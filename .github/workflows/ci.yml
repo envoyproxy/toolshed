@@ -12,6 +12,7 @@ jobs:
         - aio.functional
         - aio.subprocess
         - aio.task
+        - abstracts
         python-version:
         - 3.8
         - 3.9
