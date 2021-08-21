@@ -3,7 +3,7 @@ name: CI
 on: [push]
 
 jobs:
-  tests:
+  tests1:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
@@ -13,12 +13,33 @@ jobs:
     - uses: syphar/restore-virtualenv@v1
       id: cache-virtualenv
       with:
-        requirement_files: requirements.txt
+        requirement_files: dir1/requirements.txt
 
     - uses: syphar/restore-pip-download-cache@v1
       if: steps.cache-virtualenv.outputs.cache-hit != 'true'
 
-    - run: pip install -r requirements.txt
+    - run: pip install -r dir1/requirements.txt
+      if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+    - name: Test
+      run: py.test
+
+  tests2:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - uses: actions/setup-python@v2
+
+    - uses: syphar/restore-virtualenv@v1
+      id: cache-virtualenv
+      with:
+        requirement_files: dir2/requirements.txt
+
+    - uses: syphar/restore-pip-download-cache@v1
+      if: steps.cache-virtualenv.outputs.cache-hit != 'true'
+
+    - run: pip install -r dir2/requirements.txt
       if: steps.cache-virtualenv.outputs.cache-hit != 'true'
 
     - name: Test
