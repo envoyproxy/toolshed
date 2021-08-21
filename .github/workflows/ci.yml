@@ -44,7 +44,7 @@ jobs:
       run: flake8 aio.functional
 
     - name: Typing (aio.functional)
-      run: mypy aio.functional
+      run: mypy --namespace-packages aio.functional/aio
 
     - name: Test (aio.functional)
       run: pytest --color=yes -vv aio.functional
