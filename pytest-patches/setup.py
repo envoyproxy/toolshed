@@ -30,6 +30,7 @@ setup(
     python_requires='>=3.5',
     install_requires=['pytest>=3.5.0'],
     extras_require={
+        "test": ["pytest-coverage"],
         "lint": ['flake8'],
         "types": ['mypy'],
         "publish": ['wheel'],

@@ -25,7 +25,7 @@ setup(
     packages=find_namespace_packages(),
     python_requires='>=3.5',
     extras_require={
-        "test": ["pytest", "pytest-asyncio"],
+        "test": ["pytest", "pytest-asyncio", "pytest-coverage"],
         "lint": ['flake8'],
         "types": ['mypy'],
         "publish": ['wheel'],
