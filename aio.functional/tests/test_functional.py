@@ -109,7 +109,8 @@ async def test_functional_async_property(cache, raises, result):
         list(list(c) for c in m_async.call_args_list)
         == [[(), {}]] * 2)
 
-    iter_prop = getattr(klass, functional.async_property.cache_name)["iter_prop"]
+    iter_prop = getattr(
+        klass, functional.async_property.cache_name)["iter_prop"]
     assert isinstance(iter_prop, types.AsyncGeneratorType)
     assert (
         getattr(klass, functional.async_property.cache_name)
