@@ -7,8 +7,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        package: [pytest-patches, aio.functional]
-        python-version: [3.8, 3.9]
+        package:
+        - pytest-patches
+        - aio.functional
+        - aio.subprocess
+        python-version:
+        - 3.8
+        - 3.9
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
@@ -20,12 +25,7 @@ jobs:
       run: flake8 ${{ matrix.package }}
     - name: Typing (${{ matrix.package }})
       run: |
-        dirpath=""
-        package="${{ matrix.package }}"
-        if [[ $package =~ "." ]]; then
-            dirpath="/$(echo ${{ matrix.package }} | cut -d. -f1)"
-        fi
-        mypy --namespace-packages "${{ matrix.package }}$dirpath"
+        MYPYPATH=${{ matrix.package }} mypy --namespace-packages --explicit-package-bases -p ${{ matrix.package }}
     - name: Test (${{ matrix.package }})
       run: pytest --cov=${{ matrix.package }} ${{ matrix.package }}
     - name: Build (${{ matrix.package }})
@@ -40,7 +40,7 @@ jobs:
     - name: Archive code coverage results (${{ matrix.package }})
       uses: actions/upload-artifact@v2
       with:
-        name: coverage__${{ matrix.package }}
+        name: coverage__${{ matrix.python_version }}__${{ matrix.package }}
         path: .coverage
 
   coverage:
