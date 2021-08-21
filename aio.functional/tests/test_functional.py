@@ -1,5 +1,8 @@
 import types
-from unittest.mock import AsyncMock
+try:
+    from unittest.mock import AsyncMock
+except ImportError:
+    from asyncmock import AsyncMock
 
 import pytest
 
