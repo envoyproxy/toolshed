@@ -1,0 +1,33 @@
+name: CI
+
+on: [push]
+
+jobs:
+  pytest-patches:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - uses: actions/setup-python@v2
+
+    - run: cd pytest-patches && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[publish]
+
+    - name: Lint
+      run: flake8 pytest-patches
+
+    - name: Typing
+      run: mypy pytest-patches
+
+    - name: Test
+      run: pytest --color=yes -vv pytest-patches
+
+    - name: Build
+      run: cd pytest-patches && python setup.py bdist_wheel && ls dist
+
+    - name: Publish
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_TOKEN }}
+        packages_dir: pytest-patches/dist
