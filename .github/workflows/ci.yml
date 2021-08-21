@@ -3,65 +3,50 @@ name: CI
 on: [push]
 
 jobs:
-  pytest-patches:
+  package:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        package: [pytest-patches, aio.functional]
+        python-version: [3.8, 3.9]
     steps:
     - uses: actions/checkout@v1
-    - uses: actions/setup-python@v2
-    - run: cd pytest-patches && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[publish]  && pip install -e .[test]
-    - name: Lint (pytest-patches)
-      run: flake8 pytest-patches
-    - name: Typing (pytest-patches)
-      run: mypy pytest-patches
-    - name: Test (pytest-patches)
-      run: pytest --cov=pytest-patches pytest-patches
-    - name: Build (pytest-patches)
-      run: cd pytest-patches && python setup.py bdist_wheel && ls dist
-    - name: Publish (pytest-patches)
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: cd ${{ matrix.package }} && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[publish]  && pip install -e .[test]
+    - name: Lint (${{ matrix.package }})
+      run: flake8 ${{ matrix.package }}
+    - name: Typing (${{ matrix.package }})
+      run: |
+        dirpath=""
+        package="${{ matrix.package }}"
+        if [[ $package =~ "." ]]; then
+            dirpath="/$(echo ${{ matrix.package }} | cut -d. -f1)"
+        fi
+        mypy --namespace-packages "${{ matrix.package }}$dirpath"
+    - name: Test (${{ matrix.package }})
+      run: pytest --cov=${{ matrix.package }} ${{ matrix.package }}
+    - name: Build (${{ matrix.package }})
+      run: cd ${{ matrix.package }} && python setup.py bdist_wheel && ls dist
+    - name: Publish (${{ matrix.package }})
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_TOKEN }}
-        packages_dir: pytest-patches/dist
-    - name: Archive code coverage results (pytest-patches)
+        packages_dir: ${{ matrix.package }}/dist
+    - name: Archive code coverage results (${{ matrix.package }})
       uses: actions/upload-artifact@v2
       with:
-        name: coverage__pytest-patches
-        path: .coverage
-
-  aio_functional:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - uses: actions/setup-python@v2
-    - run: cd aio.functional && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[publish] && pip install -e .[test]
-    - name: Lint (aio.functional)
-      run: flake8 aio.functional
-    - name: Typing (aio.functional)
-      run: mypy --namespace-packages aio.functional/aio
-    - name: Test (aio.functional)
-      run: pytest --cov=aio.functional aio.functional
-    - name: Build (aio.functional)
-      run: cd aio.functional && python setup.py bdist_wheel && ls dist
-    - name: Publish (aio.functional)
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.PYPI_TOKEN }}
-        packages_dir: aio.functional/dist
-    - name: Archive code coverage results (aio.functional)
-      uses: actions/upload-artifact@v2
-      with:
-        name: coverage__aio_functional
+        name: coverage__${{ matrix.package }}
         path: .coverage
 
   coverage:
     runs-on: ubuntu-latest
     needs:
-    - pytest-patches
-    - aio_functional
+    - package
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v2
