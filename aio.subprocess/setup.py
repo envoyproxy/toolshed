@@ -12,7 +12,7 @@ def read(fname):
 
 setup(
     name='aio.subprocess',
-    version='0.0.1',
+    version=read("VERSION"),
     author='Ryan Northey',
     author_email='ryan@synca.io',
     maintainer='Ryan Northey',
