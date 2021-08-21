@@ -23,6 +23,7 @@ setup(
     long_description=read('README.rst'),
     py_modules=['aio.functional'],
     packages=find_namespace_packages(),
+    package_data={'aio.functional': ['py.typed']},
     python_requires='>=3.5',
     extras_require={
         "test": ["pytest", "pytest-asyncio", "pytest-coverage"],
