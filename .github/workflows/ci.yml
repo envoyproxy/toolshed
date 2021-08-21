@@ -10,24 +10,52 @@ jobs:
 
     - uses: actions/setup-python@v2
 
-    - run: cd pytest-patches && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[publish]
+    - run: cd pytest-patches && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[publish]  && pip install -e .[test]
 
-    - name: Lint
+    - name: Lint (pytest-patches)
       run: flake8 pytest-patches
 
-    - name: Typing
+    - name: Typing (pytest-patches)
       run: mypy pytest-patches
 
-    - name: Test
+    - name: Test (pytest-patches)
       run: pytest --color=yes -vv pytest-patches
 
-    - name: Build
+    - name: Build (pytest-patches)
       run: cd pytest-patches && python setup.py bdist_wheel && ls dist
 
-    - name: Publish
+    - name: Publish (pytest-patches)
       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_TOKEN }}
         packages_dir: pytest-patches/dist
+
+  aio_functional:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v2
+
+    - run: cd aio.functional && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[publish] && pip install -e .[test]
+
+    - name: Lint (aio.functional)
+      run: flake8 aio.functional
+
+    - name: Typing (aio.functional)
+      run: mypy aio.functional
+
+    - name: Test (aio.functional)
+      run: pytest --color=yes -vv aio.functional
+
+    - name: Build (aio.functional)
+      run: cd aio.functional && python setup.py bdist_wheel && ls dist
+
+    - name: Publish (aio.functional)
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_TOKEN }}
+        packages_dir: aio.functional/dist
