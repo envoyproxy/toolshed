@@ -23,13 +23,15 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - run: cd ${{ matrix.package }} && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[test]
-    - name: Lint (${{ matrix.package }})
-      run: flake8 ${{ matrix.package }}
     - name: Typing (${{ matrix.package }})
       run: |
         MYPYPATH=${{ matrix.package }} mypy --namespace-packages --explicit-package-bases -p ${{ matrix.package }}
     - name: Test (${{ matrix.package }})
       run: pytest --cov=${{ matrix.package }} ${{ matrix.package }}
+    - name: Doctest (${{ matrix.package }})
+      run: python3 -m doctest -oELLIPSIS -v ${{ matrix.package }}/README.rst
+    - name: Lint (${{ matrix.package }})
+      run: flake8 ${{ matrix.package }}
     - name: Archive code coverage results (${{ matrix.package }})
       uses: actions/upload-artifact@v2
       with:
@@ -51,11 +53,13 @@ jobs:
       run: coverage combine $(find . -wholename "./coverage__*/.coverage")
     - name: Coverage report
       run: coverage report
+    - name: Coverage HTML
+      run: coverage html && tar czf coverage.tar.gz htmlcov
     - name: Archive all code coverage results
       uses: actions/upload-artifact@v2
       with:
         name: coverage
-        path: .coverage
+        path: coverage.tar.gz
 
   publish:
     runs-on: ubuntu-latest
