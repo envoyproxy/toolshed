@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Type, Union
+from typing import Dict, List, Set, Tuple, Type, Union
 
 import abstracts
 
@@ -23,7 +23,7 @@ class Implementer(type):
 
         @abstractmethod
         def do_something(self):
-            \"""Do something\"""
+            ""\"Do something""\"
             raise NotImplementedError
 
     class Foo(metaclass=Implementer)
@@ -55,7 +55,7 @@ class Implementer(type):
         - class docstring
         - abstract methods
         """
-        if not isinstance(abstract, abstracts.Abstraction):
+        if not isinstance(abstract, abstracts.Interface):
             raise TypeError(
                 "Implementers can only implement subclasses of "
                 f"`abstracts.Abstraction`, unrecognized: '{abstract}'")
@@ -102,16 +102,73 @@ class Implementer(type):
                     abstract_klass, abstract_method).__doc__
 
     @classmethod
+    def add_interfaces(
+            cls,
+            ifaces: Tuple,
+            klass: "Implementer") -> None:
+        for iface in ifaces:
+            if issubclass(klass, iface):
+                continue
+            missing = iface.__abstractmethods__ - set(dir(klass))
+            if missing:
+                raise TypeError(
+                    "Not all methods for interface "
+                    f"{iface} provided: missing {sorted(missing)}")
+            iface.register(klass)
+
+    @classmethod
+    def check_interface(
+            cls,
+            clsdict: dict) -> None:
+        extra = (
+            cls.get_class_attrs(clsdict)
+            - cls.get_interface_methods(clsdict))
+        if extra:
+            raise TypeError(
+                "Interfaces can only contain methods decorated with "
+                f"`@interfacemethod`: got {extra}")
+
+    @classmethod
     def get_bases(
             cls,
             bases: Tuple[Type, ...],
-            clsdict: Dict) -> Tuple[Type, ...]:
+            clsdict: Dict) -> Tuple[Type["abstracts.Abstraction"], ...]:
         """Returns a tuple of base classes, with `__implements__` classes
         included
         """
         return (
             bases
-            + tuple(x for x in clsdict["__implements__"] if x not in bases))
+            + tuple(
+                x for x in clsdict["__implements__"]
+                if x not in bases
+                and isinstance(x, abstracts.Abstraction)))
+
+    @classmethod
+    def get_class_attrs(
+            cls,
+            clsdict: dict) -> Set[str]:
+        return set(
+            x for x in clsdict
+            if not x.startswith("__"))
+
+    @classmethod
+    def get_interface_methods(
+            cls,
+            clsdict: Dict) -> Set[str]:
+        return set(
+            k for k, v in clsdict.items()
+            if (isinstance(v, property)
+                and getattr(v.fget, "__isinterfacemethod__", False))
+            or getattr(v, "__isinterfacemethod__", False))
+
+    @classmethod
+    def get_interfaces(
+            cls,
+            bases: Tuple[Type, ...],
+            clsdict: Dict) -> Tuple[Type["abstracts.Interface"], ...]:
+        return tuple(
+            x for x in clsdict["__implements__"]
+            if (x not in bases and cls.is_interface(x)))
 
     @classmethod
     def implementation_info(
@@ -132,6 +189,14 @@ class Implementer(type):
                 abstract_docs[name] = docs
         return abstract_docs, abstract_methods
 
+    @classmethod
+    def is_interface(
+            cls,
+            klass: Union["abstracts.Interface", "Implementer"]) -> bool:
+        return (
+            isinstance(klass, abstracts.Interface)
+            and not isinstance(klass, abstracts.Abstraction))
+
     def __new__(
             cls,
             clsname: str,
@@ -139,8 +204,13 @@ class Implementer(type):
             clsdict: Dict) -> "Implementer":
         """Create a new Implementer class"""
         if "__implements__" not in clsdict:
-            return super().__new__(cls, clsname, bases, clsdict)
+            klass = super().__new__(cls, clsname, bases, clsdict)
+            if cls.is_interface(klass):
+                cls.check_interface(clsdict)
+            return klass
+        ifaces = cls.get_interfaces(bases, clsdict)
         klass = super().__new__(
             cls, clsname, cls.get_bases(bases, clsdict), clsdict)
         cls.add_docs(clsdict, klass)
+        cls.add_interfaces(ifaces, klass)
         return klass
