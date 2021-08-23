@@ -1,7 +1,6 @@
-from abc import ABCMeta
 
-from abstracts.implements import Implementer
+from abstracts.interface import Interface
 
 
-class Abstraction(Implementer, ABCMeta):
+class Abstraction(Interface):
     pass

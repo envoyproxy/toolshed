@@ -1,3 +1,5 @@
+from abc import abstractmethod
+from functools import wraps
 from typing import Any
 
 from abstracts.implements import Implementer
@@ -34,8 +36,20 @@ def implementer(implements):
             __implements__ = implements
             __doc__ = _klass.__doc__
 
+        Implementation.__module__ = klass.__module__
         Implementation.__qualname__ = klass.__name__
         Implementation.__name__ = klass.__name__
         return Implementation
 
     return wrapper
+
+
+def interfacemethod(fun):
+
+    @wraps(fun)
+    @abstractmethod
+    def wrapped(*args, **kwargs):
+        raise NotImplementedError
+
+    wrapped.__isinterfacemethod__ = True
+    return wrapped
