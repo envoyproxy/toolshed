@@ -16,7 +16,7 @@ Like any python class, an ``Abstraction`` can have any name, but it may
 be helpful to distinguish abstract classes from others by prefixing their
 name with ``A``.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import abc
    >>> import abstracts
@@ -29,20 +29,19 @@ name with ``A``.
 
 Abstract classes **cannot** be instantiated directly.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> AFoo()
    Traceback (most recent call last):
    ...
    TypeError: Can't instantiate abstract class AFoo with abstract method... do_foo
 
-
 Create an ``implementer`` for an ``abstract.Abstraction``
 ---------------------------------------------------------
 
 In order to make use of ``AFoo``, we need to create an implementer for it.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> @abstracts.implementer(AFoo)
    ... class Foo:
@@ -51,7 +50,7 @@ In order to make use of ``AFoo``, we need to create an implementer for it.
 The implementer **must** implement all of the abstract methods,
 defined by its abstract classes.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> Foo()
    Traceback (most recent call last):
@@ -67,20 +66,19 @@ defined by its abstract classes.
    >>> Foo2()
    <__main__.Foo2 object at ...>
 
-
 An implementer inherits from its ``Abstractions``
 -------------------------------------------------
 
 An ``implementer`` class is a subclass of its ``Abstraction``.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> issubclass(Foo2, AFoo)
    True
 
 Likewise an instance of an implementer is an instance of its ``Abstraction``
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> isinstance(Foo2(), AFoo)
    True
@@ -88,12 +86,11 @@ Likewise an instance of an implementer is an instance of its ``Abstraction``
 The ``Abstraction`` class can be seen in the class ``bases``, and the
 methods of the ``Abstraction`` can be invoked by the implementer.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> import inspect
    >>> AFoo in inspect.getmro(Foo2)
    True
-
 
 Create an ``implementer`` that implements multiple ``Abstraction`` s.
 ---------------------------------------------------------------------
@@ -102,7 +99,7 @@ An implementer can implement multiple abstractions.
 
 Let's create a second abstraction.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> class ABar(metaclass=abstracts.Abstraction):
    ...
@@ -113,7 +110,7 @@ Let's create a second abstraction.
 And now we can create an implementer that implememts both the ``AFoo`` and ``ABar``
 ``Abstraction`` s.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> @abstracts.implementer((AFoo, ABar))
    ... class FooBar:
@@ -127,14 +124,13 @@ And now we can create an implementer that implememts both the ``AFoo`` and ``ABa
    >>> FooBar()
    <__main__.FooBar object at ...>
 
-
 Defining abstract properties
 ----------------------------
 
 Properties can be defined in an abstract class, and just like with normal
 methods, they must be implemented by any implementers.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> class AMover(metaclass=abstracts.Abstraction):
    ...
@@ -148,14 +144,13 @@ methods, they must be implemented by any implementers.
    ...     def direction(self):
    ...         return "forwards"
 
-
 Calling ``super()`` on an ``abstractmethod``
 --------------------------------------------
 
 Just like with pythons "Abstract Base Classes" you can call ``super()``
 in an ``abstractmethod``, to invoke an abstract implementation.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> @abstracts.implementer(AMover)
    ... class Mover:
@@ -174,7 +169,7 @@ This custom implementation of ``AMover`` **must** implement both ``speed`` and
 In this case it uses the default/abstract implementation of ``speed`` while providing
 its own implementation of ``direction``.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> mover = Mover()
    >>> mover
@@ -184,7 +179,6 @@ its own implementation of ``direction``.
    5
    >>> mover.direction
    'backwards'
-
 
 Defining an ``abstracts.Interface`` class
 -----------------------------------------
@@ -205,7 +199,7 @@ In the way that it may be helpful to distinguish an ``Abstraction`` from other
 types of classes, it may be also useful to distinguish an ``Interface`` by
 using an ``I`` prefix when naming them.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> class IGeared(metaclass=abstracts.Interface):
    ...
@@ -216,7 +210,6 @@ using an ``I`` prefix when naming them.
    ...         # anyway if the method is invoked.
    ...         raise NotImplementedError
 
-
 Implementing an ``Interface``
 -----------------------------
 
@@ -226,7 +219,7 @@ the ``@implementer`` decorator.
 An implementer, can implement a combination of ``Abstractions`` and
 ``Interfaces``.
 
-.. code-block:: pythonx
+.. code-block:: pycon
 
    >>> @abstracts.implementer((AMover, IGeared))
    ... class Bicycle:
@@ -246,13 +239,12 @@ An implementer, can implement a combination of ``Abstractions`` and
    >>> Bicycle().number_of_gears
    7
 
-
 An implementer does **not** inherit from its ``Interfaces``
 -----------------------------------------------------------
 
 An ``implementer`` class is a subclass of its ``Interfaces``.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> issubclass(Bicycle, AMover)
    True
@@ -261,7 +253,7 @@ An ``implementer`` class is a subclass of its ``Interfaces``.
 
 Likewise an instance of an implementer is an instance of its ``Interfaces``
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> isinstance(Bicycle(), AMover)
    True
@@ -270,7 +262,7 @@ Likewise an instance of an implementer is an instance of its ``Interfaces``
 
 Unlike with ``Abstractions`` it does **not** however, inherit from its ``Interfaces``.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> AMover in inspect.getmro(Bicycle)
    True
@@ -288,7 +280,7 @@ If it was defined as part of an ``Interface`` you will receive an
 ``AttributeError``, as the implementation does not inherit directly from the
 interface.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> @abstracts.implementer((AMover, IGeared))
    ... class BrokenBicycle:
@@ -320,7 +312,7 @@ If you invoke ``super()`` on an ``@interfacemethod`` defined as part of an
 As an ``Interface`` can only hold this type of method, you can never invoke
 any of its methods. Doing so directly will raising a ``NotImplementedError``.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> IGeared.number_of_gears.__get__(Bicycle())
    Traceback (most recent call last):
@@ -336,7 +328,7 @@ An ``Abstraction`` on the other hand can combine both.
 
 Lets create a pure ``Interface`` that represents a "shed".
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> class IShed(metaclass=abstracts.Interface):
    ...
@@ -347,7 +339,7 @@ Lets create a pure ``Interface`` that represents a "shed".
 
 We can use this interface to create an ``ABikeShed`` ``Abstraction``
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> class ABikeShed(IShed, metaclass=abstracts.Abstraction):
    ...
@@ -368,7 +360,7 @@ as these are ``interfacemethods``.
 It can, however, make use of the abstract implementation of ``get_capacity``,
 even if it must be defined.
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> @abstracts.implementer(ABikeShed)
    ... class BikeShed:
