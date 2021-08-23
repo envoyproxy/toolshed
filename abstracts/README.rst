@@ -34,7 +34,7 @@ Abstract classes **cannot** be instantiated directly.
    >>> AFoo()
    Traceback (most recent call last):
    ...
-   TypeError: Can't instantiate abstract class AFoo with abstract method do_foo
+   TypeError: Can't instantiate abstract class AFoo with abstract method... do_foo
 
 
 Create an ``implementer`` for an ``abstract.Abstraction``
@@ -56,7 +56,7 @@ defined by its abstract classes.
    >>> Foo()
    Traceback (most recent call last):
    ...
-   TypeError: Can't instantiate abstract class Foo with abstract method do_foo
+   TypeError: Can't instantiate abstract class Foo with abstract method... do_foo
 
    >>> @abstracts.implementer(AFoo)
    ... class Foo2:
@@ -269,6 +269,8 @@ Likewise an instance of an implementer is an instance of its ``Interfaces``
    True
 
 Unlike with ``Abstractions`` it does **not** however, inherit from its ``Interfaces``.
+
+.. doctest::
 
    >>> AMover in inspect.getmro(Bicycle)
    True
