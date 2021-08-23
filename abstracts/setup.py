@@ -21,7 +21,7 @@ setup(
     url='https://github.com/phlax/pytooling/abstracts',
     description='Abstract class and interface definitions',
     long_description=read('README.rst'),
-    long_description_content_type='text/x-rst',
+    # long_description_content_type='text/x-rst',
     py_modules=['abstracts'],
     packages=find_namespace_packages(),
     package_data={'abstracts': ['py.typed']},
