@@ -6,7 +6,7 @@ pytest-patches
 Installation
 ------------
 
-You can install "pytest-patches" via `pip`_ from `PyPI`_
+You can install "pytest-patches" via ``pip``
 
 .. code-block:: console
 
@@ -16,4 +16,4 @@ You can install "pytest-patches" via `pip`_ from `PyPI`_
 License
 -------
 
-Distributed under the terms of the `Apache Software License 2.0`_ license, "pytest-patches" is free and open source software
+Distributed under the terms of the Apache Software License 2.0 license, "pytest-patches" is free and open source software
