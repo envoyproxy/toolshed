@@ -17,6 +17,7 @@ jobs:
         - envoy.base.runner
         - envoy.base.checker
         - envoy.github.abstract
+        - envoy.github.release
         - mypy-abstracts
         - pytest-patches
         python-version:
@@ -31,7 +32,16 @@ jobs:
     - run: cd ${{ matrix.package }} && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[test]
     - name: Typing (${{ matrix.package }})
       run: |
-        MYPYPATH=${{ matrix.package }} mypy --namespace-packages --explicit-package-bases -p $(echo ${{ matrix.package }} | tr '-' '_')
+        CONFIG=()
+        if [[ -e "${{ matrix.package }}/mypy.ini" ]]; then
+            CONFIG=("--config-file" "${{ matrix.package }}/mypy.ini")
+        fi
+        MYPYPATH=${{ matrix.package }} \
+            mypy ${CONFIG[@]} \
+                 --no-warn-no-return \
+                 --namespace-packages \
+                 --explicit-package-bases \
+                 -p $(echo ${{ matrix.package }} | tr '-' '_')
     - name: Test (${{ matrix.package }})
       run: pytest --cov=${{ matrix.package }} ${{ matrix.package }}
     - name: Doctest (${{ matrix.package }})
@@ -83,6 +93,7 @@ jobs:
         - envoy.base.runner
         - envoy.base.checker
         - envoy.github.abstract
+        - envoy.github.release
         - mypy-abstracts
         - pytest-patches
     steps:
