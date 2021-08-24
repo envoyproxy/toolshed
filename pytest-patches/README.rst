@@ -6,7 +6,9 @@ pytest-patches
 Installation
 ------------
 
-You can install "pytest-patches" via `pip`_ from `PyPI`_::
+You can install "pytest-patches" via `pip`_ from `PyPI`_
+
+.. code-block:: console
 
     $ pip install pytest-patches
 
