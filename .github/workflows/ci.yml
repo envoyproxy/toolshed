@@ -16,6 +16,7 @@ jobs:
         - envoy.base.utils
         - envoy.base.runner
         - envoy.base.checker
+        - envoy.github.abstract
         python-version:
         - 3.8
         - 3.9
@@ -79,6 +80,7 @@ jobs:
         - envoy.base.utils
         - envoy.base.runner
         - envoy.base.checker
+        - envoy.github.abstract
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
