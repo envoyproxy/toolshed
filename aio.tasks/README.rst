@@ -56,13 +56,13 @@ and then returns its id and how long it waited.
 
 .. code-block:: pycon
 
->>> import random
+   >>> import random
 
->>> async def task_to_run(task_id):
-...     print(f"{task_id} starting")
-...     wait = random.random() * 5
-...     await asyncio.sleep(wait)
-...     return task_id, wait
+   >>> async def task_to_run(task_id):
+   ...     print(f"{task_id} starting")
+   ...     wait = random.random() * 5
+   ...     await asyncio.sleep(wait)
+   ...     return task_id, wait
 
 Next lets create an async generator that yields 10 of the coroutines.
 
@@ -70,9 +70,9 @@ Note that the coroutines are not awaited, they will be created as tasks.
 
 .. code-block:: pycon
 
->>> def provider():
-...     for task_id in range(0, 10):
-...         yield task_to_run(task_id)
+   >>> def provider():
+   ...     for task_id in range(0, 10):
+   ...         yield task_to_run(task_id)
 
 Finally, lets create an function to asynchronously iterate the results, and
 fire it with the generator.
@@ -84,19 +84,19 @@ This continues until all have completed.
 
 .. code-block:: pycon
 
->>> import asyncio
->>> from aio.tasks import concurrent
+   >>> import asyncio
+   >>> from aio.tasks import concurrent
 
->>> async def run(coros):
-...     async for (task_id, wait) in concurrent(coros, limit=3):
-...         print(f"{task_id} waited {wait}")
+   >>> async def run(coros):
+   ...     async for (task_id, wait) in concurrent(coros, limit=3):
+   ...         print(f"{task_id} waited {wait}")
 
->>> asyncio.run(run(provider()))
-0 starting
-1 starting
-2 starting
-... waited ...
-3 starting
-... waited ...
-...
-... waited ...
+   >>> asyncio.run(run(provider()))
+   0 starting
+   1 starting
+   2 starting
+   ... waited ...
+   3 starting
+   ... waited ...
+   ...
+   ... waited ...
