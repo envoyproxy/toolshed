@@ -50,9 +50,4 @@ setup(
         'Operating System :: OS Independent',
         'License :: OSI Approved :: Apache Software License',
     ],
-    entry_points={
-        'pytest11': [
-            'patches = pytest_patches',
-        ],
-    },
 )
