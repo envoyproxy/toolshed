@@ -8,15 +8,16 @@ jobs:
     strategy:
       matrix:
         package:
-        - pytest-patches
+        - abstracts
         - aio.functional
         - aio.subprocess
         - aio.tasks
-        - abstracts
         - envoy.base.utils
         - envoy.base.runner
         - envoy.base.checker
         - envoy.github.abstract
+        - mypy-abstracts
+        - pytest-patches
         python-version:
         - 3.8
         - 3.9
@@ -29,7 +30,7 @@ jobs:
     - run: cd ${{ matrix.package }} && pip install -e . && pip install -e .[lint] && pip install -e .[types] && pip install -e .[test]
     - name: Typing (${{ matrix.package }})
       run: |
-        MYPYPATH=${{ matrix.package }} mypy --namespace-packages --explicit-package-bases -p ${{ matrix.package }}
+        MYPYPATH=${{ matrix.package }} mypy --namespace-packages --explicit-package-bases -p $(echo ${{ matrix.package }} | tr '-' '_')
     - name: Test (${{ matrix.package }})
       run: pytest --cov=${{ matrix.package }} ${{ matrix.package }}
     - name: Doctest (${{ matrix.package }})
@@ -72,15 +73,16 @@ jobs:
     strategy:
       matrix:
         package:
-        - pytest-patches
+        - abstracts
         - aio.functional
         - aio.subprocess
         - aio.tasks
-        - abstracts
         - envoy.base.utils
         - envoy.base.runner
         - envoy.base.checker
         - envoy.github.abstract
+        - mypy-abstracts
+        - pytest-patches
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
