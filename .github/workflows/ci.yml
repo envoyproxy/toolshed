@@ -13,6 +13,7 @@ jobs:
         - aio.subprocess
         - aio.tasks
         - abstracts
+        - envoy.base.utils
         python-version:
         - 3.8
         - 3.9
@@ -73,6 +74,7 @@ jobs:
         - aio.subprocess
         - aio.tasks
         - abstracts
+        - envoy.base.utils
     steps:
     - uses: actions/checkout@v1
     - name: Set up Python ${{ matrix.python-version }}
