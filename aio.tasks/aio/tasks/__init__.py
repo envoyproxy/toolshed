@@ -1,7 +1,7 @@
 
 from .exceptions import (
     ConcurrentError, ConcurrentExecutionError, ConcurrentIteratorError)
-from .task import concurrent
+from .tasks import concurrent
 
 
 __all__ = (
