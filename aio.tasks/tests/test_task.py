@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
-import aio.task
+import aio.tasks
 
 
 @pytest.mark.parametrize("limit", ["XX", None, "", 0, -1, 73])
@@ -22,7 +22,7 @@ def test_aio_concurrent_constructor(limit, yield_exceptions):
     if yield_exceptions is not None:
         kwargs["yield_exceptions"] = yield_exceptions
 
-    concurrent = aio.task.concurrent(["CORO"], **kwargs)
+    concurrent = aio.tasks.concurrent(["CORO"], **kwargs)
     assert concurrent._coros == ["CORO"]
     assert concurrent._limit == limit
     assert (
@@ -37,12 +37,12 @@ def test_aio_concurrent_constructor(limit, yield_exceptions):
 
 
 def test_aio_concurrent_dunder_aiter(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "asyncio",
         "concurrent.output",
         ("concurrent.submit", dict(new_callable=MagicMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_asyncio, m_output, m_submit):
         assert concurrent.__aiter__() == m_output.return_value
@@ -59,12 +59,12 @@ def test_aio_concurrent_dunder_aiter(patches):
 @pytest.mark.parametrize("running", [True, False])
 @pytest.mark.parametrize("submitting", [True, False])
 def test_aio_concurrent_active(patches, running, submitting):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "asyncio",
         ("concurrent.submitting", dict(new_callable=PropertyMock)),
         ("concurrent.running", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_asyncio, m_submit, m_run):
         m_submit.return_value = submitting
@@ -75,10 +75,10 @@ def test_aio_concurrent_active(patches, running, submitting):
 
 
 def test_aio_concurrent_closing_lock(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "asyncio",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_asyncio, ):
         assert concurrent.closing_lock == m_asyncio.Lock.return_value
@@ -91,10 +91,10 @@ def test_aio_concurrent_closing_lock(patches):
 
 @pytest.mark.parametrize("locked", [True, False])
 def test_aio_concurrent_closed(patches, locked):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.closing_lock", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_closing_lock, ):
         m_closing_lock.return_value.locked.return_value = locked
@@ -107,10 +107,10 @@ def test_aio_concurrent_closed(patches, locked):
 @pytest.mark.parametrize("raises", [None, BaseException, GeneratorExit])
 @pytest.mark.parametrize("close_raises", [None, BaseException])
 async def test_aio_concurrent_coros(patches, raises, close_raises):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.iter_coros", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
     results = []
     return_coros = [f"CORO{i}" for i in range(0, 3)]
     m_aclose = AsyncMock()
@@ -155,10 +155,10 @@ async def test_aio_concurrent_coros(patches, raises, close_raises):
 
 
 def test_aio_concurrent_running_queue(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "asyncio",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_asyncio, ):
         assert concurrent.running_queue == m_asyncio.Queue.return_value
@@ -171,11 +171,11 @@ def test_aio_concurrent_running_queue(patches):
 
 @pytest.mark.parametrize("cpus", [None, "", 0, 4, 73])
 def test_aio_concurrent_default_limit(patches, cpus):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "min",
         "os",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_min, m_os):
         m_os.cpu_count.return_value = cpus
@@ -188,10 +188,10 @@ def test_aio_concurrent_default_limit(patches, cpus):
 
 
 def test_aio_concurrent_consumes_async(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "isinstance",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_inst, ):
         assert concurrent.consumes_async == m_inst.return_value
@@ -206,10 +206,10 @@ def test_aio_concurrent_consumes_async(patches):
 
 
 def test_aio_concurrent_consumes_generator(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "isinstance",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_inst, ):
         assert concurrent.consumes_generator == m_inst.return_value
@@ -222,10 +222,10 @@ def test_aio_concurrent_consumes_generator(patches):
 
 @pytest.mark.parametrize("limit", [None, "", 0, -1, 73])
 def test_aio_concurrent_limit(patches, limit):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.default_limit", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
     concurrent._limit = limit
 
     with patched as (m_limit, ):
@@ -239,10 +239,10 @@ def test_aio_concurrent_limit(patches, limit):
 
 @pytest.mark.parametrize("limit", [None, "", 0, -1, 73])
 def test_aio_concurrent_nolimit(patches, limit):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.limit", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_limit, ):
         m_limit.return_value = limit
@@ -252,10 +252,10 @@ def test_aio_concurrent_nolimit(patches, limit):
 
 
 def test_aio_concurrent_out(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "asyncio",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_asyncio, ):
         assert concurrent.out == m_asyncio.Queue.return_value
@@ -268,10 +268,10 @@ def test_aio_concurrent_out(patches):
 
 @pytest.mark.parametrize("empty", [True, False])
 def test_aio_concurrent_running(patches, empty):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.running_queue", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_running_queue, ):
         m_running_queue.return_value.empty.return_value = empty
@@ -281,11 +281,11 @@ def test_aio_concurrent_running(patches, empty):
 
 
 def test_aio_concurrent_sem(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "asyncio",
         ("concurrent.limit", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_asyncio, m_limit):
         assert concurrent.sem == m_asyncio.Semaphore.return_value
@@ -297,10 +297,10 @@ def test_aio_concurrent_sem(patches):
 
 
 def test_aio_concurrent_submission_lock(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "asyncio",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_asyncio, ):
         assert concurrent.submission_lock == m_asyncio.Lock.return_value
@@ -313,10 +313,10 @@ def test_aio_concurrent_submission_lock(patches):
 
 @pytest.mark.parametrize("locked", [True, False])
 def test_aio_concurrent_submitting(patches, locked):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.submission_lock", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_submission_lock, ):
         m_submission_lock.return_value.locked.return_value = locked
@@ -327,13 +327,13 @@ def test_aio_concurrent_submitting(patches, locked):
 
 @pytest.mark.asyncio
 async def test_aio_concurrent_cancel(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.cancel_tasks", dict(new_callable=AsyncMock)),
         ("concurrent.close", dict(new_callable=AsyncMock)),
         ("concurrent.close_coros", dict(new_callable=AsyncMock)),
         ("concurrent.sem", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     waiter = MagicMock()
 
@@ -370,10 +370,10 @@ async def test_aio_concurrent_cancel(patches):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("bad", range(0, 8))
 async def test_aio_concurrent_cancel_tasks(patches, bad):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.running_tasks", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     tasks = []
     waiter = MagicMock()
@@ -407,11 +407,11 @@ async def test_aio_concurrent_cancel_tasks(patches, bad):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("closed", [True, False])
 async def test_aio_concurrent_close(patches, closed):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.closed", dict(new_callable=PropertyMock)),
         ("concurrent.closing_lock", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_closed, m_lock):
         m_closed.return_value = closed
@@ -430,12 +430,12 @@ async def test_aio_concurrent_close(patches, closed):
 @pytest.mark.parametrize("consumes_generator", [True, False])
 @pytest.mark.parametrize("bad", range(0, 8))
 async def test_aio_concurrent_close_coros(patches, consumes_generator, bad):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "concurrent.close",
         ("concurrent.iter_coros", dict(new_callable=PropertyMock)),
         ("concurrent.consumes_generator", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     coros = []
     for i in range(0, 7):
@@ -467,13 +467,13 @@ async def test_aio_concurrent_close_coros(patches, consumes_generator, bad):
 
 @pytest.mark.asyncio
 async def test_aio_concurrent_create_task(patches):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "asyncio",
         "concurrent.remember_task",
         ("concurrent.task", dict(new_callable=MagicMock)),
         ("concurrent.running_queue", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_asyncio, m_rem, m_task, m_running_queue):
         assert not await concurrent.create_task("CORO")
@@ -496,12 +496,12 @@ async def test_aio_concurrent_create_task(patches):
 @pytest.mark.parametrize("closed", [True, False])
 @pytest.mark.parametrize("active", [True, False])
 async def test_aio_concurrent_exit_on_completion(patches, active, closed):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.active", dict(new_callable=PropertyMock)),
         ("concurrent.closed", dict(new_callable=PropertyMock)),
         ("concurrent.out", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     with patched as (m_active, m_closed, m_out):
         m_out.return_value.put = AsyncMock()
@@ -514,15 +514,15 @@ async def test_aio_concurrent_exit_on_completion(patches, active, closed):
         return
     assert (
         list(m_out.return_value.put.call_args)
-        == [(aio.task.task._sentinel, ), {}])
+        == [(aio.tasks.tasks._sentinel, ), {}])
 
 
 @pytest.mark.parametrize("closed", [True, False])
 def test_aio_concurrent_forget_task(patches, closed):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.closed", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
     concurrent._running = MagicMock()
 
     with patched as (m_closed, ):
@@ -541,10 +541,10 @@ def test_aio_concurrent_forget_task(patches, closed):
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("consumes_async", [True, False])
 async def test_aio_concurrent_iter_coros(patches, raises, consumes_async):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.consumes_async", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     coros = [f"CORO{i}" for i in range(0, 7)]
     exception = BaseException("AN RAISES OCCURRED")
@@ -575,7 +575,7 @@ async def test_aio_concurrent_iter_coros(patches, raises, consumes_async):
 
     if raises:
         error = results[0]
-        assert isinstance(error, aio.task.ConcurrentIteratorError)
+        assert isinstance(error, aio.tasks.ConcurrentIteratorError)
         assert error.args[0] is exception
         assert results == [error]
         return
@@ -588,7 +588,7 @@ async def test_aio_concurrent_iter_coros(patches, raises, consumes_async):
 @pytest.mark.parametrize("decrement", [None, True, False])
 async def test_aio_concurrent_on_task_complete(
         patches, closed, nolimit, decrement):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.exit_on_completion", dict(new_callable=AsyncMock)),
         ("concurrent.closed", dict(new_callable=PropertyMock)),
@@ -596,7 +596,7 @@ async def test_aio_concurrent_on_task_complete(
         ("concurrent.running_queue", dict(new_callable=PropertyMock)),
         ("concurrent.nolimit", dict(new_callable=PropertyMock)),
         ("concurrent.sem", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
     kwargs = {}
     if decrement is not None:
         kwargs["decrement"] = decrement
@@ -643,13 +643,13 @@ async def test_aio_concurrent_on_task_complete(
 @pytest.mark.parametrize("should_error", [True, False])
 async def test_aio_concurrent_output(
         patches, result_count, error, should_error):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "concurrent.should_error",
         ("concurrent.cancel", dict(new_callable=AsyncMock)),
         ("concurrent.close", dict(new_callable=AsyncMock)),
         ("concurrent.out", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     exception = Exception()
 
@@ -658,13 +658,13 @@ async def test_aio_concurrent_output(
 
         async def get(self):
             if result_count == 0:
-                return aio.task.task._sentinel
+                return aio.tasks.tasks._sentinel
             if result_count > self._running_queue:
                 self._running_queue += 1
                 if error and result_count == self._running_queue:
                     return exception
                 return f"RESULT {self._running_queue}"
-            return aio.task.task._sentinel
+            return aio.tasks.tasks._sentinel
 
         def should_error(self, result):
             return (
@@ -724,12 +724,12 @@ async def test_aio_concurrent_output(
 @pytest.mark.parametrize("nolimit", [True, False])
 async def test_aio_concurrent_ready(
         patches, closed_before, closed_after, nolimit):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         ("concurrent.closed", dict(new_callable=PropertyMock)),
         ("concurrent.nolimit", dict(new_callable=PropertyMock)),
         ("concurrent.sem", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     class DummyCloser:
         order_mock = MagicMock()
@@ -784,7 +784,7 @@ async def test_aio_concurrent_ready(
 
 
 def test_aio_concurrent_remember_task():
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     concurrent._running = MagicMock()
     task = MagicMock()
     assert not concurrent.remember_task(task)
@@ -800,12 +800,12 @@ def test_aio_concurrent_remember_task():
     "result",
     [None,
      "RESULT",
-     aio.task.ConcurrentError,
-     aio.task.ConcurrentExecutionError,
-     aio.task.ConcurrentIteratorError])
+     aio.tasks.ConcurrentError,
+     aio.tasks.ConcurrentExecutionError,
+     aio.tasks.ConcurrentIteratorError])
 @pytest.mark.parametrize("yield_exceptions", [True, False])
 def test_aio_concurrent_should_error(result, yield_exceptions):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     concurrent.yield_exceptions = yield_exceptions
 
     if isinstance(result, type) and issubclass(result, BaseException):
@@ -813,8 +813,8 @@ def test_aio_concurrent_should_error(result, yield_exceptions):
 
     assert (
         concurrent.should_error(result)
-        == ((isinstance(result, aio.task.ConcurrentIteratorError)
-             or isinstance(result, aio.task.ConcurrentError)
+        == ((isinstance(result, aio.tasks.ConcurrentIteratorError)
+             or isinstance(result, aio.tasks.ConcurrentError)
              and not yield_exceptions)))
 
 
@@ -822,11 +822,11 @@ def test_aio_concurrent_should_error(result, yield_exceptions):
 @pytest.mark.parametrize("coros", range(0, 7))
 @pytest.mark.parametrize("unready", range(0, 8))
 @pytest.mark.parametrize(
-    "valid_raises", [None, Exception, aio.task.ConcurrentError])
+    "valid_raises", [None, Exception, aio.tasks.ConcurrentError])
 @pytest.mark.parametrize("iter_errors", [True, False])
 async def test_aio_concurrent_submit(
         patches, coros, unready, valid_raises, iter_errors):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "isinstance",
         "concurrent.validate_coro",
@@ -837,7 +837,7 @@ async def test_aio_concurrent_submit(
         ("concurrent.coros", dict(new_callable=PropertyMock)),
         ("concurrent.out", dict(new_callable=PropertyMock)),
         ("concurrent.submission_lock", dict(new_callable=PropertyMock)),
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
     m_order = MagicMock()
 
     class DummyReady:
@@ -924,7 +924,7 @@ async def test_aio_concurrent_submit(
             == [[(corolist[0], ), {}]])
         assert (
             list(list(c) for c in m_inst.call_args_list)
-            == [[(corolist[0], aio.task.ConcurrentIteratorError), {}]])
+            == [[(corolist[0], aio.tasks.ConcurrentIteratorError), {}]])
         assert not m_ready.called
         assert not m_valid.called
         assert not m_complete.called
@@ -934,7 +934,7 @@ async def test_aio_concurrent_submit(
     if valid_errors:
         assert (
             list(list(c) for c in m_inst.call_args_list)
-            == [[(corolist[0], aio.task.ConcurrentIteratorError), {}]])
+            == [[(corolist[0], aio.tasks.ConcurrentIteratorError), {}]])
         assert (
             list(list(c) for c in m_ready.call_args_list)
             == [[(), {}]])
@@ -969,7 +969,7 @@ async def test_aio_concurrent_submit(
             == max(min(coros - 1, unready), 0))
         for c in m_complete.call_args_list:
             error = list(c)[0][0]
-            assert isinstance(error, aio.task.ConcurrentError)
+            assert isinstance(error, aio.tasks.ConcurrentError)
             assert (
                 list(c)
                 == [(error,), {'decrement': False}])
@@ -989,10 +989,10 @@ class OtherException(BaseException):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("raises", [None, Exception, OtherException])
 async def test_aio_concurrent_task(patches, raises):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "concurrent.on_task_complete",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     if raises:
         exception = raises("AN ERROR OCCURRED")
@@ -1010,7 +1010,7 @@ async def test_aio_concurrent_task(patches, raises):
     if not raises:
         assert result == 23
     else:
-        assert isinstance(result, aio.task.ConcurrentExecutionError)
+        assert isinstance(result, aio.tasks.ConcurrentExecutionError)
         assert result.args[0] is exception
     assert (
         list(m_complete.call_args)
@@ -1025,10 +1025,10 @@ async def test_aio_concurrent_task(patches, raises):
      inspect.CORO_RUNNING,
      inspect.CORO_SUSPENDED])
 def test_aio_concurrent_validate_coro(patches, awaitable, state):
-    concurrent = aio.task.concurrent(["CORO"])
+    concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
         "inspect.getcoroutinestate",
-        prefix="aio.task.task")
+        prefix="aio.tasks.tasks")
 
     # we cant patch inspect.isawaitable without fooing unittest
     def unawaitable():
@@ -1048,7 +1048,7 @@ def test_aio_concurrent_validate_coro(patches, awaitable, state):
         if awaitable and state == inspect.CORO_CREATED:
             assert not concurrent.validate_coro(awaits)
         else:
-            with pytest.raises(aio.task.ConcurrentError) as e:
+            with pytest.raises(aio.tasks.ConcurrentError) as e:
                 concurrent.validate_coro(awaits)
 
     if not awaitable:
@@ -1157,11 +1157,11 @@ async def test_aio_concurrent_integration(
             None)
 
     results = []
-    concurrent = aio.task.concurrent(iter_type(generated_coros), **kwargs)
+    concurrent = aio.tasks.concurrent(iter_type(generated_coros), **kwargs)
 
     if (not all_good and not yield_exceptions) or iter_raises:
         if iter_raises:
-            with pytest.raises(aio.task.ConcurrentIteratorError) as e:
+            with pytest.raises(aio.tasks.ConcurrentIteratorError) as e:
                 async for result in concurrent:
                     results.append(result)
             assert isinstance(e.value.args[0], LoopError)
@@ -1171,11 +1171,11 @@ async def test_aio_concurrent_integration(
                 any(not inspect.isawaitable(coro) for coro in generated_coros)
                 or any(coro == "FIRED" for coro in coros))
             if coro_fail:
-                with pytest.raises(aio.task.ConcurrentError):
+                with pytest.raises(aio.tasks.ConcurrentError):
                     async for result in concurrent:
                         results.append(result)
             else:
-                with pytest.raises(aio.task.ConcurrentExecutionError):
+                with pytest.raises(aio.tasks.ConcurrentExecutionError):
                     async for result in concurrent:
                         results.append(result)
 
@@ -1214,9 +1214,9 @@ async def test_aio_concurrent_integration(
     def mangled_results():
         # replace the errors with the test strings
         for result in results:
-            if isinstance(result, aio.task.ConcurrentExecutionError):
+            if isinstance(result, aio.tasks.ConcurrentExecutionError):
                 yield "SAD"
-            elif isinstance(result, aio.task.ConcurrentError):
+            elif isinstance(result, aio.tasks.ConcurrentError):
                 if "CABBAGE" in result.args[0]:
                     yield "CABBAGE"
                 else:
