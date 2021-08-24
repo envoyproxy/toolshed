@@ -18,7 +18,7 @@ setup(
     maintainer='Ryan Northey',
     maintainer_email='ryan@synca.io',
     license='Apache Software License 2.0',
-    url='https://github.com/phlax/pytooling/aio.tasks',
+    url='https://github.com/envoyproxy/pytooling/aio.tasks',
     description='A collection of task utils for asyncio',
     long_description=read('README.rst'),
     py_modules=['aio.tasks'],

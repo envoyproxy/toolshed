@@ -18,7 +18,7 @@ setup(
     maintainer='Ryan Northey',
     maintainer_email='ryan@synca.io',
     license='Apache Software License 2.0',
-    url='https://github.com/phlax/pytooling/abstracts',
+    url='https://github.com/envoyproxy/pytooling/abstracts',
     description='Abstract class and interface definitions',
     long_description=read('README.rst'),
     # long_description_content_type='text/x-rst',

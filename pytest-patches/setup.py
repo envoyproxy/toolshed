@@ -23,7 +23,7 @@ setup(
     maintainer='Ryan Northey',
     maintainer_email='ryan@synca.io',
     license='Apache Software License 2.0',
-    url='https://github.com/phlax/pytooling/pytest-patches',
+    url='https://github.com/envoyproxy/pytooling/pytest-patches',
     description=DESCRIPTION,
     long_description=read('README.rst'),
     py_modules=['pytest_patches'],
