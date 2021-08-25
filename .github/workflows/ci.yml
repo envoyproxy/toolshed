@@ -17,6 +17,7 @@ jobs:
         - envoy.base.runner
         - envoy.base.checker
         - envoy.docker.utils
+        - envoy.dependency.pip_check
         - envoy.distribution.distrotest
         - envoy.distribution.verify
         - envoy.github.abstract
@@ -97,6 +98,7 @@ jobs:
         - envoy.base.utils
         - envoy.base.runner
         - envoy.base.checker
+        - envoy.dependency.pip_check
         - envoy.docker.utils
         - envoy.distribution.distrotest
         - envoy.distribution.verify
