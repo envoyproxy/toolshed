@@ -13,7 +13,8 @@ import aiodocker
 from envoy.base import checker, utils
 from envoy.docker import utils as docker_utils
 
-DISTROTEST_CONFIG_PATH = "tools/distribution/distrotest.yaml"
+DISTROTEST_CONFIG_PATH = pathlib.Path(
+    __file__).parent.joinpath("distrotest.yaml")
 
 DOCKER_IMAGE_PREFIX = "envoybuild_"
 DOCKER_CONTAINER_PREFIX = "envoytest_"
