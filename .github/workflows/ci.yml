@@ -16,6 +16,7 @@ jobs:
         - envoy.base.utils
         - envoy.base.runner
         - envoy.base.checker
+        - envoy.docker.utils
         - envoy.github.abstract
         - envoy.github.release
         - envoy.gpg.identity
@@ -93,6 +94,7 @@ jobs:
         - envoy.base.utils
         - envoy.base.runner
         - envoy.base.checker
+        - envoy.docker.utils
         - envoy.github.abstract
         - envoy.github.release
         - envoy.gpg.identity
