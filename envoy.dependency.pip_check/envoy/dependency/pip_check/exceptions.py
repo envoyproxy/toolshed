@@ -1,0 +1,4 @@
+
+
+class PipConfigurationError(Exception):
+    pass
