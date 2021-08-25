@@ -18,6 +18,7 @@ jobs:
         - envoy.base.checker
         - envoy.docker.utils
         - envoy.distribution.distrotest
+        - envoy.distribution.verify
         - envoy.github.abstract
         - envoy.github.release
         - envoy.gpg.identity
@@ -98,6 +99,7 @@ jobs:
         - envoy.base.checker
         - envoy.docker.utils
         - envoy.distribution.distrotest
+        - envoy.distribution.verify
         - envoy.github.abstract
         - envoy.github.release
         - envoy.gpg.identity
