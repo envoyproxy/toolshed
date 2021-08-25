@@ -21,6 +21,7 @@ jobs:
         - envoy.github.abstract
         - envoy.github.release
         - envoy.gpg.identity
+        - envoy.gpg.sign
         - mypy-abstracts
         - pytest-patches
         python-version:
@@ -100,6 +101,7 @@ jobs:
         - envoy.github.abstract
         - envoy.github.release
         - envoy.gpg.identity
+        - envoy.gpg.sign
         - mypy-abstracts
         - pytest-patches
     steps:
