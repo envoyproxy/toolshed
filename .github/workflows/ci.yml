@@ -18,6 +18,7 @@ jobs:
         - envoy.base.checker
         - envoy.github.abstract
         - envoy.github.release
+        - envoy.gpg.identity
         - mypy-abstracts
         - pytest-patches
         python-version:
@@ -94,6 +95,7 @@ jobs:
         - envoy.base.checker
         - envoy.github.abstract
         - envoy.github.release
+        - envoy.gpg.identity
         - mypy-abstracts
         - pytest-patches
     steps:
