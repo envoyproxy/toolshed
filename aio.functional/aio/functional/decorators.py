@@ -22,11 +22,15 @@ class async_property:  # noqa: N801
         self._fun = fun
         self.name = getattr(fun, "__name__", None)
         self.__doc__ = getattr(fun, '__doc__')
+        if fun and hasattr(fun, "__isabstractmethod__"):
+            self.__isabstractmethod__ = fun.__isabstractmethod__  # type:ignore
 
     def __call__(self, fun: Callable) -> 'async_property':
         self._fun = fun
         self.name = self.name or fun.__name__
         self.__doc__ = getattr(fun, '__doc__')
+        if hasattr(fun, "__isabstractmethod__"):
+            self.__isabstractmethod__ = fun.__isabstractmethod__  # type:ignore
         return self
 
     def __get__(self, instance: Any, cls=None) -> Any:
