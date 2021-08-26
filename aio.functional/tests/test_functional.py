@@ -1,3 +1,4 @@
+import abc
 import types
 from unittest.mock import AsyncMock
 
@@ -118,3 +119,21 @@ async def test_functional_async_property(cache, raises, result):
 
     # cached iterators dont give any more results once they are done
     assert results2 == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cache", [True, False])
+async def test_functional_async_property_abstract(cache):
+    if cache:
+        decorator = functional.async_property
+    else:
+        decorator = functional.async_property(cache=cache)
+
+    class Klass:
+
+        @decorator
+        @abc.abstractmethod
+        async def prop(self):
+            pass
+
+    assert Klass.prop.__isabstractmethod__ is True
