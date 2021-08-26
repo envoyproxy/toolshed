@@ -18,10 +18,10 @@ def test_release_constructor():
     assert release.manager == "MANAGER"
     assert release.version == "VERSION"
 
-    # assert release.fetcher == github_release.GithubReleaseAssetsFetcher
-    # assert "fetcher" not in release.__dict__
-    # assert release.pusher == github_release.GithubReleaseAssetsPusher
-    # assert "pusher" not in release.__dict__
+    assert release.fetcher == github_release.GithubReleaseAssetsFetcher
+    assert "fetcher" not in release.__dict__
+    assert release.pusher == github_release.GithubReleaseAssetsPusher
+    assert "pusher" not in release.__dict__
 
 
 def _check_manager_property(prop, arg=None):
