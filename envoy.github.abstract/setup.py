@@ -30,7 +30,9 @@ setup(
     extras_require={
         "test": [
             "pytest",
-            "pytest-coverage"],
+            "pytest-asyncio",
+            "pytest-coverage",
+            "pytest-patches"],
         "lint": ['flake8'],
         "types": [
             'mypy'],
@@ -38,7 +40,8 @@ setup(
     },
     install_requires=[
         "abstracts",
-        "aio.functional",
+        "aio.functional>=0.0.6",
+        "aio.tasks",
         "aiohttp",
         "gidgethub",
         "verboselogs",
