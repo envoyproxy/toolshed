@@ -1,0 +1,4 @@
+
+
+class PackagesConfigurationError(Exception):
+    pass
