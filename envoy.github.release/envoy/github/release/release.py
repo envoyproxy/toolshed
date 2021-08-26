@@ -2,7 +2,7 @@ import pathlib
 from functools import cached_property
 from typing import (
     Dict, Iterable,
-    List, Optional, Pattern, Set, Tuple, Type, Union)
+    List, Optional, Pattern, Set, Tuple, Type)
 
 import verboselogs  # type:ignore
 
@@ -18,7 +18,7 @@ from aio.functional import async_property
 
 from envoy.github.abstract import (
     AGithubRelease, AGithubReleaseAssetsFetcher,
-    AGithubReleaseAssetsPusher, AGithubReleaseManager)
+    AGithubReleaseAssetsPusher, AGithubReleaseManager, ReleaseDict)
 from envoy.github.release.assets import (
     GithubReleaseAssetsFetcher, GithubReleaseAssetsPusher)
 from envoy.github.release.exceptions import GithubReleaseError
@@ -128,9 +128,8 @@ class GithubRelease:
 
     async def create(
             self,
-            assets: Optional[List[pathlib.Path]] = None) -> Dict[
-                str, Union[List[Dict[str, Union[str, pathlib.Path]]], Dict]]:
-        results: Dict[str, Union[List[Dict], Dict]] = {}
+            assets: Optional[List[pathlib.Path]] = None) -> ReleaseDict:
+        results = ReleaseDict()
         if await self.exists:
             self.fail(f"Release {self.version_name} already exists")
         else:
@@ -162,14 +161,11 @@ class GithubRelease:
             self,
             path: pathlib.Path,
             asset_types: Optional[Dict[str, Pattern[str]]] = None,
-            append: Optional[bool] = False) -> Dict[
-                str, List[Dict[str, Union[str, pathlib.Path]]]]:
+            append: Optional[bool] = False) -> ReleaseDict:
         self.log.notice(
             "Downloading assets for release version: "
             f"{self.version_name} -> {path}")
-        assets: List[Dict[str, Union[str, pathlib.Path]]] = []
-        errors: List[Dict[str, Union[str, pathlib.Path]]] = []
-        response = dict(assets=assets, errors=errors)
+        response = ReleaseDict(assets=[], errors=[])
         fetcher = self.fetcher(self, path, asset_types, append=append)
         async for result in fetcher:
             if result.get("error"):
@@ -195,12 +191,9 @@ class GithubRelease:
 
     async def push(
             self,
-            artefacts: Iterable[pathlib.Path]) -> Dict[
-                str, List[Dict[str, Union[str, pathlib.Path]]]]:
+            artefacts: Iterable[pathlib.Path]) -> ReleaseDict:
         self.log.notice(f"Pushing assets for {self.version}")
-        assets: List[Dict[str, Union[str, pathlib.Path]]] = []
-        errors: List[Dict[str, Union[str, pathlib.Path]]] = []
-        response = dict(assets=assets, errors=errors)
+        response = ReleaseDict(assets=[], errors=[])
         try:
             for path in artefacts:
                 async for result in self.pusher(self, path):
