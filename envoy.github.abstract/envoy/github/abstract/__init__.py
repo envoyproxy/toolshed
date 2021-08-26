@@ -1,10 +1,10 @@
 
-from .abstract import (
-    AGithubRelease,
+from .assets import (
     AGithubReleaseAssets,
     AGithubReleaseAssetsPusher,
-    AGithubReleaseAssetsFetcher,
-    AGithubReleaseManager)
+    AGithubReleaseAssetsFetcher)
+from .manager import AGithubReleaseManager
+from .release import AGithubRelease
 
 
 __all__ = (
