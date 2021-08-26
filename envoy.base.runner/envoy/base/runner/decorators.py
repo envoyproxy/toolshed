@@ -5,8 +5,8 @@ from typing import Callable, Optional, Tuple, Type, Union
 
 def catches(
         errors: Union[
-            Type[Exception],
-            Tuple[Type[Exception], ...]]) -> Callable:
+            Type[BaseException],
+            Tuple[Type[BaseException], ...]]) -> Callable:
     """Method decorator to catch specified errors
 
     logs and returns 1 for sys.exit if error/s are caught
