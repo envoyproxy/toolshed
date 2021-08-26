@@ -2,7 +2,13 @@
 from .assets import (
     AGithubReleaseAssets,
     AGithubReleaseAssetsPusher,
-    AGithubReleaseAssetsFetcher)
+    AGithubReleaseAssetsFetcher,
+    AssetsAwaitableGenerator,
+    AssetsGenerator,
+    AssetsResultDict,
+    AssetTypesDict)
+
+from .exceptions import GithubReleaseError
 from .manager import AGithubReleaseManager
 from .release import AGithubRelease, ReleaseDict
 
@@ -13,4 +19,9 @@ __all__ = (
     "AGithubReleaseAssetsPusher",
     "AGithubReleaseAssetsFetcher",
     "AGithubReleaseManager",
+    "AssetsAwaitableGenerator",
+    "AssetsGenerator",
+    "AssetsResultDict",
+    "AssetTypesDict",
+    "GithubReleaseError",
     "ReleaseDict")

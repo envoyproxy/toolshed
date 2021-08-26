@@ -1,4 +1,5 @@
 import pathlib
+import tempfile
 from abc import abstractmethod
 from functools import cached_property
 from typing import (
@@ -7,69 +8,148 @@ from typing import (
 
 import aiohttp
 
+import gidgethub.abc
+
 import abstracts
 
 from aio.functional import async_property
+from aio.tasks import concurrent, ConcurrentError, ConcurrentIteratorError
 
 from envoy.github import abstract
+
+from .exceptions import GithubReleaseError
+
+
+AssetsResultDict = Dict[str, Union[str, pathlib.Path]]
+AssetsAwaitableGenerator = AsyncGenerator[
+    Coroutine[
+        Any,
+        Any,
+        AssetsResultDict],
+    Dict]
+AssetsGenerator = AsyncGenerator[
+    AssetsResultDict,
+    Awaitable]
+AssetTypesDict = Dict[str, Pattern[str]]
 
 
 class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
     """Base class for Github release assets pusher/fetcher"""
+    _concurrency = 4
 
-    @abstractmethod
     def __init__(
             self,
             release: "abstract.manager.AGithubRelease",
             path: pathlib.Path) -> None:
-        raise NotImplementedError
+        self.release = release
+        self._path = path
 
     @abstractmethod
-    async def __aiter__(self) -> AsyncGenerator[
-            Dict[str, Union[str, pathlib.Path]], Awaitable]:
+    async def __aiter__(self) -> AssetsGenerator:
+        with self:
+            try:
+                async for result in self.run():
+                    yield result
+            except ConcurrentIteratorError as e:
+                raise GithubReleaseError(e.args[0])
+
+    def __enter__(self) -> "AGithubReleaseAssets":
+        return self
+
+    def __exit__(self, *args) -> None:
+        self.cleanup()
+
+    @async_property
+    async def assets(self) -> Dict:
+        """Github release asset dictionaries"""
+        return await self.release.assets
+
+    @async_property
+    @abstracts.interfacemethod
+    async def awaitables(self) -> AssetsAwaitableGenerator:
         if False:
             yield
         raise NotImplementedError
 
+    @property
     @abstractmethod
-    def __enter__(self) -> "AGithubReleaseAssets":
-        raise NotImplementedError
+    def concurrency(self) -> int:
+        return self._concurrency
 
-    @async_property
+    @property
     @abstractmethod
-    async def assets(self) -> Dict:
-        """Github release asset dictionaries"""
-        raise NotImplementedError
+    def github(self) -> gidgethub.abc.GitHubAPI:
+        return self.release.github
 
-    @async_property
+    @property
     @abstractmethod
-    async def awaitables(
-            self) -> AsyncGenerator[
-                Coroutine[
-                    Any, Any, Dict[str, Union[str, pathlib.Path]]], Dict]:
-        raise NotImplementedError
+    def path(self) -> pathlib.Path:
+        return self._path
+
+    @property
+    @abstractmethod
+    def session(self) -> aiohttp.ClientSession:
+        return self.release.session
+
+    @property
+    def tasks(self) -> concurrent:
+        return concurrent(self.awaitables, limit=self.concurrency)
+
+    @cached_property
+    def tempdir(self) -> tempfile.TemporaryDirectory:
+        return tempfile.TemporaryDirectory()
+
+    @property
+    def version(self) -> str:
+        return self.release.version
+
+    def cleanup(self) -> None:
+        if "tempdir" in self.__dict__:
+            self.tempdir.cleanup()
+            del self.__dict__["tempdir"]
+
+    def fail(self, message: str) -> str:
+        return self.release.fail(message)
+
+    @abstractmethod
+    async def handle_result(self, result: Any) -> Any:
+        return result
+
+    @abstractmethod
+    async def run(self) -> AssetsGenerator:
+        try:
+            async for result in self.tasks:
+                yield result
+        except ConcurrentIteratorError as e:
+            # This should catch any errors running the upload coros
+            # In this case the exception is unwrapped, and the original
+            # error is raised.
+            raise e.args[0]
+        except ConcurrentError as e:
+            yield dict(error=self.fail(e.args[0]))
 
 
 class AGithubReleaseAssetsFetcher(
         AGithubReleaseAssets, metaclass=abstracts.Abstraction):
     """Fetcher of Github release assets"""
 
-    @abstractmethod
     def __init__(
             self,
             release: "abstract.manager.AGithubRelease",
             path: pathlib.Path,
-            asset_types: Optional[Dict[str, Pattern[str]]] = None,
+            asset_types: Optional[AssetTypesDict] = None,
             append: Optional[bool] = False) -> None:
-        raise NotImplementedError
+        super().__init__(release, path)
+        self._asset_types = asset_types
+        self._append = append
 
-    @cached_property
-    @abstractmethod
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def asset_types(self) -> Dict[str, Pattern[str]]:
         """Patterns for grouping assets"""
         raise NotImplementedError
 
-    @abstractmethod
+    @abstracts.interfacemethod
     def asset_type(self, asset: Dict) -> Optional[str]:
         """Categorization of an asset into an asset type
 
@@ -85,20 +165,19 @@ class AGithubReleaseAssetsFetcher(
         """
         raise NotImplementedError
 
-    @abstractmethod
+    @abstracts.interfacemethod
     async def download(
             self,
-            asset: Dict) -> Dict[str, Union[str, pathlib.Path]]:
+            asset: Dict) -> AssetsResultDict:
         """Download an asset"""
         raise NotImplementedError
 
-    @abstractmethod
+    @abstracts.interfacemethod
     async def save(
             self,
             asset_type: str,
             name: str,
-            download: aiohttp.ClientResponse) -> Dict[
-                str, Union[str, pathlib.Path]]:
+            download: aiohttp.ClientResponse) -> AssetsResultDict:
         """Save an asset of given type to disk"""
         raise NotImplementedError
 
@@ -107,17 +186,17 @@ class AGithubReleaseAssetsPusher(
         AGithubReleaseAssets, metaclass=abstracts.Abstraction):
     """Pusher of Github release assets"""
 
-    @abstractmethod
+    @abstracts.interfacemethod
     def artefacts(self) -> Iterator[pathlib.Path]:
         """Iterator of matching (ie release file type) artefacts found in a given
         path
         """
         raise NotImplementedError
 
-    @abstractmethod
+    @abstracts.interfacemethod
     async def upload(
             self,
             artefact: pathlib.Path,
-            url: str) -> Dict[str, Union[str, pathlib.Path]]:
+            url: str) -> AssetsResultDict:
         """Upload an artefact from a filepath to a given URL"""
         raise NotImplementedError
