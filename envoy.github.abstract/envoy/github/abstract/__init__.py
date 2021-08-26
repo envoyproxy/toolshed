@@ -4,7 +4,7 @@ from .assets import (
     AGithubReleaseAssetsPusher,
     AGithubReleaseAssetsFetcher)
 from .manager import AGithubReleaseManager
-from .release import AGithubRelease
+from .release import AGithubRelease, ReleaseDict
 
 
 __all__ = (
@@ -12,4 +12,5 @@ __all__ = (
     "AGithubReleaseAssets",
     "AGithubReleaseAssetsPusher",
     "AGithubReleaseAssetsFetcher",
-    "AGithubReleaseManager")
+    "AGithubReleaseManager",
+    "ReleaseDict")
