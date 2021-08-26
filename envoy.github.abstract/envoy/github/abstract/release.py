@@ -2,7 +2,7 @@ import pathlib
 from abc import abstractmethod
 from typing import (
     Dict, Iterable, List,
-    Optional, Pattern, Set, Type, Union)
+    Optional, Pattern, Set, Type, TypedDict, Union)
 
 import aiohttp
 
@@ -15,6 +15,12 @@ from aio.functional import async_property
 from .assets import (
     AGithubReleaseAssetsFetcher, AGithubReleaseAssetsPusher)
 from envoy.github import abstract
+
+
+class ReleaseDict(TypedDict, total=False):
+    release: Dict
+    assets: List[Dict[str, Union[str, pathlib.Path]]]
+    errors: List[Dict[str, Union[str, pathlib.Path]]]
 
 
 class AGithubRelease(metaclass=abstracts.Abstraction):
@@ -80,9 +86,8 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
 
     @abstractmethod
     async def create(
-        self,
-        assets: Optional[List[pathlib.Path]] = None
-    ) -> Dict[str, Union[List[Dict[str, Union[str, pathlib.Path]]], Dict]]:
+            self,
+            assets: Optional[List[pathlib.Path]] = None) -> ReleaseDict:
         """Create this release version and optionally upload provided assets"""
         raise NotImplementedError
 
@@ -100,9 +105,7 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
             self,
             path: pathlib.Path,
             asset_types: Optional[Dict[str, Pattern[str]]] = None,
-            append: Optional[bool] = False) -> Dict[
-                str,
-                List[Dict[str, Union[str, pathlib.Path]]]]:
+            append: Optional[bool] = False) -> ReleaseDict:
         """Fetch assets for this version, saving either to a directory or
         tarball
         """
@@ -115,8 +118,8 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
 
     @abstractmethod
     async def push(
-            self, artefacts: Iterable[pathlib.Path]
-    ) -> Dict[str, List[Dict[str, Union[str, pathlib.Path]]]]:
+            self,
+            artefacts: Iterable[pathlib.Path]) -> ReleaseDict:
         """Push assets from a list of paths, either directories or tarballs."""
         raise NotImplementedError
 
