@@ -13,9 +13,10 @@ jobs:
         - aio.stream
         - aio.subprocess
         - aio.tasks
-        - envoy.base.utils
-        - envoy.base.runner
         - envoy.base.checker
+        - envoy.base.command
+        - envoy.base.runner
+        - envoy.base.utils
         - envoy.docker.utils
         - envoy.dependency.pip_check
         - envoy.distribution.distrotest
@@ -95,9 +96,10 @@ jobs:
         - aio.subprocess
         - aio.stream
         - aio.tasks
-        - envoy.base.utils
-        - envoy.base.runner
         - envoy.base.checker
+        - envoy.base.command
+        - envoy.base.runner
+        - envoy.base.utils
         - envoy.dependency.pip_check
         - envoy.docker.utils
         - envoy.distribution.distrotest
