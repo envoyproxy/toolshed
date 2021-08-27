@@ -45,7 +45,6 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
         self._release = release
         self._path = path
 
-    @abstractmethod
     async def __aiter__(self) -> AssetsGenerator:
         with self:
             try:
@@ -117,7 +116,6 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
     async def handle_result(self, result: Any) -> Any:
         return result
 
-    @abstractmethod
     async def run(self) -> AssetsGenerator:
         try:
             async for result in self.tasks:
