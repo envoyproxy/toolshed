@@ -36,8 +36,8 @@ class DummyGithubReleaseAssets(assets.AGithubReleaseAssets):
 class DummyGithubReleaseAssetsFetcher(
         DummyGithubReleaseAssets, assets.AGithubReleaseAssetsFetcher):
 
-    async def download(self):
-        raise NotImplementedError
+    async def download(self, asset):
+        return super().download(asset)
 
     async def save(self, asset):
         raise NotImplementedError
@@ -48,10 +48,10 @@ class DummyGithubReleaseAssetsPusher(
 
     @property
     def artefacts(self):
-        raise NotImplementedError
+        return super().artefacts
 
-    async def upload(self):
-        raise NotImplementedError
+    async def upload(self, artefact, url):
+        return super().upload(artefact, url)
 
 
 def test_assets_constructor():
@@ -338,6 +338,52 @@ def test_assets_fetcher_asset_types(patches, asset_types):
         assert not m_re.compile.called
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "asset_types",
+    [(), range(0, 5), range(0, 3), range(3, 7)])
+async def test_assets_fetcher_awaitables(patches, asset_types):
+    fetcher = DummyGithubReleaseAssetsFetcher("RELEASE", "PATH")
+    patched = patches(
+        "AGithubReleaseAssetsFetcher.asset_type",
+        "AGithubReleaseAssetsFetcher.download",
+        ("AGithubReleaseAssetsFetcher.assets",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.github.abstract.assets")
+    results = []
+    asset_types = [f"ASSET{i}" for i in asset_types]
+
+    def asset_type(asset):
+        return (
+            asset["name"]
+            if asset["name"] in asset_types
+            else None)
+
+    returned_assets = [
+        dict(name=f"ASSET{i}") for i in range(0, 5)]
+
+    with patched as (m_type, m_download, m_assets):
+        m_assets.side_effect = AsyncMock(
+            return_value=returned_assets)
+        m_type.side_effect = asset_type
+        async for result in fetcher.awaitables:
+            results.append(await result)
+
+    assert (
+        results
+        == [m_download.return_value
+            for x in returned_assets
+            if x["name"] in asset_types])
+    assert (
+        list(list(c) for c in m_type.call_args_list)
+        == [[(asset,), {}] for asset in returned_assets])
+    assert (
+        list(list(c) for c in m_download.call_args_list)
+        == [[({'name': asset["name"], 'asset_type': asset["name"]},), {}]
+            for asset in returned_assets
+            if asset["name"] in asset_types])
+
+
 @pytest.mark.parametrize("append", [True, False])
 def test_assets_fetcher_write_mode(patches, append):
     fetcher = DummyGithubReleaseAssetsFetcher("RELEASE", "PATH")
@@ -391,6 +437,35 @@ async def test_assets_pusher_asset_names(patches):
         assert await pusher.asset_names == "ASSET NAMES"
 
     assert not hasattr(pusher, async_property.cache_name)
+
+
+@pytest.mark.asyncio
+async def test_assets_pusher_awaitables(patches):
+    pusher = DummyGithubReleaseAssetsPusher("RELEASE", "PATH")
+    patched = patches(
+        "AGithubReleaseAssetsPusher.artefact_url",
+        "AGithubReleaseAssetsPusher.upload",
+        ("AGithubReleaseAssetsPusher.artefacts",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.github.abstract.assets")
+    results = []
+    artefacts = [
+        MagicMock() for i in range(0, 5)]
+
+    with patched as (m_url, m_upload, m_artefacts):
+        m_artefacts.return_value = artefacts
+        async for result in pusher.awaitables:
+            results.append(await result)
+
+    assert results == [m_upload.return_value for i in range(0, 5)]
+    assert (
+        list(list(c) for c in m_upload.call_args_list)
+        == [[(artefact, m_url.return_value), {}]
+            for artefact in artefacts])
+    assert (
+        list(list(c) for c in m_url.call_args_list)
+        == [[(artefact.name,), {}]
+            for artefact in artefacts])
 
 
 @pytest.mark.asyncio

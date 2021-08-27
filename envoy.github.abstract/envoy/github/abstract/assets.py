@@ -205,10 +205,6 @@ class AGithubReleaseAssetsPusher(
         AGithubReleaseAssets, metaclass=abstracts.Abstraction):
     """Pusher of Github release assets"""
 
-    @async_property
-    async def asset_names(self) -> Set[str]:
-        return await self.release.asset_names
-
     @property  # type:ignore
     @abstracts.interfacemethod
     def artefacts(self) -> Iterator[pathlib.Path]:
@@ -216,6 +212,10 @@ class AGithubReleaseAssetsPusher(
         path
         """
         raise NotImplementedError
+
+    @async_property
+    async def asset_names(self) -> Set[str]:
+        return await self.release.asset_names
 
     @async_property
     async def awaitables(self) -> AssetsAwaitableGenerator:
