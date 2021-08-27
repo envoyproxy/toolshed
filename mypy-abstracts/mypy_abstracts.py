@@ -9,14 +9,17 @@ class AbstractionPlugin(Plugin):
         def _decorator_hook(*la):
             impl = la[0].cls.info
             iface = la[0].reason.args[0].node
-            # not sure if this is necessary
             try:
+                # not sure if this is necessary
                 Instance(iface, [])
             except TypeError:
                 return
             # TODO: this needs to discriminate between ifaces and
             #   abstractions
-            impl.mro.append(iface)
+            impl.mro += [
+                base for base
+                in iface.mro
+                if base not in impl.mro]
 
         if fullname == "abstracts.decorators.implementer":
             return _decorator_hook
