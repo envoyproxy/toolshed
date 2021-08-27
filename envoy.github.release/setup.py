@@ -45,7 +45,7 @@ setup(
         "aio.tasks",
         "aiohttp",
         "envoy.base.utils>=0.0.2",
-        "envoy.github.abstract>=0.0.5",
+        "envoy.github.abstract==0.0.5",
         "gidgethub",
         "packaging",
         "verboselogs",
