@@ -1,10 +1,11 @@
 import pathlib
+import re
 import tempfile
 from abc import abstractmethod
 from functools import cached_property
 from typing import (
     Any, AsyncGenerator, Awaitable, Coroutine, Dict, Iterator,
-    Optional, Pattern, Union)
+    Optional, Pattern, Set, Union)
 
 import aiohttp
 
@@ -41,7 +42,7 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
             self,
             release: "abstract.manager.AGithubRelease",
             path: pathlib.Path) -> None:
-        self.release = release
+        self._release = release
         self._path = path
 
     @abstractmethod
@@ -77,7 +78,6 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
         return self._concurrency
 
     @property
-    @abstractmethod
     def github(self) -> gidgethub.abc.GitHubAPI:
         return self.release.github
 
@@ -87,7 +87,10 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
         return self._path
 
     @property
-    @abstractmethod
+    def release(self) -> "abstract.manager.AGithubRelease":
+        return self._release
+
+    @property
     def session(self) -> aiohttp.ClientSession:
         return self.release.session
 
@@ -111,7 +114,6 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
     def fail(self, message: str) -> str:
         return self.release.fail(message)
 
-    @abstractmethod
     async def handle_result(self, result: Any) -> Any:
         return result
 
@@ -143,13 +145,20 @@ class AGithubReleaseAssetsFetcher(
         self._asset_types = asset_types
         self._append = append
 
-    @property  # type:ignore
-    @abstracts.interfacemethod
+    @property
+    def append(self) -> bool:
+        """Append to existing file or otherwise"""
+        return self._append or False
+
+    @cached_property
     def asset_types(self) -> Dict[str, Pattern[str]]:
         """Patterns for grouping assets"""
-        raise NotImplementedError
+        return self._asset_types or dict(assets=re.compile(".*"))
 
-    @abstracts.interfacemethod
+    @property
+    def write_mode(self) -> str:
+        return "a" if self.append else "w"
+
     def asset_type(self, asset: Dict) -> Optional[str]:
         """Categorization of an asset into an asset type
 
@@ -163,7 +172,9 @@ class AGithubReleaseAssetsFetcher(
             rpm=re.compile(".*\\.rpm$"))
         ```
         """
-        raise NotImplementedError
+        for k, v in self.asset_types.items():
+            if v.search(asset["name"]):
+                return k
 
     @abstracts.interfacemethod
     async def download(
@@ -186,12 +197,25 @@ class AGithubReleaseAssetsPusher(
         AGithubReleaseAssets, metaclass=abstracts.Abstraction):
     """Pusher of Github release assets"""
 
+    @async_property
+    async def asset_names(self) -> Set[str]:
+        return await self.release.asset_names
+
+    @property  # type:ignore
     @abstracts.interfacemethod
     def artefacts(self) -> Iterator[pathlib.Path]:
         """Iterator of matching (ie release file type) artefacts found in a given
         path
         """
         raise NotImplementedError
+
+    @async_property
+    async def upload_url(self) -> str:
+        return await self.release.upload_url
+
+    async def artefact_url(self, name: str) -> str:
+        """URL to upload a provided artefact name as an asset"""
+        return f"{await self.upload_url}?name={name}"
 
     @abstracts.interfacemethod
     async def upload(
