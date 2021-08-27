@@ -153,6 +153,16 @@ class AGithubReleaseAssetsFetcher(
         """Patterns for grouping assets"""
         return self._asset_types or dict(assets=re.compile(".*"))
 
+    @async_property
+    async def awaitables(self) -> AssetsAwaitableGenerator:
+        # assets categorised according to asset_types
+        for asset in await self.assets:
+            asset_type = self.asset_type(asset)
+            if not asset_type:
+                continue
+            asset["asset_type"] = asset_type
+            yield self.download(asset)
+
     @property
     def write_mode(self) -> str:
         return "a" if self.append else "w"
@@ -206,6 +216,13 @@ class AGithubReleaseAssetsPusher(
         path
         """
         raise NotImplementedError
+
+    @async_property
+    async def awaitables(self) -> AssetsAwaitableGenerator:
+        for artefact in self.artefacts:
+            yield self.upload(
+                artefact,
+                await self.artefact_url(artefact.name))
 
     @async_property
     async def upload_url(self) -> str:
