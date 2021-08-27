@@ -1,9 +1,11 @@
 
-from unittest.mock import MagicMock, PropertyMock
+from functools import partial
+from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
 from aio import tasks
+from aio.functional import async_property
 
 from envoy.github.abstract import assets, exceptions
 
@@ -23,39 +25,32 @@ class DummyGithubReleaseAssets(assets.AGithubReleaseAssets):
         return super().concurrency
 
     @property
-    def github(self):
-        return super().github
-
-    @property
     def path(self):
         return super().path
-
-    @property
-    def session(self):
-        return super().session
 
     async def run(self):
         async for result in super().run():
             yield result
 
-    def handle_result(self, result):
-        return super().handle_result(result)
-
 
 class DummyGithubReleaseAssetsFetcher(
         DummyGithubReleaseAssets, assets.AGithubReleaseAssetsFetcher):
-
-    @property
-    def asset_types(self):
-        raise NotImplementedError
-
-    def asset_type(self, asset):
-        raise NotImplementedError
 
     async def download(self):
         raise NotImplementedError
 
     async def save(self, asset):
+        raise NotImplementedError
+
+
+class DummyGithubReleaseAssetsPusher(
+        DummyGithubReleaseAssets, assets.AGithubReleaseAssetsPusher):
+
+    @property
+    def artefacts(self):
+        raise NotImplementedError
+
+    async def upload(self):
         raise NotImplementedError
 
 
@@ -291,16 +286,138 @@ async def test_assets_run(patches, raises):
     assert results == list(range(0, 5))
 
 
-def test_assets_fetcher_constructor(patches):
+@pytest.mark.parametrize(
+    "asset_types",
+    [None, "ASSET TYPES"])
+@pytest.mark.parametrize(
+    "append",
+    [None, True, False])
+def test_assets_fetcher_constructor(patches, asset_types, append):
     patched = patches(
         "AGithubReleaseAssets.__init__",
         prefix="envoy.github.abstract.assets")
+    args = ("RELEASE", "PATH", asset_types)
+    if append is not None:
+        args += (append, )
 
     with patched as (m_super, ):
-        fetcher = DummyGithubReleaseAssetsFetcher(
-            "RELEASE", "PATH", "ASSET_TYPES")
+        fetcher = DummyGithubReleaseAssetsFetcher(*args)
 
     assert (
         list(m_super.call_args)
         == [("RELEASE", "PATH"), {}])
-    assert fetcher._asset_types == "ASSET_TYPES"
+    assert fetcher._asset_types == asset_types
+    assert fetcher._append == (append or False)
+
+    assert fetcher.append == (append or False)
+    assert "append" not in fetcher.__dict__
+
+
+@pytest.mark.parametrize(
+    "asset_types",
+    [None, "ASSET TYPES"])
+def test_assets_fetcher_asset_types(patches, asset_types):
+    fetcher = DummyGithubReleaseAssetsFetcher("RELEASE", "PATH")
+    patched = patches(
+        "re",
+        prefix="envoy.github.abstract.assets")
+    fetcher._asset_types = asset_types
+
+    with patched as (m_re, ):
+        assert (
+            fetcher.asset_types
+            == (asset_types
+                if asset_types
+                else dict(assets=m_re.compile.return_value)))
+
+    if not asset_types:
+        assert (
+            list(m_re.compile.call_args)
+            == [(".*", ), {}])
+    else:
+        assert not m_re.compile.called
+
+
+@pytest.mark.parametrize("append", [True, False])
+def test_assets_fetcher_write_mode(patches, append):
+    fetcher = DummyGithubReleaseAssetsFetcher("RELEASE", "PATH")
+    patched = patches(
+        ("AGithubReleaseAssetsFetcher.append",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.github.abstract.assets")
+
+    with patched as (m_append, ):
+        m_append.return_value = append
+        assert fetcher.write_mode == {True: "a", False: "w"}[append]
+
+
+@pytest.mark.parametrize("name", [None, "foo0", "bar2", "baz23"])
+def test_assets_fetcher_asset_type(patches, name):
+    fetcher = DummyGithubReleaseAssetsFetcher("RELEASE", "PATH")
+    patched = patches(
+        ("AGithubReleaseAssetsFetcher.asset_types",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.github.abstract.assets")
+
+    types = {}
+    for t in ["foo", "bar", "baz"]:
+        for i in range(0, 3):
+            mock_type = MagicMock()
+
+            def _search(x, y, name):
+                return name == f"{x}{y}"
+
+            mock_type.search = partial(_search, t, i)
+            types[f"{t}{i}"] = mock_type
+
+    with patched as (m_types, ):
+        m_types.return_value = types
+        assert (
+            fetcher.asset_type(dict(name=name))
+            == (name if name in types else None))
+
+
+@pytest.mark.asyncio
+async def test_assets_pusher_asset_names(patches):
+    pusher = DummyGithubReleaseAssetsPusher("RELEASE", "PATH")
+    patched = patches(
+        ("AGithubReleaseAssetsPusher.release",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.github.abstract.assets")
+
+    with patched as (m_release, ):
+        m_release.return_value.asset_names = AsyncMock(
+            return_value="ASSET NAMES")()
+        assert await pusher.asset_names == "ASSET NAMES"
+
+    assert not hasattr(pusher, async_property.cache_name)
+
+
+@pytest.mark.asyncio
+async def test_assets_pusher_upload_url(patches):
+    pusher = DummyGithubReleaseAssetsPusher("RELEASE", "PATH")
+    patched = patches(
+        ("AGithubReleaseAssetsPusher.release",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.github.abstract.assets")
+
+    with patched as (m_release, ):
+        m_release.return_value.upload_url = AsyncMock(
+            return_value="UPLOAD URL")()
+        assert await pusher.upload_url == "UPLOAD URL"
+    assert not hasattr(pusher, async_property.cache_name)
+
+
+@pytest.mark.asyncio
+async def test_assets_pusher_artefact_url(patches):
+    pusher = DummyGithubReleaseAssetsPusher("RELEASE", "PATH")
+    patched = patches(
+        ("AGithubReleaseAssetsPusher.upload_url",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.github.abstract.assets")
+
+    with patched as (m_url, ):
+        m_url.side_effect = AsyncMock(return_value="UPLOAD URL")
+        assert (
+            await pusher.artefact_url("ARTEFACT")
+            == "UPLOAD URL?name=ARTEFACT")
