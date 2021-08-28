@@ -43,6 +43,7 @@ setup(
         "aio.functional>=0.0.6",
         "aio.tasks",
         "aiohttp",
+        "envoy.base.runner>=0.0.3",
         "gidgethub",
         "verboselogs",
     ],

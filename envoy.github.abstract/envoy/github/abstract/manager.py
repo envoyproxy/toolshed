@@ -1,9 +1,8 @@
 import pathlib
 from abc import abstractmethod
-from functools import cached_property
 from typing import (
     Dict, List,
-    Optional, Union)
+    Optional, Pattern, Union)
 
 import verboselogs  # type:ignore
 
@@ -18,6 +17,9 @@ import abstracts
 from aio.functional import async_property
 
 from .release import AGithubRelease
+
+
+VERSION_MIN = packaging.version.Version("0")
 
 
 class AGithubReleaseManager(metaclass=abstracts.Abstraction):
@@ -43,6 +45,31 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
     ```
     """
 
+    def __init__(
+            self,
+            path: Union[str, pathlib.Path],
+            repository: str,
+            continues: Optional[bool] = False,
+            create: Optional[bool] = True,
+            user: Optional[str] = None,
+            oauth_token: Optional[str] = None,
+            version: Optional[str] = None,
+            log: Optional[verboselogs.VerboseLogger] = None,
+            asset_types: Optional[Dict[str, Pattern[str]]] = None,
+            github: Optional[gidgethub.abc.GitHubAPI] = None,
+            session: Optional[aiohttp.ClientSession] = None) -> None:
+        self.version = version
+        self._path = path
+        self.repository = repository
+        self.continues = continues
+        self._log = log
+        self.oauth_token = oauth_token
+        self.user = user or ""
+        self._asset_types = asset_types
+        self._github = github
+        self._session = session
+        self.create = create
+
     @abstractmethod
     async def __aenter__(self) -> "AGithubReleaseManager":
         raise NotImplementedError
@@ -56,7 +83,7 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
         """Accessor for a specific Github release"""
         raise NotImplementedError
 
-    @cached_property
+    @property
     @abstractmethod
     def github(self) -> gidgethub.abc.GitHubAPI:
         """An instance of the gidgethub GitHubAPI"""
@@ -82,7 +109,7 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
         """
         raise NotImplementedError
 
-    @cached_property
+    @property
     @abstractmethod
     def log(self) -> verboselogs.VerboseLogger:
         """A verbose logger"""
@@ -96,17 +123,23 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
         """
         raise NotImplementedError
 
-    @cached_property
+    @property
     @abstractmethod
     def releases_url(self) -> pathlib.PurePosixPath:
         """Github API releases URL"""
         raise NotImplementedError
 
-    @cached_property
+    @property
     @abstractmethod
     def session(self) -> aiohttp.ClientSession:
         """Aiohttp Client session, also used for Github API client"""
         raise NotImplementedError
+
+    async def close(self) -> None:
+        if "session" not in self.__dict__:
+            return
+        await self.session.close()
+        del self.__dict__["session"]
 
     @abstractmethod
     def fail(self, message: str) -> str:
@@ -127,3 +160,7 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
             self, version: str) -> Optional[packaging.version.Version]:
         """Parsed version - eg `v1.19.0` -> `Version(1.19.0)`"""
         raise NotImplementedError
+
+    @property
+    def version_min(self) -> packaging.version.Version:
+        return VERSION_MIN
