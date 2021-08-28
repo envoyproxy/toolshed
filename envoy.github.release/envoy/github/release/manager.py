@@ -48,7 +48,7 @@ class GithubReleaseManager:
         self.continues = continues
         self._log = log
         self.oauth_token = oauth_token
-        self.user = user
+        self.user = user or ""
         self._asset_types = asset_types
         self._github = github
         self._session = session
