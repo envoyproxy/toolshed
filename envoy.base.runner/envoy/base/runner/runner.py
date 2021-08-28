@@ -3,17 +3,22 @@
 #
 
 import argparse
+import asyncio
 import logging
 import pathlib
 import subprocess
 import sys
 import tempfile
 from functools import cached_property
+from typing import Optional
 
 from frozendict import frozendict
 
 import coloredlogs  # type:ignore
 import verboselogs  # type:ignore
+
+from .decorators import cleansup
+
 
 LOG_LEVELS = (
     ("debug", logging.DEBUG),
@@ -44,6 +49,9 @@ class BaseRunner:
 
     def __init__(self, *args):
         self._args = args
+
+    def __call__(self):
+        return self.run()
 
     @cached_property
     def args(self) -> argparse.Namespace:
@@ -152,14 +160,29 @@ class BaseRunner:
 
 class Runner(BaseRunner):
 
+    @cleansup
+    def run(self) -> Optional[int]:
+        raise NotImplementedError
+
     def cleanup(self) -> None:
         self._cleanup_tempdir()
 
 
 class AsyncRunner(BaseRunner):
 
+    def __call__(self):
+        try:
+            return asyncio.run(self.run())
+        except KeyboardInterrupt:
+            self.log.error("Keyboard exit")
+            return 1
+
     async def cleanup(self) -> None:
         self._cleanup_tempdir()
+
+    @cleansup
+    async def run(self) -> Optional[int]:
+        raise NotImplementedError
 
 
 class ForkingAdapter:

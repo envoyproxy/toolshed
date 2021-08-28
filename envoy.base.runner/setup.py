@@ -41,6 +41,7 @@ setup(
         "coloredlogs",
         "frozendict",
         "verboselogs",
+        "envoy.abstract.command",
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

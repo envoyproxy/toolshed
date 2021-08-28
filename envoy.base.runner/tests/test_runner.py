@@ -474,6 +474,20 @@ def test_runner_constructor(patches):
         == [tuple(args), kwargs])
 
 
+def test_runner_dunder_call(patches):
+    run = runner.Runner()
+    patched = patches(
+        "Runner.run",
+        prefix="envoy.base.runner.runner")
+
+    with patched as (m_run, ):
+        assert run() == m_run.return_value
+
+    assert (
+        list(m_run.call_args)
+        == [(), {}])
+
+
 def test_runner_cleanup(patches):
     run = runner.Runner()
     patched = patches(
@@ -503,6 +517,34 @@ def test_async_runner_constructor(patches):
     assert (
         list(m_super.call_args)
         == [tuple(args), kwargs])
+
+
+@pytest.mark.parametrize("raises", [None, KeyboardInterrupt])
+def test_async_runner_dunder_call(patches, raises):
+    run = runner.AsyncRunner()
+    patched = patches(
+        "asyncio",
+        ("AsyncRunner.run", dict(new_callable=MagicMock)),
+        prefix="envoy.base.runner.runner")
+
+    with patched as (m_asyncio, m_run):
+        if raises:
+            m_run.side_effect = raises("DIE")
+        assert (
+            run()
+            == (m_asyncio.run.return_value
+                if not raises
+                else 1))
+
+    if not raises:
+        assert (
+            list(m_asyncio.run.call_args)
+            == [(m_run.return_value, ), {}])
+    else:
+        assert not m_asyncio.run.called
+    assert (
+        list(m_run.call_args)
+        == [(), {}])
 
 
 @pytest.mark.asyncio
