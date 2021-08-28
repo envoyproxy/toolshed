@@ -3,14 +3,14 @@ from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
-from envoy.distribution.publish import runner
+from envoy.distribution.release import runner
 
 
 def _release_arg_props(patches, prop, arg=None):
     run = runner.ReleaseRunner()
     patched = patches(
         ("ReleaseRunner.args", dict(new_callable=PropertyMock)),
-        prefix="envoy.distribution.publish.runner")
+        prefix="envoy.distribution.release.runner")
 
     with patched as (m_args, ):
         assert getattr(run, prop) == getattr(m_args.return_value, arg or prop)
@@ -29,7 +29,7 @@ def test_runner_oauth_token(patches):
     run = runner.ReleaseRunner()
     patched = patches(
         ("ReleaseRunner.oauth_token_file", dict(new_callable=PropertyMock)),
-        prefix="envoy.distribution.publish.runner")
+        prefix="envoy.distribution.release.runner")
 
     with patched as (m_file, ):
         assert (
@@ -50,7 +50,7 @@ def test_runner_oauth_token_file(patches):
     patched = patches(
         "pathlib",
         ("ReleaseRunner.args", dict(new_callable=PropertyMock)),
-        prefix="envoy.distribution.publish.runner")
+        prefix="envoy.distribution.release.runner")
 
     with patched as (m_plib, m_args):
         assert (
@@ -68,7 +68,7 @@ def test_runner_add_arguments(patches):
     parser = MagicMock()
     patched = patches(
         "runner.BaseRunner.add_arguments",
-        prefix="envoy.distribution.publish.runner")
+        prefix="envoy.distribution.release.runner")
 
     with patched as (m_super, ):
         run.add_arguments(parser)

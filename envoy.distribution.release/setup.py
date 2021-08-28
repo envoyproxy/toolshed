@@ -11,21 +11,21 @@ def read(fname):
 
 
 setup(
-    name='envoy.distribution.publish',
+    name='envoy.distribution.release',
     version=read("VERSION"),
     author='Ryan Northey',
     author_email='ryan@synca.io',
     maintainer='Ryan Northey',
     maintainer_email='ryan@synca.io',
     license='Apache Software License 2.0',
-    url='https://github.com/envoyproxy/pytooling/envoy.distribution.publish',
+    url='https://github.com/envoyproxy/pytooling/envoy.distribution.release',
     description=(
-        "Package publishing tool used in Envoy proxy's CI"),
+        "Release publishing tool used in Envoy proxy's CI"),
     long_description=read('README.rst'),
-    py_modules=['envoy.distribution.publish'],
+    py_modules=['envoy.distribution.release'],
     packages=find_namespace_packages(),
     package_data={
-        'envoy.distribution.publish': [
+        'envoy.distribution.release': [
             'py.typed']},
     python_requires='>=3.5',
     extras_require={
@@ -42,8 +42,8 @@ setup(
     install_requires=[
         "envoy.base.runner>=0.0.2",
         "envoy.base.command",
-        "envoy.github.abstract>=0.0.5",
-        "envoy.github.release>=0.0.2",
+        "envoy.github.abstract>=0.0.9",
+        "envoy.github.release>=0.0.3",
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
@@ -61,6 +61,6 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'envoy.distro-publish=envoy.distribution.publish:cmd'],
+            'envoy.release=envoy.distribution.release:cmd'],
     }
 )
