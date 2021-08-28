@@ -1,10 +1,9 @@
 
-import asyncio
 import sys
 from typing import Optional
 
 from .runner import ReleaseRunner
-from .command import (
+from .commands import (
     AssetsCommand,
     CreateCommand,
     DeleteCommand,
@@ -29,12 +28,8 @@ def _register_commands():
 # @profile
 def main(*args: str) -> Optional[int]:
     _register_commands()
-    runner = ReleaseRunner(*args)
-    try:
-        return asyncio.run(runner.run())
-    except KeyboardInterrupt:
-        runner.log.error("Keyboard exit")
-        return 1
+    result = ReleaseRunner(*args)()
+    return result
 
 
 def cmd():

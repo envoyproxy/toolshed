@@ -41,10 +41,10 @@ setup(
         "publish": ['wheel'],
     },
     install_requires=[
-        "envoy.base.runner>=0.0.2",
-        "envoy.base.command",
-        "envoy.github.abstract>=0.0.9",
-        "envoy.github.release==0.0.3",
+        "envoy.base.runner>=0.0.3",
+        "envoy.abstract.command",
+        "envoy.github.abstract>=0.0.15",
+        "envoy.github.release>=0.0.7",
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

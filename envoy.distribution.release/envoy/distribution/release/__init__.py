@@ -2,7 +2,7 @@
 # from .exceptions import PackagesConfigurationError
 
 from .runner import ReleaseRunner
-from .command import (
+from .commands import (
     AssetsCommand,
     CreateCommand,
     DeleteCommand,
