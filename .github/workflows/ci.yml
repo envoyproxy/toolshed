@@ -14,7 +14,7 @@ jobs:
         - aio.subprocess
         - aio.tasks
         - envoy.base.checker
-        - envoy.base.command
+        - envoy.abstract.command
         - envoy.base.runner
         - envoy.base.utils
         - envoy.docker.utils
@@ -98,7 +98,7 @@ jobs:
         - aio.stream
         - aio.tasks
         - envoy.base.checker
-        - envoy.base.command
+        - envoy.abstract.command
         - envoy.base.runner
         - envoy.base.utils
         - envoy.dependency.pip_check
