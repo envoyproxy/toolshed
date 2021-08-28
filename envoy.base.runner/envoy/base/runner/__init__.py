@@ -3,6 +3,8 @@ from .decorators import (
     catches,
     cleansup)
 
+from .abstract import AAsyncRunnerWithCommands
+
 from .runner import (
     AsyncRunner,
     BaseRunner,
@@ -15,6 +17,7 @@ from .runner import (
 
 
 __all__ = (
+    "AAsyncRunnerWithCommands",
     "AsyncRunner",
     "BaseRunner",
     "BazelRunner",
