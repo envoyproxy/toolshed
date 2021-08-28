@@ -29,31 +29,6 @@ class GithubReleaseManager:
     _version_re = r"v(\w+)"
     _version_format = "v{version}"
 
-    def __init__(
-            self,
-            path: Union[str, pathlib.Path],
-            repository: str,
-            continues: Optional[bool] = False,
-            create: Optional[bool] = True,
-            user: Optional[str] = None,
-            oauth_token: Optional[str] = None,
-            version: Optional[str] = None,
-            log: Optional[verboselogs.VerboseLogger] = None,
-            asset_types: Optional[Dict[str, Pattern[str]]] = None,
-            github: Optional[gidgethub.abc.GitHubAPI] = None,
-            session: Optional[aiohttp.ClientSession] = None) -> None:
-        self.version = version
-        self._path = path
-        self.repository = repository
-        self.continues = continues
-        self._log = log
-        self.oauth_token = oauth_token
-        self.user = user or ""
-        self._asset_types = asset_types
-        self._github = github
-        self._session = session
-        self.create = create
-
     async def __aenter__(self) -> AGithubReleaseManager:
         return self
 
@@ -119,12 +94,6 @@ class GithubReleaseManager:
     @cached_property
     def version_re(self) -> Pattern[str]:
         return re.compile(self._version_re)
-
-    async def close(self) -> None:
-        if "session" not in self.__dict__:
-            return
-        await self.session.close()
-        del self.__dict__["session"]
 
     def fail(self, message: str) -> str:
         if not self.continues:
