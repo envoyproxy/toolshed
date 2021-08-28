@@ -45,7 +45,7 @@ def test_release_manager_constructor(
             else True))
     assert releaser._log == log
     assert releaser.oauth_token == oauth_token
-    assert releaser.user == user
+    assert releaser.user == (user or "")
     assert releaser._asset_types == asset_types
     assert releaser._github == github
     assert releaser._session == session
@@ -118,7 +118,7 @@ def test_release_manager_github(patches, oauth_token, user, github):
         return
     assert (
         list(m_api.aiohttp.GitHubAPI.call_args)
-        == [(m_session.return_value, user),
+        == [(m_session.return_value, user or ""),
             {'oauth_token': oauth_token}])
 
 
