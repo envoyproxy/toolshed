@@ -87,7 +87,7 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
     @abstractmethod
     async def create(
             self,
-            assets: Optional[List[pathlib.Path]] = None) -> ReleaseDict:
+            assets: Optional[Iterable[pathlib.Path]] = None) -> ReleaseDict:
         """Create this release version and optionally upload provided assets"""
         raise NotImplementedError
 
