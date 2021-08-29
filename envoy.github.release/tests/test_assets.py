@@ -5,7 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 import pytest
 
 from envoy.github.abstract import GithubReleaseError
-from envoy.github.release import assets as assets
+from envoy.github.release import (
+    GithubReleaseAssetsFetcher, GithubReleaseAssetsPusher)
 
 
 def test_fetcher_constructor(patches):
@@ -17,7 +18,7 @@ def test_fetcher_constructor(patches):
 
     with patched as (m_super, m_concurrency):
         m_super.return_value = None
-        fetcher = assets.GithubReleaseAssetsFetcher(
+        fetcher = GithubReleaseAssetsFetcher(
             "RELEASE", "PATH", "ASSET_TYPES")
         concurrency = fetcher.concurrency
 
@@ -30,7 +31,7 @@ def test_fetcher_constructor(patches):
 
 
 def test_fetcher_dunder_exit(patches):
-    fetcher = assets.GithubReleaseAssetsFetcher(
+    fetcher = GithubReleaseAssetsFetcher(
         "RELEASE", "PATH", "ASSET_TYPES")
     patched = patches(
         "tarfile",
@@ -63,7 +64,7 @@ def test_fetcher_dunder_exit(patches):
 
 
 def test_fetcher_is_tarlike(patches):
-    fetcher = assets.GithubReleaseAssetsFetcher(
+    fetcher = GithubReleaseAssetsFetcher(
         "RELEASE", "PATH", "ASSET_TYPES")
     patched = patches(
         "utils",
@@ -83,7 +84,7 @@ def test_fetcher_is_tarlike(patches):
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize("append", [True, False])
 def test_fetcher_out_exists(patches, exists, append):
-    fetcher = assets.GithubReleaseAssetsFetcher(
+    fetcher = GithubReleaseAssetsFetcher(
         "RELEASE", "PATH", "ASSET_TYPES")
     patched = patches(
         ("GithubReleaseAssetsFetcher.append",
@@ -102,7 +103,7 @@ def test_fetcher_out_exists(patches, exists, append):
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize("is_tarlike", [True, False])
 def test_fetcher_path(patches, exists, is_tarlike):
-    fetcher = assets.GithubReleaseAssetsFetcher(
+    fetcher = GithubReleaseAssetsFetcher(
         "RELEASE", "PATH", "ASSET_TYPES")
     patched = patches(
         "pathlib",
@@ -153,7 +154,7 @@ def test_fetcher_path(patches, exists, is_tarlike):
 
 @pytest.mark.asyncio
 async def test_fetcher_download(patches):
-    fetcher = assets.GithubReleaseAssetsFetcher(
+    fetcher = GithubReleaseAssetsFetcher(
         "RELEASE", "PATH", "ASSET_TYPES")
     patched = patches(
         ("GithubReleaseAssetsFetcher.save",
@@ -185,7 +186,7 @@ async def test_fetcher_download(patches):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("status", [None, 200, 201])
 async def test_fetcher_save(patches, status):
-    fetcher = assets.GithubReleaseAssetsFetcher(
+    fetcher = GithubReleaseAssetsFetcher(
         "RELEASE", "PATH", "ASSET_TYPES")
     patched = patches(
         "stream",
@@ -235,7 +236,7 @@ def test_pusher_constructor(patches):
 
     with patched as (m_super, m_concurrency):
         m_super.return_value = None
-        pusher = assets.GithubReleaseAssetsPusher("RELEASE", "PATH")
+        pusher = GithubReleaseAssetsPusher("RELEASE", "PATH")
         concurrency = pusher.concurrency
 
     assert (
@@ -259,7 +260,7 @@ def test_pusher_constructor(patches):
      ([f".EXT{i}" for i in range(0, 3)]
       + [f".NOTEXT{i}" for i in range(0, 3)])])
 def test_pusher_artefacts(patches, file_exts, globs):
-    pusher = assets.GithubReleaseAssetsPusher(
+    pusher = GithubReleaseAssetsPusher(
         "RELEASE", "PATH")
     patched = patches(
         ("GithubReleaseAssetsPusher.path",
@@ -294,7 +295,7 @@ def test_pusher_artefacts(patches, file_exts, globs):
 
 
 def test_pusher_is_dir(patches):
-    pusher = assets.GithubReleaseAssetsPusher(
+    pusher = GithubReleaseAssetsPusher(
         "RELEASE", "PATH")
     patched = patches(
         ("AGithubReleaseAssetsPusher.path",
@@ -310,7 +311,7 @@ def test_pusher_is_dir(patches):
 
 
 def test_pusher_is_tarball(patches):
-    pusher = assets.GithubReleaseAssetsPusher(
+    pusher = GithubReleaseAssetsPusher(
         "RELEASE", "PATH")
     patched = patches(
         "tarfile",
@@ -329,7 +330,7 @@ def test_pusher_is_tarball(patches):
 @pytest.mark.parametrize("is_dir", [True, False])
 @pytest.mark.parametrize("is_tarball", [True, False])
 def test_pusher_path(patches, is_dir, is_tarball):
-    pusher = assets.GithubReleaseAssetsPusher(
+    pusher = GithubReleaseAssetsPusher(
         "RELEASE", "PATH")
     patched = patches(
         "utils",
@@ -381,7 +382,7 @@ def test_pusher_path(patches, is_dir, is_tarball):
 @pytest.mark.parametrize("error", [True, False])
 @pytest.mark.parametrize("state", ["uploaded", "NOTUPLOADED"])
 async def test_pusher_upload(patches, name, asset_names, error, state):
-    pusher = assets.GithubReleaseAssetsPusher(
+    pusher = GithubReleaseAssetsPusher(
         "RELEASE", "PATH")
     patched = patches(
         "stream",

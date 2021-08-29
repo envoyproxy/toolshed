@@ -8,25 +8,25 @@ import gidgethub
 from aio import tasks
 from aio.functional import async_property
 
+from envoy.github.abstract import exceptions
 from envoy.github.release import (
-    exceptions as github_errors,
-    release as github_release)
+    GithubRelease, GithubReleaseAssetsFetcher, GithubReleaseAssetsPusher)
 
 
 def test_release_constructor():
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     assert release.manager == "MANAGER"
     assert release.version == "VERSION"
 
-    assert release.fetcher == github_release.GithubReleaseAssetsFetcher
+    assert release.fetcher == GithubReleaseAssetsFetcher
     assert "fetcher" not in release.__dict__
-    assert release.pusher == github_release.GithubReleaseAssetsPusher
+    assert release.pusher == GithubReleaseAssetsPusher
     assert "pusher" not in release.__dict__
 
 
 def _check_manager_property(prop, arg=None):
     _manager = MagicMock()
-    checker = github_release.GithubRelease(_manager, "VERSION")
+    checker = GithubRelease(_manager, "VERSION")
     assert getattr(checker, prop) == getattr(_manager, arg or prop)
     assert prop not in checker.__dict__
 
@@ -43,7 +43,7 @@ def test_release_manager_props(prop):
 
 @pytest.mark.asyncio
 async def test_release_asset_names(patches):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.assets", dict(new_callable=PropertyMock)),
         prefix="envoy.github.release.release")
@@ -68,7 +68,7 @@ async def test_release_asset_names(patches):
     "raises",
     [None, BaseException, gidgethub.GitHubException])
 async def test_release_assets(patches, raises):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.assets_url", dict(new_callable=PropertyMock)),
         ("GithubRelease.github", dict(new_callable=PropertyMock)),
@@ -82,7 +82,7 @@ async def test_release_assets(patches, raises):
         if raises:
             _get.side_effect = raises("AN ERROR OCCURRED")
             _raises = (
-                github_errors.GithubReleaseError
+                exceptions.GithubReleaseError
                 if raises == gidgethub.GitHubException
                 else raises)
             with pytest.raises(_raises):
@@ -101,7 +101,7 @@ async def test_release_assets(patches, raises):
 
 @pytest.mark.asyncio
 async def test_release_assets_url(patches):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.release", dict(new_callable=PropertyMock)),
         prefix="envoy.github.release.release")
@@ -121,7 +121,7 @@ async def test_release_assets_url(patches):
 
 @pytest.mark.asyncio
 async def test_release_delete_url(patches):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.releases_url", dict(new_callable=PropertyMock)),
         ("GithubRelease.release_id", dict(new_callable=PropertyMock)),
@@ -143,7 +143,7 @@ async def test_release_delete_url(patches):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("version", [f"VERSION{i}" for i in range(0, 7)])
 async def test_release_exists(patches, version):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.release_names", dict(new_callable=PropertyMock)),
         ("GithubRelease.version_name", dict(new_callable=PropertyMock)),
@@ -160,7 +160,7 @@ async def test_release_exists(patches, version):
 
 @pytest.mark.asyncio
 async def test_release_release(patches):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.get", dict(new_callable=AsyncMock)),
         prefix="envoy.github.release.release")
@@ -173,7 +173,7 @@ async def test_release_release(patches):
 
 @pytest.mark.asyncio
 async def test_release_release_id(patches):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.release", dict(new_callable=PropertyMock)),
         prefix="envoy.github.release.release")
@@ -201,7 +201,7 @@ async def test_release_release_names(patches):
         return _release_names
 
     _manager.releases = _releases()
-    release = github_release.GithubRelease(_manager, "VERSION")
+    release = GithubRelease(_manager, "VERSION")
     assert (
         await release.release_names
         == tuple(t["tag_name"] for t in _release_names))
@@ -209,7 +209,7 @@ async def test_release_release_names(patches):
 
 @pytest.mark.asyncio
 async def test_release_upload_url(patches):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.release", dict(new_callable=PropertyMock)),
         prefix="envoy.github.release.release")
@@ -236,7 +236,7 @@ async def test_release_upload_url(patches):
 
 def test_release_version_name(patches):
     _manager = MagicMock()
-    release = github_release.GithubRelease(_manager, "VERSION")
+    release = GithubRelease(_manager, "VERSION")
     release.version_name == _manager.format_version.return_value
     assert (
         list(_manager.format_version.call_args)
@@ -244,7 +244,7 @@ def test_release_version_name(patches):
 
 
 def test_release_version_url(patches):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.releases_url", dict(new_callable=PropertyMock)),
         ("GithubRelease.version_name", dict(new_callable=PropertyMock)),
@@ -270,7 +270,7 @@ def test_release_version_url(patches):
     "raises",
     [None, BaseException, gidgethub.GitHubException])
 async def test_release_create(patches, exists, assets, raises):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         "GithubRelease.fail",
         ("GithubRelease.push", dict(new_callable=AsyncMock)),
@@ -296,7 +296,7 @@ async def test_release_create(patches, exists, assets, raises):
                 "AN ERROR OCCURRED")
         if raises and not exists:
             _raises = (
-                github_errors.GithubReleaseError
+                exceptions.GithubReleaseError
                 if raises == gidgethub.GitHubException
                 else raises)
             with pytest.raises(_raises):
@@ -347,7 +347,7 @@ async def test_release_create(patches, exists, assets, raises):
     "raises",
     [None, BaseException, gidgethub.GitHubException])
 async def test_release_delete(patches, exists, raises):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.delete_url", dict(new_callable=PropertyMock)),
         ("GithubRelease.exists", dict(new_callable=PropertyMock)),
@@ -371,7 +371,7 @@ async def test_release_delete(patches, exists, raises):
             with pytest.raises(BaseException) as e:
                 await release.delete()
         else:
-            with pytest.raises(github_errors.GithubReleaseError) as e:
+            with pytest.raises(exceptions.GithubReleaseError) as e:
                 await release.delete()
 
         if not exists:
@@ -398,7 +398,7 @@ async def test_release_delete(patches, exists, raises):
 
 def test_release_fail():
     manager = MagicMock()
-    release = github_release.GithubRelease(manager, "VERSION")
+    release = GithubRelease(manager, "VERSION")
     assert release.fail("FAILURE") == manager.fail.return_value
     assert (
         list(manager.fail.call_args)
@@ -411,7 +411,7 @@ def test_release_fail():
     [None, (), tuple(f"ASSET_TYPE{i}" for i in range(0, 3))])
 @pytest.mark.parametrize("errors", [[], [0], [2, 4], range(0, 5)])
 async def test_release_fetch(patches, asset_types, errors):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.fetcher", dict(new_callable=PropertyMock)),
         ("GithubRelease.log", dict(new_callable=PropertyMock)),
@@ -456,7 +456,7 @@ async def test_release_fetch(patches, asset_types, errors):
     "raises",
     [None, BaseException, gidgethub.GitHubException])
 async def test_release_get(patches, raises):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.version_url", dict(new_callable=PropertyMock)),
         ("GithubRelease.github", dict(new_callable=PropertyMock)),
@@ -468,7 +468,7 @@ async def test_release_get(patches, raises):
             m_github.return_value.getitem.side_effect = raises(
                 "AN ERROR OCCURRED")
             _raises = (
-                github_errors.GithubReleaseError
+                exceptions.GithubReleaseError
                 if raises == gidgethub.GitHubException
                 else raises)
             with pytest.raises(_raises):
@@ -488,7 +488,7 @@ async def test_release_get(patches, raises):
     [None, BaseException, tasks.ConcurrentError])
 @pytest.mark.parametrize("errors", [[], [1, 3], range(0, 5)])
 async def test_release_push(patches, raises, errors):
-    release = github_release.GithubRelease("MANAGER", "VERSION")
+    release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
         ("GithubRelease.log", dict(new_callable=PropertyMock)),
         ("GithubRelease.pusher", dict(new_callable=PropertyMock)),

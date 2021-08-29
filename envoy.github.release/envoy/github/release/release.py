@@ -18,10 +18,10 @@ from aio.functional import async_property
 
 from envoy.github.abstract import (
     AGithubRelease, AGithubReleaseAssetsFetcher,
-    AGithubReleaseAssetsPusher, AGithubReleaseManager, ReleaseDict)
+    AGithubReleaseAssetsPusher, AGithubReleaseManager,
+    GithubReleaseError, ReleaseDict)
 from envoy.github.release.assets import (
     GithubReleaseAssetsFetcher, GithubReleaseAssetsPusher)
-from envoy.github.release.exceptions import GithubReleaseError
 
 
 @abstracts.implementer(AGithubRelease)
