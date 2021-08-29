@@ -43,7 +43,7 @@ class AGithubReleaseCommand(
             self,
             release: Optional[Dict] = None,
             assets: Optional[List[Dict]] = None,
-            errors: Optional[List[Dict]] = None) -> str:
+            errors: Optional[List[Dict]] = None) -> Optional[int]:
         for k, v in (release or {}).items():
             if isinstance(v, dict):
                 print(k)
@@ -58,3 +58,4 @@ class AGithubReleaseCommand(
             k = "assets" if i == 0 else ""
             print('{0:<30} {1:<30} {2}'.format(
                 k, result["name"], result["url"]))
+        return 1 if errors else 0
