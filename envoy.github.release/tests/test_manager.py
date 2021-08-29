@@ -6,7 +6,9 @@ import pytest
 import packaging.version
 
 from aio.functional import async_property
-from envoy.github.release import manager, exceptions as github_errors
+
+from envoy.github.abstract import exceptions
+from envoy.github.release import GithubReleaseManager
 
 
 @pytest.mark.parametrize("continues", [None, True, False])
@@ -30,7 +32,7 @@ def test_release_manager_constructor(
         github=github,
         session=session)
     kwargs = {k: v for k, v in kwargs.items() if v is not None}
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY", **kwargs)
+    releaser = GithubReleaseManager("PATH", "REPOSITORY", **kwargs)
     assert releaser._path == "PATH"
     assert releaser.repository == "REPOSITORY"
     assert (
@@ -51,11 +53,6 @@ def test_release_manager_constructor(
     assert releaser._session == session
 
     assert releaser._version_re == r"v(\w+)"
-    assert (
-        releaser.version_min
-        == manager.VERSION_MIN
-        == packaging.version.Version("0"))
-    assert "version_min" not in releaser.__dict__
 
 
 @pytest.mark.asyncio
@@ -65,9 +62,9 @@ async def test_release_manager_async_contextmanager(patches):
         prefix="envoy.github.release.manager")
 
     with patched as (m_close, ):
-        release_manager = manager.GithubReleaseManager("PATH", "REPOSITORY")
+        release_manager = GithubReleaseManager("PATH", "REPOSITORY")
         async with release_manager as releaser:
-            assert isinstance(releaser, manager.GithubReleaseManager)
+            assert isinstance(releaser, GithubReleaseManager)
             assert not m_close.called
         assert (
             list(m_close.call_args)
@@ -75,7 +72,7 @@ async def test_release_manager_async_contextmanager(patches):
 
 
 def test_release_manager_dunder_getitem(patches):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "GithubRelease",
         prefix="envoy.github.release.manager")
@@ -99,7 +96,7 @@ def test_release_manager_github(patches, oauth_token, user, github):
         kwargs["user"] = user
     if github:
         kwargs["github"] = "GITHUB"
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY", **kwargs)
+    releaser = GithubReleaseManager("PATH", "REPOSITORY", **kwargs)
     patched = patches(
         "gidgethub",
         ("GithubReleaseManager.session", dict(new_callable=PropertyMock)),
@@ -124,7 +121,7 @@ def test_release_manager_github(patches, oauth_token, user, github):
 
 @pytest.mark.parametrize("log", [True, False])
 def test_release_manager_log(patches, log):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "verboselogs",
         prefix="envoy.github.release.manager")
@@ -150,7 +147,7 @@ def test_release_manager_log(patches, log):
 
 
 def test_release_manager_path(patches):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "pathlib",
         prefix="envoy.github.release.manager")
@@ -168,7 +165,7 @@ def test_release_manager_path(patches):
 
 @pytest.mark.asyncio
 async def test_release_manager_latest(patches):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "GithubReleaseManager.parse_version",
         ("GithubReleaseManager.releases", dict(new_callable=PropertyMock)),
@@ -202,7 +199,7 @@ async def test_release_manager_latest(patches):
 
 @pytest.mark.asyncio
 async def test_release_manager_releases(patches):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         ("GithubReleaseManager.github", dict(new_callable=PropertyMock)),
         ("GithubReleaseManager.releases_url", dict(new_callable=PropertyMock)),
@@ -225,7 +222,7 @@ async def test_release_manager_releases(patches):
 
 
 def test_release_manager_releases_url(patches):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "pathlib",
         prefix="envoy.github.release.manager")
@@ -241,7 +238,7 @@ def test_release_manager_releases_url(patches):
 
 @pytest.mark.parametrize("session", [True, False])
 def test_release_manager_session(patches, session):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "aiohttp",
         prefix="envoy.github.release.manager")
@@ -265,7 +262,7 @@ def test_release_manager_session(patches, session):
 
 
 def test_release_manager_version_re(patches):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "re",
         prefix="envoy.github.release.manager")
@@ -282,7 +279,7 @@ def test_release_manager_version_re(patches):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("session", [True, False])
 async def test_release_manager_close(patches, session):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         ("GithubReleaseManager.session", dict(new_callable=PropertyMock)),
         prefix="envoy.github.release.manager")
@@ -307,7 +304,7 @@ async def test_release_manager_close(patches, session):
 
 @pytest.mark.parametrize("continues", [True, False])
 def test_release_manager_fail(patches, continues):
-    releaser = manager.GithubReleaseManager(
+    releaser = GithubReleaseManager(
         "PATH", "REPOSITORY", continues=continues)
     patched = patches(
         ("GithubReleaseManager.log", dict(new_callable=PropertyMock)),
@@ -319,7 +316,7 @@ def test_release_manager_fail(patches, continues):
                 releaser.fail("MESSAGE")
                 == "MESSAGE")
         else:
-            with pytest.raises(github_errors.GithubReleaseError):
+            with pytest.raises(exceptions.GithubReleaseError):
                 releaser.fail("MESSAGE")
 
     if not continues:
@@ -332,7 +329,7 @@ def test_release_manager_fail(patches, continues):
 
 
 def test_release_manager_format_version():
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     releaser._version_format = MagicMock()
     assert (
         releaser.format_version("VERSION")
@@ -347,7 +344,7 @@ def test_release_manager_format_version():
     "raises",
     [None, BaseException, packaging.version.InvalidVersion])
 def test_release_manager_parse_version(patches, version, raises):
-    releaser = manager.GithubReleaseManager("PATH", "REPOSITORY")
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "packaging.version.Version",
         ("GithubReleaseManager.log", dict(new_callable=PropertyMock)),

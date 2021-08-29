@@ -15,12 +15,9 @@ import gidgethub.aiohttp
 import abstracts
 from aio.functional import async_property
 
-from envoy.github.abstract import AGithubRelease, AGithubReleaseManager
-from envoy.github.release.exceptions import GithubReleaseError
+from envoy.github.abstract import (
+    AGithubRelease, AGithubReleaseManager, GithubReleaseError)
 from envoy.github.release.release import GithubRelease
-
-
-VERSION_MIN = packaging.version.Version("0")
 
 
 @abstracts.implementer(AGithubReleaseManager)
@@ -86,10 +83,6 @@ class GithubReleaseManager:
     @cached_property
     def session(self) -> aiohttp.ClientSession:
         return self._session or aiohttp.ClientSession()
-
-    @property
-    def version_min(self) -> packaging.version.Version:
-        return VERSION_MIN
 
     @cached_property
     def version_re(self) -> Pattern[str]:
