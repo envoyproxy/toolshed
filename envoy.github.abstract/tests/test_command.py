@@ -28,6 +28,33 @@ async def test_release_command_constructor():
         await command.run()
 
 
+@pytest.mark.parametrize(
+    "assets",
+    [None, [], [f"ASSET{i}" for i in range(0, 5)]])
+def test_release_artefacts(patches, assets):
+    command = DummyGithubReleaseCommand("CONTEXT")
+    patched = patches(
+        "pathlib",
+        ("AGithubReleaseCommand.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.github.abstract.command")
+
+    with patched as (m_plib, m_args):
+        if assets is None:
+            delattr(m_args.return_value, "assets")
+        else:
+            m_args.return_value.assets = assets
+        assert (
+            command.artefacts
+            == tuple(m_plib.Path.return_value
+                     for asset in assets or []))
+
+    assert (
+        list(list(c) for c in m_plib.Path.call_args_list)
+        == [[(asset,), {}] for asset in assets or []])
+    assert "artefacts" in command.__dict__
+
+
 def test_release_command_manager(patches):
     command = DummyGithubReleaseCommand("CONTEXT")
     patched = patches(

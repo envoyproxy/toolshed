@@ -1,7 +1,8 @@
 
 import argparse
+import pathlib
 from functools import cached_property
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 
 import abstracts
 
@@ -15,6 +16,13 @@ from .manager import AGithubReleaseManager
 class AGithubReleaseCommand(
         command.AAsyncCommand,
         metaclass=abstracts.Abstraction):
+
+    @cached_property
+    def artefacts(self) -> Tuple[pathlib.Path, ...]:
+        return tuple(
+            pathlib.Path(asset)
+            for asset
+            in getattr(self.args, "assets", []))
 
     @cached_property
     def manager(self) -> AGithubReleaseManager:
