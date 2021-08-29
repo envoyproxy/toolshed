@@ -36,14 +36,15 @@ setup(
             "pytest-patches"],
         "lint": ['flake8'],
         "types": [
-            'mypy'],
+            'mypy',
+            "mypy-abstracts>=0.0.4"],
         "publish": ['wheel'],
     },
     install_requires=[
         "envoy.base.runner>=0.0.2",
         "envoy.base.command",
         "envoy.github.abstract>=0.0.9",
-        "envoy.github.release>=0.0.3",
+        "envoy.github.release==0.0.3",
     ],
     classifiers=[
         'Development Status :: 4 - Beta',

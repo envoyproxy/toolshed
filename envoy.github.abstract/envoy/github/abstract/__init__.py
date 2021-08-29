@@ -8,6 +8,7 @@ from .assets import (
     AssetsResultDict,
     AssetTypesDict)
 
+from .command import AGithubReleaseCommand
 from .exceptions import GithubReleaseError
 from .manager import AGithubReleaseManager
 from .release import AGithubRelease, ReleaseDict
@@ -19,6 +20,7 @@ __all__ = (
     "AGithubReleaseAssets",
     "AGithubReleaseAssetsPusher",
     "AGithubReleaseAssetsFetcher",
+    "AGithubReleaseCommand",
     "AGithubReleaseManager",
     "AGithubReleaseRunner",
     "AssetsAwaitableGenerator",
