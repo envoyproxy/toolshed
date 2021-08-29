@@ -2,7 +2,7 @@ import pathlib
 from functools import cached_property
 from typing import (
     Dict, Iterable,
-    List, Optional, Pattern, Set, Tuple, Type)
+    Optional, Pattern, Set, Tuple, Type)
 
 import verboselogs  # type:ignore
 
@@ -128,7 +128,7 @@ class GithubRelease:
 
     async def create(
             self,
-            assets: Optional[List[pathlib.Path]] = None) -> ReleaseDict:
+            assets: Optional[Iterable[pathlib.Path]] = None) -> ReleaseDict:
         results = ReleaseDict()
         if await self.exists:
             self.fail(f"Release {self.version_name} already exists")
