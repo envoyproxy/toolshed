@@ -2,4 +2,4 @@
 envoy.base.checker
 ==================
 
-Base checker for Envoy proxy's CI
+Checker definitions used in Envoy proxy's CI
