@@ -1,0 +1,21 @@
+
+## Envoy pytooling
+
+Python libraries, runners and checkers for Envoy proxy's CI
+
+### Packages
+
+{% for name, package in packages.items() %}
+#### [{{ name }}]({{ name }})
+
+version: {{ package.version }}
+{% if package.requires %}
+requirements:
+
+{% for requirement in package.requires.split("\n") %}
+{% if requirement %}
+- {{ requirement }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endfor %}
