@@ -2,4 +2,4 @@
 mypy-abstracts
 ==============
 
-mypy plugin to recognize classes decorated with ``abstracts.implementer``.
+Mypy plugin for abstracts lib
