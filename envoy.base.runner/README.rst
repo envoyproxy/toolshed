@@ -2,4 +2,4 @@
 envoy.base.runner
 =================
 
-Base runner for Envoy proxy's CI
+Runner definitions used in Envoy proxy's CI
