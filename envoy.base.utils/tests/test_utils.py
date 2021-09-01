@@ -88,7 +88,7 @@ def test_util_coverage_with_data_file(patches):
         "tempfile.TemporaryDirectory",
         "os.path.join",
         "open",
-        prefix="envoy.base.utils")
+        prefix="envoy.base.utils.utils")
 
     with patched as (m_config, m_tmp, m_join, m_open):
         with utils.coverage_with_data_file("PATH") as tmprc:
@@ -128,7 +128,7 @@ def test_util_extract(patches, tarballs):
         "nested",
         "pathlib",
         "tarfile.open",
-        prefix="envoy.base.utils")
+        prefix="envoy.base.utils.utils")
 
     with patched as (m_nested, m_plib, m_open):
         _extractions = [MagicMock(), MagicMock()]
@@ -174,7 +174,7 @@ def test_util_untar(patches, tarballs):
     patched = patches(
         "tempfile.TemporaryDirectory",
         "extract",
-        prefix="envoy.base.utils")
+        prefix="envoy.base.utils.utils")
 
     with patched as (m_tmp, m_extract):
         with utils.untar(*tarballs) as tmpdir:
@@ -192,7 +192,7 @@ def test_util_from_yaml(patches):
     patched = patches(
         "pathlib",
         "yaml",
-        prefix="envoy.base.utils")
+        prefix="envoy.base.utils.utils")
 
     with patched as (m_plib, m_yaml):
         assert utils.from_yaml("PATH") == m_yaml.safe_load.return_value
@@ -212,7 +212,7 @@ def test_util_to_yaml(patches):
     patched = patches(
         "pathlib",
         "yaml",
-        prefix="envoy.base.utils")
+        prefix="envoy.base.utils.utils")
 
     with patched as (m_plib, m_yaml):
         assert utils.to_yaml("DATA", "PATH") == m_plib.Path.return_value
@@ -238,3 +238,54 @@ def test_is_tarlike(patches, path):
             matches = True
             break
     assert utils.is_tarlike(path) == matches
+
+
+@pytest.mark.parametrize("text_length", range(0, 10))
+@pytest.mark.parametrize("max_length", range(5, 15))
+def test_ellipsize(text_length, max_length):
+    expected = (
+        "X" * text_length
+        if text_length <= max_length
+        else "{text}...".format(text="X" * (max_length - 3)))
+    assert (
+        utils.ellipsize("X" * text_length, max_length)
+        == expected)
+
+
+@pytest.mark.parametrize(
+    "casted",
+    [(), [], False, None, "", "X", ["Y"]])
+def test_typed(patches, casted):
+    patched = patches(
+        "trycast",
+        "ellipsize",
+        prefix="envoy.base.utils.utils")
+
+    class DummyValue:
+
+        def __str__(self):
+            return "VALUE"
+
+    value = DummyValue()
+
+    with patched as (m_try, m_elips):
+        m_try.return_value = casted
+
+        if casted is None:
+            with pytest.raises(TypeError) as e:
+                utils.typed("TYPE", value)
+
+            assert (
+                e.value.args[0]
+                == ("Value has wrong type or shape for Type "
+                    f"TYPE: {m_elips.return_value}"))
+            assert (
+                list(m_elips.call_args)
+                == [("VALUE", 10), {}])
+        else:
+            assert utils.typed("TYPE", value) == value
+            assert not m_elips.called
+
+    assert (
+        list(m_try.call_args)
+        == [("TYPE", value), {}])
