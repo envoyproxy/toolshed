@@ -11,7 +11,7 @@ from configparser import ConfigParser
 from contextlib import (
     ExitStack, contextmanager, redirect_stderr, redirect_stdout)
 from typing import (
-    Any, Callable, Iterator, List, Optional, Set, Type, Union)
+    Any, AsyncGenerator, Callable, Iterator, List, Optional, Set, Type, Union)
 
 import yaml
 
@@ -178,3 +178,17 @@ def typed(tocast: Type, value: Any) -> Any:
     raise TypeError(
         "Value has wrong type or shape for Type "
         f"{tocast}: {ellipsize(str(value), 10)}")
+
+
+async def async_list(
+        gen: AsyncGenerator,
+        filter: Optional[Callable] = None) -> List:
+    """Turn an async generator into a here and now list, with optional
+    filter
+    """
+    results = []
+    async for x in gen:
+        if filter and not filter(x):
+            continue
+        results.append(x)
+    return results

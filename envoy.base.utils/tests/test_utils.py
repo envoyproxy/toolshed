@@ -289,3 +289,24 @@ def test_typed(patches, casted):
     assert (
         list(m_try.call_args)
         == [("TYPE", value), {}])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("filter", [True, False])
+async def test_async_list(filter):
+
+    async def async_generator():
+        for x in range(0, 20):
+            yield x
+
+    kwargs = (
+        dict(filter=lambda x: ((x % 2) and x))
+        if filter
+        else {})
+    expected = (
+        [x for x in range(0, 20) if (x % 2)]
+        if filter
+        else list(range(0, 20)))
+    assert (
+        await utils.async_list(async_generator(), **kwargs)
+        == expected)
