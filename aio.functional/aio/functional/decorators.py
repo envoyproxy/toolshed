@@ -30,6 +30,9 @@ class async_property:  # noqa: N801
         self.__doc__ = getattr(fun, '__doc__')
         if fun and hasattr(fun, "__isabstractmethod__"):
             self.__isabstractmethod__ = fun.__isabstractmethod__  # type:ignore
+        if fun and hasattr(fun, "__isinterfacemethod__"):
+            self.__isinterfacemethod__ = (
+                fun.__isinterfacemethod__)  # type:ignore
 
     def __call__(self, fun: Callable) -> 'async_property':
         self._fun = fun
@@ -37,6 +40,9 @@ class async_property:  # noqa: N801
         self.__doc__ = getattr(fun, '__doc__')
         if hasattr(fun, "__isabstractmethod__"):
             self.__isabstractmethod__ = fun.__isabstractmethod__  # type:ignore
+        if hasattr(fun, "__isinterfacemethod__"):
+            self.__isinterfacemethod__ = (
+                fun.__isinterfacemethod__)  # type:ignore
         return self
 
     def __get__(self, instance: Any, cls=None) -> Any:

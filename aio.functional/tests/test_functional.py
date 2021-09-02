@@ -4,6 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
+import abstracts
+
 from aio import functional
 
 
@@ -136,7 +138,13 @@ async def test_functional_async_property_abstract(cache):
         async def prop(self):
             pass
 
+        @decorator
+        @abstracts.interfacemethod
+        async def iface_prop(self):
+            pass
+
     assert Klass.prop.__isabstractmethod__ is True
+    assert Klass.iface_prop.__isabstractmethod__ is True
 
 
 def test_functional_async_property_is_cached(cache):
