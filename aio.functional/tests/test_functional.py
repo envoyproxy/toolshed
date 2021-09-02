@@ -137,3 +137,26 @@ async def test_functional_async_property_abstract(cache):
             pass
 
     assert Klass.prop.__isabstractmethod__ is True
+
+
+def test_functional_async_property_is_cached(cache):
+    is_cached = functional.async_property.is_cached
+    cache_name = functional.async_property.cache_name
+
+    class Klass:
+        pass
+
+    obj = Klass()
+    assert not is_cached(obj, "FOO")
+    setattr(obj, cache_name, {})
+    assert not is_cached(obj, "FOO")
+    getattr(obj, cache_name)["BAR"] = 7
+    assert not is_cached(obj, "FOO")
+    getattr(obj, cache_name)["FOO"] = 23
+    assert is_cached(obj, "FOO")
+    getattr(obj, cache_name)["FOO"] = None
+    assert is_cached(obj, "FOO")
+    del getattr(obj, cache_name)["FOO"]
+    assert not is_cached(obj, "FOO")
+    delattr(obj, cache_name)
+    assert not is_cached(obj, "FOO")
