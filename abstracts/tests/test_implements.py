@@ -257,11 +257,19 @@ def test_implementer_get_interface_methods(patches):
             if prop_iface is not None:
                 self.__isinterfacemethod__ = prop_iface
 
+    class DummyClsGetter:
+
+        def __init__(self, cls_iface):
+            if cls_iface is not None:
+                self.__isinterfacemethod__ = cls_iface
+
     class DummyProperty:
 
-        def __init__(self, is_iface, amprop, prop_iface):
+        def __init__(self, is_iface, amprop, amcls, prop_iface, cls_iface):
             self.amprop = amprop
+            self.amcls = amcls
             self.prop_iface = prop_iface
+            self.cls_iface = cls_iface
             if is_iface is not None:
                 self.__isinterfacemethod__ = is_iface
 
@@ -269,22 +277,36 @@ def test_implementer_get_interface_methods(patches):
         def fget(self):
             return DummyPropertyGetter(self.prop_iface)
 
+        @property
+        def __func__(self):
+            return DummyClsGetter(self.cls_iface)
+
     def mock_isinstance(item, klass):
-        return item.amprop
+        if klass == property:
+            return item.amprop
+        return item.amcls
 
     amprop = [True, False]
+    amcls = [True, False]
     prop_iface = [None, True, False]
+    cls_iface = [None, True, False]
     is_iface = [None, True, False]
     prop_values = []
     expected = []
     i = 0
     for v1 in is_iface:
         for v2 in amprop:
-            for v3 in prop_iface:
-                if v1 or (v2 and v3):
-                    expected.append(i)
-                prop_values.append((v1, v2, v3))
-                i += 1
+            for v3 in amcls:
+                for v4 in prop_iface:
+                    for v5 in cls_iface:
+                        _expected = (
+                            v1
+                            or (v2 and v4)
+                            or (v3 and v5))
+                        if _expected:
+                            expected.append(i)
+                        prop_values.append((v1, v2, v3, v4, v5))
+                        i += 1
     props = {
         f"ITEM{i}": DummyProperty(*args)
         for i, args in enumerate(prop_values)}

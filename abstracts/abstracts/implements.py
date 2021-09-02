@@ -159,7 +159,9 @@ class Implementer(type):
             k for k, v in clsdict.items()
             if (isinstance(v, property)
                 and getattr(v.fget, "__isinterfacemethod__", False))
-            or getattr(v, "__isinterfacemethod__", False))
+            or getattr(v, "__isinterfacemethod__", False)
+            or (isinstance(v, classmethod)
+                and getattr(v.__func__, "__isinterfacemethod__", False)))
 
     @classmethod
     def get_interfaces(
