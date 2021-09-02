@@ -1,4 +1,5 @@
 
+from .exceptions import TypeCastingError
 from .utils import (
     async_list,
     buffered,
@@ -30,4 +31,5 @@ __all__ = (
     "typed",
     "untar",
     "TAR_EXTS",
-    "to_yaml")
+    "to_yaml",
+    "TypeCastingError")

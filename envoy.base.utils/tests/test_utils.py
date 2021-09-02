@@ -272,7 +272,7 @@ def test_typed(patches, casted):
         m_try.return_value = casted
 
         if casted is None:
-            with pytest.raises(TypeError) as e:
+            with pytest.raises(utils.TypeCastingError) as e:
                 utils.typed("TYPE", value)
 
             assert (

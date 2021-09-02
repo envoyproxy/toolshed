@@ -15,7 +15,9 @@ from typing import (
 
 import yaml
 
-import trycast  # type:ignore
+from trycast import trycast  # type:ignore
+
+from .exceptions import TypeCastingError
 
 
 # See here for a list of known tar file extensions:
@@ -175,7 +177,7 @@ def typed(tocast: Type, value: Any) -> Any:
 
     if trycast(tocast, value) is not None:
         return value
-    raise TypeError(
+    raise TypeCastingError(
         "Value has wrong type or shape for Type "
         f"{tocast}: {ellipsize(str(value), 10)}")
 
