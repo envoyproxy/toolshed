@@ -21,6 +21,7 @@ jobs:
         - envoy.dependency.pip_check
         - envoy.distribution.distrotest
         - envoy.distribution.release
+        - envoy.distribution.repo
         - envoy.distribution.verify
         - envoy.github.abstract
         - envoy.github.release
@@ -105,6 +106,7 @@ jobs:
         - envoy.docker.utils
         - envoy.distribution.distrotest
         - envoy.distribution.release
+        - envoy.distribution.repo
         - envoy.distribution.verify
         - envoy.github.abstract
         - envoy.github.release
