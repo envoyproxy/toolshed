@@ -19,7 +19,10 @@ class RepoBuildingRunner:
     @property
     def archive(self) -> Optional[pathlib.Path]:
         """File path to archive the built repositories to"""
-        return pathlib.Path(self.args.archive)
+        return (
+            pathlib.Path(self.args.archive)
+            if self.args.archive
+            else None)
 
     @property
     def packages(self) -> Tuple[pathlib.Path, ...]:

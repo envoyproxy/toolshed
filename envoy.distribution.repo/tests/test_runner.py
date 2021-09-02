@@ -11,7 +11,8 @@ def test_runner_constructor():
     assert isinstance(runner, repo.ARepoBuildingRunner)
 
 
-def test_runner_archive(patches):
+@pytest.mark.parametrize("archive", [None, "ARCHIVE"])
+def test_runner_archive(patches, archive):
     runner = repo.RepoBuildingRunner()
     patched = patches(
         "pathlib",
@@ -20,12 +21,18 @@ def test_runner_archive(patches):
         prefix="envoy.distribution.repo.runner")
 
     with patched as (m_plib, m_args):
-        assert runner.archive == m_plib.Path.return_value
-
-    assert (
-        list(m_plib.Path.call_args)
-        == [(m_args.return_value.archive, ), {}])
-
+        m_args.return_value.archive = archive
+        assert (
+            runner.archive
+            == (m_plib.Path.return_value
+                if archive
+                else None))
+    if not archive:
+        assert not m_plib.Path.called
+    else:
+        assert (
+            list(m_plib.Path.call_args)
+            == [(m_args.return_value.archive, ), {}])
     assert "archive" not in runner.__dict__
 
 
