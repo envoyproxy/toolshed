@@ -15,9 +15,6 @@ from .abstract import ARepoManager
 from .exceptions import RepoError
 
 
-APTLY_COMMAND = "external/com_github_aptly_dev_aptly/aptly_/aptly"
-
-
 class DebRepoError(RepoError):
     pass
 
@@ -98,10 +95,14 @@ class DebRepoManager:
 
     @cached_property
     def aptly_command(self) -> pathlib.Path:
-        breakpoint()
-        command = pathlib.Path(self._aptly_command or APTLY_COMMAND)
+        command = self._aptly_command or which("aptly")
+        if not command:
+            raise DebRepoError(
+                f"Unable to find aptly command, and none provided")
+        command = pathlib.Path(command)
         if not command.exists():
-            raise DebRepoError(f"Unable to find aptly command: {command}")
+            raise DebRepoError(
+                f"Unable to find aptly command: {command}")
         return command
 
     @cached_property
