@@ -98,6 +98,7 @@ class DebRepoManager:
 
     @cached_property
     def aptly_command(self) -> pathlib.Path:
+        breakpoint()
         command = pathlib.Path(self._aptly_command or APTLY_COMMAND)
         if not command.exists():
             raise DebRepoError(f"Unable to find aptly command: {command}")
