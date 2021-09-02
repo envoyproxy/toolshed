@@ -125,9 +125,9 @@ class DebRepoManager:
                 "repo", "create",
                 f"-distribution=\"{distro}\"",
                 "-component=main",
-                distro)).split("\n")[0])
+                distro)))
         breakpoint()
-        self.log.success(result)
+        self.log.success(result.split("\n")[0])
 
     async def create_snapshot(self, distro: str) -> None:
         if await self.snapshot_exists(distro):
