@@ -13,6 +13,7 @@ jobs:
         - aio.stream
         - aio.subprocess
         - aio.tasks
+        - aio.wrapper
         - envoy.base.checker
         - envoy.abstract.command
         - envoy.base.runner
@@ -97,6 +98,7 @@ jobs:
         - aio.subprocess
         - aio.stream
         - aio.tasks
+        - aio.wrapper
         - envoy.base.checker
         - envoy.abstract.command
         - envoy.base.runner
