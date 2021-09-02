@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import pathlib
+import shutil
 from functools import cached_property
 from itertools import chain
 from typing import List, Set, Tuple
@@ -95,7 +96,7 @@ class DebRepoManager:
 
     @cached_property
     def aptly_command(self) -> pathlib.Path:
-        command = self._aptly_command or which("aptly")
+        command = self._aptly_command or shutil.which("aptly")
         if not command:
             raise DebRepoError(
                 f"Unable to find aptly command, and none provided")
