@@ -120,12 +120,14 @@ class DebRepoManager:
         if await self.distro_exists(distro):
             await self.drop_distro(distro)
         self.log.notice(f"Creating deb distribution: {distro}")
-        self.log.success(
+        result = (
             (await self.aptly(
                 "repo", "create",
                 f"-distribution=\"{distro}\"",
                 "-component=main",
                 distro)).split("\n")[0])
+        breakpoint()
+        self.log.success(result)
 
     async def create_snapshot(self, distro: str) -> None:
         if await self.snapshot_exists(distro):
