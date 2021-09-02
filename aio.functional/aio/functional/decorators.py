@@ -15,6 +15,12 @@ class async_property:  # noqa: N801
     cache_name = "__async_prop_cache__"
     _instance = None
 
+    @classmethod
+    def is_cached(cls, item: object, name: str) -> bool:
+        return (
+            hasattr(item, cls.cache_name)
+            and name in getattr(item, cls.cache_name))
+
     # If the decorator is called with `kwargs` then `fun` is `None`
     # and instead `__call__` is triggered with `fun`
     def __init__(self, fun: Optional[Callable] = None, cache: bool = False):
