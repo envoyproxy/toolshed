@@ -1,5 +1,6 @@
 
 from .utils import (
+    async_list,
     buffered,
     BufferUtilError,
     ellipsize,
@@ -16,6 +17,7 @@ from .utils import (
 
 
 __all__ = (
+    "async_list",
     "buffered",
     "BufferUtilError",
     "ellipsize",
