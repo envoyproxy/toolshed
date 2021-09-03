@@ -11,7 +11,8 @@ from configparser import ConfigParser
 from contextlib import (
     ExitStack, contextmanager, redirect_stderr, redirect_stdout)
 from typing import (
-    Any, AsyncGenerator, Callable, Iterator, List, Optional, Set, Type, Union)
+    Any, AsyncGenerator, Callable, Generator,
+    Iterator, List, Optional, Set, Type, Union)
 
 import yaml
 
@@ -194,3 +195,17 @@ async def async_list(
             continue
         results.append(x)
     return results
+
+
+@contextmanager
+def cd_and_return(
+        path: Union[pathlib.Path, str]) -> Generator[None, None, None]:
+    """Changes working directory to given path and returns to previous
+    working directory on exit
+    """
+    prev_cwd = pathlib.Path.cwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(prev_cwd)

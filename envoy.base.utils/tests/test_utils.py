@@ -1,4 +1,5 @@
 import importlib
+import pathlib
 import sys
 from contextlib import contextmanager
 from unittest.mock import MagicMock
@@ -310,3 +311,14 @@ async def test_async_list(filter):
     assert (
         await utils.async_list(async_generator(), **kwargs)
         == expected)
+
+
+@pytest.mark.parametrize("path", ["/tmp", pathlib.Path("/tmp")])
+def test_cd_and_return(path):
+    cwd = pathlib.Path.cwd()
+
+    with utils.cd_and_return(path):
+        assert pathlib.Path.cwd() != cwd
+        assert pathlib.Path.cwd() == pathlib.Path("/tmp")
+
+    assert pathlib.Path.cwd() == cwd
