@@ -1,4 +1,5 @@
 
+from .abstract import ABazelQuery, BazelQueryError
 from .exceptions import TypeCastingError
 from .utils import (
     async_list,
@@ -19,7 +20,9 @@ from .utils import (
 
 
 __all__ = (
+    "ABazelQuery",
     "async_list",
+    "BazelQueryError",
     "buffered",
     "BufferUtilError",
     "cd_and_return",
