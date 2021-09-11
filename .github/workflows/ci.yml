@@ -17,6 +17,7 @@ jobs:
         - envoy.abstract.command
         - envoy.base.runner
         - envoy.base.utils
+        - envoy.code_format.python_check
         - envoy.docker.utils
         - envoy.dependency.pip_check
         - envoy.distribution.distrotest
@@ -102,6 +103,7 @@ jobs:
         - envoy.abstract.command
         - envoy.base.runner
         - envoy.base.utils
+        - envoy.code_format.python_check
         - envoy.dependency.pip_check
         - envoy.docker.utils
         - envoy.distribution.distrotest
