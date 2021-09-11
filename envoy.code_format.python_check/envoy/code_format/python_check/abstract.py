@@ -66,7 +66,7 @@ class APythonChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
     @property
     def yapf_files(self) -> List[str]:
         return yapf.file_resources.GetCommandLineFiles(
-            self.args.paths or [self.path],
+            self.args.paths or [str(self.path)],
             recursive=self.recurse,
             exclude=yapf.file_resources.GetExcludePatternsForDir(
                 str(self.path)))
