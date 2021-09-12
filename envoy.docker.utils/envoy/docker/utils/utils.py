@@ -18,7 +18,7 @@ async def _build_image(
         buildargs: Optional[dict] = None,
         stream: Optional[Callable] = None,
         **kwargs) -> None:
-    """Docker image builder
+    """Docker image builder.
 
     if a `stream` callable arg is supplied, logs are output there.
 
@@ -48,8 +48,8 @@ async def _build_image(
 
 
 async def build_image(*args, **kwargs) -> None:
-    """Creates a Docker context by tarballing a directory, and then building
-    an image with it
+    """Creates a Docker context by tarballing a directory, and then building an
+    image with it.
 
     aiodocker doesn't provide an in-built way to build docker images from a
     directory, only a file, so you can't include artefacts.
@@ -85,7 +85,7 @@ async def build_image(*args, **kwargs) -> None:
 @asynccontextmanager
 async def docker_client(
         url: Optional[str] = "") -> AsyncIterator[aiodocker.Docker]:
-    """Aiodocker client
+    """Aiodocker client.
 
     For example to dump the docker image data:
 

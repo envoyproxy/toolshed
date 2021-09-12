@@ -44,7 +44,7 @@ class ContainerError(Exception):
 
 
 class DistroTestConfig(object):
-    """Configuration object for distro tests
+    """Configuration object for distro tests.
 
     This holds the configuration (and Docker connect) across a batch of tests.
 
@@ -102,34 +102,33 @@ class DistroTestConfig(object):
 
     @cached_property
     def config_path(self) -> pathlib.Path:
-        """Path to a test configuration file"""
+        """Path to a test configuration file."""
         return pathlib.Path(self._config_path or DISTROTEST_CONFIG_PATH)
 
     @cached_property
     def ctx_dockerfile(self) -> pathlib.Path:
-        """Path to the Dockerfile in the Docker context"""
+        """Path to the Dockerfile in the Docker context."""
         return self.path.joinpath("Dockerfile")
 
     @cached_property
     def ctx_keyfile(self) -> pathlib.Path:
-        """Path to the keyfile in the Docker context"""
+        """Path to the keyfile in the Docker context."""
         return self.path.joinpath(self._keyfile.name)
 
     @cached_property
     def rel_ctx_packages(self) -> pathlib.Path:
         """Path to the directory (in the Docker context) containing packages to
-        test
-        """
+        test."""
         return self.path.joinpath(self.packages_name)
 
     @cached_property
     def ctx_testfile(self) -> pathlib.Path:
-        """Path to the testfile in the Docker context"""
+        """Path to the testfile in the Docker context."""
         return self.path.joinpath(self._testfile.name)
 
     @cached_property
     def images(self) -> dict:
-        """Mapping of images -> ext/types
+        """Mapping of images -> ext/types.
 
         eg `debian` -> type=`deb` ext=`changes`
            `registry.access.redhat.com/ubi8/ubi` -> type=`rpm` ext=`rpm`
@@ -137,7 +136,6 @@ class DistroTestConfig(object):
         for each image:
           - the `type` is used to find the directory of packages.
           - the `ext` is used to find packages within the directory.
-
         """
         return dict(
             chain.from_iterable(((image, dict(type=k, ext=v["ext"]))
@@ -146,12 +144,12 @@ class DistroTestConfig(object):
 
     @cached_property
     def install_img_path(self) -> pathlib.PurePosixPath:
-        """Path to the install directory within the image/container"""
+        """Path to the install directory within the image/container."""
         return pathlib.PurePosixPath("/tmp/install")
 
     @cached_property
     def keyfile(self) -> pathlib.Path:
-        """Path to the keyfile in the Docker context
+        """Path to the keyfile in the Docker context.
 
         Copies the keyfile to the path on first access.
         """
@@ -162,8 +160,7 @@ class DistroTestConfig(object):
     @cached_property
     def keyfile_img_path(self) -> pathlib.PurePosixPath:
         """Path to the public key of the key used to sign the packages, inside
-        the Docker image/container
-        """
+        the Docker image/container."""
         return pathlib.PurePosixPath("/tmp/gpg/signing.key")
 
     @cached_property
@@ -177,7 +174,7 @@ class DistroTestConfig(object):
 
     @cached_property
     def testfile(self) -> pathlib.Path:
-        """Path to the testfile in the Docker context
+        """Path to the testfile in the Docker context.
 
         Copies the testfile to the path on first access.
         """
@@ -187,11 +184,11 @@ class DistroTestConfig(object):
 
     @cached_property
     def testfile_img_path(self) -> pathlib.PurePosixPath:
-        """Path to the testfile within the image/container"""
+        """Path to the testfile within the image/container."""
         return pathlib.PurePosixPath("/tmp").joinpath(self.testfile.name)
 
     def get_config(self, image: str) -> dict:
-        """Return the type/ext config for a particular image
+        """Return the type/ext config for a particular image.
 
         If the full image name - ie `image:tag` is provided, the `tag` is
         removed.
@@ -199,17 +196,16 @@ class DistroTestConfig(object):
         return self.images[self.get_image_name(image)]
 
     def get_image_name(self, image: str) -> str:
-        """Get the image part of a full Docker image tag
-        eg `debian:buster-slim` -> `debian`.
-        """
+        """Get the image part of a full Docker image tag eg `debian:buster-
+        slim` -> `debian`."""
         return image.split(":")[0]
 
     def get_package_type(self, image: str) -> str:
-        """Get the package type for a particular image
-        eg `debian:buster-slim` will resolve to `deb`
+        """Get the package type for a particular image eg `debian:buster-slim`
+        will resolve to `deb`
 
-        If it cannot resolve a type from the configuration in `distrotest.yaml`
-        it raises a `ConfigurationError`
+        If it cannot resolve a type from the configuration in
+        `distrotest.yaml` it raises a `ConfigurationError`
         """
         image = self.get_image_name(image)
         for k, v in self.items():
@@ -218,7 +214,7 @@ class DistroTestConfig(object):
         raise ConfigurationError(f"Unrecognized image: {image}")
 
     def get_packages(self, type: str, ext: str) -> List[pathlib.Path]:
-        """List of packages of a given type/ext found for testing"""
+        """List of packages of a given type/ext found for testing."""
         return list(self.packages_dir.joinpath(type).glob(f"*.{ext}"))
 
     def items(self):
@@ -226,7 +222,7 @@ class DistroTestConfig(object):
 
 
 class DistroTestImage(object):
-    """A Docker image for running tests
+    """A Docker image for running tests.
 
     The image is installed with some basic utilities for testing.
 
@@ -262,12 +258,12 @@ class DistroTestImage(object):
 
     @property
     def build_command(self) -> str:
-        """Command to build the Docker image"""
+        """Command to build the Docker image."""
         return self.config["build"]["command"].strip().replace("\n", " && ")
 
     @cached_property
     def config(self) -> dict:
-        """Config specific to this type of Docker image"""
+        """Config specific to this type of Docker image."""
         return self.test_config[self.package_type]
 
     @property
@@ -276,7 +272,7 @@ class DistroTestImage(object):
 
     @property
     def ctx_install_dir(self) -> pathlib.Path:
-        """Directory containing packages
+        """Directory containing packages.
 
         *relative to the Docker context root*
         """
@@ -288,7 +284,7 @@ class DistroTestImage(object):
 
     @cached_property
     def dockerfile(self) -> str:
-        """The contents of the build Dockerfile"""
+        """The contents of the build Dockerfile."""
         return self.dockerfile_template.format(
             build_image=self.build_image,
             env=self.env,
@@ -302,7 +298,7 @@ class DistroTestImage(object):
 
     @property
     def dockerfile_template(self) -> str:
-        """Dockerfile template"""
+        """Dockerfile template."""
         return DOCKERFILE_TEMPLATE
 
     @property
@@ -337,12 +333,12 @@ class DistroTestImage(object):
 
     @property
     def prefix(self) -> str:
-        """Prefix for the Docker image name that we be built"""
+        """Prefix for the Docker image name that we be built."""
         return DOCKER_IMAGE_PREFIX
 
     @cached_property
     def tag(self) -> str:
-        """Tag for the Docker test image build"""
+        """Tag for the Docker test image build."""
         return f"{self.prefix}{self.name}:latest"
 
     @property
@@ -354,12 +350,12 @@ class DistroTestImage(object):
         return self.test_config.testfile_img_path
 
     def add_dockerfile(self) -> None:
-        """Add the Dockerfile for the test Docker image"""
+        """Add the Dockerfile for the test Docker image."""
         self.stream(self.dockerfile)
         self.ctx_dockerfile.write_text(self.dockerfile)
 
     async def build(self) -> None:
-        """Build the Docker image for the test"""
+        """Build the Docker image for the test."""
         self.add_dockerfile()
         try:
             await docker_utils.build_image(
@@ -372,7 +368,7 @@ class DistroTestImage(object):
             raise BuildError(e.args[0])
 
     async def exists(self) -> bool:
-        """Check if the Docker image exists already for the distribution"""
+        """Check if the Docker image exists already for the distribution."""
         return self.tag in await self.images()
 
     def get_environment(
@@ -381,7 +377,7 @@ class DistroTestImage(object):
             package_name: str,
             name: str) -> dict:
         """Creates a dictionary of environment variables that are injected when
-        the test is `exec`ed
+        the test is `exec`ed.
 
         Defaults are added from the global test configuration
         (ie `distrotest.yaml`), the package `ext` can be overridden by the
@@ -418,7 +414,7 @@ class DistroTestImage(object):
             if "binary_name" in self.config else package)
 
     async def images(self) -> Iterable[str]:
-        """The currently built Docker image tag names"""
+        """The currently built Docker image tag names."""
         return chain.from_iterable(
             [image["RepoTags"]
              for image
@@ -427,7 +423,7 @@ class DistroTestImage(object):
     def installable_img_path(
             self,
             package_filename: str) -> pathlib.PurePosixPath:
-        """Path to a package inside the container"""
+        """Path to a package inside the container."""
         return self.install_img_path.joinpath(package_filename)
 
     def stream(self, msg: str) -> None:
@@ -436,7 +432,7 @@ class DistroTestImage(object):
 
 
 class DistroTest(object):
-    """A distribution <> package test
+    """A distribution <> package test.
 
     The test image is only built if it does not exist already.
 
@@ -469,18 +465,18 @@ class DistroTest(object):
 
     @property
     def config(self) -> dict:
-        """Docker container config"""
+        """Docker container config."""
         # Dont use `AutoRemove` as we want the logs from failed containers
         return dict(Image=self.image.tag)
 
     @property
     def docker(self) -> aiodocker.Docker:
-        """aiodocker.Docker connection"""
+        """aiodocker.Docker connection."""
         return self.test_config.docker
 
     @property
     def environment(self) -> dict:
-        """Docker exec environment for the test"""
+        """Docker exec environment for the test."""
         return self.image.get_environment(
             self.installable.name,
             self.package_name,
@@ -488,32 +484,29 @@ class DistroTest(object):
 
     @property
     def errors(self) -> dict:
-        """Dictionary of test errors stored on the provided Checker"""
+        """Dictionary of test errors stored on the provided Checker."""
         return self.checker.errors
 
     @property
     def exiting(self) -> bool:
         """Flag to indicate that the program is exiting due to
-        `KeyboardInterrupt`
-        """
+        `KeyboardInterrupt`"""
         return self.checker.exiting
 
     @property
     def failed(self) -> bool:
-        """Flag to indicate whether there are test failures from running
-        the test inside the container
-        """
+        """Flag to indicate whether there are test failures from running the
+        test inside the container."""
         return len(self.failures) > 0
 
     @property
     def failures(self) -> list:
-        """List of test failures from running the test inside the container
-        """
+        """List of test failures from running the test inside the container."""
         return self._failures
 
     @cached_property
     def image(self) -> DistroTestImage:
-        """A Docker image used for testing that can be built if required"""
+        """A Docker image used for testing that can be built if required."""
         return self.image_class(
             self.test_config,
             self.build_image,
@@ -526,12 +519,12 @@ class DistroTest(object):
 
     @property
     def log(self) -> verboselogs.VerboseLogger:
-        """A logger to send progress information to"""
+        """A logger to send progress information to."""
         return self.checker.log
 
     @cached_property
     def name(self) -> str:
-        """The name of the Docker container used to test"""
+        """The name of the Docker container used to test."""
         return f"{self.prefix}{self.distro}"
 
     @cached_property
@@ -543,26 +536,26 @@ class DistroTest(object):
 
     @property
     def prefix(self) -> str:
-        """Prefix for the container name"""
+        """Prefix for the container name."""
         return DOCKER_CONTAINER_PREFIX
 
     @property
     def stdout(self) -> logging.Logger:
-        """A logger for raw logging"""
+        """A logger for raw logging."""
         return self.checker.stdout
 
     @property
     def test_cmd(self) -> tuple:
-        """The test command to run inside the test container"""
+        """The test command to run inside the test container."""
         return (str(self.test_config.testfile_img_path),)
 
     @property
     def testfile(self) -> pathlib.Path:
-        """Path to the testfile"""
+        """Path to the testfile."""
         return self.test_config.testfile
 
     async def build(self) -> None:
-        """Build the Docker image for the test if required"""
+        """Build the Docker image for the test if required."""
         if not self.rebuild and await self.image.exists():
             return
         self.run_log("Building image", msg_type="notice")
@@ -581,7 +574,7 @@ class DistroTest(object):
             return
 
     async def create(self) -> aiodocker.containers.DockerContainer:
-        """Create a Docker container for the test"""
+        """Create a Docker container for the test."""
         return await self.docker.containers.create_or_replace(
             config=self.config,
             name=self.name)
@@ -589,7 +582,7 @@ class DistroTest(object):
     async def exec(
             self,
             container: aiodocker.containers.DockerContainer) -> None:
-        """Run Docker `exec` with the test"""
+        """Run Docker `exec` with the test."""
         execute = await container.exec(
             self.test_cmd,
             environment=self.environment)
@@ -618,14 +611,14 @@ class DistroTest(object):
             self.handle_test_output(_out)
 
     def error(self, errors: Optional[Iterable[str]]) -> int:
-        """Fail a test and log the errors"""
+        """Fail a test and log the errors."""
         return self.checker.error(self.checker.active_check, errors)
 
     def handle_test_error(self, msg: str) -> None:
-        """Handle a test error
+        """Handle a test error.
 
-        Any "control" lines in the test that contain `ERROR` will cause the
-        test to fail and any additional lines are output to stderr.
+        Any "control" lines in the test that contain `ERROR` will cause
+        the test to fail and any additional lines are output to stderr.
         """
         # testrun is eg `debian_buster/envoy-1.19`
         # testname is eg `proxy-responds`
@@ -642,7 +635,7 @@ class DistroTest(object):
             self.stdout.error(_msg[1])
 
     def handle_test_output(self, msg: str) -> None:
-        """Handle and log stream from test container
+        """Handle and log stream from test container.
 
         If the message startswith eg `[debian_buster/envoy-19` then treat the
         message as a control message, otherwise log directly to stdout.
@@ -673,7 +666,7 @@ class DistroTest(object):
         self.handle_test_error(msg)
 
     def log_failures(self) -> None:
-        """Log a failure summary of a test"""
+        """Log a failure summary of a test."""
         if not self.failed:
             return
         self.run_log(
@@ -685,14 +678,13 @@ class DistroTest(object):
             self,
             container: aiodocker.containers.DockerContainer) -> str:
         """Return the concatenated container logs, only called if the container
-        fails to start
-        """
+        fails to start."""
         return ''.join(await container.log(stdout=True, stderr=True))
 
     async def on_test_complete(
             self, container: Optional[aiodocker.containers.DockerContainer],
             failed: bool) -> Optional[Tuple[str]]:
-        """Stop the container and record the results"""
+        """Stop the container and record the results."""
         self.log_failures()
         await self.stop(container)
         if not (failed or self.failed):
@@ -713,25 +705,26 @@ class DistroTest(object):
             message: str,
             msg_type: str = "info",
             test: Optional[str] = None) -> None:
-        """Log a message with test prefix"""
+        """Log a message with test prefix."""
         getattr(self.log, msg_type)(self.run_message(message, test=test))
 
     def run_message(self, message: str, test: Optional[str] = None) -> str:
-        """A log message with relevant test prefix"""
+        """A log message with relevant test prefix."""
         return (
             f"[{self.distro}/{test}] {message}"
             if test
             else f"[{self.distro}] {message}")
 
     async def start(self) -> aiodocker.containers.DockerContainer:
-        """Start and return the test container, error if it fails to start"""
+        """Start and return the test container, error if it fails to start."""
         container = await self.create()
         await container.start()
         info = await container.show()
         if not info["State"]["Running"]:
+            logs = await self.logs(container)
             raise ContainerError(
                 self.run_message(
-                    f"Container unable to start\n{await self.logs(container)}",
+                    f"Container unable to start\n{logs}",
                     test=self.package_name))
         self.run_log("Container started", test=self.package_name)
         return container
@@ -740,7 +733,7 @@ class DistroTest(object):
             self,
             container: Optional[
                 aiodocker.containers.DockerContainer] = None) -> None:
-        """Stop the test container"""
+        """Stop the test container."""
         if not container:
             return
         await container.kill()

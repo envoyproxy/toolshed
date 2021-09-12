@@ -35,8 +35,8 @@ class ExtractError(Exception):
 # this is testing specific - consider moving to tools.testing.utils
 @contextmanager
 def coverage_with_data_file(data_file: str) -> Iterator[str]:
-    """This context manager takes the path of a data file
-    and creates a custom coveragerc with the data file path included.
+    """This context manager takes the path of a data file and creates a custom
+    coveragerc with the data file path included.
 
     The context is yielded the path to the custom rc file.
     """
@@ -66,7 +66,7 @@ def buffered(
         stdout: list = None,
         stderr: list = None,
         mangle: Optional[Callable[[list], list]] = None) -> Iterator[None]:
-    """Captures stdout and stderr and feeds lines to supplied lists"""
+    """Captures stdout and stderr and feeds lines to supplied lists."""
 
     mangle = mangle or (lambda lines: lines)
 
@@ -111,7 +111,7 @@ def extract(
 
 @contextmanager
 def untar(*tarballs: Union[pathlib.Path, str]) -> Iterator[pathlib.Path]:
-    """Untar a tarball into a temporary directory
+    """Untar a tarball into a temporary directory.
 
     for example to list the contents of a tarball:
 
@@ -128,7 +128,6 @@ def untar(*tarballs: Union[pathlib.Path, str]) -> Iterator[pathlib.Path]:
 
     the created temp directory will be cleaned up on
     exiting the contextmanager
-
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         yield extract(tmpdir, *tarballs)
@@ -163,15 +162,14 @@ def is_tarlike(path: Union[pathlib.Path, str]) -> bool:
 
 def ellipsize(text: str, max_len: int) -> str:
     """Truncate strings to a given length with an ellipsis suffix where
-    required
-    """
+    required."""
     if len(text) <= max_len:
         return text
     return f"{text[:max_len - 3]}..."
 
 
 def typed(tocast: Type, value: Any) -> Any:
-    """Attempts to cast a value to a given type, TypeVar, or TypeDict
+    """Attempts to cast a value to a given type, TypeVar, or TypeDict.
 
     raises TypeError if cast value is `None`
     """
@@ -187,8 +185,7 @@ async def async_list(
         gen: AsyncGenerator,
         filter: Optional[Callable] = None) -> List:
     """Turn an async generator into a here and now list, with optional
-    filter
-    """
+    filter."""
     results = []
     async for x in gen:
         if filter and not filter(x):
@@ -200,9 +197,8 @@ async def async_list(
 @contextmanager
 def cd_and_return(
         path: Union[pathlib.Path, str]) -> Generator[None, None, None]:
-    """Changes working directory to given path and returns to previous
-    working directory on exit
-    """
+    """Changes working directory to given path and returns to previous working
+    directory on exit."""
     prev_cwd = pathlib.Path.cwd()
     try:
         os.chdir(path)

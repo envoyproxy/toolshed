@@ -15,10 +15,10 @@ class GPGError(Exception):
 
 
 class GPGIdentity(object):
-    """A GPG identity with a signing key
+    """A GPG identity with a signing key.
 
-    The signing key is found either by matching provided name/email,
-    or by retrieving the first private key.
+    The signing key is found either by matching provided name/email, or
+    by retrieving the first private key.
     """
 
     def __init__(
@@ -35,12 +35,12 @@ class GPGIdentity(object):
 
     @cached_property
     def email(self) -> str:
-        """Email parsed from the signing key"""
+        """Email parsed from the signing key."""
         return parseaddr(self.uid)[1]
 
     @property
     def fingerprint(self) -> str:
-        """GPG key fingerprint"""
+        """GPG key fingerprint."""
         return self.signing_key["fingerprint"]
 
     @cached_property
@@ -58,7 +58,7 @@ class GPGIdentity(object):
 
     @cached_property
     def home(self) -> pathlib.Path:
-        """Gets *and sets if required* the `HOME` env var"""
+        """Gets *and sets if required* the `HOME` env var."""
         home_dir = os.environ.get("HOME", pwd.getpwuid(os.getuid()).pw_dir)
         os.environ["HOME"] = home_dir
         return pathlib.Path(home_dir)
@@ -69,12 +69,12 @@ class GPGIdentity(object):
 
     @property
     def provided_email(self) -> str:
-        """Provided email for the identity"""
+        """Provided email for the identity."""
         return self._provided_email or ""
 
     @cached_property
     def provided_id(self) -> Optional[str]:
-        """Provided name and/or email for the identity"""
+        """Provided name and/or email for the identity."""
         if not (self.provided_name or self.provided_email):
             return None
         return (
@@ -84,17 +84,17 @@ class GPGIdentity(object):
 
     @property
     def provided_name(self) -> Optional[str]:
-        """Provided name for the identity"""
+        """Provided name for the identity."""
         return self._provided_name
 
     @cached_property
     def name(self) -> str:
-        """Name parsed from the signing key"""
+        """Name parsed from the signing key."""
         return parseaddr(self.uid)[0]
 
     @cached_property
     def signing_key(self) -> dict:
-        """A `dict` representing the GPG key to sign with"""
+        """A `dict` representing the GPG key to sign with."""
         # if name and/or email are provided the list of keys is pre-filtered
         # but we still need to figure out which uid matched for the found key
         for key in self.gpg.list_keys(True, keys=self.provided_id):
@@ -108,11 +108,11 @@ class GPGIdentity(object):
 
     @property
     def uid(self) -> str:
-        """UID of the identity's signing key"""
+        """UID of the identity's signing key."""
         return self.signing_key["uid"]
 
     def match(self, key: dict) -> Optional[dict]:
-        """Match a signing key
+        """Match a signing key.
 
         The key is found either by matching provided name/email
         or the first available private key
@@ -129,15 +129,14 @@ class GPGIdentity(object):
         return key
 
     def _match_email(self, uids: Iterable) -> Optional[str]:
-        """Match only the email"""
+        """Match only the email."""
         for uid in uids:
             if parseaddr(uid)[1] == self.provided_email:
                 return uid
 
     def _match_key(self, uids: Iterable) -> Optional[str]:
         """If either/both name or email are supplied it tries to match
-        either/both
-        """
+        either/both."""
         if self.provided_name and self.provided_email:
             return self._match_uid(uids)
         elif self.provided_name:
@@ -146,7 +145,7 @@ class GPGIdentity(object):
             return self._match_email(uids)
 
     def _match_name(self, uids: Iterable) -> Optional[str]:
-        """Match only the name"""
+        """Match only the name."""
         for uid in uids:
             if parseaddr(uid)[0] == self.provided_name:
                 return uid

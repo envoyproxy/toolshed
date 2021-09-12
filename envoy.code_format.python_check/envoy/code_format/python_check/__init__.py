@@ -9,5 +9,5 @@ __all__ = (
     "APythonChecker",
     "cmd",
     "main",
-    "PipConfigurationError",
+    # "PipConfigurationError",
     "PythonChecker")

@@ -23,8 +23,8 @@ VERSION_MIN = packaging.version.Version("0")
 
 
 class AGithubReleaseManager(metaclass=abstracts.Abstraction):
-    """This utility wraps the github API to provide the ability to
-    create and manage releases and release assets.
+    """This utility wraps the github API to provide the ability to create and
+    manage releases and release assets.
 
     A github client connection and/or aiohttp session can be provided if you
     wish to reuse the client or session.
@@ -80,19 +80,19 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
 
     @abstractmethod
     def __getitem__(self, version) -> AGithubRelease:
-        """Accessor for a specific Github release"""
+        """Accessor for a specific Github release."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def github(self) -> gidgethub.abc.GitHubAPI:
-        """An instance of the gidgethub GitHubAPI"""
+        """An instance of the gidgethub GitHubAPI."""
         raise NotImplementedError
 
     @async_property
     @abstractmethod
     async def latest(self) -> Dict[str, packaging.version.Version]:
-        """Returns a dictionary of latest minor and patch versions
+        """Returns a dictionary of latest minor and patch versions.
 
         For example, given the following versions:
 
@@ -105,34 +105,32 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
         1.19.2 -> 1.19.2
         1.20 -> 1.20.3
         1.20.3 -> 1.20.3
-
         """
         raise NotImplementedError
 
     @property
     @abstractmethod
     def log(self) -> verboselogs.VerboseLogger:
-        """A verbose logger"""
+        """A verbose logger."""
         raise NotImplementedError
 
     @async_property
     @abstractmethod
     async def releases(self) -> List[Dict]:
-        """List of dictionaries containing information about available releases,
-        as returned by the Github API
-        """
+        """List of dictionaries containing information about available
+        releases, as returned by the Github API."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def releases_url(self) -> pathlib.PurePosixPath:
-        """Github API releases URL"""
+        """Github API releases URL."""
         raise NotImplementedError
 
     @property
     @abstractmethod
     def session(self) -> aiohttp.ClientSession:
-        """Aiohttp Client session, also used for Github API client"""
+        """Aiohttp Client session, also used for Github API client."""
         raise NotImplementedError
 
     async def close(self) -> None:
@@ -144,8 +142,7 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
     @abstractmethod
     def fail(self, message: str) -> str:
         """Either raise an error or log a warning and return the message,
-        dependent on the value of `self.continues`.
-        """
+        dependent on the value of `self.continues`."""
         raise NotImplementedError
 
     @abstractmethod

@@ -14,7 +14,7 @@ class AsyncSubprocess:
             **kwargs) -> AsyncGenerator[
                 subprocess.CompletedProcess,
                 Iterable[Iterable[str]]]:
-        """Run external subprocesses in parallel
+        """Run external subprocesses in parallel.
 
         Yields `subprocess.CompletedProcess` results as they are completed.
 

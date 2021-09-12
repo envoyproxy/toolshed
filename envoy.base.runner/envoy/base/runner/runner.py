@@ -55,12 +55,12 @@ class BaseRunner:
 
     @cached_property
     def args(self) -> argparse.Namespace:
-        """Parsed args"""
+        """Parsed args."""
         return self.parser.parse_known_args(self._args)[0]
 
     @cached_property
     def extra_args(self) -> list:
-        """Unparsed args"""
+        """Unparsed args."""
         return self.parser.parse_known_args(self._args)[1]
 
     @property
@@ -77,7 +77,7 @@ class BaseRunner:
 
     @cached_property
     def log(self) -> verboselogs.VerboseLogger:
-        """Instantiated logger"""
+        """Instantiated logger."""
         verboselogs.install()
         logger = logging.getLogger(self.name)
         logger.setLevel(self.log_level)
@@ -92,17 +92,17 @@ class BaseRunner:
 
     @cached_property
     def log_level(self) -> int:
-        """Log level parsed from args"""
+        """Log level parsed from args."""
         return dict(LOG_LEVELS)[self.args.log_level]
 
     @property
     def name(self) -> str:
-        """Name of the runner"""
+        """Name of the runner."""
         return self.__class__.__name__
 
     @cached_property
     def parser(self) -> argparse.ArgumentParser:
-        """Argparse parser"""
+        """Argparse parser."""
         parser = argparse.ArgumentParser(allow_abbrev=False)
         self.add_arguments(parser)
         return parser
@@ -113,7 +113,7 @@ class BaseRunner:
 
     @cached_property
     def stdout(self) -> logging.Logger:
-        """Log to stdout"""
+        """Log to stdout."""
         logger = logging.getLogger("stdout")
         logger.setLevel(self.log_level)
         handler = logging.StreamHandler(sys.stdout)
@@ -125,8 +125,8 @@ class BaseRunner:
     def tempdir(self) -> tempfile.TemporaryDirectory:
         """If you call this property, remember to call `.cleanup`
 
-        For `run` methods this should be done by decorating the method with
-        `@runner.cleansup`
+        For `run` methods this should be done by decorating the method
+        with `@runner.cleansup`
         """
         if self._missing_cleanup:
             self.log.warning(
@@ -135,7 +135,7 @@ class BaseRunner:
         return tempfile.TemporaryDirectory()
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
-        """Override this method to add custom arguments to the arg parser"""
+        """Override this method to add custom arguments to the arg parser."""
         parser.add_argument(
             "--log-level",
             "-l",
@@ -198,7 +198,7 @@ class ForkingAdapter:
             *args,
             capture_output: bool = True,
             **kwargs) -> subprocess.CompletedProcess:
-        """Fork a subprocess, using self.context.path as the cwd by default"""
+        """Fork a subprocess, using self.context.path as the cwd by default."""
         kwargs["cwd"] = kwargs.get("cwd", self.context.path)
         return subprocess.run(*args, capture_output=capture_output, **kwargs)
 
@@ -209,7 +209,7 @@ class BazelAdapter:
         self.context = context
 
     def query(self, query: str) -> list:
-        """Run a bazel query and return stdout as list of lines"""
+        """Run a bazel query and return stdout as list of lines."""
         resp = self.context.subproc_run(["bazel", "query", f"'{query}'"])
         if resp.returncode:
             raise BazelRunError(f"Bazel query failed: {resp}")
@@ -222,7 +222,7 @@ class BazelAdapter:
             capture_output: bool = False,
             cwd: str = "",
             raises: bool = True) -> subprocess.CompletedProcess:
-        """Run a bazel target and return the subprocess response"""
+        """Run a bazel target and return the subprocess response."""
         args = (("--",) + args) if args else args
         bazel_args = ("bazel", "run", target) + args
         resp = self.context.subproc_run(

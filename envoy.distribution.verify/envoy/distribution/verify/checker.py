@@ -23,12 +23,12 @@ class PackagesDistroChecker(checker.AsyncChecker):
 
     @property
     def active_distrotest(self) -> Optional[distrotest.DistroTest]:
-        """Currently active test"""
+        """Currently active test."""
         return self._active_distrotest
 
     @cached_property
     def config(self) -> dict:
-        """Config parsed from the provided path
+        """Config parsed from the provided path.
 
         Expects a yaml file with distributions in the following format:
 
@@ -63,39 +63,38 @@ class PackagesDistroChecker(checker.AsyncChecker):
 
     @property
     def filter_distributions(self) -> list:
-        """List of distributions to filter the tests to be run with"""
+        """List of distributions to filter the tests to be run with."""
         return self.args.distribution
 
     @property
     def keyfile(self) -> pathlib.Path:
         """Path to a keyfile to to include in the Docker images for verifying
-        package signatures
-        """
+        package signatures."""
         return pathlib.Path(self.args.keyfile)
 
     @property
     def packages_tarball(self) -> pathlib.Path:
-        """Path to the packages tarball"""
+        """Path to the packages tarball."""
         return pathlib.Path(self.args.packages)
 
     @property
     def path(self) -> pathlib.Path:
-        """Path to a temporary directory to run the tests from"""
+        """Path to a temporary directory to run the tests from."""
         return pathlib.Path(self.tempdir.name)
 
     @property
     def rebuild(self) -> bool:
-        """Flag to rebuild the test images even if they exist"""
+        """Flag to rebuild the test images even if they exist."""
         return self.args.rebuild
 
     @property
     def test_class(self) -> Type[distrotest.DistroTest]:
-        """The test class to run the tests with"""
+        """The test class to run the tests with."""
         return distrotest.DistroTest
 
     @cached_property
     def test_config(self) -> distrotest.DistroTestConfig:
-        """The test config
+        """The test config.
 
         Parses global and provided configs to store and resolve configurations
         for the test runner.
@@ -114,19 +113,18 @@ class PackagesDistroChecker(checker.AsyncChecker):
 
     @property
     def test_config_class(self) -> Type[distrotest.DistroTestConfig]:
-        """The test config class"""
+        """The test config class."""
         return distrotest.DistroTestConfig
 
     @property
     def testfile(self) -> pathlib.Path:
-        """Path to a testfile to run inside the test containers"""
+        """Path to a testfile to run inside the test containers."""
         return pathlib.Path(self.args.testfile)
 
     @cached_property
     def tests(self) -> dict:
-        """A dictionary of tests and test configuration, filtered according
-        to provided args
-        """
+        """A dictionary of tests and test configuration, filtered according to
+        provided args."""
         _ret = {}
         for name, config in self.config.items():
             should_skip = (
@@ -173,7 +171,7 @@ class PackagesDistroChecker(checker.AsyncChecker):
             help="Rebuild test images before running the tests.")
 
     async def check_distros(self) -> None:
-        """Check runner"""
+        """Check runner."""
         for name, config in self.tests.items():
             self.log.info(
                 f"[{name}] Testing with: "
@@ -186,15 +184,15 @@ class PackagesDistroChecker(checker.AsyncChecker):
                     (i == 0 and self.rebuild))
 
     def get_test_config(self, image: str) -> dict:
-        """Get the type/ext config for a given image name"""
+        """Get the type/ext config for a given image name."""
         return self.test_config.get_config(image)
 
     def get_test_packages(self, type: str, ext: str) -> list:
-        """Get the packages to test for a given type/ext"""
+        """Get the packages to test for a given type/ext."""
         return self.test_config.get_packages(type, ext)
 
     async def on_checks_complete(self) -> int:
-        """Cleanup and return the test result"""
+        """Cleanup and return the test result."""
         await self._cleanup_test()
         await self._cleanup_docker()
         return await super().on_checks_complete()
@@ -205,7 +203,7 @@ class PackagesDistroChecker(checker.AsyncChecker):
             image: str,
             package: pathlib.Path,
             rebuild: bool) -> None:
-        """Runs a test for each of the packages against a particular distro"""
+        """Runs a test for each of the packages against a particular distro."""
         if self.exiting:
             return
         self.log.info(f"[{name}] Testing package: {package}")
@@ -214,12 +212,12 @@ class PackagesDistroChecker(checker.AsyncChecker):
         await self._active_distrotest.run()
 
     async def _cleanup_docker(self) -> None:
-        """Close the docker connection"""
+        """Close the docker connection."""
         if "docker" in self.__dict__:
             await self.docker.close()
             del self.__dict__["docker"]
 
     async def _cleanup_test(self) -> None:
-        """Cleanup test containers"""
+        """Cleanup test containers."""
         if self.active_distrotest:
             await self.active_distrotest.cleanup()

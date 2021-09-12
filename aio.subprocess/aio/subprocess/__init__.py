@@ -1,3 +1,4 @@
+"""aio.subprocess."""
 
 from aio.subprocess.async_subprocess import AsyncSubprocess
 

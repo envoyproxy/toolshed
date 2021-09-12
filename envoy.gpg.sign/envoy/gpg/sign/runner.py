@@ -14,8 +14,7 @@ from .util import DirectorySigningUtil
 
 class PackageSigningRunner(runner.Runner):
     """For a given `package_type` and `path` this will run the relevant signing
-    util for the packages they contain.
-    """
+    util for the packages they contain."""
 
     _signing_utils = ()
 
@@ -24,7 +23,7 @@ class PackageSigningRunner(runner.Runner):
             cls,
             name: str,
             util: Type[DirectorySigningUtil]) -> None:
-        """Register util for signing a package type"""
+        """Register util for signing a package type."""
         cls._signing_utils = getattr(cls, "_signing_utils") + ((name, util),)
 
     @property
@@ -33,7 +32,7 @@ class PackageSigningRunner(runner.Runner):
 
     @cached_property
     def maintainer(self) -> identity.GPGIdentity:
-        """A representation of the maintainer with GPG capabilities"""
+        """A representation of the maintainer with GPG capabilities."""
         return self.maintainer_class(
             self.maintainer_name,
             self.maintainer_email,
@@ -45,12 +44,12 @@ class PackageSigningRunner(runner.Runner):
 
     @property
     def maintainer_email(self) -> str:
-        """Email of the maintainer if set"""
+        """Email of the maintainer if set."""
         return self.args.maintainer_email
 
     @property
     def maintainer_name(self) -> str:
-        """Name of the maintainer if set"""
+        """Name of the maintainer if set."""
         return self.args.maintainer_name
 
     @property
@@ -60,7 +59,7 @@ class PackageSigningRunner(runner.Runner):
 
     @property
     def path(self) -> pathlib.Path:
-        """Path to the packages directory"""
+        """Path to the packages directory."""
         return pathlib.Path(self.args.path)
 
     @property

@@ -102,41 +102,38 @@ class concurrent:  # noqa: N801
         self.yield_exceptions = yield_exceptions
 
     def __aiter__(self) -> AsyncIterator:
-        """Start a coroutine task to process the submit queue, and return
-        an async generator to deliver results back as they arrive
-        """
+        """Start a coroutine task to process the submit queue, and return an
+        async generator to deliver results back as they arrive."""
         self.submit_task = asyncio.create_task(self.submit())
         return self.output()
 
     @property
     def active(self) -> bool:
-        """Checks whether the iterator is active, either because it
-        hasn't finished submitting or because there are still tasks running
-        """
+        """Checks whether the iterator is active, either because it hasn't
+        finished submitting or because there are still tasks running."""
         return self.submitting or self.running
 
     @property
     def closed(self) -> bool:
         """If an unhandled error occurs, the generator is closed and no further
-        processing should happen
-        """
+        processing should happen."""
         return self.closing_lock.locked()
 
     @cached_property
     def closing_lock(self) -> asyncio.Lock:
-        """Flag to indicate whether the generator has been closed"""
+        """Flag to indicate whether the generator has been closed."""
         return asyncio.Lock()
 
     @cached_property
     def consumes_async(self) -> bool:
-        """Provided coros iterable is some kind of async provider"""
+        """Provided coros iterable is some kind of async provider."""
         return isinstance(
             self._coros,
             (types.AsyncGeneratorType, AsyncIterator, AsyncIterable))
 
     @cached_property
     def consumes_generator(self) -> bool:
-        """Provided coros iterable is some kind of generator"""
+        """Provided coros iterable is some kind of generator."""
         return isinstance(
             self._coros,
             (types.AsyncGeneratorType, types.GeneratorType))
@@ -144,7 +141,7 @@ class concurrent:  # noqa: N801
     @async_property
     async def coros(self) -> AsyncIterator[
             Union[ConcurrentIteratorError, Awaitable]]:
-        """An async iterator of the provided coroutines"""
+        """An async iterator of the provided coroutines."""
         coros = self.iter_coros()
         try:
             async for coro in coros:
@@ -163,7 +160,7 @@ class concurrent:  # noqa: N801
 
     @property
     def default_limit(self) -> int:
-        """Default is to use cpu+4 to a max of 32 coroutines"""
+        """Default is to use cpu+4 to a max of 32 coroutines."""
         # This reflects the default for asyncio's `ThreadPoolExecutor`, this is
         # a fairly arbitrary number to use, but it seems like a reasonable
         # default.
@@ -171,27 +168,27 @@ class concurrent:  # noqa: N801
 
     @cached_property
     def limit(self) -> int:
-        """The limit for concurrent coroutines"""
+        """The limit for concurrent coroutines."""
         return self._limit or self.default_limit
 
     @cached_property
     def nolimit(self) -> bool:
-        """Flag indicating no limit to concurrency"""
+        """Flag indicating no limit to concurrency."""
         return self.limit == -1
 
     @cached_property
     def out(self) -> asyncio.Queue:
-        """Queue of results to yield back"""
+        """Queue of results to yield back."""
         return asyncio.Queue()
 
     @property
     def running(self) -> bool:
-        """Flag to indicate whether any tasks are running"""
+        """Flag to indicate whether any tasks are running."""
         return not self.running_queue.empty()
 
     @cached_property
     def running_queue(self) -> asyncio.Queue:
-        """Queue which is incremented/decremented as tasks begin/end
+        """Queue which is incremented/decremented as tasks begin/end.
 
         This is for tracking when there are no longer any tasks running.
 
@@ -204,29 +201,30 @@ class concurrent:  # noqa: N801
 
     @cached_property
     def running_tasks(self) -> List[asyncio.Task]:
-        """Currently running asyncio tasks"""
+        """Currently running asyncio tasks."""
         return self._running
 
     @cached_property
     def sem(self) -> asyncio.Semaphore:
-        """A sem lock to limit the number of concurrent tasks"""
+        """A sem lock to limit the number of concurrent tasks."""
         return asyncio.Semaphore(self.limit)
 
     @cached_property
     def submission_lock(self) -> asyncio.Lock:
-        """Submission lock to indicate when submission is complete"""
+        """Submission lock to indicate when submission is complete."""
         return asyncio.Lock()
 
     @property
     def submitting(self) -> bool:
-        """Flag to indicate whether we are still submitting coroutines"""
+        """Flag to indicate whether we are still submitting coroutines."""
         return self.submission_lock.locked()
 
     async def cancel(self) -> None:
-        """Stop the submission queue, cancel running tasks, close pending coroutines.
+        """Stop the submission queue, cancel running tasks, close pending
+        coroutines.
 
-        This is triggered when an unhandled error occurs and the queue should
-        stop processing and bail.
+        This is triggered when an unhandled error occurs and the queue
+        should stop processing and bail.
         """
         # Kitchen is closed
         await self.close()
@@ -245,7 +243,7 @@ class concurrent:  # noqa: N801
         await self.submit_task
 
     async def cancel_tasks(self) -> None:
-        """Cancel any running tasks"""
+        """Cancel any running tasks."""
 
         for running in self.running_tasks:
             running.cancel()
@@ -256,14 +254,13 @@ class concurrent:  # noqa: N801
                 continue
 
     async def close(self) -> None:
-        """Close the generator, prevent any further processing"""
+        """Close the generator, prevent any further processing."""
         if not self.closed:
             await self.closing_lock.acquire()
 
     async def close_coros(self) -> None:
         """Close provided coroutines (unless the provided coros is a
-        generator)
-        """
+        generator)"""
         if self.consumes_generator:
             # If we have a generator, dont blow/create/wait upon any more items
             return
@@ -279,18 +276,21 @@ class concurrent:  # noqa: N801
                 continue
 
     async def create_task(self, coro: Awaitable) -> None:
-        """Create an asyncio task from the coroutine, and remember it"""
+        """Create an asyncio task from the coroutine, and remember it."""
         task = asyncio.create_task(self.task(coro))
         self.remember_task(task)
         self.running_queue.put_nowait(None)
 
     async def exit_on_completion(self) -> None:
-        """Send the exit signal to the output queue"""
+        """Send the exit signal to the output queue."""
         if not self.active and not self.closed:
             await self.out.put(_sentinel)
 
     def forget_task(self, task: asyncio.Task) -> None:
-        """Task? what task?"""
+        """Task?
+
+        what task?
+        """
         if self.closed:
             # If we are closing, don't remove, as this has been triggered
             # by cancellation.
@@ -300,8 +300,7 @@ class concurrent:  # noqa: N801
     async def iter_coros(self) -> AsyncIterator[
             Union[ConcurrentIteratorError, Awaitable]]:
         """Iterate provided coros either synchronously or asynchronously,
-        yielding the awaitables asynchoronously.
-        """
+        yielding the awaitables asynchoronously."""
         try:
             if self.consumes_async:
                 async for coro in self._coros:  # type:ignore
@@ -320,8 +319,7 @@ class concurrent:  # noqa: N801
             result: Any,
             decrement: Optional[bool] = True) -> None:
         """Output the result, release the sem lock, decrement the running
-        count, and notify output queue if complete.
-        """
+        count, and notify output queue if complete."""
         if self.closed:
             # Results can come back after the queue has closed as they are
             # cancelled.
@@ -341,7 +339,7 @@ class concurrent:  # noqa: N801
         await self.exit_on_completion()
 
     async def output(self) -> AsyncIterator:
-        """Asynchronously yield results as they become available"""
+        """Asynchronously yield results as they become available."""
         while True:
             # Wait for some output
             result = await self.out.get()
@@ -357,8 +355,7 @@ class concurrent:  # noqa: N801
 
     async def ready(self) -> bool:
         """Wait for the sem.lock and indicate availability in the submission
-        queue
-        """
+        queue."""
         if self.closed:
             return False
         if not self.nolimit:
@@ -372,20 +369,19 @@ class concurrent:  # noqa: N801
 
     def remember_task(self, task: asyncio.Task) -> None:
         """Remember a scheduled asyncio task, in case it needs to be
-        cancelled
-        """
+        cancelled."""
         self.running_tasks.append(task)
         task.add_done_callback(self.forget_task)
 
     def should_error(self, result: Any) -> bool:
-        """Check a result type and whether it should raise an error"""
+        """Check a result type and whether it should raise an error."""
         return (
             isinstance(result, ConcurrentIteratorError)
             or (isinstance(result, ConcurrentError)
                 and not self.yield_exceptions))
 
     async def submit(self) -> None:
-        """Process the iterator of coroutines as a submission queue"""
+        """Process the iterator of coroutines as a submission queue."""
         await self.submission_lock.acquire()
         async for coro in self.coros:
             if isinstance(coro, ConcurrentIteratorError):
@@ -416,7 +412,7 @@ class concurrent:  # noqa: N801
         await self.exit_on_completion()
 
     async def task(self, coro: Awaitable) -> None:
-        """Task wrapper to catch/wrap errors and output awaited results"""
+        """Task wrapper to catch/wrap errors and output awaited results."""
         try:
             result = await coro
         except BaseException as e:
@@ -425,7 +421,7 @@ class concurrent:  # noqa: N801
             await self.on_task_complete(result)
 
     def validate_coro(self, coro: Awaitable) -> None:
-        """Validate that a provided coroutine is actually awaitable"""
+        """Validate that a provided coroutine is actually awaitable."""
         if not inspect.isawaitable(coro):
             raise ConcurrentError(
                 f"Provided input was not a coroutine: {coro}")

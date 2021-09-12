@@ -35,7 +35,7 @@ AssetTypesDict = Dict[str, Pattern[str]]
 
 
 class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
-    """Base class for Github release assets pusher/fetcher"""
+    """Base class for Github release assets pusher/fetcher."""
     _concurrency = 4
 
     def __init__(
@@ -61,7 +61,7 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
 
     @async_property
     async def assets(self) -> Dict:
-        """Github release asset dictionaries"""
+        """Github release asset dictionaries."""
         return await self.release.assets
 
     @async_property
@@ -131,7 +131,7 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
 
 class AGithubReleaseAssetsFetcher(
         AGithubReleaseAssets, metaclass=abstracts.Abstraction):
-    """Fetcher of Github release assets"""
+    """Fetcher of Github release assets."""
 
     def __init__(
             self,
@@ -145,12 +145,12 @@ class AGithubReleaseAssetsFetcher(
 
     @property
     def append(self) -> bool:
-        """Append to existing file or otherwise"""
+        """Append to existing file or otherwise."""
         return self._append or False
 
     @cached_property
     def asset_types(self) -> Dict[str, Pattern[str]]:
-        """Patterns for grouping assets"""
+        """Patterns for grouping assets."""
         return self._asset_types or dict(assets=re.compile(".*"))
 
     @async_property
@@ -168,7 +168,7 @@ class AGithubReleaseAssetsFetcher(
         return "a" if self.append else "w"
 
     def asset_type(self, asset: Dict) -> Optional[str]:
-        """Categorization of an asset into an asset type
+        """Categorization of an asset into an asset type.
 
         The default `asset_types` matcher will just match all files.
 
@@ -188,7 +188,7 @@ class AGithubReleaseAssetsFetcher(
     async def download(
             self,
             asset: Dict) -> AssetsResultDict:
-        """Download an asset"""
+        """Download an asset."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
@@ -197,20 +197,19 @@ class AGithubReleaseAssetsFetcher(
             asset_type: str,
             name: str,
             download: aiohttp.ClientResponse) -> AssetsResultDict:
-        """Save an asset of given type to disk"""
+        """Save an asset of given type to disk."""
         raise NotImplementedError
 
 
 class AGithubReleaseAssetsPusher(
         AGithubReleaseAssets, metaclass=abstracts.Abstraction):
-    """Pusher of Github release assets"""
+    """Pusher of Github release assets."""
 
     @property  # type:ignore
     @abstracts.interfacemethod
     def artefacts(self) -> Iterator[pathlib.Path]:
-        """Iterator of matching (ie release file type) artefacts found in a given
-        path
-        """
+        """Iterator of matching (ie release file type) artefacts found in a
+        given path."""
         raise NotImplementedError
 
     @async_property
@@ -229,13 +228,14 @@ class AGithubReleaseAssetsPusher(
         return await self.release.upload_url
 
     async def artefact_url(self, name: str) -> str:
-        """URL to upload a provided artefact name as an asset"""
-        return f"{await self.upload_url}?name={name}"
+        """URL to upload a provided artefact name as an asset."""
+        upload_url = await self.upload_url
+        return f"{upload_url}?name={name}"
 
     @abstracts.interfacemethod
     async def upload(
             self,
             artefact: pathlib.Path,
             url: str) -> AssetsResultDict:
-        """Upload an artefact from a filepath to a given URL"""
+        """Upload an artefact from a filepath to a given URL."""
         raise NotImplementedError

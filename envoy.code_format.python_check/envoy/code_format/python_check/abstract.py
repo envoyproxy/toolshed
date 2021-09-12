@@ -56,7 +56,7 @@ class APythonChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
 
     @property
     def recurse(self) -> bool:
-        """Flag to determine whether to apply checks recursively"""
+        """Flag to determine whether to apply checks recursively."""
         return self.args.recurse
 
     @property
@@ -85,7 +85,7 @@ class APythonChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
             help="Specify the path to a diff file with fixes")
 
     async def check_flake8(self) -> None:
-        """Run flake8 on files and/or repo"""
+        """Run flake8 on files and/or repo."""
         errors: List[str] = []
         with utils.buffered(stdout=errors, mangle=self._strip_lines):
             self.flake8_app.run_checks()
@@ -94,7 +94,7 @@ class APythonChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
             self.error("flake8", errors)
 
     async def check_yapf(self) -> None:
-        """Run flake8 on files and/or repo"""
+        """Run flake8 on files and/or repo."""
         futures = concurrent(
             self.yapf_format(python_file)
             for python_file

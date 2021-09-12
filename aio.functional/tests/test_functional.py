@@ -32,7 +32,7 @@ async def test_functional_async_property(cache, raises, result):
 
         @decorator
         async def prop(self):
-            """This prop deserves some docs"""
+            """This prop deserves some docs."""
             if raises:
                 await m_async()
                 raise SomeError("AN ERROR OCCURRED")
@@ -41,7 +41,7 @@ async def test_functional_async_property(cache, raises, result):
 
         @iter_decorator
         async def iter_prop(self):
-            """This prop also deserves some docs"""
+            """This prop also deserves some docs."""
             if raises:
                 await m_async()
                 raise SomeError("AN ITERATING ERROR OCCURRED")
@@ -58,7 +58,7 @@ async def test_functional_async_property(cache, raises, result):
         functional.async_property)
     assert (
         type(klass).prop.__doc__
-        == "This prop deserves some docs")
+        == "This prop deserves some docs.")
     assert (
         type(klass).prop.name
         == "prop")

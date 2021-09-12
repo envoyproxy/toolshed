@@ -26,7 +26,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
 
     @cached_property
     def config_requirements(self) -> set:
-        """Set of configured pip dependabot directories"""
+        """Set of configured pip dependabot directories."""
         return set(
             update['directory']
             for update in self.dependabot_config["updates"]
@@ -34,7 +34,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
 
     @cached_property
     def dependabot_config(self) -> dict:
-        """Parsed dependabot config"""
+        """Parsed dependabot config."""
         result = utils.from_yaml(
             self.path.joinpath(self.dependabot_config_path))
         if not isinstance(result, dict):
@@ -54,7 +54,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
 
     @cached_property
     def requirements_dirs(self) -> Set[str]:
-        """Set of found directories in the repo containing requirements.txt"""
+        """Set of found directories in the repo containing requirements.txt."""
         return set(
             f"/{f.parent.relative_to(self.path)}"
             for f in self.path.glob("**/*")
@@ -65,9 +65,8 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
         return self._requirements_filename
 
     def check_dependabot(self) -> None:
-        """Check that dependabot config matches requirements.txt files found
-        in repo
-        """
+        """Check that dependabot config matches requirements.txt files found in
+        repo."""
         missing_dirs = self.config_requirements.difference(
             self.requirements_dirs)
         missing_config = self.requirements_dirs.difference(
