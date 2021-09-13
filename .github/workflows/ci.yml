@@ -28,11 +28,22 @@ jobs:
     - name: Run pants lint
       run: "pants lint ::"
 
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v2
+    - name: Install pants
+      run: pip install pantsbuild.pants
+    - name: Run pants typecheck
+      run: "pants typecheck ::"
+
   package:
     runs-on: ubuntu-latest
     needs:
     - test
     - lint
+    - typecheck
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v2
