@@ -32,7 +32,7 @@ class DirectorySigningUtil:
 
     @cached_property
     def command(self) -> str:
-        """Provided command name/path or path to available system version"""
+        """Provided command name/path or path to available system version."""
         command = self._command or shutil.which(self.command_name)
         if command:
             return command
@@ -54,7 +54,7 @@ class DirectorySigningUtil:
 
     @property
     def pkg_files(self) -> Tuple[pathlib.Path, ...]:
-        """Tuple of paths to package files to sign"""
+        """Tuple of paths to package files to sign."""
         # TODO?(phlax): check maintainer/packager field matches key id
         return tuple(
             pkg_file
@@ -63,16 +63,16 @@ class DirectorySigningUtil:
             if pkg_file.name.endswith(f".{self.ext}"))
 
     def sign(self) -> None:
-        """Sign the packages"""
+        """Sign the packages."""
         for pkg in self.pkg_files:
             self.sign_pkg(pkg)
 
     def sign_command(self, pkg_file: pathlib.Path) -> tuple:
-        """Tuple of command parts to sign a specific package"""
+        """Tuple of command parts to sign a specific package."""
         return (self.command,) + self.command_args + (str(pkg_file),)
 
     def sign_pkg(self, pkg_file: pathlib.Path) -> None:
-        """Sign a specific package file"""
+        """Sign a specific package file."""
         self.log.notice(f"Sign package ({self.package_type}): {pkg_file.name}")
         response = subprocess.run(
             self.sign_command(pkg_file), capture_output=True, encoding="utf-8")

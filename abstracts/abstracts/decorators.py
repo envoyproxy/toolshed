@@ -6,7 +6,7 @@ from abstracts.implements import Implementer
 
 
 def implementer(implements):
-    """Decorator for implementers
+    """Decorator for implementers.
 
     Assuming you have an abstract class `AFoo` which has a `metaclass` of
     type `Abstraction`, it can be used as follows:
@@ -21,7 +21,6 @@ def implementer(implements):
             return "BAZ"
 
     ```
-
     """
 
     if not isinstance(implements, (tuple, list, set)):

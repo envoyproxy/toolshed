@@ -4,9 +4,9 @@ import abstracts
 
 
 class Implementer(type):
-    """Metaclass for implementers of an Abstract interface
+    """Metaclass for implementers of an Abstract interface.
 
-    Any `Abstraction` classes that are listed in `__implements__` for the
+    Any ``Abstraction`` classes that are listed in ``__implements__`` for the
     class are added as bases (ie added to the class's inheritance).
 
     Any docs for methods are copied from the interface method to the
@@ -14,32 +14,32 @@ class Implementer(type):
 
     For example:
 
-    ```
+    .. code-block:: python
 
-    from tools.base.abstract import Abstraction, Implementer
+        from tools.base.abstract import Abstraction, Implementer
 
 
-    class AFoo(metaclass=Abstraction):
+        class AFoo(metaclass=Abstraction):
 
-        @abstractmethod
-        def do_something(self):
-            ""\"Do something""\"
-            raise NotImplementedError
+            @abstractmethod
+            def do_something(self):
+                ""\"Do something""\"
+                raise NotImplementedError
 
-    class Foo(metaclass=Implementer)
-        __implements__ = (AFoo, )
+        class Foo(metaclass=Implementer)
+            __implements__ = (AFoo, )
 
-        def do_something(self):
-            return "DONE"
-    ```
+            def do_something(self):
+                return "DONE"
+
     Given the above, you should see that instantiating `Foo`:
 
-    ```
-    >>> isinstance(Foo(), AFoo)
-    True
-    >>> Foo().do_something.__doc__
-    'Do something'
-    ```
+    .. code-block:: pycon
+
+        >>> isinstance(Foo(), AFoo)
+        True
+        >>> Foo().do_something.__doc__
+        'Do something'
     """
 
     @classmethod
@@ -47,7 +47,7 @@ class Implementer(type):
             cls,
             abstract: "abstracts.Abstraction") -> Tuple[
                 str, Union[str, None], List[str]]:
-        """Information for a specific abstract implementation class
+        """Information for a specific abstract implementation class.
 
         For given abstract class, returns:
 
@@ -69,18 +69,18 @@ class Implementer(type):
 
     @classmethod
     def add_docs(cls, clsdict: Dict, klass: "Implementer") -> None:
-        """Add docs to the implementation class
+        """Add docs to the implementation class.
 
         If the implementation class has no docstring, then a docstring is
         generated with the format:
 
-        ```
-        Implements: foo.bar.ABaz
-        An implementer of the ABaz protocol...
+        .. code-block::
 
-        Implements: foo.bar.AOtherBaz
-        An implementer of the AOtherBaz protocol...
-        ```
+            Implements: foo.bar.ABaz
+            An implementer of the ABaz protocol...
+
+            Implements: foo.bar.AOtherBaz
+            An implementer of the AOtherBaz protocol...
 
         For each of the methods that are marked abstract in any of the abstract
         classes, if the method in the implementation class has no docstring the
@@ -134,8 +134,7 @@ class Implementer(type):
             bases: Tuple[Type, ...],
             clsdict: Dict) -> Tuple[Type["abstracts.Abstraction"], ...]:
         """Returns a tuple of base classes, with `__implements__` classes
-        included
-        """
+        included."""
         return (
             bases
             + tuple(
@@ -176,7 +175,7 @@ class Implementer(type):
     def implementation_info(
             cls,
             clsdict: Dict) -> Tuple[Dict[str, str], Dict[str, Type]]:
-        """Returns 2 dictionaries
+        """Returns 2 dictionaries.
 
         - abstract_docs: abstract docs for all abstract classes
         - abstract_methods: resolved abstract methods -> abstract class
@@ -204,7 +203,7 @@ class Implementer(type):
             clsname: str,
             bases: Tuple[Type, ...],
             clsdict: Dict) -> "Implementer":
-        """Create a new Implementer class"""
+        """Create a new Implementer class."""
         if "__implements__" not in clsdict:
             klass = super().__new__(cls, clsname, bases, clsdict)
             if cls.is_interface(klass):

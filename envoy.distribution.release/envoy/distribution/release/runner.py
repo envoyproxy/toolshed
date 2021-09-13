@@ -17,9 +17,8 @@ from envoy.github.release import manager
 
 @abstracts.implementer(AGithubReleaseRunner)
 class ReleaseRunner:
-    """This runner interacts with the Github release API to create, push,
-    and fetch releases and release assets.
-    """
+    """This runner interacts with the Github release API to create, push, and
+    fetch releases and release assets."""
 
     @cached_property
     def command(self) -> AAsyncCommand:

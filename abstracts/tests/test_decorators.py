@@ -15,7 +15,7 @@ class AFoo(metaclass=abstracts.Abstraction):
 
     @abstractmethod
     def do_something(self):
-        """Do something"""
+        """Do something."""
         raise NotImplementedError
 
 
@@ -23,7 +23,7 @@ class ABar(metaclass=abstracts.Abstraction):
 
     @abstractmethod
     def do_something_else(self):
-        """Do something else"""
+        """Do something else."""
         raise NotImplementedError
 
 
@@ -60,14 +60,14 @@ def test_decorators_implementer(patches, implements):
         == "ImplementationOfAnImplementer")
     assert (
         implementer.__doc__
-        == 'A test implementation of an implementer')
+        == 'A test implementation of an implementer.')
 
 
 def _implementer(implements):
 
     @abstracts.implementer(implements)
     class ImplementationOfAnImplementer:
-        """A test implementation of an implementer"""
+        """A test implementation of an implementer."""
 
         @classmethod
         def do_something_classy(cls):

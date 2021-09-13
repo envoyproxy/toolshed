@@ -20,9 +20,8 @@ class Writer(AsyncStream):
     """
 
     async def stream_bytes(self, response: aiohttp.ClientResponse) -> None:
-        """Stream chunks from an `aiohttp.ClientResponse` to an async
-        file object.
-        """
+        """Stream chunks from an `aiohttp.ClientResponse` to an async file
+        object."""
         # This is kinda aiohttp specific, we can make this more generic
         # and then adapt to aiohttp if we find the need
         async for chunk in response.content.iter_chunked(self.chunk_size):

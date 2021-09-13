@@ -31,16 +31,15 @@ class DebChangesFiles(object):
         self.src = src
 
     def __iter__(self) -> Iterator[pathlib.Path]:
-        """Iterate the required changes files, creating them, yielding the paths
-        of the newly created files, and deleting the original
-        """
+        """Iterate the required changes files, creating them, yielding the
+        paths of the newly created files, and deleting the original."""
         for path in self.files:
             yield path
         self.src.unlink()
 
     @cached_property
     def distributions(self) -> str:
-        """Find and parse the `Distributions` header in the `changes` file"""
+        """Find and parse the `Distributions` header in the `changes` file."""
         with open(self.src) as f:
             line = f.readline()
             while line:
@@ -53,12 +52,12 @@ class DebChangesFiles(object):
 
     @property
     def files(self) -> Iterator[pathlib.Path]:
-        """Create changes files for each distro, yielding the paths"""
+        """Create changes files for each distro, yielding the paths."""
         for distro in self.distributions.split():
             yield self.changes_file(distro)
 
     def changes_file(self, distro: str) -> pathlib.Path:
-        """Create a `changes` file for a specific distro"""
+        """Create a `changes` file for a specific distro."""
         target = self.changes_file_path(distro)
         target.write_text(
             self.src.read_text().replace(
@@ -67,12 +66,12 @@ class DebChangesFiles(object):
         return target
 
     def changes_file_path(self, distro: str) -> pathlib.Path:
-        """Path to write the new changes file to"""
+        """Path to write the new changes file to."""
         return self.src.with_suffix(f".{distro}.changes")
 
 
 class DebSigningUtil(DirectorySigningUtil):
-    """Sign all `changes` packages in a given directory
+    """Sign all `changes` packages in a given directory.
 
     the `.changes` spec allows a single `.changes` file to have multiple
     `Distributions` listed.
@@ -99,7 +98,7 @@ class DebSigningUtil(DirectorySigningUtil):
 
     @cached_property
     def pkg_files(self) -> tuple:
-        """Mangled .changes paths"""
+        """Mangled .changes paths."""
         return tuple(
             chain.from_iterable(
                 self.changes_files(src)

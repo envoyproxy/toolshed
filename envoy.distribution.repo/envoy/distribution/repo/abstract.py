@@ -35,26 +35,26 @@ class ARepoBuildingRunner(
 
     @classmethod
     def register_repo_type(cls, name: str, util: Type["ARepoManager"]) -> None:
-        """Register a repo type"""
+        """Register a repo type."""
         cls._repo_types = (
             getattr(cls, "_repo_types")
             + ((name, util),))
 
     @cached_property
     def asset_types(self) -> Dict[str, Pattern[str]]:
-        """Dictionary of names to asset type patterns"""
+        """Dictionary of names to asset type patterns."""
         return {
             k: re.compile(v.file_types)
             for k, v in self.repo_types.items()}
 
     @cached_property
     def path(self) -> pathlib.Path:
-        """Temp directory path"""
+        """Temp directory path."""
         return pathlib.Path(self.tempdir.name)
 
     @cached_property
     def release_config(self) -> ReleaseConfigDict:
-        """Release configuration"""
+        """Release configuration."""
         if not self.release_config_file.exists():
             raise RepoError(
                 "Unable to find release configuration: "
@@ -70,17 +70,17 @@ class ARepoBuildingRunner(
 
     @property
     def release_config_file(self) -> pathlib.Path:
-        """Path to the release configuration file"""
+        """Path to the release configuration file."""
         return pathlib.Path(PUBLISH_YAML)
 
     @cached_property
     def repo_types(self) -> Dict[str, Type["ARepoManager"]]:
-        """Registered repository types"""
+        """Registered repository types."""
         return dict(self._repo_types)
 
     @cached_property
     def repos(self) -> Dict[str, "ARepoManager"]:
-        """Dictionary of instances of the registered repository types"""
+        """Dictionary of instances of the registered repository types."""
         return {
             repo_type: manager(
                 repo_type,
@@ -94,7 +94,7 @@ class ARepoBuildingRunner(
 
     @async_property
     async def published_repos(self):
-        """Generator of paths from publishing repos"""
+        """Generator of paths from publishing repos."""
         for repo in self.repos.values():
             yield await repo.publish()
 
@@ -142,7 +142,7 @@ class ARepoManager(metaclass=abstracts.Abstraction):
 
     @cached_property
     def architectures(self) -> List[str]:
-        """Supported architectures"""
+        """Supported architectures."""
         return self.config["architectures"]
 
     @property
@@ -151,7 +151,7 @@ class ARepoManager(metaclass=abstracts.Abstraction):
 
     @property
     def versions(self) -> Dict[str, List[str]]:
-        """Versions configured for this repository type"""
+        """Versions configured for this repository type."""
         return {
             k: v[self.name]
             for k, v
@@ -160,5 +160,5 @@ class ARepoManager(metaclass=abstracts.Abstraction):
 
     @abstractmethod
     async def publish(self) -> pathlib.Path:
-        """Publish a repository"""
+        """Publish a repository."""
         raise NotImplementedError

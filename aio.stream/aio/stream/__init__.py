@@ -1,3 +1,4 @@
+"""aio.stream."""
 
 from .base import AsyncStream
 from ._reader import reader, Reader

@@ -6,7 +6,7 @@ from .abstraction import Abstraction
 
 __all__ = (
     "Abstraction",
-    "implementer",
-    "Implementer",
     "Interface",
-    "interfacemethod")
+    "implementer",
+    "interfacemethod",
+    "Implementer")

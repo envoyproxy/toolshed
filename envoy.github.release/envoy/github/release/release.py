@@ -34,12 +34,12 @@ class GithubRelease:
 
     @async_property(cache=True)
     async def asset_names(self) -> Set[str]:
-        """Set of the names of assets for this release version"""
+        """Set of the names of assets for this release version."""
         return set(asset["name"] for asset in await self.assets)
 
     @async_property(cache=True)
     async def assets(self) -> Dict:
-        """Assets dictionary as returned by Github Release API"""
+        """Assets dictionary as returned by Github Release API."""
         try:
             return await self.github.getitem(await self.assets_url)
         except gidgethub.GitHubException as e:
@@ -47,12 +47,12 @@ class GithubRelease:
 
     @async_property(cache=True)
     async def assets_url(self) -> str:
-        """URL for retrieving this version's assets information from"""
+        """URL for retrieving this version's assets information from."""
         return (await self.release)["assets_url"]
 
     @async_property(cache=True)
     async def delete_url(self) -> pathlib.PurePosixPath:
-        """Github API-relative URL for deleting this release version"""
+        """Github API-relative URL for deleting this release version."""
         return self.releases_url.joinpath(str(await self.release_id))
 
     @async_property
@@ -78,18 +78,17 @@ class GithubRelease:
     @async_property(cache=True)
     async def release(self) -> Dict:
         """Dictionary of release version information as returned by the Github
-        Release API
-        """
+        Release API."""
         return await self.get()
 
     @async_property(cache=True)
     async def release_id(self) -> int:
-        """The Github release ID for this version, required for some URLs"""
+        """The Github release ID for this version, required for some URLs."""
         return (await self.release)["id"]
 
     @async_property
     async def release_names(self) -> Tuple[str, ...]:
-        """Tuple of release tag names as returned by the Github Release API
+        """Tuple of release tag names as returned by the Github Release API.
 
         This is used to check whether the release exists already.
         """
@@ -108,7 +107,7 @@ class GithubRelease:
 
     @async_property(cache=True)
     async def upload_url(self) -> str:
-        """Upload URL for this release version"""
+        """Upload URL for this release version."""
         return (await self.release)["upload_url"].split("{")[0]
 
     @property
@@ -122,8 +121,7 @@ class GithubRelease:
     @cached_property
     def version_url(self) -> pathlib.PurePosixPath:
         """Github API-relative URL to retrieve release version information
-        from
-        """
+        from."""
         return self.releases_url.joinpath("tags", self.version_name)
 
     async def create(

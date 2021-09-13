@@ -18,7 +18,7 @@ class AAsyncRunnerWithCommands(AsyncRunner, metaclass=abstracts.Abstraction):
 
     @classmethod
     def register_command(cls, name: str, command: Type[AAsyncCommand]) -> None:
-        """Register a repo type"""
+        """Register a repo type."""
         cls._commands = getattr(cls, "_commands") + ((name, command),)
 
     @property

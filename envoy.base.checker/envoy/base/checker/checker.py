@@ -11,8 +11,8 @@ from envoy.base import runner
 class BaseChecker(runner.Runner):
     """Runs check methods prefixed with `check_` and named in `self.checks`
 
-    Check methods should call the `self.warn`, `self.error` or `self.succeed`
-    depending upon the outcome of the checks.
+    Check methods should call the `self.warn`, `self.error` or
+    `self.succeed` depending upon the outcome of the checks.
     """
     _active_check = ""
     checks: Tuple[str, ...] = ()
@@ -30,13 +30,12 @@ class BaseChecker(runner.Runner):
     @property
     def diff(self) -> bool:
         """Flag to determine whether the checker should print diffs to the
-        console
-        """
+        console."""
         return self.args.diff
 
     @property
     def error_count(self) -> int:
-        """Count of all errors found"""
+        """Count of all errors found."""
         return sum(len(e) for e in self.errors.values())
 
     @property
@@ -45,19 +44,18 @@ class BaseChecker(runner.Runner):
 
     @property
     def failed(self) -> dict:
-        """Dictionary of errors per check"""
+        """Dictionary of errors per check."""
         return dict((k, (len(v))) for k, v in self.errors.items())
 
     @property
     def fix(self) -> bool:
         """Flag to determine whether the checker should attempt to fix found
-        problems
-        """
+        problems."""
         return self.args.fix
 
     @property
     def has_failed(self) -> bool:
-        """Shows whether there are any failures"""
+        """Shows whether there are any failures."""
         # add logic for warn/error
         return bool(self.failed or self.warned)
 
@@ -80,12 +78,12 @@ class BaseChecker(runner.Runner):
 
     @property
     def paths(self) -> list:
-        """List of paths to apply checks to"""
+        """List of paths to apply checks to."""
         return self.args.paths or [self.path]
 
     @property
     def show_summary(self) -> bool:
-        """Show a summary at the end or not"""
+        """Show a summary at the end or not."""
         return bool(
             not self.exiting
             and (self.args.summary
@@ -94,7 +92,7 @@ class BaseChecker(runner.Runner):
 
     @property
     def status(self) -> dict:
-        """Dictionary showing current success/warnings/errors"""
+        """Dictionary showing current success/warnings/errors."""
         return dict(
             success=self.success_count,
             errors=self.error_count,
@@ -105,36 +103,36 @@ class BaseChecker(runner.Runner):
 
     @property
     def succeeded(self) -> dict:
-        """Dictionary of successful checks grouped by check type"""
+        """Dictionary of successful checks grouped by check type."""
         return dict((k, (len(v))) for k, v in self.success.items())
 
     @property
     def success_count(self) -> int:
-        """Current count of successful checks"""
+        """Current count of successful checks."""
         return sum(len(e) for e in self.success.values())
 
     @cached_property
     def summary(self) -> "CheckerSummary":
-        """Instance of the checker's summary class"""
+        """Instance of the checker's summary class."""
         return self.summary_class(self)
 
     @property
     def summary_class(self) -> Type["CheckerSummary"]:
-        """Checker's summary class"""
+        """Checker's summary class."""
         return CheckerSummary
 
     @property
     def warned(self) -> dict:
-        """Dictionary of warned checks grouped by check type"""
+        """Dictionary of warned checks grouped by check type."""
         return dict((k, (len(v))) for k, v in self.warnings.items())
 
     @property
     def warning_count(self) -> int:
-        """Current count of warned checks"""
+        """Current count of warned checks."""
         return sum(len(e) for e in self.warnings.values())
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
-        """Add arguments to the arg parser"""
+        """Add arguments to the arg parser."""
         super().add_arguments(parser)
         parser.add_argument(
             "--fix",
@@ -200,7 +198,7 @@ class BaseChecker(runner.Runner):
             errors: Optional[Iterable[str]],
             log: bool = True,
             log_type: str = "error") -> int:
-        """Record (and log) errors for a check type"""
+        """Record (and log) errors for a check type."""
         if not errors:
             return 0
         self.errors[name] = self.errors.get(name, [])
@@ -217,9 +215,8 @@ class BaseChecker(runner.Runner):
         return self.error("exiting", ["Keyboard exit"], log_type="fatal")
 
     def get_checks(self) -> Sequence[str]:
-        """Get list of checks for this checker class filtered according to
-        user args
-        """
+        """Get list of checks for this checker class filtered according to user
+        args."""
         return (
             self.checks if not self.args.check else
             [check for check in self.args.check if check in self.checks])
@@ -229,7 +226,7 @@ class BaseChecker(runner.Runner):
         self.log.notice(f"[{check}] Running check")
 
     def on_check_run(self, check: str) -> Any:
-        """Callback hook called after each check run"""
+        """Callback hook called after each check run."""
         self._active_check = ""
         if self.exiting:
             return
@@ -241,13 +238,12 @@ class BaseChecker(runner.Runner):
             self.log.success(f"[{check}] Check completed successfully")
 
     def on_checks_begin(self) -> Any:
-        """Callback hook called before all checks"""
+        """Callback hook called before all checks."""
         pass
 
     def on_checks_complete(self) -> Any:
         """Callback hook called after all checks have run, and returning the
-        final outcome of a checks_run
-        """
+        final outcome of a checks_run."""
         if self.show_summary:
             self.summary.print_summary()
         return 1 if self.has_failed else 0
@@ -255,8 +251,7 @@ class BaseChecker(runner.Runner):
     @runner.cleansup
     def run(self) -> int:
         """Run all configured checks and return the sum of their error
-        counts
-        """
+        counts."""
         checks = self.get_checks()
         try:
             self.on_checks_begin()
@@ -271,7 +266,7 @@ class BaseChecker(runner.Runner):
         return result
 
     def succeed(self, name: str, success: list, log: bool = True) -> None:
-        """Record (and log) success for a check type"""
+        """Record (and log) success for a check type."""
         self.success[name] = self.success.get(name, [])
         self.success[name].extend(success)
         if not log:
@@ -280,7 +275,7 @@ class BaseChecker(runner.Runner):
             self.log.success(f"[{name}] {message}")
 
     def warn(self, name: str, warnings: list, log: bool = True) -> None:
-        """Record (and log) warnings for a check type"""
+        """Record (and log) warnings for a check type."""
         self.warnings[name] = self.warnings.get(name, [])
         self.warnings[name].extend(warnings)
         if not log:
@@ -315,12 +310,12 @@ class CheckerSummary(object):
 
     @property
     def max_errors(self) -> int:
-        """Maximum errors to display in summary"""
+        """Maximum errors to display in summary."""
         return self.checker.args.summary_errors
 
     @property
     def max_warnings(self) -> int:
-        """Maximum warnings to display in summary"""
+        """Maximum warnings to display in summary."""
         return self.checker.args.summary_warnings
 
     def print_failed(self, problem_type):
@@ -345,7 +340,7 @@ class CheckerSummary(object):
         output("\n".join(_out + [""]))
 
     def print_status(self) -> None:
-        """Print summary status to stderr"""
+        """Print summary status to stderr."""
         if self.checker.errors:
             self.checker.log.error(f"{self.checker.status}")
         elif self.checker.warnings:
@@ -354,13 +349,13 @@ class CheckerSummary(object):
             self.checker.log.info(f"{self.checker.status}")
 
     def print_summary(self) -> None:
-        """Write summary to stderr"""
+        """Write summary to stderr."""
         self.print_failed("warnings")
         self.print_failed("errors")
         self.print_status()
 
     def _section(self, message: str, lines: list = None) -> list:
-        """Print a summary section"""
+        """Print a summary section."""
         section = ["Summary", "-" * 80, f"{message}"]
         if lines:
             section += [line.split("\n")[0] for line in lines]
@@ -368,7 +363,7 @@ class CheckerSummary(object):
 
 
 class AsyncChecker(BaseChecker):
-    """Async version of the Checker class for use with asyncio"""
+    """Async version of the Checker class for use with asyncio."""
 
     async def _run(self) -> int:
         checks = self.get_checks()

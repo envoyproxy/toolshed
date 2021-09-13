@@ -1,0 +1,10 @@
+pytooling_library(
+    "envoy.code_format.python_check",
+    dependencies=[
+        "//:abstracts",
+        "//:aio.subprocess",
+        "//:envoy.base.checker",
+        "//:envoy.base.utils",
+    ],
+    tags=["abstract-types"],
+)

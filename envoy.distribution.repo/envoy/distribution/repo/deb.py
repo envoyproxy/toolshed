@@ -29,17 +29,17 @@ class AAptly(metaclass=abstracts.Abstraction):
     @property  # type:ignore
     @abstracts.interfacemethod
     def aptly_command(self) -> pathlib.Path:
-        """Path to the `aptly` command"""
+        """Path to the `aptly` command."""
         raise NotImplementedError
 
     @async_property(cache=True)
     async def aptly_config(self) -> dict:
-        """Aptly configuration"""
+        """Aptly configuration."""
         return json.loads(await self.aptly("config", "show"))
 
     @async_property
     async def aptly_root_dir(self) -> pathlib.Path:
-        """Aptly root directory"""
+        """Aptly root directory."""
         return pathlib.Path((await self.aptly_config)["rootDir"])
 
     @property  # type:ignore
@@ -49,7 +49,7 @@ class AAptly(metaclass=abstracts.Abstraction):
 
     @async_property
     async def aptly_repos(self) -> List[str]:
-        """Created aptly repositories"""
+        """Created aptly repositories."""
         return (
             await self.aptly(
                 "repo", "list",
@@ -57,7 +57,7 @@ class AAptly(metaclass=abstracts.Abstraction):
 
     @async_property
     async def aptly_snapshots(self) -> List[str]:
-        """Created aptly snapshots"""
+        """Created aptly snapshots."""
         return (
             await self.aptly(
                 "snapshot", "list",
@@ -65,7 +65,7 @@ class AAptly(metaclass=abstracts.Abstraction):
 
     @async_property
     async def aptly_published(self) -> List[str]:
-        """Created aptly publishings"""
+        """Created aptly publishings."""
         return list(
             r.split(" ")[1]
             for r
@@ -74,7 +74,7 @@ class AAptly(metaclass=abstracts.Abstraction):
                 "-raw")).strip().split("\n"))
 
     async def aptly(self, *args: str) -> str:
-        """Run an aptly command"""
+        """Run an aptly command."""
         command = (self.aptly_command, ) + args
         result = await aio.subprocess.run(
             command, capture_output=True, encoding="utf-8")
@@ -115,7 +115,7 @@ class DebRepoManager:
 
     @cached_property
     def changes_files(self) -> Tuple[pathlib.Path, ...]:
-        """Debian changes files to include"""
+        """Debian changes files to include."""
         return tuple(
             x for x
             in self.path.glob(f"**/{self.name}/*.changes"))
@@ -126,7 +126,7 @@ class DebRepoManager:
         return set(chain.from_iterable(self.versions.values()))
 
     async def create_distro(self, distro: str) -> None:
-        """Create an aptly distribution repository"""
+        """Create an aptly distribution repository."""
         if await self.distro_exists(distro):
             await self.drop_distro(distro)
         self.log.notice(f"Creating deb distribution: {distro}")
@@ -138,7 +138,7 @@ class DebRepoManager:
                 distro)).strip().split("\n")[0])
 
     async def create_snapshot(self, distro: str) -> None:
-        """Create an aptly snapshot"""
+        """Create an aptly snapshot."""
         if await self.snapshot_exists(distro):
             await self.drop_snapshot(distro)
         self.log.success(
@@ -147,28 +147,28 @@ class DebRepoManager:
                 distro, "from", "repo", distro)).strip())
 
     async def distro_exists(self, distro: str) -> bool:
-        """Given aptly repository distribution has already been created"""
+        """Given aptly repository distribution has already been created."""
         return bool(distro in await self.aptly_repos)
 
     async def drop_distro(self, distro: str) -> None:
-        """Given aptly repository distribution has already been created"""
+        """Given aptly repository distribution has already been created."""
         self.log.warning(f"Removing existing repo {distro}")
         await self.aptly("repo", "drop", "-force", distro)
 
     async def drop_published(self, distro: str) -> None:
-        """Drop an aptly distribution publishing"""
+        """Drop an aptly distribution publishing."""
         self.log.warning(f"Removing existing published version {distro}")
         await self.aptly("publish", "drop", distro)
 
     async def drop_snapshot(self, distro: str) -> None:
-        """Drop an aptly snapshot"""
+        """Drop an aptly snapshot."""
         self.log.warning(f"Removing existing snapshot {distro}")
         if await self.published_exists(distro):
             await self.drop_published(distro)
         await self.aptly("snapshot", "drop", "-force", distro)
 
     async def include_changes(self, distro: str) -> None:
-        """Include configured changes files"""
+        """Include configured changes files."""
         for changes_file in self.changes_files:
             await self.include_changes_file(distro, changes_file)
 
@@ -176,7 +176,7 @@ class DebRepoManager:
             self,
             distro: str,
             changes_file: pathlib.Path) -> None:
-        """Include a changes files to a distribution"""
+        """Include a changes files to a distribution."""
         if not str(changes_file).endswith(f".{distro}.changes"):
             return
         self.log.success(
@@ -192,14 +192,14 @@ class DebRepoManager:
         return await self.aptly_root_dir
 
     async def publish_distro(self, distro: str) -> None:
-        """Publish a configured distribution"""
+        """Publish a configured distribution."""
         await self.create_distro(distro)
         await self.include_changes(distro)
         await self.create_snapshot(distro)
         await self.publish_snapshot(distro)
 
     async def publish_snapshot(self, distro: str) -> None:
-        """Publish a snapshot"""
+        """Publish a snapshot."""
         self.log.info(
             await self.aptly(
                 "publish", "snapshot",
@@ -208,9 +208,9 @@ class DebRepoManager:
                 distro))
 
     async def published_exists(self, distro: str) -> bool:
-        """Publishing for a distribution exists already"""
+        """Publishing for a distribution exists already."""
         return bool(distro in await self.aptly_published)
 
     async def snapshot_exists(self, snapshot: str) -> bool:
-        """Snapshot exists already"""
+        """Snapshot exists already."""
         return bool(snapshot in await self.aptly_snapshots)

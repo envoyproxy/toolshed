@@ -12,7 +12,7 @@ def nested(*contexts) -> Iterator[tuple]:
 
 
 def _patches(*args: str, prefix: str = "") -> ContextManager[tuple]:
-    """Takes a list of module/class paths to patch and an optional prefix
+    """Takes a list of module/class paths to patch and an optional prefix.
 
     The prefix is used to prefix all of the paths
 

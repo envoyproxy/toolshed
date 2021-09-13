@@ -23,14 +23,14 @@ class ABaseCommand(metaclass=abstracts.Abstraction):
     @property
     @abc.abstractmethod
     def parser(self) -> argparse.ArgumentParser:
-        """Argparse parser"""
+        """Argparse parser."""
         parser = argparse.ArgumentParser(allow_abbrev=False)
         self.add_arguments(parser)
         return parser
 
     @abstracts.interfacemethod
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
-        """Override this method to add custom arguments to the arg parser"""
+        """Override this method to add custom arguments to the arg parser."""
         raise NotImplementedError
 
 

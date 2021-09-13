@@ -24,7 +24,7 @@ class ReleaseDict(TypedDict, total=False):
 
 
 class AGithubRelease(metaclass=abstracts.Abstraction):
-    """A Github tagged release version
+    """A Github tagged release version.
 
     Provides CRUD operations for a release and its assets, and therefore
     can exist already, or be created.
@@ -40,7 +40,7 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
     @async_property(cache=True)
     @abstractmethod
     async def asset_names(self) -> Set[str]:
-        """Set of the names of assets for this release version"""
+        """Set of the names of assets for this release version."""
         raise NotImplementedError
 
     @async_property(cache=True)
@@ -52,8 +52,7 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
     @abstractmethod
     def fetcher(self) -> Type[AGithubReleaseAssetsFetcher]:
         """An instance of `AGithubReleaseAssetsFetcher` for fetching release
-        assets.
-        """
+        assets."""
         raise NotImplementedError
 
     @property
@@ -65,8 +64,7 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
     @abstractmethod
     def pusher(self) -> Type[AGithubReleaseAssetsPusher]:
         """An instance of `AGithubReleaseAssetsPusher` for pushing release
-        assets.
-        """
+        assets."""
         raise NotImplementedError
 
     @async_property(cache=True)
@@ -88,12 +86,13 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
     async def create(
             self,
             assets: Optional[Iterable[pathlib.Path]] = None) -> ReleaseDict:
-        """Create this release version and optionally upload provided assets"""
+        """Create this release version and optionally upload provided
+        assets."""
         raise NotImplementedError
 
     @abstractmethod
     async def delete(self) -> None:
-        """Delete this release version"""
+        """Delete this release version."""
         raise NotImplementedError
 
     @abstractmethod
@@ -107,8 +106,7 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
             asset_types: Optional[Dict[str, Pattern[str]]] = None,
             append: Optional[bool] = False) -> ReleaseDict:
         """Fetch assets for this version, saving either to a directory or
-        tarball
-        """
+        tarball."""
         raise NotImplementedError
 
     @abstractmethod
@@ -126,5 +124,5 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
     @async_property(cache=True)
     @abstractmethod
     async def upload_url(self) -> str:
-        """Upload URL for this release version"""
+        """Upload URL for this release version."""
         raise NotImplementedError

@@ -8,7 +8,7 @@ from .util import DirectorySigningUtil
 
 
 class RPMMacro:
-    """`.rpmmacros` configuration for rpmsign"""
+    """`.rpmmacros` configuration for rpmsign."""
 
     _macro_filename = ".rpmmacros"
 
@@ -48,7 +48,7 @@ class RPMMacro:
 
 
 class RPMSigningUtil(DirectorySigningUtil):
-    """Sign all RPM packages in a given directory"""
+    """Sign all RPM packages in a given directory."""
 
     command_name = "rpmsign"
     ext = "rpm"
@@ -75,7 +75,7 @@ class RPMSigningUtil(DirectorySigningUtil):
         return RPMMacro
 
     def setup(self) -> None:
-        """Create the .rpmmacros file if it doesn't exist"""
+        """Create the .rpmmacros file if it doesn't exist."""
         self.rpmmacro(
             self.maintainer.home,
             maintainer=self.maintainer.name,
