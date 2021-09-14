@@ -1,2 +1,2 @@
 
-pytooling_package(name="aio.tasks")
+pytooling_package("aio.tasks")

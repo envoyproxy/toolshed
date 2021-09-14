@@ -2,10 +2,10 @@
 pytooling_library(
     "envoy.distribution.repo",
     dependencies=[
-        "//:abstracts",
-        "//:aio.subprocess",
-        "//:envoy.base.runner",
-        "//:envoy.base.utils",
+        "//deps:abstracts",
+        "//deps:aio.functional",
+        "//deps:aio.subprocess",
+        "//deps:envoy.base.runner",
+        "//deps:envoy.base.utils",
     ],
-    tags=["abstract-types"],
 )

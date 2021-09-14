@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.distribution.verify")
+pytooling_package("envoy.distribution.verify")

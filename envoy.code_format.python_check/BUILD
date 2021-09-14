@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.code_format.python_check")
+pytooling_package("envoy.code_format.python_check")

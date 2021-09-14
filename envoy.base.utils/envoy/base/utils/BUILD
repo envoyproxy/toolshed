@@ -2,6 +2,6 @@
 pytooling_library(
     "envoy.base.utils",
     dependencies=[
-        "//:abstracts",
+        "//deps:abstracts",
     ],
 )

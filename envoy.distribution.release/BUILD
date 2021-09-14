@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.distribution.release")
+pytooling_package("envoy.distribution.release")

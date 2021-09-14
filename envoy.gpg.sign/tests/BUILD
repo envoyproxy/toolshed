@@ -2,7 +2,7 @@
 pytooling_tests(
     "envoy.gpg.sign",
     dependencies=[
-        "//:envoy.base.runner",
-        "//:envoy.gpg.identity",
+        "//deps:envoy.base.runner",
+        "//deps:envoy.gpg.identity",
     ],
 )

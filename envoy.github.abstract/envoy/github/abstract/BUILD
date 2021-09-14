@@ -2,8 +2,10 @@
 pytooling_library(
     "envoy.github.abstract",
     dependencies=[
-        "//:abstracts",
-        "//:envoy.abstract.command",
-        "//:envoy.base.runner",
+        "//deps:abstracts",
+        "//deps:aio.functional",
+        "//deps:aio.tasks",
+        "//deps:envoy.abstract.command",
+        "//deps:envoy.base.runner",
     ],
 )

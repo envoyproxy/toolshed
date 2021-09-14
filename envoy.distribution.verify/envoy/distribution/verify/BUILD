@@ -2,9 +2,8 @@
 pytooling_library(
     "envoy.distribution.verify",
     dependencies=[
-        "//:envoy.base.checker",
-        "//:envoy.base.utils",
-        "//:envoy.distribution.distrotest",
+        "//deps:envoy.base.checker",
+        "//deps:envoy.base.utils",
+        "//deps:envoy.distribution.distrotest",
     ],
-    tags=["abstract-types"],
 )

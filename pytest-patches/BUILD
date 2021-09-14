@@ -1,2 +1,2 @@
 
-pytooling_package(name="pytest-patches")
+pytooling_package("pytest-patches")

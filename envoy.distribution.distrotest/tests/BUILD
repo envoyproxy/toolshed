@@ -2,8 +2,8 @@
 pytooling_tests(
     "envoy.distribution.distrotest",
     dependencies=[
-        "//:envoy.base.checker",
-        "//:envoy.docker.utils",
-        "//:pytest-asyncio",
+        "//deps:envoy.base.checker",
+        "//deps:envoy.docker.utils",
+        "//deps:pytest-asyncio",
     ],
 )

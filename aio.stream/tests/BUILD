@@ -2,8 +2,8 @@
 pytooling_tests(
     "aio.stream",
     dependencies=[
-        "//:aiofiles",
-        "//:aiohttp",
-        "//:pytest-asyncio",
+        "//deps:aiofiles",
+        "//deps:aiohttp",
+        "//deps:pytest-asyncio",
     ],
 )

@@ -2,6 +2,7 @@
 pytooling_library(
     "envoy.abstract.command",
     dependencies=[
-        "//:abstracts",
+        "//deps:abstracts",
+        "//deps:aio.functional",
     ],
 )

@@ -2,8 +2,8 @@
 pytooling_tests(
     "envoy.github.abstract",
     dependencies=[
-        "//:abstracts",
-        "//:envoy.abstract.command",
-        "//:pytest-asyncio",
+        "//deps:abstracts",
+        "//deps:envoy.abstract.command",
+        "//deps:pytest-asyncio",
     ],
 )

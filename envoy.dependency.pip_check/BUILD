@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.dependency.pip_check")
+pytooling_package("envoy.dependency.pip_check")

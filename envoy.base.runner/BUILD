@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.base.runner")
+pytooling_package("envoy.base.runner")

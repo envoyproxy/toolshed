@@ -1,2 +1,2 @@
 
-pytooling_package(name="abstracts")
+pytooling_package("abstracts")
