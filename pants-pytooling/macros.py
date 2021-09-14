@@ -37,12 +37,21 @@ def pytooling_package(
         skip_mypy=True,
         dependencies=dependencies,
         **library_kwargs or {})
+
+    files(
+        name="build_artefacts",
+        sources=["setup.cfg"])
+
     pytooling_distribution(
         name="package",
         dependencies=dependencies,
         provides=setup_py(
             name=namespace,
             **setup_kwargs or {}),
+        verify_targets=[
+            "//:check_modules",
+            "//:check_metadata",
+            "//:check_dependencies"],
         setup_py_commands=["bdist_wheel", "sdist"],
         **kwargs)
 
