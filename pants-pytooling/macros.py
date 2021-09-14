@@ -1,32 +1,60 @@
 
 
-def pytooling_library(namespace, dependencies=[], **kwargs):
-    dependencies = [f"!//:{namespace}", f"{namespace}/{namespace.replace('.', '/').replace('-', '_')}"] + dependencies
+def _dep_on_myself(namespace: str) -> list:
+    # This prevents dependency conflicts on a package's own upstream
+    return [
+        f"!//deps:{namespace}",
+        f"{namespace}/{namespace.replace('.', '/').replace('-', '_')}"]
+
+
+def pytooling_library(
+        namespace: str,
+        dependencies = None,  # Optional[List]
+        **kwargs) -> None:
+    """Library of namespaced code that can be packaged"""
+    resources(
+        name="package_data",
+        sources=["py.typed"])
     python_library(
-        dependencies=dependencies,
+        dependencies=(
+            _dep_on_myself(namespace)
+            + [":package_data"]
+            + (dependencies or [])),
         **kwargs)
 
 
-def pytooling_package(name, dependencies=[], **kwargs):
-
+def pytooling_package(
+        namespace: str,
+        dependencies = None,  # Optional[List] = None,
+        library_kwargs = None,  # Optional[Dict] = None,
+        setup_kwargs = None,  # Optional[Dict] = None,
+        **kwargs) -> None:
+    """Namespaced distribution package"""
+    dependencies = (
+        _dep_on_myself(namespace)
+        + (dependencies or []))
     python_library(
         skip_mypy=True,
         dependencies=dependencies,
-    )
-
+        **library_kwargs or {})
     pytooling_distribution(
         name="package",
-        provides=setup_py(
-            name=name,
-            **kwargs,
-        ),
-        setup_py_commands=["bdist_wheel", "sdist"],
-    )
-
-
-def pytooling_tests(namespace, dependencies=[], **kwargs):
-    dependencies = [f"!//:{namespace}", f"{namespace}/{namespace.replace('.', '/').replace('-', '_')}"] + dependencies
-    python_tests(
         dependencies=dependencies,
+        provides=setup_py(
+            name=namespace,
+            **setup_kwargs or {}),
+        setup_py_commands=["bdist_wheel", "sdist"],
+        **kwargs)
+
+
+def pytooling_tests(
+        namespace: str,
+        dependencies = None,  # Optional[List] = None,
+        **kwargs) -> None:
+    """Test library for a namespaced package"""
+    python_tests(
+        dependencies=(
+            _dep_on_myself(namespace)
+            + (dependencies or [])),
         skip_mypy=True,
         **kwargs)
