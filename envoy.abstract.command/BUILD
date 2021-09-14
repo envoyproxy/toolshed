@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.abstract.command")
+pytooling_package("envoy.abstract.command")

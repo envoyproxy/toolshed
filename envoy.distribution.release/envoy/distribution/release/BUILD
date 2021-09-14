@@ -2,12 +2,13 @@
 pytooling_library(
     "envoy.distribution.release",
     dependencies=[
-        "//:abstracts",
-        "//:envoy.abstract.command",
-        "//:envoy.base.runner",
-        "//:envoy.base.utils",
-        "//:envoy.github.abstract",
-        "//:envoy.github.release",
+        "//deps:abstracts",
+        "//deps:aio.functional",
+        "//deps:envoy.abstract.command",
+        "//deps:envoy.base.runner",
+        "//deps:envoy.base.utils",
+        "//deps:envoy.github.abstract",
+        "//deps:envoy.github.release",
     ],
     tags=["abstract-types"],
 )

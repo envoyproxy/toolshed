@@ -2,6 +2,6 @@
 pytooling_tests(
     "aio.subprocess",
     dependencies=[
-        "//:pytest-asyncio",
+        "//deps:pytest-asyncio",
     ],
 )

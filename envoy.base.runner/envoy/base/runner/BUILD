@@ -2,7 +2,7 @@
 pytooling_library(
     "envoy.base.runner",
     dependencies=[
-        "//:envoy.abstract.command",
-        "//:abstracts",
+        "//deps:envoy.abstract.command",
+        "//deps:abstracts",
     ],
 )

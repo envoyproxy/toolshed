@@ -2,8 +2,8 @@
 pytooling_library(
     "envoy.gpg.sign",
     dependencies=[
-        "//:envoy.base.runner",
-        "//:envoy.base.utils",
-        "//:envoy.gpg.identity",
+        "//deps:envoy.base.runner",
+        "//deps:envoy.base.utils",
+        "//deps:envoy.gpg.identity",
     ],
 )

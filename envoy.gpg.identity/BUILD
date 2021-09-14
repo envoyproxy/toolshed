@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.gpg.identity")
+pytooling_package("envoy.gpg.identity")

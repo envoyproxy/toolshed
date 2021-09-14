@@ -2,9 +2,8 @@
 pytooling_library(
     "envoy.dependency.pip_check",
     dependencies=[
-        "//:abstracts",
-        "//:envoy.base.checker",
-        "//:envoy.base.utils",
+        "//deps:abstracts",
+        "//deps:envoy.base.checker",
+        "//deps:envoy.base.utils",
     ],
-    tags=["abstract-types"],
 )

@@ -2,7 +2,7 @@
 pytooling_tests(
     "envoy.base.checker",
     dependencies=[
-        "//:envoy.base.runner",
-        "//:pytest-asyncio",
+        "//deps:envoy.base.runner",
+        "//deps:pytest-asyncio",
     ],
 )

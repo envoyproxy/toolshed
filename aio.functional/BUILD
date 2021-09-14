@@ -1,2 +1,2 @@
 
-pytooling_package(name="aio.functional")
+pytooling_package("aio.functional")

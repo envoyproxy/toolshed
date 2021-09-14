@@ -2,6 +2,6 @@
 pytooling_tests(
     "aio.tasks",
     dependencies=[
-        "//:pytest-asyncio",
+        "//deps:pytest-asyncio",
     ],
 )

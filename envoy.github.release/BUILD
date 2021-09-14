@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.github.release")
+pytooling_package("envoy.github.release")

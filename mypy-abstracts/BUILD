@@ -1,7 +1,7 @@
 
 pytooling_package(
-    name="mypy-abstracts",
+    "mypy-abstracts",
     dependencies=[
-        "//:mypy",
+        "//deps:mypy",
     ],
 )

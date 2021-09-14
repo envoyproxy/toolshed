@@ -2,9 +2,9 @@
 pytooling_tests(
     "envoy.distribution.release",
     dependencies=[
-        "//:abstracts",
-        "//:envoy.github.abstract",
-        "//:envoy.github.release",
-        "//:pytest-asyncio",
+        "//deps:abstracts",
+        "//deps:envoy.github.abstract",
+        "//deps:envoy.github.release",
+        "//deps:pytest-asyncio",
     ],
 )

@@ -1,2 +1,2 @@
 
-pytooling_package(name="envoy.docker.utils")
+pytooling_package("envoy.docker.utils")

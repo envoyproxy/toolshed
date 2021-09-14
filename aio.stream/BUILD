@@ -1,2 +1,2 @@
 
-pytooling_package(name="aio.stream")
+pytooling_package("aio.stream")

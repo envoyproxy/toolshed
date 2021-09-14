@@ -1,2 +1,2 @@
 
-pytooling_package(name="aio.subprocess")
+pytooling_package("aio.subprocess")
