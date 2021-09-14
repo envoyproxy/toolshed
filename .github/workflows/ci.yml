@@ -38,12 +38,23 @@ jobs:
     - name: Run pants typecheck
       run: "pants typecheck ::"
 
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v2
+    - name: Install pants
+      run: pip install pantsbuild.pants
+    - name: Run pants README
+      run: "pants readme --check=README.md ::"
+
   package:
     runs-on: ubuntu-latest
     needs:
     - test
     - lint
     - typecheck
+    - docs
     steps:
     - uses: actions/checkout@v1
     - uses: actions/setup-python@v2

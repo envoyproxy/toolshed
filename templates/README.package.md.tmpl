@@ -1,0 +1,17 @@
+#### [{{ package.name }}]({{ package.name }})
+
+version: {{ package.version }}
+
+pypi: {{ package.pypi_url }}
+
+{%- if package.requires %}
+
+##### requirements:
+{% for requirement in package.requires %}
+{%- if requirement %}
+- {{ requirement }}
+{%- endif -%}
+{%- endfor -%}
+{%- endif %}
+
+---

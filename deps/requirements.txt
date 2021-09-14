@@ -25,13 +25,17 @@ envoy.gpg.sign>=0.0.3
 flake8
 frozendict
 gidgethub
+jinja2
 mypy
 mypy-abstracts
+packaging
 pytest-patches
 pytest-asyncio
 python-gnupg
 pyyaml
+setuptools
 trycast
+types-setuptools
 verboselogs
 wheel-inspect
 yapf
