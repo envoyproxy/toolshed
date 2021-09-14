@@ -36,7 +36,7 @@ class PytoolingSetupKwargsResponse:
 
     @property
     def kwargs(self) -> SetupKwargs:
-        return SetupKwargs(self.setup_kwargs, address=self.address)
+        return SetupKwargs(self.setup_kwargs, address=self.address)  # , _allow_banned_keys=True)
 
     @property
     def setup_kwargs(self) -> Dict:
