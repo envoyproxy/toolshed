@@ -9,7 +9,7 @@ def _dep_on_myself(namespace: str) -> list:
 
 def pytooling_library(
         namespace: str,
-        dependencies = None,  # Optional[List]
+        dependencies=None,  # Optional[List]
         **kwargs) -> None:
     """Library of namespaced code that can be packaged"""
     resources(
@@ -25,14 +25,17 @@ def pytooling_library(
 
 def pytooling_package(
         namespace: str,
-        dependencies = None,  # Optional[List] = None,
-        library_kwargs = None,  # Optional[Dict] = None,
-        setup_kwargs = None,  # Optional[Dict] = None,
+        dependencies=None,  # Optional[List] = None,
+        library_kwargs=None,  # Optional[Dict] = None,
+        setup_kwargs=None,  # Optional[Dict] = None,
         **kwargs) -> None:
     """Namespaced distribution package"""
     dependencies = (
         _dep_on_myself(namespace)
         + (dependencies or []))
+    resources(
+        name="build_artefacts",
+        sources=["VERSION", "setup.cfg"])
     python_library(
         skip_mypy=True,
         dependencies=dependencies,
@@ -45,11 +48,17 @@ def pytooling_package(
             **setup_kwargs or {}),
         setup_py_commands=["bdist_wheel", "sdist"],
         **kwargs)
+    readme_snippet(
+        name="package_snippet",
+        artefacts=[
+            f"{namespace}:build_artefacts",
+            "//templates:README.package.md.tmpl"],
+        text=["//tools/readme:summarize"])
 
 
 def pytooling_tests(
         namespace: str,
-        dependencies = None,  # Optional[List] = None,
+        dependencies=None,  # Optional[List] = None,
         **kwargs) -> None:
     """Test library for a namespaced package"""
     python_tests(
