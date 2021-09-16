@@ -6,6 +6,7 @@ aiodocker
 aiofiles
 aiohttp
 abstracts>=0.0.12
+colorama
 coloredlogs
 envoy.abstract.command>=0.0.3
 envoy.base.checker>=0.0.2
@@ -34,6 +35,13 @@ pytest-asyncio
 python-gnupg
 pyyaml
 setuptools
+sphinx
+sphinx-copybutton
+sphinx-rtd-theme
+sphinx-tabs
+sphinxcontrib-httpdomain
+sphinxcontrib-serializinghtml
+sphinxext-rediraffe
 trycast
 types-setuptools
 verboselogs
