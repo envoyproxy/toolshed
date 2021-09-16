@@ -236,6 +236,28 @@ pypi: https://pypi.org/project/envoy.docker.utils
 ---
 
 
+#### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
+
+version: 0.0.1
+
+pypi: https://pypi.org/project/envoy.docs.sphinx_runner
+
+##### requirements:
+
+- [colorama](https://pypi.org/project/colorama)
+- [envoy.base.runner](https://pypi.org/project/envoy.base.runner)
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils)
+- [sphinx](https://pypi.org/project/sphinx)
+- [sphinx-copybutton](https://pypi.org/project/sphinx-copybutton)
+- [sphinx-rtd-theme](https://pypi.org/project/sphinx-rtd-theme)
+- [sphinx-tabs](https://pypi.org/project/sphinx-tabs)
+- [sphinxcontrib-httpdomain](https://pypi.org/project/sphinxcontrib-httpdomain)
+- [sphinxcontrib-serializinghtml](https://pypi.org/project/sphinxcontrib-serializinghtml)
+- [sphinxext-rediraffe](https://pypi.org/project/sphinxext-rediraffe)
+
+---
+
+
 #### [envoy.github.abstract](envoy.github.abstract)
 
 version: 0.0.17.dev0
