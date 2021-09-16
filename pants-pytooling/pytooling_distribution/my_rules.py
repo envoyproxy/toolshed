@@ -44,7 +44,12 @@ class PytoolingSetupKwargsResponse:
         for option in self.config["metadata"]:
             kwargs[option] = self.config["metadata"][option]
         kwargs["version"] = self.version
-        # kwargs["tags"] = ["setup"]
+        if self.config.has_section("options.entry_points"):
+            for entry_point in self.config["options.entry_points"]:
+                kwargs["entry_points"] = kwargs.get("entry_points", {})
+                kwargs["entry_points"][entry_point] = self.config[
+                    "options.entry_points"][
+                        entry_point].strip().replace(" ", "").split("\n")
         return kwargs
 
     @property
