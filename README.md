@@ -124,7 +124,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code_format.python_check](envoy.code_format.python_check)
 
-version: 0.0.4
+version: 0.0.5.dev0
 
 pypi: https://pypi.org/project/envoy.code_format.python_check
 

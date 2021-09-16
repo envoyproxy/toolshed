@@ -1,6 +1,6 @@
 [GLOBAL]
 pythonpath = ["%(buildroot)s/pants-pytooling"]
-pants_version = "2.6.0"
+pants_version = "2.6.1"
 backend_packages = [
     "pants.backend.python",
     "pants.backend.python.lint.docformatter",
