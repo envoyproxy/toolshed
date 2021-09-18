@@ -238,7 +238,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.0.2
+version: 0.0.3
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
