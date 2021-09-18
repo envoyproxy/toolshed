@@ -5,6 +5,7 @@ pytooling_library(
         "//deps:envoy.base.runner",
         "//deps:envoy.base.utils",
         "//deps:colorama",
+        "//deps:docutils",
         "//deps:sphinx",
         "//deps:sphinx-copybutton",
         "//deps:sphinx-rtd-theme",

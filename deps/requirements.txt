@@ -8,6 +8,7 @@ aiohttp
 abstracts>=0.0.12
 colorama
 coloredlogs
+docutils~=0.16.0
 envoy.abstract.command>=0.0.3
 envoy.base.checker>=0.0.2
 envoy.base.runner>=0.0.4
