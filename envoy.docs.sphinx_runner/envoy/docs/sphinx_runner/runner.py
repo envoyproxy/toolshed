@@ -3,10 +3,11 @@ import os
 import pathlib
 import platform
 import re
+import shutil
 import sys
 import tarfile
 from functools import cached_property
-from typing import List
+from typing import List, Optional
 
 from colorama import Fore, Style  # type:ignore
 
@@ -64,16 +65,22 @@ class SphinxRunner(runner.Runner):
             blob_sha=self.blob_sha,
             version_number=self.version_number,
             docker_image_tag_name=self.docker_image_tag_name)
-        if self.validator_path:
-            _configs["validator_path"] = str(self.validator_path)
-        if self.descriptor_path:
-            _configs["descriptor_path"] = str(self.descriptor_path)
+        if self.validate_fragments:
+            if self.validator_path:
+                _configs["validator_path"] = str(self.validator_path)
+            if self.descriptor_path:
+                _configs["descriptor_path"] = str(self.descriptor_path)
+        else:
+            _configs["skip_validation"] = "true"
         return _configs
 
     @property
-    def descriptor_path(self) -> pathlib.Path:
+    def descriptor_path(self) -> Optional[pathlib.Path]:
         """Path to a descriptor file for config validation."""
-        return pathlib.Path(self.args.descriptor_path)
+        return (
+            pathlib.Path(self.args.descriptor_path)
+            if self.args.descriptor_path
+            else None)
 
     @property
     def docker_image_tag_name(self) -> str:
@@ -94,9 +101,14 @@ class SphinxRunner(runner.Runner):
         return self.build_dir.joinpath("generated", "html")
 
     @property
-    def output_filename(self) -> pathlib.Path:
-        """Path to tar file for saving generated html docs."""
-        return pathlib.Path(self.args.output_filename)
+    def output_path(self) -> pathlib.Path:
+        """Path to tar file or directory for saving generated html docs."""
+        return pathlib.Path(self.args.output_path)
+
+    @property
+    def overwrite(self) -> bool:
+        """Overwrite output path if exists."""
+        return self.args.overwrite
 
     @property
     def py_compatible(self) -> bool:
@@ -132,9 +144,19 @@ class SphinxRunner(runner.Runner):
             str(self.rst_dir), str(self.html_dir)]
 
     @property
-    def validator_path(self) -> pathlib.Path:
+    def validate_fragments(self) -> bool:
+        """Validate configuration fragments."""
+        return bool(
+            self.validator_path
+            or self.args.validate_fragments)
+
+    @property
+    def validator_path(self) -> Optional[pathlib.Path]:
         """Path to validator utility for validating snippets."""
-        return pathlib.Path(self.args.validator_path)
+        return (
+            pathlib.Path(self.args.validator_path)
+            if self.args.validator_path
+            else None)
 
     @property
     def version_file(self) -> pathlib.Path:
@@ -144,7 +166,10 @@ class SphinxRunner(runner.Runner):
     @cached_property
     def version_number(self) -> str:
         """Semantic version."""
-        return self.version_file.read_text().strip()
+        return (
+            self.args.version
+            if self.args.version
+            else self.version_file.read_text().strip())
 
     @property
     def version_string(self) -> str:
@@ -161,8 +186,13 @@ class SphinxRunner(runner.Runner):
         parser.add_argument("--version_file")
         parser.add_argument("--validator_path")
         parser.add_argument("--descriptor_path")
+        parser.add_argument("--version")
+        parser.add_argument(
+            "--validate_fragments", default=False, action="store_true")
+        parser.add_argument(
+            "--overwrite", default=False, action="store_true")
         parser.add_argument("rst_tar")
-        parser.add_argument("output_filename")
+        parser.add_argument("output_path")
 
     def build_html(self) -> None:
         if sphinx_build(self.sphinx_args):
@@ -199,12 +229,24 @@ class SphinxRunner(runner.Runner):
                 f"Git tag ({self.version_number}) not found in "
                 "version_history/current.rst")
 
-    def create_tarball(self) -> None:
-        with tarfile.open(self.output_filename, "w") as tar:
+    def save_html(self) -> None:
+        if self.output_path.exists():
+            self.log.warning(
+                f"Output path ({self.output_path}) exists, removing")
+            if self.output_path.is_file():
+                self.output_path.unlink()
+            else:
+                shutil.rmtree(self.output_path)
+        if not utils.is_tarlike(self.output_path):
+            shutil.copytree(self.html_dir, self.output_path)
+            return
+        with tarfile.open(self.output_path, "w") as tar:
             tar.add(self.html_dir, arcname=".")
 
     @runner.cleansup
+    @runner.catches((SphinxBuildError, SphinxEnvError))
     def run(self):
+        self.validate_args()
         os.environ["ENVOY_DOCS_BUILD_CONFIG"] = str(self.config_file)
         try:
             self.check_env()
@@ -217,7 +259,14 @@ class SphinxRunner(runner.Runner):
         except SphinxBuildError as e:
             print(e)
             return 1
-        self.create_tarball()
+        self.save_html()
+
+    def validate_args(self):
+        if self.output_path.exists():
+            if not self.overwrite:
+                raise SphinxBuildError(
+                    f"Output path ({self.output_path}) exists and "
+                    "`--overwrite` is not set`")
 
     def _color(self, msg, name=None):
         return f"{self.colors[name or 'chrome']}{msg}{Style.RESET_ALL}"
