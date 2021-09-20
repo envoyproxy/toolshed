@@ -205,3 +205,10 @@ def cd_and_return(
         yield
     finally:
         os.chdir(prev_cwd)
+
+
+def to_bytes(data: Union[str, bytes]) -> bytes:
+    return (
+        bytes(data, encoding="utf-8")
+        if not isinstance(data, bytes)
+        else data)
