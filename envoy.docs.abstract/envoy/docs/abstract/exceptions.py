@@ -1,0 +1,4 @@
+
+
+class RSTFormatterError(Exception):
+    pass

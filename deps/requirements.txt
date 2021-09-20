@@ -12,7 +12,7 @@ docutils~=0.16.0
 envoy.abstract.command>=0.0.3
 envoy.base.checker>=0.0.2
 envoy.base.runner>=0.0.4
-envoy.base.utils>=0.0.8
+envoy.base.utils>=0.0.9
 envoy.code_format.python_check>=0.0.4
 envoy.dependency.pip_check>=0.0.4
 envoy.distribution.distrotest>=0.0.3
@@ -27,6 +27,7 @@ envoy.gpg.sign>=0.0.3
 flake8
 frozendict
 gidgethub
+protobuf
 jinja2
 mypy
 mypy-abstracts
@@ -44,6 +45,7 @@ sphinxcontrib-httpdomain
 sphinxcontrib-serializinghtml
 sphinxext-rediraffe
 trycast
+types-protobuf
 types-setuptools
 verboselogs
 wheel-inspect
