@@ -16,7 +16,8 @@ from .utils import (
     typed,
     untar,
     TAR_EXTS,
-    to_yaml)
+    to_yaml,
+    to_bytes)
 
 
 __all__ = (
@@ -36,5 +37,6 @@ __all__ = (
     "typed",
     "untar",
     "TAR_EXTS",
+    "to_bytes",
     "to_yaml",
     "TypeCastingError")

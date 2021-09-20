@@ -322,3 +322,12 @@ def test_cd_and_return(path):
         assert pathlib.Path.cwd() == pathlib.Path("/tmp")
 
     assert pathlib.Path.cwd() == cwd
+
+
+@pytest.mark.parametrize("data", [b"BYTES", "STRING"])
+def test_to_bytes(data):
+    assert (
+        utils.to_bytes(data)
+        == (data.encode("utf-8")
+            if not isinstance(data, bytes)
+            else data))
