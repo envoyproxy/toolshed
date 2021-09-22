@@ -44,6 +44,7 @@ extra_requirements = [
      "mypy-abstracts",
      "types-aiofiles",
      "types-frozendict",
+     "types-protobuf",
      "types-pyyaml"]
 args = [
      "--explicit-package-bases",

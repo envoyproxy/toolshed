@@ -109,7 +109,7 @@ pypi: https://pypi.org/project/envoy.base.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.0.9
+version: 0.0.10.dev0
 
 pypi: https://pypi.org/project/envoy.base.utils
 
@@ -232,6 +232,23 @@ pypi: https://pypi.org/project/envoy.docker.utils
 ##### requirements:
 
 - [aiodocker](https://pypi.org/project/aiodocker)
+
+---
+
+
+#### [envoy.docs.abstract](envoy.docs.abstract)
+
+version: 0.0.1
+
+pypi: https://pypi.org/project/envoy.docs.abstract
+
+##### requirements:
+
+- [abstracts](https://pypi.org/project/abstracts)
+- [envoy.base.runner](https://pypi.org/project/envoy.base.runner)
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.9
+- [jinja2](https://pypi.org/project/jinja2)
+- [protobuf](https://pypi.org/project/protobuf)
 
 ---
 
