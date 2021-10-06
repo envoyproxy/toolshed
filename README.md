@@ -142,6 +142,26 @@ pypi: https://pypi.org/project/envoy.code_format.python_check
 ---
 
 
+#### [envoy.dependency.cve_scan](envoy.dependency.cve_scan)
+
+version: 0.0.1.dev0
+
+pypi: https://pypi.org/project/envoy.dependency.cve_scan
+
+##### requirements:
+
+- [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+- [aio.functional](https://pypi.org/project/aio.functional)
+- [aio.tasks](https://pypi.org/project/aio.tasks)
+- [aiohttp](https://pypi.org/project/aiohttp)
+- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.0.2
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.3
+- [jinja2](https://pypi.org/project/jinja2)
+- [packaging](https://pypi.org/project/packaging)
+
+---
+
+
 #### [envoy.dependency.pip_check](envoy.dependency.pip_check)
 
 version: 0.0.5.dev0

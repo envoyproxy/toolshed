@@ -1,0 +1,56 @@
+{
+    "bazel_compdb": {
+        "project_name": "bazel-compilation-database",
+        "project_desc": "Clang JSON compilation database support for Bazel",
+        "project_url": "https://github.com/grailbio/bazel-compilation-database",
+        "version": "0.4.5",
+        "sha256": "bcecfd622c4ef272fd4ba42726a52e140b961c4eac23025f18b346c968a8cfb4",
+        "strip_prefix": "bazel-compilation-database-0.4.5",
+        "urls": [
+            "https://github.com/grailbio/bazel-compilation-database/archive/0.4.5.tar.gz"
+        ],
+        "release_date": "2020-08-01",
+        "use_category": [
+            "build"
+        ]
+    },
+    "org_brotli": {
+        "project_name": "brotli",
+        "project_desc": "brotli compression library",
+        "project_url": "https://brotli.org",
+        "version": "0cd2e3926e95e7e2930f57ae3f4885508d462a25",
+        "sha256": "93810780e60304b51f2c9645fe313a6e4640711063ed0b860cfa60999dd256c5",
+        "strip_prefix": "brotli-0cd2e3926e95e7e2930f57ae3f4885508d462a25",
+        "urls": [
+            "https://github.com/google/brotli/archive/0cd2e3926e95e7e2930f57ae3f4885508d462a25.tar.gz"
+        ],
+        "use_category": [
+            "dataplane_ext"
+        ],
+        "extensions": [
+            "envoy.compression.brotli.compressor",
+            "envoy.compression.brotli.decompressor"
+        ],
+        "release_date": "2020-09-08",
+        "cpe": "cpe:2.3:a:google:brotli:*"
+    },
+    "com_github_wasmtime": {
+        "project_name": "wasmtime",
+        "project_desc": "A standalone runtime for WebAssembly",
+        "project_url": "https://github.com/bytecodealliance/wasmtime",
+        "version": "0.30.0",
+        "sha256": "78eccfd8c8d63c30e85762bf36cf032409b7c34ac34f329b7e228ea6cc7aebca",
+        "strip_prefix": "wasmtime-0.30.0",
+        "urls": [
+            "https://github.com/bytecodealliance/wasmtime/archive/v0.30.0.tar.gz"
+        ],
+        "release_date": "2021-09-17",
+        "use_category": [
+            "dataplane_ext"
+        ],
+        "extensions": [
+            "envoy.wasm.runtime.wasmtime"
+        ],
+        "cpe": "cpe:2.3:a:bytecodealliance:wasmtime:*"
+    }
+}

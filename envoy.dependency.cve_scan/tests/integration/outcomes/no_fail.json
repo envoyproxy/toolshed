@@ -1,0 +1,26 @@
+{
+    "error": [],
+    "info": [
+        [
+            [
+                "CVE data downloaded from: NIST_URL"
+            ],
+            {}
+        ],
+        [
+            [
+                "No CPE listed for: bazel_compdb"
+            ],
+            {}
+        ]
+    ],
+    "notice": [
+        [
+            [
+                "[cves] Running check"
+            ],
+            {}
+        ]
+    ],
+    "warning": []
+}
