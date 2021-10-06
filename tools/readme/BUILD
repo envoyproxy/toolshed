@@ -1,6 +1,4 @@
-
-
-python_library(
+python_sources(
     dependencies=[
         "//deps:jinja2",
         "//deps:packaging",
@@ -11,7 +9,7 @@ python_library(
 
 pex_binary(
     name="summarize",
-    dependencies = [
+    dependencies=[
         "./summarize.py",
     ],
     entry_point="readme.summarize",
@@ -19,7 +17,7 @@ pex_binary(
 
 pex_binary(
     name="header",
-    dependencies = [
+    dependencies=[
         "./header.py",
     ],
     entry_point="readme.header",

@@ -15,7 +15,7 @@ def pytooling_library(
     resources(
         name="package_data",
         sources=["py.typed"])
-    python_library(
+    python_sources(
         dependencies=(
             _dep_on_myself(namespace)
             + [":package_data"]
@@ -36,7 +36,7 @@ def pytooling_package(
     resources(
         name="build_artefacts",
         sources=["VERSION", "setup.cfg"])
-    python_library(
+    python_sources(
         skip_mypy=True,
         dependencies=dependencies,
         **library_kwargs or {})
@@ -46,7 +46,8 @@ def pytooling_package(
         provides=setup_py(
             name=namespace,
             **setup_kwargs or {}),
-        setup_py_commands=["bdist_wheel", "sdist"],
+        wheel=True,
+        sdist=True,
         **kwargs)
     readme_snippet(
         name="package_snippet",

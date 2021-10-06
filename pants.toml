@@ -1,6 +1,6 @@
 [GLOBAL]
 pythonpath = ["%(buildroot)s/pants-pytooling"]
-pants_version = "2.6.1"
+pants_version = "2.8.0rc0"
 backend_packages = [
     "pants.backend.python",
     "pants.backend.python.lint.docformatter",
@@ -15,17 +15,17 @@ build_file_prelude_globs = [
 ]
 plugins = ["jinja2"]
 
-[python-setup]
+[python]
 interpreter_constraints = [">=3.8.*"]
 
 [test]
 use_coverage = true
 
 [pytest]
-pytest_plugins = [
+extra_requirements = [
     "pytest-cov>=2.10.1,<2.12",
-    "pytest-patches",
-]
+    "pytest-patches"]
+lockfile = ".pytest.lock"
 
 [coverage-py]
 report = ["console", "html"]
@@ -40,7 +40,8 @@ root_patterns = ["pants-pytooling"]
 [mypy]
 config = "mypy.ini"
 extra_requirements = [
-     "mypy-abstracts",
+     "mypy-abstracts"]
+extra_type_stubs = [
      "types-aiofiles",
      "types-frozendict",
      "types-pyyaml"]
@@ -48,3 +49,7 @@ args = [
      "--explicit-package-bases",
      "--namespace-packages",
      "--no-warn-no-return"]
+lockfile = ".mypy.lock"
+
+[update-build-files]
+fmt = false
