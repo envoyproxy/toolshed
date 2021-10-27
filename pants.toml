@@ -9,7 +9,6 @@ backend_packages = [
     "pytooling_distribution",
     "pytooling_readme"]
 #   "pytooling_readme.package"]
-# arbitrary change
 pants_ignore = ["not"]
 build_file_prelude_globs = [
   "pants-pytooling/macros.py",
