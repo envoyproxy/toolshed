@@ -75,14 +75,14 @@ def buffered(
 
     contexts: List[
         Union[
-            redirect_stderr[io.StringIO],
-            redirect_stdout[io.StringIO]]] = []
+            redirect_stderr[io.TextIOWrapper],
+            redirect_stdout[io.TextIOWrapper]]] = []
 
     if stdout is not None:
-        _stdout = io.StringIO()
+        _stdout = io.TextIOWrapper(io.BytesIO())
         contexts.append(redirect_stdout(_stdout))
     if stderr is not None:
-        _stderr = io.StringIO()
+        _stderr = io.TextIOWrapper(io.BytesIO())
         contexts.append(redirect_stderr(_stderr))
 
     with nested(*contexts):

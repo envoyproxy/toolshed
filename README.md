@@ -109,7 +109,7 @@ pypi: https://pypi.org/project/envoy.base.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.0.9
+version: 0.0.10
 
 pypi: https://pypi.org/project/envoy.base.utils
 
