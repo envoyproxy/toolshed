@@ -42,7 +42,15 @@ class PytoolingSetupKwargsResponse:
     def setup_kwargs(self) -> Dict:
         kwargs = self.request.explicit_kwargs.copy()
         for option in self.config["metadata"]:
-            kwargs[option] = self.config["metadata"][option]
+            if option == "long_description":
+                if self.config["metadata"][option].startswith("file:"):
+                    filepath = self.config['metadata'][
+                        option].split(':')[1].strip()
+                    kwargs[option] = pathlib.Path(
+                        f"{self.namespace}/"
+                        f"{filepath}").read_text()
+            elif option != "classifiers":
+                kwargs[option] = self.config["metadata"][option]
         kwargs["version"] = self.version
         if self.config.has_section("options.entry_points"):
             for entry_point in self.config["options.entry_points"]:
