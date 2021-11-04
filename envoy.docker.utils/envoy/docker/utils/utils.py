@@ -84,7 +84,7 @@ async def build_image(*args, **kwargs) -> None:
 
 @asynccontextmanager
 async def docker_client(
-        url: Optional[str] = "") -> AsyncIterator[aiodocker.Docker]:
+        url: Optional[str] = None) -> AsyncIterator[aiodocker.Docker]:
     """Aiodocker client.
 
     For example to dump the docker image data:
