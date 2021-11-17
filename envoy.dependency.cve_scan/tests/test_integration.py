@@ -70,7 +70,7 @@ class DummyCVEChecker:
     # implementations should cache this
     @property
     def dependency_metadata(self):
-        # this needs to be mocked for these tests
+        # super needs to be mocked for these tests
         return super().dependency_metadata
 
     @cached_property
@@ -87,22 +87,16 @@ class DummyCVEVersionMatcher:
 # *Test data*
 #
 
-configs = pathlib.Path("envoy.dependency.cve_scan/tests/integration/config")
-CONFIG_TEST_DATA = {
-    f"config:{p.name.split('.')[0]}":
-    p for p in list(configs.glob("*.yaml"))}
-nist = pathlib.Path("envoy.dependency.cve_scan/tests/integration/nist")
-NIST_TEST_DATA = {
-    f"nist:{p.name.split('.')[0]}":
-    p for p in list(nist.glob("*.json"))}
-deps = pathlib.Path("envoy.dependency.cve_scan/tests/integration/deps")
-DEPS_TEST_DATA = {
-    f"deps:{p.name.split('.')[0]}": p
-    for p in list(deps.glob("*.json"))}
-outcomes = pathlib.Path("envoy.dependency.cve_scan/tests/integration/outcomes")
-OUTCOME_TEST_DATA = {
-    f"outcome:{p.name.split('.')[0]}": p
-    for p in list(outcomes.glob("*.json"))}
+TEST_DATA = {
+    k: {f"{k}:{p.name.split('.')[0]}": p
+        for p in pathlib.Path(
+            f"envoy.dependency.cve_scan/tests/integration/{k}").glob(
+                f"*.{suffix}")}
+    for k, suffix
+    in (("config", "yaml"),
+        ("nist", "json"),
+        ("deps", "json"),
+        ("outcome", "json"))}
 
 TEST_OUTCOMES = {
     "default": "nothing",
@@ -119,18 +113,18 @@ TEST_FAILURES = [
 # *Parametrized integration test*
 #
 
-@pytest.mark.parametrize("config_name", CONFIG_TEST_DATA.keys())
-@pytest.mark.parametrize("nist_data_name", NIST_TEST_DATA.keys())
-@pytest.mark.parametrize("deps_data_name", DEPS_TEST_DATA.keys())
+@pytest.mark.parametrize("config_name", TEST_DATA["config"].keys())
+@pytest.mark.parametrize("nist_data_name", TEST_DATA["nist"].keys())
+@pytest.mark.parametrize("deps_data_name", TEST_DATA["deps"].keys())
 def test_integration(patches, config_name, nist_data_name, deps_data_name):
     test_name = f"{deps_data_name}-{nist_data_name}-{config_name}"
     should_fail = test_name in TEST_FAILURES
     outcome = TEST_OUTCOMES.get(test_name, TEST_OUTCOMES["default"])
     outcome_data = json.loads(
-        OUTCOME_TEST_DATA.get(f"outcome:{outcome}").read_text())
-    config = yaml.safe_load(CONFIG_TEST_DATA[config_name].read_text())
-    nist_data = NIST_TEST_DATA[nist_data_name].read_bytes()
-    deps_data = json.loads(DEPS_TEST_DATA[deps_data_name].read_text())
+        TEST_DATA["outcome"].get(f"outcome:{outcome}").read_text())
+    config = yaml.safe_load(TEST_DATA["config"][config_name].read_text())
+    nist_data = TEST_DATA["nist"][nist_data_name].read_bytes()
+    deps_data = json.loads(TEST_DATA["deps"][deps_data_name].read_text())
     patched = patches(
         "utils",
         ("ACVEChecker.nist_downloads",

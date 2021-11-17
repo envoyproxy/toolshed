@@ -1,7 +1,7 @@
 
 from .abstract import (
     ACPE, ACVE, ACVEChecker, ADependency, ACVEVersionMatcher)
-from .exceptions import CPEError, CVECheckError
+from .exceptions import CPEError, CVEError, CVECheckError
 
 __all__ = (
     "ACPE",
@@ -10,4 +10,5 @@ __all__ = (
     "ADependency",
     "ACVEVersionMatcher",
     "CPEError",
+    "CVEError",
     "CVECheckError")

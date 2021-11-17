@@ -1,3 +1,12 @@
+"""Abstract CVE Checker."""
+
+#
+# As all the classes here are defined as abstract, implementations
+# will need to subclass all of them.
+#
+# Please see the dummy implementation in `test_integration.py` for a
+# reference implementation
+#
 
 import abc
 import argparse
@@ -18,11 +27,8 @@ from aio.tasks import concurrent
 
 from envoy.base import checker, utils
 
-from ..exceptions import CVECheckError
-from . import typing
-from .cpe import ACPE
-from .cve import ACVE
-from .dependency import ADependency
+from envoy.dependency.cve_scan.exceptions import CVECheckError
+from . import cpe, cve, dependency, typing
 
 
 NIST_URL_TPL = (
@@ -31,10 +37,16 @@ SCAN_FROM_YEAR = 2018
 
 
 class ACVEChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
+    """Abstract CVE Checker."""
+
     checks = ("cves",)
 
     @cached_property
     def config(self) -> typing.CVEConfigDict:
+        """CVE scan config - a combination of defaults and config defined
+        in provided config file
+        """
+
         config: typing.CVEConfigDict = dict(
             nist_url=self.nist_url_tpl,
             start_year=0)
@@ -51,20 +63,24 @@ class ACVEChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
 
     @property
     def config_path(self) -> pathlib.Path:
+        """Path to CVE scan config file."""
         return pathlib.Path(self.args.config_path)
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def cpe_class(self) -> ACPE:
+    def cpe_class(self) -> cpe.ACPE:
+        """CPE class."""
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def cve_class(self) -> ACVE:
+    def cve_class(self) -> cve.ACVE:
+        """CVE class."""
         raise NotImplementedError
 
     @async_property
     async def cve_data(self) -> typing.CVEDataTuple:
+        """CVE data derived from parsing NIST CVE data."""
         cves: typing.CVEDict = dict()
         cpe_revmap: typing.CPERevmapDict = defaultdict(set)
         async for download in concurrent(self.nist_downloads):
@@ -73,61 +89,76 @@ class ACVEChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
         return cves, cpe_revmap
 
     @cached_property
-    def dependencies(self) -> List[ADependency]:
+    def dependencies(self) -> List[dependency.ADependency]:
+        """List of dependencies."""
         return [
             self.dependency_class(k, v)
             for k, v in self.dependency_metadata.items()]
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def dependency_class(self) -> Type[ADependency]:
+    def dependency_class(self) -> Type[dependency.ADependency]:
+        """Dependency class."""
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
     def dependency_metadata(self) -> typing.DependenciesDict:
+        """Dependency metadata (derived in Envoy's case from
+        `repository_locations.bzl`)"""
         raise NotImplementedError
 
     @property
     @abc.abstractmethod
     def ignored_cves(self) -> List[str]:
+        """List of CVEs to ignore, taken from config file."""
         return self.config.get("ignored_cves", [])
 
     @property
     def nist_downloads(self) -> typing.DownloadGenerator:
+        """Download co-routines for NIST data."""
         for url in self.urls:
             yield self.download(url)
 
     @property
     def nist_url_tpl(self) -> str:
+        """Default URL template string for NIST downloads."""
         return NIST_URL_TPL
 
     @property
     def provided_urls(self) -> Optional[List[str]]:
+        """URLs provided to override default NIST URLs."""
         return self.args.urls
 
     @property
     def scan_year_end(self) -> int:
+        """Inclusive end year to scan to."""
         return datetime.now().year + 1
 
     @property
     def scan_year_start(self) -> int:
+        """Inclusive start year to scan from."""
         return self.config["start_year"]
 
     @property
     def scan_years(self) -> range:
+        """Range of years to scan."""
         return range(self.scan_year_start, self.scan_year_end)
 
     @cached_property
     def session(self) -> aiohttp.ClientSession:
+        """HTTP client session."""
         return aiohttp.ClientSession()
 
     @property
     def start_year(self) -> int:
+        """Start year to scan from, override this to remove requirement to
+        specify `start_year` in config."""
         raise NotImplementedError
 
     @cached_property
     def tracked_cpes(self) -> "typing.TrackedCPEDict":
+        """Dict of tracked CPE <> dependency."""
         return {
             v.cpe: v
             for v
@@ -136,6 +167,7 @@ class ACVEChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
 
     @property
     def urls(self) -> List[str]:
+        """URLs to fetch NIST data from."""
         if self.provided_urls:
             return self.provided_urls
         return [
@@ -150,34 +182,37 @@ class ACVEChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
     async def check_cves(self) -> None:
         """Scan for CVEs in a parsed NIST CVE database."""
         cve_data = await self.cve_data
-        for dependency in self.dependencies:
-            if not dependency.cpe:
-                self.log.info(f"No CPE listed for: {dependency.id}")
+        for dep in self.dependencies:
+            if not dep.cpe:
+                self.log.info(f"No CPE listed for: {dep.id}")
                 continue
             errors = []
-            for cve in sorted(self.dependency_check(dependency, *cve_data)):
+            for failing_cve in sorted(self.dependency_check(dep, *cve_data)):
                 errors.append(
-                    f'{cve_data[0][cve].format_failure(dependency)}')
+                    f'{cve_data[0][failing_cve].format_failure(dep)}')
             if errors:
                 self.error("cves", errors)
             else:
-                self.succeed("cves", [f"No CVEs found for: {dependency.id}"])
+                self.succeed("cves", [f"No CVEs found for: {dep.id}"])
 
     def dependency_check(
             self,
-            dependency: ADependency,
+            dependency: dependency.ADependency,
             cves: "typing.CVEDict",
             cpe_revmap: "typing.CPERevmapDict") -> Generator:
+        """Check for relevant CVEs for a given dependency."""
         cpe_str = self.cpe_class.from_string(dependency.cpe).vendor_normalized
-        for cve in cpe_revmap.get(cpe_str, []):
-            if cves[cve].dependency_match(dependency):
-                yield cve
+        for cpe_cve in cpe_revmap.get(cpe_str, []):
+            if cves[cpe_cve].dependency_match(dependency):
+                yield cpe_cve
 
     async def download(self, url: str) -> aiohttp.ClientResponse:
+        """Async HTTP get of download URL."""
         return await self.session.get(url)
 
-    def include_cve(self, cve):
-        return (
+    def include_cve(self, cve) -> bool:
+        """Determine whether a CVE has any (not-ignored) CPEs."""
+        return bool(
             len(cve.cpes) > 0
             and cve.is_v3
             and cve.id not in self.ignored_cves)
@@ -197,14 +232,15 @@ class ACVEChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
             if not self.include_cve(cve):
                 continue
             cves[cve.id] = cve
-            for cpe in cve.cpes:
-                cpe_revmap[cpe.vendor_normalized].add(cve.id)
+            for cve_cpe in cve.cpes:
+                cpe_revmap[cve_cpe.vendor_normalized].add(cve.id)
 
     async def parse_cve_response(
             self,
             download: aiohttp.ClientResponse,
             cves: "typing.CVEDict",
             cpe_revmap: "typing.CPERevmapDict") -> None:
+        """Parse async gzipped HTTP response -> JSON."""
         exceptions = (
             aiohttp.client_exceptions.ClientPayloadError,
             gzip.BadGzipFile)

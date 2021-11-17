@@ -1,3 +1,4 @@
+"""Abstract CVE."""
 
 import textwrap
 from datetime import date
@@ -8,10 +9,8 @@ import jinja2
 
 import abstracts
 
-from .cpe import ACPE
-from . import typing
-from .dependency import ADependency
-from .version_matcher import ACVEVersionMatcher
+from envoy.dependency.cve_scan.exceptions import CVEError
+from . import cpe, dependency, typing, version_matcher
 
 
 CVE_FAIL_TPL = """
@@ -42,67 +41,85 @@ class ACVE(metaclass=abstracts.Abstraction):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def cpe_class(self) -> ACPE:
+    def cpe_class(self) -> "cpe.ACPE":
+        """CPE class.
+
+        Should match class specified in CVEChecker.
+        """
         raise NotImplementedError
 
     @cached_property
-    def cpes(self) -> Set[ACPE]:
-        cpe_set: Set[ACPE] = set()
+    def cpes(self) -> Set["cpe.ACPE"]:
+        """Associated CPEs."""
+        cpe_set: Set["cpe.ACPE"] = set()
         self.gather_cpes(self.nodes, cpe_set)
         return cpe_set
 
     @property
     def description(self) -> str:
+        """CVE description."""
         return self.cve_data[
             'cve']['description']['description_data'][0]['value']
 
     @cached_property
     def fail_template(self) -> jinja2.Template:
+        """Jinja2 template for rendering a failing CVE match."""
         return jinja2.Template(self.fail_tpl)
 
     @property
     def fail_tpl(self) -> str:
+        """Template string, used for rendering with Jinja2."""
         return CVE_FAIL_TPL.lstrip()
 
     @property
     def formatted_description(self) -> str:
+        """Indented CVE description."""
         return '\n  '.join(textwrap.wrap(self.description))
 
     @property
     def id(self) -> str:
+        """CVE id/code."""
         return self.cve_data['cve']['CVE_data_meta']['ID']
 
     @property
     def is_v3(self) -> bool:
+        """Determine whether a CVE has any v3 data."""
         return "baseMetricV3" in self.cve_data['impact']
 
     @property
     def last_modified_date(self) -> date:
+        """Date the CVE was last modified."""
         return self.parse_cve_date(self.cve_data['lastModifiedDate'])
 
     @property
     def nodes(self) -> List["typing.CVENodeDict"]:
+        """CVE nodes used for matching versions."""
         return self.cve_data['configurations']['nodes']
 
     @property
     def published_date(self) -> date:
+        """Date the CVE was published."""
         return self.parse_cve_date(self.cve_data['publishedDate'])
 
     @property
     def score(self) -> float:
+        """CVE score."""
         return self.cve_data['impact']['baseMetricV3']['cvssV3']['baseScore']
 
     @property
     def severity(self) -> str:
+        """CVE severity."""
         return self.cve_data[
             'impact']['baseMetricV3']['cvssV3']['baseSeverity']
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def version_matcher_class(self) -> Type[ACVEVersionMatcher]:
+    def version_matcher_class(self) -> Type[
+            version_matcher.ACVEVersionMatcher]:
+        """Version matcher class."""
         raise NotImplementedError
 
-    def dependency_match(self, dependency: ADependency) -> bool:
+    def dependency_match(self, dep: "dependency.ADependency") -> bool:
         """Heuristically match dependency metadata against CVE.
 
         In general, we allow false positives but want to keep the noise
@@ -111,24 +128,26 @@ class ACVE(metaclass=abstracts.Abstraction):
         # ? wildcard_version_match = False
         # Consider each CPE attached to the CVE for a match against the
         # dependency CPE.
-        for cpe in self.cpes:
-            if cpe.dependency_match(dependency):
+        for cve_cpe in self.cpes:
+            if cve_cpe.dependency_match(dep):
                 # Wildcard version matches need additional heuristics unrelated
                 # to CPE to qualify, e.g. last updated date.
                 return (
-                    self.wildcard_version_match(dependency)
-                    if cpe.version == '*'
+                    self.wildcard_version_match(dep)
+                    if cve_cpe.version == '*'
                     else True)
 
-    def format_failure(self, dependency: ADependency) -> str:
+    def format_failure(self, dep: "dependency.ADependency") -> str:
+        """Format CVE failure for a given dependency."""
         return self.fail_template.render(
             cve=self,
-            dependency=dependency)
+            dependency=dep)
 
     def gather_cpes(
             self,
             nodes: List["typing.CVENodeDict"],
-            cpe_set: Set[ACPE]) -> None:
+            cpe_set: Set["cpe.ACPE"]) -> None:
+        """Recursively gather CPE data from CVE nodes."""
         for node in nodes:
             for cpe_match in node.get('cpe_match', []):
                 cpe = self.cpe_class.from_string(cpe_match.pop('cpe23Uri'))
@@ -141,7 +160,9 @@ class ACVE(metaclass=abstracts.Abstraction):
     def include_version(
             self,
             cpe_match: "typing.CVENodeMatchDict",
-            cpe: "ACPE") -> bool:
+            cpe: "cpe.ACPE") -> bool:
+        """Determine whether a CPE matches according to installed version of a
+        dependency."""
         return (
             str(cpe) in self.tracked_cpes
             and (
@@ -149,12 +170,13 @@ class ACVE(metaclass=abstracts.Abstraction):
                     self.tracked_cpes[str(cpe)])))
 
     def parse_cve_date(self, date_str: str) -> date:
-        assert (date_str.endswith('Z'))
+        if not date_str.endswith('Z'):
+            raise CVEError("CVE dates should be UTC and in isoformat")
         return date.fromisoformat(date_str.split('T')[0])
 
-    def wildcard_version_match(self, dependency: ADependency) -> bool:
+    def wildcard_version_match(self, dep: "dependency.ADependency") -> bool:
         # If the CVE was published after the dependency was last updated, it's
         # a potential match.
         return (
-            date.fromisoformat(dependency.release_date)
+            date.fromisoformat(dep.release_date)
             <= self.published_date)

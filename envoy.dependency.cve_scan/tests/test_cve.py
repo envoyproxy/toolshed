@@ -5,7 +5,7 @@ import pytest
 
 import abstracts
 
-from envoy.dependency.cve_scan import ACVE
+from envoy.dependency.cve_scan import ACVE, CVEError
 
 
 @abstracts.implementer(ACVE)
@@ -296,6 +296,69 @@ def test_cve_severity():
     assert "severity" not in cve.__dict__
 
 
+@pytest.mark.parametrize(
+    "matches",
+    [[],
+     [False] * 5,
+     [False, True, False, False, False],
+     [False, False, True, False, True],
+     [False, "*", True, False, True],
+     [False, "*", False, False, False]])
+def test_cve_dependency_match(patches, matches):
+    cve = DummyCVE("CVE", "TRACKED CPES")
+    patched = patches(
+        ("ACVE.cpes",
+         dict(new_callable=PropertyMock)),
+        "ACVE.wildcard_version_match",
+        prefix="envoy.dependency.cve_scan.abstract.cve")
+    dep = MagicMock()
+    cpes = []
+    for cpe_match in matches:
+        cpe = MagicMock()
+        cpe.dependency_match.return_value = cpe_match
+        cpe.version = cpe_match
+        cpes.append(cpe)
+
+    expected = []
+    for cpe_match in matches:
+        expected.append(cpe_match)
+        if cpe_match:
+            break
+
+    with patched as (m_cpes, m_match):
+        m_cpes.return_value = cpes
+        if not expected or expected[-1] is False:
+            assert not cve.dependency_match(dep)
+        else:
+            assert (
+                cve.dependency_match(dep)
+                == (m_match.return_value
+                    if expected[-1] == "*"
+                    else True))
+
+    if expected and expected[-1] == "*":
+        assert (
+            list(list(c) for c in m_match.call_args_list)
+            == [[(dep, ), {}]])
+    else:
+        assert not m_match.called
+
+    for i, cpe in enumerate(cpes):
+        if i == 0:
+            previous_result = False
+        else:
+            try:
+                previous_result = expected[i - 1]
+            except IndexError:
+                previous_result = True
+        if not previous_result:
+            assert (
+                list(cpe.dependency_match.call_args)
+                == [(dep,), {}])
+        else:
+            assert not cpe.dependency_match.called
+
+
 def test_cve_format_failure(patches):
     cve = DummyCVE("CVE", "TRACKED_CPES")
     patched = patches(
@@ -431,3 +494,59 @@ def test_cve_include_version(patches, tracked, matches):
     assert (
         list(tracked_cpes.__getitem__.call_args)
         == [(str(cpe),), {}])
+
+
+@pytest.mark.parametrize("is_utc", [True, False])
+def test_cve_parse_cve_date(patches, is_utc):
+    cve = DummyCVE("CVE", "TRACKED CPES")
+    patched = patches(
+        "date",
+        prefix="envoy.dependency.cve_scan.abstract.cve")
+    date_str = MagicMock()
+    date_str.endswith.return_value = is_utc
+
+    with patched as (m_date, ):
+        if not is_utc:
+            with pytest.raises(CVEError) as e:
+                cve.parse_cve_date(date_str)
+            assert not m_date.fromisoformat.called
+            assert (
+                e.value.args[0]
+                == 'CVE dates should be UTC and in isoformat')
+            return
+        assert (
+            cve.parse_cve_date(date_str)
+            == m_date.fromisoformat.return_value)
+
+    assert (
+        list(m_date.fromisoformat.call_args)
+        == [(date_str.split.return_value.__getitem__.return_value,), {}])
+    assert (
+        list(date_str.split.call_args)
+        == [("T", ), {}])
+    assert (
+        list(date_str.split.return_value.__getitem__.call_args)
+        == [(0, ), {}])
+
+
+@pytest.mark.parametrize("release_date", [0, 7, 23])
+@pytest.mark.parametrize("published_date", [0, 7, 23])
+def test_cve_wildcard_version_match(patches, release_date, published_date):
+    cve = DummyCVE("CVE", "TRACKED CPES")
+    patched = patches(
+        "date",
+        ("ACVE.published_date",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.cve_scan.abstract.cve")
+    dep = MagicMock()
+
+    with patched as (m_date, m_published):
+        m_date.fromisoformat.return_value = release_date
+        m_published.return_value = published_date
+        assert (
+            cve.wildcard_version_match(dep)
+            == (release_date <= published_date))
+
+    assert (
+        list(m_date.fromisoformat.call_args)
+        == [(dep.release_date, ), {}])

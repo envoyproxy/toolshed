@@ -1,3 +1,4 @@
+"""Abstract dependency."""
 
 from functools import cached_property
 from typing import Optional
@@ -20,6 +21,7 @@ class ADependency(metaclass=abstracts.Abstraction):
 
     @cached_property
     def cpe(self) -> Optional[str]:
+        """Configured CPE for this dependency."""
         return (
             str(self.metadata["cpe"])
             if self.metadata.get("cpe", "N/A") != "N/A"
@@ -27,10 +29,12 @@ class ADependency(metaclass=abstracts.Abstraction):
 
     @property
     def release_date(self) -> str:
+        """Release (or published) date of this dependency."""
         return self.metadata["release_date"]
 
     @cached_property
     def release_version(self) -> Optional[version.Version]:
+        """Semantic version for the release of this dependency if available."""
         try:
             return version.Version(self.version)
         except version.InvalidVersion:
@@ -38,4 +42,5 @@ class ADependency(metaclass=abstracts.Abstraction):
 
     @property
     def version(self) -> str:
+        """Version string of this dependency."""
         return self.metadata["version"]

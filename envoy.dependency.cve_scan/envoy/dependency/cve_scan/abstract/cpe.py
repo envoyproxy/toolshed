@@ -1,3 +1,4 @@
+"""Abstract CPE."""
 
 import re
 
@@ -5,8 +6,8 @@ import abstracts
 
 from envoy.base import utils
 
-from ..exceptions import CPEError
-from .dependency import ADependency
+from envoy.dependency.cve_scan.exceptions import CPEError
+from . import dependency
 
 
 FUZZY_DATE_RE = re.compile(r'(\d{4}).?(\d{2}).?(\d{2})')
@@ -18,6 +19,7 @@ class ACPE(metaclass=abstracts.Abstraction):
 
     @classmethod
     def from_string(cls, cpe_str: str) -> "ACPE":
+        """Generate a CPE object from a CPE string."""
         components = cpe_str.split(':')
         if len(components) < 6 or not cpe_str.startswith('cpe:2.3:'):
             raise CPEError(
@@ -46,11 +48,11 @@ class ACPE(metaclass=abstracts.Abstraction):
         significant."""
         return str(self.__class__(self.part, self.vendor, '*', '*'))
 
-    def dependency_match(self, dependency: ADependency) -> bool:
+    def dependency_match(self, dep: dependency.ADependency) -> bool:
         """Heuristically match dependency metadata against CPE."""
 
         dep_cpe = self.__class__.from_string(
-            utils.typed(str, dependency.cpe))
+            utils.typed(str, dep.cpe))
 
         # We allow Envoy dependency CPEs to wildcard the 'product', this is
         # useful for
@@ -69,11 +71,11 @@ class ACPE(metaclass=abstracts.Abstraction):
             # Wildcard versions always match.
             self.version == '*'
             # An exact version match is a hit.
-            or self.version == dependency.version
+            or self.version == dep.version
             # Allow the 'release_date' dependency metadata to substitute
             # for date.
             # TODO(htuch): Consider fuzzier date ranges.
-            or self.version == dependency.release_date)
+            or self.version == dep.release_date)
         if version_match:
             return True
 
@@ -84,11 +86,11 @@ class ACPE(metaclass=abstracts.Abstraction):
         return (
             self.regex_groups_match(
                 FUZZY_DATE_RE,
-                dependency.version,
+                dep.version,
                 self.version)
             or self.regex_groups_match(
                 FUZZY_SEMVER_RE,
-                dependency.version,
+                dep.version,
                 self.version))
 
     def regex_groups_match(self, regex, lhs, rhs) -> bool:
