@@ -1,0 +1,63 @@
+{
+    "error": [
+        [
+            [
+                "[cves] CVE ID: CVE-2021-39216 (com_github_wasmtime@0.29.0)\n  CVSS v3 score: 6.3\n  Severity: MEDIUM\n  Published date: 2021-09-17\n  Last modified date: 2021-10-04\n  Description: Wasmtime is an open source runtime for WebAssembly & WASI. In Wasmtime\n  from version 0.19.0 and before version 0.30.0 there was a use-after-\n  free bug when passing `externref`s from the host to guest Wasm\n  content. To trigger the bug, you have to explicitly pass multiple\n  `externref`s from the host to a Wasm instance at the same time, either\n  by passing multiple `externref`s as arguments from host code to a Wasm\n  function, or returning multiple `externref`s to Wasm from a multi-\n  value return function defined in the host. If you do not have host\n  code that matches one of these shapes, then you are not impacted. If\n  Wasmtime's `VMExternRefActivationsTable` became filled to capacity\n  after passing the first `externref` in, then passing in the second\n  `externref` could trigger a garbage collection. However the first\n  `externref` is not rooted until we pass control to Wasm, and therefore\n  could be reclaimed by the collector if nothing else was holding a\n  reference to it or otherwise keeping it alive. Then, when control was\n  passed to Wasm after the garbage collection, Wasm could use the first\n  `externref`, which at this point has already been freed. We have\n  reason to believe that the effective impact of this bug is relatively\n  small because usage of `externref` is currently quite rare. The bug\n  has been fixed, and users should upgrade to Wasmtime 0.30.0. If you\n  cannot upgrade Wasmtime yet, you can avoid the bug by disabling\n  reference types support in Wasmtime by passing `false` to\n  `wasmtime::Config::wasm_reference_types`.\n  Affected CPEs:\n  - cpe:2.3:a:bytecodealliance:wasmtime:*\n"
+            ],
+            {}
+        ],
+        [
+            [
+                "[cves] CVE ID: CVE-2021-39218 (com_github_wasmtime@0.29.0)\n  CVSS v3 score: 6.3\n  Severity: MEDIUM\n  Published date: 2021-09-17\n  Last modified date: 2021-10-04\n  Description: Wasmtime is an open source runtime for WebAssembly & WASI. In Wasmtime\n  from version 0.26.0 and before version 0.30.0 is affected by a memory\n  unsoundness vulnerability. There was an invalid free and out-of-bounds\n  read and write bug when running Wasm that uses `externref`s in\n  Wasmtime. To trigger this bug, Wasmtime needs to be running Wasm that\n  uses `externref`s, the host creates non-null `externrefs`, Wasmtime\n  performs a garbage collection (GC), and there has to be a Wasm frame\n  on the stack that is at a GC safepoint where there are no live\n  references at this safepoint, and there is a safepoint with live\n  references earlier in this frame's function. Under this scenario,\n  Wasmtime would incorrectly use the GC stack map for the safepoint from\n  earlier in the function instead of the empty safepoint. This would\n  result in Wasmtime treating arbitrary stack slots as `externref`s that\n  needed to be rooted for GC. At the *next* GC, it would be determined\n  that nothing was referencing these bogus `externref`s (because nothing\n  could ever reference them, because they are not really `externref`s)\n  and then Wasmtime would deallocate them and run `<ExternRef as\n  Drop>::drop` on them. This results in a free of memory that is not\n  necessarily on the heap (and shouldn't be freed at this moment even if\n  it was), as well as potential out-of-bounds reads and writes. Even\n  though support for `externref`s (via the reference types proposal) is\n  enabled by default, unless you are creating non-null `externref`s in\n  your host code or explicitly triggering GCs, you cannot be affected by\n  this bug. We have reason to believe that the effective impact of this\n  bug is relatively small because usage of `externref` is currently\n  quite rare. This bug has been patched and users should upgrade to\n  Wasmtime version 0.30.0. If you cannot upgrade Wasmtime at this time,\n  you can avoid this bug by disabling the reference types proposal by\n  passing `false` to `wasmtime::Config::wasm_reference_types`.\n  Affected CPEs:\n  - cpe:2.3:a:bytecodealliance:wasmtime:*\n"
+            ],
+            {}
+        ],
+        [
+            [
+                "[cves] CVE ID: CVE-2021-39219 (com_github_wasmtime@0.29.0)\n  CVSS v3 score: 6.3\n  Severity: MEDIUM\n  Published date: 2021-09-17\n  Last modified date: 2021-10-04\n  Description: Wasmtime is an open source runtime for WebAssembly & WASI. Wasmtime\n  before version 0.30.0 is affected by a type confusion vulnerability.\n  As a Rust library the `wasmtime` crate clearly marks which functions\n  are safe and which are `unsafe`, guaranteeing that if consumers never\n  use `unsafe` then it should not be possible to have memory unsafety\n  issues in their embeddings of Wasmtime. An issue was discovered in the\n  safe API of `Linker::func_*` APIs. These APIs were previously not\n  sound when one `Engine` was used to create the `Linker` and then a\n  different `Engine` was used to create a `Store` and then the `Linker`\n  was used to instantiate a module into that `Store`. Cross-`Engine`\n  usage of functions is not supported in Wasmtime and this can result in\n  type confusion of function pointers, resulting in being able to safely\n  call a function with the wrong type. Triggering this bug requires\n  using at least two `Engine` values in an embedding and then\n  additionally using two different values with a `Linker` (one at the\n  creation time of the `Linker` and another when instantiating a module\n  with the `Linker`). It's expected that usage of more-than-one `Engine`\n  in an embedding is relatively rare since an `Engine` is intended to be\n  a globally shared resource, so the expectation is that the impact of\n  this issue is relatively small. The fix implemented is to change this\n  behavior to `panic!()` in Rust instead of silently allowing it. Using\n  different `Engine` instances with a `Linker` is a programmer bug that\n  `wasmtime` catches at runtime. This bug has been patched and users\n  should upgrade to Wasmtime version 0.30.0. If you cannot upgrade\n  Wasmtime and are using more than one `Engine` in your embedding it's\n  recommended to instead use only one `Engine` for the entire program if\n  possible. An `Engine` is designed to be a globally shared resource\n  that is suitable to have only one for the lifetime of an entire\n  process. If using multiple `Engine`s is required then code should be\n  audited to ensure that `Linker` is only used with one `Engine`.\n  Affected CPEs:\n  - cpe:2.3:a:bytecodealliance:wasmtime:*\n"
+            ],
+            {}
+        ],
+        [
+            [
+                "[cves] Check failed"
+            ],
+            {}
+        ],
+        [
+            [
+                "Summary\n--------------------------------------------------------------------------------\nDummyCVEChecker cves:\nCVE ID: CVE-2021-39216 (com_github_wasmtime@0.29.0)\nCVE ID: CVE-2021-39218 (com_github_wasmtime@0.29.0)\nCVE ID: CVE-2021-39219 (com_github_wasmtime@0.29.0)\n"
+            ],
+            {}
+        ],
+        [
+            [
+                "{'success': 1, 'errors': 3, 'warnings': 0, 'failed': {'cves': 3}, 'warned': {}, 'succeeded': {'cves': 1}}"
+            ],
+            {}
+        ]
+    ],
+    "info": [
+        [
+            [
+                "CVE data downloaded from: NIST_URL"
+            ],
+            {}
+        ],
+        [
+            [
+                "No CPE listed for: bazel_compdb"
+            ],
+            {}
+        ]
+    ],
+    "notice": [
+        [
+            [
+                "[cves] Running check"
+            ],
+            {}
+        ]
+    ],
+    "warning": []
+}

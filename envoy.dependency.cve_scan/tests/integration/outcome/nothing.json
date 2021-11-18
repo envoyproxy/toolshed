@@ -1,0 +1,20 @@
+{
+    "error": [],
+    "info": [
+        [
+            [
+                "CVE data downloaded from: NIST_URL"
+            ],
+            {}
+        ]
+    ],
+    "notice": [
+        [
+            [
+                "[cves] Running check"
+            ],
+            {}
+        ]
+    ],
+    "warning": []
+}

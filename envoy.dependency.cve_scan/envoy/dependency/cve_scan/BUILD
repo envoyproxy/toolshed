@@ -1,0 +1,24 @@
+
+pytooling_library(
+    "envoy.dependency.cve_scan",
+    dependencies=[
+        "//deps:abstracts",
+        "//deps:aio.functional",
+        "//deps:aio.tasks",
+        "//deps:envoy.base.checker",
+        "//deps:envoy.base.utils",
+        "//deps:aiohttp",
+        "//deps:jinja2",
+        "//deps:packaging",
+    ],
+    sources=[
+        "abstract/__init__.py",
+        "abstract/checker.py",
+        "abstract/cpe.py",
+        "abstract/cve.py",
+        "abstract/dependency.py",
+        "abstract/typing.py",
+        "abstract/version_matcher.py",
+        "exceptions.py",
+    ],
+)
