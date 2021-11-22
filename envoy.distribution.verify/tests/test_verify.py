@@ -120,6 +120,25 @@ def test_checker_docker(patches):
     assert "docker" in checker.__dict__
 
 
+@pytest.mark.parametrize("maintainer", [None, True, "MAINT"])
+def test_checker_maintainer(patches, maintainer):
+    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    patched = patches(
+        ("PackagesDistroChecker.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.verify.checker")
+
+    with patched as (m_args, ):
+        m_args.return_value.maintainer = maintainer
+        assert (
+            checker.maintainer
+            == (maintainer
+                if maintainer
+                else verify.checker.ENVOY_MAINTAINER))
+
+    assert "maintainer" not in checker.__dict__
+
+
 def test_checker_path(patches):
     checker = verify.PackagesDistroChecker("path1", "path2", "path3")
     patched = patches(
@@ -143,6 +162,8 @@ def test_checker_test_config(patches):
          dict(new_callable=PropertyMock)),
         ("PackagesDistroChecker.keyfile",
          dict(new_callable=PropertyMock)),
+        ("PackagesDistroChecker.maintainer",
+         dict(new_callable=PropertyMock)),
         ("PackagesDistroChecker.packages_tarball",
          dict(new_callable=PropertyMock)),
         ("PackagesDistroChecker.path",
@@ -151,9 +172,13 @@ def test_checker_test_config(patches):
          dict(new_callable=PropertyMock)),
         ("PackagesDistroChecker.testfile",
          dict(new_callable=PropertyMock)),
+        ("PackagesDistroChecker.version",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.verify.checker")
 
-    with patched as (m_docker, m_key, m_tar, m_path, m_class, m_test):
+    with patched as patchy:
+        (m_docker, m_key, m_maintainer,
+         m_tar, m_path, m_class, m_test, m_version) = patchy
         assert checker.test_config == m_class.return_value.return_value
 
     assert (
@@ -164,8 +189,8 @@ def test_checker_test_config(patches):
              'path': m_path.return_value,
              'tarball': m_tar.return_value,
              'testfile': m_test.return_value,
-             'maintainer': verify.checker.ENVOY_MAINTAINER,
-             'version': verify.checker.ENVOY_VERSION}])
+             'maintainer': m_maintainer.return_value,
+             'version': str(m_version.return_value)}])
     assert "test_config" in checker.__dict__
 
 
@@ -236,6 +261,23 @@ def test_checker_tests(patches, config, distributions):
             * len(config)))
 
 
+def test_checker_version(patches):
+    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    patched = patches(
+        "version",
+        ("PackagesDistroChecker.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.verify.checker")
+
+    with patched as (m_version, m_args):
+        assert checker.version == m_version.Version.return_value
+
+    assert (
+        list(m_version.Version.call_args)
+        == [(m_args.return_value.version, ), {}])
+    assert "version" not in checker.__dict__
+
+
 def test_checker_add_arguments():
     checker = verify.PackagesDistroChecker("x", "y", "z")
     parser = MagicMock()
@@ -295,6 +337,8 @@ def test_checker_add_arguments():
              {'help': (
                  'Path to the test file that will be run inside the '
                  'distribution containers')}],
+            [('version',),
+             {'help': 'Expected envoy version.'}],
             [('config',),
              {'help': (
                  'Path to a YAML configuration with distributions '
@@ -310,6 +354,11 @@ def test_checker_add_arguments():
               'help': (
                   'Specify distribution to test. '
                   'Can be specified multiple times.')}],
+            [('--maintainer',
+              '-m'),
+             {'help': (
+                 'Specify the expected maintainer of the packages. '
+                 'Defaults to Envoy maintainers.')}],
             [('--rebuild',),
              {'action': 'store_true',
               'help': 'Rebuild test images before running the tests.'}]])
