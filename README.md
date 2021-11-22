@@ -231,7 +231,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 
 #### [envoy.distribution.verify](envoy.distribution.verify)
 
-version: 0.0.3
+version: 0.0.4
 
 pypi: https://pypi.org/project/envoy.distribution.verify
 
@@ -239,7 +239,6 @@ pypi: https://pypi.org/project/envoy.distribution.verify
 
 - [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.0.2
 - [envoy.distribution.distrotest](https://pypi.org/project/envoy.distribution.distrotest) >=0.0.3
-- [packaging](https://pypi.org/project/packaging)
 
 ---
 

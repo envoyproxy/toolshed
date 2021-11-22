@@ -264,17 +264,13 @@ def test_checker_tests(patches, config, distributions):
 def test_checker_version(patches):
     checker = verify.PackagesDistroChecker("path1", "path2", "path3")
     patched = patches(
-        "version",
         ("PackagesDistroChecker.args",
          dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.verify.checker")
 
-    with patched as (m_version, m_args):
-        assert checker.version == m_version.Version.return_value
+    with patched as (m_args, ):
+        assert checker.version == m_args.return_value.version
 
-    assert (
-        list(m_version.Version.call_args)
-        == [(m_args.return_value.version, ), {}])
     assert "version" not in checker.__dict__
 
 

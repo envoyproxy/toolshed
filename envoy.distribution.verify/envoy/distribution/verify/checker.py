@@ -4,8 +4,6 @@ import pathlib
 from functools import cached_property
 from typing import Optional, Type
 
-from packaging import version
-
 import aiodocker
 
 from envoy.base import checker, utils
@@ -145,9 +143,10 @@ class PackagesDistroChecker(checker.AsyncChecker):
         return _ret
 
     @property
-    def version(self) -> version.Version:
-        """Path to a temporary directory to run the tests from."""
-        return version.Version(self.args.version)
+    def version(self) -> str:
+        """Version string that should be present when the binary is called with
+        `--version`."""
+        return self.args.version
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
