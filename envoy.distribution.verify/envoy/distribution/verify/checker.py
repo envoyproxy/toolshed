@@ -4,6 +4,8 @@ import pathlib
 from functools import cached_property
 from typing import Optional, Type
 
+from packaging import version
+
 import aiodocker
 
 from envoy.base import checker, utils
@@ -12,9 +14,7 @@ from envoy.distribution import distrotest
 from .exceptions import PackagesConfigurationError
 
 
-# TODO(phlax): make this configurable
 ENVOY_MAINTAINER = "Envoy maintainers <envoy-maintainers@googlegroups.com>"
-ENVOY_VERSION = "1.20.0"
 
 
 class PackagesDistroChecker(checker.AsyncChecker):
@@ -73,6 +73,11 @@ class PackagesDistroChecker(checker.AsyncChecker):
         return pathlib.Path(self.args.keyfile)
 
     @property
+    def maintainer(self) -> str:
+        """Expected package maintainer, defaults to Envoy maintainers."""
+        return self.args.maintainer or ENVOY_MAINTAINER
+
+    @property
     def packages_tarball(self) -> pathlib.Path:
         """Path to the packages tarball."""
         return pathlib.Path(self.args.packages)
@@ -108,8 +113,8 @@ class PackagesDistroChecker(checker.AsyncChecker):
             tarball=self.packages_tarball,
             keyfile=self.keyfile,
             testfile=self.testfile,
-            maintainer=ENVOY_MAINTAINER,
-            version=ENVOY_VERSION)
+            maintainer=self.maintainer,
+            version=str(self.version))
 
     @property
     def test_config_class(self) -> Type[distrotest.DistroTestConfig]:
@@ -139,6 +144,11 @@ class PackagesDistroChecker(checker.AsyncChecker):
                 _ret[name]["ext"])
         return _ret
 
+    @property
+    def version(self) -> version.Version:
+        """Path to a temporary directory to run the tests from."""
+        return version.Version(self.args.version)
+
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
         parser.add_argument(
@@ -146,6 +156,9 @@ class PackagesDistroChecker(checker.AsyncChecker):
             help=(
                 "Path to the test file that will be run inside the "
                 "distribution containers"))
+        parser.add_argument(
+            "version",
+            help="Expected envoy version.")
         parser.add_argument(
             "config",
             help="Path to a YAML configuration with distributions for testing")
@@ -165,6 +178,12 @@ class PackagesDistroChecker(checker.AsyncChecker):
             help=(
                 "Specify distribution to test. "
                 "Can be specified multiple times."))
+        parser.add_argument(
+            "--maintainer",
+            "-m",
+            help=(
+                "Specify the expected maintainer of the packages. "
+                "Defaults to Envoy maintainers."))
         parser.add_argument(
             "--rebuild",
             action="store_true",
