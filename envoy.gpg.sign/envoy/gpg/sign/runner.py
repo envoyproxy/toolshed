@@ -12,6 +12,9 @@ from .exceptions import SigningError
 from .util import DirectorySigningUtil
 
 
+SIGNING_KEY_PATH = "signing.key"
+
+
 class PackageSigningRunner(runner.Runner):
     """For a given `package_type` and `path` this will run the relevant signing
     util for the packages they contain."""
@@ -63,13 +66,17 @@ class PackageSigningRunner(runner.Runner):
         return pathlib.Path(self.args.path)
 
     @property
-    def tar(self) -> str:
-        return self.args.tar
+    def signing_key_path(self) -> str:
+        return SIGNING_KEY_PATH
 
     @cached_property
     def signing_utils(self) -> dict:
         """Configured signing utils - eg `DebSigningUtil`, `RPMSigningUtil`"""
         return dict(getattr(self, "_signing_utils"))
+
+    @property
+    def tar(self) -> str:
+        return self.args.tar
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
@@ -103,6 +110,12 @@ class PackageSigningRunner(runner.Runner):
             help=(
                 "Maintainer email to match when searching for a GPG key "
                 "to match with"))
+
+    def add_key(self, path: Union[pathlib.Path, str]) -> None:
+        # todo(phlax): always return pathlib.Path from untar and avoid
+        #    the `utils.typed`
+        utils.typed(pathlib.Path, path).joinpath(
+            self.signing_key_path).write_text(self.maintainer.export_key())
 
     def archive(self, path: Union[pathlib.Path, str]) -> None:
         with tarfile.open(self.tar, "w") as tar:
@@ -141,4 +154,5 @@ class PackageSigningRunner(runner.Runner):
                 "when `--extract` is set")
         with utils.untar(self.path) as tardir:
             self.sign_all(tardir)
+            self.add_key(tardir)
             self.archive(tardir)

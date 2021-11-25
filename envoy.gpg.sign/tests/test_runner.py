@@ -12,6 +12,8 @@ def test_packager_constructor():
     assert isinstance(packager, runner.Runner)
     assert packager.maintainer_class == identity.GPGIdentity
     assert packager._signing_utils == ()
+    assert packager.signing_key_path == sign.runner.SIGNING_KEY_PATH
+    assert "signing_key_path" not in packager.__dict__
 
 
 def test_packager_cls_register_util():
@@ -183,6 +185,36 @@ def test_packager_add_arguments():
                   'to match with')}]])
 
 
+def test_packager_add_key(patches):
+    packager = sign.PackageSigningRunner("x", "y", "z")
+    patched = patches(
+        "utils",
+        "pathlib",
+        ("PackageSigningRunner.maintainer",
+         dict(new_callable=PropertyMock)),
+        ("PackageSigningRunner.signing_key_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.sign.runner")
+    path = MagicMock()
+
+    with patched as (m_utils, m_plib, m_maintainer, m_keypath):
+        assert not packager.add_key(path)
+
+    assert (
+        list(m_utils.typed.call_args)
+        == [(m_plib.Path, path), {}])
+    m_path = m_utils.typed.return_value
+    assert (
+        list(m_path.joinpath.call_args)
+        == [(m_keypath.return_value, ), {}])
+    assert (
+        list(m_path.joinpath.return_value.write_text.call_args)
+        == [(m_maintainer.return_value.export_key.return_value, ), {}])
+    assert (
+        list(m_maintainer.return_value.export_key.call_args)
+        == [(), {}])
+
+
 def test_packager_archive(patches):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
@@ -346,13 +378,14 @@ def test_packager_sign_tarball(patches, tar):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
         "utils",
+        "PackageSigningRunner.add_key",
         "PackageSigningRunner.archive",
         "PackageSigningRunner.sign_all",
         ("PackageSigningRunner.path", dict(new_callable=PropertyMock)),
         ("PackageSigningRunner.tar", dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.sign.runner")
 
-    with patched as (m_utils, m_archive, m_sign, m_path, m_tar):
+    with patched as (m_utils, m_addkey, m_archive, m_sign, m_path, m_tar):
         m_tar.return_value = tar
         if not tar:
             with pytest.raises(sign.SigningError) as e:
@@ -366,6 +399,7 @@ def test_packager_sign_tarball(patches, tar):
             == ("You must set a `--tar` file to save to when "
                 "`--extract` is set"))
         assert not m_utils.untar.called
+        assert not m_addkey.called
         assert not m_sign.called
         assert not m_archive.called
         return
@@ -375,6 +409,9 @@ def test_packager_sign_tarball(patches, tar):
         == [(m_path.return_value,), {}])
     assert (
         list(m_sign.call_args)
+        == [(m_utils.untar.return_value.__enter__.return_value,), {}])
+    assert (
+        list(m_addkey.call_args)
         == [(m_utils.untar.return_value.__enter__.return_value,), {}])
     assert (
         list(m_archive.call_args)
