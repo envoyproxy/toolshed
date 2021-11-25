@@ -16,24 +16,28 @@ from envoy.docker import utils as docker_utils
 @pytest.mark.parametrize("config_path", [None, "CONFIG_PATH"])
 def test_config_constructor(config_path):
     args = (
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     if config_path is not None:
         args += (config_path, )
     config = distrotest.DistroTestConfig(*args)
 
     for k in args:
-        if k in ["KEYFILE", "TESTFILE", "CONFIG_PATH"]:
+        if k in ["TESTFILE", "CONFIG_PATH"]:
             assert getattr(config, f"_{k.lower()}") == k
         else:
             assert getattr(config, k.lower()) == k
 
     assert config._config_path == config_path
+    assert (
+        config.signing_key_path
+        == distrotest.distrotest.SIGNING_KEY_PATH)
+    assert "signing_key_path" not in config.__dict__
 
 
 def test_config_dunder_getitem(patches):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "KEYFILE", "PATH", "TARBALL", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         ("DistroTestConfig.config", dict(new_callable=PropertyMock)),
@@ -54,7 +58,7 @@ def test_config_dunder_getitem(patches):
 @pytest.mark.parametrize("isdict", [True, False])
 def test_config_config(patches, isdict):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "KEYFILE", "PATH", "TARBALL", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "utils",
@@ -85,7 +89,7 @@ def test_config_config(patches, isdict):
 @pytest.mark.parametrize("config_path", [None, "CONFIG_PATH"])
 def test_config_config_path(config_path):
     args = (
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     if config_path is not None:
         args += (config_path, )
@@ -99,7 +103,7 @@ def test_config_config_path(config_path):
 def test_config_ctx_dockerfile():
     path = MagicMock()
     config = distrotest.DistroTestConfig(
-        "DOCKER", path, "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", path, "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
 
     assert config.ctx_dockerfile == path.joinpath.return_value
@@ -111,22 +115,26 @@ def test_config_ctx_dockerfile():
 
 def test_config_ctx_keyfile(patches):
     path = MagicMock()
-    keyfile = MagicMock()
     config = distrotest.DistroTestConfig(
-        "DOCKER", path, "TARBALL", keyfile, "TESTFILE",
+        "DOCKER", path, "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
+    patched = patches(
+        ("DistroTestConfig.signing_key", dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.distrotest.distrotest")
 
-    assert config.ctx_keyfile == path.joinpath.return_value
+    with patched as (m_key, ):
+        assert config.ctx_keyfile == path.joinpath.return_value
+
     assert (
         list(path.joinpath.call_args)
-        == [(keyfile.name, ), {}])
+        == [(m_key.return_value.name, ), {}])
     assert "ctx_keyfile" in config.__dict__
 
 
 def test_config_rel_ctx_packages():
     path = MagicMock()
     config = distrotest.DistroTestConfig(
-        "DOCKER", path, "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", path, "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
 
     assert config.rel_ctx_packages == path.joinpath.return_value
@@ -140,7 +148,7 @@ def test_config_ctx_testfile():
     path = MagicMock()
     testfile = MagicMock()
     config = distrotest.DistroTestConfig(
-        "DOCKER", path, "TARBALL", "KEYFILE", testfile,
+        "DOCKER", path, "TARBALL", testfile,
         "MAINTAINER", "VERSION")
 
     assert config.ctx_testfile == path.joinpath.return_value
@@ -162,7 +170,7 @@ def test_config_ctx_testfile():
       for i in range(0, 5)}])
 def test_config_images(patches, items):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "KEYFILE", "PATH", "TARBALL", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "DistroTestConfig.items",
@@ -200,25 +208,26 @@ def test_config_install_img_path(patches):
 
 def test_config_keyfile(patches):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "shutil",
         ("DistroTestConfig.ctx_keyfile", dict(new_callable=PropertyMock)),
+        ("DistroTestConfig.signing_key", dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.distrotest.distrotest")
 
-    with patched as (m_shutil, m_key):
+    with patched as (m_shutil, m_key, m_sign):
         assert config.keyfile == m_key.return_value
 
     assert (
         list(m_shutil.copyfile.call_args)
-        == [("KEYFILE", m_key.return_value), {}])
+        == [(m_sign.return_value, m_key.return_value), {}])
     assert "keyfile" in config.__dict__
 
 
 def test_config_keyfile_img_path(patches):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "KEYFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "pathlib",
@@ -235,7 +244,7 @@ def test_config_keyfile_img_path(patches):
 
 def test_config_packages_dir(patches):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "utils",
@@ -251,9 +260,31 @@ def test_config_packages_dir(patches):
     assert "packages_dir" in config.__dict__
 
 
+def test_config_signing_key(patches):
+    config = distrotest.DistroTestConfig(
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
+        "MAINTAINER", "VERSION")
+    patched = patches(
+        ("DistroTestConfig.packages_dir",
+         dict(new_callable=PropertyMock)),
+        ("DistroTestConfig.signing_key_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.distrotest.distrotest")
+
+    with patched as (m_packages, m_keypath):
+        assert (
+            config.signing_key
+            == m_packages.return_value.joinpath.return_value)
+
+    assert (
+        list(m_packages.return_value.joinpath.call_args)
+        == [(m_keypath.return_value, ), {}])
+    assert "signing_key" in config.__dict__
+
+
 def test_config_testfile(patches):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "TESTFILE", "PATH", "TARBALL", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "shutil",
@@ -271,7 +302,7 @@ def test_config_testfile(patches):
 
 def test_config_testfile_img_path(patches):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "pathlib",
@@ -296,7 +327,7 @@ def test_config_testfile_img_path(patches):
 
 def test_config_get_config(patches):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "DistroTestConfig.get_image_name",
@@ -318,7 +349,7 @@ def test_config_get_config(patches):
 
 def test_config_get_image_name():
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     image = MagicMock()
     assert (
@@ -340,7 +371,7 @@ def test_config_get_image_name():
     [[], ["TYPE1", "TYPE2", "TYPE3"], ["TYPE3", "TYPE4"]])
 def test_config_get_package_type(patches, pkg_type, pkg_types):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         "DistroTestConfig.get_image_name",
@@ -373,7 +404,7 @@ def test_config_get_package_type(patches, pkg_type, pkg_types):
 @pytest.mark.parametrize("packages", [[], ["PACKAGE1", "PACKAGE2"]])
 def test_config_get_packages(patches, pkg_type, ext, packages):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         ("DistroTestConfig.packages_dir", dict(new_callable=PropertyMock)),
@@ -393,7 +424,7 @@ def test_config_get_packages(patches, pkg_type, ext, packages):
 
 def test_config_items(patches):
     config = distrotest.DistroTestConfig(
-        "DOCKER", "PATH", "TARBALL", "KEYFILE", "TESTFILE",
+        "DOCKER", "PATH", "TARBALL", "TESTFILE",
         "MAINTAINER", "VERSION")
     patched = patches(
         ("DistroTestConfig.config", dict(new_callable=PropertyMock)),

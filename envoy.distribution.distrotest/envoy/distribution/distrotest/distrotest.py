@@ -30,6 +30,8 @@ RUN {build_command}
 CMD ["tail", "-f", "/dev/null"]
 """
 
+SIGNING_KEY_PATH = "signing.key"
+
 
 class BuildError(Exception):
     pass
@@ -70,13 +72,11 @@ class DistroTestConfig(object):
             docker: aiodocker.Docker,
             path: pathlib.Path,
             tarball: pathlib.Path,
-            keyfile: pathlib.Path,
             testfile: pathlib.Path,
             maintainer: str,
             version: str,
             config_path: Optional[pathlib.Path] = None):
         self.docker = docker
-        self._keyfile = keyfile
         self.path = path
         self.tarball = tarball
         self._testfile = testfile
@@ -113,7 +113,7 @@ class DistroTestConfig(object):
     @cached_property
     def ctx_keyfile(self) -> pathlib.Path:
         """Path to the keyfile in the Docker context."""
-        return self.path.joinpath(self._keyfile.name)
+        return self.path.joinpath(self.signing_key.name)
 
     @cached_property
     def rel_ctx_packages(self) -> pathlib.Path:
@@ -154,7 +154,7 @@ class DistroTestConfig(object):
         Copies the keyfile to the path on first access.
         """
         # Add the keyfile and return the path
-        shutil.copyfile(self._keyfile, self.ctx_keyfile)
+        shutil.copyfile(self.signing_key, self.ctx_keyfile)
         return self.ctx_keyfile
 
     @cached_property
@@ -171,6 +171,16 @@ class DistroTestConfig(object):
         """
         utils.extract(self.rel_ctx_packages, self.tarball)
         return self.rel_ctx_packages
+
+    @cached_property
+    def signing_key(self) -> pathlib.Path:
+        """Full path to the extracted signing key."""
+        return self.packages_dir.joinpath(self.signing_key_path)
+
+    @property
+    def signing_key_path(self) -> str:
+        """Path within tarball of signing key."""
+        return SIGNING_KEY_PATH
 
     @cached_property
     def testfile(self) -> pathlib.Path:

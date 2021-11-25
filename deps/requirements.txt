@@ -15,7 +15,7 @@ envoy.base.runner>=0.0.4
 envoy.base.utils>=0.0.8
 envoy.code_format.python_check>=0.0.4
 envoy.dependency.pip_check>=0.0.4
-envoy.distribution.distrotest>=0.0.3
+envoy.distribution.distrotest==0.0.3
 envoy.distribution.release>=0.0.4
 envoy.distribution.repo>=0.0.2
 envoy.distribution.verify>=0.0.2
