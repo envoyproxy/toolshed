@@ -111,6 +111,9 @@ class GPGIdentity(object):
         """UID of the identity's signing key."""
         return self.signing_key["uid"]
 
+    def export_key(self) -> str:
+        return self.gpg.export_keys(keyids=[self.signing_key["keyid"]])
+
     def match(self, key: dict) -> Optional[dict]:
         """Match a signing key.
 
