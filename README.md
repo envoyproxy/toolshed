@@ -179,7 +179,7 @@ pypi: https://pypi.org/project/envoy.dependency.pip_check
 
 #### [envoy.distribution.distrotest](envoy.distribution.distrotest)
 
-version: 0.0.5.dev0
+version: 0.0.5
 
 pypi: https://pypi.org/project/envoy.distribution.distrotest
 
