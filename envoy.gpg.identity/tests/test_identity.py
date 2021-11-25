@@ -284,6 +284,26 @@ def test_identity_uid(patches):
     assert "uid" not in gpg.__dict__
 
 
+def test_identity_export_key(patches):
+    gpg = identity.GPGIdentity()
+    patched = patches(
+        ("GPGIdentity.gpg", dict(new_callable=PropertyMock)),
+        ("GPGIdentity.signing_key", dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.identity.identity")
+
+    with patched as (m_gpg, m_key):
+        assert (
+            gpg.export_key()
+            == m_gpg.return_value.export_keys.return_value)
+
+    assert (
+        list(m_gpg.return_value.export_keys.call_args)
+        == [(), dict(keyids=[m_key.return_value.__getitem__.return_value])])
+    assert (
+        list(m_key.return_value.__getitem__.call_args)
+        == [("keyid", ), {}])
+
+
 @pytest.mark.parametrize("name", ["NAME", None])
 @pytest.mark.parametrize("email", ["EMAIL", None])
 @pytest.mark.parametrize("match", ["MATCH", None])
