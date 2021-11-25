@@ -65,12 +65,6 @@ class PackagesDistroChecker(checker.AsyncChecker):
         return self.args.distribution
 
     @property
-    def keyfile(self) -> pathlib.Path:
-        """Path to a keyfile to to include in the Docker images for verifying
-        package signatures."""
-        return pathlib.Path(self.args.keyfile)
-
-    @property
     def maintainer(self) -> str:
         """Expected package maintainer, defaults to Envoy maintainers."""
         return self.args.maintainer or ENVOY_MAINTAINER
@@ -109,7 +103,6 @@ class PackagesDistroChecker(checker.AsyncChecker):
             docker=self.docker,
             path=self.path,
             tarball=self.packages_tarball,
-            keyfile=self.keyfile,
             testfile=self.testfile,
             maintainer=self.maintainer,
             version=str(self.version))
@@ -164,12 +157,6 @@ class PackagesDistroChecker(checker.AsyncChecker):
         parser.add_argument(
             "packages",
             help="Path to a tarball containing packages to test")
-        parser.add_argument(
-            "--keyfile",
-            "-k",
-            help=(
-                "Specify the path to a file containing a gpg key for "
-                "verifying packages."))
         parser.add_argument(
             "--distribution",
             "-d",

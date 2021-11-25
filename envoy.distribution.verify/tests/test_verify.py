@@ -61,7 +61,6 @@ def _check_arg_path_property(patches, prop, arg=None):
 @pytest.mark.parametrize(
     "prop",
     [("testfile",),
-     ("keyfile",),
      ("packages_tarball", "packages")])
 def test_checker_arg_path_props(patches, prop):
     _check_arg_path_property(patches, *prop)
@@ -160,8 +159,6 @@ def test_checker_test_config(patches):
     patched = patches(
         ("PackagesDistroChecker.docker",
          dict(new_callable=PropertyMock)),
-        ("PackagesDistroChecker.keyfile",
-         dict(new_callable=PropertyMock)),
         ("PackagesDistroChecker.maintainer",
          dict(new_callable=PropertyMock)),
         ("PackagesDistroChecker.packages_tarball",
@@ -177,7 +174,7 @@ def test_checker_test_config(patches):
         prefix="envoy.distribution.verify.checker")
 
     with patched as patchy:
-        (m_docker, m_key, m_maintainer,
+        (m_docker, m_maintainer,
          m_tar, m_path, m_class, m_test, m_version) = patchy
         assert checker.test_config == m_class.return_value.return_value
 
@@ -185,7 +182,6 @@ def test_checker_test_config(patches):
         list(m_class.return_value.call_args)
         == [(),
             {'docker': m_docker.return_value,
-             'keyfile': m_key.return_value,
              'path': m_path.return_value,
              'tarball': m_tar.return_value,
              'testfile': m_test.return_value,
@@ -341,10 +337,6 @@ def test_checker_add_arguments():
                  'for testing')}],
             [('packages',),
              {'help': 'Path to a tarball containing packages to test'}],
-            [('--keyfile', '-k'),
-             {'help': (
-                 'Specify the path to a file containing a gpg key for '
-                 'verifying packages.')}],
             [('--distribution', '-d'),
              {'nargs': '?',
               'help': (
