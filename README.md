@@ -231,7 +231,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 
 #### [envoy.distribution.verify](envoy.distribution.verify)
 
-version: 0.0.4
+version: 0.0.5.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.verify
 
