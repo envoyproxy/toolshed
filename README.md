@@ -335,14 +335,14 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 
 #### [envoy.gpg.sign](envoy.gpg.sign)
 
-version: 0.0.5.dev0
+version: 0.0.5
 
 pypi: https://pypi.org/project/envoy.gpg.sign
 
 ##### requirements:
 
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.0.4
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.3
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.12
 - [envoy.gpg.identity](https://pypi.org/project/envoy.gpg.identity) >=0.0.3
 
 ---
