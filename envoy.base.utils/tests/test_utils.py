@@ -331,3 +331,57 @@ def test_to_bytes(data):
         == (data.encode("utf-8")
             if not isinstance(data, bytes)
             else data))
+
+
+@pytest.mark.parametrize("length", [0, 10, 20, 30, 40, 50])
+@pytest.mark.parametrize("raises", [None, ValueError, Exception])
+def test_is_sha(patches, length, raises):
+    text = MagicMock()
+    text.__len__.return_value = length
+    patched = patches(
+        "int",
+        prefix="envoy.base.utils.utils")
+    _do_int = int
+
+    def _int(item, base=None):
+        if base == 16 and raises:
+            raise raises()
+        return _do_int(item)
+
+    with patched as (m_int, ):
+        m_int.side_effect = _int
+        if length == 40 and raises == Exception:
+            with pytest.raises(Exception):
+                utils.is_sha(text)
+        else:
+            assert (
+                utils.is_sha(text)
+                == (length == 40
+                    and not raises))
+    if length == 40:
+        assert (
+            list(m_int.call_args)
+            == [(text, 16), {}])
+    else:
+        assert not m_int.called
+
+
+@pytest.mark.parametrize("mode", [None, "r", "w"])
+@pytest.mark.parametrize(
+    "path",
+    ["foo", "foo.tar", "foo.tar.gz", "foo.tar.xz", "foo.tar.bz2"])
+def test_tar_mode(mode, path):
+    m_path = MagicMock()
+    m_path.__str__.return_value = path
+    expected = mode or "r"
+    suffixes = ["gz", "bz2", "xz"]
+    for suffix in suffixes:
+        if str(path).endswith(f".{suffix}"):
+            expected = f"{mode or 'r'}:{suffix}"
+            break
+    kwargs = {}
+    if mode:
+        kwargs["mode"] = mode
+    assert (
+        utils.tar_mode(m_path, **kwargs)
+        == expected)
