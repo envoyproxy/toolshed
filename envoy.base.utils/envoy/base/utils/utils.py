@@ -212,3 +212,21 @@ def to_bytes(data: Union[str, bytes]) -> bytes:
         bytes(data, encoding="utf-8")
         if not isinstance(data, bytes)
         else data)
+
+
+def is_sha(text: str) -> bool:
+    if len(text) != 40:
+        return False
+    try:
+        int(text, 16)
+    except ValueError:
+        return False
+    return True
+
+
+def tar_mode(path: Union[pathlib.Path, str], mode="r") -> str:
+    suffixes = ["gz", "bz2", "xz"]
+    for suffix in suffixes:
+        if str(path).endswith(f".{suffix}"):
+            return f"{mode}:{suffix}"
+    return mode

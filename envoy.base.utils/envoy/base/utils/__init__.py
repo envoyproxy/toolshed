@@ -17,7 +17,9 @@ from .utils import (
     untar,
     TAR_EXTS,
     to_yaml,
-    to_bytes)
+    to_bytes,
+    is_sha,
+    tar_mode)
 
 
 __all__ = (
@@ -31,12 +33,14 @@ __all__ = (
     "extract",
     "ExtractError",
     "from_yaml",
+    "is_sha",
     "is_tarlike",
     "coverage_with_data_file",
     "nested",
     "typed",
     "untar",
     "TAR_EXTS",
+    "tar_mode",
     "to_bytes",
     "to_yaml",
     "TypeCastingError")
