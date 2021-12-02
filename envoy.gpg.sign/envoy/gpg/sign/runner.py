@@ -118,7 +118,7 @@ class PackageSigningRunner(runner.Runner):
             self.signing_key_path).write_text(self.maintainer.export_key())
 
     def archive(self, path: Union[pathlib.Path, str]) -> None:
-        with tarfile.open(self.tar, "w") as tar:
+        with tarfile.open(self.tar, utils.tar_mode(self.tar, mode="w")) as tar:
             tar.add(path, arcname=".")
 
     def get_signing_util(self, path: pathlib.Path) -> DirectorySigningUtil:

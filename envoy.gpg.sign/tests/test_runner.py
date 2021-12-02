@@ -219,15 +219,19 @@ def test_packager_archive(patches):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
         "tarfile",
+        "utils",
         ("PackageSigningRunner.tar", dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.sign.runner")
 
-    with patched as (m_tarfile, m_tar):
+    with patched as (m_tarfile, m_utils, m_tar):
         assert not packager.archive("PATH")
 
     assert (
         list(m_tarfile.open.call_args)
-        == [(m_tar.return_value, 'w'), {}])
+        == [(m_tar.return_value, m_utils.tar_mode.return_value), {}])
+    assert (
+        list(m_utils.tar_mode.call_args)
+        == [(m_tar.return_value, ), dict(mode="w")])
     assert (
         list(m_tarfile.open.return_value.__enter__.return_value.add.call_args)
         == [('PATH',), {'arcname': '.'}])
