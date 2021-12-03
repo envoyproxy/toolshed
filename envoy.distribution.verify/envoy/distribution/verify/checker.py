@@ -190,7 +190,7 @@ class PackagesDistroChecker(checker.AsyncChecker):
 
     def get_test_config(self, image: str) -> dict:
         """Get the type/ext config for a given image name."""
-        return self.test_config.get_config(image)
+        return self.test_config.get_config(image).copy()
 
     def get_test_packages(self, type: str, ext: str) -> list:
         """Get the packages to test for a given type/ext."""

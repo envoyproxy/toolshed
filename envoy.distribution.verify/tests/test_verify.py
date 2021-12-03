@@ -407,11 +407,14 @@ def test_checker_get_test_config(patches):
     with patched as (m_config, ):
         assert (
             checker.get_test_config("IMAGE")
-            == m_config.return_value.get_config.return_value)
+            == m_config.return_value.get_config.return_value.copy.return_value)
 
     assert (
         list(m_config.return_value.get_config.call_args)
         == [('IMAGE',), {}])
+    assert (
+        list(m_config.return_value.get_config.return_value.copy.call_args)
+        == [(), {}])
 
 
 def test_checker_get_test_packages(patches):
