@@ -8,11 +8,23 @@ from envoy.gpg import identity
 @pytest.mark.parametrize("name", ["NAME", None])
 @pytest.mark.parametrize("email", ["EMAIL", None])
 @pytest.mark.parametrize("log", ["LOG", None])
-def test_identity_constructor(name, email, log):
-    gpg = identity.GPGIdentity(name, email, log)
+@pytest.mark.parametrize("gen_key", [None, True, False])
+def test_identity_constructor(patches, name, email, log, gen_key):
+    patched = patches(
+        "GPGIdentity.gen_key_if_missing",
+        prefix="envoy.gpg.identity.identity")
+    kwargs = {}
+    if gen_key is not None:
+        kwargs["gen_key"] = gen_key
+
+    with patched as (m_missing, ):
+        gpg = identity.GPGIdentity(
+            name, email, log, **kwargs)
+
     assert gpg.provided_name == name
     assert gpg.provided_email == (email or "")
     assert gpg._log == log
+    assert gpg.gen_key == (gen_key or False)
 
 
 def test_identity_dunder_str(patches):
@@ -59,6 +71,47 @@ def test_identity_fingerprint(patches):
         == [('fingerprint',), {}])
 
     assert "fingerprint" not in gpg.__dict__
+
+
+@pytest.mark.parametrize("name", ["NAME", None])
+@pytest.mark.parametrize("email", ["EMAIL", None])
+def test_identity_gen_key_data(patches, name, email):
+    gpg = identity.GPGIdentity()
+    patched = patches(
+        ("GPGIdentity.gpg", dict(new_callable=PropertyMock)),
+        ("GPGIdentity.provided_email", dict(new_callable=PropertyMock)),
+        ("GPGIdentity.provided_name", dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.identity.identity")
+
+    with patched as (m_gpg, m_email, m_name):
+        m_email.return_value = email
+        m_name.return_value = name
+
+        if not (name and email):
+            with pytest.raises(identity.GPGError) as e:
+                gpg.gen_key_data
+            assert (
+                e.value.args[0]
+                == ("Both `name` and `email` must be provided to generate a "
+                    f"key. name: {name}, email: {email}"))
+        else:
+            assert (
+                gpg.gen_key_data
+                == m_gpg.return_value.gen_key_input.return_value)
+
+    assert "gen_key_data" not in gpg.__dict__
+
+    if not (name and email):
+        assert not m_gpg.called
+        return
+    assert (
+        list(m_gpg.return_value.gen_key_input.call_args)
+        == [(),
+            dict(name_real=name,
+                 name_email=email,
+                 key_type="RSA",
+                 key_length=2048,
+                 no_protection=True)])
 
 
 def test_identity_gpg(patches):
@@ -304,28 +357,63 @@ def test_identity_export_key(patches):
         == [("keyid", ), {}])
 
 
+@pytest.mark.parametrize("raises", [None, Exception, identity.GPGError])
+def test_identity_gen_key_if_missing(patches, raises):
+    gpg = identity.GPGIdentity()
+    patched = patches(
+        ("GPGIdentity.gen_key_data", dict(new_callable=PropertyMock)),
+        ("GPGIdentity.gpg", dict(new_callable=PropertyMock)),
+        ("GPGIdentity.signing_key", dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.identity.identity")
+
+    with patched as (m_data, m_gpg, m_key):
+        if raises is not None:
+            m_key.side_effect = raises
+
+        if raises == Exception:
+            with pytest.raises(raises):
+                gpg.gen_key_if_missing()
+        else:
+            assert not gpg.gen_key_if_missing()
+
+    if raises != identity.GPGError:
+        assert not m_gpg.called
+        assert not m_data.called
+        return
+    assert (
+        list(m_gpg.return_value.gen_key.call_args)
+        == [(m_data.return_value, ), {}])
+
+
 @pytest.mark.parametrize("name", ["NAME", None])
 @pytest.mark.parametrize("email", ["EMAIL", None])
 @pytest.mark.parametrize("match", ["MATCH", None])
 @pytest.mark.parametrize("log", [True, False])
-def test_identity_match(patches, name, email, match, log):
+@pytest.mark.parametrize("gen_key", [True, False])
+def test_identity_match(patches, name, email, match, log, gen_key):
     gpg = identity.GPGIdentity()
     patched = patches(
         "GPGIdentity._match_key",
+        ("GPGIdentity.gen_key", dict(new_callable=PropertyMock)),
         ("GPGIdentity.provided_id", dict(new_callable=PropertyMock)),
         ("GPGIdentity.log", dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.identity.identity")
     key = dict(uids=["UID1", "UID2"])
 
-    with patched as (m_match, m_id, m_log):
+    with patched as (m_match, m_gen, m_id, m_log):
         if not log:
             m_log.return_value = None
         m_match.return_value = match
+        m_gen.return_value = gen_key
         m_id.return_value = name or email
         result = gpg.match(key)
 
     if not name and not email:
         assert not m_match.called
+        if gen_key:
+            assert not m_log.called
+            assert not result
+            return
         if log:
             assert (
                 list(m_log.return_value.warning.call_args)
