@@ -22,7 +22,7 @@ envoy.distribution.verify>=0.0.2
 envoy.docker.utils>=0.0.2
 envoy.github.abstract>=0.0.16
 envoy.github.release>=0.0.8
-envoy.gpg.identity>=0.0.3
+envoy.gpg.identity>=0.0.4
 envoy.gpg.sign>=0.0.3
 flake8
 frozendict
