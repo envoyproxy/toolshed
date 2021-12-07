@@ -49,9 +49,23 @@ def test_packager_extract(patches):
     assert "extract" not in packager.__dict__
 
 
+def test_packager_gen_key(patches):
+    packager = sign.PackageSigningRunner("x", "y", "z")
+    patched = patches(
+        ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.sign.runner")
+
+    with patched as (m_args, ):
+        assert packager.gen_key == m_args.return_value.gen_key
+
+    assert "gen_key" not in packager.__dict__
+
+
 def test_packager_maintainer(patches):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
+        ("PackageSigningRunner.gen_key",
+         dict(new_callable=PropertyMock)),
         ("PackageSigningRunner.log",
          dict(new_callable=PropertyMock)),
         ("PackageSigningRunner.maintainer_class",
@@ -62,14 +76,14 @@ def test_packager_maintainer(patches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.sign.runner")
 
-    with patched as (m_log, m_class, m_email, m_name):
+    with patched as (m_gen, m_log, m_class, m_email, m_name):
         assert packager.maintainer == m_class.return_value.return_value
 
     assert (
         list(m_class.return_value.call_args)
         == [(m_name.return_value,
              m_email.return_value,
-             m_log.return_value), {}])
+             m_log.return_value), dict(gen_key=m_gen.return_value)])
 
     assert "maintainer" in packager.__dict__
 
@@ -182,7 +196,11 @@ def test_packager_add_arguments():
              {'default': '',
               'help': (
                   'Maintainer email to match when searching for a GPG key '
-                  'to match with')}]])
+                  'to match with')}],
+           [('--gen-key',),
+            {'action': 'store_true',
+             'help': 'If set, create the signing key (requires '
+                     '`--maintainer-name` and `--maintainer-email`) '}]])
 
 
 def test_packager_add_key(patches):
