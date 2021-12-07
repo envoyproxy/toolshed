@@ -25,10 +25,14 @@ class GPGIdentity(object):
             self,
             name: Optional[str] = None,
             email: Optional[str] = None,
-            log: Optional[logging.Logger] = None):
+            log: Optional[logging.Logger] = None,
+            gen_key: bool = False):
         self._provided_name = name
         self._provided_email = email
         self._log = log
+        self._gen_key = gen_key
+        if gen_key:
+            self.gen_key_if_missing()
 
     def __str__(self) -> str:
         return self.uid
@@ -42,6 +46,26 @@ class GPGIdentity(object):
     def fingerprint(self) -> str:
         """GPG key fingerprint."""
         return self.signing_key["fingerprint"]
+
+    @property
+    def gen_key(self) -> bool:
+        """Flag to determine whether to generate missing key."""
+        return self._gen_key
+
+    @property
+    def gen_key_data(self) -> str:
+        """GPG data for generating a key."""
+        if not (self.provided_name and self.provided_email):
+            raise GPGError(
+                "Both `name` and `email` must be provided to generate "
+                f"a key. name: {self.provided_name}, "
+                f"email: {self.provided_email}")
+        return self.gpg.gen_key_input(
+            name_real=self.provided_name,
+            name_email=self.provided_email,
+            key_type="RSA",
+            key_length=2048,
+            no_protection=True)
 
     @cached_property
     def gpg(self) -> gnupg.GPG:
@@ -78,9 +102,9 @@ class GPGIdentity(object):
         if not (self.provided_name or self.provided_email):
             return None
         return (
-            formataddr((self.provided_name, self.provided_email)) if
-            (self.provided_name and self.provided_email) else
-            (self.provided_name or self.provided_email))
+            formataddr((self.provided_name, self.provided_email))
+            if (self.provided_name and self.provided_email)
+            else (self.provided_name or self.provided_email))
 
     @property
     def provided_name(self) -> Optional[str]:
@@ -114,6 +138,12 @@ class GPGIdentity(object):
     def export_key(self) -> str:
         return self.gpg.export_keys(keyids=[self.signing_key["keyid"]])
 
+    def gen_key_if_missing(self):
+        try:
+            self.signing_key
+        except GPGError:
+            self.gpg.gen_key(self.gen_key_data)
+
     def match(self, key: dict) -> Optional[dict]:
         """Match a signing key.
 
@@ -125,6 +155,8 @@ class GPGIdentity(object):
         if self.provided_id:
             key["uid"] = self._match_key(key["uids"])
             return key if key["uid"] else None
+        if self.gen_key:
+            return None
         if self.log:
             self.log.warning(
                 "No GPG name/email supplied, signing with first available key")
