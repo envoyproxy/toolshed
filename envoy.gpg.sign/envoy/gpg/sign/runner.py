@@ -33,13 +33,18 @@ class PackageSigningRunner(runner.Runner):
     def extract(self) -> bool:
         return self.args.extract
 
+    @property
+    def gen_key(self) -> bool:
+        return self.args.gen_key
+
     @cached_property
     def maintainer(self) -> identity.GPGIdentity:
         """A representation of the maintainer with GPG capabilities."""
         return self.maintainer_class(
             self.maintainer_name,
             self.maintainer_email,
-            self.log)
+            self.log,
+            gen_key=self.gen_key)
 
     @property
     def maintainer_class(self) -> Type[identity.GPGIdentity]:
@@ -110,6 +115,12 @@ class PackageSigningRunner(runner.Runner):
             help=(
                 "Maintainer email to match when searching for a GPG key "
                 "to match with"))
+        parser.add_argument(
+            "--gen-key",
+            action="store_true",
+            help=(
+                "If set, create the signing key (requires "
+                "`--maintainer-name` and `--maintainer-email`) "))
 
     def add_key(self, path: Union[pathlib.Path, str]) -> None:
         # todo(phlax): always return pathlib.Path from untar and avoid
