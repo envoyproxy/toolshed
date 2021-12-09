@@ -26,7 +26,7 @@ class GPGIdentity(object):
             name: Optional[str] = None,
             email: Optional[str] = None,
             log: Optional[logging.Logger] = None,
-            gnupg_home: Optional[str] = None,
+            gnupg_home: Optional[pathlib.Path] = None,
             gen_key: bool = False):
         self._provided_name = name
         self._provided_email = email
@@ -81,7 +81,7 @@ class GPGIdentity(object):
     @property
     def gnupg_home(self) -> pathlib.Path:
         home = (
-            pathlib.Path(self._gnupg_home)
+            self._gnupg_home
             if self._gnupg_home
             else self.home.joinpath(".gnupg"))
         if not home.exists():

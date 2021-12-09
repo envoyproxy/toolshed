@@ -1,4 +1,4 @@
-from unittest.mock import PropertyMock
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
@@ -141,16 +141,19 @@ def test_identity_gnupg_home(patches, home, exists):
     gpg = identity.GPGIdentity()
     patched = patches(
         "os",
-        "pathlib",
         ("GPGIdentity.home", dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.identity.identity")
+    home = (
+        MagicMock()
+        if home
+        else None)
     gpg._gnupg_home = home
 
-    with patched as (m_os, m_plib, m_home, ):
+    with patched as (m_os, m_home):
         home_path = (
             m_home.return_value.joinpath.return_value
             if not home
-            else m_plib.Path.return_value)
+            else home)
         home_path.exists.return_value = exists
         assert (
             gpg.gnupg_home
@@ -171,9 +174,6 @@ def test_identity_gnupg_home(patches, home, exists):
         assert not home_path.mkdir.called
     if home:
         assert not m_home.called
-        assert (
-            list(m_plib.Path.call_args)
-            == [(home, ), {}])
         return
     assert (
         list(m_home.return_value.joinpath.call_args)
