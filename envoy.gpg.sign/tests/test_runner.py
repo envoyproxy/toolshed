@@ -61,10 +61,54 @@ def test_packager_gen_key(patches):
     assert "gen_key" not in packager.__dict__
 
 
+@pytest.mark.parametrize("gen_key", [True, False])
+def test_packager_gnupg_home(patches, gen_key):
+    packager = sign.PackageSigningRunner("x", "y", "z")
+    patched = patches(
+        "pathlib",
+        ("PackageSigningRunner.gen_key",
+         dict(new_callable=PropertyMock)),
+        ("PackageSigningRunner.gnupg_tempdir",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.sign.runner")
+
+    with patched as (m_plib, m_gen, m_temp):
+        m_gen.return_value = gen_key
+        assert (
+            packager.gnupg_home
+            == (m_plib.Path.return_value
+                if gen_key
+                else None))
+
+    assert "gnupg_home" not in packager.__dict__
+    if not gen_key:
+        assert not m_plib.Path.called
+        assert not m_temp.called
+        return
+    assert (
+        list(m_plib.Path.call_args)
+        == [(m_temp.return_value.name, ), {}])
+
+
+def test_packager_gnupg_tempdir(patches):
+    packager = sign.PackageSigningRunner("x", "y", "z")
+    patched = patches(
+        "tempfile",
+        prefix="envoy.gpg.sign.runner")
+
+    with patched as (m_temp, ):
+        assert (
+            packager.gnupg_tempdir
+            == m_temp.TemporaryDirectory.return_value)
+    assert "gnupg_tempdir" in packager.__dict__
+
+
 def test_packager_maintainer(patches):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
         ("PackageSigningRunner.gen_key",
+         dict(new_callable=PropertyMock)),
+        ("PackageSigningRunner.gnupg_home",
          dict(new_callable=PropertyMock)),
         ("PackageSigningRunner.log",
          dict(new_callable=PropertyMock)),
@@ -76,14 +120,16 @@ def test_packager_maintainer(patches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.sign.runner")
 
-    with patched as (m_gen, m_log, m_class, m_email, m_name):
+    with patched as (m_gen, m_home, m_log, m_class, m_email, m_name):
         assert packager.maintainer == m_class.return_value.return_value
 
     assert (
         list(m_class.return_value.call_args)
         == [(m_name.return_value,
              m_email.return_value,
-             m_log.return_value), dict(gen_key=m_gen.return_value)])
+             m_log.return_value),
+            dict(gnupg_home=m_home.return_value,
+                 gen_key=m_gen.return_value)])
 
     assert "maintainer" in packager.__dict__
 
@@ -253,6 +299,28 @@ def test_packager_archive(patches):
     assert (
         list(m_tarfile.open.return_value.__enter__.return_value.add.call_args)
         == [('PATH',), {'arcname': '.'}])
+
+
+@pytest.mark.parametrize("indict", [True, False])
+def test_packager_cleanup(patches, indict):
+    packager = sign.PackageSigningRunner("x", "y", "z")
+    patched = patches(
+        ("PackageSigningRunner.gnupg_tempdir",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.sign.runner")
+    if indict:
+        packager.__dict__["gnupg_tempdir"] = "GNUPG TEMPDIR"
+
+    with patched as (m_temp, ):
+        assert not packager.cleanup()
+
+    assert "gnupg_tempdir" not in packager.__dict__
+    if not indict:
+        assert not m_temp.called
+        return
+    assert (
+        list(m_temp.return_value.cleanup.call_args)
+        == [(), {}])
 
 
 def test_packager_get_signing_util(patches):
