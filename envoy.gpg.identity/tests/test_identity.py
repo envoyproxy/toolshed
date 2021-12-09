@@ -8,12 +8,15 @@ from envoy.gpg import identity
 @pytest.mark.parametrize("name", ["NAME", None])
 @pytest.mark.parametrize("email", ["EMAIL", None])
 @pytest.mark.parametrize("log", ["LOG", None])
+@pytest.mark.parametrize("gnupg_home", ["HOME", None])
 @pytest.mark.parametrize("gen_key", [None, True, False])
-def test_identity_constructor(patches, name, email, log, gen_key):
+def test_identity_constructor(patches, name, email, log, gnupg_home, gen_key):
     patched = patches(
         "GPGIdentity.gen_key_if_missing",
         prefix="envoy.gpg.identity.identity")
     kwargs = {}
+    if gnupg_home is not None:
+        kwargs["gnupg_home"] = gnupg_home
     if gen_key is not None:
         kwargs["gen_key"] = gen_key
 
@@ -24,6 +27,7 @@ def test_identity_constructor(patches, name, email, log, gen_key):
     assert gpg.provided_name == name
     assert gpg.provided_email == (email or "")
     assert gpg._log == log
+    assert gpg._gnupg_home == gnupg_home
     assert gpg.gen_key == (gen_key or False)
 
 
@@ -118,32 +122,62 @@ def test_identity_gpg(patches):
     gpg = identity.GPGIdentity()
     patched = patches(
         "gnupg.GPG",
+        ("GPGIdentity.gnupg_home", dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.identity.identity")
 
-    with patched as (m_gpg, ):
+    with patched as (m_gpg, m_home):
         assert gpg.gpg == m_gpg.return_value
 
     assert (
         list(m_gpg.call_args)
-        == [(), {}])
+        == [(), dict(gnupghome=m_home.return_value)])
 
     assert "gpg" in gpg.__dict__
 
 
-def test_identity_gnupg_home(patches):
+@pytest.mark.parametrize("home", [None, "HOME"])
+@pytest.mark.parametrize("exists", [True, False])
+def test_identity_gnupg_home(patches, home, exists):
     gpg = identity.GPGIdentity()
     patched = patches(
+        "os",
+        "pathlib",
         ("GPGIdentity.home", dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.identity.identity")
+    gpg._gnupg_home = home
 
-    with patched as (m_home, ):
-        assert gpg.gnupg_home == m_home.return_value.joinpath.return_value
+    with patched as (m_os, m_plib, m_home, ):
+        home_path = (
+            m_home.return_value.joinpath.return_value
+            if not home
+            else m_plib.Path.return_value)
+        home_path.exists.return_value = exists
+        assert (
+            gpg.gnupg_home
+            == home_path)
 
+    assert "gnupg_home" not in gpg.__dict__
+    assert (
+        list(m_os.environ.__setitem__.call_args)
+        == [("GNUPGHOME", str(home_path)), {}])
+    assert (
+        list(home_path.exists.call_args)
+        == [(), {}])
+    if not exists:
+        assert (
+            list(home_path.mkdir.call_args)
+            == [(), {}])
+    else:
+        assert not home_path.mkdir.called
+    if home:
+        assert not m_home.called
+        assert (
+            list(m_plib.Path.call_args)
+            == [(home, ), {}])
+        return
     assert (
         list(m_home.return_value.joinpath.call_args)
         == [('.gnupg', ), {}])
-
-    assert "gnupg_home" not in gpg.__dict__
 
 
 @pytest.mark.parametrize("gpg1", [None, "GPG"])
@@ -358,7 +392,8 @@ def test_identity_export_key(patches):
 
 
 @pytest.mark.parametrize("raises", [None, Exception, identity.GPGError])
-def test_identity_gen_key_if_missing(patches, raises):
+@pytest.mark.parametrize("fingerprint", [None, "FINGERPRINT"])
+def test_identity_gen_key_if_missing(patches, raises, fingerprint):
     gpg = identity.GPGIdentity()
     patched = patches(
         ("GPGIdentity.gen_key_data", dict(new_callable=PropertyMock)),
@@ -369,10 +404,15 @@ def test_identity_gen_key_if_missing(patches, raises):
     with patched as (m_data, m_gpg, m_key):
         if raises is not None:
             m_key.side_effect = raises
+        m_gpg.return_value.gen_key.return_value.fingerprint = fingerprint
 
         if raises == Exception:
             with pytest.raises(raises):
                 gpg.gen_key_if_missing()
+        elif raises and not fingerprint:
+            with pytest.raises(identity.GPGError) as e:
+                gpg.gen_key_if_missing()
+            assert e.value.args[0] == "Failed to generate key"
         else:
             assert not gpg.gen_key_if_missing()
 

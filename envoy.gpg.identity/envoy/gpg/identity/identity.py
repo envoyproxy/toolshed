@@ -26,11 +26,13 @@ class GPGIdentity(object):
             name: Optional[str] = None,
             email: Optional[str] = None,
             log: Optional[logging.Logger] = None,
+            gnupg_home: Optional[str] = None,
             gen_key: bool = False):
         self._provided_name = name
         self._provided_email = email
         self._log = log
         self._gen_key = gen_key
+        self._gnupg_home = gnupg_home
         if gen_key:
             self.gen_key_if_missing()
 
@@ -69,7 +71,7 @@ class GPGIdentity(object):
 
     @cached_property
     def gpg(self) -> gnupg.GPG:
-        return gnupg.GPG()
+        return gnupg.GPG(gnupghome=self.gnupg_home)
 
     @cached_property
     def gpg_bin(self) -> Optional[pathlib.Path]:
@@ -78,7 +80,14 @@ class GPGIdentity(object):
 
     @property
     def gnupg_home(self) -> pathlib.Path:
-        return self.home.joinpath(".gnupg")
+        home = (
+            pathlib.Path(self._gnupg_home)
+            if self._gnupg_home
+            else self.home.joinpath(".gnupg"))
+        if not home.exists():
+            home.mkdir()
+        os.environ["GNUPGHOME"] = str(home)
+        return home
 
     @cached_property
     def home(self) -> pathlib.Path:
@@ -142,7 +151,9 @@ class GPGIdentity(object):
         try:
             self.signing_key
         except GPGError:
-            self.gpg.gen_key(self.gen_key_data)
+            key = self.gpg.gen_key(self.gen_key_data)
+            if not key.fingerprint:
+                raise GPGError("Failed to generate key")
 
     def match(self, key: dict) -> Optional[dict]:
         """Match a signing key.
