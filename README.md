@@ -322,7 +322,7 @@ pypi: https://pypi.org/project/envoy.github.release
 
 #### [envoy.gpg.identity](envoy.gpg.identity)
 
-version: 0.0.6
+version: 0.0.7.dev0
 
 pypi: https://pypi.org/project/envoy.gpg.identity
 
@@ -343,7 +343,7 @@ pypi: https://pypi.org/project/envoy.gpg.sign
 
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.0.4
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.12
-- [envoy.gpg.identity](https://pypi.org/project/envoy.gpg.identity) >=0.0.4
+- [envoy.gpg.identity](https://pypi.org/project/envoy.gpg.identity) >=0.0.6
 
 ---
 
