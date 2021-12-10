@@ -2,8 +2,9 @@
 import argparse
 import pathlib
 import tarfile
+import tempfile
 from functools import cached_property
-from typing import Type, Union
+from typing import Optional, Type, Union
 
 from envoy.base import runner, utils
 from envoy.gpg import identity
@@ -37,6 +38,17 @@ class PackageSigningRunner(runner.Runner):
     def gen_key(self) -> bool:
         return self.args.gen_key
 
+    @property
+    def gnupg_home(self) -> Optional[pathlib.Path]:
+        return (
+            pathlib.Path(self.gnupg_tempdir.name)
+            if self.gen_key
+            else None)
+
+    @cached_property
+    def gnupg_tempdir(self) -> tempfile.TemporaryDirectory:
+        return tempfile.TemporaryDirectory()
+
     @cached_property
     def maintainer(self) -> identity.GPGIdentity:
         """A representation of the maintainer with GPG capabilities."""
@@ -44,6 +56,7 @@ class PackageSigningRunner(runner.Runner):
             self.maintainer_name,
             self.maintainer_email,
             self.log,
+            gnupg_home=self.gnupg_home,
             gen_key=self.gen_key)
 
     @property
@@ -132,10 +145,16 @@ class PackageSigningRunner(runner.Runner):
         with tarfile.open(self.tar, utils.tar_mode(self.tar, mode="w")) as tar:
             tar.add(path, arcname=".")
 
+    def cleanup(self):
+        if "gnupg_tempdir" in self.__dict__:
+            self.gnupg_tempdir.cleanup()
+            del self.__dict__["gnupg_tempdir"]
+
     def get_signing_util(self, path: pathlib.Path) -> DirectorySigningUtil:
         return self.signing_utils[path.name](path, self.maintainer, self.log)
 
     @runner.catches((identity.GPGError, SigningError))
+    @runner.cleansup
     def run(self) -> None:
         if self.extract:
             self.sign_tarball()
