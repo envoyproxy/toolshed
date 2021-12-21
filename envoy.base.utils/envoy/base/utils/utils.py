@@ -2,6 +2,7 @@
 # Provides shared utils used by other python modules
 #
 
+import datetime
 import io
 import os
 import pathlib
@@ -234,7 +235,7 @@ def tar_mode(path: Union[pathlib.Path, str], mode="r") -> str:
     return mode
 
 
-def dt_to_utc_isoformat(dt):
+def dt_to_utc_isoformat(dt: datetime.datetime) -> str:
     """Convert a `datetime` -> UTC `date.isoformat`"""
     date = dt.replace(tzinfo=pytz.UTC)
     return date.date().isoformat()
