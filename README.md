@@ -109,13 +109,14 @@ pypi: https://pypi.org/project/envoy.base.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.0.13.dev0
+version: 0.0.13
 
 pypi: https://pypi.org/project/envoy.base.utils
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts)
+- [pytz](https://pypi.org/project/pytz)
 - [pyyaml](https://pypi.org/project/pyyaml)
 - [trycast](https://pypi.org/project/trycast)
 

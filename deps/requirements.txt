@@ -34,6 +34,7 @@ packaging
 pytest-patches
 pytest-asyncio
 python-gnupg
+pytz
 pyyaml
 setuptools
 sphinx
