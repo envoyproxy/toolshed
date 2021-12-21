@@ -335,7 +335,7 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 
 #### [envoy.gpg.sign](envoy.gpg.sign)
 
-version: 0.0.7
+version: 0.0.8.dev0
 
 pypi: https://pypi.org/project/envoy.gpg.sign
 
