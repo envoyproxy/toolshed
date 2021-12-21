@@ -14,6 +14,8 @@ from typing import (
     Any, AsyncGenerator, Callable, Generator,
     Iterator, List, Optional, Set, Type, Union)
 
+import pytz
+
 import yaml
 
 from trycast import trycast  # type:ignore
@@ -230,3 +232,9 @@ def tar_mode(path: Union[pathlib.Path, str], mode="r") -> str:
         if str(path).endswith(f".{suffix}"):
             return f"{mode}:{suffix}"
     return mode
+
+
+def dt_to_utc_isoformat(dt):
+    """Convert a `datetime` -> UTC `date.isoformat`"""
+    date = dt.replace(tzinfo=pytz.UTC)
+    return date.date().isoformat()

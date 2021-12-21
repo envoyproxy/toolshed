@@ -385,3 +385,26 @@ def test_tar_mode(mode, path):
     assert (
         utils.tar_mode(m_path, **kwargs)
         == expected)
+
+
+def test_dt_to_utc_isoformat(patches):
+    patched = patches(
+        "pytz",
+        prefix="envoy.base.utils.utils")
+    dt = MagicMock()
+
+    with patched as (m_pytz, ):
+        assert (
+            utils.dt_to_utc_isoformat(dt)
+            == (dt.replace.return_value.date
+                .return_value.isoformat.return_value))
+
+    assert (
+        list(dt.replace.call_args)
+        == [(), dict(tzinfo=m_pytz.UTC)])
+    assert (
+        list(dt.replace.return_value.date.call_args)
+        == [(), {}])
+    assert (
+        list(dt.replace.return_value.date.return_value.isoformat.call_args)
+        == [(), {}])

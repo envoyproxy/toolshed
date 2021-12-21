@@ -44,6 +44,7 @@ extra_requirements = [
 extra_type_stubs = [
      "types-aiofiles",
      "types-frozendict",
+     "types-pytz",
      "types-pyyaml"]
 args = [
      "--explicit-package-bases",
