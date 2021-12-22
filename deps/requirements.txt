@@ -1,3 +1,4 @@
+aio.api.github>=0.0.2
 aio.functional>=0.0.9
 aio.stream>=0.0.2
 aio.subprocess>=0.0.4
@@ -10,9 +11,9 @@ colorama
 coloredlogs
 docutils~=0.16.0
 envoy.abstract.command>=0.0.3
-envoy.base.checker>=0.0.2
+envoy.base.checker>=0.0.3
 envoy.base.runner>=0.0.4
-envoy.base.utils>=0.0.12
+envoy.base.utils>=0.0.13
 envoy.code_format.python_check>=0.0.4
 envoy.dependency.pip_check>=0.0.4
 envoy.distribution.distrotest>=0.0.4

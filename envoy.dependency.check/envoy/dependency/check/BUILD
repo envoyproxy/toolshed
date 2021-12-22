@@ -1,0 +1,23 @@
+
+pytooling_library(
+    "envoy.dependency.check",
+    dependencies=[
+        "//deps:abstracts",
+        "//deps:aio.functional",
+        "//deps:aio.api.github",
+        "//deps:aio.tasks",
+        "//deps:envoy.base.checker",
+        "//deps:envoy.base.utils",
+        "//deps:aiohttp",
+        "//deps:packaging",
+    ],
+    sources=[
+        "abstract/__init__.py",
+        "abstract/checker.py",
+        "abstract/dependency.py",
+        "abstract/issues.py",
+        "abstract/release.py",
+        "abstract/typing.py",
+        "exceptions.py",
+    ],
+)
