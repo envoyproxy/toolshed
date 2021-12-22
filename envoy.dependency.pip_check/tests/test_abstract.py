@@ -75,6 +75,12 @@ def test_abstract_pip_checker_dependabot_config(patches, isdict):
         == [(m_path.return_value.joinpath.return_value,), {}])
 
 
+def test_abstract_pip_checker_ignored_dirs():
+    checker = DummyPipChecker("path1", "path2", "path3")
+    assert checker.ignored_dirs == set(pip_check.abstract.IGNORED_DIRS)
+    assert "ignored_dirs" in checker.__dict__
+
+
 def test_abstract_pip_checker_path(patches):
     checker = DummyPipChecker("path1", "path2", "path3")
     patched = patches(
@@ -85,30 +91,37 @@ def test_abstract_pip_checker_path(patches):
         assert checker.path == m_super.return_value
 
 
-def test_abstract_pip_checker_requirements_dirs(patches):
+@pytest.mark.parametrize("ignored", [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]])
+def test_abstract_pip_checker_requirements_dirs(patches, ignored):
     checker = DummyPipChecker("path1", "path2", "path3")
     dummy_glob = [
         "FILE1", "FILE2", "FILE3",
         "REQUIREMENTS_FILE", "FILE4",
         "REQUIREMENTS_FILE", "FILE5"]
     patched = patches(
+        ("APipChecker.ignored_dirs", dict(new_callable=PropertyMock)),
         ("APipChecker.requirements_filename", dict(new_callable=PropertyMock)),
         ("APipChecker.path", dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.pip_check.abstract")
     expected = []
 
-    with patched as (m_reqs, m_path):
+    with patched as (m_ignored, m_reqs, m_path):
         m_reqs.return_value = "REQUIREMENTS_FILE"
-        _glob = []
+        path_glob = []
+        ignored_paths = []
 
-        for fname in dummy_glob:
+        for i, fname in enumerate(dummy_glob):
             _mock = MagicMock()
             _mock.name = fname
-            if fname == "REQUIREMENTS_FILE":
+            if i in ignored:
+                ignored_paths.append(
+                    f"/{_mock.parent.relative_to.return_value}")
+            elif fname == "REQUIREMENTS_FILE":
                 expected.append(_mock)
-            _glob.append(_mock)
+            path_glob.append(_mock)
 
-        m_path.return_value.glob.return_value = _glob
+        m_ignored.return_value = ignored_paths
+        m_path.return_value.glob.return_value = path_glob
         assert (
             checker.requirements_dirs
             == {f"/{f.parent.relative_to.return_value}"
