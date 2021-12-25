@@ -16,6 +16,22 @@ pypi: https://pypi.org/project/abstracts
 ---
 
 
+#### [aio.api.github](aio.api.github)
+
+version: 0.0.1
+
+pypi: https://pypi.org/project/aio.api.github
+
+##### requirements:
+
+- [abstracts](https://pypi.org/project/abstracts)
+- [aio.functional](https://pypi.org/project/aio.functional)
+- [gidgethub](https://pypi.org/project/gidgethub)
+- [packaging](https://pypi.org/project/packaging)
+
+---
+
+
 #### [aio.functional](aio.functional)
 
 version: 0.0.10.dev0

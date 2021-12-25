@@ -1,0 +1,26 @@
+
+pytooling_library(
+    "aio.api.github",
+    dependencies=[
+        "//deps:abstracts",
+        "//deps:aio.functional",
+        "//deps:gidgethub",
+        "//deps:packaging",
+    ],
+    sources=[
+        "abstract/__init__.py",
+        "abstract/api.py",
+        "abstract/base.py",
+        "abstract/commit.py",
+        "abstract/issues.py",
+        "abstract/iterator.py",
+        "abstract/label.py",
+        "abstract/release.py",
+        "abstract/repo.py",
+        "abstract/tag.py",
+        "__init__.py",
+        "api.py",
+        "exceptions.py",
+        "utils.py",
+    ],
+)
