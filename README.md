@@ -80,7 +80,7 @@ pypi: https://pypi.org/project/envoy.abstract.command
 
 #### [envoy.base.checker](envoy.base.checker)
 
-version: 0.0.3.dev0
+version: 0.0.3
 
 pypi: https://pypi.org/project/envoy.base.checker
 

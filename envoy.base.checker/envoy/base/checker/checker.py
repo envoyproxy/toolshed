@@ -43,6 +43,11 @@ class BaseChecker(runner.Runner):
         return "exiting" in self.errors
 
     @property
+    def fail_on_warn(self) -> bool:
+        """Return failure when warnings are generated."""
+        return self.args.warning == "error"
+
+    @property
     def failed(self) -> dict:
         """Dictionary of errors per check."""
         return dict((k, (len(v))) for k, v in self.errors.items())
@@ -56,8 +61,9 @@ class BaseChecker(runner.Runner):
     @property
     def has_failed(self) -> bool:
         """Shows whether there are any failures."""
-        # add logic for warn/error
-        return bool(self.failed or self.warned)
+        return bool(
+            self.failed
+            or (self.warned and self.fail_on_warn))
 
     @cached_property
     def path(self) -> pathlib.Path:
