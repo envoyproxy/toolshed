@@ -11,11 +11,15 @@ class AGithubTag(GithubRepoEntity, metaclass=abstracts.Abstraction):
     @property
     def commit_url(self):
         """URL to retrieve related commit for this tag."""
-        # this is messy 8/
+        # Sometimes when retrieving a tag using `git/ref/tags/{name}`
+        # you get back a commit rather than a tag, not sure why
+        # but this abstracts that to get the commit *from this tag*
+        # TODO: check what pygithub does
         try:
             url = self.data["object"]["url"]
         except KeyError:
             url = self.data["url"]
+        # we want the repo commit rather than the git commit
         return url.replace("git/commits", "commits")
 
     @async_property(cache=True)

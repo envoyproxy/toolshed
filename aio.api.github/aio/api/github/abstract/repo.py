@@ -123,7 +123,6 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
         #   check what pygithub does.
         ref_tag = await self.getitem(f"git/ref/tags/{name}")
         tag = await self.github.getitem(ref_tag["object"]["url"])
-        # print(ref_tag["object"]["url"])
         return self.github.tag_class(self, tag)
 
     def tags(self) -> "abstract.AGithubIterator":
