@@ -31,7 +31,7 @@ def test_abstract_repo_constructor():
       (False, 4, 1),
       (True, 1, 0))])
 @pytest.mark.parametrize("since", range(0, 6))
-async def test_abstract_repo_newer_release(patches, releases, since):
+async def test_abstract_repo_highest_release(patches, releases, since):
     repo = DummyGithubRepo("GITHUB", "NAME")
     patched = patches(
         "AGithubRepo.releases",
@@ -59,7 +59,7 @@ async def test_abstract_repo_newer_release(patches, releases, since):
 
     with patched as (m_releases, ):
         m_releases.return_value = release_iter
-        result = await repo.newer_release(**kwargs)
+        result = await repo.highest_release(**kwargs)
 
     if not recent_releases:
         assert not result

@@ -63,6 +63,29 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
         """Github API path for provided relative path."""
         return str(self.github_path.joinpath(rel_path))
 
+    async def highest_release(
+            self,
+            since: Optional[datetime] = None) -> Optional[
+                "abstract.AGithubRelease"]:
+        """Release with the highest semantic version, optionally `since` a
+        previous release date.
+
+        Not necessarily the most recent.
+        """
+        highest_release = None
+
+        async for release in self.releases():
+            if since and release.published_at < since:
+                break
+            is_higher = (
+                not release.prerelease
+                and release.version
+                and (not highest_release
+                     or release.version >= highest_release.version))
+            if is_higher:
+                highest_release = release
+        return highest_release
+
     def iter_entities(
             self,
             entity: Type[base.GithubEntity],
@@ -73,29 +96,6 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             path,
             inflate=partial(entity, self),
             **kwargs)
-
-    async def newer_release(
-            self,
-            since: Optional[datetime] = None) -> Optional[
-                "abstract.AGithubRelease"]:
-        """Release with the highest semantic version, optionally `since` a
-        previous release date.
-
-        Not necessarily the most recent.
-        """
-        latest_release = None
-
-        async for release in self.releases():
-            if since and release.published_at < since:
-                break
-            is_higher = (
-                not release.prerelease
-                and release.version
-                and (not latest_release
-                     or release.version >= latest_release.version))
-            if is_higher:
-                latest_release = release
-        return latest_release
 
     async def patch(self, query: str, data: Optional[Dict] = None) -> Any:
         """Call the `gidgethub.patch` api for this repo."""
