@@ -113,6 +113,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
 
     def releases(self) -> "abstract.AGithubIterator":
         """Iterate releases for this repo."""
+        # TODO: make per_page configurable
         return self.iter_entities(
             self.github.release_class,
             "releases?per_page=100")
