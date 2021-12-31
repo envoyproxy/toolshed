@@ -31,7 +31,7 @@ jinja2
 mypy
 mypy-abstracts
 packaging
-pygments~=2.10.0
+pygments==2.10.0
 pytest-patches
 pytest-asyncio
 python-gnupg
