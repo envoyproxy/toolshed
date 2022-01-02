@@ -11,6 +11,9 @@ from .base import GithubRepoEntity
 class AGithubCommit(GithubRepoEntity, metaclass=abstracts.Abstraction):
     """A Github commit."""
 
+    def __str__(self):
+        return f"<{self.__class__.__name__} {self.repo.name}#{self.sha}>"
+
     @cached_property
     def timestamp(self) -> datetime:
         """Datetime of the commit."""

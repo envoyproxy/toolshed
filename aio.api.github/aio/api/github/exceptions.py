@@ -6,3 +6,7 @@ class IssueExists(Exception):
 
 class IssueCreateError(Exception):
     pass
+
+
+class TagNotFound(Exception):
+    pass

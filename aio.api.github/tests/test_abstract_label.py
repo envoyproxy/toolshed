@@ -24,3 +24,7 @@ def test_abstract_label_constructor(patches):
     assert (
         list(m_super.call_args)
         == [args, kwargs])
+    label.name = "LABEL_NAME"
+    assert (
+        str(label)
+        == f"<{label.__class__.__name__} LABEL_NAME>")

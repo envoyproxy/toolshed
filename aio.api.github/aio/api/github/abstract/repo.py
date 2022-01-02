@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, Type
 
 import abstracts
 
-from aio.api.github import abstract, utils
+from aio.api.github import abstract, exceptions, utils
 from . import base
 
 
@@ -16,6 +16,9 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
     def __init__(self, github: "abstract.AGithubAPI", name: str) -> None:
         self.github = github
         self.name = name
+
+    def __str__(self):
+        return f"<{self.__class__.__name__} {self.name}>"
 
     @cached_property
     def github_path(self) -> pathlib.PurePosixPath:
@@ -120,9 +123,9 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
 
     async def tag(self, name: str) -> "abstract.AGithubTag":
         """Fetch a tag for this repo."""
-        # TODO: these dont always give back the same kinda objects
-        #   check what pygithub does.
         ref_tag = await self.getitem(f"git/ref/tags/{name}")
+        if ref_tag["object"]["type"] != "tag":
+            raise exceptions.TagNotFound(name)
         tag = await self.github.getitem(ref_tag["object"]["url"])
         return self.github.tag_class(self, tag)
 

@@ -15,6 +15,15 @@ from .base import GithubRepoEntity
 class AGithubIssue(GithubRepoEntity, metaclass=abstracts.Abstraction):
     """A Github issue."""
 
+    def __gt__(self, other) -> bool:
+        return self.number > other.number
+
+    def __lt__(self, other) -> bool:
+        return self.number < other.number
+
+    def __str__(self):
+        return f"<{self.__class__.__name__} {self.repo.name}#{self.number}>"
+
     async def create_comment(self, comment: str) -> Any:
         """Add a comment to the issue."""
         # TODO: add comment class

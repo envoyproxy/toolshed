@@ -1,4 +1,6 @@
 
+from unittest.mock import MagicMock
+
 import abstracts
 
 from aio.api import github
@@ -24,6 +26,11 @@ def test_abstract_release_constructor(patches):
     assert (
         list(m_super.call_args)
         == [args, kwargs])
+    release.repo = MagicMock()
+    release.tag_name = "RELEASE_NAME"
+    assert (
+        str(release)
+        == f"<{release.__class__.__name__} {release.repo.name}@RELEASE_NAME>")
 
 
 def test_abstract_release_dunder_data(patches):

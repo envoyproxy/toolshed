@@ -13,6 +13,9 @@ from .base import GithubRepoEntity
 class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
     """A Github release."""
 
+    def __str__(self):
+        return f"<{self.__class__.__name__} {self.repo.name}@{self.tag_name}>"
+
     @cached_property
     def __data__(self) -> Dict[str, Callable]:
         return dict(

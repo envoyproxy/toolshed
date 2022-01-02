@@ -36,6 +36,31 @@ def test_abstract_issue_constructor(patches):
     assert (
         list(m_super.call_args)
         == [args, kwargs])
+    issue.repo = MagicMock()
+    issue.number = 23
+    assert (
+        str(issue)
+        == f"<{issue.__class__.__name__} {issue.repo.name}#23>")
+
+
+@pytest.mark.parametrize("number", range(0, 3))
+@pytest.mark.parametrize("other_number", range(0, 3))
+def test_issue_dunder_gt(number, other_number):
+    issue1 = DummyGithubIssue("REPO", "DATA")
+    issue1.number = number
+    issue2 = DummyGithubIssue("REPO", "DATA")
+    issue2.number = other_number
+    assert (issue1 > issue2) == (number > other_number)
+
+
+@pytest.mark.parametrize("number", range(0, 3))
+@pytest.mark.parametrize("other_number", range(0, 3))
+def test_issue_dunder_lt(number, other_number):
+    issue1 = DummyGithubIssue("REPO", "DATA")
+    issue1.number = number
+    issue2 = DummyGithubIssue("REPO", "DATA")
+    issue2.number = other_number
+    assert (issue1 < issue2) == (number < other_number)
 
 
 @pytest.mark.asyncio

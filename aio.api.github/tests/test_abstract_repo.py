@@ -17,6 +17,7 @@ def test_abstract_repo_constructor():
     repo = DummyGithubRepo("GITHUB", "NAME")
     assert repo.github == "GITHUB"
     assert repo.name == "NAME"
+    assert str(repo) == f"<{repo.__class__.__name__} NAME>"
 
 
 @pytest.mark.asyncio
@@ -342,15 +343,24 @@ def test_abstract_repo_releases(patches):
 
 
 @pytest.mark.asyncio
-async def test_abstract_repo_tag(patches):
+@pytest.mark.parametrize("is_tag", [True, False])
+async def test_abstract_repo_tag(patches, is_tag):
     github = MagicMock()
     github.getitem = AsyncMock()
     repo = DummyGithubRepo(github, "NAME")
     patched = patches(
         "AGithubRepo.getitem",
         prefix="aio.api.github.abstract.repo")
+    ref_tag = MagicMock()
+    if is_tag:
+        ref_tag.__getitem__.return_value.__getitem__.return_value = "tag"
 
     with patched as (m_getitem, ):
+        m_getitem.return_value = ref_tag
+        if not is_tag:
+            with pytest.raises(base_github.exceptions.TagNotFound):
+                await repo.tag("TAG_NAME")
+            return
         assert (
             await repo.tag("TAG_NAME")
             == github.tag_class.return_value)

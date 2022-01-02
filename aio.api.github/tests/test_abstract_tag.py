@@ -1,5 +1,5 @@
 
-from unittest.mock import AsyncMock, PropertyMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -28,46 +28,24 @@ def test_abstract_tag_constructor(patches):
     assert (
         list(m_super.call_args)
         == [args, kwargs])
-
-
-@pytest.mark.parametrize("obj", [True, False])
-def test_abstract_tag_commit_url(obj):
-    url = MagicMock()
-    data = dict(object=dict(url=url))
-    if not obj:
-        data = dict(url=url)
-    tag = DummyGithubTag("GITHUB", data)
-    assert tag.commit_url == url.replace.return_value
+    tag.repo = MagicMock()
+    tag.tag = "TAG_NAME"
     assert (
-        list(url.replace.call_args)
-        == [("git/commits", "commits"), {}])
-    assert "commit_url" not in tag.__dict__
+        str(tag)
+        == f"<{tag.__class__.__name__} {tag.repo.name}@TAG_NAME>")
 
 
 @pytest.mark.asyncio
 async def test_abstract_tag_commit(patches):
-    tag = DummyGithubTag("REPO", {})
-    patched = patches(
-        ("AGithubTag.commit_url",
-         dict(new_callable=PropertyMock)),
-        ("AGithubTag.github",
-         dict(new_callable=PropertyMock)),
-        prefix="aio.api.github.abstract.tag")
-
-    with patched as (m_url, m_github):
-        m_github.return_value.getitem = AsyncMock()
-        result = await tag.commit
-        assert (
-            result
-            == m_github.return_value.commit_class.return_value)
-
+    repo = AsyncMock()
+    tag = DummyGithubTag(repo, dict(object=dict(sha="SHA")))
+    result = await tag.commit
     assert (
-        list(m_github.return_value.commit_class.call_args)
-        == [(m_github.return_value,
-             m_github.return_value.getitem.return_value), {}])
+        result
+        == repo.commit.return_value)
     assert (
-        list(m_github.return_value.getitem.call_args)
-        == [(m_url.return_value, ), {}])
+        list(repo.commit.call_args)
+        == [("SHA", ), {}])
     assert (
         getattr(
             tag,
