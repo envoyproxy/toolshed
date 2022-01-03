@@ -24,7 +24,10 @@ class AGithubIssue(GithubRepoEntity, metaclass=abstracts.Abstraction):
     def __str__(self):
         return f"<{self.__class__.__name__} {self.repo.name}#{self.number}>"
 
-    async def create_comment(self, comment: str) -> Any:
+    async def close(self) -> "AGithubIssue":
+        return await self.edit(state="closed")
+
+    async def comment(self, comment: str) -> Any:
         """Add a comment to the issue."""
         # TODO: add comment class
         return await self.repo.post(

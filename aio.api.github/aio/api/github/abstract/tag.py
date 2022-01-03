@@ -12,6 +12,6 @@ class AGithubTag(GithubRepoEntity, metaclass=abstracts.Abstraction):
         return f"<{self.__class__.__name__} {self.repo.name}@{self.tag}>"
 
     @async_property(cache=True)
-    async def commit(self):
+    async def commit(self) -> "abstract.AGithubCommit":
         """Related commit for this tag."""
         return await self.repo.commit(self.object["sha"])

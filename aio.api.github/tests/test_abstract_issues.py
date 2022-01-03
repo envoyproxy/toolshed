@@ -64,13 +64,28 @@ def test_issue_dunder_lt(number, other_number):
 
 
 @pytest.mark.asyncio
-async def test_abstract_issue_create_comment():
+async def test_abstract_issue_close(patches):
+    issue = DummyGithubIssue("REPO", "DATA")
+    patched = patches(
+        "AGithubIssue.edit",
+        prefix="aio.api.github.abstract.issues")
+    with patched as (m_edit, ):
+        assert (
+            await issue.close()
+            == m_edit.return_value)
+    assert (
+        list(m_edit.call_args)
+        == [(), dict(state="closed")])
+
+
+@pytest.mark.asyncio
+async def test_abstract_issue_comment():
     repo = MagicMock()
     repo.post = AsyncMock()
     issue = DummyGithubIssue(repo, "DATA")
     issue.number = 23
     assert (
-        await issue.create_comment("COMMENT")
+        await issue.comment("COMMENT")
         == repo.post.return_value)
     assert (
         list(repo.post.call_args)
