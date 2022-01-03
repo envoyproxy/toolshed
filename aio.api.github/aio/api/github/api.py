@@ -60,6 +60,9 @@ class GithubTag:
 @abstracts.implementer(AGithubAPI)
 class GithubAPI:
 
+    def __init__(self, *args, **kwargs) -> None:
+        AGithubAPI.__init__(self, *args, **kwargs)
+
     @property
     def api_class(self) -> Type[gidgethub.abc.GitHubAPI]:
         return super().api_class
