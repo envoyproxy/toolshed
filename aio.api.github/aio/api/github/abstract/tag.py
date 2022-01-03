@@ -3,6 +3,7 @@ import abstracts
 
 from aio.functional import async_property
 
+from aio.api.github import abstract
 from .base import GithubRepoEntity
 
 
