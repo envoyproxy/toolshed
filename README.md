@@ -18,7 +18,7 @@ pypi: https://pypi.org/project/abstracts
 
 #### [aio.api.github](aio.api.github)
 
-version: 0.0.1
+version: 0.0.2
 
 pypi: https://pypi.org/project/aio.api.github
 
