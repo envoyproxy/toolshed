@@ -77,6 +77,21 @@ def test_checker_error_count():
     assert "error_count" not in checker.__dict__
 
 
+@pytest.mark.parametrize("warning", [True, False, "cabbage", "error"])
+def test_checker_fail_on_warn(patches, warning):
+    checker = Checker("path1", "path2", "path3")
+    patched = patches(
+        ("Checker.args", dict(new_callable=PropertyMock)),
+        prefix="envoy.base.checker.checker")
+
+    with patched as (m_args, ):
+        m_args.return_value.warning = warning
+        assert (
+            checker.fail_on_warn
+            == (warning == "error"))
+    assert "fail_on_warn" not in checker.__dict__
+
+
 def test_checker_failed():
     checker = Checker("path1", "path2", "path3")
     checker.errors = dict(foo=["err"] * 3, bar=["err"] * 5, baz=["err"] * 7)
@@ -97,19 +112,22 @@ def test_checker_fix():
 
 @pytest.mark.parametrize("failed", [True, False])
 @pytest.mark.parametrize("warned", [True, False])
-def test_checker_has_failed(patches, failed, warned):
+@pytest.mark.parametrize("fail_on_warn", [True, False])
+def test_checker_has_failed(patches, failed, warned, fail_on_warn):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
+        ("Checker.fail_on_warn", dict(new_callable=PropertyMock)),
         ("Checker.failed", dict(new_callable=PropertyMock)),
         ("Checker.warned", dict(new_callable=PropertyMock)),
         prefix="envoy.base.checker.checker")
 
-    with patched as (m_failed, m_warned):
+    with patched as (m_fail_warn, m_failed, m_warned):
+        m_fail_warn.return_value = fail_on_warn
         m_failed.return_value = failed
         m_warned.return_value = warned
         result = checker.has_failed
 
-    if failed or warned:
+    if failed or (warned and fail_on_warn):
         assert result is True
     else:
         assert result is False
