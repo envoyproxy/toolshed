@@ -18,7 +18,7 @@ pypi: https://pypi.org/project/abstracts
 
 #### [aio.api.github](aio.api.github)
 
-version: 0.0.2
+version: 0.0.3.dev0
 
 pypi: https://pypi.org/project/aio.api.github
 
@@ -96,7 +96,7 @@ pypi: https://pypi.org/project/envoy.abstract.command
 
 #### [envoy.base.checker](envoy.base.checker)
 
-version: 0.0.3
+version: 0.0.4.dev0
 
 pypi: https://pypi.org/project/envoy.base.checker
 
