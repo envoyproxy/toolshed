@@ -50,12 +50,12 @@ class ADependencyChecker(
                 self.log.info(e)
         return tuple(sorted(deps))
 
-    @property  # type:ignore
-    @abstracts.interfacemethod
+    @property
+    @abc.abstractmethod
     def dependency_metadata(self) -> typing.DependenciesDict:
         """Dependency metadata (derived in Envoy's case from
         `repository_locations.bzl`)."""
-        raise NotImplementedError
+        return json.load(self.repository_locations_path)
 
     @cached_property
     def github(self) -> github.GithubAPI:
@@ -81,6 +81,10 @@ class ADependencyChecker(
         """Dependency issues class."""
         raise NotImplementedError
 
+    @property
+    def repository_locations_path(self) -> pathlib.Path:
+        return pathlib.Path(self.arg.repository_locations)
+
     @cached_property
     def session(self) -> aiohttp.ClientSession:
         """HTTP client session."""
@@ -94,6 +98,7 @@ class ADependencyChecker(
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
         parser.add_argument('--github_token')
+        parser.add_argument('--repository_locations')
         parser.add_argument('--sync_issues', action="store_true")
 
     async def check_dates(self) -> None:

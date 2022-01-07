@@ -1,19 +1,32 @@
 
 from . import abstract, exceptions
-
 from .abstract import (
     ADependencyChecker,
+    ADependencyGithubRelease,
     AGithubDependency,
     AGithubDependencyIssue,
-    AGithubDependencyIssues,
-    ADependencyGithubRelease)
+    AGithubDependencyIssues)
+from .checker import (
+    DependencyChecker,
+    DependencyGithubRelease,
+    GithubDependency,
+    GithubDependencyIssue,
+    GithubDependencyIssues)
+from .cmd import cmd, main
 
 
 __all__ = (
     "abstract",
     "ADependencyChecker",
+    "ADependencyGithubRelease",
     "AGithubDependency",
     "AGithubDependencyIssue",
     "AGithubDependencyIssues",
-    "ADependencyGithubRelease",
-    "exceptions")
+    "cmd",
+    "DependencyChecker",
+    "DependencyGithubRelease",
+    "GithubDependency",
+    "GithubDependencyIssue",
+    "GithubDependencyIssues",
+    "exceptions",
+    "main")
