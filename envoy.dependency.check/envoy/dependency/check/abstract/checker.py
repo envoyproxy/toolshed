@@ -84,7 +84,7 @@ class ADependencyChecker(
 
     @property
     def repository_locations_path(self) -> pathlib.Path:
-        return pathlib.Path(self.arg.repository_locations)
+        return pathlib.Path(self.args.repository_locations)
 
     @cached_property
     def session(self) -> aiohttp.ClientSession:
