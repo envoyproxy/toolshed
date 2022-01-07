@@ -16,7 +16,7 @@ from envoy.dependency.check import abstract
 
 
 GITHUB_REPO_LOCATION = "envoyproxy/envoy"
-LABELS = ["dependencies", "area/build", "no stalebot"]
+LABELS = ("dependencies", "area/build", "no stalebot")
 BODY_TPL = """
 Package Name: {dep}
 Current Version: {dep.github_version_name}@{release_date}
@@ -140,14 +140,14 @@ class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
     def __init__(
             self,
             github,
-            body_tpl=BODY_TPL,
-            closing_tpl=CLOSING_TPL,
-            issues_search_tpl=ISSUES_SEARCH_TPL,
-            labels=LABELS,
-            repo_name=GITHUB_REPO_LOCATION,
-            title_prefix=TITLE_PREFIX,
-            title_re_tpl=TITLE_RE_TPL,
-            title_tpl=TITLE_TPL) -> None:
+            body_tpl: str = BODY_TPL,
+            closing_tpl: str = CLOSING_TPL,
+            issues_search_tpl: str = ISSUES_SEARCH_TPL,
+            labels: Tuple[str, ...] = LABELS,
+            repo_name: str = GITHUB_REPO_LOCATION,
+            title_prefix: str = TITLE_PREFIX,
+            title_re_tpl: str = TITLE_RE_TPL,
+            title_tpl: str = TITLE_TPL) -> None:
         self.github = github
         self.body_tpl = body_tpl
         self.closing_tpl = closing_tpl
@@ -196,7 +196,7 @@ class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
         raise NotImplementedError
 
     @async_property(cache=True)
-    async def missing_labels(self) -> Tuple[github.AGithubLabel, ...]:
+    async def missing_labels(self) -> Tuple[str, ...]:
         """Missing Github issue labels."""
         found = []
         async for label in self.repo.labels:
