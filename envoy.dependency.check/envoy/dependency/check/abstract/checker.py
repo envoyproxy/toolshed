@@ -56,7 +56,7 @@ class ADependencyChecker(
     def dependency_metadata(self) -> typing.DependenciesDict:
         """Dependency metadata (derived in Envoy's case from
         `repository_locations.bzl`)."""
-        return json.load(self.repository_locations_path)
+        return json.loads(self.repository_locations_path.read_text())
 
     @cached_property
     def github(self) -> github.GithubAPI:
