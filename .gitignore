@@ -81,3 +81,7 @@ target/
 /.pants.workdir.file_lock*
 
 not/*
+\#*
+not
+*.old
+*not
