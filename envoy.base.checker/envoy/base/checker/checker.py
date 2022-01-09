@@ -2,10 +2,16 @@ import argparse
 import asyncio
 import logging
 import pathlib
+import time
 from functools import cached_property
-from typing import Any, Iterable, Optional, Sequence, Tuple, Type
+from typing import (
+    Any, Awaitable, Callable, Dict, Iterable, List, Optional, Sequence,
+    Set, Tuple, Type)
 
 from envoy.base import runner
+
+
+_sentinel = object()
 
 
 class BaseChecker(runner.Runner):
@@ -17,15 +23,21 @@ class BaseChecker(runner.Runner):
     _active_check = ""
     checks: Tuple[str, ...] = ()
 
-    def __init__(self, *args):
+    def __init__(self, *args) -> None:
         super().__init__(*args)
-        self.success = {}
-        self.errors = {}
-        self.warnings = {}
+        self.success: Dict = {}
+        self.errors: Dict = {}
+        self.warnings: Dict = {}
 
     @property
     def active_check(self) -> str:
+        """Currently active check."""
         return self._active_check
+
+    @cached_property
+    def checks_to_run(self) -> Sequence[str]:
+        """Checks to run after being filtered according to CLI args."""
+        return self.get_checks()
 
     @property
     def diff(self) -> bool:
@@ -33,13 +45,18 @@ class BaseChecker(runner.Runner):
         console."""
         return self.args.diff
 
+    @cached_property
+    def disabled_checks(self) -> Dict[str, str]:
+        """Checks which have been disabled due to missing CLI args."""
+        return {}
+
     @property
     def error_count(self) -> int:
         """Count of all errors found."""
         return sum(len(e) for e in self.errors.values())
 
     @property
-    def exiting(self):
+    def exiting(self) -> bool:
         return "exiting" in self.errors
 
     @property
@@ -216,16 +233,41 @@ class BaseChecker(runner.Runner):
         return 1
 
     def exit(self) -> int:
-        self.log.handlers[0].setLevel(logging.FATAL)
+        self.root_logger.handlers[0].setLevel(logging.FATAL)
         self.stdout.handlers[0].setLevel(logging.FATAL)
         return self.error("exiting", ["Keyboard exit"], log_type="fatal")
 
     def get_checks(self) -> Sequence[str]:
         """Get list of checks for this checker class filtered according to user
         args."""
-        return (
-            self.checks if not self.args.check else
-            [check for check in self.args.check if check in self.checks])
+        # Checks filtered according to args
+        checks = (
+            self.checks
+            if not self.args.check
+            else [
+                check
+                for check
+                in self.args.check
+                if check in self.checks])
+
+        # Filter disabled checks
+        for check, reason in self.disabled_checks.items():
+            if check not in checks:
+                continue
+            msg = f"Cannot run disabled check ({check}): {reason}"
+            if self.args.check:
+                # If user specified a check but it has been
+                # disabled, error
+                self.error(check, [msg])
+            else:
+                self.log.notice(msg)
+
+        # error if no checks ?
+        return [
+            check
+            for check
+            in checks
+            if check not in self.disabled_checks]
 
     def on_check_begin(self, check: str) -> Any:
         self._active_check = check
@@ -258,10 +300,9 @@ class BaseChecker(runner.Runner):
     def run(self) -> int:
         """Run all configured checks and return the sum of their error
         counts."""
-        checks = self.get_checks()
         try:
             self.on_checks_begin()
-            for check in checks:
+            for check in self.checks_to_run:
                 self.on_check_begin(check)
                 getattr(self, f"check_{check}")()
                 self.on_check_run(check)
@@ -310,8 +351,10 @@ class BazelChecker(runner.BazelRunner, Checker):
 
 
 class CheckerSummary(object):
+    """Summary of completed checks."""
 
-    def __init__(self, checker: BaseChecker):
+    def __init__(self, checker: BaseChecker) -> None:
+        # TODO: factor out the checker object
         self.checker = checker
 
     @property
@@ -324,26 +367,28 @@ class CheckerSummary(object):
         """Maximum warnings to display in summary."""
         return self.checker.args.summary_warnings
 
-    def print_failed(self, problem_type):
-        _out = []
-        _max = getattr(self, f"max_{problem_type}")
+    def max_problems_of(self, problem_type: str, n: int) -> int:
+        """Max of `n` and global max for number of items to display for a given
+        problem type."""
+        global_max = getattr(self, f"max_{problem_type}")
+        return (
+            min(n, global_max)
+            if global_max >= 0
+            else n)
+
+    def print_failed(self, problem_type: str) -> None:
+        """Print failures of a given problem_type - eg error, warning."""
         for check, problems in getattr(self.checker, problem_type).items():
-            _msg = f"{self.checker.name} {check}"
-            _max = (min(len(problems), _max) if _max >= 0 else len(problems))
-            msg = (
-                f"{_msg}: (showing first {_max} of {len(problems)})"
-                if (len(problems) > _max and _max > 0)
-                else (f"{_msg}:"
-                      if _max != 0
-                      else _msg))
-            _out.extend(self._section(msg, problems[:_max]))
-        if not _out:
-            return
-        output = (
-            self.checker.log.warning
-            if problem_type == "warnings"
-            else self.checker.log.error)
-        output("\n".join(_out + [""]))
+            self.print_failed_check(problem_type, check, problems)
+
+    def print_failed_check(
+            self,
+            problem_type: str,
+            check: str,
+            problems: List[str]) -> None:
+        """Summary for a failed check of a given problem type."""
+        self.writer_for(problem_type)(
+            self.problem_section(problem_type, check, problems))
 
     def print_status(self) -> None:
         """Print summary status to stderr."""
@@ -360,44 +405,120 @@ class CheckerSummary(object):
         self.print_failed("errors")
         self.print_status()
 
-    def _section(self, message: str, lines: list = None) -> list:
+    def problem_section(
+            self,
+            problem_type: str,
+            check: str,
+            problems: List[str]) -> str:
         """Print a summary section."""
-        section = ["Summary", "-" * 80, f"{message}"]
+        max_display = self.max_problems_of(problem_type, len(problems))
+        title = self.problem_title(problem_type, len(problems), max_display)
+        lines = problems[:max_display]
+        section = [
+            f"{problem_type.upper()} Summary [{check}]{title}",
+            "-" * 80]
         if lines:
             section += [line.split("\n")[0] for line in lines]
-        return section
+        return "\n".join(section + [""])
+
+    def problem_title(
+            self,
+            problem_type: str,
+            n: int,
+            max_display: int) -> str:
+        """Problem summary title for a check."""
+        return (
+            f": (showing first {max_display} of {n})"
+            if (n > max_display and max_display > 0)
+            else ":")
+
+    def writer_for(self, problem_type: str) -> Callable:
+        """Write for a particular problem type."""
+        return (
+            self.checker.log.notice
+            if problem_type == "warnings"
+            else self.checker.log.error)
 
 
 class AsyncChecker(BaseChecker):
     """Async version of the Checker class for use with asyncio."""
 
-    async def _run(self) -> int:
-        checks = self.get_checks()
-        try:
-            await self.on_checks_begin()
-            for check in checks:
-                await self.on_check_begin(check)
-                await getattr(self, f"check_{check}")()
-                await self.on_check_run(check)
-        finally:
-            if self.exiting:
-                result = 1
-            else:
-                result = await self.on_checks_complete()
-        return result
+    @cached_property
+    def check_queue(self) -> asyncio.Queue:
+        """Queue of checks to run."""
+        return asyncio.Queue()
 
-    @runner.cleansup
-    def run(self) -> int:
-        try:
-            return asyncio.get_event_loop().run_until_complete(self._run())
-        except KeyboardInterrupt:
-            # This needs to be outside the loop to catch the a keyboard
-            # interrupt. This means that a new loop has to be created to
-            # cleanup.
-            result = self.exit()
-            result = asyncio.get_event_loop().run_until_complete(
-                self.on_checks_complete())
-            return result
+    @cached_property
+    def completed_checks(self) -> Set[str]:
+        """Checks that have succesfully completed."""
+        return set()
+
+    @cached_property
+    def preload_checks(self) -> Dict[str, List[str]]:
+        """Mapping of checks to blocking preload tasks."""
+        checks: Dict[str, List[str]] = {}
+        for name, task in self.preload_checks_data.items():
+            for check in task.get("blocks", []):
+                checks[check] = checks.get(check, [])
+                checks[check].append(name)
+        return checks
+
+    @cached_property
+    def preload_checks_data(self) -> Dict[str, Dict]:
+        return dict(getattr(self, "_preload_checks_data", ()))
+
+    @cached_property
+    def preload_pending_tasks(self) -> Set[str]:
+        """Currently pending preload tasks."""
+        return set()
+
+    @cached_property
+    def preload_tasks(self) -> Tuple[Awaitable, ...]:
+        """Tuple of awaitables for preloading check data."""
+        tasks = [
+            self.preload_data(name)
+            for name
+            in self.preload_checks_data]
+        return tuple(t for t in tasks if t)
+
+    @cached_property
+    def preloaded_checks(self) -> Set[str]:
+        """Checks for wich all preload tasks are complete."""
+        return set()
+
+    @property
+    def remaining_checks(self) -> Tuple[str, ...]:
+        return tuple(
+            check
+            for check
+            in self.checks_to_run
+            if (check not in self.removed_checks
+                and check not in self.completed_checks))
+
+    @cached_property
+    def removed_checks(self) -> Set[str]:
+        """Checks removed due to failed preload tasks."""
+        return set()
+
+    async def begin_checks(self) -> None:
+        """Start the checks queue, and preloaders, and populate the queue with
+        any checks that don't require preloaded data."""
+        await self.on_checks_begin()
+        # Set up preload tasks
+        asyncio.create_task(self.preload())
+        # Place all checks that are not blocked in the queue.
+        for check in self.checks_to_run:
+            if check not in self.preload_checks:
+                await self.check_queue.put(check)
+
+    def on_async_error(
+            self,
+            loop: asyncio.AbstractEventLoop,
+            context: Dict) -> None:
+        """Handle unhandled async exceptions by stopping the loop and printing
+        the traceback."""
+        loop.default_exception_handler(context)
+        loop.stop()
 
     async def on_check_begin(self, check: str) -> None:
         super().on_check_begin(check)
@@ -410,3 +531,153 @@ class AsyncChecker(BaseChecker):
 
     async def on_checks_complete(self) -> int:
         return super().on_checks_complete()
+
+    async def on_preload(self, task: str) -> None:
+        """Event fired after each preload task completes."""
+        self.preload_pending_tasks.remove(task)
+        for check in self.checks_to_run:
+            if self._check_should_run(check):
+                self.log.debug(f"Check data preloaded: {check}")
+                self.preloaded_checks.add(check)
+                await self.check_queue.put(check)
+        if self.removed_checks and not self.preload_pending_tasks:
+            await self.on_preload_errors()
+
+    async def on_preload_errors(self) -> None:
+        """All preloads have completed, and some failed."""
+        failed_checks = len(self.removed_checks)
+        all_checks = len(self.checks_to_run)
+        if failed_checks < all_checks:
+            self.log.error(
+                "Some checks "
+                f"({failed_checks}/{all_checks}) "
+                "were not run as required data failed to load")
+        else:
+            self.log.error(
+                f"All ({all_checks}) checks failed as required "
+                "data failed to load")
+        if not self.remaining_checks:
+            await self.check_queue.put(_sentinel)
+
+    async def on_preload_task_failed(
+            self,
+            task: str,
+            e: BaseException) -> None:
+        """Preload task failed, disabled related checks."""
+        for check in self.preload_checks_data[task]["blocks"]:
+            if check in self.removed_checks:
+                continue
+            # disable any checks that depend upon this task
+            self.removed_checks.add(check)
+            self.error(
+                check,
+                [f"Check disabled: data download ({task}) failed {e}"])
+
+    async def preload(self) -> None:
+        """Async preload data for checks."""
+        # TODO: factor out the preloading to a separate interface
+        if self.preload_tasks:
+            await asyncio.gather(*self.preload_tasks)
+
+    def preload_data(
+            self,
+            task: str) -> Optional[Awaitable]:
+        """Return an awaitable preload task if required."""
+        if self._task_should_preload(task):
+            self.preload_pending_tasks.add(task)
+            return self.preloader(
+                task,
+                self.preload_checks_data[task]["fun"](self))
+
+    async def preloader(self, task: str, runner: Awaitable) -> None:
+        """Wrap a preload task with the pending queue, and trigger `on_preload`
+        event on completion."""
+        start = time.time()
+        self.log.debug(f"Preloading {task}...")
+        proceed = False
+        try:
+            await runner
+        except self.preloader_catches(task) as e:
+            self.log.debug(f"Preload failed {task} in {time.time() - start}s")
+            await self.on_preload_task_failed(task, e)
+            proceed = True
+        else:
+            self.log.debug(f"Preloaded {task} in {time.time() - start}s")
+            proceed = True
+        finally:
+            if proceed:
+                await self.on_preload(task)
+
+    def preloader_catches(self, task: str) -> Tuple[Type[BaseException], ...]:
+        return tuple(self.preload_checks_data[task].get("catches", ()))
+
+    @runner.cleansup
+    def run(self) -> int:
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(self.on_async_error)
+        try:
+            return loop.run_until_complete(self._run())
+        except RuntimeError:
+            # Loop was forcibly stopped, most likely due to unhandled
+            # error in task.
+            return 1
+        except KeyboardInterrupt:
+            # This needs to be outside the loop to catch the a keyboard
+            # interrupt. This means that a new loop has to be created to
+            # cleanup.
+            self.exit()
+            return asyncio.get_event_loop().run_until_complete(
+                self.on_checks_complete())
+
+    def _check_should_run(self, check: str) -> bool:
+        """Indicate whether a check is ready to run."""
+        return bool(
+            check in self.preload_checks
+            and check not in self.preloaded_checks
+            and check not in self.removed_checks
+            and not any(
+                task
+                in self.preload_pending_tasks
+                for task in self.preload_checks[check]))
+
+    async def _run(self) -> int:
+        await self.begin_checks()
+        try:
+            await self._run_from_queue()
+        finally:
+            result = (
+                1
+                if self.exiting
+                else await self.on_checks_complete())
+        return result
+
+    async def _run_check(self, check: str) -> None:
+        await self.on_check_begin(check)
+        await getattr(self, f"check_{check}")()
+        await self.on_check_run(check)
+
+    async def _run_from_queue(self) -> None:
+        while True:
+            if not self.remaining_checks:
+                break
+            check = await self.check_queue.get()
+            if check is _sentinel:
+                break
+            await self._run_check(check)
+            self.check_queue.task_done()
+            self.completed_checks.add(check)
+
+    def _task_should_preload(
+            self,
+            task: str) -> bool:
+        handler = self.preload_checks_data[task]
+        return not (
+            task in self.preload_pending_tasks
+            or not any(
+                c in self.checks_to_run
+                for c
+                in handler.get("when", []))
+            or any(
+                c in self.checks_to_run
+                for c
+                in handler.get("unless", [])))

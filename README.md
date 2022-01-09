@@ -96,7 +96,7 @@ pypi: https://pypi.org/project/envoy.abstract.command
 
 #### [envoy.base.checker](envoy.base.checker)
 
-version: 0.0.4.dev0
+version: 0.1.0
 
 pypi: https://pypi.org/project/envoy.base.checker
 
