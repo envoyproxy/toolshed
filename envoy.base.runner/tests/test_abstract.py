@@ -12,6 +12,9 @@ from envoy.base.runner import (
 @abstracts.implementer(AAsyncRunnerWithCommands)
 class DummyAsyncRunnerWithCommands:
 
+    def __init__(self):
+        pass
+
     @property
     def command(self):
         return super().command

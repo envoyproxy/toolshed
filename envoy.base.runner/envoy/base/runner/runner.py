@@ -45,13 +45,29 @@ class BazelRunError(Exception):
     pass
 
 
+class BaseLogFilter(logging.Filter):
+
+    def __init__(self, app_logger: logging.Logger, *args, **kwargs) -> None:
+        self.app_logger = app_logger
+
+
+class AppLogFilter(BaseLogFilter):
+
+    def filter(self, record) -> bool:
+        return record.name == self.app_logger.name
+
+
+class RootLogFilter(BaseLogFilter):
+
+    def filter(self, record) -> bool:
+        return record.name != self.app_logger.name
+
+
 class BaseRunner:
 
     def __init__(self, *args):
         self._args = args
-
-    def __call__(self):
-        return self.run()
+        self.setup_logging()
 
     @cached_property
     def args(self) -> argparse.Namespace:
@@ -63,6 +79,19 @@ class BaseRunner:
         """Unparsed args."""
         return self.parser.parse_known_args(self._args)[1]
 
+    @cached_property
+    def log(self) -> verboselogs.VerboseLogger:
+        """Instantiated logger."""
+        app_logger = verboselogs.VerboseLogger(self.name)
+        coloredlogs.install(
+            field_styles=self.log_field_styles,
+            level_styles=self.log_level_styles,
+            fmt=self.log_fmt,
+            level=self.verbosity,
+            logger=app_logger,
+            isatty=True)
+        return app_logger
+
     @property
     def log_field_styles(self):
         return LOG_FIELD_STYLES
@@ -71,29 +100,14 @@ class BaseRunner:
     def log_fmt(self):
         return LOG_FMT
 
-    @property
-    def log_level_styles(self):
-        return LOG_LEVEL_STYLES
-
-    @cached_property
-    def log(self) -> verboselogs.VerboseLogger:
-        """Instantiated logger."""
-        verboselogs.install()
-        logger = logging.getLogger(self.name)
-        logger.setLevel(self.log_level)
-        coloredlogs.install(
-            field_styles=self.log_field_styles,
-            level_styles=self.log_level_styles,
-            fmt=self.log_fmt,
-            level='DEBUG',
-            logger=logger,
-            isatty=True)
-        return logger
-
     @cached_property
     def log_level(self) -> int:
         """Log level parsed from args."""
         return dict(LOG_LEVELS)[self.args.log_level]
+
+    @property
+    def log_level_styles(self):
+        return LOG_LEVEL_STYLES
 
     @property
     def name(self) -> str:
@@ -110,6 +124,27 @@ class BaseRunner:
     @cached_property
     def path(self) -> pathlib.Path:
         return pathlib.Path(".")
+
+    @property
+    def root_log_format(self) -> logging.Formatter:
+        return logging.Formatter("%(name)s: %(levelname)s %(message)s")
+
+    @cached_property
+    def root_log_handler(self) -> logging.Handler:
+        """Instantiated logger."""
+        root_handler = logging.StreamHandler()
+        root_handler.setLevel(self.log_level)
+        root_handler.addFilter(RootLogFilter(self.log))
+        root_handler.setFormatter(self.root_log_format)
+        return root_handler
+
+    @cached_property
+    def root_logger(self) -> logging.Logger:
+        """Instantiated logger."""
+        root_logger = logging.getLogger()
+        root_logger.handlers[0].addFilter(AppLogFilter(self.log))
+        root_logger.addHandler(self.root_log_handler)
+        return root_logger
 
     @cached_property
     def stdout(self) -> logging.Logger:
@@ -134,14 +169,10 @@ class BaseRunner:
                 "decorated with `@runner.cleansup`")
         return tempfile.TemporaryDirectory()
 
-    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
-        """Override this method to add custom arguments to the arg parser."""
-        parser.add_argument(
-            "--log-level",
-            "-l",
-            choices=[level[0] for level in LOG_LEVELS],
-            default="info",
-            help="Log level to display")
+    @cached_property
+    def verbosity(self) -> int:
+        """Log level parsed from args."""
+        return dict(LOG_LEVELS)[self.args.verbosity]
 
     @property
     def _missing_cleanup(self) -> bool:
@@ -152,6 +183,26 @@ class BaseRunner:
                 getattr(run_fun, "__wrapped__", object()),
                 "__cleansup__", False))
 
+    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
+        """Override this method to add custom arguments to the arg parser."""
+        parser.add_argument(
+            "--verbosity",
+            "-v",
+            choices=[level[0] for level in LOG_LEVELS],
+            default="info",
+            help="Application log level")
+        parser.add_argument(
+            "--log-level",
+            "-l",
+            choices=[level[0] for level in LOG_LEVELS],
+            default="warn",
+            help="Log level for non-application logs")
+
+    def setup_logging(self):
+        logging.basicConfig(level=self.log_level)
+        self.root_logger.setLevel(self.log_level)
+        self.log.setLevel(self.verbosity)
+
     def _cleanup_tempdir(self) -> None:
         if "tempdir" in self.__dict__:
             self.tempdir.cleanup()
@@ -159,6 +210,9 @@ class BaseRunner:
 
 
 class Runner(BaseRunner):
+
+    def __call__(self) -> Optional[int]:
+        return self.run()
 
     @cleansup
     def run(self) -> Optional[int]:
