@@ -113,6 +113,7 @@ class ReadmePackageRunner(runner.Runner):
         return jinja2.Template(pathlib.Path(self.args.template).read_text())
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
+        super().add_arguments(parser)
         parser.add_argument("template")
         parser.add_argument("path")
 
