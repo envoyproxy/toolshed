@@ -1,5 +1,6 @@
 
 import abc
+import logging
 from functools import cached_property
 from typing import Any, Type
 
@@ -16,6 +17,9 @@ from .label import AGithubLabel
 from .release import AGithubRelease
 from .repo import AGithubRepo
 from .tag import AGithubTag
+
+
+logger = logging.getLogger(__name__)
 
 
 class AGithubAPI(metaclass=abstracts.Abstraction):
@@ -100,22 +104,30 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
 
     async def getitem(self, *args, **kwargs) -> Any:
         """Call the `gidgethub.getitem` api."""
-        # print("GETITEM", args, kwargs)
+        la = "\n".join(f" {arg}" for arg in args)
+        kwa = "\n".join(f" {k}: {v}" for k, v in kwargs.items())
+        logger.debug(f"GETITEM:\n{la}\n{kwa}".strip())
         return await self.api.getitem(*args, **kwargs)
 
     def getiter(self, *args, **kwargs) -> AGithubIterator:
         """Return a `GithubIterator` wrapping `gidgethub.getiter`."""
-        # print("GETITER", args, kwargs)
+        la = "\n".join(f" {arg}" for arg in args)
+        kwa = "\n".join(f" {k}: {v}" for k, v in kwargs.items())
+        logger.debug(f"GETITER:\n{la}\n{kwa}".strip())
         return self.iterator_class(self.api, *args, **kwargs)
 
     async def patch(self, *args, **kwargs):
         """Call the `gidgethub.patch` api."""
-        # print("PATCH", args, kwargs)
+        la = "\n".join(f" {arg}" for arg in args)
+        kwa = "\n".join(f" {k}: {v}" for k, v in kwargs.items())
+        logger.debug(f"PATCH:\n{la}\n{kwa}".strip())
         return await self.api.patch(*args, **kwargs)
 
     async def post(self, *args, **kwargs):
         """Call the `gidgethub.post` api."""
-        # print("POST", args, kwargs)
+        la = "\n".join(f" {arg}" for arg in args)
+        kwa = "\n".join(f" {k}: {v}" for k, v in kwargs.items())
+        logger.debug(f"POST:\n{la}\n{kwa}".strip())
         return await self.api.post(*args, **kwargs)
 
     def repo_from_url(self, url):
