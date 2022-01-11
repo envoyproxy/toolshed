@@ -205,8 +205,10 @@ def test_packager_tar(patches):
 def test_packager_signing_utils():
     packager = sign.PackageSigningRunner("x", "y", "z")
     _utils = (("NAME1", "UTIL1"), ("NAME2", "UTIL2"))
+    del packager.__dict__["signing_utils"]
     packager._signing_utils = _utils
     assert packager.signing_utils == dict(_utils)
+    assert "signing_utils" in packager.__dict__
 
 
 def test_packager_add_arguments():
@@ -215,10 +217,14 @@ def test_packager_add_arguments():
     packager.add_arguments(parser)
     assert (
         list(list(c) for c in parser.add_argument.call_args_list)
-        == [[('--log-level', '-l'),
+        == [[('--verbosity', '-v'),
              {'choices': ['debug', 'info', 'warn', 'error'],
               'default': 'info',
-              'help': 'Log level to display'}],
+              'help': 'Application log level'}],
+            [('--log-level', '-l'),
+             {'choices': ['debug', 'info', 'warn', 'error'],
+              'default': 'warn',
+              'help': 'Log level for non-application logs'}],
             [('path',),
              {'default': '',
               'help': 'Path to the directory containing packages to sign'}],
