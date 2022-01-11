@@ -13,6 +13,9 @@ from envoy.distribution import repo
 @abstracts.implementer(repo.ARepoBuildingRunner)
 class DummyRepoBuildingRunner:
 
+    def __init__(self):
+        pass
+
     def add_arguments(self, parser):
         super().add_arguments(parser)
 
