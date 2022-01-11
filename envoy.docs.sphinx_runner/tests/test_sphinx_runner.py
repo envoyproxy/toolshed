@@ -5,15 +5,21 @@ import pytest
 from envoy.docs import sphinx_runner
 
 
+class DummySphinxRunner(sphinx_runner.SphinxRunner):
+
+    def __init__(self):
+        pass
+
+
 def test_sphinx_runner_constructor():
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     assert runner._build_sha == "UNKNOWN"
     assert runner._build_dir == "."
 
 
 @pytest.mark.parametrize("docs_tag", [None, "", "SOME_DOCS_TAG"])
 def test_sphinx_runner_blob_sha(patches, docs_tag):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.build_sha", dict(new_callable=PropertyMock)),
         ("SphinxRunner.docs_tag", dict(new_callable=PropertyMock)),
@@ -29,7 +35,7 @@ def test_sphinx_runner_blob_sha(patches, docs_tag):
 
 
 def test_sphinx_runner_build_dir(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "pathlib",
         ("SphinxRunner.tempdir", dict(new_callable=PropertyMock)),
@@ -46,7 +52,7 @@ def test_sphinx_runner_build_dir(patches):
 
 @pytest.mark.parametrize("build_sha", [None, "", "SOME_BUILD_SHA"])
 def test_sphinx_runner_build_sha(patches, build_sha):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -62,7 +68,7 @@ def test_sphinx_runner_build_sha(patches, build_sha):
 
 
 def test_sphinx_runner_colors(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "Fore",
         prefix="envoy.docs.sphinx_runner.runner")
@@ -79,7 +85,7 @@ def test_sphinx_runner_colors(patches):
 
 
 def test_sphinx_runner_config_file(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "utils",
         ("SphinxRunner.config_file_path", dict(new_callable=PropertyMock)),
@@ -98,7 +104,7 @@ def test_sphinx_runner_config_file(patches):
 
 
 def test_sphinx_runner_config_file_path(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.build_dir", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -116,7 +122,7 @@ def test_sphinx_runner_config_file_path(patches):
 
 @pytest.mark.parametrize("validate", [True, False])
 def test_sphinx_runner_configs(patches, validate):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     mapping = dict(
         version_string="version_string",
         release_level="release_level",
@@ -153,7 +159,7 @@ def test_sphinx_runner_configs(patches, validate):
 
 
 def test_sphinx_runner_descriptor_path(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "pathlib",
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
@@ -171,7 +177,7 @@ def test_sphinx_runner_descriptor_path(patches):
 
 
 def test_sphinx_runner_docker_image_tag_name(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "re",
         ("SphinxRunner.version_number", dict(new_callable=PropertyMock)),
@@ -190,7 +196,7 @@ def test_sphinx_runner_docker_image_tag_name(patches):
 
 
 def test_sphinx_runner_docs_tag(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -202,7 +208,7 @@ def test_sphinx_runner_docs_tag(patches):
 
 
 def test_sphinx_runner_html_dir(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.build_dir", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -217,7 +223,7 @@ def test_sphinx_runner_html_dir(patches):
 
 
 def test_sphinx_runner_output_path(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "pathlib",
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
@@ -233,7 +239,7 @@ def test_sphinx_runner_output_path(patches):
 
 
 def test_sphinx_runner_overwrite(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -247,7 +253,7 @@ def test_sphinx_runner_overwrite(patches):
 @pytest.mark.parametrize("major", [2, 3, 4])
 @pytest.mark.parametrize("minor", [5, 6, 7, 8, 9])
 def test_sphinx_runner_py_compatible(patches, major, minor):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "bool",
         "sys",
@@ -269,7 +275,7 @@ def test_sphinx_runner_py_compatible(patches, major, minor):
 
 @pytest.mark.parametrize("docs_tag", [None, "", "SOME_DOCS_TAG"])
 def test_sphinx_runner_release_level(patches, docs_tag):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.docs_tag", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -285,7 +291,7 @@ def test_sphinx_runner_release_level(patches, docs_tag):
 
 @pytest.mark.parametrize("rst_tar", [None, "", "SOME_DOCS_TAG"])
 def test_sphinx_runner_rst_dir(patches, rst_tar):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "pathlib",
         "utils",
@@ -311,7 +317,7 @@ def test_sphinx_runner_rst_dir(patches, rst_tar):
 
 
 def test_sphinx_runner_rst_tar(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "pathlib",
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
@@ -327,7 +333,7 @@ def test_sphinx_runner_rst_tar(patches):
 
 
 def test_sphinx_runner_sphinx_args(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
         ("SphinxRunner.rst_dir", dict(new_callable=PropertyMock)),
@@ -346,7 +352,7 @@ def test_sphinx_runner_sphinx_args(patches):
 @pytest.mark.parametrize("validator_path", ["", None, "VALIDATOR"])
 @pytest.mark.parametrize("validate", [True, False])
 def test_sphinx_runner_validate_fragments(patches, validator_path, validate):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
         ("SphinxRunner.validator_path", dict(new_callable=PropertyMock)),
@@ -359,7 +365,7 @@ def test_sphinx_runner_validate_fragments(patches, validator_path, validate):
 
 
 def test_sphinx_runner_validator_path(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "pathlib",
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
@@ -377,7 +383,7 @@ def test_sphinx_runner_validator_path(patches):
 
 
 def test_sphinx_runner_version_file(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "pathlib",
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
@@ -394,7 +400,7 @@ def test_sphinx_runner_version_file(patches):
 
 @pytest.mark.parametrize("version", ["", None, "VERSION"])
 def test_sphinx_runner_version_number(patches, version):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
         ("SphinxRunner.version_file", dict(new_callable=PropertyMock)),
@@ -423,7 +429,7 @@ def test_sphinx_runner_version_number(patches, version):
 
 @pytest.mark.parametrize("docs_tag", [None, "", "SOME_DOCS_TAG"])
 def test_sphinx_runner_version_string(patches, docs_tag):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.docs_tag", dict(new_callable=PropertyMock)),
         ("SphinxRunner.build_sha", dict(new_callable=PropertyMock)),
@@ -447,7 +453,7 @@ def test_sphinx_runner_version_string(patches, docs_tag):
 
 
 def test_sphinx_runner_add_arguments(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     parser = MagicMock()
     patched = patches(
         "runner.Runner.add_arguments",
@@ -479,7 +485,7 @@ def test_sphinx_runner_add_arguments(patches):
 
 @pytest.mark.parametrize("fails", [True, False])
 def test_sphinx_runner_build_html(patches, fails):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "sphinx_build",
         ("SphinxRunner.sphinx_args", dict(new_callable=PropertyMock)),
@@ -505,7 +511,7 @@ def test_sphinx_runner_build_html(patches, fails):
 
 
 def test_sphinx_runner_build_summary(patches):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "print",
         "SphinxRunner._color",
@@ -550,7 +556,7 @@ def test_sphinx_runner_build_summary(patches):
     "current", ["XXX v1.17 ZZZ", "AAA v1.23 VVV", "BBB v1.73 EEE"])
 def test_sphinx_runner_check_env(
         patches, py_compat, release_level, version_number, docs_tag, current):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "platform",
         ("SphinxRunner.configs", dict(new_callable=PropertyMock)),
@@ -610,7 +616,7 @@ def test_sphinx_runner_check_env(
 
 @pytest.mark.parametrize("exists", [True, False])
 def test_sphinx_runner_cleanup(patches, exists):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.tempdir", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -633,7 +639,7 @@ def test_sphinx_runner_cleanup(patches, exists):
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize("is_file", [True, False])
 def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "tarfile",
         "utils",
@@ -697,7 +703,7 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
 @pytest.mark.parametrize("check_fails", [True, False])
 @pytest.mark.parametrize("build_fails", [True, False])
 def test_sphinx_runner_run(patches, check_fails, build_fails):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "print",
         "os",
@@ -767,7 +773,7 @@ def test_sphinx_runner_run(patches, check_fails, build_fails):
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize("overwrite", [True, False])
 def test_sphinx_runner_validate_args(patches, exists, overwrite):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.output_path", dict(new_callable=PropertyMock)),
         ("SphinxRunner.overwrite", dict(new_callable=PropertyMock)),
@@ -796,7 +802,7 @@ def test_sphinx_runner_validate_args(patches, exists, overwrite):
 
 @pytest.mark.parametrize("color", [None, "COLOR"])
 def test_sphinx_runner__color(patches, color):
-    runner = sphinx_runner.SphinxRunner()
+    runner = DummySphinxRunner()
     patched = patches(
         "Style",
         ("SphinxRunner.colors", dict(new_callable=PropertyMock)),

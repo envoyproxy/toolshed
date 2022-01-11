@@ -7,8 +7,14 @@ from envoy.base.checker import AsyncChecker
 from envoy.distribution import distrotest, verify
 
 
+class DummyDistroChecker(verify.PackagesDistroChecker):
+
+    def __init__(self, *args):
+        pass
+
+
 def test_checker_constructor(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     assert isinstance(checker, AsyncChecker)
     assert checker._active_distrotest is None
     assert checker.checks == ("distros", )
@@ -20,7 +26,7 @@ def test_checker_constructor(patches):
 
 
 def _check_arg_property(patches, prop, arg=None):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
 
     patched = patches(
         ("PackagesDistroChecker.args", dict(new_callable=PropertyMock)),
@@ -43,7 +49,7 @@ def test_checker_arg_props(patches, prop):
 
 
 def _check_arg_path_property(patches, prop, arg=None):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         "pathlib",
         ("PackagesDistroChecker.args", dict(new_callable=PropertyMock)),
@@ -67,7 +73,7 @@ def test_checker_arg_path_props(patches, prop):
 
 
 def test_checker_active_distrotest(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     assert checker.active_distrotest is None
     checker._active_distrotest = "ATEST"
     assert checker.active_distrotest == "ATEST"
@@ -76,7 +82,7 @@ def test_checker_active_distrotest(patches):
 
 @pytest.mark.parametrize("is_dict", [True, False])
 def test_checker_config(patches, is_dict):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         "isinstance",
         "utils",
@@ -105,7 +111,7 @@ def test_checker_config(patches, is_dict):
 
 
 def test_checker_docker(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         "aiodocker",
         prefix="envoy.distribution.verify.checker")
@@ -121,7 +127,7 @@ def test_checker_docker(patches):
 
 @pytest.mark.parametrize("maintainer", [None, True, "MAINT"])
 def test_checker_maintainer(patches, maintainer):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         ("PackagesDistroChecker.args",
          dict(new_callable=PropertyMock)),
@@ -139,7 +145,7 @@ def test_checker_maintainer(patches, maintainer):
 
 
 def test_checker_path(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         "pathlib",
         ("PackagesDistroChecker.tempdir", dict(new_callable=PropertyMock)),
@@ -155,7 +161,7 @@ def test_checker_path(patches):
 
 
 def test_checker_test_config(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         ("PackagesDistroChecker.docker",
          dict(new_callable=PropertyMock)),
@@ -212,7 +218,7 @@ def test_checker_test_config(patches):
      ["DISTRO1", "DISTRO2", "DISTRO3"],
      ["DISTRO1", "DISTRO3"]])
 def test_checker_tests(patches, config, distributions):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         "PackagesDistroChecker.get_test_config",
         "PackagesDistroChecker.get_test_packages",
@@ -258,7 +264,7 @@ def test_checker_tests(patches, config, distributions):
 
 
 def test_checker_version(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         ("PackagesDistroChecker.args",
          dict(new_callable=PropertyMock)),
@@ -271,15 +277,19 @@ def test_checker_version(patches):
 
 
 def test_checker_add_arguments():
-    checker = verify.PackagesDistroChecker("x", "y", "z")
+    checker = DummyDistroChecker("x", "y", "z")
     parser = MagicMock()
     checker.add_arguments(parser)
     assert (
         list(list(c) for c in parser.add_argument.call_args_list)
-        == [[('--log-level', '-l'),
+        == [[('--verbosity', '-v'),
              {'choices': ['debug', 'info', 'warn', 'error'],
               'default': 'info',
-              'help': 'Log level to display'}],
+              'help': 'Application log level'}],
+            [('--log-level', '-l'),
+             {'choices': ['debug', 'info', 'warn', 'error'],
+              'default': 'warn',
+              'help': 'Log level for non-application logs'}],
             [('--fix',),
              {'action': 'store_true',
               'default': False,
@@ -360,7 +370,7 @@ def test_checker_add_arguments():
       for i in range(1, 4)}])
 @pytest.mark.parametrize("rebuild", [True, False])
 async def test_checker_check_distros(patches, tests, rebuild):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         "PackagesDistroChecker.run_test",
         ("PackagesDistroChecker.log", dict(new_callable=PropertyMock)),
@@ -399,7 +409,7 @@ async def test_checker_check_distros(patches, tests, rebuild):
 
 
 def test_checker_get_test_config(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         ("PackagesDistroChecker.test_config", dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.verify.checker")
@@ -418,7 +428,7 @@ def test_checker_get_test_config(patches):
 
 
 def test_checker_get_test_packages(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         ("PackagesDistroChecker.test_config", dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.verify.checker")
@@ -435,7 +445,7 @@ def test_checker_get_test_packages(patches):
 
 @pytest.mark.asyncio
 async def test_checker_on_checks_complete(patches):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         "PackagesDistroChecker._cleanup_test",
         "PackagesDistroChecker._cleanup_docker",
@@ -467,7 +477,7 @@ async def test_checker_on_checks_complete(patches):
 @pytest.mark.parametrize("errors", [None, (), ("ERR1", "ERR")])
 @pytest.mark.parametrize("rebuild", [True, False])
 async def test_checker_run_test(patches, exiting, errors, rebuild):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         ("PackagesDistroChecker.test_class", dict(new_callable=PropertyMock)),
         ("PackagesDistroChecker.test_config", dict(new_callable=PropertyMock)),
@@ -505,7 +515,7 @@ async def test_checker_run_test(patches, exiting, errors, rebuild):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 async def test_checker__cleanup_docker(patches, exists):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         ("PackagesDistroChecker.docker", dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.verify.checker")
@@ -531,7 +541,7 @@ async def test_checker__cleanup_docker(patches, exists):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 async def test_checker__cleanup_test(patches, exists):
-    checker = verify.PackagesDistroChecker("path1", "path2", "path3")
+    checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
         ("PackagesDistroChecker.active_distrotest",
          dict(new_callable=PropertyMock)),

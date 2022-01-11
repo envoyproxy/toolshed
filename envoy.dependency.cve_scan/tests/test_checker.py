@@ -16,6 +16,9 @@ from envoy.dependency.cve_scan.abstract.checker import NIST_URL_TPL
 @abstracts.implementer(ACVEChecker)
 class DummyCVEChecker:
 
+    def __init__(self):
+        pass
+
     @property
     def cpe_class(self):
         return super().cpe_class

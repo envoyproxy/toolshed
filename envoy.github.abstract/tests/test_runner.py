@@ -11,6 +11,9 @@ from envoy.github.abstract.runner import AGithubReleaseRunner
 @abstracts.implementer(AGithubReleaseRunner)
 class DummyGithubReleaseRunner:
 
+    def __init__(self):
+        pass
+
     @property
     def command(self):
         return super().command
