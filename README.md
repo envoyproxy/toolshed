@@ -109,7 +109,7 @@ pypi: https://pypi.org/project/envoy.base.checker
 
 #### [envoy.base.runner](envoy.base.runner)
 
-version: 0.0.5.dev0
+version: 0.1.0
 
 pypi: https://pypi.org/project/envoy.base.runner
 

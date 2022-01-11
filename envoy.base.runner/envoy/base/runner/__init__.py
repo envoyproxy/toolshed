@@ -1,10 +1,9 @@
 
+from . import runner
 from .decorators import (
     catches,
     cleansup)
-
 from .abstract import AAsyncRunnerWithCommands
-
 from .runner import (
     AsyncRunner,
     BaseRunner,
@@ -27,4 +26,5 @@ __all__ = (
     "cleansup",
     "ForkingAdapter",
     "ForkingRunner",
-    "Runner")
+    "Runner",
+    "runner")
