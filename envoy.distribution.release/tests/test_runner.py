@@ -8,15 +8,21 @@ from envoy.github.abstract import AGithubReleaseRunner
 from envoy.github.release.manager import GithubReleaseManager
 
 
+class DummyReleaseRunner(runner.ReleaseRunner):
+
+    def __init__(self):
+        pass
+
+
 def test_runner_constructor():
-    run = runner.ReleaseRunner()
+    run = DummyReleaseRunner()
     isinstance(run, AGithubReleaseRunner)
     assert run.release_manager_class == GithubReleaseManager
 
 
 @pytest.mark.parametrize("prop", ["command", "commands", "release_manager"])
 def test_runner_super_props(patches, prop):
-    run = runner.ReleaseRunner()
+    run = DummyReleaseRunner()
     patched = patches(
         (f"AGithubReleaseRunner.{prop}",
          dict(new_callable=PropertyMock)),
@@ -29,7 +35,7 @@ def test_runner_super_props(patches, prop):
 
 
 def test_runner_add_arguments(patches):
-    run = runner.ReleaseRunner()
+    run = DummyReleaseRunner()
     patched = patches(
         "AGithubReleaseRunner.add_arguments",
         prefix="envoy.distribution.release.runner")
@@ -44,7 +50,7 @@ def test_runner_add_arguments(patches):
 
 @pytest.mark.asyncio
 async def test_runner_run(patches):
-    run = runner.ReleaseRunner()
+    run = DummyReleaseRunner()
     patched = patches(
         ("AGithubReleaseRunner.run",
          dict(new_callable=AsyncMock)),
