@@ -10,7 +10,7 @@ colorama
 coloredlogs
 docutils~=0.16.0
 envoy.abstract.command>=0.0.3
-envoy.base.checker>=0.0.3
+envoy.base.checker>=0.1.0
 envoy.base.runner>=0.1.0
 envoy.base.utils>=0.0.13
 envoy.code_format.python_check>=0.0.4
@@ -33,7 +33,7 @@ mypy-abstracts
 packaging
 pygments>=2.11.1
 pytest-patches
-pytest-asyncio
+pytest-asyncio<0.17.0
 python-gnupg
 pytz
 pyyaml

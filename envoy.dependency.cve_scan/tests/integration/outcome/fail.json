@@ -26,7 +26,7 @@
         ],
         [
             [
-                "Summary\n--------------------------------------------------------------------------------\nDummyCVEChecker cves:\nCVE ID: CVE-2021-39216 (com_github_wasmtime@0.29.0)\nCVE ID: CVE-2021-39218 (com_github_wasmtime@0.29.0)\nCVE ID: CVE-2021-39219 (com_github_wasmtime@0.29.0)\n"
+                "ERRORS Summary [cves]:\n--------------------------------------------------------------------------------\nCVE ID: CVE-2021-39216 (com_github_wasmtime@0.29.0)\nCVE ID: CVE-2021-39218 (com_github_wasmtime@0.29.0)\nCVE ID: CVE-2021-39219 (com_github_wasmtime@0.29.0)\n"
             ],
             {}
         ],
