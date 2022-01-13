@@ -1,8 +1,6 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-
 import abstracts
 
 from aio.api import github as base_github
@@ -35,7 +33,6 @@ def test_abstract_tag_constructor(patches):
         == f"<{tag.__class__.__name__} {tag.repo.name}@TAG_NAME>")
 
 
-@pytest.mark.asyncio
 async def test_abstract_tag_commit(patches):
     repo = AsyncMock()
     tag = DummyGithubTag(repo, dict(object=dict(sha="SHA")))

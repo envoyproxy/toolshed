@@ -32,7 +32,6 @@ def test_aaptly_iface_props(iface_prop):
         getattr(DummyAptly(), iface_prop)
 
 
-@pytest.mark.asyncio
 async def test_aaptly_aptly_config(patches):
     aptly = DummyAptly()
     patched = patches(
@@ -55,7 +54,6 @@ async def test_aaptly_aptly_config(patches):
     assert async_property.is_cached(aptly, "aptly_config")
 
 
-@pytest.mark.asyncio
 async def test_aaptly_aptly_published(patches):
     aptly = DummyAptly()
     patched = patches(
@@ -92,7 +90,6 @@ async def test_aaptly_aptly_published(patches):
     assert not async_property.is_cached(aptly, "published")
 
 
-@pytest.mark.asyncio
 async def test_aaptly_aptly_root_dir(patches):
     aptly = DummyAptly()
     patched = patches(
@@ -117,7 +114,6 @@ async def test_aaptly_aptly_root_dir(patches):
     assert not async_property.is_cached(aptly, "aptly_root_dir")
 
 
-@pytest.mark.asyncio
 async def test_aaptly_aptly_repos(patches):
     aptly = DummyAptly()
     patched = patches(
@@ -143,7 +139,6 @@ async def test_aaptly_aptly_repos(patches):
     assert not async_property.is_cached(aptly, "repos")
 
 
-@pytest.mark.asyncio
 async def test_aaptly_aptly_snapshots(patches):
     aptly = DummyAptly()
     patched = patches(
@@ -169,7 +164,6 @@ async def test_aaptly_aptly_snapshots(patches):
     assert not async_property.is_cached(aptly, "snapshots")
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "return_code",
     [None] + list(range(0, 3)))
@@ -337,7 +331,6 @@ def test_deb_repomanager_distros(patches):
         == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 async def test_deb_repomanager_create_distro(patches, exists):
     manager = repo.DebRepoManager(
@@ -389,7 +382,6 @@ async def test_deb_repomanager_create_distro(patches, exists):
         == [(0, ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 async def test_deb_repomanager_create_snapshot(patches, exists):
     manager = repo.DebRepoManager(
@@ -429,7 +421,6 @@ async def test_deb_repomanager_create_snapshot(patches, exists):
         == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("repo_name", [f"REPO{i}" for i in range(0, 5)])
 async def test_deb_repomanager_distro_exists(patches, repo_name):
     manager = repo.DebRepoManager(
@@ -447,7 +438,6 @@ async def test_deb_repomanager_distro_exists(patches, repo_name):
             == bool(repo_name in repos))
 
 
-@pytest.mark.asyncio
 async def test_deb_repomanager_drop_distro(patches):
     manager = repo.DebRepoManager(
         "NAME", "PATH", "CONFIG", "LOG", "STDOUT")
@@ -468,7 +458,6 @@ async def test_deb_repomanager_drop_distro(patches):
         == [("repo", "drop", "-force", "DISTRO"), {}])
 
 
-@pytest.mark.asyncio
 async def test_deb_repomanager_drop_published(patches):
     manager = repo.DebRepoManager(
         "NAME", "PATH", "CONFIG", "LOG", "STDOUT")
@@ -489,7 +478,6 @@ async def test_deb_repomanager_drop_published(patches):
         == [("publish", "drop", "DISTRO"), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 async def test_deb_repomanager_drop_snapshot(patches, exists):
     manager = repo.DebRepoManager(
@@ -524,7 +512,6 @@ async def test_deb_repomanager_drop_snapshot(patches, exists):
              "DISTRO"), {}])
 
 
-@pytest.mark.asyncio
 async def test_deb_repomanager_include_changes(patches):
     manager = repo.DebRepoManager(
         "NAME", "PATH", "CONFIG", "LOG", "STDOUT")
@@ -540,7 +527,6 @@ async def test_deb_repomanager_include_changes(patches):
         assert not await manager.include_changes("DISTRO")
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("distro", ["DISTRO1", "DISTRO2"])
 @pytest.mark.parametrize(
     "changes_file",
@@ -599,7 +585,6 @@ async def test_deb_repomanager_include_changes_file(
         == [(mock_split.return_value.__getitem__.return_value, ), {}])
 
 
-@pytest.mark.asyncio
 async def test_deb_repomanager_publish(patches):
     manager = repo.DebRepoManager(
         "NAME", "PATH", "CONFIG", "LOG", "STDOUT")
@@ -630,7 +615,6 @@ async def test_deb_repomanager_publish(patches):
         == [[(distro, ), {}] for distro in distros])
 
 
-@pytest.mark.asyncio
 async def test_deb_repomanager_publish_distro(patches):
     manager = repo.DebRepoManager(
         "NAME", "PATH", "CONFIG", "LOG", "STDOUT")
@@ -657,7 +641,6 @@ async def test_deb_repomanager_publish_distro(patches):
             [('PUBLISH_SNAP',), {}]])
 
 
-@pytest.mark.asyncio
 async def test_deb_repomanager_publish_snapshot(patches):
     manager = repo.DebRepoManager(
         "NAME", "PATH", "CONFIG", "LOG", "STDOUT")
@@ -685,7 +668,6 @@ async def test_deb_repomanager_publish_snapshot(patches):
         == [(m_aptly.return_value, ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "published_name",
     [f"PUBLISHED{i}" for i in range(0, 5)])
@@ -705,7 +687,6 @@ async def test_deb_repomanager_published_exists(patches, published_name):
             == bool(published_name in published))
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "snapshot_name",
     [f"SNAPSHOT{i}" for i in range(0, 5)])

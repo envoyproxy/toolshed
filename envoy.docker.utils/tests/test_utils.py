@@ -21,7 +21,6 @@ class MockAsyncIterator:
             raise StopAsyncIteration
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("args", [(), ("ARG1", ), ("ARG1", "ARG2")])
 @pytest.mark.parametrize("kwargs", [{}, dict(kkey1="VVAR1", kkey2="VVAR2")])
 async def test_util_build_image(patches, args, kwargs):
@@ -44,7 +43,6 @@ async def test_util_build_image(patches, args, kwargs):
             kwargs])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("stream", [True, False])
 @pytest.mark.parametrize("buildargs", [None, dict(key1="VAR1", key2="VAR2")])
 @pytest.mark.parametrize("error", [None, "SOMETHING WENT WRONG"])
@@ -115,7 +113,6 @@ async def test_util__build_image(patches, stream, buildargs, error):
     assert not _stream.called
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("url", [None, "URL"])
 async def test_util_docker_client(patches, raises, url):

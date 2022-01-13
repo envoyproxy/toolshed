@@ -103,7 +103,6 @@ def test_aio_concurrent_closed(patches, locked):
     assert "closed" not in concurrent.__dict__
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("raises", [None, BaseException, GeneratorExit])
 @pytest.mark.parametrize("close_raises", [None, BaseException])
 async def test_aio_concurrent_coros(patches, raises, close_raises):
@@ -325,7 +324,6 @@ def test_aio_concurrent_submitting(patches, locked):
     assert "submitting" not in concurrent.__dict__
 
 
-@pytest.mark.asyncio
 async def test_aio_concurrent_cancel(patches):
     concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
@@ -367,7 +365,6 @@ async def test_aio_concurrent_cancel(patches):
         == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("bad", range(0, 8))
 async def test_aio_concurrent_cancel_tasks(patches, bad):
     concurrent = aio.tasks.concurrent(["CORO"])
@@ -404,7 +401,6 @@ async def test_aio_concurrent_cancel_tasks(patches, bad):
             == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("closed", [True, False])
 async def test_aio_concurrent_close(patches, closed):
     concurrent = aio.tasks.concurrent(["CORO"])
@@ -426,7 +422,6 @@ async def test_aio_concurrent_close(patches, closed):
             == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("consumes_generator", [True, False])
 @pytest.mark.parametrize("bad", range(0, 8))
 async def test_aio_concurrent_close_coros(patches, consumes_generator, bad):
@@ -465,7 +460,6 @@ async def test_aio_concurrent_close_coros(patches, consumes_generator, bad):
             == [(), {}])
 
 
-@pytest.mark.asyncio
 async def test_aio_concurrent_create_task(patches):
     concurrent = aio.tasks.concurrent(["CORO"])
     patched = patches(
@@ -492,7 +486,6 @@ async def test_aio_concurrent_create_task(patches):
         == [(m_asyncio.create_task.return_value, ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("closed", [True, False])
 @pytest.mark.parametrize("active", [True, False])
 async def test_aio_concurrent_exit_on_completion(patches, active, closed):
@@ -537,7 +530,6 @@ def test_aio_concurrent_forget_task(patches, closed):
         == [("TASK", ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("consumes_async", [True, False])
 async def test_aio_concurrent_iter_coros(patches, raises, consumes_async):
@@ -582,7 +574,6 @@ async def test_aio_concurrent_iter_coros(patches, raises, consumes_async):
     assert results == coros
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("closed", [True, False])
 @pytest.mark.parametrize("nolimit", [True, False])
 @pytest.mark.parametrize("decrement", [None, True, False])
@@ -637,7 +628,6 @@ async def test_aio_concurrent_on_task_complete(
         == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("result_count", range(0, 7))
 @pytest.mark.parametrize("error", [True, False])
 @pytest.mark.parametrize("should_error", [True, False])
@@ -718,7 +708,6 @@ async def test_aio_concurrent_output(
         == [f"RESULT {i}" for i in range(1, result_count + 1)])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("closed_before", [True, False])
 @pytest.mark.parametrize("closed_after", [True, False])
 @pytest.mark.parametrize("nolimit", [True, False])
@@ -818,7 +807,6 @@ def test_aio_concurrent_should_error(result, yield_exceptions):
              and not yield_exceptions)))
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("coros", range(0, 7))
 @pytest.mark.parametrize("unready", range(0, 8))
 @pytest.mark.parametrize(
@@ -986,7 +974,6 @@ class OtherException(BaseException):
     pass
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("raises", [None, Exception, OtherException])
 async def test_aio_concurrent_task(patches, raises):
     concurrent = aio.tasks.concurrent(["CORO"])
@@ -1074,7 +1061,6 @@ async def aiter(items):
         yield item
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("limit", list(range(0, 4)) + [-1])
 @pytest.mark.parametrize("yield_exceptions", [None, True, False])
 @pytest.mark.parametrize("iter_type", [list, tuple, set, iter, aiter])

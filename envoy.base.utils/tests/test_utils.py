@@ -292,7 +292,6 @@ def test_typed(patches, casted):
         == [("TYPE", value), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("filter", [True, False])
 async def test_async_list(filter):
 

@@ -362,7 +362,6 @@ def test_checker_add_arguments():
               'help': 'Rebuild test images before running the tests.'}]])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "tests",
     [{},
@@ -443,7 +442,6 @@ def test_checker_get_test_packages(patches):
         == [('TYPE', 'EXT'), {}])
 
 
-@pytest.mark.asyncio
 async def test_checker_on_checks_complete(patches):
     checker = DummyDistroChecker("path1", "path2", "path3")
     patched = patches(
@@ -472,7 +470,6 @@ async def test_checker_on_checks_complete(patches):
             == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exiting", [True, False])
 @pytest.mark.parametrize("errors", [None, (), ("ERR1", "ERR")])
 @pytest.mark.parametrize("rebuild", [True, False])
@@ -512,7 +509,6 @@ async def test_checker_run_test(patches, exiting, errors, rebuild):
             {"rebuild": rebuild}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 async def test_checker__cleanup_docker(patches, exists):
     checker = DummyDistroChecker("path1", "path2", "path3")
@@ -538,7 +534,6 @@ async def test_checker__cleanup_docker(patches, exists):
         == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 async def test_checker__cleanup_test(patches, exists):
     checker = DummyDistroChecker("path1", "path2", "path3")

@@ -660,7 +660,6 @@ def test_image_add_dockerfile(patches):
         == [(m_dfile.return_value,), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("raises", [True, False])
 async def test_image_build(patches, raises):
     image = distrotest.DistroTestImage(
@@ -698,7 +697,6 @@ async def test_image_build(patches, raises):
             {'stream': m_stream, 'forcerm': True}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("tag", ["TAG1", "TAG2"])
 @pytest.mark.parametrize(
     "images",
@@ -824,7 +822,6 @@ def test_image_get_install_binary(patches, contains):
              'PACKAGE'), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "images",
     [[],
@@ -1044,7 +1041,6 @@ def test_distrotest_test_cmd(patches):
 
 # methods
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 async def test_distrotest_build(patches, exists):
     check = checker.AsyncChecker()
@@ -1078,7 +1074,6 @@ async def test_distrotest_build(patches, exists):
             [('Image built',), {}]])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("raises", [True, False])
 async def test_distrotest_cleanup(patches, raises):
     check = checker.AsyncChecker()
@@ -1106,7 +1101,6 @@ async def test_distrotest_cleanup(patches, raises):
         == [(m_docker.containers.get.return_value,), {}])
 
 
-@pytest.mark.asyncio
 async def test_distrotest_create(patches):
     check = checker.AsyncChecker()
     dtest = distrotest.DistroTest(
@@ -1129,7 +1123,6 @@ async def test_distrotest_create(patches):
              'name': m_name.return_value}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("failed", [True, False])
 @pytest.mark.parametrize("returns", [0, 1])
 @pytest.mark.parametrize("msgs", range(0, 5))
@@ -1281,7 +1274,6 @@ def test_distrotest_handle_test_error(patches, msg):
     assert not m_stdout.called
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "start",
     ["NAME", "[NAME", "[NOME", "x[NAME", "[NAME]", "ERROR"])
@@ -1372,7 +1364,6 @@ def test_distrotest_log_failures(patches, failed, failures):
             {'msg_type': 'error', 'test': m_name.return_value}])
 
 
-@pytest.mark.asyncio
 async def test_distrotest_logs():
     check = checker.AsyncChecker()
     dtest = distrotest.DistroTest(
@@ -1386,7 +1377,6 @@ async def test_distrotest_logs():
         == [(), {'stdout': True, 'stderr': True}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("failed", [True, False])
 @pytest.mark.parametrize("self_failed", [True, False])
 async def test_distrotest_on_test_complete(patches, failed, self_failed):
@@ -1426,7 +1416,6 @@ async def test_distrotest_on_test_complete(patches, failed, self_failed):
         == [(check.active_check, [m_msg.return_value]), {}])
 
 
-@pytest.mark.asyncio
 async def test_distrotest_run(patches):
     check = checker.AsyncChecker()
     dtest = distrotest.DistroTest(
@@ -1492,7 +1481,6 @@ def test_distrotest_run_message(patches, testname):
         assert dtest.run_message("MESSAGE") == "[NAME] MESSAGE"
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("running", [True, False])
 async def test_distrotest_start(patches, running):
     check = checker.AsyncChecker()
@@ -1548,7 +1536,6 @@ async def test_distrotest_start(patches, running):
     assert not m_logs.called
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("container", [None, "CONTAINER"])
 async def test_distrotest_stop(patches, container):
     check = checker.AsyncChecker()
@@ -1580,7 +1567,6 @@ async def test_distrotest_stop(patches, container):
         == [('Container stopped',), {'test': m_pkg.return_value}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "build_raises",
     [None,

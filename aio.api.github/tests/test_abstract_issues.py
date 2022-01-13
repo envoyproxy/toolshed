@@ -63,7 +63,6 @@ def test_issue_dunder_lt(number, other_number):
     assert (issue1 < issue2) == (number < other_number)
 
 
-@pytest.mark.asyncio
 async def test_abstract_issue_close(patches):
     issue = DummyGithubIssue("REPO", "DATA")
     patched = patches(
@@ -78,7 +77,6 @@ async def test_abstract_issue_close(patches):
         == [(), dict(state="closed")])
 
 
-@pytest.mark.asyncio
 async def test_abstract_issue_comment():
     repo = MagicMock()
     repo.post = AsyncMock()
@@ -93,7 +91,6 @@ async def test_abstract_issue_comment():
             dict(data=dict(body="COMMENT"))])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "kwargs", [{}, {f"K{i}": f"V{i}" for i in range(0, 3)}])
 async def test_abstract_issue_edit(patches, kwargs):
@@ -157,7 +154,6 @@ def test_abstract_issues_filter(repo, filter):
         == (f"{filters} " if filters else ""))
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("repo1", [None, "REPO1"])
 @pytest.mark.parametrize("repo2", [None, "REPO2"])
 @pytest.mark.parametrize(

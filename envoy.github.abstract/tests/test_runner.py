@@ -184,7 +184,6 @@ def test_runner_add_arguments(patches):
             [('command',), {'choices': {}.keys(), 'help': 'Command to run'}]])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("indict", [True, False])
 async def test_runner_cleanup(patches, indict):
     run = DummyGithubReleaseRunner()

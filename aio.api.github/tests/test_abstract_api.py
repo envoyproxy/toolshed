@@ -110,7 +110,6 @@ def test_abstract_api_api(patches):
     assert "api" in api.__dict__
 
 
-@pytest.mark.asyncio
 async def test_abstract_api_getitem(patches):
     api = DummyGithubAPI()
     patched = patches(
@@ -152,7 +151,6 @@ def test_abstract_api_getiter(patches):
         == [(m_api.return_value, ) + args, kwargs])
 
 
-@pytest.mark.asyncio
 async def test_abstract_api_patch(patches):
     api = DummyGithubAPI()
     patched = patches(
@@ -173,7 +171,6 @@ async def test_abstract_api_patch(patches):
         == [args, kwargs])
 
 
-@pytest.mark.asyncio
 async def test_abstract_api_post(patches):
     api = DummyGithubAPI()
     patched = patches(

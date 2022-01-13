@@ -6,7 +6,6 @@ import pytest
 import aio.subprocess
 
 
-@pytest.mark.asyncio
 async def test_subprocess_parallel(patches):
     patched = patches(
         "asyncio",
@@ -46,7 +45,6 @@ async def test_subprocess_parallel(patches):
         == [[(m_run.return_value,), {}] for proc in procs])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("loop", [True, False])
 @pytest.mark.parametrize("executor", [None, "EXECUTOR"])
 async def test_subprocess_run(patches, loop, executor):

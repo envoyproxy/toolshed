@@ -106,7 +106,6 @@ def test_release_manager_constructor(
     assert "version_min" not in releaser.__dict__
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("session", [True, False])
 async def test_release_manager_close(patches, session):
     releaser = DummyGithubReleaseManager("PATH", "REPOSITORY")

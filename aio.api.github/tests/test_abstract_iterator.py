@@ -27,7 +27,6 @@ def test_abstract_iterator_constructor(args, kwargs):
     assert iterator.kwargs == kwargs
 
 
-@pytest.mark.asyncio
 async def test_abstract_iterator_dunder_aiter(patches):
     iterator = DummyGithubIterator("API", "QUERY")
     iterator.args = tuple(f"ARG{i}" for i in range(0, 3))
@@ -103,7 +102,6 @@ def test_abstract_iterator_count_url(patches):
     assert "count_url" not in iterator.__dict__
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("rate_limit", [None] + list(range(0, 6)))
 async def test_abstract_iterator_total_count(patches, rate_limit):
     iterator = DummyGithubIterator(MagicMock(), "QUERY")

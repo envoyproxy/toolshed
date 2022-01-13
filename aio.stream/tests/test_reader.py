@@ -28,7 +28,6 @@ def test_stream_reader_constructor(patches, size):
     assert "size" not in reader.__dict__
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("size", [None, 0, 23])
 async def test_stream_reader_dunder_aiter(patches, size):
     reader = stream.Reader("BUFFER")
@@ -84,7 +83,6 @@ def test_stream_reader_dunder_len(patches, size):
             == "object of type 'Reader' with no 'size' cannot get len()")
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("chunk_size", [None, 0, 23])
 async def test_stream_reader(patches, chunk_size):
     patched = patches(

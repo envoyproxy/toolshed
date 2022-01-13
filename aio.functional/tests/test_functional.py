@@ -9,7 +9,6 @@ import abstracts
 from aio import functional
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("cache", [None, True, False])
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("result", [None, False, "X", 23])
@@ -123,7 +122,6 @@ async def test_functional_async_property(cache, raises, result):
     assert results2 == []
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("cache", [True, False])
 async def test_functional_async_property_abstract(cache):
     if cache:

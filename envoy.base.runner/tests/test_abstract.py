@@ -1,8 +1,6 @@
 
 from unittest.mock import AsyncMock, PropertyMock
 
-import pytest
-
 import abstracts
 
 from envoy.base.runner import (
@@ -84,7 +82,6 @@ def test_async_commandrunner_commands():
         == {'A': 'aaa', 'B': 'bbb'})
 
 
-@pytest.mark.asyncio
 async def test_async_commandrunner_run(patches):
     runner = DummyAsyncRunnerWithCommands()
     patched = patches(

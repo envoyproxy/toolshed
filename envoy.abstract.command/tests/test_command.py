@@ -107,7 +107,6 @@ def test_icommand():
         command.ICommand.run(icommand)
 
 
-@pytest.mark.asyncio
 async def test_iasynccommand():
 
     @abstracts.implementer(command.ICommand)

@@ -227,7 +227,6 @@ def test_repo_buildingrunner_repos(patches):
                 {}])
 
 
-@pytest.mark.asyncio
 async def test_repo_buildingrunner_published_repos(patches):
     runner = DummyRepoBuildingRunner()
     patched = patches(
@@ -275,7 +274,6 @@ def test_repo_buildingrunner_add_arguments(patches):
             == [(parser, ), {}])
 
 
-@pytest.mark.asyncio
 async def test_repo_buildingrunner_cleanup(patches):
     runner = DummyRepoBuildingRunner()
     patched = patches(
@@ -290,7 +288,6 @@ async def test_repo_buildingrunner_cleanup(patches):
         == [(), {}])
 
 
-@pytest.mark.asyncio
 async def test_repo_buildingrunner_run():
     runner = DummyRepoBuildingRunner()
 
@@ -366,7 +363,6 @@ def test_repo_manager_versions():
         == {'V1': 'foo', 'V3': 'baz'})
 
 
-@pytest.mark.asyncio
 async def test_repo_manager_publish():
     manager = DummyRepoManager(
         "NAME", "PATH", "CONFIG", "LOG", "STDOUT")

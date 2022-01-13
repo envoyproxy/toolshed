@@ -94,7 +94,6 @@ def test_assets_context(patches):
     assert m_cleanup.called
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "raises",
     [None, BaseException, tasks.ConcurrentIteratorError])
@@ -153,7 +152,6 @@ async def test_assets_dunder_aiter(patches, raises):
     assert _results == list(range(0, 5))
 
 
-@pytest.mark.asyncio
 async def test_assets_assets(patches):
 
     async def mock_assets():
@@ -226,13 +224,11 @@ def test_assets_fail():
         == [("FAILURE", ), {}])
 
 
-@pytest.mark.asyncio
 async def test_assets_handle_result():
     release_assets = DummyGithubReleaseAssets("RELEASE", "PATH")
     assert await release_assets.handle_result("RESULT") == "RESULT"
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "raises",
     [None,
@@ -338,7 +334,6 @@ def test_assets_fetcher_asset_types(patches, asset_types):
         assert not m_re.compile.called
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "asset_types",
     [(), range(0, 5), range(0, 3), range(3, 7)])
@@ -423,7 +418,6 @@ def test_assets_fetcher_asset_type(patches, name):
             == (name if name in types else None))
 
 
-@pytest.mark.asyncio
 async def test_assets_pusher_asset_names(patches):
     pusher = DummyGithubReleaseAssetsPusher("RELEASE", "PATH")
     patched = patches(
@@ -439,7 +433,6 @@ async def test_assets_pusher_asset_names(patches):
     assert not hasattr(pusher, async_property.cache_name)
 
 
-@pytest.mark.asyncio
 async def test_assets_pusher_awaitables(patches):
     pusher = DummyGithubReleaseAssetsPusher("RELEASE", "PATH")
     patched = patches(
@@ -468,7 +461,6 @@ async def test_assets_pusher_awaitables(patches):
             for artefact in artefacts])
 
 
-@pytest.mark.asyncio
 async def test_assets_pusher_upload_url(patches):
     pusher = DummyGithubReleaseAssetsPusher("RELEASE", "PATH")
     patched = patches(
@@ -483,7 +475,6 @@ async def test_assets_pusher_upload_url(patches):
     assert not hasattr(pusher, async_property.cache_name)
 
 
-@pytest.mark.asyncio
 async def test_assets_pusher_artefact_url(patches):
     pusher = DummyGithubReleaseAssetsPusher("RELEASE", "PATH")
     patched = patches(

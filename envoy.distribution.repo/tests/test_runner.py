@@ -136,7 +136,6 @@ def test_runner_extract_packages(patches):
             for p in m_packages.return_value])
 
 
-@pytest.mark.asyncio
 async def test_runner_run(patches):
     runner = repo.RepoBuildingRunner()
     patched = patches(

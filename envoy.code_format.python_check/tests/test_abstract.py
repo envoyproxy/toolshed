@@ -164,7 +164,6 @@ def test_abstract_python_checker_add_arguments(patches):
               'help': 'Specify the path to a diff file with fixes'}]])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("errors", [[], ["err1", "err2"]])
 async def test_abstract_python_checker_check_flake8(patches, errors):
     checker = DummyPythonChecker("path1", "path2", "path3")
@@ -214,7 +213,6 @@ def test_abstract_python_checker_check_recurse():
     assert "recurse" not in checker.__dict__
 
 
-@pytest.mark.asyncio
 async def test_abstract_python_checker_check_yapf(patches):
     checker = DummyPythonChecker("path1", "path2", "path3")
     patched = patches(
@@ -246,7 +244,6 @@ async def test_abstract_python_checker_check_yapf(patches):
             for i, _ in enumerate(files)])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "errors",
     [[], ["check2", "check3"], ["check1", "check3"]])
@@ -276,7 +273,6 @@ async def test_abstract_python_checker_on_check_run(patches, errors, warnings):
             == [(checkname, [checkname]), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("diff_path", ["", "DIFF1"])
 @pytest.mark.parametrize("failed", [True, False])
 async def test_abstract_python_checker_on_checks_complete(
@@ -316,7 +312,6 @@ async def test_abstract_python_checker_on_checks_complete(
         == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("fix", [True, False])
 async def test_abstract_python_checker_yapf_format(patches, fix):
     checker = DummyPythonChecker("path1", "path2", "path3")

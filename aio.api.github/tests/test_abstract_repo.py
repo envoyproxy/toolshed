@@ -20,7 +20,6 @@ def test_abstract_repo_constructor():
     assert str(repo) == f"<{repo.__class__.__name__} NAME>"
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "releases",
     [(),
@@ -111,7 +110,6 @@ def test_abstract_repo_labels(patches):
     assert "labels" not in repo.__dict__
 
 
-@pytest.mark.asyncio
 async def test_abstract_repo_commit(patches):
     github = MagicMock()
     repo = DummyGithubRepo(github, "NAME")
@@ -167,7 +165,6 @@ def test_abstract_repo_commits(patches, since):
         == [(github.commit_class, repo), {}])
 
 
-@pytest.mark.asyncio
 async def test_abstract_repo_getitem(patches):
     github = MagicMock()
     repo = DummyGithubRepo(github, "NAME")
@@ -248,7 +245,6 @@ def test_abstract_repo_iter_entities(patches):
         == [("ENTITY", repo), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "data", [None, {f"K{i}": f"V{i}" for i in range(0, 3)}])
 async def test_abstract_repo_patch(patches, data):
@@ -276,7 +272,6 @@ async def test_abstract_repo_patch(patches, data):
         == [("QUERY", ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "data", [None, {f"K{i}": f"V{i}" for i in range(0, 3)}])
 async def test_abstract_repo_post(patches, data):
@@ -304,7 +299,6 @@ async def test_abstract_repo_post(patches, data):
         == [("QUERY", ), {}])
 
 
-@pytest.mark.asyncio
 async def test_abstract_repo_release(patches):
     github = MagicMock()
     repo = DummyGithubRepo(github, "NAME")
@@ -342,7 +336,6 @@ def test_abstract_repo_releases(patches):
         == [(github.release_class, "releases?per_page=100"), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("is_tag", [True, False])
 async def test_abstract_repo_tag(patches, is_tag):
     github = MagicMock()
