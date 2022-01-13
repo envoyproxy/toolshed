@@ -34,7 +34,7 @@ pypi: https://pypi.org/project/aio.api.github
 
 #### [aio.functional](aio.functional)
 
-version: 0.0.10.dev0
+version: 0.0.10
 
 pypi: https://pypi.org/project/aio.functional
 

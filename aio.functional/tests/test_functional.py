@@ -9,6 +9,10 @@ import abstracts
 from aio import functional
 
 
+# TODO: add a test to make sure that async loading multiple
+#   instances of the same class dont write to each others caches
+
+
 @pytest.mark.parametrize("cache", [None, True, False])
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("result", [None, False, "X", 23])
