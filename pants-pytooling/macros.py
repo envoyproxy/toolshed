@@ -62,9 +62,16 @@ def pytooling_tests(
         dependencies=None,  # Optional[List] = None,
         **kwargs) -> None:
     """Test library for a namespaced package"""
+    dependencies = (
+        _dep_on_myself(namespace)
+        + (dependencies or []))
+
+    # TODO: remove this if we add separate per-package
+    #   pytest.ini files
+    if "//deps:pytest-asyncio" not in dependencies:
+        dependencies.append("//deps:pytest-asyncio")
+
     python_tests(
-        dependencies=(
-            _dep_on_myself(namespace)
-            + (dependencies or [])),
+        dependencies=dependencies,
         skip_mypy=True,
         **kwargs)
