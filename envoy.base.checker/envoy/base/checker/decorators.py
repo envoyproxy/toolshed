@@ -11,7 +11,7 @@ class preload:
             self,
             when: Sequence[str],
             blocks: Optional[Sequence[str]] = None,
-            catches: Optional[Sequence[BaseException]] = None,
+            catches: Optional[Sequence[Type[BaseException]]] = None,
             name: Optional[str] = None,
             unless: Optional[Sequence[str]] = None) -> None:
         self._when = when
@@ -39,7 +39,7 @@ class preload:
         return self.when + tuple(self._blocks or ())
 
     @property
-    def catches(self) -> Tuple[BaseException, ...]:
+    def catches(self) -> Tuple[Type[BaseException], ...]:
         return tuple(self._catches or ())
 
     @property
