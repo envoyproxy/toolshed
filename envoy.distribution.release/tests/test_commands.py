@@ -9,7 +9,6 @@ from envoy.distribution.release import commands
 from envoy.github.abstract.command import AGithubReleaseCommand
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "assets",
     [[], [dict(name=f"ASSET{i}") for i in range(0, 5)]])
@@ -66,7 +65,6 @@ def test_release_command_create_add_arguments(patches):
                   'or a tarball')}]])
 
 
-@pytest.mark.asyncio
 async def test_release_command_create_run(patches):
     command = commands.CreateCommand("CONTEXT")
     assert isinstance(command, AGithubReleaseCommand)
@@ -93,7 +91,6 @@ async def test_release_command_create_run(patches):
         == [(), dict(FOO="bar")])
 
 
-@pytest.mark.asyncio
 async def test_release_command_delete(patches):
     command = commands.DeleteCommand("CONTEXT")
     assert isinstance(command, AGithubReleaseCommand)
@@ -173,7 +170,6 @@ def test_release_command_fetch_find_latest(patches, find_latest):
         assert command.find_latest == find_latest
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("find_latest", [True, False])
 async def test_release_command_fetch_releases(patches, find_latest):
     command = commands.FetchCommand("CONTEXT")
@@ -260,7 +256,6 @@ def test_release_command_fetch_add_arguments(patches):
                   'assets into')}]])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "releases",
     [[], ["RELEASE0"], [f"RELEASE{i}" for i in range(0, 5)]])
@@ -290,7 +285,6 @@ async def test_release_command_fetch_run(patches, releases):
                 {'append': i > 0}])
 
 
-@pytest.mark.asyncio
 async def test_release_command_info(patches):
     command = commands.InfoCommand("CONTEXT")
     assert isinstance(command, AGithubReleaseCommand)
@@ -312,7 +306,6 @@ async def test_release_command_info(patches):
         == [(mock_release.return_value, ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "releases",
     [[], [dict(tag_name=f"RELEASE{i}") for i in range(0, 5)]])
@@ -357,7 +350,6 @@ def test_release_command_push_add_arguments(patches):
                   'or a tarball')}]])
 
 
-@pytest.mark.asyncio
 async def test_release_command_push_run(patches):
     command = commands.PushCommand("CONTEXT")
     assert isinstance(command, AGithubReleaseCommand)

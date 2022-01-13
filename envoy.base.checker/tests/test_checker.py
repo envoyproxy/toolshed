@@ -1169,7 +1169,6 @@ def test_asyncchecker_remaining_checks(patches, checks, removed, completed):
     assert "remaining_checks" not in checker.__dict__
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "to_run",
     [[],
@@ -1235,7 +1234,6 @@ def test_asyncchecker_on_async_error():
         == [(), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("checks", [[], [f"C{i}" for i in range(0, 5)]])
 @pytest.mark.parametrize("removed", [True, False])
 @pytest.mark.parametrize("pending", [True, False])
@@ -1290,7 +1288,6 @@ async def test_asyncchecker_on_preload(patches, checks, removed, pending):
         assert not m_err.called
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("checks", range(0, 10))
 @pytest.mark.parametrize("removed", range(0, 10))
 @pytest.mark.parametrize("remaining", [True, False])
@@ -1340,7 +1337,6 @@ async def test_asyncchecker_on_preload_errors(
             == [(m_sentinel, ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "checks",
     [[],
@@ -1392,7 +1388,6 @@ async def test_asyncchecker_on_preload_task_failed(patches, checks, removed):
             for check in to_remove])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "tasks",
     [[],
@@ -1471,7 +1466,6 @@ def test_asyncchecker_preload_data(patches, should):
         == [(checker, ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "catches",
     [[], [Exception], [SomeError, OtherError]])
@@ -1663,7 +1657,6 @@ def test_asyncchecker_run(patches, raises):
         == [(m_run.return_value,), {}])
 
 
-@pytest.mark.asyncio
 async def test_asyncchecker_on_check_begin(patches):
     checker = AsyncChecker()
     patched = patches(
@@ -1678,7 +1671,6 @@ async def test_asyncchecker_on_check_begin(patches):
         == [('CHECKNAME',), {}])
 
 
-@pytest.mark.asyncio
 async def test_asyncchecker_on_check_run(patches):
     checker = AsyncChecker()
     patched = patches(
@@ -1693,7 +1685,6 @@ async def test_asyncchecker_on_check_run(patches):
         == [('CHECKNAME',), {}])
 
 
-@pytest.mark.asyncio
 async def test_asyncchecker_on_checks_begin(patches):
     checker = AsyncChecker()
     patched = patches(
@@ -1708,7 +1699,6 @@ async def test_asyncchecker_on_checks_begin(patches):
         == [(), {}])
 
 
-@pytest.mark.asyncio
 async def test_asyncchecker_on_checks_complete(patches):
     checker = AsyncChecker()
 
@@ -1779,7 +1769,6 @@ def test_asyncchecker__check_should_run(
         == [("CHECK", ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("exiting", [True, False])
 async def test_asyncchecker__run(patches, raises, exiting):
@@ -1818,7 +1807,6 @@ async def test_asyncchecker__run(patches, raises, exiting):
             == [(), {}])
 
 
-@pytest.mark.asyncio
 async def test_asyncchecker__run_check(patches):
     checker = AsyncChecker()
     patched = patches(
@@ -1861,7 +1849,6 @@ async def test_asyncchecker__run_check(patches):
         == [(checker, "check_CHECK"), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "checks",
     [[],

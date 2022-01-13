@@ -97,7 +97,6 @@ def test_root_log_filter(name):
         == (name != "APP_LOGGER"))
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("async_fun", [True, False])
 @pytest.mark.parametrize(
     "errors",
@@ -186,7 +185,6 @@ def _cleanup_runner(async_fun, raises):
     return DummyCleanupRunner()
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("async_fun", [True, False])
 @pytest.mark.parametrize("raises", [True, False])
 async def test_cleansup(async_fun, raises):
@@ -733,7 +731,6 @@ def test_async_runner_dunder_call(patches, raises):
         == [(), {}])
 
 
-@pytest.mark.asyncio
 async def test_async_runner_cleanup(patches):
     patched = patches(
         "AsyncRunner._cleanup_tempdir",

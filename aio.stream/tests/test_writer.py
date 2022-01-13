@@ -23,7 +23,6 @@ def test_stream_writer_constructor(patches):
         == [tuple(args), kwargs])
 
 
-@pytest.mark.asyncio
 async def test_stream_writer_stream_bytes(patches):
     writer = stream.Writer("BUFFER")
     response = MagicMock()
@@ -53,7 +52,6 @@ async def test_stream_writer_stream_bytes(patches):
         == [[(f'CHUNK{i}',), {}] for i in range(0, 3)])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("chunk_size", [None, 0, 23])
 async def test_stream_writer(patches, chunk_size):
     patched = patches(

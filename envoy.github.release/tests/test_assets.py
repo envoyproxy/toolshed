@@ -152,7 +152,6 @@ def test_fetcher_path(patches, exists, is_tarlike):
         == [[(), {}]] * path_calls)
 
 
-@pytest.mark.asyncio
 async def test_fetcher_download(patches):
     fetcher = GithubReleaseAssetsFetcher(
         "RELEASE", "PATH", "ASSET_TYPES")
@@ -183,7 +182,6 @@ async def test_fetcher_download(patches):
         == [('ASSET DOWNLOAD URL',), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("status", [None, 200, 201])
 async def test_fetcher_save(patches, status):
     fetcher = GithubReleaseAssetsFetcher(
@@ -372,7 +370,6 @@ def test_pusher_path(patches, is_dir, is_tarball):
         assert not m_utils.extract.called
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("name", [f"ARTEFACT{i}" for i in range(0, 5)])
 @pytest.mark.parametrize(
     "asset_names",

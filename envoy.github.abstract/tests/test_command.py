@@ -16,7 +16,6 @@ class DummyGithubReleaseCommand:
         return await super().run()
 
 
-@pytest.mark.asyncio
 async def test_release_command_constructor():
     command = DummyGithubReleaseCommand("CONTEXT")
     assert isinstance(command, AAsyncCommand)

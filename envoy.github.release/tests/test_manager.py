@@ -55,7 +55,6 @@ def test_release_manager_constructor(
     assert releaser._version_re == r"v(\w+)"
 
 
-@pytest.mark.asyncio
 async def test_release_manager_async_contextmanager(patches):
     patched = patches(
         ("GithubReleaseManager.close", dict(new_callable=AsyncMock)),
@@ -163,7 +162,6 @@ def test_release_manager_path(patches):
         == [('PATH',), {}])
 
 
-@pytest.mark.asyncio
 async def test_release_manager_latest(patches):
     releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
@@ -197,7 +195,6 @@ async def test_release_manager_latest(patches):
     assert not hasattr(releaser, "__async_prop_cache__")
 
 
-@pytest.mark.asyncio
 async def test_release_manager_releases(patches):
     releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
@@ -276,7 +273,6 @@ def test_release_manager_version_re(patches):
         == [("VERSION RE", ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("session", [True, False])
 async def test_release_manager_close(patches, session):
     releaser = GithubReleaseManager("PATH", "REPOSITORY")

@@ -48,7 +48,6 @@ def test_runner_add_arguments(patches):
         == [("PARSER", ), {}])
 
 
-@pytest.mark.asyncio
 async def test_runner_run(patches):
     run = DummyReleaseRunner()
     patched = patches(

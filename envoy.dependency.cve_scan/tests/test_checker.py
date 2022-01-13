@@ -132,7 +132,6 @@ def test_checker_config_path(patches):
     assert "config_path" not in checker.__dict__
 
 
-@pytest.mark.asyncio
 async def test_checker_cve_data(patches):
     checker = DummyCVEChecker()
     patched = patches(
@@ -388,7 +387,6 @@ def test_checker_add_arguments(patches):
         == [[('config_path',), {}], [('urls',), {'nargs': '*'}]])
 
 
-@pytest.mark.asyncio
 async def test_checker_check_cves(patches):
     checker = DummyCVEChecker()
     patched = patches(
@@ -502,7 +500,6 @@ def test_checker_dependency_match(patches, exclude_cves, cve_len, match_cves):
         == [[(dependency, ), {}] for cve in cpe_cves])
 
 
-@pytest.mark.asyncio
 async def test_checker_download(patches):
     checker = DummyCVEChecker()
     patched = patches(
@@ -541,7 +538,6 @@ def test_checker_include_cve(patches, len_cpes, is_v3, id_ignored):
             == (len_cpes > 0 and is_v3 and not id_ignored))
 
 
-@pytest.mark.asyncio
 async def test_checker_on_checks_complete(patches):
     checker = DummyCVEChecker()
     patched = patches(
@@ -613,7 +609,6 @@ def test_checker_parse_cve_json(patches, exclude_cves):
         == [[(cve.id,), {}] for cpe, cve in expected])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "raises",
     [None,

@@ -41,7 +41,6 @@ def test_release_manager_props(prop):
     _check_manager_property(*prop)
 
 
-@pytest.mark.asyncio
 async def test_release_asset_names(patches):
     release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
@@ -63,7 +62,6 @@ async def test_release_asset_names(patches):
     assert "asset_names" in release.__async_prop_cache__
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "raises",
     [None, BaseException, gidgethub.GitHubException])
@@ -99,7 +97,6 @@ async def test_release_assets(patches, raises):
         assert "assets" in release.__async_prop_cache__
 
 
-@pytest.mark.asyncio
 async def test_release_assets_url(patches):
     release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
@@ -119,7 +116,6 @@ async def test_release_assets_url(patches):
     assert "assets_url" in getattr(release, async_property.cache_name)
 
 
-@pytest.mark.asyncio
 async def test_release_delete_url(patches):
     release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
@@ -140,7 +136,6 @@ async def test_release_delete_url(patches):
     assert "delete_url" in getattr(release, async_property.cache_name)
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("version", [f"VERSION{i}" for i in range(0, 7)])
 async def test_release_exists(patches, version):
     release = GithubRelease("MANAGER", "VERSION")
@@ -158,7 +153,6 @@ async def test_release_exists(patches, version):
     assert not hasattr(release, async_property.cache_name)
 
 
-@pytest.mark.asyncio
 async def test_release_release(patches):
     release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
@@ -171,7 +165,6 @@ async def test_release_release(patches):
     assert "release" in getattr(release, async_property.cache_name)
 
 
-@pytest.mark.asyncio
 async def test_release_release_id(patches):
     release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
@@ -191,7 +184,6 @@ async def test_release_release_id(patches):
     assert "release_id" in getattr(release, async_property.cache_name)
 
 
-@pytest.mark.asyncio
 async def test_release_release_names(patches):
     _manager = MagicMock()
 
@@ -207,7 +199,6 @@ async def test_release_release_names(patches):
         == tuple(t["tag_name"] for t in _release_names))
 
 
-@pytest.mark.asyncio
 async def test_release_upload_url(patches):
     release = GithubRelease("MANAGER", "VERSION")
     patched = patches(
@@ -261,7 +252,6 @@ def test_release_version_url(patches):
     assert "version_url" in release.__dict__
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize(
     "assets",
@@ -341,7 +331,6 @@ async def test_release_create(patches, exists, assets, raises):
     assert result == expected
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize(
     "raises",
@@ -405,7 +394,6 @@ def test_release_fail():
         == [("FAILURE", ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "asset_types",
     [None, (), tuple(f"ASSET_TYPE{i}" for i in range(0, 3))])
@@ -451,7 +439,6 @@ async def test_release_fetch(patches, asset_types, errors):
         == [(release, 'PATH', asset_types, False), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "raises",
     [None, BaseException, gidgethub.GitHubException])
@@ -482,7 +469,6 @@ async def test_release_get(patches, raises):
         == [(str(m_url.return_value), ), {}])
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "raises",
     [None, BaseException, tasks.ConcurrentError])
