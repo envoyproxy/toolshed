@@ -1,4 +1,4 @@
-aio.functional>=0.0.9
+aio.functional>=0.0.10
 aio.stream>=0.0.2
 aio.subprocess>=0.0.4
 aio.tasks>=0.0.4
