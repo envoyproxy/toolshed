@@ -25,7 +25,7 @@ pypi: https://pypi.org/project/aio.api.github
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.9
+- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.10
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [packaging](https://pypi.org/project/packaging)
 
@@ -34,7 +34,7 @@ pypi: https://pypi.org/project/aio.api.github
 
 #### [aio.functional](aio.functional)
 
-version: 0.0.10
+version: 0.0.11.dev0
 
 pypi: https://pypi.org/project/aio.functional
 
@@ -76,7 +76,7 @@ pypi: https://pypi.org/project/aio.tasks
 
 ##### requirements:
 
-- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.9
+- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.10
 
 ---
 
@@ -168,7 +168,7 @@ pypi: https://pypi.org/project/envoy.dependency.cve_scan
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.9
+- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.10
 - [aio.tasks](https://pypi.org/project/aio.tasks) >=0.0.4
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.0.3
@@ -235,7 +235,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.9
+- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.10
 - [aio.subprocess](https://pypi.org/project/aio.subprocess) >=0.0.4
 - [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.3
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.0
@@ -306,7 +306,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.9
+- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.10
 - [aio.tasks](https://pypi.org/project/aio.tasks) >=0.0.4
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.0
@@ -325,7 +325,7 @@ pypi: https://pypi.org/project/envoy.github.release
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.9
+- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.10
 - [aio.stream](https://pypi.org/project/aio.stream) >=0.0.2
 - [aio.tasks](https://pypi.org/project/aio.tasks) >=0.0.4
 - [aiohttp](https://pypi.org/project/aiohttp)
