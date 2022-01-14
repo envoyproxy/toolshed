@@ -4,7 +4,8 @@ import os
 import types
 from functools import cached_property
 from typing import (
-    Any, AsyncIterable, AsyncIterator, Awaitable, Iterable, Iterator, List,
+    Any, AsyncIterable, AsyncIterator, Awaitable, Callable,
+    Iterable, Iterator, List,
     Optional, Union)
 
 from aio.functional import async_property
@@ -422,10 +423,48 @@ class concurrent:  # noqa: N801
 
     def validate_coro(self, coro: Awaitable) -> None:
         """Validate that a provided coroutine is actually awaitable."""
+
         if not inspect.isawaitable(coro):
             raise ConcurrentError(
                 f"Provided input was not a coroutine: {coro}")
 
-        if inspect.getcoroutinestate(coro) != inspect.CORO_CREATED:
+        spent = (
+            not asyncio.isfuture(coro)
+            and (inspect.getcoroutinestate(coro)
+                 != inspect.CORO_CREATED))
+
+        if spent:
             raise ConcurrentError(
                 f"Provided coroutine has already been fired: {coro}")
+
+
+async def inflate(
+        iterable: Iterable,
+        cb: Callable[[Any], Iterable[Awaitable]]) -> AsyncIterable[Any]:
+    """Inflate async data for an iterable of objects.
+
+    The provided callback function should return an iterable of awaitables.
+
+    For example, given a sequence of objects with an `id` property and cached
+    async properties of `foo` and `bar`, this function can be used to preload
+    the `foo` and `bar` properties for all the objects concurrently:
+
+    ```python
+
+    objects = inflate(
+        inflatables,
+        lambda o: (
+            o.foo,
+            o.bar))
+    async for obj in objects:
+        self.log.debug(f"Preloaded object: {obj.id}")
+    ```
+    """
+    things = concurrent(
+        asyncio.gather(
+            asyncio.sleep(0, result=thing),
+            *cb(thing))
+        for thing
+        in iterable)
+    async for thing in things:
+        yield thing[0]

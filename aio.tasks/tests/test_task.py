@@ -1230,3 +1230,51 @@ async def test_aio_concurrent_integration(
         assert set(expected) == set(mangled_results())
     else:
         assert expected == list(mangled_results())
+
+
+@pytest.mark.parametrize(
+    "iterable",
+    [[], [f"OBJ{i}" for i in range(0, 5)]])
+async def test_inflate(patches, iterable):
+    patched = patches(
+        "asyncio",
+        "concurrent",
+        prefix="aio.tasks.tasks")
+    cb = MagicMock()
+    awaitables = [f"AWAIT{i}" for i in range(0, 3)]
+    things = [[f"RESULT{i}", "X"] for i in range(0, 7)]
+    cb.return_value = awaitables
+    results = []
+    gathered = []
+
+    async def iter_things(x):
+        for thing in things:
+            yield thing
+
+    with patched as (m_aio, m_concurrent):
+        m_concurrent.side_effect = iter_things
+        async for thing in aio.tasks.inflate(iterable, cb):
+            results.append(thing)
+        gen = m_concurrent.call_args[0][0]
+        for item in gen:
+            gathered.append(item)
+
+    assert results == [t[0] for t in things]
+    assert (
+        m_concurrent.call_args
+        == [(gen, ), {}])
+    assert (
+        gathered
+        == [m_aio.gather.return_value] * len(iterable))
+    assert (
+        m_aio.gather.call_args_list
+        == [[(m_aio.sleep.return_value, *awaitables), {}]
+            for i in range(0, len(iterable))])
+    assert (
+        m_aio.sleep.call_args_list
+        == [[(0, ), dict(result=item)]
+            for item in iterable])
+    assert (
+        cb.call_args_list
+        == [[(item, ), {}]
+            for item in iterable])
