@@ -1,6 +1,7 @@
 
 import abc
 import pathlib
+import re
 from functools import cached_property
 from typing import Iterable, Set
 
@@ -12,7 +13,7 @@ from .exceptions import PipConfigurationError
 
 
 DEPENDABOT_CONFIG = ".github/dependabot.yml"
-IGNORED_DIRS = ("/tools/dev",)
+IGNORED_DIRS = (r"^/tools/dev$|^/tools/dev/src")
 REQUIREMENTS_FILENAME = "requirements.txt"
 
 # TODO(phlax): add checks for:
@@ -50,7 +51,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
 
     @cached_property
     def ignored_dirs(self) -> Set[str]:
-        return set(IGNORED_DIRS)
+        return re.compile("|".join(IGNORED_DIRS))
 
     @property
     @abc.abstractmethod
@@ -63,9 +64,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
         return set(
             f"/{f.parent.relative_to(self.path)}"
             for f in self.path.glob("**/*")
-            if (f.name == self.requirements_filename
-                and (f"/{f.parent.relative_to(self.path)}"
-                     not in self.ignored_dirs)))
+            if (f.name == self.requirements_filename and not self.ignored_dirs.match(f"/{f.parent.relative_to(self.path)}")))
 
     @property
     def requirements_filename(self) -> str:
