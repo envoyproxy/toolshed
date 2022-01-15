@@ -78,7 +78,8 @@ def test_abstract_pip_checker_dependabot_config(patches, isdict):
 
 def test_abstract_pip_checker_ignored_dirs():
     checker = DummyPipChecker("path1", "path2", "path3")
-    assert checker.ignored_dirs == re.compile("|".join(pip_check.abstract.IGNORED_DIRS))
+    assert checker.ignored_dirs == re.compile(
+        "|".join(pip_check.abstract.IGNORED_DIRS))
     assert "ignored_dirs" in checker.__dict__
 
 
@@ -167,7 +168,6 @@ def test_abstract_pip_checker_check_dependabot(patches, requirements):
             == [(config & dirs, ), {}])
     else:
         assert not m_success.called
-
     if config - dirs:
         assert (
             [(config - dirs,
