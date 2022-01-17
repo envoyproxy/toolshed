@@ -13,7 +13,7 @@ from .exceptions import PipConfigurationError
 
 
 DEPENDABOT_CONFIG = ".github/dependabot.yml"
-IGNORED_DIRS = ([r"^/tools/dev"])
+IGNORED_DIRS = (r"^/tools/dev$", r"^/tools/dev/src")
 REQUIREMENTS_FILENAME = "requirements.txt"
 
 # TODO(phlax): add checks for:
@@ -64,9 +64,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
         return set(
             f"/{f.parent.relative_to(self.path)}"
             for f in self.path.glob("**/*")
-            if (f.name == self.requirements_filename
-                and not self.ignored_dirs.match(
-                    f"/{f.parent.relative_to(self.path)}")))
+            if self.dir_matches(f))
 
     @property
     def requirements_filename(self) -> str:
@@ -103,3 +101,9 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
     def dependabot_errors(self, missing: Iterable, msg: str) -> None:
         for dirname in sorted(missing):
             self.error("dependabot", [f"{msg}: {dirname}"])
+
+    def dir_matches(self, f):
+        return (
+            f.name == self.requirements_filename
+            and not self.ignored_dirs.match(
+                f"/{f.parent.relative_to(self.path)}"))
