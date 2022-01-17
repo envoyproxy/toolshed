@@ -70,7 +70,7 @@ pypi: https://pypi.org/project/aio.subprocess
 
 #### [aio.tasks](aio.tasks)
 
-version: 0.0.5.dev0
+version: 0.0.5
 
 pypi: https://pypi.org/project/aio.tasks
 
