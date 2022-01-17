@@ -150,8 +150,8 @@ pypi: https://pypi.org/project/envoy.code_format.python_check
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.subprocess](https://pypi.org/project/aio.subprocess) >=0.0.4
 - [aio.tasks](https://pypi.org/project/aio.tasks) >=0.0.4
-- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.0.3
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.3
+- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.1.0
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
 - [flake8](https://pypi.org/project/flake8)
 - [pep8-naming](https://pypi.org/project/pep8-naming)
 - [yapf](https://pypi.org/project/yapf)
@@ -188,7 +188,7 @@ pypi: https://pypi.org/project/envoy.dependency.pip_check
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.0.3
+- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.1.0
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
 
 ---
@@ -203,7 +203,7 @@ pypi: https://pypi.org/project/envoy.distribution.distrotest
 ##### requirements:
 
 - [aiodocker](https://pypi.org/project/aiodocker)
-- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.0.3
+- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.1.0
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
 - [envoy.docker.utils](https://pypi.org/project/envoy.docker.utils) >=0.0.2
 
@@ -254,7 +254,7 @@ pypi: https://pypi.org/project/envoy.distribution.verify
 
 ##### requirements:
 
-- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.0.3
+- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.1.0
 - [envoy.distribution.distrotest](https://pypi.org/project/envoy.distribution.distrotest) >=0.0.4
 
 ---
