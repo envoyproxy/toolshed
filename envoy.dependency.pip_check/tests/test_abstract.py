@@ -1,4 +1,3 @@
-from functools import partial
 from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
@@ -92,6 +91,23 @@ def test_abstract_pip_checker_path(patches):
 
     with patched as (m_super, ):
         assert checker.path == m_super.return_value
+
+
+def test_abstract_pip_checker_ignored_dirs(patches):
+    checker = DummyPipChecker("path1", "path2", "path3")
+    patched = patches(
+        "re",
+        prefix="envoy.dependency.pip_check.abstract")
+
+    with patched as (m_re, ):
+        assert (
+            checker.ignored_dirs
+            == m_re.compile.return_value)
+
+    assert (
+        m_re.compile.call_args
+        == [("|".join(pip_check.abstract.IGNORED_DIRS), ), {}])
+    assert "ignored_dirs" in checker.__dict__
 
 
 @pytest.mark.parametrize(
@@ -222,3 +238,43 @@ def test_abstract_pip_checker_dependabot_errors(patches):
         list(list(c) for c in list(m_error.call_args_list))
         == [[('dependabot', [f'ERROR MESSAGE: {x}']), {}]
             for x in sorted(errors)])
+
+
+@pytest.mark.parametrize("name_matches", [True, False])
+@pytest.mark.parametrize("dir_ignored", [True, False])
+def test_abstract_pip_checker_dir_matches(patches, name_matches, dir_ignored):
+    checker = DummyPipChecker("path1", "path2", "path3")
+    patched = patches(
+        ("APipChecker.ignored_dirs",
+         dict(new_callable=PropertyMock)),
+        ("APipChecker.path",
+         dict(new_callable=PropertyMock)),
+        ("APipChecker.requirements_filename",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.pip_check.abstract")
+    path = MagicMock()
+    path.name = "PATH_NAME"
+
+    with patched as (m_ignored, m_path, m_filename):
+        if name_matches:
+            m_filename.return_value = "PATH_NAME"
+        m_ignored.return_value.match.return_value = (
+            True
+            if dir_ignored
+            else False)
+
+        assert (
+            checker.dir_matches(path)
+            == (name_matches and not dir_ignored))
+
+    if not name_matches:
+        assert not m_ignored.called
+        assert not path.parent.relative_to.called
+        assert not m_path.called
+        return
+    assert (
+        m_ignored.return_value.match.call_args
+        == [(f"/{path.parent.relative_to.return_value}", ), {}])
+    assert (
+        path.parent.relative_to.call_args
+        == [(m_path.return_value, ), {}])
