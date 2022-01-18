@@ -1,6 +1,7 @@
 
 import abc
 import pathlib
+import re
 from functools import cached_property
 from typing import Iterable, Set
 
@@ -12,7 +13,7 @@ from .exceptions import PipConfigurationError
 
 
 DEPENDABOT_CONFIG = ".github/dependabot.yml"
-IGNORED_DIRS = ("/tools/dev",)
+IGNORED_DIRS = (r"^/tools/dev$", r"^/tools/dev/src")
 REQUIREMENTS_FILENAME = "requirements.txt"
 
 # TODO(phlax): add checks for:
@@ -49,8 +50,8 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
         return self._dependabot_config
 
     @cached_property
-    def ignored_dirs(self) -> Set[str]:
-        return set(IGNORED_DIRS)
+    def ignored_dirs(self) -> re.Pattern:
+        return re.compile("|".join(IGNORED_DIRS))
 
     @property
     @abc.abstractmethod
@@ -63,9 +64,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
         return set(
             f"/{f.parent.relative_to(self.path)}"
             for f in self.path.glob("**/*")
-            if (f.name == self.requirements_filename
-                and (f"/{f.parent.relative_to(self.path)}"
-                     not in self.ignored_dirs)))
+            if self.dir_matches(f))
 
     @property
     def requirements_filename(self) -> str:
@@ -102,3 +101,11 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
     def dependabot_errors(self, missing: Iterable, msg: str) -> None:
         for dirname in sorted(missing):
             self.error("dependabot", [f"{msg}: {dirname}"])
+
+    def dir_matches(self, path: pathlib.Path) -> bool:
+        """For given file path, check if its a requirements file and whether
+        its parent directory is excluded."""
+        return (
+            path.name == self.requirements_filename
+            and not self.ignored_dirs.match(
+                f"/{path.parent.relative_to(self.path)}"))

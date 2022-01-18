@@ -75,12 +75,6 @@ def test_abstract_pip_checker_dependabot_config(patches, isdict):
         == [(m_path.return_value.joinpath.return_value,), {}])
 
 
-def test_abstract_pip_checker_ignored_dirs():
-    checker = DummyPipChecker("path1", "path2", "path3")
-    assert checker.ignored_dirs == set(pip_check.abstract.IGNORED_DIRS)
-    assert "ignored_dirs" in checker.__dict__
-
-
 def test_abstract_pip_checker_path(patches):
     checker = DummyPipChecker("path1", "path2", "path3")
     patched = patches(
@@ -91,41 +85,57 @@ def test_abstract_pip_checker_path(patches):
         assert checker.path == m_super.return_value
 
 
-@pytest.mark.parametrize("ignored", [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]])
-def test_abstract_pip_checker_requirements_dirs(patches, ignored):
+def test_abstract_pip_checker_ignored_dirs(patches):
     checker = DummyPipChecker("path1", "path2", "path3")
-    dummy_glob = [
-        "FILE1", "FILE2", "FILE3",
-        "REQUIREMENTS_FILE", "FILE4",
-        "REQUIREMENTS_FILE", "FILE5"]
     patched = patches(
-        ("APipChecker.ignored_dirs", dict(new_callable=PropertyMock)),
-        ("APipChecker.requirements_filename", dict(new_callable=PropertyMock)),
-        ("APipChecker.path", dict(new_callable=PropertyMock)),
+        "re",
         prefix="envoy.dependency.pip_check.abstract")
-    expected = []
 
-    with patched as (m_ignored, m_reqs, m_path):
-        m_reqs.return_value = "REQUIREMENTS_FILE"
-        path_glob = []
-        ignored_paths = []
+    with patched as (m_re, ):
+        assert (
+            checker.ignored_dirs
+            == m_re.compile.return_value)
 
-        for i, fname in enumerate(dummy_glob):
-            _mock = MagicMock()
-            _mock.name = fname
-            if i in ignored:
-                ignored_paths.append(
-                    f"/{_mock.parent.relative_to.return_value}")
-            elif fname == "REQUIREMENTS_FILE":
-                expected.append(_mock)
-            path_glob.append(_mock)
+    assert (
+        m_re.compile.call_args
+        == [("|".join(pip_check.abstract.IGNORED_DIRS), ), {}])
+    assert "ignored_dirs" in checker.__dict__
 
-        m_ignored.return_value = ignored_paths
-        m_path.return_value.glob.return_value = path_glob
+
+@pytest.mark.parametrize(
+    "matches",
+    [[], range(0, 3), range(0, 5), range(3, 7)])
+def test_abstract_pip_checker_requirements_dirs(patches, matches):
+    checker = DummyPipChecker("path1", "path2", "path3")
+    patched = patches(
+        ("APipChecker.path", dict(new_callable=PropertyMock)),
+        "APipChecker.dir_matches",
+        prefix="envoy.dependency.pip_check.abstract")
+    dirs = [MagicMock() for i in range(0, 5)]
+    expected = [d for i, d in enumerate(dirs) if i in matches]
+
+    class Matcher:
+        counter = 0
+
+        def match_dirs(self, path):
+            _matches = self.counter in matches
+            self.counter += 1
+            return _matches
+
+    matcher = Matcher()
+
+    with patched as (m_path, m_matches):
+        m_matches.side_effect = matcher.match_dirs
+        m_path.return_value.glob.return_value = dirs
+
         assert (
             checker.requirements_dirs
             == {f"/{f.parent.relative_to.return_value}"
                 for f in expected})
+
+    assert (
+        m_matches.call_args_list
+        == [[(d, ), {}] for d in dirs])
 
     for exp in expected:
         assert (
@@ -166,7 +176,6 @@ def test_abstract_pip_checker_check_dependabot(patches, requirements):
             == [(config & dirs, ), {}])
     else:
         assert not m_success.called
-
     if config - dirs:
         assert (
             [(config - dirs,
@@ -221,3 +230,43 @@ def test_abstract_pip_checker_dependabot_errors(patches):
         list(list(c) for c in list(m_error.call_args_list))
         == [[('dependabot', [f'ERROR MESSAGE: {x}']), {}]
             for x in sorted(errors)])
+
+
+@pytest.mark.parametrize("name_matches", [True, False])
+@pytest.mark.parametrize("dir_ignored", [True, False])
+def test_abstract_pip_checker_dir_matches(patches, name_matches, dir_ignored):
+    checker = DummyPipChecker("path1", "path2", "path3")
+    patched = patches(
+        ("APipChecker.ignored_dirs",
+         dict(new_callable=PropertyMock)),
+        ("APipChecker.path",
+         dict(new_callable=PropertyMock)),
+        ("APipChecker.requirements_filename",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.pip_check.abstract")
+    path = MagicMock()
+    path.name = "PATH_NAME"
+
+    with patched as (m_ignored, m_path, m_filename):
+        if name_matches:
+            m_filename.return_value = "PATH_NAME"
+        m_ignored.return_value.match.return_value = (
+            True
+            if dir_ignored
+            else False)
+
+        assert (
+            checker.dir_matches(path)
+            == (name_matches and not dir_ignored))
+
+    if not name_matches:
+        assert not m_ignored.called
+        assert not path.parent.relative_to.called
+        assert not m_path.called
+        return
+    assert (
+        m_ignored.return_value.match.call_args
+        == [(f"/{path.parent.relative_to.return_value}", ), {}])
+    assert (
+        path.parent.relative_to.call_args
+        == [(m_path.return_value, ), {}])
