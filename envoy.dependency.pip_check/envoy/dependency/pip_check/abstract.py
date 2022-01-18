@@ -105,6 +105,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
     def dir_matches(self, path: pathlib.Path) -> bool:
         """For given file path, check if its a requirements file and whether
         its parent directory is excluded."""
-        return (path.name == self.requirements_filename and
-            not self.ignored_dirs.match(
-                f"/{path.parent.relative_to(self.path)}"))
+        return (
+            path.name == self.requirements_filename and
+            not self.ignored_dirs.match
+            (f"/{path.parent.relative_to(self.path)}"))

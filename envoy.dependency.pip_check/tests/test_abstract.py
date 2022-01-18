@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
-import re
 
 from envoy.dependency import pip_check
 
@@ -74,13 +73,6 @@ def test_abstract_pip_checker_dependabot_config(patches, isdict):
     assert (
         list(m_utils.from_yaml.call_args)
         == [(m_path.return_value.joinpath.return_value,), {}])
-
-
-def test_abstract_pip_checker_ignored_dirs():
-    checker = DummyPipChecker("path1", "path2", "path3")
-    assert checker.ignored_dirs == re.compile(
-        "|".join(pip_check.abstract.IGNORED_DIRS))
-    assert "ignored_dirs" in checker.__dict__
 
 
 def test_abstract_pip_checker_path(patches):
