@@ -110,11 +110,11 @@ pypi: https://pypi.org/project/envoy.code_format.python_check
 ---
 
 
-#### [envoy.dependency.cve_scan](envoy.dependency.cve_scan)
+#### [envoy.dependency.check](envoy.dependency.check)
 
-version: 0.0.5.dev0
+version: 0.0.1.dev0
 
-pypi: https://pypi.org/project/envoy.dependency.cve_scan
+pypi: https://pypi.org/project/envoy.dependency.check
 
 ##### requirements:
 
