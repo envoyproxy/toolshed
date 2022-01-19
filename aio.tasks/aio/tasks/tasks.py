@@ -377,9 +377,9 @@ class concurrent:  # noqa: N801
     def should_error(self, result: Any) -> bool:
         """Check a result type and whether it should raise an error."""
         return (
-            isinstance(result, ConcurrentIteratorError)
-            or (isinstance(result, ConcurrentError)
-                and not self.yield_exceptions))
+            not self.yield_exceptions
+            and (isinstance(result, ConcurrentIteratorError)
+                 or isinstance(result, ConcurrentError)))
 
     async def submit(self) -> None:
         """Process the iterator of coroutines as a submission queue."""
@@ -440,7 +440,8 @@ class concurrent:  # noqa: N801
 
 async def inflate(
         iterable: Iterable,
-        cb: Callable[[Any], Iterable[Awaitable]]) -> AsyncIterable[Any]:
+        cb: Callable[[Any], Iterable[Awaitable]],
+        yield_exceptions: bool = True) -> AsyncIterable[Any]:
     """Inflate async data for an iterable of objects.
 
     The provided callback function should return an iterable of awaitables.
@@ -461,10 +462,14 @@ async def inflate(
     ```
     """
     things = concurrent(
-        asyncio.gather(
+        (asyncio.gather(
             asyncio.sleep(0, result=thing),
             *cb(thing))
-        for thing
-        in iterable)
+         for thing
+         in iterable),
+        yield_exceptions=yield_exceptions)
     async for thing in things:
-        yield thing[0]
+        if yield_exceptions and isinstance(thing, Exception):
+            yield thing
+        else:
+            yield thing[0]
