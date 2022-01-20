@@ -1,6 +1,6 @@
 
 from functools import cached_property
-from typing import List, Type
+from typing import List, Optional, Type
 
 import abstracts
 
@@ -48,11 +48,23 @@ class DependencyCVEs:
 
 @abstracts.implementer(check.ADependency)
 class Dependency:
+
+    @property
+    def release_class(self) -> Type[check.ADependencyGithubRelease]:
+        return DependencyGithubRelease
+
+
+@abstracts.implementer(check.ADependencyGithubRelease)
+class DependencyGithubRelease:
     pass
 
 
 @abstracts.implementer(check.ADependencyChecker)
 class DependencyChecker:
+
+    @property
+    def access_token(self) -> Optional[str]:
+        return super().access_token
 
     @property
     def cves_class(self) -> Type[check.ADependencyCVEs]:

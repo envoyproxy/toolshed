@@ -6,6 +6,7 @@ from .cves import (
     ADependencyCVEs,
     ADependencyCVEVersionMatcher)
 from .dependency import ADependency
+from .release import ADependencyGithubRelease
 
 
 __all__ = (
@@ -14,4 +15,5 @@ __all__ = (
     "ADependencyCPE",
     "ADependencyCVE",
     "ADependencyCVEs",
-    "ADependencyCVEVersionMatcher")
+    "ADependencyCVEVersionMatcher",
+    "ADependencyGithubRelease")

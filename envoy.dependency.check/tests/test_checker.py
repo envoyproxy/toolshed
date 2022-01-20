@@ -25,6 +25,19 @@ def test_checker_checker_constructor(patches):
     assert "dependency_class" not in checker.__dict__
 
 
+def test_checker_checker_access_token(patches):
+    checker = check.DependencyChecker()
+    patched = patches(
+        ("check.ADependencyChecker.access_token",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.checker")
+
+    with patched as (m_super, ):
+        assert checker.access_token == m_super.return_value
+
+    assert "access_token" not in checker.__dict__
+
+
 def test_checker_checker_dependency_metadata(patches):
     checker = check.DependencyChecker()
     patched = patches(
@@ -51,6 +64,23 @@ def test_checker_dependency_constructor(patches):
     assert (
         m_super.call_args
         == [("ID", "METADATA", "GITHUB"), {}])
+    assert dependency.release_class == check.DependencyGithubRelease
+    assert "release_class" not in dependency.__dict__
+
+
+def test_checker_release_constructor(patches):
+    patched = patches(
+        "check.ADependencyGithubRelease.__init__",
+        prefix="envoy.dependency.check.checker")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        checker = check.DependencyGithubRelease("REPO", "VERSION")
+
+    assert isinstance(checker, check.ADependencyGithubRelease)
+    assert (
+        m_super.call_args
+        == [("REPO", "VERSION"), {}])
 
 
 @pytest.mark.parametrize("config", [None, "CONFIG"])

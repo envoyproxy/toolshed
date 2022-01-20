@@ -3,6 +3,7 @@ pytooling_library(
     "envoy.dependency.check",
     dependencies=[
         "//deps:abstracts",
+        "//deps:aio.api.github",
         "//deps:aio.core",
         "//deps:aio.run.checker",
         "//deps:envoy.base.utils",
@@ -19,6 +20,7 @@ pytooling_library(
         "abstract/cves/cves.py",
         "abstract/cves/version_matcher.py",
         "abstract/dependency.py",
+        "abstract/release.py",
         "checker.py",
         "cmd.py",
         "exceptions.py",
