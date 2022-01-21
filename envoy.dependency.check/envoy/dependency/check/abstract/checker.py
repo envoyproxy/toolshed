@@ -26,7 +26,7 @@ class ADependencyChecker(
         metaclass=abstracts.Abstraction):
     """Dependency checker."""
 
-    checks = ("cves", "release_dates")
+    checks = ("cves", "release_dates", "releases")
 
     @property
     @abc.abstractmethod
@@ -54,6 +54,11 @@ class ADependencyChecker(
         raise NotImplementedError
 
     @cached_property
+    def dep_ids(self) -> Tuple[str, ...]:
+        """Tuple of dependency ids."""
+        return tuple(dep.id for dep in self.dependencies)
+
+    @cached_property
     def dependencies(self) -> Tuple["abstract.ADependency", ...]:
         """Tuple of dependencies."""
         deps = []
@@ -79,6 +84,7 @@ class ADependencyChecker(
         disabled = {}
         if not self.access_token:
             disabled["release_dates"] = "No Github access token supplied"
+            disabled["releases"] = "No Github access token supplied"
         return disabled
 
     @cached_property
@@ -130,6 +136,11 @@ class ADependencyChecker(
         for dep in self.github_dependencies:
             await self.dep_date_check(dep)
 
+    async def check_releases(self) -> None:
+        """Check dependencies for new releases."""
+        for dep in self.github_dependencies:
+            await self.dep_release_check(dep)
+
     async def dep_cve_check(
             self,
             dep: "abstract.ADependency") -> None:
@@ -164,6 +175,31 @@ class ADependencyChecker(
                 "release_dates",
                 [f"Date matches ({dep.release_date}): {dep.id}"])
 
+    async def dep_release_check(
+            self,
+            dep: "abstract.ADependency") -> None:
+        """Check releases for dependency."""
+        newer_release = await dep.newer_release
+        if newer_release:
+            self.warn(
+                "releases",
+                [f"Newer release ({newer_release.tag_name}): {dep.id}\n"
+                 f"{dep.release_date} "
+                 f"{dep.github_version_name}\n"
+                 f"{await newer_release.date} "
+                 f"{newer_release.tag_name} "])
+        elif await dep.has_recent_commits:
+            self.warn(
+                "releases",
+                [f"Recent commits ({await dep.recent_commits}): {dep.id}\n"
+                 f"There have been {await dep.recent_commits} commits since "
+                 f"{dep.github_version_name} landed on "
+                 f"{dep.release_date}"])
+        else:
+            self.succeed(
+                "releases",
+                [f"Up-to-date ({dep.github_version_name}): {dep.id}"])
+
     async def on_checks_complete(self) -> int:
         await self.session.close()
         return await super().on_checks_complete()
@@ -177,6 +213,7 @@ class ADependencyChecker(
 
     @checker.preload(
         when=["release_dates"],
+        unless=["releases"],
         catches=[ConcurrentError, gidgethub.GitHubException])
     async def preload_release_dates(self) -> None:
         preloader = inflate(
@@ -185,3 +222,16 @@ class ADependencyChecker(
                 d.release.date, ))
         async for dep in preloader:
             self.log.debug(f"Preloaded release date: {dep.id}")
+
+    @checker.preload(
+        when=["releases"],
+        blocks=["release_dates"],
+        catches=[ConcurrentError, gidgethub.GitHubException])
+    async def preload_releases(self) -> None:
+        preloader = inflate(
+            self.github_dependencies,
+            lambda d: (
+                d.newer_release,
+                d.recent_commits))
+        async for dep in preloader:
+            self.log.debug(f"Preloaded release data: {dep.id}")
