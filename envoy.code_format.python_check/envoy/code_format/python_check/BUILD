@@ -4,7 +4,8 @@ pytooling_library(
     dependencies=[
         "//deps:abstracts",
         "//deps:aio.core",
-        "//deps:envoy.base.checker",
+        "//aio.run.checker/aio/run/checker/__init__.py",
+        # "//deps:envoy.base.checker",
         "//deps:envoy.base.utils",
     ],
     tags=["abstract-types"],

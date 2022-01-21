@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, PropertyMock
 
 import abstracts
 
-from envoy.base.runner import (
+from aio.run.runner import (
     AsyncRunner, AAsyncRunnerWithCommands)
 
 
@@ -59,7 +59,7 @@ def test_async_commandrunner_command(patches):
          dict(new_callable=PropertyMock)),
         ("AAsyncRunnerWithCommands.commands",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.runner.abstract")
+        prefix="aio.run.runner.abstract")
 
     with patched as (m_args, m_commands):
         assert (
@@ -87,7 +87,7 @@ async def test_async_commandrunner_run(patches):
     patched = patches(
         ("AAsyncRunnerWithCommands.command",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.runner.abstract")
+        prefix="aio.run.runner.abstract")
 
     with patched as (m_cmd, ):
         cmd_run = AsyncMock()

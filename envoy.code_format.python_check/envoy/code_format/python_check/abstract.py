@@ -14,8 +14,9 @@ import abstracts
 
 from aio.core.subprocess import run
 from aio.core.tasks import concurrent
+from aio.run import checker
 
-from envoy.base import checker, utils
+from envoy.base import utils
 
 
 FLAKE8_CONFIG = '.flake8'
@@ -25,7 +26,7 @@ YAPF_CONFIG = '.style.yapf'
 #      - isort
 
 
-class APythonChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
+class APythonChecker(checker.Checker, metaclass=abstracts.Abstraction):
     checks = ("flake8", "yapf")
 
     @property
