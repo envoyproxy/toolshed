@@ -23,6 +23,8 @@ def test_checker_checker_constructor(patches):
     assert "cves_class" not in checker.__dict__
     assert checker.dependency_class == check.Dependency
     assert "dependency_class" not in checker.__dict__
+    assert checker.issues_class == check.GithubDependencyIssues
+    assert "issues_class" not in checker.__dict__
 
 
 def test_checker_checker_access_token(patches):
@@ -81,6 +83,38 @@ def test_checker_release_constructor(patches):
     assert (
         m_super.call_args
         == [("REPO", "VERSION"), {}])
+
+
+def test_checker_issue_constructor(patches):
+    patched = patches(
+        "check.AGithubDependencyIssue.__init__",
+        prefix="envoy.dependency.check.checker")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        issue = check.GithubDependencyIssue("ISSUES", "ISSUE")
+
+    assert isinstance(issue, check.AGithubDependencyIssue)
+    assert (
+        m_super.call_args
+        == [("ISSUES", "ISSUE"), {}])
+
+
+def test_checker_issues_constructor(patches):
+    patched = patches(
+        "check.AGithubDependencyIssues.__init__",
+        prefix="envoy.dependency.check.checker")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        issues = check.GithubDependencyIssues("GITHUB")
+
+    assert isinstance(issues, check.AGithubDependencyIssues)
+    assert (
+        m_super.call_args
+        == [("GITHUB", ), {}])
+    assert issues.issue_class == check.GithubDependencyIssue
+    assert "issue_class" not in issues.__dict__
 
 
 @pytest.mark.parametrize("config", [None, "CONFIG"])

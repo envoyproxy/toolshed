@@ -26,7 +26,7 @@ class ADependencyChecker(
         metaclass=abstracts.Abstraction):
     """Dependency checker."""
 
-    checks = ("cves", "release_dates", "releases")
+    checks = ("cves", "release_dates", "release_issues", "releases")
 
     @property
     @abc.abstractmethod
@@ -84,6 +84,7 @@ class ADependencyChecker(
         disabled = {}
         if not self.access_token:
             disabled["release_dates"] = "No Github access token supplied"
+            disabled["release_issues"] = "No Github access token supplied"
             disabled["releases"] = "No Github access token supplied"
         return disabled
 
@@ -111,6 +112,17 @@ class ADependencyChecker(
                 deps.append(dep)
         return tuple(deps)
 
+    @cached_property
+    def issues(self) -> "abstract.AGithubDependencyIssues":
+        """Dependency issues."""
+        return self.issues_class(self.github)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def issues_class(self) -> Type["abstract.AGithubDependencyIssues"]:
+        """Dependency issues class."""
+        raise NotImplementedError
+
     @property
     def repository_locations_path(self) -> pathlib.Path:
         return pathlib.Path(self.args.repository_locations)
@@ -135,6 +147,14 @@ class ADependencyChecker(
         """Check recorded dates match for dependencies."""
         for dep in self.github_dependencies:
             await self.dep_date_check(dep)
+
+    async def check_release_issues(self) -> None:
+        """Check dependency issues."""
+        await self.release_issues_labels_check()
+        for dep in self.github_dependencies:
+            await self.dep_release_issue_check(dep)
+        await self.release_issues_missing_dep_check()
+        await self.release_issues_duplicate_check()
 
     async def check_releases(self) -> None:
         """Check dependencies for new releases."""
@@ -175,6 +195,47 @@ class ADependencyChecker(
                 "release_dates",
                 [f"Date matches ({dep.release_date}): {dep.id}"])
 
+    async def dep_release_issue_check(
+            self,
+            dep: "abstract.ADependency") -> None:
+        """Check issues for dependency."""
+        issue = (await self.issues.dep_issues).get(dep.id)
+        newer_release = await dep.newer_release
+        if not newer_release:
+            if issue:
+                # There is an open issue, but the dep is already
+                # up-to-date.
+                self.warn(
+                    "release_issues",
+                    [f"Stale issue: {dep.id} #{issue.number}"])
+                if self.fix:
+                    await self._dep_release_issue_close_stale(issue, dep)
+            else:
+                # No issue required
+                self.succeed(
+                    "release_issues",
+                    [f"No issue required: {dep.id}"])
+            return
+        if issue:
+            if issue.version == (await dep.newer_release).version:
+                # Required issue exists
+                self.succeed(
+                    "release_issues",
+                    [f"Issue exists (#{issue.number}): {dep.id}"])
+                return
+            # Existing issue is showing incorrect version
+            self.warn(
+                "release_issues",
+                [f"Out-of-date issue (#{issue.number}): {dep.id} "
+                 f"({issue.version} -> {newer_release.version})"])
+        else:
+            # Issue is required to be added
+            self.warn(
+                "release_issues",
+                [f"Missing issue: {dep.id} ({newer_release.version})"])
+        if self.fix:
+            await self._dep_release_issue_create(issue, dep)
+
     async def dep_release_check(
             self,
             dep: "abstract.ADependency") -> None:
@@ -200,6 +261,54 @@ class ADependencyChecker(
                 "releases",
                 [f"Up-to-date ({dep.github_version_name}): {dep.id}"])
 
+    async def release_issues_duplicate_check(self) -> None:
+        """Check for duplicate issues for dependencies."""
+        duplicates = False
+        async for issue in self.issues.duplicate_issues:
+            duplicates = True
+            self.warn(
+                "release_issues",
+                [f"Duplicate issue for dependency (#{issue.number}): "
+                 f"{issue.dep}"])
+            if self.fix:
+                await self._release_issue_close_duplicate(issue)
+        if not duplicates:
+            self.succeed(
+                "release_issues",
+                ["No duplicate issues found."])
+
+    async def release_issues_labels_check(self) -> None:
+        """Check expected labels are present."""
+        missing = False
+        for label in await self.issues.missing_labels:
+            missing = True
+            # TODO: make this a warning if `fix` and fix it
+            self.error(
+                "release_issues",
+                [f"Missing label: {label}"])
+        if not missing:
+            self.succeed(
+                "release_issues",
+                [f"All ({len(self.issues.labels)}) "
+                 "required labels are available."])
+
+    async def release_issues_missing_dep_check(self) -> None:
+        """Check for missing dependencies for issues."""
+        closed = False
+        issues = await self.issues.open_issues
+        for issue in issues:
+            if issue.dep not in self.dep_ids:
+                closed = True
+                self.warn(
+                    "release_issues",
+                    [f"Missing dependency (#{issue.number}): {issue.dep}"])
+                if self.fix:
+                    await self._release_issue_close_missing_dep(issue)
+        if not closed:
+            self.succeed(
+                "release_issues",
+                [f"All ({len(issues)}) issues have current dependencies."])
+
     async def on_checks_complete(self) -> int:
         await self.session.close()
         return await super().on_checks_complete()
@@ -213,7 +322,7 @@ class ADependencyChecker(
 
     @checker.preload(
         when=["release_dates"],
-        unless=["releases"],
+        unless=["releases", "release_issues"],
         catches=[ConcurrentError, gidgethub.GitHubException])
     async def preload_release_dates(self) -> None:
         preloader = inflate(
@@ -224,7 +333,15 @@ class ADependencyChecker(
             self.log.debug(f"Preloaded release date: {dep.id}")
 
     @checker.preload(
-        when=["releases"],
+        when=["release_issues"],
+        blocks=["release_dates"],
+        catches=[gidgethub.GitHubException])
+    async def preload_release_issues(self) -> None:
+        await self.issues.missing_labels
+        await self.issues.dep_issues
+
+    @checker.preload(
+        when=["releases", "release_issues"],
         blocks=["release_dates"],
         catches=[ConcurrentError, gidgethub.GitHubException])
     async def preload_releases(self) -> None:
@@ -235,3 +352,53 @@ class ADependencyChecker(
                 d.recent_commits))
         async for dep in preloader:
             self.log.debug(f"Preloaded release data: {dep.id}")
+
+    async def _dep_release_issue_close_stale(
+            self,
+            issue: "abstract.AGithubDependencyIssue",
+            dep: "abstract.ADependency") -> None:
+        await issue.close()
+        self.log.notice(
+            f"Closed stale issue (#{issue.number}): {dep.id}\n"
+            f"{issue.title}\n{issue.body}")
+
+    async def _dep_release_issue_create(
+            self,
+            issue: "abstract.AGithubDependencyIssue",
+            dep: "abstract.ADependency") -> None:
+        if await self.issues.missing_labels:
+            self.error(
+                "release_issues",
+                [f"Unable to create issue for {dep.id}: missing labels"])
+            return
+        new_issue = await self.issues.create(dep)
+        self.log.notice(
+            f"Created issue (#{new_issue.number}): "
+            f"{dep.id} {new_issue.version}\n"
+            f"{new_issue.title}\n{new_issue.body}")
+        if not issue:
+            return
+        await new_issue.close_old(issue, dep)
+        self.log.notice(
+            f"Closed old issue (#{issue.number}): "
+            f"{dep.id} {issue.version}\n"
+            f"{issue.title}\n{issue.body}")
+
+    async def _release_issue_close_duplicate(
+            self,
+            issue: "abstract.AGithubDependencyIssue") -> None:
+        current_issue = (await self.issues.dep_issues)[issue.dep]
+        await current_issue.close_duplicate(issue)
+        self.log.notice(
+            f"Closed duplicate issue (#{issue.number}): {issue.dep}\n"
+            f" {issue.title}\n"
+            f"current issue #({current_issue.number}):\n"
+            f" {current_issue.title}")
+
+    async def _release_issue_close_missing_dep(
+            self,
+            issue: "abstract.AGithubDependencyIssue") -> None:
+        """Close an issue that has no current dependency."""
+        await issue.close()
+        self.log.notice(
+            f"Closed issue with no current dependency (#{issue.number})")

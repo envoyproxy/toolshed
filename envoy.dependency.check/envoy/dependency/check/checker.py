@@ -59,6 +59,19 @@ class DependencyGithubRelease:
     pass
 
 
+@abstracts.implementer(check.AGithubDependencyIssue)
+class GithubDependencyIssue:
+    pass
+
+
+@abstracts.implementer(check.AGithubDependencyIssues)
+class GithubDependencyIssues:
+
+    @property
+    def issue_class(self) -> Type[GithubDependencyIssue]:
+        return GithubDependencyIssue
+
+
 @abstracts.implementer(check.ADependencyChecker)
 class DependencyChecker:
 
@@ -77,3 +90,7 @@ class DependencyChecker:
     @cached_property
     def dependency_metadata(self) -> check.typing.DependenciesDict:
         return super().dependency_metadata
+
+    @property
+    def issues_class(self) -> Type[check.AGithubDependencyIssues]:
+        return GithubDependencyIssues

@@ -34,6 +34,10 @@ class DummyDependencyChecker:
     def dependency_metadata(self):
         return super().dependency_metadata
 
+    @property
+    def issues_class(self):
+        return super().issues_class
+
 
 def test_checker_constructor():
 
@@ -42,10 +46,12 @@ def test_checker_constructor():
 
     checker = DummyDependencyChecker()
     assert isinstance(checker, Checker)
-    assert checker.checks == ("cves", "release_dates", "releases")
+    assert (
+        checker.checks
+        == ("cves", "release_dates", "release_issues", "releases"))
 
     iface_props = [
-        "dependency_class"]
+        "dependency_class", "issues_class"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
@@ -211,6 +217,7 @@ def test_checker_disabled_checks(patches, token):
         prefix="envoy.dependency.check.abstract.checker")
     expected = (
         dict(release_dates="No Github access token supplied",
+             release_issues="No Github access token supplied",
              releases="No Github access token supplied")
         if not token
         else {})
@@ -316,6 +323,24 @@ def test_checker_github_dependencies(
     assert "github_dependencies" in checker.__dict__
 
 
+def test_checker_issues(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.github",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.issues_class",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_github, m_issues):
+        assert checker.issues == m_issues.return_value.return_value
+
+    assert (
+        m_issues.return_value.call_args
+        == [(m_github.return_value, ), {}])
+    assert "issues" in checker.__dict__
+
+
 def test_checker_repository_locations_path(patches):
     checker = DummyDependencyChecker()
     patched = patches(
@@ -416,6 +441,36 @@ async def test_checker_check_release_dates(patches):
 
     assert (
         m_check.call_args_list
+        == [[(mock,), {}] for mock in deps])
+
+
+async def test_checker_check_release_issues(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.github_dependencies",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.dep_release_issue_check",
+        "ADependencyChecker.release_issues_missing_dep_check",
+        "ADependencyChecker.release_issues_duplicate_check",
+        "ADependencyChecker.release_issues_labels_check",
+        prefix="envoy.dependency.check.abstract.checker")
+    deps = [MagicMock() for i in range(0, 5)]
+
+    with patched as (m_deps, m_dep_check, m_issue_check, m_dupes, m_labels):
+        m_deps.return_value = deps
+        assert not await checker.check_release_issues()
+
+    assert (
+        m_labels.call_args
+        == [(), {}])
+    assert (
+        m_issue_check.call_args
+        == [(), {}])
+    assert (
+        m_dupes.call_args
+        == [(), {}])
+    assert (
+        m_dep_check.call_args_list
         == [[(mock,), {}] for mock in deps])
 
 
@@ -548,6 +603,106 @@ async def test_checker_dep_date_check(patches, gh_date, mismatch):
             {}])
 
 
+@pytest.mark.parametrize("issue", [None, "ISSUE"])
+@pytest.mark.parametrize("newer_release", [True, False])
+@pytest.mark.parametrize("fix", [True, False])
+@pytest.mark.parametrize("version_matches", [True, False])
+async def test_checker_dep_issue_check(
+        patches, issue, newer_release, fix, version_matches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.fix",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.succeed",
+        "ADependencyChecker.warn",
+        "ADependencyChecker._dep_release_issue_close_stale",
+        "ADependencyChecker._dep_release_issue_create",
+        prefix="envoy.dependency.check.abstract.checker")
+
+    class DummyDep:
+        id = "DUMMY_DEP"
+
+        @async_property
+        async def newer_release(self):
+            if newer_release:
+                mock_release = MagicMock()
+                mock_release.version = "NEWER_RELEASE_NAME"
+                return mock_release
+
+    dep = DummyDep()
+    issues_dict = MagicMock()
+
+    if issue:
+        mock_issue = MagicMock()
+        if version_matches:
+            mock_issue.version = "NEWER_RELEASE_NAME"
+        issues_dict.get.return_value = mock_issue
+    else:
+        mock_issue = None
+        issues_dict.get.return_value = None
+
+    with patched as patchy:
+        (m_issue, m_manage,
+         m_succeed, m_warn, m_close, m_create) = patchy
+        dep_issues = AsyncMock(return_value=issues_dict)
+        m_issue.return_value.dep_issues = dep_issues()
+        m_manage.return_value = fix
+        assert not await checker.dep_release_issue_check(dep)
+
+    if not newer_release:
+        assert not m_create.called
+        if issue:
+            assert (
+                m_warn.call_args_list
+                == [[("release_issues",
+                    [f"Stale issue: DUMMY_DEP #{mock_issue.number}"]),
+                    {}]])
+            assert not m_succeed.called
+            if fix:
+                assert (
+                    m_close.call_args
+                    == [(mock_issue, dep), {}])
+            else:
+                assert not m_close.called
+        else:
+            assert (
+                m_succeed.call_args_list
+                == [[("release_issues",
+                      ["No issue required: DUMMY_DEP"]),
+                     {}]])
+            assert not m_warn.called
+            assert not m_close.called
+            assert not m_manage.called
+        return
+    assert not m_close.called
+    if issue:
+        if version_matches:
+            assert (
+                m_succeed.call_args_list
+                == [[("release_issues",
+                      [f"Issue exists (#{mock_issue.number}): DUMMY_DEP"]),
+                    {}]])
+            assert not m_warn.called
+            assert not m_manage.called
+            assert not m_create.called
+            return
+        assert (
+            m_warn.call_args_list
+            == [[("release_issues",
+                  [f"Out-of-date issue (#{mock_issue.number}): "
+                   f"DUMMY_DEP ({mock_issue.version} -> NEWER_RELEASE_NAME)"]),
+                 {}]])
+    assert not m_succeed.called
+    if fix:
+        assert (
+            m_create.call_args
+            == [(mock_issue, dep), {}])
+    else:
+        assert not m_create.called
+
+
 @pytest.mark.parametrize("newer_release", [True, False])
 @pytest.mark.parametrize("recent_commits", [True, False])
 async def test_checker_dep_release_check(
@@ -630,6 +785,93 @@ async def test_checker_on_checks_complete(patches):
     assert (
         m_session.return_value.close.call_args
         == [(), {}])
+
+
+@pytest.mark.parametrize("fix", [True, False])
+@pytest.mark.parametrize("dupes", [0, 1, 3, 5])
+async def test_checker_release_issues_duplicate_check(patches, fix, dupes):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.fix",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.warn",
+        "ADependencyChecker.succeed",
+        "ADependencyChecker._release_issue_close_duplicate",
+        prefix="envoy.dependency.check.abstract.checker")
+    mock_dupes = []
+
+    for dupe in range(0, dupes):
+        mock_dupe = MagicMock()
+        mock_dupes.append(mock_dupe)
+
+    async def dupe_iter():
+        for dupe in mock_dupes:
+            yield dupe
+
+    with patched as (m_issues, m_manage, m_warn, m_succeed, m_close):
+        m_manage.return_value = fix
+        m_issues.return_value.duplicate_issues = dupe_iter()
+        assert not await checker.release_issues_duplicate_check()
+
+    assert (
+        m_warn.call_args_list
+        == [[("release_issues",
+              [f"Duplicate issue for dependency (#{issue.number}): "
+               f"{issue.dep}"]), {}]
+            for issue in mock_dupes])
+    if fix:
+        assert (
+            m_close.call_args_list
+            == [[(issue, ), {}]
+                for issue in mock_dupes])
+    else:
+        assert not m_close.called
+    if not dupes:
+        assert not m_warn.called
+        assert not m_close.called
+        assert (
+            m_succeed.call_args_list
+            == [[("release_issues",
+                ["No duplicate issues found."]),
+                {}]])
+    else:
+        assert not m_succeed.called
+
+
+@pytest.mark.parametrize(
+    "missing_labels",
+    [[],
+     [f"LABEL{i}" for i in range(0, 5)]])
+async def test_checker_release_issues_labels_check(patches, missing_labels):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.error",
+        "ADependencyChecker.succeed",
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_issues, m_error, m_succeed):
+        m_issues.return_value.missing_labels = AsyncMock(
+            return_value=missing_labels)()
+        assert not await checker.release_issues_labels_check()
+
+    assert (
+        m_error.call_args_list
+        == [[("release_issues", [f"Missing label: {label}"]), {}]
+            for label in missing_labels])
+    if not missing_labels:
+        assert not m_error.called
+        assert (
+            m_succeed.call_args_list
+            == [[("release_issues",
+                [f"All ({m_issues.return_value.labels.__len__.return_value}) "
+                 "required labels are available."]),
+                {}]])
+    else:
+        assert not m_succeed.called
 
 
 @pytest.mark.parametrize(
@@ -720,10 +962,36 @@ async def test_checker_preload_release_dates(patches, deps):
         == ('release_dates',))
     assert (
         ADependencyChecker.preload_release_dates.unless
-        == ('releases', ))
+        == ('releases', "release_issues"))
     assert (
         ADependencyChecker.preload_release_dates.catches
         == (ConcurrentError, gidgethub.GitHubException))
+
+
+async def test_checker_preload_release_issues(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_issues, ):
+        m_issues.return_value.missing_labels = AsyncMock()()
+        m_issues.return_value.dep_issues = AsyncMock()()
+        assert not await checker.preload_release_issues()
+
+    assert (
+        ADependencyChecker.preload_release_issues.when
+        == ('release_issues', ))
+    assert (
+        ADependencyChecker.preload_release_issues.blocks
+        == ('release_issues', "release_dates"))
+    assert (
+        ADependencyChecker.preload_release_issues.unless
+        == ())
+    assert (
+        ADependencyChecker.preload_release_issues.catches
+        == (gidgethub.GitHubException, ))
 
 
 @pytest.mark.parametrize(
@@ -765,13 +1033,204 @@ async def test_checker_preload_releases(patches, deps):
         assert not m_log.called
     assert (
         ADependencyChecker.preload_releases.when
-        == ('releases',))
+        == ('releases', "release_issues"))
     assert (
         ADependencyChecker.preload_releases.blocks
-        == ('releases', "release_dates"))
+        == ('releases', "release_issues", "release_dates"))
     assert (
         ADependencyChecker.preload_releases.unless
         == ())
     assert (
         ADependencyChecker.preload_releases.catches
         == (ConcurrentError, gidgethub.GitHubException))
+
+
+@pytest.mark.parametrize("fix", [True, False])
+@pytest.mark.parametrize(
+    "open_issues",
+    [[],
+     [True, False, True],
+     [False, False, False],
+     [True, True, True]])
+async def test_checker_release_issues_missing_dep_check(
+        patches, fix, open_issues):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.dep_ids",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.fix",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.warn",
+        "ADependencyChecker.succeed",
+        "ADependencyChecker._release_issue_close_missing_dep",
+        prefix="envoy.dependency.check.abstract.checker")
+    ids = []
+    mock_issues = []
+    should_fail = any(open_issues)
+
+    for issue in open_issues:
+        mock_issue = MagicMock()
+        if not issue:
+            ids.append(mock_issue.dep)
+        mock_issues.append(mock_issue)
+
+    with patched as (m_ids, m_issues, m_manage, m_warn, m_succeed, m_close):
+        m_issues.return_value.open_issues = AsyncMock(
+            return_value=mock_issues)()
+        m_ids.return_value = ids
+        m_manage.return_value = fix
+        assert not await checker.release_issues_missing_dep_check()
+
+    assert (
+        m_warn.call_args_list
+        == [[("release_issues",
+              [f"Missing dependency (#{issue.number}): {issue.dep}"]), {}]
+            for issue in mock_issues if issue.dep not in ids])
+    if fix:
+        assert (
+            m_close.call_args_list
+            == [[(issue, ), {}]
+                for issue in mock_issues if issue.dep not in ids])
+    else:
+        assert not m_close.called
+    if not should_fail:
+        assert not m_warn.called
+        assert not m_close.called
+        assert (
+            m_succeed.call_args_list
+            == [[("release_issues",
+                [f"All ({len(open_issues)}) issues have "
+                 "current dependencies."]),
+                {}]])
+    else:
+        assert not m_succeed.called
+
+
+async def test_checker__dep_release_issue_close_stale(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+    issue = AsyncMock()
+    dep = MagicMock()
+
+    with patched as (m_log, ):
+        assert not await checker._dep_release_issue_close_stale(issue, dep)
+
+    assert (
+        issue.close.call_args
+        == [(), {}])
+    assert (
+        m_log.return_value.notice.call_args
+        == [(f"Closed stale issue (#{issue.number}): {dep.id}\n"
+             f"{issue.title}\n{issue.body}", ), {}])
+
+
+@pytest.mark.parametrize("issue", [True, False])
+@pytest.mark.parametrize("missing_labels", [True, False])
+async def test_checker__dep_release_issue_create(
+        patches, issue, missing_labels):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.log",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.error",
+        prefix="envoy.dependency.check.abstract.checker")
+    issue = (
+        AsyncMock()
+        if issue
+        else None)
+    dep = MagicMock()
+
+    with patched as (m_issues, m_log, m_error):
+        m_issues.return_value.missing_labels = AsyncMock(
+            return_value=missing_labels)()
+        create = AsyncMock()
+        m_issues.return_value.create = create
+        assert not await checker._dep_release_issue_create(issue, dep)
+
+    if missing_labels:
+        assert (
+            m_error.call_args
+            == [("release_issues",
+                 [f"Unable to create issue for {dep.id}: missing labels"]),
+                {}])
+        assert not m_log.return_value.called
+        assert not create.called
+        return
+
+    assert not m_error.called
+    new_issue = create.return_value
+    assert (
+        m_log.return_value.notice.call_args_list[0]
+        == [(f"Created issue (#{new_issue.number}): "
+             f"{dep.id} {new_issue.version}\n"
+             f"{new_issue.title}\n{new_issue.body}", ), {}])
+    if not issue:
+        assert len(m_log.return_value.notice.call_args_list) == 1
+        assert not new_issue.close_old.called
+        return
+    assert len(m_log.return_value.notice.call_args_list) == 2
+    assert (
+        new_issue.close_old.call_args
+        == [(issue, dep), {}])
+    assert (
+        m_log.return_value.notice.call_args_list[1]
+        == [(f"Closed old issue (#{issue.number}): "
+             f"{dep.id} {issue.version}\n"
+             f"{issue.title}\n{issue.body}", ), {}])
+
+
+async def test_checker__release_issue_close_duplicate(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+    issue = AsyncMock()
+    issue.dep = "DEP"
+    current_issue = AsyncMock()
+    issues_dict = dict(DEP=current_issue)
+
+    with patched as (m_issues, m_log):
+        dep_issues = AsyncMock(return_value=issues_dict)
+        m_issues.return_value.dep_issues = dep_issues()
+        assert not await checker._release_issue_close_duplicate(issue)
+
+    assert (
+        current_issue.close_duplicate.call_args
+        == [(issue, ), {}])
+    assert (
+        m_log.return_value.notice.call_args
+        == [(f"Closed duplicate issue (#{issue.number}): {issue.dep}\n"
+             f" {issue.title}\n"
+             f"current issue #({current_issue.number}):\n"
+             f" {current_issue.title}", ),
+            {}])
+
+
+async def test_checker__release_issue_close_missing_dep(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+    issue = AsyncMock()
+
+    with patched as (m_log, ):
+        assert not await checker._release_issue_close_missing_dep(issue)
+
+    assert (
+        issue.close.call_args
+        == [(), {}])
+    assert (
+        m_log.return_value.notice.call_args
+        == [(f"Closed issue with no current dependency (#{issue.number})", ),
+            {}])
