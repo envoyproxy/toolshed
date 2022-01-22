@@ -177,7 +177,7 @@ pypi: https://pypi.org/project/envoy.distribution.release
 
 #### [envoy.distribution.repo](envoy.distribution.repo)
 
-version: 0.0.4
+version: 0.0.5.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.repo
 
