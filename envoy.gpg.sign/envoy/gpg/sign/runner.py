@@ -6,7 +6,9 @@ import tempfile
 from functools import cached_property
 from typing import Optional, Type, Union
 
-from envoy.base import runner, utils
+from aio.run import runner
+
+from envoy.base import utils
 from envoy.gpg import identity
 
 from .exceptions import SigningError
@@ -145,7 +147,7 @@ class PackageSigningRunner(runner.Runner):
         with tarfile.open(self.tar, utils.tar_mode(self.tar, mode="w")) as tar:
             tar.add(path, arcname=".")
 
-    def cleanup(self):
+    async def cleanup(self):
         if "gnupg_tempdir" in self.__dict__:
             self.gnupg_tempdir.cleanup()
             del self.__dict__["gnupg_tempdir"]
@@ -155,7 +157,7 @@ class PackageSigningRunner(runner.Runner):
 
     @runner.catches((identity.GPGError, SigningError))
     @runner.cleansup
-    def run(self) -> None:
+    async def run(self) -> None:
         if self.extract:
             self.sign_tarball()
         else:
