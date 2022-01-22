@@ -5,7 +5,7 @@ from .checker import PipChecker
 
 
 def main(*args: str) -> int:
-    return PipChecker(*args).run()
+    return PipChecker(*args)()
 
 
 def cmd():
