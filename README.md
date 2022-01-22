@@ -144,14 +144,14 @@ pypi: https://pypi.org/project/envoy.dependency.cve_scan
 
 #### [envoy.dependency.pip_check](envoy.dependency.pip_check)
 
-version: 0.0.9.dev0
+version: 0.1.0
 
 pypi: https://pypi.org/project/envoy.dependency.pip_check
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.1.2
+- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.2.1
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
 
 ---

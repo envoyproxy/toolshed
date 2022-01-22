@@ -7,7 +7,9 @@ from typing import Iterable, Set
 
 import abstracts
 
-from envoy.base import checker, utils
+from aio.run import checker
+
+from envoy.base import utils
 
 from .exceptions import PipConfigurationError
 
@@ -70,7 +72,7 @@ class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
     def requirements_filename(self) -> str:
         return self._requirements_filename
 
-    def check_dependabot(self) -> None:
+    async def check_dependabot(self) -> None:
         """Check that dependabot config matches requirements.txt files found in
         repo."""
         missing_dirs = self.config_requirements.difference(
