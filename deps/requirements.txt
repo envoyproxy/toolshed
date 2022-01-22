@@ -12,13 +12,13 @@ docutils~=0.16.0
 envoy.base.utils>=0.0.13
 envoy.code_format.python_check>=0.0.5
 envoy.dependency.pip_check>=0.0.5
-envoy.distribution.distrotest>=0.0.6
+envoy.distribution.distrotest>=0.0.7
 envoy.distribution.release>=0.0.5
 envoy.distribution.repo>=0.0.3
 envoy.distribution.verify>=0.0.6
 envoy.docker.utils>=0.0.2
 envoy.github.abstract>=0.0.20
-envoy.github.release>=0.0.9
+envoy.github.release>=0.0.10
 envoy.gpg.identity>=0.0.6
 envoy.gpg.sign>=0.0.9
 flake8

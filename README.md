@@ -146,7 +146,7 @@ pypi: https://pypi.org/project/envoy.dependency.pip_check
 
 #### [envoy.distribution.distrotest](envoy.distribution.distrotest)
 
-version: 0.0.7
+version: 0.0.8.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.distrotest
 
@@ -162,7 +162,7 @@ pypi: https://pypi.org/project/envoy.distribution.distrotest
 
 #### [envoy.distribution.release](envoy.distribution.release)
 
-version: 0.0.6.dev0
+version: 0.0.6
 
 pypi: https://pypi.org/project/envoy.distribution.release
 
@@ -170,7 +170,7 @@ pypi: https://pypi.org/project/envoy.distribution.release
 
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
 - [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.20
-- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.9
+- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.10
 
 ---
 
@@ -195,14 +195,14 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 
 #### [envoy.distribution.verify](envoy.distribution.verify)
 
-version: 0.0.8.dev0
+version: 0.0.8
 
 pypi: https://pypi.org/project/envoy.distribution.verify
 
 ##### requirements:
 
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.2.1
-- [envoy.distribution.distrotest](https://pypi.org/project/envoy.distribution.distrotest) >=0.0.6
+- [envoy.distribution.distrotest](https://pypi.org/project/envoy.distribution.distrotest) >=0.0.7
 
 ---
 
@@ -264,7 +264,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 
 #### [envoy.github.release](envoy.github.release)
 
-version: 0.0.10
+version: 0.0.11.dev0
 
 pypi: https://pypi.org/project/envoy.github.release
 
