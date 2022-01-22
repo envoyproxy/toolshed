@@ -5,7 +5,7 @@ import pytest
 
 import abstracts
 
-from envoy.abstract.command import AAsyncCommand
+from aio.run.runner import ACommand
 from envoy.github.abstract.command import AGithubReleaseCommand
 
 
@@ -18,7 +18,7 @@ class DummyGithubReleaseCommand:
 
 async def test_release_command_constructor():
     command = DummyGithubReleaseCommand("CONTEXT")
-    assert isinstance(command, AAsyncCommand)
+    assert isinstance(command, ACommand)
 
     assert command.runner == "CONTEXT"
     assert "runner" not in command.__dict__
@@ -70,7 +70,7 @@ def test_release_command_manager(patches):
 def test_release_command_parser(patches):
     command = DummyGithubReleaseCommand("CONTEXT")
     patched = patches(
-        ("command.AAsyncCommand.parser",
+        ("runner.ACommand.parser",
          dict(new_callable=PropertyMock)),
         prefix="envoy.github.abstract.command")
 
