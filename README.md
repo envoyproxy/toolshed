@@ -106,7 +106,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code_format.python_check](envoy.code_format.python_check)
 
-version: 0.0.7
+version: 0.0.8.dev0
 
 pypi: https://pypi.org/project/envoy.code_format.python_check
 
@@ -144,7 +144,7 @@ pypi: https://pypi.org/project/envoy.dependency.cve_scan
 
 #### [envoy.dependency.pip_check](envoy.dependency.pip_check)
 
-version: 0.1.0
+version: 0.1.1.dev0
 
 pypi: https://pypi.org/project/envoy.dependency.pip_check
 
@@ -237,7 +237,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.0.8
+version: 0.0.9.dev0
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
