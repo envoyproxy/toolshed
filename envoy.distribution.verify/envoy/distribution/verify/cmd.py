@@ -5,7 +5,7 @@ from .checker import PackagesDistroChecker
 
 
 def main(*args: str) -> int:
-    return PackagesDistroChecker(*args).run()
+    return PackagesDistroChecker(*args)()
 
 
 def cmd():

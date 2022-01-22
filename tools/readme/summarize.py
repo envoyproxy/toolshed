@@ -11,7 +11,7 @@ import packaging.version
 
 import jinja2
 
-from envoy.base import runner
+from aio.run import runner
 
 
 PYPI_PROJECT_URL = "https://pypi.org/project"
@@ -121,7 +121,7 @@ class ReadmePackageRunner(runner.Runner):
     def package_path(self):
         return pathlib.Path(self.args.path)
 
-    def run(self):
+    async def run(self):
         package = Package(self.package_path)
         print(self.template.render(package=package))
 

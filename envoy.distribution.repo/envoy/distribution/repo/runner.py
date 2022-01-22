@@ -7,7 +7,9 @@ from typing import Optional, Tuple
 
 import abstracts
 
-from envoy.base import runner, utils
+from aio.run import runner
+
+from envoy.base import utils
 
 from .abstract import ARepoBuildingRunner
 from .exceptions import RepoError

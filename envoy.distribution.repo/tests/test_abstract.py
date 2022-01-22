@@ -5,7 +5,7 @@ import pytest
 
 import abstracts
 
-from envoy.base.runner import AsyncRunner
+from aio.run.runner import Runner
 from envoy.base import utils
 from envoy.distribution import repo
 
@@ -36,7 +36,7 @@ class DummyRepoManager:
 
 def test_repo_buildingrunner_constructor():
     runner = DummyRepoBuildingRunner()
-    assert isinstance(runner, AsyncRunner)
+    assert isinstance(runner, Runner)
 
     assert runner._repo_types == ()
     repo_types = tuple(
@@ -251,7 +251,7 @@ async def test_repo_buildingrunner_published_repos(patches):
 def test_repo_buildingrunner_add_arguments(patches):
     runner = DummyRepoBuildingRunner()
     patched = patches(
-        "runner.AsyncRunner.add_arguments",
+        "runner.Runner.add_arguments",
         ("ARepoBuildingRunner.repo_types",
          dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.repo.abstract")
@@ -277,7 +277,7 @@ def test_repo_buildingrunner_add_arguments(patches):
 async def test_repo_buildingrunner_cleanup(patches):
     runner = DummyRepoBuildingRunner()
     patched = patches(
-        "runner.AsyncRunner.cleanup",
+        "runner.Runner.cleanup",
         prefix="envoy.distribution.repo.abstract")
 
     with patched as (m_super, ):

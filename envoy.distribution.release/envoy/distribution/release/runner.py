@@ -8,8 +8,8 @@ import gidgethub.abc
 
 import abstracts
 
-from envoy.abstract.command import AAsyncCommand
-from envoy.base import runner
+from aio.run import runner
+
 from envoy.github.abstract import (
     GithubReleaseError, AGithubReleaseRunner, AGithubReleaseManager)
 from envoy.github.release import manager
@@ -21,11 +21,11 @@ class ReleaseRunner:
     fetch releases and release assets."""
 
     @cached_property
-    def command(self) -> AAsyncCommand:
+    def command(self) -> runner.ACommand:
         return super().command
 
     @cached_property
-    def commands(self) -> runner.abstract.AsyncCommandDict:
+    def commands(self) -> runner.abstract.CommandDict:
         return super().commands
 
     @cached_property

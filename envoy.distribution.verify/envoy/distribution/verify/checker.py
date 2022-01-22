@@ -6,7 +6,9 @@ from typing import Optional, Type
 
 import aiodocker
 
-from envoy.base import checker, utils
+from aio.run import checker
+
+from envoy.base import utils
 from envoy.distribution import distrotest
 
 from .exceptions import PackagesConfigurationError
@@ -15,7 +17,7 @@ from .exceptions import PackagesConfigurationError
 ENVOY_MAINTAINER = "Envoy maintainers <envoy-maintainers@googlegroups.com>"
 
 
-class PackagesDistroChecker(checker.AsyncChecker):
+class PackagesDistroChecker(checker.Checker):
     _active_distrotest = None
     checks = ("distros",)
 

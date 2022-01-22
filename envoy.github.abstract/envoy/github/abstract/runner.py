@@ -6,12 +6,13 @@ from typing import Optional, Type
 
 import abstracts
 
-from envoy.base import runner
+from aio.run import runner
+
 from .manager import AGithubReleaseManager
 
 
 class AGithubReleaseRunner(
-        runner.AAsyncRunnerWithCommands,
+        runner.ARunnerWithCommands,
         metaclass=abstracts.Abstraction):
 
     @property

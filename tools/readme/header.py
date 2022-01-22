@@ -6,7 +6,7 @@ from functools import cached_property
 
 import jinja2
 
-from envoy.base import runner
+from aio.run import runner
 
 
 class ReadmeHeaderRunner(runner.Runner):
@@ -19,7 +19,7 @@ class ReadmeHeaderRunner(runner.Runner):
         super().add_arguments(parser)
         parser.add_argument("template")
 
-    def run(self):
+    async def run(self):
         print(self.template.render())
 
 

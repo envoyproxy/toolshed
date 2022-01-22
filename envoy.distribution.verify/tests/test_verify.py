@@ -3,7 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
-from envoy.base.checker import AsyncChecker
+from aio.run.checker import Checker
+
 from envoy.distribution import distrotest, verify
 
 
@@ -15,7 +16,7 @@ class DummyDistroChecker(verify.PackagesDistroChecker):
 
 def test_checker_constructor(patches):
     checker = DummyDistroChecker("path1", "path2", "path3")
-    assert isinstance(checker, AsyncChecker)
+    assert isinstance(checker, Checker)
     assert checker._active_distrotest is None
     assert checker.checks == ("distros", )
 
@@ -447,7 +448,7 @@ async def test_checker_on_checks_complete(patches):
     patched = patches(
         "PackagesDistroChecker._cleanup_test",
         "PackagesDistroChecker._cleanup_docker",
-        "checker.BaseChecker.on_checks_complete",
+        "checker.Checker.on_checks_complete",
         prefix="envoy.distribution.verify.checker")
     order_mock = MagicMock()
 

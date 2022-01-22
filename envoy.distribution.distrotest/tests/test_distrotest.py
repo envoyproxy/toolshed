@@ -6,7 +6,8 @@ import pytest
 
 import aiodocker
 
-from envoy.base import checker
+from aio.run import checker
+
 from envoy.distribution import distrotest
 from envoy.docker import utils as docker_utils
 
@@ -877,7 +878,7 @@ def test_image_stream(patches, stream):
 # # DistroTest
 
 def test_distrotest_constructor(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     assert dtest.checker == check
@@ -934,7 +935,7 @@ def test_distrotest_config_props(patches, prop):
 
 
 def test_distrotest_config(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -946,7 +947,7 @@ def test_distrotest_config(patches):
 
 
 def test_distrotest_environment(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     installable = MagicMock()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", installable)
@@ -967,7 +968,7 @@ def test_distrotest_environment(patches):
 
 @pytest.mark.parametrize("failures", [[], ["FAIL1", "FAIL2"]])
 def test_distrotest_failed(patches, failures):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -980,7 +981,7 @@ def test_distrotest_failed(patches, failures):
 
 
 def test_distrotest_image(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1002,7 +1003,7 @@ def test_distrotest_image(patches):
 
 
 def test_distrotest_name(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1016,7 +1017,7 @@ def test_distrotest_name(patches):
 
 
 def test_distrotest_package_name(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     installable = MagicMock()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", installable)
@@ -1032,7 +1033,7 @@ def test_distrotest_package_name(patches):
 
 
 def test_distrotest_test_cmd(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     config = MagicMock()
     dtest = distrotest.DistroTest(
         check, config, "NAME", "IMAGE", "INSTALLABLE")
@@ -1043,7 +1044,7 @@ def test_distrotest_test_cmd(patches):
 
 @pytest.mark.parametrize("exists", [True, False])
 async def test_distrotest_build(patches, exists):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1076,7 +1077,7 @@ async def test_distrotest_build(patches, exists):
 
 @pytest.mark.parametrize("raises", [True, False])
 async def test_distrotest_cleanup(patches, raises):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1102,7 +1103,7 @@ async def test_distrotest_cleanup(patches, raises):
 
 
 async def test_distrotest_create(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1127,7 +1128,7 @@ async def test_distrotest_create(patches):
 @pytest.mark.parametrize("returns", [0, 1])
 @pytest.mark.parametrize("msgs", range(0, 5))
 async def test_distrotest_exec(patches, failed, returns, msgs):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1224,7 +1225,7 @@ def test_distrotest_error():
     "msg",
     ["MESSAGE", "MESSAGE\nEXTRA", "MESSAGE\nEXTRA\nMORE"])
 def test_distrotest_handle_test_error(patches, msg):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1293,7 +1294,7 @@ def test_distrotest_handle_test_error(patches, msg):
      " ERROR\nfoo",
      "OTHER\nfoo"])
 async def test_distrotest_handle_test_output(patches, start, msg):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1339,7 +1340,7 @@ async def test_distrotest_handle_test_output(patches, start, msg):
 @pytest.mark.parametrize("failed", [True, False])
 @pytest.mark.parametrize("failures", [[], ["FAIL1"], ["FAIL1", "FAIL2"]])
 def test_distrotest_log_failures(patches, failed, failures):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1365,7 +1366,7 @@ def test_distrotest_log_failures(patches, failed, failures):
 
 
 async def test_distrotest_logs():
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     container = AsyncMock()
@@ -1417,7 +1418,7 @@ async def test_distrotest_on_test_complete(patches, failed, self_failed):
 
 
 async def test_distrotest_run(patches):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1439,7 +1440,7 @@ async def test_distrotest_run(patches):
 @pytest.mark.parametrize("msg_type", [None, "MSG_TYPE"])
 @pytest.mark.parametrize("testname", [None, "TEST"])
 def test_distrotest_run_log(patches, msg_type, testname):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1470,7 +1471,7 @@ def test_distrotest_run_log(patches, msg_type, testname):
 
 @pytest.mark.parametrize("testname", [None, "TEST"])
 def test_distrotest_run_message(patches, testname):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     if testname:
@@ -1483,7 +1484,7 @@ def test_distrotest_run_message(patches, testname):
 
 @pytest.mark.parametrize("running", [True, False])
 async def test_distrotest_start(patches, running):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1538,7 +1539,7 @@ async def test_distrotest_start(patches, running):
 
 @pytest.mark.parametrize("container", [None, "CONTAINER"])
 async def test_distrotest_stop(patches, container):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(
@@ -1588,7 +1589,7 @@ async def test_distrotest_stop(patches, container):
     [None, aiodocker.exceptions.DockerError, Exception])
 async def test_distrotest__run(
         patches, build_raises, start_raises, exec_raises, stop_raises):
-    check = checker.AsyncChecker()
+    check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     patched = patches(

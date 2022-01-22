@@ -3,7 +3,7 @@ python_sources(
         "//deps:jinja2",
         "//deps:packaging",
         "//deps:setuptools",
-        "//deps:envoy.base.runner",
+        "//deps:aio.run.runner",
     ],
 )
 
