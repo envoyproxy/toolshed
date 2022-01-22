@@ -5,7 +5,7 @@ from .checker import PythonChecker
 
 
 def main(*args: str) -> int:
-    return PythonChecker(*args).run()
+    return PythonChecker(*args)()
 
 
 def cmd():

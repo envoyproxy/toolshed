@@ -2,7 +2,7 @@
 pytooling_library(
     "envoy.docs.sphinx_runner",
     dependencies=[
-        "//deps:envoy.base.runner",
+        "//deps:aio.run.runner",
         "//deps:envoy.base.utils",
         "//deps:colorama",
         "//deps:docutils",

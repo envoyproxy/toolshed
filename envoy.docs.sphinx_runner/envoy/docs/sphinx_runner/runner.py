@@ -13,7 +13,9 @@ from colorama import Fore, Style  # type:ignore
 
 from sphinx.cmd.build import main as sphinx_build  # type:ignore
 
-from envoy.base import runner, utils
+from aio.run import runner
+
+from envoy.base import utils
 
 from .exceptions import SphinxBuildError, SphinxEnvError
 
@@ -245,7 +247,7 @@ class SphinxRunner(runner.Runner):
 
     @runner.cleansup
     @runner.catches((SphinxBuildError, SphinxEnvError))
-    def run(self):
+    async def run(self):
         self.validate_args()
         os.environ["ENVOY_DOCS_BUILD_CONFIG"] = str(self.config_file)
         try:

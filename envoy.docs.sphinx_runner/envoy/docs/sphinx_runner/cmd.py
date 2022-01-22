@@ -5,7 +5,7 @@ from .runner import SphinxRunner
 
 
 def main(*args: str) -> int:
-    return SphinxRunner(*args).run()
+    return SphinxRunner(*args)()
 
 
 def cmd():
