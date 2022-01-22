@@ -4,6 +4,7 @@ pytooling_library(
     dependencies=[
         "//deps:abstracts",
         "//deps:aio.core",
+        "//deps:aio.run.runner",
         "//deps:envoy.github.abstract",
         "//deps:envoy.base.utils",
     ],

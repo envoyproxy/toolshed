@@ -12,8 +12,9 @@ import verboselogs  # type:ignore
 import abstracts
 
 from aio.core.functional import async_property
+from aio.run import runner
 
-from envoy.base import runner, utils
+from envoy.base import utils
 
 from .exceptions import RepoError
 
@@ -29,7 +30,7 @@ class ReleaseConfigDict(TypedDict):
 
 
 class ARepoBuildingRunner(
-        runner.AsyncRunner,
+        runner.Runner,
         metaclass=abstracts.Abstraction):
     _repo_types = ()
 

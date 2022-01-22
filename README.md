@@ -75,19 +75,6 @@ pypi: https://pypi.org/project/aio.run.runner
 ---
 
 
-#### [envoy.abstract.command](envoy.abstract.command)
-
-version: 0.0.5.dev0
-
-pypi: https://pypi.org/project/envoy.abstract.command
-
-##### requirements:
-
-- [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-
----
-
-
 #### [envoy.base.utils](envoy.base.utils)
 
 version: 0.0.14.dev0
@@ -159,14 +146,14 @@ pypi: https://pypi.org/project/envoy.dependency.pip_check
 
 #### [envoy.distribution.distrotest](envoy.distribution.distrotest)
 
-version: 0.0.7.dev0
+version: 0.0.7
 
 pypi: https://pypi.org/project/envoy.distribution.distrotest
 
 ##### requirements:
 
+- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.2.1
 - [aiodocker](https://pypi.org/project/aiodocker)
-- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.1.2
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
 - [envoy.docker.utils](https://pypi.org/project/envoy.docker.utils) >=0.0.2
 
@@ -181,9 +168,8 @@ pypi: https://pypi.org/project/envoy.distribution.release
 
 ##### requirements:
 
-- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.4
-- [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.1
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.17
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.20
 - [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.9
 
 ---
@@ -199,11 +185,10 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.core](https://pypi.org/project/aio.core) >=0.2.0
-- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.4
-- [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.1
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.17
-- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.9
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.20
+- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.10
 
 ---
 
@@ -216,7 +201,7 @@ pypi: https://pypi.org/project/envoy.distribution.verify
 
 ##### requirements:
 
-- [envoy.base.checker](https://pypi.org/project/envoy.base.checker) >=0.1.2
+- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.2.1
 - [envoy.distribution.distrotest](https://pypi.org/project/envoy.distribution.distrotest) >=0.0.6
 
 ---
@@ -261,7 +246,7 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
 #### [envoy.github.abstract](envoy.github.abstract)
 
-version: 0.0.20
+version: 0.0.21.dev0
 
 pypi: https://pypi.org/project/envoy.github.abstract
 
@@ -279,7 +264,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 
 #### [envoy.github.release](envoy.github.release)
 
-version: 0.0.10.dev0
+version: 0.0.10
 
 pypi: https://pypi.org/project/envoy.github.release
 
@@ -287,9 +272,10 @@ pypi: https://pypi.org/project/envoy.github.release
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.13
 - [aio.core](https://pypi.org/project/aio.core) >=0.2.0
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.17
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.20
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [packaging](https://pypi.org/project/packaging)
 - [verboselogs](https://pypi.org/project/verboselogs)
@@ -312,7 +298,7 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 
 #### [envoy.gpg.sign](envoy.gpg.sign)
 
-version: 0.0.9
+version: 0.0.10.dev0
 
 pypi: https://pypi.org/project/envoy.gpg.sign
 

@@ -10,7 +10,9 @@ import verboselogs  # type:ignore
 
 import aiodocker
 
-from envoy.base import checker, utils
+from aio.run import checker
+
+from envoy.base import utils
 from envoy.docker import utils as docker_utils
 
 DISTROTEST_CONFIG_PATH = pathlib.Path(
@@ -459,7 +461,7 @@ class DistroTest(object):
 
     def __init__(
             self,
-            checker: checker.AsyncChecker,
+            checker: checker.Checker,
             test_config: DistroTestConfig,
             name: str,
             image: str,

@@ -4,7 +4,7 @@ pytooling_tests(
     dependencies=[
         "//deps:abstracts",
         "//deps:aio.core",
-        "//deps:envoy.base.runner",
+        "//deps:aio.run.runner",
         "//deps:envoy.base.utils",
         "//deps:pytest-asyncio",
     ],

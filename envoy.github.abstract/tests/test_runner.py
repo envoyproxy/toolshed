@@ -163,7 +163,7 @@ def test_runner_add_arguments(patches):
     run = DummyGithubReleaseRunner()
     parser = MagicMock()
     patched = patches(
-        "runner.BaseRunner.add_arguments",
+        "runner.Runner.add_arguments",
         prefix="envoy.github.abstract.runner")
 
     with patched as (m_super, ):
