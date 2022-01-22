@@ -5,16 +5,16 @@ import pathlib
 import time
 from functools import cached_property
 from typing import (
-    Any, Awaitable, Callable, Dict, Iterable, List, Optional, Sequence,
+    Awaitable, Callable, Dict, Iterable, List, Optional, Sequence,
     Set, Tuple, Type)
 
-from envoy.base import runner
+from aio.run import runner
 
 
 _sentinel = object()
 
 
-class BaseChecker(runner.Runner):
+class Checker(runner.Runner):
     """Runs check methods prefixed with `check_` and named in `self.checks`
 
     Check methods should call the `self.warn`, `self.error` or
@@ -269,11 +269,11 @@ class BaseChecker(runner.Runner):
             in checks
             if check not in self.disabled_checks]
 
-    def on_check_begin(self, check: str) -> Any:
+    async def on_check_begin(self, check: str) -> None:
         self._active_check = check
         self.log.notice(f"[{check}] Running check")
 
-    def on_check_run(self, check: str) -> Any:
+    async def on_check_run(self, check: str) -> None:
         """Callback hook called after each check run."""
         self._active_check = ""
         if self.exiting:
@@ -285,11 +285,11 @@ class BaseChecker(runner.Runner):
         else:
             self.log.success(f"[{check}] Check completed successfully")
 
-    def on_checks_begin(self) -> Any:
+    async def on_checks_begin(self) -> None:
         """Callback hook called before all checks."""
         pass
 
-    def on_checks_complete(self) -> Any:
+    async def on_checks_complete(self) -> int:
         """Callback hook called after all checks have run, and returning the
         final outcome of a checks_run."""
         if self.show_summary:
@@ -298,19 +298,21 @@ class BaseChecker(runner.Runner):
 
     @runner.cleansup
     def run(self) -> int:
-        """Run all configured checks and return the sum of their error
-        counts."""
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(self.on_async_error)
         try:
-            self.on_checks_begin()
-            for check in self.checks_to_run:
-                self.on_check_begin(check)
-                getattr(self, f"check_{check}")()
-                self.on_check_run(check)
+            return loop.run_until_complete(self._run())
+        except RuntimeError:
+            # Loop was forcibly stopped, most likely due to unhandled
+            # error in task.
+            return 1
         except KeyboardInterrupt:
+            # This needs to be outside the loop to catch the a keyboard
+            # interrupt. This means that a new loop has to be created to
+            # cleanup.
             self.exit()
-        finally:
-            result = self.on_checks_complete()
-        return result
+            return asyncio.get_event_loop().run_until_complete(
+                self.on_checks_complete())
 
     def succeed(self, name: str, success: list, log: bool = True) -> None:
         """Record (and log) success for a check type."""
@@ -330,30 +332,220 @@ class BaseChecker(runner.Runner):
         for message in warnings:
             self.log.warning(f"[{name}] {message}")
 
+    @cached_property
+    def check_queue(self) -> asyncio.Queue:
+        """Queue of checks to run."""
+        return asyncio.Queue()
 
-class Checker(BaseChecker):
+    @cached_property
+    def completed_checks(self) -> Set[str]:
+        """Checks that have succesfully completed."""
+        return set()
 
-    def on_check_begin(self, check: str) -> None:
-        super().on_check_begin(check)
+    @cached_property
+    def preload_checks(self) -> Dict[str, List[str]]:
+        """Mapping of checks to blocking preload tasks."""
+        checks: Dict[str, List[str]] = {}
+        for name, task in self.preload_checks_data.items():
+            for check in task.get("blocks", []):
+                checks[check] = checks.get(check, [])
+                checks[check].append(name)
+        return checks
 
-    def on_check_run(self, check: str) -> None:
-        super().on_check_run(check)
+    @cached_property
+    def preload_checks_data(self) -> Dict[str, Dict]:
+        return dict(getattr(self, "_preload_checks_data", ()))
 
-    def on_checks_begin(self) -> None:
-        super().on_checks_complete()
+    @cached_property
+    def preload_pending_tasks(self) -> Set[str]:
+        """Currently pending preload tasks."""
+        return set()
 
-    def on_checks_complete(self) -> int:
-        return super().on_checks_complete()
+    @cached_property
+    def preload_tasks(self) -> Tuple[Awaitable, ...]:
+        """Tuple of awaitables for preloading check data."""
+        tasks = [
+            self.preload_data(name)
+            for name
+            in self.preload_checks_data]
+        return tuple(t for t in tasks if t)
 
+    @cached_property
+    def preloaded_checks(self) -> Set[str]:
+        """Checks for wich all preload tasks are complete."""
+        return set()
 
-class BazelChecker(runner.BazelRunner, Checker):
-    pass
+    @property
+    def remaining_checks(self) -> Tuple[str, ...]:
+        return tuple(
+            check
+            for check
+            in self.checks_to_run
+            if (check not in self.removed_checks
+                and check not in self.completed_checks))
+
+    @cached_property
+    def removed_checks(self) -> Set[str]:
+        """Checks removed due to failed preload tasks."""
+        return set()
+
+    async def begin_checks(self) -> None:
+        """Start the checks queue, and preloaders, and populate the queue with
+        any checks that don't require preloaded data."""
+        await self.on_checks_begin()
+        # Set up preload tasks
+        asyncio.create_task(self.preload())
+        # Place all checks that are not blocked in the queue.
+        for check in self.checks_to_run:
+            if check not in self.preload_checks:
+                await self.check_queue.put(check)
+
+    def on_async_error(
+            self,
+            loop: asyncio.AbstractEventLoop,
+            context: Dict) -> None:
+        """Handle unhandled async exceptions by stopping the loop and printing
+        the traceback."""
+        loop.default_exception_handler(context)
+        loop.stop()
+
+    async def on_preload(self, task: str) -> None:
+        """Event fired after each preload task completes."""
+        self.preload_pending_tasks.remove(task)
+        for check in self.checks_to_run:
+            if self._check_should_run(check):
+                self.log.debug(f"Check data preloaded: {check}")
+                self.preloaded_checks.add(check)
+                await self.check_queue.put(check)
+        if self.removed_checks and not self.preload_pending_tasks:
+            await self.on_preload_errors()
+
+    async def on_preload_errors(self) -> None:
+        """All preloads have completed, and some failed."""
+        failed_checks = len(self.removed_checks)
+        all_checks = len(self.checks_to_run)
+        if failed_checks < all_checks:
+            self.log.error(
+                "Some checks "
+                f"({failed_checks}/{all_checks}) "
+                "were not run as required data failed to load")
+        else:
+            self.log.error(
+                f"All ({all_checks}) checks failed as required "
+                "data failed to load")
+        if not self.remaining_checks:
+            await self.check_queue.put(_sentinel)
+
+    async def on_preload_task_failed(
+            self,
+            task: str,
+            e: BaseException) -> None:
+        """Preload task failed, disabled related checks."""
+        for check in self.preload_checks_data[task]["blocks"]:
+            if check in self.removed_checks:
+                continue
+            # disable any checks that depend upon this task
+            self.removed_checks.add(check)
+            self.error(
+                check,
+                [f"Check disabled: data download ({task}) failed {e}"])
+
+    async def preload(self) -> None:
+        """Async preload data for checks."""
+        # TODO: factor out the preloading to a separate interface
+        if self.preload_tasks:
+            await asyncio.gather(*self.preload_tasks)
+
+    def preload_data(
+            self,
+            task: str) -> Optional[Awaitable]:
+        """Return an awaitable preload task if required."""
+        if self._task_should_preload(task):
+            self.preload_pending_tasks.add(task)
+            return self.preloader(
+                task,
+                self.preload_checks_data[task]["fun"](self))
+
+    async def preloader(self, task: str, runner: Awaitable) -> None:
+        """Wrap a preload task with the pending queue, and trigger `on_preload`
+        event on completion."""
+        start = time.time()
+        self.log.debug(f"Preloading {task}...")
+        proceed = False
+        try:
+            await runner
+        except self.preloader_catches(task) as e:
+            self.log.debug(f"Preload failed {task} in {time.time() - start}s")
+            await self.on_preload_task_failed(task, e)
+            proceed = True
+        else:
+            self.log.debug(f"Preloaded {task} in {time.time() - start}s")
+            proceed = True
+        finally:
+            if proceed:
+                await self.on_preload(task)
+
+    def preloader_catches(self, task: str) -> Tuple[Type[BaseException], ...]:
+        return tuple(self.preload_checks_data[task].get("catches", ()))
+
+    def _check_should_run(self, check: str) -> bool:
+        """Indicate whether a check is ready to run."""
+        return bool(
+            check in self.preload_checks
+            and check not in self.preloaded_checks
+            and check not in self.removed_checks
+            and not any(
+                task
+                in self.preload_pending_tasks
+                for task in self.preload_checks[check]))
+
+    async def _run(self) -> int:
+        await self.begin_checks()
+        try:
+            await self._run_from_queue()
+        finally:
+            result = (
+                1
+                if self.exiting
+                else await self.on_checks_complete())
+        return result
+
+    async def _run_check(self, check: str) -> None:
+        await self.on_check_begin(check)
+        await getattr(self, f"check_{check}")()
+        await self.on_check_run(check)
+
+    async def _run_from_queue(self) -> None:
+        while True:
+            if not self.remaining_checks:
+                break
+            check = await self.check_queue.get()
+            if check is _sentinel:
+                break
+            await self._run_check(check)
+            self.check_queue.task_done()
+            self.completed_checks.add(check)
+
+    def _task_should_preload(
+            self,
+            task: str) -> bool:
+        handler = self.preload_checks_data[task]
+        return not (
+            task in self.preload_pending_tasks
+            or not any(
+                c in self.checks_to_run
+                for c
+                in handler.get("when", []))
+            or any(
+                c in self.checks_to_run
+                for c
+                in handler.get("unless", [])))
 
 
 class CheckerSummary(object):
     """Summary of completed checks."""
 
-    def __init__(self, checker: BaseChecker) -> None:
+    def __init__(self, checker: Checker) -> None:
         # TODO: factor out the checker object
         self.checker = checker
 
@@ -438,246 +630,3 @@ class CheckerSummary(object):
             self.checker.log.notice
             if problem_type == "warnings"
             else self.checker.log.error)
-
-
-class AsyncChecker(BaseChecker):
-    """Async version of the Checker class for use with asyncio."""
-
-    @cached_property
-    def check_queue(self) -> asyncio.Queue:
-        """Queue of checks to run."""
-        return asyncio.Queue()
-
-    @cached_property
-    def completed_checks(self) -> Set[str]:
-        """Checks that have succesfully completed."""
-        return set()
-
-    @cached_property
-    def preload_checks(self) -> Dict[str, List[str]]:
-        """Mapping of checks to blocking preload tasks."""
-        checks: Dict[str, List[str]] = {}
-        for name, task in self.preload_checks_data.items():
-            for check in task.get("blocks", []):
-                checks[check] = checks.get(check, [])
-                checks[check].append(name)
-        return checks
-
-    @cached_property
-    def preload_checks_data(self) -> Dict[str, Dict]:
-        return dict(getattr(self, "_preload_checks_data", ()))
-
-    @cached_property
-    def preload_pending_tasks(self) -> Set[str]:
-        """Currently pending preload tasks."""
-        return set()
-
-    @cached_property
-    def preload_tasks(self) -> Tuple[Awaitable, ...]:
-        """Tuple of awaitables for preloading check data."""
-        tasks = [
-            self.preload_data(name)
-            for name
-            in self.preload_checks_data]
-        return tuple(t for t in tasks if t)
-
-    @cached_property
-    def preloaded_checks(self) -> Set[str]:
-        """Checks for wich all preload tasks are complete."""
-        return set()
-
-    @property
-    def remaining_checks(self) -> Tuple[str, ...]:
-        return tuple(
-            check
-            for check
-            in self.checks_to_run
-            if (check not in self.removed_checks
-                and check not in self.completed_checks))
-
-    @cached_property
-    def removed_checks(self) -> Set[str]:
-        """Checks removed due to failed preload tasks."""
-        return set()
-
-    async def begin_checks(self) -> None:
-        """Start the checks queue, and preloaders, and populate the queue with
-        any checks that don't require preloaded data."""
-        await self.on_checks_begin()
-        # Set up preload tasks
-        asyncio.create_task(self.preload())
-        # Place all checks that are not blocked in the queue.
-        for check in self.checks_to_run:
-            if check not in self.preload_checks:
-                await self.check_queue.put(check)
-
-    def on_async_error(
-            self,
-            loop: asyncio.AbstractEventLoop,
-            context: Dict) -> None:
-        """Handle unhandled async exceptions by stopping the loop and printing
-        the traceback."""
-        loop.default_exception_handler(context)
-        loop.stop()
-
-    async def on_check_begin(self, check: str) -> None:
-        super().on_check_begin(check)
-
-    async def on_check_run(self, check: str) -> None:
-        super().on_check_run(check)
-
-    async def on_checks_begin(self) -> None:
-        super().on_checks_begin()
-
-    async def on_checks_complete(self) -> int:
-        return super().on_checks_complete()
-
-    async def on_preload(self, task: str) -> None:
-        """Event fired after each preload task completes."""
-        self.preload_pending_tasks.remove(task)
-        for check in self.checks_to_run:
-            if self._check_should_run(check):
-                self.log.debug(f"Check data preloaded: {check}")
-                self.preloaded_checks.add(check)
-                await self.check_queue.put(check)
-        if self.removed_checks and not self.preload_pending_tasks:
-            await self.on_preload_errors()
-
-    async def on_preload_errors(self) -> None:
-        """All preloads have completed, and some failed."""
-        failed_checks = len(self.removed_checks)
-        all_checks = len(self.checks_to_run)
-        if failed_checks < all_checks:
-            self.log.error(
-                "Some checks "
-                f"({failed_checks}/{all_checks}) "
-                "were not run as required data failed to load")
-        else:
-            self.log.error(
-                f"All ({all_checks}) checks failed as required "
-                "data failed to load")
-        if not self.remaining_checks:
-            await self.check_queue.put(_sentinel)
-
-    async def on_preload_task_failed(
-            self,
-            task: str,
-            e: BaseException) -> None:
-        """Preload task failed, disabled related checks."""
-        for check in self.preload_checks_data[task]["blocks"]:
-            if check in self.removed_checks:
-                continue
-            # disable any checks that depend upon this task
-            self.removed_checks.add(check)
-            self.error(
-                check,
-                [f"Check disabled: data download ({task}) failed {e}"])
-
-    async def preload(self) -> None:
-        """Async preload data for checks."""
-        # TODO: factor out the preloading to a separate interface
-        if self.preload_tasks:
-            await asyncio.gather(*self.preload_tasks)
-
-    def preload_data(
-            self,
-            task: str) -> Optional[Awaitable]:
-        """Return an awaitable preload task if required."""
-        if self._task_should_preload(task):
-            self.preload_pending_tasks.add(task)
-            return self.preloader(
-                task,
-                self.preload_checks_data[task]["fun"](self))
-
-    async def preloader(self, task: str, runner: Awaitable) -> None:
-        """Wrap a preload task with the pending queue, and trigger `on_preload`
-        event on completion."""
-        start = time.time()
-        self.log.debug(f"Preloading {task}...")
-        proceed = False
-        try:
-            await runner
-        except self.preloader_catches(task) as e:
-            self.log.debug(f"Preload failed {task} in {time.time() - start}s")
-            await self.on_preload_task_failed(task, e)
-            proceed = True
-        else:
-            self.log.debug(f"Preloaded {task} in {time.time() - start}s")
-            proceed = True
-        finally:
-            if proceed:
-                await self.on_preload(task)
-
-    def preloader_catches(self, task: str) -> Tuple[Type[BaseException], ...]:
-        return tuple(self.preload_checks_data[task].get("catches", ()))
-
-    @runner.cleansup
-    def run(self) -> int:
-        loop = asyncio.get_event_loop()
-        loop.set_exception_handler(self.on_async_error)
-        try:
-            return loop.run_until_complete(self._run())
-        except RuntimeError:
-            # Loop was forcibly stopped, most likely due to unhandled
-            # error in task.
-            return 1
-        except KeyboardInterrupt:
-            # This needs to be outside the loop to catch the a keyboard
-            # interrupt. This means that a new loop has to be created to
-            # cleanup.
-            self.exit()
-            return asyncio.get_event_loop().run_until_complete(
-                self.on_checks_complete())
-
-    def _check_should_run(self, check: str) -> bool:
-        """Indicate whether a check is ready to run."""
-        return bool(
-            check in self.preload_checks
-            and check not in self.preloaded_checks
-            and check not in self.removed_checks
-            and not any(
-                task
-                in self.preload_pending_tasks
-                for task in self.preload_checks[check]))
-
-    async def _run(self) -> int:
-        await self.begin_checks()
-        try:
-            await self._run_from_queue()
-        finally:
-            result = (
-                1
-                if self.exiting
-                else await self.on_checks_complete())
-        return result
-
-    async def _run_check(self, check: str) -> None:
-        await self.on_check_begin(check)
-        await getattr(self, f"check_{check}")()
-        await self.on_check_run(check)
-
-    async def _run_from_queue(self) -> None:
-        while True:
-            if not self.remaining_checks:
-                break
-            check = await self.check_queue.get()
-            if check is _sentinel:
-                break
-            await self._run_check(check)
-            self.check_queue.task_done()
-            self.completed_checks.add(check)
-
-    def _task_should_preload(
-            self,
-            task: str) -> bool:
-        handler = self.preload_checks_data[task]
-        return not (
-            task in self.preload_pending_tasks
-            or not any(
-                c in self.checks_to_run
-                for c
-                in handler.get("when", []))
-            or any(
-                c in self.checks_to_run
-                for c
-                in handler.get("unless", [])))

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, PropertyMock
 import pytest
 
 
-from envoy.base import checker
+from aio.run import checker
 
 
 @pytest.mark.parametrize("when", [None, "WHEN"])
@@ -51,7 +51,7 @@ def test_preload_dunder_set_name(patches):
     preloader = checker.preload("WHEN")
     patched = patches(
         "preload.get_preload_checks_data",
-        prefix="envoy.base.checker.decorators")
+        prefix="aio.run.checker.decorators")
     cls = MagicMock()
 
     with patched as (m_data, ):
@@ -71,7 +71,7 @@ def test_preload_dunder_get(patches, cls, instance):
     patched = patches(
         ("preload.fun",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.decorators")
+        prefix="aio.run.checker.decorators")
     args = (
         (cls, )
         if cls
@@ -95,7 +95,7 @@ def test_preload_blocks(patches, blocks):
     patched = patches(
         ("preload.when",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.decorators")
+        prefix="aio.run.checker.decorators")
     when = tuple(f"C{i}" for i in range(0, 5))
     preloader._blocks = blocks
 
@@ -203,7 +203,7 @@ def test_preload_get_preload_checks_data(patches):
          dict(new_callable=PropertyMock)),
         ("preload.when",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.decorators")
+        prefix="aio.run.checker.decorators")
     cls = MagicMock()
 
     with patched as patchy:
