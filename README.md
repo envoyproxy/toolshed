@@ -32,51 +32,17 @@ pypi: https://pypi.org/project/aio.api.github
 ---
 
 
-#### [aio.functional](aio.functional)
+#### [aio.core](aio.core)
 
-version: 0.0.11.dev0
+version: 0.2.0
 
-pypi: https://pypi.org/project/aio.functional
+pypi: https://pypi.org/project/aio.core
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-
----
-
-
-#### [aio.stream](aio.stream)
-
-version: 0.0.3.dev0
-
-pypi: https://pypi.org/project/aio.stream
-
-##### requirements:
-
 - [aiofiles](https://pypi.org/project/aiofiles)
 - [aiohttp](https://pypi.org/project/aiohttp)
-
----
-
-
-#### [aio.subprocess](aio.subprocess)
-
-version: 0.0.5.dev0
-
-pypi: https://pypi.org/project/aio.subprocess
-
----
-
-
-#### [aio.tasks](aio.tasks)
-
-version: 0.0.6.dev0
-
-pypi: https://pypi.org/project/aio.tasks
-
-##### requirements:
-
-- [aio.functional](https://pypi.org/project/aio.functional) >=0.0.10
 
 ---
 

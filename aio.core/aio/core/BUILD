@@ -1,0 +1,23 @@
+
+pytooling_library(
+    "aio.core",
+    dependencies=[
+        "//deps:abstracts",
+        "//deps:aiofiles",
+        "//deps:aiohttp",
+    ],
+    sources=[
+        "__init__.py",
+        "functional/__init__.py",
+        "functional/decorators.py",
+        "stream/__init__.py",
+        "stream/base.py",
+        "stream/_reader.py",
+        "stream/_writer.py",
+        "subprocess/__init__.py",
+        "subprocess/async_subprocess.py",
+        "tasks/__init__.py",
+        "tasks/exceptions.py",
+        "tasks/tasks.py",
+    ],
+)
