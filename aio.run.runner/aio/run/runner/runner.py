@@ -6,7 +6,6 @@ import argparse
 import asyncio
 import logging
 import pathlib
-import subprocess
 import sys
 import tempfile
 from functools import cached_property
@@ -63,11 +62,18 @@ class RootLogFilter(BaseLogFilter):
         return record.name != self.app_logger.name
 
 
-class BaseRunner:
+class Runner:
 
     def __init__(self, *args):
         self._args = args
         self.setup_logging()
+
+    def __call__(self):
+        try:
+            return asyncio.run(self.run())
+        except KeyboardInterrupt:
+            self.log.error("Keyboard exit")
+            return 1
 
     @cached_property
     def args(self) -> argparse.Namespace:
@@ -198,6 +204,9 @@ class BaseRunner:
             default="warn",
             help="Log level for non-application logs")
 
+    async def cleanup(self) -> None:
+        self._cleanup_tempdir()
+
     def setup_logging(self):
         logging.basicConfig(level=self.log_level)
         self.root_logger.setLevel(self.log_level)
@@ -208,95 +217,6 @@ class BaseRunner:
             self.tempdir.cleanup()
             del self.__dict__["tempdir"]
 
-
-class Runner(BaseRunner):
-
-    def __call__(self) -> Optional[int]:
-        return self.run()
-
-    @cleansup
-    def run(self) -> Optional[int]:
-        raise NotImplementedError
-
-    def cleanup(self) -> None:
-        self._cleanup_tempdir()
-
-
-class AsyncRunner(BaseRunner):
-
-    def __call__(self):
-        try:
-            return asyncio.run(self.run())
-        except KeyboardInterrupt:
-            self.log.error("Keyboard exit")
-            return 1
-
-    async def cleanup(self) -> None:
-        self._cleanup_tempdir()
-
     @cleansup
     async def run(self) -> Optional[int]:
         raise NotImplementedError
-
-
-class ForkingAdapter:
-
-    def __init__(self, context: Runner):
-        self.context = context
-
-    def __call__(self, *args, **kwargs) -> subprocess.CompletedProcess:
-        return self.subproc_run(*args, **kwargs)
-
-    def subproc_run(
-            self,
-            *args,
-            capture_output: bool = True,
-            **kwargs) -> subprocess.CompletedProcess:
-        """Fork a subprocess, using self.context.path as the cwd by default."""
-        kwargs["cwd"] = kwargs.get("cwd", self.context.path)
-        return subprocess.run(*args, capture_output=capture_output, **kwargs)
-
-
-class BazelAdapter:
-
-    def __init__(self, context: "ForkingRunner"):
-        self.context = context
-
-    def query(self, query: str) -> list:
-        """Run a bazel query and return stdout as list of lines."""
-        resp = self.context.subproc_run(["bazel", "query", f"'{query}'"])
-        if resp.returncode:
-            raise BazelRunError(f"Bazel query failed: {resp}")
-        return resp.stdout.decode("utf-8").split("\n")
-
-    def run(
-            self,
-            target: str,
-            *args,
-            capture_output: bool = False,
-            cwd: str = "",
-            raises: bool = True) -> subprocess.CompletedProcess:
-        """Run a bazel target and return the subprocess response."""
-        args = (("--",) + args) if args else args
-        bazel_args = ("bazel", "run", target) + args
-        resp = self.context.subproc_run(
-            bazel_args,
-            capture_output=capture_output,
-            cwd=cwd or self.context.path)
-        if resp.returncode and raises:
-            raise BazelRunError(f"Bazel run failed: {resp}")
-        return resp
-
-
-class ForkingRunner(Runner):
-
-    @cached_property
-    def subproc_run(self) -> ForkingAdapter:
-        return ForkingAdapter(self)
-
-
-class BazelRunner(ForkingRunner):
-
-    @cached_property
-    def bazel(self) -> BazelAdapter:
-        return BazelAdapter(self)

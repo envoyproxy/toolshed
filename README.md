@@ -47,6 +47,21 @@ pypi: https://pypi.org/project/aio.core
 ---
 
 
+#### [aio.run.runner](aio.run.runner)
+
+version: 0.2.0
+
+pypi: https://pypi.org/project/aio.run.runner
+
+##### requirements:
+
+- [coloredlogs](https://pypi.org/project/coloredlogs)
+- [frozendict](https://pypi.org/project/frozendict)
+- [verboselogs](https://pypi.org/project/verboselogs)
+
+---
+
+
 #### [envoy.abstract.command](envoy.abstract.command)
 
 version: 0.0.5.dev0
@@ -69,22 +84,6 @@ pypi: https://pypi.org/project/envoy.base.checker
 ##### requirements:
 
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.1
-
----
-
-
-#### [envoy.base.runner](envoy.base.runner)
-
-version: 0.1.2.dev0
-
-pypi: https://pypi.org/project/envoy.base.runner
-
-##### requirements:
-
-- [coloredlogs](https://pypi.org/project/coloredlogs)
-- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.4
-- [frozendict](https://pypi.org/project/frozendict)
-- [verboselogs](https://pypi.org/project/verboselogs)
 
 ---
 
@@ -211,7 +210,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 
 #### [envoy.distribution.verify](envoy.distribution.verify)
 
-version: 0.0.7
+version: 0.0.8.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.verify
 
