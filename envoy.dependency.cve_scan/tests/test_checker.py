@@ -372,7 +372,7 @@ def test_checker_urls(patches, provided_urls):
 def test_checker_add_arguments(patches):
     checker = DummyCVEChecker()
     patched = patches(
-        "checker.AsyncChecker.add_arguments",
+        "checker.Checker.add_arguments",
         prefix="envoy.dependency.cve_scan.abstract.checker")
     parser = MagicMock()
 
@@ -541,7 +541,7 @@ def test_checker_include_cve(patches, len_cpes, is_v3, id_ignored):
 async def test_checker_on_checks_complete(patches):
     checker = DummyCVEChecker()
     patched = patches(
-        "checker.AsyncChecker.on_checks_complete",
+        "checker.Checker.on_checks_complete",
         ("ACVEChecker.session",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.cve_scan.abstract.checker")
