@@ -153,7 +153,7 @@ TEST_REQS = (
 
 
 @pytest.mark.parametrize("requirements", TEST_REQS)
-def test_abstract_pip_checker_check_dependabot(patches, requirements):
+async def test_abstract_pip_checker_check_dependabot(patches, requirements):
     config, dirs = requirements
     checker = DummyPipChecker("path1", "path2", "path3")
 
@@ -168,7 +168,7 @@ def test_abstract_pip_checker_check_dependabot(patches, requirements):
     with patched as (m_config, m_dirs, m_fname, m_success, m_errors):
         m_config.return_value = config
         m_dirs.return_value = dirs
-        assert not checker.check_dependabot()
+        assert not await checker.check_dependabot()
 
     if config & dirs:
         assert (
