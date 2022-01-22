@@ -13,7 +13,7 @@ import gidgethub.abc
 import gidgethub.aiohttp
 
 import abstracts
-from aio.functional import async_property
+from aio.core.functional import async_property
 
 from envoy.github.abstract import (
     AGithubRelease, AGithubReleaseManager, GithubReleaseError)

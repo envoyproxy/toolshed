@@ -7,7 +7,7 @@ import aiohttp
 
 import abstracts
 
-from aio import stream
+from aio.core import stream
 
 from envoy.base import utils
 

@@ -12,8 +12,8 @@ import yapf  # type:ignore
 
 import abstracts
 
-from aio.subprocess import run
-from aio.tasks import concurrent
+from aio.core.subprocess import run
+from aio.core.tasks import concurrent
 
 from envoy.base import checker, utils
 

@@ -13,8 +13,8 @@ import gidgethub.abc
 
 import abstracts
 
-from aio.functional import async_property
-from aio.tasks import concurrent, ConcurrentError, ConcurrentIteratorError
+from aio.core.functional import async_property
+from aio.core.tasks import concurrent, ConcurrentError, ConcurrentIteratorError
 
 from envoy.github import abstract
 

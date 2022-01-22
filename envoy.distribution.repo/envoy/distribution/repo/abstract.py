@@ -11,7 +11,7 @@ import verboselogs  # type:ignore
 
 import abstracts
 
-from aio.functional import async_property
+from aio.core.functional import async_property
 
 from envoy.base import runner, utils
 

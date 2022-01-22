@@ -1,9 +1,8 @@
 
 import abstracts
 
-from aio.functional import async_property
-
 from aio.api.github import abstract
+from aio.core.functional import async_property
 from .base import GithubRepoEntity
 
 
