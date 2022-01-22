@@ -296,12 +296,11 @@ class Checker(runner.Runner):
             self.summary.print_summary()
         return 1 if self.has_failed else 0
 
-    @runner.cleansup
-    def run(self) -> int:
+    def __call__(self):
         loop = asyncio.get_event_loop()
         loop.set_exception_handler(self.on_async_error)
         try:
-            return loop.run_until_complete(self._run())
+            return loop.run_until_complete(self.run())
         except RuntimeError:
             # Loop was forcibly stopped, most likely due to unhandled
             # error in task.
@@ -488,6 +487,18 @@ class Checker(runner.Runner):
     def preloader_catches(self, task: str) -> Tuple[Type[BaseException], ...]:
         return tuple(self.preload_checks_data[task].get("catches", ()))
 
+    @runner.cleansup
+    async def run(self) -> int:
+        await self.begin_checks()
+        try:
+            await self._run_from_queue()
+        finally:
+            result = (
+                1
+                if self.exiting
+                else await self.on_checks_complete())
+        return result
+
     def _check_should_run(self, check: str) -> bool:
         """Indicate whether a check is ready to run."""
         return bool(
@@ -498,17 +509,6 @@ class Checker(runner.Runner):
                 task
                 in self.preload_pending_tasks
                 for task in self.preload_checks[check]))
-
-    async def _run(self) -> int:
-        await self.begin_checks()
-        try:
-            await self._run_from_queue()
-        finally:
-            result = (
-                1
-                if self.exiting
-                else await self.on_checks_complete())
-        return result
 
     async def _run_check(self, check: str) -> None:
         await self.on_check_begin(check)

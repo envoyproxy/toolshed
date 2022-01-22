@@ -637,13 +637,13 @@ async def test_checker_on_checks_complete(patches, failed, show_summary):
 @pytest.mark.parametrize(
     "raises",
     [None, RuntimeError, KeyboardInterrupt, Exception])
-def test_checker_run(patches, raises):
+def test_checker_dunder_call(patches, raises):
     checker = Checker()
     patched = patches(
         "asyncio",
         "Checker.exit",
         ("Checker.cleanup", dict(new_callable=MagicMock)),
-        ("Checker._run", dict(new_callable=MagicMock)),
+        ("Checker.run", dict(new_callable=MagicMock)),
         ("Checker.on_checks_complete", dict(new_callable=MagicMock)),
         "Checker.on_async_error",
         prefix="aio.run.checker.checker")
@@ -655,16 +655,16 @@ def test_checker_run(patches, raises):
             m_run.side_effect = raises
 
             if raises == KeyboardInterrupt:
-                result = checker.run()
+                result = checker.__call__()
             elif raises == RuntimeError:
-                result = checker.run()
+                result = checker.__call__()
             else:
                 with pytest.raises(raises):
                     checker.run()
                 return
         else:
             assert (
-                checker.run()
+                checker.__call__()
                 == run_until_complete.return_value)
 
     assert (
@@ -1613,7 +1613,7 @@ def test_checker__check_should_run(
 
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("exiting", [True, False])
-async def test_checker__run(patches, raises, exiting):
+async def test_checker_run(patches, raises, exiting):
     checker = Checker()
     patched = patches(
         "Checker.begin_checks",
@@ -1628,11 +1628,11 @@ async def test_checker__run(patches, raises, exiting):
             m_run_q.side_effect = SomeError("AN ERROR OCCURRED")
 
             with pytest.raises(SomeError):
-                await checker._run()
+                await checker.run()
         elif exiting:
-            assert await checker._run() == 1
+            assert await checker.run() == 1
         else:
-            assert await checker._run() == m_complete.return_value
+            assert await checker.run() == m_complete.return_value
 
     assert (
         m_start.call_args
