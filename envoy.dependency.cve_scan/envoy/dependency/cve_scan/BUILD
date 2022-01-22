@@ -4,7 +4,7 @@ pytooling_library(
     dependencies=[
         "//deps:abstracts",
         "//deps:aio.core",
-        "//deps:aio.run.checker",
+        "//deps:envoy.base.checker",
         "//deps:envoy.base.utils",
         "//deps:aiohttp",
         "//deps:jinja2",
