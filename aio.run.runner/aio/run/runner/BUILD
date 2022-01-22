@@ -1,8 +1,7 @@
 
 pytooling_library(
-    "envoy.base.runner",
+    "aio.run.runner",
     dependencies=[
-        "//deps:envoy.abstract.command",
         "//deps:abstracts",
     ],
 )
