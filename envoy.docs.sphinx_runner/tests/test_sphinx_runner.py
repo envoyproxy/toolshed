@@ -615,7 +615,7 @@ def test_sphinx_runner_check_env(
 
 
 @pytest.mark.parametrize("exists", [True, False])
-def test_sphinx_runner_cleanup(patches, exists):
+async def test_sphinx_runner_cleanup(patches, exists):
     runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.tempdir", dict(new_callable=PropertyMock)),
@@ -624,7 +624,7 @@ def test_sphinx_runner_cleanup(patches, exists):
     with patched as (m_temp, ):
         if exists:
             runner.__dict__["tempdir"] = m_temp.return_value
-        assert not runner.cleanup()
+        assert not await runner.cleanup()
 
     assert "tempdir" not in runner.__dict__
     if exists:
@@ -702,7 +702,7 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
 
 @pytest.mark.parametrize("check_fails", [True, False])
 @pytest.mark.parametrize("build_fails", [True, False])
-def test_sphinx_runner_run(patches, check_fails, build_fails):
+async def test_sphinx_runner_run(patches, check_fails, build_fails):
     runner = DummySphinxRunner()
     patched = patches(
         "print",
@@ -729,7 +729,9 @@ def test_sphinx_runner_run(patches, check_fails, build_fails):
         if build_fails:
             _build_error = sphinx_runner.SphinxBuildError("BUILD FAILED")
             m_build.side_effect = lambda: _raise(_build_error)
-        assert runner.run() == (1 if (check_fails or build_fails) else None)
+        assert (
+            await runner.run()
+            == (1 if (check_fails or build_fails) else None))
 
     assert (
         list(m_validate.call_args)
