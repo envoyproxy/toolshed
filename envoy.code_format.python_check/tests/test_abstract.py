@@ -94,7 +94,7 @@ def test_abstract_python_checker_flake8_config_path(patches):
 def test_abstract_python_checker_path(patches):
     checker = DummyPythonChecker("path1", "path2", "path3")
     patched = patches(
-        ("checker.AsyncChecker.path", dict(new_callable=PropertyMock)),
+        ("checker.Checker.path", dict(new_callable=PropertyMock)),
         prefix="envoy.code_format.python_check.abstract")
 
     with patched as (m_super, ):
@@ -144,7 +144,7 @@ def test_abstract_python_checker_add_arguments(patches):
     checker = DummyPythonChecker("path1", "path2", "path3")
     add_mock = patch(
         "envoy.code_format.python_check.abstract"
-        ".checker.AsyncChecker.add_arguments")
+        ".checker.Checker.add_arguments")
     m_parser = MagicMock()
 
     with add_mock as m_add:
@@ -280,7 +280,7 @@ async def test_abstract_python_checker_on_checks_complete(
     checker = DummyPythonChecker("path1", "path2", "path3")
     patched = patches(
         "run",
-        ("checker.AsyncChecker.on_checks_complete",
+        ("checker.Checker.on_checks_complete",
          dict(new_callable=AsyncMock)),
         ("APythonChecker.diff_file_path",
          dict(new_callable=PropertyMock)),
