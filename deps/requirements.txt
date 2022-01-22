@@ -9,7 +9,7 @@ coloredlogs
 docutils~=0.16.0
 envoy.abstract.command>=0.0.4
 envoy.base.checker>=0.1.1
-envoy.base.runner>=0.1.0
+envoy.base.runner>=0.1.1
 envoy.base.utils>=0.0.13
 envoy.code_format.python_check>=0.0.5
 envoy.dependency.pip_check>=0.0.5
