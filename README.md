@@ -246,7 +246,7 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
 #### [envoy.github.abstract](envoy.github.abstract)
 
-version: 0.0.21.dev0
+version: 0.0.21
 
 pypi: https://pypi.org/project/envoy.github.abstract
 
