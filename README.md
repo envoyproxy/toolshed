@@ -49,7 +49,7 @@ pypi: https://pypi.org/project/aio.core
 
 #### [envoy.abstract.command](envoy.abstract.command)
 
-version: 0.0.4
+version: 0.0.5.dev0
 
 pypi: https://pypi.org/project/envoy.abstract.command
 
@@ -75,14 +75,14 @@ pypi: https://pypi.org/project/envoy.base.checker
 
 #### [envoy.base.runner](envoy.base.runner)
 
-version: 0.1.1.dev0
+version: 0.1.1
 
 pypi: https://pypi.org/project/envoy.base.runner
 
 ##### requirements:
 
 - [coloredlogs](https://pypi.org/project/coloredlogs)
-- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.3
+- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.4
 - [frozendict](https://pypi.org/project/frozendict)
 - [verboselogs](https://pypi.org/project/verboselogs)
 
@@ -182,10 +182,10 @@ pypi: https://pypi.org/project/envoy.distribution.release
 
 ##### requirements:
 
-- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.3
+- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.4
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.0
 - [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.17
-- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.8
+- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.9
 
 ---
 
@@ -200,7 +200,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.core](https://pypi.org/project/aio.core) >=0.2.0
-- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.3
+- [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.4
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.0
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
 - [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.17
@@ -280,7 +280,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 
 #### [envoy.github.release](envoy.github.release)
 
-version: 0.0.9
+version: 0.0.10.dev0
 
 pypi: https://pypi.org/project/envoy.github.release
 
