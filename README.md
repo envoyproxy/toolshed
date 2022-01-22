@@ -261,7 +261,7 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
 #### [envoy.github.abstract](envoy.github.abstract)
 
-version: 0.0.19.dev0
+version: 0.0.20
 
 pypi: https://pypi.org/project/envoy.github.abstract
 
@@ -269,8 +269,8 @@ pypi: https://pypi.org/project/envoy.github.abstract
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.core](https://pypi.org/project/aio.core) >=0.2.0
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
 - [aiohttp](https://pypi.org/project/aiohttp)
-- [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.1
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [verboselogs](https://pypi.org/project/verboselogs)
 

@@ -6,7 +6,7 @@ from typing import Dict, Optional, List, Tuple
 
 import abstracts
 
-from envoy.abstract import command
+from aio.run import runner
 
 from .release import AGithubRelease
 from .runner import AGithubReleaseRunner
@@ -14,7 +14,7 @@ from .manager import AGithubReleaseManager
 
 
 class AGithubReleaseCommand(
-        command.AAsyncCommand,
+        runner.ACommand,
         metaclass=abstracts.Abstraction):
 
     @cached_property
