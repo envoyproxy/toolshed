@@ -64,7 +64,7 @@ def test_cve_cpes(patches):
         assert cve.cpes == m_set.return_value
 
     assert (
-        list(m_gather.call_args)
+        m_gather.call_args
         == [(m_nodes.return_value, m_set.return_value), {}])
     assert "cpes" in cve.__dict__
 
@@ -80,7 +80,7 @@ def test_cve_fail_template(patches):
         assert cve.fail_template == m_jinja.Template.return_value
 
     assert (
-        list(m_jinja.Template.call_args)
+        m_jinja.Template.call_args
         == [(m_tpl.return_value, ), {}])
     assert "fail_template" in cve.__dict__
 
@@ -112,7 +112,7 @@ def test_cve_formatted_description(patches):
             == "\n  ".join(wrapped))
 
     assert (
-        list(m_wrap.wrap.call_args)
+        m_wrap.wrap.call_args
         == [(m_description.return_value, ), {}])
     assert "formatted_description" not in cve.__dict__
 
@@ -127,29 +127,29 @@ def test_cve_description():
                         .__getitem__.return_value
                         .__getitem__.return_value))
     assert (
-        list(cve.cve_data.__getitem__.call_args)
+        cve.cve_data.__getitem__.call_args
         == [("cve", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.call_args)
         == [("description", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.call_args)
         == [("description_data", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.call_args)
         == [(0, ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.call_args)
         == [("value", ), {}])
     assert "description" not in cve.__dict__
 
@@ -162,16 +162,16 @@ def test_cve_id():
                         .__getitem__.return_value
                         .__getitem__.return_value))
     assert (
-        list(cve.cve_data.__getitem__.call_args)
+        cve.cve_data.__getitem__.call_args
         == [("cve", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.call_args)
         == [("CVE_data_meta", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.call_args)
         == [("ID", ), {}])
     assert "id" not in cve.__dict__
 
@@ -182,8 +182,8 @@ def test_cve_is_v3():
         cve.is_v3
         == (cve.cve_data.__getitem__.return_value.__contains__.return_value))
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__contains__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__contains__.call_args)
         == [("baseMetricV3", ), {}])
     assert "is_v3" not in cve.__dict__
 
@@ -197,10 +197,10 @@ def test_cve_last_modified_date(patches):
     with patched as (m_date, ):
         assert cve.last_modified_date == m_date.return_value
     assert (
-        list(m_date.call_args)
+        m_date.call_args
         == [(cve.cve_data.__getitem__.return_value, ), {}])
     assert (
-        list(cve.cve_data.__getitem__.call_args)
+        cve.cve_data.__getitem__.call_args
         == [("lastModifiedDate", ), {}])
     assert "last_modified_date" not in cve.__dict__
 
@@ -212,11 +212,11 @@ def test_cve_nodes():
         == (cve.cve_data.__getitem__.return_value
                         .__getitem__.return_value))
     assert (
-        list(cve.cve_data.__getitem__.call_args)
+        cve.cve_data.__getitem__.call_args
         == [("configurations", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.call_args)
         == [("nodes", ), {}])
     assert "nodes" not in cve.__dict__
 
@@ -230,10 +230,10 @@ def test_cve_published_date(patches):
     with patched as (m_date, ):
         assert cve.published_date == m_date.return_value
     assert (
-        list(m_date.call_args)
+        m_date.call_args
         == [(cve.cve_data.__getitem__.return_value, ), {}])
     assert (
-        list(cve.cve_data.__getitem__.call_args)
+        cve.cve_data.__getitem__.call_args
         == [("publishedDate", ), {}])
     assert "published_date" not in cve.__dict__
 
@@ -247,22 +247,22 @@ def test_cve_score():
                         .__getitem__.return_value
                         .__getitem__.return_value))
     assert (
-        list(cve.cve_data.__getitem__.call_args)
+        cve.cve_data.__getitem__.call_args
         == [("impact", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.call_args)
         == [("baseMetricV3", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.call_args)
         == [("cvssV3", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.call_args)
         == [("baseScore", ), {}])
     assert "score" not in cve.__dict__
 
@@ -276,22 +276,22 @@ def test_cve_severity():
                         .__getitem__.return_value
                         .__getitem__.return_value))
     assert (
-        list(cve.cve_data.__getitem__.call_args)
+        cve.cve_data.__getitem__.call_args
         == [("impact", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.call_args)
         == [("baseMetricV3", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.call_args)
         == [("cvssV3", ), {}])
     assert (
-        list(cve.cve_data.__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.return_value
-                         .__getitem__.call_args)
+        (cve.cve_data.__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.return_value
+                     .__getitem__.call_args)
         == [("baseSeverity", ), {}])
     assert "severity" not in cve.__dict__
 
@@ -338,7 +338,7 @@ def test_cve_dependency_match(patches, matches):
 
     if expected and expected[-1] == "*":
         assert (
-            list(list(c) for c in m_match.call_args_list)
+            m_match.call_args_list
             == [[(dep, ), {}]])
     else:
         assert not m_match.called
@@ -353,7 +353,7 @@ def test_cve_dependency_match(patches, matches):
                 previous_result = True
         if not previous_result:
             assert (
-                list(cpe.dependency_match.call_args)
+                cpe.dependency_match.call_args
                 == [(dep,), {}])
         else:
             assert not cpe.dependency_match.called
@@ -372,7 +372,7 @@ def test_cve_format_failure(patches):
             == m_template.return_value.render.return_value)
 
     assert (
-        list(m_template.return_value.render.call_args)
+        m_template.return_value.render.call_args
         == [(), {'cve': cve, 'dependency': dependency}])
 
 
@@ -430,7 +430,7 @@ def test_cve_gather_cpes(patches, include):
         assert not cve.gather_cpes(nodes, cpe_set)
 
     assert (
-        list(list(c) for c in m_class.return_value.from_string.call_args_list)
+        m_class.return_value.from_string.call_args_list
         == [[('URI0',), {}],
             [('URI1',), {}], [('URI2',), {}],
             [('URI3',), {}], [('URI4',), {}],
@@ -439,7 +439,7 @@ def test_cve_gather_cpes(patches, include):
             [('URIab5',), {}], [('URIab6',), {}]])
     cpe_obj = m_class.return_value.from_string.return_value
     assert (
-        list(list(c) for c in m_include.call_args_list)
+        m_include.call_args_list
         == [[({'data': 'DATA0'}, cpe_obj), {}],
             [({'data': 'DATA1'}, cpe_obj), {}],
             [({'data': 'DATA2'}, cpe_obj), {}],
@@ -456,7 +456,7 @@ def test_cve_gather_cpes(patches, include):
         if include == "odd"
         else 5)
     assert (
-        list(list(c) for c in cpe_set.add.call_args_list)
+        cpe_set.add.call_args_list
         == [[(cpe_obj,), {}]] * expected_cpe_count)
 
 
@@ -480,19 +480,19 @@ def test_cve_include_version(patches, tracked, matches):
             == (tracked and matches))
 
     assert (
-        list(tracked_cpes.__contains__.call_args)
+        tracked_cpes.__contains__.call_args
         == [(str(cpe),), {}])
     if not tracked:
         assert not m_matcher.called
         return
     assert (
-        list(m_matcher.return_value.call_args)
+        m_matcher.return_value.call_args
         == [(cpe_match,), {}])
     assert (
-        list(m_matcher.return_value.return_value.call_args)
+        m_matcher.return_value.return_value.call_args
         == [(tracked_cpes.__getitem__.return_value,), {}])
     assert (
-        list(tracked_cpes.__getitem__.call_args)
+        tracked_cpes.__getitem__.call_args
         == [(str(cpe),), {}])
 
 
@@ -519,13 +519,13 @@ def test_cve_parse_cve_date(patches, is_utc):
             == m_date.fromisoformat.return_value)
 
     assert (
-        list(m_date.fromisoformat.call_args)
+        m_date.fromisoformat.call_args
         == [(date_str.split.return_value.__getitem__.return_value,), {}])
     assert (
-        list(date_str.split.call_args)
+        date_str.split.call_args
         == [("T", ), {}])
     assert (
-        list(date_str.split.return_value.__getitem__.call_args)
+        date_str.split.return_value.__getitem__.call_args
         == [(0, ), {}])
 
 
@@ -548,5 +548,5 @@ def test_cve_wildcard_version_match(patches, release_date, published_date):
             == (release_date <= published_date))
 
     assert (
-        list(m_date.fromisoformat.call_args)
+        m_date.fromisoformat.call_args
         == [(dep.release_date, ), {}])

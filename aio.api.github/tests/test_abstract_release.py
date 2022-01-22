@@ -24,7 +24,7 @@ def test_abstract_release_constructor(patches):
 
     assert isinstance(release, github.abstract.base.GithubRepoEntity)
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [args, kwargs])
     release.repo = MagicMock()
     release.tag_name = "RELEASE_NAME"
@@ -44,7 +44,7 @@ def test_abstract_release_dunder_data(patches):
         assert release.__data__ == m_dict.return_value
 
     assert (
-        list(m_dict.call_args)
+        m_dict.call_args
         == [(),
             dict(created_at=m_utils.dt_from_js_isoformat,
                  published_at=m_utils.dt_from_js_isoformat)])
@@ -63,7 +63,7 @@ def test_abstract_release_version(patches):
         assert release.version == m_version.parse.return_value
 
     assert (
-        list(m_version.parse.call_args)
+        m_version.parse.call_args
         == [("TAG_NAME", ), {}])
 
     assert "version" in release.__dict__

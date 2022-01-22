@@ -129,10 +129,10 @@ async def test_assets_dunder_aiter(patches, raises):
                 _results.append(result)
 
     assert (
-        list(m_run.call_args)
+        m_run.call_args
         == [(), {}])
     assert (
-        list(m_enter.call_args)
+        m_enter.call_args
         == [(), {}])
 
     if raises:
@@ -147,7 +147,7 @@ async def test_assets_dunder_aiter(patches, raises):
         return
 
     assert (
-        list(m_exit.call_args)
+        m_exit.call_args
         == [(None, None, None), {}])
     assert _results == list(range(0, 5))
 
@@ -175,7 +175,7 @@ def test_assets_tasks(patches):
         assert release_assets.tasks == m_concurrent.return_value
 
     assert (
-        list(m_concurrent.call_args)
+        m_concurrent.call_args
         == [(m_await.return_value,), dict(limit=23)])
     assert "tasks" not in release_assets.__dict__
 
@@ -190,7 +190,7 @@ def test_assets_tempdir(patches):
         assert release_assets.tempdir == m_temp.TemporaryDirectory.return_value
 
     assert (
-        list(m_temp.TemporaryDirectory.call_args)
+        m_temp.TemporaryDirectory.call_args
         == [(), {}])
 
 
@@ -209,7 +209,7 @@ def test_assets_cleanup(patches, tempdir):
     assert "tempdir" not in release_assets.__dict__
     if tempdir:
         assert (
-            list(m_temp.return_value.cleanup.call_args)
+            m_temp.return_value.cleanup.call_args
             == [(), {}])
     else:
         assert not m_temp.called
@@ -220,7 +220,7 @@ def test_assets_fail():
     release_assets = DummyGithubReleaseAssets(release, "PATH")
     assert release_assets.fail("FAILURE") == release.fail.return_value
     assert (
-        list(release.fail.call_args)
+        release.fail.call_args
         == [("FAILURE", ), {}])
 
 
@@ -274,7 +274,7 @@ async def test_assets_run(patches, raises):
             return
     if raises:
         assert (
-            list(m_fail.call_args)
+            m_fail.call_args
             == [("AN ERROR OCCURRED", ), {}])
         assert results == [dict(error=m_fail.return_value)]
         return
@@ -300,7 +300,7 @@ def test_assets_fetcher_constructor(patches, asset_types, append):
         fetcher = DummyGithubReleaseAssetsFetcher(*args)
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [("RELEASE", "PATH"), {}])
     assert fetcher._asset_types == asset_types
     assert fetcher._append == (append or False)
@@ -328,7 +328,7 @@ def test_assets_fetcher_asset_types(patches, asset_types):
 
     if not asset_types:
         assert (
-            list(m_re.compile.call_args)
+            m_re.compile.call_args
             == [(".*", ), {}])
     else:
         assert not m_re.compile.called
@@ -370,10 +370,10 @@ async def test_assets_fetcher_awaitables(patches, asset_types):
             for x in returned_assets
             if x["name"] in asset_types])
     assert (
-        list(list(c) for c in m_type.call_args_list)
+        m_type.call_args_list
         == [[(asset,), {}] for asset in returned_assets])
     assert (
-        list(list(c) for c in m_download.call_args_list)
+        m_download.call_args_list
         == [[({'name': asset["name"], 'asset_type': asset["name"]},), {}]
             for asset in returned_assets
             if asset["name"] in asset_types])
@@ -452,11 +452,11 @@ async def test_assets_pusher_awaitables(patches):
 
     assert results == [m_upload.return_value for i in range(0, 5)]
     assert (
-        list(list(c) for c in m_upload.call_args_list)
+        m_upload.call_args_list
         == [[(artefact, m_url.return_value), {}]
             for artefact in artefacts])
     assert (
-        list(list(c) for c in m_url.call_args_list)
+        m_url.call_args_list
         == [[(artefact.name,), {}]
             for artefact in artefacts])
 

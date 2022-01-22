@@ -81,7 +81,7 @@ async def test_functional_async_property(cache, raises, result):
             e2.value.args[0]
             == 'AN ITERATING ERROR OCCURRED')
         assert (
-            list(m_async.call_args_list)
+            m_async.call_args_list
             == [[(), {}]] * 2)
         return
 
@@ -102,7 +102,7 @@ async def test_functional_async_property(cache, raises, result):
     if not cache:
         assert results2 == results1
         assert (
-            list(list(c) for c in m_async.call_args_list)
+            m_async.call_args_list
             == [[(), {}]] * 4)
         assert not hasattr(klass, functional.async_property.cache_name)
         return
@@ -112,7 +112,7 @@ async def test_functional_async_property(cache, raises, result):
     assert await klass.prop == result
     assert await klass.prop == result
     assert (
-        list(list(c) for c in m_async.call_args_list)
+        m_async.call_args_list
         == [[(), {}]] * 2)
 
     iter_prop = getattr(

@@ -87,7 +87,7 @@ async def test_catches(errors, async_fun, raises, args, kwargs):
             else await run.run_async(*args, **kwargs))
 
     assert (
-        list(run._runner.call_args)
+        run._runner.call_args
         == [args, kwargs])
 
     if not should_fail and raises:
@@ -98,7 +98,7 @@ async def test_catches(errors, async_fun, raises, args, kwargs):
             error
             == (str(_error) or repr(_error)))
         assert (
-            list(run.log.error.call_args)
+            run.log.error.call_args
             == [(error,), {}])
     else:
         assert not run.log.error.called
@@ -167,8 +167,8 @@ async def test_cleansup(async_fun, raises):
                 == run._runner.return_value)
 
     assert (
-        list(run._runner.call_args)
+        run._runner.call_args
         == [tuple(args), kwargs])
     assert (
-        list(run.cleanup.call_args)
+        run.cleanup.call_args
         == [(), {}])

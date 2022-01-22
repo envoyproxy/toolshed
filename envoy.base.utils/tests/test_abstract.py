@@ -55,10 +55,10 @@ def test_bazel_query_query(patches):
         assert query.query("EXPRESSION") == m_handle.return_value
 
     assert (
-        list(m_handle.call_args)
+        m_handle.call_args
         == [(m_run.return_value, ), {}])
     assert (
-        list(m_run.call_args)
+        m_run.call_args
         == [("EXPRESSION", ), {}])
 
 
@@ -89,10 +89,10 @@ def test_bazel_query_handle_query_response(patches, failed):
         return
 
     assert (
-        list(response.stdout.strip.call_args)
+        response.stdout.strip.call_args
         == [(), {}])
     assert (
-        list(response.stdout.strip.return_value.split.call_args)
+        response.stdout.strip.return_value.split.call_args
         == [("\n", ), {}])
 
 
@@ -138,8 +138,8 @@ def test_bazel_query_run_query(patches):
             == m_sub.run.return_value)
 
     assert (
-        list(m_sub.run.call_args)
+        m_sub.run.call_args
         == [(m_command.return_value, ), kwargs])
     assert (
-        list(m_command.call_args)
+        m_command.call_args
         == [("EXPRESSION", ), {}])

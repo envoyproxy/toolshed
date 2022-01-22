@@ -21,7 +21,7 @@ def test_stream_reader_constructor(patches, size):
 
     kwargs.pop("size", None)
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [tuple(args), kwargs])
     assert reader._size == size
     assert reader.size == size
@@ -58,7 +58,7 @@ async def test_stream_reader_dunder_aiter(patches, size):
         results
         == [f"CHUNK{i}" for i in range(0, 3)])
     assert (
-        list(list(c) for c in _chunker._read.call_args_list)
+        _chunker._read.call_args_list
         == [[(m_size.return_value, ), {}] for i in range(0, 4)])
 
 
@@ -98,16 +98,16 @@ async def test_stream_reader(patches, chunk_size):
 
     assert reader == m_reader.return_value
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [("PATH", ), {}])
     assert (
-        list(m_aiofiles.open.call_args)
+        m_aiofiles.open.call_args
         == [(m_plib.Path.return_value, 'rb'), {}])
     assert (
-        list(m_reader.call_args)
+        m_reader.call_args
         == [(m_aiofiles.open.return_value.__aenter__.return_value,),
             {'chunk_size': chunk_size,
              'size': m_plib.Path.return_value.stat.return_value.st_size}])
     assert (
-        list(m_plib.Path.return_value.stat.call_args)
+        m_plib.Path.return_value.stat.call_args
         == [(), {}])

@@ -53,10 +53,10 @@ def test_identity_email(patches):
         assert gpg.email == m_parse.return_value.__getitem__.return_value
 
     assert (
-        list(m_parse.return_value.__getitem__.call_args)
+        m_parse.return_value.__getitem__.call_args
         == [(1,), {}])
     assert (
-        list(m_parse.call_args)
+        m_parse.call_args
         == [(m_uid.return_value,), {}])
     assert "email" in gpg.__dict__
 
@@ -71,7 +71,7 @@ def test_identity_fingerprint(patches):
         assert gpg.fingerprint == m_key.return_value.__getitem__.return_value
 
     assert (
-        list(m_key.return_value.__getitem__.call_args)
+        m_key.return_value.__getitem__.call_args
         == [('fingerprint',), {}])
 
     assert "fingerprint" not in gpg.__dict__
@@ -109,7 +109,7 @@ def test_identity_gen_key_data(patches, name, email):
         assert not m_gpg.called
         return
     assert (
-        list(m_gpg.return_value.gen_key_input.call_args)
+        m_gpg.return_value.gen_key_input.call_args
         == [(),
             dict(name_real=name,
                  name_email=email,
@@ -129,7 +129,7 @@ def test_identity_gpg(patches):
         assert gpg.gpg == m_gpg.return_value
 
     assert (
-        list(m_gpg.call_args)
+        m_gpg.call_args
         == [(), dict(gnupghome=m_home.return_value)])
 
     assert "gpg" in gpg.__dict__
@@ -161,14 +161,14 @@ def test_identity_gnupg_home(patches, home, exists):
 
     assert "gnupg_home" not in gpg.__dict__
     assert (
-        list(m_os.environ.__setitem__.call_args)
+        m_os.environ.__setitem__.call_args
         == [("GNUPGHOME", str(home_path)), {}])
     assert (
-        list(home_path.exists.call_args)
+        home_path.exists.call_args
         == [(), {}])
     if not exists:
         assert (
-            list(home_path.mkdir.call_args)
+            home_path.mkdir.call_args
             == [(), {}])
     else:
         assert not home_path.mkdir.called
@@ -176,7 +176,7 @@ def test_identity_gnupg_home(patches, home, exists):
         assert not m_home.called
         return
     assert (
-        list(m_home.return_value.joinpath.call_args)
+        m_home.return_value.joinpath.call_args
         == [('.gnupg', ), {}])
 
 
@@ -204,18 +204,18 @@ def test_identity_gpg_bin(patches, gpg1, gpg2):
 
     if gpg2 or gpg1:
         assert (
-            list(m_plib.Path.call_args)
+            m_plib.Path.call_args
             == [(gpg2 or gpg1, ), {}])
     else:
         assert not m_plib.Path.called
 
     if gpg2:
         assert (
-            list(list(c) for c in m_shutil.which.call_args_list)
+            m_shutil.which.call_args_list
             == [[('gpg2',), {}]])
         return
     assert (
-        list(list(c) for c in m_shutil.which.call_args_list)
+        m_shutil.which.call_args_list
         == [[('gpg2',), {}], [('gpg',), {}]])
 
 
@@ -232,16 +232,16 @@ def test_identity_home(patches):
 
     # m_os.environ.__getitem__.return_value
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_os.environ.get.return_value, ), {}])
     assert (
-        list(m_os.environ.get.call_args)
+        m_os.environ.get.call_args
         == [('HOME', m_pwd.getpwuid.return_value.pw_dir), {}])
     assert (
-        list(m_pwd.getpwuid.call_args)
+        m_pwd.getpwuid.call_args
         == [(m_os.getuid.return_value,), {}])
     assert (
-        list(m_os.getuid.call_args)
+        m_os.getuid.call_args
         == [(), {}])
 
     assert "home" in gpg.__dict__
@@ -263,7 +263,7 @@ def test_identity_log(patches, log):
         else:
             assert gpg.log == m_log.getLogger.return_value
             assert (
-                list(m_log.getLogger.call_args)
+                m_log.getLogger.call_args
                 == [(gpg.__class__.__name__, ), {}])
 
 
@@ -286,7 +286,7 @@ def test_identity_identity_id(patches, name, email):
 
     if name and email:
         assert (
-            list(m_format.call_args)
+            m_format.call_args
             == [(('NAME', 'EMAIL'),), {}])
         assert result == m_format.return_value
         return
@@ -306,10 +306,10 @@ def test_identity_name(patches):
         assert gpg.name == m_parse.return_value.__getitem__.return_value
 
     assert (
-        list(m_parse.return_value.__getitem__.call_args)
+        m_parse.return_value.__getitem__.call_args
         == [(0,), {}])
     assert (
-        list(m_parse.call_args)
+        m_parse.call_args
         == [(m_uid.return_value,), {}])
     assert "name" in gpg.__dict__
 
@@ -348,10 +348,10 @@ def test_identity_signing_key(patches, key, name, email):
             _match_attempts = _keys
 
     assert (
-        list(m_gpg.return_value.list_keys.call_args)
+        m_gpg.return_value.list_keys.call_args
         == [(True, ), dict(keys=m_id.return_value)])
     assert (
-        list(list(c) for c in m_match.call_args_list)
+        m_match.call_args_list
         == [[(k,), {}] for k in _match_attempts])
 
 
@@ -365,7 +365,7 @@ def test_identity_uid(patches):
         assert gpg.uid == m_key.return_value.__getitem__.return_value
 
     assert (
-        list(m_key.return_value.__getitem__.call_args)
+        m_key.return_value.__getitem__.call_args
         == [('uid',), {}])
 
     assert "uid" not in gpg.__dict__
@@ -384,10 +384,10 @@ def test_identity_export_key(patches):
             == m_gpg.return_value.export_keys.return_value)
 
     assert (
-        list(m_gpg.return_value.export_keys.call_args)
+        m_gpg.return_value.export_keys.call_args
         == [(), dict(keyids=[m_key.return_value.__getitem__.return_value])])
     assert (
-        list(m_key.return_value.__getitem__.call_args)
+        m_key.return_value.__getitem__.call_args
         == [("keyid", ), {}])
 
 
@@ -421,7 +421,7 @@ def test_identity_gen_key_if_missing(patches, raises, fingerprint):
         assert not m_data.called
         return
     assert (
-        list(m_gpg.return_value.gen_key.call_args)
+        m_gpg.return_value.gen_key.call_args
         == [(m_data.return_value, ), {}])
 
 
@@ -456,7 +456,7 @@ def test_identity_match(patches, name, email, match, log, gen_key):
             return
         if log:
             assert (
-                list(m_log.return_value.warning.call_args)
+                m_log.return_value.warning.call_args
                 == [(('No GPG name/email supplied, '
                       'signing with first available key'),),
                     {}])
@@ -465,7 +465,7 @@ def test_identity_match(patches, name, email, match, log, gen_key):
             == {'uids': ['UID1', 'UID2'], 'uid': 'UID1'})
         return
     assert (
-        list(m_match.call_args)
+        m_match.call_args
         == [(key["uids"],), {}])
     if log:
         assert not m_log.return_value.warning.called
@@ -494,13 +494,13 @@ def test_identity__match_email(patches, uids, email):
     if email in uids:
         assert result == email
         assert (
-            list(list(c) for c in m_parse.call_args_list)
+            m_parse.call_args_list
             == [[(uid,), {}] for uid in uids[:uids.index(email) + 1]])
         return
 
     assert not result
     assert (
-        list(list(c) for c in m_parse.call_args_list)
+        m_parse.call_args_list
         == [[(uid,), {}] for uid in uids])
 
 
@@ -524,21 +524,21 @@ def test_identity__match_key(patches, name, email):
 
     if name and email:
         assert (
-            list(m_uid.call_args)
+            m_uid.call_args
             == [(dict(uids=key["uids"]),), {}])
         assert not m_email.called
         assert not m_name.called
         assert result == m_uid.return_value
     elif name:
         assert (
-            list(m_name.call_args)
+            m_name.call_args
             == [(dict(uids=key["uids"]),), {}])
         assert not m_email.called
         assert not m_uid.called
         assert result == m_name.return_value
     elif email:
         assert (
-            list(m_email.call_args)
+            m_email.call_args
             == [(dict(uids=key["uids"]),), {}])
         assert not m_name.called
         assert not m_uid.called
@@ -562,13 +562,13 @@ def test_identity__match_name(patches, uids, name):
     if name in uids:
         assert result == name
         assert (
-            list(list(c) for c in m_parse.call_args_list)
+            m_parse.call_args_list
             == [[(uid,), {}] for uid in uids[:uids.index(name) + 1]])
         return
 
     assert not result
     assert (
-        list(list(c) for c in m_parse.call_args_list)
+        m_parse.call_args_list
         == [[(uid,), {}] for uid in uids])
 
 

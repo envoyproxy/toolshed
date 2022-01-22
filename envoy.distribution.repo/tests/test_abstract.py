@@ -93,7 +93,7 @@ def test_repo_buildingrunner_asset_types(patches):
                 for i in range(0, 5)})
 
     assert (
-        list(list(c) for c in m_re.compile.call_args_list)
+        m_re.compile.call_args_list
         == [[(v.file_types, ), {}] for v in repo_types.values()])
     assert "asset_types" in runner.__dict__
 
@@ -112,7 +112,7 @@ def test_repo_buildingrunner_path(patches):
             == m_plib.Path.return_value)
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_temp.return_value.name, ), {}])
     assert "path" in runner.__dict__
 
@@ -142,7 +142,7 @@ def test_repo_buildingrunner_release_config(patches, exists, casts):
                 == m_utils.typed.return_value)
 
     assert (
-        list(m_config.return_value.exists.call_args)
+        m_config.return_value.exists.call_args
         == [(), {}])
 
     if not exists:
@@ -154,12 +154,12 @@ def test_repo_buildingrunner_release_config(patches, exists, casts):
         assert not m_utils.from_yaml.called
         return
     assert (
-        list(m_utils.typed.call_args)
+        m_utils.typed.call_args
         == [(repo.ReleaseConfigDict,
              m_utils.from_yaml.return_value),
             {}])
     assert (
-        list(m_utils.from_yaml.call_args)
+        m_utils.from_yaml.call_args
         == [(m_config.return_value, ), {}])
     if not casts:
         assert (
@@ -183,7 +183,7 @@ def test_repo_buildingrunner_releaes_config_file(patches):
             == m_plib.Path.return_value)
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(repo.abstract.PUBLISH_YAML, ), {}])
     assert "release_config_file" not in runner.__dict__
 
@@ -218,7 +218,7 @@ def test_repo_buildingrunner_repos(patches):
 
     for k, v in repo_types.items():
         assert (
-            list(v.call_args)
+            v.call_args
             == [(k,
                  m_path.return_value,
                  m_config.return_value,
@@ -244,7 +244,7 @@ async def test_repo_buildingrunner_published_repos(patches):
     assert results == [m.publish.return_value for m in repos]
     for m in repos:
         assert (
-            list(m.publish.call_args)
+            m.publish.call_args
             == [(), {}])
 
 
@@ -265,12 +265,12 @@ def test_repo_buildingrunner_add_arguments(patches):
         assert not runner.add_arguments(parser)
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(parser, ), {}])
 
     for manager in repo_types.values():
         assert (
-            list(manager.add_arguments.call_args)
+            manager.add_arguments.call_args
             == [(parser, ), {}])
 
 
@@ -284,7 +284,7 @@ async def test_repo_buildingrunner_cleanup(patches):
         assert not await runner.cleanup()
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(), {}])
 
 

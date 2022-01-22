@@ -24,7 +24,7 @@ def test_abstract_commit_constructor(patches):
 
     assert isinstance(commit, github.abstract.base.GithubRepoEntity)
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [args, kwargs])
     commit.repo = MagicMock()
     commit.sha = "SHA"
@@ -46,19 +46,19 @@ def test_abstract_commit_timestamp(patches):
             == m_utils.dt_from_js_isoformat.return_value)
 
     assert (
-        list(m_utils.dt_from_js_isoformat.call_args)
+        m_utils.dt_from_js_isoformat.call_args
         == [(data.__getitem__.return_value
                  .__getitem__.return_value
                  .__getitem__.return_value, ), {}])
     assert (
-        list(data.__getitem__.call_args)
+        data.__getitem__.call_args
         == [("commit", ), {}])
     assert (
-        list(data.__getitem__.return_value
-                 .__getitem__.call_args)
+        (data.__getitem__.return_value
+             .__getitem__.call_args)
         == [("committer", ), {}])
     assert (
-        list(data.__getitem__.return_value
-                 .__getitem__.return_value
-                 .__getitem__.call_args)
+        (data.__getitem__.return_value
+             .__getitem__.return_value
+             .__getitem__.call_args)
         == [("date", ), {}])

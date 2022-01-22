@@ -88,12 +88,12 @@ def test_runner_dunder_call(patches, raises):
 
     if not raises:
         assert (
-            list(m_asyncio.run.call_args)
+            m_asyncio.run.call_args
             == [(m_run.return_value, ), {}])
     else:
         assert not m_asyncio.run.called
     assert (
-        list(m_run.call_args)
+        m_run.call_args
         == [(), {}])
 
 
@@ -112,10 +112,10 @@ def test_runner_args(patches):
             == known_args.return_value.__getitem__.return_value)
 
     assert (
-        list(known_args.call_args)
+        known_args.call_args
         == [(('path1', 'path2', 'path3'),), {}])
     assert (
-        list(known_args.return_value.__getitem__.call_args)
+        known_args.return_value.__getitem__.call_args
         == [(0,), {}])
     assert "args" in run.__dict__
 
@@ -135,10 +135,10 @@ def test_runner_extra_args(patches):
             == known_args.return_value.__getitem__.return_value)
 
     assert (
-        list(known_args.call_args)
+        known_args.call_args
         == [(('path1', 'path2', 'path3'),), {}])
     assert (
-        list(known_args.return_value.__getitem__.call_args)
+        known_args.return_value.__getitem__.call_args
         == [(1,), {}])
     assert "extra_args" in run.__dict__
 
@@ -192,10 +192,10 @@ def test_runner_log_level(patches):
         assert run.log_level == m_dict.return_value.__getitem__.return_value
 
     assert (
-        list(m_dict.call_args)
+        m_dict.call_args
         == [(runner.runner.LOG_LEVELS, ), {}])
     assert (
-        list(m_dict.return_value.__getitem__.call_args)
+        m_dict.return_value.__getitem__.call_args
         == [(m_args.return_value.log_level,), {}])
     assert "log_level" in run.__dict__
 
@@ -216,10 +216,10 @@ def test_runner_parser(patches):
         assert run.parser == m_parser.ArgumentParser.return_value
 
     assert (
-        list(m_parser.ArgumentParser.call_args)
+        m_parser.ArgumentParser.call_args
         == [(), {"allow_abbrev": False}])
     assert (
-        list(m_add_args.call_args)
+        m_add_args.call_args
         == [(m_parser.ArgumentParser.return_value,), {}])
     assert "parser" in run.__dict__
 
@@ -234,7 +234,7 @@ def test_runner_path(patches):
         assert run.path == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(".", ), {}])
 
 
@@ -327,22 +327,22 @@ def test_runner_stdout(patches):
         assert run.stdout == m_log.getLogger.return_value
 
     assert (
-        list(m_log.getLogger.call_args)
+        m_log.getLogger.call_args
         == [('stdout',), {}])
     assert (
-        list(m_log.getLogger.return_value.setLevel.call_args)
+        m_log.getLogger.return_value.setLevel.call_args
         == [(m_level.return_value,), {}])
     assert (
-        list(m_log.StreamHandler.call_args)
+        m_log.StreamHandler.call_args
         == [(sys.stdout,), {}])
     assert (
-        list(m_log.Formatter.call_args)
+        m_log.Formatter.call_args
         == [('%(message)s',), {}])
     assert (
-        list(m_log.StreamHandler.return_value.setFormatter.call_args)
+        m_log.StreamHandler.return_value.setFormatter.call_args
         == [(m_log.Formatter.return_value,), {}])
     assert (
-        list(m_log.getLogger.return_value.addHandler.call_args)
+        m_log.getLogger.return_value.addHandler.call_args
         == [(m_log.StreamHandler.return_value,), {}])
 
 
@@ -361,14 +361,14 @@ def test_runner_tempdir(patches, missing):
 
     if missing:
         assert (
-            list(m_log.return_value.warning.call_args)
+            m_log.return_value.warning.call_args
             == [(("Tempdir created but instance has a `run` method "
                   "which is not decorated with `@runner.cleansup`"), ), {}])
     else:
         assert not m_log.called
 
     assert (
-        list(m_tmp.TemporaryDirectory.call_args)
+        m_tmp.TemporaryDirectory.call_args
         == [(), {}])
     assert "tempdir" in run.__dict__
 
@@ -383,10 +383,10 @@ def test_runner_verbosity(patches):
         assert run.verbosity == m_dict.return_value.__getitem__.return_value
 
     assert (
-        list(m_dict.call_args)
+        m_dict.call_args
         == [(runner.runner.LOG_LEVELS, ), {}])
     assert (
-        list(m_dict.return_value.__getitem__.call_args)
+        m_dict.return_value.__getitem__.call_args
         == [(m_args.return_value.verbosity,), {}])
     assert "verbosity" in run.__dict__
 
@@ -398,7 +398,7 @@ def test_runner_add_arguments():
     assert run.add_arguments(parser) is None
 
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('--verbosity',
               '-v'),
              {'choices': ['debug',
@@ -486,7 +486,7 @@ def test_runner__cleanup_tempdir(patches, cached):
 
     if cached:
         assert (
-            list(m_temp.return_value.cleanup.call_args)
+            m_temp.return_value.cleanup.call_args
             == [(), {}])
     else:
         assert not m_temp.called
@@ -504,5 +504,5 @@ async def test_runner_cleanup(patches):
         assert not await run.cleanup()
 
     assert (
-        list(m_temp.call_args)
+        m_temp.call_args
         == [(), {}])

@@ -51,10 +51,10 @@ async def test_abstract_iterator_dunder_aiter(patches):
 
     assert results == [m_inflate.return_value] * len(iterables)
     assert (
-        list(list(c) for c in m_inflate.call_args_list)
+        m_inflate.call_args_list
         == [[(result,), {}] for result in iterables])
     assert (
-        list(iterator.api.api_iter.call_args)
+        iterator.api.api_iter.call_args
         == [('QUERY', ) + iterator.args, iterator.kwargs])
 
 
@@ -71,15 +71,15 @@ def test_abstract_iterator_count_request_headers(patches):
             == m_gidget.sansio.create_headers.return_value)
 
     assert (
-        list(m_gidget.sansio.create_headers.call_args)
+        m_gidget.sansio.create_headers.call_args
         == [(iterator.api.requester, ),
             dict(accept=m_gidget.sansio.accept_format.return_value,
                  oauth_token=iterator.api.oauth_token)])
     assert (
-        list(m_gidget.sansio.accept_format.call_args)
+        m_gidget.sansio.accept_format.call_args
         == [(), {}])
     assert (
-        list(m_gidget.sansio.create_headers.return_value.__setitem__.call_args)
+        m_gidget.sansio.create_headers.return_value.__setitem__.call_args
         == [("content-length", "0"), {}])
 
 
@@ -95,7 +95,7 @@ def test_abstract_iterator_count_url(patches):
             == m_gidget.sansio.format_url.return_value)
 
     assert (
-        list(m_gidget.sansio.format_url.call_args)
+        m_gidget.sansio.format_url.call_args
         == [("QUERY&per_page=1", {}),
             dict(base_url=iterator.api.base_url)])
 
@@ -124,10 +124,10 @@ async def test_abstract_iterator_total_count(patches, rate_limit):
     if rate_limit is not None:
         assert iterator.api.rate_limit.remaining == (rate_limit - 1)
     assert (
-        list(m_count.call_args)
+        m_count.call_args
         == [(iterator.api._request.return_value, ), {}])
     assert (
-        list(iterator.api._request.call_args)
+        iterator.api._request.call_args
         == [("GET", m_url.return_value, m_headers.return_value, b""), {}])
     assert (
         "total_count"
@@ -154,7 +154,7 @@ def test_abstract_iterator_count_from_data(patches, data):
         assert not m_int.called
         return
     assert (
-        list(m_int.call_args)
+        m_int.call_args
         == [(data["total_count"], ), {}])
 
 
@@ -178,7 +178,7 @@ def test_abstract_iterator_count_from_headers(patches, headers):
         assert not m_int.called
         return
     assert (
-        list(m_int.call_args)
+        m_int.call_args
         == [(headers["Link"].split.return_value
                             .__getitem__.return_value
                             .split.return_value
@@ -187,37 +187,37 @@ def test_abstract_iterator_count_from_headers(patches, headers):
                             .__getitem__.return_value, ), {}])
 
     assert (
-        list(headers["Link"].split.call_args)
+        headers["Link"].split.call_args
         == [(",", ), {}])
     assert (
-        list(headers["Link"].split.return_value
-                            .__getitem__.call_args)
+        (headers["Link"].split.return_value
+                        .__getitem__.call_args)
         == [(1, ), {}])
     assert (
-        list(headers["Link"].split.return_value
-                            .__getitem__.return_value
-                            .split.call_args)
+        (headers["Link"].split.return_value
+                        .__getitem__.return_value
+                        .split.call_args)
         == [(">", ), {}])
     assert (
-        list(headers["Link"].split.return_value
-                            .__getitem__.return_value
-                            .split.return_value
-                            .__getitem__.call_args)
+        (headers["Link"].split.return_value
+                        .__getitem__.return_value
+                        .split.return_value
+                        .__getitem__.call_args)
         == [(0, ), {}])
     assert (
-        list(headers["Link"].split.return_value
-                            .__getitem__.return_value
-                            .split.return_value
-                            .__getitem__.return_value
-                            .split.call_args)
+        (headers["Link"].split.return_value
+                        .__getitem__.return_value
+                        .split.return_value
+                        .__getitem__.return_value
+                        .split.call_args)
         == [("=", ), {}])
     assert (
-        list(headers["Link"].split.return_value
-                            .__getitem__.return_value
-                            .split.return_value
-                            .__getitem__.return_value
-                            .split.return_value
-                            .__getitem__.call_args)
+        (headers["Link"].split.return_value
+                        .__getitem__.return_value
+                        .split.return_value
+                        .__getitem__.return_value
+                        .split.return_value
+                        .__getitem__.call_args)
         == [(-1, ), {}])
 
 
@@ -254,7 +254,7 @@ def test_abstract_iterator_count_from_response(patches, header, data, code):
                     else m_data.return_value))
 
     assert (
-        list(m_gidgethub.sansio.decipher_response.call_args)
+        m_gidgethub.sansio.decipher_response.call_args
         == [tuple(response), {}])
 
     if code != 200:
@@ -265,13 +265,13 @@ def test_abstract_iterator_count_from_response(patches, header, data, code):
     assert iterator.api.rate_limit == 73
     if response[1]:
         assert (
-            list(m_headers.call_args)
+            m_headers.call_args
             == [(response[1], ), {}])
         assert not m_data.called
         return
     assert not m_headers.called
     assert (
-        list(m_data.call_args)
+        m_data.call_args
         == [(data and dict(total_count=23) or {}, ), {}])
 
 
@@ -293,5 +293,5 @@ def test_abstract_iterator_inflate(inflate):
         return
 
     assert (
-        list(iterator._inflate.call_args)
+        iterator._inflate.call_args
         == [(result, ), {}])

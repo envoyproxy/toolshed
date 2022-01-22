@@ -29,19 +29,19 @@ async def test_subprocess_parallel(patches):
 
     assert results == returned
     assert (
-        list(m_future.call_args)
+        m_future.call_args
         == [(), {}])
     assert (
-        list(m_asyncio.as_completed.call_args)
+        m_asyncio.as_completed.call_args
         == [(tuple(
             m_asyncio.ensure_future.return_value
             for i in range(0, len(procs))), ), {}])
     kwargs["executor"] = m_future.return_value.__enter__.return_value
     assert (
-        list(list(c) for c in m_run.call_args_list)
+        m_run.call_args_list
         == [[(proc,), kwargs] for proc in procs])
     assert (
-        list(list(c) for c in m_asyncio.ensure_future.call_args_list)
+        m_asyncio.ensure_future.call_args_list
         == [[(m_run.return_value,), {}] for proc in procs])
 
 
@@ -80,8 +80,8 @@ async def test_subprocess_run(patches, loop, executor):
     kwargs.pop("loop", None)
 
     assert (
-        list(m_partial.call_args)
+        m_partial.call_args
         == [(m_subproc.run, ) + tuple(args), kwargs])
     assert (
-        list(m_loop.run_in_executor.call_args)
+        m_loop.run_in_executor.call_args
         == [(executor, m_partial.return_value), {}])

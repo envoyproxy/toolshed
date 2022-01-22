@@ -86,7 +86,7 @@ def test_packager_gnupg_home(patches, gen_key):
         assert not m_temp.called
         return
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_temp.return_value.name, ), {}])
 
 
@@ -124,7 +124,7 @@ def test_packager_maintainer(patches):
         assert packager.maintainer == m_class.return_value.return_value
 
     assert (
-        list(m_class.return_value.call_args)
+        m_class.return_value.call_args
         == [(m_name.return_value,
              m_email.return_value,
              m_log.return_value),
@@ -185,7 +185,7 @@ def test_packager_path(patches):
         assert packager.path == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.path, ), {}])
     assert "path" not in packager.__dict__
 
@@ -216,7 +216,7 @@ def test_packager_add_arguments():
     parser = MagicMock()
     packager.add_arguments(parser)
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('--verbosity', '-v'),
              {'choices': ['debug', 'info', 'warn', 'error'],
               'default': 'info',
@@ -271,17 +271,17 @@ def test_packager_add_key(patches):
         assert not packager.add_key(path)
 
     assert (
-        list(m_utils.typed.call_args)
+        m_utils.typed.call_args
         == [(m_plib.Path, path), {}])
     m_path = m_utils.typed.return_value
     assert (
-        list(m_path.joinpath.call_args)
+        m_path.joinpath.call_args
         == [(m_keypath.return_value, ), {}])
     assert (
-        list(m_path.joinpath.return_value.write_text.call_args)
+        m_path.joinpath.return_value.write_text.call_args
         == [(m_maintainer.return_value.export_key.return_value, ), {}])
     assert (
-        list(m_maintainer.return_value.export_key.call_args)
+        m_maintainer.return_value.export_key.call_args
         == [(), {}])
 
 
@@ -297,13 +297,13 @@ def test_packager_archive(patches):
         assert not packager.archive("PATH")
 
     assert (
-        list(m_tarfile.open.call_args)
+        m_tarfile.open.call_args
         == [(m_tar.return_value, m_utils.tar_mode.return_value), {}])
     assert (
-        list(m_utils.tar_mode.call_args)
+        m_utils.tar_mode.call_args
         == [(m_tar.return_value, ), dict(mode="w")])
     assert (
-        list(m_tarfile.open.return_value.__enter__.return_value.add.call_args)
+        m_tarfile.open.return_value.__enter__.return_value.add.call_args
         == [('PATH',), {'arcname': '.'}])
 
 
@@ -325,7 +325,7 @@ async def test_packager_cleanup(patches, indict):
         assert not m_temp.called
         return
     assert (
-        list(m_temp.return_value.cleanup.call_args)
+        m_temp.return_value.cleanup.call_args
         == [(), {}])
 
 
@@ -347,10 +347,10 @@ def test_packager_get_signing_util(patches):
             == m_utils.return_value.__getitem__.return_value.return_value)
 
     assert (
-        list(m_utils.return_value.__getitem__.call_args)
+        m_utils.return_value.__getitem__.call_args
         == [(path.name,), {}])
     assert (
-        list(m_utils.return_value.__getitem__.return_value.call_args)
+        m_utils.return_value.__getitem__.return_value.call_args
         == [(path, m_maintainer.return_value, m_log.return_value), {}])
 
 
@@ -373,18 +373,18 @@ async def test_packager_run(patches, extract):
         assert not await packager.run()
 
     assert (
-        list(m_log.return_value.success.call_args)
+        m_log.return_value.success.call_args
         == [('Successfully signed packages',), {}])
 
     if extract:
         assert (
-            list(m_tarb.call_args)
+            m_tarb.call_args
             == [(), {}])
         assert not m_dir.called
         return
     assert not m_tarb.called
     assert (
-        list(m_dir.call_args)
+        m_dir.call_args
         == [(), {}])
 
 
@@ -401,14 +401,14 @@ def test_packager_sign(patches):
         assert not packager.sign(path)
 
     assert (
-        list(m_log.return_value.notice.call_args)
+        m_log.return_value.notice.call_args
         == [((f"Signing {path.name}s ({m_maintainer.return_value}) "
               f"{path}"),), {}])
     assert (
-        list(m_util.call_args)
+        m_util.call_args
         == [(path, ), {}])
     assert (
-        list(m_util.return_value.sign.call_args)
+        m_util.return_value.sign.call_args
         == [(), {}])
 
 
@@ -435,11 +435,11 @@ def test_packager_sign_all(patches, listdir, utils):
         assert not packager.sign_all(path)
 
     assert (
-        list(path.glob.call_args)
+        path.glob.call_args
         == [('*',), {}])
     expected = [x for x in listdir if x in utils]
     assert (
-        list(list(c) for c in m_sign.call_args_list)
+        m_sign.call_args_list
         == [[(_glob[k], ), {}] for k in expected])
 
 
@@ -458,14 +458,14 @@ def test_packager_sign_directory(patches, tar):
         assert not packager.sign_directory()
 
     assert (
-        list(m_sign.call_args)
+        m_sign.call_args
         == [(m_path.return_value, ), {}])
     if not tar:
         assert not m_archive.called
         return
 
     assert (
-        list(m_archive.call_args)
+        m_archive.call_args
         == [(m_path.return_value, ), {}])
 
 
@@ -501,14 +501,14 @@ def test_packager_sign_tarball(patches, tar):
         return
 
     assert (
-        list(m_utils.untar.call_args)
+        m_utils.untar.call_args
         == [(m_path.return_value,), {}])
     assert (
-        list(m_sign.call_args)
+        m_sign.call_args
         == [(m_utils.untar.return_value.__enter__.return_value,), {}])
     assert (
-        list(m_addkey.call_args)
+        m_addkey.call_args
         == [(m_utils.untar.return_value.__enter__.return_value,), {}])
     assert (
-        list(m_archive.call_args)
+        m_archive.call_args
         == [(m_utils.untar.return_value.__enter__.return_value,), {}])

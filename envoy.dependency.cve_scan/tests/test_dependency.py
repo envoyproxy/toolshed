@@ -60,7 +60,7 @@ def test_dependency_release_version(patches, raises):
                 == (m_version.return_value if not raises else None))
 
     assert (
-        list(m_version.call_args)
+        m_version.call_args
         == [(m_dep_version.return_value, ), {}])
     if raises != Exception:
         assert "release_version" in dependency.__dict__

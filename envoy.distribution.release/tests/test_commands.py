@@ -34,12 +34,12 @@ async def test_release_command_assets(patches, assets):
 
     if not assets:
         assert (
-            list(m_runner.return_value.log.warning.call_args)
+            m_runner.return_value.log.warning.call_args
             == [(f"Version {m_version.return_value} has no assets", ), {}])
         assert not m_runner.return_value.stdout.called
         return
     assert (
-        list(list(c) for c in m_runner.return_value.stdout.info.call_args_list)
+        m_runner.return_value.stdout.info.call_args_list
         == [[(asset["name"],), {}] for asset in assets])
 
 
@@ -54,10 +54,10 @@ def test_release_command_create_add_arguments(patches):
         assert not command.add_arguments(parser)
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(parser, ), {}])
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('--assets',),
              {'nargs': '*',
               'help': (
@@ -84,10 +84,10 @@ async def test_release_command_create_run(patches):
             == m_format.return_value)
 
     assert (
-        list(mock_create.call_args)
+        mock_create.call_args
         == [(), dict(assets=m_artefacts.return_value)])
     assert (
-        list(m_format.call_args)
+        m_format.call_args
         == [(), dict(FOO="bar")])
 
 
@@ -105,7 +105,7 @@ async def test_release_command_delete(patches):
         assert await command.run() == mock_delete.return_value
 
     assert (
-        list(mock_delete.call_args)
+        mock_delete.call_args
         == [(), {}])
 
 
@@ -131,7 +131,7 @@ def test_release_command_fetch_asset_types(patches, asset_types):
                 for asset_type in asset_types or []})
 
     assert (
-        list(list(c) for c in m_re.compile.call_args_list)
+        m_re.compile.call_args_list
         == [[(asset_type.split(":", 1)[1],), {}]
             for asset_type in asset_types or []])
     assert "asset_types" not in command.__dict__
@@ -149,7 +149,7 @@ def test_release_command_fetch_path(patches):
         assert command.path == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.path, ), {}])
     assert "path" not in command.__dict__
 
@@ -239,7 +239,7 @@ def test_release_command_fetch_add_arguments(patches):
 
     assert not m_super.called
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('version',),
              {'nargs': '*',
               'help': (
@@ -280,7 +280,7 @@ async def test_release_command_fetch_run(patches, releases):
 
     for i, release in enumerate(releases.values()):
         assert (
-            list(release.fetch.call_args)
+            release.fetch.call_args
             == [(m_path.return_value, m_types.return_value),
                 {'append': i > 0}])
 
@@ -302,7 +302,7 @@ async def test_release_command_info(patches):
             == m_format.return_value)
 
     assert (
-        list(m_format.call_args)
+        m_format.call_args
         == [(mock_release.return_value, ), {}])
 
 
@@ -323,7 +323,7 @@ async def test_release_command_list(patches, releases):
         assert not await command.run()
 
     assert (
-        list(list(c) for c in m_runner.return_value.stdout.info.call_args_list)
+        m_runner.return_value.stdout.info.call_args_list
         == [[(release["tag_name"], ), {}]
             for release in releases])
 
@@ -339,10 +339,10 @@ def test_release_command_push_add_arguments(patches):
         assert not command.add_arguments(parser)
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(parser, ), {}])
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('--assets',),
              {'nargs': '*',
               'help': (
@@ -366,5 +366,5 @@ async def test_release_command_push_run(patches):
         assert not await command.run()
 
     assert (
-        list(mock_push.call_args)
+        mock_push.call_args
         == [(m_artefacts.return_value, ), {}])

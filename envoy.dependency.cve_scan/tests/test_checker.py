@@ -92,23 +92,23 @@ def test_checker_config(patches, start_config, start_raises):
             assert checker.config == m_dict.return_value
 
     assert (
-        list(m_dict.call_args)
+        m_dict.call_args
         == [(), dict(nist_url=m_tpl.return_value, start_year=0)])
     assert (
-        list(m_dict.return_value.update.call_args)
+        m_dict.return_value.update.call_args
         == [(m_utils.typed.return_value, ), {}])
     assert (
-        list(m_utils.typed.call_args)
+        m_utils.typed.call_args
         == [(m_dict, m_utils.from_yaml.return_value), {}])
     assert (
-        list(m_utils.from_yaml.call_args)
+        m_utils.from_yaml.call_args
         == [(m_path.return_value, ), {}])
     assert (
-        list(m_dict.return_value.__getitem__.call_args)
+        m_dict.return_value.__getitem__.call_args
         == [("start_year", ), {}])
     if start_config == 0 and not start_raises:
         assert (
-            list(m_dict.return_value.__setitem__.call_args)
+            m_dict.return_value.__setitem__.call_args
             == [("start_year", m_start.return_value), {}])
     else:
         assert not m_dict.return_value.__setitem__.called
@@ -127,7 +127,7 @@ def test_checker_config_path(patches):
         assert checker.config_path == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.config_path, ), {}])
     assert "config_path" not in checker.__dict__
 
@@ -158,14 +158,14 @@ async def test_checker_cve_data(patches):
             == (m_dict.return_value, m_ddict.return_value))
 
     assert (
-        list(list(c) for c in m_log.return_value.info.call_args_list)
+        m_log.return_value.info.call_args_list
         == [[(f"CVE data downloaded from: {dl.url}", ), {}]
             for dl in download_mocks])
     assert (
-        list(m_conc.call_args)
+        m_conc.call_args
         == [(m_nist.return_value,), {}])
     assert (
-        list(list(c) for c in m_parse.call_args_list)
+        m_parse.call_args_list
         == [[(dl, m_dict.return_value, m_ddict.return_value), {}]
             for dl in download_mocks])
     assert "cve_data" not in checker.__dict__
@@ -186,7 +186,7 @@ def test_checker_dependencies(patches):
                 for i in range(0, 5)])
 
     assert (
-        list(m_dep_class.return_value.call_args_list)
+        m_dep_class.return_value.call_args_list
         == [[(f"k{i}", f"v{i}"), {}] for i in range(0, 5)])
     assert "dependencies" in checker.__dict__
 
@@ -201,7 +201,7 @@ def test_checker_ignored_cves(patches):
         assert checker.ignored_cves == m_config.return_value.get.return_value
 
     assert (
-        list(m_config.return_value.get.call_args)
+        m_config.return_value.get.call_args
         == [("ignored_cves", []), {}])
     assert "ignored_cves" not in checker.__dict__
 
@@ -222,7 +222,7 @@ def test_checker_nist_downloads(patches):
             == [m_download.return_value for i in range(0, 5)])
 
     assert (
-        list(list(c) for c in m_download.call_args_list)
+        m_download.call_args_list
         == [[(f'URL{i}',), {}] for i in range(0, 5)])
 
     assert "nist_downloads" not in checker.__dict__
@@ -258,10 +258,10 @@ def test_checker_scan_year_end(patches):
             == m_dt.now.return_value.year.__add__.return_value)
 
     assert (
-        list(m_dt.now.call_args)
+        m_dt.now.call_args
         == [(), {}])
     assert (
-        list(m_dt.now.return_value.year.__add__.call_args)
+        m_dt.now.return_value.year.__add__.call_args
         == [(1, ), {}])
     assert "scan_year_end" not in checker.__dict__
 
@@ -279,7 +279,7 @@ def test_checker_scan_year_start(patches):
             == m_config.return_value.__getitem__.return_value)
 
     assert (
-        list(m_config.return_value.__getitem__.call_args)
+        m_config.return_value.__getitem__.call_args
         == [("start_year", ), {}])
 
     assert "scan_year_start" not in checker.__dict__
@@ -297,7 +297,7 @@ def test_checker_scan_years(patches):
         assert checker.scan_years == m_range.return_value
 
     assert (
-        list(m_range.call_args)
+        m_range.call_args
         == [(m_start.return_value, m_end.return_value), {}])
 
     assert "scan_years" not in checker.__dict__
@@ -313,7 +313,7 @@ def test_checker_session(patches):
         assert checker.session == m_aiohttp.ClientSession.return_value
 
     assert (
-        list(m_aiohttp.ClientSession.call_args)
+        m_aiohttp.ClientSession.call_args
         == [(), {}])
 
     assert "session" in checker.__dict__
@@ -363,9 +363,7 @@ def test_checker_urls(patches, provided_urls):
         return
 
     assert (
-        list(list(c)
-             for c
-             in m_config.return_value.__getitem__.call_args_list)
+        m_config.return_value.__getitem__.call_args_list
         == [[('nist_url',), {}]] * 5)
 
 
@@ -380,10 +378,10 @@ def test_checker_add_arguments(patches):
         assert not checker.add_arguments(parser)
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(parser, ), {}])
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('config_path',), {}], [('urls',), {'nargs': '*'}]])
 
 
@@ -419,25 +417,25 @@ async def test_checker_check_cves(patches):
         assert not await checker.check_cves()
 
     assert (
-        list(list(c) for c in m_log.return_value.info.call_args_list)
+        m_log.return_value.info.call_args_list
         == [[(f"No CPE listed for: {deps[1].id}", ), {}]])
     assert (
-        list(list(c) for c in m_check.call_args_list)
+        m_check.call_args_list
         == [[(dep, *cve_data), {}]
             for i, dep in enumerate(deps) if i != 1])
     formatted_failure = (
         f"{cve_data[0].__getitem__.return_value.format_failure.return_value}")
     assert (
-        list(list(c) for c in m_error.call_args_list)
+        m_error.call_args_list
         == [[('cves',
               [formatted_failure
                for fail in dep.errors]), {}]
             for i, dep in enumerate(deps) if i in [2, 3]])
     assert (
-        list(list(c) for c in cve_data[0].__getitem__.call_args_list)
+        cve_data[0].__getitem__.call_args_list
         == [[(i, ), {}] for i in [1, 3, 5, 2, 4]])
     assert (
-        list(list(c) for c in m_succeed.call_args_list)
+        m_succeed.call_args_list
         == [[('cves',
               [f"No CVEs found for: {dep.id}"]), {}]
             for i, dep in enumerate(deps) if i not in [1, 2, 3]])
@@ -484,19 +482,17 @@ def test_checker_dependency_match(patches, exclude_cves, cve_len, match_cves):
                 if i in match_cves])
 
     assert (
-        list(m_class.return_value.from_string.call_args)
+        m_class.return_value.from_string.call_args
         == [(dependency.cpe, ), {}])
     assert (
-        list(cpe_revmap.get.call_args)
+        cpe_revmap.get.call_args
         == [(m_class.return_value.from_string.return_value.vendor_normalized,
              []), {}])
     assert (
-        list(list(c) for c in cves.__getitem__.call_args_list)
+        cves.__getitem__.call_args_list
         == [[(cve, ), {}] for cve in cpe_cves])
     assert (
-        list(list(c)
-             for c
-             in cves.__getitem__.return_value.dependency_match.call_args_list)
+        cves.__getitem__.return_value.dependency_match.call_args_list
         == [[(dependency, ), {}] for cve in cpe_cves])
 
 
@@ -513,7 +509,7 @@ async def test_checker_download(patches):
         assert await checker.download("URL") == aget.return_value
 
     assert (
-        list(aget.call_args)
+        aget.call_args
         == [("URL", ), {}])
 
 
@@ -551,7 +547,7 @@ async def test_checker_on_checks_complete(patches):
         assert await checker.on_checks_complete() == m_super.return_value
 
     assert (
-        list(m_session.return_value.close.call_args)
+        m_session.return_value.close.call_args
         == [(), {}])
 
 
@@ -582,15 +578,15 @@ def test_checker_parse_cve_json(patches, exclude_cves):
         assert not checker.parse_cve_json(cve_json, cve_dict, cpe_revmap)
 
     assert (
-        list(list(c) for c in m_class.return_value.call_args_list)
+        m_class.return_value.call_args_list
         == [[(cve_item, m_tracked.return_value), {}]
             for cve_item in cve_items])
     assert (
-        list(list(c) for c in m_include.call_args_list)
+        m_include.call_args_list
         == [[(cve, ), {}]
             for cve in cves])
     assert (
-        list(list(c) for c in cve_dict.__setitem__.call_args_list)
+        cve_dict.__setitem__.call_args_list
         == [[(cve.id, cve), {}]
             for i, cve in enumerate(cves) if i not in exclude_cves])
     expected = []
@@ -600,12 +596,10 @@ def test_checker_parse_cve_json(patches, exclude_cves):
         for cpe in cve.cpes:
             expected.append((cpe, cve))
     assert (
-        list(list(c) for c in cpe_revmap.__getitem__.call_args_list)
+        cpe_revmap.__getitem__.call_args_list
         == [[(cpe.vendor_normalized,), {}] for cpe, cve in expected])
     assert (
-        list(list(c)
-             for c
-             in cpe_revmap.__getitem__.return_value.add.call_args_list)
+        cpe_revmap.__getitem__.return_value.add.call_args_list
         == [[(cve.id,), {}] for cpe, cve in expected])
 
 
@@ -648,21 +642,21 @@ async def test_checker_parse_cve_response(patches, raises):
                 is None)
 
     assert (
-        list(download.read.call_args)
+        download.read.call_args
         == [(), {}])
     if raises == aiohttp.client_exceptions.ClientPayloadError:
         assert not m_gzip.called
         assert not m_json.loads.called
         return
     assert (
-        list(m_gzip.call_args)
+        m_gzip.call_args
         == [(download.read.return_value, ), {}])
     if raises == gzip.BadGzipFile:
         assert not m_json.loads.called
         return
     assert (
-        list(m_json.loads.call_args)
+        m_json.loads.call_args
         == [(m_gzip.return_value, ), {}])
     assert (
-        list(m_parse.call_args)
+        m_parse.call_args
         == [(m_json.loads.return_value, cves, cpe_revmap), {}])

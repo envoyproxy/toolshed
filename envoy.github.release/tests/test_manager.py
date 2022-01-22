@@ -66,7 +66,7 @@ async def test_release_manager_async_contextmanager(patches):
             assert isinstance(releaser, GithubReleaseManager)
             assert not m_close.called
         assert (
-            list(m_close.call_args)
+            m_close.call_args
             == [(), {}])
 
 
@@ -80,7 +80,7 @@ def test_release_manager_dunder_getitem(patches):
         assert releaser["X.Y.Z"] == m_release.return_value
 
     assert (
-        list(m_release.call_args)
+        m_release.call_args
         == [(releaser, "X.Y.Z"), {}])
 
 
@@ -113,7 +113,7 @@ def test_release_manager_github(patches, oauth_token, user, github):
         assert not m_api.aiohttp.GitHubAPI.called
         return
     assert (
-        list(m_api.aiohttp.GitHubAPI.call_args)
+        m_api.aiohttp.GitHubAPI.call_args
         == [(m_session.return_value, user or ""),
             {'oauth_token': oauth_token}])
 
@@ -141,7 +141,7 @@ def test_release_manager_log(patches, log):
         return
 
     assert (
-        list(m_log.VerboseLogger.call_args)
+        m_log.VerboseLogger.call_args
         == [('envoy.github.release.manager',), {}])
 
 
@@ -158,7 +158,7 @@ def test_release_manager_path(patches):
 
     assert "path" in releaser.__dict__
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [('PATH',), {}])
 
 
@@ -213,7 +213,7 @@ async def test_release_manager_releases(patches):
         assert await releaser.releases == list(range(0, 5))
 
     assert (
-        list(getiter_mock.call_args)
+        getiter_mock.call_args
         == [(str(m_releases.return_value), ), {}])
     assert not hasattr(releaser, async_property.cache_name)
 
@@ -228,7 +228,7 @@ def test_release_manager_releases_url(patches):
         assert releaser.releases_url == m_plib.PurePosixPath.return_value
 
     assert (
-        list(m_plib.PurePosixPath.call_args)
+        m_plib.PurePosixPath.call_args
         == [("/repos/REPOSITORY/releases", ), {}])
     assert "releases_url" in releaser.__dict__
 
@@ -254,7 +254,7 @@ def test_release_manager_session(patches, session):
         assert not m_http.ClientSession.called
         return
     assert (
-        list(m_http.ClientSession.call_args)
+        m_http.ClientSession.call_args
         == [(), {}])
 
 
@@ -269,7 +269,7 @@ def test_release_manager_version_re(patches):
         assert releaser.version_re == m_re.compile.return_value
 
     assert (
-        list(m_re.compile.call_args)
+        m_re.compile.call_args
         == [("VERSION RE", ), {}])
 
 
@@ -294,7 +294,7 @@ async def test_release_manager_close(patches, session):
         return
 
     assert (
-        list(m_session.return_value.close.call_args)
+        m_session.return_value.close.call_args
         == [(), {}])
 
 
@@ -320,7 +320,7 @@ def test_release_manager_fail(patches, continues):
         return
 
     assert (
-        list(m_log.return_value.warning.call_args)
+        m_log.return_value.warning.call_args
         == [("MESSAGE", ), {}])
 
 
@@ -331,7 +331,7 @@ def test_release_manager_format_version():
         releaser.format_version("VERSION")
         == releaser._version_format.format.return_value)
     assert (
-        list(releaser._version_format.format.call_args)
+        releaser._version_format.format.call_args
         == [(), dict(version="VERSION")])
 
 
@@ -363,18 +363,18 @@ def test_release_manager_parse_version(patches, version, raises):
                     else m_packaging.return_value))
 
     assert (
-        list(m_version.return_value.sub.call_args)
+        m_version.return_value.sub.call_args
         == [(r"\1", "VERSION"), {}])
     if version:
         assert (
-            list(m_packaging.call_args)
+            m_packaging.call_args
             == [(m_version.return_value.sub.return_value, ), {}])
     else:
         assert not m_packaging.called
 
     if not version or raises and raises != BaseException:
         assert (
-            list(m_log.return_value.warning.call_args)
+            m_log.return_value.warning.call_args
             == [("Unable to parse version: VERSION", ), {}])
     else:
         assert not m_log.called

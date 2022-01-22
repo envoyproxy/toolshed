@@ -46,10 +46,10 @@ async def test_aaptly_aptly_config(patches):
             == m_json.loads.return_value)
 
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("config", "show"), {}])
     assert (
-        list(m_json.loads.call_args)
+        m_json.loads.call_args
         == [(m_aptly.return_value, ), {}])
     assert async_property.is_cached(aptly, "aptly_config")
 
@@ -72,20 +72,20 @@ async def test_aaptly_aptly_published(patches):
                 for p in parts])
 
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("publish", "list", "-raw"), {}])
     assert (
-        list(mock_strip.call_args)
+        mock_strip.call_args
         == [(), {}])
     assert (
-        list(mock_split.call_args)
+        mock_split.call_args
         == [("\n", ), {}])
     for part in parts:
         assert (
-            list(part.split.call_args)
+            part.split.call_args
             == [(" ", ), {}])
         assert (
-            list(part.split.return_value.__getitem__.call_args)
+            part.split.return_value.__getitem__.call_args
             == [(1, ), {}])
     assert not async_property.is_cached(aptly, "published")
 
@@ -106,10 +106,10 @@ async def test_aaptly_aptly_root_dir(patches):
             == m_plib.Path.return_value)
 
     assert (
-        list(mock_config.return_value.__getitem__.call_args)
+        mock_config.return_value.__getitem__.call_args
         == [("rootDir", ), {}])
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(mock_config.return_value.__getitem__.return_value, ), {}])
     assert not async_property.is_cached(aptly, "aptly_root_dir")
 
@@ -128,13 +128,13 @@ async def test_aaptly_aptly_repos(patches):
             == mock_strip.return_value.split.return_value)
 
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("repo", "list", "-raw"), {}])
     assert (
-        list(mock_strip.call_args)
+        mock_strip.call_args
         == [(), {}])
     assert (
-        list(mock_strip.return_value.split.call_args)
+        mock_strip.return_value.split.call_args
         == [("\n", ), {}])
     assert not async_property.is_cached(aptly, "repos")
 
@@ -153,13 +153,13 @@ async def test_aaptly_aptly_snapshots(patches):
             == mock_strip.return_value.split.return_value)
 
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("snapshot", "list", "-raw"), {}])
     assert (
-        list(mock_strip.call_args)
+        mock_strip.call_args
         == [(), {}])
     assert (
-        list(mock_strip.return_value.split.call_args)
+        mock_strip.return_value.split.call_args
         == [("\n", ), {}])
     assert not async_property.is_cached(aptly, "snapshots")
 
@@ -198,7 +198,7 @@ async def test_aaptly_aptly_aptly(patches, return_code, stderr, args):
                 == mock_run.return_value.stdout)
 
     assert (
-        list(m_aio.core.subprocess.run.call_args)
+        m_aio.core.subprocess.run.call_args
         == [(command, ),
             dict(capture_output=True, encoding="utf-8")])
     if return_code:
@@ -210,13 +210,13 @@ async def test_aaptly_aptly_aptly(patches, return_code, stderr, args):
         assert not m_log.called
         return
     assert (
-        list(mock_run.return_value.stderr.strip.call_args)
+        mock_run.return_value.stderr.strip.call_args
         == [(), {}])
     if not stderr:
         assert not m_log.called
         return
     assert (
-        list(m_log.return_value.info.call_args)
+        m_log.return_value.info.call_args
         == [(mock_run.return_value.stderr, ), {}])
 
 
@@ -225,7 +225,7 @@ def test_deb_repomanager_add_arguments():
     parser = MagicMock()
     assert not repo.DebRepoManager.add_arguments(parser)
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('--deb_aptly_command',), {'nargs': '?'}]])
 
 
@@ -247,7 +247,7 @@ def test_deb_repomanager_constructor(patches, aptly_command):
     assert manager._aptly_command == aptly_command
     assert manager.file_types == r".*(\.deb|\.changes)$"
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(manager, "NAME", "PATH", "CONFIG", "LOG", "STDOUT"), {}])
 
 
@@ -282,7 +282,7 @@ def test_deb_repomanager_aptly_command(patches, cmd, exists, which):
         return
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(cmd or which, ), {}])
 
     if exists:
@@ -302,7 +302,7 @@ def test_deb_repomanager_changes_files():
     path.glob.return_value = paths
     assert manager.changes_files == tuple(paths)
     assert (
-        list(path.glob.call_args)
+        path.glob.call_args
         == [(f"**/{name}/*.changes", ), {}])
     assert "changes_files" in manager.__dict__
 
@@ -321,13 +321,13 @@ def test_deb_repomanager_distros(patches):
         assert manager.distros == m_set.return_value
 
     assert (
-        list(m_set.call_args)
+        m_set.call_args
         == [(m_chain.from_iterable.return_value, ), {}])
     assert (
-        list(m_chain.from_iterable.call_args)
+        m_chain.from_iterable.call_args
         == [(m_versions.return_value.values.return_value, ), {}])
     assert (
-        list(m_versions.return_value.values.call_args)
+        m_versions.return_value.values.call_args
         == [(), {}])
 
 
@@ -350,35 +350,35 @@ async def test_deb_repomanager_create_distro(patches, exists):
         assert not await manager.create_distro("DISTRO")
 
     assert (
-        list(m_exists.call_args)
+        m_exists.call_args
         == [("DISTRO", ), {}])
     if exists:
         assert (
-            list(m_rm.call_args)
+            m_rm.call_args
             == [("DISTRO", ), {}])
     else:
         assert not m_rm.called
     assert (
-        list(m_log.return_value.notice.call_args)
+        m_log.return_value.notice.call_args
         == [("Creating deb distribution: DISTRO", ), {}])
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("repo", "create",
              "-distribution=\"DISTRO\"",
              "-component=main",
              "DISTRO"), {}])
     mock_split = mock_strip.return_value.split
     assert (
-        list(m_log.return_value.success.call_args)
+        m_log.return_value.success.call_args
         == [(mock_split.return_value.__getitem__.return_value, ), {}])
     assert (
-        list(mock_strip.call_args)
+        mock_strip.call_args
         == [(), {}])
     assert (
-        list(mock_split.call_args)
+        mock_split.call_args
         == [("\n", ), {}])
     assert (
-        list(mock_split.return_value.__getitem__.call_args)
+        mock_split.return_value.__getitem__.call_args
         == [(0, ), {}])
 
 
@@ -401,23 +401,23 @@ async def test_deb_repomanager_create_snapshot(patches, exists):
         assert not await manager.create_snapshot("DISTRO")
 
     assert (
-        list(m_exists.call_args)
+        m_exists.call_args
         == [("DISTRO", ), {}])
     if exists:
         assert (
-            list(m_rm.call_args)
+            m_rm.call_args
             == [("DISTRO", ), {}])
     else:
         assert not m_rm.called
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("snapshot", "create",
              "DISTRO", "from", "repo", "DISTRO"), {}])
     assert (
-        list(m_log.return_value.success.call_args)
+        m_log.return_value.success.call_args
         == [(mock_strip.return_value, ), {}])
     assert (
-        list(mock_strip.call_args)
+        mock_strip.call_args
         == [(), {}])
 
 
@@ -451,10 +451,10 @@ async def test_deb_repomanager_drop_distro(patches):
         assert not await manager.drop_distro("DISTRO")
 
     assert (
-        list(m_log.return_value.warning.call_args)
+        m_log.return_value.warning.call_args
         == [("Removing existing repo DISTRO", ), {}])
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("repo", "drop", "-force", "DISTRO"), {}])
 
 
@@ -471,10 +471,10 @@ async def test_deb_repomanager_drop_published(patches):
         assert not await manager.drop_published("DISTRO")
 
     assert (
-        list(m_log.return_value.warning.call_args)
+        m_log.return_value.warning.call_args
         == [("Removing existing published version DISTRO", ), {}])
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("publish", "drop", "DISTRO"), {}])
 
 
@@ -495,19 +495,19 @@ async def test_deb_repomanager_drop_snapshot(patches, exists):
         assert not await manager.drop_snapshot("DISTRO")
 
     assert (
-        list(m_log.return_value.warning.call_args)
+        m_log.return_value.warning.call_args
         == [("Removing existing snapshot DISTRO", ), {}])
     assert (
-        list(m_exists.call_args)
+        m_exists.call_args
         == [("DISTRO", ), {}])
     if exists:
         assert (
-            list(m_rm.call_args)
+            m_rm.call_args
             == [("DISTRO", ), {}])
     else:
         assert not m_rm.called
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("snapshot", "drop", "-force",
              "DISTRO"), {}])
 
@@ -568,20 +568,20 @@ async def test_deb_repomanager_include_changes_file(
         return
 
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("repo", "include", "-no-remove-files", changes_file), {}])
     assert (
-        list(mock_strip.call_args)
+        mock_strip.call_args
         == [(), {}])
     mock_split = mock_strip.return_value.split
     assert (
-        list(mock_split.call_args)
+        mock_split.call_args
         == [("\n", ), {}])
     assert (
-        list(mock_split.return_value.__getitem__.call_args)
+        mock_split.return_value.__getitem__.call_args
         == [(-1, ), {}])
     assert (
-        list(m_log.return_value.success.call_args)
+        m_log.return_value.success.call_args
         == [(mock_split.return_value.__getitem__.return_value, ), {}])
 
 
@@ -608,10 +608,10 @@ async def test_deb_repomanager_publish(patches):
             == mock_dir.return_value)
 
     assert (
-        list(m_log.return_value.notice.call_args)
+        m_log.return_value.notice.call_args
         == [("Building deb repository", ), {}])
     assert (
-        list(list(c) for c in m_publish.call_args_list)
+        m_publish.call_args_list
         == [[(distro, ), {}] for distro in distros])
 
 
@@ -634,7 +634,7 @@ async def test_deb_repomanager_publish_distro(patches):
         assert not await manager.publish_distro("DISTRO")
 
     assert (
-        list(list(c) for c in order_mock.call_args_list)
+        order_mock.call_args_list
         == [[('CREATE_DISTRO',), {}],
             [('INCLUDE',), {}],
             [('CREATE_SNAP',), {}],
@@ -658,13 +658,13 @@ async def test_deb_repomanager_publish_snapshot(patches):
         assert not await manager.publish_snapshot("DISTRO")
 
     assert (
-        list(m_aptly.call_args)
+        m_aptly.call_args
         == [("publish", "snapshot",
              "-distribution=DISTRO",
              f"-architectures={','.join(architectures)}",
              "DISTRO"), {}])
     assert (
-        list(m_log.return_value.info.call_args)
+        m_log.return_value.info.call_args
         == [(m_aptly.return_value, ), {}])
 
 

@@ -34,11 +34,11 @@ async def test_util_build_image(patches, args, kwargs):
 
     temp_file = m_temp.NamedTemporaryFile
     assert (
-        list(temp_file.call_args)
+        temp_file.call_args
         == [(), {}])
 
     assert (
-        list(m_build.call_args)
+        m_build.call_args
         == [(temp_file.return_value.__enter__.return_value, ) + args,
             kwargs])
 
@@ -81,16 +81,16 @@ async def test_util__build_image(patches, stream, buildargs, error):
             assert not await utils.utils._build_image(*args, **kwargs)
 
     assert (
-        list(m_tar.open.call_args)
+        m_tar.open.call_args
         == [(tar.name,), {'fileobj': tar, 'mode': 'w'}])
     assert (
-        list(m_tar.open.return_value.__enter__.return_value.add.call_args)
+        m_tar.open.return_value.__enter__.return_value.add.call_args
         == [('CONTEXT',), {'arcname': '.'}])
     assert (
-        list(tar.seek.call_args)
+        tar.seek.call_args
         == [(0,), {}])
     assert (
-        list(docker.images.build.call_args)
+        docker.images.build.call_args
         == [(),
             {'fileobj': tar,
              'encoding': 'gzip',
@@ -99,12 +99,12 @@ async def test_util__build_image(patches, stream, buildargs, error):
              'buildargs': buildargs or {}}])
     if stream and error:
         assert (
-            list(list(c) for c in _stream.call_args_list)
+            _stream.call_args_list
             == [[('LINE1',), {}]])
         return
     elif stream:
         assert (
-            list(list(c) for c in _stream.call_args_list)
+            _stream.call_args_list
             == [[(f'LINE{i}',), {}] for i in range(1, 4)])
         return
     # the iterator should be called n + 1 for the n of items
@@ -135,9 +135,9 @@ async def test_util_docker_client(patches, raises, url):
                 pass
 
     assert (
-        list(m_docker.Docker.call_args)
+        m_docker.Docker.call_args
         == [(url,), {}])
     assert docker == m_docker.Docker.return_value
     assert (
-        list(m_docker.Docker.return_value.close.call_args)
+        m_docker.Docker.return_value.close.call_args
         == [(), {}])

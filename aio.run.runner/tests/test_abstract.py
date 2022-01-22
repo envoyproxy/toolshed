@@ -49,10 +49,10 @@ def test_command_args(patches):
             == known_args.return_value.__getitem__.return_value)
 
     assert (
-        list(known_args.call_args)
+        known_args.call_args
         == [(context.extra_args, ), {}])
     assert (
-        list(known_args.return_value.__getitem__.call_args)
+        known_args.return_value.__getitem__.call_args
         == [(0, ), {}])
 
 
@@ -70,10 +70,10 @@ def test_command_extra_args(patches):
             == known_args.return_value.__getitem__.return_value)
 
     assert (
-        list(known_args.call_args)
+        known_args.call_args
         == [(context.extra_args, ), {}])
     assert (
-        list(known_args.return_value.__getitem__.call_args)
+        known_args.return_value.__getitem__.call_args
         == [(1, ), {}])
 
 
@@ -90,10 +90,10 @@ def test_command_parser(patches):
             == m_argparse.ArgumentParser.return_value)
 
     assert (
-        list(m_argparse.ArgumentParser.call_args)
+        m_argparse.ArgumentParser.call_args
         == [(), dict(allow_abbrev=False)])
     assert (
-        list(m_addargs.call_args)
+        m_addargs.call_args
         == [(m_argparse.ArgumentParser.return_value, ), {}])
 
 
@@ -183,10 +183,10 @@ def test_commandrunner_command(patches):
             == m_commands.return_value.__getitem__.return_value.return_value)
 
     assert (
-        list(m_commands.return_value.__getitem__.call_args)
+        m_commands.return_value.__getitem__.call_args
         == [(m_args.return_value.command, ), {}])
     assert (
-        list(m_commands.return_value.__getitem__.return_value.call_args)
+        m_commands.return_value.__getitem__.return_value.call_args
         == [(runner, ), {}])
 
 
@@ -213,5 +213,5 @@ async def test_commandrunner_run(patches):
             == cmd_run.return_value)
 
     assert (
-        list(cmd_run.call_args)
+        cmd_run.call_args
         == [(), {}])

@@ -79,7 +79,7 @@ def test_abstract_repo_github_path(patches):
         assert repo.github_path == m_plib.PurePosixPath.return_value
 
     assert (
-        list(m_plib.PurePosixPath.call_args)
+        m_plib.PurePosixPath.call_args
         == [("/repos/NAME", ), {}])
     assert "github_path" in repo.__dict__
 
@@ -89,7 +89,7 @@ def test_abstract_repo_issues(patches):
     repo = DummyGithubRepo(github, "NAME")
     assert repo.issues == github.issues_class.return_value
     assert (
-        list(github.issues_class.call_args)
+        github.issues_class.call_args
         == [(github, ), dict(repo=repo)])
     assert "issues" in repo.__dict__
 
@@ -105,7 +105,7 @@ def test_abstract_repo_labels(patches):
         assert repo.labels == m_iter.return_value
 
     assert (
-        list(m_iter.call_args)
+        m_iter.call_args
         == [(github.label_class, "labels"), {}])
     assert "labels" not in repo.__dict__
 
@@ -123,10 +123,10 @@ async def test_abstract_repo_commit(patches):
             == github.commit_class.return_value)
 
     assert (
-        list(github.commit_class.call_args)
+        github.commit_class.call_args
         == [(repo, m_getitem.return_value), {}])
     assert (
-        list(m_getitem.call_args)
+        m_getitem.call_args
         == [("commits/COMMIT_NAME", ), {}])
 
 
@@ -153,15 +153,15 @@ def test_abstract_repo_commits(patches, since):
     if since:
         query = f"{query}?since={m_utils.dt_to_js_isoformat.return_value}"
         assert (
-            list(m_utils.dt_to_js_isoformat.call_args)
+            m_utils.dt_to_js_isoformat.call_args
             == [(since, ), {}])
     else:
         assert not m_utils.dt_to_js_isoformat.called
     assert (
-        list(m_getiter.call_args)
+        m_getiter.call_args
         == [(query, ), dict(inflate=m_partial.return_value)])
     assert (
-        list(m_partial.call_args)
+        m_partial.call_args
         == [(github.commit_class, repo), {}])
 
 
@@ -179,10 +179,10 @@ async def test_abstract_repo_getitem(patches):
             == github.getitem.return_value)
 
     assert (
-        list(github.getitem.call_args)
+        github.getitem.call_args
         == [(m_gh_endpoint.return_value, ), {}])
     assert (
-        list(m_gh_endpoint.call_args)
+        m_gh_endpoint.call_args
         == [("QUERY", ), {}])
 
 
@@ -201,10 +201,10 @@ def test_abstract_repo_getiter(patches, kwargs):
             == github.getiter.return_value)
 
     assert (
-        list(github.getiter.call_args)
+        github.getiter.call_args
         == [(m_gh_endpoint.return_value, ), kwargs])
     assert (
-        list(m_gh_endpoint.call_args)
+        m_gh_endpoint.call_args
         == [("QUERY", ), {}])
 
 
@@ -221,7 +221,7 @@ def test_abstract_repo_github_endpoint(patches):
             == str(m_path.return_value.joinpath.return_value))
 
     assert (
-        list(m_path.return_value.joinpath.call_args)
+        m_path.return_value.joinpath.call_args
         == [("ENDPOINT", ), {}])
 
 
@@ -238,10 +238,10 @@ def test_abstract_repo_iter_entities(patches):
             == m_getiter.return_value)
 
     assert (
-        list(m_getiter.call_args)
+        m_getiter.call_args
         == [("PATH", ), dict(inflate=m_partial.return_value)])
     assert (
-        list(m_partial.call_args)
+        m_partial.call_args
         == [("ENTITY", repo), {}])
 
 
@@ -265,10 +265,10 @@ async def test_abstract_repo_patch(patches, data):
             == github.patch.return_value)
 
     assert (
-        list(github.patch.call_args)
+        github.patch.call_args
         == [(m_gh_endpoint.return_value, ), dict(data=data)])
     assert (
-        list(m_gh_endpoint.call_args)
+        m_gh_endpoint.call_args
         == [("QUERY", ), {}])
 
 
@@ -292,10 +292,10 @@ async def test_abstract_repo_post(patches, data):
             == github.post.return_value)
 
     assert (
-        list(github.post.call_args)
+        github.post.call_args
         == [(m_gh_endpoint.return_value, ), dict(data=data)])
     assert (
-        list(m_gh_endpoint.call_args)
+        m_gh_endpoint.call_args
         == [("QUERY", ), {}])
 
 
@@ -312,10 +312,10 @@ async def test_abstract_repo_release(patches):
             == github.release_class.return_value)
 
     assert (
-        list(github.release_class.call_args)
+        github.release_class.call_args
         == [(repo, m_getitem.return_value), {}])
     assert (
-        list(m_getitem.call_args)
+        m_getitem.call_args
         == [("releases/tags/RELEASE_NAME", ), {}])
 
 
@@ -332,7 +332,7 @@ def test_abstract_repo_releases(patches):
             == m_iter.return_value)
 
     assert (
-        list(m_iter.call_args)
+        m_iter.call_args
         == [(github.release_class, "releases?per_page=100"), {}])
 
 
@@ -359,23 +359,23 @@ async def test_abstract_repo_tag(patches, is_tag):
             == github.tag_class.return_value)
 
     assert (
-        list(github.tag_class.call_args)
+        github.tag_class.call_args
         == [(repo, github.getitem.return_value), {}])
     assert (
-        list(github.getitem.call_args)
+        github.getitem.call_args
         == [(m_getitem.return_value
                       .__getitem__.return_value
                       .__getitem__.return_value, ), {}])
     assert (
-        list(m_getitem.call_args)
+        m_getitem.call_args
         == [("git/ref/tags/TAG_NAME", ), {}])
     assert (
-        list(m_getitem.return_value.__getitem__.call_args)
+        m_getitem.return_value.__getitem__.call_args
         == [("object", ), {}])
     assert (
-        list(m_getitem.return_value
-                      .__getitem__.return_value
-                      .__getitem__.call_args)
+        (m_getitem.return_value
+                  .__getitem__.return_value
+                  .__getitem__.call_args)
         == [("url", ), {}])
 
 
@@ -392,5 +392,5 @@ def test_abstract_repo_tags(patches):
             == m_iter.return_value)
 
     assert (
-        list(m_iter.call_args)
+        m_iter.call_args
         == [(github.tag_class, "tags"), {}])

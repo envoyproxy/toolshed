@@ -40,7 +40,7 @@ def test_abstract_pip_checker_config_requirements():
             {"package-ecosystem": "pip", "directory": "dir3"}]
         assert checker.config_requirements == {'dir1', 'dir3'}
         assert (
-            list(m_config.return_value.__getitem__.call_args)
+            m_config.return_value.__getitem__.call_args
             == [('updates',), {}])
 
 
@@ -68,10 +68,10 @@ def test_abstract_pip_checker_dependabot_config(patches, isdict):
                     f"{checker.dependabot_config_path}"))
 
     assert (
-        list(m_path.return_value.joinpath.call_args)
+        m_path.return_value.joinpath.call_args
         == [(checker._dependabot_config, ), {}])
     assert (
-        list(m_utils.from_yaml.call_args)
+        m_utils.from_yaml.call_args
         == [(m_path.return_value.joinpath.return_value,), {}])
 
 
@@ -139,7 +139,7 @@ def test_abstract_pip_checker_requirements_dirs(patches, matches):
 
     for exp in expected:
         assert (
-            list(exp.parent.relative_to.call_args)
+            exp.parent.relative_to.call_args
             == [(m_path.return_value,), {}])
     assert "requirements_dirs" in checker.__dict__
 
@@ -172,7 +172,7 @@ async def test_abstract_pip_checker_check_dependabot(patches, requirements):
 
     if config & dirs:
         assert (
-            list(m_success.call_args)
+            m_success.call_args
             == [(config & dirs, ), {}])
     else:
         assert not m_success.called
@@ -182,14 +182,14 @@ async def test_abstract_pip_checker_check_dependabot(patches, requirements):
               (f"Missing {m_fname.return_value} dir, "
                "specified in dependabot config")),
              {}]
-            in list(list(c) for c in m_errors.call_args_list))
+            in list(m_errors.call_args_list))
 
     if dirs - config:
         assert (
             [(dirs - config,
               f"Missing dependabot config for {m_fname.return_value} in dir"),
              {}]
-            in list(list(c) for c in m_errors.call_args_list))
+            in list(m_errors.call_args_list))
 
     if not config - dirs and not dirs - config:
         assert not m_errors.called
@@ -208,7 +208,7 @@ def test_abstract_pip_checker_dependabot_success(patches):
         checker.dependabot_success(success)
 
     assert (
-        list(m_succeed.call_args)
+        m_succeed.call_args
         == [('dependabot',
              [f"{m_fname.return_value}: {x}" for x in sorted(success)]),  {}])
 
@@ -227,7 +227,7 @@ def test_abstract_pip_checker_dependabot_errors(patches):
         checker.dependabot_errors(errors, msg)
 
     assert (
-        list(list(c) for c in list(m_error.call_args_list))
+        m_error.call_args_list
         == [[('dependabot', [f'ERROR MESSAGE: {x}']), {}]
             for x in sorted(errors)])
 

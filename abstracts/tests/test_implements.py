@@ -159,10 +159,10 @@ def test_implementer_add_interfaces(patches, subc, missing):
 
     if not missing_ifaces:
         assert (
-            list(list(c) for c in m_subc.call_args_list)
+            m_subc.call_args_list
             == [[('KLASS', iface), {}] for iface in ifaces])
         assert (
-            list(list(c) for c in mock_register.call_args_list)
+            mock_register.call_args_list
             == [[(iface.x, 'KLASS', ), {}]
                 for iface in ifaces if iface.x not in subc])
         return
@@ -174,10 +174,10 @@ def test_implementer_add_interfaces(patches, subc, missing):
         == (f"Not all methods for interface {failed} "
             "provided: missing ['METHOD5', 'METHOD6']"))
     assert (
-        list(list(c) for c in m_subc.call_args_list)
+        m_subc.call_args_list
         == [[('KLASS', iface), {}] for iface in ifaces[:failed_index + 1]])
     assert (
-        list(list(c) for c in mock_register.call_args_list)
+        mock_register.call_args_list
         == [[(iface.x, 'KLASS', ), {}]
             for iface in ifaces[:failed_index] if iface.x not in subc])
 
@@ -202,10 +202,10 @@ def test_implementer_check_interface(patches, attrs, methods):
             abstracts.Implementer.check_interface(clsdict)
 
     assert (
-        list(m_attrs.call_args)
+        m_attrs.call_args
         == [(clsdict, ), {}])
     assert (
-        list(m_methods.call_args)
+        m_methods.call_args
         == [(clsdict, ), {}])
     if extra:
         assert (
@@ -428,36 +428,36 @@ def test_implementer_dunder_new(
 
     if has_implements:
         assert (
-            list(m_getifaces.call_args)
+            m_getifaces.call_args
             == [(bases, clsdict), {}])
         assert (
-            list(m_docs.call_args)
+            m_docs.call_args
             == [(clsdict, "NEW"), {}])
         assert not m_isiface.called
         assert not m_checkiface.called
         assert (
-            list(list(c) for c in mock_super.call_args_list)
+            mock_super.call_args_list
             == [[(), {}],
                 [('NAME', m_bases.return_value,
                   {'FOO': 'BAR', '__implements__': 'IMPLEMENTS'}), {}]])
         assert (
-            list(m_ifaces.call_args)
+            m_ifaces.call_args
             == [(m_getifaces.return_value, "NEW"), {}])
         return
     assert not m_ifaces.called
     assert not m_docs.called
     assert not m_getifaces.called
     assert (
-        list(list(c) for c in mock_super.call_args_list)
+        mock_super.call_args_list
         == [[(), {}],
             [('NAME', bases,
               {'FOO': 'BAR'}), {}]])
     assert (
-        list(m_isiface.call_args)
+        m_isiface.call_args
         == [("NEW", ), {}])
     if is_interface:
         assert (
-            list(m_checkiface.call_args)
+            m_checkiface.call_args
             == [(clsdict, ), {}])
     else:
         assert not m_checkiface.called
