@@ -18,7 +18,7 @@ pypi: https://pypi.org/project/abstracts
 
 #### [aio.api.github](aio.api.github)
 
-version: 0.0.3
+version: 0.0.4.dev0
 
 pypi: https://pypi.org/project/aio.api.github
 
@@ -49,7 +49,7 @@ pypi: https://pypi.org/project/aio.core
 
 #### [envoy.abstract.command](envoy.abstract.command)
 
-version: 0.0.4.dev0
+version: 0.0.4
 
 pypi: https://pypi.org/project/envoy.abstract.command
 
@@ -107,7 +107,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code_format.python_check](envoy.code_format.python_check)
 
-version: 0.0.5
+version: 0.0.6.dev0
 
 pypi: https://pypi.org/project/envoy.code_format.python_check
 
@@ -126,7 +126,7 @@ pypi: https://pypi.org/project/envoy.code_format.python_check
 
 #### [envoy.dependency.cve_scan](envoy.dependency.cve_scan)
 
-version: 0.0.2
+version: 0.0.3.dev0
 
 pypi: https://pypi.org/project/envoy.dependency.cve_scan
 
@@ -184,7 +184,7 @@ pypi: https://pypi.org/project/envoy.distribution.release
 
 - [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.3
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.0
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.16
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.17
 - [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.8
 
 ---
@@ -203,7 +203,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 - [envoy.abstract.command](https://pypi.org/project/envoy.abstract.command) >=0.0.3
 - [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.0
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.16
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.17
 - [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.8
 
 ---
@@ -262,7 +262,7 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
 #### [envoy.github.abstract](envoy.github.abstract)
 
-version: 0.0.17
+version: 0.0.18.dev0
 
 pypi: https://pypi.org/project/envoy.github.abstract
 
@@ -280,17 +280,17 @@ pypi: https://pypi.org/project/envoy.github.abstract
 
 #### [envoy.github.release](envoy.github.release)
 
-version: 0.0.9.dev0
+version: 0.0.9
 
 pypi: https://pypi.org/project/envoy.github.release
 
 ##### requirements:
 
-- [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+- [abstracts](https://pypi.org/project/abstracts) >=0.0.13
 - [aio.core](https://pypi.org/project/aio.core) >=0.2.0
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.16
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.17
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [packaging](https://pypi.org/project/packaging)
 - [verboselogs](https://pypi.org/project/verboselogs)
