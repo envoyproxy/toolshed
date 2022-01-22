@@ -4,7 +4,7 @@ import pathlib
 import re
 from typing import Dict, List, Optional, Pattern
 
-from aio.functional import async_property
+from aio.core.functional import async_property
 
 import abstracts
 

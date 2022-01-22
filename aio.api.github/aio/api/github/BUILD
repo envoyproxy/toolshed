@@ -3,7 +3,7 @@ pytooling_library(
     "aio.api.github",
     dependencies=[
         "//deps:abstracts",
-        "//deps:aio.functional",
+        "//deps:aio.core",
         "//deps:gidgethub",
         "//deps:packaging",
     ],

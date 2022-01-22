@@ -9,8 +9,8 @@ from typing import List, Set, Tuple
 
 import abstracts
 
-import aio.subprocess
-from aio.functional import async_property
+import aio.core.subprocess
+from aio.core.functional import async_property
 
 from .abstract import ARepoManager
 from .exceptions import RepoError
@@ -76,7 +76,7 @@ class AAptly(metaclass=abstracts.Abstraction):
     async def aptly(self, *args: str) -> str:
         """Run an aptly command."""
         command = (self.aptly_command, ) + args
-        result = await aio.subprocess.run(
+        result = await aio.core.subprocess.run(
             command, capture_output=True, encoding="utf-8")
 
         if result.returncode:

@@ -3,7 +3,7 @@ pytooling_library(
     "envoy.distribution.release",
     dependencies=[
         "//deps:abstracts",
-        "//deps:aio.functional",
+        "//deps:aio.core",
         "//deps:envoy.abstract.command",
         "//deps:envoy.base.runner",
         "//deps:envoy.base.utils",

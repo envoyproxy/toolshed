@@ -13,8 +13,8 @@ import gidgethub.aiohttp
 
 import abstracts
 
-from aio.tasks import ConcurrentError
-from aio.functional import async_property
+from aio.core.tasks import ConcurrentError
+from aio.core.functional import async_property
 
 from envoy.github.abstract import (
     AGithubRelease, AGithubReleaseAssetsFetcher,

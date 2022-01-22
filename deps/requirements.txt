@@ -1,8 +1,5 @@
 aio.api.github>=0.0.2
-aio.functional>=0.0.10
-aio.stream>=0.0.2
-aio.subprocess>=0.0.4
-aio.tasks>=0.0.5
+aio.core>=0.2.0
 aiodocker
 aiofiles
 aiohttp

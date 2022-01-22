@@ -5,7 +5,7 @@ import pytest
 
 import abstracts
 
-from aio.functional import async_property
+from aio.core.functional import async_property
 
 from envoy.distribution import repo
 
@@ -185,7 +185,7 @@ async def test_aaptly_aptly_aptly(patches, return_code, stderr, args):
         mock_run.return_value.stderr = MagicMock()
         if not stderr:
             mock_run.return_value.stderr.strip.return_value = None
-        m_aio.subprocess.run = mock_run
+        m_aio.core.subprocess.run = mock_run
         command = (m_command.return_value, )
         if args:
             command += args
@@ -198,7 +198,7 @@ async def test_aaptly_aptly_aptly(patches, return_code, stderr, args):
                 == mock_run.return_value.stdout)
 
     assert (
-        list(m_aio.subprocess.run.call_args)
+        list(m_aio.core.subprocess.run.call_args)
         == [(command, ),
             dict(capture_output=True, encoding="utf-8")])
     if return_code:

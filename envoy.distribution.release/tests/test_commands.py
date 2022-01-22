@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
-from aio.functional import async_property
+from aio.core.functional import async_property
 
 from envoy.distribution.release import commands
 from envoy.github.abstract.command import AGithubReleaseCommand

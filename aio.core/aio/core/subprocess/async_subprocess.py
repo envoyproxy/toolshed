@@ -23,7 +23,7 @@ class AsyncSubprocess:
         ```
         import asyncio
 
-        from aio.subprocess import parallel
+        from aio.core.subprocess import parallel
 
         async def run_system_commands(commands):
             async for result in parallel(commands, capture_output=True):
@@ -68,7 +68,7 @@ class AsyncSubprocess:
         ```
         import asyncio
 
-        from aio.subprocess import run
+        from aio.core.subprocess import run
 
         async def run_system_command():
             result = await run(["whoami"], capture_output=True)

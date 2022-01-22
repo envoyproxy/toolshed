@@ -3,7 +3,7 @@ pytooling_tests(
     "aio.api.github",
     dependencies=[
         "//deps:abstracts",
-        "//deps:aio.functional",
+        "//deps:aio.core",
         "//deps:aiohttp",
         "//deps:gidgethub",
         "//deps:packaging",

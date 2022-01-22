@@ -5,7 +5,7 @@ import pytest
 
 import packaging.version
 
-from aio.functional import async_property
+from aio.core.functional import async_property
 
 from envoy.github.abstract import exceptions
 from envoy.github.release import GithubReleaseManager

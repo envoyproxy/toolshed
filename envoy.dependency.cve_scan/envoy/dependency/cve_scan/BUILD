@@ -3,8 +3,7 @@ pytooling_library(
     "envoy.dependency.cve_scan",
     dependencies=[
         "//deps:abstracts",
-        "//deps:aio.functional",
-        "//deps:aio.tasks",
+        "//deps:aio.core",
         "//deps:envoy.base.checker",
         "//deps:envoy.base.utils",
         "//deps:aiohttp",

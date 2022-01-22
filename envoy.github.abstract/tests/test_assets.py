@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
-from aio import tasks
-from aio.functional import async_property
+from aio.core import tasks
+from aio.core.functional import async_property
 
 from envoy.github.abstract import assets, exceptions
 

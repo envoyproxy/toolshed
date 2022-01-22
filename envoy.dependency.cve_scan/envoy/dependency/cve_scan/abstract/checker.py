@@ -22,8 +22,8 @@ import aiohttp
 
 import abstracts
 
-from aio.functional import async_property
-from aio.tasks import concurrent
+from aio.core.functional import async_property
+from aio.core.tasks import concurrent
 
 from envoy.base import checker, utils
 

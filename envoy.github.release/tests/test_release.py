@@ -5,8 +5,8 @@ import pytest
 
 import gidgethub
 
-from aio import tasks
-from aio.functional import async_property
+from aio.core import tasks
+from aio.core.functional import async_property
 
 from envoy.github.abstract import exceptions
 from envoy.github.release import (
