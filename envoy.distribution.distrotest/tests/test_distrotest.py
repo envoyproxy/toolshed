@@ -50,7 +50,7 @@ def test_config_dunder_getitem(patches):
             == m_config.return_value.__getitem__.return_value)
 
     assert (
-        list(m_config.return_value.__getitem__.call_args)
+        m_config.return_value.__getitem__.call_args
         == [('X',), {}])
 
 
@@ -77,7 +77,7 @@ def test_config_config(patches, isdict):
                 config.config
 
     assert (
-        list(m_utils.from_yaml.call_args)
+        m_utils.from_yaml.call_args
         == [(m_path.return_value,), {}])
     if isdict:
         assert "config" in config.__dict__
@@ -109,7 +109,7 @@ def test_config_ctx_dockerfile():
 
     assert config.ctx_dockerfile == path.joinpath.return_value
     assert (
-        list(path.joinpath.call_args)
+        path.joinpath.call_args
         == [('Dockerfile', ), {}])
     assert "ctx_dockerfile" in config.__dict__
 
@@ -127,7 +127,7 @@ def test_config_ctx_keyfile(patches):
         assert config.ctx_keyfile == path.joinpath.return_value
 
     assert (
-        list(path.joinpath.call_args)
+        path.joinpath.call_args
         == [(m_key.return_value.name, ), {}])
     assert "ctx_keyfile" in config.__dict__
 
@@ -140,7 +140,7 @@ def test_config_rel_ctx_packages():
 
     assert config.rel_ctx_packages == path.joinpath.return_value
     assert (
-        list(path.joinpath.call_args)
+        path.joinpath.call_args
         == [(config.packages_name, ), {}])
     assert "rel_ctx_packages" in config.__dict__
 
@@ -155,7 +155,7 @@ def test_config_ctx_testfile():
     assert config.ctx_testfile == path.joinpath.return_value
 
     assert (
-        list(path.joinpath.call_args)
+        path.joinpath.call_args
         == [(testfile.name, ), {}])
     assert "ctx_testfile" in config.__dict__
 
@@ -202,7 +202,7 @@ def test_config_install_img_path(patches):
         assert config.install_img_path == m_plib.PurePosixPath.return_value
 
     assert (
-        list(m_plib.PurePosixPath.call_args)
+        m_plib.PurePosixPath.call_args
         == [("/tmp/install",), {}])
     assert "install_img_path" in config.__dict__
 
@@ -221,7 +221,7 @@ def test_config_keyfile(patches):
         assert config.keyfile == m_key.return_value
 
     assert (
-        list(m_shutil.copyfile.call_args)
+        m_shutil.copyfile.call_args
         == [(m_sign.return_value, m_key.return_value), {}])
     assert "keyfile" in config.__dict__
 
@@ -238,7 +238,7 @@ def test_config_keyfile_img_path(patches):
         assert config.keyfile_img_path == m_plib.PurePosixPath.return_value
 
     assert (
-        list(m_plib.PurePosixPath.call_args)
+        m_plib.PurePosixPath.call_args
         == [("/tmp/gpg/signing.key",), {}])
     assert "keyfile_img_path" in config.__dict__
 
@@ -256,7 +256,7 @@ def test_config_packages_dir(patches):
         assert config.packages_dir == m_packages.return_value
 
     assert (
-        list(m_utils.extract.call_args)
+        m_utils.extract.call_args
         == [(m_packages.return_value, "TARBALL"), {}])
     assert "packages_dir" in config.__dict__
 
@@ -278,7 +278,7 @@ def test_config_signing_key(patches):
             == m_packages.return_value.joinpath.return_value)
 
     assert (
-        list(m_packages.return_value.joinpath.call_args)
+        m_packages.return_value.joinpath.call_args
         == [(m_keypath.return_value, ), {}])
     assert "signing_key" in config.__dict__
 
@@ -296,7 +296,7 @@ def test_config_testfile(patches):
         assert config.testfile == m_key.return_value
 
     assert (
-        list(m_shutil.copyfile.call_args)
+        m_shutil.copyfile.call_args
         == [("TESTFILE", m_key.return_value), {}])
     assert "testfile" in config.__dict__
 
@@ -316,10 +316,10 @@ def test_config_testfile_img_path(patches):
             == m_plib.PurePosixPath.return_value.joinpath.return_value)
 
     assert (
-        list(m_plib.PurePosixPath.call_args)
+        m_plib.PurePosixPath.call_args
         == [("/tmp",), {}])
     assert (
-        list(m_plib.PurePosixPath.return_value.joinpath.call_args)
+        m_plib.PurePosixPath.return_value.joinpath.call_args
         == [(m_name.return_value.name,), {}])
     assert "testfile_img_path" in config.__dict__
 
@@ -341,10 +341,10 @@ def test_config_get_config(patches):
             == m_images.return_value.__getitem__.return_value)
 
     assert (
-        list(m_images.return_value.__getitem__.call_args)
+        m_images.return_value.__getitem__.call_args
         == [(m_name.return_value, ), {}])
     assert (
-        list(m_name.call_args)
+        m_name.call_args
         == [("IMAGE", ), {}])
 
 
@@ -357,10 +357,10 @@ def test_config_get_image_name():
         config.get_image_name(image)
         == image.split.return_value.__getitem__.return_value)
     assert (
-        list(image.split.call_args)
+        image.split.call_args
         == [(":", ), {}])
     assert (
-        list(image.split.return_value.__getitem__.call_args)
+        image.split.return_value.__getitem__.call_args
         == [(0, ), {}])
 
 
@@ -393,10 +393,10 @@ def test_config_get_package_type(patches, pkg_type, pkg_types):
             assert e.value.args[0] == f"Unrecognized image: {pkg_type}"
 
     assert (
-        list(m_name.call_args)
+        m_name.call_args
         == [("IMAGE", ), {}])
     assert (
-        list(m_items.call_args)
+        m_items.call_args
         == [(), {}])
 
 
@@ -416,10 +416,10 @@ def test_config_get_packages(patches, pkg_type, ext, packages):
         assert config.get_packages(pkg_type, ext) == packages
 
     assert (
-        list(m_pkg.return_value.joinpath.call_args)
+        m_pkg.return_value.joinpath.call_args
         == [(pkg_type,), {}])
     assert (
-        list(m_pkg.return_value.joinpath.return_value.glob.call_args)
+        m_pkg.return_value.joinpath.return_value.glob.call_args
         == [(f'*.{ext}',), {}])
 
 
@@ -435,7 +435,7 @@ def test_config_items(patches):
         assert config.items() == m_config.return_value.items.return_value
 
     assert (
-        list(m_config.return_value.items.call_args)
+        m_config.return_value.items.call_args
         == [(), {}])
 
 
@@ -499,16 +499,16 @@ def test_image_build_command(patches):
             == strip.return_value.replace.return_value)
 
     assert (
-        list(m_config.return_value.__getitem__.call_args)
+        m_config.return_value.__getitem__.call_args
         == [('build',), {}])
     assert (
-        list(config_item.call_args)
+        config_item.call_args
         == [('command',), {}])
     assert (
-        list(strip.call_args)
+        strip.call_args
         == [(), {}])
     assert (
-        list(strip.return_value.replace.call_args)
+        strip.return_value.replace.call_args
         == [("\n", " && "), {}])
     assert "build_command" not in image.__dict__
 
@@ -524,7 +524,7 @@ def test_image_config(patches):
         assert image.config == config.__getitem__.return_value
 
     assert (
-        list(config.__getitem__.call_args)
+        config.__getitem__.call_args
         == [(m_type.return_value,), {}])
     assert "config" in image.__dict__
 
@@ -543,10 +543,10 @@ def test_image_ctx_install_dir(patches):
             == m_plib.Path.return_value.joinpath.return_value)
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_name.return_value, ), {}])
     assert (
-        list(m_plib.Path.return_value.joinpath.call_args)
+        m_plib.Path.return_value.joinpath.call_args
         == [(m_type.return_value, ), {}])
     assert "ctx_install_dir" not in image.__dict__
 
@@ -580,7 +580,7 @@ def test_image_dockerfile(patches):
         assert image.dockerfile == m_template.return_value.format.return_value
 
     assert (
-        list(m_template.return_value.format.call_args)
+        m_template.return_value.format.call_args
         == [(),
             {'build_image': 'BUILD_IMAGE',
              'install_dir': m_install.return_value,
@@ -608,10 +608,10 @@ def test_image_env(patches, env):
             assert image.env == ""
 
     assert (
-        list(m_config.return_value.__getitem__.call_args)
+        m_config.return_value.__getitem__.call_args
         == [("build", ), {}])
     assert (
-        list(m_config.return_value.__getitem__.return_value.get.call_args)
+        m_config.return_value.__getitem__.return_value.get.call_args
         == [("env", ""), {}])
     assert "env" not in image.__dict__
 
@@ -621,7 +621,7 @@ def test_image_keyfile_package_type():
     image = distrotest.DistroTestImage(config, "BUILD_IMAGE", "NAME")
     assert image.package_type == config.get_package_type.return_value
     assert (
-        list(config.get_package_type.call_args)
+        config.get_package_type.call_args
         == [("BUILD_IMAGE", ), {}])
     assert "package_type" in image.__dict__
 
@@ -654,10 +654,10 @@ def test_image_add_dockerfile(patches):
     with patched as (m_shutil, m_dfile, m_ctx_docker):
         assert not image.add_dockerfile()
     assert (
-        list(stream.call_args)
+        stream.call_args
         == [(m_dfile.return_value,), {}])
     assert (
-        list(m_ctx_docker.return_value.write_text.call_args)
+        m_ctx_docker.return_value.write_text.call_args
         == [(m_dfile.return_value,), {}])
 
 
@@ -688,10 +688,10 @@ async def test_image_build(patches, raises):
             assert not await image.build()
 
     assert (
-        list(m_add.call_args)
+        m_add.call_args
         == [(), {}])
     assert (
-        list(m_build.call_args)
+        m_build.call_args
         == [(m_docker.return_value,
              m_path.return_value,
              m_tag.return_value),
@@ -752,7 +752,7 @@ def test_image_get_environment(patches, items):
             == _dict)
 
     assert (
-        list(m_dict.call_args)
+        m_dict.call_args
         == [(),
             {'ENVOY_MAINTAINER': config.maintainer,
              'ENVOY_VERSION': config.version,
@@ -761,29 +761,29 @@ def test_image_get_environment(patches, items):
              'PACKAGE': 'PKG_NAME',
              'DISTRO': 'DISTRO_NAME'}])
     assert (
-        list(list(c) for c in m_path.call_args_list)
+        m_path.call_args_list
         == [[(m_get.return_value,), {}],
             [('PKG_FNAME',), {}]])
     assert (
-        list(m_get.call_args)
+        m_get.call_args
         == [('PKG_FNAME',), {}])
     assert (
-        list(m_config.return_value.__getitem__.call_args)
+        m_config.return_value.__getitem__.call_args
         == [('test',), {}])
     assert (
-        list(m_config.return_value.__getitem__.return_value.items.call_args)
+        m_config.return_value.__getitem__.return_value.items.call_args
         == [(), {}])
     assert (
-        list(list(c) for c in _dict.__setitem__.call_args_list)
+        _dict.__setitem__.call_args_list
         == [[(m_k.upper.return_value, m_v.format.return_value), {}]
             for m_k, m_v in _items])
 
     for m_k, m_v in _items:
         assert (
-            list(m_k.upper.call_args)
+            m_k.upper.call_args
             == [(), {}])
         assert (
-            list(m_v.format.call_args)
+            m_v.format.call_args
             == [(), {'A': 'B'}])
 
 
@@ -811,13 +811,13 @@ def test_image_get_install_binary(patches, contains):
 
     config_item = m_config.return_value.__getitem__.return_value.__getitem__
     assert (
-        list(list(c) for c in m_config.return_value.__getitem__.call_args_list)
+        m_config.return_value.__getitem__.call_args_list
         == [[('binary_name',), {}], [('binary_name',), {}]])
     assert (
-        list(list(c) for c in config_item.call_args_list)
+        config_item.call_args_list
         == [[('match',), {}], [('replace',), {}]])
     assert (
-        list(m_re.sub.call_args)
+        m_re.sub.call_args
         == [(config_item.return_value,
              config_item.return_value,
              'PACKAGE'), {}])
@@ -842,7 +842,7 @@ async def test_image_images(patches, images):
 
     expected = [image["RepoTags"] for image in images]
     assert (
-        list(m_chain.from_iterable.call_args)
+        m_chain.from_iterable.call_args
         == [(expected,), {}])
 
 
@@ -859,7 +859,7 @@ def test_image_installable_img_path(patches):
             == m_dir.return_value.joinpath.return_value)
 
     assert (
-        list(m_dir.return_value.joinpath.call_args)
+        m_dir.return_value.joinpath.call_args
         == [("INSTALLABLE",), {}])
 
 
@@ -871,7 +871,7 @@ def test_image_stream(patches, stream):
     assert not image.stream("MESSAGE")
     if stream:
         assert (
-            list(stream.call_args)
+            stream.call_args
             == [("MESSAGE", ), {}])
 
 
@@ -962,7 +962,7 @@ def test_distrotest_environment(patches):
             == m_image.return_value.get_environment.return_value)
 
     assert (
-        list(m_image.return_value.get_environment.call_args)
+        m_image.return_value.get_environment.call_args
         == [(installable.name, m_name.return_value, 'NAME'), {}])
 
 
@@ -995,7 +995,7 @@ def test_distrotest_image(patches):
         assert dtest.image == m_class.return_value
 
     assert (
-        list(m_class.call_args)
+        m_class.call_args
         == [('CONFIG',
              'IMAGE',
              'NAME'),
@@ -1025,10 +1025,10 @@ def test_distrotest_package_name(patches):
         dtest.package_name
         == installable.name.split.return_value.__getitem__.return_value)
     assert (
-        list(installable.name.split.call_args)
+        installable.name.split.call_args
         == [('_',), {}])
     assert (
-        list(installable.name.split.return_value.__getitem__.call_args)
+        installable.name.split.return_value.__getitem__.call_args
         == [(0,), {}])
 
 
@@ -1058,7 +1058,7 @@ async def test_distrotest_build(patches, exists):
         assert not await dtest.build()
 
     assert (
-        list(m_image.return_value.exists.call_args)
+        m_image.return_value.exists.call_args
         == [(), {}])
 
     if exists:
@@ -1067,10 +1067,10 @@ async def test_distrotest_build(patches, exists):
         return
 
     assert (
-        list(m_image.return_value.build.call_args)
+        m_image.return_value.build.call_args
         == [(), {}])
     assert (
-        list(list(c) for c in m_run.call_args_list)
+        m_run.call_args_list
         == [[('Building image',), {'msg_type': 'notice'}],
             [('Image built',), {}]])
 
@@ -1095,10 +1095,10 @@ async def test_distrotest_cleanup(patches, raises):
         assert not await dtest.cleanup()
 
     assert (
-        list(m_docker.containers.get.call_args)
+        m_docker.containers.get.call_args
         == [(m_name.return_value,), {}])
     assert (
-        list(m_stop.call_args)
+        m_stop.call_args
         == [(m_docker.containers.get.return_value,), {}])
 
 
@@ -1118,7 +1118,7 @@ async def test_distrotest_create(patches):
             == m_docker.containers.create_or_replace.return_value)
 
     assert (
-        list(m_docker.containers.create_or_replace.call_args)
+        m_docker.containers.create_or_replace.call_args
         == [(),
             {'config': m_config.return_value,
              'name': m_name.return_value}])
@@ -1168,14 +1168,14 @@ async def test_distrotest_exec(patches, failed, returns, msgs):
         assert not await dtest.exec(container)
 
     assert (
-        list(container.exec.call_args)
+        container.exec.call_args
         == [(m_cmd.return_value,),
             {'environment': m_env.return_value}])
     assert (
-        list(_tracker.stream.call_args)
+        _tracker.stream.call_args
         == [(), {'detach': False}])
     assert (
-        list(container.exec.return_value.inspect.call_args)
+        container.exec.return_value.inspect.call_args
         == [(), {}])
 
     assert _tracker.counter == msgs + 1
@@ -1183,10 +1183,10 @@ async def test_distrotest_exec(patches, failed, returns, msgs):
 
     for _out in _tracker._outs:
         assert (
-            list(_out.data.decode.call_args)
+            _out.data.decode.call_args
             == [('utf-8',), {}])
         assert (
-            list(_out.data.decode.return_value.strip.call_args)
+            _out.data.decode.return_value.strip.call_args
             == [(), {}])
 
     _log_error = (msgs > 0) and (returns and not failed)
@@ -1195,18 +1195,18 @@ async def test_distrotest_exec(patches, failed, returns, msgs):
         assert dtest._failures == ['container-start']
         output = _tracker._outs[-1].data.decode.return_value.strip.return_value
         assert (
-            list(m_error.call_args)
+            m_error.call_args
             == [([(f"[NAME] Error executing test in container\n"
                    f"{output}")],), {}])
         assert (
-            list(list(c) for c in m_out.call_args_list)
+            m_out.call_args_list
             == [[(_out.data.decode.return_value.strip.return_value,), {}]
                 for _out in _tracker._outs[:-1]])
     else:
         assert dtest._failures == []
         assert not m_error.called
         assert (
-            list(list(c) for c in m_out.call_args_list)
+            m_out.call_args_list
             == [[(_out.data.decode.return_value.strip.return_value,), {}]
                 for _out in _tracker._outs])
 
@@ -1217,7 +1217,7 @@ def test_distrotest_error():
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
     assert dtest.error(["ERR1", "ERR2"]) == check.error.return_value
     assert (
-        list(check.error.call_args)
+        check.error.call_args
         == [(check.active_check, ['ERR1', 'ERR2']), {}])
 
 
@@ -1248,27 +1248,27 @@ def test_distrotest_handle_test_error(patches, msg):
         assert not dtest.handle_test_error(_msg)
 
     assert (
-        list(list(c) for c in _msg.split.call_args_list)
+        _msg.split.call_args_list
         == [[(']',), {}], [('\n', 1), {}]])
     assert (
-        list(_splitter.__getitem__.call_args)
+        _splitter.__getitem__.call_args
         == [(0,), {}])
     strip = _splitter.__getitem__.return_value.strip
     assert (
-        list(strip.call_args)
+        strip.call_args
         == [('[',), {}])
     assert (
-        list(strip.return_value.split.call_args)
+        strip.return_value.split.call_args
         == [(':',), {}])
 
     assert dtest._failures == ['TESTNAME']
     assert (
-        list(m_error.call_args)
+        m_error.call_args
         == [(['[TESTRUN:TESTNAME] Test failed'],), {}])
 
     if len(msg.split("\n")) > 1:
         assert (
-            list(m_stdout.return_value.error.call_args)
+            m_stdout.return_value.error.call_args
             == [(msg.split("\n", 1)[1],), {}])
         return
 
@@ -1310,13 +1310,13 @@ async def test_distrotest_handle_test_output(patches, start, msg):
     if not _msg.startswith("[NAME") and "\n" in _msg:
         _parts = _msg.split("\n", 1)
         assert (
-            list(m_stdout.return_value.info.call_args_list[0])
+            m_stdout.return_value.info.call_args_list[0]
             == [(_parts[0],), {}])
         _msg = _parts[1]
 
     if not start.startswith("[NAME"):
         assert (
-            list(m_stdout.return_value.info.call_args)
+            m_stdout.return_value.info.call_args
             == [(_msg,), {}])
         assert not m_error.called
         assert not m_log.called
@@ -1326,14 +1326,14 @@ async def test_distrotest_handle_test_output(patches, start, msg):
 
     if "ERROR" not in msg:
         assert (
-            list(m_log.return_value.info.call_args)
+            m_log.return_value.info.call_args
             == [(_msg,), {}])
         assert not m_error.called
         return
 
     assert not m_log.called
     assert (
-        list(m_error.call_args)
+        m_error.call_args
         == [(_msg,), {}])
 
 
@@ -1360,7 +1360,7 @@ def test_distrotest_log_failures(patches, failed, failures):
         return
 
     assert (
-        list(m_log.call_args)
+        m_log.call_args
         == [(f'Package test had failures: {",".join(failures)}',),
             {'msg_type': 'error', 'test': m_name.return_value}])
 
@@ -1374,7 +1374,7 @@ async def test_distrotest_logs():
     container.log.return_value = _logs
     assert await dtest.logs(container) == "".join(_logs)
     assert (
-        list(container.log.call_args)
+        container.log.call_args
         == [(), {'stdout': True, 'stderr': True}])
 
 
@@ -1397,10 +1397,10 @@ async def test_distrotest_on_test_complete(patches, failed, self_failed):
         assert not await dtest.on_test_complete("CONTAINER", failed)
 
     assert (
-        list(m_log.call_args)
+        m_log.call_args
         == [(), {}])
     assert (
-        list(m_stop.call_args)
+        m_stop.call_args
         == [('CONTAINER',), {}])
 
     if failed or self_failed:
@@ -1409,11 +1409,11 @@ async def test_distrotest_on_test_complete(patches, failed, self_failed):
         return
 
     assert (
-        list(m_msg.call_args)
+        m_msg.call_args
         == [('Package test passed',),
             {'test': m_name.return_value}])
     assert (
-        list(check.succeed.call_args)
+        check.succeed.call_args
         == [(check.active_check, [m_msg.return_value]), {}])
 
 
@@ -1430,10 +1430,10 @@ async def test_distrotest_run(patches):
         assert not await dtest.run()
 
     assert (
-        list(m_run.call_args)
+        m_run.call_args
         == [(), {}])
     assert (
-        list(m_error.call_args)
+        m_error.call_args
         == [(m_run.return_value,), {}])
 
 
@@ -1459,13 +1459,13 @@ def test_distrotest_run_log(patches, msg_type, testname):
         assert not dtest.run_log(*args, **kwargs)
 
     assert (
-        list(m_get.call_args)
+        m_get.call_args
         == [(m_log.return_value, msg_type or 'info'), {}])
     assert (
-        list(m_get.return_value.call_args)
+        m_get.return_value.call_args
         == [(m_msg.return_value,), {}])
     assert (
-        list(m_msg.call_args)
+        m_msg.call_args
         == [('MESSAGE',), {'test': testname}])
 
 
@@ -1509,28 +1509,28 @@ async def test_distrotest_start(patches, running):
             assert e.value.args[0] == m_msg.return_value
 
     assert (
-        list(m_create.call_args)
+        m_create.call_args
         == [(), {}])
     assert (
-        list(m_create.return_value.start.call_args)
+        m_create.return_value.start.call_args
         == [(), {}])
     assert (
-        list(m_create.return_value.show.call_args)
+        m_create.return_value.show.call_args
         == [(), {}])
 
     if not running:
         assert not m_log.called
         assert (
-            list(m_msg.call_args)
+            m_msg.call_args
             == [(f"Container unable to start\n{m_logs.return_value}",),
                 {'test': m_name.return_value}])
         assert (
-            list(m_logs.call_args)
+            m_logs.call_args
             == [(m_create.return_value,), {}])
         return
 
     assert (
-        list(m_log.call_args)
+        m_log.call_args
         == [('Container started',),
             {'test': m_name.return_value}])
     assert not m_msg.called
@@ -1558,13 +1558,13 @@ async def test_distrotest_stop(patches, container):
         return
 
     assert (
-        list(container.kill.call_args)
+        container.kill.call_args
         == [(), {}])
     assert (
-        list(container.delete.call_args)
+        container.delete.call_args
         == [(), {}])
     assert (
-        list(m_log.call_args)
+        m_log.call_args
         == [('Container stopped',), {'test': m_pkg.return_value}])
 
 
@@ -1638,20 +1638,20 @@ async def test_distrotest__run(
             result = await dtest._run()
 
     assert (
-        list(m_build.call_args)
+        m_build.call_args
         == [(), {}])
 
     if build_raises or start_raises:
         assert (
-            list(m_stop.call_args)
+            m_stop.call_args
             == [(None, True), {}])
     elif exec_raises:
         assert (
-            list(m_stop.call_args)
+            m_stop.call_args
             == [(m_start.return_value, True), {}])
     else:
         assert (
-            list(m_stop.call_args)
+            m_stop.call_args
             == [(m_start.return_value, False), {}])
 
     if build_raises:
@@ -1662,7 +1662,7 @@ async def test_distrotest__run(
         return
 
     assert (
-        list(m_start.call_args)
+        m_start.call_args
         == [(), {}])
 
     if start_raises:
@@ -1672,7 +1672,7 @@ async def test_distrotest__run(
         return
 
     assert (
-        list(m_exec.call_args)
+        m_exec.call_args
         == [(m_start.return_value,), {}])
 
     if exec_raises or stop_raises:

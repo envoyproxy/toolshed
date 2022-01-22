@@ -93,15 +93,15 @@ def test_matcher__cpe_version(patches, version_info):
                 else None))
 
     assert (
-        list(cpe_match.get.call_args)
+        cpe_match.get.call_args
         == [("versionActionEndingluding", None), {}])
     if version_info is None:
         assert not m_version.Version.called
         assert not m_utils.typed.called
         return
     assert (
-        list(m_version.Version.call_args)
+        m_version.Version.call_args
         == [(m_utils.typed.return_value, ), {}])
     assert (
-        list(m_utils.typed.call_args)
+        m_utils.typed.call_args
         == [(str, cpe_match.get.return_value), {}])

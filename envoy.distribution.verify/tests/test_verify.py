@@ -60,7 +60,7 @@ def _check_arg_path_property(patches, prop, arg=None):
         assert getattr(checker, prop) == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(getattr(m_args.return_value, arg or prop), ), {}])
     assert prop not in checker.__dict__
 
@@ -100,7 +100,7 @@ def test_checker_config(patches, is_dict):
                 checker.config
 
     assert (
-        list(m_utils.from_yaml.call_args)
+        m_utils.from_yaml.call_args
         == [(m_args.return_value.config,), {}])
 
     if is_dict:
@@ -121,7 +121,7 @@ def test_checker_docker(patches):
         assert checker.docker == m_docker.Docker.return_value
 
     assert (
-        list(m_docker.Docker.call_args)
+        m_docker.Docker.call_args
         == [(), {}])
     assert "docker" in checker.__dict__
 
@@ -156,7 +156,7 @@ def test_checker_path(patches):
         assert checker.path == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_temp.return_value.name, ), {}])
     assert "path" not in checker.__dict__
 
@@ -186,7 +186,7 @@ def test_checker_test_config(patches):
         assert checker.test_config == m_class.return_value.return_value
 
     assert (
-        list(m_class.return_value.call_args)
+        m_class.return_value.call_args
         == [(),
             {'docker': m_docker.return_value,
              'path': m_path.return_value,
@@ -248,18 +248,16 @@ def test_checker_tests(patches, config, distributions):
         assert result[k] == m_tconfig.return_value
 
     assert (
-        list(list(c) for c in m_tconfig.call_args_list)
+        m_tconfig.call_args_list
         == [[(_config["image"], ), {}] for _config in config.values()])
     assert (
-        list(list(c) for c in m_tconfig.return_value.update.call_args_list)
+        m_tconfig.return_value.update.call_args_list
         == [[(_conf,), {}] for _conf in config.values()])
     assert (
-        list(list(c)
-             for c
-             in m_tconfig.return_value.__getitem__.call_args_list)
+        m_tconfig.return_value.__getitem__.call_args_list
         == [[('type',), {}], [('ext',), {}]] * len(config))
     assert (
-        list(list(c) for c in m_pkgs.call_args_list)
+        m_pkgs.call_args_list
         == ([[(m_tconfig.return_value.__getitem__.return_value, ) * 2, {}]]
             * len(config)))
 
@@ -282,7 +280,7 @@ def test_checker_add_arguments():
     parser = MagicMock()
     checker.add_arguments(parser)
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('--verbosity', '-v'),
              {'choices': ['debug', 'info', 'warn', 'error'],
               'default': 'info',
@@ -393,7 +391,7 @@ async def test_checker_check_distros(patches, tests, rebuild):
         assert not await checker.check_distros()
 
     assert (
-        list(list(c) for c in m_log.return_value.info.call_args_list)
+        m_log.return_value.info.call_args_list
         == [[((f"[{name}] Testing with: "
                f'{",".join(n.name for n in tests[name]["packages"])}'),),
              {}]
@@ -404,7 +402,7 @@ async def test_checker_check_distros(patches, tests, rebuild):
              for i, package in enumerate(tests[name]["packages"])]
             for name in tests))
     assert (
-        list(list(c) for c in m_dtest.call_args_list)
+        m_dtest.call_args_list
         == expected)
 
 
@@ -420,10 +418,10 @@ def test_checker_get_test_config(patches):
             == m_config.return_value.get_config.return_value.copy.return_value)
 
     assert (
-        list(m_config.return_value.get_config.call_args)
+        m_config.return_value.get_config.call_args
         == [('IMAGE',), {}])
     assert (
-        list(m_config.return_value.get_config.return_value.copy.call_args)
+        m_config.return_value.get_config.return_value.copy.call_args
         == [(), {}])
 
 
@@ -439,7 +437,7 @@ def test_checker_get_test_packages(patches):
             == m_config.return_value.get_packages.return_value)
 
     assert (
-        list(m_config.return_value.get_packages.call_args)
+        m_config.return_value.get_packages.call_args
         == [('TYPE', 'EXT'), {}])
 
 
@@ -460,14 +458,14 @@ async def test_checker_on_checks_complete(patches):
         assert await checker.on_checks_complete() == "COMPLETE"
 
     assert (
-        (list(list(c) for c in order_mock.call_args_list))
+        order_mock.call_args_list
         == [[('TEST',), {}],
             [('DOCKER',), {}],
             [('COMPLETE',), {}]])
 
     for m in m_test, m_docker, m_complete:
         assert (
-            list(m.call_args)
+            m.call_args
             == [(), {}])
 
 
@@ -499,10 +497,10 @@ async def test_checker_run_test(patches, exiting, errors, rebuild):
         checker._active_distrotest
         == m_test.return_value.return_value)
     assert (
-        list(m_log.return_value.info.call_args)
+        m_log.return_value.info.call_args
         == [('[NAME] Testing package: PACKAGE',), {}])
     assert (
-        list(m_test.return_value.call_args)
+        m_test.return_value.call_args
         == [(checker, m_config.return_value,
              'NAME',
              'IMAGE',
@@ -531,7 +529,7 @@ async def test_checker__cleanup_docker(patches, exists):
         return
 
     assert (
-        list(m_docker.return_value.close.call_args)
+        m_docker.return_value.close.call_args
         == [(), {}])
 
 
@@ -554,5 +552,5 @@ async def test_checker__cleanup_test(patches, exists):
         return
 
     assert (
-        list(m_active.return_value.cleanup.call_args)
+        m_active.return_value.cleanup.call_args
         == [(), {}])

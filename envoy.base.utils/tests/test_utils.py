@@ -95,29 +95,29 @@ def test_util_coverage_with_data_file(patches):
         with utils.coverage_with_data_file("PATH") as tmprc:
             assert tmprc == m_join.return_value
     assert (
-        list(m_config.call_args)
+        m_config.call_args
         == [(), {}])
     assert (
-        list(m_config.return_value.read.call_args)
+        m_config.return_value.read.call_args
         == [('.coveragerc',), {}])
     config_dict = m_config.return_value.__getitem__
     assert (
-        list(config_dict.call_args)
+        config_dict.call_args
         == [('run',), {}])
     assert (
-        list(config_dict.return_value.__setitem__.call_args)
+        config_dict.return_value.__setitem__.call_args
         == [('data_file', 'PATH'), {}])
     assert (
-        list(m_tmp.call_args)
+        m_tmp.call_args
         == [(), {}])
     assert (
-        list(m_join.call_args)
+        m_join.call_args
         == [(m_tmp.return_value.__enter__.return_value, '.coveragerc'), {}])
     assert (
-        list(m_open.call_args)
+        m_open.call_args
         == [(m_join.return_value, 'w'), {}])
     assert (
-        list(m_config.return_value.write.call_args)
+        m_config.return_value.write.call_args
         == [(m_open.return_value.__enter__.return_value,), {}])
 
 
@@ -152,19 +152,19 @@ def test_util_extract(patches, tarballs):
         return
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [("PATH", ), {}])
 
     for _extract in _extractions:
         assert (
-            list(_extract.extractall.call_args)
+            _extract.extractall.call_args
             == [(), dict(path="PATH")])
 
     assert (
-        list(m_open.call_args_list)
+        m_open.call_args_list
         == [[(tarb, ), {}] for tarb in tarballs])
     assert (
-        list(m_nested.call_args)
+        m_nested.call_args
         == [tuple(m_open.return_value for x in tarballs), {}])
 
 
@@ -182,10 +182,10 @@ def test_util_untar(patches, tarballs):
             assert tmpdir == m_extract.return_value
 
     assert (
-        list(m_tmp.call_args)
+        m_tmp.call_args
         == [(), {}])
     assert (
-        list(m_extract.call_args)
+        m_extract.call_args
         == [(m_tmp.return_value.__enter__.return_value, ) + tarballs, {}])
 
 
@@ -199,13 +199,13 @@ def test_util_from_yaml(patches):
         assert utils.from_yaml("PATH") == m_yaml.safe_load.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [("PATH", ), {}])
     assert (
-        list(m_yaml.safe_load.call_args)
+        m_yaml.safe_load.call_args
         == [(m_plib.Path.return_value.read_text.return_value, ), {}])
     assert (
-        list(m_plib.Path.return_value.read_text.call_args)
+        m_plib.Path.return_value.read_text.call_args
         == [(), {}])
 
 
@@ -219,13 +219,13 @@ def test_util_to_yaml(patches):
         assert utils.to_yaml("DATA", "PATH") == m_plib.Path.return_value
 
     assert (
-        list(m_yaml.dump.call_args)
+        m_yaml.dump.call_args
         == [("DATA", ), {}])
     assert (
-        list(m_plib.Path.return_value.write_text.call_args)
+        m_plib.Path.return_value.write_text.call_args
         == [(m_yaml.dump.return_value, ), {}])
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [("PATH", ), {}])
 
 
@@ -281,14 +281,14 @@ def test_typed(patches, casted):
                 == ("Value has wrong type or shape for Type "
                     f"TYPE: {m_elips.return_value}"))
             assert (
-                list(m_elips.call_args)
+                m_elips.call_args
                 == [("VALUE", 10), {}])
         else:
             assert utils.typed("TYPE", value) == value
             assert not m_elips.called
 
     assert (
-        list(m_try.call_args)
+        m_try.call_args
         == [("TYPE", value), {}])
 
 
@@ -359,7 +359,7 @@ def test_is_sha(patches, length, raises):
                     and not raises))
     if length == 40:
         assert (
-            list(m_int.call_args)
+            m_int.call_args
             == [(text, 16), {}])
     else:
         assert not m_int.called
@@ -399,11 +399,11 @@ def test_dt_to_utc_isoformat(patches):
                 .return_value.isoformat.return_value))
 
     assert (
-        list(dt.replace.call_args)
+        dt.replace.call_args
         == [(), dict(tzinfo=m_pytz.UTC)])
     assert (
-        list(dt.replace.return_value.date.call_args)
+        dt.replace.return_value.date.call_args
         == [(), {}])
     assert (
-        list(dt.replace.return_value.date.return_value.isoformat.call_args)
+        dt.replace.return_value.date.return_value.isoformat.call_args
         == [(), {}])

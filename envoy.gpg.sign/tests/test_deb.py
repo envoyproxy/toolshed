@@ -30,7 +30,7 @@ def test_changes_dunder_iter(patches):
 
     assert isinstance(result, types.GeneratorType)
     assert (
-        list(path.unlink.call_args)
+        path.unlink.call_args
         == [(), {}])
 
 
@@ -91,9 +91,7 @@ def test_changes_distributions(patches, lines):
         lines = lines[:breakon]
     count = len(lines) + 1
     assert (
-        list(list(c)
-             for c
-             in readline.call_args_list)
+        readline.call_args_list
         == [[(), {}]] * count)
 
 
@@ -112,7 +110,7 @@ def test_changes_files(patches):
 
     assert isinstance(result, types.GeneratorType)
     assert (
-        list(list(c) for c in m_changes.call_args_list)
+        m_changes.call_args_list
         == [[('DISTRO1',), {}],
             [('DISTRO2',), {}],
             [('DISTRO3',), {}]])
@@ -132,16 +130,16 @@ def test_changes_changes_file(patches):
             == m_path.return_value)
 
     assert (
-        list(m_path.call_args)
+        m_path.call_args
         == [('DISTRO',), {}])
     assert (
-        list(m_path.return_value.write_text.call_args)
+        m_path.return_value.write_text.call_args
         == [(path.read_text.return_value.replace.return_value,), {}])
     assert (
-        list(path.read_text.call_args)
+        path.read_text.call_args
         == [(), {}])
     assert (
-        list(path.read_text.return_value.replace.call_args)
+        path.read_text.return_value.replace.call_args
         == [(m_distros.return_value, "DISTRO"), {}])
 
 
@@ -150,7 +148,7 @@ def test_changes_file_path():
     changes = sign.DebChangesFiles(path)
     assert changes.changes_file_path("DISTRO") == path.with_suffix.return_value
     assert (
-        list(path.with_suffix.call_args)
+        path.with_suffix.call_args
         == [('.DISTRO.changes',), {}])
 
 
@@ -200,5 +198,5 @@ def test_debsign_pkg_files(patches):
 
     assert m_chain.from_iterable.called
     assert (
-        list(list(c) for c in m_changes.return_value.call_args_list)
+        m_changes.return_value.call_args_list
         == [[('FILE1',), {}], [('FILE2',), {}], [('FILE3',), {}]])

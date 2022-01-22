@@ -24,7 +24,7 @@ def test_abstract_tag_constructor(patches):
 
     assert isinstance(tag, base_github.abstract.base.GithubRepoEntity)
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [args, kwargs])
     tag.repo = MagicMock()
     tag.tag = "TAG_NAME"
@@ -41,7 +41,7 @@ async def test_abstract_tag_commit(patches):
         result
         == repo.commit.return_value)
     assert (
-        list(repo.commit.call_args)
+        repo.commit.call_args
         == [("SHA", ), {}])
     assert (
         getattr(

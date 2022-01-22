@@ -44,13 +44,13 @@ def test_abstract_base_githubentity_dunder_getattr(
         assert (
             result
             == m_data.return_value.get.return_value.return_value)
-        call_args = list(m_data.return_value.get.call_args)
+        call_args = m_data.return_value.get.call_args
         assert call_args[0][0] == k
         marker = MagicMock()
         assert call_args[0][1](marker) is marker
         assert call_args[1] == {}
         assert (
-            list(m_data.return_value.get.return_value.call_args)
+            m_data.return_value.get.return_value.call_args
             == [(data[k], ), {}])
         return
     elif default != "UNSET":

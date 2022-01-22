@@ -45,7 +45,7 @@ def test_sphinx_runner_build_dir(patches):
         assert runner.build_dir == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_temp.return_value.name, ), {}])
     assert "build_dir" not in runner.__dict__
 
@@ -98,7 +98,7 @@ def test_sphinx_runner_config_file(patches):
             == m_utils.to_yaml.return_value)
 
     assert (
-        list(m_utils.to_yaml.call_args)
+        m_utils.to_yaml.call_args
         == [(m_configs.return_value, m_fpath.return_value), {}])
     assert "config_file" in runner.__dict__
 
@@ -115,7 +115,7 @@ def test_sphinx_runner_config_file_path(patches):
             == m_build.return_value.joinpath.return_value)
 
     assert (
-        list(m_build.return_value.joinpath.call_args)
+        m_build.return_value.joinpath.call_args
         == [('build.yaml',), {}])
     assert "config_file_path" not in runner.__dict__
 
@@ -171,7 +171,7 @@ def test_sphinx_runner_descriptor_path(patches):
             == m_plib.Path.return_value)
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.descriptor_path,), {}])
     assert "descriptor_path" not in runner.__dict__
 
@@ -189,7 +189,7 @@ def test_sphinx_runner_docker_image_tag_name(patches):
             == m_re.sub.return_value)
 
     assert (
-        list(m_re.sub.call_args)
+        m_re.sub.call_args
         == [('([0-9]+\\.[0-9]+)\\.[0-9]+.*', 'v\\1-latest',
              m_version.return_value), {}])
     assert "docker_image_tag_name" not in runner.__dict__
@@ -217,7 +217,7 @@ def test_sphinx_runner_html_dir(patches):
         assert runner.html_dir == m_build.return_value.joinpath.return_value
 
     assert (
-        list(m_build.return_value.joinpath.call_args)
+        m_build.return_value.joinpath.call_args
         == [('generated', 'html'), {}])
     assert "html_dir" in runner.__dict__
 
@@ -233,7 +233,7 @@ def test_sphinx_runner_output_path(patches):
         assert runner.output_path == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.output_path, ), {}])
     assert "output_path" not in runner.__dict__
 
@@ -268,7 +268,7 @@ def test_sphinx_runner_py_compatible(patches, major, minor):
         if major == 3 and minor >= 8
         else False)
     assert (
-        list(m_bool.call_args)
+        m_bool.call_args
         == [(expected,), {}])
     assert "py_compatible" not in runner.__dict__
 
@@ -304,12 +304,12 @@ def test_sphinx_runner_rst_dir(patches, rst_tar):
         assert runner.rst_dir == m_dir.return_value.joinpath.return_value
 
     assert (
-        list(m_dir.return_value.joinpath.call_args)
+        m_dir.return_value.joinpath.call_args
         == [('generated', 'rst'), {}])
 
     if rst_tar:
         assert (
-            list(m_utils.extract.call_args)
+            m_utils.extract.call_args
             == [(m_dir.return_value.joinpath.return_value, rst_tar), {}])
     else:
         assert not m_utils.extract.called
@@ -327,7 +327,7 @@ def test_sphinx_runner_rst_tar(patches):
         assert runner.rst_tar == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.rst_tar, ), {}])
     assert "rst_tar" not in runner.__dict__
 
@@ -377,7 +377,7 @@ def test_sphinx_runner_validator_path(patches):
             == m_plib.Path.return_value)
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.validator_path,), {}])
     assert "validator_path" not in runner.__dict__
 
@@ -393,7 +393,7 @@ def test_sphinx_runner_version_file(patches):
         assert runner.version_file == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.version_file, ), {}])
     assert "version_file" not in runner.__dict__
 
@@ -418,10 +418,10 @@ def test_sphinx_runner_version_number(patches, version):
         assert not m_file.called
         return
     assert (
-        list(m_file.return_value.read_text.call_args)
+        m_file.return_value.read_text.call_args
         == [(), {}])
     assert (
-        list(m_file.return_value.read_text.return_value.strip.call_args)
+        m_file.return_value.read_text.return_value.strip.call_args
         == [(), {}])
 
     assert "version_number" in runner.__dict__
@@ -446,7 +446,7 @@ def test_sphinx_runner_version_string(patches, docs_tag):
                 == (f"{m_version.return_value}-"
                     f"{m_sha.return_value.__getitem__.return_value}"))
             assert (
-                list(m_sha.return_value.__getitem__.call_args)
+                m_sha.return_value.__getitem__.call_args
                 == [(slice(None, 6, None),), {}])
 
     assert "version_string" not in runner.__dict__
@@ -463,10 +463,10 @@ def test_sphinx_runner_add_arguments(patches):
         runner.add_arguments(parser)
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(parser, ), {}])
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('--build_sha',), {}],
             [('--docs_tag',), {}],
             [('--version_file',), {}],
@@ -501,7 +501,7 @@ def test_sphinx_runner_build_html(patches, fails):
             runner.build_html()
 
     assert (
-        list(m_sphinx.call_args)
+        m_sphinx.call_args
         == [(m_args.return_value,), {}])
 
     if fails:
@@ -523,7 +523,7 @@ def test_sphinx_runner_build_summary(patches):
         runner.build_summary()
 
     assert (
-        list(list(c) for c in m_print.call_args_list)
+        m_print.call_args_list
         == [[(), {}],
             [(m_color.return_value,), {}],
             [(m_color.return_value,), {}],
@@ -535,7 +535,7 @@ def test_sphinx_runner_build_summary(patches):
             [(m_color.return_value,), {}],
             [(), {}]])
     assert (
-        list(list(c) for c in m_color.call_args_list)
+        m_color.call_args_list
         == [[('#### Sphinx build configs #####################',), {}],
             [('###',), {}],
             [('###',), {}],
@@ -604,7 +604,7 @@ def test_sphinx_runner_check_env(
         return
 
     assert (
-        list(m_rst.return_value.joinpath.call_args)
+        m_rst.return_value.joinpath.call_args
         == [("version_history", "current.rst"), {}])
 
     if version_number not in current:
@@ -629,7 +629,7 @@ async def test_sphinx_runner_cleanup(patches, exists):
     assert "tempdir" not in runner.__dict__
     if exists:
         assert (
-            list(m_temp.return_value.cleanup.call_args)
+            m_temp.return_value.cleanup.call_args
             == [(), {}])
     else:
         assert not m_temp.called
@@ -657,21 +657,21 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
 
     if exists:
         assert (
-            list(m_log.return_value.warning.call_args)
+            m_log.return_value.warning.call_args
             == [(f"Output path ({m_out.return_value}) exists, "
                  "removing", ), {}])
         assert (
-            list(m_out.return_value.is_file.call_args)
+            m_out.return_value.is_file.call_args
             == [(), {}])
         if is_file:
             assert (
-                list(m_out.return_value.unlink.call_args)
+                m_out.return_value.unlink.call_args
                 == [(), {}])
             assert not m_shutil.rmtree.called
         else:
             assert not m_out.return_value.unlink.called
             assert (
-                list(m_shutil.rmtree.call_args)
+                m_shutil.rmtree.call_args
                 == [(m_out.return_value, ), {}])
 
     else:
@@ -681,22 +681,22 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
         assert not m_shutil.rmtree.called
 
     assert (
-        list(m_utils.is_tarlike.call_args)
+        m_utils.is_tarlike.call_args
         == [(m_out.return_value, ), {}])
 
     if not tarlike:
         assert not m_tar.open.called
         assert (
-            list(m_shutil.copytree.call_args)
+            m_shutil.copytree.call_args
             == [(m_html.return_value, m_out.return_value, ), {}])
         return
 
     assert not m_shutil.copytree.called
     assert (
-        list(m_tar.open.call_args)
+        m_tar.open.call_args
         == [(m_out.return_value, 'w'), {}])
     assert (
-        list(m_tar.open.return_value.__enter__.return_value.add.call_args)
+        m_tar.open.return_value.__enter__.return_value.add.call_args
         == [(m_html.return_value,), {'arcname': '.'}])
 
 
@@ -734,18 +734,18 @@ async def test_sphinx_runner_run(patches, check_fails, build_fails):
             == (1 if (check_fails or build_fails) else None))
 
     assert (
-        list(m_validate.call_args)
+        m_validate.call_args
         == [(), {}])
     assert (
-        list(m_check.call_args)
+        m_check.call_args
         == [(), {}])
     assert (
-        list(m_os.environ.__setitem__.call_args)
+        m_os.environ.__setitem__.call_args
         == [('ENVOY_DOCS_BUILD_CONFIG', str(m_config.return_value)), {}])
 
     if check_fails:
         assert (
-            list(m_print.call_args)
+            m_print.call_args
             == [(_check_error,), {}])
         assert not m_summary.called
         assert not m_build.called
@@ -753,22 +753,22 @@ async def test_sphinx_runner_run(patches, check_fails, build_fails):
         return
 
     assert (
-        list(m_summary.call_args)
+        m_summary.call_args
         == [(), {}])
     assert (
-        list(m_build.call_args)
+        m_build.call_args
         == [(), {}])
 
     if build_fails:
         assert (
-            list(m_print.call_args)
+            m_print.call_args
             == [(_build_error,), {}])
         assert not m_save.called
         return
 
     assert not m_print.called
     assert (
-        list(m_save.call_args)
+        m_save.call_args
         == [(), {}])
 
 
@@ -795,7 +795,7 @@ def test_sphinx_runner_validate_args(patches, exists, overwrite):
             assert not runner.validate_args()
 
     assert (
-        list(m_out.return_value.exists.call_args)
+        m_out.return_value.exists.call_args
         == [(), {}])
     if not exists:
         assert not m_overwrite.called
@@ -816,5 +816,5 @@ def test_sphinx_runner__color(patches, color):
             == (f"{m_colors.return_value.__getitem__.return_value}"
                 f"MSG{m_style.RESET_ALL}"))
     assert (
-        list(m_colors.return_value.__getitem__.call_args)
+        m_colors.return_value.__getitem__.call_args
         == [(color or "chrome",), {}])

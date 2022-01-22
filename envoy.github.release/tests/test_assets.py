@@ -23,7 +23,7 @@ def test_fetcher_constructor(patches):
         concurrency = fetcher.concurrency
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [("RELEASE", "PATH", "ASSET_TYPES"), {}])
 
     assert concurrency == m_concurrency.return_value
@@ -51,15 +51,15 @@ def test_fetcher_dunder_exit(patches):
         assert not fetcher.__exit__(*args)
 
     assert (
-        list(m_tar.open.call_args)
+        m_tar.open.call_args
         == [(m_superpath.return_value,
              m_mode.return_value), {}])
     assert (
-        list(m_tar.open.return_value.__enter__.return_value.add.call_args)
+        m_tar.open.return_value.__enter__.return_value.add.call_args
         == [(m_path.return_value, ),
             dict(arcname=m_version.return_value)])
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [tuple(args), {}])
 
 
@@ -76,7 +76,7 @@ def test_fetcher_is_tarlike(patches):
         assert fetcher.is_tarlike == m_utils.is_tarlike.return_value
 
     assert (
-        list(m_utils.is_tarlike.call_args)
+        m_utils.is_tarlike.call_args
         == [(m_path.return_value, ), {}])
     assert "is_tarlike" in fetcher.__dict__
 
@@ -135,7 +135,7 @@ def test_fetcher_path(patches, exists, is_tarlike):
             if not is_tarlike
             else f"Output tarball exists: {m_path.return_value}")
         assert (
-            list(m_fail.call_args)
+            m_fail.call_args
             == [(msg,), {}])
     else:
         assert not m_fail.called
@@ -145,10 +145,10 @@ def test_fetcher_path(patches, exists, is_tarlike):
         assert not m_temp.called
     else:
         assert (
-            list(m_plib.Path.call_args)
+            m_plib.Path.call_args
             == [(m_temp.return_value.name,), {}])
     assert (
-        list(list(c) for c in m_path.call_args_list)
+        m_path.call_args_list
         == [[(), {}]] * path_calls)
 
 
@@ -173,12 +173,12 @@ async def test_fetcher_download(patches):
             == m_save.return_value)
 
     assert (
-        list(m_save.call_args)
+        m_save.call_args
         == [("ASSET TYPE",
              "ASSET NAME",
              m_session.return_value.get.return_value), {}])
     assert (
-        list(m_session.return_value.get.call_args)
+        m_session.return_value.get.call_args
         == [('ASSET DOWNLOAD URL',), {}])
 
 
@@ -202,7 +202,7 @@ async def test_fetcher_save(patches, status):
     expected = dict(name="NAME", outfile=outfile)
     if status != 200:
         assert (
-            list(m_fail.call_args)
+            m_fail.call_args
             == [(f"Failed downloading, got response:\n{download}", ), {}])
         expected["error"] = m_fail.return_value
     else:
@@ -210,18 +210,18 @@ async def test_fetcher_save(patches, status):
 
     assert result == expected
     assert (
-        list(m_path.return_value.joinpath.call_args)
+        m_path.return_value.joinpath.call_args
         == [('ASSET TYPE', 'NAME'), {}])
     assert (
-        list(outfile.parent.mkdir.call_args)
+        outfile.parent.mkdir.call_args
         == [(), dict(exist_ok=True)])
     writer = m_stream.writer
     assert (
-        list(writer.call_args)
+        writer.call_args
         == [(outfile, ), {}])
     stream_bytes = writer.return_value.__aenter__.return_value.stream_bytes
     assert (
-        list(stream_bytes.call_args)
+        stream_bytes.call_args
         == [(download, ), {}])
 
 
@@ -238,7 +238,7 @@ def test_pusher_constructor(patches):
         concurrency = pusher.concurrency
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [("RELEASE", "PATH"), {}])
 
     assert concurrency == m_concurrency.return_value
@@ -285,10 +285,10 @@ def test_pusher_artefacts(patches, file_exts, globs):
         artefacts
         == [mock_globs[x] for x in globs if x[1:] in file_exts])
     assert (
-        list(pusher._artefacts_glob.format.call_args)
+        pusher._artefacts_glob.format.call_args
         == [(), dict(version=m_version.return_value)])
     assert (
-        list(m_path.return_value.glob.call_args)
+        m_path.return_value.glob.call_args
         == [(pusher._artefacts_glob.format.return_value, ), {}])
 
 
@@ -303,7 +303,7 @@ def test_pusher_is_dir(patches):
         assert pusher.is_dir == m_path.return_value.is_dir.return_value
 
     assert (
-        list(m_path.return_value.is_dir.call_args)
+        m_path.return_value.is_dir.call_args
         == [(), {}])
     assert "is_dir" in pusher.__dict__
 
@@ -320,7 +320,7 @@ def test_pusher_is_tarball(patches):
         assert pusher.is_tarball == m_tar.is_tarfile.return_value
 
     assert (
-        list(m_tar.is_tarfile.call_args)
+        m_tar.is_tarfile.call_args
         == [(m_path.return_value, ), {}])
     assert "is_tarball" in pusher.__dict__
 
@@ -363,7 +363,7 @@ def test_pusher_path(patches, is_dir, is_tarball):
     assert "path" in pusher.__dict__
     if is_tarball:
         assert (
-            list(m_utils.extract.call_args)
+            m_utils.extract.call_args
             == [(m_temp.return_value.name,
                  m_path.return_value), {}])
     else:
@@ -409,15 +409,15 @@ async def test_pusher_upload(patches, name, asset_names, error, state):
         assert not m_stream.reader.called
         assert not m_github.return_value.post.called
         assert (
-            list(m_fail.call_args)
+            m_fail.call_args
             == [(f"Asset exists already {name}", ), {}])
         return
 
     assert (
-        list(m_stream.reader.call_args)
+        m_stream.reader.call_args
         == [(artefact, ), {}])
     assert (
-        list(m_github.return_value.post.call_args)
+        m_github.return_value.post.call_args
         == [("URL", ),
             dict(data=m_stream.reader.return_value.__aenter__.return_value,
                  content_type="application/octet-stream")])
@@ -428,7 +428,7 @@ async def test_pusher_upload(patches, name, asset_names, error, state):
                 'url': 'URL',
                 'error': m_fail.return_value})
         assert (
-            list(m_fail.call_args)
+            m_fail.call_args
             == [(("Something went wrong uploading "
                   f"{name} -> URL, got:\n{response}"), ),
                 {}])
@@ -438,6 +438,6 @@ async def test_pusher_upload(patches, name, asset_names, error, state):
         == {'name': name,
             'url': response.__getitem__.return_value})
     assert (
-        list(response.__getitem__.call_args)
+        response.__getitem__.call_args
         == [("url", ), {}])
     assert not m_fail.called

@@ -56,7 +56,7 @@ async def test_release_asset_names(patches):
 
     for _asset in _assets:
         assert (
-            list(_asset.__getitem__.call_args)
+            _asset.__getitem__.call_args
             == [('name',), {}])
 
     assert "asset_names" in release.__async_prop_cache__
@@ -91,7 +91,7 @@ async def test_release_assets(patches, raises):
                 == _get.return_value)
 
     assert (
-        list(_get.call_args)
+        _get.call_args
         == [(_url.return_value,), {}])
     if not raises:
         assert "assets" in release.__async_prop_cache__
@@ -111,7 +111,7 @@ async def test_release_assets_url(patches):
             == _release.return_value.__getitem__.return_value)
 
     assert (
-        list(_release.return_value.__getitem__.call_args)
+        _release.return_value.__getitem__.call_args
         == [('assets_url',), {}])
     assert "assets_url" in getattr(release, async_property.cache_name)
 
@@ -131,7 +131,7 @@ async def test_release_delete_url(patches):
             == m_url.return_value.joinpath.return_value)
 
     assert (
-        list(m_url.return_value.joinpath.call_args)
+        m_url.return_value.joinpath.call_args
         == [(str(_id.return_value), ), {}])
     assert "delete_url" in getattr(release, async_property.cache_name)
 
@@ -179,7 +179,7 @@ async def test_release_release_id(patches):
             == _release.return_value.__getitem__.return_value)
 
     assert (
-        list(_release.return_value.__getitem__.call_args)
+        _release.return_value.__getitem__.call_args
         == [('id',), {}])
     assert "release_id" in getattr(release, async_property.cache_name)
 
@@ -214,13 +214,13 @@ async def test_release_upload_url(patches):
             == split.return_value.__getitem__.return_value)
 
     assert (
-        list(_release.return_value.__getitem__.call_args)
+        _release.return_value.__getitem__.call_args
         == [('upload_url',), {}])
     assert (
-        list(split.call_args)
+        split.call_args
         == [('{',), {}])
     assert (
-        list(split.return_value.__getitem__.call_args)
+        split.return_value.__getitem__.call_args
         == [(0,), {}])
     assert "upload_url" in release.__async_prop_cache__
 
@@ -230,7 +230,7 @@ def test_release_version_name(patches):
     release = GithubRelease(_manager, "VERSION")
     release.version_name == _manager.format_version.return_value
     assert (
-        list(_manager.format_version.call_args)
+        _manager.format_version.call_args
         == [("VERSION",), {}])
 
 
@@ -247,7 +247,7 @@ def test_release_version_url(patches):
             == m_releases.return_value.joinpath.return_value)
 
     assert (
-        list(m_releases.return_value.joinpath.call_args)
+        m_releases.return_value.joinpath.call_args
         == [("tags", m_version.return_value), {}])
     assert "version_url" in release.__dict__
 
@@ -297,17 +297,17 @@ async def test_release_create(patches, exists, assets, raises):
     expected = {}
     if not exists:
         assert (
-            list(m_log.return_value.notice.call_args)
+            m_log.return_value.notice.call_args
             == [("Creating release VERSION", ), {}])
         assert (
-            list(m_github.return_value.post.call_args)
+            m_github.return_value.post.call_args
             == [(str(m_url.return_value), ),
                 dict(data=dict(tag_name=m_version.return_value))])
         assert not m_fail.called
         if not raises:
             expected["release"] = m_github.return_value.post.return_value
             assert (
-                list(m_log.return_value.success.call_args)
+                m_log.return_value.success.call_args
                 == [("Release created VERSION", ), {}])
         else:
             assert not m_log.return_value.success.called
@@ -315,7 +315,7 @@ async def test_release_create(patches, exists, assets, raises):
         assert not m_github.return_value.post.called
         assert not m_log.called
         assert (
-            list(m_fail.call_args)
+            m_fail.call_args
             == [(f"Release {m_version.return_value} already exists", ), {}])
 
     if not exists and raises:
@@ -324,7 +324,7 @@ async def test_release_create(patches, exists, assets, raises):
     if assets:
         expected["PUSHED"] = True
         assert (
-            list(m_push.call_args)
+            m_push.call_args
             == [(assets, ), {}])
     else:
         assert not m_push.called
@@ -372,16 +372,16 @@ async def test_release_delete(patches, exists, raises):
             assert not m_github.called
             return
         assert (
-            list(m_log.return_value.notice.call_args)
+            m_log.return_value.notice.call_args
             == [(f"Deleting release version: {m_version.return_value}", ), {}])
         assert (
-            list(m_github.return_value.delete.call_args)
+            m_github.return_value.delete.call_args
             == [(str(_url.return_value), ), {}])
         if raises:
             assert not m_log.return_value.success.called
             return
         assert (
-            list(m_log.return_value.success.call_args)
+            m_log.return_value.success.call_args
             == [(f"Release version deleted: {m_version.return_value}", ), {}])
 
 
@@ -390,7 +390,7 @@ def test_release_fail():
     release = GithubRelease(manager, "VERSION")
     assert release.fail("FAILURE") == manager.fail.return_value
     assert (
-        list(manager.fail.call_args)
+        manager.fail.call_args
         == [("FAILURE", ), {}])
 
 
@@ -431,11 +431,11 @@ async def test_release_fetch(patches, asset_types, errors):
         assert await release.fetch("PATH", **kwargs) == expected
 
     assert (
-        list(m_log.return_value.notice.call_args)
+        m_log.return_value.notice.call_args
         == [(("Downloading assets for release version: "
               f"{m_version.return_value} -> PATH"), ), {}])
     assert (
-        list(fetched.call_args)
+        fetched.call_args
         == [(release, 'PATH', asset_types, False), {}])
 
 
@@ -465,7 +465,7 @@ async def test_release_get(patches, raises):
                 await release.get()
                 == m_github.return_value.getitem.return_value)
     assert (
-        list(m_github.return_value.getitem.call_args)
+        m_github.return_value.getitem.call_args
         == [(str(m_url.return_value), ), {}])
 
 
@@ -520,27 +520,27 @@ async def test_release_push(patches, raises, errors):
             assert await release.push(artefacts) == expected
 
     assert (
-        list(m_log.return_value.notice.call_args)
+        m_log.return_value.notice.call_args
         == [("Pushing assets for VERSION", ), {}])
 
     if raises:
         assert (
-            list(list(c) for c in m_pusher.return_value.call_args_list)
+            m_pusher.return_value.call_args_list
             == [[(release, 'ARTEFACTS0'), {}]])
         assert not m_log.return_value.info.called
     else:
         assert (
-            list(list(c) for c in m_pusher.return_value.call_args_list)
+            m_pusher.return_value.call_args_list
             == [[(release, f'ARTEFACTS{x}'), {}] for x in range(0, 5)])
 
     if raises or errors:
         assert not m_log.return_value.success.called
     else:
         assert (
-            list(m_log.return_value.success.call_args)
+            m_log.return_value.success.call_args
             == [("Assets uploaded: VERSION", ), {}])
         assert (
-            list(list(c) for c in m_log.return_value.info.call_args_list)
+            m_log.return_value.info.call_args_list
             == [[(f'Release file uploaded ARTEFACTS{i}_ASSET{x}',), {}]
                 for i in range(0, 5)
                 for x in range(0, 5)])

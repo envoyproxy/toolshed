@@ -44,7 +44,7 @@ def test_runner_add_arguments(patches):
         assert not run.add_arguments("PARSER")
 
     assert (
-        list(m_args.call_args)
+        m_args.call_args
         == [("PARSER", ), {}])
 
 

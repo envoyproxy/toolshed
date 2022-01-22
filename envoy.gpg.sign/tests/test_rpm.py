@@ -30,7 +30,7 @@ def test_rpmmacro_home(patches):
         assert rpmmacro.home == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(rpmmacro._home,), {}])
 
 
@@ -43,7 +43,7 @@ def test_rpmmacro_path(patches):
         assert rpmmacro.path == m_home.return_value.joinpath.return_value
 
     assert (
-        list(m_home.return_value.joinpath.call_args)
+        m_home.return_value.joinpath.call_args
         == [(rpmmacro._macro_filename, ), {}])
 
 
@@ -59,7 +59,7 @@ def test_rpmmacro_macro(patches, kwargs):
     expected = m_template.return_value
     for k, v in kwargs.items():
         assert (
-            list(expected.replace.call_args)
+            expected.replace.call_args
             == [(f"__{k.upper()}__", v), {}])
         expected = expected.replace.return_value
 
@@ -83,7 +83,7 @@ def test_rpmmacro_write(patches, overwrite, exists):
 
     if not overwrite:
         assert (
-            list(m_path.return_value.exists.call_args)
+            m_path.return_value.exists.call_args
             == [(), {}])
     else:
         assert not m_path.return_value.exists.join.called
@@ -93,7 +93,7 @@ def test_rpmmacro_write(patches, overwrite, exists):
         return
 
     assert (
-        list(m_path.return_value.write_text.call_args)
+        m_path.return_value.write_text.call_args
         == [(m_macro.return_value,), {}])
 
 
@@ -116,10 +116,10 @@ def test_rpmsign_constructor(patches, args, kwargs):
     assert rpmsign.ext == "rpm"
     assert rpmsign.command_name == "rpmsign"
     assert (
-        list(m_setup.call_args)
+        m_setup.call_args
         == [(), {}])
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [('PATH', maintainer) + args, kwargs])
     assert rpmsign.rpmmacro == sign.RPMMacro
 
@@ -188,7 +188,7 @@ def test_rpmsign_setup(patches):
         assert not rpmsign.setup()
 
     assert (
-        list(m_macro.return_value.call_args)
+        m_macro.return_value.call_args
         == [(maintainer.home,),
             {'maintainer': maintainer.name,
              'gpg_bin': maintainer.gpg_bin,
@@ -208,8 +208,8 @@ def test_rpmsign_sign_pkg(patches):
         assert not rpmsign.sign_pkg(file)
 
     assert (
-        list(file.chmod.call_args)
+        file.chmod.call_args
         == [(0o755, ), {}])
     assert (
-        list(m_sign.call_args)
+        m_sign.call_args
         == [(file,), {}])

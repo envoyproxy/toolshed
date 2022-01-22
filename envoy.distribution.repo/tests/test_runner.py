@@ -31,7 +31,7 @@ def test_runner_archive(patches, archive):
         assert not m_plib.Path.called
     else:
         assert (
-            list(m_plib.Path.call_args)
+            m_plib.Path.call_args
             == [(m_args.return_value.archive, ), {}])
     assert "archive" not in runner.__dict__
 
@@ -53,7 +53,7 @@ def test_runner_packages(patches):
                      for i in range(0, 5)))
 
     assert (
-        list(m_plib.Path.call_args_list)
+        m_plib.Path.call_args_list
         == [[(package, ), {}] for package in packages])
 
     assert "packages" not in runner.__dict__
@@ -70,10 +70,10 @@ def test_runner_add_arguments(patches):
         assert not runner.add_arguments(parser)
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(parser, ), {}])
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('--packages',),
              {'nargs': '*'}],
             [('--archive',),
@@ -100,17 +100,17 @@ def test_runner_create_archive(patches, archive):
     if not archive:
         assert not m_tar.open.called
         assert (
-            list(m_log.return_value.warning.call_args)
+            m_log.return_value.warning.call_args
             == [("No `--archive` argument provided, dry run only", ), {}])
         return
 
     assert not m_log.called
     assert (
-        list(m_tar.open.call_args)
+        m_tar.open.call_args
         == [(m_archive.return_value, "w"), {}])
     tfile = m_tar.open.return_value.__enter__.return_value
     assert (
-        list(list(c) for c in tfile.add.call_args_list)
+        tfile.add.call_args_list
         == [[(path, ), dict(arcname=".")]
             for path in paths])
 
@@ -131,7 +131,7 @@ def test_runner_extract_packages(patches):
         assert not runner.extract_packages()
 
     assert (
-        list(list(c) for c in m_utils.extract.call_args_list)
+        m_utils.extract.call_args_list
         == [[(m_path.return_value, p), {}]
             for p in m_packages.return_value])
 
@@ -152,14 +152,14 @@ async def test_runner_run(patches):
         assert not await runner.run()
 
     assert (
-        list(m_extract.call_args)
+        m_extract.call_args
         == [(), {}])
     assert (
-        list(m_create.call_args)
+        m_create.call_args
         == [tuple(create_args), {}])
     filter = m_utils.async_list.call_args.kwargs["filter"]
     assert (
-        list(m_utils.async_list.call_args)
+        m_utils.async_list.call_args
         == [(m_repos.return_value, ), dict(filter=filter)])
     assert filter("XYZ") == "XYZ"
     assert filter(None) is None

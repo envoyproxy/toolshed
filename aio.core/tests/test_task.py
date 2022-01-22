@@ -49,10 +49,10 @@ def test_aio_concurrent_dunder_aiter(patches):
 
     assert concurrent.submit_task == m_asyncio.create_task.return_value
     assert (
-        list(m_submit.call_args)
+        m_submit.call_args
         == [(), {}])
     assert (
-        list(m_asyncio.create_task.call_args)
+        m_asyncio.create_task.call_args
         == [(m_submit.return_value, ), {}])
 
 
@@ -84,7 +84,7 @@ def test_aio_concurrent_closing_lock(patches):
         assert concurrent.closing_lock == m_asyncio.Lock.return_value
 
     assert (
-        list(m_asyncio.Lock.call_args)
+        m_asyncio.Lock.call_args
         == [(), {}])
     assert "closing_lock" in concurrent.__dict__
 
@@ -141,7 +141,7 @@ async def test_aio_concurrent_coros(patches, raises, close_raises):
 
     if raises == GeneratorExit:
         assert (
-            list(coros.aclose.call_args)
+            coros.aclose.call_args
             == [(), {}])
         return
 
@@ -163,7 +163,7 @@ def test_aio_concurrent_running_queue(patches):
         assert concurrent.running_queue == m_asyncio.Queue.return_value
 
     assert (
-        list(m_asyncio.Queue.call_args)
+        m_asyncio.Queue.call_args
         == [(), {}])
     assert "running_queue" in concurrent.__dict__
 
@@ -181,7 +181,7 @@ def test_aio_concurrent_default_limit(patches, cpus):
         assert concurrent.default_limit == m_min.return_value
 
     assert (
-        list(m_min.call_args)
+        m_min.call_args
         == [(32, (cpus or 0) + 4), {}])
     assert "default_limit" not in concurrent.__dict__
 
@@ -196,7 +196,7 @@ def test_aio_concurrent_consumes_async(patches):
         assert concurrent.consumes_async == m_inst.return_value
 
     assert (
-        list(m_inst.call_args)
+        m_inst.call_args
         == [(["CORO"],
              (types.AsyncGeneratorType,
               AsyncIterator,
@@ -214,7 +214,7 @@ def test_aio_concurrent_consumes_generator(patches):
         assert concurrent.consumes_generator == m_inst.return_value
 
     assert (
-        list(m_inst.call_args)
+        m_inst.call_args
         == [(["CORO"], (types.AsyncGeneratorType, types.GeneratorType)), {}])
     assert "consumes_generator" in concurrent.__dict__
 
@@ -260,7 +260,7 @@ def test_aio_concurrent_out(patches):
         assert concurrent.out == m_asyncio.Queue.return_value
 
     assert (
-        list(m_asyncio.Queue.call_args)
+        m_asyncio.Queue.call_args
         == [(), {}])
     assert "out" in concurrent.__dict__
 
@@ -290,7 +290,7 @@ def test_aio_concurrent_sem(patches):
         assert concurrent.sem == m_asyncio.Semaphore.return_value
 
     assert (
-        list(m_asyncio.Semaphore.call_args)
+        m_asyncio.Semaphore.call_args
         == [(m_limit.return_value, ), {}])
     assert "sem" in concurrent.__dict__
 
@@ -305,7 +305,7 @@ def test_aio_concurrent_submission_lock(patches):
         assert concurrent.submission_lock == m_asyncio.Lock.return_value
 
     assert (
-        list(m_asyncio.Lock.call_args)
+        m_asyncio.Lock.call_args
         == [(), {}])
     assert "submission_lock" in concurrent.__dict__
 
@@ -349,19 +349,19 @@ async def test_aio_concurrent_cancel(patches):
         assert not await concurrent.cancel()
 
     assert (
-        list(m_close.call_args)
+        m_close.call_args
         == [(), {}])
     assert (
-        list(m_sem.return_value.release.call_args)
+        m_sem.return_value.release.call_args
         == [(), {}])
     assert (
-        list(m_cancel.call_args)
+        m_cancel.call_args
         == [(), {}])
     assert (
-        list(m_coros.call_args)
+        m_coros.call_args
         == [(), {}])
     assert (
-        list(waiter.call_args)
+        waiter.call_args
         == [(), {}])
 
 
@@ -393,11 +393,11 @@ async def test_aio_concurrent_cancel_tasks(patches, bad):
         assert not await concurrent.cancel_tasks()
 
     assert (
-        list(list(c) for c in waiter.call_args_list)
+        waiter.call_args_list
         == [[(), {}]] * 7)
     for task in tasks:
         assert (
-            list(task.cancel.call_args)
+            task.cancel.call_args
             == [(), {}])
 
 
@@ -418,7 +418,7 @@ async def test_aio_concurrent_close(patches, closed):
         assert not m_lock.called
     else:
         assert (
-            list(m_lock.return_value.acquire.call_args)
+            m_lock.return_value.acquire.call_args
             == [(), {}])
 
 
@@ -452,11 +452,11 @@ async def test_aio_concurrent_close_coros(patches, consumes_generator, bad):
         assert not m_iter.called
         return
     assert (
-        list(m_iter.call_args)
+        m_iter.call_args
         == [(), {}])
     for coro in coros:
         assert (
-            list(coro.close.call_args)
+            coro.close.call_args
             == [(), {}])
 
 
@@ -473,16 +473,16 @@ async def test_aio_concurrent_create_task(patches):
         assert not await concurrent.create_task("CORO")
 
     assert (
-        list(m_running_queue.return_value.put_nowait.call_args)
+        m_running_queue.return_value.put_nowait.call_args
         == [(None, ), {}])
     assert (
-        list(m_task.call_args)
+        m_task.call_args
         == [("CORO", ), {}])
     assert (
-        list(m_asyncio.create_task.call_args)
+        m_asyncio.create_task.call_args
         == [(m_task.return_value, ), {}])
     assert (
-        list(m_rem.call_args)
+        m_rem.call_args
         == [(m_asyncio.create_task.return_value, ), {}])
 
 
@@ -506,7 +506,7 @@ async def test_aio_concurrent_exit_on_completion(patches, active, closed):
         assert not m_out.called
         return
     assert (
-        list(m_out.return_value.put.call_args)
+        m_out.return_value.put.call_args
         == [(aio.core.tasks.tasks._sentinel, ), {}])
 
 
@@ -526,7 +526,7 @@ def test_aio_concurrent_forget_task(patches, closed):
         assert not concurrent._running.remove.called
         return
     assert (
-        list(concurrent._running.remove.call_args)
+        concurrent._running.remove.call_args
         == [("TASK", ), {}])
 
 
@@ -609,22 +609,22 @@ async def test_aio_concurrent_on_task_complete(
         return
 
     assert (
-        list(m_out.return_value.put.call_args)
+        m_out.return_value.put.call_args
         == [("RESULT", ), {}])
     if nolimit:
         assert not m_sem.return_value.release.called
     else:
         assert (
-            list(m_sem.return_value.release.call_args)
+            m_sem.return_value.release.call_args
             == [(), {}])
     if decrement or decrement is None:
         assert (
-            list(m_running_queue.return_value.get_nowait.call_args)
+            m_running_queue.return_value.get_nowait.call_args
             == [(), {}])
     else:
         assert not m_running_queue.return_value.get_nowait.called
     assert (
-        list(m_complete.call_args)
+        m_complete.call_args
         == [(), {}])
 
 
@@ -680,16 +680,16 @@ async def test_aio_concurrent_output(
         # last one errored
         assert results == [f"RESULT {i}" for i in range(1, result_count)]
         assert (
-            list(list(c) for c in m_error.call_args_list)
+            m_error.call_args_list
             == [[(result,), {}] for result in results] + [[(exception,), {}]])
         assert (
-            list(m_cancel.call_args)
+            m_cancel.call_args
             == [(), {}])
         assert not m_close.called
         return
 
     assert (
-        list(list(c) for c in m_close.call_args_list)
+        m_close.call_args_list
         == [[(), {}]])
     assert not m_cancel.called
 
@@ -754,18 +754,18 @@ async def test_aio_concurrent_ready(
         assert not m_nolimit.called
         assert not m_sem.called
         assert (
-            list(list(c) for c in closer.order_mock.call_args_list)
+            closer.order_mock.call_args_list
             == [[('CLOSED',), {}]])
         return
     if nolimit:
         assert not m_sem.called
         assert (
-            list(list(c) for c in closer.order_mock.call_args_list)
+            closer.order_mock.call_args_list
             == [[('CLOSED',), {}],
                 [('NOLIMIT',), {}]])
         return
     assert (
-        list(list(c) for c in closer.order_mock.call_args_list)
+        closer.order_mock.call_args_list
         == [[('CLOSED',), {}],
             [('NOLIMIT',), {}],
             [('ACQUIRE',), {}],
@@ -778,10 +778,10 @@ def test_aio_concurrent_remember_task():
     task = MagicMock()
     assert not concurrent.remember_task(task)
     assert (
-        list(concurrent._running.append.call_args)
+        concurrent._running.append.call_args
         == [(task, ), {}])
     assert (
-        list(task.add_done_callback.call_args)
+        task.add_done_callback.call_args
         == [(concurrent.forget_task, ), {}])
 
 
@@ -881,10 +881,10 @@ async def test_aio_concurrent_submit(
         assert not m_exit.called
     else:
         assert (
-            list(m_lock.return_value.release.call_args)
+            m_lock.return_value.release.call_args
             == [(), {}])
         assert (
-            list(m_exit.call_args)
+            m_exit.call_args
             == [(), {}])
 
     if coros < 2:
@@ -908,10 +908,10 @@ async def test_aio_concurrent_submit(
 
     if iter_errors:
         assert (
-            list(list(c) for c in m_out.return_value.put.call_args_list)
+            m_out.return_value.put.call_args_list
             == [[(corolist[0], ), {}]])
         assert (
-            list(list(c) for c in m_inst.call_args_list)
+            m_inst.call_args_list
             == [[(corolist[0], aio.core.tasks.ConcurrentIteratorError), {}]])
         assert not m_ready.called
         assert not m_valid.called
@@ -921,32 +921,32 @@ async def test_aio_concurrent_submit(
 
     if valid_errors:
         assert (
-            list(list(c) for c in m_inst.call_args_list)
+            m_inst.call_args_list
             == [[(corolist[0], aio.core.tasks.ConcurrentIteratorError), {}]])
         assert (
-            list(list(c) for c in m_ready.call_args_list)
+            m_ready.call_args_list
             == [[(), {}]])
         assert (
-            list(list(c) for c in m_valid.call_args_list)
+            m_valid.call_args_list
             == [[(corolist[0], ), {}]])
         assert not m_complete.called
         assert not m_create.called
         assert (
-            list(list(c) for c in m_order.call_args_list)
+            m_order.call_args_list
             == ([[('ACQUIRE',), {}],
                  [(corolist[0],), {}]]))
         return
 
     assert not m_out.return_value.put.called
     assert (
-        list(list(c) for c in m_ready.call_args_list)
+        m_ready.call_args_list
         == [[(), {}]] * min(coros - 1, unready + 1 or 1))
     assert (
-        list(list(c) for c in m_valid.call_args_list)
+        m_valid.call_args_list
         == [[(corolist[i - 1], ), {}]
             for i in range(1, min(coros, unready + 1))])
     assert (
-        list(list(c) for c in m_order.call_args_list)
+        m_order.call_args_list
         == ([[('ACQUIRE',), {}]]
             + [[(corolist[i - 1],), {}]
                for i in range(1, min(coros, unready + 2))]
@@ -959,13 +959,13 @@ async def test_aio_concurrent_submit(
             error = list(c)[0][0]
             assert isinstance(error, aio.core.tasks.ConcurrentError)
             assert (
-                list(c)
+                c
                 == [(error,), {'decrement': False}])
         assert not m_create.called
         return
     assert not m_complete.called
     assert (
-        list(list(c) for c in m_create.call_args_list)
+        m_create.call_args_list
         == [[(corolist[i - 1],), {}]
             for i in range(1, min(coros, unready + 1))])
 
@@ -1000,7 +1000,7 @@ async def test_aio_concurrent_task(patches, raises):
         assert isinstance(result, aio.core.tasks.ConcurrentExecutionError)
         assert result.args[0] is exception
     assert (
-        list(m_complete.call_args)
+        m_complete.call_args
         == [(result, ), {}])
 
 
@@ -1047,7 +1047,7 @@ def test_aio_concurrent_validate_coro(patches, awaitable, state):
 
     awaits.close()
     assert (
-        list(m_state.call_args)
+        m_state.call_args
         == [(awaits, ), {}])
 
     if state != inspect.CORO_CREATED:

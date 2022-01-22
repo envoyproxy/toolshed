@@ -17,7 +17,7 @@ def test_api_constructor(patches):
 
     assert isinstance(api, github.AGithubAPI)
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(api, ) + args, kwargs])
     assert api.commit_class == github.GithubCommit
     assert api.issue_class == github.GithubIssue

@@ -85,7 +85,7 @@ def test_abstract_api_dunder_getitem(patches):
         assert api["REPO"] == m_repo_class.return_value.return_value
 
     assert (
-        list(m_repo_class.return_value.call_args)
+        m_repo_class.return_value.call_args
         == [(api, "REPO"), {}])
 
 
@@ -104,7 +104,7 @@ def test_abstract_api_api(patches):
             == m_api_class.return_value.return_value)
 
     assert (
-        list(m_api_class.return_value.call_args)
+        m_api_class.return_value.call_args
         == [args, kwargs])
 
     assert "api" in api.__dict__
@@ -126,7 +126,7 @@ async def test_abstract_api_getitem(patches):
             == m_api.return_value.getitem.return_value)
 
     assert (
-        list(m_api.return_value.getitem.call_args)
+        m_api.return_value.getitem.call_args
         == [args, kwargs])
 
 
@@ -147,7 +147,7 @@ def test_abstract_api_getiter(patches):
             == m_iter.return_value.return_value)
 
     assert (
-        list(m_iter.return_value.call_args)
+        m_iter.return_value.call_args
         == [(m_api.return_value, ) + args, kwargs])
 
 
@@ -167,7 +167,7 @@ async def test_abstract_api_patch(patches):
             == m_api.return_value.patch.return_value)
 
     assert (
-        list(m_api.return_value.patch.call_args)
+        m_api.return_value.patch.call_args
         == [args, kwargs])
 
 
@@ -187,7 +187,7 @@ async def test_abstract_api_post(patches):
             == m_api.return_value.post.return_value)
 
     assert (
-        list(m_api.return_value.post.call_args)
+        m_api.return_value.post.call_args
         == [args, kwargs])
 
 
@@ -212,14 +212,14 @@ def test_abstract_api_repo_from_url(patches, isrepo):
 
     repo_url = f"{m_api.return_value.base_url}/repos/"
     assert (
-        list(url.startswith.call_args)
+        url.startswith.call_args
         == [(repo_url, ), {}])
     if not isrepo:
         assert not m_get.called
         return
     assert (
-        list(m_get.call_args)
+        m_get.call_args
         == [("X/Y", ), {}])
     assert (
-        list(url.__getitem__.call_args)
+        url.__getitem__.call_args
         == [(slice(len(repo_url), None, None),), {}])

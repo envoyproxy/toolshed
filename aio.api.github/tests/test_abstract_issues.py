@@ -34,7 +34,7 @@ def test_abstract_issue_constructor(patches):
 
     assert isinstance(issue, github.abstract.base.GithubRepoEntity)
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [args, kwargs])
     issue.repo = MagicMock()
     issue.number = 23
@@ -73,7 +73,7 @@ async def test_abstract_issue_close(patches):
             await issue.close()
             == m_edit.return_value)
     assert (
-        list(m_edit.call_args)
+        m_edit.call_args
         == [(), dict(state="closed")])
 
 
@@ -86,7 +86,7 @@ async def test_abstract_issue_comment():
         await issue.comment("COMMENT")
         == repo.post.return_value)
     assert (
-        list(repo.post.call_args)
+        repo.post.call_args
         == [("issues/23/comments", ),
             dict(data=dict(body="COMMENT"))])
 
@@ -108,10 +108,10 @@ async def test_abstract_issue_edit(patches, kwargs):
 
     assert isinstance(result, github.AGithubIssue)
     assert (
-        list(m_init.call_args)
+        m_init.call_args
         == [(repo, repo.patch.return_value), {}])
     assert (
-        list(repo.patch.call_args)
+        repo.patch.call_args
         == [("issues/23", ), dict(data=kwargs)])
 
 
@@ -205,17 +205,17 @@ async def test_abstract_issues_create(repo1, repo2, raises):
                     f"{repo.name}\nRecieved: BOOM!"))
         assert not github.issue_class.called
         assert (
-            list(repo.post.call_args)
+            repo.post.call_args
             == [('issues',), data_kwargs])
     else:
         assert (
             await issues.create("ISSUE_TITLE", **kwargs)
             == github.issue_class.return_value)
         assert (
-            list(github.issue_class.call_args)
+            github.issue_class.call_args
             == [(repo, repo.post.return_value), {}])
     assert (
-        list(repo.post.call_args)
+        repo.post.call_args
         == [('issues',), data_kwargs])
 
 
@@ -248,7 +248,7 @@ def test_abstract_issues_inflater(patches, repo1, repo2):
         assert not m_partial.called
         return
     assert (
-        list(m_partial.call_args)
+        m_partial.call_args
         == [(github.issue_class, repo), {}])
 
 
@@ -271,14 +271,14 @@ def test_abstract_issues_search(patches, repo):
             == github.getiter.return_value)
 
     assert (
-        list(github.getiter.call_args)
+        github.getiter.call_args
         == [(m_query.return_value, ),
             dict(inflate=m_inflater.return_value)])
     assert (
-        list(m_query.call_args)
+        m_query.call_args
         == [("QUERY", ), {}])
     assert (
-        list(m_inflater.call_args)
+        m_inflater.call_args
         == [(repo, ), {}])
 
 
@@ -296,7 +296,7 @@ def test_abstract_issues_search_query(patches):
             == f"/search/issues?q={m_url.parse.quote.return_value}")
 
     assert (
-        list(m_url.parse.quote.call_args)
+        m_url.parse.quote.call_args
         == [(f"{m_filter.return_value}QUERY", ), {}])
 
 
@@ -308,8 +308,8 @@ def test_abstract_issues__inflate():
         issues._inflate(result)
         == github.issue_class.return_value)
     assert (
-        list(github.issue_class.call_args)
+        github.issue_class.call_args
         == [(github.repo_from_url.return_value, result), {}])
     assert (
-        list(github.repo_from_url.call_args)
+        github.repo_from_url.call_args
         == [("URL", ), {}])

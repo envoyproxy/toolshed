@@ -81,10 +81,10 @@ def test_runner_oauth_token(patches, token_set, token_exists):
         assert not m_file.return_value.read_text.called
         return
     assert (
-        list(m_file.return_value.read_text.call_args)
+        m_file.return_value.read_text.call_args
         == [(), {}])
     assert (
-        list(m_file.return_value.read_text.return_value.strip.call_args)
+        m_file.return_value.read_text.return_value.strip.call_args
         == [(), {}])
 
 
@@ -110,7 +110,7 @@ def test_runner_oauth_token_file(patches, token_set):
         assert not m_plib.Path.called
         return
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_args.return_value.oauth_token_file, ), {}])
 
 
@@ -126,7 +126,7 @@ def test_runner_path(patches):
         assert run.path == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(m_tempdir.return_value.name, ), {}])
 
 
@@ -151,7 +151,7 @@ def test_runner_release_manager(patches):
         assert run.release_manager == m_class.return_value.return_value
 
     assert (
-        list(m_class.return_value.call_args)
+        m_class.return_value.call_args
         == [(m_path.return_value,
              m_repo.return_value),
             {'log': m_log.return_value,
@@ -170,10 +170,10 @@ def test_runner_add_arguments(patches):
         run.add_arguments(parser)
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(parser, ), {}])
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[('repository',),
              {'help': 'Github repository'}],
             [('oauth_token_file',),
@@ -202,7 +202,7 @@ async def test_runner_cleanup(patches, indict):
     assert "release_manager" not in run.__dict__
     if indict:
         assert (
-            list(m_manager.return_value.close.call_args)
+            m_manager.return_value.close.call_args
             == [(), {}])
     else:
         assert not m_manager.return_value.close.called

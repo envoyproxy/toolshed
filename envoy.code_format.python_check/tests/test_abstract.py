@@ -36,7 +36,7 @@ def test_abstract_python_checker_diff_path(patches, diff_path):
 
     if diff_path:
         assert (
-            list(m_plib.Path.call_args)
+            m_plib.Path.call_args
             == [(m_args.return_value.diff_file, ), {}])
     else:
         assert not m_plib.Path.called
@@ -53,10 +53,10 @@ def test_abstract_python_checker_flake8_app(patches):
         assert checker.flake8_app == m_flake8_app.return_value
 
     assert (
-        list(m_flake8_app.call_args)
+        m_flake8_app.call_args
         == [(), {}])
     assert (
-        list(m_flake8_app.return_value.initialize.call_args)
+        m_flake8_app.return_value.initialize.call_args
         == [(m_flake8_args.return_value,), {}])
 
 
@@ -87,7 +87,7 @@ def test_abstract_python_checker_flake8_config_path(patches):
             == m_path.return_value.joinpath.return_value)
 
     assert (
-        list(m_path.return_value.joinpath.call_args)
+        m_path.return_value.joinpath.call_args
         == [(python_check.abstract.FLAKE8_CONFIG, ), {}])
 
 
@@ -113,7 +113,7 @@ def test_abstract_python_checker_yapf_config_path(patches):
             == m_path.return_value.joinpath.return_value)
 
     assert (
-        list(m_path.return_value.joinpath.call_args)
+        m_path.return_value.joinpath.call_args
         == [(python_check.abstract.YAPF_CONFIG, ), {}])
 
 
@@ -131,12 +131,12 @@ def test_abstract_python_checker_yapf_files(patches):
         assert checker.yapf_files == m_yapf_files.return_value
 
     assert (
-        list(m_yapf_files.call_args)
+        m_yapf_files.call_args
         == [(m_args.return_value.paths,),
             {'recursive': m_args.return_value.recurse,
              'exclude': m_yapf_exclude.return_value}])
     assert (
-        list(m_yapf_exclude.call_args)
+        m_yapf_exclude.call_args
         == [(str(m_path.return_value),), {}])
 
 
@@ -151,10 +151,10 @@ def test_abstract_python_checker_add_arguments(patches):
         checker.add_arguments(m_parser)
 
     assert (
-        list(m_add.call_args)
+        m_add.call_args
         == [(m_parser,), {}])
     assert (
-        list(list(c) for c in m_parser.add_argument.call_args_list)
+        m_parser.add_argument.call_args_list
         == [[('--recurse', '-r'),
              {'choices': ['yes', 'no'],
               'default': 'yes',
@@ -185,18 +185,18 @@ async def test_abstract_python_checker_check_flake8(patches, errors):
         assert not await checker.check_flake8()
 
     assert (
-        list(m_buffered.call_args)
+        m_buffered.call_args
         == [(), {'stdout': errors, 'mangle': m_mangle}])
     assert (
-        list(m_flake8_app.return_value.run_checks.call_args)
+        m_flake8_app.return_value.run_checks.call_args
         == [(), {}])
     assert (
-        list(m_flake8_app.return_value.report.call_args)
+        m_flake8_app.return_value.report.call_args
         == [(), {}])
 
     if errors:
         assert (
-            list(m_error.call_args)
+            m_error.call_args
             == [('flake8', ['err1', 'err2']), {}])
     else:
         assert not m_error.called
@@ -236,10 +236,10 @@ async def test_abstract_python_checker_check_yapf(patches):
         assert not await checker.check_yapf()
 
     assert (
-        list(list(c) for c in m_yapf_format.call_args_list)
+        m_yapf_format.call_args_list
         == [[(file,), {}] for file in files])
     assert (
-        list(list(c) for c in m_yapf_result.call_args_list)
+        m_yapf_result.call_args_list
         == [[(m_yapf_format.return_value, f"REFORMAT{i}", f"CHANGED{i}"), {}]
             for i, _ in enumerate(files)])
 
@@ -269,7 +269,7 @@ async def test_abstract_python_checker_on_check_run(patches, errors, warnings):
         assert not m_succeed.called
     else:
         assert (
-            list(m_succeed.call_args)
+            m_succeed.call_args
             == [(checkname, [checkname]), {}])
 
 
@@ -298,17 +298,17 @@ async def test_abstract_python_checker_on_checks_complete(
 
     if diff_path and failed:
         assert (
-            list(m_run.call_args)
+            m_run.call_args
             == [(['git', 'diff', 'HEAD'],),
                 dict(capture_output=True, cwd=m_path.return_value)])
         assert (
-            list(m_diff.return_value.write_bytes.call_args)
+            m_diff.return_value.write_bytes.call_args
             == [(m_run.return_value.stdout,), {}])
     else:
         assert not m_run.called
 
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [(), {}])
 
 
@@ -328,13 +328,13 @@ async def test_abstract_python_checker_yapf_format(patches, fix):
             == ("FILENAME", m_format.return_value))
 
     assert (
-        list(m_format.call_args)
+        m_format.call_args
         == [('FILENAME',),
             {'style_config': str(m_config.return_value),
              'in_place': fix,
              'print_diff': not fix}])
     assert (
-        list(list(c) for c in m_fix.call_args_list)
+        m_fix.call_args_list
         == [[(), {}], [(), {}]])
 
 
@@ -357,7 +357,7 @@ def test_abstract_python_checker_yapf_result(
 
     if not changed:
         assert (
-            list(m_succeed.call_args)
+            m_succeed.call_args
             == [('yapf', ['FILENAME']), {}])
         assert not m_warn.called
         assert not m_error.called
@@ -368,19 +368,19 @@ def test_abstract_python_checker_yapf_result(
         assert not m_error.called
         assert len(m_warn.call_args_list) == 1
         assert (
-            list(m_warn.call_args)
+            m_warn.call_args
             == [('yapf', ['FILENAME: reformatted']), {}])
         return
     if reformatted:
         assert not m_error.called
         assert len(m_warn.call_args_list) == 1
         assert (
-            list(m_warn.call_args)
+            m_warn.call_args
             == [('yapf', [f'FILENAME: diff\n{reformatted}']), {}])
         return
     assert not m_warn.called
     assert (
-        list(m_error.call_args)
+        m_error.call_args
         == [('yapf', ['FILENAME']), {}])
 
 
@@ -396,7 +396,7 @@ def test_abstract_python_checker_strip_lines():
             == [m_strip.return_value] * 3)
 
     assert (
-        list(list(c) for c in m_strip.call_args_list)
+        m_strip.call_args_list
         == [[('foo',), {}], [('bar',), {}], [('baz',), {}]])
 
 

@@ -49,7 +49,7 @@ def test_release_artefacts(patches, assets):
                      for asset in assets or []))
 
     assert (
-        list(list(c) for c in m_plib.Path.call_args_list)
+        m_plib.Path.call_args_list
         == [[(asset,), {}] for asset in assets or []])
     assert "artefacts" in command.__dict__
 
@@ -95,7 +95,7 @@ def test_release_command_release(patches):
             == m_manager.return_value.__getitem__.return_value)
 
     assert (
-        list(m_manager.return_value.__getitem__.call_args)
+        m_manager.return_value.__getitem__.call_args
         == [(m_version.return_value, ), {}])
     assert "release" in command.__dict__
 
@@ -118,5 +118,5 @@ def test_release_command_add_arguments():
     parser = MagicMock()
     assert not command.add_arguments(parser)
     assert (
-        list(list(c) for c in parser.add_argument.call_args_list)
+        parser.add_argument.call_args_list
         == [[("version", ), dict(help="Github release version")]])

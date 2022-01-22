@@ -22,7 +22,7 @@ def test_abstract_label_constructor(patches):
 
     assert isinstance(label, github.abstract.base.GithubRepoEntity)
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [args, kwargs])
     label.name = "LABEL_NAME"
     assert (

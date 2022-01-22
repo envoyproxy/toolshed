@@ -44,7 +44,7 @@ def test_util_command(patches, command_name, command, which):
                 util.command
 
             assert (
-                list(m_shutil.which.call_args)
+                m_shutil.which.call_args
                 == [(command_name or "",), {}])
             assert (
                 e.value.args[0]
@@ -63,7 +63,7 @@ def test_util_command(patches, command_name, command, which):
         return
 
     assert (
-        list(m_shutil.which.call_args)
+        m_shutil.which.call_args
         == [(command_name or "",), {}])
     assert result == m_shutil.which.return_value
 
@@ -82,7 +82,7 @@ def test_util_sign(patches):
         assert not util.sign()
 
     assert (
-        list(list(c) for c in m_sign.call_args_list)
+        m_sign.call_args_list
         == [[('PKG1',), {}],
             [('PKG2',), {}],
             [('PKG3',), {}]])
@@ -127,20 +127,20 @@ def test_util_sign_pkg(patches, returncode):
             assert not util.sign_pkg(pkg_file)
 
     assert (
-        list(util.log.notice.call_args)
+        util.log.notice.call_args
         == [(f"Sign package ({m_type.return_value}): {pkg_file.name}",), {}])
     assert (
-        list(m_command.call_args)
+        m_command.call_args
         == [(pkg_file,), {}])
     assert (
-        list(m_subproc.run.call_args)
+        m_subproc.run.call_args
         == [(m_command.return_value,),
             {'capture_output': True,
              'encoding': 'utf-8'}])
 
     if not returncode:
         assert (
-            list(util.log.success.call_args)
+            util.log.success.call_args
             == [((f"Signed package ({m_type.return_value}): "
                   f"{pkg_file.name}"),), {}])
         return
@@ -172,7 +172,7 @@ def test_util_path(patches):
         assert util.path == m_plib.Path.return_value
 
     assert (
-        list(m_plib.Path.call_args)
+        m_plib.Path.call_args
         == [(util._path,), {}])
 
 
@@ -205,7 +205,7 @@ def test_util_pkg_files(patches, files):
     expected = [fname for fname in files if fname.endswith(".EXT")]
 
     assert (
-        list(m_path.return_value.glob.call_args)
+        m_path.return_value.glob.call_args
         == [("*",), {}])
     assert "pkg_files" not in util.__dict__
     assert (

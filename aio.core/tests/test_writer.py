@@ -19,7 +19,7 @@ def test_stream_writer_constructor(patches):
 
     assert isinstance(writer, stream.AsyncStream)
     assert (
-        list(m_super.call_args)
+        m_super.call_args
         == [tuple(args), kwargs])
 
 
@@ -45,10 +45,10 @@ async def test_stream_writer_stream_bytes(patches):
         assert not await writer.stream_bytes(response)
 
     assert (
-        list(response.content.iter_chunked.call_args)
+        response.content.iter_chunked.call_args
         == [(m_size.return_value, ), {}])
     assert (
-        list(list(c) for c in m_buffer.return_value.write.call_args_list)
+        m_buffer.return_value.write.call_args_list
         == [[(f'CHUNK{i}',), {}] for i in range(0, 3)])
 
 
@@ -66,9 +66,9 @@ async def test_stream_writer(patches, chunk_size):
 
     assert writer == m_writer.return_value
     assert (
-        list(m_aiofiles.open.call_args)
+        m_aiofiles.open.call_args
         == [("PATH", 'wb'), {}])
     assert (
-        list(m_writer.call_args)
+        m_writer.call_args
         == [(m_aiofiles.open.return_value.__aenter__.return_value,),
             {'chunk_size': chunk_size}])
