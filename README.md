@@ -47,9 +47,22 @@ pypi: https://pypi.org/project/aio.core
 ---
 
 
+#### [aio.run.checker](aio.run.checker)
+
+version: 0.2.0
+
+pypi: https://pypi.org/project/aio.run.checker
+
+##### requirements:
+
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
+
+---
+
+
 #### [aio.run.runner](aio.run.runner)
 
-version: 0.2.1
+version: 0.2.2.dev0
 
 pypi: https://pypi.org/project/aio.run.runner
 
@@ -71,19 +84,6 @@ pypi: https://pypi.org/project/envoy.abstract.command
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-
----
-
-
-#### [envoy.base.checker](envoy.base.checker)
-
-version: 0.1.3.dev0
-
-pypi: https://pypi.org/project/envoy.base.checker
-
-##### requirements:
-
-- [envoy.base.runner](https://pypi.org/project/envoy.base.runner) >=0.1.1
 
 ---
 

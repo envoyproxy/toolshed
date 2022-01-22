@@ -3,18 +3,12 @@ from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 
 import pytest
 
-from envoy.base.checker import (
-    AsyncChecker, BaseChecker, BazelChecker, Checker, CheckerSummary)
-from envoy.base.runner import BazelRunner
+from aio.run.checker import (
+    Checker, CheckerSummary)
+from aio.run.runner import Runner
 
 
 class DummyChecker(Checker):
-
-    def __init__(self):
-        self.args = PropertyMock()
-
-
-class DummyBazelChecker(BazelChecker):
 
     def __init__(self):
         self.args = PropertyMock()
@@ -28,10 +22,10 @@ class DummyCheckerWithChecks(Checker):
         self.check2 = MagicMock()
 
     def check_check1(self):
-        self.check1()
+        pass
 
     def check_check2(self):
-        self.check2()
+        pass
 
 
 class SomeError(BaseException):
@@ -42,28 +36,41 @@ class OtherError(BaseException):
     pass
 
 
-def test_checker_constructor():
-    super_mock = patch("envoy.base.checker.checker.runner.Runner.__init__")
+def test_checker_constructor(patches):
+    patched = patches(
+        "getattr",
+        ("runner.Runner.__init__", dict(new_callable=MagicMock)),
+        prefix="aio.run.checker.checker")
 
-    with super_mock as m_super:
+    with patched as (m_get, m_super):
+        m_super.return_value = None
         checker = Checker("path1", "path2", "path3")
+
+    assert isinstance(checker, Runner)
 
     assert (
         m_super.call_args
         == [('path1', 'path2', 'path3'), {}])
     assert checker.summary_class == CheckerSummary
-
     assert checker.active_check == ""
     assert "active_check" not in checker.__dict__
     assert checker.disabled_checks == {}
     assert "disabled_checks" in checker.__dict__
+    assert checker.preload_pending_tasks == set()
+    assert "preload_pending_tasks" in checker.__dict__
+    assert checker.preloaded_checks == set()
+    assert "preloaded_checks" in checker.__dict__
+    assert checker.removed_checks == set()
+    assert "removed_checks" in checker.__dict__
+    assert checker.completed_checks == set()
+    assert "completed_checks" in checker.__dict__
 
 
 def test_checker_checks_to_run(patches):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
         "Checker.get_checks",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_checks, ):
         assert checker.checks_to_run == m_checks.return_value
@@ -74,7 +81,7 @@ def test_checker_checks_to_run(patches):
 def test_checker_diff():
     checker = Checker("path1", "path2", "path3")
     args_mock = patch(
-        "envoy.base.checker.checker.Checker.args",
+        "aio.run.checker.checker.Checker.args",
         new_callable=PropertyMock)
 
     with args_mock as m_args:
@@ -104,7 +111,7 @@ def test_checker_fail_on_warn(patches, warning):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
         ("Checker.args", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_args, ):
         m_args.return_value.warning = warning
@@ -124,7 +131,7 @@ def test_checker_failed():
 def test_checker_fix():
     checker = Checker("path1", "path2", "path3")
     args_mock = patch(
-        "envoy.base.checker.checker.Checker.args",
+        "aio.run.checker.checker.Checker.args",
         new_callable=PropertyMock)
 
     with args_mock as m_args:
@@ -141,7 +148,7 @@ def test_checker_has_failed(patches, failed, warned, fail_on_warn):
         ("Checker.fail_on_warn", dict(new_callable=PropertyMock)),
         ("Checker.failed", dict(new_callable=PropertyMock)),
         ("Checker.warned", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_fail_warn, m_failed, m_warned):
         m_fail_warn.return_value = fail_on_warn
@@ -167,7 +174,7 @@ def test_checker_path(patches, path, paths, isdir):
         "pathlib",
         ("Checker.args", dict(new_callable=PropertyMock)),
         ("Checker.parser", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_plib, m_args, m_parser):
         m_parser.return_value.error = DummyError
@@ -206,7 +213,7 @@ def test_checker_paths(patches, paths):
     patched = patches(
         ("Checker.args", dict(new_callable=PropertyMock)),
         ("Checker.path", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_args, m_path):
         m_args.return_value.paths = paths
@@ -231,7 +238,7 @@ def test_checker_show_summary(
         ("Checker.exiting", dict(new_callable=PropertyMock)),
         ("Checker.error_count", dict(new_callable=PropertyMock)),
         ("Checker.warning_count", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_args, m_exit, m_errors, m_warnings):
         m_args.return_value.summary = summary
@@ -258,7 +265,7 @@ def test_checker_status(patches):
         ("Checker.failed", dict(new_callable=PropertyMock)),
         ("Checker.warned", dict(new_callable=PropertyMock)),
         ("Checker.succeeded", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as args:
         (m_success_count, m_error_count, m_warning_count,
@@ -297,7 +304,7 @@ def test_checker_success_count():
 def test_checker_summary():
     checker = Checker("path1", "path2", "path3")
     summary_mock = patch(
-        "envoy.base.checker.checker.Checker.summary_class",
+        "aio.run.checker.checker.Checker.summary_class",
         new_callable=PropertyMock)
 
     with summary_mock as m_summary:
@@ -336,7 +343,7 @@ def test_checker_add_arguments(patches):
     parser = MagicMock()
     patched = patches(
         "runner.Runner.add_arguments",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_super, ):
         assert checker.add_arguments(parser) is None
@@ -412,7 +419,7 @@ TEST_ERRORS: tuple = (
 def test_checker_error(log, log_type, errors, newerrors):
     checker = Checker("path1", "path2", "path3")
     log_mock = patch(
-        "envoy.base.checker.checker.Checker.log",
+        "aio.run.checker.checker.Checker.log",
         new_callable=PropertyMock)
     checker.errors = errors.copy()
     result = 1 if newerrors else 0
@@ -450,7 +457,7 @@ def test_checker_exit(patches):
         "Checker.error",
         ("Checker.root_logger", dict(new_callable=PropertyMock)),
         ("Checker.stdout", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_error, m_log, m_stdout):
         assert checker.exit() == m_error.return_value
@@ -499,7 +506,7 @@ def test_checker_get_checks(patches, checks, disabled_checks):
         ("Checker.log",
          dict(new_callable=PropertyMock)),
         "Checker.error",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
     expected = list(checker.checks)
     if checks:
         expected = [c for c in expected if c in checks]
@@ -534,19 +541,19 @@ def test_checker_get_checks(patches, checks, disabled_checks):
             for check in filtered])
 
 
-def test_checker_on_check_begin(patches):
-    checker = Checker("path1", "path2", "path3")
+async def test_checker_on_check_begin(patches):
+    checker = Checker()
     patched = patches(
         ("Checker.log", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_log, ):
-        assert not checker.on_check_begin("checkname")
+        assert not await checker.on_check_begin("CHECKNAME")
 
-    assert checker.active_check == "checkname"
+    assert checker.active_check == "CHECKNAME"
     assert (
         m_log.return_value.notice.call_args
-        == [('[checkname] Running check',), {}])
+        == [('[CHECKNAME] Running check',), {}])
 
 
 @pytest.mark.parametrize(
@@ -554,12 +561,12 @@ def test_checker_on_check_begin(patches):
 @pytest.mark.parametrize(
     "warnings", [[], ["CHECK1", "CHECK2", "CHECK3"], ["CHECK2", "CHECK3"]])
 @pytest.mark.parametrize("exiting", [True, False])
-def test_checker_on_check_run(patches, errors, warnings, exiting):
+async def test_checker_on_check_run(patches, errors, warnings, exiting):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
         ("Checker.exiting", dict(new_callable=PropertyMock)),
         ("Checker.log", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     check = "CHECK1"
     checker.errors = errors
@@ -568,7 +575,7 @@ def test_checker_on_check_run(patches, errors, warnings, exiting):
 
     with patched as (m_exit, m_log):
         m_exit.return_value = exiting
-        assert not checker.on_check_run(check)
+        assert not await checker.on_check_run(check)
 
     assert checker.active_check == ""
 
@@ -599,25 +606,25 @@ def test_checker_on_check_run(patches, errors, warnings, exiting):
     assert not m_log.return_value.error.called
 
 
-def test_checker_on_checks_begin():
+async def test_checker_on_checks_begin():
     checker = Checker("path1", "path2", "path3")
-    assert checker.on_checks_begin() is None
+    assert not await checker.on_checks_begin()
 
 
 @pytest.mark.parametrize("failed", [True, False])
 @pytest.mark.parametrize("show_summary", [True, False])
-def test_checker_on_checks_complete(patches, failed, show_summary):
+async def test_checker_on_checks_complete(patches, failed, show_summary):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
         ("Checker.has_failed", dict(new_callable=PropertyMock)),
         ("Checker.show_summary", dict(new_callable=PropertyMock)),
         ("Checker.summary", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_failed, m_show_summary, m_summary):
         m_failed.return_value = failed
         m_show_summary.return_value = show_summary
-        assert checker.on_checks_complete() is (1 if failed else 0)
+        assert await checker.on_checks_complete() is (1 if failed else 0)
 
     if show_summary:
         assert (
@@ -629,70 +636,76 @@ def test_checker_on_checks_complete(patches, failed, show_summary):
 
 @pytest.mark.parametrize(
     "raises",
-    [None, KeyboardInterrupt, Exception])
+    [None, RuntimeError, KeyboardInterrupt, Exception])
 def test_checker_run(patches, raises):
-    checker = DummyCheckerWithChecks("path1", "path2", "path3")
+    checker = Checker()
     patched = patches(
+        "asyncio",
         "Checker.exit",
-        "Checker.on_check_begin",
-        "Checker.on_check_run",
-        "Checker.on_checks_begin",
-        "Checker.on_checks_complete",
-        ("Checker.checks_to_run",
-         dict(new_callable=PropertyMock)),
-        ("Checker.log", dict(new_callable=PropertyMock)),
-        ("Checker.name", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        ("Checker.cleanup", dict(new_callable=MagicMock)),
+        ("Checker._run", dict(new_callable=MagicMock)),
+        ("Checker.on_checks_complete", dict(new_callable=MagicMock)),
+        "Checker.on_async_error",
+        prefix="aio.run.checker.checker")
 
-    with patched as patchy:
-        (m_exit, m_check, m_run,
-         m_begin, m_complete, m_get, m_log, m_name) = patchy
-        m_get.return_value = ("check1", "check2")
-
+    with patched as (m_async, m_exit, m_cleanup, m_run, m_complete, m_on_err):
+        run_until_complete = (
+            m_async.get_event_loop.return_value.run_until_complete)
         if raises:
-            m_begin.side_effect = raises()
+            m_run.side_effect = raises
 
             if raises == KeyboardInterrupt:
-                assert checker.run() == m_complete.return_value
+                result = checker.run()
+            elif raises == RuntimeError:
+                result = checker.run()
             else:
                 with pytest.raises(raises):
                     checker.run()
+                return
         else:
-            assert checker.run() == m_complete.return_value
+            assert (
+                checker.run()
+                == run_until_complete.return_value)
 
     assert (
-        m_begin.call_args
+        m_async.get_event_loop.call_args_list[0]
         == [(), {}])
     assert (
-        m_complete.call_args
+        m_async.get_event_loop.return_value.set_exception_handler.call_args
+        == [(m_on_err, ), {}])
+    assert (
+        m_run.call_args
         == [(), {}])
 
     if raises == KeyboardInterrupt:
         assert (
             m_exit.call_args
             == [(), {}])
+        assert (
+            m_async.get_event_loop.call_args_list[1]
+            == [(), {}])
+        assert (
+            run_until_complete.call_args
+            == [(m_complete.return_value,), {}])
+        assert (
+            m_complete.call_args
+            == [(), {}])
+        assert (
+            result
+            == run_until_complete.return_value)
         return
-
     assert not m_exit.called
-
+    assert len(m_async.get_event_loop.call_args_list) == 1
+    assert (
+        m_async.get_event_loop.call_args
+        == [(), {}])
     if raises:
+        assert not run_until_complete.called
         return
-
+    assert len(run_until_complete.call_args_list) == 1
     assert (
-        m_get.call_args
-        == [(), {}])
-    assert (
-        m_check.call_args_list
-        == [[(f'check{i}',), {}] for i in range(1, 3)])
-    assert (
-        m_run.call_args_list
-        == [[(f'check{i}',), {}] for i in range(1, 3)])
-    assert (
-        checker.check1.call_args
-        == [(), {}])
-    assert (
-        checker.check2.call_args
-        == [(), {}])
+        run_until_complete.call_args
+        == [(m_run.return_value,), {}])
 
 
 TEST_WARNS: tuple = (
@@ -708,7 +721,7 @@ TEST_WARNS: tuple = (
 def test_checker_warn(patches, log, warns):
     checker = Checker("path1", "path2", "path3")
     log_mock = patch(
-        "envoy.base.checker.checker.Checker.log",
+        "aio.run.checker.checker.Checker.log",
         new_callable=PropertyMock)
     checker.warnings = warns.copy()
 
@@ -743,7 +756,7 @@ TEST_SUCCESS: tuple = (
 def test_checker_succeed(patches, log, success):
     checker = Checker("path1", "path2", "path3")
     log_mock = patch(
-        "envoy.base.checker.checker.Checker.log",
+        "aio.run.checker.checker.Checker.log",
         new_callable=PropertyMock)
     checker.success = success.copy()
 
@@ -798,7 +811,7 @@ def test_checker_summary_max_problems_of(patches, global_max):
     patched = patches(
         "getattr",
         "min",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_get, m_min):
         m_get.return_value = global_max
@@ -828,7 +841,7 @@ def test_checker_summary_print_failed(patches, problems):
     patched = patches(
         "getattr",
         "CheckerSummary.print_failed_check",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_get, m_print):
         m_get.return_value.items.return_value = problems.items()
@@ -849,7 +862,7 @@ def test_checker_summary_print_failed_check(patches):
     patched = patches(
         "CheckerSummary.writer_for",
         "CheckerSummary.problem_section",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_writer, m_section):
         assert not summary.print_failed_check(
@@ -872,7 +885,7 @@ def test_checker_summary_print_summary(patches):
     patched = patches(
         "CheckerSummary.print_failed",
         "CheckerSummary.print_status",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_failed, m_status):
         summary.print_summary()
@@ -928,7 +941,7 @@ def test_checker_summary_problem_section(patches, section, max_display):
     patched = patches(
         "CheckerSummary.max_problems_of",
         "CheckerSummary.problem_title",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
     check, problems = section
     problem_type = "meltdown"
 
@@ -979,50 +992,11 @@ def test_checker_summary_writer_for(problem_type):
     assert summary.writer_for(problem_type) == expected
 
 
-# BazelChecker test
-
-def test_bazelchecker_constructor():
-    checker = DummyBazelChecker()
-    assert isinstance(checker, BazelRunner)
-    assert isinstance(checker, Checker)
-
-
-# AsyncChecker tests
-
-@pytest.mark.parametrize(
-    "args", [[], [f"ARG{i}" for i in range(0, 5)]])
-@pytest.mark.parametrize(
-    "kwargs", [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
-def test_asyncchecker_constructor(patches, args, kwargs):
-    patched = patches(
-        "getattr",
-        ("BaseChecker.__init__", dict(new_callable=MagicMock)),
-        prefix="envoy.base.checker.checker")
-
-    with patched as (m_attr, m_super):
-        m_super.return_value = None
-        checker = AsyncChecker(*args, **kwargs)
-
-    assert isinstance(checker, BaseChecker)
-    assert (
-        m_super.call_args
-        == [tuple(args), kwargs])
-
-    assert checker.preload_pending_tasks == set()
-    assert "preload_pending_tasks" in checker.__dict__
-    assert checker.preloaded_checks == set()
-    assert "preloaded_checks" in checker.__dict__
-    assert checker.removed_checks == set()
-    assert "removed_checks" in checker.__dict__
-    assert checker.completed_checks == set()
-    assert "completed_checks" in checker.__dict__
-
-
-def test_asyncchecker_check_queue(patches):
-    checker = AsyncChecker()
+def test_checker_check_queue(patches):
+    checker = Checker()
     patched = patches(
         "asyncio",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_async, ):
         assert checker.check_queue == m_async.Queue.return_value
@@ -1042,8 +1016,8 @@ def test_asyncchecker_check_queue(patches):
     "blocks",
     [[],
      [f"BLOCK_{i}" for i in range(0, 6)]])
-def test_asyncchecker_preload_checks(checks, blocks):
-    checker = AsyncChecker()
+def test_checker_preload_checks(checks, blocks):
+    checker = Checker()
     checkers = {}
     preload_checks_data = MagicMock()
     checker.preload_checks_data = preload_checks_data
@@ -1077,12 +1051,12 @@ def test_asyncchecker_preload_checks(checks, blocks):
     assert "preload_checks" in checker.__dict__
 
 
-def test_asyncchecker_preload_checks_data(patches):
-    checker = AsyncChecker()
+def test_checker_preload_checks_data(patches):
+    checker = Checker()
     patched = patches(
         "dict",
         "getattr",
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_dict, m_get):
         assert checker.preload_checks_data == m_dict.return_value
@@ -1098,12 +1072,12 @@ def test_asyncchecker_preload_checks_data(patches):
 
 @pytest.mark.parametrize(
     "checks", [[], [f"C{i}" for i in range(0, 5)]])
-def test_asyncchecker_preload_tasks(patches, checks):
-    checker = AsyncChecker()
+def test_checker_preload_tasks(patches, checks):
+    checker = Checker()
     patched = patches(
-        ("AsyncChecker.preload_data",
+        ("Checker.preload_data",
          dict(new_callable=MagicMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
     checker.preload_checks_data = MagicMock()
 
     def iter_checks():
@@ -1143,16 +1117,16 @@ def test_asyncchecker_preload_tasks(patches, checks):
     [[],
      [f"C{i}" for i in range(0, 5)],
      [f"C{i}" for i in range(0, 10)]])
-def test_asyncchecker_remaining_checks(patches, checks, removed, completed):
-    checker = AsyncChecker()
+def test_checker_remaining_checks(patches, checks, removed, completed):
+    checker = Checker()
     patched = patches(
-        ("AsyncChecker.checks_to_run",
+        ("Checker.checks_to_run",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.completed_checks",
+        ("Checker.completed_checks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.removed_checks",
+        ("Checker.removed_checks",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     expected = []
     for check in checks:
@@ -1181,20 +1155,20 @@ def test_asyncchecker_remaining_checks(patches, checks, removed, completed):
      [f"CHECK{i}" for i in range(0, 5)],
      [f"CHECK{i}" for i in range(3, 7)],
      [f"CHECK{i}" for i in range(5, 10)]])
-async def test_asyncchecker_begin_checks(patches, to_run, to_pre):
-    checker = AsyncChecker()
+async def test_checker_begin_checks(patches, to_run, to_pre):
+    checker = Checker()
     patched = patches(
         "asyncio",
-        ("AsyncChecker.check_queue",
+        ("Checker.check_queue",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.checks_to_run",
+        ("Checker.checks_to_run",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preload_checks",
+        ("Checker.preload_checks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preload",
+        ("Checker.preload",
          dict(new_callable=MagicMock)),
-        "AsyncChecker.on_checks_begin",
-        prefix="envoy.base.checker.checker")
+        "Checker.on_checks_begin",
+        prefix="aio.run.checker.checker")
 
     expected = [c for c in to_run if c not in to_pre]
 
@@ -1221,8 +1195,8 @@ async def test_asyncchecker_begin_checks(patches, to_run, to_pre):
         == [[(check, ), {}] for check in expected])
 
 
-def test_asyncchecker_on_async_error():
-    checker = AsyncChecker()
+def test_checker_on_async_error():
+    checker = Checker()
     loop = MagicMock()
     context = MagicMock()
     assert not checker.on_async_error(loop, context)
@@ -1237,22 +1211,22 @@ def test_asyncchecker_on_async_error():
 @pytest.mark.parametrize("checks", [[], [f"C{i}" for i in range(0, 5)]])
 @pytest.mark.parametrize("removed", [True, False])
 @pytest.mark.parametrize("pending", [True, False])
-async def test_asyncchecker_on_preload(patches, checks, removed, pending):
-    checker = AsyncChecker()
+async def test_checker_on_preload(patches, checks, removed, pending):
+    checker = Checker()
     patched = patches(
-        ("AsyncChecker.check_queue",
+        ("Checker.check_queue",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.checks_to_run",
+        ("Checker.checks_to_run",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preloaded_checks",
+        ("Checker.preloaded_checks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preload_pending_tasks",
+        ("Checker.preload_pending_tasks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.removed_checks",
+        ("Checker.removed_checks",
          dict(new_callable=PropertyMock)),
-        "AsyncChecker._check_should_run",
-        "AsyncChecker.on_preload_errors",
-        prefix="envoy.base.checker.checker")
+        "Checker._check_should_run",
+        "Checker.on_preload_errors",
+        prefix="aio.run.checker.checker")
     preload_pending = ["TASK"]
     if pending:
         preload_pending.append("OTHER_TASK")
@@ -1291,22 +1265,22 @@ async def test_asyncchecker_on_preload(patches, checks, removed, pending):
 @pytest.mark.parametrize("checks", range(0, 10))
 @pytest.mark.parametrize("removed", range(0, 10))
 @pytest.mark.parametrize("remaining", [True, False])
-async def test_asyncchecker_on_preload_errors(
+async def test_checker_on_preload_errors(
         patches, checks, removed, remaining):
-    checker = AsyncChecker()
+    checker = Checker()
     patched = patches(
         "_sentinel",
-        ("AsyncChecker.check_queue",
+        ("Checker.check_queue",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.checks_to_run",
+        ("Checker.checks_to_run",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.log",
+        ("Checker.log",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.remaining_checks",
+        ("Checker.remaining_checks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.removed_checks",
+        ("Checker.removed_checks",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
     check_items = [""] * checks
     removed_items = [""] * removed
 
@@ -1348,15 +1322,15 @@ async def test_asyncchecker_on_preload_errors(
     [[],
      [f"C{i}" for i in range(0, 5)],
      [f"C{i}" for i in range(0, 10)]])
-async def test_asyncchecker_on_preload_task_failed(patches, checks, removed):
-    checker = AsyncChecker()
+async def test_checker_on_preload_task_failed(patches, checks, removed):
+    checker = Checker()
     patched = patches(
-        ("AsyncChecker.preload_checks_data",
+        ("Checker.preload_checks_data",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.removed_checks",
+        ("Checker.removed_checks",
          dict(new_callable=PropertyMock)),
-        "AsyncChecker.error",
-        prefix="envoy.base.checker.checker")
+        "Checker.error",
+        prefix="aio.run.checker.checker")
     # get an ordered unique list
     to_remove = list(dict.fromkeys([x for x in checks if x not in removed]))
     removed = set(removed)
@@ -1393,13 +1367,13 @@ async def test_asyncchecker_on_preload_task_failed(patches, checks, removed):
     [[],
      ["T23"],
      [f"T{i}" for i in range(0, 5)]])
-async def test_asyncchecker_preload(patches, tasks):
-    checker = AsyncChecker()
+async def test_checker_preload(patches, tasks):
+    checker = Checker()
     patched = patches(
         "asyncio",
-        ("AsyncChecker.preload_tasks",
+        ("Checker.preload_tasks",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_aio, m_tasks):
         m_aio.gather = AsyncMock()
@@ -1415,17 +1389,17 @@ async def test_asyncchecker_preload(patches, tasks):
 
 
 @pytest.mark.parametrize("should", [True, False])
-def test_asyncchecker_preload_data(patches, should):
-    checker = AsyncChecker()
+def test_checker_preload_data(patches, should):
+    checker = Checker()
     patched = patches(
-        ("AsyncChecker.preload_checks_data",
+        ("Checker.preload_checks_data",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preload_pending_tasks",
+        ("Checker.preload_pending_tasks",
          dict(new_callable=PropertyMock)),
-        "AsyncChecker._task_should_preload",
-        ("AsyncChecker.preloader",
+        "Checker._task_should_preload",
+        ("Checker.preloader",
          dict(new_callable=MagicMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_data, m_pending, m_should, m_preloader):
         m_should.return_value = should
@@ -1472,16 +1446,16 @@ def test_asyncchecker_preload_data(patches, should):
 @pytest.mark.parametrize(
     "raises",
     [None, BaseException, Exception, SomeError, OtherError])
-async def test_asyncchecker_preloader(patches, catches, raises):
-    checker = AsyncChecker()
+async def test_checker_preloader(patches, catches, raises):
+    checker = Checker()
     patched = patches(
         "time",
-        ("AsyncChecker.log",
+        ("Checker.log",
          dict(new_callable=PropertyMock)),
-        "AsyncChecker.on_preload",
-        "AsyncChecker.on_preload_task_failed",
-        "AsyncChecker.preloader_catches",
-        prefix="envoy.base.checker.checker")
+        "Checker.on_preload",
+        "Checker.on_preload_task_failed",
+        "Checker.preloader_catches",
+        prefix="aio.run.checker.checker")
     error = (
         raises("AN ERROR OCCURRED")
         if raises
@@ -1559,13 +1533,13 @@ async def test_asyncchecker_preloader(patches, catches, raises):
             [('on_pre', "NAME"), {}]])
 
 
-def test_asyncchecker_preloader_catches(patches):
-    checker = AsyncChecker()
+def test_checker_preloader_catches(patches):
+    checker = Checker()
     patched = patches(
         "tuple",
-        ("AsyncChecker.preload_checks_data",
+        ("Checker.preload_checks_data",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     with patched as (m_tuple, m_data):
         assert (
@@ -1584,158 +1558,26 @@ def test_asyncchecker_preloader_catches(patches):
         == [("catches", ()), {}])
 
 
-@pytest.mark.parametrize(
-    "raises",
-    [None, RuntimeError, KeyboardInterrupt, Exception])
-def test_asyncchecker_run(patches, raises):
-    checker = AsyncChecker()
-    patched = patches(
-        "asyncio",
-        "BaseChecker.exit",
-        ("AsyncChecker._run", dict(new_callable=MagicMock)),
-        ("AsyncChecker.on_checks_complete", dict(new_callable=MagicMock)),
-        "AsyncChecker.on_async_error",
-        prefix="envoy.base.checker.checker")
-
-    with patched as (m_async, m_exit, m_run, m_complete, m_on_err):
-        run_until_complete = (
-            m_async.get_event_loop.return_value.run_until_complete)
-        if raises:
-            m_run.side_effect = raises
-
-            if raises == KeyboardInterrupt:
-                result = checker.run()
-            elif raises == RuntimeError:
-                result = checker.run()
-            else:
-                with pytest.raises(raises):
-                    checker.run()
-                return
-        else:
-            assert (
-                checker.run()
-                == run_until_complete.return_value)
-
-    assert (
-        m_async.get_event_loop.call_args_list[0]
-        == [(), {}])
-    assert (
-        m_async.get_event_loop.return_value.set_exception_handler.call_args
-        == [(m_on_err, ), {}])
-    assert (
-        m_run.call_args
-        == [(), {}])
-
-    if raises == KeyboardInterrupt:
-        assert (
-            m_exit.call_args
-            == [(), {}])
-        assert (
-            m_async.get_event_loop.call_args_list[1]
-            == [(), {}])
-        assert (
-            run_until_complete.call_args
-            == [(m_complete.return_value,), {}])
-        assert (
-            m_complete.call_args
-            == [(), {}])
-        assert (
-            result
-            == run_until_complete.return_value)
-        return
-    assert not m_exit.called
-    assert len(m_async.get_event_loop.call_args_list) == 1
-    assert (
-        m_async.get_event_loop.call_args
-        == [(), {}])
-    if raises:
-        assert not run_until_complete.called
-        return
-    assert len(run_until_complete.call_args_list) == 1
-    assert (
-        run_until_complete.call_args
-        == [(m_run.return_value,), {}])
-
-
-async def test_asyncchecker_on_check_begin(patches):
-    checker = AsyncChecker()
-    patched = patches(
-        "BaseChecker.on_check_begin",
-        prefix="envoy.base.checker.checker")
-
-    with patched as (m_super, ):
-        assert not await checker.on_check_begin("CHECKNAME")
-
-    assert (
-        m_super.call_args
-        == [('CHECKNAME',), {}])
-
-
-async def test_asyncchecker_on_check_run(patches):
-    checker = AsyncChecker()
-    patched = patches(
-        "BaseChecker.on_check_run",
-        prefix="envoy.base.checker.checker")
-
-    with patched as (m_super, ):
-        assert not await checker.on_check_run("CHECKNAME")
-
-    assert (
-        m_super.call_args
-        == [('CHECKNAME',), {}])
-
-
-async def test_asyncchecker_on_checks_begin(patches):
-    checker = AsyncChecker()
-    patched = patches(
-        "BaseChecker.on_checks_begin",
-        prefix="envoy.base.checker.checker")
-
-    with patched as (m_super, ):
-        assert not await checker.on_checks_begin()
-
-    assert (
-        m_super.call_args
-        == [(), {}])
-
-
-async def test_asyncchecker_on_checks_complete(patches):
-    checker = AsyncChecker()
-
-    patched = patches(
-        "BaseChecker.on_checks_complete",
-        prefix="envoy.base.checker.checker")
-
-    with patched as (m_complete, ):
-        assert (
-            await checker.on_checks_complete()
-            == m_complete.return_value)
-
-    assert (
-        m_complete.call_args
-        == [(), {}])
-
-
 @pytest.mark.parametrize("preloads", [True, False])
 @pytest.mark.parametrize("preloaded", [True, False])
 @pytest.mark.parametrize("removed", [True, False])
 @pytest.mark.parametrize(
     "pending", [[], ["T1"], ["T1", "T3", "T6"], ["T7"], ["T8", "T9"]])
-def test_asyncchecker__check_should_run(
+def test_checker__check_should_run(
         patches, preloads, preloaded, removed, pending):
-    checker = AsyncChecker()
+    checker = Checker()
     patched = patches(
-        ("AsyncChecker.checks_to_run",
+        ("Checker.checks_to_run",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preload_checks",
+        ("Checker.preload_checks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preload_pending_tasks",
+        ("Checker.preload_pending_tasks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preloaded_checks",
+        ("Checker.preloaded_checks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.removed_checks",
+        ("Checker.removed_checks",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
     tasks = [f"T{i}" for i in range(0, 5)]
     task_pending = any(t in tasks for t in pending)
 
@@ -1771,14 +1613,14 @@ def test_asyncchecker__check_should_run(
 
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("exiting", [True, False])
-async def test_asyncchecker__run(patches, raises, exiting):
-    checker = AsyncChecker()
+async def test_checker__run(patches, raises, exiting):
+    checker = Checker()
     patched = patches(
-        "AsyncChecker.begin_checks",
-        "AsyncChecker._run_from_queue",
-        "AsyncChecker.on_checks_complete",
-        ("AsyncChecker.exiting", dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        "Checker.begin_checks",
+        "Checker._run_from_queue",
+        "Checker.on_checks_complete",
+        ("Checker.exiting", dict(new_callable=PropertyMock)),
+        prefix="aio.run.checker.checker")
 
     with patched as (m_start, m_run_q, m_complete, m_exit):
         m_exit.return_value = exiting
@@ -1807,13 +1649,13 @@ async def test_asyncchecker__run(patches, raises, exiting):
             == [(), {}])
 
 
-async def test_asyncchecker__run_check(patches):
-    checker = AsyncChecker()
+async def test_checker__run_check(patches):
+    checker = Checker()
     patched = patches(
         "getattr",
-        "AsyncChecker.on_check_begin",
-        "AsyncChecker.on_check_run",
-        prefix="envoy.base.checker.checker")
+        "Checker.on_check_begin",
+        "Checker.on_check_run",
+        prefix="aio.run.checker.checker")
 
     class OrderMock:
         order = MagicMock()
@@ -1859,19 +1701,19 @@ async def test_asyncchecker__run_check(patches):
      ([f"C{i}" for i in range(0, 2)]
       + ["SENTINEL"]
       + [f"C{i}" for i in range(0, 2)])])
-async def test_asyncchecker__run_from_queue(patches, checks):
-    checker = AsyncChecker()
+async def test_checker__run_from_queue(patches, checks):
+    checker = Checker()
     patched = patches(
         "_sentinel",
-        "BaseChecker.log",
-        "AsyncChecker._run_check",
-        ("AsyncChecker.check_queue",
+        "Checker.log",
+        "Checker._run_check",
+        ("Checker.check_queue",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.completed_checks",
+        ("Checker.completed_checks",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.remaining_checks",
+        ("Checker.remaining_checks",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
 
     class Getter:
         i = 0
@@ -1931,16 +1773,16 @@ async def test_asyncchecker__run_from_queue(patches, checks):
     "when", [[], ["C1"], ["C1", "C3", "C6"], ["C7"], ["C8", "C9"]])
 @pytest.mark.parametrize(
     "unless", [[], ["C1"], ["C1", "C3", "C6"], ["C7"], ["C8", "C9"]])
-def test_asyncchecker__task_should_preload(patches, pending, when, unless):
-    checker = AsyncChecker()
+def test_checker__task_should_preload(patches, pending, when, unless):
+    checker = Checker()
     patched = patches(
-        ("AsyncChecker.preload_checks_data",
+        ("Checker.preload_checks_data",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.checks_to_run",
+        ("Checker.checks_to_run",
          dict(new_callable=PropertyMock)),
-        ("AsyncChecker.preload_pending_tasks",
+        ("Checker.preload_pending_tasks",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.base.checker.checker")
+        prefix="aio.run.checker.checker")
     checks_to_run = [f"C{i}" for i in range(0, 5)]
     handler = MagicMock()
     when_matches = any(c in checks_to_run for c in when)

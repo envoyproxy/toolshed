@@ -1,8 +1,8 @@
 
 pytooling_tests(
-    "envoy.base.checker",
+    "aio.run.checker",
     dependencies=[
-        "//deps:envoy.base.runner",
+        "//deps:aio.run.runner",
         "//deps:pytest-asyncio",
     ],
 )
