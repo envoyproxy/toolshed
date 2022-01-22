@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
-from envoy.base import runner
+from aio.run import runner
 from envoy.gpg import identity, sign
 
 
@@ -308,7 +308,7 @@ def test_packager_archive(patches):
 
 
 @pytest.mark.parametrize("indict", [True, False])
-def test_packager_cleanup(patches, indict):
+async def test_packager_cleanup(patches, indict):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
         ("PackageSigningRunner.gnupg_tempdir",
@@ -318,7 +318,7 @@ def test_packager_cleanup(patches, indict):
         packager.__dict__["gnupg_tempdir"] = "GNUPG TEMPDIR"
 
     with patched as (m_temp, ):
-        assert not packager.cleanup()
+        assert not await packager.cleanup()
 
     assert "gnupg_tempdir" not in packager.__dict__
     if not indict:
@@ -355,7 +355,7 @@ def test_packager_get_signing_util(patches):
 
 
 @pytest.mark.parametrize("extract", [True, False])
-def test_packager_run(patches, extract):
+async def test_packager_run(patches, extract):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
         "PackageSigningRunner.sign_tarball",
@@ -370,7 +370,7 @@ def test_packager_run(patches, extract):
 
     with patched as (m_tarb, m_dir, m_extract, m_log):
         m_extract.return_value = extract
-        assert not packager.run()
+        assert not await packager.run()
 
     assert (
         list(m_log.return_value.success.call_args)
