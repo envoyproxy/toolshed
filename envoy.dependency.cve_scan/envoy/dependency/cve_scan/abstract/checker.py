@@ -24,8 +24,9 @@ import abstracts
 
 from aio.core.functional import async_property
 from aio.core.tasks import concurrent
+from aio.run import checker
 
-from envoy.base import checker, utils
+from envoy.base import utils
 
 from envoy.dependency.cve_scan.exceptions import CVECheckError
 from . import cpe, cve, dependency, typing
@@ -36,7 +37,7 @@ NIST_URL_TPL = (
 SCAN_FROM_YEAR = 2018
 
 
-class ACVEChecker(checker.AsyncChecker, metaclass=abstracts.Abstraction):
+class ACVEChecker(checker.Checker, metaclass=abstracts.Abstraction):
     """Abstract CVE Checker."""
 
     checks = ("cves",)
