@@ -162,7 +162,7 @@ pypi: https://pypi.org/project/envoy.distribution.distrotest
 
 #### [envoy.distribution.release](envoy.distribution.release)
 
-version: 0.0.7
+version: 0.0.8.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.release
 
@@ -177,7 +177,7 @@ pypi: https://pypi.org/project/envoy.distribution.release
 
 #### [envoy.distribution.repo](envoy.distribution.repo)
 
-version: 0.0.5
+version: 0.0.6.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.repo
 
