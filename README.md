@@ -18,7 +18,7 @@ pypi: https://pypi.org/project/abstracts
 
 #### [aio.api.bazel](aio.api.bazel)
 
-version: 0.0.1
+version: 0.0.2.dev0
 
 pypi: https://pypi.org/project/aio.api.bazel
 
@@ -90,7 +90,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.0.14.dev0
+version: 0.0.14
 
 pypi: https://pypi.org/project/envoy.base.utils
 
