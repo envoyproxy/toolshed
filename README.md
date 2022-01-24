@@ -16,6 +16,19 @@ pypi: https://pypi.org/project/abstracts
 ---
 
 
+#### [aio.api.bazel](aio.api.bazel)
+
+version: 0.0.1
+
+pypi: https://pypi.org/project/aio.api.bazel
+
+##### requirements:
+
+- [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+
+---
+
+
 #### [aio.api.github](aio.api.github)
 
 version: 0.0.4.dev0
