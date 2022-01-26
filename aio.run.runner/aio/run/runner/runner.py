@@ -50,12 +50,6 @@ class BaseLogFilter(logging.Filter):
         self.app_logger = app_logger
 
 
-class AppLogFilter(BaseLogFilter):
-
-    def filter(self, record) -> bool:
-        return record.name == self.app_logger.name
-
-
 class RootLogFilter(BaseLogFilter):
 
     def filter(self, record) -> bool:
@@ -148,7 +142,7 @@ class Runner:
     def root_logger(self) -> logging.Logger:
         """Instantiated logger."""
         root_logger = logging.getLogger()
-        root_logger.handlers[0].addFilter(AppLogFilter(self.log))
+        root_logger.removeHandler(root_logger.handlers[0])
         root_logger.addHandler(self.root_log_handler)
         return root_logger
 
