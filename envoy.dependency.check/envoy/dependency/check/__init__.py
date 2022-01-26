@@ -6,14 +6,16 @@ from .abstract import (
     ADependencyCPE,
     ADependencyCVE,
     ADependencyCVEs,
-    ADependencyCVEVersionMatcher)
+    ADependencyCVEVersionMatcher,
+    ADependencyGithubRelease)
 from .checker import (
     Dependency,
     DependencyChecker,
     DependencyCPE,
     DependencyCVE,
     DependencyCVEs,
-    DependencyCVEVersionMatcher)
+    DependencyCVEVersionMatcher,
+    DependencyGithubRelease)
 from .cmd import run, main
 from . import checker
 
@@ -26,6 +28,7 @@ __all__ = (
     "ADependencyCVE",
     "ADependencyCVEs",
     "ADependencyCVEVersionMatcher",
+    "ADependencyGithubRelease",
     "checker",
     "Dependency",
     "DependencyChecker",
@@ -33,6 +36,7 @@ __all__ = (
     "DependencyCVE",
     "DependencyCVEs",
     "DependencyCVEVersionMatcher",
+    "DependencyGithubRelease",
     "exceptions",
     "main",
     "run",
