@@ -1,0 +1,20 @@
+{
+    "error": [],
+    "info": [
+        [
+            [
+                "No CPE listed for: bazel_compdb"
+            ],
+            {}
+        ]
+    ],
+    "notice": [
+        [
+            [
+                "[cves] Running check"
+            ],
+            {}
+        ]
+    ],
+    "warning": []
+}
