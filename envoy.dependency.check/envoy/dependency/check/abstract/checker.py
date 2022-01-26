@@ -26,7 +26,7 @@ class ADependencyChecker(
         metaclass=abstracts.Abstraction):
     """Dependency checker."""
 
-    checks = ("cves", "dates")
+    checks = ("cves", "release_dates")
 
     @property
     @abc.abstractmethod
@@ -78,7 +78,7 @@ class ADependencyChecker(
     def disabled_checks(self):
         disabled = {}
         if not self.access_token:
-            disabled["dates"] = "No Github access token supplied"
+            disabled["release_dates"] = "No Github access token supplied"
         return disabled
 
     @cached_property
@@ -125,7 +125,7 @@ class ADependencyChecker(
         for dep in self.dependencies:
             await self.dep_cve_check(dep)
 
-    async def check_dates(self) -> None:
+    async def check_release_dates(self) -> None:
         """Check recorded dates match for dependencies."""
         for dep in self.github_dependencies:
             await self.dep_date_check(dep)
@@ -151,17 +151,17 @@ class ADependencyChecker(
         """Check dates for dependency."""
         if not await dep.release.date:
             self.error(
-                "dates",
-                [f"{dep.id} is a GitHub repository with no no inferrable "
+                "release_dates",
+                [f"{dep.id} is a GitHub repository with no inferrable "
                  "release date"])
         elif await dep.release_date_mismatch:
             self.error(
-                "dates",
+                "release_dates",
                 [f"Date mismatch: {dep.id} "
                  f"{dep.release_date} != {await dep.release.date}"])
         else:
             self.succeed(
-                "dates",
+                "release_dates",
                 [f"Date matches ({dep.release_date}): {dep.id}"])
 
     async def on_checks_complete(self) -> int:
@@ -176,9 +176,9 @@ class ADependencyChecker(
             self.log.debug(f"Preloaded cve data: {download}")
 
     @checker.preload(
-        when=["dates"],
+        when=["release_dates"],
         catches=[ConcurrentError, gidgethub.GitHubException])
-    async def preload_dates(self) -> None:
+    async def preload_release_dates(self) -> None:
         preloader = inflate(
             self.github_dependencies,
             lambda d: (

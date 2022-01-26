@@ -42,7 +42,7 @@ def test_checker_constructor():
 
     checker = DummyDependencyChecker()
     assert isinstance(checker, Checker)
-    assert checker.checks == ("cves", "dates")
+    assert checker.checks == ("cves", "release_dates")
 
     iface_props = [
         "dependency_class"]
@@ -195,7 +195,7 @@ def test_checker_disabled_checks(patches, token):
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
     expected = (
-        dict(dates="No Github access token supplied")
+        dict(release_dates="No Github access token supplied")
         if not token
         else {})
 
@@ -385,7 +385,7 @@ async def test_checker_check_cves(patches):
         == [[(mock,), {}] for mock in deps])
 
 
-async def test_checker_check_dates(patches):
+async def test_checker_check_release_dates(patches):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.github_dependencies",
@@ -396,7 +396,7 @@ async def test_checker_check_dates(patches):
 
     with patched as (m_deps, m_check):
         m_deps.return_value = deps
-        assert not await checker.check_dates()
+        assert not await checker.check_release_dates()
 
     assert (
         m_check.call_args_list
@@ -491,8 +491,8 @@ async def test_checker_dep_date_check(patches, gh_date, mismatch):
     if not gh_date:
         assert (
             m_error.call_args
-            == [("dates",
-                 ["DUMMY_DEP is a GitHub repository with no no inferrable "
+            == [("release_dates",
+                 ["DUMMY_DEP is a GitHub repository with no inferrable "
                   "release date"]),
                 {}])
         assert not m_succeed.called
@@ -500,7 +500,7 @@ async def test_checker_dep_date_check(patches, gh_date, mismatch):
     if mismatch:
         assert (
             m_error.call_args
-            == [("dates",
+            == [("release_dates",
                  ["Date mismatch: DUMMY_DEP "
                   f"DUMMY_RELEASE_DATE != {gh_date}"]),
                 {}])
@@ -509,7 +509,8 @@ async def test_checker_dep_date_check(patches, gh_date, mismatch):
     assert not m_error.called
     assert (
         m_succeed.call_args
-        == [("dates", ["Date matches (DUMMY_RELEASE_DATE): DUMMY_DEP"]),
+        == [("release_dates",
+             ["Date matches (DUMMY_RELEASE_DATE): DUMMY_DEP"]),
             {}])
 
 
@@ -577,7 +578,7 @@ async def test_checker_preload_cves(patches, downloads):
     "deps",
     [[],
      [f"DEP{i}" for i in range(0, 5)]])
-async def test_checker_preload_dates(patches, deps):
+async def test_checker_preload_release_dates(patches, deps):
     checker = DummyDependencyChecker()
     patched = patches(
         "inflate",
@@ -595,7 +596,7 @@ async def test_checker_preload_dates(patches, deps):
 
     with patched as (m_inflate, m_log, m_gh_deps):
         m_inflate.side_effect = iter_deps
-        assert not await checker.preload_dates()
+        assert not await checker.preload_release_dates()
 
     cb = m_inflate.call_args[0][1]
     item = MagicMock()
@@ -611,11 +612,11 @@ async def test_checker_preload_dates(patches, deps):
     else:
         assert not m_log.called
     assert (
-        ADependencyChecker.preload_dates.when
-        == ('dates',))
+        ADependencyChecker.preload_release_dates.when
+        == ('release_dates',))
     assert (
-        ADependencyChecker.preload_dates.blocks
-        == ('dates',))
+        ADependencyChecker.preload_release_dates.blocks
+        == ('release_dates',))
     assert (
-        ADependencyChecker.preload_dates.catches
+        ADependencyChecker.preload_release_dates.catches
         == (ConcurrentError, gidgethub.GitHubException))
