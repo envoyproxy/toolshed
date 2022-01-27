@@ -2,7 +2,11 @@
 
 ## Envoy pytooling
 
+<img src="https://github.com/envoyproxy/pytooling/raw/2f3ada749e0d8052b3be2705ac808ed649fcf7e1/envoy-pytooling.png" width="100" align="left" />
+
 Python libraries, runners and checkers for Envoy proxy's CI
+
+<br clear="both" />
 
 ### Packages
 
