@@ -21,20 +21,6 @@ def test_base_log_filter():
 
 
 @pytest.mark.parametrize("name", ["APP_LOGGER", "SOMETHING_ELSE"])
-def test_app_log_filter(name):
-    app_logger = MagicMock()
-    app_logger.name = "APP_LOGGER"
-    filter = runner.runner.AppLogFilter(app_logger)
-    assert isinstance(filter, runner.runner.BaseLogFilter)
-    assert filter.app_logger == app_logger
-    record = MagicMock()
-    record.name = name
-    assert (
-        filter.filter(record)
-        == (name == "APP_LOGGER"))
-
-
-@pytest.mark.parametrize("name", ["APP_LOGGER", "SOMETHING_ELSE"])
 def test_root_log_filter(name):
     app_logger = MagicMock()
     app_logger.name = "APP_LOGGER"
@@ -288,12 +274,11 @@ def test_runner_root_logger(patches):
     run = DummyRunner()
     patched = patches(
         "logging",
-        "AppLogFilter",
         ("Runner.log", dict(new_callable=PropertyMock)),
         ("Runner.root_log_handler", dict(new_callable=PropertyMock)),
         prefix="aio.run.runner.runner")
 
-    with patched as (m_logging, m_filter, m_log, m_handler):
+    with patched as (m_logging, m_log, m_handler):
         assert run.root_logger == m_logging.getLogger.return_value
 
     assert (
@@ -303,13 +288,10 @@ def test_runner_root_logger(patches):
         m_logging.getLogger.return_value.handlers.__getitem__.call_args
         == [(0, ), {}])
     assert (
-        m_logging.getLogger.return_value
-                 .handlers.__getitem__.return_value
-                 .addFilter.call_args
-        == [(m_filter.return_value, ), {}])
-    assert (
-        m_filter.call_args
-        == [(m_log.return_value, ), {}])
+        m_logging.getLogger.return_value.removeHandler.call_args
+        == [(m_logging.getLogger.return_value
+                      .handlers.__getitem__.return_value, ),
+            {}])
     assert (
         m_logging.getLogger.return_value.addHandler.call_args
         == [(m_handler.return_value, ), {}])
