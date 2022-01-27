@@ -68,6 +68,37 @@ def test_dependency_dunder_str(patches):
             == f"ID@{m_version.return_value}")
 
 
+@pytest.mark.parametrize("count", [None] + list(range(0, 3)))
+async def test_dependency_commits_since_current(patches, count):
+    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    patched = patches(
+        ("ADependency.release",
+         dict(new_callable=PropertyMock)),
+        ("ADependency.repo",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.dependency")
+
+    with patched as (m_release, m_repo):
+        m_repo.return_value.commits.return_value.total_count = AsyncMock(
+            return_value=count)()
+        m_release.return_value.timestamp_commit = AsyncMock(
+            return_value="TIMESTAMP")()
+        result = await dependency.commits_since_current
+        assert (
+            result
+            == (count and count - 1 or count))
+
+    assert (
+        m_repo.return_value.commits.call_args
+        == [(), dict(since="TIMESTAMP")])
+    assert (
+        getattr(
+            dependency,
+            ADependency.commits_since_current.cache_name)[
+                "commits_since_current"]
+        == result)
+
+
 @pytest.mark.parametrize(
     "metadata", [dict(), dict(cpe="N/A"), dict(cpe="CPE")])
 def test_dependency_cpe(metadata):
@@ -247,6 +278,75 @@ def test_dependency_github_version_name(patches, tagged):
         == [(slice(0, 7), ), {}])
 
 
+@pytest.mark.parametrize("commits", range(0, 5))
+async def test_dependency_has_recent_commits(patches, commits):
+    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    patched = patches(
+        ("ADependency.recent_commits",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.dependency")
+
+    with patched as (m_recent, ):
+        m_recent.return_value = AsyncMock(return_value=commits)()
+        assert await dependency.has_recent_commits == (commits > 1)
+
+    assert not getattr(
+        dependency,
+        ADependency.has_recent_commits.cache_name,
+        None)
+
+
+@pytest.mark.parametrize("newest", [None, "BINGO", "BLOOP"])
+async def test_dependency_newer_release(patches, newest):
+    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    patched = patches(
+        "version",
+        ("ADependency.release",
+         dict(new_callable=PropertyMock)),
+        ("ADependency.release_class",
+         dict(new_callable=PropertyMock)),
+        ("ADependency.repo",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.dependency")
+
+    if newest:
+        newer_release = MagicMock()
+        newer_release.tag_name = newest
+    else:
+        newer_release = None
+
+    with patched as (m_version, m_release, m_class, m_repo):
+        m_version.parse.side_effect = lambda x: x
+        m_release.return_value.version = "BLOOP"
+        timestamp = AsyncMock()
+        m_release.return_value.timestamp = timestamp()
+        m_repo.return_value.highest_release = AsyncMock(
+            return_value=newer_release)
+        result = await dependency.newer_release
+        assert (
+            result
+            == (m_class.return_value.return_value
+                if newest and newest != "BLOOP"
+                else None))
+
+    if newest and newest != "BLOOP":
+        assert (
+            m_class.return_value.call_args
+            == [(m_repo.return_value, newest),
+                dict(release=newer_release)])
+    else:
+        assert not m_class.called
+    assert (
+        m_repo.return_value.highest_release.call_args
+        == [(), dict(since=timestamp.return_value)])
+    assert (
+        getattr(
+            dependency,
+            ADependency.newer_release.cache_name)[
+                "newer_release"]
+        == result)
+
+
 def test_dependency_organization(patches):
     dependency = DummyDependency2("ID", "METADATA", "GITHUB")
     patched = patches(
@@ -281,6 +381,35 @@ def test_dependency_project(patches):
         m_components.return_value.__getitem__.call_args
         == [(4, ), {}])
     assert "project" not in dependency.__dict__
+
+
+@pytest.mark.parametrize("tagged", [True, False])
+async def test_dependency_recent_commits(patches, tagged):
+    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    patched = patches(
+        ("ADependency.commits_since_current",
+         dict(new_callable=PropertyMock)),
+        ("ADependency.release",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.dependency")
+
+    with patched as (m_commits, m_release):
+        m_release.return_value.tagged = tagged
+        commits = AsyncMock()
+        m_commits.side_effect = commits
+        result = await dependency.recent_commits
+        assert (
+            result
+            == (commits.return_value
+                if not tagged
+                else 0))
+
+    assert (
+        getattr(
+            dependency,
+            ADependency.recent_commits.cache_name)[
+                "recent_commits"]
+        == result)
 
 
 def test_dependency_release(patches):

@@ -34,6 +34,13 @@ class ADependency(metaclass=abstracts.Abstraction):
     def __str__(self):
         return f"{self.id}@{self.version}"
 
+    @async_property(cache=True)
+    async def commits_since_current(self) -> int:
+        """Commits since current commit/tag."""
+        count = await self.repo.commits(
+            since=await self.release.timestamp_commit).total_count
+        return count and count - 1 or count
+
     @cached_property
     def cpe(self) -> Optional[str]:
         """Configured CPE for this dependency."""
@@ -80,6 +87,31 @@ class ADependency(metaclass=abstracts.Abstraction):
             if not self.release.tagged
             else self.github_version)
 
+    @async_property
+    async def has_recent_commits(self) -> bool:
+        """Flag indicating whether there are more recent commits than the
+        current pinned commit."""
+        return await self.recent_commits > 1
+
+    @async_property(cache=True)
+    async def newer_release(
+            self) -> Optional["abstract.ADependencyGithubRelease"]:
+        """Release with highest semantic version if newer than the current
+        release, or where pin is to tag or commit."""
+        # TODO: consider adding `newer_tags` for deps that only create
+        #   tags and not releases (eg tclap)
+        newer_release = await self.repo.highest_release(
+            since=await self.release.timestamp)
+        return (
+            self.release_class(
+                self.repo,
+                newer_release.tag_name,
+                release=newer_release)
+            if (newer_release
+                and (version.parse(newer_release.tag_name)
+                     != self.release.version))
+            else None)
+
     @property
     def organization(self) -> str:
         """Github organization name."""
@@ -89,6 +121,14 @@ class ADependency(metaclass=abstracts.Abstraction):
     def project(self) -> str:
         """Github project name."""
         return self.url_components[4]
+
+    @async_property(cache=True)
+    async def recent_commits(self) -> int:
+        """Count of commits since current pinned commit."""
+        return (
+            await self.commits_since_current
+            if not self.release.tagged
+            else 0)
 
     @cached_property
     def release(self) -> "abstract.ADependencyGithubRelease":
