@@ -20,6 +20,7 @@ pytooling_library(
         "abstract/cves/cves.py",
         "abstract/cves/version_matcher.py",
         "abstract/dependency.py",
+        "abstract/issues.py",
         "abstract/release.py",
         "checker.py",
         "cmd.py",
