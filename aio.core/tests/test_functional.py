@@ -1,6 +1,6 @@
 import abc
 import types
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -170,3 +170,169 @@ def test_functional_async_property_is_cached(cache):
     assert not is_cached(obj, "FOO")
     delattr(obj, cache_name)
     assert not is_cached(obj, "FOO")
+
+
+@pytest.mark.parametrize("predicate", [True, False])
+@pytest.mark.parametrize("result", [True, False])
+async def test_collections_async_list(patches, predicate, result):
+    patched = patches(
+        "list",
+        prefix="aio.core.functional.collections")
+    kwargs = {}
+    n = 1
+    if predicate:
+        kwargs["predicate"] = MagicMock()
+        kwargs["predicate"].side_effect = lambda x: x % 2
+    if result:
+        n = 2
+        kwargs["result"] = MagicMock()
+        kwargs["result"].side_effect = lambda x: x * n
+
+    async def iterator():
+        for x in range(0, 10):
+            yield x
+
+    with patched as (m_list, ):
+        assert (
+            await functional.async_list(iterator(), **kwargs)
+            == m_list.return_value)
+
+    if predicate:
+        assert (
+            kwargs["predicate"].call_args_list
+            == [[(x, ), {}] for x in range(0, 10)])
+        assert (
+            m_list.return_value.append.call_args_list
+            == [[(x * n, ), {}]
+                for x
+                in range(0, 10)
+                if x % 2])
+        if result:
+            assert (
+                kwargs["result"].call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)
+                    if x % 2])
+    else:
+        assert (
+            m_list.return_value.append.call_args_list
+            == [[(x * n, ), {}] for x in range(0, 10)])
+        if result:
+            assert (
+                kwargs["result"].call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)])
+
+
+@pytest.mark.parametrize("predicate", [True, False])
+@pytest.mark.parametrize("result", [True, False])
+async def test_collections_async_set(patches, predicate, result):
+    patched = patches(
+        "set",
+        prefix="aio.core.functional.collections")
+    kwargs = {}
+    n = 1
+    if predicate:
+        kwargs["predicate"] = MagicMock()
+        kwargs["predicate"].side_effect = lambda x: x % 2
+    if result:
+        n = 2
+        kwargs["result"] = MagicMock()
+        kwargs["result"].side_effect = lambda x: x * n
+
+    async def iterator():
+        for x in range(0, 10):
+            yield x
+
+    with patched as (m_set, ):
+        assert (
+            await functional.async_set(iterator(), **kwargs)
+            == m_set.return_value)
+
+    if predicate:
+        assert (
+            kwargs["predicate"].call_args_list
+            == [[(x, ), {}] for x in range(0, 10)])
+        assert (
+            m_set.return_value.add.call_args_list
+            == [[(x * n, ), {}]
+                for x
+                in range(0, 10)
+                if x % 2])
+        if result:
+            assert (
+                kwargs["result"].call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)
+                    if x % 2])
+    else:
+        assert (
+            m_set.return_value.add.call_args_list
+            == [[(x * n, ), {}] for x in range(0, 10)])
+        if result:
+            assert (
+                kwargs["result"].call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)])
+
+
+@pytest.mark.parametrize("executor", [True, False])
+async def test_collections_async_map(patches, executor):
+    patched = patches(
+        "futures",
+        "list",
+        "map",
+        prefix="aio.core.functional.process")
+    kwargs = {}
+    if executor:
+        kwargs["executor"] = MagicMock()
+    future_results = [MagicMock() for x in range(0, 10)]
+    results = []
+    iterable = list(range(0, 7))
+    fun = MagicMock()
+
+    def iterator(result_futures):
+        for x in future_results:
+            yield x
+
+    with patched as (m_futures, m_list, m_map):
+        m_futures.as_completed.side_effect = iterator
+
+        async for result in functional.async_map(fun, iterable, **kwargs):
+            results.append(result)
+
+        anon_fun = m_map.call_args[0][0]
+        anon_fun("X")
+
+    assert (
+        results
+        == [x.result.return_value
+            for x
+            in future_results])
+    if executor:
+        assert (
+            kwargs["executor"].call_args
+            == [(), {}])
+        assert not m_futures.ThreadPoolExecutor.called
+        assert (
+            (kwargs["executor"].return_value
+                               .__enter__.return_value.submit.call_args)
+            == [(fun, "X"), {}])
+    else:
+        assert (
+            m_futures.ThreadPoolExecutor.call_args
+            == [(), {}])
+        assert (
+            (m_futures.ThreadPoolExecutor.return_value
+                      .__enter__.return_value.submit.call_args)
+            == [(fun, "X"), {}])
+    assert (
+        m_list.call_args
+        == [(m_map.return_value, ), {}])
+    assert (
+        m_map.call_args
+        == [(anon_fun, iterable), {}])
