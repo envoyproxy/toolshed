@@ -79,7 +79,7 @@ pypi: https://pypi.org/project/aio.run.checker
 
 #### [aio.run.runner](aio.run.runner)
 
-version: 0.2.2
+version: 0.2.3.dev0
 
 pypi: https://pypi.org/project/aio.run.runner
 
@@ -129,7 +129,7 @@ pypi: https://pypi.org/project/envoy.code_format.python_check
 
 #### [envoy.dependency.check](envoy.dependency.check)
 
-version: 0.0.1
+version: 0.0.2.dev0
 
 pypi: https://pypi.org/project/envoy.dependency.check
 
