@@ -239,3 +239,11 @@ def dt_to_utc_isoformat(dt: datetime.datetime) -> str:
     """Convert a `datetime` -> UTC `date.isoformat`"""
     date = dt.replace(tzinfo=pytz.UTC)
     return date.date().isoformat()
+
+
+def last_n_bytes_of(target: Union[str, pathlib.Path], n: int = 1) -> bytes:
+    """Return the last `n` bytes from a file, defaults to 1 byte."""
+    with open(target, "rb") as f:
+        f.seek(0, os.SEEK_END)
+        f.seek(f.tell() - n)
+        return f.read(n)

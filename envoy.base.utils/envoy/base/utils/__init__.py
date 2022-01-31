@@ -19,7 +19,8 @@ from .utils import (
     to_yaml,
     to_bytes,
     is_sha,
-    tar_mode)
+    tar_mode,
+    last_n_bytes_of)
 
 
 __all__ = (
@@ -34,6 +35,7 @@ __all__ = (
     "from_yaml",
     "is_sha",
     "is_tarlike",
+    "last_n_bytes_of",
     "coverage_with_data_file",
     "nested",
     "typed",

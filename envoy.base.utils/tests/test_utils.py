@@ -407,3 +407,36 @@ def test_dt_to_utc_isoformat(patches):
     assert (
         dt.replace.return_value.date.return_value.isoformat.call_args
         == [(), {}])
+
+
+@pytest.mark.parametrize("n", [None] + list(range(1, 5)))
+def test_last_n_bytes_of(patches, n):
+    patched = patches(
+        "open",
+        "os",
+        prefix="envoy.base.utils.utils")
+    target = MagicMock()
+    args = (
+        (n, )
+        if n is not None
+        else ())
+
+    with patched as (m_open, m_os):
+        m_open.return_value.__enter__.return_value.tell.return_value = 23
+        assert (
+            utils.last_n_bytes_of(target, *args)
+            == m_open.return_value.__enter__.return_value.read.return_value)
+
+    assert (
+        m_open.call_args
+        == [(target, "rb"), {}])
+    assert (
+        m_open.return_value.__enter__.return_value.seek.call_args_list
+        == [[(0, m_os.SEEK_END), {}],
+            [(23 - (n or 1), ), {}]])
+    assert (
+        m_open.return_value.__enter__.return_value.tell.call_args
+        == [(), {}])
+    assert (
+        m_open.return_value.__enter__.return_value.read.call_args
+        == [(n or 1, ), {}])
