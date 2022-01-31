@@ -1,6 +1,6 @@
 import abc
 import types
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -170,3 +170,280 @@ def test_functional_async_property_is_cached(cache):
     assert not is_cached(obj, "FOO")
     delattr(obj, cache_name)
     assert not is_cached(obj, "FOO")
+
+
+@pytest.mark.parametrize("predicate", [True, False])
+@pytest.mark.parametrize("result", [True, False])
+async def test_collections_async_list(patches, predicate, result):
+    patched = patches(
+        "list",
+        "maybe_coro",
+        prefix="aio.core.functional.collections")
+    kwargs = {}
+    n = 1
+    if predicate:
+        kwargs["predicate"] = MagicMock()
+    if result:
+        n = 2
+        kwargs["result"] = MagicMock()
+
+    async def iterator():
+        for x in range(0, 10):
+            yield x
+
+    predicate_mock = AsyncMock(side_effect=lambda x: x % 2)
+    result_mock = AsyncMock(side_effect=lambda x: x * 2)
+    coro_mock = AsyncMock(side_effect=lambda x: x)
+
+    def maybe(arg):
+        if arg == kwargs.get("predicate"):
+            return predicate_mock
+        elif arg == kwargs.get("result"):
+            return result_mock
+        return coro_mock
+
+    with patched as (m_list, m_maybe):
+        m_maybe.side_effect = maybe
+        assert (
+            await functional.async_list(iterator(), **kwargs)
+            == m_list.return_value)
+
+    if result:
+        assert not coro_mock.called
+    else:
+        assert not result_mock.called
+    if predicate:
+        assert (
+            predicate_mock.call_args_list
+            == [[(x, ), {}]
+                for x
+                in range(0, 10)])
+        assert (
+            m_list.return_value.append.call_args_list
+            == [[(x * n, ), {}]
+                for x
+                in range(0, 10)
+                if x % 2])
+        if result:
+            assert (
+                result_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)
+                    if x % 2])
+        else:
+            assert (
+                coro_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)
+                    if x % 2])
+    else:
+        assert not predicate_mock.called
+        assert (
+            m_list.return_value.append.call_args_list
+            == [[(x * n, ), {}]
+                for x in range(0, 10)])
+        if result:
+            assert (
+                result_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)])
+        else:
+            assert (
+                coro_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)])
+
+
+@pytest.mark.parametrize("predicate", [True, False])
+@pytest.mark.parametrize("result", [True, False])
+async def test_collections_async_set(patches, predicate, result):
+    patched = patches(
+        "set",
+        "maybe_coro",
+        prefix="aio.core.functional.collections")
+    kwargs = {}
+    n = 1
+    if predicate:
+        kwargs["predicate"] = MagicMock()
+    if result:
+        n = 2
+        kwargs["result"] = MagicMock()
+
+    async def iterator():
+        for x in range(0, 10):
+            yield x
+
+    predicate_mock = AsyncMock(side_effect=lambda x: x % 2)
+    result_mock = AsyncMock(side_effect=lambda x: x * 2)
+    coro_mock = AsyncMock(side_effect=lambda x: x)
+
+    def maybe(arg):
+        if arg == kwargs.get("predicate"):
+            return predicate_mock
+        elif arg == kwargs.get("result"):
+            return result_mock
+        return coro_mock
+
+    with patched as (m_set, m_maybe):
+        m_maybe.side_effect = maybe
+        assert (
+            await functional.async_set(iterator(), **kwargs)
+            == m_set.return_value)
+
+    if result:
+        assert not coro_mock.called
+    else:
+        assert not result_mock.called
+    if predicate:
+        assert (
+            predicate_mock.call_args_list
+            == [[(x, ), {}]
+                for x
+                in range(0, 10)])
+        assert (
+            m_set.return_value.add.call_args_list
+            == [[(x * n, ), {}]
+                for x
+                in range(0, 10)
+                if x % 2])
+        if result:
+            assert (
+                result_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)
+                    if x % 2])
+        else:
+            assert (
+                coro_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)
+                    if x % 2])
+    else:
+        assert not predicate_mock.called
+        assert (
+            m_set.return_value.add.call_args_list
+            == [[(x * n, ), {}]
+                for x in range(0, 10)])
+        if result:
+            assert (
+                result_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)])
+        else:
+            assert (
+                coro_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)])
+
+
+@pytest.mark.parametrize("fork", [None, True, False])
+async def test_collections_async_map(patches, fork):
+    patched = patches(
+        "futures",
+        "list",
+        "map",
+        prefix="aio.core.functional.process")
+    kwargs = {}
+    if fork is not None:
+        kwargs["fork"] = fork
+    future_results = [MagicMock() for x in range(0, 10)]
+    results = []
+    iterable = list(range(0, 7))
+    fun = MagicMock()
+
+    def iterator(result_futures):
+        for x in future_results:
+            yield x
+
+    with patched as (m_futures, m_list, m_map):
+        m_futures.as_completed.side_effect = iterator
+
+        async for result in functional.async_map(fun, iterable, **kwargs):
+            results.append(result)
+
+        anon_fun = m_map.call_args[0][0]
+        anon_fun("X")
+
+    assert (
+        results
+        == [x.result.return_value
+            for x
+            in future_results])
+    if fork:
+        assert not m_futures.ThreadPoolExecutor.called
+        assert (
+            m_futures.ProcessPoolExecutor.call_args
+            == [(), {}])
+        assert (
+            (m_futures.ProcessPoolExecutor.return_value
+                      .__enter__.return_value.submit.call_args)
+            == [(fun, "X"), {}])
+    else:
+        assert not m_futures.ProcessPoolExecutor.called
+        assert (
+            m_futures.ThreadPoolExecutor.call_args
+            == [(), {}])
+        assert (
+            (m_futures.ThreadPoolExecutor.return_value
+                      .__enter__.return_value.submit.call_args)
+            == [(fun, "X"), {}])
+    assert (
+        m_list.call_args
+        == [(m_map.return_value, ), {}])
+    assert (
+        m_map.call_args
+        == [(anon_fun, iterable), {}])
+
+
+@pytest.mark.parametrize("awaitable", [True, False])
+async def test_collections_maybe_awaitable(patches, awaitable):
+    patched = patches(
+        "asyncio",
+        "inspect",
+        prefix="aio.core.functional.utils")
+    result = MagicMock()
+
+    with patched as (m_aio, m_inspect):
+        m_inspect.iscoroutine.return_value = awaitable
+        assert (
+            functional.maybe_awaitable(result)
+            == (result
+                if awaitable
+                else m_aio.sleep.return_value))
+
+    if awaitable:
+        assert not m_aio.sleep.called
+    else:
+        assert (
+            m_aio.sleep.call_args
+            == [(0, ), dict(result=result)])
+
+
+@pytest.mark.parametrize("iscoro", [True, False])
+async def test_collections_maybe_coro(patches, iscoro):
+    patched = patches(
+        "inspect",
+        prefix="aio.core.functional.utils")
+    fun = (
+        AsyncMock()
+        if iscoro
+        else MagicMock())
+
+    with patched as (m_inspect, ):
+        m_inspect.iscoroutinefunction.return_value = iscoro
+        result = functional.maybe_coro(fun)
+        assert (
+            await result("ARG1", "ARG2", foo="BAR")
+            == fun.return_value)
+
+    assert (
+        fun.call_args
+        == [("ARG1", "ARG2"), dict(foo="BAR")])
