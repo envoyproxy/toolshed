@@ -1,10 +1,13 @@
 """aio.core.subprocess."""
 
-from .async_subprocess import AsyncSubprocess
+from .async_subprocess import AsyncSubprocess, run, parallel
+from .abstract import AAsyncShell
+from .shell import AsyncShell
 
 
-run = AsyncSubprocess.run
-parallel = AsyncSubprocess.parallel
-
-
-__all__ = ("run", "parallel", "AsyncSubprocess")
+__all__ = (
+    "run",
+    "parallel",
+    "AAsyncShell",
+    "AsyncSubprocess",
+    "AsyncShell")
