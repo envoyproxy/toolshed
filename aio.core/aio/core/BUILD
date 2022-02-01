@@ -9,7 +9,10 @@ pytooling_library(
     sources=[
         "__init__.py",
         "functional/__init__.py",
+        "functional/collections.py",
         "functional/decorators.py",
+        "functional/process.py",
+        "functional/utils.py",
         "stream/__init__.py",
         "stream/base.py",
         "stream/_reader.py",
