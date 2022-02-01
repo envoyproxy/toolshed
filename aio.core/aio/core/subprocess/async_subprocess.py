@@ -1,6 +1,7 @@
 import asyncio
 import subprocess
-from concurrent.futures import Executor, ProcessPoolExecutor
+from concurrent.futures import (
+    Executor, ProcessPoolExecutor, ThreadPoolExecutor)
 from functools import partial
 from typing import AsyncGenerator, Iterable, Optional
 
@@ -11,6 +12,7 @@ class AsyncSubprocess:
     async def parallel(
             cls,
             commands: Iterable[Iterable[str]],
+            fork: bool = True,
             **kwargs) -> AsyncGenerator[
                 subprocess.CompletedProcess,
                 Iterable[Iterable[str]]]:
@@ -42,7 +44,11 @@ class AsyncSubprocess:
         # speedup over a large number of tasks, despite any additional overhead
         # of creating the executor. Without `max_workers` set
         # `ProcessPoolExecutor` defaults to the number of cpus on the machine.
-        with ProcessPoolExecutor() as pool:
+        executor = (
+            ProcessPoolExecutor
+            if fork
+            else ThreadPoolExecutor)
+        with executor() as pool:
             futures = asyncio.as_completed(
                 tuple(
                     asyncio.ensure_future(
@@ -88,3 +94,13 @@ class AsyncSubprocess:
         loop = loop or asyncio.get_running_loop()
         return await loop.run_in_executor(
             executor, partial(subprocess.run, *args, **kwargs))
+
+
+parallel = AsyncSubprocess.parallel
+run = AsyncSubprocess.run
+
+
+__all__ = (
+    "AsyncSubprocess",
+    "parallel",
+    "run")
