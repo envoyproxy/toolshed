@@ -313,23 +313,63 @@ def test_shell_to_list():
         == [("\n", ), {}])
 
 
+@pytest.mark.parametrize("stdout", [None, False, "", "STDOUT"])
+@pytest.mark.parametrize("stderr", [None, False, "", "STDERR"])
+def test_shell__handle_exception(patches, stdout, stderr):
+    shell = DummyAsyncShell()
+    patched = patches(
+        "textwrap",
+        prefix="aio.core.subprocess.abstract.shell")
+    response = MagicMock()
+    response.args = [f"A{i}" for i in range(0, 5)]
+    response.stdout = stdout
+    response.stderr = stderr
+    fail_output = "\n".join(
+        out
+        for out
+        in [response.stdout, response.stderr]
+        if out)
+    fail_output = f":\n{fail_output}" if fail_output else fail_output
+
+    with patched as (m_wrap, ):
+        with pytest.raises(subprocess.exceptions.RunError) as e:
+            shell._handle_exception(response)
+        assert (
+            e.value.args[0]
+            == f"Run failed ({m_wrap.shorten.return_value}):{fail_output}")
+        assert e.value.args[1] == response
+
+    assert (
+        m_wrap.shorten.call_args
+        == [(" ".join(response.args), ),
+            dict(width=10, placeholder="...")])
+
+
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("returncode", range(0, 5))
-def test_shell__handle_response(raises, returncode):
+def test_shell__handle_response(patches, raises, returncode):
     shell = DummyAsyncShell()
+    patched = patches(
+        "AAsyncShell._handle_exception",
+        prefix="aio.core.subprocess.abstract.shell")
     response = MagicMock()
     response.returncode = returncode
     handler = MagicMock()
 
-    if returncode and raises:
-        with pytest.raises(subprocess.exceptions.RunError) as e:
+    with patched as (m_exception, ):
+        assert (
             shell._handle_response(handler, raises, response)
-        assert e.value.args[0] == f"Run failed: {response}"
+            == (m_exception.return_value
+                if raises and returncode
+                else handler.return_value))
+
+    if raises and returncode:
         assert not handler.called
+        assert (
+            m_exception.call_args
+            == [(response, ), {}])
         return
-    assert (
-        shell._handle_response(handler, raises, response)
-        == handler.return_value)
+    assert not m_exception.called
     assert (
         handler.call_args
         == [(response, ), {}])
