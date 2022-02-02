@@ -3,10 +3,11 @@ import abc
 import subprocess
 from concurrent import futures
 from functools import cached_property
-from typing import Any, AsyncIterator, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import abstracts
 
+from aio.core import functional
 from aio.core.subprocess import (
     exceptions,
     parallel as _parallel,
@@ -49,7 +50,7 @@ class AAsyncShell(metaclass=abstracts.Abstraction):
         self._raises = raises
         self._kwargs = kwargs
 
-    async def __call__(self, *args, **kwargs) -> subprocess.CompletedProcess:
+    async def __call__(self, *args, **kwargs) -> Any:
         return await self.run(*args, **kwargs)
 
     @property
@@ -91,7 +92,7 @@ class AAsyncShell(metaclass=abstracts.Abstraction):
         return self._raises
 
     @abc.abstractmethod
-    def parallel(self, *args, **kwargs) -> AsyncIterator:
+    def parallel(self, *args, **kwargs) -> functional.AwaitableGenerator:
         """Wrapper around the `parallel` utility."""
         return _parallel(
             *args,
@@ -108,7 +109,7 @@ class AAsyncShell(metaclass=abstracts.Abstraction):
     async def run(
             self,
             *args,
-            **kwargs) -> subprocess.CompletedProcess:
+            **kwargs) -> Any:
         """Wrapper around the `run` utility."""
         run_kwargs = self.run_kwargs(**kwargs)
         return self._handle_response(

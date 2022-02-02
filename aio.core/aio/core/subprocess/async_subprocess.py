@@ -6,6 +6,9 @@ from functools import partial
 from typing import AsyncGenerator, Iterable, Optional
 
 
+from aio.core import functional
+
+
 class AsyncSubprocess:
 
     @classmethod
@@ -96,7 +99,19 @@ class AsyncSubprocess:
             executor, partial(subprocess.run, *args, **kwargs))
 
 
-parallel = AsyncSubprocess.parallel
+def parallel(*args, **kwargs) -> functional.AwaitableGenerator:
+    collector = kwargs.pop("collector", None)
+    iterator = kwargs.pop("iterator", None)
+    predicate = kwargs.pop("predicate", None)
+    result = kwargs.pop("result", None)
+    return functional.AwaitableGenerator(
+        AsyncSubprocess.parallel(*args, **kwargs),
+        collector=collector,
+        iterator=iterator,
+        predicate=predicate,
+        result=result)
+
+
 run = AsyncSubprocess.run
 
 
