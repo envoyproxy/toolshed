@@ -13,7 +13,7 @@ def _register_utils() -> None:
 
 def main(*args) -> int:
     _register_utils()
-    return PackageSigningRunner(*args).run()
+    return PackageSigningRunner(*args)()
 
 
 def cmd():
