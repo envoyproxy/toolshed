@@ -1,6 +1,6 @@
 import abc
 import types
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
@@ -174,174 +174,157 @@ def test_functional_async_property_is_cached(cache):
 
 @pytest.mark.parametrize("predicate", [True, False])
 @pytest.mark.parametrize("result", [True, False])
+async def test_collections_async_iterator(patches, predicate, result):
+    patched = patches(
+        "maybe_coro",
+        prefix="aio.core.functional.collections")
+    results = []
+    kwargs = {}
+    n = 1
+    if predicate:
+        kwargs["predicate"] = MagicMock()
+    if result:
+        n = 2
+        kwargs["result"] = MagicMock()
+
+    async def iterator():
+        for x in range(0, 10):
+            yield x
+
+    predicate_mock = AsyncMock(side_effect=lambda x: x % 2)
+    result_mock = AsyncMock(side_effect=lambda x: x * 2)
+    coro_mock = AsyncMock(side_effect=lambda x: x)
+
+    def maybe(arg):
+        if arg == kwargs.get("predicate"):
+            return predicate_mock
+        elif arg == kwargs.get("result"):
+            return result_mock
+        return coro_mock
+
+    with patched as (m_maybe, ):
+        m_maybe.side_effect = maybe
+        async for item in functional.async_iterator(iterator(), **kwargs):
+            results.append(item)
+
+    if result:
+        assert not coro_mock.called
+    else:
+        assert not result_mock.called
+    if predicate:
+        assert (
+            results
+            == [x * n for x in range(0, 10) if x % 2])
+        assert (
+            predicate_mock.call_args_list
+            == [[(x, ), {}]
+                for x
+                in range(0, 10)])
+        if result:
+            assert (
+                result_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)
+                    if x % 2])
+        else:
+            assert (
+                coro_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)
+                    if x % 2])
+    else:
+        assert not predicate_mock.called
+        assert (
+            results
+            == [x * n for x in range(0, 10)])
+        if result:
+            assert (
+                result_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)])
+        else:
+            assert (
+                coro_mock.call_args_list
+                == [[(x, ), {}]
+                    for x
+                    in range(0, 10)])
+
+
+@pytest.mark.parametrize("predicate", [None, False, "PREDICATE"])
+@pytest.mark.parametrize("result", [None, False, "RESULT"])
 async def test_collections_async_list(patches, predicate, result):
     patched = patches(
         "list",
-        "maybe_coro",
+        "async_iterator",
         prefix="aio.core.functional.collections")
-    kwargs = {}
-    n = 1
-    if predicate:
-        kwargs["predicate"] = MagicMock()
-    if result:
-        n = 2
-        kwargs["result"] = MagicMock()
 
-    async def iterator():
+    iterator_instance = MagicMock()
+    kwargs = {}
+    if predicate is not None:
+        kwargs["predicate"] = predicate
+    if result is not None:
+        kwargs["result"] = result
+
+    async def iterator(it, **kwargs):
         for x in range(0, 10):
             yield x
 
-    predicate_mock = AsyncMock(side_effect=lambda x: x % 2)
-    result_mock = AsyncMock(side_effect=lambda x: x * 2)
-    coro_mock = AsyncMock(side_effect=lambda x: x)
-
-    def maybe(arg):
-        if arg == kwargs.get("predicate"):
-            return predicate_mock
-        elif arg == kwargs.get("result"):
-            return result_mock
-        return coro_mock
-
-    with patched as (m_list, m_maybe):
-        m_maybe.side_effect = maybe
+    with patched as (m_list, m_iter):
+        m_iter.side_effect = iterator
         assert (
-            await functional.async_list(iterator(), **kwargs)
+            await functional.async_list(
+                iterator_instance, **kwargs)
             == m_list.return_value)
 
-    if result:
-        assert not coro_mock.called
-    else:
-        assert not result_mock.called
-    if predicate:
-        assert (
-            predicate_mock.call_args_list
-            == [[(x, ), {}]
-                for x
-                in range(0, 10)])
-        assert (
-            m_list.return_value.append.call_args_list
-            == [[(x * n, ), {}]
-                for x
-                in range(0, 10)
-                if x % 2])
-        if result:
-            assert (
-                result_mock.call_args_list
-                == [[(x, ), {}]
-                    for x
-                    in range(0, 10)
-                    if x % 2])
-        else:
-            assert (
-                coro_mock.call_args_list
-                == [[(x, ), {}]
-                    for x
-                    in range(0, 10)
-                    if x % 2])
-    else:
-        assert not predicate_mock.called
-        assert (
-            m_list.return_value.append.call_args_list
-            == [[(x * n, ), {}]
-                for x in range(0, 10)])
-        if result:
-            assert (
-                result_mock.call_args_list
-                == [[(x, ), {}]
-                    for x
-                    in range(0, 10)])
-        else:
-            assert (
-                coro_mock.call_args_list
-                == [[(x, ), {}]
-                    for x
-                    in range(0, 10)])
+    kwargs["predicate"] = predicate
+    kwargs["result"] = result
+    assert (
+        m_iter.call_args
+        == [(iterator_instance, ), kwargs])
+    assert (
+        m_list.return_value.append.call_args_list
+        == [[(x, ), {}]
+            for x in range(0, 10)])
 
 
-@pytest.mark.parametrize("predicate", [True, False])
-@pytest.mark.parametrize("result", [True, False])
+@pytest.mark.parametrize("predicate", [None, False, "PREDICATE"])
+@pytest.mark.parametrize("result", [None, False, "RESULT"])
 async def test_collections_async_set(patches, predicate, result):
     patched = patches(
         "set",
-        "maybe_coro",
+        "async_iterator",
         prefix="aio.core.functional.collections")
-    kwargs = {}
-    n = 1
-    if predicate:
-        kwargs["predicate"] = MagicMock()
-    if result:
-        n = 2
-        kwargs["result"] = MagicMock()
 
-    async def iterator():
+    iterator_instance = MagicMock()
+    kwargs = {}
+    if predicate is not None:
+        kwargs["predicate"] = predicate
+    if result is not None:
+        kwargs["result"] = result
+
+    async def iterator(it, **kwargs):
         for x in range(0, 10):
             yield x
 
-    predicate_mock = AsyncMock(side_effect=lambda x: x % 2)
-    result_mock = AsyncMock(side_effect=lambda x: x * 2)
-    coro_mock = AsyncMock(side_effect=lambda x: x)
-
-    def maybe(arg):
-        if arg == kwargs.get("predicate"):
-            return predicate_mock
-        elif arg == kwargs.get("result"):
-            return result_mock
-        return coro_mock
-
-    with patched as (m_set, m_maybe):
-        m_maybe.side_effect = maybe
+    with patched as (m_set, m_iter):
+        m_iter.side_effect = iterator
         assert (
-            await functional.async_set(iterator(), **kwargs)
+            await functional.async_set(
+                iterator_instance, **kwargs)
             == m_set.return_value)
 
-    if result:
-        assert not coro_mock.called
-    else:
-        assert not result_mock.called
-    if predicate:
-        assert (
-            predicate_mock.call_args_list
-            == [[(x, ), {}]
-                for x
-                in range(0, 10)])
-        assert (
-            m_set.return_value.add.call_args_list
-            == [[(x * n, ), {}]
-                for x
-                in range(0, 10)
-                if x % 2])
-        if result:
-            assert (
-                result_mock.call_args_list
-                == [[(x, ), {}]
-                    for x
-                    in range(0, 10)
-                    if x % 2])
-        else:
-            assert (
-                coro_mock.call_args_list
-                == [[(x, ), {}]
-                    for x
-                    in range(0, 10)
-                    if x % 2])
-    else:
-        assert not predicate_mock.called
-        assert (
-            m_set.return_value.add.call_args_list
-            == [[(x * n, ), {}]
-                for x in range(0, 10)])
-        if result:
-            assert (
-                result_mock.call_args_list
-                == [[(x, ), {}]
-                    for x
-                    in range(0, 10)])
-        else:
-            assert (
-                coro_mock.call_args_list
-                == [[(x, ), {}]
-                    for x
-                    in range(0, 10)])
+    kwargs["predicate"] = predicate
+    kwargs["result"] = result
+    assert (
+        m_iter.call_args
+        == [(iterator_instance, ), kwargs])
+    assert (
+        m_set.return_value.add.call_args_list
+        == [[(x, ), {}]
+            for x in range(0, 10)])
 
 
 @pytest.mark.parametrize("fork", [None, True, False])
@@ -447,3 +430,109 @@ async def test_collections_maybe_coro(patches, iscoro):
     assert (
         fun.call_args
         == [("ARG1", "ARG2"), dict(foo="BAR")])
+
+
+@pytest.mark.parametrize("collector", [None, False, "COLLECTOR"])
+@pytest.mark.parametrize("iterator", [None, False, "ITERATOR"])
+@pytest.mark.parametrize("predicate", [None, False, "PREDICATE"])
+@pytest.mark.parametrize("result", [None, False, "RESULT"])
+def test_generator_awaitablegenerator_constructor(
+        collector, iterator, predicate, result):
+    kwargs = {}
+    if collector is not None:
+        kwargs["collector"] = collector
+    if iterator is not None:
+        kwargs["iterator"] = iterator
+    if predicate is not None:
+        kwargs["predicate"] = predicate
+    if result is not None:
+        kwargs["result"] = result
+    generator = functional.AwaitableGenerator("GENERATOR", **kwargs)
+    kwargs.pop("collector", None)
+    assert generator.generator == "GENERATOR"
+    assert generator.collector == collector or functional.async_list
+    assert generator.iterator == iterator or functional.async_list
+    assert generator.predicate == predicate
+    assert generator.result == result
+    assert (
+        generator.iter_kwargs
+        == dict(predicate=generator.predicate,
+                result=generator.result))
+    assert "iter_kwargs" not in generator.__dict__
+
+
+async def test_generator_awaitable_generator_dunder_aiter(patches):
+    generator = functional.AwaitableGenerator("GENERATOR")
+    patched = patches(
+        ("AwaitableGenerator.iterable",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.functional.generator")
+    results = []
+
+    async def someiterfun():
+        for x in range(0, 5):
+            yield x
+
+    with patched as (m_iterable, ):
+        m_iterable.side_effect = someiterfun
+        async for result in generator:
+            results.append(result)
+
+    assert results == list(range(0, 5))
+
+
+async def test_generator_awaitable_generator_dunder_await(patches):
+    generator = functional.AwaitableGenerator("GENERATOR")
+    patched = patches(
+        ("AwaitableGenerator.awaitable",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.functional.generator")
+
+    async def somefun():
+        return "FUN"
+
+    with patched as (m_awaitable, ):
+        m_awaitable.side_effect = somefun
+        assert await generator == "FUN"
+
+
+async def test_generator_awaitable_generator_awaitable(patches):
+    collector = MagicMock()
+    generator = functional.AwaitableGenerator("GENERATOR", collector=collector)
+    patched = patches(
+        ("AwaitableGenerator.iter_kwargs",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.functional.generator")
+    kwargs = dict(foo="BAR")
+
+    with patched as (m_kwargs, ):
+        m_kwargs.return_value = kwargs
+        assert (
+            generator.awaitable
+            == collector.return_value)
+
+    assert (
+        collector.call_args
+        == [("GENERATOR", ), kwargs])
+    assert "awaitable" not in generator.__dict__
+
+
+async def test_generator_awaitable_generator_iterable(patches):
+    iterator = MagicMock()
+    generator = functional.AwaitableGenerator("GENERATOR", iterator=iterator)
+    patched = patches(
+        ("AwaitableGenerator.iter_kwargs",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.functional.generator")
+    kwargs = dict(foo="BAR")
+
+    with patched as (m_kwargs, ):
+        m_kwargs.return_value = kwargs
+        assert (
+            generator.iterable
+            == iterator.return_value)
+
+    assert (
+        iterator.call_args
+        == [("GENERATOR", ), kwargs])
+    assert "awaitable" not in generator.__dict__
