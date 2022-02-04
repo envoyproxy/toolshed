@@ -11,7 +11,13 @@
     "notice": [
         [
             [
-                "[cves] Running check"
+                "[cves] Running checks..."
+            ],
+            {}
+        ],
+        [
+            [
+                "[cves] Checks (2) completed successfully"
             ],
             {}
         ]
