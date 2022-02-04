@@ -271,7 +271,7 @@ class Checker(runner.Runner):
 
     async def on_check_begin(self, check: str) -> None:
         self._active_check = check
-        self.log.notice(f"[{check}] Running check")
+        self.log.notice(f"[{check}] Running checks...")
 
     async def on_check_run(self, check: str) -> None:
         """Callback hook called after each check run."""
@@ -282,8 +282,12 @@ class Checker(runner.Runner):
             self.log.error(f"[{check}] Check failed")
         elif check in self.warnings:
             self.log.warning(f"[{check}] Check has warnings")
+        elif check not in self.success:
+            self.log.notice(f"[{check}] No checks ran")
         else:
-            self.log.success(f"[{check}] Check completed successfully")
+            self.log.notice(
+                f"[{check}] Checks ({len(self.success[check])}) "
+                "completed successfully")
 
     async def on_checks_begin(self) -> None:
         """Callback hook called before all checks."""
