@@ -553,15 +553,21 @@ async def test_checker_on_check_begin(patches):
     assert checker.active_check == "CHECKNAME"
     assert (
         m_log.return_value.notice.call_args
-        == [('[CHECKNAME] Running check',), {}])
+        == [('[CHECKNAME] Running checks...',), {}])
 
 
 @pytest.mark.parametrize(
     "errors", [[], ["CHECK1", "CHECK2", "CHECK3"], ["CHECK2", "CHECK3"]])
 @pytest.mark.parametrize(
     "warnings", [[], ["CHECK1", "CHECK2", "CHECK3"], ["CHECK2", "CHECK3"]])
+@pytest.mark.parametrize(
+    "success",
+    [{},
+     {f"CHECK{i}": [f"V1{i}"] for i in range(1, 3)},
+     {f"CHECK{i}": [f"V1{i}", f"V2{i}"] for i in range(2, 3)}])
 @pytest.mark.parametrize("exiting", [True, False])
-async def test_checker_on_check_run(patches, errors, warnings, exiting):
+async def test_checker_on_check_run(
+        patches, errors, warnings, success, exiting):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
         ("Checker.exiting", dict(new_callable=PropertyMock)),
@@ -571,6 +577,7 @@ async def test_checker_on_check_run(patches, errors, warnings, exiting):
     check = "CHECK1"
     checker.errors = errors
     checker.warnings = warnings
+    checker.success = success
     checker._active_check = check
 
     with patched as (m_exit, m_log):
@@ -582,7 +589,6 @@ async def test_checker_on_check_run(patches, errors, warnings, exiting):
     if exiting:
         assert not m_log.called
         return
-
     if check in errors:
         assert (
             m_log.return_value.error.call_args
@@ -590,7 +596,6 @@ async def test_checker_on_check_run(patches, errors, warnings, exiting):
         assert not m_log.return_value.warning.called
         assert not m_log.return_value.success.called
         return
-
     if check in warnings:
         assert (
             m_log.return_value.warning.call_args
@@ -598,10 +603,15 @@ async def test_checker_on_check_run(patches, errors, warnings, exiting):
         assert not m_log.return_value.error.called
         assert not m_log.return_value.info.called
         return
-
-    assert (
-        m_log.return_value.success.call_args
-        == [(f'[{check}] Check completed successfully',), {}])
+    if check in success:
+        assert (
+            m_log.return_value.notice.call_args
+            == [(f"[{check}] Checks ({len(success[check])}) "
+                 "completed successfully",), {}])
+    else:
+        assert (
+            m_log.return_value.notice.call_args
+            == [(f'[{check}] No checks ran',), {}])
     assert not m_log.return_value.warning.called
     assert not m_log.return_value.error.called
 

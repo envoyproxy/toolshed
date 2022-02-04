@@ -66,7 +66,7 @@ pypi: https://pypi.org/project/aio.core
 
 #### [aio.run.checker](aio.run.checker)
 
-version: 0.2.2.dev0
+version: 0.2.2
 
 pypi: https://pypi.org/project/aio.run.checker
 
