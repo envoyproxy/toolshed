@@ -1,6 +1,7 @@
 
 import abc
 import subprocess
+import textwrap
 from concurrent import futures
 from functools import cached_property
 from typing import Any, Callable, Dict, List, Optional
@@ -133,11 +134,26 @@ class AAsyncShell(metaclass=abstracts.Abstraction):
         """Split the `stdout` from a `subprocess` response to a list."""
         return response.stdout.split("\n")
 
+    def _handle_exception(self, response: subprocess.CompletedProcess) -> None:
+        command = textwrap.shorten(
+            " ".join(response.args),
+            width=10,
+            placeholder="...")
+        output = "\n".join(
+            out
+            for out
+            in [response.stdout, response.stderr]
+            if out)
+        output = f":\n{output}" if output else output
+        raise exceptions.RunError(
+            f"Run failed ({command}):{output}",
+            response)
+
     def _handle_response(
             self,
             handler: Callable,
             raises: bool,
             response: subprocess.CompletedProcess) -> Any:
         if response.returncode and raises:
-            raise exceptions.RunError(f"Run failed: {response}")
+            return self._handle_exception(response)
         return handler(response)

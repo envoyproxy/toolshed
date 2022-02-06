@@ -8,6 +8,10 @@ pytooling_library(
     ],
     sources=[
         "__init__.py",
+        "directory/__init__.py",
+        "directory/directory.py",
+        "directory/abstract/__init__.py",
+        "directory/abstract/directory.py",
         "functional/__init__.py",
         "functional/collections.py",
         "functional/decorators.py",
