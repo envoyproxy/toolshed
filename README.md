@@ -51,7 +51,7 @@ pypi: https://pypi.org/project/aio.api.github
 
 #### [aio.core](aio.core)
 
-version: 0.4.0
+version: 0.4.1.dev0
 
 pypi: https://pypi.org/project/aio.core
 
@@ -273,7 +273,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.3.0
+- [aio.core](https://pypi.org/project/aio.core) >=0.4.0
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [gidgethub](https://pypi.org/project/gidgethub)
