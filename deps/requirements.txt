@@ -1,5 +1,5 @@
 aio.api.github>=0.0.3
-aio.core>=0.4.0
+aio.core>=0.5.0
 aio.run.checker>=0.3.0
 aio.run.runner>=0.2.1
 aiodocker
