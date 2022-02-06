@@ -608,3 +608,165 @@ def test_util_nested():
 
     assert fun1_args == ["A"]
     assert fun2_args == ["B"]
+
+
+@pytest.mark.parametrize(
+    "args",
+    [[], [f"ARG{i}" for i in range(0, 5)]])
+@pytest.mark.parametrize(
+    "kwargs",
+    [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
+def test_buffering(patches, args, kwargs):
+
+    patched = patches(
+        "buffered",
+        prefix="aio.core.functional.output")
+
+    marker = MagicMock()
+    fun = MagicMock()
+
+    def run_fun(*args, **kwargs):
+        return marker.in_context
+
+    fun.side_effect = run_fun
+
+    @contextlib.contextmanager
+    def mock_buffered(stdout, stderr):
+        marker.in_context = "IN CONTEXT"
+        yield
+        marker.in_context = "NOT IN CONTEXT"
+
+    with patched as (m_buffered, ):
+        m_buffered.side_effect = mock_buffered
+        assert (
+            functional.buffering(fun, "STDOUT", "STDERR", *args, **kwargs)
+            == "IN CONTEXT")
+
+    assert (
+        m_buffered.call_args
+        == [("STDOUT", "STDERR"), {}])
+    assert (
+        fun.call_args
+        == [tuple(args), kwargs])
+
+
+@pytest.mark.parametrize("stdout", [None, False, "", "STDOUT"])
+@pytest.mark.parametrize("stderr", [None, False, "", "STDERR"])
+@pytest.mark.parametrize("both", [None, False, "", "BOTH"])
+async def test_capturing(patches, stdout, stderr, both):
+    patched = patches(
+        "output.BufferedOutputs",
+        prefix="aio.core.functional.output")
+    kwargs = {}
+    if stdout is not None:
+        kwargs["stdout"] = stdout
+    if stderr is not None:
+        kwargs["stderr"] = stderr
+    if both is not None:
+        kwargs["both"] = both
+    should_fail = (
+        not any([stdout, stderr, both])
+        or (both
+            and (stdout or stderr)))
+    outputs = {}
+    stdout = (both if both else stdout)
+    if stdout:
+        outputs["stdout"] = stdout
+    stderr = (both if both else stderr)
+    if stderr:
+        outputs["stderr"] = stderr
+
+    with patched as (m_output, ):
+        if should_fail:
+            with pytest.raises(output.exceptions.CapturingException) as e:
+                async with functional.capturing(**kwargs):
+                    pass
+            if not both:
+                assert (
+                    e.value.args[0]
+                    == ("You must supply either `both`, "
+                        "or one of `stdout` and `stderr`"))
+            else:
+                assert (
+                    e.value.args[0]
+                    == ("If you supply `both`, `stdout` "
+                        "and `stderr` should not be set"))
+
+        else:
+            async with functional.capturing(**kwargs) as buffer:
+                assert buffer == m_output.return_value.__aenter__.return_value
+
+    if should_fail:
+        assert not m_output.called
+        return
+
+    assert (
+        m_output.call_args
+        == [(outputs, ), {}])
+
+
+@pytest.mark.parametrize(
+    "args",
+    [[], [f"ARG{i}" for i in range(0, 5)]])
+@pytest.mark.parametrize("stdout", [None, False, "", "STDOUT"])
+@pytest.mark.parametrize("stderr", [None, False, "", "STDERR"])
+@pytest.mark.parametrize("both", [None, False, "", "BOTH"])
+@pytest.mark.parametrize("pool", [None, False, "", "POOL"])
+@pytest.mark.parametrize("any_set", [True, False])
+async def test_threaded(patches, args, stdout, stderr, both, pool, any_set):
+    patched = patches(
+        "any",
+        "asyncio",
+        "dict",
+        "functional",
+        prefix="aio.core.functional.process")
+    fun = MagicMock()
+    kwargs = {}
+    if stdout is not None:
+        kwargs["stdout"] = stdout
+    if stderr is not None:
+        kwargs["stderr"] = stderr
+    if both is not None:
+        kwargs["both"] = both
+    if pool is not None:
+        kwargs["pool"] = pool
+
+    with patched as (m_any, m_aio, m_dict, m_func):
+        m_any.return_value = any_set
+        executor = AsyncMock()
+        m_aio.get_running_loop.return_value.run_in_executor = executor
+        get = MagicMock()
+        m_func.capturing.return_value.__aenter__.return_value.get = get
+        assert (
+            await functional.threaded(fun, *args, **kwargs)
+            == (m_aio.get_running_loop.return_value
+                     .run_in_executor.return_value))
+
+    assert (
+        m_aio.get_running_loop.call_args
+        == [(), {}])
+    assert (
+        m_any.call_args
+        == [([stdout, stderr, both], ), {}])
+    if not any_set:
+        assert not m_dict.called
+        assert not m_func.capturing.called
+        assert (
+            executor.call_args
+            == [(pool, fun, *args), {}])
+        return
+    assert (
+        m_dict.call_args
+        == [(), dict(stdout=stdout, stderr=stderr, both=both)])
+    assert (
+        m_func.capturing.call_args
+        == [(m_dict.return_value, ), {}])
+    assert (
+        executor.call_args
+        == [(pool, m_func.buffering, fun,
+             get.return_value,
+             get.return_value,
+             *args), {}])
+    assert (
+        get.call_args_list
+        == [[(out, ), {}] for out in ["stdout", "stderr"]])

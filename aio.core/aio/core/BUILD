@@ -17,6 +17,7 @@ pytooling_library(
         "functional/collections.py",
         "functional/decorators.py",
         "functional/generator.py",
+        "functional/output.py",
         "functional/process.py",
         "functional/utils.py",
         "output/abstract/__init__.py",

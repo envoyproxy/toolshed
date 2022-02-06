@@ -2,12 +2,9 @@
 import asyncio
 import contextlib
 import inspect
-import io
 from typing import (
     Any, Awaitable, Callable, Coroutine,
-    Iterator, List, Optional, Union)
-
-from aio.core.output import exceptions
+    Union)
 
 
 def maybe_awaitable(result: Any) -> Coroutine:
@@ -67,39 +64,3 @@ def nested(*contexts):
             stack.enter_context(context)
             for context
             in contexts]
-
-
-@contextlib.contextmanager
-def buffered(
-        stdout: list = None,
-        stderr: list = None,
-        mangle: Optional[Callable[[list], list]] = None) -> Iterator[None]:
-    """Captures stdout and stderr and feeds lines to supplied lists."""
-
-    mangle = mangle or (lambda lines: lines)
-
-    if stdout is None and stderr is None:
-        raise exceptions.BufferUtilError(
-            "You must specify stdout and/or stderr")
-
-    contexts: List[
-        Union[
-            contextlib.redirect_stderr[io.TextIOWrapper],
-            contextlib.redirect_stdout[io.TextIOWrapper]]] = []
-
-    if stdout is not None:
-        _stdout = io.TextIOWrapper(io.BytesIO())
-        contexts.append(contextlib.redirect_stdout(_stdout))
-    if stderr is not None:
-        _stderr = io.TextIOWrapper(io.BytesIO())
-        contexts.append(contextlib.redirect_stderr(_stderr))
-
-    with nested(*contexts):
-        yield
-
-    if stdout is not None:
-        _stdout.seek(0)
-        stdout.extend(mangle(_stdout.read().strip().split("\n")))
-    if stderr is not None:
-        _stderr.seek(0)
-        stderr.extend(mangle(_stderr.read().strip().split("\n")))

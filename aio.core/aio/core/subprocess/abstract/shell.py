@@ -93,7 +93,7 @@ class AAsyncShell(metaclass=abstracts.Abstraction):
         return self._raises
 
     @abc.abstractmethod
-    def parallel(self, *args, **kwargs) -> functional.AwaitableGenerator:
+    def parallel(self, *args, **kwargs) -> "functional.AwaitableGenerator":
         """Wrapper around the `parallel` utility."""
         return _parallel(
             *args,
