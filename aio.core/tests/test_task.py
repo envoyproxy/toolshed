@@ -1279,3 +1279,46 @@ async def test_inflate(patches, iterable):
         cb.call_args_list
         == [[(item, ), {}]
             for item in iterable])
+
+
+@pytest.mark.parametrize(
+    "args", [[], [f"A{i}" for i in range(0, 3)]])
+@pytest.mark.parametrize(
+    "kwargs", [{}, {f"K{i}": f"V{i}" for i in range(0, 3)}])
+@pytest.mark.parametrize("collector", [None, False, "COLLECTOR"])
+@pytest.mark.parametrize("iterator", [None, False, "ITERATOR"])
+@pytest.mark.parametrize("predicate", [None, False, "PREDICATE"])
+@pytest.mark.parametrize("result", [None, False, "RESULT"])
+async def test_concurrent(
+        patches, args, kwargs, collector, iterator, predicate, result):
+    patched = patches(
+        "AwaitableGenerator",
+        "Concurrent",
+        prefix="aio.core.tasks.tasks")
+    if collector is not None:
+        kwargs["collector"] = collector
+    if iterator is not None:
+        kwargs["iterator"] = iterator
+    if predicate is not None:
+        kwargs["predicate"] = predicate
+    if result is not None:
+        kwargs["result"] = result
+
+    with patched as (m_generator, m_concurrent):
+        assert (
+            aio.core.tasks.concurrent(*args, **kwargs)
+            == m_generator.return_value)
+
+    for k in ["collector", "iterator", "predicate", "result"]:
+        kwargs.pop(k, None)
+
+    assert (
+        m_generator.call_args
+        == [(m_concurrent.return_value, ),
+            dict(collector=collector,
+                 iterator=iterator,
+                 predicate=predicate,
+                 result=result)])
+    assert (
+        m_concurrent.call_args
+        == [tuple(args), kwargs])
