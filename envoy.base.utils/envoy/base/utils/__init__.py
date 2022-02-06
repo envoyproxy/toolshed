@@ -2,8 +2,6 @@
 from .exceptions import TypeCastingError
 from .utils import (
     async_list,
-    buffered,
-    BufferUtilError,
     cd_and_return,
     dt_to_utc_isoformat,
     ellipsize,
@@ -12,7 +10,6 @@ from .utils import (
     from_yaml,
     is_tarlike,
     coverage_with_data_file,
-    nested,
     typed,
     untar,
     TAR_EXTS,
@@ -25,8 +22,6 @@ from .utils import (
 
 __all__ = (
     "async_list",
-    "buffered",
-    "BufferUtilError",
     "cd_and_return",
     "dt_to_utc_isoformat",
     "ellipsize",
@@ -37,7 +32,6 @@ __all__ = (
     "is_tarlike",
     "last_n_bytes_of",
     "coverage_with_data_file",
-    "nested",
     "typed",
     "untar",
     "TAR_EXTS",

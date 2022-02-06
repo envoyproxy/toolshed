@@ -3,6 +3,9 @@ pytooling_tests(
     "envoy.base.utils",
     dependencies=[
         "//deps:abstracts",
-        "//deps:pytest-asyncio",
+        "//deps:aio.core",
+        "//deps:pyyaml",
+        "//deps:pytz",
+        "//deps:trycast",
     ],
 )
