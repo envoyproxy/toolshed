@@ -24,6 +24,7 @@ envoy.gpg.sign>=0.0.9
 flake8
 frozendict
 gidgethub
+janus
 jinja2
 mypy
 mypy-abstracts

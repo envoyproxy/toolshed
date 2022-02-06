@@ -7,7 +7,7 @@ from typing import (
     Any, Awaitable, Callable, Coroutine,
     Iterator, List, Optional, Union)
 
-from aio.core.functional import exceptions
+from aio.core.output import exceptions
 
 
 def maybe_awaitable(result: Any) -> Coroutine:
