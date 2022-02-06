@@ -9,7 +9,7 @@ abstracts>=0.0.12
 colorama
 coloredlogs
 docutils~=0.16.0
-envoy.base.utils>=0.0.13
+envoy.base.utils>=0.1.0
 envoy.code_format.python_check>=0.0.5
 envoy.dependency.pip_check>=0.0.5
 envoy.distribution.distrotest>=0.0.7
