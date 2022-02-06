@@ -8,7 +8,7 @@ from typing import (
     Iterable, Iterator, List,
     Optional, Union)
 
-from aio.core.functional import async_property
+from aio.core.functional import async_property, AwaitableGenerator
 
 from .exceptions import (
     ConcurrentError, ConcurrentExecutionError, ConcurrentIteratorError)
@@ -17,7 +17,7 @@ from .exceptions import (
 _sentinel = object()
 
 
-class concurrent:  # noqa: N801
+class Concurrent:
     """This utility provides very similar functionality to
     `asyncio.as_completed` in that it runs coroutines in concurrent, yielding
     the results as they are available.
@@ -436,6 +436,19 @@ class concurrent:  # noqa: N801
         if spent:
             raise ConcurrentError(
                 f"Provided coroutine has already been fired: {coro}")
+
+
+def concurrent(*args, **kwargs) -> AwaitableGenerator:
+    collector = kwargs.pop("collector", None)
+    iterator = kwargs.pop("iterator", None)
+    predicate = kwargs.pop("predicate", None)
+    result = kwargs.pop("result", None)
+    return AwaitableGenerator(
+        Concurrent(*args, **kwargs),
+        collector=collector,
+        iterator=iterator,
+        predicate=predicate,
+        result=result)
 
 
 async def inflate(
