@@ -12,11 +12,10 @@ import yapf  # type:ignore
 
 import abstracts
 
+from aio.core import functional
 from aio.core.subprocess import run
 from aio.core.tasks import concurrent
 from aio.run import checker
-
-from envoy.base import utils
 
 
 FLAKE8_CONFIG = '.flake8'
@@ -88,7 +87,7 @@ class APythonChecker(checker.Checker, metaclass=abstracts.Abstraction):
     async def check_flake8(self) -> None:
         """Run flake8 on files and/or repo."""
         errors: List[str] = []
-        with utils.buffered(stdout=errors, mangle=self._strip_lines):
+        with functional.buffered(stdout=errors, mangle=self._strip_lines):
             self.flake8_app.run_checks()
             self.flake8_app.report()
         if errors:

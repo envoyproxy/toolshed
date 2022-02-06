@@ -1,4 +1,7 @@
+
 import abc
+import contextlib
+import sys
 import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
@@ -536,3 +539,72 @@ async def test_generator_awaitable_generator_iterable(patches):
         iterator.call_args
         == [("GENERATOR", ), kwargs])
     assert "awaitable" not in generator.__dict__
+
+
+def test_util_buffered_stdout():
+    stdout = []
+
+    with functional.buffered(stdout=stdout):
+        print("test1")
+        print("test2")
+        sys.stdout.write("test3\n")
+        sys.stderr.write("error0\n")
+
+    assert stdout == ["test1", "test2", "test3"]
+
+
+def test_util_buffered_stderr():
+    stderr = []
+
+    with functional.buffered(stderr=stderr):
+        print("test1")
+        print("test2")
+        sys.stdout.write("test3\n")
+        sys.stderr.write("error0\n")
+        sys.stderr.write("error1\n")
+
+    assert stderr == ["error0", "error1"]
+
+
+def test_util_buffered_stdout_stderr():
+    stdout = []
+    stderr = []
+
+    with functional.buffered(stdout=stdout, stderr=stderr):
+        print("test1")
+        print("test2")
+        sys.stdout.write("test3\n")
+        sys.stderr.write("error0\n")
+        sys.stderr.write("error1\n")
+
+    assert stdout == ["test1", "test2", "test3"]
+    assert stderr == ["error0", "error1"]
+
+
+def test_util_buffered_no_stdout_stderr():
+    with pytest.raises(functional.exceptions.BufferUtilError):
+        with functional.buffered():
+            pass
+
+
+def test_util_nested():
+
+    fun1_args = []
+    fun2_args = []
+
+    @contextlib.contextmanager
+    def fun1(arg):
+        fun1_args.append(arg)
+        yield "FUN1"
+
+    @contextlib.contextmanager
+    def fun2(arg):
+        fun2_args.append(arg)
+        yield "FUN2"
+
+    with functional.nested(fun1("A"), fun2("B")) as (fun1_yield, fun2_yield):
+        assert fun1_yield == "FUN1"
+        assert fun2_yield == "FUN2"
+
+    assert fun1_args == ["A"]
+    assert fun2_args == ["B"]

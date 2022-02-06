@@ -1,7 +1,5 @@
 import importlib
 import pathlib
-import sys
-from contextlib import contextmanager
 from unittest.mock import MagicMock
 
 import pytest
@@ -12,75 +10,6 @@ from envoy.base import utils
 # this is necessary to fix coverage as these libs are imported before pytest
 # is invoked
 importlib.reload(utils)
-
-
-def test_util_buffered_stdout():
-    stdout = []
-
-    with utils.buffered(stdout=stdout):
-        print("test1")
-        print("test2")
-        sys.stdout.write("test3\n")
-        sys.stderr.write("error0\n")
-
-    assert stdout == ["test1", "test2", "test3"]
-
-
-def test_util_buffered_stderr():
-    stderr = []
-
-    with utils.buffered(stderr=stderr):
-        print("test1")
-        print("test2")
-        sys.stdout.write("test3\n")
-        sys.stderr.write("error0\n")
-        sys.stderr.write("error1\n")
-
-    assert stderr == ["error0", "error1"]
-
-
-def test_util_buffered_stdout_stderr():
-    stdout = []
-    stderr = []
-
-    with utils.buffered(stdout=stdout, stderr=stderr):
-        print("test1")
-        print("test2")
-        sys.stdout.write("test3\n")
-        sys.stderr.write("error0\n")
-        sys.stderr.write("error1\n")
-
-    assert stdout == ["test1", "test2", "test3"]
-    assert stderr == ["error0", "error1"]
-
-
-def test_util_buffered_no_stdout_stderr():
-    with pytest.raises(utils.BufferUtilError):
-        with utils.buffered():
-            pass
-
-
-def test_util_nested():
-
-    fun1_args = []
-    fun2_args = []
-
-    @contextmanager
-    def fun1(arg):
-        fun1_args.append(arg)
-        yield "FUN1"
-
-    @contextmanager
-    def fun2(arg):
-        fun2_args.append(arg)
-        yield "FUN2"
-
-    with utils.nested(fun1("A"), fun2("B")) as (fun1_yield, fun2_yield):
-        assert fun1_yield == "FUN1"
-        assert fun2_yield == "FUN2"
-
-    assert fun1_args == ["A"]
-    assert fun2_args == ["B"]
 
 
 def test_util_coverage_with_data_file(patches):
@@ -126,14 +55,14 @@ def test_util_coverage_with_data_file(patches):
     [(), tuple("TARB{i}" for i in range(0, 3))])
 def test_util_extract(patches, tarballs):
     patched = patches(
-        "nested",
+        "functional",
         "pathlib",
         "tarfile.open",
         prefix="envoy.base.utils.utils")
 
-    with patched as (m_nested, m_plib, m_open):
+    with patched as (m_fun, m_plib, m_open):
         _extractions = [MagicMock(), MagicMock()]
-        m_nested.return_value.__enter__.return_value = _extractions
+        m_fun.nested.return_value.__enter__.return_value = _extractions
 
         if tarballs:
             assert utils.extract("PATH", *tarballs) == m_plib.Path.return_value
@@ -145,7 +74,7 @@ def test_util_extract(patches, tarballs):
         assert (
             e.value.args[0]
             == 'No tarballs specified for extraction to PATH')
-        assert not m_nested.called
+        assert not m_fun.nested.called
         assert not m_open.called
         for _extract in _extractions:
             assert not _extract.extractall.called
@@ -164,7 +93,7 @@ def test_util_extract(patches, tarballs):
         m_open.call_args_list
         == [[(tarb, ), {}] for tarb in tarballs])
     assert (
-        m_nested.call_args
+        m_fun.nested.call_args
         == [tuple(m_open.return_value for x in tarballs), {}])
 
 

@@ -2,15 +2,13 @@
 # Provides shared utils used by other python modules
 #
 
+import contextlib
 import datetime
-import io
 import os
 import pathlib
 import tarfile
 import tempfile
 from configparser import ConfigParser
-from contextlib import (
-    ExitStack, contextmanager, redirect_stderr, redirect_stdout)
 from typing import (
     Any, AsyncGenerator, Callable, Generator,
     Iterator, List, Optional, Set, Type, Union)
@@ -22,6 +20,8 @@ import yaml
 from trycast import trycast  # type:ignore
 
 from .exceptions import TypeCastingError
+
+from aio.core import functional
 
 
 # See here for a list of known tar file extensions:
@@ -36,7 +36,7 @@ class ExtractError(Exception):
 
 
 # this is testing specific - consider moving to tools.testing.utils
-@contextmanager
+@contextlib.contextmanager
 def coverage_with_data_file(data_file: str) -> Iterator[str]:
     """This context manager takes the path of a data file and creates a custom
     coveragerc with the data file path included.
@@ -54,57 +54,13 @@ def coverage_with_data_file(data_file: str) -> Iterator[str]:
         yield tmprc
 
 
-class BufferUtilError(Exception):
-    pass
-
-
-@contextmanager
-def nested(*contexts):
-    with ExitStack() as stack:
-        yield [stack.enter_context(context) for context in contexts]
-
-
-@contextmanager
-def buffered(
-        stdout: list = None,
-        stderr: list = None,
-        mangle: Optional[Callable[[list], list]] = None) -> Iterator[None]:
-    """Captures stdout and stderr and feeds lines to supplied lists."""
-
-    mangle = mangle or (lambda lines: lines)
-
-    if stdout is None and stderr is None:
-        raise BufferUtilError("You must specify stdout and/or stderr")
-
-    contexts: List[
-        Union[
-            redirect_stderr[io.TextIOWrapper],
-            redirect_stdout[io.TextIOWrapper]]] = []
-
-    if stdout is not None:
-        _stdout = io.TextIOWrapper(io.BytesIO())
-        contexts.append(redirect_stdout(_stdout))
-    if stderr is not None:
-        _stderr = io.TextIOWrapper(io.BytesIO())
-        contexts.append(redirect_stderr(_stderr))
-
-    with nested(*contexts):
-        yield
-
-    if stdout is not None:
-        _stdout.seek(0)
-        stdout.extend(mangle(_stdout.read().strip().split("\n")))
-    if stderr is not None:
-        _stderr.seek(0)
-        stderr.extend(mangle(_stderr.read().strip().split("\n")))
-
-
 def extract(
         path: Union[pathlib.Path, str],
         *tarballs: Union[pathlib.Path, str]) -> pathlib.Path:
     if not tarballs:
         raise ExtractError(f"No tarballs specified for extraction to {path}")
-    openers = nested(*tuple(tarfile.open(tarball) for tarball in tarballs))
+    openers = functional.nested(
+        *tuple(tarfile.open(tarball) for tarball in tarballs))
 
     with openers as tarfiles:
         for tar in tarfiles:
@@ -112,7 +68,7 @@ def extract(
     return pathlib.Path(path)
 
 
-@contextmanager
+@contextlib.contextmanager
 def untar(*tarballs: Union[pathlib.Path, str]) -> Iterator[pathlib.Path]:
     """Untar a tarball into a temporary directory.
 
@@ -197,7 +153,7 @@ async def async_list(
     return results
 
 
-@contextmanager
+@contextlib.contextmanager
 def cd_and_return(
         path: Union[pathlib.Path, str]) -> Generator[None, None, None]:
     """Changes working directory to given path and returns to previous working

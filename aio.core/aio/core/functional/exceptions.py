@@ -1,0 +1,4 @@
+
+
+class BufferUtilError(Exception):
+    pass

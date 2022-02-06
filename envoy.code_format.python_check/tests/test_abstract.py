@@ -169,7 +169,7 @@ async def test_abstract_python_checker_check_flake8(patches, errors):
     checker = DummyPythonChecker("path1", "path2", "path3")
 
     patched = patches(
-        "utils.buffered",
+        "functional.buffered",
         "APythonChecker.error",
         "APythonChecker._strip_lines",
         ("APythonChecker.flake8_app", dict(new_callable=PropertyMock)),

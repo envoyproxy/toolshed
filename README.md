@@ -51,7 +51,7 @@ pypi: https://pypi.org/project/aio.api.github
 
 #### [aio.core](aio.core)
 
-version: 0.2.1.dev0
+version: 0.3.0
 
 pypi: https://pypi.org/project/aio.core
 
@@ -119,7 +119,6 @@ pypi: https://pypi.org/project/envoy.code_format.python_check
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.core](https://pypi.org/project/aio.core) >=0.2.0
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.2.1
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
 - [flake8](https://pypi.org/project/flake8)
 - [pep8-naming](https://pypi.org/project/pep8-naming)
 - [yapf](https://pypi.org/project/yapf)
