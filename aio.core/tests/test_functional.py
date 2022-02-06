@@ -9,7 +9,7 @@ import pytest
 
 import abstracts
 
-from aio.core import functional
+from aio.core import functional, output
 
 
 # TODO: add a test to make sure that async loading multiple
@@ -582,7 +582,7 @@ def test_util_buffered_stdout_stderr():
 
 
 def test_util_buffered_no_stdout_stderr():
-    with pytest.raises(functional.exceptions.BufferUtilError):
+    with pytest.raises(output.exceptions.BufferUtilError):
         with functional.buffered():
             pass
 

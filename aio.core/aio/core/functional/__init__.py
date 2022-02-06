@@ -5,7 +5,7 @@ from .decorators import async_property
 from .generator import AwaitableGenerator
 from .process import async_map
 from .utils import buffered, maybe_awaitable, maybe_coro, nested
-from . import exceptions, utils
+from . import utils
 
 
 __all__ = (
@@ -16,7 +16,6 @@ __all__ = (
     "async_set",
     "AwaitableGenerator",
     "buffered",
-    "exceptions",
     "maybe_awaitable",
     "maybe_coro",
     "nested",
