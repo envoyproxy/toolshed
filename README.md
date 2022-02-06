@@ -51,7 +51,7 @@ pypi: https://pypi.org/project/aio.api.github
 
 #### [aio.core](aio.core)
 
-version: 0.4.1.dev0
+version: 0.5.0
 
 pypi: https://pypi.org/project/aio.core
 
@@ -60,6 +60,7 @@ pypi: https://pypi.org/project/aio.core
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aiofiles](https://pypi.org/project/aiofiles)
 - [aiohttp](https://pypi.org/project/aiohttp)
+- [janus](https://pypi.org/project/janus)
 
 ---
 

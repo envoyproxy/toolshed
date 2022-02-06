@@ -99,7 +99,7 @@ class AsyncSubprocess:
             executor, partial(subprocess.run, *args, **kwargs))
 
 
-def parallel(*args, **kwargs) -> functional.AwaitableGenerator:
+def parallel(*args, **kwargs) -> "functional.AwaitableGenerator":
     collector = kwargs.pop("collector", None)
     iterator = kwargs.pop("iterator", None)
     predicate = kwargs.pop("predicate", None)
