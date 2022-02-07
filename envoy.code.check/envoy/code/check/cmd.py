@@ -1,16 +1,16 @@
 
 import sys
 
-from .checker import PythonChecker
+from .checker import CodeChecker
 
 
 def main(*args: str) -> int:
-    return PythonChecker(*args)()
+    return CodeChecker(*args)()
 
 
-def cmd():
+def run() -> None:
     sys.exit(main(*sys.argv[1:]))
 
 
 if __name__ == "__main__":
-    cmd()
+    run()
