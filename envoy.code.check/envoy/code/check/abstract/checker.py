@@ -25,7 +25,7 @@ class ACodeChecker(
         metaclass=abstracts.Abstraction):
     """Code checker."""
 
-    checks = ("python_yapf", "python_flake8")
+    checks = ("shellcheck", "python_yapf", "python_flake8")
 
     @property
     def all_files(self) -> bool:
@@ -105,6 +105,16 @@ class ACodeChecker(
         return super().path
 
     @cached_property
+    def shellcheck(self) -> "abstract.AShellcheckCheck":
+        """Shellcheck checker."""
+        return self.shellcheck_class(self.directory, fix=self.fix)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def shellcheck_class(self) -> Type["abstract.AShellcheckCheck"]:
+        raise NotImplementedError
+
+    @cached_property
     def yapf(self) -> "abstract.AYapfCheck":
         """YAPF checker."""
         return self.yapf_class(self.directory, fix=self.fix)
@@ -129,10 +139,19 @@ class ACodeChecker(
         """Check for yapf issues."""
         await self._code_check(self.yapf)
 
+    async def check_shellcheck(self) -> None:
+        """Check for shellcheck issues."""
+        await self._code_check(self.shellcheck)
+
     @checker.preload(
         when=["python_flake8"])
     async def preload_flake8(self) -> None:
         await self.flake8.problem_files
+
+    @checker.preload(
+        when=["shellcheck"])
+    async def preload_shellcheck(self) -> None:
+        await self.shellcheck.problem_files
 
     @checker.preload(
         when=["python_yapf"])
