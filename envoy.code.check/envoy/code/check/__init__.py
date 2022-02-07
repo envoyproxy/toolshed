@@ -4,10 +4,12 @@ from .abstract import (
     ACodeCheck,
     ACodeChecker,
     AFlake8Check,
+    ASpellingCheck,
     AYapfCheck)
 from .checker import (
     CodeChecker,
     Flake8Check,
+    SpellingCheck,
     YapfCheck)
 from .cmd import run, main
 from . import checker
@@ -26,4 +28,5 @@ __all__ = (
     "main",
     "run",
     "typing",
+    "SpellingCheck",
     "YapfCheck")

@@ -19,6 +19,11 @@ class YapfCheck:
     pass
 
 
+@abstracts.implementer(check.ASpellingCheck)
+class SpellingCheck:
+    pass
+
+
 @abstracts.implementer(check.ACodeChecker)
 class CodeChecker:
 
@@ -37,6 +42,10 @@ class CodeChecker:
     @cached_property
     def path(self) -> pathlib.Path:
         return super().path
+
+    @property
+    def spelling_class(self):
+        return SpellingCheck
 
     @property
     def yapf_class(self):
