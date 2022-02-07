@@ -10,8 +10,10 @@ from typing import Dict, Mapping, Optional, Pattern, Set, Tuple, Type
 import abstracts
 
 from aio.core import directory as _directory, event, subprocess
+from aio.core.tasks import inflate
 from aio.run import checker
 
+from envoy.base.utils import IProject
 from envoy.code.check import abstract, typing
 
 
@@ -51,6 +53,7 @@ class ACodeChecker(
     """Code checker."""
 
     checks = (
+        "changelog",
         "extensions_fuzzed",
         "extensions_metadata",
         "extensions_registered",
@@ -86,6 +89,19 @@ class ACodeChecker(
     @property
     def changed_since(self) -> Optional[str]:
         return self.args.since
+
+    @cached_property
+    def changelog(self) -> "abstract.AChangelogCheck":
+        """Changelog checker."""
+        return self.changelog_class(
+            self.project,
+            self.directory,
+            **self.check_kwargs)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def changelog_class(self) -> Type["abstract.AChangelogCheck"]:
+        raise NotImplementedError
 
     @property
     def check_kwargs(self) -> Mapping:
@@ -178,6 +194,15 @@ class ACodeChecker(
         return super().path
 
     @cached_property
+    def project(self) -> IProject:
+        return self.project_class(self.path)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def project_class(self) -> Type[IProject]:
+        raise NotImplementedError
+
+    @cached_property
     def shellcheck(self) -> "abstract.AShellcheckCheck":
         """Shellcheck checker."""
         return self.shellcheck_class(self.directory, **self.check_kwargs)
@@ -209,6 +234,16 @@ class ACodeChecker(
         parser.add_argument("-x", "--excluding", action="append")
         parser.add_argument("-s", "--since")
         parser.add_argument("--extensions_build_config")
+
+    async def check_changelog(self):
+        for changelog in self.changelog:
+            errors = await changelog.errors
+            if errors:
+                self.error("changelog", errors)
+            else:
+                self.succeed(
+                    "changelog",
+                    [f"{changelog.version}"])
 
     async def check_extensions_fuzzed(self) -> None:
         """Check for glint issues."""
@@ -257,6 +292,14 @@ class ACodeChecker(
     async def check_shellcheck(self) -> None:
         """Check for shellcheck issues."""
         await self._code_check(self.shellcheck)
+
+    @checker.preload(when=["changelog"])
+    async def preload_changelog(self) -> None:
+        preloader = inflate(
+            self.changelog,
+            lambda c: (c.errors, ))
+        async for changelog in preloader:
+            self.log.debug(f"Preloaded changelog: {changelog.version}")
 
     @checker.preload(
         when=["python_flake8"],

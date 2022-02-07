@@ -76,12 +76,20 @@ class DummyCodeChecker:
         return super().path
 
     @property
+    def project_class(self):
+        return super().project_class
+
+    @property
     def shellcheck_class(self):
         return super().shellcheck_class
 
     @property
     def yapf_class(self):
         return super().yapf_class
+
+    @property
+    def changelog_class(self):
+        return super().changelog_class
 
 
 @pytest.mark.parametrize(
@@ -96,8 +104,8 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         prefix="envoy.code.check.abstract.checker")
     iface_props = [
         "extensions_class", "fs_directory_class", "flake8_class",
-        "git_directory_class", "glint_class",
-        "shellcheck_class", "yapf_class"]
+        "git_directory_class", "glint_class", "project_class",
+        "shellcheck_class", "yapf_class", "changelog_class"]
 
     with patched as (m_super, ):
         m_super.return_value = None
@@ -115,9 +123,11 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         == [tuple(args), kwargs])
     assert (
         checker.checks
-        == ("extensions_fuzzed", "extensions_metadata",
+        == ("changelog",
+            "extensions_fuzzed", "extensions_metadata",
             "extensions_registered",
-            "glint", "python_yapf", "python_flake8", "shellcheck"))
+            "glint", "python_yapf", "python_flake8",
+            "shellcheck"))
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(checker, prop)
@@ -229,6 +239,48 @@ def test_abstract_checker_tools(patches, tool):
     assert tool in checker.__dict__
 
 
+async def test_abstract_checker_preload_changelog(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        "inflate",
+        ("ACodeChecker.changelog",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+    clogs = []
+
+    for x in range(0, 5):
+        clog = MagicMock()
+        clog.version = x
+        clogs.append(clog)
+
+    async def inflate(thing, fun):
+        for clog in clogs:
+            yield clog
+
+    with patched as (m_inflate, m_clog, m_log):
+        m_inflate.side_effect = inflate
+        assert not await checker.preload_changelog()
+
+    inflater = m_inflate.call_args[0][1]
+    assert (
+        m_inflate.call_args
+        == [(m_clog.return_value,
+             inflater), {}])
+    assert (
+        m_log.return_value.debug.call_args_list
+        == [[(f"Preloaded changelog: {clog.version}", ), {}]
+            for clog in clogs])
+    thing = MagicMock()
+    assert (
+        inflater(thing)
+        == (thing.errors, ))
+    assert (
+        check.ACodeChecker.preload_changelog.when
+        == ("changelog", ))
+
+
 @pytest.mark.parametrize(
     "preloader",
     (("glint", "glint"),
@@ -307,6 +359,33 @@ def test_abstract_checker_changed_since(patches):
             == m_args.return_value.since)
 
     assert "changed_since" not in checker.__dict__
+
+
+def test_abstract_checker_changelog(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.changelog_class",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.directory",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.check_kwargs",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.project",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+
+    with patched as (m_class, m_dir, m_kwa, m_project):
+        m_kwa.return_value = kwargs
+        assert (
+            checker.changelog
+            == m_class.return_value.return_value)
+
+    assert (
+        m_class.return_value.call_args
+        == [(m_project.return_value,
+             m_dir.return_value), kwargs])
+    assert "changelog" in checker.__dict__
 
 
 def test_abstract_checker_check_kwargs(patches):
@@ -483,6 +562,68 @@ def test_abstract_checker_path(patches):
             == m_super.return_value)
 
     assert "path" not in checker.__dict__
+
+
+def test_abstract_checker_project(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.path",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.project_class",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+
+    with patched as (m_path, m_class):
+        assert (
+            checker.project
+            == m_class.return_value.return_value)
+
+    assert (
+        m_class.return_value.call_args
+        == [(m_path.return_value, ), {}])
+    assert "project" in checker.__dict__
+
+
+async def test_abstract_checker_check_changelogs(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.changelog",
+         dict(new_callable=PropertyMock)),
+        "ACodeChecker.error",
+        "ACodeChecker.succeed",
+        prefix="envoy.code.check.abstract.checker")
+
+    clogs = []
+    for i in range(0, 10):
+        clog = MagicMock()
+        clog._errors = AsyncMock(
+            return_value=(
+                []
+                if i % 2
+                else [f"ERROR{i}"]))
+        clog.errors = clog._errors()
+        clogs.append(clog)
+
+    def iter_clogs():
+        for clog in clogs:
+            yield clog
+
+    with patched as (m_clog, m_error, m_succeed):
+        m_clog.return_value.__iter__.side_effect = iter_clogs
+        assert not await checker.check_changelog()
+
+    assert (
+        m_succeed.call_args_list
+        == [[("changelog", [f"{c.version}"]), {}]
+            for i, c
+            in enumerate(clogs)
+            if i % 2])
+    assert (
+        m_error.call_args_list
+        == [[("changelog", c._errors.return_value), {}]
+            for i, c
+            in enumerate(clogs)
+            if not i % 2])
 
 
 @pytest.mark.parametrize("fuzzed", [True, False])
