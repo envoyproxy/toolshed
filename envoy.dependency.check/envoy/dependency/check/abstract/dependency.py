@@ -8,6 +8,7 @@ from typing import List, Optional, Set, Type
 from packaging import version
 
 import abstracts
+import aiohttp
 
 from aio.api import github
 from aio.core import event
@@ -26,12 +27,14 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             metadata: "typing.DependencyMetadataDict",
             github: github.AGithubAPI,
             loop: Optional[asyncio.AbstractEventLoop] = None,
-            pool: Optional[futures.Executor] = None) -> None:
+            pool: Optional[futures.Executor] = None,
+            session: Optional[aiohttp.ClientSession] = None) -> None:
         self.id = id
         self.metadata = metadata
         self.github = github
         self._loop = loop
         self._pool = pool
+        self.session = session
 
     def __gt__(self, other: "ADependency") -> bool:
         return self.id > other.id
@@ -103,8 +106,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         return await self.recent_commits > 1
 
     @async_property(cache=True)
-    async def newer_release(
-            self) -> Optional["abstract.ADependencyGithubRelease"]:
+    async def newer_release(self) -> Optional["abstract.ADependencyGithubRelease"]:
         """Release with highest semantic version if newer than the current
         release, or where pin is to tag or commit."""
         # TODO: consider adding `newer_tags` for deps that only create
@@ -115,7 +117,9 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             self.release_class(
                 self.repo,
                 newer_release.tag_name,
-                release=newer_release)
+                release=newer_release,
+                session=self.session,
+                asset_url=self.metadata["urls"])
             if (newer_release
                 and (version.parse(newer_release.tag_name)
                      != self.release.version))
@@ -159,13 +163,25 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
     def release_date(self) -> str:
         """Release (or published) date of this dependency."""
         return self.metadata["release_date"]
-
+    
     @async_property
     async def release_date_mismatch(self) -> bool:
         """Flag indicating the metadata date doesnt match the Github date."""
         return (
             self.release_date
             != await self.release.date)
+
+    @property
+    def release_sha(self) -> str:
+        """Release (or published) sha of this dependency."""
+        return self.metadata["sha256"]
+
+    @async_property
+    async def release_sha_mismatch(self) -> bool:
+        """Flag indicating the metadata sha doesnt match the Github sha."""
+        return (
+            self.release_sha
+            != await self.release.sha)
 
     @cached_property
     def release_version(self) -> Optional[version.Version]:

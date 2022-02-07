@@ -26,7 +26,7 @@ class ADependencyChecker(
         metaclass=abstracts.Abstraction):
     """Dependency checker."""
 
-    checks = ("cves", "release_dates", "release_issues", "releases")
+    checks = ("cves", "sha", "release_dates", "release_issues", "releases")
 
     @property
     @abc.abstractmethod
@@ -70,6 +70,7 @@ class ADependencyChecker(
                     k, v,
                     self.github,
                     pool=self.pool,
+                    session=self.session,
                     loop=self.loop))
         return tuple(sorted(deps))
 
@@ -168,6 +169,11 @@ class ADependencyChecker(
         for dep in self.github_dependencies:
             await self.dep_release_check(dep)
 
+    async def check_sha(self) -> None:
+        """Check shas for new releases."""
+        for dep in self.github_dependencies:
+            await self.dep_sha_check(dep)
+
     async def dep_cve_check(
             self,
             dep: "abstract.ADependency") -> None:
@@ -201,6 +207,25 @@ class ADependencyChecker(
             self.succeed(
                 "release_dates",
                 [f"Date matches ({dep.release_date}): {dep.id}"])
+
+    async def dep_sha_check(
+            self,
+            dep: "abstract.ADependency") -> None:
+        """Check sha for dependency."""
+        if not await dep.release.sha:
+            self.error(
+                "sha",
+                [f"{dep.id} is a GitHub repository with no inferrable "
+                 "release sha"])
+        elif await dep.release_sha_mismatch:
+            self.error(
+                "sha",
+                [f"SHA mismatch: {dep.id} "
+                 f"{dep.release_sha} != {await dep.release.sha}"])
+        else:
+            self.succeed(
+                "sha",
+                [f"SHA matches ({dep.release_sha}): {dep.id}"])
 
     async def dep_release_issue_check(
             self,
@@ -338,6 +363,18 @@ class ADependencyChecker(
                 d.release.date, ))
         async for dep in preloader:
             self.log.debug(f"Preloaded release date: {dep.id}")
+
+    @checker.preload(
+        when=["sha"],
+        unless=["releases", "release_issues", "release_dates"],
+        catches=[ConcurrentError, gidgethub.GitHubException])
+    async def preload_release_shas(self) -> None:
+        preloader = inflate(
+            self.github_dependencies,
+            lambda d: (
+                d.release.sha, ))
+        async for dep in preloader:
+            self.log.debug(f"Preloaded release sha: {dep.id}")
 
     @checker.preload(
         when=["release_issues"],
