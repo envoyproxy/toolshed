@@ -1,0 +1,24 @@
+
+pytooling_library(
+    "envoy.code.check",
+    dependencies=[
+        "//deps:abstracts",
+        "//deps:aio.core",
+        "//deps:aio.run.checker",
+        "//deps:envoy.base.utils",
+        "//deps:flake8",
+        "//deps:yapf",
+    ],
+    sources=[
+        "__init__.py",
+        "abstract/__init__.py",
+        "abstract/base.py",
+        "abstract/checker.py",
+        "abstract/flake8.py",
+        "abstract/yapf.py",
+        "checker.py",
+        "cmd.py",
+        "exceptions.py",
+        "typing.py",
+    ],
+)
