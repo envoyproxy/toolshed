@@ -48,7 +48,7 @@ def test_checker_constructor():
     assert isinstance(checker, Checker)
     assert (
         checker.checks
-        == ("cves", "release_dates", "release_issues", "releases"))
+        == ("cves", "release_dates", "release_issues", "releases", "sha"))
 
     iface_props = [
         "dependency_class", "issues_class"]

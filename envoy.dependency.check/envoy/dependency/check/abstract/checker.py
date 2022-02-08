@@ -26,7 +26,7 @@ class ADependencyChecker(
         metaclass=abstracts.Abstraction):
     """Dependency checker."""
 
-    checks = ("cves", "sha", "release_dates", "release_issues", "releases")
+    checks = ("cves", "release_dates", "release_issues", "releases", "sha")
 
     @property
     @abc.abstractmethod

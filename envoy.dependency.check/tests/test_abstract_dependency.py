@@ -310,7 +310,7 @@ async def test_dependency_has_recent_commits(patches, commits):
 
 @pytest.mark.parametrize("newest", [None, "BINGO", "BLOOP"])
 async def test_dependency_newer_release(patches, newest):
-    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    dependency = DummyDependency2("ID", {"urls": ["URL"]}, "GITHUB")
     patched = patches(
         "version",
         ("ADependency.release",
@@ -344,8 +344,8 @@ async def test_dependency_newer_release(patches, newest):
     if newest and newest != "BLOOP":
         assert (
             m_class.return_value.call_args
-            == [(m_repo.return_value, newest),
-                dict(release=newer_release)])
+            == [(m_repo.return_value, newest, ["URL"]),
+               dict(release=newer_release)])
     else:
         assert not m_class.called
     assert (
@@ -425,7 +425,7 @@ async def test_dependency_recent_commits(patches, tagged):
 
 
 def test_dependency_release(patches):
-    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    dependency = DummyDependency2("ID", {"urls": ["URL"]}, "GITHUB")
     patched = patches(
         ("ADependency.github_version",
          dict(new_callable=PropertyMock)),
@@ -480,6 +480,34 @@ async def test_dependency_release_date_mismatch(patches, date1, date2):
     assert not getattr(
         dependency,
         ADependency.release_date_mismatch.cache_name,
+        None)
+
+
+def test_dependency_sha():
+    metadata = MagicMock()
+    dependency = DummyDependency2("ID", metadata, "GITHUB")
+    assert dependency.release_sha == metadata.__getitem__.return_value
+
+
+@pytest.mark.parametrize("sha1", range(0, 5))
+@pytest.mark.parametrize("sha2", range(0, 5))
+async def test_dependency_sha_mismatch(patches, sha1, sha2):
+    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    patched = patches(
+        ("ADependency.release",
+         dict(new_callable=PropertyMock)),
+        ("ADependency.release_sha",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.dependency")
+
+    with patched as (m_release, m_sha):
+        m_sha.return_value = sha1
+        m_release.return_value.sha = AsyncMock(return_value=sha2)()
+        assert await dependency.release_sha_mismatch == (sha1 != sha2)
+
+    assert not getattr(
+        dependency,
+        ADependency.release_sha_mismatch.cache_name,
         None)
 
 

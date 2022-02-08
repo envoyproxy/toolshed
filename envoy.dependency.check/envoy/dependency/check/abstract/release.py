@@ -13,7 +13,6 @@ import hashlib
 import gidgethub
 
 import abstracts
-import aiohttp
 
 from aio.api import github as _github
 from aio.core import event
@@ -82,22 +81,14 @@ class ADependencyGithubRelease(
         return self.github.api._session
 
     @async_property(cache=True)
-    async def sha256sum(self):
-        file_hash = hashlib.sha256()
-        async with aiohttp.ClientSession() as session:
-            response = await session.get(self._url[0])
-            data = await response.read()
-            if data:
-                file_hash.update(data)
-        return file_hash.hexdigest()
-
-
-    @async_property(cache=True)
-    async def sha(self) -> str:
+    async def sha(self):
         """Github release SHA."""
-        if self._sha:
-            return self._sha
-        return await self.sha256sum
+        file_hash = hashlib.sha256()
+        response = await self.repo.github.api._session.get(self._url[0])
+        data = await response.read()
+        if data:
+            file_hash.update(data)
+        return file_hash.hexdigest()
 
     @async_property(cache=True)
     async def tag(self) -> Optional[_github.AGithubTag]:

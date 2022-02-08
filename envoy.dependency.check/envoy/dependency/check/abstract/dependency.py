@@ -8,7 +8,6 @@ from typing import List, Optional, Set, Type
 from packaging import version
 
 import abstracts
-import aiohttp
 
 from aio.api import github
 from aio.core import event
@@ -106,7 +105,8 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         return await self.recent_commits > 1
 
     @async_property(cache=True)
-    async def newer_release(self) -> Optional["abstract.ADependencyGithubRelease"]:
+    async def newer_release(
+            self) -> Optional["abstract.ADependencyGithubRelease"]:
         """Release with highest semantic version if newer than the current
         release, or where pin is to tag or commit."""
         # TODO: consider adding `newer_tags` for deps that only create
@@ -119,7 +119,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
                 newer_release.tag_name,
                 release=newer_release,
                 session=self.session,
-                asset_url=self.metadata["urls"])
+                asset_url=self.github_url)
             if (newer_release
                 and (version.parse(newer_release.tag_name)
                      != self.release.version))
@@ -163,7 +163,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
     def release_date(self) -> str:
         """Release (or published) date of this dependency."""
         return self.metadata["release_date"]
-    
+
     @async_property
     async def release_date_mismatch(self) -> bool:
         """Flag indicating the metadata date doesnt match the Github date."""
