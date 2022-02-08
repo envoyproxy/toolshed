@@ -29,6 +29,11 @@ class CapturedOutput:
     pass
 
 
+@abstracts.implementer(output.ACapturedOutputs)
+class CapturedOutputs:
+    pass
+
+
 @abstracts.implementer(output.AQueueIO)
 class QueueIO:
     pass
