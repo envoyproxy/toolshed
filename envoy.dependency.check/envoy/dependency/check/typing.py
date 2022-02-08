@@ -62,7 +62,7 @@ class BaseDependencyMetadataDict(TypedDict):
 class DependencyMetadataDict(BaseDependencyMetadataDict, total=False):
     cpe: Optional[str]
     urls: List[str]
-    sha256: Optional[str]
+    sha256: str
 
 
 CPERevmapDict = Dict[str, Set[str]]
