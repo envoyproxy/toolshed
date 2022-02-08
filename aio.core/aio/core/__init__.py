@@ -2,6 +2,7 @@
 from . import (
     directory,
     functional,
+    interactive,
     output,
     stream,
     subprocess,
@@ -11,6 +12,7 @@ from . import (
 __all__ = (
     "directory",
     "functional",
+    "interactive",
     "output",
     "stream",
     "subprocess",
