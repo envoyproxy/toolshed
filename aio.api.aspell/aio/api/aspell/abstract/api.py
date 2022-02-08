@@ -118,22 +118,14 @@ class AAspellAPI(metaclass=abstracts.Abstraction):
     async def listener(self):
         print(f"MESSAGE RCVD: {stdout} {stderr}")
 
-    async def spellcheck(self, message):
-        pipe = await self.pipe
-        return await pipe.write(message)
-
     async def start(self):
         await self.session
 
-    async def compile_dictionary(self, dictionary):
-        words = ["asdfasfdafds", "cabbage"]
+    async def spellcheck(self, line):
         session = await self.session
-        for word in words:
-            response = await session(f"{word}\n".encode("utf-8"))
-            if str(response[0]).strip() == "*":
-                print(f"{word} is a good word")
-            else:
-                print(f"{word} is a bad word")
+        response = await session(f"{line}\n".encode("utf-8"))
+        if str(response[0]).strip() != "*":
+            return line
 
     async def stop(self):
         pass
