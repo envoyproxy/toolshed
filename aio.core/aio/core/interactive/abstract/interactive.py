@@ -125,7 +125,7 @@ class AInteractive(metaclass=abstracts.Abstraction):
         return self.prompt.matches(counter, result)
 
     async def send_stdin(self, message):
-        print(f"SEND STDIN {message}")
+        # print(f"SEND STDIN {message}")
         async with self.write_lock:
             proc = await self.proc
             if message is not None:
@@ -137,8 +137,8 @@ class AInteractive(metaclass=abstracts.Abstraction):
             result = await pipe.readline()
             await self.buffer.put(None)
             # If we havent completed writing, wait
+            # print(f"GOT RESULT: {type}  {result}")
             async with self.write_lock:
-                # print(f"GOT RESULT: {type}  {result}")
                 await self.q.put(output.CapturedOutput(type, result))
 
     async def start(self):
