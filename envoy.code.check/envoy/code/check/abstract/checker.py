@@ -25,7 +25,7 @@ class ACodeChecker(
         metaclass=abstracts.Abstraction):
     """Code checker."""
 
-    checks = ("python_yapf", "python_flake8", "spelling")
+    checks = ("python_yapf", "python_flake8", "spelling", "spelling_dictionary")
 
     @property
     def all_files(self) -> bool:
@@ -115,6 +115,16 @@ class ACodeChecker(
         raise NotImplementedError
 
     @cached_property
+    def spelling_dictionary(self) -> "abstract.ASpellingDictionaryCheck":
+        """Spelling dictionary checker."""
+        return self.spelling_class(self.directory, fix=self.fix)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def spelling_dictionary_class(self) -> Type["abstract.ASpellingDictionaryCheck"]:
+        raise NotImplementedError
+
+    @cached_property
     def yapf(self) -> "abstract.AYapfCheck":
         """YAPF checker."""
         return self.yapf_class(self.directory, fix=self.fix)
@@ -142,6 +152,10 @@ class ACodeChecker(
     async def check_spelling(self) -> None:
         """Check for yapf issues."""
         await self._code_check(self.spelling)
+
+    async def check_spelling_dictionary(self) -> None:
+        """Check for yapf issues."""
+        await self._code_check(self.spelling_dictionary)
 
     @checker.preload(
         when=["python_flake8"])

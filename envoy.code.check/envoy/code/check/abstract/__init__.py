@@ -2,7 +2,7 @@
 from .base import ACodeCheck
 from .checker import ACodeChecker
 from .flake8 import AFlake8Check
-from .spelling import ASpellingCheck
+from .spelling import ASpellingCheck, ASpellingDictionaryCheck
 from .yapf import AYapfCheck
 from . import (
     base,
@@ -17,6 +17,7 @@ __all__ = (
     "ACodeChecker",
     "AFlake8Check",
     "ASpellingCheck",
+    "ASpellingDictionaryCheck",
     "AYapfCheck",
     "base",
     "checker",

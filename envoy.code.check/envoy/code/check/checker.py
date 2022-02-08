@@ -24,6 +24,11 @@ class SpellingCheck:
     pass
 
 
+@abstracts.implementer(check.ASpellingDictionaryCheck)
+class SpellingDictionaryCheck:
+    pass
+
+
 @abstracts.implementer(check.ACodeChecker)
 class CodeChecker:
 
@@ -46,6 +51,10 @@ class CodeChecker:
     @property
     def spelling_class(self):
         return SpellingCheck
+
+    @property
+    def spelling_dictionary_class(self):
+        return SpellingDictionaryCheck
 
     @property
     def yapf_class(self):
