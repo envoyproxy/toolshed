@@ -32,6 +32,11 @@ pytooling_library(
         "functional/utils.py",
         "log/__init__.py",
         "log/logging.py",
+        "pipe/__init__.py",
+        "pipe/abstract/__init__.py",
+        "pipe/abstract/pipe.py",
+        "pipe/interface.py",
+        "pipe/pipe.py",
         "stream/__init__.py",
         "stream/base.py",
         "stream/_reader.py",
@@ -43,5 +48,6 @@ pytooling_library(
         "tasks/__init__.py",
         "tasks/exceptions.py",
         "tasks/tasks.py",
+        "utils.py",
     ],
 )
