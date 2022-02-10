@@ -770,3 +770,23 @@ async def test_threaded(patches, args, stdout, stderr, both, pool, any_set):
     assert (
         get.call_args_list
         == [[(out, ), {}] for out in ["stdout", "stderr"]])
+
+
+def test_utils_junzip(patches):
+    data = MagicMock()
+    patched = patches(
+        "gzip",
+        "json",
+        prefix="aio.core.functional.utils")
+
+    with patched as (m_gzip, m_json):
+        assert (
+           functional.utils.junzip(data)
+           == m_json.loads.return_value)
+
+    assert (
+        m_json.loads.call_args
+        == [(m_gzip.decompress.return_value, ), {}])
+    assert (
+        m_gzip.decompress.call_args
+        == [(data, ), {}])

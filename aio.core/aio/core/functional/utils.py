@@ -1,6 +1,8 @@
 
 import asyncio
 import contextlib
+import gzip
+import json
 import inspect
 from typing import (
     Any, Awaitable, Callable, Coroutine,
@@ -64,3 +66,7 @@ def nested(*contexts):
             stack.enter_context(context)
             for context
             in contexts]
+
+
+def junzip(data: bytes) -> Any:
+    return json.loads(gzip.decompress(data))
