@@ -2,6 +2,8 @@ from unittest.mock import PropertyMock
 
 import pytest
 
+from aio.api import nist
+
 from envoy.dependency import check
 
 
@@ -135,10 +137,12 @@ def test_checker_cves_constructor(patches, config):
     assert (
         m_super.call_args
         == [("DEPENDENCIES", ), kwargs])
-    assert cves.cpe_class == check.DependencyCPE
+    assert cves.cpe_class == nist.CPE
     assert "cpe_class" not in cves.__dict__
     assert cves.cve_class == check.DependencyCVE
     assert "cve_class" not in cves.__dict__
+    assert cves.nist_downloader_class == nist.NISTDownloader
+    assert "nist_downloader_class" not in cves.__dict__
 
 
 def test_checker_cves_ignored_cves(patches):
@@ -154,36 +158,6 @@ def test_checker_cves_ignored_cves(patches):
     assert "ignored_cves" in cves.__dict__
 
 
-def test_checker_version_matcher_constructor(patches):
-    patched = patches(
-        "check.ADependencyCVEVersionMatcher.__init__",
-        prefix="envoy.dependency.check.checker")
-
-    with patched as (m_super, ):
-        m_super.return_value = None
-        version_matcher = check.DependencyCVEVersionMatcher("CPE_MATCH")
-
-    assert isinstance(version_matcher, check.ADependencyCVEVersionMatcher)
-    assert (
-        m_super.call_args
-        == [("CPE_MATCH", ), {}])
-
-
-def test_checker_cpe_constructor(patches):
-    patched = patches(
-        "check.ADependencyCPE.__init__",
-        prefix="envoy.dependency.check.checker")
-
-    with patched as (m_super, ):
-        m_super.return_value = None
-        cpe = check.DependencyCPE()
-
-    assert isinstance(cpe, check.ADependencyCPE)
-    assert (
-        m_super.call_args
-        == [(), {}])
-
-
 def test_checker_cve_constructor(patches):
     patched = patches(
         "check.ADependencyCVE.__init__",
@@ -197,7 +171,3 @@ def test_checker_cve_constructor(patches):
     assert (
         m_super.call_args
         == [("CVE_DATA", "TRACKED CPES"), {}])
-    assert cve.cpe_class == check.DependencyCPE
-    assert "cpe_class" not in cve.__dict__
-    assert cve.version_matcher_class == check.DependencyCVEVersionMatcher
-    assert "version_matcher_class" not in cve.__dict__

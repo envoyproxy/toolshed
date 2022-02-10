@@ -4,6 +4,7 @@ pytooling_library(
     dependencies=[
         "//deps:abstracts",
         "//deps:aio.api.github",
+        "//deps:aio.api.nist",
         "//deps:aio.core",
         "//deps:aio.run.checker",
         "//deps:envoy.base.utils",
@@ -15,10 +16,8 @@ pytooling_library(
         "abstract/__init__.py",
         "abstract/checker.py",
         "abstract/cves/__init__.py",
-        "abstract/cves/cpe.py",
         "abstract/cves/cve.py",
         "abstract/cves/cves.py",
-        "abstract/cves/version_matcher.py",
         "abstract/dependency.py",
         "abstract/issues.py",
         "abstract/release.py",
