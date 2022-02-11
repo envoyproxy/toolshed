@@ -790,3 +790,43 @@ def test_utils_junzip(patches):
     assert (
         m_gzip.decompress.call_args
         == [(data, ), {}])
+
+
+@pytest.mark.parametrize(
+    "casted",
+    [(), [], False, None, "", "X", ["Y"]])
+def test_typed(patches, casted):
+    patched = patches(
+        "trycast",
+        "textwrap",
+        "str",
+        prefix="aio.core.functional.utils")
+
+    value = MagicMock()
+
+    with patched as (m_try, m_wrap, m_str):
+        m_try.return_value = casted
+
+        if casted is None:
+            with pytest.raises(functional.exceptions.TypeCastingError) as e:
+                functional.utils.typed("TYPE", value)
+
+            assert (
+                e.value.args[0]
+                == ("Value has wrong type or shape for Type "
+                    f"TYPE: {m_wrap.shorten.return_value}"))
+            assert (
+                m_wrap.shorten.call_args
+                == [(m_str.return_value, ),
+                    dict(width=10, placeholder="...")])
+            assert (
+                m_str.call_args
+                == [(value, ), {}])
+        else:
+            assert functional.utils.typed("TYPE", value) == value
+            assert not m_wrap.shorten.called
+            assert not m_str.called
+
+    assert (
+        m_try.call_args
+        == [("TYPE", value), {}])
