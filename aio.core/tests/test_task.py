@@ -1236,11 +1236,18 @@ async def test_aio_concurrent_integration(
 @pytest.mark.parametrize(
     "iterable",
     [[], [f"OBJ{i}" for i in range(0, 5)]])
-async def test_inflate(patches, iterable):
+@pytest.mark.parametrize("limit", [None, *range(0, 5)])
+@pytest.mark.parametrize("yield_exceptions", [None, True, False])
+async def test_inflate(patches, iterable, limit, yield_exceptions):
     patched = patches(
         "asyncio",
         "concurrent",
         prefix="aio.core.tasks.tasks")
+    kwargs = {}
+    if limit is not None:
+        kwargs["limit"] = limit
+    if yield_exceptions is not None:
+        kwargs["yield_exceptions"] = yield_exceptions
     cb = MagicMock()
     awaitables = [f"AWAIT{i}" for i in range(0, 3)]
     things = [[f"RESULT{i}", "X"] for i in range(0, 7)]
@@ -1248,22 +1255,23 @@ async def test_inflate(patches, iterable):
     results = []
     gathered = []
 
-    async def iter_things(x):
+    async def iter_things(x, **kwargs):
         for thing in things:
             yield thing
 
     with patched as (m_aio, m_concurrent):
         m_concurrent.side_effect = iter_things
-        async for thing in aio.core.tasks.inflate(iterable, cb):
+        async for thing in aio.core.tasks.inflate(iterable, cb, **kwargs):
             results.append(thing)
         gen = m_concurrent.call_args[0][0]
         for item in gen:
             gathered.append(item)
 
+    passed_kwargs = dict(limit=limit, yield_exceptions=yield_exceptions)
     assert results == [t[0] for t in things]
     assert (
         m_concurrent.call_args
-        == [(gen, ), {}])
+        == [(gen, ), passed_kwargs])
     assert (
         gathered
         == [m_aio.gather.return_value] * len(iterable))
