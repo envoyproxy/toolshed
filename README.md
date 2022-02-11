@@ -50,6 +50,21 @@ pypi: https://pypi.org/project/aio.api.github
 ---
 
 
+#### [aio.api.nist](aio.api.nist)
+
+version: 0.0.1
+
+pypi: https://pypi.org/project/aio.api.nist
+
+##### requirements:
+
+- [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+- [aio.core](https://pypi.org/project/aio.core) >=0.5.2
+- [packaging](https://pypi.org/project/packaging)
+
+---
+
+
 #### [aio.core](aio.core)
 
 version: 0.5.7.dev0
