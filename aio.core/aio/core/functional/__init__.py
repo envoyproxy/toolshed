@@ -5,8 +5,8 @@ from .decorators import async_property
 from .generator import AwaitableGenerator
 from .output import buffered, buffering, capturing
 from .process import async_map, threaded
-from .utils import maybe_awaitable, maybe_coro, nested
-from . import utils
+from .utils import maybe_awaitable, maybe_coro, nested, typed
+from . import exceptions, utils
 
 
 __all__ = (
@@ -19,9 +19,11 @@ __all__ = (
     "buffered",
     "buffering",
     "capturing",
+    "exceptions",
     "maybe_awaitable",
     "maybe_coro",
     "nested",
     "output",
     "threaded",
+    "typed",
     "utils")

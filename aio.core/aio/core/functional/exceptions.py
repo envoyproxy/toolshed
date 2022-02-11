@@ -1,0 +1,4 @@
+
+
+class TypeCastingError(TypeError):
+    pass

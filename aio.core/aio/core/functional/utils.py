@@ -4,9 +4,14 @@ import contextlib
 import gzip
 import json
 import inspect
+import textwrap
 from typing import (
     Any, Awaitable, Callable, Coroutine,
-    Union)
+    Type, Union)
+
+from trycast import trycast  # type:ignore
+
+from aio.core.functional import exceptions
 
 
 def maybe_awaitable(result: Any) -> Coroutine:
@@ -70,3 +75,17 @@ def nested(*contexts):
 
 def junzip(data: bytes) -> Any:
     return json.loads(gzip.decompress(data))
+
+
+def typed(tocast: Type, value: Any) -> Any:
+    """Attempts to cast a value to a given type, TypeVar, or TypeDict.
+
+    raises TypeError if cast value is `None`
+    """
+
+    if trycast(tocast, value) is not None:
+        return value
+    raise exceptions.TypeCastingError(
+        "Value has wrong type or shape for Type "
+        f"{tocast}: "
+        f"{textwrap.shorten(str(value), width=10, placeholder='...')}")
