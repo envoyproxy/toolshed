@@ -453,7 +453,9 @@ def concurrent(*args, **kwargs) -> AwaitableGenerator:
 
 async def inflate(
         iterable: Iterable,
-        cb: Callable[[Any], Iterable[Awaitable]]) -> AsyncIterable[Any]:
+        cb: Callable[[Any], Iterable[Awaitable]],
+        yield_exceptions: Optional[bool] = None,
+        limit: Optional[int] = None) -> AsyncIterable[Any]:
     """Inflate async data for an iterable of objects.
 
     The provided callback function should return an iterable of awaitables.
@@ -474,10 +476,12 @@ async def inflate(
     ```
     """
     things = concurrent(
-        asyncio.gather(
+        (asyncio.gather(
             asyncio.sleep(0, result=thing),
             *cb(thing))
-        for thing
-        in iterable)
+         for thing
+         in iterable),
+        limit=limit,
+        yield_exceptions=yield_exceptions)
     async for thing in things:
         yield thing[0]
