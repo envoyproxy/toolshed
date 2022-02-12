@@ -1,5 +1,6 @@
 
 from . import (
+    dev,
     directory,
     functional,
     output,
@@ -9,6 +10,7 @@ from . import (
 
 
 __all__ = (
+    "dev",
     "directory",
     "functional",
     "output",

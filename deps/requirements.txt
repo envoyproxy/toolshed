@@ -25,6 +25,7 @@ frozendict
 gidgethub
 janus
 jinja2
+orjson
 mypy
 mypy-abstracts
 packaging
@@ -43,6 +44,7 @@ sphinxcontrib-httpdomain
 sphinxcontrib-serializinghtml
 sphinxext-rediraffe
 trycast
+types-orjson
 types-setuptools
 verboselogs
 wheel-inspect

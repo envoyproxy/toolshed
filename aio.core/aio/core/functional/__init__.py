@@ -1,6 +1,12 @@
 """aio.core.functional."""
 
-from .collections import async_iterator, async_list, async_set
+from .collections import (
+    async_iterator,
+    async_list,
+    async_set,
+    DictQuery,
+    qdict,
+    QueryDict)
 from .decorators import async_property
 from .generator import AwaitableGenerator
 from .output import buffered, buffering, capturing
@@ -19,11 +25,14 @@ __all__ = (
     "buffered",
     "buffering",
     "capturing",
+    "DictQuery",
     "exceptions",
     "maybe_awaitable",
     "maybe_coro",
     "nested",
     "output",
+    "qdict",
+    "QueryDict",
     "threaded",
     "typed",
     "utils")
