@@ -6,9 +6,12 @@ pytooling_library(
         "//deps:aiofiles",
         "//deps:aiohttp",
         "//deps:janus",
+        "//deps:orjson",
     ],
     sources=[
         "__init__.py",
+        "dev/__init__.py",
+        "dev/perf.py",
         "directory/__init__.py",
         "directory/directory.py",
         "directory/abstract/__init__.py",

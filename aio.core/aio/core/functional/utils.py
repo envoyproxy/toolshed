@@ -2,7 +2,6 @@
 import asyncio
 import contextlib
 import gzip
-import json
 import inspect
 import textwrap
 from typing import (
@@ -10,6 +9,8 @@ from typing import (
     Type, Union)
 
 from trycast import trycast  # type:ignore
+
+import orjson as json
 
 from aio.core.functional import exceptions
 

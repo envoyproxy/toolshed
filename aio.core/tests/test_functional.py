@@ -830,3 +830,169 @@ def test_typed(patches, casted):
     assert (
         m_try.call_args
         == [("TYPE", value), {}])
+
+
+def test_dict_query_constructor():
+    data = MagicMock()
+    query = functional.DictQuery(data)
+    assert query.data == data
+
+
+def test_dict_query_dunder_call(patches):
+    query = functional.DictQuery("DATA")
+    patched = patches(
+        "dict",
+        "DictQuery.iter_queries",
+        prefix="aio.core.functional.collections")
+    qs = MagicMock()
+
+    with patched as (m_dict, m_queries):
+        assert query(qs) == m_dict.return_value
+
+    assert (
+        m_dict.call_args
+        == [(m_queries.return_value, ), {}])
+    assert (
+        m_queries.call_args
+        == [(qs, ), {}])
+
+
+def test_dict_query_dunder_getitem(patches):
+    query = functional.DictQuery("DATA")
+    patched = patches(
+        "DictQuery.query",
+        prefix="aio.core.functional.collections")
+    qs = MagicMock()
+
+    with patched as (m_query, ):
+        assert query[qs] == m_query.return_value
+
+    assert (
+        m_query.call_args
+        == [(qs, ), {}])
+
+
+def test_dict_query_iter_queries(patches):
+    query = functional.DictQuery("DATA")
+    patched = patches(
+        "DictQuery.query",
+        prefix="aio.core.functional.collections")
+    qs = MagicMock()
+    items = [(i, f"I{i}") for i in range(0, 5)]
+    qs.items.return_value = items
+
+    with patched as (m_query, ):
+        result = query.iter_queries(qs)
+        assert isinstance(result, types.GeneratorType)
+        assert (
+            list(result)
+            == [(i[0], m_query.return_value) for i in items])
+
+    assert (
+        m_query.call_args_list
+        == [[(item[1], ), {}] for item in items])
+
+
+@pytest.mark.parametrize(
+    "parts", [[], [f"PART{i}" for i in range(0, 5)]])
+def test_dict_query_query(patches, parts):
+    data = MagicMock()
+    query = functional.DictQuery(data)
+    patched = patches(
+        "DictQuery.spliterator",
+        prefix="aio.core.functional.collections")
+    qs = MagicMock()
+
+    with patched as (m_split, ):
+        m_split.return_value = parts
+        result = query.query(qs)
+
+    expected = data
+    for part in parts:
+        assert (
+            expected.__getitem__.call_args
+            == [(part, ), {}])
+        expected = expected.__getitem__.return_value
+
+    assert result == expected
+    assert (
+        m_split.call_args
+        == [(qs, ), {}])
+
+
+def test_dict_query_spliterator():
+    query = functional.DictQuery("DATA")
+    qs = MagicMock()
+    int_items = [i for i in range(0, 5)]
+    intable_items = [str(i) for i in range(5, 10)]
+    str_items = [str(f"I{i}") for i in range(5, 10)]
+    items = (
+        int_items
+        + intable_items
+        + str_items)
+    qs.split.return_value = items
+    result = query.spliterator(qs)
+    assert isinstance(result, types.GeneratorType)
+    assert (
+        list(result)
+        == (int_items
+            + [int(i) for i in intable_items]
+            + str_items))
+    assert (
+        qs.split.call_args
+        == [("/", ), {}])
+
+
+def test_query_dict_constructor():
+    query = MagicMock()
+    qdict = functional.QueryDict(query)
+    assert qdict.query == query
+    assert qdict.query_class == functional.DictQuery
+
+
+def test_query_dict_dunder_call(patches):
+    query_dict = functional.QueryDict("QUERY")
+    patched = patches(
+        "QueryDict.query_dict",
+        prefix="aio.core.functional.collections")
+    data = MagicMock()
+
+    with patched as (m_query, ):
+        assert query_dict(data) == m_query.return_value
+
+    assert (
+        m_query.call_args
+        == [(data, ), {}])
+
+
+def test_query_dict_query_dict(patches):
+    query_dict = functional.QueryDict("QUERY")
+    patched = patches(
+        "QueryDict.query_class",
+        prefix="aio.core.functional.collections")
+    data = MagicMock()
+
+    with patched as (m_class, ):
+        assert (
+            query_dict.query_dict(data)
+            == m_class.return_value.return_value)
+
+    assert (
+        m_class.call_args
+        == [(data, ), {}])
+    assert (
+        m_class.return_value.call_args
+        == [("QUERY", ), {}])
+
+
+@pytest.mark.parametrize(
+    "queries",
+    [{},
+     {f"QK{i}": f"QV{i}" for i in range(0, 5)}])
+def test_qdict(patches, queries):
+    patched = patches(
+        "QueryDict",
+        prefix="aio.core.functional.collections")
+
+    with patched as (m_qdict, ):
+        assert functional.qdict(**queries) == m_qdict.return_value
