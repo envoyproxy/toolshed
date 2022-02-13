@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
+from aio.core import event
 from aio.run import runner
 
 
@@ -40,6 +41,8 @@ def test_runner_constructor():
     assert run.log_field_styles == runner.runner.LOG_FIELD_STYLES
     assert run.log_level_styles == runner.runner.LOG_LEVEL_STYLES
     assert run.log_fmt == runner.runner.LOG_FMT
+    assert isinstance(run, event.IReactive)
+    assert isinstance(run, event.AReactive)
 
 
 @pytest.mark.parametrize("raises", [None, KeyboardInterrupt])
