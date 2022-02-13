@@ -13,6 +13,8 @@ from typing import Optional
 
 from frozendict import frozendict
 
+import uvloop  # type:ignore
+
 import coloredlogs  # type:ignore
 import verboselogs  # type:ignore
 
@@ -60,14 +62,18 @@ class Runner:
 
     def __init__(self, *args):
         self._args = args
-        self.setup_logging()
 
     def __call__(self):
+        self.setup_logging()
+        self.install_reactor()
         try:
             return asyncio.run(self.run())
         except KeyboardInterrupt:
             self.log.error("Keyboard exit")
             return 1
+        finally:
+            self.log.debug("Loop closed")
+            self.shutdown_logging()
 
     @cached_property
     def args(self) -> argparse.Namespace:
@@ -174,15 +180,6 @@ class Runner:
         """Log level parsed from args."""
         return dict(LOG_LEVELS)[self.args.verbosity]
 
-    @property
-    def _missing_cleanup(self) -> bool:
-        run_fun = getattr(self, "run", None)
-        return bool(
-            run_fun
-            and not getattr(
-                getattr(run_fun, "__wrapped__", object()),
-                "__cleansup__", False))
-
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         """Override this method to add custom arguments to the arg parser."""
         parser.add_argument(
@@ -201,16 +198,35 @@ class Runner:
     async def cleanup(self) -> None:
         self._cleanup_tempdir()
 
+    def install_reactor(self):
+        uvloop.install()
+        self.log.debug("Starting reactor...")
+
+    @cleansup
+    async def run(self) -> Optional[int]:
+        raise NotImplementedError
+
     def setup_logging(self):
         logging.basicConfig(level=self.log_level)
         self.root_logger.setLevel(self.log_level)
         self.log.setLevel(self.verbosity)
+        self.log.debug("Logging started")
+
+    def shutdown_logging(self):
+        self.log.debug("Shutting down logging, goodbye")
+        logging.shutdown()
 
     def _cleanup_tempdir(self) -> None:
         if "tempdir" in self.__dict__:
             self.tempdir.cleanup()
             del self.__dict__["tempdir"]
+            self.log.debug("Tempdir cleaned up")
 
-    @cleansup
-    async def run(self) -> Optional[int]:
-        raise NotImplementedError
+    @property
+    def _missing_cleanup(self) -> bool:
+        run_fun = getattr(self, "run", None)
+        return bool(
+            run_fun
+            and not getattr(
+                getattr(run_fun, "__wrapped__", object()),
+                "__cleansup__", False))

@@ -46,6 +46,7 @@ sphinxext-rediraffe
 trycast
 types-orjson
 types-setuptools
+uvloop
 verboselogs
 wheel-inspect
 yapf

@@ -82,7 +82,7 @@ pypi: https://pypi.org/project/aio.run.checker
 
 #### [aio.run.runner](aio.run.runner)
 
-version: 0.2.3.dev0
+version: 0.2.3
 
 pypi: https://pypi.org/project/aio.run.runner
 
@@ -90,6 +90,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 - [coloredlogs](https://pypi.org/project/coloredlogs)
 - [frozendict](https://pypi.org/project/frozendict)
+- [uvloop](https://pypi.org/project/uvloop)
 - [verboselogs](https://pypi.org/project/verboselogs)
 
 ---

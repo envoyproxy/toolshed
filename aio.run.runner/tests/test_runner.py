@@ -34,17 +34,8 @@ def test_root_log_filter(name):
         == (name != "APP_LOGGER"))
 
 
-def test_runner_constructor(patches):
-    patched = patches(
-        "Runner.setup_logging",
-        prefix="aio.run.runner.runner")
-
-    with patched as (m_setup, ):
-        run = runner.Runner("path1", "path2", "path3")
-
-    assert (
-        m_setup.call_args
-        == [(), {}])
+def test_runner_constructor():
+    run = runner.Runner("path1", "path2", "path3")
     assert run._args == ("path1", "path2", "path3")
     assert run.log_field_styles == runner.runner.LOG_FIELD_STYLES
     assert run.log_level_styles == runner.runner.LOG_LEVEL_STYLES
@@ -57,12 +48,12 @@ def test_runner_dunder_call(patches, raises):
         "asyncio",
         ("Runner.log", dict(new_callable=MagicMock)),
         ("Runner.run", dict(new_callable=MagicMock)),
+        "Runner.install_reactor",
         "Runner.setup_logging",
+        "Runner.shutdown_logging",
         prefix="aio.run.runner.runner")
 
-    # TODO: TEST LOG
-
-    with patched as (m_asyncio, m_log, m_run, m_setup):
+    with patched as (m_asyncio, m_log, m_run, m_install, m_setup, m_shutdown):
         run = runner.Runner()
         if raises:
             m_run.side_effect = raises("DIE")
@@ -72,14 +63,30 @@ def test_runner_dunder_call(patches, raises):
                 if not raises
                 else 1))
 
+    assert (
+        m_setup.call_args
+        == [(), {}])
+    assert (
+        m_install.call_args
+        == [(), {}])
     if not raises:
+        assert not m_log.error.called
         assert (
             m_asyncio.run.call_args
             == [(m_run.return_value, ), {}])
     else:
         assert not m_asyncio.run.called
+        assert (
+            m_log.error.call_args
+            == [("Keyboard exit", ), {}])
     assert (
         m_run.call_args
+        == [(), {}])
+    assert (
+        m_log.debug.call_args
+        == [("Loop closed", ), {}])
+    assert (
+        m_shutdown.call_args
         == [(), {}])
 
 
@@ -395,6 +402,39 @@ def test_runner_add_arguments():
               'help': 'Log level for non-application logs'}]])
 
 
+async def test_runner_cleanup(patches):
+    patched = patches(
+        "Runner._cleanup_tempdir",
+        "Runner.setup_logging",
+        prefix="aio.run.runner.runner")
+
+    with patched as (m_temp, m_setup):
+        run = runner.Runner()
+        assert not await run.cleanup()
+
+    assert (
+        m_temp.call_args
+        == [(), {}])
+
+
+def test_runner_install_reactor(patches):
+    patched = patches(
+        "uvloop",
+        "Runner.log",
+        prefix="aio.run.runner.runner")
+    run = runner.Runner()
+
+    with patched as (m_uv, m_log):
+        assert not run.install_reactor()
+
+    assert (
+        m_uv.install.call_args
+        == [(), {}])
+    assert (
+        m_log.debug.call_args
+        == [("Starting reactor...", ), {}])
+
+
 def test_runner_setup_logging(patches):
     run = DummyRunner()
     patched = patches(
@@ -421,6 +461,24 @@ def test_runner_setup_logging(patches):
     assert (
         m_log.return_value.setLevel.call_args
         == [(m_verb.return_value, ), {}])
+
+
+def test_runner_shutdown_logging(patches):
+    patched = patches(
+        "logging",
+        "Runner.log",
+        prefix="aio.run.runner.runner")
+    run = runner.Runner()
+
+    with patched as (m_logging, m_log):
+        assert not run.shutdown_logging()
+
+    assert (
+        m_logging.shutdown.call_args
+        == [(), {}])
+    assert (
+        m_log.debug.call_args
+        == [("Shutting down logging, goodbye", ), {}])
 
 
 @pytest.mark.parametrize("has_fun", [True, False])
@@ -458,33 +516,23 @@ def test_runner__missing_cleanup(has_fun, is_wrapped, cleansup):
 def test_runner__cleanup_tempdir(patches, cached):
     run = DummyRunner()
     patched = patches(
+        "Runner.log",
         ("Runner.tempdir", dict(new_callable=PropertyMock)),
         prefix="aio.run.runner.runner")
     if cached:
         run.__dict__["tempdir"] = "TEMPDIR"
 
-    with patched as (m_temp, ):
+    with patched as (m_logger, m_temp):
         assert not run._cleanup_tempdir()
 
     if cached:
         assert (
             m_temp.return_value.cleanup.call_args
             == [(), {}])
+        assert (
+            m_logger.debug.call_args
+            == [("Tempdir cleaned up", ), {}])
     else:
+        assert not m_logger.debug.called
         assert not m_temp.called
     assert "tempdir" not in run.__dict__
-
-
-async def test_runner_cleanup(patches):
-    patched = patches(
-        "Runner._cleanup_tempdir",
-        "Runner.setup_logging",
-        prefix="aio.run.runner.runner")
-
-    with patched as (m_temp, m_setup):
-        run = runner.Runner()
-        assert not await run.cleanup()
-
-    assert (
-        m_temp.call_args
-        == [(), {}])
