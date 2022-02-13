@@ -614,27 +614,6 @@ def test_sphinx_runner_check_env(
                 "in version_history/current.rst", ))
 
 
-@pytest.mark.parametrize("exists", [True, False])
-async def test_sphinx_runner_cleanup(patches, exists):
-    runner = DummySphinxRunner()
-    patched = patches(
-        ("SphinxRunner.tempdir", dict(new_callable=PropertyMock)),
-        prefix="envoy.docs.sphinx_runner.runner")
-
-    with patched as (m_temp, ):
-        if exists:
-            runner.__dict__["tempdir"] = m_temp.return_value
-        assert not await runner.cleanup()
-
-    assert "tempdir" not in runner.__dict__
-    if exists:
-        assert (
-            m_temp.return_value.cleanup.call_args
-            == [(), {}])
-    else:
-        assert not m_temp.called
-
-
 @pytest.mark.parametrize("tarlike", [True, False])
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize("is_file", [True, False])
