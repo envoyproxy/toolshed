@@ -25,7 +25,7 @@ class ACodeChecker(
         metaclass=abstracts.Abstraction):
     """Code checker."""
 
-    checks = ("python_yapf", "python_flake8")
+    checks = ("python_yapf", "python_flake8", "spelling", "spelling_dictionary")
 
     @property
     def all_files(self) -> bool:
@@ -105,6 +105,26 @@ class ACodeChecker(
         return super().path
 
     @cached_property
+    def spelling(self) -> "abstract.ASpellingCheck":
+        """SPELLING checker."""
+        return self.spelling_class(self.directory, fix=self.fix)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def spelling_class(self) -> Type["abstract.ASpellingCheck"]:
+        raise NotImplementedError
+
+    @cached_property
+    def spelling_dictionary(self) -> "abstract.ASpellingDictionaryCheck":
+        """Spelling dictionary checker."""
+        return self.spelling_class(self.directory, fix=self.fix)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def spelling_dictionary_class(self) -> Type["abstract.ASpellingDictionaryCheck"]:
+        raise NotImplementedError
+
+    @cached_property
     def yapf(self) -> "abstract.AYapfCheck":
         """YAPF checker."""
         return self.yapf_class(self.directory, fix=self.fix)
@@ -129,6 +149,14 @@ class ACodeChecker(
         """Check for yapf issues."""
         await self._code_check(self.yapf)
 
+    async def check_spelling(self) -> None:
+        """Check for yapf issues."""
+        await self._code_check(self.spelling)
+
+    async def check_spelling_dictionary(self) -> None:
+        """Check for yapf issues."""
+        await self._code_check(self.spelling_dictionary)
+
     @checker.preload(
         when=["python_flake8"])
     async def preload_flake8(self) -> None:
@@ -138,6 +166,11 @@ class ACodeChecker(
         when=["python_yapf"])
     async def preload_yapf(self) -> None:
         await self.yapf.problem_files
+
+    @checker.preload(
+        when=["spelling"])
+    async def preload_spelling(self) -> None:
+        await self.spelling.problem_files
 
     async def _code_check(self, check: "abstract.ACodeCheck") -> None:
         problem_files = await check.problem_files
