@@ -16,6 +16,8 @@ pytooling_library(
         "directory/directory.py",
         "directory/abstract/__init__.py",
         "directory/abstract/directory.py",
+        "event/__init__.py",
+        "event/reactive.py",
         "functional/__init__.py",
         "functional/collections.py",
         "functional/decorators.py",

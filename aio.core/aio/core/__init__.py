@@ -2,6 +2,7 @@
 from . import (
     dev,
     directory,
+    event,
     functional,
     output,
     stream,
@@ -12,6 +13,7 @@ from . import (
 __all__ = (
     "dev",
     "directory",
+    "event",
     "functional",
     "output",
     "stream",
