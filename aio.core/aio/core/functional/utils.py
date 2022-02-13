@@ -5,8 +5,7 @@ import gzip
 import inspect
 import textwrap
 from typing import (
-    Any, Awaitable, Callable, Coroutine,
-    Type, Union)
+    Any, Awaitable, Callable, Coroutine, Union)
 
 from trycast import trycast  # type:ignore
 
@@ -78,7 +77,9 @@ def junzip(data: bytes) -> Any:
     return json.loads(gzip.decompress(data))
 
 
-def typed(tocast: Type, value: Any) -> Any:
+# Due to patchy mypy support, `tocast` has to be an `object` for now.
+# This should be more strictly typed once mypy has `TypeForm` support.
+def typed(tocast: object, value: Any) -> Any:
     """Attempts to cast a value to a given type, TypeVar, or TypeDict.
 
     raises TypeError if cast value is `None`
