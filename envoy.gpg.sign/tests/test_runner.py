@@ -205,7 +205,6 @@ def test_packager_tar(patches):
 def test_packager_signing_utils():
     packager = sign.PackageSigningRunner("x", "y", "z")
     _utils = (("NAME1", "UTIL1"), ("NAME2", "UTIL2"))
-    del packager.__dict__["signing_utils"]
     packager._signing_utils = _utils
     assert packager.signing_utils == dict(_utils)
     assert "signing_utils" in packager.__dict__
