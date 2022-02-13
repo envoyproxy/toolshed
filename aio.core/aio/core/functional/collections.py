@@ -62,8 +62,23 @@ async def async_set(
 SearchKey = Union[str, int]
 CollectionQueryDict = Dict[SearchKey, str]
 CollectionResultDict = Dict[str, Any]
+SearchableCollection = Mapping[SearchKey, Any]
 Indexable = Mapping[int, Any]
-SearchableCollection = Union[Indexable, Dict[str, Any]]
+
+
+class _SearchableCollection(SearchableCollection):
+
+    def __init__(self, collection: Mapping) -> None:
+        self._collection = collection
+
+    def __getitem__(self, k: SearchKey) -> Any:
+        return self._collection.__getitem__(k)
+
+    def __iter__(self) -> Iterator:
+        return self._collection.__iter__()
+
+    def __len__(self) -> int:
+        return self._collection.__len__()
 
 
 class CollectionQuery:
@@ -92,19 +107,15 @@ class CollectionQuery:
         return data
 
     def traverse(self, query: SearchKey, data: Any, path: SearchKey):
-        if isinstance(data, dict):
+        if not isinstance(path, int):
             try:
-                return self.traverse_mapping(
-                    typed(Dict[SearchKey, Any], data),
-                    path)
-            except (KeyError, exceptions.TypeCastingError) as e:
+                return self.traverse_mapping(data, path)
+            except KeyError as e:
                 raise exceptions.CollectionQueryError(
                     f"Unable to traverse mapping {path} in {query}: {e}")
         try:
-            return self.traverse_indexable(
-                typed(Indexable, data),
-                typed(int, path))
-        except (IndexError, exceptions.TypeCastingError) as e:
+            return self.traverse_indexable(data, path)
+        except IndexError as e:
             raise exceptions.CollectionQueryError(
                 f"Unable to traverse index {path} in {query}: {e}")
 
@@ -140,12 +151,12 @@ class QueryDict:
 
     def __call__(
             self,
-            data: Any) -> CollectionResultDict:
+            data: Mapping) -> CollectionResultDict:
         # TODO: optimize retrieving from same paths
-        return self.query_dict(typed(SearchableCollection, data))
+        return self.query_dict(data)
 
     def query_dict(self, data: SearchableCollection) -> CollectionResultDict:
-        return self.query_class(data)(self.query)
+        return self.query_class(_SearchableCollection(data))(self.query)
 
     @property
     def query_class(self) -> Type[CollectionQuery]:
