@@ -4,7 +4,7 @@ from .collections import (
     async_iterator,
     async_list,
     async_set,
-    DictQuery,
+    CollectionQuery,
     qdict,
     QueryDict)
 from .decorators import async_property
@@ -12,7 +12,7 @@ from .generator import AwaitableGenerator
 from .output import buffered, buffering, capturing
 from .process import async_map, threaded
 from .utils import maybe_awaitable, maybe_coro, nested, typed
-from . import exceptions, utils
+from . import collections, exceptions, utils
 
 
 __all__ = (
@@ -25,7 +25,8 @@ __all__ = (
     "buffered",
     "buffering",
     "capturing",
-    "DictQuery",
+    "CollectionQuery",
+    "collections",
     "exceptions",
     "maybe_awaitable",
     "maybe_coro",

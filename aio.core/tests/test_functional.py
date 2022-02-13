@@ -832,17 +832,17 @@ def test_typed(patches, casted):
         == [("TYPE", value), {}])
 
 
-def test_dict_query_constructor():
+def test_collection_query_constructor():
     data = MagicMock()
-    query = functional.DictQuery(data)
+    query = functional.CollectionQuery(data)
     assert query.data == data
 
 
-def test_dict_query_dunder_call(patches):
-    query = functional.DictQuery("DATA")
+def test_collection_query_dunder_call(patches):
+    query = functional.CollectionQuery("DATA")
     patched = patches(
         "dict",
-        "DictQuery.iter_queries",
+        "CollectionQuery.iter_queries",
         prefix="aio.core.functional.collections")
     qs = MagicMock()
 
@@ -857,10 +857,10 @@ def test_dict_query_dunder_call(patches):
         == [(qs, ), {}])
 
 
-def test_dict_query_dunder_getitem(patches):
-    query = functional.DictQuery("DATA")
+def test_collection_query_dunder_getitem(patches):
+    query = functional.CollectionQuery("DATA")
     patched = patches(
-        "DictQuery.query",
+        "CollectionQuery.query",
         prefix="aio.core.functional.collections")
     qs = MagicMock()
 
@@ -872,22 +872,27 @@ def test_dict_query_dunder_getitem(patches):
         == [(qs, ), {}])
 
 
-def test_dict_query_iter_queries(patches):
-    query = functional.DictQuery("DATA")
+def test_collection_query_iter_queries(patches):
+    query = functional.CollectionQuery("DATA")
     patched = patches(
-        "DictQuery.query",
+        "str",
+        "CollectionQuery.query",
         prefix="aio.core.functional.collections")
     qs = MagicMock()
     items = [(i, f"I{i}") for i in range(0, 5)]
     qs.items.return_value = items
 
-    with patched as (m_query, ):
+    with patched as (m_str, m_query):
         result = query.iter_queries(qs)
         assert isinstance(result, types.GeneratorType)
         assert (
             list(result)
-            == [(i[0], m_query.return_value) for i in items])
+            == [(m_str.return_value, m_query.return_value)
+                for i in items])
 
+    assert (
+        m_str.call_args_list
+        == [[(item[0], ), {}] for item in items])
     assert (
         m_query.call_args_list
         == [[(item[1], ), {}] for item in items])
@@ -895,33 +900,43 @@ def test_dict_query_iter_queries(patches):
 
 @pytest.mark.parametrize(
     "parts", [[], [f"PART{i}" for i in range(0, 5)]])
-def test_dict_query_query(patches, parts):
+def test_collection_query_query(patches, parts):
     data = MagicMock()
-    query = functional.DictQuery(data)
+    query = functional.CollectionQuery(data)
     patched = patches(
-        "DictQuery.spliterator",
+        "CollectionQuery.spliterator",
+        "CollectionQuery.traverse",
         prefix="aio.core.functional.collections")
     qs = MagicMock()
 
-    with patched as (m_split, ):
+    with patched as (m_split, m_traverse):
         m_split.return_value = parts
-        result = query.query(qs)
-
-    expected = data
-    for part in parts:
         assert (
-            expected.__getitem__.call_args
-            == [(part, ), {}])
-        expected = expected.__getitem__.return_value
+            query.query(qs)
+            == (m_traverse.return_value
+                if parts
+                else data))
 
-    assert result == expected
+    calls = []
+    for i, part in enumerate(parts):
+        calls.append(
+            (qs, data, part)
+            if i == 0
+            else (qs, m_traverse.return_value, part))
+    assert (
+        m_traverse.call_args_list
+        == [[call, {}] for call in calls])
     assert (
         m_split.call_args
         == [(qs, ), {}])
 
 
-def test_dict_query_spliterator():
-    query = functional.DictQuery("DATA")
+@pytest.mark.parametrize("is_int", [True, False])
+def test_collection_query_spliterator(patches, is_int):
+    query = functional.CollectionQuery("DATA")
+    patched = patches(
+        "isinstance",
+        prefix="aio.core.functional.collections")
     qs = MagicMock()
     int_items = [i for i in range(0, 5)]
     intable_items = [str(i) for i in range(5, 10)]
@@ -931,10 +946,19 @@ def test_dict_query_spliterator():
         + intable_items
         + str_items)
     qs.split.return_value = items
-    result = query.spliterator(qs)
-    assert isinstance(result, types.GeneratorType)
+
+    with patched as (m_inst, ):
+        m_inst.return_value = is_int
+        result = query.spliterator(qs)
+        assert isinstance(result, types.GeneratorType)
+        result = list(result)
+
+    if is_int:
+        assert not qs.split.called
+        assert result == [qs]
+        return
     assert (
-        list(result)
+        result
         == (int_items
             + [int(i) for i in intable_items]
             + str_items))
@@ -943,29 +967,156 @@ def test_dict_query_spliterator():
         == [("/", ), {}])
 
 
+@pytest.mark.parametrize("is_mapping", [True, False])
+@pytest.mark.parametrize(
+    "mapping_raises",
+    [None, Exception, KeyError, functional.exceptions.TypeCastingError])
+@pytest.mark.parametrize(
+    "indexable_raises",
+    [None, Exception, IndexError, functional.exceptions.TypeCastingError])
+def test_collection_query_traverse(
+        patches, is_mapping, mapping_raises, indexable_raises):
+    query = functional.CollectionQuery("DATA")
+    patched = patches(
+        "isinstance",
+        "typed",
+        "Any",
+        "Dict",
+        "Indexable",
+        "SearchKey",
+        "CollectionQuery.traverse_mapping",
+        "CollectionQuery.traverse_indexable",
+        prefix="aio.core.functional.collections")
+    qs = MagicMock()
+    data = MagicMock()
+    path = MagicMock()
+    should_raise = (
+        (is_mapping
+         and mapping_raises
+         and mapping_raises != Exception)
+        or (not is_mapping
+            and indexable_raises
+            and indexable_raises != Exception))
+    should_fail = (
+        not should_raise
+        and ((is_mapping and mapping_raises)
+             or not is_mapping and indexable_raises))
+    e = None
+    mapping_error = None
+    index_error = None
+
+    with patched as patchy:
+        (m_inst, m_typed, m_tany, m_tdict, m_tindex, m_tkey,
+         m_mapping, m_indexable) = patchy
+        m_inst.return_value = is_mapping
+        if mapping_raises:
+            mapping_error = mapping_raises("A MAPPING ERROR OCCURRED")
+            m_mapping.side_effect = mapping_error
+        if indexable_raises:
+            index_error = indexable_raises("AN INDEXABLE ERROR OCCURRED")
+            m_indexable.side_effect = index_error
+        if should_raise:
+            raises = functional.exceptions.CollectionQueryError
+            with pytest.raises(raises) as e:
+                query.traverse(qs, data, path)
+        elif should_fail:
+            with pytest.raises(Exception) as e:
+                query.traverse(qs, data, path)
+        else:
+            assert(
+                query.traverse(qs, data, path)
+                == (m_mapping.return_value
+                    if is_mapping
+                    else m_indexable.return_value))
+
+    assert (
+        m_inst.call_args
+        == [(data, dict), {}])
+    if is_mapping:
+        assert not m_indexable.called
+        assert (
+            m_mapping.call_args
+            == [(m_typed.return_value, path), {}])
+        assert (
+            m_typed.call_args_list
+            == [[(m_tdict.__getitem__.return_value, data),
+                 {}]])
+        assert (
+            m_tdict.__getitem__.call_args
+            == [((m_tkey, m_tany), ), {}])
+        if should_raise:
+            assert (
+                e.value.args[0]
+                == (f"Unable to traverse mapping {path} "
+                    f"in {qs}: {mapping_error}"))
+        return
+    assert not m_mapping.called
+    assert (
+        m_indexable.call_args
+        == [(m_typed.return_value,
+             m_typed.return_value), {}])
+    assert (
+        m_typed.call_args_list
+        == [[(m_tindex, data), {}],
+            [(int, path), {}]])
+    if should_raise:
+        assert (
+            e.value.args[0]
+            == f"Unable to traverse index {path} in {qs}: {index_error}")
+
+
+def test_collection_query_traverse_mapping():
+    query = functional.CollectionQuery("DATA")
+    data = MagicMock()
+    key = MagicMock()
+    assert (
+        query.traverse_mapping(data, key)
+        == data.__getitem__.return_value)
+    assert (
+        data.__getitem__.call_args
+        == [(key, ), {}])
+
+
+def test_collection_query_traverse_indexable():
+    query = functional.CollectionQuery("DATA")
+    data = MagicMock()
+    key = MagicMock()
+    assert (
+        query.traverse_indexable(data, key)
+        == data.__getitem__.return_value)
+    assert (
+        data.__getitem__.call_args
+        == [(key, ), {}])
+
+
 def test_query_dict_constructor():
     query = MagicMock()
     qdict = functional.QueryDict(query)
     assert qdict.query == query
-    assert qdict.query_class == functional.DictQuery
+    assert qdict.query_class == functional.CollectionQuery
 
 
 def test_query_dict_dunder_call(patches):
     query_dict = functional.QueryDict("QUERY")
     patched = patches(
+        "typed",
+        "SearchableCollection",
         "QueryDict.query_dict",
         prefix="aio.core.functional.collections")
     data = MagicMock()
 
-    with patched as (m_query, ):
+    with patched as (m_typed, m_searchable, m_query):
         assert query_dict(data) == m_query.return_value
 
     assert (
+        m_typed.call_args
+        == [(m_searchable, data), {}])
+    assert (
         m_query.call_args
-        == [(data, ), {}])
+        == [(m_typed.return_value, ), {}])
 
 
-def test_query_dict_query_dict(patches):
+def test_query_collection_query_dict(patches):
     query_dict = functional.QueryDict("QUERY")
     patched = patches(
         "QueryDict.query_class",
