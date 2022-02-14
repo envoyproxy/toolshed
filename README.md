@@ -144,9 +144,9 @@ pypi: https://pypi.org/project/envoy.dependency.check
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.0.2
-- [aio.core](https://pypi.org/project/aio.core) >=0.3.0
-- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.3.0
+- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.0.5
+- [aio.core](https://pypi.org/project/aio.core) >=0.5.4
+- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.3.2
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0
 - [gidgethub](https://pypi.org/project/gidgethub)

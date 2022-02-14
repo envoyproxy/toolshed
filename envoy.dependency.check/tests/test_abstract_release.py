@@ -8,6 +8,7 @@ import gidgethub
 import abstracts
 
 from aio.api import github
+from aio.core import event
 
 from envoy.dependency.check import ADependencyGithubRelease
 
@@ -17,12 +18,30 @@ class DummyDependencyGithubRelease:
     pass
 
 
-def test_release_constructor():
-    release = DummyDependencyGithubRelease("REPO", "VERSION")
+@pytest.mark.parametrize("asset_url", [None, "", "ASSET_URL"])
+@pytest.mark.parametrize("loop", [None, "", "LOOP"])
+@pytest.mark.parametrize("pool", [None, "", "POOL"])
+@pytest.mark.parametrize("gh_release", [None, "", "RELEASE"])
+def test_release_constructor(asset_url, loop, pool, gh_release):
+    kwargs = {}
+    if asset_url is not None:
+        kwargs["asset_url"] = asset_url
+    if loop is not None:
+        kwargs["loop"] = loop
+    if pool is not None:
+        kwargs["pool"] = pool
+    if gh_release is not None:
+        kwargs["release"] = gh_release
+    release = DummyDependencyGithubRelease("REPO", "VERSION", **kwargs)
     assert release.repo == "REPO"
     assert release._version == "VERSION"
     assert release.tag_name == "VERSION"
+    assert release.asset_url == asset_url
+    assert release._release == gh_release
+    assert release._loop == loop
+    assert release._pool == pool
     assert "tag_name" not in release.__dict__
+    assert isinstance(release, event.IReactive)
 
 
 @pytest.mark.parametrize(
@@ -94,6 +113,13 @@ async def test_release_date(patches):
             ADependencyGithubRelease.date.cache_name)[
                 "date"]
         == result)
+
+
+def test_release_github():
+    repo = MagicMock()
+    release = DummyDependencyGithubRelease(repo, "VERSION")
+    assert release.github == repo.github
+    assert "github" not in release.__dict__
 
 
 @pytest.mark.parametrize(
@@ -195,6 +221,19 @@ async def test_release_tag(patches, raises, err):
     assert (
         repo.tag.call_args
         == [(m_tagname.return_value, ), {}])
+
+
+def test_release_session(patches):
+    release = DummyDependencyGithubRelease("REPO", "VERSION")
+    patched = patches(
+        ("ADependencyGithubRelease.github",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.release")
+
+    with patched as (m_github, ):
+        assert release.session == m_github.return_value.api._session
+
+    assert "session" not in release.__dict__
 
 
 @pytest.mark.parametrize("is_sha", [True, False])

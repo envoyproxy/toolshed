@@ -1,34 +1,52 @@
 
+import asyncio
+import logging
+from concurrent import futures
 from datetime import datetime
 from functools import cached_property
 from typing import Optional, Union
 
 from packaging import version
 
+import aiohttp
+
 import gidgethub
 
 import abstracts
 
-from aio.api import github
+from aio.api import github as _github
+from aio.core import event
 from aio.core.functional import async_property
 
 from envoy.base import utils
 
 
-class ADependencyGithubRelease(metaclass=abstracts.Abstraction):
+logger = logging.getLogger(__name__)
+
+
+@abstracts.implementer(event.IReactive)
+class ADependencyGithubRelease(
+        event.AReactive,
+        metaclass=abstracts.Abstraction):
     """Github release associated with a dependency."""
 
     def __init__(
             self,
-            repo: github.AGithubRepo,
+            repo: _github.AGithubRepo,
             version: str,
-            release: Optional[github.AGithubRelease] = None) -> None:
+            asset_url: Optional[str] = None,
+            release: Optional[_github.AGithubRelease] = None,
+            loop: Optional[asyncio.AbstractEventLoop] = None,
+            pool: Optional[futures.Executor] = None) -> None:
         self.repo = repo
+        self.asset_url = asset_url
         self._version = version
         self._release = release
+        self._pool = pool
+        self._loop = loop
 
     @async_property(cache=True)
-    async def commit(self) -> Optional[github.AGithubCommit]:
+    async def commit(self) -> Optional[_github.AGithubCommit]:
         """Github commit for this release."""
         try:
             return await self.repo.commit(self.tag_name)
@@ -42,8 +60,12 @@ class ADependencyGithubRelease(metaclass=abstracts.Abstraction):
         """UTC date of this release."""
         return utils.dt_to_utc_isoformat(await self.timestamp)
 
+    @property
+    def github(self) -> _github.AGithubAPI:
+        return self.repo.github
+
     @async_property(cache=True)
-    async def release(self) -> Optional[github.AGithubRelease]:
+    async def release(self) -> Optional[_github.AGithubRelease]:
         """Github release."""
         if self._release:
             return self._release
@@ -54,12 +76,16 @@ class ADependencyGithubRelease(metaclass=abstracts.Abstraction):
                 return None
             raise e
 
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        return self.github.api._session
+
     @async_property(cache=True)
-    async def tag(self) -> Optional[github.AGithubTag]:
+    async def tag(self) -> Optional[_github.AGithubTag]:
         """Github tag."""
         try:
             return await self.repo.tag(self.tag_name)
-        except (gidgethub.BadRequest, github.exceptions.TagNotFound) as e:
+        except (gidgethub.BadRequest, _github.exceptions.TagNotFound) as e:
             do_raise = (
                 isinstance(e, gidgethub.BadRequest)
                 and e.args[0] != "Not Found")

@@ -9,6 +9,8 @@ import aiohttp
 
 import abstracts
 
+from aio.core import event
+
 from envoy.dependency import check
 
 
@@ -29,11 +31,17 @@ class DummyDependencyCVEs:
 
 
 @pytest.mark.parametrize("config_path", [None, "", "PATH"])
+@pytest.mark.parametrize("loop", [None, "", "LOOP"])
+@pytest.mark.parametrize("pool", [None, "", "POOL"])
 @pytest.mark.parametrize("session", [None, "", "SESSION"])
-def test_cves_constructor(patches, config_path, session):
+def test_cves_constructor(patches, config_path, loop, pool, session):
     kwargs = {}
     if config_path is not None:
         kwargs["config_path"] = config_path
+    if loop is not None:
+        kwargs["loop"] = loop
+    if pool is not None:
+        kwargs["pool"] = pool
     if session is not None:
         kwargs["session"] = session
 
@@ -43,7 +51,10 @@ def test_cves_constructor(patches, config_path, session):
     cves = DummyDependencyCVEs("DEPENDENCIES", **kwargs)
     assert cves.dependencies == "DEPENDENCIES"
     assert cves._config_path == config_path
+    assert cves._loop == loop
+    assert cves._pool == pool
     assert cves._session == session
+    assert isinstance(cves, event.IReactive)
 
     with pytest.raises(NotImplementedError):
         cves.cpe_class
