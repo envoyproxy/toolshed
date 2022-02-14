@@ -303,8 +303,7 @@ class Checker(runner.Runner):
 
     def start_reactor(self):
         super().install_reactor()
-        loop = asyncio.get_event_loop()
-        loop.set_exception_handler(self.on_async_error)
+        self.loop.set_exception_handler(self.on_async_error)
 
     def __call__(self):
         # TODO: use super.__call__ and factor out the runtime
