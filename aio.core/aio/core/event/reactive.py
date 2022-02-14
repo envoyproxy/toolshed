@@ -2,6 +2,7 @@
 import asyncio
 from concurrent import futures
 from functools import cached_property
+from typing import Optional
 
 import abstracts
 
@@ -22,8 +23,8 @@ class IReactive(metaclass=abstracts.Interface):
 
 
 class AReactive(IReactive, metaclass=abstracts.Abstraction):
-    _loop = None
-    _pool = None
+    _loop: Optional[asyncio.AbstractEventLoop] = None
+    _pool: Optional[futures.Executor] = None
 
     @cached_property
     def loop(self) -> asyncio.AbstractEventLoop:
