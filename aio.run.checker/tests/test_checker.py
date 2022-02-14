@@ -541,6 +541,28 @@ def test_checker_get_checks(patches, checks, disabled_checks):
             for check in filtered])
 
 
+def test_checker_install_reactor(patches):
+    checker = Checker()
+    patched = patches(
+        "asyncio",
+        "runner.Runner.install_reactor",
+        "Checker.on_async_error",
+        prefix="aio.run.checker.checker")
+
+    with patched as (m_async, m_reactor, m_onerror):
+        assert not checker.install_reactor()
+
+    assert (
+        m_reactor.call_args
+        == [(), {}])
+    assert (
+        m_async.get_event_loop.call_args
+        == [(), {}])
+    assert (
+        m_async.get_event_loop.return_value.set_exception_handler.call_args
+        == [(m_onerror, ), {}])
+
+
 async def test_checker_on_check_begin(patches):
     checker = Checker()
     patched = patches(
@@ -553,7 +575,7 @@ async def test_checker_on_check_begin(patches):
     assert checker.active_check == "CHECKNAME"
     assert (
         m_log.return_value.notice.call_args
-        == [('[CHECKNAME] Running checks...',), {}])
+        == [('[CHECKNAME] Running check...',), {}])
 
 
 @pytest.mark.parametrize(
@@ -616,9 +638,22 @@ async def test_checker_on_check_run(
     assert not m_log.return_value.error.called
 
 
-async def test_checker_on_checks_begin():
+async def test_checker_on_checks_begin(patches):
     checker = Checker("path1", "path2", "path3")
-    assert not await checker.on_checks_begin()
+    patched = patches(
+        "Checker._notify_checks",
+        "Checker._notify_preload",
+        prefix="aio.run.checker.checker")
+
+    with patched as (m_checks, m_preload):
+        assert not await checker.on_checks_begin()
+
+    assert (
+        m_checks.call_args
+        == [(), {}])
+    assert (
+        m_preload.call_args
+        == [(), {}])
 
 
 @pytest.mark.parametrize("failed", [True, False])
@@ -656,9 +691,13 @@ def test_checker_dunder_call(patches, raises):
         ("Checker.run", dict(new_callable=MagicMock)),
         ("Checker.on_checks_complete", dict(new_callable=MagicMock)),
         "Checker.on_async_error",
+        "Checker.setup_logging",
+        "Checker.install_reactor",
         prefix="aio.run.checker.checker")
 
-    with patched as (m_async, m_exit, m_cleanup, m_run, m_complete, m_on_err):
+    with patched as patchy:
+        (m_async, m_exit, m_cleanup,
+         m_run, m_complete, m_on_err, m_log, m_reactor) = patchy
         run_until_complete = (
             m_async.get_event_loop.return_value.run_until_complete)
         if raises:
@@ -675,24 +714,19 @@ def test_checker_dunder_call(patches, raises):
         else:
             assert (
                 checker.__call__()
-                == run_until_complete.return_value)
+                == m_async.run.return_value)
 
-    assert (
-        m_async.get_event_loop.call_args_list[0]
-        == [(), {}])
-    assert (
-        m_async.get_event_loop.return_value.set_exception_handler.call_args
-        == [(m_on_err, ), {}])
     assert (
         m_run.call_args
         == [(), {}])
 
     if raises == KeyboardInterrupt:
+        assert not m_async.run.called
         assert (
             m_exit.call_args
             == [(), {}])
         assert (
-            m_async.get_event_loop.call_args_list[1]
+            m_async.get_event_loop.call_args
             == [(), {}])
         assert (
             run_until_complete.call_args
@@ -705,17 +739,11 @@ def test_checker_dunder_call(patches, raises):
             == run_until_complete.return_value)
         return
     assert not m_exit.called
-    assert len(m_async.get_event_loop.call_args_list) == 1
-    assert (
-        m_async.get_event_loop.call_args
-        == [(), {}])
-    if raises:
-        assert not run_until_complete.called
-        return
-    assert len(run_until_complete.call_args_list) == 1
-    assert (
-        run_until_complete.call_args
-        == [(m_run.return_value,), {}])
+    assert not run_until_complete.called
+    if not raises:
+        assert (
+            m_async.run.call_args
+            == [(m_run.return_value,), {}])
 
 
 TEST_WARNS: tuple = (
@@ -1619,6 +1647,57 @@ def test_checker__check_should_run(
     assert (
         m_preloads.return_value.__getitem__.call_args
         == [("CHECK", ), {}])
+
+
+def test_checker__notify_checks(patches):
+    checker = Checker("path1", "path2", "path3")
+    patched = patches(
+        ("Checker.checks_to_run", dict(new_callable=PropertyMock)),
+        ("Checker.log", dict(new_callable=PropertyMock)),
+        prefix="aio.run.checker.checker")
+    checks = [f"C{i}" for i in range(0, 5)]
+    joined_checks = ", ".join(checks)
+
+    with patched as (m_checks, m_log):
+        m_checks.return_value = checks
+        assert not checker._notify_checks()
+
+    assert (
+        m_log.return_value.notice.call_args
+        == [(f"Running checks: {joined_checks}", ), {}])
+
+
+@pytest.mark.parametrize(
+    "checks",
+    [[],
+     [f"C{i}" for i in range(0, 5)],
+     [f"C{i}" for i in range(0, 10)]])
+@pytest.mark.parametrize(
+    "preload_checks",
+    [[],
+     [f"C{i}" for i in reversed(range(0, 5))],
+     [f"C{i}" for i in reversed(range(0, 10))]])
+def test_checker__notify_preload(patches, checks, preload_checks):
+    checker = Checker("path1", "path2", "path3")
+    patched = patches(
+        ("Checker.checks_to_run", dict(new_callable=PropertyMock)),
+        ("Checker.log", dict(new_callable=PropertyMock)),
+        ("Checker.preload_checks", dict(new_callable=PropertyMock)),
+        prefix="aio.run.checker.checker")
+    preload = [x for x in checks if x in preload_checks]
+    joined_checks = ", ".join(preload)
+
+    with patched as (m_checks, m_log, m_preload):
+        m_checks.return_value = checks
+        m_preload.return_value = preload_checks
+        assert not checker._notify_preload()
+
+    if not joined_checks:
+        assert not m_log.called
+    else:
+        assert (
+            m_log.return_value.notice.call_args
+            == [(f"Preloading: {joined_checks}", ), {}])
 
 
 @pytest.mark.parametrize("raises", [True, False])
