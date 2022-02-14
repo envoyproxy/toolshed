@@ -18,6 +18,10 @@ import uvloop  # type:ignore
 import coloredlogs  # type:ignore
 import verboselogs  # type:ignore
 
+import abstracts
+
+from aio.core import event
+
 from .decorators import cleansup
 
 
@@ -58,7 +62,8 @@ class RootLogFilter(BaseLogFilter):
         return record.name != self.app_logger.name
 
 
-class Runner:
+@abstracts.implementer(event.IReactive)
+class Runner(event.AReactive):
 
     def __init__(self, *args):
         self._args = args
