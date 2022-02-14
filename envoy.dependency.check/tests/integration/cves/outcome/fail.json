@@ -42,7 +42,19 @@
     "notice": [
         [
             [
-                "[cves] Running checks..."
+                "Running checks: cves"
+            ],
+            {}
+        ],
+        [
+            [
+                "Preloading: cves"
+            ],
+            {}
+        ],
+        [
+            [
+                "[cves] Running check..."
             ],
             {}
         ],
