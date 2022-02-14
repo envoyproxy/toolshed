@@ -544,22 +544,23 @@ def test_checker_get_checks(patches, checks, disabled_checks):
 def test_checker_start_reactor(patches):
     checker = Checker()
     patched = patches(
-        "asyncio",
+        ("Checker.loop",
+         dict(new_callable=PropertyMock)),
         "runner.Runner.install_reactor",
         "Checker.on_async_error",
         prefix="aio.run.checker.checker")
 
-    with patched as (m_async, m_reactor, m_onerror):
+    with patched as (m_loop, m_reactor, m_onerror):
         assert not checker.start_reactor()
 
     assert (
         m_reactor.call_args
         == [(), {}])
     assert (
-        m_async.get_event_loop.call_args
+        m_loop.call_args
         == [(), {}])
     assert (
-        m_async.get_event_loop.return_value.set_exception_handler.call_args
+        m_loop.return_value.set_exception_handler.call_args
         == [(m_onerror, ), {}])
 
 
