@@ -1,7 +1,7 @@
 
 from typing import Type
 
-import gidgethub.abc
+import gidgethub.aiohttp
 
 import abstracts
 
@@ -60,11 +60,11 @@ class GithubTag:
 @abstracts.implementer(AGithubAPI)
 class GithubAPI:
 
-    def __init__(self, *args, **kwargs) -> None:
-        AGithubAPI.__init__(self, *args, **kwargs)
+    def __init__(self, session, *args, **kwargs) -> None:
+        AGithubAPI.__init__(self, session, *args, **kwargs)
 
     @property
-    def api_class(self) -> Type[gidgethub.abc.GitHubAPI]:
+    def api_class(self) -> Type[gidgethub.aiohttp.GitHubAPI]:
         return super().api_class
 
     @property

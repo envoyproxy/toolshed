@@ -4,6 +4,7 @@ pytooling_library(
     dependencies=[
         "//deps:abstracts",
         "//deps:aio.core",
+        "//deps:aiohttp",
         "//deps:gidgethub",
         "//deps:packaging",
     ],

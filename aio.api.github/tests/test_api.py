@@ -30,7 +30,7 @@ def test_api_constructor(patches):
 
 
 def test_api_api_class(patches):
-    api = github.GithubAPI()
+    api = github.GithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api_class", dict(new_callable=PropertyMock)),
         prefix="aio.api.github.api")
