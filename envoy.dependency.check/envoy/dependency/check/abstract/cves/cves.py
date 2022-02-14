@@ -1,9 +1,11 @@
 
+import asyncio
 import abc
 import gzip
 import json
 import pathlib
 from collections import defaultdict
+from concurrent import futures
 from datetime import datetime
 from functools import cached_property
 from typing import AsyncIterator, Dict, List, Optional, Tuple
@@ -12,6 +14,7 @@ import aiohttp
 
 import abstracts
 
+from aio.core import event
 from aio.core.functional import async_property
 from aio.core.tasks import concurrent
 
@@ -23,16 +26,21 @@ NIST_URL_TPL = (
 SCAN_FROM_YEAR = 2018
 
 
-class ADependencyCVEs(metaclass=abstracts.Abstraction):
+@abstracts.implementer(event.IReactive)
+class ADependencyCVEs(event.AReactive, metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
             dependencies: Tuple["abstract.ADependency", ...],
             config_path: Optional[str] = None,
-            session: Optional[aiohttp.ClientSession] = None) -> None:
+            session: Optional[aiohttp.ClientSession] = None,
+            loop: Optional[asyncio.AbstractEventLoop] = None,
+            pool: Optional[futures.Executor] = None) -> None:
         self.dependencies = dependencies
         self._config_path = config_path
         self._session = session
+        self._loop = loop
+        self._pool = pool
 
     @cached_property
     def config(self) -> "typing.CVEConfigDict":

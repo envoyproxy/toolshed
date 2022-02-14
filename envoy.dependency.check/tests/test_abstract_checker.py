@@ -122,17 +122,23 @@ def test_checker_cves(patches):
          dict(new_callable=PropertyMock)),
         ("ADependencyChecker.cves_class",
          dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.loop",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.pool",
+         dict(new_callable=PropertyMock)),
         ("ADependencyChecker.session",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
 
-    with patched as (m_deps, m_config, m_class, m_session):
+    with patched as (m_deps, m_config, m_class, m_loop, m_pool, m_session):
         assert checker.cves == m_class.return_value.return_value
 
     assert (
         m_class.return_value.call_args
         == [(m_deps.return_value, ),
             dict(config_path=m_config.return_value,
+                 loop=m_loop.return_value,
+                 pool=m_pool.return_value,
                  session=m_session.return_value)])
     assert "cves" in checker.__dict__
 
@@ -167,9 +173,15 @@ def test_checker_dependencies(patches, deps):
          dict(new_callable=PropertyMock)),
         ("ADependencyChecker.dependency_class",
          dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.loop",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.pool",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
 
-    with patched as (m_sorted, m_tuple, m_meta, m_github, m_class):
+    with patched as patchy:
+        (m_sorted, m_tuple, m_meta,
+         m_github, m_class, m_loop, m_pool) = patchy
         m_meta.return_value.items.return_value = deps
         assert checker.dependencies == m_tuple.return_value
 
@@ -181,7 +193,9 @@ def test_checker_dependencies(patches, deps):
         == [([m_class.return_value.return_value] * len(deps), ), {}])
     assert (
         m_class.return_value.call_args_list
-        == [[(i, dep, m_github.return_value), {}]
+        == [[(i, dep, m_github.return_value),
+             dict(loop=m_loop.return_value,
+                  pool=m_pool.return_value)]
             for i, dep in deps])
     assert "dependencies" in checker.__dict__
 

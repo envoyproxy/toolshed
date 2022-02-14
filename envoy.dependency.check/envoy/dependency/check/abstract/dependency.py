@@ -1,5 +1,7 @@
 """Abstract dependency."""
 
+import asyncio
+from concurrent import futures
 from functools import cached_property
 from typing import List, Optional, Set, Type
 
@@ -8,22 +10,28 @@ from packaging import version
 import abstracts
 
 from aio.api import github
+from aio.core import event
 from aio.core.functional import async_property
 
 from envoy.dependency.check import abstract, exceptions, typing
 
 
-class ADependency(metaclass=abstracts.Abstraction):
+@abstracts.implementer(event.IReactive)
+class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
     """Github dependency."""
 
     def __init__(
             self,
             id: str,
             metadata: "typing.DependencyMetadataDict",
-            github: github.AGithubAPI) -> None:
+            github: github.AGithubAPI,
+            loop: Optional[asyncio.AbstractEventLoop] = None,
+            pool: Optional[futures.Executor] = None) -> None:
         self.id = id
         self.metadata = metadata
         self.github = github
+        self._loop = loop
+        self._pool = pool
 
     def __gt__(self, other: "ADependency") -> bool:
         return self.id > other.id
@@ -54,11 +62,12 @@ class ADependency(metaclass=abstracts.Abstraction):
         return {".tar.gz", ".zip"}
 
     @cached_property
-    def github_url(self) -> Optional[str]:
+    def github_url(self) -> str:
         """Github URL."""
         for url in self.urls:
             if url.startswith('https://github.com/'):
                 return url
+        return ""
 
     @cached_property
     def github_version(self) -> str:
@@ -133,7 +142,12 @@ class ADependency(metaclass=abstracts.Abstraction):
     @cached_property
     def release(self) -> "abstract.ADependencyGithubRelease":
         """Github release."""
-        return self.release_class(self.repo, self.github_version)
+        return self.release_class(
+            self.repo,
+            self.github_version,
+            asset_url=self.github_url,
+            loop=self.loop,
+            pool=self.pool)
 
     @property  # type:ignore
     @abstracts.interfacemethod

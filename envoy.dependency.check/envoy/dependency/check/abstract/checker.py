@@ -41,15 +41,17 @@ class ADependencyChecker(
         return self.args.cve_config
 
     @cached_property
-    def cves(self):
+    def cves(self) -> "abstract.ADependencyCVEs":
         return self.cves_class(
             self.dependencies,
             config_path=self.cve_config,
-            session=self.session)
+            session=self.session,
+            loop=self.loop,
+            pool=self.pool)
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def cves_class(self) -> "abstract.ADependencyCVEs":
+    def cves_class(self) -> Type["abstract.ADependencyCVEs"]:
         """CVEs class."""
         raise NotImplementedError
 
@@ -63,7 +65,12 @@ class ADependencyChecker(
         """Tuple of dependencies."""
         deps = []
         for k, v in self.dependency_metadata.items():
-            deps.append(self.dependency_class(k, v, self.github))
+            deps.append(
+                self.dependency_class(
+                    k, v,
+                    self.github,
+                    pool=self.pool,
+                    loop=self.loop))
         return tuple(sorted(deps))
 
     @property  # type:ignore

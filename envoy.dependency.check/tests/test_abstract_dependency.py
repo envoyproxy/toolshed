@@ -7,6 +7,8 @@ import pytest
 
 import abstracts
 
+from aio.core import event
+
 from envoy.dependency.check import ADependency, exceptions
 
 
@@ -26,17 +28,27 @@ class DummyDependency2(DummyDependency):
         self.github = github
 
 
-def test_dependency_constructor(patches):
+@pytest.mark.parametrize("loop", [None, "", "LOOP"])
+@pytest.mark.parametrize("pool", [None, "", "POOL"])
+def test_dependency_constructor(patches, loop, pool):
+    kwargs = {}
+    if loop is not None:
+        kwargs["loop"] = loop
+    if pool is not None:
+        kwargs["pool"] = pool
 
     with pytest.raises(TypeError):
-        ADependency("ID", "METADATA", "GITHUB")
+        ADependency("ID", "METADATA", "GITHUB", **kwargs)
 
-    dependency = DummyDependency("ID", "METADATA", "GITHUB")
+    dependency = DummyDependency("ID", "METADATA", "GITHUB", **kwargs)
     assert dependency.id == "ID"
     assert dependency.metadata == "METADATA"
     assert dependency.github == "GITHUB"
     assert dependency.github_filetypes == {".zip", ".tar.gz"}
+    assert dependency._loop == loop
+    assert dependency._pool == pool
     assert "github_filetypes" not in dependency.__dict__
+    assert isinstance(dependency, event.IReactive)
 
 
 @pytest.mark.parametrize("id", range(0, 3))
@@ -124,7 +136,7 @@ def test_dependency_github_url(patches, urls):
         prefix="envoy.dependency.check.abstract.dependency")
 
     mock_urls = []
-    expected_url = None
+    expected_url = ""
     for url in urls:
         mock_url = MagicMock()
         mock_url.startswith.return_value = url
@@ -417,18 +429,28 @@ def test_dependency_release(patches):
     patched = patches(
         ("ADependency.github_version",
          dict(new_callable=PropertyMock)),
+        ("ADependency.github_url",
+         dict(new_callable=PropertyMock)),
+        ("ADependency.loop",
+         dict(new_callable=PropertyMock)),
+        ("ADependency.pool",
+         dict(new_callable=PropertyMock)),
         ("ADependency.release_class",
          dict(new_callable=PropertyMock)),
         ("ADependency.repo",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.dependency")
 
-    with patched as (m_version, m_class, m_repo):
+    with patched as (m_version, m_url, m_loop, m_pool, m_class, m_repo):
         assert dependency.release == m_class.return_value.return_value
 
     assert (
         m_class.return_value.call_args
-        == [(m_repo.return_value, m_version.return_value), {}])
+        == [(m_repo.return_value,
+             m_version.return_value),
+            dict(asset_url=m_url.return_value,
+                 loop=m_loop.return_value,
+                 pool=m_pool.return_value)])
     assert "release" in dependency.__dict__
 
 
