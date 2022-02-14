@@ -269,9 +269,14 @@ class Checker(runner.Runner):
             in checks
             if check not in self.disabled_checks]
 
+    def install_reactor(self):
+        super().install_reactor()
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(self.on_async_error)
+
     async def on_check_begin(self, check: str) -> None:
         self._active_check = check
-        self.log.notice(f"[{check}] Running checks...")
+        self.log.notice(f"[{check}] Running check...")
 
     async def on_check_run(self, check: str) -> None:
         """Callback hook called after each check run."""
@@ -291,7 +296,8 @@ class Checker(runner.Runner):
 
     async def on_checks_begin(self) -> None:
         """Callback hook called before all checks."""
-        pass
+        self._notify_checks()
+        self._notify_preload()
 
     async def on_checks_complete(self) -> int:
         """Callback hook called after all checks have run, and returning the
@@ -301,10 +307,14 @@ class Checker(runner.Runner):
         return 1 if self.has_failed else 0
 
     def __call__(self):
-        loop = asyncio.get_event_loop()
-        loop.set_exception_handler(self.on_async_error)
+        # TODO: use super.__call__ and factor out the runtime
+        self.setup_logging()
+        self.install_reactor()
         try:
-            return loop.run_until_complete(self.run())
+            self.log.debug("Starting checker...")
+            result = asyncio.run(self.run())
+            print("Checker finished")
+            return result
         except RuntimeError:
             # Loop was forcibly stopped, most likely due to unhandled
             # error in task.
@@ -513,6 +523,19 @@ class Checker(runner.Runner):
                 task
                 in self.preload_pending_tasks
                 for task in self.preload_checks[check]))
+
+    def _notify_checks(self) -> None:
+        checks = ", ".join(self.checks_to_run)
+        self.log.notice(f"Running checks: {checks}")
+
+    def _notify_preload(self) -> None:
+        preload = ", ".join(
+            d
+            for d
+            in self.checks_to_run
+            if d in self.preload_checks)
+        if preload:
+            self.log.notice(f"Preloading: {preload}")
 
     async def _run_check(self, check: str) -> None:
         await self.on_check_begin(check)
