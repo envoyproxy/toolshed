@@ -269,11 +269,6 @@ class Checker(runner.Runner):
             in checks
             if check not in self.disabled_checks]
 
-    def install_reactor(self):
-        super().install_reactor()
-        loop = asyncio.get_event_loop()
-        loop.set_exception_handler(self.on_async_error)
-
     async def on_check_begin(self, check: str) -> None:
         self._active_check = check
         self.log.notice(f"[{check}] Running check...")
@@ -306,13 +301,18 @@ class Checker(runner.Runner):
             self.summary.print_summary()
         return 1 if self.has_failed else 0
 
+    def start_reactor(self):
+        super().install_reactor()
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(self.on_async_error)
+
     def __call__(self):
         # TODO: use super.__call__ and factor out the runtime
         self.setup_logging()
-        self.install_reactor()
+        self.start_reactor()
         try:
             self.log.debug("Starting checker...")
-            result = asyncio.run(self.run())
+            result = self.loop.run_until_complete(self.run())
             print("Checker finished")
             return result
         except RuntimeError:
