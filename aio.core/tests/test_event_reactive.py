@@ -49,10 +49,10 @@ def test_event_reactive_loop(patches):
     with patched as (m_aio, ):
         assert (
             reactive.loop
-            == m_aio.get_running_loop.return_value)
+            == m_aio.get_event_loop.return_value)
 
     assert (
-        m_aio.get_running_loop.call_args
+        m_aio.get_event_loop.call_args
         == [(), {}])
     assert "loop" in reactive.__dict__
 

@@ -28,7 +28,9 @@ class AReactive(IReactive, metaclass=abstracts.Abstraction):
 
     @cached_property
     def loop(self) -> asyncio.AbstractEventLoop:
-        return self._loop or asyncio.get_running_loop()
+        """Does not expect an existing loop to be running if it is not passed a
+        loop."""
+        return self._loop or asyncio.get_event_loop()
 
     @cached_property
     def pool(self) -> futures.Executor:
