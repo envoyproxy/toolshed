@@ -57,9 +57,10 @@ class DummyGithubAPI:
 def test_abstract_api_constructor(args, kwargs):
 
     with pytest.raises(TypeError):
-        github.AGithubAPI(*args, **kwargs)
+        github.AGithubAPI("SESSION", *args, **kwargs)
 
-    api = DummyGithubAPI(*args, **kwargs)
+    api = DummyGithubAPI("SESSION", *args, **kwargs)
+    assert api.session == "SESSION"
     assert api.args == args
     assert api.kwargs == kwargs
     props = (
@@ -75,7 +76,7 @@ def test_abstract_api_constructor(args, kwargs):
 
 
 def test_abstract_api_dunder_getitem(patches):
-    api = DummyGithubAPI()
+    api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.repo_class",
          dict(new_callable=PropertyMock)),
@@ -92,7 +93,7 @@ def test_abstract_api_dunder_getitem(patches):
 def test_abstract_api_api(patches):
     args = tuple(f"ARG{i}" for i in range(0, 3))
     kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
-    api = DummyGithubAPI(*args, **kwargs)
+    api = DummyGithubAPI("SESSION", *args, **kwargs)
     patched = patches(
         ("AGithubAPI.api_class",
          dict(new_callable=PropertyMock)),
@@ -105,13 +106,13 @@ def test_abstract_api_api(patches):
 
     assert (
         m_api_class.return_value.call_args
-        == [args, kwargs])
+        == [("SESSION", *args), kwargs])
 
     assert "api" in api.__dict__
 
 
 async def test_abstract_api_getitem(patches):
-    api = DummyGithubAPI()
+    api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
          dict(new_callable=PropertyMock)),
@@ -131,7 +132,7 @@ async def test_abstract_api_getitem(patches):
 
 
 def test_abstract_api_getiter(patches):
-    api = DummyGithubAPI()
+    api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
          dict(new_callable=PropertyMock)),
@@ -152,7 +153,7 @@ def test_abstract_api_getiter(patches):
 
 
 async def test_abstract_api_patch(patches):
-    api = DummyGithubAPI()
+    api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
          dict(new_callable=PropertyMock)),
@@ -172,7 +173,7 @@ async def test_abstract_api_patch(patches):
 
 
 async def test_abstract_api_post(patches):
-    api = DummyGithubAPI()
+    api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
          dict(new_callable=PropertyMock)),
@@ -193,7 +194,7 @@ async def test_abstract_api_post(patches):
 
 @pytest.mark.parametrize("isrepo", [True, False])
 def test_abstract_api_repo_from_url(patches, isrepo):
-    api = DummyGithubAPI()
+    api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
          dict(new_callable=PropertyMock)),

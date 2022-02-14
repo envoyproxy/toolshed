@@ -3,8 +3,9 @@ import abc
 from functools import cached_property
 from typing import Any, Type
 
+import aiohttp
+
 import gidgethub
-import gidgethub.abc
 import gidgethub.aiohttp
 
 import abstracts
@@ -26,7 +27,11 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
     Can also be used to work with repos by calling `self["repo/name"]`.
     """
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            session: aiohttp.ClientSession,
+            *args, **kwargs) -> None:
+        self.session = session
         self.args = args
         self.kwargs = kwargs
 
@@ -37,13 +42,16 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
         return self.repo_class(self, k)
 
     @cached_property
-    def api(self) -> gidgethub.abc.GitHubAPI:
+    def api(self) -> gidgethub.aiohttp.GitHubAPI:
         """Gidgethub API."""
-        return self.api_class(*self.args, **self.kwargs)
+        return self.api_class(
+            self.session,
+            *self.args,
+            **self.kwargs)
 
     @property
     @abc.abstractmethod
-    def api_class(self) -> Type[gidgethub.abc.GitHubAPI]:
+    def api_class(self) -> Type[gidgethub.aiohttp.GitHubAPI]:
         """API class."""
         return gidgethub.aiohttp.GitHubAPI
 

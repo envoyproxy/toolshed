@@ -1,4 +1,5 @@
 
+import asyncio
 import gzip
 import json
 import pathlib
@@ -64,8 +65,12 @@ def test_integration_cves(
          dict(new_callable=PropertyMock)),
         ("DependencyChecker.log",
          dict(new_callable=PropertyMock)),
+        ("DependencyChecker.loop",
+         dict(new_callable=PropertyMock)),
         ("DependencyChecker.session",
          dict(new_callable=PropertyMock)),
+        "DependencyChecker.install_reactor",
+        "DependencyChecker.setup_logging",
         prefix="envoy.dependency.check.checker")
 
     def dep_items():
@@ -80,11 +85,15 @@ def test_integration_cves(
         download.return_value.url = "NIST_URL"
         yield download()
 
-    with patched as (m_config, m_downloads, m_deps, m_log, m_session):
+    with patched as patchy:
+        (m_config, m_downloads,
+         m_deps, m_log, m_loop, m_session,
+         m_reactor, m_logging) = patchy
         m_config.return_value = config
         m_deps.return_value.items.side_effect = dep_items
         m_downloads.side_effect = nist_downloads
         m_session.return_value = AsyncMock()
+        m_loop.return_value = asyncio.get_event_loop()
         dep_checker = checker.DependencyChecker(
             "CONFIG_PATH", "-w", "error")
         dep_checker.checks = ("cves", )
