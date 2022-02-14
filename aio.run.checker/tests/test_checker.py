@@ -541,7 +541,7 @@ def test_checker_get_checks(patches, checks, disabled_checks):
             for check in filtered])
 
 
-def test_checker_install_reactor(patches):
+def test_checker_start_reactor(patches):
     checker = Checker()
     patched = patches(
         "asyncio",
@@ -550,7 +550,7 @@ def test_checker_install_reactor(patches):
         prefix="aio.run.checker.checker")
 
     with patched as (m_async, m_reactor, m_onerror):
-        assert not checker.install_reactor()
+        assert not checker.start_reactor()
 
     assert (
         m_reactor.call_args
@@ -688,15 +688,16 @@ def test_checker_dunder_call(patches, raises):
         "asyncio",
         "Checker.exit",
         ("Checker.cleanup", dict(new_callable=MagicMock)),
+        ("Checker.loop", dict(new_callable=PropertyMock)),
         ("Checker.run", dict(new_callable=MagicMock)),
         ("Checker.on_checks_complete", dict(new_callable=MagicMock)),
         "Checker.on_async_error",
         "Checker.setup_logging",
-        "Checker.install_reactor",
+        "Checker.start_reactor",
         prefix="aio.run.checker.checker")
 
     with patched as patchy:
-        (m_async, m_exit, m_cleanup,
+        (m_async, m_exit, m_cleanup, m_loop,
          m_run, m_complete, m_on_err, m_log, m_reactor) = patchy
         run_until_complete = (
             m_async.get_event_loop.return_value.run_until_complete)
@@ -714,14 +715,14 @@ def test_checker_dunder_call(patches, raises):
         else:
             assert (
                 checker.__call__()
-                == m_async.run.return_value)
+                == m_loop.return_value.run_until_complete.return_value)
 
     assert (
         m_run.call_args
         == [(), {}])
 
     if raises == KeyboardInterrupt:
-        assert not m_async.run.called
+        assert not m_loop.return_value.run_until_complete.called
         assert (
             m_exit.call_args
             == [(), {}])
@@ -742,7 +743,7 @@ def test_checker_dunder_call(patches, raises):
     assert not run_until_complete.called
     if not raises:
         assert (
-            m_async.run.call_args
+            m_loop.return_value.run_until_complete.call_args
             == [(m_run.return_value,), {}])
 
 
