@@ -408,15 +408,18 @@ def test_runner_add_arguments():
 async def test_runner_cleanup(patches):
     patched = patches(
         "Runner._cleanup_tempdir",
-        "Runner.setup_logging",
+        "Runner._shutdown_pool",
         prefix="aio.run.runner.runner")
 
-    with patched as (m_temp, m_setup):
+    with patched as (m_temp, m_pool):
         run = runner.Runner()
         assert not await run.cleanup()
 
     assert (
         m_temp.call_args
+        == [(), {}])
+    assert (
+        m_pool.call_args
         == [(), {}])
 
 
@@ -539,3 +542,29 @@ def test_runner__cleanup_tempdir(patches, cached):
         assert not m_logger.debug.called
         assert not m_temp.called
     assert "tempdir" not in run.__dict__
+
+
+@pytest.mark.parametrize("cached", [True, False])
+def test_runner__shutdown_pool(patches, cached):
+    run = DummyRunner()
+    patched = patches(
+        "Runner.log",
+        ("Runner.pool", dict(new_callable=PropertyMock)),
+        prefix="aio.run.runner.runner")
+    if cached:
+        run.__dict__["pool"] = "POOL"
+
+    with patched as (m_logger, m_temp):
+        assert not run._shutdown_pool()
+
+    if cached:
+        assert (
+            m_temp.return_value.shutdown.call_args
+            == [(), {}])
+        assert (
+            m_logger.debug.call_args
+            == [("Process pool shut down", ), {}])
+    else:
+        assert not m_logger.debug.called
+        assert not m_temp.called
+    assert "pool" not in run.__dict__

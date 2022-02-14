@@ -202,6 +202,7 @@ class Runner(event.AReactive):
 
     async def cleanup(self) -> None:
         self._cleanup_tempdir()
+        self._shutdown_pool()
 
     def install_reactor(self):
         uvloop.install()
@@ -221,12 +222,6 @@ class Runner(event.AReactive):
         self.log.debug("Shutting down logging, goodbye")
         logging.shutdown()
 
-    def _cleanup_tempdir(self) -> None:
-        if "tempdir" in self.__dict__:
-            self.tempdir.cleanup()
-            del self.__dict__["tempdir"]
-            self.log.debug("Tempdir cleaned up")
-
     @property
     def _missing_cleanup(self) -> bool:
         run_fun = getattr(self, "run", None)
@@ -235,3 +230,15 @@ class Runner(event.AReactive):
             and not getattr(
                 getattr(run_fun, "__wrapped__", object()),
                 "__cleansup__", False))
+
+    def _cleanup_tempdir(self) -> None:
+        if "tempdir" in self.__dict__:
+            self.tempdir.cleanup()
+            del self.__dict__["tempdir"]
+            self.log.debug("Tempdir cleaned up")
+
+    def _shutdown_pool(self) -> None:
+        if "pool" in self.__dict__:
+            self.pool.shutdown()
+            del self.__dict__["pool"]
+            self.log.debug("Process pool shut down")
