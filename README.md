@@ -82,7 +82,7 @@ pypi: https://pypi.org/project/aio.run.checker
 
 #### [aio.run.runner](aio.run.runner)
 
-version: 0.2.4
+version: 0.2.5.dev0
 
 pypi: https://pypi.org/project/aio.run.runner
 
