@@ -310,7 +310,7 @@ async def test_dependency_has_recent_commits(patches, commits):
 
 @pytest.mark.parametrize("newest", [None, "BINGO", "BLOOP"])
 async def test_dependency_newer_release(patches, newest):
-    dependency = DummyDependency2("ID", {"urls": ["url"]}, "GITHUB")
+    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
     patched = patches(
         "version",
         ("ADependency.release",
@@ -345,7 +345,7 @@ async def test_dependency_newer_release(patches, newest):
         assert (
             m_class.return_value.call_args
             == [(m_repo.return_value, newest),
-               dict(release=newer_release)])
+                dict(release=newer_release)])
     else:
         assert not m_class.called
     assert (

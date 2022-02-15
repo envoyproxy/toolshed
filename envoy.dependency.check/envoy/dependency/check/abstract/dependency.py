@@ -115,8 +115,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             self.release_class(
                 self.repo,
                 newer_release.tag_name,
-                release=newer_release,
-                asset_url=self.github_url)
+                release=newer_release)
             if (newer_release
                 and (version.parse(newer_release.tag_name)
                      != self.release.version))

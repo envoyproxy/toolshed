@@ -366,8 +366,7 @@ class ADependencyChecker(
     @checker.preload(
         when=["sha"],
         unless=["releases", "release_issues", "release_dates"],
-        catches=[ConcurrentError, aiohttp.ClientError,
-                 gidgethub.GitHubException])
+        catches=[ConcurrentError, aiohttp.ClientError])
     async def preload_release_shas(self) -> None:
         preloader = inflate(
             self.github_dependencies,
