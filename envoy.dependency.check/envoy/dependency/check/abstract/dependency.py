@@ -167,6 +167,18 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             self.release_date
             != await self.release.date)
 
+    @property
+    def release_sha(self) -> str:
+        """Release (or published) sha of this dependency."""
+        return self.metadata["sha256"]
+
+    @async_property
+    async def release_sha_mismatch(self) -> bool:
+        """Flag indicating the metadata sha doesnt match the Github sha."""
+        return (
+            self.release_sha
+            != await self.release.sha)
+
     @cached_property
     def release_version(self) -> Optional[version.Version]:
         """Semantic version for the release of this dependency if available."""

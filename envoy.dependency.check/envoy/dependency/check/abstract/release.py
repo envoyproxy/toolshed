@@ -1,5 +1,6 @@
 
 import asyncio
+import hashlib
 import logging
 from concurrent import futures
 from datetime import datetime
@@ -79,6 +80,16 @@ class ADependencyGithubRelease(
     @property
     def session(self) -> aiohttp.ClientSession:
         return self.github.api._session
+
+    @async_property(cache=True)
+    async def sha(self):
+        """Github release SHA."""
+        file_hash = hashlib.sha256()
+        response = await self.session.get(self.asset_url)
+        data = await response.read()
+        if data:
+            file_hash.update(data)
+        return file_hash.hexdigest()
 
     @async_property(cache=True)
     async def tag(self) -> Optional[_github.AGithubTag]:
