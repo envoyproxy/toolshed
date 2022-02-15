@@ -52,7 +52,7 @@ pypi: https://pypi.org/project/aio.api.github
 
 #### [aio.api.nist](aio.api.nist)
 
-version: 0.0.1
+version: 0.0.2.dev0
 
 pypi: https://pypi.org/project/aio.api.nist
 
