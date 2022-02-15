@@ -30,6 +30,10 @@ class DummyCodeChecker:
         return super().path
 
     @property
+    def shellcheck_class(self):
+        return super().shellcheck_class
+
+    @property
     def yapf_class(self):
         return super().yapf_class
 
@@ -46,7 +50,8 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         prefix="envoy.code.check.abstract.checker")
     iface_props = [
         "fs_directory_class", "flake8_class",
-        "git_directory_class", "yapf_class"]
+        "git_directory_class",
+        "shellcheck_class", "yapf_class"]
 
     with patched as (m_super, ):
         m_super.return_value = None
@@ -60,7 +65,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         == [tuple(args), kwargs])
     assert (
         checker.checks
-        == ("python_yapf", "python_flake8"))
+        == ("shellcheck", "python_yapf", "python_flake8"))
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(checker, prop)
@@ -92,7 +97,8 @@ def test_abstract_checker_grep_globs(patches, all_files):
 @pytest.mark.parametrize(
     "subcheck",
     (("python_flake8", "flake8"),
-     ("python_yapf", "yapf")))
+     ("python_yapf", "yapf"),
+     ("shellcheck", "shellcheck")))
 async def test_abstract_checker_checks(patches, subcheck):
     checkname, tool = subcheck
     checker = DummyCodeChecker()
@@ -113,7 +119,8 @@ async def test_abstract_checker_checks(patches, subcheck):
 @pytest.mark.parametrize(
     "tool",
     (("flake8",
-      "yapf")))
+      "yapf",
+      "shellcheck")))
 def test_abstract_checker_tools(patches, tool):
     checker = DummyCodeChecker()
     patched = patches(
@@ -140,7 +147,8 @@ def test_abstract_checker_tools(patches, tool):
 @pytest.mark.parametrize(
     "preloader",
     (("python_flake8", "flake8"),
-     ("python_yapf", "yapf")))
+     ("python_yapf", "yapf"),
+     ("shellcheck", "shellcheck")))
 async def test_abstract_checker_preloaders(patches, preloader):
     when, name = preloader
     checker = DummyCodeChecker()

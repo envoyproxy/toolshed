@@ -14,6 +14,11 @@ class Flake8Check:
     pass
 
 
+@abstracts.implementer(check.AShellcheckCheck)
+class ShellcheckCheck:
+    pass
+
+
 @abstracts.implementer(check.AYapfCheck)
 class YapfCheck:
     pass
@@ -37,6 +42,10 @@ class CodeChecker:
     @cached_property
     def path(self) -> pathlib.Path:
         return super().path
+
+    @property
+    def shellcheck_class(self):
+        return ShellcheckCheck
 
     @property
     def yapf_class(self):
