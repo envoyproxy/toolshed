@@ -8,7 +8,6 @@ from typing import List, Optional, Set, Type
 from packaging import version
 
 import abstracts
-import aiohttp
 
 from aio.api import github
 from aio.core import event
