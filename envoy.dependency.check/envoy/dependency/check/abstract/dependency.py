@@ -8,6 +8,7 @@ from typing import List, Optional, Set, Type
 from packaging import version
 
 import abstracts
+import aiohttp
 
 from aio.api import github
 from aio.core import event
@@ -26,14 +27,12 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             metadata: "typing.DependencyMetadataDict",
             github: github.AGithubAPI,
             loop: Optional[asyncio.AbstractEventLoop] = None,
-            pool: Optional[futures.Executor] = None,
-            session: Optional[aiohttp.ClientSession] = None) -> None:
+            pool: Optional[futures.Executor] = None) -> None:
         self.id = id
         self.metadata = metadata
         self.github = github
         self._loop = loop
         self._pool = pool
-        self.session = session
 
     def __gt__(self, other: "ADependency") -> bool:
         return self.id > other.id
@@ -118,7 +117,6 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
                 self.repo,
                 newer_release.tag_name,
                 release=newer_release,
-                session=self.session,
                 asset_url=self.github_url)
             if (newer_release
                 and (version.parse(newer_release.tag_name)

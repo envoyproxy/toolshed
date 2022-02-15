@@ -70,7 +70,6 @@ class ADependencyChecker(
                     k, v,
                     self.github,
                     pool=self.pool,
-                    session=self.session,
                     loop=self.loop))
         return tuple(sorted(deps))
 
@@ -214,18 +213,18 @@ class ADependencyChecker(
         """Check sha for dependency."""
         if not await dep.release.sha:
             self.error(
-                "sha",
+                self.active_check,
                 [f"{dep.id} is a GitHub repository with no inferrable "
                  "release sha"])
         elif await dep.release_sha_mismatch:
             self.error(
-                "sha",
-                [f"SHA mismatch: {dep.id} "
+                self.active_check,
+                [f"mismatch: {dep.id} "
                  f"{dep.release_sha} != {await dep.release.sha}"])
         else:
             self.succeed(
-                "sha",
-                [f"SHA matches ({dep.release_sha}): {dep.id}"])
+                self.active_check,
+                [f"\N{check mark} matches ({dep.release_sha[:10]}): {dep.id}"])
 
     async def dep_release_issue_check(
             self,
@@ -367,12 +366,13 @@ class ADependencyChecker(
     @checker.preload(
         when=["sha"],
         unless=["releases", "release_issues", "release_dates"],
-        catches=[ConcurrentError, gidgethub.GitHubException])
+        catches=[ConcurrentError, aiohttp.ClientError,
+                 gidgethub.GitHubException])
     async def preload_release_shas(self) -> None:
         preloader = inflate(
             self.github_dependencies,
             lambda d: (
-                d.release.sha, ))
+                d.release.sha, ), limit=6)
         async for dep in preloader:
             self.log.debug(f"Preloaded release sha: {dep.id}")
 

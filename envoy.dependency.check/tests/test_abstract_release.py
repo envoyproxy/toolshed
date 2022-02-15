@@ -55,7 +55,7 @@ async def test_release_commit(patches, raises, err):
         msg.phrase = err
         error = raises(msg)
         repo.commit.side_effect = error
-    release = DummyDependencyGithubRelease(repo, "VERSION", ["URL"])
+    release = DummyDependencyGithubRelease(repo, "VERSION")
     patched = patches(
         ("ADependencyGithubRelease.tag_name",
          dict(new_callable=PropertyMock)),
@@ -90,7 +90,7 @@ async def test_release_commit(patches, raises, err):
 
 
 async def test_release_date(patches):
-    release = DummyDependencyGithubRelease("REPO", "VERSION", ["URL"])
+    release = DummyDependencyGithubRelease("REPO", "VERSION")
     patched = patches(
         "utils",
         ("ADependencyGithubRelease.timestamp",
@@ -137,7 +137,7 @@ async def test_release_release(patches, raises, err, provided):
     kwargs = {}
     if provided:
         kwargs["release"] = MagicMock()
-    release = DummyDependencyGithubRelease(repo, "VERSION", ["URL"], **kwargs)
+    release = DummyDependencyGithubRelease(repo, "VERSION", **kwargs)
     patched = patches(
         ("ADependencyGithubRelease.tag_name",
          dict(new_callable=PropertyMock)),
@@ -189,7 +189,7 @@ async def test_release_tag(patches, raises, err):
         msg.phrase = err
         error = raises(msg)
         repo.tag.side_effect = error
-    release = DummyDependencyGithubRelease(repo, "VERSION", ["URL"])
+    release = DummyDependencyGithubRelease(repo, "VERSION")
     patched = patches(
         ("ADependencyGithubRelease.tag_name",
          dict(new_callable=PropertyMock)),
@@ -238,7 +238,7 @@ def test_release_session(patches):
 
 @pytest.mark.parametrize("is_sha", [True, False])
 def test_release_tagged(patches, is_sha):
-    release = DummyDependencyGithubRelease("REPO", "VERSION", ["URL"])
+    release = DummyDependencyGithubRelease("REPO", "VERSION")
     patched = patches(
         "utils",
         ("ADependencyGithubRelease.tag_name",
@@ -257,7 +257,7 @@ def test_release_tagged(patches, is_sha):
 
 @pytest.mark.parametrize("tagged", [True, False])
 async def test_release_timestamp(patches, tagged):
-    release = DummyDependencyGithubRelease("REPO", "VERSION", ["URL"])
+    release = DummyDependencyGithubRelease("REPO", "VERSION")
     patched = patches(
         ("ADependencyGithubRelease.tagged",
          dict(new_callable=PropertyMock)),
@@ -289,7 +289,7 @@ async def test_release_timestamp(patches, tagged):
 
 
 async def test_release_timestamp_commit(patches):
-    release = DummyDependencyGithubRelease("REPO", "VERSION", ["URL"])
+    release = DummyDependencyGithubRelease("REPO", "VERSION")
     patched = patches(
         ("ADependencyGithubRelease.commit",
          dict(new_callable=PropertyMock)),
@@ -314,7 +314,7 @@ async def test_release_timestamp_commit(patches):
 @pytest.mark.parametrize("has_release", [True, False])
 @pytest.mark.parametrize("has_tag", [True, False])
 async def test_release_timestamp_tag(patches, has_release, has_tag):
-    release = DummyDependencyGithubRelease("REPO", "VERSION", ["URL"])
+    release = DummyDependencyGithubRelease("REPO", "VERSION")
     patched = patches(
         ("ADependencyGithubRelease.release",
          dict(new_callable=PropertyMock)),
@@ -360,7 +360,7 @@ async def test_release_timestamp_tag(patches, has_release, has_tag):
 
 
 def test_release_version(patches):
-    release = DummyDependencyGithubRelease("REPO", "VERSION", ["URL"])
+    release = DummyDependencyGithubRelease("REPO", "VERSION")
     patched = patches(
         "version",
         ("ADependencyGithubRelease.tag_name",

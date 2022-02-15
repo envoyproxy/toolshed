@@ -1,5 +1,6 @@
 
 import asyncio
+import hashlib
 import logging
 from concurrent import futures
 from datetime import datetime
@@ -9,7 +10,6 @@ from typing import Optional, Union
 from packaging import version
 
 import aiohttp
-import hashlib
 import gidgethub
 
 import abstracts
@@ -84,7 +84,7 @@ class ADependencyGithubRelease(
     async def sha(self):
         """Github release SHA."""
         file_hash = hashlib.sha256()
-        response = await self.repo.github.api._session.get(self._url[0])
+        response = await self.session.get(self.asset_url)
         data = await response.read()
         if data:
             file_hash.update(data)
