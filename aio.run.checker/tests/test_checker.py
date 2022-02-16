@@ -813,7 +813,7 @@ def test_checker_succeed(patches, log, success):
     if log:
         assert (
             m_log.return_value.success.call_args_list
-            == [[(f'[mycheck] success{i}',), {}] for i in range(1, 4)])
+            == [[(f'[mycheck] ✔ success{i}',), {}] for i in range(1, 4)])
     else:
         assert not m_log.return_value.success.called
 
