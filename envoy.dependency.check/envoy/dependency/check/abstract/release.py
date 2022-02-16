@@ -2,6 +2,7 @@
 import asyncio
 import hashlib
 import logging
+import time
 from concurrent import futures
 from datetime import datetime
 from functools import cached_property
@@ -20,9 +21,12 @@ from aio.core import event
 from aio.core.functional import async_property
 
 from envoy.base import utils
+from envoy.dependency.check import exceptions
 
 
 logger = logging.getLogger(__name__)
+
+MIN_DATA_SIZE_TO_HASH_IN_PROC = 1000000
 
 
 @abstracts.implementer(event.IReactive)
@@ -30,6 +34,12 @@ class ADependencyGithubRelease(
         event.AReactive,
         metaclass=abstracts.Abstraction):
     """Github release associated with a dependency."""
+
+    @classmethod
+    def hash_file_data(cls, data: bytes) -> str:
+        file_hash = hashlib.sha256()
+        file_hash.update(data)
+        return str(file_hash.hexdigest())
 
     def __init__(
             self,
@@ -65,6 +75,10 @@ class ADependencyGithubRelease(
     def github(self) -> _github.AGithubAPI:
         return self.repo.github
 
+    @property
+    def min_data_size_to_hash_in_proc(self) -> int:
+        return MIN_DATA_SIZE_TO_HASH_IN_PROC
+
     @async_property(cache=True)
     async def release(self) -> Optional[_github.AGithubRelease]:
         """Github release."""
@@ -79,17 +93,18 @@ class ADependencyGithubRelease(
 
     @property
     def session(self) -> aiohttp.ClientSession:
-        return self.github.api._session
+        return self.github.session
 
     @async_property(cache=True)
-    async def sha(self):
-        """Github release SHA."""
-        file_hash = hashlib.sha256()
+    async def sha(self) -> str:
+        """Release SHA."""
+        if not self.asset_url:
+            raise exceptions.NoReleaseAssetError(
+                f"Cannot check sha for {self.__class__.__name__}"
+                "with no `asset_url`")
         response = await self.session.get(self.asset_url)
-        data = await response.read()
-        if data:
-            file_hash.update(data)
-        return file_hash.hexdigest()
+        logger.debug(f"SHA download: {self.asset_url}")
+        return await self._hash_file_data(await response.read())
 
     @async_property(cache=True)
     async def tag(self) -> Optional[_github.AGithubTag]:
@@ -147,3 +162,26 @@ class ADependencyGithubRelease(
                 version.Version]:
         """Semantic version of this release."""
         return version.parse(self.tag_name)
+
+    def should_hash_in_proc(self, data: bytes) -> bool:
+        """Conditionally generate SHA hashes based on incoming data."""
+        return len(data) > self.min_data_size_to_hash_in_proc
+
+    async def _hash_file_data(self, data: bytes) -> str:
+        hash_in_proc = self.should_hash_in_proc(data)
+        start = time.perf_counter()
+        sha = (
+            await self.loop.run_in_executor(
+                self.pool,
+                self.hash_file_data,
+                data)
+            if hash_in_proc
+            else self.hash_file_data(data))
+        logger.debug(
+            "SHA parsed in {:.3f}s{}: {}" .format(
+                time.perf_counter() - start,
+                (" (fork: True)"
+                 if hash_in_proc
+                 else ""),
+                self.asset_url))
+        return sha

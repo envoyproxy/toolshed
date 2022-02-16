@@ -17,6 +17,10 @@ class NotGithubDependency(Exception):
     pass
 
 
+class NoReleaseAssetError(Exception):
+    pass
+
+
 class CPEError(Exception):
     pass
 

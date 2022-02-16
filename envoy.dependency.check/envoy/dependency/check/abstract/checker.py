@@ -27,7 +27,12 @@ class ADependencyChecker(
         metaclass=abstracts.Abstraction):
     """Dependency checker."""
 
-    checks = ("cves", "release_dates", "release_issues", "releases", "sha")
+    checks = (
+        "cves",
+        "release_dates",
+        "release_issues",
+        "release_sha",
+        "releases")
 
     @property
     @abc.abstractmethod
@@ -97,10 +102,6 @@ class ADependencyChecker(
         return disabled
 
     @cached_property
-    def sha_preload_limit(self) -> int:
-        return int(psutil.cpu_count() * 1.5)
-
-    @cached_property
     def github(self) -> github.GithubAPI:
         """Github API."""
         return github.GithubAPI(
@@ -144,6 +145,10 @@ class ADependencyChecker(
         """HTTP client session."""
         return aiohttp.ClientSession()
 
+    @cached_property
+    def sha_preload_limit(self) -> int:
+        return int(psutil.cpu_count() * 1.5)
+
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
         parser.add_argument('--github_token')
@@ -173,10 +178,10 @@ class ADependencyChecker(
         for dep in self.github_dependencies:
             await self.dep_release_check(dep)
 
-    async def check_sha(self) -> None:
+    async def check_release_sha(self) -> None:
         """Check shas for new releases."""
         for dep in self.github_dependencies:
-            await self.dep_sha_check(dep)
+            await self.dep_release_sha_check(dep)
 
     async def dep_cve_check(
             self,
@@ -191,7 +196,9 @@ class ADependencyChecker(
         if warnings:
             self.warn("cves", warnings)
         else:
-            self.succeed("cves", [f"No CVEs found for: {dep.id}"])
+            self.succeed(
+                "cves",
+                [f"No CVE vulnerabilities found: {dep.id}"])
 
     async def dep_date_check(
             self,
@@ -205,31 +212,12 @@ class ADependencyChecker(
         elif await dep.release_date_mismatch:
             self.error(
                 "release_dates",
-                [f"Date mismatch: {dep.id} "
+                [f"Mismatch: {dep.id} "
                  f"{dep.release_date} != {await dep.release.date}"])
         else:
             self.succeed(
                 "release_dates",
-                [f"Date matches ({dep.release_date}): {dep.id}"])
-
-    async def dep_sha_check(
-            self,
-            dep: "abstract.ADependency") -> None:
-        """Check sha for dependency."""
-        if not await dep.release.sha:
-            self.error(
-                self.active_check,
-                [f"{dep.id} is a GitHub repository with no inferrable "
-                 "release sha"])
-        elif await dep.release_sha_mismatch:
-            self.error(
-                self.active_check,
-                [f"mismatch: {dep.id} "
-                 f"{dep.release_sha} != {await dep.release.sha}"])
-        else:
-            self.succeed(
-                self.active_check,
-                [f"\N{check mark} matches ({dep.release_sha[:10]}): {dep.id}"])
+                [f"Match ({dep.release_date}): {dep.id}"])
 
     async def dep_release_issue_check(
             self,
@@ -296,6 +284,24 @@ class ADependencyChecker(
             self.succeed(
                 "releases",
                 [f"Up-to-date ({dep.github_version_name}): {dep.id}"])
+
+    async def dep_release_sha_check(
+            self,
+            dep: "abstract.ADependency") -> None:
+        """Check sha for dependency."""
+        if not await dep.release.sha:
+            self.error(
+                self.active_check,
+                [f"Unable to generate release SHA: {dep.id}"])
+        elif await dep.release_sha_mismatch:
+            self.error(
+                self.active_check,
+                [f"Mismatch: {dep.id} "
+                 f"{dep.release_sha} != {await dep.release.sha}"])
+        else:
+            self.succeed(
+                self.active_check,
+                [f"Match ({dep.display_sha}): {dep.id}"])
 
     async def release_issues_duplicate_check(self) -> None:
         """Check for duplicate issues for dependencies."""
@@ -369,24 +375,23 @@ class ADependencyChecker(
             self.log.debug(f"Preloaded release date: {dep.id}")
 
     @checker.preload(
-        when=["sha"],
-        unless=["releases", "release_issues", "release_dates"],
-        catches=[ConcurrentError, aiohttp.ClientError])
-    async def preload_release_shas(self) -> None:
-        preloader = inflate(
-            self.github_dependencies,
-            lambda d: (
-                d.release.sha, ), limit=self.sha_preload_limit)
-        async for dep in preloader:
-            self.log.debug(f"Preloaded release sha: {dep.id}")
-
-    @checker.preload(
         when=["release_issues"],
         blocks=["release_dates"],
         catches=[gidgethub.GitHubException])
     async def preload_release_issues(self) -> None:
         await self.issues.missing_labels
         await self.issues.dep_issues
+
+    @checker.preload(
+        when=["release_sha"],
+        catches=[ConcurrentError, aiohttp.ClientError])
+    async def preload_release_sha(self) -> None:
+        preloader = inflate(
+            self.github_dependencies,
+            lambda d: (
+                d.release.sha, ), limit=self.sha_preload_limit)
+        async for dep in preloader:
+            self.log.debug(f"Preloaded release sha: {dep.id}")
 
     @checker.preload(
         when=["releases", "release_issues"],
