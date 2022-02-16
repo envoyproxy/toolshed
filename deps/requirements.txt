@@ -1,6 +1,6 @@
 aio.api.github>=0.0.5
 aio.api.nist
-aio.core>=0.5.6
+aio.core>=0.5.7
 aio.run.checker>=0.3.3
 aio.run.runner>=0.2.5
 aiodocker
