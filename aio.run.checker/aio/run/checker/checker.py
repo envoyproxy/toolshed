@@ -333,7 +333,7 @@ class Checker(runner.Runner):
         if not log:
             return
         for message in success:
-            self.log.success(f"[{name}] {message}")
+            self.log.success(f"[{name}] \N{heavy check mark} {message}")
 
     def warn(self, name: str, warnings: list, log: bool = True) -> None:
         """Record (and log) warnings for a check type."""
