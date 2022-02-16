@@ -5,7 +5,7 @@ import argparse
 import json
 import os
 import pathlib
-import psutil
+import psutil  # type:ignore
 from functools import cached_property
 from typing import Optional, Tuple, Type
 
@@ -98,7 +98,7 @@ class ADependencyChecker(
 
     @cached_property
     def sha_preload_limit(self) -> int:
-        return psutil.cpu_count() * 1.5
+        return int(psutil.cpu_count() * 1.5)
 
     @cached_property
     def github(self) -> github.GithubAPI:
