@@ -422,7 +422,7 @@ async def test_runner_cleanup(patches):
         m_pool.call_args
         == [(), {}])
 
-@pytest.mark.skipif("darwin" in sys.platform, reason="uvloop does not work on macOS")
+
 def test_runner_install_reactor(patches):
     patched = patches(
         "uvloop",
