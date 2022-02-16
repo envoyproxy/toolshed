@@ -13,8 +13,6 @@ from typing import Optional
 
 from frozendict import frozendict
 
-import uvloop  # type:ignore
-
 import coloredlogs  # type:ignore
 import verboselogs  # type:ignore
 
@@ -24,6 +22,9 @@ from aio.core import event
 
 from .decorators import cleansup
 
+# condition needed due to https://github.com/bazelbuild/rules_python/issues/622
+if 'darwin' not in sys.platform:
+    import uvloop  # type:ignore
 
 LOG_LEVELS = (
     ("debug", logging.DEBUG),
@@ -205,7 +206,10 @@ class Runner(event.AReactive):
         self._shutdown_pool()
 
     def install_reactor(self):
-        uvloop.install()
+        if 'darwin' not in sys.platform:
+            uvloop.install()
+        else:
+            self.log.warn("Unsupported platform, Cannot start reactor...")
         self.log.debug("Starting reactor...")
 
     @cleansup

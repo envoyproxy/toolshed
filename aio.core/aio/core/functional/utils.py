@@ -9,9 +9,14 @@ from typing import (
 
 from trycast import trycast  # type:ignore
 
-import orjson as json
-
 from aio.core.functional import exceptions
+
+# condition needed due to https://github.com/bazelbuild/rules_python/issues/622
+import sys
+if 'darwin' not in sys.platform:
+    import orjson as json
+else:
+    import json
 
 
 def maybe_awaitable(result: Any) -> Coroutine:
