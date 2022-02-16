@@ -4,29 +4,13 @@ from typing import List, Optional, Type
 
 import abstracts
 
+from aio.api import nist
+
 from envoy.dependency import check
-
-
-@abstracts.implementer(check.ADependencyCPE)
-class DependencyCPE:
-    pass
 
 
 @abstracts.implementer(check.ADependencyCVE)
 class DependencyCVE:
-
-    @property
-    def cpe_class(self) -> Type[check.ADependencyCPE]:
-        return DependencyCPE
-
-    @property
-    def version_matcher_class(
-            self) -> Type[check.ADependencyCVEVersionMatcher]:
-        return DependencyCVEVersionMatcher
-
-
-@abstracts.implementer(check.ADependencyCVEVersionMatcher)
-class DependencyCVEVersionMatcher:
     pass
 
 
@@ -34,8 +18,8 @@ class DependencyCVEVersionMatcher:
 class DependencyCVEs:
 
     @property
-    def cpe_class(self) -> Type[check.ADependencyCPE]:
-        return DependencyCPE
+    def cpe_class(self) -> Type[nist.ACPE]:
+        return nist.CPE
 
     @property
     def cve_class(self) -> Type[check.ADependencyCVE]:
@@ -44,6 +28,10 @@ class DependencyCVEs:
     @cached_property
     def ignored_cves(self) -> List[str]:
         return super().ignored_cves
+
+    @property
+    def nist_downloader_class(self) -> Type[nist.NISTDownloader]:
+        return nist.NISTDownloader
 
 
 @abstracts.implementer(check.ADependency)

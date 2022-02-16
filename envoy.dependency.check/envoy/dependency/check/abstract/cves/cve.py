@@ -3,13 +3,15 @@
 import textwrap
 from datetime import date
 from functools import cached_property
-from typing import List, Set, Type
+from typing import Set, Type
 
 import jinja2
 
 import abstracts
 
 from envoy.dependency.check import abstract, exceptions, typing
+
+from aio.api import nist
 
 
 CVE_FAIL_TPL = """
@@ -30,35 +32,23 @@ class ADependencyCVE(metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
-            cve_data: "typing.CVEItemDict",
-            tracked_cpes: "typing.TrackedCPEDict") -> None:
+            cve_data: "typing.DependencyCVEItemDict",
+            cpe_class: Type["nist.ACPE"]) -> None:
         self.cve_data = cve_data
-        self.tracked_cpes = tracked_cpes
+        self.cpe_class = cpe_class
 
     def __gt__(self, other) -> bool:
         return self.id > other.id
 
-    @property  # type:ignore
-    @abstracts.interfacemethod
-    def cpe_class(self) -> "abstract.ADependencyCPE":
-        """CPE class.
-
-        Should match class specified in CVEChecker.
-        """
-        raise NotImplementedError
-
     @cached_property
-    def cpes(self) -> Set["abstract.ADependencyCPE"]:
+    def cpes(self) -> Set["nist.ACPE"]:
         """Associated CPEs."""
-        cpe_set: Set["abstract.ADependencyCPE"] = set()
-        self.gather_cpes(self.nodes, cpe_set)
-        return cpe_set
+        return set(self.cpe_class(**cpe) for cpe in self.cve_data["cpes"])
 
     @property
     def description(self) -> str:
         """CVE description."""
-        return self.cve_data[
-            'cve']['description']['description_data'][0]['value']
+        return self.cve_data["description"]
 
     @cached_property
     def fail_template(self) -> jinja2.Template:
@@ -78,63 +68,27 @@ class ADependencyCVE(metaclass=abstracts.Abstraction):
     @property
     def id(self) -> str:
         """CVE id/code."""
-        return self.cve_data['cve']['CVE_data_meta']['ID']
-
-    @property
-    def is_v3(self) -> bool:
-        """Determine whether a CVE has any v3 data."""
-        return "baseMetricV3" in self.cve_data['impact']
+        return self.cve_data["id"]
 
     @property
     def last_modified_date(self) -> date:
         """Date the CVE was last modified."""
-        return self.parse_cve_date(self.cve_data['lastModifiedDate'])
-
-    @property
-    def nodes(self) -> List["typing.CVENodeDict"]:
-        """CVE nodes used for matching versions."""
-        return self.cve_data['configurations']['nodes']
+        return self.parse_cve_date(self.cve_data['last_modified_date'])
 
     @property
     def published_date(self) -> date:
         """Date the CVE was published."""
-        return self.parse_cve_date(self.cve_data['publishedDate'])
+        return self.parse_cve_date(self.cve_data['published_date'])
 
     @property
     def score(self) -> float:
         """CVE score."""
-        return self.cve_data['impact']['baseMetricV3']['cvssV3']['baseScore']
+        return float(self.cve_data["score"])
 
     @property
     def severity(self) -> str:
         """CVE severity."""
-        return self.cve_data[
-            'impact']['baseMetricV3']['cvssV3']['baseSeverity']
-
-    @property  # type:ignore
-    @abstracts.interfacemethod
-    def version_matcher_class(self) -> Type[
-            "abstract.ADependencyCVEVersionMatcher"]:
-        """Version matcher class."""
-        raise NotImplementedError
-
-    def dependency_match(self, dep: "abstract.ADependency") -> bool:
-        """Heuristically match dependency metadata against CVE.
-
-        In general, we allow false positives but want to keep the noise
-        low, to avoid the toil around having to populate IGNORES_CVES.
-        """
-        # ? wildcard_version_match = False
-        # Consider each CPE attached to the CVE for a match against the
-        # dependency CPE.
-        for cve_cpe in self.cpes:
-            if cve_cpe.dependency_match(dep):
-                # Wildcard version matches need additional heuristics unrelated
-                # to CPE to qualify, e.g. last updated date.
-                return (
-                    self.wildcard_version_match(dep)
-                    if cve_cpe.version == '*'
-                    else True)
+        return self.cve_data["severity"]
 
     def format_failure(self, dep: "abstract.ADependency") -> str:
         """Format CVE failure for a given dependency."""
@@ -142,41 +96,8 @@ class ADependencyCVE(metaclass=abstracts.Abstraction):
             cve=self,
             dependency=dep)
 
-    def gather_cpes(
-            self,
-            nodes: List["typing.CVENodeDict"],
-            cpe_set: Set["abstract.ADependencyCPE"]) -> None:
-        """Recursively gather CPE data from CVE nodes."""
-        for node in nodes:
-            for cpe_match in node.get('cpe_match', []):
-                cpe = self.cpe_class.from_string(cpe_match.pop('cpe23Uri'))
-                if self.include_version(cpe_match, cpe):
-                    cpe_set.add(cpe)
-            children = node.get('children', [])
-            if children:
-                self.gather_cpes(children, cpe_set)
-
-    def include_version(
-            self,
-            cpe_match: "typing.CVENodeMatchDict",
-            cpe: "abstract.ADependencyCPE") -> bool:
-        """Determine whether a CPE matches according to installed version of a
-        dependency."""
-        return (
-            str(cpe) in self.tracked_cpes
-            and (
-                self.version_matcher_class(cpe_match)(
-                    self.tracked_cpes[str(cpe)])))
-
     def parse_cve_date(self, date_str: str) -> date:
         if not date_str.endswith('Z'):
             raise exceptions.CVEError(
                 "CVE dates should be UTC and in isoformat")
         return date.fromisoformat(date_str.split('T')[0])
-
-    def wildcard_version_match(self, dep: "abstract.ADependency") -> bool:
-        # If the CVE was published after the dependency was last updated, it's
-        # a potential match.
-        return (
-            date.fromisoformat(dep.release_date)
-            <= self.published_date)
