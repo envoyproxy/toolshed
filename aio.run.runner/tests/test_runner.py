@@ -365,6 +365,18 @@ def test_runner_tempdir(patches, missing):
     assert "tempdir" in run.__dict__
 
 
+@pytest.mark.parametrize("use_uvloop", [None, True, False])
+def test_runner_use_uvloop(patches, use_uvloop):
+    run = DummyRunner()
+    run._use_uvloop = use_uvloop
+    assert (
+        run.use_uvloop
+        is (True
+            if use_uvloop is None
+            else use_uvloop))
+    assert "use_uvloop" not in run.__dict__
+
+
 def test_runner_verbosity(patches):
     run = DummyRunner()
     patched = patches(
@@ -423,19 +435,28 @@ async def test_runner_cleanup(patches):
         == [(), {}])
 
 
-def test_runner_install_reactor(patches):
+@pytest.mark.parametrize("use_uvloop", [True, False])
+@pytest.mark.parametrize("uvloop", [True, False])
+def test_runner_install_reactor(patches, uvloop, use_uvloop):
     patched = patches(
         "uvloop",
+        ("Runner.use_uvloop",
+         dict(new_callable=PropertyMock)),
         "Runner.log",
         prefix="aio.run.runner.runner")
     run = runner.Runner()
 
-    with patched as (m_uv, m_log):
+    with patched as (m_uv, m_use, m_log):
+        m_uv.__bool__.return_value = uvloop
+        m_use.return_value = use_uvloop
         assert not run.install_reactor()
 
-    assert (
-        m_uv.install.call_args
-        == [(), {}])
+    if uvloop and use_uvloop:
+        assert (
+            m_uv.install.call_args
+            == [(), {}])
+    else:
+        assert not m_uv.install.called
     assert (
         m_log.debug.call_args
         == [("Starting reactor...", ), {}])

@@ -98,13 +98,13 @@ pypi: https://pypi.org/project/aio.run.checker
 
 #### [aio.run.runner](aio.run.runner)
 
-version: 0.2.6.dev0
+version: 0.2.6
 
 pypi: https://pypi.org/project/aio.run.runner
 
 ##### requirements:
 
-- [aio.core](https://pypi.org/project/aio.core) >=0.5.4
+- [aio.core](https://pypi.org/project/aio.core) >=0.5.8
 - [coloredlogs](https://pypi.org/project/coloredlogs)
 - [frozendict](https://pypi.org/project/frozendict)
 - [uvloop](https://pypi.org/project/uvloop)
