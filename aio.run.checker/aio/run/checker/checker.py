@@ -312,7 +312,6 @@ class Checker(runner.Runner):
         try:
             self.log.debug("Starting checker...")
             result = self.loop.run_until_complete(self.run())
-            print("Checker finished")
             return result
         except RuntimeError:
             # Loop was forcibly stopped, most likely due to unhandled
