@@ -27,7 +27,12 @@ class ADependencyChecker(
         metaclass=abstracts.Abstraction):
     """Dependency checker."""
 
-    checks = ("cves", "release_dates", "release_issues", "releases", "sha")
+    checks = (
+        "cves",
+        "release_dates",
+        "release_issues",
+        "release_sha",
+        "releases")
 
     @property
     @abc.abstractmethod
@@ -97,10 +102,6 @@ class ADependencyChecker(
         return disabled
 
     @cached_property
-    def sha_preload_limit(self) -> int:
-        return int(psutil.cpu_count() * 1.5)
-
-    @cached_property
     def github(self) -> github.GithubAPI:
         """Github API."""
         return github.GithubAPI(
@@ -144,6 +145,10 @@ class ADependencyChecker(
         """HTTP client session."""
         return aiohttp.ClientSession()
 
+    @cached_property
+    def sha_preload_limit(self) -> int:
+        return int(psutil.cpu_count() * 1.5)
+
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
         parser.add_argument('--github_token')
@@ -173,10 +178,10 @@ class ADependencyChecker(
         for dep in self.github_dependencies:
             await self.dep_release_check(dep)
 
-    async def check_sha(self) -> None:
+    async def check_release_sha(self) -> None:
         """Check shas for new releases."""
         for dep in self.github_dependencies:
-            await self.dep_sha_check(dep)
+            await self.dep_release_sha_check(dep)
 
     async def dep_cve_check(
             self,
@@ -189,9 +194,13 @@ class ADependencyChecker(
             warnings.append(
                 f'{failing_cve.format_failure(dep)}')
         if warnings:
-            self.warn("cves", warnings)
+            self.warn(
+                self.active_check,
+                warnings)
         else:
-            self.succeed("cves", [f"No CVEs found for: {dep.id}"])
+            self.succeed(
+                self.active_check,
+                [f"No CVE vulnerabilities found: {dep.id}"])
 
     async def dep_date_check(
             self,
@@ -199,37 +208,18 @@ class ADependencyChecker(
         """Check dates for dependency."""
         if not await dep.release.date:
             self.error(
-                "release_dates",
+                self.active_check,
                 [f"{dep.id} is a GitHub repository with no inferrable "
                  "release date"])
         elif await dep.release_date_mismatch:
             self.error(
-                "release_dates",
-                [f"Date mismatch: {dep.id} "
+                self.active_check,
+                [f"Mismatch: {dep.id} "
                  f"{dep.release_date} != {await dep.release.date}"])
         else:
             self.succeed(
-                "release_dates",
-                [f"Date matches ({dep.release_date}): {dep.id}"])
-
-    async def dep_sha_check(
-            self,
-            dep: "abstract.ADependency") -> None:
-        """Check sha for dependency."""
-        if not await dep.release.sha:
-            self.error(
                 self.active_check,
-                [f"{dep.id} is a GitHub repository with no inferrable "
-                 "release sha"])
-        elif await dep.release_sha_mismatch:
-            self.error(
-                self.active_check,
-                [f"mismatch: {dep.id} "
-                 f"{dep.release_sha} != {await dep.release.sha}"])
-        else:
-            self.succeed(
-                self.active_check,
-                [f"\N{check mark} matches ({dep.release_sha[:10]}): {dep.id}"])
+                [f"Match ({dep.release_date}): {dep.id}"])
 
     async def dep_release_issue_check(
             self,
@@ -242,32 +232,32 @@ class ADependencyChecker(
                 # There is an open issue, but the dep is already
                 # up-to-date.
                 self.warn(
-                    "release_issues",
+                    self.active_check,
                     [f"Stale issue: {dep.id} #{issue.number}"])
                 if self.fix:
                     await self._dep_release_issue_close_stale(issue, dep)
             else:
                 # No issue required
                 self.succeed(
-                    "release_issues",
+                    self.active_check,
                     [f"No issue required: {dep.id}"])
             return
         if issue:
             if issue.version == (await dep.newer_release).version:
                 # Required issue exists
                 self.succeed(
-                    "release_issues",
+                    self.active_check,
                     [f"Issue exists (#{issue.number}): {dep.id}"])
                 return
             # Existing issue is showing incorrect version
             self.warn(
-                "release_issues",
+                self.active_check,
                 [f"Out-of-date issue (#{issue.number}): {dep.id} "
                  f"({issue.version} -> {newer_release.version})"])
         else:
             # Issue is required to be added
             self.warn(
-                "release_issues",
+                self.active_check,
                 [f"Missing issue: {dep.id} ({newer_release.version})"])
         if self.fix:
             await self._dep_release_issue_create(issue, dep)
@@ -279,7 +269,7 @@ class ADependencyChecker(
         newer_release = await dep.newer_release
         if newer_release:
             self.warn(
-                "releases",
+                self.active_check,
                 [f"Newer release ({newer_release.tag_name}): {dep.id}\n"
                  f"{dep.release_date} "
                  f"{dep.github_version_name}\n"
@@ -287,15 +277,33 @@ class ADependencyChecker(
                  f"{newer_release.tag_name} "])
         elif await dep.has_recent_commits:
             self.warn(
-                "releases",
+                self.active_check,
                 [f"Recent commits ({await dep.recent_commits}): {dep.id}\n"
                  f"There have been {await dep.recent_commits} commits since "
                  f"{dep.github_version_name} landed on "
                  f"{dep.release_date}"])
         else:
             self.succeed(
-                "releases",
+                self.active_check,
                 [f"Up-to-date ({dep.github_version_name}): {dep.id}"])
+
+    async def dep_release_sha_check(
+            self,
+            dep: "abstract.ADependency") -> None:
+        """Check sha for dependency."""
+        if not await dep.release.sha:
+            self.error(
+                self.active_check,
+                [f"Unable to generate release SHA: {dep.id}"])
+        elif await dep.release_sha_mismatch:
+            self.error(
+                self.active_check,
+                [f"Mismatch: {dep.id} "
+                 f"{dep.release_sha} != {await dep.release.sha}"])
+        else:
+            self.succeed(
+                self.active_check,
+                [f"Match ({dep.display_sha}): {dep.id}"])
 
     async def release_issues_duplicate_check(self) -> None:
         """Check for duplicate issues for dependencies."""
@@ -303,14 +311,14 @@ class ADependencyChecker(
         async for issue in self.issues.duplicate_issues:
             duplicates = True
             self.warn(
-                "release_issues",
+                self.active_check,
                 [f"Duplicate issue for dependency (#{issue.number}): "
                  f"{issue.dep}"])
             if self.fix:
                 await self._release_issue_close_duplicate(issue)
         if not duplicates:
             self.succeed(
-                "release_issues",
+                self.active_check,
                 ["No duplicate issues found."])
 
     async def release_issues_labels_check(self) -> None:
@@ -320,11 +328,11 @@ class ADependencyChecker(
             missing = True
             # TODO: make this a warning if `fix` and fix it
             self.error(
-                "release_issues",
+                self.active_check,
                 [f"Missing label: {label}"])
         if not missing:
             self.succeed(
-                "release_issues",
+                self.active_check,
                 [f"All ({len(self.issues.labels)}) "
                  "required labels are available."])
 
@@ -336,13 +344,13 @@ class ADependencyChecker(
             if issue.dep not in self.dep_ids:
                 closed = True
                 self.warn(
-                    "release_issues",
+                    self.active_check,
                     [f"Missing dependency (#{issue.number}): {issue.dep}"])
                 if self.fix:
                     await self._release_issue_close_missing_dep(issue)
         if not closed:
             self.succeed(
-                "release_issues",
+                self.active_check,
                 [f"All ({len(issues)}) issues have current dependencies."])
 
     async def on_checks_complete(self) -> int:
@@ -369,24 +377,23 @@ class ADependencyChecker(
             self.log.debug(f"Preloaded release date: {dep.id}")
 
     @checker.preload(
-        when=["sha"],
-        unless=["releases", "release_issues", "release_dates"],
-        catches=[ConcurrentError, aiohttp.ClientError])
-    async def preload_release_shas(self) -> None:
-        preloader = inflate(
-            self.github_dependencies,
-            lambda d: (
-                d.release.sha, ), limit=self.sha_preload_limit)
-        async for dep in preloader:
-            self.log.debug(f"Preloaded release sha: {dep.id}")
-
-    @checker.preload(
         when=["release_issues"],
         blocks=["release_dates"],
         catches=[gidgethub.GitHubException])
     async def preload_release_issues(self) -> None:
         await self.issues.missing_labels
         await self.issues.dep_issues
+
+    @checker.preload(
+        when=["release_sha"],
+        catches=[ConcurrentError, aiohttp.ClientError])
+    async def preload_release_sha(self) -> None:
+        preloader = inflate(
+            self.github_dependencies,
+            lambda d: (
+                d.release.sha, ), limit=self.sha_preload_limit)
+        async for dep in preloader:
+            self.log.debug(f"Preloaded release sha: {dep.id}")
 
     @checker.preload(
         when=["releases", "release_issues"],
@@ -416,7 +423,7 @@ class ADependencyChecker(
             dep: "abstract.ADependency") -> None:
         if await self.issues.missing_labels:
             self.error(
-                "release_issues",
+                self.active_check,
                 [f"Unable to create issue for {dep.id}: missing labels"])
             return
         new_issue = await self.issues.create(dep)

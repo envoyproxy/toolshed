@@ -10,12 +10,36 @@ import abstracts
 from aio.api import github
 from aio.core import event
 
+from envoy.dependency import check
 from envoy.dependency.check import ADependencyGithubRelease
 
 
 @abstracts.implementer(ADependencyGithubRelease)
 class DummyDependencyGithubRelease:
     pass
+
+
+def test_hash_file_data(patches):
+    patched = patches(
+        "hashlib",
+        "str",
+        prefix="envoy.dependency.check.abstract.release")
+    data = MagicMock()
+
+    with patched as (m_hashlib, m_str):
+        assert (
+            DummyDependencyGithubRelease.hash_file_data(data)
+            == m_str.return_value)
+
+    assert (
+        m_str.call_args
+        == [(m_hashlib.sha256.return_value.hexdigest.return_value, ), {}])
+    assert (
+        m_hashlib.sha256.call_args
+        == [(), {}])
+    assert (
+        m_hashlib.sha256.return_value.update.call_args
+        == [(data, ), {}])
 
 
 @pytest.mark.parametrize("asset_url", [None, "", "ASSET_URL"])
@@ -42,6 +66,10 @@ def test_release_constructor(asset_url, loop, pool, gh_release):
     assert release._pool == pool
     assert "tag_name" not in release.__dict__
     assert isinstance(release, event.IReactive)
+    assert (
+        release.min_data_size_to_hash_in_proc
+        == check.abstract.release.MIN_DATA_SIZE_TO_HASH_IN_PROC)
+    assert "min_data_size_to_hash_in_proc" not in release.__dict__
 
 
 @pytest.mark.parametrize(
@@ -231,9 +259,67 @@ def test_release_session(patches):
         prefix="envoy.dependency.check.abstract.release")
 
     with patched as (m_github, ):
-        assert release.session == m_github.return_value.api._session
+        assert release.session == m_github.return_value.session
 
     assert "session" not in release.__dict__
+
+
+@pytest.mark.parametrize("asset_url", [True, False])
+async def test_release_sha(patches, asset_url):
+    kwargs = (
+        dict(asset_url=MagicMock())
+        if asset_url
+        else {})
+    release = DummyDependencyGithubRelease("REPO", "VERSION", **kwargs)
+    patched = patches(
+        "logger",
+        ("ADependencyGithubRelease.session",
+         dict(new_callable=PropertyMock)),
+        "ADependencyGithubRelease._hash_file_data",
+        prefix="envoy.dependency.check.abstract.release")
+    result = None
+    e = None
+
+    with patched as (m_log, m_session, m_hash):
+        get = AsyncMock()
+        m_session.return_value.get = get
+        if not asset_url:
+            with pytest.raises(check.exceptions.NoReleaseAssetError) as e:
+                await release.sha
+        else:
+            result = await release.sha
+
+    if not asset_url:
+        assert not get.called
+        assert not m_log.called
+        assert not m_hash.called
+        assert (
+            e.value.args[0]
+            == ("Cannot check sha for DummyDependencyGithubRelease"
+                "with no `asset_url`"))
+        return
+    assert (
+        result
+        == m_hash.return_value)
+    assert (
+        get.call_args
+        == [(kwargs["asset_url"], ), {}])
+    assert (
+        m_log.debug.call_args
+        == [(f"SHA download: {kwargs['asset_url']}", ),
+            {}])
+    assert (
+        get.return_value.read.call_args
+        == [(), {}])
+    assert (
+        m_hash.call_args
+        == [(get.return_value.read.return_value, ), {}])
+    assert (
+        getattr(
+            release,
+            ADependencyGithubRelease.sha.cache_name)[
+                "sha"]
+        == result)
 
 
 @pytest.mark.parametrize("is_sha", [True, False])
@@ -374,3 +460,90 @@ def test_release_version(patches):
         m_version.parse.call_args
         == [(m_tagname.return_value, ), {}])
     assert "version" in release.__dict__
+
+
+@pytest.mark.parametrize("min_len", range(0, 5))
+@pytest.mark.parametrize("data_len", range(0, 5))
+def test_release_should_hash_in_proc(patches, min_len, data_len):
+    release = DummyDependencyGithubRelease("REPO", "VERSION")
+    patched = patches(
+        "len",
+        ("ADependencyGithubRelease.min_data_size_to_hash_in_proc",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.release")
+    data = MagicMock()
+
+    with patched as (m_len, m_min):
+        m_len.return_value = data_len
+        m_min.return_value = min_len
+        assert (
+            release.should_hash_in_proc(data)
+            == (data_len > min_len))
+
+    assert (
+        m_len.call_args
+        == [(data, ), {}])
+
+
+@pytest.mark.parametrize("in_proc", [True, False])
+async def test_release__hash_file_data(patches, in_proc):
+    asset_url = MagicMock()
+    release = DummyDependencyGithubRelease(
+        "REPO",
+        "VERSION",
+        asset_url=asset_url)
+    patched = patches(
+        "logger",
+        "time",
+        ("ADependencyGithubRelease.loop",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyGithubRelease.pool",
+         dict(new_callable=PropertyMock)),
+        "ADependencyGithubRelease.hash_file_data",
+        "ADependencyGithubRelease.should_hash_in_proc",
+        prefix="envoy.dependency.check.abstract.release")
+    data = MagicMock()
+
+    class Time:
+        called = False
+
+        def perf_counter(self):
+            if self.called:
+                return .0777777
+            self.called = True
+            return .02323232323
+
+    time = Time()
+
+    with patched as (m_log, m_time, m_loop, m_pool, m_hash, m_in_proc):
+        executor = AsyncMock()
+        m_loop.return_value.run_in_executor = executor
+        m_in_proc.return_value = in_proc
+        m_time.perf_counter.side_effect = time.perf_counter
+        assert (
+            await release._hash_file_data(data)
+            == (executor.return_value
+                if in_proc
+                else m_hash.return_value))
+
+    assert (
+        m_in_proc.call_args
+        == [(data, ), {}])
+    assert (
+        m_time.perf_counter.call_args_list
+        == [[(), {}], [(), {}]])
+    if in_proc:
+        fork = " (fork: True)"
+        assert not m_hash.called
+        assert (
+            executor.call_args
+            == [(m_pool.return_value, m_hash, data), {}])
+    else:
+        fork = ""
+        assert not executor.called
+        assert (
+            m_hash.call_args
+            == [(data, ), {}])
+    assert (
+        m_log.debug.call_args
+        == [(f"SHA parsed in 0.055s{fork}: {asset_url}", ), {}])

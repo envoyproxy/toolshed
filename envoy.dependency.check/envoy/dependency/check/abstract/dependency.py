@@ -40,7 +40,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         return self.id < other.id
 
     def __str__(self):
-        return f"{self.id}@{self.version}"
+        return f"{self.id}@{self.display_version}"
 
     @async_property(cache=True)
     async def commits_since_current(self) -> int:
@@ -56,6 +56,20 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             str(self.metadata["cpe"])
             if self.metadata.get("cpe", "N/A") != "N/A"
             else None)
+
+    @cached_property
+    def display_sha(self) -> str:
+        """Truncated release sha of this dependency, may/not be the same as the
+        `display_version`."""
+        return self.release_sha[:10]
+
+    @cached_property
+    def display_version(self) -> str:
+        """Version string of this dependency, truncated if necessary."""
+        return (
+            self.version[:10]
+            if not self.release.tagged
+            else self.version)
 
     @property
     def github_filetypes(self) -> Set[str]:

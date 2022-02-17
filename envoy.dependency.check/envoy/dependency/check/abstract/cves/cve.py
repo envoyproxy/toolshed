@@ -15,7 +15,7 @@ from aio.api import nist
 
 
 CVE_FAIL_TPL = """
-  CVE ID: {{cve.id}} ({{dependency.id}}@{{dependency.version}})
+  {{cve.id}} ({{dependency.id}}@{{dependency.display_version}})
   CVSS v3 score: {{cve.score}}
   Severity: {{cve.severity}}
   Published date: {{cve.published_date}}

@@ -11,6 +11,7 @@ pytooling_library(
         "//deps:jinja2",
         "//deps:aiohttp",
         "//deps:packaging",
+        "//deps:psutil",
     ],
     sources=[
         "abstract/__init__.py",

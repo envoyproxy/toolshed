@@ -70,7 +70,7 @@ def test_dependency_dunder_lt(id, other_id):
 def test_dependency_dunder_str(patches):
     dependency = DummyDependency2("ID", "METADATA", "GITHUB")
     patched = patches(
-        ("ADependency.version",
+        ("ADependency.display_version",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.dependency")
 
@@ -121,6 +121,51 @@ def test_dependency_cpe(metadata):
         else None)
     assert dependency.cpe == expected
     assert "cpe" in dependency.__dict__
+
+
+def test_dependency_display_sha(patches):
+    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    patched = patches(
+        ("ADependency.release_sha",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.dependency")
+
+    with patched as (m_sha, ):
+        assert (
+            dependency.display_sha
+            == m_sha.return_value.__getitem__.return_value)
+
+    assert (
+        m_sha.return_value.__getitem__.call_args
+        == [(slice(None, 10), )])
+    assert "display_sha" in dependency.__dict__
+
+
+@pytest.mark.parametrize("tagged", [True, False])
+def test_dependency_display_version(patches, tagged):
+    dependency = DummyDependency2("ID", "METADATA", "GITHUB")
+    patched = patches(
+        ("ADependency.release",
+         dict(new_callable=PropertyMock)),
+        ("ADependency.version",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.dependency")
+
+    with patched as (m_release, m_version):
+        m_release.return_value.tagged = tagged
+        assert (
+            dependency.display_version
+            == (m_version.return_value.__getitem__.return_value
+                if not tagged
+                else m_version.return_value))
+
+    if tagged:
+        assert not m_version.return_value.__getitem__.called
+    else:
+        assert (
+            m_version.return_value.__getitem__.call_args
+            == [(slice(None, 10), )])
+    assert "display_version" in dependency.__dict__
 
 
 @pytest.mark.parametrize(
