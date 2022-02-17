@@ -17,10 +17,10 @@ import coloredlogs  # type:ignore
 
 # condition needed due to https://github.com/bazelbuild/rules_python/issues/622
 try:
-    import uvloop  # type:ignore
+    import uvloop
 except ImportError:
-    logging.warn("Unsupported platform, Cannot import uvloop...")
     uvloop = None  # type:ignore
+    logging.warn("Unsupported platform, Cannot import uvloop...")
 
 import verboselogs  # type:ignore
 
@@ -69,6 +69,7 @@ class RootLogFilter(BaseLogFilter):
 
 @abstracts.implementer(event.IReactive)
 class Runner(event.AReactive):
+    _use_uvloop: Optional[bool] = None
 
     def __init__(self, *args):
         self._args = args
@@ -185,6 +186,13 @@ class Runner(event.AReactive):
                 "decorated with `@runner.cleansup`")
         return tempfile.TemporaryDirectory()
 
+    @property
+    def use_uvloop(self) -> bool:
+        return (
+            self._use_uvloop
+            if self._use_uvloop is not None
+            else True)
+
     @cached_property
     def verbosity(self) -> int:
         """Log level parsed from args."""
@@ -210,9 +218,9 @@ class Runner(event.AReactive):
         self._shutdown_pool()
 
     def install_reactor(self):
-        if uvloop:
+        if uvloop and self.use_uvloop:
             uvloop.install()
-            self.log.debug("Starting reactor...")
+        self.log.debug("Starting reactor...")
 
     @cleansup
     async def run(self) -> Optional[int]:
