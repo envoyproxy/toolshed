@@ -20,7 +20,7 @@ try:
     import uvloop  # type:ignore
 except ImportError:
     logging.warn("Unsupported platform, Cannot import uvloop...")
-    uvloop = None
+    uvloop = None  # type:ignore
 
 import verboselogs  # type:ignore
 
@@ -212,9 +212,7 @@ class Runner(event.AReactive):
     def install_reactor(self):
         if uvloop:
             uvloop.install()
-        else:
-            self.log.warn("Unsupported platform, Cannot start reactor...")
-        self.log.debug("Starting reactor...")
+            self.log.debug("Starting reactor...")
 
     @cleansup
     async def run(self) -> Optional[int]:

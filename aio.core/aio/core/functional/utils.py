@@ -11,7 +11,7 @@ from trycast import trycast  # type:ignore
 
 # condition needed due to https://github.com/bazelbuild/rules_python/issues/622
 try:
-    import orjson as json  # type:ignore
+    import orjson as json
 except ImportError:
     import json  # type:ignore
 
