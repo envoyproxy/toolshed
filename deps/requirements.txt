@@ -30,6 +30,7 @@ orjson
 mypy
 mypy-abstracts
 packaging
+psutil
 pygments>=2.11.1
 pytest-patches
 pytest-asyncio>=0.17.0
@@ -46,6 +47,7 @@ sphinxcontrib-serializinghtml
 sphinxext-rediraffe
 trycast
 types-orjson
+types-psutil
 types-setuptools
 uvloop
 verboselogs

@@ -5,7 +5,7 @@ import argparse
 import json
 import os
 import pathlib
-import psutil  # type:ignore
+import psutil
 from functools import cached_property
 from typing import Optional, Tuple, Type
 
