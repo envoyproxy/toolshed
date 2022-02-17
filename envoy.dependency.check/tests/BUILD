@@ -9,14 +9,5 @@ pytooling_tests(
         "//deps:envoy.base.utils",
         "//deps:aiohttp",
         "//deps:packaging",
-        ":data",
-    ],
-)
-
-resources(
-    name="data",
-    sources=[
-        "**/*.json",
-        "**/*.yaml",
     ],
 )
