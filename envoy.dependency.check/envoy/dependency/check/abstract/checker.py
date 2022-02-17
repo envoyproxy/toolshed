@@ -5,6 +5,7 @@ import argparse
 import json
 import os
 import pathlib
+import psutil
 from functools import cached_property
 from typing import Optional, Tuple, Type
 
@@ -94,6 +95,10 @@ class ADependencyChecker(
             disabled["release_issues"] = "No Github access token supplied"
             disabled["releases"] = "No Github access token supplied"
         return disabled
+
+    @cached_property
+    def sha_preload_limit(self) -> int:
+        return int(psutil.cpu_count() * 1.5)
 
     @cached_property
     def github(self) -> github.GithubAPI:
@@ -371,7 +376,7 @@ class ADependencyChecker(
         preloader = inflate(
             self.github_dependencies,
             lambda d: (
-                d.release.sha, ), limit=6)
+                d.release.sha, ), limit=self.sha_preload_limit)
         async for dep in preloader:
             self.log.debug(f"Preloaded release sha: {dep.id}")
 
