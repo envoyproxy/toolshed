@@ -85,13 +85,13 @@ pypi: https://pypi.org/project/aio.core
 
 #### [aio.run.checker](aio.run.checker)
 
-version: 0.3.5.dev0
+version: 0.3.5
 
 pypi: https://pypi.org/project/aio.run.checker
 
 ##### requirements:
 
-- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.5
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.6
 
 ---
 
