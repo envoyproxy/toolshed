@@ -14,11 +14,14 @@ from typing import Optional
 from frozendict import frozendict
 
 import coloredlogs  # type:ignore
+
 # condition needed due to https://github.com/bazelbuild/rules_python/issues/622
 try:
     import uvloop  # type:ignore
 except ImportError:
     logging.warn("Unsupported platform, Cannot import uvloop...")
+    uvloop = None
+
 import verboselogs  # type:ignore
 
 import abstracts
@@ -207,9 +210,9 @@ class Runner(event.AReactive):
         self._shutdown_pool()
 
     def install_reactor(self):
-        try:
+        if uvloop:
             uvloop.install()
-        except NameError:
+        else:
             self.log.warn("Unsupported platform, Cannot start reactor...")
         self.log.debug("Starting reactor...")
 

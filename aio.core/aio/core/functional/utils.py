@@ -11,9 +11,9 @@ from trycast import trycast  # type:ignore
 
 # condition needed due to https://github.com/bazelbuild/rules_python/issues/622
 try:
-    import orjson as json
+    import orjson as json  # type:ignore
 except ImportError:
-    import json
+    import json  # type:ignore
 
 from aio.core.functional import exceptions
 
