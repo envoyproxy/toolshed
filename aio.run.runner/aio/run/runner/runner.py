@@ -13,9 +13,15 @@ from typing import Optional
 
 from frozendict import frozendict
 
-import uvloop  # type:ignore
-
 import coloredlogs  # type:ignore
+
+# condition needed due to https://github.com/bazelbuild/rules_python/issues/622
+try:
+    import uvloop  # type:ignore
+except ImportError:
+    logging.warn("Unsupported platform, Cannot import uvloop...")
+    uvloop = None  # type:ignore
+
 import verboselogs  # type:ignore
 
 import abstracts
@@ -23,7 +29,6 @@ import abstracts
 from aio.core import event
 
 from .decorators import cleansup
-
 
 LOG_LEVELS = (
     ("debug", logging.DEBUG),
@@ -205,8 +210,9 @@ class Runner(event.AReactive):
         self._shutdown_pool()
 
     def install_reactor(self):
-        uvloop.install()
-        self.log.debug("Starting reactor...")
+        if uvloop:
+            uvloop.install()
+            self.log.debug("Starting reactor...")
 
     @cleansup
     async def run(self) -> Optional[int]:

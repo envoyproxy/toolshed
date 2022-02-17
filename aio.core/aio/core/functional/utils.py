@@ -9,7 +9,11 @@ from typing import (
 
 from trycast import trycast  # type:ignore
 
-import orjson as json
+# condition needed due to https://github.com/bazelbuild/rules_python/issues/622
+try:
+    import orjson as json
+except ImportError:
+    import json  # type:ignore
 
 from aio.core.functional import exceptions
 
