@@ -6,6 +6,48 @@ import pytest
 from envoy.code import check
 
 
+def test_check_flake8_files(patches):
+    patched = patches(
+        "Flake8App",
+        prefix="envoy.code.check.abstract.flake8")
+    path = MagicMock()
+    files = MagicMock()
+    args = MagicMock()
+
+    with patched as (m_app, ):
+        assert (
+            check.AFlake8Check.check_flake8_files(path, files, args)
+            == m_app.return_value.run_checks.return_value)
+
+    assert (
+        m_app.call_args
+        == [(path, args), {}])
+    assert (
+        m_app.return_value.run_checks.call_args
+        == [(files, ), {}])
+
+
+def test_filter_flake8_files(patches):
+    patched = patches(
+        "Flake8App",
+        prefix="envoy.code.check.abstract.flake8")
+    path = MagicMock()
+    files = MagicMock()
+    args = MagicMock()
+
+    with patched as (m_app, ):
+        assert (
+            check.AFlake8Check.filter_flake8_files(path, files, args)
+            == m_app.return_value.include_files.return_value)
+
+    assert (
+        m_app.call_args
+        == [(path, args), {}])
+    assert (
+        m_app.return_value.include_files.call_args
+        == [(files, ), {}])
+
+
 def test_flake8_constructor():
     flake8 = check.AFlake8Check("DIRECTORY")
     assert flake8.directory == "DIRECTORY"
@@ -19,57 +61,29 @@ async def test_flake8_checker_files(patches, files):
     directory = MagicMock()
     flake8 = check.AFlake8Check(directory)
     patched = patches(
-        "set",
-        ("AFlake8Check.flake8",
+        ("AFlake8Check.flake8_args",
          dict(new_callable=PropertyMock)),
+        "AFlake8Check.execute",
+        "AFlake8Check.filter_flake8_files",
         prefix="envoy.code.check.abstract.flake8")
-    files = AsyncMock(return_value=range(0, 20))
+    files = AsyncMock()
     directory.files = files()
 
-    with patched as (m_set, m_flake8):
-        m_flake8.return_value.include_file.side_effect = (
-            lambda x: x % 2)
+    with patched as (m_args, m_execute, m_filter):
         assert (
             await flake8.checker_files
-            == m_set.return_value)
-        iterator = m_set.call_args[0][0]
-        called = list(iterator)
+            == m_execute.return_value)
 
     assert (
-        called
-        == [x for x in range(0, 20)
-            if x % 2])
-    assert (
-        m_flake8.return_value.include_file.call_args_list
-        == [[(x, ), {}] for x in range(0, 20)])
+        m_execute.call_args
+        == [(m_filter,
+             directory.absolute_path,
+             files.return_value,
+             m_args.return_value), {}])
     assert not (
         hasattr(
             flake8,
             check.AFlake8Check.checker_files.cache_name))
-
-
-def test_flake8_flake8(patches):
-    directory = MagicMock()
-    flake8 = check.AFlake8Check(directory)
-    patched = patches(
-        "str",
-        "Flake8App",
-        ("AFlake8Check.flake8_args",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.code.check.abstract.flake8")
-
-    with patched as (m_str, m_app, m_args):
-        assert (
-            flake8.flake8
-            == m_app.return_value)
-
-    assert (
-        m_app.call_args
-        == [(m_str.return_value, m_args.return_value), {}])
-    assert (
-        m_str.call_args
-        == [(directory.path, ), {}])
-    assert "flake8" in flake8.__dict__
 
 
 def test_flake8_flake8_args(patches):
@@ -101,24 +115,35 @@ def test_flake8_flake8_config_path():
 
 
 async def test_flake8_flake8_errors(patches):
-    flake8 = check.AFlake8Check("DIRECTORY")
+    directory = MagicMock()
+    flake8 = check.AFlake8Check(directory)
     patched = patches(
         "threaded",
         ("AFlake8Check.absolute_paths",
          dict(new_callable=PropertyMock)),
-        ("AFlake8Check.flake8",
+        ("AFlake8Check.flake8_args",
          dict(new_callable=PropertyMock)),
         ("AFlake8Check._errors",
          dict(new_callable=PropertyMock)),
+        "AFlake8Check.check_flake8_files",
         "AFlake8Check._handle_error",
         prefix="envoy.code.check.abstract.flake8")
 
-    with patched as (m_threaded, m_abs, m_app, m_errs, m_handle):
+    with patched as (m_threaded, m_abs, m_args, m_errs, m_checks, m_handle):
         files = AsyncMock()
         m_abs.side_effect = files
         assert (
             await flake8.errors
             == m_errs.return_value)
+
+    assert (
+        m_threaded.call_args
+        == [(m_checks,
+             directory.absolute_path,
+             files.return_value,
+             m_args.return_value),
+            dict(stdout=m_handle)])
+
     assert not (
         hasattr(
             flake8,

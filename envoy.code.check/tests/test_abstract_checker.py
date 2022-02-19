@@ -126,21 +126,22 @@ def test_abstract_checker_tools(patches, tool):
     patched = patches(
         ("ACodeChecker.directory",
          dict(new_callable=PropertyMock)),
-        ("ACodeChecker.fix",
+        ("ACodeChecker.check_kwargs",
          dict(new_callable=PropertyMock)),
         (f"ACodeChecker.{tool}_class",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
+    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
 
-    with patched as (m_dir, m_fix, m_tool):
+    with patched as (m_dir, m_kwargs, m_tool):
+        m_kwargs.return_value = kwargs
         assert (
             getattr(checker, tool)
             == m_tool.return_value.return_value)
 
     assert (
         m_tool.return_value.call_args
-        == [(m_dir.return_value, ),
-            dict(fix=m_fix.return_value)])
+        == [(m_dir.return_value, ), kwargs])
     assert tool in checker.__dict__
 
 
@@ -196,6 +197,32 @@ def test_abstract_checker_changed_since(patches):
             == m_args.return_value.since)
 
     assert "changed_since" not in checker.__dict__
+
+
+def test_abstract_checker_check_kwargs(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        "dict",
+        ("ACodeChecker.fix",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.loop",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.pool",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+
+    with patched as (m_dict, m_fix, m_loop, m_pool):
+        assert (
+            checker.check_kwargs
+            == m_dict.return_value)
+
+    assert (
+        m_dict.call_args
+        == [(),
+            dict(fix=m_fix.return_value,
+                 loop=m_loop.return_value,
+                 pool=m_pool.return_value)])
+    assert "check_kwargs" not in checker.__dict__
 
 
 def test_abstract_checker_directory(patches):

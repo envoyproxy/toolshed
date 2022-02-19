@@ -5,7 +5,7 @@ import argparse
 import pathlib
 import re
 from functools import cached_property
-from typing import Dict, Optional, Pattern, Tuple, Type
+from typing import Dict, Mapping, Optional, Pattern, Tuple, Type
 
 import abstracts
 
@@ -46,6 +46,13 @@ class ACodeChecker(
     def changed_since(self) -> Optional[str]:
         return self.args.since
 
+    @property
+    def check_kwargs(self) -> Mapping:
+        return dict(
+            fix=self.fix,
+            loop=self.loop,
+            pool=self.pool)
+
     @cached_property
     def directory(self) -> "_directory.ADirectory":
         """Greppable directory - optionally in a git repo, depending on whether
@@ -76,7 +83,7 @@ class ACodeChecker(
     @cached_property
     def flake8(self) -> "abstract.AFlake8Check":
         """Flake8 checker."""
-        return self.flake8_class(self.directory, fix=self.fix)
+        return self.flake8_class(self.directory, **self.check_kwargs)
 
     @property  # type:ignore
     @abstracts.interfacemethod
@@ -109,7 +116,7 @@ class ACodeChecker(
     @cached_property
     def shellcheck(self) -> "abstract.AShellcheckCheck":
         """Shellcheck checker."""
-        return self.shellcheck_class(self.directory, fix=self.fix)
+        return self.shellcheck_class(self.directory, **self.check_kwargs)
 
     @property  # type:ignore
     @abstracts.interfacemethod
@@ -119,7 +126,7 @@ class ACodeChecker(
     @cached_property
     def yapf(self) -> "abstract.AYapfCheck":
         """YAPF checker."""
-        return self.yapf_class(self.directory, fix=self.fix)
+        return self.yapf_class(self.directory, **self.check_kwargs)
 
     @property  # type:ignore
     @abstracts.interfacemethod
