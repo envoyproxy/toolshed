@@ -25,7 +25,6 @@ async def test_flake8_checker_files(patches, files):
         prefix="envoy.code.check.abstract.flake8")
     files = AsyncMock(return_value=range(0, 20))
     directory.files = files()
-    directory.absolute_path.side_effect = (lambda x: x)
 
     with patched as (m_set, m_flake8):
         m_flake8.return_value.include_file.side_effect = (
@@ -40,9 +39,6 @@ async def test_flake8_checker_files(patches, files):
         called
         == [x for x in range(0, 20)
             if x % 2])
-    assert (
-        directory.absolute_path.call_args_list
-        == [[(x, ), {}] for x in range(0, 20)])
     assert (
         m_flake8.return_value.include_file.call_args_list
         == [[(x, ), {}] for x in range(0, 20)])
@@ -280,7 +276,8 @@ def test_flake8app__include_directory(patches, paths, exclude):
 @pytest.mark.parametrize("is_excluded", [True, False])
 def test_flake8app__include_file(
         patches, filename_matches, include_dir, is_excluded):
-    flake8 = check.abstract.flake8.Flake8App("PATH", "ARGS")
+    path = MagicMock()
+    flake8 = check.abstract.flake8.Flake8App(path, "ARGS")
     patched = patches(
         "os",
         "Flake8App._filename_matches",
@@ -299,8 +296,11 @@ def test_flake8app__include_file(
                 and not is_excluded))
 
     assert (
+        m_os.path.join.call_args
+        == [(path, "INCPATH"), {}])
+    assert (
         m_match.call_args
-        == [("INCPATH", ), {}])
+        == [(m_os.path.join.return_value, ), {}])
     if not filename_matches:
         assert not m_include.called
         assert not m_exclude.called
@@ -311,13 +311,13 @@ def test_flake8app__include_file(
         == [(m_os.path.dirname.return_value, ), {}])
     assert (
         m_os.path.dirname.call_args
-        == [("INCPATH", ), {}])
+        == [(m_os.path.join.return_value, ), {}])
     if not include_dir:
         assert not m_exclude.called
         return
     assert (
         m_exclude.call_args
-        == [("INCPATH", ), {}])
+        == [(m_os.path.join.return_value, ), {}])
 
 
 @pytest.mark.parametrize("any_paths", [True, False])

@@ -261,11 +261,16 @@ def test_abstract_checker_directory_kwargs(patches, all_files):
          dict(new_callable=PropertyMock)),
         ("ACodeChecker.exclude_dirs_from_grep",
          dict(new_callable=PropertyMock)),
+        ("ACodeChecker.loop",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.pool",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
 
     with patched as patchy:
         (m_dict, m_all, m_changed, m_exc_re,
-         m_match_re, m_exc, m_exc_dirs) = patchy
+         m_match_re, m_exc, m_exc_dirs,
+         m_loop, m_pool) = patchy
         m_all.return_value = all_files
         assert (
             checker.directory_kwargs
@@ -277,7 +282,9 @@ def test_abstract_checker_directory_kwargs(patches, all_files):
             dict(exclude_matcher=m_exc_re.return_value,
                  path_matcher=m_match_re.return_value,
                  exclude=m_exc.return_value,
-                 exclude_dirs=m_exc_dirs.return_value)])
+                 exclude_dirs=m_exc_dirs.return_value,
+                 loop=m_loop.return_value,
+                 pool=m_pool.return_value)])
     if all_files:
         assert not m_dict.return_value.__setitem__.called
         assert not m_changed.called

@@ -43,6 +43,7 @@ class Flake8App:
 
     def include_file(self, path: str) -> bool:
         """Include file according to flake8 config."""
+        path = os.path.join(self.path, path)
         return (
             self._filename_matches(path)
             and self._include_directory(os.path.dirname(path))
@@ -93,8 +94,7 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             path
             for path
             in await self.directory.files
-            if self.flake8.include_file(
-                self.directory.absolute_path(path)))
+            if self.flake8.include_file(path))
 
     @async_property
     async def errors(self) -> Dict[str, List[str]]:

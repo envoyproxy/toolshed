@@ -66,7 +66,9 @@ class ACodeChecker(
             exclude_matcher=self.grep_excluding_re,
             path_matcher=self.grep_matching_re,
             exclude=self.exclude_from_grep,
-            exclude_dirs=self.exclude_dirs_from_grep)
+            exclude_dirs=self.exclude_dirs_from_grep,
+            pool=self.pool,
+            loop=self.loop)
         if not self.all_files:
             kwargs["changed"] = self.changed_since
         return kwargs

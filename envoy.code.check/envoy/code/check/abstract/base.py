@@ -26,7 +26,8 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def absolute_paths(self) -> Set[str]:
-        return self.directory.absolute_paths(await self.files)
+        return await self.directory.make_paths_absolute(
+            await self.files)
 
     @async_property
     @abstracts.interfacemethod

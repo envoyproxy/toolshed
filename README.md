@@ -67,7 +67,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.5.11
+version: 0.5.12.dev0
 
 pypi: https://pypi.org/project/aio.core
 
@@ -139,7 +139,7 @@ pypi: https://pypi.org/project/envoy.code.check
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.5.10
+- [aio.core](https://pypi.org/project/aio.core) >=0.5.11
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.3.0
 - [aiofiles](https://pypi.org/project/aiofiles)
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.0.13
