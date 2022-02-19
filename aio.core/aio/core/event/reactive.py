@@ -8,6 +8,7 @@ import abstracts
 
 
 class IReactive(metaclass=abstracts.Interface):
+    """Object that has a `loop`."""
 
     @property  # type: ignore
     @abstracts.interfacemethod
@@ -28,8 +29,11 @@ class AReactive(IReactive, metaclass=abstracts.Abstraction):
 
     @cached_property
     def loop(self) -> asyncio.AbstractEventLoop:
-        """Does not expect an existing loop to be running if it is not passed a
-        loop."""
+        """Event loop.
+
+        Does not expect an existing loop to be running if it is not
+        passed a loop.
+        """
         return self._loop or asyncio.get_event_loop()
 
     @cached_property
