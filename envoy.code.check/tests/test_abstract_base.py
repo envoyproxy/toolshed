@@ -21,11 +21,16 @@ class DummyCodeCheck:
 
 
 @pytest.mark.parametrize("fix", [None, True, False])
-async def test_code_check_constructor(fix):
-    kwargs = (
-        dict(fix=fix)
-        if fix is not None
-        else {})
+@pytest.mark.parametrize("pool", [None, "POOL"])
+@pytest.mark.parametrize("loop", [None, "LOOP"])
+async def test_code_check_constructor(fix, pool, loop):
+    kwargs = {}
+    if fix is not None:
+        kwargs["fix"] = fix
+    if loop is not None:
+        kwargs["loop"] = loop
+    if pool is not None:
+        kwargs["pool"] = pool
 
     with pytest.raises(TypeError):
         check.ACodeCheck("DIRECTORY", **kwargs)
@@ -35,6 +40,8 @@ async def test_code_check_constructor(fix):
     assert code_check._fix == (fix if fix is not None else False)
     assert code_check.fix == code_check._fix
     assert "fix" not in code_check.__dict__
+    assert code_check._loop == loop
+    assert code_check._pool == pool
 
     for iface_prop in ["checker_files", "problem_files"]:
         with pytest.raises(NotImplementedError):
