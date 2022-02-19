@@ -495,10 +495,7 @@ async def test_release__hash_file_data(patches, in_proc):
     patched = patches(
         "logger",
         "time",
-        ("ADependencyGithubRelease.loop",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyGithubRelease.pool",
-         dict(new_callable=PropertyMock)),
+        "ADependencyGithubRelease.execute",
         "ADependencyGithubRelease.hash_file_data",
         "ADependencyGithubRelease.should_hash_in_proc",
         prefix="envoy.dependency.check.abstract.release")
@@ -515,14 +512,12 @@ async def test_release__hash_file_data(patches, in_proc):
 
     time = Time()
 
-    with patched as (m_log, m_time, m_loop, m_pool, m_hash, m_in_proc):
-        executor = AsyncMock()
-        m_loop.return_value.run_in_executor = executor
+    with patched as (m_log, m_time, m_execute, m_hash, m_in_proc):
         m_in_proc.return_value = in_proc
         m_time.perf_counter.side_effect = time.perf_counter
         assert (
             await release._hash_file_data(data)
-            == (executor.return_value
+            == (m_execute.return_value
                 if in_proc
                 else m_hash.return_value))
 
@@ -536,11 +531,11 @@ async def test_release__hash_file_data(patches, in_proc):
         fork = " (fork: True)"
         assert not m_hash.called
         assert (
-            executor.call_args
-            == [(m_pool.return_value, m_hash, data), {}])
+            m_execute.call_args
+            == [(m_hash, data), {}])
     else:
         fork = ""
-        assert not executor.called
+        assert not m_execute.called
         assert (
             m_hash.call_args
             == [(data, ), {}])

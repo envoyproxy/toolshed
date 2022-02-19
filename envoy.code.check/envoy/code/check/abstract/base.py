@@ -10,8 +10,8 @@ from aio.core.directory import ADirectory
 from aio.core.functional import async_property
 
 
-@abstracts.implementer(event.IReactive)
-class ACodeCheck(event.AReactive, metaclass=abstracts.Abstraction):
+@abstracts.implementer(event.IExecutive)
+class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
