@@ -1,17 +1,28 @@
 
-from typing import Dict, List, Set
+import asyncio
+from concurrent import futures
+from typing import Dict, List, Optional, Set
 
 import abstracts
 
+from aio.core import event
 from aio.core.directory import ADirectory
 from aio.core.functional import async_property
 
 
-class ACodeCheck(metaclass=abstracts.Abstraction):
+@abstracts.implementer(event.IReactive)
+class ACodeCheck(event.AReactive, metaclass=abstracts.Abstraction):
 
-    def __init__(self, directory: ADirectory, fix: bool = False) -> None:
+    def __init__(
+            self,
+            directory: ADirectory,
+            fix: bool = False,
+            loop: Optional[asyncio.AbstractEventLoop] = None,
+            pool: Optional[futures.Executor] = None) -> None:
         self.directory = directory
         self._fix = fix
+        self._loop = loop
+        self._pool = pool
 
     @async_property(cache=True)
     async def absolute_paths(self) -> Set[str]:
