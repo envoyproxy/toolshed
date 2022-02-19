@@ -39,19 +39,14 @@ class AQueueIO(metaclass=abstracts.Abstraction):
             self,
             type: str,
             q: janus.SyncQueue,
-            output_class: Type[ACapturedOutput]) -> None:
+            output: Callable) -> None:
         self.type = type
         self.q = q
-        self._output_class = output_class
+        self._output = output
 
     @property
     def closed(self) -> bool:
         return self.q.closed
-
-    @property
-    @abc.abstractmethod
-    def output_class(self) -> Type[ACapturedOutput]:
-        return self._output_class
 
     def readable(self) -> bool:
         return False
@@ -60,7 +55,7 @@ class AQueueIO(metaclass=abstracts.Abstraction):
         return False
 
     def write(self, msg: bytes) -> None:
-        self.q.put(self.output_class(self.type, msg))
+        self.q.put(self._output(msg))
 
     def writable(self) -> bool:
         return True

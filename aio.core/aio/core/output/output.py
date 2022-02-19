@@ -31,7 +31,4 @@ class CapturedOutput:
 
 @abstracts.implementer(output.AQueueIO)
 class QueueIO:
-
-    @property
-    def output_class(self) -> Type[output.ACapturedOutput]:
-        return super().output_class
+    pass
