@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 MIN_DATA_SIZE_TO_HASH_IN_PROC = 1000000
 
 
-@abstracts.implementer(event.IReactive)
+@abstracts.implementer(event.IExecutive)
 class ADependencyGithubRelease(
-        event.AReactive,
+        event.AExecutive,
         metaclass=abstracts.Abstraction):
     """Github release associated with a dependency."""
 
@@ -171,10 +171,7 @@ class ADependencyGithubRelease(
         hash_in_proc = self.should_hash_in_proc(data)
         start = time.perf_counter()
         sha = (
-            await self.loop.run_in_executor(
-                self.pool,
-                self.hash_file_data,
-                data)
+            await self.execute(self.hash_file_data, data)
             if hash_in_proc
             else self.hash_file_data(data))
         logger.debug(

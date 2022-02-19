@@ -326,27 +326,22 @@ async def test_downloader_parse(patches):
     downloader = DummyNISTDownloader("URLS", "TRACKED_CPES")
     patched = patches(
         "logger",
-        ("ANISTDownloader.loop",
-         dict(new_callable=PropertyMock)),
         ("ANISTDownloader.parser",
          dict(new_callable=PropertyMock)),
-        ("ANISTDownloader.pool",
-         dict(new_callable=PropertyMock)),
+        "ANISTDownloader.execute",
         prefix="aio.api.nist.abstract.downloader")
     data = MagicMock()
 
-    with patched as (m_logger, m_loop, m_parser, m_pool):
-        m_loop.return_value.run_in_executor = AsyncMock()
+    with patched as (m_logger,  m_parser, m_execute):
         assert (
             await downloader.parse("URL", data)
-            == m_loop.return_value.run_in_executor.return_value)
+            == m_execute.return_value)
 
     assert (
         m_logger.debug.call_args
         == [("Parsing CVE data: URL", ), {}])
     assert (
-        m_loop.return_value.run_in_executor.call_args
-        == [(m_pool.return_value,
-             m_parser.return_value,
+        m_execute.call_args
+        == [(m_parser.return_value,
              data),
             {}])

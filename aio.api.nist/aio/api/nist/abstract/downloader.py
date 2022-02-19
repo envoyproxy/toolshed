@@ -25,8 +25,8 @@ NIST_URL_TPL = (
 SCAN_FROM_YEAR = 2018
 
 
-@abstracts.implementer(event.IReactive)
-class ANISTDownloader(event.AReactive, metaclass=abstracts.Abstraction):
+@abstracts.implementer(event.IExecutive)
+class ANISTDownloader(event.AExecutive, metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
@@ -143,7 +143,6 @@ class ANISTDownloader(event.AReactive, metaclass=abstracts.Abstraction):
         # process - useful for debugging.
         # return self.parser(data)
         logger.debug(f"Parsing CVE data: {url}")
-        return await self.loop.run_in_executor(
-            self.pool,
+        return await self.execute(
             self.parser,
             data)
