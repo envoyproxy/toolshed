@@ -158,6 +158,7 @@ async def test_yapf_problem_files(patches, files):
 @pytest.mark.parametrize("notpy", range(0, 10))
 async def test_yapf_py_files(notpy):
     directory = MagicMock()
+    directory.make_paths_absolute = AsyncMock()
     yapf = check.AYapfCheck(directory)
     dir_files = []
 
@@ -172,12 +173,11 @@ async def test_yapf_py_files(notpy):
     directory.files = files()
     assert (
         await yapf.py_files
-        == directory.absolute_paths.return_value
+        == directory.make_paths_absolute.return_value
         == getattr(
             yapf,
             check.AYapfCheck.py_files.cache_name)["py_files"])
-
-    iterator = directory.absolute_paths.call_args[0][0]
+    iterator = directory.make_paths_absolute.call_args[0][0]
     called = list(iterator)
     assert (
         called

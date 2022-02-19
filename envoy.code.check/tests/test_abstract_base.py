@@ -50,6 +50,7 @@ async def test_code_check_constructor(fix, pool, loop):
 
 async def test_code_check_absolute_paths(patches):
     directory = MagicMock()
+    directory.make_paths_absolute = AsyncMock()
     code_check = DummyCodeCheck(directory)
     patched = patches(
         ("ACodeCheck.files",
@@ -63,9 +64,9 @@ async def test_code_check_absolute_paths(patches):
 
     assert (
         result
-        == directory.absolute_paths.return_value)
+        == directory.make_paths_absolute.return_value)
     assert (
-        directory.absolute_paths.call_args
+        directory.make_paths_absolute.call_args
         == [(files.return_value, ), {}])
     assert (
         getattr(

@@ -79,11 +79,12 @@ class AYapfCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def py_files(self) -> Set[str]:
-        return self.directory.absolute_paths(
-            path
-            for path
-            in await self.directory.files
-            if path.endswith(".py"))
+        return await self.directory.make_paths_absolute(
+            tuple(
+                path
+                for path
+                in await self.directory.files
+                if path.endswith(".py")))
 
     @async_property
     async def yapf_file_resources(self) -> Set[str]:
