@@ -43,7 +43,7 @@ async def threaded(
             *args)
 
     output = dict(stdout=stdout, stderr=stderr, both=both)
-    async with functional.capturing(output) as buffer:
+    async with functional.capturing(**output) as buffer:
         return await asyncio.get_running_loop().run_in_executor(
             pool,
             functional.buffering,

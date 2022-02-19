@@ -24,6 +24,16 @@ def test_buffered_outputs_constructor(patches, args, kwargs):
     assert isinstance(buffered, output.ABufferedOutputs)
 
 
+@pytest.mark.parametrize("output_class", [None, False, "", "OUTPUT_CLASS"])
+def test_buffered_outputs_output_class(output_class):
+    buffered = output.BufferedOutputs(
+        "HANDLERS", "Q_CLASS", output_class)
+    assert (
+        buffered.output_class
+        == (output_class or output.CapturedOutput))
+    assert "output_class" not in buffered.__dict__
+
+
 @pytest.mark.parametrize("io_class", [None, False, "", "IO_CLASS"])
 def test_buffered_outputs_io_class(io_class):
     kwargs = (
@@ -36,16 +46,6 @@ def test_buffered_outputs_io_class(io_class):
         buffered.io_class
         == (io_class or output.QueueIO))
     assert "io_class" not in buffered.__dict__
-
-
-@pytest.mark.parametrize("output_class", [None, False, "", "OUTPUT_CLASS"])
-def test_buffered_outputs_output_class(output_class):
-    buffered = output.BufferedOutputs(
-        "HANDLERS", "Q_CLASS", output_class)
-    assert (
-        buffered.output_class
-        == (output_class or output.CapturedOutput))
-    assert "output_class" not in buffered.__dict__
 
 
 def test_buffered_outputs_queue_class(patches):
@@ -98,19 +98,3 @@ def test_queueio_constructor(patches, args, kwargs):
         queue = output.QueueIO(*args, **kwargs)
 
     assert isinstance(queue, output.AQueueIO)
-
-
-def test_queueio_output_class(patches):
-    patched = patches(
-        ("output.AQueueIO.output_class",
-         dict(new_callable=PropertyMock)),
-        prefix="aio.core.output.output")
-    queue = output.QueueIO(
-        "TYPE", "Q", "OUTPUT_CLASS")
-
-    with patched as (m_super, ):
-        assert (
-            queue.output_class
-            == m_super.return_value)
-
-    assert "output_class" not in queue.__dict__

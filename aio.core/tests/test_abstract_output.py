@@ -26,10 +26,7 @@ class DummyBufferedOutputs:
 
 @abstracts.implementer(output.AQueueIO)
 class DummyQueueIO:
-
-    @property
-    def output_class(self):
-        return super().output_class
+    pass
 
 
 @pytest.mark.parametrize("encoding", [None, False, "ENCODING"])
@@ -62,16 +59,10 @@ def test_captured_output_dunder_str(encoding):
 
 
 def test_queueio_constructor():
-
-    with pytest.raises(TypeError):
-        output.AQueueIO("TYPE", "Q", "OUTPUT_CLASS")
-
-    queue = DummyQueueIO("TYPE", "Q", "OUTPUT_CLASS")
+    queue = DummyQueueIO("TYPE", "Q", "OUTPUT")
     assert queue.type == "TYPE"
     assert queue.q == "Q"
-    assert queue._output_class == "OUTPUT_CLASS"
-    assert queue.output_class == "OUTPUT_CLASS"
-    assert "output_class" not in queue.__dict__
+    assert queue._output == "OUTPUT"
     assert queue.readable() is False
     assert queue.writable() is True
     assert queue.seekable() is False
@@ -94,7 +85,7 @@ def test_queueio_write():
         == [(output_class.return_value, ), {}])
     assert (
         output_class.call_args
-        == [("TYPE", "MESSAGE"), {}])
+        == [("MESSAGE", ), {}])
 
 
 @pytest.mark.parametrize("io_class", [None, False, "IO_CLASS"])
@@ -103,10 +94,6 @@ def test_buffered_constructor(io_class):
         dict(io_class=io_class)
         if io_class is not None
         else {})
-
-    with pytest.raises(TypeError):
-        output.ABufferedOutputs(
-            "HANDLERS", "Q_CLASS", "OUTPUT_CLASS", **kwargs)
 
     buffered = DummyBufferedOutputs(
         "HANDLERS", "Q_CLASS", "OUTPUT_CLASS", **kwargs)

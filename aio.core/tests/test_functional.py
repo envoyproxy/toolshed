@@ -730,8 +730,10 @@ async def test_threaded(patches, args, stdout, stderr, both, pool, any_set):
         kwargs["both"] = both
     if pool is not None:
         kwargs["pool"] = pool
+    capture_kwargs = {f"CAPK{i}": f"CAPV{i}" for i in range(0, 7)}
 
     with patched as (m_any, m_aio, m_dict, m_func):
+        m_dict.return_value = capture_kwargs
         m_any.return_value = any_set
         executor = AsyncMock()
         m_aio.get_running_loop.return_value.run_in_executor = executor
@@ -760,7 +762,7 @@ async def test_threaded(patches, args, stdout, stderr, both, pool, any_set):
         == [(), dict(stdout=stdout, stderr=stderr, both=both)])
     assert (
         m_func.capturing.call_args
-        == [(m_dict.return_value, ), {}])
+        == [(), capture_kwargs])
     assert (
         executor.call_args
         == [(pool, m_func.buffering, fun,
