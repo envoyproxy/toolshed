@@ -1,5 +1,9 @@
+
+import asyncio
+import os
 import pathlib
 import shutil
+from concurrent import futures
 from functools import cached_property, lru_cache
 from typing import (
     AsyncIterator, Iterable, Optional,
@@ -7,12 +11,13 @@ from typing import (
 
 import abstracts
 
-from aio.core import subprocess
+from aio.core import event, subprocess
 from aio.core.functional import async_property, async_set, AwaitableGenerator
 from aio.core.subprocess import exceptions as subprocess_exceptions
 
 
-class ADirectory(metaclass=abstracts.Abstraction):
+@abstracts.implementer(event.IExecutive)
+class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     """A filesystem directory, with an associated fileset, and tools for
     finding files.
 
@@ -29,6 +34,20 @@ class ADirectory(metaclass=abstracts.Abstraction):
     you can override this by setting `text_only` to `False`.
     """
 
+    @classmethod
+    @lru_cache(maxsize=None)
+    def make_path_absolute(cls, absolute_path, path: str) -> str:
+        """Make a directory-relative path absolute."""
+        return os.path.join(absolute_path, path)
+
+    @classmethod
+    def _make_paths_absolute(cls, path: str, paths: Iterable[str]) -> Set[str]:
+        """Make directory-relative paths absolute."""
+        return set(
+            cls.make_path_absolute(path, p)
+            for p
+            in paths)
+
     def __init__(
             self,
             path: Union[str, pathlib.Path],
@@ -36,13 +55,17 @@ class ADirectory(metaclass=abstracts.Abstraction):
             exclude_dirs: Optional[Iterable[str]] = None,
             path_matcher: Optional[Pattern[str]] = None,
             exclude_matcher: Optional[Pattern[str]] = None,
-            text_only: Optional[bool] = True) -> None:
+            text_only: Optional[bool] = True,
+            loop: Optional[asyncio.AbstractEventLoop] = None,
+            pool: Optional[futures.Executor] = None) -> None:
         self._path = path
         self.path_matcher = path_matcher
         self.exclude_matcher = exclude_matcher
         self.text_only = text_only
         self.exclude = exclude or ()
         self.exclude_dirs = exclude_dirs or ()
+        self._loop = loop
+        self._pool = pool
 
     @async_property(cache=True)
     async def files(self) -> Set[str]:
@@ -91,17 +114,9 @@ class ADirectory(metaclass=abstracts.Abstraction):
         """Shell that uses the directory path as `cwd`."""
         return subprocess.AsyncShell(cwd=self.path)
 
-    @lru_cache(maxsize=None)
-    def absolute_path(self, path: str) -> str:
-        """Make a directory-relative path absolute."""
-        return str(self.path.joinpath(path).resolve())
-
-    def absolute_paths(self, paths: Iterable[str]) -> Set[str]:
-        """Make directory-relative paths absolute."""
-        return set(
-            self.absolute_path(path)
-            for path
-            in paths)
+    @cached_property
+    def absolute_path(self):
+        return str(self.path.resolve())
 
     def grep(
             self,
@@ -111,6 +126,14 @@ class ADirectory(metaclass=abstracts.Abstraction):
             self._grep(args, target),
             collector=async_set,
             predicate=self._include_file)
+
+    async def make_paths_absolute(self, paths: Iterable[str]) -> Set[str]:
+        """Make directory-relative paths absolute."""
+        # TODO: only shell out if the number is large
+        return await self.execute(
+            self._make_paths_absolute,
+            self.absolute_path,
+            paths)
 
     def parse_grep_args(
             self,
@@ -128,7 +151,7 @@ class ADirectory(metaclass=abstracts.Abstraction):
     @lru_cache
     def relative_path(self, path: str) -> str:
         """Make an absolute path directory-relative."""
-        return str(pathlib.Path(path).relative_to(self.path))
+        return path[len(self.absolute_path) + 1:]
 
     def relative_paths(self, paths: Iterable[str]) -> Set[str]:
         """Make absolute paths directory-relative."""
