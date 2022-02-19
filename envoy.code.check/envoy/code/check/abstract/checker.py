@@ -168,7 +168,7 @@ class ACodeChecker(
             else:
                 self.succeed(
                     self.active_check,
-                    [f"🗸 {path}"])
+                    [path])
 
     def _grep_re(self, arg: Optional[str]) -> Optional[Pattern[str]]:
         # When using system `grep` we want to filter out at least some

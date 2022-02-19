@@ -388,7 +388,7 @@ async def test_abstract_checker_code_check(patches, files, problem_files):
             for error in errors])
     assert (
         m_succeed.call_args_list
-        == [[(m_active.return_value, [f"🗸 {succeed}"]), {}]
+        == [[(m_active.return_value, [succeed]), {}]
             for succeed in success])
 
 
