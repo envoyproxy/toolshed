@@ -1,9 +1,51 @@
 
+import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
 from aio.core import directory, subprocess
+
+
+def test_abstract_directory_make_path_absolute(patches):
+    patched = patches(
+        "os",
+        prefix="aio.core.directory.abstract.directory")
+
+    with patched as (m_os, ):
+        assert (
+            directory.ADirectory.make_path_absolute("ROOT_PATH", "PATH")
+            == m_os.path.join.return_value)
+
+    assert (
+        m_os.path.join.call_args
+        == [("ROOT_PATH", "PATH"), {}])
+    assert directory.ADirectory.make_path_absolute.cache_info().misses == 1
+    assert directory.ADirectory.make_path_absolute.cache_info().currsize == 1
+
+
+def test_abstract_directory__make_paths_absolute(patches):
+    patched = patches(
+        "set",
+        "ADirectory.make_path_absolute",
+        prefix="aio.core.directory.abstract.directory")
+
+    with patched as (m_set, m_abspath):
+        assert (
+            directory.ADirectory._make_paths_absolute("PATH", range(0, 5))
+            == m_set.return_value)
+        iterator = m_set.call_args[0][0]
+        assert isinstance(iterator, types.GeneratorType)
+        assert (
+            list(iterator)
+            == [m_abspath.return_value] * 5)
+
+    assert (
+        m_set.call_args
+        == [(iterator, ), {}])
+    assert (
+        m_abspath.call_args_list
+        == [[("PATH", i), {}] for i in range(0, 5)])
 
 
 @pytest.mark.parametrize(
@@ -211,40 +253,15 @@ def test_abstract_directory_absolute_path(patches):
         prefix="aio.core.directory.abstract.directory")
 
     with patched as (m_str, m_path):
-        assert (
-            direct.absolute_path("NOT_ABS_PATH")
-            == m_str.return_value)
+        assert direct.absolute_path == m_str.return_value
 
     assert (
         m_str.call_args
-        == [(m_path.return_value.joinpath.return_value
-                                .resolve.return_value, ),
-            {}])
+        == [(m_path.return_value.resolve.return_value, ), {}])
     assert (
-        m_path.return_value.joinpath.call_args
-        == [("NOT_ABS_PATH", ), {}])
-    assert (
-        m_path.return_value.joinpath.return_value.resolve.call_args
+        m_path.return_value.resolve.call_args
         == [(), {}])
-    assert direct.absolute_path.cache_info().misses == 1
-    assert direct.absolute_path.cache_info().currsize == 1
-
-
-def test_abstract_directory_absolute_paths(patches):
-    direct = directory.ADirectory("PATH")
-    patched = patches(
-        "ADirectory.absolute_path",
-        prefix="aio.core.directory.abstract.directory")
-
-    with patched as (m_abspath, ):
-        m_abspath.side_effect = lambda i: f"PATH{i}"
-        assert (
-            direct.absolute_paths(range(0, 5))
-            == set(f"PATH{i}" for i in range(0, 5)))
-
-    assert (
-        m_abspath.call_args_list
-        == [[(i, ), {}] for i in range(0, 5)])
+    assert "absolute_path" in direct.__dict__
 
 
 def test_abstract_directory_grep(patches):
@@ -268,6 +285,27 @@ def test_abstract_directory_grep(patches):
     assert (
         m_grep.call_args
         == [("ARGS", "TARGET"), {}])
+
+
+async def test_abstract_directory_paths_absolute(patches):
+    direct = directory.ADirectory("PATH")
+    patched = patches(
+        ("ADirectory.absolute_path",
+         dict(new_callable=PropertyMock)),
+        "ADirectory.execute",
+        "ADirectory._make_paths_absolute",
+        prefix="aio.core.directory.abstract.directory")
+    paths = MagicMock()
+
+    with patched as (m_path, m_execute, m_abs):
+        assert (
+            await direct.make_paths_absolute(paths)
+            == m_execute.return_value)
+
+    assert (
+        m_execute.call_args
+        == [(m_abs, m_path.return_value, paths),
+            {}])
 
 
 @pytest.mark.parametrize("target", [0, False, None, "TARGET"])
@@ -296,26 +334,24 @@ def test_abstract_directory_parse_grep_args(patches, target):
 def test_abstract_directory_relative_path(patches):
     direct = directory.ADirectory("PATH")
     patched = patches(
-        "str",
-        "pathlib",
-        ("ADirectory.path",
+        "len",
+        ("ADirectory.absolute_path",
          dict(new_callable=PropertyMock)),
         prefix="aio.core.directory.abstract.directory")
+    path = MagicMock()
 
-    with patched as (m_str, m_plib, m_path):
+    with patched as (m_len, m_path):
+        m_len.return_value = 22
         assert (
-            direct.relative_path("NOT_REL_PATH")
-            == m_str.return_value)
+            direct.relative_path(path)
+            == path.__getitem__.return_value)
 
     assert (
-        m_str.call_args
-        == [(m_plib.Path.return_value.relative_to.return_value, ), {}])
-    assert (
-        m_plib.Path.call_args
-        == [("NOT_REL_PATH", ), {}])
-    assert (
-        m_plib.Path.return_value.relative_to.call_args
+        m_len.call_args
         == [(m_path.return_value, ), {}])
+    assert (
+        path.__getitem__.call_args
+        == [(slice(23, None), ), {}])
     assert direct.relative_path.cache_info().misses == 1
     assert direct.relative_path.cache_info().currsize == 1
 
