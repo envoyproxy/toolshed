@@ -44,7 +44,8 @@ jobs:
     - name: Install pants
       run: pip install pantsbuild.pants==2.9.0
     - name: Run pants (type) check
-      run: "pants check $(pants roots | tr '\n' ',' | sed  's/,/:: /g' -)"
+      run: echo "Typecheck disabled"
+      # run: "pants check $(pants roots | tr '\n' ',' | sed  's/,/:: /g' -)"
 
   docs:
     runs-on: ubuntu-latest
