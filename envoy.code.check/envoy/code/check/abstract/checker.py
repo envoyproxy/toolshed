@@ -9,7 +9,7 @@ from typing import Dict, Mapping, Optional, Pattern, Tuple, Type
 
 import abstracts
 
-from aio.core import directory as _directory
+from aio.core import directory as _directory, event
 from aio.run import checker
 
 from envoy.code.check import abstract
@@ -20,12 +20,14 @@ GREP_EXCLUDE_GLOBS = (r"\#*", r"\.#*", r"*~")
 GREP_EXCLUDE_DIR_GLOBS = (r"build", r"build*", r"generated", r"\.*", r"src")
 
 
+@abstracts.implementer(event.IReactive)
 class ACodeChecker(
         checker.Checker,
+        event.AReactive,
         metaclass=abstracts.Abstraction):
     """Code checker."""
 
-    checks = ("shellcheck", "python_yapf", "python_flake8")
+    checks = ("glint", "python_yapf", "python_flake8", "shellcheck")
 
     @property
     def all_files(self) -> bool:
@@ -100,6 +102,16 @@ class ACodeChecker(
     def git_directory_class(self) -> Type["_directory.AGitDirectory"]:
         raise NotImplementedError
 
+    @cached_property
+    def glint(self) -> "abstract.AGlintCheck":
+        """Glint checker."""
+        return self.glint_class(self.directory, **self.check_kwargs)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def glint_class(self) -> Type["abstract.AGlintCheck"]:
+        raise NotImplementedError
+
     @property
     def grep_excluding_re(self) -> Optional[Pattern[str]]:
         return self._grep_re(self.args.excluding)
@@ -140,6 +152,10 @@ class ACodeChecker(
         parser.add_argument("-x", "--excluding", action="append")
         parser.add_argument("-s", "--since")
 
+    async def check_glint(self) -> None:
+        """Check for glint issues."""
+        await self._code_check(self.glint)
+
     async def check_python_flake8(self) -> None:
         """Check for flake8 issues."""
         await self._code_check(self.flake8)
@@ -156,6 +172,11 @@ class ACodeChecker(
         when=["python_flake8"])
     async def preload_flake8(self) -> None:
         await self.flake8.problem_files
+
+    @checker.preload(
+        when=["glint"])
+    async def preload_glint(self) -> None:
+        await self.glint.problem_files
 
     @checker.preload(
         when=["shellcheck"])
