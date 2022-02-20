@@ -100,7 +100,7 @@ class AYapfCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     async def _problem_files(self) -> AsyncIterator["typing.YapfProblemTuple"]:
         if not await self.files:
             return
-        async for path, problem in tasks.concurrent(self._yapf_checks):
+        async for path, problem in tasks.concurrent(self._yapf_checks, limit=4):
             if problem:
                 yield path, problem
 
