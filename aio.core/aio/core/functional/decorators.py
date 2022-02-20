@@ -3,7 +3,15 @@
 #
 
 import inspect
-from typing import Any, Callable, Optional
+import logging
+import time
+from functools import cached_property
+from typing import Any, Callable, Dict, Optional
+
+from aio.core import event
+
+
+logger = logging.getLogger(__name__)
 
 
 class NoCache(Exception):
@@ -51,6 +59,10 @@ class async_property:  # noqa: N801
             return self.async_iter_result(instance)
         return self.async_result(instance)
 
+    @cached_property
+    def loaders(self) -> Dict[str, event.Loader]:
+        return {}
+
     def fun(self, *args, **kwargs):
         if self._fun:
             return self._fun(*args, **kwargs)
@@ -82,14 +94,41 @@ class async_property:  # noqa: N801
             return self.get_cached_prop(instance)
         except (NoCache, KeyError):
             pass
-
-        # derive the result, set the cache if required, and return the result
-        return self.set_prop_cache(instance, await self.fun(instance))
+        if self.cache:
+            return await self.load_cooperatively(instance)
+        return await self.load(instance)
 
     def get_cached_prop(self, instance: Any) -> Any:
         if not self.cache:
             raise NoCache
         return self.get_prop_cache(instance)[self.name]
+
+    def get_loader(self, instance: Any) -> Optional[event.Loader]:
+        try:
+            hash(instance)
+        except TypeError:
+            return None
+        if instance not in self.loaders:
+            self.loaders[instance] = event.Loader()
+        return self.loaders[instance]
+
+    async def load(self, instance: Any) -> Any:
+        # derive the result, set the cache if required, and return the result
+        start_time = time.perf_counter()
+        result = await self.fun(instance)
+        self.set_prop_cache(instance, result)
+        self._debug(start_time, result, instance)
+        return result
+
+    async def load_cooperatively(self, instance: Any) -> Any:
+        loader = self.get_loader(instance)
+        if not loader:
+            # Unhashable type, just load
+            return await self.load(instance)
+        if not await loader:
+            with loader:
+                return await self.load(instance)
+        return self.get_cached_prop(instance)
 
     def set_prop_cache(self, instance: Any, result: Any) -> Any:
         if not self.cache:
@@ -98,3 +137,20 @@ class async_property:  # noqa: N801
         cache[self.name] = result
         setattr(instance, self.cache_name, cache)
         return result
+
+    def _debug(self, start_time: float, result: Any, instance: Any) -> None:
+        time_taken = time.perf_counter() - start_time
+        try:
+            len_info = f" {len(result)} results"
+        except TypeError:
+            len_info = ""
+        logger.debug(
+            f"Fetched (cache: {self.cache}) async_prop{len_info} for "
+            f"{self._repr(instance)} in {time_taken}s")
+
+    def _repr(self, instance: Any) -> str:
+        if self._fun is None:
+            return "async_property"
+        return (
+            f"<{instance.__class__.__module__}"
+            f".{self._fun.__qualname__} {hex(id(instance))}>")
