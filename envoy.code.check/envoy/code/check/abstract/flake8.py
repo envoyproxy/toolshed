@@ -1,23 +1,47 @@
 
+import io
 import os
 import pathlib
 from functools import cached_property, lru_cache
 from typing import Dict, List, Set, Tuple
 
-from flake8.main.application import (  # type:ignore
-    Application as Flake8Application)
+from flake8.main.application import Application  # type:ignore
 from flake8 import (  # type:ignore
     utils as flake8_utils,
     checker as flake8_checker)
 
 import abstracts
 
-from aio.core.functional import async_property, threaded
+from aio.core.functional import async_property
 
 from envoy.code.check import abstract
 
 
 FLAKE8_CONFIG = '.flake8'
+
+
+class Flake8Application(Application):
+    """Subclassed flake8.Application to capture output."""
+
+    @cached_property
+    def output_fd(self) -> io.StringIO:
+        return io.StringIO()
+
+    def _stop(self) -> None:
+        self.output_fd.seek(0)
+        self._results: List[str] = [
+            x
+            for x
+            in self.output_fd.read().strip().split("\n")
+            if x]
+        self._formatter_stop()
+
+    def make_formatter(self) -> None:
+        # ~Hacky workaround to capture flake8 output
+        super().make_formatter()
+        self.formatter.output_fd = self.output_fd
+        self._formatter_stop = self.formatter.stop
+        self.formatter.stop = self._stop
 
 
 class Flake8App:
@@ -26,7 +50,7 @@ class Flake8App:
     Provides optimized file discovery using app's lookup tools.
     """
 
-    def __init__(self, path: str, args) -> None:
+    def __init__(self, path: str, args: Tuple[str, ...]) -> None:
         self.path = path
         self.args = args
 
@@ -49,17 +73,18 @@ class Flake8App:
             and self._include_directory(os.path.dirname(path))
             and not self._is_excluded(path))
 
-    def include_files(self, files):
+    def include_files(self, files: Set[str]) -> Set[str]:
         return set(
             path
             for path
             in files
             if self.include_file(os.path.join(self.path, path)))
 
-    def run_checks(self, paths):
+    def run_checks(self, paths: Set[str]) -> List[str]:
         """Run flake8 checks."""
         self.app.run_checks(files=paths)
         self.app.report()
+        return self.app._results
 
     @cached_property
     def _excluded_paths(self) -> Set[str]:
@@ -96,13 +121,21 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     """Flake8 check for a fileset."""
 
     @classmethod
-    def check_flake8_files(cls, path, files, args):
+    def check_flake8_files(
+            cls,
+            path: str,
+            files: Set[str],
+            args: Tuple[str, ...]):
         return Flake8App(
             path,
             args).run_checks(files)
 
     @classmethod
-    def filter_flake8_files(cls, path, files, args):
+    def filter_flake8_files(
+            cls,
+            path: str,
+            files: Set[str],
+            args: Tuple[str, ...]):
         return Flake8App(
             path,
             args).include_files(files)
@@ -118,16 +151,7 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     @async_property
     async def errors(self) -> Dict[str, List[str]]:
         """Discovered flake8 errors."""
-        # This runs in a thread for the purpose of capturing stdout/sderr
-        # (and not blocking).
-        # The actual flake8 tests are run by flake8 in separate procs.
-        await threaded(
-            self.check_flake8_files,
-            self.directory.absolute_path,
-            await self.absolute_paths,
-            self.flake8_args,
-            stdout=self._handle_error)
-        return self._errors
+        return self.handle_errors(await self.flake8_errors)
 
     @property
     def flake8_args(self) -> Tuple[str, ...]:
@@ -142,6 +166,22 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         """Path to flake8 configuration."""
         return self.directory.path.joinpath(FLAKE8_CONFIG)
 
+    @async_property
+    async def flake8_errors(self) -> List[str]:
+        return await self.execute(
+            self.check_flake8_files,
+            self.directory.absolute_path,
+            await self.absolute_paths,
+            self.flake8_args)
+
+    def handle_errors(self, errors: List[str]) -> Dict[str, List[str]]:
+        flake8_errors: Dict[str, List[str]] = {}
+        for error in errors:
+            path, message = self._parse_error(error)
+            flake8_errors[path] = flake8_errors.get(path, [])
+            flake8_errors[path].append(message)
+        return flake8_errors
+
     @async_property(cache=True)
     async def problem_files(self) -> Dict[str, List[str]]:
         """Discovered files with flake8 errors."""
@@ -150,14 +190,8 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             if await self.files
             else {})
 
-    @cached_property
-    def _errors(self) -> Dict:
-        return {}
-
-    async def _handle_error(self, output):
-        message = str(output)
-        if not message:
-            return
-        path = self.directory.relative_path(message.split(":")[0])
-        self._errors[path] = self._errors.get(path, [])
-        self._errors[path].append(f"{path}: {message.split(':', 1)[1]}")
+    def _parse_error(self, error: str) -> Tuple[str, str]:
+        path = self.directory.relative_path(error.split(":")[0])
+        return (
+            path,
+            f"{path}: {error.split(':', 1)[1]}")
