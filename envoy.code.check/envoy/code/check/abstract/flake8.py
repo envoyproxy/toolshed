@@ -49,6 +49,13 @@ class Flake8App:
             and self._include_directory(os.path.dirname(path))
             and not self._is_excluded(path))
 
+    def include_files(self, files):
+        return set(
+            path
+            for path
+            in files
+            if self.include_file(os.path.join(self.path, path)))
+
     def run_checks(self, paths):
         """Run flake8 checks."""
         self.app.run_checks(files=paths)
@@ -88,29 +95,39 @@ class Flake8App:
 class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     """Flake8 check for a fileset."""
 
+    @classmethod
+    def check_flake8_files(cls, path, files, args):
+        return Flake8App(
+            path,
+            args).run_checks(files)
+
+    @classmethod
+    def filter_flake8_files(cls, path, files, args):
+        return Flake8App(
+            path,
+            args).include_files(files)
+
     @async_property
     async def checker_files(self) -> Set[str]:
-        return set(
-            path
-            for path
-            in await self.directory.files
-            if self.flake8.include_file(path))
+        return await self.execute(
+            self.filter_flake8_files,
+            self.directory.absolute_path,
+            await self.directory.files,
+            self.flake8_args)
 
     @async_property
     async def errors(self) -> Dict[str, List[str]]:
         """Discovered flake8 errors."""
+        # This runs in a thread for the purpose of capturing stdout/sderr
+        # (and not blocking).
+        # The actual flake8 tests are run by flake8 in separate procs.
         await threaded(
-            self.flake8.run_checks,
+            self.check_flake8_files,
+            self.directory.absolute_path,
             await self.absolute_paths,
+            self.flake8_args,
             stdout=self._handle_error)
         return self._errors
-
-    @cached_property
-    def flake8(self) -> Flake8App:
-        """Wrapped flake8 application."""
-        return Flake8App(
-            str(self.directory.path),
-            self.flake8_args)
 
     @property
     def flake8_args(self) -> Tuple[str, ...]:
