@@ -295,7 +295,7 @@ async def test_release_sha(patches, asset_url):
         assert not m_hash.called
         assert (
             e.value.args[0]
-            == ("Cannot check sha for DummyDependencyGithubRelease"
+            == ("Cannot check sha for DummyDependencyGithubRelease "
                 "with no `asset_url`"))
         return
     assert (
