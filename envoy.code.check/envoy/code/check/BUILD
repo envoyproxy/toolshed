@@ -15,6 +15,7 @@ pytooling_library(
         "abstract/base.py",
         "abstract/checker.py",
         "abstract/flake8.py",
+        "abstract/glint.py",
         "abstract/shellcheck.py",
         "abstract/yapf.py",
         "checker.py",

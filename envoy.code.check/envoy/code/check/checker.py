@@ -14,6 +14,11 @@ class Flake8Check:
     pass
 
 
+@abstracts.implementer(check.AGlintCheck)
+class GlintCheck:
+    pass
+
+
 @abstracts.implementer(check.AShellcheckCheck)
 class ShellcheckCheck:
     pass
@@ -38,6 +43,10 @@ class CodeChecker:
     @property
     def git_directory_class(self):
         return directory.GitDirectory
+
+    @property
+    def glint_class(self):
+        return GlintCheck
 
     @cached_property
     def path(self) -> pathlib.Path:

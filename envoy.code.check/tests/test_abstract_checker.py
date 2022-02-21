@@ -26,6 +26,10 @@ class DummyCodeChecker:
         return super().git_directory_class
 
     @property
+    def glint_class(self):
+        return super().glint_class
+
+    @property
     def path(self):
         return super().path
 
@@ -50,7 +54,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         prefix="envoy.code.check.abstract.checker")
     iface_props = [
         "fs_directory_class", "flake8_class",
-        "git_directory_class",
+        "git_directory_class", "glint_class",
         "shellcheck_class", "yapf_class"]
 
     with patched as (m_super, ):
@@ -65,7 +69,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         == [tuple(args), kwargs])
     assert (
         checker.checks
-        == ("shellcheck", "python_yapf", "python_flake8"))
+        == ("glint", "python_yapf", "python_flake8", "shellcheck"))
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(checker, prop)
@@ -96,7 +100,8 @@ def test_abstract_checker_grep_globs(patches, all_files):
 
 @pytest.mark.parametrize(
     "subcheck",
-    (("python_flake8", "flake8"),
+    (("glint", "glint"),
+     ("python_flake8", "flake8"),
      ("python_yapf", "yapf"),
      ("shellcheck", "shellcheck")))
 async def test_abstract_checker_checks(patches, subcheck):
@@ -118,7 +123,8 @@ async def test_abstract_checker_checks(patches, subcheck):
 
 @pytest.mark.parametrize(
     "tool",
-    (("flake8",
+    (("glint",
+      "flake8",
       "yapf",
       "shellcheck")))
 def test_abstract_checker_tools(patches, tool):
@@ -147,7 +153,8 @@ def test_abstract_checker_tools(patches, tool):
 
 @pytest.mark.parametrize(
     "preloader",
-    (("python_flake8", "flake8"),
+    (("glint", "glint"),
+     ("python_flake8", "flake8"),
      ("python_yapf", "yapf"),
      ("shellcheck", "shellcheck")))
 async def test_abstract_checker_preloaders(patches, preloader):
