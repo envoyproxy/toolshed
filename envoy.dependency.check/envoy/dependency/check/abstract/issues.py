@@ -28,7 +28,8 @@ New Version: {newer_release.tag_name}@{newer_release_date}
 Upstream releases: https://github.com/{full_name}/releases
 New Issue Link: https://github.com/{repo_location}/issues/{number}
 """
-ISSUES_SEARCH_TPL = "in:title {self.title_prefix} is:open"
+ISSUES_SEARCH_TPL = ("in:title {self.title_prefix} is:open "
+                     "is:issue author:github-actions[bot]")
 TITLE_PREFIX = "Newer release available"
 TITLE_RE_TPL = r"{title_prefix} [`]?([\w\-\.]+)[`]?: ([\w\-\.]+)"
 TITLE_TPL = (
