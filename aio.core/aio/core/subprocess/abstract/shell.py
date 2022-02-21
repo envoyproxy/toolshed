@@ -2,20 +2,20 @@
 import abc
 import subprocess
 import textwrap
-from concurrent import futures
 from functools import cached_property
 from typing import Any, Callable, Dict, List, Optional
 
 import abstracts
 
-from aio.core import functional
+from aio.core import event, functional
 from aio.core.subprocess import (
     exceptions,
     parallel as _parallel,
     run as _run)
 
 
-class AAsyncShell(metaclass=abstracts.Abstraction):
+@abstracts.implementer(event.IExecutive)
+class AAsyncShell(event.AExecutive, metaclass=abstracts.Abstraction):
     """Execute shell commands asynchronously.
 
     Wraps async `run` and `parallel` methods for an environment,
@@ -49,6 +49,8 @@ class AAsyncShell(metaclass=abstracts.Abstraction):
         self._handler = kwargs.pop("handler", self.to_list)
         self._fork = fork
         self._raises = raises
+        self._loop = kwargs.pop("loop", None)
+        self._pool = kwargs.pop("pool", None)
         self._kwargs = kwargs
 
     async def __call__(self, *args, **kwargs) -> Any:
@@ -60,15 +62,6 @@ class AAsyncShell(metaclass=abstracts.Abstraction):
         return dict(
             capture_output=True,
             encoding="utf-8")
-
-    @property
-    @abc.abstractmethod
-    def executor(self) -> futures.Executor:
-        """Executor to use, either Thread or Process pool."""
-        return (
-            futures.ProcessPoolExecutor()
-            if self.fork
-            else futures.ThreadPoolExecutor())
 
     @property
     def fork(self) -> bool:
@@ -125,9 +118,7 @@ class AAsyncShell(metaclass=abstracts.Abstraction):
             **dict(
                 handler=self.handler,
                 raises=self.raises,
-                executor=(
-                    kwargs.pop("executor", None)
-                    or self.executor)),
+                executor=self.pool),
             **kwargs}
 
     def to_list(self, response: subprocess.CompletedProcess) -> List[str]:

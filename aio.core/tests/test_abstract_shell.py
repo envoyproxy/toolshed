@@ -5,15 +5,11 @@ import pytest
 
 import abstracts
 
-from aio.core import subprocess
+from aio.core import event, subprocess
 
 
 @abstracts.implementer(subprocess.AAsyncShell)
 class DummyAsyncShell:
-
-    @property
-    def executor(self):
-        return super().executor
 
     def parallel(self, *args, **kwargs):
         return super().parallel(*args, **kwargs)
@@ -25,10 +21,12 @@ class DummyAsyncShell:
 @pytest.mark.parametrize("fork", [None, True, False])
 @pytest.mark.parametrize("raises", [None, True, False])
 @pytest.mark.parametrize("handler", [0, None, "HANDLER"])
+@pytest.mark.parametrize("loop", [None, False, "LOOP"])
+@pytest.mark.parametrize("pool", [None, False, "POOL"])
 @pytest.mark.parametrize(
     "kwargs",
     [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
-def test_shell_constructor(patches, fork, raises, handler, kwargs):
+def test_shell_constructor(patches, fork, raises, handler, loop, pool, kwargs):
     patched = patches(
         "AAsyncShell.to_list",
         prefix="aio.core.subprocess.abstract.shell")
@@ -39,6 +37,11 @@ def test_shell_constructor(patches, fork, raises, handler, kwargs):
         shell_kwargs["raises"] = raises
     if handler != 0:
         shell_kwargs["handler"] = handler
+    if loop is not None:
+        shell_kwargs["loop"] = loop
+    if pool is not None:
+        shell_kwargs["pool"] = pool
+
     shell_kwargs = {**shell_kwargs, **kwargs}
 
     with patched as (m_tolist, ):
@@ -48,6 +51,7 @@ def test_shell_constructor(patches, fork, raises, handler, kwargs):
 
         shell = DummyAsyncShell(**shell_kwargs)
 
+    assert isinstance(shell, event.IExecutive)
     assert (
         shell._handler
         == (m_tolist
@@ -68,6 +72,8 @@ def test_shell_constructor(patches, fork, raises, handler, kwargs):
     assert shell.raises == shell._raises
     assert "raises" not in shell.__dict__
     assert shell._kwargs == kwargs
+    assert shell._loop == loop
+    assert shell._pool == pool
     assert (
         shell.default_kwargs
         == dict(capture_output=True, encoding="utf-8"))
@@ -94,29 +100,6 @@ async def test_shell_dunder_call(patches, args, kwargs):
     assert (
         m_run.call_args
         == [tuple(args), kwargs])
-
-
-@pytest.mark.parametrize("fork", [True, False])
-def test_shell_executor(patches, fork):
-    shell = DummyAsyncShell()
-    patched = patches(
-        "futures",
-        ("AAsyncShell.fork",
-         dict(new_callable=PropertyMock)),
-        prefix="aio.core.subprocess.abstract.shell")
-
-    with patched as (m_futures, m_fork):
-        m_fork.return_value = fork
-        assert (
-            shell.executor
-            == (m_futures.ProcessPoolExecutor.return_value
-                if fork
-                else m_futures.ThreadPoolExecutor.return_value))
-    if fork:
-        assert not m_futures.ThreadPoolExecutor.called
-    else:
-        assert not m_futures.ProcessPoolExecutor.called
-    assert "executor" not in shell.__dict__
 
 
 @pytest.mark.parametrize("handler", [None, "HANDLER"])
@@ -261,45 +244,39 @@ async def test_shell_run(patches, args, kwargs):
 @pytest.mark.parametrize(
     "kwargs",
     [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
-@pytest.mark.parametrize(
-    "executor", [0, None, False, "self_kwargs", "kwargs"])
-def test_shell_run_kwargs(patches, self_kwargs, kwargs, executor):
+def test_shell_run_kwargs(patches, self_kwargs, kwargs):
     shell = DummyAsyncShell()
     kwargs = kwargs.copy()
     self_kwargs = self_kwargs.copy()
     patched = patches(
         "dict",
-        ("AAsyncShell.executor",
-         dict(new_callable=PropertyMock)),
         ("AAsyncShell.handler",
          dict(new_callable=PropertyMock)),
         ("AAsyncShell.kwargs",
          dict(new_callable=PropertyMock)),
+        ("AAsyncShell.pool",
+         dict(new_callable=PropertyMock)),
         ("AAsyncShell.raises",
          dict(new_callable=PropertyMock)),
         prefix="aio.core.subprocess.abstract.shell")
-    if executor == "self_kwargs":
-        self_kwargs["executor"] = executor
-    elif executor != 0:
-        kwargs["executor"] = executor
 
-    with patched as (m_dict, m_exec, m_handler, m_kwargs, m_raises):
+    with patched as (m_dict, m_handler, m_kwargs, m_pool, m_raises):
         m_dict.return_value = dict(returned="KWARGS")
         m_kwargs.return_value = self_kwargs
         expected = {
             **dict(returned="KWARGS"),
             **self_kwargs,
             **kwargs}
-        expected.pop("executor", None)
         assert (
             shell.run_kwargs(**kwargs)
             == expected)
+
     assert (
         m_dict.call_args
         == [(),
             dict(handler=m_handler.return_value,
                  raises=m_raises.return_value,
-                 executor=executor or m_exec.return_value)])
+                 executor=m_pool.return_value)])
 
 
 def test_shell_to_list():
