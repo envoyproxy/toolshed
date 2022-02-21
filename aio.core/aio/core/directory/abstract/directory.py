@@ -70,7 +70,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     @async_property(cache=True)
     async def files(self) -> Set[str]:
         """Set of relative file paths associated with this directory."""
-        return await self.grep(["-l", ""])
+        return await self.get_files()
 
     @cached_property
     def grep_args(self) -> Tuple[str, ...]:
@@ -112,11 +112,17 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     @cached_property
     def shell(self) -> subprocess.AAsyncShell:
         """Shell that uses the directory path as `cwd`."""
-        return subprocess.AsyncShell(cwd=self.path)
+        return subprocess.AsyncShell(
+            cwd=self.path,
+            loop=self.loop,
+            pool=self.pool)
 
     @cached_property
     def absolute_path(self):
         return str(self.path.resolve())
+
+    async def get_files(self) -> Set[str]:
+        return await self.grep(["-l", ""])
 
     def grep(
             self,
@@ -165,9 +171,6 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
             args: Iterable,
             target: Optional[str] = None) -> AsyncIterator[str]:
         """Run `grep` in the directory."""
-        # Currently this generation is a little pointless, but is here in
-        # anticipation of https://github.com/envoyproxy/pytooling/issues/246
-        # getting fixed.
         try:
             for path in await self.shell(self.parse_grep_args(args, target)):
                 if path:
@@ -219,21 +222,10 @@ class AGitDirectory(ADirectory):
 
     @async_property(cache=True)
     async def files(self) -> Set[str]:
-        if not self.changed:
-            return await super().files
-        # If the super `files` are going to be filtered fetch them first, and
-        # only check `changed_files` if there are any matching. Otherwise do
-        # the reverse - get the `changed_files` and bail if there are none.
-        no_match = (
-            ((self.path_matcher or self.exclude_matcher)
-             and not await super().files)
-            or not await self.changed_files)
         return (
-            set()
-            if no_match
-            else (
-                await super().files
-                & await self.changed_files))
+            await self.get_files()
+            if not self.changed
+            else await self.get_changed_files())
 
     @property
     def git_command(self) -> str:
@@ -247,3 +239,21 @@ class AGitDirectory(ADirectory):
     @property
     def grep_command_args(self) -> Tuple[str, ...]:
         return self.git_command, "grep", "--cached"
+
+    async def get_changed_files(self) -> Set[str]:
+        """Files that have changed."""
+        # If the super `files` are going to be filtered fetch them first, and
+        # only check `changed_files` if there are any matching. Otherwise do
+        # the reverse - get the `changed_files` and bail if there are none.
+        files = None
+        if self.path_matcher or self.exclude_matcher:
+            files = await self.get_files()
+            if not files:
+                return set()
+        elif not await self.changed_files:
+            return set()
+        return (
+            (await self.get_files()
+             if files is None
+             else files)
+            & await self.changed_files)

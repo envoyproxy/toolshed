@@ -1,6 +1,4 @@
 
-from unittest.mock import PropertyMock
-
 import pytest
 
 from aio.core import subprocess
@@ -66,18 +64,3 @@ async def test_shell_run(patches, args, kwargs):
     assert (
         m_super.call_args
         == [tuple(args), kwargs])
-
-
-async def test_shell_executor(patches):
-    shell = subprocess.AsyncShell()
-    patched = patches(
-        ("subprocess.AAsyncShell.executor",
-         dict(new_callable=PropertyMock)),
-        prefix="aio.core.subprocess.shell")
-
-    with patched as (m_super, ):
-        assert (
-            shell.executor
-            == m_super.return_value)
-
-    assert "executor" not in shell.__dict__

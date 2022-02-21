@@ -231,16 +231,23 @@ def test_abstract_directory_shell(patches):
     direct = directory.ADirectory("PATH")
     patched = patches(
         "subprocess",
+        ("ADirectory.loop",
+         dict(new_callable=PropertyMock)),
         ("ADirectory.path",
+         dict(new_callable=PropertyMock)),
+        ("ADirectory.pool",
          dict(new_callable=PropertyMock)),
         prefix="aio.core.directory.abstract.directory")
 
-    with patched as (m_sub, m_path):
+    with patched as (m_sub, m_loop, m_path, m_pool):
         assert direct.shell == m_sub.AsyncShell.return_value
 
     assert (
         m_sub.AsyncShell.call_args
-        == [(), dict(cwd=m_path.return_value)])
+        == [(),
+            dict(cwd=m_path.return_value,
+                 loop=m_loop.return_value,
+                 pool=m_pool.return_value)])
     assert "shell" in direct.__dict__
 
 
@@ -521,6 +528,34 @@ async def test_abstract_git_directory_changed_files(patches):
         == result)
 
 
+@pytest.mark.parametrize("changed", [True, False])
+async def test_abstract_git_directory_files(patches, changed):
+    direct = directory.AGitDirectory(
+        "PATH",
+        changed=changed)
+    patched = patches(
+        "AGitDirectory.get_changed_files",
+        "AGitDirectory.get_files",
+        prefix="aio.core.directory.abstract.directory")
+
+    with patched as (m_changed_files, m_files):
+        result = await direct.files
+        assert (
+            result
+            == (m_changed_files.return_value
+                if changed
+                else m_files.return_value)
+            == getattr(
+                direct,
+                directory.AGitDirectory.files.cache_name)[
+                    "files"])
+
+    if changed:
+        assert not m_files.called
+    else:
+        assert not m_changed_files.called
+
+
 @pytest.mark.parametrize(
     "files",
     [set(),
@@ -531,59 +566,54 @@ async def test_abstract_git_directory_changed_files(patches):
     [set(),
      set(f"F{i}" for i in range(0, 5)),
      set(f"F{i}" for i in range(0, 10))])
-@pytest.mark.parametrize("changed", [True, False])
 @pytest.mark.parametrize("path_matcher", [None, "PATH_MATCHER"])
 @pytest.mark.parametrize("exclude_matcher", [None, "EXCLUDE_MATCHER"])
-async def test_abstract_git_directory_files(
-        patches, changed, files, changed_files, path_matcher, exclude_matcher):
+async def test_abstract_git_directory_get_changed_files(
+        patches, files, changed_files, path_matcher, exclude_matcher):
     direct = directory.AGitDirectory(
         "PATH",
-        changed=changed,
         path_matcher=path_matcher,
         exclude_matcher=exclude_matcher)
     patched = patches(
         "set",
-        ("ADirectory.files",
-         dict(new_callable=PropertyMock)),
         ("AGitDirectory.changed_files",
          dict(new_callable=PropertyMock)),
+        "ADirectory.get_files",
         prefix="aio.core.directory.abstract.directory")
 
-    with patched as (m_set, m_files, m_changed):
-        m_files.side_effect = AsyncMock(return_value=files)
+    with patched as (m_set, m_changed, m_files):
+        m_files.return_value = files
         m_changed.side_effect = AsyncMock(return_value=changed_files)
-        result = await direct.files
-        if not changed:
-            assert result == files
-        else:
-            empty_set = (
-                ((path_matcher or exclude_matcher)
-                 and not files)
-                or not changed_files)
-            assert (
-                result
-                == (m_set.return_value
-                    if empty_set
-                    else files & changed_files))
+        result = await direct.get_changed_files()
+        empty_set = False
+        if (path_matcher or exclude_matcher):
+            if not files:
+                empty_set = True
+        elif not changed_files:
+            empty_set = True
+        assert (
+            result
+            == (m_set.return_value
+                if empty_set
+                else files & changed_files))
 
-    no_changed = (
-        not changed
-        or ((path_matcher or exclude_matcher)
-            and not files))
-    if no_changed:
+    if (path_matcher or exclude_matcher) and not files:
         assert not m_changed.called
-    no_files = (
-        changed
-        and not (path_matcher or exclude_matcher)
-        and not changed_files)
-    if no_files:
+        assert (
+            m_files.call_args_list
+            == [[(), {}]])
+    elif not (path_matcher or exclude_matcher) and not changed_files:
         assert not m_files.called
-    assert (
-        getattr(
-            direct,
-            directory.AGitDirectory.files.cache_name)[
-                "files"]
-        == result)
+        assert (
+            m_changed.call_args
+            == [(), {}])
+    else:
+        assert (
+            m_files.call_args_list
+            == [[(), {}]])
+        assert (
+            m_changed.call_args
+            == [(), {}])
 
 
 @pytest.mark.parametrize("git", [None, "GIT"])
