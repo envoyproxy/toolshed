@@ -100,7 +100,7 @@ class ADependencyGithubRelease(
         """Release SHA."""
         if not self.asset_url:
             raise exceptions.NoReleaseAssetError(
-                f"Cannot check sha for {self.__class__.__name__}"
+                f"Cannot check sha for {self.__class__.__name__} "
                 "with no `asset_url`")
         response = await self.session.get(self.asset_url)
         logger.debug(f"SHA download: {self.asset_url}")
