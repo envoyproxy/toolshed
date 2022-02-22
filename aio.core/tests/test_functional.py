@@ -1,8 +1,10 @@
 
 import abc
 import contextlib
+import math
 import sys
 import types
+from typing import Iterable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
@@ -1171,3 +1173,121 @@ def test_searchable_collection_dunder_len():
     assert (
         collection.__len__.call_args
         == [(), {}])
+
+
+@pytest.mark.parametrize("item_count", range(0, 20))
+@pytest.mark.parametrize("batch_size", range(0, 7))
+def test_batches(item_count, batch_size):
+    items = [MagicMock() for m in range(0, item_count)]
+    actual_batch_size = batch_size or 1
+    batch_iter = functional.batches(items, batch_size)
+    assert isinstance(batch_iter, types.GeneratorType)
+    batches = list(batch_iter)
+    assert all(len(b) <= actual_batch_size for b in batches)
+    assert sum(len(b) for b in batches) == item_count
+    assert (
+        len(batches)
+        == (0
+            if not item_count
+            else (
+                math.floor(item_count / actual_batch_size)
+                + (1
+                   if item_count % actual_batch_size
+                   else 0))))
+    results = []
+    for b in batches:
+        for result in b:
+            results.append(result)
+    assert results == items
+
+
+@pytest.mark.parametrize("is_str_or_bytes", [True, False])
+@pytest.mark.parametrize("is_iterable", [True, False])
+@pytest.mark.parametrize("max_batch_size", [None, 0, 23])
+def test_batch_jobs(patches, is_str_or_bytes, is_iterable, max_batch_size):
+    patched = patches(
+        "len",
+        "isinstance",
+        "min",
+        "round",
+        "type",
+        "psutil",
+        "batches",
+        "typed",
+        prefix="aio.core.functional.utils")
+    jobs = MagicMock()
+    args = (
+        ()
+        if max_batch_size is None
+        else (max_batch_size, ))
+
+    def isinst(item, _type):
+        if _type == Iterable:
+            return is_iterable
+        return is_str_or_bytes
+
+    with patched as patchy:
+        (m_len, m_isinst, m_min, m_round, m_type,
+         m_psutil, m_batches, m_typed) = patchy
+        m_isinst.side_effect = isinst
+        if not is_iterable or is_str_or_bytes:
+            with pytest.raises(functional.exceptions.BatchedJobsError) as e:
+                functional.batch_jobs(jobs, *args)
+        else:
+            assert (
+                functional.batch_jobs(jobs, *args)
+                == m_batches.return_value)
+
+    assert (
+        m_isinst.call_args_list[0]
+        == [(jobs, Iterable), {}])
+    if not is_iterable or is_str_or_bytes:
+        assert not m_psutil.proc_count.called
+        assert not m_round.called
+        assert not m_len.called
+        assert not m_min.called
+        assert not m_batches.called
+        assert not m_typed.called
+        assert (
+            e.value.args[0]
+            == f"Wrong type for `batch_jobs` ({m_type.return_value}: {jobs}")
+        assert (
+            m_type.call_args
+            == [(jobs, ), {}])
+    if not is_iterable:
+        assert len(m_isinst.call_args_list) == 1
+        return
+    assert (
+        m_isinst.call_args_list[1]
+        == [(jobs, (str, bytes)), {}])
+    if is_str_or_bytes:
+        return
+    assert not m_type.called
+    assert (
+        m_psutil.cpu_count.call_args
+        == [(), {}])
+    assert (
+        m_len.call_args
+        == [(jobs, ), {}])
+    assert (
+        m_round.call_args
+        == [(m_len.return_value.__truediv__.return_value, ),
+            {}])
+    assert (
+        m_len.return_value.__truediv__.call_args
+        == [(m_psutil.cpu_count.return_value, ), {}])
+    batch_count = m_round.return_value
+    if max_batch_size:
+        assert (
+            m_min.call_args
+            == [(m_round.return_value, max_batch_size), {}])
+        batch_count = m_min.return_value
+    else:
+        assert not m_min.called
+    assert (
+        m_typed.call_args
+        == [(Iterable, jobs), {}])
+    assert (
+        m_batches.call_args
+        == [(m_typed.return_value, ),
+            dict(batch_size=batch_count)])
