@@ -1,14 +1,17 @@
 
 import asyncio
+import pathlib
+import os
 import re
-from functools import cached_property
+from functools import cached_property, partial
 from typing import (
     Callable, Dict, Iterator, List,
-    Pattern, Set, Tuple)
+    Pattern, Set, Tuple, Union)
 
 import abstracts
 
-from aio.core.functional import async_property
+from aio.core.dev import debug
+from aio.core.functional import async_property, directory_context
 
 from envoy.base import utils
 from envoy.code.check import abstract
@@ -21,15 +24,23 @@ NOGLINT_RE = (
     r"[\w/]*password_protected_password.txt$")
 
 
-class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
-
-    @classmethod
-    def have_newlines(cls, paths: str) -> Set[Tuple[str, bool]]:
+@debug.logging(
+    log=__name__,
+    show_cpu=True)
+def _have_newlines(path, paths):
+    with directory_context(path):
         return set(
             (target,
              (utils.last_n_bytes_of(target)
               == b'\n'))
             for target in paths)
+
+
+class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
+
+    @classmethod
+    def have_newlines(cls, path, *paths: str) -> Set[Tuple[str, bool]]:
+        return _have_newlines(path, paths)
 
     @classmethod
     def filter_files(
@@ -51,7 +62,9 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     async def files_with_mixed_tabs(self) -> Set[str]:
         files = await self.files_with_preceeding_tabs
         return (
-            await self.directory.grep(["-lP", r"^ ", *files])
+            await self.directory.grep(
+                ["-lP", r"^ "],
+                target=files)
             if files
             else set())
 
@@ -60,24 +73,16 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         files = await self.files
         if not files:
             return set()
-        # This is a workaround for a blocking issue sending
-        # very large cli args to a subprocess.
-        # TODO: generalize this solution in directory.grep
-        if len(files) < 1000:
-            return await self.directory.grep(
-                ["-lP", r"^\t",
-                 *await self.files])
-        return (
-            files
-            & await self.directory.grep(
-                ["-lP", r"^\t"]))
+        return await self.directory.grep(
+            ["-lP", r"^\t"],
+            target=await self.files)
 
     @async_property
     async def files_with_no_newline(self) -> Set[str]:
         return (
-            await self.execute(
-                self.have_newlines,
-                await self.absolute_paths)
+            await self.execute_in_batches(
+                partial(self.have_newlines, self.directory.path),
+                *await self.files)
             if await self.files
             else set())
 
@@ -86,19 +91,9 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         files = await self.files
         if not files:
             return set()
-        # This is a workaround for a blocking issue sending
-        # very large cli args to a subprocess.
-        # TODO: generalize this solution in directory.grep
-        if len(files) < 1000:
-            return await self.directory.grep(
-                ["-lE",
-                 "[[:blank:]]$",
-                 *await self.files])
-        return (
-            files
-            & await self.directory.grep(
-                ["-lE",
-                 "[[:blank:]]$"]))
+        return await self.directory.grep(
+            ["-lE", "[[:blank:]]$"],
+            target=await self.files)
 
     @cached_property
     def noglint_re(self) -> Pattern[str]:
