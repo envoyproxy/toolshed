@@ -11,7 +11,13 @@ from .decorators import async_property
 from .generator import AwaitableGenerator
 from .output import buffered, buffering, capturing
 from .process import async_map, threaded
-from .utils import maybe_awaitable, maybe_coro, nested, typed
+from .utils import (
+    batches,
+    batch_jobs,
+    maybe_awaitable,
+    maybe_coro,
+    nested,
+    typed)
 from . import collections, exceptions, utils
 
 
@@ -22,6 +28,8 @@ __all__ = (
     "async_map",
     "async_set",
     "AwaitableGenerator",
+    "batches",
+    "batch_jobs",
     "buffered",
     "buffering",
     "capturing",

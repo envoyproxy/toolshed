@@ -5,3 +5,7 @@ class CollectionQueryError(Exception):
 
 class TypeCastingError(TypeError):
     pass
+
+
+class BatchedJobsError(Exception):
+    pass

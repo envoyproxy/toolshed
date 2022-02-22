@@ -5,7 +5,10 @@ import gzip
 import inspect
 import textwrap
 from typing import (
-    Any, Awaitable, Callable, Coroutine, Type, Union)
+    Any, Awaitable, Callable, Coroutine,
+    Iterable, Iterator, List, Optional, Sized, Type, Union)
+
+import psutil
 
 from trycast import trycast  # type:ignore
 
@@ -93,3 +96,31 @@ def typed(tocast: Type, value: Any) -> Any:
         "Value has wrong type or shape for Type "
         f"{tocast}: "
         f"{textwrap.shorten(str(value), width=10, placeholder='...')}")
+
+
+# TODO: add async versions of the `batch` utils
+def batches(items: Iterable, batch_size: int) -> Iterator[List]:
+    """Yield batches of items according to batch size."""
+    batch = []
+    for item in items:
+        batch.append(item)
+        if len(batch) >= batch_size:
+            yield batch
+            batch = []
+    if batch:
+        yield batch
+
+
+def batch_jobs(jobs: Sized, max_batch_size: Optional[int] = None):
+    """Batch jobs between processors, optionally setting a max batch size."""
+    bad_jobs_type = (
+        not isinstance(jobs, Iterable)
+        or isinstance(jobs, (str, bytes)))
+    if bad_jobs_type:
+        raise exceptions.BatchedJobsError(
+            f"Wrong type for `batch_jobs` ({type(jobs)}: {jobs}")
+    proc_count = psutil.cpu_count()
+    batch_count = round(len(jobs) / proc_count)
+    if max_batch_size:
+        batch_count = min(batch_count, max_batch_size)
+    return batches(typed(Iterable, jobs), batch_size=batch_count)
