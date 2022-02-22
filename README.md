@@ -78,6 +78,7 @@ pypi: https://pypi.org/project/aio.core
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [janus](https://pypi.org/project/janus)
 - [orjson](https://pypi.org/project/orjson)
+- [psutil](https://pypi.org/project/psutil)
 - [trycast](https://pypi.org/project/trycast)
 
 ---

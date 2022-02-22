@@ -7,6 +7,7 @@ pytooling_library(
         "//deps:aiohttp",
         "//deps:janus",
         "//deps:orjson",
+        "//deps:psutil",
     ],
     sources=[
         "__init__.py",
