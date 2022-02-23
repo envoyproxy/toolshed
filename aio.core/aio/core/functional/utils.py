@@ -111,7 +111,10 @@ def batches(items: Iterable, batch_size: int) -> Iterator[List]:
         yield batch
 
 
-def batch_jobs(jobs: Sized, max_batch_size: Optional[int] = None):
+def batch_jobs(
+        jobs: Sized,
+        max_batch_size: Optional[int] = None,
+        min_batch_size: Optional[int] = None) -> Iterator[List]:
     """Batch jobs between processors, optionally setting a max batch size."""
     bad_jobs_type = (
         not isinstance(jobs, Iterable)
@@ -123,4 +126,6 @@ def batch_jobs(jobs: Sized, max_batch_size: Optional[int] = None):
     batch_count = round(len(jobs) / proc_count)
     if max_batch_size:
         batch_count = min(batch_count, max_batch_size)
+    if min_batch_size:
+        batch_count = max(batch_count, min_batch_size)
     return batches(typed(Iterable, jobs), batch_size=batch_count)
