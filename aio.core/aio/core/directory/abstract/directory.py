@@ -1,10 +1,11 @@
 
 import asyncio
-import os
+import logging
 import pathlib
 import shutil
+import subprocess as _subprocess
 from concurrent import futures
-from functools import cached_property, lru_cache
+from functools import cached_property, lru_cache, partial
 from typing import (
     AsyncIterator, Iterable, Optional,
     Pattern, Set, Tuple, Union)
@@ -12,8 +13,31 @@ from typing import (
 import abstracts
 
 from aio.core import event, subprocess
+from aio.core.dev import debug
 from aio.core.functional import async_property, async_set, AwaitableGenerator
 from aio.core.subprocess import exceptions as subprocess_exceptions
+
+
+logger = logging.getLogger(__name__)
+
+GREP_MIN_BATCH_SIZE = 500
+GREP_MAX_BATCH_SIZE = 2000
+
+
+@debug.logging(
+    log=__name__,
+    show_cpu=True)
+def _run_grep(path, *args):
+    # TODO: Add error handling!!!
+    return set(
+        path
+        for path
+        in _subprocess.run(
+            args,
+            cwd=path,
+            capture_output=True,
+            encoding="utf-8").stdout.split("\n")
+        if path)
 
 
 @abstracts.implementer(event.IExecutive)
@@ -35,18 +59,13 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     """
 
     @classmethod
-    @lru_cache(maxsize=None)
-    def make_path_absolute(cls, absolute_path, path: str) -> str:
-        """Make a directory-relative path absolute."""
-        return os.path.join(absolute_path, path)
+    def run_grep(cls, path: str, *args):
+        """Run shellcheck command with a list of files from a path."""
+        return _run_grep(path, *args)
 
     @classmethod
-    def _make_paths_absolute(cls, path: str, paths: Iterable[str]) -> Set[str]:
-        """Make directory-relative paths absolute."""
-        return set(
-            cls.make_path_absolute(path, p)
-            for p
-            in paths)
+    def handle_grep_response(cls, response):
+        return
 
     def __init__(
             self,
@@ -122,29 +141,21 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         return str(self.path.resolve())
 
     async def get_files(self) -> Set[str]:
-        return await self.grep(["-l", ""])
+        return await self.grep(["-l"], "")
 
     def grep(
             self,
             args: Iterable,
-            target: Optional[str] = None) -> AwaitableGenerator:
+            target: Union[str, Iterable[str]]) -> AwaitableGenerator:
         return AwaitableGenerator(
             self._grep(args, target),
             collector=async_set,
             predicate=self._include_file)
 
-    async def make_paths_absolute(self, paths: Iterable[str]) -> Set[str]:
-        """Make directory-relative paths absolute."""
-        # TODO: only shell out if the number is large
-        return await self.execute(
-            self._make_paths_absolute,
-            self.absolute_path,
-            paths)
-
     def parse_grep_args(
             self,
             args: Iterable[str],
-            target: Optional[str] = None) -> Tuple[str, ...]:
+            target: Union[str, Iterable[str]]) -> Tuple[str, ...]:
         """Parse `grep` args with the defaults to pass to the `grep`
         command."""
         return (
@@ -154,37 +165,30 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
               if target is not None
               else ()))
 
-    @lru_cache
+    # @lru_cache
     def relative_path(self, path: str) -> str:
         """Make an absolute path directory-relative."""
         return path[len(self.absolute_path) + 1:]
 
-    def relative_paths(self, paths: Iterable[str]) -> Set[str]:
-        """Make absolute paths directory-relative."""
-        return set(
-            self.relative_path(path)
-            for path
-            in paths)
-
     async def _grep(
             self,
             args: Iterable,
-            target: Optional[str] = None) -> AsyncIterator[str]:
+            target: Union[str, Iterable[str]]) -> AsyncIterator[str]:
         """Run `grep` in the directory."""
-        try:
-            for path in await self.shell(self.parse_grep_args(args, target)):
-                if path:
-                    yield path
-        except subprocess_exceptions.RunError as e:
-            response = e.args[1]
-            grep_fail = (
-                (response.returncode == 1)
-                and not response.stdout
-                and not response.stderr)
-            if not grep_fail:
-                raise e
+        *grep_args, target = self.parse_grep_args(args, target)
+        batches = self.execute_in_batches(
+            partial(self.run_grep, str(self.path), *grep_args),
+            *([target]
+              if isinstance(target, str)
+              else target),
+            concurrency=6,
+            min_batch_size=GREP_MIN_BATCH_SIZE,
+            max_batch_size=GREP_MAX_BATCH_SIZE)
+        async for batch in batches:
+            for result in batch:
+                yield result
 
-    @lru_cache
+    # @lru_cache
     def _include_file(self, path: str) -> bool:
         return bool(
             (not self.path_matcher
