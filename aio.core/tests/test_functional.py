@@ -1204,10 +1204,13 @@ def test_batches(item_count, batch_size):
 @pytest.mark.parametrize("is_str_or_bytes", [True, False])
 @pytest.mark.parametrize("is_iterable", [True, False])
 @pytest.mark.parametrize("max_batch_size", [None, 0, 23])
-def test_batch_jobs(patches, is_str_or_bytes, is_iterable, max_batch_size):
+@pytest.mark.parametrize("min_batch_size", [None, 0, 23])
+def test_batch_jobs(
+        patches, is_str_or_bytes, is_iterable, max_batch_size, min_batch_size):
     patched = patches(
         "len",
         "isinstance",
+        "max",
         "min",
         "round",
         "type",
@@ -1216,10 +1219,11 @@ def test_batch_jobs(patches, is_str_or_bytes, is_iterable, max_batch_size):
         "typed",
         prefix="aio.core.functional.utils")
     jobs = MagicMock()
-    args = (
-        ()
-        if max_batch_size is None
-        else (max_batch_size, ))
+    kwargs = {}
+    if max_batch_size is not None:
+        kwargs["max_batch_size"] = max_batch_size
+    if min_batch_size is not None:
+        kwargs["min_batch_size"] = min_batch_size
 
     def isinst(item, _type):
         if _type == Iterable:
@@ -1227,15 +1231,15 @@ def test_batch_jobs(patches, is_str_or_bytes, is_iterable, max_batch_size):
         return is_str_or_bytes
 
     with patched as patchy:
-        (m_len, m_isinst, m_min, m_round, m_type,
+        (m_len, m_isinst, m_max, m_min, m_round, m_type,
          m_psutil, m_batches, m_typed) = patchy
         m_isinst.side_effect = isinst
         if not is_iterable or is_str_or_bytes:
             with pytest.raises(functional.exceptions.BatchedJobsError) as e:
-                functional.batch_jobs(jobs, *args)
+                functional.batch_jobs(jobs, **kwargs)
         else:
             assert (
-                functional.batch_jobs(jobs, *args)
+                functional.batch_jobs(jobs, **kwargs)
                 == m_batches.return_value)
 
     assert (
@@ -1246,6 +1250,7 @@ def test_batch_jobs(patches, is_str_or_bytes, is_iterable, max_batch_size):
         assert not m_round.called
         assert not m_len.called
         assert not m_min.called
+        assert not m_max.called
         assert not m_batches.called
         assert not m_typed.called
         assert (
@@ -1280,10 +1285,17 @@ def test_batch_jobs(patches, is_str_or_bytes, is_iterable, max_batch_size):
     if max_batch_size:
         assert (
             m_min.call_args
-            == [(m_round.return_value, max_batch_size), {}])
+            == [(batch_count, max_batch_size), {}])
         batch_count = m_min.return_value
     else:
         assert not m_min.called
+    if min_batch_size:
+        assert (
+            m_max.call_args
+            == [(batch_count, min_batch_size), {}])
+        batch_count = m_max.return_value
+    else:
+        assert not m_max.called
     assert (
         m_typed.call_args
         == [(Iterable, jobs), {}])
