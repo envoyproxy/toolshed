@@ -51,7 +51,7 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     async def files_with_mixed_tabs(self) -> Set[str]:
         files = await self.files_with_preceeding_tabs
         return (
-            await self.directory.grep(["-lP", r"^ ", *files])
+            await self.directory.grep(["-lP", r"^ "], target=files)
             if files
             else set())
 
@@ -60,17 +60,9 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         files = await self.files
         if not files:
             return set()
-        # This is a workaround for a blocking issue sending
-        # very large cli args to a subprocess.
-        # TODO: generalize this solution in directory.grep
-        if len(files) < 1000:
-            return await self.directory.grep(
-                ["-lP", r"^\t",
-                 *await self.files])
-        return (
-            files
-            & await self.directory.grep(
-                ["-lP", r"^\t"]))
+        return await self.directory.grep(
+            ["-lP", r"^\t"],
+            target=await self.files)
 
     @async_property
     async def files_with_no_newline(self) -> Set[str]:
@@ -86,19 +78,9 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         files = await self.files
         if not files:
             return set()
-        # This is a workaround for a blocking issue sending
-        # very large cli args to a subprocess.
-        # TODO: generalize this solution in directory.grep
-        if len(files) < 1000:
-            return await self.directory.grep(
-                ["-lE",
-                 "[[:blank:]]$",
-                 *await self.files])
-        return (
-            files
-            & await self.directory.grep(
-                ["-lE",
-                 "[[:blank:]]$"]))
+        return await self.directory.grep(
+            ["-lE", "[[:blank:]]$"],
+            target=await self.files)
 
     @cached_property
     def noglint_re(self) -> Pattern[str]:

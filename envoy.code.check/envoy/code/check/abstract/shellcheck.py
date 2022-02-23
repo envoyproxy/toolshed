@@ -28,6 +28,7 @@ class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def checker_files(self) -> Set[str]:
+        shebang_files = await self.shebang_files
         return (
             await self.sh_files
             | await self.shebang_files)
@@ -60,13 +61,9 @@ class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     async def shebang_files(self) -> Set[str]:
         """Files that contain shebang lines, excluding actual .sh files and
         others, eg md/rst, that may have such lines for other reasons."""
-        return set(
-            path
-            for path
-            in await self.directory.grep(
-                ["-lE",
-                 self.shebang_re_expr,
-                 *await self._possible_shebang_files]))
+        return await self.directory.grep(
+            ["-lE", self.shebang_re_expr],
+            target=await self._possible_shebang_files)
 
     @property
     def shebang_re_expr(self) -> str:
