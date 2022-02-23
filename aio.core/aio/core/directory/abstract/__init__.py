@@ -1,7 +1,8 @@
 
-from .directory import ADirectory, AGitDirectory
+from .directory import ADirectory, ADirectoryGrepper, AGitDirectory
 
 
 __all__ = (
     "ADirectory",
+    "ADirectoryGrepper",
     "AGitDirectory")
