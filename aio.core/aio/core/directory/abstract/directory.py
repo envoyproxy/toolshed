@@ -1,19 +1,29 @@
 
 import asyncio
 import os
+import logging
 import pathlib
 import shutil
+import subprocess as _subprocess
 from concurrent import futures
-from functools import cached_property, lru_cache
+from functools import cached_property, lru_cache, partial
 from typing import (
     AsyncIterator, Iterable, Optional,
     Pattern, Set, Tuple, Union)
+
+import psutil
 
 import abstracts
 
 from aio.core import event, subprocess
 from aio.core.functional import async_property, async_set, AwaitableGenerator
 from aio.core.subprocess import exceptions as subprocess_exceptions
+
+
+logger = logging.getLogger(__name__)
+
+GREP_MIN_BATCH_SIZE = 100
+GREP_MAX_BATCH_SIZE = 500
 
 
 @abstracts.implementer(event.IExecutive)
@@ -35,10 +45,27 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     """
 
     @classmethod
-    @lru_cache(maxsize=None)
+    # @lru_cache(maxsize=None)
     def make_path_absolute(cls, absolute_path, path: str) -> str:
         """Make a directory-relative path absolute."""
         return os.path.join(absolute_path, path)
+
+    @classmethod
+    def run_grep(cls, path: str, *args):
+        """Run shellcheck command with a list of files from a path."""
+        logger.debug(
+            f"Running shellcheck (cpu: "
+            f"{psutil.Process(os.getpid()).cpu_num()}) on {len(args)} files")
+        return cls.handle_grep_response(
+            _subprocess.run(
+                args,
+                cwd=path,
+                capture_output=True,
+                encoding="utf-8"))
+
+    @classmethod
+    def handle_grep_response(cls, response):
+        return [x for x in response.stdout.split("\n") if x]
 
     @classmethod
     def _make_paths_absolute(cls, path: str, paths: Iterable[str]) -> Set[str]:
@@ -65,7 +92,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         self.exclude = exclude or ()
         self.exclude_dirs = exclude_dirs or ()
         self._loop = loop
-        self._pool = pool
+        self._pool = None  # pool
 
     @async_property(cache=True)
     async def files(self) -> Set[str]:
@@ -171,18 +198,24 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
             args: Iterable,
             target: Optional[str] = None) -> AsyncIterator[str]:
         """Run `grep` in the directory."""
-        try:
-            for path in await self.shell(self.parse_grep_args(args, target)):
-                if path:
-                    yield path
-        except subprocess_exceptions.RunError as e:
-            response = e.args[1]
-            grep_fail = (
-                (response.returncode == 1)
-                and not response.stdout
-                and not response.stderr)
-            if not grep_fail:
-                raise e
+        *grep_args, target = self.parse_grep_args(args, target)
+        if target:
+            batches = self.execute_in_batches(
+                partial(self.run_grep, str(self.path), *grep_args),
+                *target,
+                concurrency=6,
+                min_batch_size=GREP_MIN_BATCH_SIZE,
+                max_batch_size=GREP_MAX_BATCH_SIZE)
+            async for batch in batches:
+                for result in batch:
+                    yield result
+            return
+        results = await self.execute(
+            partial(
+                self.run_grep, str(self.path),
+                *grep_args, target))
+        for result in results:
+            yield result
 
     @lru_cache
     def _include_file(self, path: str) -> bool:
