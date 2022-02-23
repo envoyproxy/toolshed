@@ -17,6 +17,7 @@ class IExecutive(event.IReactive, metaclass=abstracts.Interface):
             self,
             executable: Callable,
             *args,
+            use_pool: bool = True,
             **kwargs) -> Any:
         """Execute a command in a process pool."""
         raise NotImplementedError
