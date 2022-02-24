@@ -1,23 +1,36 @@
 
 import inspect
 import logging as _logging
+import os
 import time
 from functools import partial
 from typing import Any, Callable, Optional
+
+import psutil
 
 
 logger = _logging.getLogger(__name__)
 
 
-class logging:
+class ALogging:
 
     def __init__(self, fun: Optional[Callable] = None, *args, **kwargs):
         self.__wrapped__ = fun
         self.__doc__ = getattr(fun, '__doc__')
         self._log = kwargs.pop("log", None)
         self._format_result = kwargs.pop("format_result", None)
+        self._show_cpu = kwargs.pop("show_cpu", None)
 
-    def __call__(self, fun: Optional[Callable] = None):
+    def __call__(self, *args, **kwargs):
+        if self.__wrapped__:
+            if inspect.isasyncgenfunction(self.__wrapped__):
+                return self.fun_async_gen(*args, **kwargs)
+            elif inspect.iscoroutinefunction(self.__wrapped__):
+                return self.fun_async(*args, **kwargs)
+            elif inspect.isgeneratorfunction(self.__wrapped__):
+                return self.fun_gen(*args, **kwargs)
+            return self.fun(*args, **kwargs)
+        fun: Optional[Callable] = args[0] if args else None
         self.__wrapped__ = fun
         self.__doc__ = getattr(fun, '__doc__')
         return self
@@ -79,7 +92,8 @@ class logging:
     def log_debug_start(self, instance, *args, **kwargs):
         self.log(instance).debug(
             f"{self.__wrapped__.__qualname__} called\n"
-            f"ARGS: {args}\n  KWARGS: {kwargs}")
+            f"  ARGS: {args}\n"
+            f"  KWARGS: {kwargs}")
         return (instance, args, kwargs), time.perf_counter()
 
     def log_debug_complete(self, start, result):
@@ -89,6 +103,10 @@ class logging:
             len_info = str(len(result))
         except TypeError:
             len_info = ""
+        cpu_info = (
+            f" (cpu: {psutil.Process(os.getpid()).cpu_num()})"
+            if self._show_cpu
+            else "")
         result_info = (
             f"{type(result).__name__:5} {len_info:4} "
             f"{time_taken:6.3f}s")
@@ -97,18 +115,40 @@ class logging:
             result_info = formatter(
                 start, result, time_taken, result_info)
         self.log(instance).debug(
-            f"{self.__wrapped__.__qualname__} returns {result_info}")
+            f"{self.__wrapped__.__qualname__}{cpu_info} returns {result_info}")
         return result
 
     def log_debug_complete_iter(self, start, count):
         (instance, args, kwargs), start_time = start
         time_taken = time.perf_counter() - start_time
+        cpu_info = (
+            f"(cpu: {psutil.Process(os.getpid()).cpu_num()}) "
+            if self._show_cpu
+            else "")
         result_info = (
-            f"type(self.__wrapped__).__name__ {count:4} "
+            f"{type(self.__wrapped__).__name__:5} {count:4} "
             f"{time_taken:6.3f}s")
         formatter = self.format_result(instance)
         if formatter:
             result_info = formatter(
                 start, count, time_taken, result_info)
         self.log(instance).debug(
-            f"{self.__wrapped__.__qualname__} generated {result_info}")
+            f"{self.__wrapped__.__qualname__}{cpu_info} generated {result_info}")
+
+
+class ANullLogging(ALogging):
+
+    def log_debug_start(self, instance, *args, **kwargs):
+        return (instance, args, kwargs), None
+
+    def log_debug_complete(self, start, result):
+        return result
+
+    def log_debug_complete_iter(self, start, count):
+        pass
+
+
+def logging(*args, **kwargs):
+    if os.environ.get("AIODEBUG"):
+        return ALogging(*args, **kwargs)
+    return ANullLogging(*args, **kwargs)
