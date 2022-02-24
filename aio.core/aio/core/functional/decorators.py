@@ -4,11 +4,11 @@
 
 import inspect
 import logging
-import time
 from functools import cached_property
 from typing import Any, Callable, Dict, Optional
 
 from aio.core import event
+from aio.core.dev import debug
 
 
 logger = logging.getLogger(__name__)
@@ -112,13 +112,12 @@ class async_property:  # noqa: N801
             self.loaders[instance] = event.Loader()
         return self.loaders[instance]
 
+    @debug.logging(
+        log=__name__,
+        format_result="self._debug_prop")
     async def load(self, instance: Any) -> Any:
         # derive the result, set the cache if required, and return the result
-        start_time = time.perf_counter()
-        result = await self.fun(instance)
-        self.set_prop_cache(instance, result)
-        self._debug(start_time, result, instance)
-        return result
+        return self.set_prop_cache(instance, await self.fun(instance))
 
     async def load_cooperatively(self, instance: Any) -> Any:
         loader = self.get_loader(instance)
@@ -138,15 +137,13 @@ class async_property:  # noqa: N801
         setattr(instance, self.cache_name, cache)
         return result
 
-    def _debug(self, start_time: float, result: Any, instance: Any) -> None:
-        time_taken = time.perf_counter() - start_time
-        try:
-            len_info = f" {len(result)} results"
-        except TypeError:
-            len_info = ""
-        logger.debug(
-            f"Fetched (cache: {self.cache}) async_prop{len_info} for "
-            f"{self._repr(instance)} in {time_taken}s")
+    def _debug_prop(self, start, result, time_taken, result_info):
+        (instance, args, kwargs), start_time = start
+        cache = (
+            "\N{viewdata square}"
+            if self.cache
+            else "~")
+        return f"{cache} {result_info}: {self._repr(instance)}"
 
     def _repr(self, instance: Any) -> str:
         if self._fun is None:
