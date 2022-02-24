@@ -12,6 +12,7 @@ pytooling_library(
     sources=[
         "__init__.py",
         "dev/__init__.py",
+        "dev/debug.py",
         "dev/perf.py",
         "directory/__init__.py",
         "directory/directory.py",
