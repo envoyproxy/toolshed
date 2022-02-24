@@ -299,7 +299,8 @@ async def test_abstract_directory_paths_absolute(patches):
     patched = patches(
         ("ADirectory.absolute_path",
          dict(new_callable=PropertyMock)),
-        "ADirectory.execute",
+        ("ADirectory.execute",
+         dict(new_callable=AsyncMock)),
         "ADirectory._make_paths_absolute",
         prefix="aio.core.directory.abstract.directory")
     paths = MagicMock()

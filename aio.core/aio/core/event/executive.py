@@ -1,13 +1,10 @@
 
-import logging
 from typing import Any, Callable, Optional
 
 import abstracts
 
 from aio.core import event, functional, tasks
-
-
-logger = logging.getLogger(__name__)
+from aio.core.dev import debug
 
 
 # TODO: split `IReactive.pool` to here
@@ -39,13 +36,14 @@ class IExecutive(event.IReactive, metaclass=abstracts.Interface):
 @abstracts.implementer((event.AReactive, IExecutive))
 class AExecutive(metaclass=abstracts.Abstraction):
 
+    @debug.logging(
+        log=__name__,
+        format_result="self._debug_execute")
     async def execute(
             self,
             executable: Callable,
             *args,
             **kwargs) -> Any:
-        logger.debug(
-            f"Executing: {executable}\n  {args}\n  {kwargs}")
         return await self.loop.run_in_executor(
             self.pool,
             *(executable, *args),
@@ -70,3 +68,14 @@ class AExecutive(metaclass=abstracts.Abstraction):
                  min_batch_size=min_batch_size,
                  max_batch_size=max_batch_size)),
             limit=concurrency)
+
+    def _debug_execute(self, start, result, time_taken, result_info):
+        (instance, (executable, *args), kwargs), start_time = start
+        pool_name = (
+            "\N{forking}"
+            if self.pool.__class__.__name__ == "ProcessPoolExecutor"
+            else "\N{nonforking}")
+        pool_info = f"{pool_name}:{hex(id(self.pool))}"
+        return (
+            f"{pool_info} {result_info}: "
+            f"{executable.__module__}{executable.__qualname__}")

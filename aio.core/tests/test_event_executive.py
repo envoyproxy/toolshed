@@ -69,7 +69,8 @@ async def test_event_executive_execute(patches, args, kwargs):
         execute = AsyncMock()
         m_loop.return_value.run_in_executor = execute
         assert (
-            await executive.execute("EXECUTABLE", *args, **kwargs)
+            await DummyExecutive.execute.__wrapped__(
+                executive, "EXECUTABLE", *args, **kwargs)
             == m_loop.return_value.run_in_executor.return_value)
 
     assert (
