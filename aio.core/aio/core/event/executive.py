@@ -1,4 +1,5 @@
 
+from functools import partial
 from typing import Any, Callable, Optional
 
 import abstracts
@@ -76,6 +77,8 @@ class AExecutive(metaclass=abstracts.Abstraction):
             if self.pool.__class__.__name__ == "ProcessPoolExecutor"
             else "\N{nonforking}")
         pool_info = f"{pool_name}:{hex(id(self.pool))}"
+        if type(executable) == partial:
+            executable = executable.func
         return (
             f"{pool_info} {result_info}: "
             f"{executable.__module__}{executable.__qualname__}")
