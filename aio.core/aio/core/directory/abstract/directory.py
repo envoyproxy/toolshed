@@ -1,19 +1,69 @@
 
 import asyncio
-import os
 import pathlib
 import shutil
+import subprocess as _subprocess
 from concurrent import futures
-from functools import cached_property, lru_cache
+from functools import cached_property, partial
 from typing import (
     AsyncIterator, Iterable, Optional,
-    Pattern, Set, Tuple, Union)
+    Pattern, Set, Tuple, Type, Union)
 
 import abstracts
 
 from aio.core import event, subprocess
+from aio.core.dev import debug
 from aio.core.functional import async_property, async_set, AwaitableGenerator
 from aio.core.subprocess import exceptions as subprocess_exceptions
+
+
+GREP_MIN_BATCH_SIZE = 500
+GREP_MAX_BATCH_SIZE = 2000
+
+
+# TODO: factor this into a generic subproc runner/parser
+class ADirectoryGrepper(metaclass=abstracts.Abstraction):
+    """Blocking directory grepper.
+
+    Run inside a subproc, so *must* be picklable.
+    """
+
+    @classmethod
+    def include_path(cls, path: str, path_matcher, exclude_matcher) -> bool:
+        return bool(
+            path
+            and (not path_matcher
+                 or path_matcher.match(path))
+            and (not exclude_matcher
+                 or not exclude_matcher.match(path)))
+
+    def __init__(
+            self,
+            path: str,
+            path_matcher: Optional[Pattern[str]] = None,
+            exclude_matcher:  Optional[Pattern[str]] = None) -> None:
+        self.path = path
+        self.path_matcher = path_matcher
+        self.exclude_matcher = exclude_matcher
+
+    @debug.logging(
+        log=__name__,
+        show_cpu=True)
+    def __call__(self, *args: str) -> Set[str]:
+        """Call `grep` command with args."""
+        # TODO: Add error handling!!!
+        return set(
+            path
+            for path
+            in _subprocess.run(
+                args,
+                cwd=self.path,
+                capture_output=True,
+                encoding="utf-8").stdout.split("\n")
+            if self.include_path(
+                path,
+                self.path_matcher,
+                self.exclude_matcher))
 
 
 @abstracts.implementer(event.IExecutive)
@@ -34,20 +84,6 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     you can override this by setting `text_only` to `False`.
     """
 
-    @classmethod
-    @lru_cache(maxsize=None)
-    def make_path_absolute(cls, absolute_path, path: str) -> str:
-        """Make a directory-relative path absolute."""
-        return os.path.join(absolute_path, path)
-
-    @classmethod
-    def _make_paths_absolute(cls, path: str, paths: Iterable[str]) -> Set[str]:
-        """Make directory-relative paths absolute."""
-        return set(
-            cls.make_path_absolute(path, p)
-            for p
-            in paths)
-
     def __init__(
             self,
             path: Union[str, pathlib.Path],
@@ -66,6 +102,15 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         self.exclude_dirs = exclude_dirs or ()
         self._loop = loop
         self._pool = pool
+
+    @cached_property
+    def absolute_path(self) -> str:
+        return str(self.path.resolve())
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def directory_grepper_class(self) -> Type[ADirectoryGrepper]:
+        raise NotImplementedError
 
     @async_property(cache=True)
     async def files(self) -> Set[str]:
@@ -104,6 +149,21 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
                 for directory
                 in self.exclude_dirs))
 
+    @property
+    def grep_max_batch_size(self) -> int:
+        return GREP_MAX_BATCH_SIZE
+
+    @property
+    def grep_min_batch_size(self) -> int:
+        return GREP_MIN_BATCH_SIZE
+
+    @cached_property
+    def grepper(self) -> ADirectoryGrepper:
+        return self.directory_grepper_class(
+            str(self.path),
+            path_matcher=self.path_matcher,
+            exclude_matcher=self.exclude_matcher)
+
     @cached_property
     def path(self) -> pathlib.Path:
         """Path to this directory."""
@@ -117,80 +177,52 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
             loop=self.loop,
             pool=self.pool)
 
-    @cached_property
-    def absolute_path(self):
-        return str(self.path.resolve())
-
     async def get_files(self) -> Set[str]:
-        return await self.grep(["-l", ""])
+        return await self.grep(["-l"], "")
 
     def grep(
             self,
             args: Iterable,
-            target: Optional[str] = None) -> AwaitableGenerator:
+            target: Union[str, Iterable[str]]) -> AwaitableGenerator:
         return AwaitableGenerator(
             self._grep(args, target),
-            collector=async_set,
-            predicate=self._include_file)
-
-    async def make_paths_absolute(self, paths: Iterable[str]) -> Set[str]:
-        """Make directory-relative paths absolute."""
-        # TODO: only shell out if the number is large
-        return await self.execute(
-            self._make_paths_absolute,
-            self.absolute_path,
-            paths)
+            collector=async_set)
 
     def parse_grep_args(
             self,
             args: Iterable[str],
-            target: Optional[str] = None) -> Tuple[str, ...]:
+            target: Union[
+                str,
+                Iterable[str]]) -> Tuple[Tuple[str, ...], Iterable[str]]:
         """Parse `grep` args with the defaults to pass to the `grep`
         command."""
         return (
-            *self.grep_args,
-            *args,
-            *((target, )
-              if target is not None
-              else ()))
+            (*self.grep_args,
+             *args),
+            ((target, )
+             if isinstance(target, str)
+             else target))
 
-    @lru_cache
-    def relative_path(self, path: str) -> str:
-        """Make an absolute path directory-relative."""
-        return path[len(self.absolute_path) + 1:]
-
-    def relative_paths(self, paths: Iterable[str]) -> Set[str]:
-        """Make absolute paths directory-relative."""
-        return set(
-            self.relative_path(path)
-            for path
-            in paths)
+    def _batched_grep(
+            self,
+            grep_args: Tuple[str, ...],
+            paths: Iterable[str]) -> AwaitableGenerator:
+        return self.execute_in_batches(
+            partial(self.grepper, *grep_args),
+            *paths,
+            min_batch_size=self.grep_min_batch_size,
+            max_batch_size=self.grep_max_batch_size)
 
     async def _grep(
             self,
-            args: Iterable,
-            target: Optional[str] = None) -> AsyncIterator[str]:
+            args: Iterable[str],
+            target: Union[str, Iterable[str]]) -> AsyncIterator[str]:
         """Run `grep` in the directory."""
-        try:
-            for path in await self.shell(self.parse_grep_args(args, target)):
-                if path:
-                    yield path
-        except subprocess_exceptions.RunError as e:
-            response = e.args[1]
-            grep_fail = (
-                (response.returncode == 1)
-                and not response.stdout
-                and not response.stderr)
-            if not grep_fail:
-                raise e
-
-    @lru_cache
-    def _include_file(self, path: str) -> bool:
-        return bool(
-            (not self.path_matcher
-             or self.path_matcher.match(path))
-            and (not self.exclude_matcher
-                 or not self.exclude_matcher.match(path)))
+        batches = self._batched_grep(
+            *self.parse_grep_args(args, target))
+        async for batch in batches:
+            for result in batch:
+                yield result
 
 
 class AGitDirectory(ADirectory):
@@ -208,6 +240,7 @@ class AGitDirectory(ADirectory):
     async def changed_files(self) -> Set[str]:
         """Files that have changed since `self.changed`, which can be the name
         of a git object (branch etc) or a commit hash."""
+        # TODO: move filtering into a subshell
         return set(
             path
             for path
@@ -218,7 +251,11 @@ class AGitDirectory(ADirectory):
                  self.changed,
                  "--diff-filter=ACMR",
                  "--ignore-submodules=all"])
-            if (path and self._include_file(path)))
+            if (path
+                and self.directory_grepper_class.include_path(
+                    path,
+                    self.path_matcher,
+                    self.exclude_matcher)))
 
     @async_property(cache=True)
     async def files(self) -> Set[str]:

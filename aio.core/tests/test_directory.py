@@ -1,51 +1,11 @@
 
-import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+import abstracts
+
 from aio.core import directory, subprocess
-
-
-def test_abstract_directory_make_path_absolute(patches):
-    patched = patches(
-        "os",
-        prefix="aio.core.directory.abstract.directory")
-
-    with patched as (m_os, ):
-        assert (
-            directory.ADirectory.make_path_absolute("ROOT_PATH", "PATH")
-            == m_os.path.join.return_value)
-
-    assert (
-        m_os.path.join.call_args
-        == [("ROOT_PATH", "PATH"), {}])
-    assert directory.ADirectory.make_path_absolute.cache_info().misses == 1
-    assert directory.ADirectory.make_path_absolute.cache_info().currsize == 1
-
-
-def test_abstract_directory__make_paths_absolute(patches):
-    patched = patches(
-        "set",
-        "ADirectory.make_path_absolute",
-        prefix="aio.core.directory.abstract.directory")
-
-    with patched as (m_set, m_abspath):
-        assert (
-            directory.ADirectory._make_paths_absolute("PATH", range(0, 5))
-            == m_set.return_value)
-        iterator = m_set.call_args[0][0]
-        assert isinstance(iterator, types.GeneratorType)
-        assert (
-            list(iterator)
-            == [m_abspath.return_value] * 5)
-
-    assert (
-        m_set.call_args
-        == [(iterator, ), {}])
-    assert (
-        m_abspath.call_args_list
-        == [[("PATH", i), {}] for i in range(0, 5)])
 
 
 @pytest.mark.parametrize(
@@ -90,6 +50,22 @@ def test_git_directory_constructor(patches, args, kwargs):
         == [tuple(args), kwargs])
 
 
+@abstracts.implementer(directory.ADirectory)
+class DummyDirectory:
+
+    @property
+    def directory_grepper_class(self):
+        return super().directory_grepper_class
+
+
+@abstracts.implementer(directory.AGitDirectory)
+class DummyGitDirectory:
+
+    @property
+    def directory_grepper_class(self):
+        return super().directory_grepper_class
+
+
 @pytest.mark.parametrize("exclude", [None, 0, [], (), "EXCLUDE"])
 @pytest.mark.parametrize("exclude_dirs", [None, 0, [], (), "EXCLUDE"])
 @pytest.mark.parametrize("path_matcher", [None, 0, [], (), "MATCHER"])
@@ -109,8 +85,9 @@ def test_abstract_directory_constructor(
         kwargs["exclude_matcher"] = exclude_matcher
     if text_only is not None:
         kwargs["text_only"] = text_only
-
-    direct = directory.ADirectory("PATH", **kwargs)
+    with pytest.raises(TypeError):
+        directory.ADirectory(**kwargs)
+    direct = DummyDirectory("PATH", **kwargs)
     assert direct._path == "PATH"
     assert direct.path_matcher == path_matcher
     assert direct.exclude_matcher == exclude_matcher
@@ -119,10 +96,22 @@ def test_abstract_directory_constructor(
         == (True if text_only is None else text_only))
     assert direct.exclude == (exclude or ())
     assert direct.exclude_dirs == (exclude_dirs or ())
+    assert (
+        direct.grep_max_batch_size
+        == directory.abstract.directory.GREP_MAX_BATCH_SIZE)
+    assert "grep_max_batch_size" not in direct.__dict__
+    assert (
+        direct.grep_min_batch_size
+        == directory.abstract.directory.GREP_MIN_BATCH_SIZE)
+    assert "grep_min_batch_size" not in direct.__dict__
+    iface_props = ["directory_grepper_class"]
+    for prop in iface_props:
+        with pytest.raises(NotImplementedError):
+            getattr(direct, prop)
 
 
 async def test_abstract_directory_files(patches):
-    direct = directory.ADirectory("PATH")
+    direct = DummyDirectory("PATH")
     patched = patches(
         ("ADirectory.grep",
          dict(new_callable=AsyncMock)),
@@ -136,7 +125,7 @@ async def test_abstract_directory_files(patches):
 
     assert (
         m_grep.call_args
-        == [(["-l", ""], ), {}])
+        == [(["-l"], ""), {}])
     assert (
         getattr(
             direct,
@@ -147,7 +136,7 @@ async def test_abstract_directory_files(patches):
 
 @pytest.mark.parametrize("text_only", [True, False])
 def test_abstract_directory_grep_args(patches, text_only):
-    direct = directory.ADirectory("PATH", text_only=text_only)
+    direct = DummyDirectory("PATH", text_only=text_only)
     patched = patches(
         ("ADirectory.grep_command_args",
          dict(new_callable=PropertyMock)),
@@ -175,7 +164,7 @@ def test_abstract_directory_grep_args(patches, text_only):
 
 @pytest.mark.parametrize("grep", [None, "GREP"])
 def test_abstract_directory_grep_command_args(patches, grep):
-    direct = directory.ADirectory("PATH")
+    direct = DummyDirectory("PATH")
     patched = patches(
         "shutil",
         prefix="aio.core.directory.abstract.directory")
@@ -200,7 +189,7 @@ def test_abstract_directory_grep_command_args(patches, grep):
 @pytest.mark.parametrize("exclude", [[], range(0, 5), ["a", "b", "c"]])
 @pytest.mark.parametrize("exclude_dirs", [[], range(0, 5), ["a", "b", "c"]])
 def test_abstract_directory_grep_exclusion_args(exclude, exclude_dirs):
-    direct = directory.ADirectory(
+    direct = DummyDirectory(
         "PATH", exclude=exclude, exclude_dirs=exclude_dirs)
     expected = []
     for x in exclude:
@@ -212,8 +201,35 @@ def test_abstract_directory_grep_exclusion_args(exclude, exclude_dirs):
     assert "grep_exclusion_args" not in direct.__dict__
 
 
+def test_abstract_directory_grepper(patches):
+    direct = DummyDirectory("PATH")
+    patched = patches(
+        "str",
+        ("ADirectory.directory_grepper_class",
+         dict(new_callable=PropertyMock)),
+        ("ADirectory.path",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.abstract.directory")
+    direct.path_matcher = MagicMock()
+    direct.exclude_matcher = MagicMock()
+
+    with patched as (m_str, m_class, m_path):
+        assert (
+            direct.grepper
+            == m_class.return_value.return_value)
+
+    assert (
+        m_class.return_value.call_args
+        == [(m_str.return_value, ),
+            dict(path_matcher=direct.path_matcher,
+                 exclude_matcher=direct.exclude_matcher)])
+    assert (
+        m_str.call_args
+        == [(m_path.return_value, ), {}])
+
+
 def test_abstract_directory_path(patches):
-    direct = directory.ADirectory("PATH")
+    direct = DummyDirectory("PATH")
     patched = patches(
         "pathlib",
         prefix="aio.core.directory.abstract.directory")
@@ -228,7 +244,7 @@ def test_abstract_directory_path(patches):
 
 
 def test_abstract_directory_shell(patches):
-    direct = directory.ADirectory("PATH")
+    direct = DummyDirectory("PATH")
     patched = patches(
         "subprocess",
         ("ADirectory.loop",
@@ -252,7 +268,7 @@ def test_abstract_directory_shell(patches):
 
 
 def test_abstract_directory_absolute_path(patches):
-    direct = directory.ADirectory("PATH")
+    direct = DummyDirectory("PATH")
     patched = patches(
         "str",
         ("ADirectory.path",
@@ -272,15 +288,14 @@ def test_abstract_directory_absolute_path(patches):
 
 
 def test_abstract_directory_grep(patches):
-    direct = directory.ADirectory("PATH")
+    direct = DummyDirectory("PATH")
     patched = patches(
         "async_set",
         "AwaitableGenerator",
         "ADirectory._grep",
-        "ADirectory._include_file",
         prefix="aio.core.directory.abstract.directory")
 
-    with patched as (m_set, m_gen, m_grep, m_include):
+    with patched as (m_set, m_gen, m_grep):
         assert (
             direct.grep("ARGS", "TARGET")
             == m_gen.return_value)
@@ -288,160 +303,115 @@ def test_abstract_directory_grep(patches):
     assert (
         m_gen.call_args
         == [(m_grep.return_value, ),
-            dict(collector=m_set, predicate=m_include)])
+            dict(collector=m_set)])
     assert (
         m_grep.call_args
         == [("ARGS", "TARGET"), {}])
 
 
-async def test_abstract_directory_paths_absolute(patches):
-    direct = directory.ADirectory("PATH")
+@pytest.mark.parametrize("is_str", [True, False])
+def test_abstract_directory_parse_grep_args(patches, is_str):
+    direct = DummyDirectory("PATH")
     patched = patches(
-        ("ADirectory.absolute_path",
-         dict(new_callable=PropertyMock)),
-        ("ADirectory.execute",
-         dict(new_callable=AsyncMock)),
-        "ADirectory._make_paths_absolute",
-        prefix="aio.core.directory.abstract.directory")
-    paths = MagicMock()
-
-    with patched as (m_path, m_execute, m_abs):
-        assert (
-            await direct.make_paths_absolute(paths)
-            == m_execute.return_value)
-
-    assert (
-        m_execute.call_args
-        == [(m_abs, m_path.return_value, paths),
-            {}])
-
-
-@pytest.mark.parametrize("target", [0, False, None, "TARGET"])
-def test_abstract_directory_parse_grep_args(patches, target):
-    direct = directory.ADirectory("PATH")
-    patched = patches(
+        "isinstance",
         ("ADirectory.grep_args",
          dict(new_callable=PropertyMock)),
         prefix="aio.core.directory.abstract.directory")
-
     grep_args = [f"GARG{i}" for i in range(0, 5)]
     args = [f"ARG{i}" for i in range(0, 5)]
-    target_arg = (
-        (target, )
-        if target is not None
-        else ())
-    expected = (*grep_args, *args, *target_arg)
+    target = MagicMock()
+    expected = (
+        (*grep_args,
+         *args),
+        ((target, )
+         if is_str
+         else target))
 
-    with patched as (m_grep_args, ):
+    with patched as (m_inst, m_grep_args):
         m_grep_args.return_value = grep_args
+        m_inst.return_value = is_str
         assert (
-            direct.parse_grep_args(args, *target_arg)
+            direct.parse_grep_args(args, target)
             == expected)
 
-
-def test_abstract_directory_relative_path(patches):
-    direct = directory.ADirectory("PATH")
-    patched = patches(
-        "len",
-        ("ADirectory.absolute_path",
-         dict(new_callable=PropertyMock)),
-        prefix="aio.core.directory.abstract.directory")
-    path = MagicMock()
-
-    with patched as (m_len, m_path):
-        m_len.return_value = 22
-        assert (
-            direct.relative_path(path)
-            == path.__getitem__.return_value)
-
     assert (
-        m_len.call_args
-        == [(m_path.return_value, ), {}])
-    assert (
-        path.__getitem__.call_args
-        == [(slice(23, None), ), {}])
-    assert direct.relative_path.cache_info().misses == 1
-    assert direct.relative_path.cache_info().currsize == 1
+        m_inst.call_args
+        == [(target, str), {}])
 
 
-def test_abstract_directory_relative_paths(patches):
-    direct = directory.ADirectory("PATH")
+async def test_abstract_directory__grep(patches):
+    direct = DummyDirectory("PATH")
     patched = patches(
-        "ADirectory.relative_path",
-        prefix="aio.core.directory.abstract.directory")
-
-    with patched as (m_relpath, ):
-        m_relpath.side_effect = lambda i: f"PATH{i}"
-        assert (
-            direct.relative_paths(range(0, 5))
-            == set(f"PATH{i}" for i in range(0, 5)))
-
-    assert (
-        m_relpath.call_args_list
-        == [[(i, ), {}] for i in range(0, 5)])
-
-
-@pytest.mark.parametrize(
-    "raises",
-    [None, Exception, subprocess.exceptions.RunError])
-@pytest.mark.parametrize("returncode", [None, 0, False, 1, 2])
-@pytest.mark.parametrize("stdout", [True, False])
-@pytest.mark.parametrize("stderr", [True, False])
-async def test_abstract_directory__grep(
-        patches, raises, returncode, stdout, stderr):
-    direct = directory.ADirectory("PATH")
-    patched = patches(
-        ("ADirectory.shell",
-         dict(new_callable=PropertyMock)),
         "ADirectory.parse_grep_args",
+        "ADirectory._batched_grep",
         prefix="aio.core.directory.abstract.directory")
     results = []
-    items = [str(i) for i in range(0, 5)] + [0, None, (), ""]
-    error = MagicMock()
-    error.returncode = returncode
-    error.stdout = stdout
-    error.stderr = stderr
+    expected = []
 
-    with patched as (m_shell, m_parse):
-        shell_mock = AsyncMock(return_value=items)
-        m_shell.return_value.side_effect = shell_mock
-        if raises:
-            raised = raises(
-                "AN ERROR OCCURRED", error)
-            shell_mock.side_effect = raised
+    async def iter_batches(args, paths):
+        for x in range(0, 7):
+            batch = [
+                f"ITEM.{x}.{y}"
+                for y
+                in range(0, 3)]
+            expected.extend(batch)
+            yield batch
 
-        if raises == Exception:
-            with pytest.raises(Exception) as e:
-                async for result in direct._grep("ARGS", "TARGET"):
-                    pass
-            assert e.value is raised
-        elif raises and (returncode != 1 or stdout or stderr):
-            with pytest.raises(subprocess.exceptions.RunError) as e:
-                async for result in direct._grep("ARGS", "TARGET"):
-                    pass
-            assert e.value is raised
-        else:
-            async for result in direct._grep("ARGS", "TARGET"):
-                results.append(result)
+    with patched as (m_parse, m_batched):
+        m_parse.return_value = ("ARGS_", "TARGET_")
+        m_batched.side_effect = iter_batches
+        async for result in direct._grep("ARGS", "TARGET"):
+            results.append(result)
 
-    assert (
-        m_shell.return_value.call_args
-        == [(m_parse.return_value, ), {}])
-    assert (
-        results
-        == ([str(i) for i in range(0, 5)]
-            if not raises
-            else []))
+    assert results == expected
     assert (
         m_parse.call_args
         == [("ARGS", "TARGET"), {}])
+    assert (
+        m_batched.call_args
+        == [("ARGS_", "TARGET_"), {}])
+
+
+def test_abstract_directory__batched_grep(patches):
+    direct = DummyDirectory("PATH")
+    patched = patches(
+        "partial",
+        "ADirectory.execute_in_batches",
+        ("ADirectory.grepper",
+         dict(new_callable=PropertyMock)),
+        ("ADirectory.grep_max_batch_size",
+         dict(new_callable=PropertyMock)),
+        ("ADirectory.grep_min_batch_size",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.abstract.directory")
+    grep_args = [f"GARG{i}" for i in range(0, 5)]
+    paths = [f"PATH{i}" for i in range(0, 5)]
+    direct.exclude_matcher = MagicMock()
+    direct.path_matcher = MagicMock()
+
+    with patched as patchy:
+        (m_partial, m_exec,
+         m_grepper, m_max, m_min) = patchy
+        assert (
+            direct._batched_grep(grep_args, paths)
+            == m_exec.return_value)
+
+    assert (
+        m_exec.call_args
+        == [(m_partial.return_value, *paths),
+            dict(min_batch_size=m_min.return_value,
+                 max_batch_size=m_max.return_value)])
+    assert (
+        m_partial.call_args
+        == [(m_grepper.return_value,
+             *grep_args)])
 
 
 @pytest.mark.parametrize("matcher", [True, False])
 @pytest.mark.parametrize("matcher_matches", [True, False])
 @pytest.mark.parametrize("exclude", [True, False])
 @pytest.mark.parametrize("exclude_matches", [True, False])
-def test_abstract_directory__include_file(
+def __test_abstract_directory__include_file(
         matcher, matcher_matches, exclude, exclude_matches):
     kwargs = {}
     if matcher:
@@ -451,7 +421,7 @@ def test_abstract_directory__include_file(
         kwargs["exclude_matcher"] = MagicMock()
         kwargs["exclude_matcher"].match.return_value = exclude_matches
 
-    direct = directory.ADirectory("PATH", **kwargs)
+    direct = DummyDirectory("PATH", **kwargs)
     assert (
         direct._include_file("PATH")
         == ((not matcher or matcher_matches)
@@ -474,7 +444,9 @@ def test_abstract_git_directory_constructor(patches, args, kwargs, changed):
 
     with patched as (m_super, ):
         m_super.return_value = None
-        direct = directory.AGitDirectory(*args, **kwargs)
+        with pytest.raises(TypeError):
+            directory.AGitDirectory(*args, **kwargs)
+        direct = DummyGitDirectory(*args, **kwargs)
 
     kwargs.pop("changed", None)
     assert isinstance(direct, directory.ADirectory)
@@ -482,10 +454,14 @@ def test_abstract_git_directory_constructor(patches, args, kwargs, changed):
         m_super.call_args
         == [tuple(args), kwargs])
     assert direct.changed == changed
+    iface_props = ["directory_grepper_class"]
+    for prop in iface_props:
+        with pytest.raises(NotImplementedError):
+            getattr(direct, prop)
 
 
-async def test_abstract_git_directory_changed_files(patches):
-    direct = directory.AGitDirectory("PATH", changed="CHANGED")
+async def __test_abstract_git_directory_changed_files(patches):
+    direct = DummyGitDirectory("PATH", changed="CHANGED")
     patched = patches(
         ("AGitDirectory.git_command",
          dict(new_callable=PropertyMock)),
@@ -531,7 +507,7 @@ async def test_abstract_git_directory_changed_files(patches):
 
 @pytest.mark.parametrize("changed", [True, False])
 async def test_abstract_git_directory_files(patches, changed):
-    direct = directory.AGitDirectory(
+    direct = DummyGitDirectory(
         "PATH",
         changed=changed)
     patched = patches(
@@ -571,7 +547,7 @@ async def test_abstract_git_directory_files(patches, changed):
 @pytest.mark.parametrize("exclude_matcher", [None, "EXCLUDE_MATCHER"])
 async def test_abstract_git_directory_get_changed_files(
         patches, files, changed_files, path_matcher, exclude_matcher):
-    direct = directory.AGitDirectory(
+    direct = DummyGitDirectory(
         "PATH",
         path_matcher=path_matcher,
         exclude_matcher=exclude_matcher)
@@ -619,7 +595,7 @@ async def test_abstract_git_directory_get_changed_files(
 
 @pytest.mark.parametrize("git", [None, "GIT"])
 def test_abstract_git_directory_git_command(patches, git):
-    direct = directory.AGitDirectory("PATH")
+    direct = DummyGitDirectory("PATH")
     patched = patches(
         "shutil",
         prefix="aio.core.directory.abstract.directory")
@@ -643,7 +619,7 @@ def test_abstract_git_directory_git_command(patches, git):
 
 @pytest.mark.parametrize("git", [None, "GIT"])
 def test_abstract_git_directory_grep_command_args(patches, git):
-    direct = directory.AGitDirectory("PATH")
+    direct = DummyGitDirectory("PATH")
     patched = patches(
         ("AGitDirectory.git_command",
          dict(new_callable=PropertyMock)),
