@@ -328,7 +328,8 @@ async def test_downloader_parse(patches):
         "logger",
         ("ANISTDownloader.parser",
          dict(new_callable=PropertyMock)),
-        "ANISTDownloader.execute",
+        ("ANISTDownloader.execute",
+         dict(new_callable=AsyncMock)),
         prefix="aio.api.nist.abstract.downloader")
     data = MagicMock()
 
