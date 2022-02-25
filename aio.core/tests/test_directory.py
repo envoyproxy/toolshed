@@ -339,14 +339,18 @@ def test_abstract_directory_parse_grep_args(patches, is_str):
         == [(target, str), {}])
 
 
-async def test_abstract_directory__grep(patches):
+@pytest.mark.parametrize("is_str", [True, False])
+@pytest.mark.parametrize("target", [True, False])
+async def test_abstract_directory__grep(patches, is_str, target):
     direct = DummyDirectory("PATH")
     patched = patches(
+        "isinstance",
         "ADirectory.parse_grep_args",
         "ADirectory._batched_grep",
         prefix="aio.core.directory.abstract.directory")
     results = []
     expected = []
+    target = "TARGET" if target else None
 
     async def iter_batches(args, paths):
         for x in range(0, 7):
@@ -354,19 +358,28 @@ async def test_abstract_directory__grep(patches):
                 f"ITEM.{x}.{y}"
                 for y
                 in range(0, 3)]
-            expected.extend(batch)
+            if is_str or target:
+                expected.extend(batch)
             yield batch
 
-    with patched as (m_parse, m_batched):
+    with patched as (m_isinst, m_parse, m_batched):
+        m_isinst.return_value = is_str
         m_parse.return_value = ("ARGS_", "TARGET_")
         m_batched.side_effect = iter_batches
-        async for result in direct._grep("ARGS", "TARGET"):
+        async for result in direct._grep("ARGS", target):
             results.append(result)
 
     assert results == expected
     assert (
+        m_isinst.call_args
+        == [(target, str), {}])
+    if not is_str and not target:
+        assert not m_parse.called
+        assert not m_batched.called
+        return
+    assert (
         m_parse.call_args
-        == [("ARGS", "TARGET"), {}])
+        == [("ARGS", target), {}])
     assert (
         m_batched.call_args
         == [("ARGS_", "TARGET_"), {}])

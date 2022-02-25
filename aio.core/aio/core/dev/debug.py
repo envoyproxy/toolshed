@@ -3,7 +3,7 @@ import inspect
 import logging as _logging
 import os
 import time
-from functools import partial
+from functools import cached_property, partial
 from typing import Any, Callable, Optional
 
 import psutil
@@ -45,6 +45,15 @@ class ALogging:
         elif inspect.isgeneratorfunction(self.__wrapped__):
             return partial(self.fun_gen, instance)
         return partial(self.fun, instance)
+
+    @cached_property
+    def name(self) -> str:
+        return (
+            getattr(
+                self.__wrapped__, "__qualname__", None)
+            or getattr(
+                self.__wrapped__, "__name__", None)
+            or self.__class__.__name__)
 
     def log(self, instance):
         if self._log:
@@ -91,7 +100,7 @@ class ALogging:
 
     def log_debug_start(self, instance, *args, **kwargs):
         self.log(instance).debug(
-            f"{self.__wrapped__.__qualname__} called\n"
+            f"{self.name} called\n"
             f"  ARGS: {args}\n"
             f"  KWARGS: {kwargs}")
         return (instance, args, kwargs), time.perf_counter()
@@ -115,7 +124,7 @@ class ALogging:
             result_info = formatter(
                 start, result, time_taken, result_info)
         self.log(instance).debug(
-            f"{self.__wrapped__.__qualname__}{cpu_info} returns {result_info}")
+            f"{self.name}{cpu_info} returns {result_info}")
         return result
 
     def log_debug_complete_iter(self, start, count):
@@ -133,7 +142,7 @@ class ALogging:
             result_info = formatter(
                 start, count, time_taken, result_info)
         self.log(instance).debug(
-            f"{self.__wrapped__.__qualname__}{cpu_info}"
+            f"{self.name}{cpu_info}"
             f"generated {result_info}")
 
 
