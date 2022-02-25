@@ -44,8 +44,7 @@ jobs:
     - name: Install pants
       run: pip install pantsbuild.pants==2.9.0
     - name: Run pants (type) check
-      run: echo "PANTS CHECK TEMP DISABLED"
-      # "pants check $(pants roots | tr '\n' ',' | sed  's/,/:: /g' -)"
+      run: "pants check $(pants roots | tr '\n' ',' | sed  's/,/:: /g' -)"
 
   docs:
     runs-on: ubuntu-latest

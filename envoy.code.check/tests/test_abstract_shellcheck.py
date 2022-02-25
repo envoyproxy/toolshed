@@ -6,6 +6,26 @@ import pytest
 from envoy.code import check
 
 
+def test_shellcheck_run_shellcheck(patches):
+    patched = patches(
+        "Shellcheck",
+        prefix="envoy.code.check.abstract.shellcheck")
+    path = MagicMock()
+    args = [MagicMock() for x in range(0, 5)]
+
+    with patched as (m_shellcheck, ):
+        assert (
+            check.AShellcheckCheck.run_shellcheck(path, *args)
+            == m_shellcheck.return_value.run_checks.return_value)
+
+    assert (
+        m_shellcheck.call_args
+        == [(path, *args), {}])
+    assert (
+        m_shellcheck.return_value.run_checks.call_args
+        == [(), {}])
+
+
 def test_shellcheck_constructor():
     shellcheck = check.AShellcheckCheck("DIRECTORY")
     assert shellcheck.directory == "DIRECTORY"
@@ -87,36 +107,45 @@ def test_shellcheck_checker_path_match_re(patches):
 async def test_shellcheck_problem_files(patches, files):
     shellcheck = check.AShellcheckCheck("DIRECTORY")
     patched = patches(
-        "dict",
         ("AShellcheckCheck.files",
          dict(new_callable=PropertyMock)),
-        ("AShellcheckCheck._problem_files",
+        ("AShellcheckCheck.shellcheck_executable",
          dict(new_callable=PropertyMock)),
+        "AShellcheckCheck.execute_in_batches",
         prefix="envoy.code.check.abstract.shellcheck")
-
-    with patched as (m_dict, m_files, m_problems):
-        m_files.side_effect = AsyncMock(return_value=files)
-        problems = AsyncMock()
-        m_problems.side_effect = problems
-        result = await shellcheck.problem_files
-        assert (
-            result
-            == (m_dict.return_value
-                if files
-                else {}))
-
+    batched = [
+        {f"K{x}": "V1{x}" for x in range(0, 10)},
+        {f"K{x}": "V2{x}" for x in range(1, 7)},
+        {f"K{x}": "V3{x}" for x in range(5, 13)}]
     if files:
+        files = [f"F{i}" for i in range(0, 5)]
+    expected = {}
+    for d in batched:
+        expected.update(d)
+
+    async def iter_batched(*args):
+        for batch in batched:
+            yield batch
+
+    with patched as (m_files, m_exec, m_batches):
+        m_files.side_effect = AsyncMock(return_value=files)
+        m_batches.side_effect = iter_batched
         assert (
-            m_dict.call_args
-            == [(problems.return_value, ), {}])
-    else:
-        assert not m_dict.called
+            await shellcheck.problem_files
+            == (expected
+                if files
+                else {})
+            == getattr(
+                shellcheck,
+                check.ACodeCheck.problem_files.cache_name)[
+                    "problem_files"])
+
+    if not files:
+        assert not m_exec.called
+        return
     assert (
-        getattr(
-            shellcheck,
-            check.ACodeCheck.problem_files.cache_name)[
-                "problem_files"]
-        == result)
+        m_batches.call_args
+        == [(m_exec.return_value, *files), {}])
 
 
 @pytest.mark.parametrize("files", [True, False])
@@ -162,32 +191,28 @@ async def test_shellcheck_sh_files(patches, files):
             check.AShellcheckCheck.sh_files.cache_name))
 
 
-@pytest.mark.parametrize("files", [True, False])
-async def test_shellcheck_shebang_files(patches, files):
+async def test_shellcheck_shebang_files(patches):
     directory = MagicMock()
     shellcheck = check.AShellcheckCheck(directory)
     patched = patches(
-        "set",
         ("AShellcheckCheck.shebang_re_expr",
          dict(new_callable=PropertyMock)),
         ("AShellcheckCheck._possible_shebang_files",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.shellcheck")
-    directory.grep = AsyncMock(return_value=range(0, 20))
-    files = [f"F{i}" for i in range(0, 5)]
+    directory.grep = AsyncMock()
 
-    with patched as (m_set, m_re, m_files):
-        m_files.side_effect = AsyncMock(return_value=files)
+    with patched as (m_re, m_files):
+        files = AsyncMock()
+        m_files.side_effect = files
         assert (
             await shellcheck.shebang_files
-            == m_set.return_value)
-        iterator = m_set.call_args[0][0]
-        called = list(iterator)
+            == directory.grep.return_value)
 
-    assert called == list(range(0, 20))
     assert (
         directory.grep.call_args
-        == [(['-lE', m_re.return_value, *files], ), {}])
+        == [(['-lE', m_re.return_value], ),
+            dict(target=files.return_value)])
     assert not (
         hasattr(
             shellcheck,
@@ -217,52 +242,27 @@ def test_shellcheck_shellcheck_command(patches, command):
         assert "shellcheck_command" in shellcheck.__dict__
 
 
-async def test_shellcheck__problem_files(patches):
+def test_shellcheck_shellcheck_executable(patches):
     directory = MagicMock()
     shellcheck = check.AShellcheckCheck(directory)
     patched = patches(
-        ("AShellcheckCheck.files",
-         dict(new_callable=PropertyMock)),
+        "partial",
+        "AShellcheckCheck.run_shellcheck",
         ("AShellcheckCheck.shellcheck_command",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.shellcheck")
-    directory.shell.parallel = AsyncMock()
-    paths = [f"P{i}" for i in range(0, 5)]
 
-    with patched as (m_files, m_command):
-        m_files.side_effect = AsyncMock(
-            return_value=paths)
+    with patched as (m_partial, m_run, m_command):
         assert (
-            await shellcheck._problem_files
-            == directory.shell.parallel.return_value)
-
-        command_iter = directory.shell.parallel.call_args[0][0]
-        command_list = list(command_iter)
-        predicate = directory.shell.parallel.call_args[1]["predicate"]
-        result = directory.shell.parallel.call_args[1]["result"]
+            shellcheck.shellcheck_executable
+            == m_partial.return_value)
 
     assert (
-        command_list
-        == [[m_command.return_value, "-x", path]
-            for path in paths])
-    assert (
-        directory.shell.parallel.call_args
-        == [(command_iter, ), dict(predicate=predicate, result=result)])
-    predicate_result = MagicMock()
-    assert predicate(predicate_result) == predicate_result.returncode
-    result_response = MagicMock()
-    assert (
-        result(result_response)
-        == (result_response.args.__getitem__.return_value,
-            [f"Issues found: {result_response.args.__getitem__.return_value}\n"
-             f"{result_response.stdout}"]))
-    assert (
-        result_response.args.__getitem__.call_args_list
-        == [[(-1, ), {}], [(-1, ), {}]])
-    assert not (
-        hasattr(
-            shellcheck,
-            check.AShellcheckCheck._problem_files.cache_name))
+        m_partial.call_args
+        == [(m_run,
+             directory.path,
+             m_command.return_value,
+             "-x"), {}])
 
 
 @pytest.mark.parametrize("files", [True, False])

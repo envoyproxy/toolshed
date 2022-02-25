@@ -7,6 +7,23 @@ import pytest
 from envoy.code import check
 
 
+async def test_glint_have_newlines(patches):
+    patched = patches(
+        "_have_newlines",
+        prefix="envoy.code.check.abstract.glint")
+    path = MagicMock()
+    paths = [MagicMock() for i in range(0, 3)]
+
+    with patched as (m_newlines, ):
+        assert (
+            check.AGlintCheck.have_newlines(path, *paths)
+            == m_newlines.return_value)
+
+    assert (
+        m_newlines.call_args
+        == [(path, tuple(paths)), {}])
+
+
 def test_glint_constructor():
     glint = check.AGlintCheck("DIRECTORY")
     assert glint.directory == "DIRECTORY"
@@ -45,106 +62,126 @@ async def test_glint_checker_files(patches, files):
             check.AGlintCheck.checker_files.cache_name))
 
 
-@pytest.mark.parametrize("files", [[], [f"F{i}" for i in range(0, 5)]])
-async def test_glint_files_with_mixed_tabs(patches, files):
+async def test_glint_files_with_mixed_tabs(patches):
     directory = MagicMock()
     glint = check.AGlintCheck(directory)
     patched = patches(
-        "set",
         ("AGlintCheck.files_with_preceeding_tabs",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.glint")
     directory.grep = AsyncMock()
 
-    with patched as (m_set, m_tabs):
-        m_tabs.side_effect = AsyncMock(return_value=files)
+    with patched as (m_tabs, ):
+        tabs = AsyncMock()
+        m_tabs.side_effect = tabs
         assert (
             await glint.files_with_mixed_tabs
-            == (directory.grep.return_value
-                if files
-                else m_set.return_value))
+            == directory.grep.return_value)
 
-    if files:
-        assert not m_set.called
-        assert (
-            directory.grep.call_args
-            == [(["-lP", r"^ ", *files], ), {}])
-    else:
-        assert m_set.call_args == [(), {}]
-        assert not directory.grep.called
+    assert (
+        directory.grep.call_args
+        == [(["-lP", r"^ "], ),
+            dict(target=tabs.return_value)])
     assert not (
         hasattr(
             glint,
             check.AGlintCheck.files_with_mixed_tabs.cache_name))
 
 
-@pytest.mark.parametrize("files", [[], [f"F{i}" for i in range(0, 5)]])
-async def test_glint_files_with_preceeding_tabs(patches, files):
+async def test_glint_files_with_preceeding_tabs(patches):
     directory = MagicMock()
     glint = check.AGlintCheck(directory)
     patched = patches(
-        "set",
         ("AGlintCheck.files",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.glint")
     directory.grep = AsyncMock()
 
-    with patched as (m_set, m_tabs):
-        m_tabs.side_effect = AsyncMock(return_value=files)
+    with patched as (m_files, ):
+        files = AsyncMock()
+        m_files.side_effect = files
         assert (
             await glint.files_with_preceeding_tabs
-            == (directory.grep.return_value
-                if files
-                else m_set.return_value))
+            == directory.grep.return_value)
 
-    if files:
-        assert not m_set.called
-        assert (
-            directory.grep.call_args
-            == [(["-lP", r"^\t", *files], ), {}])
-    else:
-        assert m_set.call_args == [(), {}]
-        assert not directory.grep.called
+    assert (
+        directory.grep.call_args
+        == [(["-lP", r"^\t"], ),
+            dict(target=files.return_value)])
     assert not (
         hasattr(
             glint,
             check.AGlintCheck.files_with_preceeding_tabs.cache_name))
 
 
-@pytest.mark.parametrize("files", [True, False])
-async def test_glint_files_with_no_newline(patches, files):
-    glint = check.AGlintCheck("DIRECTORY")
+async def test_glint_files_with_no_newline(patches):
+    directory = MagicMock()
+    glint = check.AGlintCheck(directory)
     patched = patches(
-        "set",
-        ("AGlintCheck.absolute_paths",
-         dict(new_callable=PropertyMock)),
+        "partial",
         ("AGlintCheck.files",
          dict(new_callable=PropertyMock)),
-        "AGlintCheck.execute",
+        "AGlintCheck.execute_in_batches",
         "AGlintCheck.have_newlines",
         prefix="envoy.code.check.abstract.glint")
+    batched = [
+        set(x for x in range(0, 10)),
+        set(x for x in range(1, 7)),
+        set(x for x in range(5, 13))]
+    expected = batched[0] | batched[1] | batched[2]
 
-    with patched as (m_set, m_paths, m_files, m_execute, m_newlines):
-        m_files.side_effect = AsyncMock(return_value=files)
-        abs_paths = AsyncMock()
-        m_paths.side_effect = abs_paths
+    async def batch_iter(x):
+        for batch in batched:
+            yield batch
+
+    with patched as (m_partial, m_files, m_execute, m_newlines):
+        m_files.side_effect = AsyncMock(
+            [f"FILE{i}" for i in range(0, 5)])
+        m_execute.side_effect = batch_iter
         assert (
             await glint.files_with_no_newline
-            == (m_set.return_value
-                if not files
-                else m_execute.return_value))
+            == expected)
 
     assert not (
         hasattr(
             glint,
             check.AGlintCheck.files_with_no_newline.cache_name))
-    if not files:
-        assert not m_execute.called
-        assert not m_paths.called
-        return
     assert (
         m_execute.call_args
-        == [(m_newlines, abs_paths.return_value), {}])
+        == [(m_partial.return_value, *m_files.return_value), {}])
+    assert (
+        m_partial.call_args
+        == [(m_newlines, directory.path), {}])
+
+
+async def test_glint__check_problems(patches):
+    glint = check.AGlintCheck("DIRECTORY")
+    patched = patches(
+        "list",
+        "AGlintCheck._check_path",
+        prefix="envoy.code.check.abstract.glint")
+    batched = [
+        set(x for x in range(0, 10)),
+        set(x for x in range(1, 7)),
+        set(x for x in range(5, 13))]
+    expected = batched[0] | batched[1] | batched[2]
+
+    with patched as (m_list, m_check):
+        assert (
+            await glint._check_problems(batched)
+            == {p: m_list.return_value
+                for p in expected})
+
+    assert (
+        m_list.call_args_list
+        == [[(m_check.return_value, ), {}]
+            for p
+            in expected])
+    assert (
+        m_check.call_args_list
+        == [[(p, *batched), {}]
+            for p
+            in expected])
 
 
 @pytest.mark.parametrize("files", [[], [f"F{i}" for i in range(0, 5)]])
@@ -152,28 +189,22 @@ async def test_glint_files_with_trailing_whitespace(patches, files):
     directory = MagicMock()
     glint = check.AGlintCheck(directory)
     patched = patches(
-        "set",
         ("AGlintCheck.files",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.glint")
     directory.grep = AsyncMock()
 
-    with patched as (m_set, m_tabs):
-        m_tabs.side_effect = AsyncMock(return_value=files)
+    with patched as (m_files, ):
+        files = AsyncMock()
+        m_files.side_effect = files
         assert (
             await glint.files_with_trailing_whitespace
-            == (directory.grep.return_value
-                if files
-                else m_set.return_value))
+            == directory.grep.return_value)
 
-    if files:
-        assert not m_set.called
-        assert (
-            directory.grep.call_args
-            == [(["-lE", r"[[:blank:]]$", *files], ), {}])
-    else:
-        assert m_set.call_args == [(), {}]
-        assert not directory.grep.called
+    assert (
+        directory.grep.call_args
+        == [(["-lE", r"[[:blank:]]$"], ),
+            dict(target=files.return_value)])
     assert not (
         hasattr(
             glint,
@@ -198,108 +229,63 @@ def test_glint_noglint_re(patches):
     assert "noglint_re" in glint.__dict__
 
 
-@pytest.mark.parametrize("files", [[], [f"F{i}" for i in range(0, 10)]])
-@pytest.mark.parametrize("any_problems", [True, False])
-async def test_glint_problem_files(patches, files, any_problems):
-    glint = check.AGlintCheck("DIRECTORY")
-    patched = patches(
-        "any",
-        "list",
-        ("AGlintCheck.problems",
-         dict(new_callable=PropertyMock)),
-        ("AGlintCheck.files",
-         dict(new_callable=PropertyMock)),
-        "AGlintCheck._check_path",
-        prefix="envoy.code.check.abstract.glint")
-
-    class DummyProblems:
-        i = 0
-
-        def to_list(self, item):
-            self.i += 1
-            if not (self.i - 1) % 2:
-                return []
-            return [f"P{i}" for i in range(0, self.i)]
-
-    dummy_problems = DummyProblems()
-
-    with patched as (m_any, m_list, m_probs, m_files, m_check):
-        m_any.return_value = any_problems
-        m_list.side_effect = dummy_problems.to_list
-        m_files.side_effect = AsyncMock(return_value=files)
-        m_probs.side_effect = AsyncMock(
-            return_value=[f"PROB{i}" for i in range(0, 5)])
-        result = await glint.problem_files
-
-    assert (
-        getattr(
-            glint,
-            check.AGlintCheck.problem_files.cache_name)[
-                "problem_files"]
-        == result)
-
-    # files called
-    if not files:
-        assert not m_probs.called
-        assert not m_any.called
-        assert not m_list.called
-        assert not m_check.called
-        assert result == {}
-        return
-    # any called
-    # problems called
-    if not any_problems:
-        assert not m_list.called
-        assert not m_check.called
-        assert result == {}
-        return
-    assert (
-        result
-        == {f"F{i}":
-            [f"P{x}"
-             for x
-             in range(0, i + 1)]
-            for i
-            in range(0, 10)
-            if i % 2})
-
-
-async def test_glint_problems(patches):
+@pytest.mark.parametrize("files", [True, False])
+async def test_glint_problem_files(patches, files):
     glint = check.AGlintCheck("DIRECTORY")
     patched = patches(
         "asyncio",
+        ("AGlintCheck.files",
+         dict(new_callable=PropertyMock)),
         ("AGlintCheck.files_with_no_newline",
          dict(new_callable=PropertyMock)),
         ("AGlintCheck.files_with_mixed_tabs",
          dict(new_callable=PropertyMock)),
         ("AGlintCheck.files_with_trailing_whitespace",
          dict(new_callable=PropertyMock)),
+        "AGlintCheck._check_problems",
         prefix="envoy.code.check.abstract.glint")
 
-    with patched as (m_aio, m_newline, m_tabs, m_ws):
-        m_aio.gather = AsyncMock()
+    with patched as patchy:
+        (m_asyncio, m_files, m_newline, m_tabs,
+         m_ws, m_checks) = patchy
+        m_files.side_effect = AsyncMock(return_value=files)
+        gather = AsyncMock()
+        m_asyncio.gather = gather
         assert (
-            await glint.problems
-            == m_aio.gather.return_value)
+            await glint.problem_files
+            == (m_checks.return_value
+                if files
+                else {})
+            == getattr(
+                glint,
+                check.AGlintCheck.problem_files.cache_name)[
+                    "problem_files"])
 
+    if not files:
+        assert not m_checks.called
+        assert not gather.called
+        assert not m_newline.called
+        assert not m_tabs.called
+        assert not m_ws.called
+        return
     assert (
-        m_aio.gather.call_args
+        m_checks.call_args
+        == [(gather.return_value, ), {}])
+    assert (
+        gather.call_args
         == [(m_newline.return_value,
              m_tabs.return_value,
              m_ws.return_value), {}])
-    assert not (
-        hasattr(
-            glint,
-            check.AGlintCheck.problems.cache_name))
 
 
 @pytest.mark.parametrize("n", range(1, 5))
-def test_glint_have_newlines(patches, n):
-    glint = check.AGlintCheck("DIRECTORY")
+def test_glint__have_newlines(patches, n):
     patched = patches(
         "set",
+        "directory_context",
         "utils",
         prefix="envoy.code.check.abstract.glint")
+    path = MagicMock()
     paths = [MagicMock() for x in range(0, 5)]
 
     class Byter:
@@ -313,18 +299,23 @@ def test_glint_have_newlines(patches, n):
 
     byter = Byter()
 
-    with patched as (m_set, m_utils):
+    with patched as (m_set, m_dir_ctx, m_utils):
         m_utils.last_n_bytes_of.side_effect = byter.last_n_bytes_of
         assert (
-            glint.have_newlines(paths)
+            check.abstract.glint._have_newlines(path, paths)
             == m_set.return_value)
         pathgen = m_set.call_args[0][0]
         assert isinstance(pathgen, types.GeneratorType)
         assert (
             list(pathgen)
-            == [(p, bool((i + 1) % n))
-                for i, p in enumerate(paths)])
+            == [p
+                for i, p
+                in enumerate(paths)
+                if not bool((i + 1) % n)])
 
+    assert (
+        m_dir_ctx.call_args
+        == [(path, ), {}])
     assert (
         m_utils.last_n_bytes_of.call_args_list
         == [[(p, ), {}]

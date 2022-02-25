@@ -48,34 +48,6 @@ async def test_code_check_constructor(fix, pool, loop):
             await getattr(code_check, iface_prop)
 
 
-async def test_code_check_absolute_paths(patches):
-    directory = MagicMock()
-    directory.make_paths_absolute = AsyncMock()
-    code_check = DummyCodeCheck(directory)
-    patched = patches(
-        ("ACodeCheck.files",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.code.check.abstract.base")
-
-    with patched as (m_files, ):
-        files = AsyncMock()
-        m_files.side_effect = files
-        result = await code_check.absolute_paths
-
-    assert (
-        result
-        == directory.make_paths_absolute.return_value)
-    assert (
-        directory.make_paths_absolute.call_args
-        == [(files.return_value, ), {}])
-    assert (
-        getattr(
-            code_check,
-            check.ACodeCheck.absolute_paths.cache_name)[
-                "absolute_paths"]
-        == result)
-
-
 @pytest.mark.parametrize(
     "files",
     [set(),

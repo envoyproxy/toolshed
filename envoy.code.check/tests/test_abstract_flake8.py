@@ -18,7 +18,7 @@ def test_check_flake8_files(patches):
 
     with patched as (m_app, ):
         assert (
-            check.AFlake8Check.check_flake8_files(path, files, args)
+            check.AFlake8Check.check_flake8_files(path, args, files)
             == m_app.return_value.run_checks.return_value)
 
     assert (
@@ -39,7 +39,7 @@ def test_filter_flake8_files(patches):
 
     with patched as (m_app, ):
         assert (
-            check.AFlake8Check.filter_flake8_files(path, files, args)
+            check.AFlake8Check.filter_flake8_files(path, args, files)
             == m_app.return_value.include_files.return_value)
 
     assert (
@@ -56,14 +56,14 @@ def test_flake8_constructor():
     assert isinstance(flake8, check.ACodeCheck)
 
 
-@pytest.mark.parametrize("files", [True, False])
-async def test_flake8_checker_files(patches, files):
+async def test_flake8_checker_files(patches):
     directory = MagicMock()
     flake8 = check.AFlake8Check(directory)
     patched = patches(
         ("AFlake8Check.flake8_args",
          dict(new_callable=PropertyMock)),
-        "AFlake8Check.execute",
+        ("AFlake8Check.execute",
+         dict(new_callable=AsyncMock)),
         "AFlake8Check.filter_flake8_files",
         prefix="envoy.code.check.abstract.flake8")
     files = AsyncMock()
@@ -78,15 +78,15 @@ async def test_flake8_checker_files(patches, files):
         m_execute.call_args
         == [(m_filter,
              directory.absolute_path,
-             files.return_value,
-             m_args.return_value), {}])
+             m_args.return_value,
+             files.return_value), {}])
     assert not (
         hasattr(
             flake8,
             check.AFlake8Check.checker_files.cache_name))
 
 
-async def test_flake8_errors(patches):
+async def test_flake8_problem_files(patches):
     directory = MagicMock()
     flake8 = check.AFlake8Check(directory)
     patched = patches(
@@ -99,16 +99,15 @@ async def test_flake8_errors(patches):
         errors = AsyncMock()
         m_errors.side_effect = errors
         assert (
-            await flake8.errors
-            == m_handle.return_value)
+            await flake8.problem_files
+            == m_handle.return_value
+            == getattr(
+                flake8,
+                check.AFlake8Check.problem_files.cache_name)["problem_files"])
 
     assert (
         m_handle.call_args
         == [(errors.return_value, ), {}])
-    assert not (
-        hasattr(
-            flake8,
-            check.AFlake8Check.errors.cache_name))
 
 
 def test_flake8_flake8_args(patches):
@@ -143,17 +142,18 @@ async def test_flake8_flake8_errors(patches):
     directory = MagicMock()
     flake8 = check.AFlake8Check(directory)
     patched = patches(
-        ("AFlake8Check.absolute_paths",
+        ("AFlake8Check.files",
          dict(new_callable=PropertyMock)),
         ("AFlake8Check.flake8_args",
          dict(new_callable=PropertyMock)),
         "AFlake8Check.check_flake8_files",
-        "AFlake8Check.execute",
+        ("AFlake8Check.execute",
+         dict(new_callable=AsyncMock)),
         prefix="envoy.code.check.abstract.flake8")
 
-    with patched as (m_abs, m_args, m_checks, m_execute):
+    with patched as (m_files, m_args, m_checks, m_execute):
         files = AsyncMock()
-        m_abs.side_effect = files
+        m_files.side_effect = files
         assert (
             await flake8.flake8_errors
             == m_execute.return_value)
@@ -162,42 +162,12 @@ async def test_flake8_flake8_errors(patches):
         m_execute.call_args
         == [(m_checks,
              directory.absolute_path,
-             files.return_value,
-             m_args.return_value), {}])
+             m_args.return_value,
+             files.return_value), {}])
     assert not (
         hasattr(
             flake8,
             check.AFlake8Check.flake8_errors.cache_name))
-
-
-@pytest.mark.parametrize("files", [True, False])
-async def test_flake8_problem_files(patches, files):
-    directory = MagicMock()
-    flake8 = check.AFlake8Check(directory)
-    patched = patches(
-        ("AFlake8Check.errors",
-         dict(new_callable=PropertyMock)),
-        ("AFlake8Check.files",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.code.check.abstract.flake8")
-
-    with patched as (m_errors, m_files):
-        m_files.side_effect = AsyncMock(return_value=files)
-        errors = AsyncMock()
-        m_errors.side_effect = errors
-        result = await flake8.problem_files
-
-    assert (
-        getattr(
-            flake8,
-            check.AFlake8Check.problem_files.cache_name)[
-                "problem_files"]
-        == result
-        == (errors.return_value
-            if files
-            else {}))
-    if not files:
-        assert not m_errors.called
 
 
 def test_flake8_handle_errors(patches):
@@ -238,12 +208,9 @@ def test_flake8__parse_error():
     error = MagicMock()
     assert (
         flake8._parse_error(error)
-        == (directory.relative_path.return_value,
-            (f"{directory.relative_path.return_value}: "
+        == (error.split.return_value.__getitem__.return_value,
+            (f"{error.split.return_value.__getitem__.return_value}: "
              f"{error.split.return_value.__getitem__.return_value}")))
-    assert (
-        directory.relative_path.call_args
-        == [(error.split.return_value.__getitem__.return_value, ), {}])
     assert (
         error.split.call_args_list
         == [[(":", ), {}],
@@ -384,16 +351,20 @@ def test_flake8app_include_files(patches, n):
 def test_flake8app_run_checks(patches):
     flake8 = check.abstract.flake8.Flake8App("PATH", "ARGS")
     patched = patches(
+        "directory_context",
         ("Flake8App.app",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.flake8")
     paths = MagicMock()
 
-    with patched as (m_app, ):
+    with patched as (m_dir_ctx, m_app):
         assert (
             flake8.run_checks(paths)
             == m_app.return_value._results)
 
+    assert (
+        m_dir_ctx.call_args
+        == [("PATH", ), {}])
     assert (
         m_app.return_value.run_checks.call_args
         == [(), dict(files=paths)])

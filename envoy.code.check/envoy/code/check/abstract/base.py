@@ -24,11 +24,6 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
         self._loop = loop
         self._pool = pool
 
-    @async_property(cache=True)
-    async def absolute_paths(self) -> Set[str]:
-        return await self.directory.make_paths_absolute(
-            await self.files)
-
     @async_property
     @abstracts.interfacemethod
     async def checker_files(self) -> Set[str]:
@@ -49,4 +44,5 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
     @async_property
     @abstracts.interfacemethod
     async def problem_files(self) -> Dict[str, List[str]]:
+        """Discovered files with flake8 errors."""
         raise NotImplementedError

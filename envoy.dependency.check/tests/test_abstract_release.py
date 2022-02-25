@@ -495,7 +495,8 @@ async def test_release__hash_file_data(patches, in_proc):
     patched = patches(
         "logger",
         "time",
-        "ADependencyGithubRelease.execute",
+        ("ADependencyGithubRelease.execute",
+         dict(new_callable=AsyncMock)),
         "ADependencyGithubRelease.hash_file_data",
         "ADependencyGithubRelease.should_hash_in_proc",
         prefix="envoy.dependency.check.abstract.release")

@@ -79,6 +79,9 @@ class AExecutive(metaclass=abstracts.Abstraction):
         pool_info = f"{pool_name}:{hex(id(self.pool))}"
         if type(executable) == partial:
             executable = executable.func
+        name = getattr(
+            executable, "__qualname__",
+            executable.__class__.__qualname__)
         return (
             f"{pool_info} {result_info}: "
-            f"{executable.__module__}{executable.__qualname__}")
+            f"{executable.__module__}{name}")

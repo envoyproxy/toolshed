@@ -1,17 +1,18 @@
 
 import asyncio
 import re
-from functools import cached_property
+from functools import cached_property, partial
 from typing import (
-    Callable, Dict, Iterator, List,
+    Callable, Iterable, Iterator,
     Pattern, Set, Tuple)
 
 import abstracts
 
-from aio.core.functional import async_property
+from aio.core.dev import debug
+from aio.core.functional import async_property, directory_context
 
 from envoy.base import utils
-from envoy.code.check import abstract
+from envoy.code.check import abstract, typing
 
 
 NOGLINT_RE = (
@@ -21,15 +22,24 @@ NOGLINT_RE = (
     r"[\w/]*password_protected_password.txt$")
 
 
+@debug.logging(
+    log=__name__,
+    show_cpu=True)
+def _have_newlines(path: str, paths: Iterable[str]) -> Set[str]:
+    with directory_context(path):
+        return set(
+            target
+            for target
+            in paths
+            if (utils.last_n_bytes_of(target)
+                != b'\n'))
+
+
 class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod
-    def have_newlines(cls, paths: str) -> Set[Tuple[str, bool]]:
-        return set(
-            (target,
-             (utils.last_n_bytes_of(target)
-              == b'\n'))
-            for target in paths)
+    def have_newlines(cls, path: str, *paths: str) -> Set[str]:
+        return _have_newlines(path, paths)
 
     @classmethod
     def filter_files(
@@ -49,88 +59,55 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def files_with_mixed_tabs(self) -> Set[str]:
-        files = await self.files_with_preceeding_tabs
-        return (
-            await self.directory.grep(["-lP", r"^ ", *files])
-            if files
-            else set())
+        return await self.directory.grep(
+            ["-lP", r"^ "],
+            target=await self.files_with_preceeding_tabs)
 
     @async_property
     async def files_with_preceeding_tabs(self) -> Set[str]:
-        files = await self.files
-        if not files:
-            return set()
-        # This is a workaround for a blocking issue sending
-        # very large cli args to a subprocess.
-        # TODO: generalize this solution in directory.grep
-        if len(files) < 1000:
-            return await self.directory.grep(
-                ["-lP", r"^\t",
-                 *await self.files])
-        return (
-            files
-            & await self.directory.grep(
-                ["-lP", r"^\t"]))
+        return await self.directory.grep(
+            ["-lP", r"^\t"],
+            target=await self.files)
 
     @async_property
     async def files_with_no_newline(self) -> Set[str]:
-        return (
-            await self.execute(
-                self.have_newlines,
-                await self.absolute_paths)
-            if await self.files
-            else set())
+        batched = self.execute_in_batches(
+            partial(self.have_newlines, self.directory.path),
+            *await self.files)
+        no_newline = set()
+        async for batch in batched:
+            no_newline |= batch
+        return no_newline
 
     @async_property
     async def files_with_trailing_whitespace(self) -> Set[str]:
-        files = await self.files
-        if not files:
-            return set()
-        # This is a workaround for a blocking issue sending
-        # very large cli args to a subprocess.
-        # TODO: generalize this solution in directory.grep
-        if len(files) < 1000:
-            return await self.directory.grep(
-                ["-lE",
-                 "[[:blank:]]$",
-                 *await self.files])
-        return (
-            files
-            & await self.directory.grep(
-                ["-lE",
-                 "[[:blank:]]$"]))
+        return await self.directory.grep(
+            ["-lE", "[[:blank:]]$"],
+            target=await self.files)
 
     @cached_property
     def noglint_re(self) -> Pattern[str]:
         return re.compile(r"|".join(NOGLINT_RE))
 
     @async_property(cache=True)
-    async def problem_files(self) -> Dict[str, List[str]]:
-        if not await self.files:
-            return {}
-        problems = await self.problems
-        if not any(problems):
-            return {}
-        return self._check_problems(await self.files, problems)
+    async def problem_files(self) -> typing.ProblemDict:
+        return (
+            await self._check_problems(
+                await asyncio.gather(
+                    self.files_with_no_newline,
+                    self.files_with_mixed_tabs,
+                    self.files_with_trailing_whitespace))
+            if await self.files
+            else {})
 
-    def _check_problems(
+    async def _check_problems(
             self,
-            files: Set[str],
             problems: Tuple[
-                Set[str], Set[str], Set[str]]) -> Dict[str, List[str]]:
-        problem_files: Dict[str, List[str]] = {}
-        for path in files:
-            file_problems = list(self._check_path(path, *problems))
-            if file_problems:
-                problem_files[path] = file_problems
-        return problem_files
-
-    @async_property
-    async def problems(self) -> Tuple[Set[str], Set[str], Set[str]]:
-        return await asyncio.gather(
-            self.files_with_no_newline,
-            self.files_with_mixed_tabs,
-            self.files_with_trailing_whitespace)
+                Set[str], Set[str], Set[str]]) -> typing.ProblemDict:
+        return {
+            path: list(self._check_path(path, *problems))
+            for path
+            in (problems[0] | problems[1] | problems[2])}
 
     def _check_path(
             self,

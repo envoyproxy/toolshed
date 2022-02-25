@@ -218,6 +218,8 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
             args: Iterable[str],
             target: Union[str, Iterable[str]]) -> AsyncIterator[str]:
         """Run `grep` in the directory."""
+        if not isinstance(target, str) and not target:
+            return
         batches = self._batched_grep(
             *self.parse_grep_args(args, target))
         async for batch in batches:
