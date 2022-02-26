@@ -611,46 +611,6 @@ def test_util_nested():
     assert fun2_args == ["B"]
 
 
-@pytest.mark.parametrize(
-    "args",
-    [[], [f"ARG{i}" for i in range(0, 5)]])
-@pytest.mark.parametrize(
-    "kwargs",
-    [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
-def test_buffering(patches, args, kwargs):
-
-    patched = patches(
-        "buffered",
-        prefix="aio.core.functional.output")
-
-    marker = MagicMock()
-    fun = MagicMock()
-
-    def run_fun(*args, **kwargs):
-        return marker.in_context
-
-    fun.side_effect = run_fun
-
-    @contextlib.contextmanager
-    def mock_buffered(stdout, stderr):
-        marker.in_context = "IN CONTEXT"
-        yield
-        marker.in_context = "NOT IN CONTEXT"
-
-    with patched as (m_buffered, ):
-        m_buffered.side_effect = mock_buffered
-        assert (
-            functional.buffering(fun, "STDOUT", "STDERR", *args, **kwargs)
-            == "IN CONTEXT")
-
-    assert (
-        m_buffered.call_args
-        == [("STDOUT", "STDERR"), {}])
-    assert (
-        fun.call_args
-        == [tuple(args), kwargs])
-
-
 @pytest.mark.parametrize("stdout", [None, False, "", "STDOUT"])
 @pytest.mark.parametrize("stderr", [None, False, "", "STDERR"])
 @pytest.mark.parametrize("both", [None, False, "", "BOTH"])
