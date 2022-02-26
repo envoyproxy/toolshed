@@ -9,7 +9,7 @@ from .collections import (
     QueryDict)
 from .decorators import async_property
 from .generator import AwaitableGenerator
-from .output import buffered, buffering, capturing
+from .output import buffered, capturing
 from .process import async_map
 from .utils import (
     batches,
@@ -32,7 +32,6 @@ __all__ = (
     "batches",
     "batch_jobs",
     "buffered",
-    "buffering",
     "capturing",
     "CollectionQuery",
     "collections",

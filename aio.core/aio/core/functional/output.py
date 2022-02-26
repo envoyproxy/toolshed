@@ -50,12 +50,6 @@ def buffered(
         stderr.extend(mangle(_stderr.read().strip().split("\n")))
 
 
-def buffering(fun, stdout, stderr, *args, **kwargs):
-    """Run a function with buffered `stdout` and/or `stderr`."""
-    with buffered(stdout, stderr):
-        return fun(*args, **kwargs)
-
-
 @contextlib.asynccontextmanager
 async def capturing(stdout=None, stderr=None, both=None):
     """Async contextmanager which captures and asynchronously yields
