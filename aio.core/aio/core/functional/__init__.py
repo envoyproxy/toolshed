@@ -10,7 +10,7 @@ from .collections import (
 from .decorators import async_property
 from .generator import AwaitableGenerator
 from .output import buffered, buffering, capturing
-from .process import async_map, threaded
+from .process import async_map
 from .utils import (
     batches,
     batch_jobs,
@@ -44,6 +44,5 @@ __all__ = (
     "output",
     "qdict",
     "QueryDict",
-    "threaded",
     "typed",
     "utils")
