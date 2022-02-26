@@ -1,4 +1,3 @@
-
 import abc
 import contextlib
 import math
@@ -705,75 +704,6 @@ async def test_capturing(patches, stdout, stderr, both):
     assert (
         m_output.call_args
         == [(outputs, ), {}])
-
-
-@pytest.mark.parametrize(
-    "args",
-    [[], [f"ARG{i}" for i in range(0, 5)]])
-@pytest.mark.parametrize("stdout", [None, False, "", "STDOUT"])
-@pytest.mark.parametrize("stderr", [None, False, "", "STDERR"])
-@pytest.mark.parametrize("both", [None, False, "", "BOTH"])
-@pytest.mark.parametrize("pool", [None, False, "", "POOL"])
-@pytest.mark.parametrize("any_set", [True, False])
-async def test_threaded(patches, args, stdout, stderr, both, pool, any_set):
-    patched = patches(
-        "any",
-        "asyncio",
-        "dict",
-        "functional",
-        prefix="aio.core.functional.process")
-    fun = MagicMock()
-    kwargs = {}
-    if stdout is not None:
-        kwargs["stdout"] = stdout
-    if stderr is not None:
-        kwargs["stderr"] = stderr
-    if both is not None:
-        kwargs["both"] = both
-    if pool is not None:
-        kwargs["pool"] = pool
-    capture_kwargs = {f"CAPK{i}": f"CAPV{i}" for i in range(0, 7)}
-
-    with patched as (m_any, m_aio, m_dict, m_func):
-        m_dict.return_value = capture_kwargs
-        m_any.return_value = any_set
-        executor = AsyncMock()
-        m_aio.get_running_loop.return_value.run_in_executor = executor
-        get = MagicMock()
-        m_func.capturing.return_value.__aenter__.return_value.get = get
-        assert (
-            await functional.threaded(fun, *args, **kwargs)
-            == (m_aio.get_running_loop.return_value
-                     .run_in_executor.return_value))
-
-    assert (
-        m_aio.get_running_loop.call_args
-        == [(), {}])
-    assert (
-        m_any.call_args
-        == [([stdout, stderr, both], ), {}])
-    if not any_set:
-        assert not m_dict.called
-        assert not m_func.capturing.called
-        assert (
-            executor.call_args
-            == [(pool, fun, *args), {}])
-        return
-    assert (
-        m_dict.call_args
-        == [(), dict(stdout=stdout, stderr=stderr, both=both)])
-    assert (
-        m_func.capturing.call_args
-        == [(), capture_kwargs])
-    assert (
-        executor.call_args
-        == [(pool, m_func.buffering, fun,
-             get.return_value,
-             get.return_value,
-             *args), {}])
-    assert (
-        get.call_args_list
-        == [[(out, ), {}] for out in ["stdout", "stderr"]])
 
 
 def test_utils_junzip(patches):
