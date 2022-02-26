@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import logging
 import pathlib
 import time
 from functools import cached_property
@@ -233,8 +232,7 @@ class Checker(runner.Runner):
         return 1
 
     def exit(self) -> int:
-        self.root_logger.handlers[0].setLevel(logging.FATAL)
-        self.stdout.handlers[0].setLevel(logging.FATAL)
+        super().exit()
         return self.error("exiting", ["Keyboard exit"], log_type="fatal")
 
     def get_checks(self) -> Sequence[str]:
@@ -291,6 +289,8 @@ class Checker(runner.Runner):
 
     async def on_checks_begin(self) -> None:
         """Callback hook called before all checks."""
+        # Set up preload tasks
+        asyncio.create_task(self.preload())
         self._notify_checks()
         self._notify_preload()
 
@@ -301,29 +301,8 @@ class Checker(runner.Runner):
             self.summary.print_summary()
         return 1 if self.has_failed else 0
 
-    def start_reactor(self):
-        super().install_reactor()
-        self.loop.set_exception_handler(self.on_async_error)
-
-    def __call__(self):
-        # TODO: use super.__call__ and factor out the runtime
-        self.setup_logging()
-        self.start_reactor()
-        try:
-            self.log.debug("Starting checker...")
-            result = self.loop.run_until_complete(self.run())
-            return result
-        except RuntimeError:
-            # Loop was forcibly stopped, most likely due to unhandled
-            # error in task.
-            return 1
-        except KeyboardInterrupt:
-            # This needs to be outside the loop to catch the a keyboard
-            # interrupt. This means that a new loop has to be created to
-            # cleanup.
-            self.exit()
-            return asyncio.get_event_loop().run_until_complete(
-                self.on_checks_complete())
+    async def on_runner_error(self, e: BaseException) -> None:
+        await self.on_checks_complete()
 
     def succeed(self, name: str, success: list, log: bool = True) -> None:
         """Record (and log) success for a check type."""
@@ -404,21 +383,10 @@ class Checker(runner.Runner):
         """Start the checks queue, and preloaders, and populate the queue with
         any checks that don't require preloaded data."""
         await self.on_checks_begin()
-        # Set up preload tasks
-        asyncio.create_task(self.preload())
         # Place all checks that are not blocked in the queue.
         for check in self.checks_to_run:
             if check not in self.preload_checks:
                 await self.check_queue.put(check)
-
-    def on_async_error(
-            self,
-            loop: asyncio.AbstractEventLoop,
-            context: Dict) -> None:
-        """Handle unhandled async exceptions by stopping the loop and printing
-        the traceback."""
-        loop.default_exception_handler(context)
-        loop.stop()
 
     async def on_preload(self, task: str) -> None:
         """Event fired after each preload task completes."""
