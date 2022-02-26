@@ -611,61 +611,6 @@ def test_util_nested():
     assert fun2_args == ["B"]
 
 
-@pytest.mark.parametrize("stdout", [None, False, "", "STDOUT"])
-@pytest.mark.parametrize("stderr", [None, False, "", "STDERR"])
-@pytest.mark.parametrize("both", [None, False, "", "BOTH"])
-async def test_capturing(patches, stdout, stderr, both):
-    patched = patches(
-        "output.BufferedOutputs",
-        prefix="aio.core.functional.output")
-    kwargs = {}
-    if stdout is not None:
-        kwargs["stdout"] = stdout
-    if stderr is not None:
-        kwargs["stderr"] = stderr
-    if both is not None:
-        kwargs["both"] = both
-    should_fail = (
-        not any([stdout, stderr, both])
-        or (both
-            and (stdout or stderr)))
-    outputs = {}
-    stdout = (both if both else stdout)
-    if stdout:
-        outputs["stdout"] = stdout
-    stderr = (both if both else stderr)
-    if stderr:
-        outputs["stderr"] = stderr
-
-    with patched as (m_output, ):
-        if should_fail:
-            with pytest.raises(output.exceptions.CapturingException) as e:
-                async with functional.capturing(**kwargs):
-                    pass
-            if not both:
-                assert (
-                    e.value.args[0]
-                    == ("You must supply either `both`, "
-                        "or one of `stdout` and `stderr`"))
-            else:
-                assert (
-                    e.value.args[0]
-                    == ("If you supply `both`, `stdout` "
-                        "and `stderr` should not be set"))
-
-        else:
-            async with functional.capturing(**kwargs) as buffer:
-                assert buffer == m_output.return_value.__aenter__.return_value
-
-    if should_fail:
-        assert not m_output.called
-        return
-
-    assert (
-        m_output.call_args
-        == [(outputs, ), {}])
-
-
 def test_utils_junzip(patches):
     data = MagicMock()
     patched = patches(
