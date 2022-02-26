@@ -143,6 +143,7 @@ def test_runner_log(patches):
     patched = patches(
         "coloredlogs",
         "verboselogs",
+        "_log",
         ("Runner.log_field_styles",
          dict(new_callable=PropertyMock)),
         ("Runner.log_fmt",
@@ -157,15 +158,16 @@ def test_runner_log(patches):
         prefix="aio.run.runner.runner")
 
     with patched as patchy:
-        (m_color, m_verb, m_fstyle, m_fmt,
+        (m_color, m_verb, m_log, m_fstyle, m_fmt,
          m_lstyle, m_name, m_verbosity, m_setup) = patchy
         run = runner.Runner('path1', 'path2', 'path3')
-        assert run.log == m_verb.VerboseLogger.return_value
+        assert (
+            run.log
+            == m_log.QueueLogger.return_value.start.return_value)
 
     assert (
         m_verb.VerboseLogger.call_args
         == [(m_name.return_value, ), {}])
-
     assert (
         m_color.install.call_args
         == [(),
@@ -175,6 +177,15 @@ def test_runner_log(patches):
              'level': m_verbosity.return_value,
              'level_styles': m_lstyle.return_value,
              'logger': m_verb.VerboseLogger.return_value}])
+    assert (
+        m_verb.VerboseLogger.return_value.setLevel.call_args
+        == [(m_verbosity.return_value, ), {}])
+    assert (
+        m_log.QueueLogger.call_args
+        == [(m_verb.VerboseLogger.return_value, ), {}])
+    assert (
+        m_log.QueueLogger.return_value.start.call_args
+        == [(), {}])
     assert "log" in run.__dict__
 
 
@@ -284,13 +295,21 @@ def test_runner_root_logger(patches):
     run = DummyRunner()
     patched = patches(
         "logging",
-        ("Runner.log", dict(new_callable=PropertyMock)),
-        ("Runner.root_log_handler", dict(new_callable=PropertyMock)),
+        "_log",
+        ("Runner.log_level",
+         dict(new_callable=PropertyMock)),
+        ("Runner.root_log_handler",
+         dict(new_callable=PropertyMock)),
         prefix="aio.run.runner.runner")
 
-    with patched as (m_logging, m_log, m_handler):
-        assert run.root_logger == m_logging.getLogger.return_value
+    with patched as (m_logging, m_log, m_level, m_handler):
+        assert (
+            run.root_logger
+            == m_log.QueueLogger.return_value.start.return_value)
 
+    assert (
+        m_logging.basicConfig.call_args
+        == [(), dict(level=m_level.return_value)])
     assert (
         m_logging.getLogger.call_args
         == [(), {}])
@@ -305,6 +324,15 @@ def test_runner_root_logger(patches):
     assert (
         m_logging.getLogger.return_value.addHandler.call_args
         == [(m_handler.return_value, ), {}])
+    assert (
+        m_logging.getLogger.return_value.setLevel.call_args
+        == [(m_level.return_value, ), {}])
+    assert (
+        m_log.QueueLogger.call_args
+        == [(m_logging.getLogger.return_value, ), {}])
+    assert (
+        m_log.QueueLogger.return_value.start.call_args
+        == [(), {}])
     assert "root_logger" in run.__dict__
 
 
@@ -465,29 +493,21 @@ def test_runner_install_reactor(patches, uvloop, use_uvloop):
 def test_runner_setup_logging(patches):
     run = DummyRunner()
     patched = patches(
-        "logging",
         ("Runner.log",
-         dict(new_callable=PropertyMock)),
-        ("Runner.log_level",
          dict(new_callable=PropertyMock)),
         ("Runner.root_logger",
          dict(new_callable=PropertyMock)),
-        ("Runner.verbosity",
-         dict(new_callable=PropertyMock)),
         prefix="aio.run.runner.runner")
 
-    with patched as (m_logging, m_log, m_level, m_root, m_verb):
+    with patched as (m_log, m_root):
         assert not run.setup_logging()
 
     assert (
-        m_logging.basicConfig.call_args
-        == [(), dict(level=m_level.return_value)])
+        m_root.return_value.debug.call_args
+        == [("Start (async) root logger", ), {}])
     assert (
-        m_root.return_value.setLevel.call_args
-        == [(m_level.return_value, ), {}])
-    assert (
-        m_log.return_value.setLevel.call_args
-        == [(m_verb.return_value, ), {}])
+        m_log.return_value.debug.call_args
+        == [("Start (async) app logger", ), {}])
 
 
 def test_runner_shutdown_logging(patches):

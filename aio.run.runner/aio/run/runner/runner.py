@@ -26,9 +26,10 @@ import verboselogs  # type:ignore
 
 import abstracts
 
-from aio.core import event
+from aio.core import event, log as _log
 
 from .decorators import cleansup
+
 
 LOG_LEVELS = (
     ("debug", logging.DEBUG),
@@ -57,7 +58,10 @@ class BazelRunError(Exception):
 
 class BaseLogFilter(logging.Filter):
 
-    def __init__(self, app_logger: logging.Logger, *args, **kwargs) -> None:
+    def __init__(
+            self,
+            app_logger: _log.StoppableLogger,
+            *args, **kwargs) -> None:
         self.app_logger = app_logger
 
 
@@ -97,7 +101,7 @@ class Runner(event.AReactive):
         return self.parser.parse_known_args(self._args)[1]
 
     @cached_property
-    def log(self) -> verboselogs.VerboseLogger:
+    def log(self) -> _log.StoppableLogger:
         """Instantiated logger."""
         app_logger = verboselogs.VerboseLogger(self.name)
         coloredlogs.install(
@@ -107,7 +111,8 @@ class Runner(event.AReactive):
             level=self.verbosity,
             logger=app_logger,
             isatty=True)
-        return app_logger
+        app_logger.setLevel(self.verbosity)
+        return _log.QueueLogger(app_logger).start()
 
     @property
     def log_field_styles(self):
@@ -156,12 +161,14 @@ class Runner(event.AReactive):
         return root_handler
 
     @cached_property
-    def root_logger(self) -> logging.Logger:
+    def root_logger(self) -> _log.StoppableLogger:
         """Instantiated logger."""
+        logging.basicConfig(level=self.log_level)
         root_logger = logging.getLogger()
         root_logger.removeHandler(root_logger.handlers[0])
         root_logger.addHandler(self.root_log_handler)
-        return root_logger
+        root_logger.setLevel(self.log_level)
+        return _log.QueueLogger(root_logger).start()
 
     @cached_property
     def stdout(self) -> logging.Logger:
@@ -227,13 +234,13 @@ class Runner(event.AReactive):
         raise NotImplementedError
 
     def setup_logging(self):
-        logging.basicConfig(level=self.log_level)
-        self.root_logger.setLevel(self.log_level)
-        self.log.setLevel(self.verbosity)
-        self.log.debug("Logging started")
+        self.root_logger.debug("Start (async) root logger")
+        self.log.debug("Start (async) app logger")
 
     def shutdown_logging(self):
         self.log.debug("Shutting down logging, goodbye")
+        self.log.stop()
+        self.root_logger.stop()
         logging.shutdown()
 
     @property

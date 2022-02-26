@@ -4,6 +4,9 @@ pytooling_library(
     dependencies=[
         "//deps:abstracts",
         "//deps:aio.core",
+        "//deps:coloredlogs",
+        "//deps:frozendict",
         "//deps:uvloop",
+        "//deps:verboselogs",
     ],
 )
