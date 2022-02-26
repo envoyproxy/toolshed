@@ -30,6 +30,8 @@ pytooling_library(
         "functional/output.py",
         "functional/process.py",
         "functional/utils.py",
+        "log/__init__.py",
+        "log/logging.py",
         "output/abstract/__init__.py",
         "output/abstract/output.py",
         "output/exceptions.py",
