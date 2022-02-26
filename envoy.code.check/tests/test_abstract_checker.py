@@ -394,7 +394,7 @@ def test_abstract_checker_path(patches):
      {f"F{i}": f"P{i}" for i in range(0, 5)},
      {f"F{i}": f"P{i}" for i in range(5, 10)},
      {f"F{i}": f"P{i}" for i in range(0, 10)}])
-async def test_abstract_checker_code_check(patches, files, problem_files):
+def test_abstract_checker__check_output(patches, files, problem_files):
     checker = DummyCodeChecker()
     patched = patches(
         "sorted",
@@ -403,11 +403,7 @@ async def test_abstract_checker_code_check(patches, files, problem_files):
         "ACodeChecker.error",
         "ACodeChecker.succeed",
         prefix="envoy.code.check.abstract.checker")
-    check = MagicMock()
-    files_mock = AsyncMock()
-    check.files = files_mock()
-    problems_mock = AsyncMock(return_value=problem_files)
-    check.problem_files = problems_mock()
+    check_files = MagicMock()
     errors = []
     success = []
     for f in files:
@@ -418,11 +414,12 @@ async def test_abstract_checker_code_check(patches, files, problem_files):
 
     with patched as (m_sorted, m_active, m_error, m_succeed):
         m_sorted.return_value = files
-        assert not await checker._code_check(check)
+        assert not checker._check_output(
+            check_files, problem_files)
 
     assert (
         m_sorted.call_args
-        == [(files_mock.return_value, ), {}])
+        == [(check_files, ), {}])
     assert (
         m_error.call_args_list
         == [[(m_active.return_value, problem_files[error]), {}]
@@ -431,6 +428,32 @@ async def test_abstract_checker_code_check(patches, files, problem_files):
         m_succeed.call_args_list
         == [[(m_active.return_value, [succeed]), {}]
             for succeed in success])
+
+
+async def test_abstract_checker_code_check(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.loop",
+         dict(new_callable=PropertyMock)),
+        "ACodeChecker._check_output",
+        prefix="envoy.code.check.abstract.checker")
+    check = MagicMock()
+    files_mock = AsyncMock()
+    check.files = files_mock()
+    problems_mock = AsyncMock()
+    check.problem_files = problems_mock()
+
+    with patched as (m_loop, m_check):
+        execute = AsyncMock()
+        m_loop.return_value.run_in_executor = execute
+        assert not await checker._code_check(check)
+
+    assert (
+        execute.call_args
+        == [(None,
+             m_check,
+             files_mock.return_value,
+             problems_mock.return_value), {}])
 
 
 @pytest.mark.parametrize("arg", [None, False, (), ["A1"], ["A1", "A2"]])
