@@ -5,14 +5,14 @@ import argparse
 import pathlib
 import re
 from functools import cached_property
-from typing import Dict, Mapping, Optional, Pattern, Tuple, Type
+from typing import Dict, Mapping, Optional, Pattern, Set, Tuple, Type
 
 import abstracts
 
 from aio.core import directory as _directory, event
 from aio.run import checker
 
-from envoy.code.check import abstract
+from envoy.code.check import abstract, typing
 
 
 # This is excluding at least some of the things that `.gitignore` would.
@@ -188,9 +188,13 @@ class ACodeChecker(
     async def preload_yapf(self) -> None:
         await self.yapf.problem_files
 
-    async def _code_check(self, check: "abstract.ACodeCheck") -> None:
-        problem_files = await check.problem_files
-        for path in sorted(await check.files):
+    def _check_output(
+            self,
+            check_files: Set[str],
+            problem_files: typing.ProblemDict) -> None:
+        # This can be slow/blocking for large result sets, run
+        # in a separate thread
+        for path in sorted(check_files):
             if path in problem_files:
                 self.error(
                     self.active_check,
@@ -199,6 +203,13 @@ class ACodeChecker(
                 self.succeed(
                     self.active_check,
                     [path])
+
+    async def _code_check(self, check: "abstract.ACodeCheck") -> None:
+        await self.loop.run_in_executor(
+            None,
+            self._check_output,
+            await check.files,
+            await check.problem_files)
 
     def _grep_re(self, arg: Optional[str]) -> Optional[Pattern[str]]:
         # When using system `grep` we want to filter out at least some
