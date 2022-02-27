@@ -86,7 +86,7 @@ pypi: https://pypi.org/project/aio.core
 
 #### [aio.run.checker](aio.run.checker)
 
-version: 0.4.0
+version: 0.4.1.dev0
 
 pypi: https://pypi.org/project/aio.run.checker
 
@@ -268,7 +268,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.0.11
+version: 0.0.12.dev0
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
@@ -345,7 +345,7 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 
 #### [envoy.gpg.sign](envoy.gpg.sign)
 
-version: 0.0.13
+version: 0.0.14.dev0
 
 pypi: https://pypi.org/project/envoy.gpg.sign
 
