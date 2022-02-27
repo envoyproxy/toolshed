@@ -1,4 +1,4 @@
-import logging
+
 from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 
 import pytest
@@ -454,28 +454,16 @@ def test_checker_error(log, log_type, errors, newerrors):
 def test_checker_exit(patches):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
+        "runner.Runner.exit",
         "Checker.error",
-        ("Checker.root_logger", dict(new_callable=PropertyMock)),
-        ("Checker.stdout", dict(new_callable=PropertyMock)),
         prefix="aio.run.checker.checker")
 
-    with patched as (m_error, m_log, m_stdout):
+    with patched as (m_super, m_error):
         assert checker.exit() == m_error.return_value
 
-    stdout = m_stdout.return_value.handlers.__getitem__
-    log = m_log.return_value.handlers.__getitem__
     assert (
-        log.call_args
-        == [(0,), {}])
-    assert (
-        log.return_value.setLevel.call_args
-        == [(logging.FATAL,), {}])
-    assert (
-        stdout.call_args
-        == [(0,), {}])
-    assert (
-        stdout.return_value.setLevel.call_args
-        == [(logging.FATAL,), {}])
+        m_super.call_args
+        == [(), {}])
     assert (
         m_error.call_args
         == [('exiting', ['Keyboard exit']), {'log_type': 'fatal'}])
@@ -642,18 +630,27 @@ async def test_checker_on_check_run(
 async def test_checker_on_checks_begin(patches):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
+        "asyncio",
+        ("Checker.preload",
+         dict(new_callable=MagicMock)),
         "Checker._notify_checks",
         "Checker._notify_preload",
         prefix="aio.run.checker.checker")
 
-    with patched as (m_checks, m_preload):
+    with patched as (m_asyncio, m_preload, m_checks, m_notify_preload):
         assert not await checker.on_checks_begin()
 
+    assert (
+        m_asyncio.create_task.call_args
+        == [(m_preload.return_value, ), {}])
+    assert (
+        m_preload.call_args
+        == [(), {}])
     assert (
         m_checks.call_args
         == [(), {}])
     assert (
-        m_preload.call_args
+        m_notify_preload.call_args
         == [(), {}])
 
 
@@ -680,72 +677,19 @@ async def test_checker_on_checks_complete(patches, failed, show_summary):
         assert not m_summary.return_value.print_summary.called
 
 
-@pytest.mark.parametrize(
-    "raises",
-    [None, RuntimeError, KeyboardInterrupt, Exception])
-def test_checker_dunder_call(patches, raises):
-    checker = Checker()
+async def test_checker_on_runner_error(patches):
+    checker = Checker("path1", "path2", "path3")
     patched = patches(
-        "asyncio",
-        "Checker.exit",
-        ("Checker.cleanup", dict(new_callable=MagicMock)),
-        ("Checker.loop", dict(new_callable=PropertyMock)),
-        ("Checker.run", dict(new_callable=MagicMock)),
-        ("Checker.on_checks_complete", dict(new_callable=MagicMock)),
-        "Checker.on_async_error",
-        "Checker.setup_logging",
-        "Checker.start_reactor",
+        "Checker.on_checks_complete",
         prefix="aio.run.checker.checker")
+    e = MagicMock()
 
-    with patched as patchy:
-        (m_async, m_exit, m_cleanup, m_loop,
-         m_run, m_complete, m_on_err, m_log, m_reactor) = patchy
-        run_until_complete = (
-            m_async.get_event_loop.return_value.run_until_complete)
-        if raises:
-            m_run.side_effect = raises
-
-            if raises == KeyboardInterrupt:
-                result = checker.__call__()
-            elif raises == RuntimeError:
-                result = checker.__call__()
-            else:
-                with pytest.raises(raises):
-                    checker.run()
-                return
-        else:
-            assert (
-                checker.__call__()
-                == m_loop.return_value.run_until_complete.return_value)
+    with patched as (m_complete, ):
+        assert not await checker.on_runner_error(e)
 
     assert (
-        m_run.call_args
+        m_complete.call_args
         == [(), {}])
-
-    if raises == KeyboardInterrupt:
-        assert not m_loop.return_value.run_until_complete.called
-        assert (
-            m_exit.call_args
-            == [(), {}])
-        assert (
-            m_async.get_event_loop.call_args
-            == [(), {}])
-        assert (
-            run_until_complete.call_args
-            == [(m_complete.return_value,), {}])
-        assert (
-            m_complete.call_args
-            == [(), {}])
-        assert (
-            result
-            == run_until_complete.return_value)
-        return
-    assert not m_exit.called
-    assert not run_until_complete.called
-    if not raises:
-        assert (
-            m_loop.return_value.run_until_complete.call_args
-            == [(m_run.return_value,), {}])
 
 
 TEST_WARNS: tuple = (
@@ -1198,21 +1142,18 @@ def test_checker_remaining_checks(patches, checks, removed, completed):
 async def test_checker_begin_checks(patches, to_run, to_pre):
     checker = Checker()
     patched = patches(
-        "asyncio",
         ("Checker.check_queue",
          dict(new_callable=PropertyMock)),
         ("Checker.checks_to_run",
          dict(new_callable=PropertyMock)),
         ("Checker.preload_checks",
          dict(new_callable=PropertyMock)),
-        ("Checker.preload",
-         dict(new_callable=MagicMock)),
         "Checker.on_checks_begin",
         prefix="aio.run.checker.checker")
 
     expected = [c for c in to_run if c not in to_pre]
 
-    with patched as (m_io, m_q, m_run, m_checks, m_preload, m_begin):
+    with patched as (m_q, m_run, m_checks, m_begin):
         m_run.return_value = to_run
         m_checks.return_value = to_pre
         m_q.return_value.put = AsyncMock()
@@ -1221,12 +1162,6 @@ async def test_checker_begin_checks(patches, to_run, to_pre):
     assert (
         m_begin.call_args
         == [(), {}])
-    assert (
-        m_preload.call_args
-        == [(), {}])
-    assert (
-        m_io.create_task.call_args
-        == [(m_preload.return_value, ), {}])
 
     if not expected:
         assert not m_q.return_value.put.called
