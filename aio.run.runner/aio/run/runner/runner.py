@@ -112,7 +112,7 @@ class Runner(event.AReactive):
             logger=app_logger,
             isatty=True)
         app_logger.setLevel(self.verbosity)
-        return _log.QueueLogger(app_logger).start()
+        return _log.QueueLogger(app_logger).start()  # type:ignore
 
     @property
     def log_field_styles(self):
@@ -168,7 +168,7 @@ class Runner(event.AReactive):
         root_logger.removeHandler(root_logger.handlers[0])
         root_logger.addHandler(self.root_log_handler)
         root_logger.setLevel(self.log_level)
-        return _log.QueueLogger(root_logger).start()
+        return _log.QueueLogger(root_logger).start()  # type:ignore
 
     @cached_property
     def stdout(self) -> logging.Logger:

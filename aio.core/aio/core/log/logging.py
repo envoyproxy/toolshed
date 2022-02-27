@@ -1,9 +1,10 @@
 
 import asyncio
+import atexit
 import logging
 import logging.handlers
 from functools import cached_property
-from queue import Queue
+from queue import SimpleQueue
 from typing import Any, Callable, List, Type
 
 
@@ -19,7 +20,7 @@ class QueueHandler(logging.handlers.QueueHandler):
 
 
 class StoppableLogger:
-    """Wraps a `logging.Logger` with a stop method."""
+    # TODO: Remove!
 
     def __init__(self, logger: logging.Logger, stop: Callable) -> None:
         self._logger = logger
@@ -35,16 +36,21 @@ class StoppableLogger:
 class QueueLogger:
     """Wraps a `logging.Logger` with a listening queue.
 
-    Calling the `start` method returns a `StoppableLogger`, which wraps
-    the original `Logger` and expects to be stopped.
+    Calling the `start` method returns the original `Logger`, with the
+    listener started.
+
+    If you set `stop_on_exit` to `False`, you must `stop` the listener
+    yourself to ensure the logging queue is cleared.
     """
 
     def __init__(
             self,
             logger: logging.Logger,
-            respect_handler: bool = True) -> None:
+            stop_on_exit: bool = True,
+            respect_handler_level: bool = True) -> None:
         self._logger = logger
-        self.respect_handler = respect_handler
+        self.respect_handler_level = respect_handler_level
+        self.stop_on_exit = stop_on_exit
 
     @cached_property
     def handler(self) -> QueueHandler:
@@ -69,19 +75,19 @@ class QueueLogger:
         return logging.handlers.QueueListener
 
     @cached_property
-    def queue(self) -> Queue:
-        return self.queue_class(-1)
+    def queue(self) -> SimpleQueue:
+        return self.queue_class()
 
     @property
-    def queue_class(self) -> Type[Queue]:
-        return Queue
+    def queue_class(self) -> Type[SimpleQueue]:
+        return SimpleQueue
 
     @cached_property
     def listener(self) -> logging.handlers.QueueListener:
         return self.listener_class(
             self.queue,
             *self.handlers,
-            respect_handler_level=self.respect_handler)
+            respect_handler_level=self.respect_handler_level)
 
     @cached_property
     def logger(self) -> logging.Logger:
@@ -89,6 +95,8 @@ class QueueLogger:
         self._logger.addHandler(self.handler)
         return self._logger
 
-    def start(self) -> StoppableLogger:
+    def start(self) -> logging.Logger:
         self.listener.start()
-        return StoppableLogger(self.logger, self.listener.stop)
+        if self.stop_on_exit:
+            atexit.register(self.listener.stop)
+        return self.logger
