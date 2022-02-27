@@ -5,9 +5,11 @@ import pwd
 import shutil
 from functools import cached_property
 from email.utils import formataddr, parseaddr
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Union
 
 import gnupg  # type:ignore
+
+from aio.core import log as _log
 
 
 class GPGError(Exception):
@@ -25,7 +27,7 @@ class GPGIdentity(object):
             self,
             name: Optional[str] = None,
             email: Optional[str] = None,
-            log: Optional[logging.Logger] = None,
+            log: Optional[Union[logging.Logger, _log.StoppableLogger]] = None,
             gnupg_home: Optional[pathlib.Path] = None,
             gen_key: bool = False):
         self._provided_name = name
@@ -97,7 +99,7 @@ class GPGIdentity(object):
         return pathlib.Path(home_dir)
 
     @cached_property
-    def log(self) -> logging.Logger:
+    def log(self) -> Union[logging.Logger, _log.StoppableLogger]:
         return self._log or logging.getLogger(self.__class__.__name__)
 
     @property
