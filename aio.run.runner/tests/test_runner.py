@@ -45,52 +45,59 @@ def test_runner_constructor():
     assert isinstance(run, event.AReactive)
 
 
-@pytest.mark.parametrize("raises", [None, KeyboardInterrupt])
+@pytest.mark.parametrize(
+    "raises",
+    [None, KeyboardInterrupt, Exception, RuntimeError])
 def test_runner_dunder_call(patches, raises):
+    run = runner.Runner()
     patched = patches(
-        "asyncio",
-        ("Runner.log", dict(new_callable=MagicMock)),
-        ("Runner.run", dict(new_callable=MagicMock)),
-        "Runner.install_reactor",
-        "Runner.setup_logging",
-        "Runner.shutdown_logging",
+        ("Runner.loop",
+         dict(new_callable=PropertyMock)),
+        ("Runner.run",
+         dict(new_callable=MagicMock)),
+        ("Runner.on_runner_error",
+         dict(new_callable=MagicMock)),
+        "Runner.on_runner_start",
         prefix="aio.run.runner.runner")
 
-    with patched as (m_asyncio, m_log, m_run, m_install, m_setup, m_shutdown):
-        run = runner.Runner()
+    with patched as (m_loop, m_run, m_error, m_start):
         if raises:
             m_run.side_effect = raises("DIE")
-        assert (
-            run()
-            == (m_asyncio.run.return_value
+        if raises == Exception:
+            with pytest.raises(Exception):
+                run()
+        else:
+            expect_fail = (
+                None
                 if not raises
-                else 1))
+                else (1
+                      if raises == RuntimeError
+                      else m_error.return_value))
+            assert (
+                run()
+                == (m_loop.return_value.run_until_complete.return_value
+                    if not expect_fail
+                    else expect_fail))
 
     assert (
-        m_setup.call_args
+        m_start.call_args
         == [(), {}])
-    assert (
-        m_install.call_args
-        == [(), {}])
-    if not raises:
-        assert not m_log.error.called
-        assert (
-            m_asyncio.run.call_args
-            == [(m_run.return_value, ), {}])
-    else:
-        assert not m_asyncio.run.called
-        assert (
-            m_log.error.call_args
-            == [("Keyboard exit", ), {}])
     assert (
         m_run.call_args
         == [(), {}])
-    assert (
-        m_log.debug.call_args
-        == [("Loop closed", ), {}])
-    assert (
-        m_shutdown.call_args
-        == [(), {}])
+    if not raises:
+        assert not m_error.called
+        assert (
+            m_loop.return_value.run_until_complete.call_args
+            == [(m_run.return_value, ), {}])
+        return
+    assert not m_loop.return_value.run_until_complete.called
+    if raises == KeyboardInterrupt:
+        assert (
+            m_error.call_args
+            == [(), {}])
+    else:
+        assert not m_error.called
 
 
 def test_runner_args(patches):
@@ -295,17 +302,16 @@ def test_runner_root_logger(patches):
     run = DummyRunner()
     patched = patches(
         "logging",
-        "_log",
         ("Runner.log_level",
          dict(new_callable=PropertyMock)),
         ("Runner.root_log_handler",
          dict(new_callable=PropertyMock)),
         prefix="aio.run.runner.runner")
 
-    with patched as (m_logging, m_log, m_level, m_handler):
+    with patched as (m_logging, m_level, m_handler):
         assert (
             run.root_logger
-            == m_log.QueueLogger.return_value.start.return_value)
+            == m_logging.getLogger.return_value)
 
     assert (
         m_logging.basicConfig.call_args
@@ -327,12 +333,6 @@ def test_runner_root_logger(patches):
     assert (
         m_logging.getLogger.return_value.setLevel.call_args
         == [(m_level.return_value, ), {}])
-    assert (
-        m_log.QueueLogger.call_args
-        == [(m_logging.getLogger.return_value, ), {}])
-    assert (
-        m_log.QueueLogger.return_value.start.call_args
-        == [(), {}])
     assert "root_logger" in run.__dict__
 
 
@@ -448,19 +448,43 @@ def test_runner_add_arguments():
 async def test_runner_cleanup(patches):
     patched = patches(
         "Runner._cleanup_tempdir",
-        "Runner._shutdown_pool",
         prefix="aio.run.runner.runner")
 
-    with patched as (m_temp, m_pool):
+    with patched as (m_temp, ):
         run = runner.Runner()
         assert not await run.cleanup()
 
     assert (
         m_temp.call_args
         == [(), {}])
+
+
+def test_runner_exit(patches):
+    run = DummyRunner()
+    patched = patches(
+        ("Runner.root_logger",
+         dict(new_callable=PropertyMock)),
+        ("Runner.stdout",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.run.runner.runner")
+
+    with patched as (m_log, m_stdout):
+        assert not run.exit()
+
+    stdout = m_stdout.return_value.handlers.__getitem__
+    log = m_log.return_value.handlers.__getitem__
     assert (
-        m_pool.call_args
-        == [(), {}])
+        log.call_args
+        == [(0,), {}])
+    assert (
+        log.return_value.setLevel.call_args
+        == [(logging.FATAL,), {}])
+    assert (
+        stdout.call_args
+        == [(0,), {}])
+    assert (
+        stdout.return_value.setLevel.call_args
+        == [(logging.FATAL,), {}])
 
 
 @pytest.mark.parametrize("use_uvloop", [True, False])
@@ -490,6 +514,37 @@ def test_runner_install_reactor(patches, uvloop, use_uvloop):
         == [("Starting reactor...", ), {}])
 
 
+def test_runner_on_async_error():
+    run = DummyRunner()
+    loop = MagicMock()
+    context = MagicMock()
+    assert not run.on_async_error(loop, context)
+    assert (
+        loop.default_exception_handler.call_args
+        == [(context, ), {}])
+    assert (
+        loop.stop.call_args
+        == [(), {}])
+
+
+def test_runner_on_runner_start(patches):
+    run = DummyRunner()
+    patched = patches(
+        "Runner.setup_logging",
+        "Runner.start_reactor",
+        prefix="aio.run.runner.runner")
+
+    with patched as (m_logging, m_reactor):
+        assert not run.on_runner_start()
+
+    assert (
+        m_logging.call_args
+        == [(), {}])
+    assert (
+        m_reactor.call_args
+        == [(), {}])
+
+
 def test_runner_setup_logging(patches):
     run = DummyRunner()
     patched = patches(
@@ -510,22 +565,27 @@ def test_runner_setup_logging(patches):
         == [("Start (async) app logger", ), {}])
 
 
-def test_runner_shutdown_logging(patches):
+def test_runner_start_reactor(patches):
+    runner = DummyRunner()
     patched = patches(
-        "logging",
-        "Runner.log",
+        ("Runner.loop",
+         dict(new_callable=PropertyMock)),
+        "Runner.install_reactor",
+        "Runner.on_async_error",
         prefix="aio.run.runner.runner")
-    run = runner.Runner()
 
-    with patched as (m_logging, m_log):
-        assert not run.shutdown_logging()
+    with patched as (m_loop, m_reactor, m_onerror):
+        assert not runner.start_reactor()
 
     assert (
-        m_logging.shutdown.call_args
+        m_reactor.call_args
         == [(), {}])
     assert (
-        m_log.debug.call_args
-        == [("Shutting down logging, goodbye", ), {}])
+        m_loop.call_args
+        == [(), {}])
+    assert (
+        m_loop.return_value.set_exception_handler.call_args
+        == [(m_onerror, ), {}])
 
 
 @pytest.mark.parametrize("has_fun", [True, False])
@@ -585,27 +645,28 @@ def test_runner__cleanup_tempdir(patches, cached):
     assert "tempdir" not in run.__dict__
 
 
-@pytest.mark.parametrize("cached", [True, False])
-def test_runner__shutdown_pool(patches, cached):
+def test_runner__on_runner_error(patches):
     run = DummyRunner()
     patched = patches(
-        "Runner.log",
-        ("Runner.pool", dict(new_callable=PropertyMock)),
+        "asyncio",
+        "Runner.exit",
+        ("Runner.on_runner_error",
+         dict(new_callable=MagicMock)),
         prefix="aio.run.runner.runner")
-    if cached:
-        run.__dict__["pool"] = "POOL"
+    e = MagicMock()
 
-    with patched as (m_logger, m_temp):
-        assert not run._shutdown_pool()
+    with patched as (m_asyncio, m_exit, m_on_error):
+        assert run._on_runner_error(e) == 1
 
-    if cached:
-        assert (
-            m_temp.return_value.shutdown.call_args
-            == [(), {}])
-        assert (
-            m_logger.debug.call_args
-            == [("Process pool shut down", ), {}])
-    else:
-        assert not m_logger.debug.called
-        assert not m_temp.called
-    assert "pool" not in run.__dict__
+    assert (
+        m_exit.call_args
+        == [(), {}])
+    assert (
+        m_asyncio.get_event_loop.call_args
+        == [(), {}])
+    assert (
+        m_asyncio.get_event_loop.return_value.run_until_complete.call_args
+        == [(m_on_error.return_value, ), {}])
+    assert (
+        m_on_error.call_args
+        == [(e, ), {}])

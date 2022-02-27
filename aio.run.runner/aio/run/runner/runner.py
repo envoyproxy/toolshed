@@ -9,7 +9,7 @@ import pathlib
 import sys
 import tempfile
 from functools import cached_property
-from typing import Optional
+from typing import Dict, Optional
 
 from frozendict import frozendict
 
@@ -60,7 +60,7 @@ class BaseLogFilter(logging.Filter):
 
     def __init__(
             self,
-            app_logger: _log.StoppableLogger,
+            app_logger: verboselogs.VerboseLogger,
             *args, **kwargs) -> None:
         self.app_logger = app_logger
 
@@ -79,16 +79,18 @@ class Runner(event.AReactive):
         self._args = args
 
     def __call__(self):
-        self.setup_logging()
-        self.install_reactor()
+        self.on_runner_start()
         try:
-            return asyncio.run(self.run())
-        except KeyboardInterrupt:
-            self.log.error("Keyboard exit")
+            return self.loop.run_until_complete(self.run())
+        except RuntimeError:
+            # Loop was forcibly stopped, most likely due to unhandled
+            # error in task.
             return 1
-        finally:
-            self.log.debug("Loop closed")
-            self.shutdown_logging()
+        except KeyboardInterrupt:
+            # This needs to be outside the loop to catch the a keyboard
+            # interrupt. This means that a new loop has to be created to
+            # cleanup.
+            return self.on_runner_error()
 
     @cached_property
     def args(self) -> argparse.Namespace:
@@ -101,7 +103,7 @@ class Runner(event.AReactive):
         return self.parser.parse_known_args(self._args)[1]
 
     @cached_property
-    def log(self) -> _log.StoppableLogger:
+    def log(self) -> verboselogs.VerboseLogger:
         """Instantiated logger."""
         app_logger = verboselogs.VerboseLogger(self.name)
         coloredlogs.install(
@@ -112,7 +114,7 @@ class Runner(event.AReactive):
             logger=app_logger,
             isatty=True)
         app_logger.setLevel(self.verbosity)
-        return _log.QueueLogger(app_logger).start()  # type:ignore
+        return _log.QueueLogger(app_logger).start()
 
     @property
     def log_field_styles(self):
@@ -161,14 +163,14 @@ class Runner(event.AReactive):
         return root_handler
 
     @cached_property
-    def root_logger(self) -> _log.StoppableLogger:
+    def root_logger(self) -> logging.Logger:
         """Instantiated logger."""
         logging.basicConfig(level=self.log_level)
         root_logger = logging.getLogger()
         root_logger.removeHandler(root_logger.handlers[0])
         root_logger.addHandler(self.root_log_handler)
         root_logger.setLevel(self.log_level)
-        return _log.QueueLogger(root_logger).start()  # type:ignore
+        return root_logger
 
     @cached_property
     def stdout(self) -> logging.Logger:
@@ -222,12 +224,35 @@ class Runner(event.AReactive):
 
     async def cleanup(self) -> None:
         self._cleanup_tempdir()
-        self._shutdown_pool()
+
+    def exit(self) -> int:
+        self.root_logger.handlers[0].setLevel(logging.FATAL)
+        self.stdout.handlers[0].setLevel(logging.FATAL)
 
     def install_reactor(self):
         if uvloop and self.use_uvloop:
             uvloop.install()
         self.log.debug("Starting reactor...")
+
+    def on_async_error(
+            self,
+            loop: asyncio.AbstractEventLoop,
+            context: Dict) -> None:
+        """Handle unhandled async exceptions by stopping the loop and printing
+        the traceback."""
+        loop.default_exception_handler(context)
+        loop.stop()
+
+    async def on_runner_error(self, e: BaseException) -> None:
+        """Called in a separate loop in the event of catastrophic failure.
+
+        Override to cleanup.
+        """
+        pass
+
+    def on_runner_start(self):
+        self.setup_logging()
+        self.start_reactor()
 
     @cleansup
     async def run(self) -> Optional[int]:
@@ -237,11 +262,9 @@ class Runner(event.AReactive):
         self.root_logger.debug("Start (async) root logger")
         self.log.debug("Start (async) app logger")
 
-    def shutdown_logging(self):
-        self.log.debug("Shutting down logging, goodbye")
-        self.log.stop()
-        self.root_logger.stop()
-        logging.shutdown()
+    def start_reactor(self):
+        self.install_reactor()
+        self.loop.set_exception_handler(self.on_async_error)
 
     @property
     def _missing_cleanup(self) -> bool:
@@ -258,8 +281,7 @@ class Runner(event.AReactive):
             del self.__dict__["tempdir"]
             self.log.debug("Tempdir cleaned up")
 
-    def _shutdown_pool(self) -> None:
-        if "pool" in self.__dict__:
-            self.pool.shutdown()
-            del self.__dict__["pool"]
-            self.log.debug("Process pool shut down")
+    def _on_runner_error(self, e: BaseException) -> int:
+        self.exit()
+        asyncio.get_event_loop().run_until_complete(self.on_runner_error(e))
+        return 1
