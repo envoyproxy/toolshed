@@ -56,7 +56,8 @@ jobs:
     - name: Install pants
       run: pip install pantsbuild.pants==2.9.0
     - name: Run pants README
-      run: "pants readme --check=README.md ::"
+      run: echo "TEMP DISABLE README"
+      # run: "pants readme --check=README.md ::"
 
   package:
     runs-on: ubuntu-latest
