@@ -1,6 +1,6 @@
 
 import logging
-from queue import Queue
+from queue import SimpleQueue
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
@@ -8,50 +8,26 @@ import pytest
 from aio.core import log
 
 
-def test_stoppable_logger_constructor():
-    logger = log.StoppableLogger("LOGGER", "STOP")
-    assert logger._logger == "LOGGER"
-    assert logger._stop == "STOP"
-
-
-def test_stoppable_logger_dunder_getattr(patches):
-    wrapped_logger = MagicMock()
-    logger = log.StoppableLogger(wrapped_logger, "STOP")
-    patched = patches(
-        "getattr",
-        prefix="aio.core.log.logging")
-
-    with patched as (m_getattr, ):
-        assert (
-            logger.SOMEATTR
-            == m_getattr.return_value)
-
-    assert (
-        m_getattr.call_args
-        == [(wrapped_logger, "SOMEATTR"), {}])
-
-
-def test_stoppable_logger_stop():
-    stop = MagicMock()
-    logger = log.StoppableLogger("LOGGER", stop)
-    assert not logger.stop()
-    assert (
-        stop.call_args
-        == [(), {}])
-
-
 @pytest.mark.parametrize("respect", [None, True, False])
-def test_queue_logger_constructor(respect):
+@pytest.mark.parametrize("stop_on_exit", [None, True, False])
+def test_queue_logger_constructor(respect, stop_on_exit):
     kwargs = {}
     if respect is not None:
-        kwargs["respect_handler"] = respect
+        kwargs["respect_handler_level"] = respect
+    if stop_on_exit is not None:
+        kwargs["stop_on_exit"] = stop_on_exit
 
     logger = log.QueueLogger("LOGGER", **kwargs)
     assert logger._logger == "LOGGER"
-    assert logger.respect_handler == (respect if respect is not None else True)
+    assert (
+        logger.respect_handler_level
+        == (respect if respect is not None else True))
+    assert (
+        logger.stop_on_exit
+        == (stop_on_exit if stop_on_exit is not None else True))
     assert logger.handler_class == log.QueueHandler
     assert "handler_class" not in logger.__dict__
-    assert logger.queue_class == Queue
+    assert logger.queue_class == SimpleQueue
     assert "queue_class" not in logger.__dict__
     assert logger.listener_class == logging.handlers.QueueListener
     assert "listener_class" not in logger.__dict__
@@ -121,7 +97,7 @@ def test_queue_logger_queue(patches):
 
     assert (
         m_class.return_value.call_args
-        == [(-1, ), {}])
+        == [(), {}])
     assert "queue" in logger.__dict__
 
 
@@ -129,7 +105,7 @@ def test_queue_logger_queue(patches):
 def test_queue_logger_listener(patches, respect):
     kwargs = {}
     if respect is not None:
-        kwargs["respect_handler"] = respect
+        kwargs["respect_handler_level"] = respect
     logger = log.QueueLogger("LOGGER", **kwargs)
     patched = patches(
         ("QueueLogger.handlers",
@@ -174,21 +150,25 @@ def test_queue_logger_logger(patches):
         == [(m_handler.return_value, ), {}])
 
 
-def test_queue_logger_start(patches):
-    logger = log.QueueLogger("LOGGER")
+@pytest.mark.parametrize("stop_on_exit", [True, False])
+def test_queue_logger_start(patches, stop_on_exit):
+    logger = log.QueueLogger("LOGGER", stop_on_exit=stop_on_exit)
     patched = patches(
-        "StoppableLogger",
+        "atexit",
         ("QueueLogger.listener",
          dict(new_callable=PropertyMock)),
         ("QueueLogger.logger",
          dict(new_callable=PropertyMock)),
         prefix="aio.core.log.logging")
 
-    with patched as (m_stoppable, m_listener, m_logger):
+    with patched as (m_atexit, m_listener, m_logger):
         assert (
             logger.start()
-            == m_stoppable.return_value)
+            == m_logger.return_value)
 
-    assert (
-        m_stoppable.call_args
-        == [(m_logger.return_value, m_listener.return_value.stop), {}])
+    if not stop_on_exit:
+        assert not m_atexit.register.called
+    else:
+        assert (
+            m_atexit.register.call_args
+            == [(m_listener.return_value.stop, ), {}])
