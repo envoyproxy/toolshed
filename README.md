@@ -92,14 +92,14 @@ pypi: https://pypi.org/project/aio.run.checker
 
 ##### requirements:
 
-- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.6
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.7
 
 ---
 
 
 #### [aio.run.runner](aio.run.runner)
 
-version: 0.2.7
+version: 0.2.8.dev0
 
 pypi: https://pypi.org/project/aio.run.runner
 
@@ -268,13 +268,13 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.0.10.dev0
+version: 0.0.10
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
 ##### requirements:
 
-- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.3
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.7
 - [colorama](https://pypi.org/project/colorama)
 - [docutils](https://pypi.org/project/docutils) ~=0.16.0
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0
@@ -331,7 +331,7 @@ pypi: https://pypi.org/project/envoy.github.release
 
 #### [envoy.gpg.identity](envoy.gpg.identity)
 
-version: 0.0.7
+version: 0.0.8.dev0
 
 pypi: https://pypi.org/project/envoy.gpg.identity
 
@@ -345,15 +345,15 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 
 #### [envoy.gpg.sign](envoy.gpg.sign)
 
-version: 0.0.12.dev0
+version: 0.0.12
 
 pypi: https://pypi.org/project/envoy.gpg.sign
 
 ##### requirements:
 
-- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.3
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.7
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0
-- [envoy.gpg.identity](https://pypi.org/project/envoy.gpg.identity) >=0.0.6
+- [envoy.gpg.identity](https://pypi.org/project/envoy.gpg.identity) >=0.0.7
 
 ---
 
