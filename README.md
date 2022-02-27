@@ -268,7 +268,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.0.10
+version: 0.0.11.dev0
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
@@ -345,7 +345,7 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 
 #### [envoy.gpg.sign](envoy.gpg.sign)
 
-version: 0.0.12
+version: 0.0.13.dev0
 
 pypi: https://pypi.org/project/envoy.gpg.sign
 
