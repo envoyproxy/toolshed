@@ -14,7 +14,6 @@ from .process import async_map
 from .utils import (
     batches,
     batch_jobs,
-    directory_context,
     maybe_awaitable,
     maybe_coro,
     nested,
@@ -34,7 +33,6 @@ __all__ = (
     "buffered",
     "CollectionQuery",
     "collections",
-    "directory_context",
     "exceptions",
     "maybe_awaitable",
     "maybe_coro",
