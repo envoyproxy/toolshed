@@ -59,6 +59,7 @@ class ADirectoryGrepper(
     def handle_error(
             self,
             response: subprocess.CompletedProcess) -> Dict[str, List[str]]:
+        # TODO: Handle error in directory class
         return super().handle_error(response)
 
 

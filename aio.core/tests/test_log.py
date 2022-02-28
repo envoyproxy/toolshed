@@ -1,4 +1,5 @@
 
+import asyncio
 import logging
 from queue import SimpleQueue
 from unittest.mock import MagicMock, PropertyMock
@@ -172,3 +173,42 @@ def test_queue_logger_start(patches, stop_on_exit):
         assert (
             m_atexit.register.call_args
             == [(m_listener.return_value.stop, ), {}])
+
+
+def test_queue_handler_constructor():
+    assert isinstance(log.QueueHandler("QUEUE"), logging.handlers.QueueHandler)
+
+
+@pytest.mark.parametrize("raises", [None, asyncio.CancelledError, Exception])
+def test_queue_handler_emit(patches, raises):
+    handler = log.QueueHandler("QUEUE")
+    patched = patches(
+        "QueueHandler.enqueue",
+        "QueueHandler.handleError",
+        prefix="aio.core.log.logging")
+    record = MagicMock()
+
+    with patched as (m_enqueue, m_error):
+        if raises:
+            exception = raises("BOOM")
+            m_enqueue.side_effect = exception
+
+        if raises == asyncio.CancelledError:
+            with pytest.raises(asyncio.CancelledError) as e:
+                handler.emit(record)
+        else:
+            assert not handler.emit(record)
+
+    assert (
+        m_enqueue.call_args
+        == [(record, ), {}])
+    if raises == asyncio.CancelledError:
+        assert not m_error.called
+        assert e.value == exception
+        return
+    if not raises:
+        assert not m_error.called
+        return
+    assert (
+        m_error.call_args
+        == [(record, ), {}])
