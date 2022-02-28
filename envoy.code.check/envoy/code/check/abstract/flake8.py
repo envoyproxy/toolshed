@@ -1,5 +1,6 @@
 
 import io
+import logging
 import os
 import pathlib
 from functools import cached_property, lru_cache
@@ -13,12 +14,16 @@ from flake8 import (  # type:ignore
 import abstracts
 
 from aio.core.functional import async_property
-from aio.core.directory.utils import directory_context  # type:ignore
+from aio.core.directory.utils import directory_context
 
 from envoy.code.check import abstract, typing
 
 
 FLAKE8_CONFIG = '.flake8'
+
+
+# Workaround for https://github.com/PyCQA/flake8/issues/1390
+logging.getLogger("flake8.options.manager").setLevel(logging.ERROR)
 
 
 class Flake8Application(Application):
@@ -57,6 +62,7 @@ class Flake8App:
 
     @cached_property
     def app(self) -> Flake8Application:
+        """Flake8 Application."""
         flake8_app = Flake8Application()
         flake8_app.initialize(self.args)
         return flake8_app
@@ -75,6 +81,7 @@ class Flake8App:
             and not self._is_excluded(path))
 
     def include_files(self, files: Set[str]) -> Set[str]:
+        """Figure out whether to include a file for checking."""
         return set(
             path
             for path
@@ -127,7 +134,8 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             cls,
             path: str,
             args: Tuple[str, ...],
-            files: Set[str]):
+            files: Set[str]) -> List[str]:
+        """Flake8 checker."""
         return Flake8App(
             path,
             args).run_checks(files)
@@ -137,7 +145,8 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             cls,
             path: str,
             args: Tuple[str, ...],
-            files: Set[str]):
+            files: Set[str]) -> Set[str]:
+        """Flake8 file discovery."""
         return Flake8App(
             path,
             args).include_files(files)
@@ -165,11 +174,17 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def flake8_errors(self) -> List[str]:
-        return await self.execute(
-            self.check_flake8_files,
-            self.directory.absolute_path,
-            self.flake8_args,
-            await self.files)
+        """Flake8 error list for check files."""
+        # Important dont send an empty set to the flake8 checker,
+        # as flake8 will check every file in path.
+        return (
+            await self.execute(
+                self.check_flake8_files,
+                self.directory.absolute_path,
+                self.flake8_args,
+                await self.files)
+            if await self.files
+            else [])
 
     @async_property(cache=True)
     async def problem_files(self) -> typing.ProblemDict:
@@ -177,6 +192,7 @@ class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         return self.handle_errors(await self.flake8_errors)
 
     def handle_errors(self, errors: List[str]) -> typing.ProblemDict:
+        """Turn flake8 error list -> `ProblemDict`."""
         flake8_errors: typing.ProblemDict = {}
         for error in errors:
             path, message = self._parse_error(error)

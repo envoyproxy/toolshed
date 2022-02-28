@@ -9,8 +9,8 @@ from typing import (
 import abstracts
 
 from aio.core.dev import debug
+from aio.core import directory
 from aio.core.functional import async_property
-from aio.core.directory.utils import directory_context  # type:ignore
 
 from envoy.base import utils
 from envoy.code.check import abstract, typing
@@ -23,29 +23,35 @@ NOGLINT_RE = (
     r"[\w/]*password_protected_password.txt$")
 
 
-@debug.logging(
-    log=__name__,
-    show_cpu=True)
-def _have_newlines(path: str, paths: Iterable[str]) -> Set[str]:
-    with directory_context(path):
-        return set(
-            target
-            for target
-            in paths
-            if (utils.last_n_bytes_of(target)
-                != b'\n'))
+@abstracts.implementer(directory.IDirectoryContext)
+class NewlineChecker(directory.ADirectoryContext):
+
+    @debug.logging(
+        log=__name__,
+        show_cpu=True)
+    def have_newlines(self, paths: Iterable[str]) -> Set[str]:
+        """Check files for final newline."""
+        with self.in_directory:
+            return set(
+                target
+                for target
+                in paths
+                if (utils.last_n_bytes_of(target)
+                    != b'\n'))
 
 
 class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod
     def have_newlines(cls, path: str, *paths: str) -> Set[str]:
-        return _have_newlines(path, paths)
+        """Check files for final newline."""
+        return NewlineChecker(path).have_newlines(paths)
 
     @classmethod
     def filter_files(
             cls, files: Set[str],
             match: Callable) -> Set[str]:
+        """Filter files for `glint` checking."""
         return set(
             path
             for path
@@ -60,18 +66,21 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def files_with_mixed_tabs(self) -> Set[str]:
+        """Files with mixed preceeding tabs and spaces."""
         return await self.directory.grep(
             ["-lP", r"^ "],
             target=await self.files_with_preceeding_tabs)
 
     @async_property
     async def files_with_preceeding_tabs(self) -> Set[str]:
+        """Files with preceeding tabs."""
         return await self.directory.grep(
             ["-lP", r"^\t"],
             target=await self.files)
 
     @async_property
     async def files_with_no_newline(self) -> Set[str]:
+        """Files with no final newline."""
         batched = self.execute_in_batches(
             partial(self.have_newlines, self.directory.path),
             *await self.files)
@@ -82,12 +91,14 @@ class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def files_with_trailing_whitespace(self) -> Set[str]:
+        """Files with trailing whitespace."""
         return await self.directory.grep(
             ["-lE", "[[:blank:]]$"],
             target=await self.files)
 
     @cached_property
     def noglint_re(self) -> Pattern[str]:
+        """Regex for matching files that should not be checked."""
         return re.compile(r"|".join(NOGLINT_RE))
 
     @async_property(cache=True)

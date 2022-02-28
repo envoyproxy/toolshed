@@ -8,11 +8,11 @@ import yapf  # type:ignore
 
 import abstracts
 
+from aio.core import directory
 from aio.core.dev import debug
 from aio.core.functional import (
     async_property,
     AwaitableGenerator)
-from aio.core.directory.utils import directory_context  # type:ignore
 
 from envoy.code.check import abstract, typing
 
@@ -20,27 +20,29 @@ from envoy.code.check import abstract, typing
 YAPF_CONFIG = '.style.yapf'
 
 
-class YapfFormatCheck:
+@abstracts.implementer(directory.IDirectoryContext)
+class YapfFormatCheck(directory.ADirectoryContext):
     """Wraps `yapf_api.FormatFile` to run it on multiple paths in a subproc."""
 
     def __init__(
             self,
-            root_path: str,
+            path: str,
             config_path: str,
             fix: bool,
             *args) -> None:
-        self.root_path = root_path
+        directory.ADirectoryContext.__init__(self, path)
         self.config_path = config_path
         self.fix = fix
         self.args = args
 
     @property
     def check_results(self) -> Iterator["typing.YapfProblemTuple"]:
+        """Iterate Yapf check results."""
         for path in self.args:
             result = self.handle_result(
                 path,
                 yapf.yapf_api.FormatFile(
-                    os.path.join(self.root_path, path),
+                    os.path.join(self.path, path),
                     style_config=self.config_path,
                     in_place=self.fix,
                     print_diff=not self.fix))
@@ -52,6 +54,7 @@ class YapfFormatCheck:
             path: str,
             yapf_result: "typing.YapfResultTuple") -> Optional[
                 "typing.YapfProblemTuple"]:
+        """Handle a Yapf check result converting to a path and error list."""
         reformatted, encoding, changed = yapf_result
         if not (changed or reformatted):
             return None
@@ -65,20 +68,24 @@ class YapfFormatCheck:
         log=__name__,
         show_cpu=True)
     def run_checks(self) -> Tuple["typing.YapfProblemTuple", ...]:
+        """Run Yapf checks."""
         return tuple(self.check_results)
 
 
-@debug.logging(
-    log=__name__,
-    show_cpu=True)
-def _yapf_files(directory_path: str, py_files: Iterable[str]) -> Set[str]:
-    with directory_context(directory_path):
-        return set(
-            yapf.file_resources.GetCommandLineFiles(
-                py_files,
-                recursive=False,
-                exclude=yapf.file_resources.GetExcludePatternsForDir(
-                    directory_path)))
+@abstracts.implementer(directory.IDirectoryContext)
+class YapfFiles(directory.ADirectoryContext):
+
+    @debug.logging(
+        log=__name__,
+        show_cpu=True)
+    def filter_files(self, py_files: Iterable[str]) -> Set[str]:
+        with self.in_directory:
+            return set(
+                yapf.file_resources.GetCommandLineFiles(
+                    py_files,
+                    recursive=False,
+                    exclude=yapf.file_resources.GetExcludePatternsForDir(
+                        self.path)))
 
 
 class AYapfCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
@@ -88,7 +95,8 @@ class AYapfCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             cls,
             directory_path: str,
             *py_files: str) -> Set[str]:
-        return _yapf_files(directory_path, py_files)
+        """Yapf file discovery for a given file list."""
+        return YapfFiles(directory_path).filter_files(py_files)
 
     @classmethod
     def yapf_format(
@@ -97,6 +105,7 @@ class AYapfCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             config_path: str,
             fix: bool,
             *args) -> "typing.YapfProblemTuple":
+        """Run Yapf checks on provided file list."""
         return YapfFormatCheck(root_path, config_path, fix, *args).run_checks()
 
     @async_property
@@ -117,6 +126,7 @@ class AYapfCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @property
     def config_path(self) -> pathlib.Path:
+        """Path to the Yapf config file."""
         return self.directory.path.joinpath(YAPF_CONFIG)
 
     @async_property(cache=True)
@@ -125,6 +135,7 @@ class AYapfCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def py_files(self) -> Set[str]:
+        """Files with a `.py` suffix."""
         return set(
             path
             for path
