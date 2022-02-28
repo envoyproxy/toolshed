@@ -12,7 +12,7 @@ import psutil
 logger = _logging.getLogger(__name__)
 
 
-class ALogging:
+class ADebugLogging:
 
     def __init__(self, fun: Optional[Callable] = None, *args, **kwargs):
         self.__wrapped__ = fun
@@ -100,9 +100,8 @@ class ALogging:
 
     def log_debug_start(self, instance, *args, **kwargs):
         self.log(instance).debug(
-            f"{self.name} called\n"
-            f"  ARGS: {args}\n"
-            f"  KWARGS: {kwargs}")
+            f"{self.name} called "
+            f"(args: {len(args)}, kwargs: {len(kwargs)})")
         return (instance, args, kwargs), time.perf_counter()
 
     def log_debug_complete(self, start, result):
@@ -146,7 +145,30 @@ class ALogging:
             f"generated {result_info}")
 
 
-class ANullLogging(ALogging):
+class ATraceLogging(ADebugLogging):
+
+    def log_debug_start(self, instance, *args, **kwargs):
+        start = super().log_debug_start(instance, *args, **kwargs)
+        if args:
+            self.log(instance).debug(
+                f"{self.name} call_args\n"
+                f"   {args}")
+        if kwargs:
+            self.log(instance).debug(
+                f"{self.name} call_kwargs\n"
+                f"   {kwargs}")
+        return start
+
+    def log_debug_complete(self, start, result):
+        result = super().log_debug_complete(start, result)
+        (instance, args, kwargs), start_time = start
+        self.log(instance).debug(
+            f"{self.name} return_value\n"
+            f"  {result}")
+        return result
+
+
+class ANullLogging(ADebugLogging):
 
     def log_debug_start(self, instance, *args, **kwargs):
         return (instance, args, kwargs), None
@@ -159,6 +181,8 @@ class ANullLogging(ALogging):
 
 
 def logging(*args, **kwargs):
+    if os.environ.get("AIOTRACEDEBUG"):
+        return ATraceLogging(*args, **kwargs)
     if os.environ.get("AIODEBUG"):
-        return ALogging(*args, **kwargs)
+        return ADebugLogging(*args, **kwargs)
     return ANullLogging(*args, **kwargs)
