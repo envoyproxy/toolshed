@@ -1,11 +1,9 @@
 
 from .logging import (
     QueueHandler,
-    QueueLogger,
-    StoppableLogger)
+    QueueLogger)
 
 
 __all__ = (
     "QueueHandler",
-    "QueueLogger",
-    "StoppableLogger")
+    "QueueLogger")
