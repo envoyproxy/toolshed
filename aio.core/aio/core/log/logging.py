@@ -5,7 +5,7 @@ import logging
 import logging.handlers
 from functools import cached_property
 from queue import SimpleQueue
-from typing import Any, Callable, List, Type
+from typing import List, Type
 
 
 class QueueHandler(logging.handlers.QueueHandler):
@@ -17,20 +17,6 @@ class QueueHandler(logging.handlers.QueueHandler):
             raise
         except Exception:
             self.handleError(record)
-
-
-class StoppableLogger:
-    # TODO: Remove!
-
-    def __init__(self, logger: logging.Logger, stop: Callable) -> None:
-        self._logger = logger
-        self._stop = stop
-
-    def __getattr__(self, k: str) -> Any:
-        return getattr(self._logger, k)
-
-    def stop(self) -> None:
-        self._stop()
 
 
 class QueueLogger:
