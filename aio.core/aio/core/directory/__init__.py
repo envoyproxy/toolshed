@@ -3,6 +3,7 @@
 from .context import ADirectoryContext, IDirectoryContext
 from .abstract import ADirectory, ADirectoryGrepper, AGitDirectory
 from .directory import Directory, DirectoryGrepper, GitDirectory
+from . import utils
 
 
 __all__ = (
@@ -13,4 +14,5 @@ __all__ = (
     "Directory",
     "DirectoryGrepper",
     "GitDirectory",
-    "IDirectoryContext")
+    "IDirectoryContext",
+    "utils")

@@ -1,4 +1,5 @@
 
+import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
@@ -27,6 +28,7 @@ def test_directory_constructor(patches, args, kwargs):
     assert (
         m_super.call_args
         == [tuple(args), kwargs])
+    assert direct.directory_grepper_class == directory.DirectoryGrepper
 
 
 @pytest.mark.parametrize(
@@ -48,6 +50,7 @@ def test_git_directory_constructor(patches, args, kwargs):
     assert (
         m_super.call_args
         == [tuple(args), kwargs])
+    assert direct.directory_grepper_class == directory.DirectoryGrepper
 
 
 @abstracts.implementer(directory.ADirectory)
@@ -722,3 +725,158 @@ def test_directory_context_in_directory(patches):
         m_utils.directory_context.call_args
         == [(m_path.return_value, ), {}])
     assert "in_directory" not in context.__dict__
+
+
+@abstracts.implementer(directory.ADirectoryGrepper)
+class DummyDirectoryGrepper:
+    pass
+
+
+@pytest.mark.parametrize("path_matcher", [None, True, False])
+@pytest.mark.parametrize("exclude_matcher", [None, True, False])
+def test_directory_grepper_include_matcher(path_matcher, exclude_matcher):
+    path = MagicMock()
+    p_match = MagicMock()
+    p_match.match.return_value = path_matcher
+    p_matcher = (
+        p_match
+        if path_matcher is not None
+        else None)
+    x_match = MagicMock()
+    x_match.match.return_value = exclude_matcher
+    x_matcher = (
+        x_match
+        if exclude_matcher is not None
+        else None)
+    expected = (
+        True
+        if (path_matcher is not False
+            and exclude_matcher is not True)
+        else False)
+    assert (
+        directory.ADirectoryGrepper.include_path(path, p_matcher, x_matcher)
+        == expected)
+    if p_matcher:
+        assert (
+            p_matcher.match.call_args
+            == [(path, ), {}])
+    if not x_matcher:
+        return
+    if path_matcher is False:
+        assert not x_matcher.match.called
+    else:
+        assert (
+            x_matcher.match.call_args
+            == [(path, ), {}])
+
+
+@pytest.mark.parametrize("path_matcher", [None, 0, [], (), "MATCHER"])
+@pytest.mark.parametrize("exclude_matcher", [None, 0, [], (), "MATCHER"])
+def test_directory_grepper_constructor(patches, path_matcher, exclude_matcher):
+    patched = patches(
+        "_subprocess.ASubprocessHandler.__init__",
+        prefix="aio.core.directory.abstract.directory")
+    kwargs = {}
+    if path_matcher is not None:
+        kwargs["path_matcher"] = path_matcher
+    if exclude_matcher is not None:
+        kwargs["exclude_matcher"] = exclude_matcher
+    path = MagicMock()
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        grepper = DummyDirectoryGrepper(path, **kwargs)
+
+    assert (
+        m_super.call_args
+        == [(grepper, path, ), {}])
+    assert grepper.path_matcher == path_matcher
+    assert grepper.exclude_matcher == exclude_matcher
+
+
+@pytest.mark.parametrize("n", range(1, 5))
+def test_directory_grepper_handle(patches, n):
+    path_matcher = MagicMock()
+    exclude_matcher = MagicMock()
+    grepper = DummyDirectoryGrepper(
+        "PATH",
+        path_matcher=path_matcher,
+        exclude_matcher=exclude_matcher)
+    patched = patches(
+        "set",
+        "_subprocess.ASubprocessHandler.handle_error",
+        "ADirectoryGrepper.include_path",
+        prefix="aio.core.directory.abstract.directory")
+    response = MagicMock()
+    paths = [f"PATH{i}" for i in range(0, 7)]
+    response.stdout.split.return_value = paths
+
+    def include(path, *args):
+        return int(path[-1]) % n
+
+    with patched as (m_set, m_super, m_include):
+        m_include.side_effect = include
+        assert (
+            grepper.handle(response)
+            == m_set.return_value)
+        path_iter = m_set.call_args[0][0]
+        assert isinstance(path_iter, types.GeneratorType)
+        result = list(path_iter)
+
+    assert (
+        result
+        == [p for i, p in enumerate(paths) if i % n])
+    assert (
+        response.stdout.split.call_args
+        == [("\n", ), {}])
+    assert (
+        m_include.call_args_list
+        == [[(p, path_matcher, exclude_matcher), {}]
+            for p in paths])
+
+
+def test_directory_grepper_handle_error(patches):
+    grepper = DummyDirectoryGrepper("PATH")
+    patched = patches(
+        "_subprocess.ASubprocessHandler.handle_error",
+        prefix="aio.core.directory.abstract.directory")
+    response = MagicMock()
+
+    with patched as (m_super, ):
+        assert (
+            grepper.handle_error(response)
+            == m_super.return_value)
+
+    assert (
+        m_super.call_args
+        == [(response, ), {}])
+
+
+def test_directory_utils_directory_context(patches):
+    patched = patches(
+        "pathlib",
+        "os",
+        prefix="aio.core.directory.utils")
+    path = MagicMock()
+    tracker = MagicMock()
+
+    with patched as (m_plib, m_os):
+        m_os.chdir.side_effect = lambda path: tracker(f"PATH: {path}")
+        abspath = MagicMock(
+            side_effect=lambda: (23 if tracker("ABSPATH") else None))
+        m_plib.Path.return_value.absolute = abspath
+        with directory.utils.directory_context(path):
+            tracker("IN CONTEXT")
+
+    assert (
+        m_plib.Path.call_args
+        == [(), {}])
+    assert (
+        abspath.call_args
+        == [(), {}])
+    assert (
+        [x[0][0] for x in tracker.call_args_list]
+        == ['ABSPATH',
+            f"PATH: {path}",
+            'IN CONTEXT',
+            "PATH: 23"])
