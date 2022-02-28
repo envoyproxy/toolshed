@@ -246,7 +246,7 @@ def test_abstract_directory_path(patches):
 def test_abstract_directory_shell(patches):
     direct = DummyDirectory("PATH")
     patched = patches(
-        "subprocess",
+        "_subprocess",
         ("ADirectory.loop",
          dict(new_callable=PropertyMock)),
         ("ADirectory.path",
@@ -644,3 +644,81 @@ def test_abstract_git_directory_grep_command_args(patches, git):
             == (m_command.return_value, "grep", "--cached"))
 
     assert "grep_command_args" not in direct.__dict__
+
+
+@abstracts.implementer(directory.IDirectoryContext)
+class DummyDirectoryContextInterface:
+
+    @property
+    def path(self):
+        return directory.IDirectoryContext.path.fget(self)
+
+    @property
+    def in_directory(self):
+        return directory.IDirectoryContext.in_directory.fget(self)
+
+
+def test_directory_context_interface():
+    with pytest.raises(TypeError):
+        directory.IDirectoryContext()
+
+    iface = DummyDirectoryContextInterface()
+
+    for iface_prop in ["path", "in_directory"]:
+        with pytest.raises(NotImplementedError):
+            getattr(iface, iface_prop)
+
+
+@abstracts.implementer(directory.ADirectoryContext)
+class DummyDirectoryContext:
+
+    @property
+    def path(self):
+        return super().path
+
+    @property
+    def in_directory(self):
+        return super().in_directory
+
+
+def test_directory_context_constructor():
+    context = DummyDirectoryContext("PATH")
+    assert context._path == "PATH"
+    assert isinstance(context, directory.IDirectoryContext)
+
+
+@pytest.mark.parametrize("path", [None, False, "", "PATH"])
+def test_directory_context_path(patches, path):
+    context = DummyDirectoryContext(path)
+    patched = patches(
+        "pathlib",
+        prefix="aio.core.directory.context")
+
+    with patched as (m_plib, ):
+        assert (
+            context.path
+            == m_plib.Path.return_value)
+
+    assert (
+        m_plib.Path.call_args
+        == [(path or ".", ), {}])
+    assert "path" in context.__dict__
+
+
+def test_directory_context_in_directory(patches):
+    context = DummyDirectoryContext("PATH")
+    patched = patches(
+        "utils",
+        ("ADirectoryContext.path",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.context")
+
+    with patched as (m_utils, m_path):
+        assert (
+            context.in_directory
+            == m_utils.directory_context.return_value)
+
+    assert (
+        m_utils.directory_context.call_args
+        == [(m_path.return_value, ), {}])
+    assert "in_directory" not in context.__dict__

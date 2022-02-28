@@ -11,8 +11,8 @@ import abstracts
 from aio.core.dev import debug
 from aio.core.functional import (
     async_property,
-    AwaitableGenerator,
-    directory_context)
+    AwaitableGenerator)
+from aio.core.functional import directory_context  # type:ignore
 
 from envoy.code.check import abstract, typing
 

@@ -2,27 +2,27 @@
 import asyncio
 import pathlib
 import shutil
-import subprocess as _subprocess
+import subprocess as subprocess
 from concurrent import futures
 from functools import cached_property, partial
 from typing import (
-    AsyncIterator, Iterable, Optional,
+    AsyncIterator, Dict, Iterable, List, Optional,
     Pattern, Set, Tuple, Type, Union)
 
 import abstracts
 
-from aio.core import event, subprocess
-from aio.core.dev import debug
+from aio.core import event, subprocess as _subprocess
 from aio.core.functional import async_property, async_set, AwaitableGenerator
-from aio.core.subprocess import exceptions as subprocess_exceptions
 
 
 GREP_MIN_BATCH_SIZE = 500
 GREP_MAX_BATCH_SIZE = 2000
 
 
-# TODO: factor this into a generic subproc runner/parser
-class ADirectoryGrepper(metaclass=abstracts.Abstraction):
+@abstracts.implementer(_subprocess.ISubprocessHandler)
+class ADirectoryGrepper(
+        _subprocess.ASubprocessHandler,
+        metaclass=abstracts.Abstraction):
     """Blocking directory grepper.
 
     Run inside a subproc, so *must* be picklable.
@@ -42,28 +42,24 @@ class ADirectoryGrepper(metaclass=abstracts.Abstraction):
             path: str,
             path_matcher: Optional[Pattern[str]] = None,
             exclude_matcher:  Optional[Pattern[str]] = None) -> None:
-        self.path = path
+        _subprocess.ASubprocessHandler.__init__(self, path)
         self.path_matcher = path_matcher
         self.exclude_matcher = exclude_matcher
 
-    @debug.logging(
-        log=__name__,
-        show_cpu=True)
-    def __call__(self, *args: str) -> Set[str]:
-        """Call `grep` command with args."""
-        # TODO: Add error handling!!!
+    def handle(self, response: subprocess.CompletedProcess) -> Set[str]:
         return set(
             path
             for path
-            in _subprocess.run(
-                args,
-                cwd=self.path,
-                capture_output=True,
-                encoding="utf-8").stdout.split("\n")
+            in response.stdout.split("\n")
             if self.include_path(
                 path,
                 self.path_matcher,
                 self.exclude_matcher))
+
+    def handle_error(
+            self,
+            response: subprocess.CompletedProcess) -> Dict[str, List[str]]:
+        return super().handle_error(response)
 
 
 @abstracts.implementer(event.IExecutive)
@@ -133,7 +129,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         grep_command = shutil.which("grep")
         if grep_command:
             return grep_command, "-r"
-        raise subprocess_exceptions.OSCommandError(
+        raise _subprocess.exceptions.OSCommandError(
             "Unable to find `grep` command")
 
     @property
@@ -170,9 +166,9 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         return pathlib.Path(self._path)
 
     @cached_property
-    def shell(self) -> subprocess.AAsyncShell:
+    def shell(self) -> _subprocess.AAsyncShell:
         """Shell that uses the directory path as `cwd`."""
-        return subprocess.AsyncShell(
+        return _subprocess.AsyncShell(
             cwd=self.path,
             loop=self.loop,
             pool=self.pool)
@@ -272,7 +268,7 @@ class AGitDirectory(ADirectory):
         git_command = shutil.which("git")
         if git_command:
             return git_command
-        raise subprocess_exceptions.OSCommandError(
+        raise _subprocess.exceptions.OSCommandError(
             "Unable to find the `git` command")
 
     @property

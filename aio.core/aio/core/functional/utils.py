@@ -3,10 +3,7 @@ import asyncio
 import contextlib
 import gzip
 import inspect
-import os
-import pathlib
 import textwrap
-from contextlib import contextmanager
 from typing import (
     Any, Awaitable, Callable, Coroutine,
     Iterable, Iterator, List, Optional, Sized, Type, Union)
@@ -132,14 +129,3 @@ def batch_jobs(
     if min_batch_size:
         batch_count = max(batch_count, min_batch_size)
     return batches(typed(Iterable, jobs), batch_size=batch_count)
-
-
-@contextmanager
-def directory_context(path: Union[str, pathlib.Path]):
-    """Sets the directory context."""
-    origin = pathlib.Path().absolute()
-    try:
-        os.chdir(path)
-        yield
-    finally:
-        os.chdir(origin)
