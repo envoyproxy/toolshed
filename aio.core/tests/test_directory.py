@@ -246,30 +246,6 @@ def test_abstract_directory_path(patches):
     assert "path" in direct.__dict__
 
 
-def test_abstract_directory_shell(patches):
-    direct = DummyDirectory("PATH")
-    patched = patches(
-        "_subprocess",
-        ("ADirectory.loop",
-         dict(new_callable=PropertyMock)),
-        ("ADirectory.path",
-         dict(new_callable=PropertyMock)),
-        ("ADirectory.pool",
-         dict(new_callable=PropertyMock)),
-        prefix="aio.core.directory.abstract.directory")
-
-    with patched as (m_sub, m_loop, m_path, m_pool):
-        assert direct.shell == m_sub.AsyncShell.return_value
-
-    assert (
-        m_sub.AsyncShell.call_args
-        == [(),
-            dict(cwd=m_path.return_value,
-                 loop=m_loop.return_value,
-                 pool=m_pool.return_value)])
-    assert "shell" in direct.__dict__
-
-
 def test_abstract_directory_absolute_path(patches):
     direct = DummyDirectory("PATH")
     patched = patches(
