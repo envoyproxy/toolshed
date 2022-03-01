@@ -1,18 +1,18 @@
 """aio.core.directory."""
 
 from .context import ADirectoryContext, IDirectoryContext
-from .abstract import ADirectory, ADirectoryGrepper, AGitDirectory
-from .directory import Directory, DirectoryGrepper, GitDirectory
+from .abstract import ADirectory, ADirectoryFileFinder, AGitDirectory
+from .directory import Directory, DirectoryFileFinder, GitDirectory
 from . import utils
 
 
 __all__ = (
     "ADirectory",
     "ADirectoryContext",
-    "ADirectoryGrepper",
+    "ADirectoryFileFinder",
     "AGitDirectory",
     "Directory",
-    "DirectoryGrepper",
+    "DirectoryFileFinder",
     "GitDirectory",
     "IDirectoryContext",
     "utils")

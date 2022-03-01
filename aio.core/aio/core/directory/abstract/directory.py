@@ -20,10 +20,10 @@ GREP_MAX_BATCH_SIZE = 2000
 
 
 @abstracts.implementer(_subprocess.ISubprocessHandler)
-class ADirectoryGrepper(
+class ADirectoryFileFinder(
         _subprocess.ASubprocessHandler,
         metaclass=abstracts.Abstraction):
-    """Blocking directory grepper.
+    """Blocking directory finder.
 
     Run inside a subproc, so *must* be picklable.
     """
@@ -59,7 +59,7 @@ class ADirectoryGrepper(
     def handle_error(
             self,
             response: subprocess.CompletedProcess) -> Dict[str, List[str]]:
-        # TODO: Handle error in directory class
+        # TODO: Handle errors in directory classes
         return super().handle_error(response)
 
 
@@ -104,15 +104,22 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     def absolute_path(self) -> str:
         return str(self.path.resolve())
 
-    @property  # type:ignore
-    @abstracts.interfacemethod
-    def directory_grepper_class(self) -> Type[ADirectoryGrepper]:
-        raise NotImplementedError
-
     @async_property(cache=True)
     async def files(self) -> Set[str]:
         """Set of relative file paths associated with this directory."""
         return await self.get_files()
+
+    @cached_property
+    def finder(self) -> ADirectoryFileFinder:
+        return self.finder_class(
+            str(self.path),
+            path_matcher=self.path_matcher,
+            exclude_matcher=self.exclude_matcher)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def finder_class(self) -> Type[ADirectoryFileFinder]:
+        raise NotImplementedError
 
     @cached_property
     def grep_args(self) -> Tuple[str, ...]:
@@ -153,13 +160,6 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     @property
     def grep_min_batch_size(self) -> int:
         return GREP_MIN_BATCH_SIZE
-
-    @cached_property
-    def grepper(self) -> ADirectoryGrepper:
-        return self.directory_grepper_class(
-            str(self.path),
-            path_matcher=self.path_matcher,
-            exclude_matcher=self.exclude_matcher)
 
     @cached_property
     def path(self) -> pathlib.Path:
@@ -205,7 +205,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
             grep_args: Tuple[str, ...],
             paths: Iterable[str]) -> AwaitableGenerator:
         return self.execute_in_batches(
-            partial(self.grepper, *grep_args),
+            partial(self.finder, *grep_args),
             *paths,
             min_batch_size=self.grep_min_batch_size,
             max_batch_size=self.grep_max_batch_size)
@@ -231,6 +231,20 @@ class AGitDirectory(ADirectory):
     Uses the `git` index cache for faster grepping.
     """
 
+    @classmethod
+    def find_git_files_changed_since(
+            cls,
+            finder: ADirectoryFileFinder,
+            git_command: str,
+            since: str) -> Set[str]:
+        return finder(
+            git_command,
+            "diff",
+            "--name-only",
+            since,
+            "--diff-filter=ACMR",
+            "--ignore-submodules=all")
+
     def __init__(self, *args, **kwargs) -> None:
         self.changed = kwargs.pop("changed", None)
         super().__init__(*args, **kwargs)
@@ -239,45 +253,17 @@ class AGitDirectory(ADirectory):
     async def changed_files(self) -> Set[str]:
         """Files that have changed since `self.changed`, which can be the name
         of a git object (branch etc) or a commit hash."""
-        # TODO: move filtering into a subshell
-        return set(
-            path
-            for path
-            in await self.shell(
-                [self.git_command,
-                 "diff",
-                 "--name-only",
-                 self.changed,
-                 "--diff-filter=ACMR",
-                 "--ignore-submodules=all"])
-            if (path
-                and self.directory_grepper_class.include_path(
-                    path,
-                    self.path_matcher,
-                    self.exclude_matcher)))
+        return await self.execute(
+            self.find_git_files_changed_since,
+            self.finder,
+            self.git_command,
+            self.changed)
 
     @async_property(cache=True)
     async def files(self) -> Set[str]:
-        return (
-            await self.get_files()
-            if not self.changed
-            else await self.get_changed_files())
-
-    @property
-    def git_command(self) -> str:
-        """Path to the `git` command."""
-        git_command = shutil.which("git")
-        if git_command:
-            return git_command
-        raise _subprocess.exceptions.OSCommandError(
-            "Unable to find the `git` command")
-
-    @property
-    def grep_command_args(self) -> Tuple[str, ...]:
-        return self.git_command, "grep", "--cached"
-
-    async def get_changed_files(self) -> Set[str]:
         """Files that have changed."""
+        if not self.changed:
+            return await self.get_files()
         # If the super `files` are going to be filtered fetch them first, and
         # only check `changed_files` if there are any matching. Otherwise do
         # the reverse - get the `changed_files` and bail if there are none.
@@ -293,3 +279,16 @@ class AGitDirectory(ADirectory):
              if files is None
              else files)
             & await self.changed_files)
+
+    @property
+    def git_command(self) -> str:
+        """Path to the `git` command."""
+        git_command = shutil.which("git")
+        if git_command:
+            return git_command
+        raise _subprocess.exceptions.OSCommandError(
+            "Unable to find the `git` command")
+
+    @property
+    def grep_command_args(self) -> Tuple[str, ...]:
+        return self.git_command, "grep", "--cached"
