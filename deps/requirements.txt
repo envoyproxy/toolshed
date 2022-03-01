@@ -2,7 +2,7 @@ abstracts>=0.0.12
 aio.api.github>=0.0.5
 aio.api.nist
 aio.core>=0.8.0
-aio.run.checker>=0.4.0
+aio.run.checker>=0.5.0
 aio.run.runner>=0.3.0
 aiodocker
 aiofiles
@@ -20,7 +20,7 @@ envoy.docker.utils>=0.0.2
 envoy.github.abstract>=0.0.21
 envoy.github.release>=0.0.11
 envoy.gpg.identity>=0.1.0
-envoy.gpg.sign>=0.0.13
+envoy.gpg.sign>=0.1.0
 flake8
 frozendict
 gidgethub
