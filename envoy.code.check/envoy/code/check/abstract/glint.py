@@ -10,7 +10,7 @@ import abstracts
 
 from aio.core.dev import debug
 from aio.core.functional import async_property
-from aio.core.functional import directory_context  # type:ignore
+from aio.core.directory.utils import directory_context  # type:ignore
 
 from envoy.base import utils
 from envoy.code.check import abstract, typing
