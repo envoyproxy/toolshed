@@ -10,12 +10,12 @@ from aio.core import directory
 class Directory:
 
     @property
-    def directory_grepper_class(self) -> Type[directory.ADirectoryGrepper]:
-        return DirectoryGrepper
+    def finder_class(self) -> Type[directory.ADirectoryFileFinder]:
+        return DirectoryFileFinder
 
 
-@abstracts.implementer(directory.ADirectoryGrepper)
-class DirectoryGrepper:
+@abstracts.implementer(directory.ADirectoryFileFinder)
+class DirectoryFileFinder:
     pass
 
 
@@ -23,5 +23,5 @@ class DirectoryGrepper:
 class GitDirectory:
 
     @property
-    def directory_grepper_class(self) -> Type[directory.ADirectoryGrepper]:
-        return DirectoryGrepper
+    def finder_class(self) -> Type[directory.ADirectoryFileFinder]:
+        return DirectoryFileFinder
