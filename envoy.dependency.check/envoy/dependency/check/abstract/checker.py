@@ -373,16 +373,22 @@ class ADependencyChecker(
             self.github_dependencies,
             lambda d: (
                 d.release.date, ))
-        async for dep in preloader:
-            self.log.debug(f"Preloaded release date: {dep.id}")
+        try:
+            async for dep in preloader:
+                self.log.debug(f"Preloaded release date: {dep.id}")
+        except ConcurrentError as err:
+            raise err.args[0]
 
     @checker.preload(
         when=["release_issues"],
         blocks=["release_dates"],
         catches=[gidgethub.GitHubException])
     async def preload_release_issues(self) -> None:
-        await self.issues.missing_labels
-        await self.issues.dep_issues
+        try:
+            await self.issues.missing_labels
+            await self.issues.dep_issues
+        except ConcurrentError as err:
+            raise err.args[0]
 
     @checker.preload(
         when=["release_sha"],
@@ -405,8 +411,11 @@ class ADependencyChecker(
             lambda d: (
                 d.newer_release,
                 d.recent_commits))
-        async for dep in preloader:
-            self.log.debug(f"Preloaded release data: {dep.id}")
+        try:
+            async for dep in preloader:
+                self.log.debug(f"Preloaded release data: {dep.id}")
+        except ConcurrentError as err:
+            raise err.args[0]
 
     async def _dep_release_issue_close_stale(
             self,
