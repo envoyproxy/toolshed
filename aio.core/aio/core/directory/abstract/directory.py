@@ -166,14 +166,6 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         """Path to this directory."""
         return pathlib.Path(self._path)
 
-    @cached_property
-    def shell(self) -> _subprocess.AAsyncShell:
-        """Shell that uses the directory path as `cwd`."""
-        return _subprocess.AsyncShell(
-            cwd=self.path,
-            loop=self.loop,
-            pool=self.pool)
-
     async def get_files(self) -> Set[str]:
         return await self.grep(["-l"], "")
 
