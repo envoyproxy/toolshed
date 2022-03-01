@@ -13,7 +13,7 @@ from flake8 import (  # type:ignore
 import abstracts
 
 from aio.core.functional import async_property
-from aio.core.functional import directory_context  # type:ignore
+from aio.core.directory.utils import directory_context  # type:ignore
 
 from envoy.code.check import abstract, typing
 

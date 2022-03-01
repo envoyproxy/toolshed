@@ -12,7 +12,7 @@ from aio.core.dev import debug
 from aio.core.functional import (
     async_property,
     AwaitableGenerator)
-from aio.core.functional import directory_context  # type:ignore
+from aio.core.directory.utils import directory_context  # type:ignore
 
 from envoy.code.check import abstract, typing
 

@@ -4,6 +4,8 @@ pytooling_tests(
     dependencies=[
         "//deps:aio.run.runner",
         "//deps:envoy.base.utils",
-        "//deps:envoy.gpg.identity",
+        # TEMP: use local copy for testing until import is fixed
+        # "//deps:envoy.gpg.identity",
+        "//envoy.gpg.identity/envoy/gpg/identity/__init__.py",
     ],
 )
