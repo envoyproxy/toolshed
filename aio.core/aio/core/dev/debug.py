@@ -133,10 +133,6 @@ class ADebugLogging:
     def log_debug_complete_iter(self, start, count):
         (instance, args, kwargs), start_time = start
         time_taken = time.perf_counter() - start_time
-        cpu_info = (
-            f"(cpu: {psutil.Process(os.getpid()).cpu_num()}) "
-            if self._show_cpu
-            else "")
         result_info = (
             f"{type(self.__wrapped__).__name__:5} {count:4} "
             f"{time_taken:6.3f}s")
@@ -145,11 +141,11 @@ class ADebugLogging:
             result_info = formatter(
                 start, count, time_taken, result_info)
         self.log(instance).debug(
-            f"{self.name}{cpu_info}"
+            f"{self.name}{self._cpu_info} "
             f"generated {result_info}")
 
     @property
-    def cpu_info(self):
+    def _cpu_info(self):
         return (
             f" (cpu: {psutil.Process(os.getpid()).cpu_num()})"
             if psutil and self._show_cpu
