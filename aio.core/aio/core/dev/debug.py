@@ -6,10 +6,18 @@ import time
 from functools import cached_property, partial
 from typing import Any, Callable, Optional
 
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None  # type: ignore
 
 
 logger = _logging.getLogger(__name__)
+
+if not psutil:
+    logger.warning(
+        "Unable to import `psutil`. Most likely related to: "
+        "https://github.com/bazelbuild/rules_python/issues/622")
 
 
 class ADebugLogging:
@@ -111,10 +119,6 @@ class ADebugLogging:
             len_info = str(len(result))
         except TypeError:
             len_info = ""
-        cpu_info = (
-            f" (cpu: {psutil.Process(os.getpid()).cpu_num()})"
-            if self._show_cpu
-            else "")
         result_info = (
             f"{type(result).__name__:5} {len_info:4} "
             f"{time_taken:6.3f}s")
@@ -123,7 +127,7 @@ class ADebugLogging:
             result_info = formatter(
                 start, result, time_taken, result_info)
         self.log(instance).debug(
-            f"{self.name}{cpu_info} returns {result_info}")
+            f"{self.name}{self._cpu_info} returns {result_info}")
         return result
 
     def log_debug_complete_iter(self, start, count):
@@ -143,6 +147,13 @@ class ADebugLogging:
         self.log(instance).debug(
             f"{self.name}{cpu_info}"
             f"generated {result_info}")
+
+    @property
+    def cpu_info(self):
+        return (
+            f" (cpu: {psutil.Process(os.getpid()).cpu_num()})"
+            if psutil and self._show_cpu
+            else "")
 
 
 class ATraceLogging(ADebugLogging):
