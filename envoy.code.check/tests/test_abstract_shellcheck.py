@@ -1,12 +1,272 @@
 
+import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+from aio.core import subprocess
+
 from envoy.code import check
 
 
-def test_shellcheck_run_shellcheck(patches):
+def test_shellcheck_constructor():
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    assert isinstance(shellcheck, subprocess.ISubprocessHandler)
+    assert isinstance(shellcheck, subprocess.ASubprocessHandler)
+
+
+def test_shellcheck_error_line_re(patches):
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    patched = patches(
+        "re",
+        prefix="envoy.code.check.abstract.shellcheck")
+
+    with patched as (m_re, ):
+        assert (
+            shellcheck.error_line_re
+            == m_re.compile.return_value)
+
+    assert (
+        m_re.compile.call_args
+        == [(check.abstract.shellcheck.SHELLCHECK_ERROR_LINE_RE, ),
+            {}])
+    assert "error_line_re" in shellcheck.__dict__
+
+
+def test_shellcheck_handle():
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    assert shellcheck.handle("RESPONSE") == {}
+
+
+def test_shellcheck_handle_error(patches):
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    patched = patches(
+        "Shellcheck._render_errors",
+        "Shellcheck._shellcheck_errors",
+        prefix="envoy.code.check.abstract.shellcheck")
+    response = MagicMock()
+
+    with patched as (m_render, m_errors):
+        assert (
+            shellcheck.handle_error(response)
+            == m_render.return_value)
+
+    assert (
+        m_render.call_args
+        == [(m_errors.return_value, ), {}])
+    assert (
+        m_errors.call_args
+        == [(response, ), {}])
+
+
+@pytest.mark.parametrize("matched", [True, False])
+def test_shellcheck_parse_error_line(patches, matched):
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    patched = patches(
+        "int",
+        ("Shellcheck.error_line_re",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.shellcheck")
+    matched_re = (
+        MagicMock()
+        if matched
+        else None)
+    line = MagicMock()
+
+    with patched as (m_int, m_re):
+        m_re.return_value.search.return_value = matched_re
+        assert (
+            shellcheck.parse_error_line(line)
+            == ((matched_re.groups.return_value.__getitem__.return_value,
+                 m_int.return_value)
+                if matched
+                else ("", None)))
+
+    assert (
+        m_re.return_value.search.call_args
+        == [(line, ), {}])
+    if matched:
+        assert (
+            m_int.call_args
+            == [(matched_re.groups.return_value.__getitem__.return_value, ),
+                {}])
+        assert (
+            matched_re.groups.call_args_list
+            == [[(), {}]] * 2)
+        assert (
+            matched_re.groups.return_value.__getitem__.call_args_list
+            == [[(0, ), {}], [(1, ), {}]])
+
+
+def test_shellcheck__render_errors(patches):
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    patched = patches(
+        "Shellcheck._render_file_errors",
+        prefix="envoy.code.check.abstract.shellcheck")
+    errors = [
+        (MagicMock(), MagicMock())
+        for i in range(0, 5)]
+
+    with patched as (m_render, ):
+        assert (
+            shellcheck._render_errors(errors)
+            == {e: m_render.return_value
+                for e, info
+                in errors})
+
+    assert (
+        m_render.call_args_list
+        == [[(e, info), {}]
+            for e, info
+            in errors])
+
+
+@pytest.mark.parametrize("line_nums", range(0, 5))
+def test_shellcheck__render_file_errors(patches, line_nums):
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    patched = patches(
+        "str",
+        prefix="envoy.code.check.abstract.shellcheck")
+    path = MagicMock()
+    errors = MagicMock()
+    line_numbers = [MagicMock() for i in range(0, line_nums)]
+    lines = [f"LINE{i}" for i in range(0, 3)]
+    line_or_lines = (
+        "lines"
+        if line_nums > 1
+        else "line")
+
+    def getitem(k):
+        if k == "line_numbers":
+            return line_numbers
+        return lines
+
+    errors.__getitem__.side_effect = getitem
+    joined_line_numbers = ", ".join(str(line) for line in line_numbers)
+
+    with patched as (m_str, ):
+        m_str.side_effect = lambda x: str(x)
+        assert (
+            shellcheck._render_file_errors(path, errors)
+            == ["\n".join(
+                [f"{path} ({line_or_lines}: {joined_line_numbers})",
+                 *lines])])
+
+
+@pytest.mark.parametrize("filename", [None, "FILENAME"])
+def test_shellcheck__shellcheck_error_info(patches, filename):
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    patched = patches(
+        "dict",
+        prefix="envoy.code.check.abstract.shellcheck")
+    args = (
+        (filename, )
+        if filename is not None
+        else ())
+
+    with patched as (m_dict, ):
+        assert (
+            shellcheck._shellcheck_error_info(*args)
+            == (filename, m_dict.return_value))
+
+    assert (
+        m_dict.call_args
+        == [(), dict(line_numbers=[], lines=[])])
+
+
+SHELLCHECK_INPUTS = (
+    (),
+    ("", ),
+    ("MATCH FNAME1 23",
+     "DATA 0",
+     "DATA 1",
+     "DATA 2",
+     "",
+     "MATCH FNAME1 73",
+     "MORE DATA 0",
+     "MORE DATA 1",
+     "MORE DATA 2",
+     "",
+     "MATCH FNAME2 23",
+     "MORE DATA 0",
+     "MORE DATA 1",
+     "MORE DATA 2",
+     ""),
+    ("",
+     "MATCH FNAME1 23",
+     "DATA 0",
+     "DATA 1",
+     "DATA 2",
+     "",
+     "MATCH FNAME1 73",
+     "MORE DATA 0",
+     "MORE DATA 1",
+     "MORE DATA 2",
+     "",
+     "MATCH FNAME2 23",
+     "MORE DATA 0",
+     "MORE DATA 1",
+     "MORE DATA 2",
+     ""))
+
+
+@pytest.mark.parametrize("input", SHELLCHECK_INPUTS)
+def test_shellcheck__shellcheck_errors(patches, input):
+    shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
+    patched = patches(
+        "Shellcheck.parse_error_line",
+        "Shellcheck._shellcheck_error_info",
+        prefix="envoy.code.check.abstract.shellcheck")
+    response = MagicMock()
+    response.stdout.split.return_value = input
+
+    def parse(line):
+        if line.startswith("MATCH"):
+            return line.split(" ")[1:]
+        return "", None
+
+    def info(fname=None):
+        return fname, dict(lines=[], line_numbers=[])
+
+    with patched as (m_parse, m_info):
+        m_parse.side_effect = parse
+        m_info.side_effect = info
+        resultgen = shellcheck._shellcheck_errors(response)
+        assert isinstance(resultgen, types.GeneratorType)
+        result = list(resultgen)
+
+    if not input or not any(input):
+        assert not result
+        return
+
+    assert (
+        result
+        == [('FNAME1',
+             {'lines': [
+                 'MATCH FNAME1 23',
+                 'DATA 0',
+                 'DATA 1',
+                 'DATA 2',
+                 "",
+                 'MATCH FNAME1 73',
+                 'MORE DATA 0',
+                 'MORE DATA 1',
+                 'MORE DATA 2',
+                 ""],
+              'line_numbers': [
+                  '23',
+                  '73']}),
+            ('FNAME2',
+             {'lines': [
+                 'MATCH FNAME2 23',
+                 'MORE DATA 0',
+                 'MORE DATA 1',
+                 'MORE DATA 2',
+                 ""],
+              'line_numbers': ['23']})])
+
+
+def test_shellcheck_checker_run_shellcheck(patches):
     patched = patches(
         "Shellcheck",
         prefix="envoy.code.check.abstract.shellcheck")
@@ -16,17 +276,17 @@ def test_shellcheck_run_shellcheck(patches):
     with patched as (m_shellcheck, ):
         assert (
             check.AShellcheckCheck.run_shellcheck(path, *args)
-            == m_shellcheck.return_value.run_checks.return_value)
+            == m_shellcheck.return_value.return_value)
 
     assert (
         m_shellcheck.call_args
-        == [(path, *args), {}])
+        == [(path, ), {}])
     assert (
-        m_shellcheck.return_value.run_checks.call_args
-        == [(), {}])
+        m_shellcheck.return_value.call_args
+        == [tuple(args), {}])
 
 
-def test_shellcheck_constructor():
+def test_shellcheck_checker_constructor():
     shellcheck = check.AShellcheckCheck("DIRECTORY")
     assert shellcheck.directory == "DIRECTORY"
     assert (

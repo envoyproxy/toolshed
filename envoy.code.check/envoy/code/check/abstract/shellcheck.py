@@ -3,11 +3,11 @@ import re
 import shutil
 import subprocess
 from functools import cached_property, partial
-from typing import Dict, List, Pattern, Set, Tuple
+from typing import Iterator, List, Optional, Pattern, Set, Tuple, TypedDict
 
 import abstracts
 
-from aio.core.dev import debug
+from aio.core import subprocess as _subprocess
 from aio.core.functional import async_property
 
 from envoy.code.check import abstract, exceptions, typing
@@ -27,80 +27,108 @@ SHELLCHECK_NOMATCH_RE = (
     r"[\w/]*\.genrule_cmd$")
 
 
-class Shellcheck:
+class ShellcheckErrorDict(TypedDict):
+    lines: List[str]
+    line_numbers: List[int]
 
-    def __init__(
-            self,
-            path: str,
-            *args) -> None:
-        self.path = path
-        self.args = args
+
+@abstracts.implementer(_subprocess.ISubprocessHandler)
+class Shellcheck(_subprocess.ASubprocessHandler):
 
     @cached_property
     def error_line_re(self) -> Pattern[str]:
+        """Regex for matching a shellcheck error line.
+
+        This demarcates the beginning of a specific error for a file.
+        """
         return re.compile(SHELLCHECK_ERROR_LINE_RE)
 
-    def handle_errors(
+    def handle(
+            self,
+            response: subprocess.CompletedProcess) -> typing.ProblemDict:
+        return {}
+
+    def handle_error(
             self,
             response: subprocess.CompletedProcess) -> typing.ProblemDict:
         """Turn the response from a call to shellcheck (for multiple files)
         into an `typing.ProblemDict`."""
-        errors: Dict[str, Dict[str, List]] = {}
-        if not response.returncode:
-            return {}
-        filename = None
-        for line in response.stdout.split("\n"):
-            _filename, line_number = self.parse_error_line(line)
-            if _filename:
-                filename = _filename
-                errors[filename] = errors.get(
-                    filename,
-                    dict(line_numbers=[], lines=[]))
-                errors[filename]["line_numbers"].append(line_number)
-            if filename is None:
-                continue
-            errors[filename]["lines"].append(line)
-        return self._render_errors(errors)
+        return self._render_errors(self._shellcheck_errors(response))
 
-    def parse_error_line(self, line: str) -> Tuple[str, str]:
+    def parse_error_line(self, line: str) -> Tuple[str, Optional[int]]:
         """Parse `filename`, `line_number` from a shellcheck error line."""
         matched = self.error_line_re.search(line)
         return (
             (matched.groups()[0],
-             matched.groups()[1])
+             int(matched.groups()[1]))
             if matched
-            else ("", ""))
-
-    @debug.logging(
-        log=__name__,
-        show_cpu=True)
-    def run_checks(self) -> typing.ProblemDict:
-        return self.handle_errors(
-            subprocess.run(
-                self.args,
-                cwd=self.path,
-                capture_output=True,
-                encoding="utf-8"))
+            else ("", None))
 
     def _render_errors(
             self,
-            problems: Dict[str, Dict[str, List]]) -> typing.ProblemDict:
-        problem_files: typing.ProblemDict = {}
-        for k, v in problems.items():
-            line_numbers = ", ".join(v["line_numbers"])
-            lines = "lines" if len(v["line_numbers"]) > 1 else "line"
-            problem_files[k] = [
-                "\n".join([
-                    f"{k} ({lines}: {line_numbers})",
-                    *v["lines"]])]
-        return problem_files
+            errors: Iterator[
+                Tuple[
+                    str,
+                    ShellcheckErrorDict]]) -> typing.ProblemDict:
+        return {
+            k: self._render_file_errors(k, v)
+            for k, v
+            in errors}
+
+    def _render_file_errors(
+            self,
+            path: str,
+            errors: ShellcheckErrorDict) -> List[str]:
+        # This does v basic en pluralization
+        line_numbers = ", ".join(str(n) for n in errors["line_numbers"])
+        lines = (
+            "lines"
+            if len(errors["line_numbers"]) > 1
+            else "line")
+        return [
+            "\n".join([
+                f"{path} ({lines}: {line_numbers})",
+                *errors["lines"]])]
+
+    def _shellcheck_error_info(
+            self,
+            filename: Optional[str] = None) -> Tuple[
+                Optional[str], ShellcheckErrorDict]:
+        return (
+            filename,
+            dict(line_numbers=[], lines=[]))
+
+    def _shellcheck_errors(
+            self,
+            response: subprocess.CompletedProcess) -> Iterator[
+                Tuple[str, ShellcheckErrorDict]]:
+        filename, info = self._shellcheck_error_info()
+        for line in response.stdout.split("\n"):
+            _filename, line_number = self.parse_error_line(line)
+            if _filename and line_number:
+                # matches as error line - may/not be a new error for this file
+                if filename and (_filename != filename):
+                    # filename boundary - yield, and reset
+                    yield filename, info
+                    filename, info = self._shellcheck_error_info(_filename)
+                # add line number to error line_numbers
+                info["line_numbers"].append(line_number)
+                filename = _filename
+            if filename is None:
+                # preceeding whitespace
+                continue
+            info["lines"].append(line)
+        if filename:
+            # flush the buffer
+            yield filename, info
 
 
 class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod
     def run_shellcheck(self, path: str, *args) -> typing.ProblemDict:
-        return Shellcheck(path, *args).run_checks()
+        """Run shellcheck on files."""
+        return Shellcheck(path)(*args)
 
     @async_property
     async def checker_files(self) -> Set[str]:
@@ -110,10 +138,12 @@ class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @cached_property
     def path_match_exclude_re(self) -> Pattern[str]:
+        """Regex to match files not to check."""
         return re.compile("|".join(SHELLCHECK_NOMATCH_RE))
 
     @cached_property
     def path_match_re(self) -> Pattern[str]:
+        """Regex to match files to check."""
         return re.compile("|".join(SHELLCHECK_MATCH_RE))
 
     @async_property(cache=True)
@@ -131,6 +161,7 @@ class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def sh_files(self) -> Set[str]:
+        """Files with a `.sh` suffix, but that are not excluded."""
         return set(
             path
             for path
@@ -148,10 +179,12 @@ class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @property
     def shebang_re_expr(self) -> str:
+        """Regex for matching shebang lines _in_ a file."""
         return "|".join(SHEBANG_RE)
 
     @cached_property
     def shellcheck_command(self) -> str:
+        """Shellcheck command, should be available in the running system."""
         command = shutil.which("shellcheck")
         if command:
             return command
@@ -160,6 +193,7 @@ class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @cached_property
     def shellcheck_executable(self) -> partial:
+        """Partial with shellcheck command and args."""
         return partial(
             self.run_shellcheck,
             self.directory.path,

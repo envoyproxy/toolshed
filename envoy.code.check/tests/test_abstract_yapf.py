@@ -1,29 +1,133 @@
 
+import types
 from functools import partial
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+from aio.core import directory
+
 from envoy.code import check
 
 
-def test_yapf__yapf_files(patches):
+@pytest.mark.parametrize("args", [[], [f"ARG{i}" for i in range(0, 5)]])
+def test_yapf_yapfformatcheck_constructor(args):
+    yapf_check = check.abstract.yapf.YapfFormatCheck(
+        "PATH", "CONFIG_PATH", "FIX", *args)
+    assert isinstance(yapf_check, directory.IDirectoryContext)
+    assert isinstance(yapf_check, directory.ADirectoryContext)
+    assert yapf_check.config_path == "CONFIG_PATH"
+    assert yapf_check.fix == "FIX"
+    assert yapf_check.args == tuple(args)
+
+
+@pytest.mark.parametrize("n", range(1, 5))
+@pytest.mark.parametrize("fix", [True, False])
+def test_yapf_yapfformatcheck_check_results(patches, n, fix):
+    args = [f"ARG{i}" for i in range(0, 7)]
+    yapf_check = check.abstract.yapf.YapfFormatCheck(
+        "PATH", "CONFIG_PATH", fix, *args)
+    patched = patches(
+        "os",
+        "yapf",
+        ("YapfFormatCheck.path",
+         dict(new_callable=PropertyMock)),
+        "YapfFormatCheck.handle_result",
+        prefix="envoy.code.check.abstract.yapf")
+
+    def handle(path, *args):
+        i = int(path[-1])
+        if i % n:
+            return path
+
+    with patched as (m_os, m_yapf, m_path, m_handle):
+        m_handle.side_effect = handle
+        resultgen = yapf_check.check_results
+        assert isinstance(resultgen, types.GeneratorType)
+        assert (
+            list(resultgen)
+            == [p for p in args if (int(p[-1]) % n)])
+
+    assert (
+        m_handle.call_args_list
+        == [[(p, m_yapf.yapf_api.FormatFile.return_value), {}]
+            for p in args])
+    assert (
+        m_yapf.yapf_api.FormatFile.call_args_list
+        == [[(m_os.path.join.return_value, ),
+             dict(style_config="CONFIG_PATH",
+                  in_place=fix,
+                  print_diff=not fix)]
+            for p in args])
+    assert (
+        m_os.path.join.call_args_list
+        == [[(m_path.return_value, p), {}]
+            for p in args])
+
+
+@pytest.mark.parametrize(
+    "changed",
+    [None, True, False, "", [], "CHANGED"])
+@pytest.mark.parametrize(
+    "reformatted",
+    [None, True, False, "", [], "REFORMATTED"])
+def test_yapf_yapfformatcheck_handle_result(changed, reformatted):
+    yapf_check = check.abstract.yapf.YapfFormatCheck(
+        "PATH", "CONFIG_PATH", "FIX")
+    path = MagicMock()
+    encoding = MagicMock()
+    assert (
+        yapf_check.handle_result(path, (reformatted, encoding, changed))
+        == (None
+            if not (changed or reformatted)
+            else ((path, [f"Issues found: {path}\n{reformatted}"])
+                  if reformatted
+                  else (path, [f"Issues found (fixed): {path}"]))))
+
+
+def test_yapf_yapfformatcheck_run_checks(patches):
+    yapf_check = check.abstract.yapf.YapfFormatCheck(
+        "PATH", "CONFIG_PATH", "FIX")
+    patched = patches(
+        "tuple",
+        ("YapfFormatCheck.check_results",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.yapf")
+
+    with patched as (m_tuple, m_results):
+        assert (
+            yapf_check.run_checks()
+            == m_tuple.return_value)
+
+    assert (
+        m_tuple.call_args
+        == [(m_results.return_value, ), {}])
+
+
+def test_yapf_yapffiles_constructor():
+    yapf_files = check.abstract.yapf.YapfFiles("PATH")
+    assert isinstance(yapf_files, directory.IDirectoryContext)
+    assert isinstance(yapf_files, directory.ADirectoryContext)
+
+
+def test_yapf_yapffiles_filter_files(patches):
+    yapf_files = check.abstract.yapf.YapfFiles("PATH")
     patched = patches(
         "yapf",
         "set",
-        "directory_context",
+        ("YapfFiles.in_directory",
+         dict(new_callable=PropertyMock)),
+        ("YapfFiles.path",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.yapf")
-    dir_path = MagicMock()
     py_files = MagicMock()
 
-    with patched as (m_yapf, m_set, m_dir_ctx):
+    with patched as (m_yapf, m_set, m_dir_ctx, m_path):
         assert (
-            check.abstract.yapf._yapf_files(dir_path, py_files)
+            yapf_files.filter_files(py_files)
             == m_set.return_value)
 
-    assert (
-        m_dir_ctx.call_args
-        == [(dir_path, ), {}])
+    assert m_dir_ctx.return_value.__enter__.called
     assert (
         m_set.call_args
         == [(m_yapf.file_resources.GetCommandLineFiles.return_value, ),
@@ -36,12 +140,12 @@ def test_yapf__yapf_files(patches):
                                                .return_value))])
     assert (
         m_yapf.file_resources.GetExcludePatternsForDir.call_args
-        == [(dir_path, ), {}])
+        == [(m_path.return_value, ), {}])
 
 
 def test_yapf_yapf_files(patches):
     patched = patches(
-        "_yapf_files",
+        "YapfFiles",
         prefix="envoy.code.check.abstract.yapf")
     path = MagicMock()
     files = [MagicMock() for i in range(0, 5)]
@@ -49,11 +153,14 @@ def test_yapf_yapf_files(patches):
     with patched as (m_yapf_files, ):
         assert (
             check.AYapfCheck.yapf_files(path, *files)
-            == m_yapf_files.return_value)
+            == m_yapf_files.return_value.filter_files.return_value)
 
     assert (
         m_yapf_files.call_args
-        == [(path, tuple(files)), {}])
+        == [(path, ), {}])
+    assert (
+        m_yapf_files.return_value.filter_files.call_args
+        == [(tuple(files), ), {}])
 
 
 @pytest.mark.parametrize("fix", [None, True, False])
@@ -147,6 +254,18 @@ async def test_yapf_checker_files(patches, files):
         == [(directory.path, ), {}])
 
 
+def test_yapf_config_path():
+    directory = MagicMock()
+    yapf = check.AYapfCheck(directory)
+    assert (
+        yapf.config_path
+        == directory.path.joinpath.return_value)
+    assert (
+        directory.path.joinpath.call_args
+        == [(check.abstract.yapf.YAPF_CONFIG, ), {}])
+    assert "config_path" not in yapf.__dict__
+
+
 @pytest.mark.parametrize("files", [True, False])
 async def test_yapf_problem_files(patches, files):
     yapf = check.AYapfCheck("DIRECTORY")
@@ -214,13 +333,68 @@ async def test_yapf_py_files(patches, notpy):
             == [(".py", ), {}])
 
 
-def test_yapf_config_path():
+@pytest.mark.parametrize("files", [True, False])
+async def test_yapf__problem_files(patches, files):
     directory = MagicMock()
-    yapf = check.AYapfCheck(directory)
+    fix = MagicMock()
+    yapf = check.AYapfCheck(directory, fix=fix)
+    patched = patches(
+        "partial",
+        "str",
+        "AYapfCheck.yapf_format",
+        ("AYapfCheck.config_path",
+         dict(new_callable=PropertyMock)),
+        ("AYapfCheck.files",
+         dict(new_callable=PropertyMock)),
+        "AYapfCheck.execute_in_batches",
+        prefix="envoy.code.check.abstract.yapf")
+    batched = [
+        [(f"PATH{x}", f"PROB{x}") for x in range(0, 10)],
+        [(f"PATH{x}", f"PROB{x}") for x in range(10, 20)],
+        [(f"PATH{x}", f"PROB{x}") for x in range(20, 30)]]
+    files = (
+        [f"FILE{i}" for i in range(0, 5)]
+        if files
+        else [])
+    expected = batched[0] + batched[1] + batched[2]
+    results = []
+
+    async def batch_iter(*x):
+        for batch in batched:
+            yield batch
+
+    with patched as (m_partial, m_str, m_format, m_conf, m_files, m_execute):
+        m_files.side_effect = AsyncMock(return_value=files)
+        m_execute.side_effect = batch_iter
+
+        async for f, p in yapf._problem_files:
+            results.append((f, p))
+
+        assert (
+            results
+            == ([]
+                if not files
+                else expected))
+
+    assert not (
+        hasattr(
+            yapf,
+            check.AYapfCheck._problem_files.cache_name))
+    if not files:
+        assert not m_execute.called
+        assert not m_partial.called
+        assert not m_str.called
+        return
     assert (
-        yapf.config_path
-        == directory.path.joinpath.return_value)
+        m_execute.call_args
+        == [(m_partial.return_value, *files), {}])
     assert (
-        directory.path.joinpath.call_args
-        == [(check.abstract.yapf.YAPF_CONFIG, ), {}])
-    assert "config_path" not in yapf.__dict__
+        m_partial.call_args
+        == [(m_format,
+             m_str.return_value,
+             m_str.return_value,
+             fix), {}])
+    assert (
+        m_str.call_args_list
+        == [[(directory.path, ), {}],
+            [(m_conf.return_value, ), {}]])

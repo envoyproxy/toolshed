@@ -4,12 +4,14 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+from aio.core import directory
+
 from envoy.code import check
 
 
 async def test_glint_have_newlines(patches):
     patched = patches(
-        "_have_newlines",
+        "NewlineChecker",
         prefix="envoy.code.check.abstract.glint")
     path = MagicMock()
     paths = [MagicMock() for i in range(0, 3)]
@@ -17,11 +19,14 @@ async def test_glint_have_newlines(patches):
     with patched as (m_newlines, ):
         assert (
             check.AGlintCheck.have_newlines(path, *paths)
-            == m_newlines.return_value)
+            == m_newlines.return_value.have_newlines.return_value)
 
     assert (
         m_newlines.call_args
-        == [(path, tuple(paths)), {}])
+        == [(path, ), {}])
+    assert (
+        m_newlines.return_value.have_newlines.call_args
+        == [(tuple(paths), ), {}])
 
 
 def test_glint_constructor():
@@ -278,50 +283,6 @@ async def test_glint_problem_files(patches, files):
              m_ws.return_value), {}])
 
 
-@pytest.mark.parametrize("n", range(1, 5))
-def test_glint__have_newlines(patches, n):
-    patched = patches(
-        "set",
-        "directory_context",
-        "utils",
-        prefix="envoy.code.check.abstract.glint")
-    path = MagicMock()
-    paths = [MagicMock() for x in range(0, 5)]
-
-    class Byter:
-        counter = 0
-
-        def last_n_bytes_of(self, target):
-            self.counter += 1
-            if self.counter % n:
-                return b"\n"
-            return "OTHER"
-
-    byter = Byter()
-
-    with patched as (m_set, m_dir_ctx, m_utils):
-        m_utils.last_n_bytes_of.side_effect = byter.last_n_bytes_of
-        assert (
-            check.abstract.glint._have_newlines(path, paths)
-            == m_set.return_value)
-        pathgen = m_set.call_args[0][0]
-        assert isinstance(pathgen, types.GeneratorType)
-        assert (
-            list(pathgen)
-            == [p
-                for i, p
-                in enumerate(paths)
-                if not bool((i + 1) % n)])
-
-    assert (
-        m_dir_ctx.call_args
-        == [(path, ), {}])
-    assert (
-        m_utils.last_n_bytes_of.call_args_list
-        == [[(p, ), {}]
-            for p in paths])
-
-
 @pytest.mark.parametrize(
     "newline", [[], ["PATH", "other"], ["PATH"], ["no", "path"]])
 @pytest.mark.parametrize(
@@ -340,3 +301,52 @@ def test_glint__check_path(patches, newline, mixed_tabs, whitespace):
     assert (
         list(glint._check_path("PATH", newline, mixed_tabs, whitespace))
         == expected)
+
+
+def test_glint_newline_checker_constructor():
+    nl_checker = check.abstract.glint.NewlineChecker("PATH")
+    assert isinstance(nl_checker, directory.IDirectoryContext)
+    assert isinstance(nl_checker, directory.ADirectoryContext)
+
+
+@pytest.mark.parametrize("n", range(1, 5))
+def test_glint_newline_checker_have_newlines(patches, n):
+    nl_checker = check.abstract.glint.NewlineChecker("PATH")
+    patched = patches(
+        "set",
+        ("NewlineChecker.in_directory",
+         dict(new_callable=PropertyMock)),
+        "utils",
+        prefix="envoy.code.check.abstract.glint")
+    paths = [MagicMock() for x in range(0, 5)]
+
+    class Byter:
+        counter = 0
+
+        def last_n_bytes_of(self, target):
+            self.counter += 1
+            if self.counter % n:
+                return b"\n"
+            return "OTHER"
+
+    byter = Byter()
+
+    with patched as (m_set, m_dir_ctx, m_utils):
+        m_utils.last_n_bytes_of.side_effect = byter.last_n_bytes_of
+        assert (
+            nl_checker.have_newlines(paths)
+            == m_set.return_value)
+        pathgen = m_set.call_args[0][0]
+        assert isinstance(pathgen, types.GeneratorType)
+        assert (
+            list(pathgen)
+            == [p
+                for i, p
+                in enumerate(paths)
+                if not bool((i + 1) % n)])
+
+    assert m_dir_ctx.return_value.__enter__.called
+    assert (
+        m_utils.last_n_bytes_of.call_args_list
+        == [[(p, ), {}]
+            for p in paths])
