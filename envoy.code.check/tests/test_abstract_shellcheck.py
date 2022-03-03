@@ -489,7 +489,7 @@ def test_shellcheck_shellcheck_command(patches, command):
     with patched as (m_shutil, ):
         m_shutil.which.return_value = command
         if not command:
-            with pytest.raises(check.exceptions.ShellcheckError) as e:
+            with pytest.raises(subprocess.exceptions.OSCommandError) as e:
                 shellcheck.shellcheck_command
             assert e.value.args[0] == 'Unable to find shellcheck command'
         else:
