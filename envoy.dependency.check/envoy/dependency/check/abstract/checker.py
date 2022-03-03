@@ -21,7 +21,10 @@ from aio.core.tasks import ConcurrentError, inflate
 
 from envoy.dependency.check import abstract, exceptions, typing
 
-_NO_GITHUB_TOKEN_ERROR_MSG = "No Github access token supplied via environment variable `GITHUB_TOKEN` or argument `--github_token`"
+_NO_GITHUB_TOKEN_ERROR_MSG = ("No Github access token supplied "
+                              "via environment variable `GITHUB_TOKEN` "
+                              "or argument `--github_token`")
+
 
 class ADependencyChecker(
         checker.Checker,
