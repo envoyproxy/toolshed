@@ -55,14 +55,15 @@ def test_runner_dunder_call(patches, raises):
          dict(new_callable=PropertyMock)),
         ("Runner.run",
          dict(new_callable=MagicMock)),
-        ("Runner.on_runner_error",
+        ("Runner._on_runner_error",
          dict(new_callable=MagicMock)),
         "Runner.on_runner_start",
         prefix="aio.run.runner.runner")
 
     with patched as (m_loop, m_run, m_error, m_start):
         if raises:
-            m_run.side_effect = raises("DIE")
+            error = raises("DIE")
+            m_run.side_effect = error
         if raises == Exception:
             with pytest.raises(Exception):
                 run()
@@ -95,7 +96,7 @@ def test_runner_dunder_call(patches, raises):
     if raises == KeyboardInterrupt:
         assert (
             m_error.call_args
-            == [(), {}])
+            == [(error, ), {}])
     else:
         assert not m_error.called
 
@@ -527,6 +528,11 @@ def test_runner_on_async_error():
         == [(), {}])
 
 
+async def test_runner_on_runner_error(patches):
+    run = DummyRunner()
+    assert await run.on_runner_error("ERROR") == 1
+
+
 def test_runner_on_runner_start(patches):
     run = DummyRunner()
     patched = patches(
@@ -656,7 +662,10 @@ def test_runner__on_runner_error(patches):
     e = MagicMock()
 
     with patched as (m_asyncio, m_exit, m_on_error):
-        assert run._on_runner_error(e) == 1
+        assert (
+            run._on_runner_error(e)
+            == (m_asyncio.get_event_loop.return_value
+                         .run_until_complete.return_value))
 
     assert (
         m_exit.call_args

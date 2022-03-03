@@ -301,8 +301,8 @@ class Checker(runner.Runner):
             self.summary.print_summary()
         return 1 if self.has_failed else 0
 
-    async def on_runner_error(self, e: BaseException) -> None:
-        await self.on_checks_complete()
+    async def on_runner_error(self, e: BaseException) -> int:
+        return await self.on_checks_complete()
 
     def succeed(self, name: str, success: list, log: bool = True) -> None:
         """Record (and log) success for a check type."""
