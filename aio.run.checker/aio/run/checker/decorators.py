@@ -1,11 +1,11 @@
 
+from functools import partial
 from typing import (
     Any, Callable, Dict, Optional, Sequence,
     Tuple, Type)
 
 
 class preload:
-    _instance = None
 
     def __init__(
             self,
@@ -31,8 +31,7 @@ class preload:
     def __get__(self, instance: Any, cls: Optional[Type] = None) -> Any:
         if instance is None:
             return self
-        self._instance = instance
-        return self.fun
+        return partial(self.fun, instance)
 
     @property
     def blocks(self) -> Tuple[str, ...]:
@@ -54,10 +53,9 @@ class preload:
     def unless(self) -> Tuple[str, ...]:
         return tuple(self._unless or ())
 
-    def fun(self, *args, **kwargs) -> None:
-        if self._instance:
-            return self._fun(self._instance, *args, **kwargs)
-        return self._fun(*args, **kwargs)
+    def fun(self, instance, *args, **kwargs) -> Any:
+        if self._fun:
+            return self._fun(instance, *args, **kwargs)
 
     def get_preload_checks_data(
             self,

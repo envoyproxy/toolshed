@@ -69,6 +69,7 @@ def test_preload_dunder_set_name(patches):
 def test_preload_dunder_get(patches, cls, instance):
     preloader = checker.preload("WHEN")
     patched = patches(
+        "partial",
         ("preload.fun",
          dict(new_callable=PropertyMock)),
         prefix="aio.run.checker.decorators")
@@ -77,14 +78,19 @@ def test_preload_dunder_get(patches, cls, instance):
         if cls
         else ())
 
-    with patched as (m_fun, ):
+    with patched as (m_partial, m_fun):
         assert (
             preloader.__get__(instance, *args)
-            == (m_fun.return_value
+            == (m_partial.return_value
                 if instance is not None
                 else preloader))
 
-    assert preloader._instance == instance
+    if instance is None:
+        assert not m_partial.called
+        return
+    assert (
+        m_partial.call_args
+        == [(m_fun.return_value, instance), {}])
 
 
 @pytest.mark.parametrize(
@@ -155,13 +161,15 @@ def test_preload_when(when):
     assert "when" not in preloader.__dict__
 
 
-@pytest.mark.parametrize("instance", [None, "", "INSTANCE"])
+@pytest.mark.parametrize("fun", [True, False])
 @pytest.mark.parametrize("args", [True, False])
 @pytest.mark.parametrize("kwargs", [True, False])
-def test_preload_fun(instance, args, kwargs):
+def test_preload_fun(fun, args, kwargs):
     preloader = checker.preload("WHEN")
-    preloader._instance = instance
-    preloader._fun = MagicMock()
+    preloader._fun = (
+        MagicMock()
+        if fun
+        else None)
     args = (
         [f"ARG{i}" for i in range(0, 5)]
         if args
@@ -172,17 +180,14 @@ def test_preload_fun(instance, args, kwargs):
         else {})
 
     assert (
-        preloader.fun(*args, **kwargs)
-        == preloader._fun.return_value)
-
-    if instance:
+        preloader.fun("INSTANCE", *args, **kwargs)
+        == (preloader._fun.return_value
+            if fun
+            else None))
+    if fun:
         assert (
             preloader._fun.call_args
-            == [(instance, ) + tuple(args), kwargs])
-    else:
-        assert (
-            preloader._fun.call_args
-            == [tuple(args), kwargs])
+            == [("INSTANCE", ) + tuple(args), kwargs])
 
 
 def test_preload_get_preload_checks_data(patches):
