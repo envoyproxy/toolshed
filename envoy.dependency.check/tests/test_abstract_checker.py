@@ -236,9 +236,9 @@ def test_checker_disabled_checks(patches, token):
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
     expected = (
-        dict(release_dates=abstract.checker._NO_GITHUB_TOKEN_ERROR_MSG,
-             release_issues=abstract.checker._NO_GITHUB_TOKEN_ERROR_MSG,
-             releases=abstract.checker._NO_GITHUB_TOKEN_ERROR_MSG)
+        dict(release_dates=abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG,
+             release_issues=abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG,
+             releases=abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG)
         if not token
         else {})
 
