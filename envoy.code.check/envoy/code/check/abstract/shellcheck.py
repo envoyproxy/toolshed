@@ -10,7 +10,7 @@ import abstracts
 from aio.core import subprocess as _subprocess
 from aio.core.functional import async_property
 
-from envoy.code.check import abstract, exceptions, typing
+from envoy.code.check import abstract, typing
 
 
 SHELLCHECK_ERROR_LINE_RE = r"In ([\w\-\_\./]+) line ([0-9]+):"
@@ -188,7 +188,7 @@ class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         command = shutil.which("shellcheck")
         if command:
             return command
-        raise exceptions.ShellcheckError(
+        raise _subprocess.exceptions.OSCommandError(
             "Unable to find shellcheck command")
 
     @cached_property

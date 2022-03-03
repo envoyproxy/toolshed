@@ -9,7 +9,7 @@ from typing import Dict, Mapping, Optional, Pattern, Set, Tuple, Type
 
 import abstracts
 
-from aio.core import directory as _directory, event
+from aio.core import directory as _directory, event, subprocess
 from aio.run import checker
 
 from envoy.code.check import abstract, typing
@@ -181,6 +181,7 @@ class ACodeChecker(
         """Check for glint issues."""
         await self._code_check(self.glint)
 
+    # TODO: catch errors in checkers as well as preloaders
     async def check_python_flake8(self) -> None:
         """Check for flake8 issues."""
         await self._code_check(self.flake8)
@@ -194,22 +195,26 @@ class ACodeChecker(
         await self._code_check(self.shellcheck)
 
     @checker.preload(
-        when=["python_flake8"])
+        when=["python_flake8"],
+        catches=[subprocess.exceptions.OSCommandError])
     async def preload_flake8(self) -> None:
         await self.flake8.problem_files
 
     @checker.preload(
-        when=["glint"])
+        when=["glint"],
+        catches=[subprocess.exceptions.OSCommandError])
     async def preload_glint(self) -> None:
         await self.glint.problem_files
 
     @checker.preload(
-        when=["shellcheck"])
+        when=["shellcheck"],
+        catches=[subprocess.exceptions.OSCommandError])
     async def preload_shellcheck(self) -> None:
         await self.shellcheck.problem_files
 
     @checker.preload(
-        when=["python_yapf"])
+        when=["python_yapf"],
+        catches=[subprocess.exceptions.OSCommandError])
     async def preload_yapf(self) -> None:
         await self.yapf.problem_files
 
