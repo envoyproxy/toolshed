@@ -28,8 +28,9 @@ New Version: {newer_release.tag_name}@{newer_release_date}
 Upstream releases: https://github.com/{full_name}/releases
 New Issue Link: https://github.com/{repo_location}/issues/{number}
 """
+ISSUE_AUTHOR = "app/github-actions"
 ISSUES_SEARCH_TPL = ("in:title {self.title_prefix} is:open "
-                     "is:issue author:github-actions[bot]")
+                     "is:issue author:{self.issue_author}")
 TITLE_PREFIX = "Newer release available"
 TITLE_RE_TPL = r"{title_prefix} [`]?([\w\-\.]+)[`]?: ([\w\-\.]+)"
 TITLE_TPL = (
@@ -142,6 +143,7 @@ class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
             github,
             body_tpl: str = BODY_TPL,
             closing_tpl: str = CLOSING_TPL,
+            issue_author: str = ISSUE_AUTHOR,
             issues_search_tpl: str = ISSUES_SEARCH_TPL,
             labels: Tuple[str, ...] = LABELS,
             repo_name: str = GITHUB_REPO_LOCATION,
@@ -151,6 +153,7 @@ class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
         self.github = github
         self.body_tpl = body_tpl
         self.closing_tpl = closing_tpl
+        self.issue_author = issue_author
         self.issues_search_tpl = issues_search_tpl
         self.labels = labels
         self.repo_name = repo_name
