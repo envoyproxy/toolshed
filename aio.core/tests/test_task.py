@@ -1277,7 +1277,8 @@ async def test_inflate(patches, iterable, limit, yield_exceptions):
         == [m_aio.gather.return_value] * len(iterable))
     assert (
         m_aio.gather.call_args_list
-        == [[(m_aio.sleep.return_value, *awaitables), {}]
+        == [[(m_aio.sleep.return_value, *awaitables),
+             dict(return_exceptions=True)]
             for i in range(0, len(iterable))])
     assert (
         m_aio.sleep.call_args_list
