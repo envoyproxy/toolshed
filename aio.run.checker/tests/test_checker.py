@@ -685,7 +685,9 @@ async def test_checker_on_runner_error(patches):
     e = MagicMock()
 
     with patched as (m_complete, ):
-        assert not await checker.on_runner_error(e)
+        assert (
+            await checker.on_runner_error(e)
+            == m_complete.return_value)
 
     assert (
         m_complete.call_args

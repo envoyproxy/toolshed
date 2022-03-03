@@ -86,11 +86,11 @@ class Runner(event.AReactive):
             # Loop was forcibly stopped, most likely due to unhandled
             # error in task.
             return 1
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as e:
             # This needs to be outside the loop to catch the a keyboard
             # interrupt. This means that a new loop has to be created to
             # cleanup.
-            return self.on_runner_error()
+            return self._on_runner_error(e)
 
     @cached_property
     def args(self) -> argparse.Namespace:
@@ -243,12 +243,12 @@ class Runner(event.AReactive):
         loop.default_exception_handler(context)
         loop.stop()
 
-    async def on_runner_error(self, e: BaseException) -> None:
+    async def on_runner_error(self, e: BaseException) -> int:
         """Called in a separate loop in the event of catastrophic failure.
 
         Override to cleanup.
         """
-        pass
+        return 1
 
     def on_runner_start(self):
         self.setup_logging()
@@ -283,5 +283,5 @@ class Runner(event.AReactive):
 
     def _on_runner_error(self, e: BaseException) -> int:
         self.exit()
-        asyncio.get_event_loop().run_until_complete(self.on_runner_error(e))
-        return 1
+        return asyncio.get_event_loop().run_until_complete(
+            self.on_runner_error(e))
