@@ -1047,9 +1047,9 @@ def test_batch_jobs(
         "isinstance",
         "max",
         "min",
+        "os",
         "round",
         "type",
-        "psutil",
         "batches",
         "typed",
         prefix="aio.core.functional.utils")
@@ -1066,8 +1066,8 @@ def test_batch_jobs(
         return is_str_or_bytes
 
     with patched as patchy:
-        (m_len, m_isinst, m_max, m_min, m_round, m_type,
-         m_psutil, m_batches, m_typed) = patchy
+        (m_len, m_isinst, m_max, m_min, m_os, m_round, m_type,
+         m_batches, m_typed) = patchy
         m_isinst.side_effect = isinst
         if not is_iterable or is_str_or_bytes:
             with pytest.raises(functional.exceptions.BatchedJobsError) as e:
@@ -1081,7 +1081,7 @@ def test_batch_jobs(
         m_isinst.call_args_list[0]
         == [(jobs, Iterable), {}])
     if not is_iterable or is_str_or_bytes:
-        assert not m_psutil.proc_count.called
+        assert not m_os.proc_count.called
         assert not m_round.called
         assert not m_len.called
         assert not m_min.called
@@ -1104,7 +1104,7 @@ def test_batch_jobs(
         return
     assert not m_type.called
     assert (
-        m_psutil.cpu_count.call_args
+        m_os.cpu_count.call_args
         == [(), {}])
     assert (
         m_len.call_args
@@ -1115,7 +1115,7 @@ def test_batch_jobs(
             {}])
     assert (
         m_len.return_value.__truediv__.call_args
-        == [(m_psutil.cpu_count.return_value, ), {}])
+        == [(m_os.cpu_count.return_value, ), {}])
     batch_count = m_round.return_value
     if max_batch_size:
         assert (

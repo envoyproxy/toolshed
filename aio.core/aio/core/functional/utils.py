@@ -3,12 +3,11 @@ import asyncio
 import contextlib
 import gzip
 import inspect
+import os
 import textwrap
 from typing import (
     Any, Awaitable, Callable, Coroutine,
     Iterable, Iterator, List, Optional, Sized, Type, Union)
-
-import psutil
 
 from trycast import trycast  # type:ignore
 
@@ -122,7 +121,7 @@ def batch_jobs(
     if bad_jobs_type:
         raise exceptions.BatchedJobsError(
             f"Wrong type for `batch_jobs` ({type(jobs)}: {jobs}")
-    proc_count = psutil.cpu_count()
+    proc_count = os.cpu_count() or 1
     batch_count = round(len(jobs) / proc_count)
     if max_batch_size:
         batch_count = min(batch_count, max_batch_size)
