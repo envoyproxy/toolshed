@@ -15,9 +15,29 @@ from aio.run import checker
 from envoy.code.check import abstract, typing
 
 
+# TODO: Add a README in envoy repo with info on how to fix and maybe use
+#   a template
+GLINT_ADVICE = (
+    "Glint check failed\n"
+    "\n"
+    "  Please fix your editor to ensure:\n"
+    "\n"
+    "      - no trailing whitespace\n"
+    "      - no preceding mixed tabs/spaces\n"
+    "      - all files end with a newline")
+
 # This is excluding at least some of the things that `.gitignore` would.
 GREP_EXCLUDE_GLOBS = (r"\#*", r"\.#*", r"*~")
 GREP_EXCLUDE_DIR_GLOBS = (r"build", r"build*", r"generated", r"\.*", r"src")
+
+
+class CodeCheckerSummary(checker.CheckerSummary):
+
+    def print_summary(self) -> None:
+        """Write summary to stderr."""
+        super().print_summary()
+        if "glint" in self.checker.errors:
+            self.writer_for("error")(GLINT_ADVICE)
 
 
 @abstracts.implementer(event.IReactive)
@@ -134,6 +154,11 @@ class ACodeChecker(
     @abstracts.interfacemethod
     def shellcheck_class(self) -> Type["abstract.AShellcheckCheck"]:
         raise NotImplementedError
+
+    @property
+    def summary_class(self) -> Type[CodeCheckerSummary]:
+        """CodeChecker's summary class."""
+        return CodeCheckerSummary
 
     @cached_property
     def yapf(self) -> "abstract.AYapfCheck":
