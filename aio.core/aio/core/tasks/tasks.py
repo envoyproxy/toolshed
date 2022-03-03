@@ -478,10 +478,14 @@ async def inflate(
     things = concurrent(
         (asyncio.gather(
             asyncio.sleep(0, result=thing),
-            *cb(thing))
+            *cb(thing),
+            return_exceptions=True)
          for thing
          in iterable),
         limit=limit,
         yield_exceptions=yield_exceptions)
     async for thing in things:
+        if isinstance(thing[1], Exception):
+            # TODO: test this further, and perhaps respect `yield_exceptions`
+            raise thing[1]
         yield thing[0]
