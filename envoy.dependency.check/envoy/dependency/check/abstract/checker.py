@@ -21,6 +21,7 @@ from aio.core.tasks import ConcurrentError, inflate
 
 from envoy.dependency.check import abstract, exceptions, typing
 
+_NO_GITHUB_TOKEN_ERROR_MSG = "No Github access token supplied via environment variable `GITHUB_TOKEN` or argument `--github_token`"
 
 class ADependencyChecker(
         checker.Checker,
@@ -96,9 +97,9 @@ class ADependencyChecker(
     def disabled_checks(self):
         disabled = {}
         if not self.access_token:
-            disabled["release_dates"] = "No Github access token supplied"
-            disabled["release_issues"] = "No Github access token supplied"
-            disabled["releases"] = "No Github access token supplied"
+            disabled["release_dates"] = _NO_GITHUB_TOKEN_ERROR_MSG
+            disabled["release_issues"] = _NO_GITHUB_TOKEN_ERROR_MSG
+            disabled["releases"] = _NO_GITHUB_TOKEN_ERROR_MSG
         return disabled
 
     @cached_property

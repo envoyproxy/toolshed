@@ -14,7 +14,7 @@ from aio.core.tasks import ConcurrentError
 from aio.run.checker import Checker
 
 from envoy.dependency.check import (
-    ADependencyChecker, exceptions)
+    abstract, ADependencyChecker, exceptions)
 
 
 @abstracts.implementer(ADependencyChecker)
@@ -236,9 +236,9 @@ def test_checker_disabled_checks(patches, token):
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
     expected = (
-        dict(release_dates="No Github access token supplied",
-             release_issues="No Github access token supplied",
-             releases="No Github access token supplied")
+        dict(release_dates=abstract.checker._NO_GITHUB_TOKEN_ERROR_MSG,
+             release_issues=abstract.checker._NO_GITHUB_TOKEN_ERROR_MSG,
+             releases=abstract.checker._NO_GITHUB_TOKEN_ERROR_MSG)
         if not token
         else {})
 
