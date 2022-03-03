@@ -199,6 +199,7 @@ async def test_issue_comment():
 
 @pytest.mark.parametrize("body_tpl", [None, "BODY_TPL"])
 @pytest.mark.parametrize("closing_tpl", [None, "CLOSING_TPL"])
+@pytest.mark.parametrize("issue_author", [None, "ISSUE_AUTHOR"])
 @pytest.mark.parametrize("issues_search_tpl", [None, "ISSUES_SEARCH_TPL"])
 @pytest.mark.parametrize("labels", [None, "LABELS"])
 @pytest.mark.parametrize("repo_name", [None, "REPO_NAME"])
@@ -206,13 +207,15 @@ async def test_issue_comment():
 @pytest.mark.parametrize("title_re_tpl", [None, "TITLE_RE_TPL"])
 @pytest.mark.parametrize("title_tpl", [None, "TITLE_TPL"])
 def test_issues_constructor(
-        body_tpl, closing_tpl, issues_search_tpl, labels,
+        body_tpl, closing_tpl, issue_author, issues_search_tpl, labels,
         repo_name, title_prefix, title_re_tpl, title_tpl):
     kwargs = {}
     if body_tpl:
         kwargs["body_tpl"] = body_tpl
     if closing_tpl:
         kwargs["closing_tpl"] = closing_tpl
+    if issue_author:
+        kwargs["issue_author"] = issue_author
     if issues_search_tpl:
         kwargs["issues_search_tpl"] = issues_search_tpl
     if labels:
@@ -236,6 +239,9 @@ def test_issues_constructor(
     assert (
         issues.closing_tpl
         == (closing_tpl or abstract.issues.CLOSING_TPL))
+    assert (
+        issues.issue_author
+        == (issue_author or abstract.issues.ISSUE_AUTHOR))
     assert (
         issues.issues_search_tpl
         == (issues_search_tpl or abstract.issues.ISSUES_SEARCH_TPL))
