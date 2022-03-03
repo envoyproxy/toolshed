@@ -10,6 +10,44 @@ from aio import run
 from envoy.code import check
 
 
+def test_checker_summary_constructor():
+    checker = MagicMock()
+    summary = check.abstract.checker.CodeCheckerSummary(checker)
+    assert isinstance(
+        summary,
+        run.checker.CheckerSummary)
+
+
+@pytest.mark.parametrize("glint_errors", [True, False])
+def test_checker_summary_print_summary(patches, glint_errors):
+    checker = MagicMock()
+    summary = check.abstract.checker.CodeCheckerSummary(checker)
+    patched = patches(
+        "checker.CheckerSummary.print_summary",
+        "CodeCheckerSummary.writer_for",
+        prefix="envoy.code.check.abstract.checker")
+    checker.errors.__contains__.return_value = glint_errors
+
+    with patched as (m_super, m_writer):
+        assert not summary.print_summary()
+
+    assert (
+        m_super.call_args
+        == [(), {}])
+    assert (
+        checker.errors.__contains__.call_args
+        == [("glint", ), {}])
+    if glint_errors:
+        assert (
+            m_writer.call_args
+            == [("error", ), {}])
+        assert (
+            m_writer.return_value.call_args
+            == [(check.abstract.checker.GLINT_ADVICE, ), {}])
+        return
+    assert not m_writer.called
+
+
 @abstracts.implementer(check.ACodeChecker)
 class DummyCodeChecker:
 
@@ -64,6 +102,10 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         checker = DummyCodeChecker(*args, **kwargs)
 
     assert isinstance(checker, run.checker.Checker)
+    assert (
+        checker.summary_class
+        == check.abstract.checker.CodeCheckerSummary)
+    assert "summary_class" not in checker.__dict__
     assert (
         m_super.call_args
         == [tuple(args), kwargs])
