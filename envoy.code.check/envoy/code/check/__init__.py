@@ -1,5 +1,5 @@
 
-from . import abstract, exceptions, typing
+from . import abstract, typing
 from .abstract import (
     ACodeCheck,
     ACodeChecker,
@@ -26,7 +26,6 @@ __all__ = (
     "AShellcheckCheck",
     "AYapfCheck",
     "checker",
-    "exceptions",
     "CodeChecker",
     "Flake8Check",
     "GlintCheck",

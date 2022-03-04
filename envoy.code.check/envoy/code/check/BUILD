@@ -20,7 +20,6 @@ pytooling_library(
         "abstract/yapf.py",
         "checker.py",
         "cmd.py",
-        "exceptions.py",
         "typing.py",
     ],
 )
