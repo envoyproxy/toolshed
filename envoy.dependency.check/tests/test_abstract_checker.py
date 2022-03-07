@@ -399,11 +399,11 @@ def test_checker_sha_preload_limit(patches):
     checker = DummyDependencyChecker()
     patched = patches(
         "int",
-        "psutil",
+        "os",
         prefix="envoy.dependency.check.abstract.checker")
 
-    with patched as (m_int, m_psutil):
-        m_psutil.cpu_count.return_value = 23.23
+    with patched as (m_int, m_os):
+        m_os.cpu_count.return_value = 23.23
         assert (
             checker.sha_preload_limit
             == m_int.return_value)
@@ -412,7 +412,7 @@ def test_checker_sha_preload_limit(patches):
         m_int.call_args
         == [(34.845, ), {}])
     assert (
-        m_psutil.cpu_count.call_args
+        m_os.cpu_count.call_args
         == [(), {}])
     assert "sha_preload_limit" in checker.__dict__
 

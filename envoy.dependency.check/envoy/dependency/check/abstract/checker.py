@@ -5,7 +5,6 @@ import argparse
 import json
 import os
 import pathlib
-import psutil
 from functools import cached_property
 from typing import Optional, Tuple, Type
 
@@ -151,7 +150,7 @@ class ADependencyChecker(
 
     @cached_property
     def sha_preload_limit(self) -> int:
-        return int(psutil.cpu_count() * 1.5)
+        return int(os.cpu_count() * 1.5)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
