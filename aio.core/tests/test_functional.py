@@ -1,7 +1,6 @@
 import abc
 import contextlib
 import math
-import sys
 import types
 from typing import Iterable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
@@ -10,7 +9,7 @@ import pytest
 
 import abstracts
 
-from aio.core import functional, output
+from aio.core import functional
 
 
 # TODO: add a test to make sure that async loading multiple
@@ -540,52 +539,6 @@ async def test_generator_awaitable_generator_iterable(patches):
         iterator.call_args
         == [("GENERATOR", ), kwargs])
     assert "awaitable" not in generator.__dict__
-
-
-def test_util_buffered_stdout():
-    stdout = []
-
-    with functional.buffered(stdout=stdout):
-        print("test1")
-        print("test2")
-        sys.stdout.write("test3\n")
-        sys.stderr.write("error0\n")
-
-    assert stdout == ["test1", "test2", "test3"]
-
-
-def test_util_buffered_stderr():
-    stderr = []
-
-    with functional.buffered(stderr=stderr):
-        print("test1")
-        print("test2")
-        sys.stdout.write("test3\n")
-        sys.stderr.write("error0\n")
-        sys.stderr.write("error1\n")
-
-    assert stderr == ["error0", "error1"]
-
-
-def test_util_buffered_stdout_stderr():
-    stdout = []
-    stderr = []
-
-    with functional.buffered(stdout=stdout, stderr=stderr):
-        print("test1")
-        print("test2")
-        sys.stdout.write("test3\n")
-        sys.stderr.write("error0\n")
-        sys.stderr.write("error1\n")
-
-    assert stdout == ["test1", "test2", "test3"]
-    assert stderr == ["error0", "error1"]
-
-
-def test_util_buffered_no_stdout_stderr():
-    with pytest.raises(output.exceptions.BufferUtilError):
-        with functional.buffered():
-            pass
 
 
 def test_util_nested():

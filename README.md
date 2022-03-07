@@ -76,7 +76,6 @@ pypi: https://pypi.org/project/aio.core
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aiofiles](https://pypi.org/project/aiofiles)
 - [aiohttp](https://pypi.org/project/aiohttp)
-- [janus](https://pypi.org/project/janus)
 - [orjson](https://pypi.org/project/orjson)
 - [psutil](https://pypi.org/project/psutil)
 - [trycast](https://pypi.org/project/trycast)

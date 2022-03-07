@@ -4,7 +4,6 @@ from . import (
     directory,
     event,
     functional,
-    output,
     stream,
     subprocess,
     tasks)
@@ -15,7 +14,6 @@ __all__ = (
     "directory",
     "event",
     "functional",
-    "output",
     "stream",
     "subprocess",
     "tasks")
