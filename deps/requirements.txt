@@ -24,7 +24,6 @@ envoy.gpg.sign>=0.1.0
 flake8
 frozendict
 gidgethub
-janus
 jinja2
 orjson
 mypy
