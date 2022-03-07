@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v3
       with:
         python-version: "3.8"
     - name: Run pants test
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v3
       with:
         python-version: "3.8"
     - name: Run pants lint
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v3
       with:
         python-version: "3.8"
     - name: Run pants (type) check
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v3
       with:
         python-version: "3.8"
     - name: Run pants README
@@ -59,7 +59,7 @@ jobs:
     - docs
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v3
       with:
         python-version: "3.8"
     - name: Run pants package
@@ -78,7 +78,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v2
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v3
       with:
         python-version: "3.8"
     - name: Find packages to publish
