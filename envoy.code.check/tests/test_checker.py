@@ -38,6 +38,8 @@ def test_checker_constructor(patches, args, kwargs):
     assert "glint_class" not in directory.__dict__
     assert checker.shellcheck_class == check.ShellcheckCheck
     assert "shellcheck_class" not in directory.__dict__
+    assert checker.glint_class == check.GlintCheck
+    assert "glint_class" not in directory.__dict__
     assert checker.yapf_class == check.YapfCheck
     assert "yapf_class" not in directory.__dict__
 
@@ -66,6 +68,7 @@ def test_checker_path(patches):
     [check.Flake8Check,
      check.GlintCheck,
      check.ShellcheckCheck,
+     check.GlintCheck,
      check.YapfCheck])
 def test_checker_constructors(patches, args, kwargs, sub):
     patched = patches(

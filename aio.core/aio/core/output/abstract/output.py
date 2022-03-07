@@ -11,9 +11,50 @@ import janus
 import abstracts
 
 from aio import core
+from aio.core import functional
 
 
 DEATH_SENTINEL = object()
+
+
+class ACapturedOutputs(metaclass=abstracts.Abstraction):
+    """Wraps a list of captured outputs and allows you to
+    print them, or filter them base on type."""
+
+    def __init__(self, outputs, output_types=None, out_file=None):
+        self._outputs = outputs
+        self._output_types = output_types
+        self.out_file = functional.maybe_coro(out_file or print)
+
+    def __getitem__(self, type):
+        return list(self.output_for(type))
+
+    @property
+    def output(self):
+        return "\n".join(
+            f"{result.type}: {str(result)}"
+        for result in self._outputs)
+
+    @cached_property
+    def output_types(self):
+        if self._output_types:
+            return self._output_types
+        return dict(
+            stdout=sys.stdout,
+            stderr=sys.stderr)
+
+    async def drain(self, type=None):
+        types = [type] if type else self.output_types.keys()
+        for output_type in types:
+            for output in self[output_type]:
+                await self.out_file(
+                    output,
+                    file=self.output_types[output_type])
+
+    def output_for(self, type):
+        for result in self._outputs:
+            if result.type == type:
+                yield result
 
 
 class ACapturedOutput(metaclass=abstracts.Abstraction):
