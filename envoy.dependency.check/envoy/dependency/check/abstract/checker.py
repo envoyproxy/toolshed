@@ -3,6 +3,7 @@
 import abc
 import argparse
 import json
+import math
 import os
 import pathlib
 from functools import cached_property
@@ -150,7 +151,8 @@ class ADependencyChecker(
 
     @cached_property
     def sha_preload_limit(self) -> int:
-        return int(os.cpu_count() * 1.5)
+        proc_count = os.cpu_count() or 1
+        return math.ceil(proc_count * 1.5)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)

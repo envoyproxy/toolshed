@@ -395,22 +395,22 @@ def test_checker_session(patches):
     assert "session" in checker.__dict__
 
 
-def test_checker_sha_preload_limit(patches):
+@pytest.mark.parametrize("cpu_count", [None, 0, 1, 23])
+def test_checker_sha_preload_limit(patches, cpu_count):
     checker = DummyDependencyChecker()
     patched = patches(
-        "int",
+        "math.ceil",
         "os",
         prefix="envoy.dependency.check.abstract.checker")
 
-    with patched as (m_int, m_os):
-        m_os.cpu_count.return_value = 23.23
+    with patched as (m_math, m_os):
+        m_os.cpu_count.return_value = cpu_count
         assert (
             checker.sha_preload_limit
-            == m_int.return_value)
-
+            == m_math.return_value)
     assert (
-        m_int.call_args
-        == [(34.845, ), {}])
+        m_math.call_args
+        == [((cpu_count or 1)*1.5, ), {}])
     assert (
         m_os.cpu_count.call_args
         == [(), {}])
