@@ -12,10 +12,8 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: "3.8"
-    - name: Install pants
-      run: pip install pantsbuild.pants==2.9.0
     - name: Run pants test
-      run: "pants test ::"
+      run: "./pants test ::"
     - name: Archive code coverage results
       uses: actions/upload-artifact@v2
       with:
@@ -29,10 +27,8 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: "3.8"
-    - name: Install pants
-      run: pip install pantsbuild.pants==2.9.0
     - name: Run pants lint
-      run: "pants lint ::"
+      run: "./pants lint ::"
 
   typecheck:
     runs-on: ubuntu-latest
@@ -41,10 +37,8 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: "3.8"
-    - name: Install pants
-      run: pip install pantsbuild.pants==2.9.0
     - name: Run pants (type) check
-      run: "pants check $(pants roots | tr '\n' ',' | sed  's/,/:: /g' -)"
+      run: "./pants check $(./pants roots | tr '\n' ',' | sed  's/,/:: /g' -)"
 
   docs:
     runs-on: ubuntu-latest
@@ -53,10 +47,8 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: "3.8"
-    - name: Install pants
-      run: pip install pantsbuild.pants==2.9.0
     - name: Run pants README
-      run: "pants readme --check=README.md ::"
+      run: "./pants readme --check=README.md ::"
 
   package:
     runs-on: ubuntu-latest
@@ -70,10 +62,8 @@ jobs:
     - uses: actions/setup-python@v2
       with:
         python-version: "3.8"
-    - name: Install pants
-      run: pip install pantsbuild.pants==2.9.0
     - name: Run pants package
-      run: "pants package ::"
+      run: "./pants package ::"
     - name: Archive created packages
       uses: actions/upload-artifact@v2
       with:
