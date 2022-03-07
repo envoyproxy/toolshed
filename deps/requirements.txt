@@ -25,7 +25,7 @@ frozendict
 gidgethub
 jinja2
 orjson
-mypy
+mypy>=0.931
 mypy-abstracts
 packaging
 psutil

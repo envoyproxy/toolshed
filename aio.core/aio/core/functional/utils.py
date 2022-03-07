@@ -6,7 +6,7 @@ import inspect
 import os
 import textwrap
 from typing import (
-    Any, Awaitable, Callable, Coroutine,
+    Any, Awaitable, Callable,
     Iterable, Iterator, List, Optional, Sized, Type, Union)
 
 from trycast import trycast  # type:ignore
@@ -20,7 +20,7 @@ except ImportError:
 from aio.core.functional import exceptions
 
 
-def maybe_awaitable(result: Any) -> Coroutine:
+def maybe_awaitable(result: Any) -> Awaitable:
     """Make anything awaitable.
 
     ```python
