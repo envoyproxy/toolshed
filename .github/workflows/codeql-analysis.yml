@@ -2,10 +2,11 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ main ]
+    branches:
+    - main
   pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ main ]
+    branches:
+    - main
   schedule:
     - cron: '35 7 * * 1'
 
@@ -28,10 +29,17 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: "3.8"
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
         languages: ${{ matrix.language }}
+        debug: true
+        setup-python-dependencies: false
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
