@@ -52,6 +52,7 @@ args = [
      "--namespace-packages",
      "--no-warn-no-return"]
 lockfile = ".mypy.lock"
+version = "mypy>=0.931"
 
 [update-build-files]
 fmt = false
