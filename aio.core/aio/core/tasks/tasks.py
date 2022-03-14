@@ -428,9 +428,10 @@ class Concurrent:
             raise ConcurrentError(
                 f"Provided input was not a coroutine: {coro}")
 
+        # TODO(phlax): debug this further and remove ignore.
         spent = (
             not asyncio.isfuture(coro)
-            and (inspect.getcoroutinestate(coro)
+            and (inspect.getcoroutinestate(coro)  # type:ignore
                  != inspect.CORO_CREATED))
 
         if spent:
