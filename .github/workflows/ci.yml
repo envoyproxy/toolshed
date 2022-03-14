@@ -8,6 +8,8 @@ on:
     branches:
     - main
   release:
+    types:
+      released
 
 jobs:
   test:
@@ -94,7 +96,7 @@ jobs:
         find packages/ -maxdepth 1 -type f ! -path "*dev*" | xargs -I{} cp {} dist-out/
         [ "$(ls -A dist-out)" ] || echo "PUBLISH_PACKAGES=false" >> $GITHUB_ENV
     - name: Publish to PyPi
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags') && env.PUBLISH_PACKAGES == 'true'
+      if: github.event_name == 'release' && startsWith(github.ref, 'refs/tags') && env.PUBLISH_PACKAGES == 'true'
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
