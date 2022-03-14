@@ -67,7 +67,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.8.2.dev0
+version: 0.8.2
 
 pypi: https://pypi.org/project/aio.core
 
@@ -77,7 +77,6 @@ pypi: https://pypi.org/project/aio.core
 - [aiofiles](https://pypi.org/project/aiofiles)
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [orjson](https://pypi.org/project/orjson)
-- [psutil](https://pypi.org/project/psutil)
 - [trycast](https://pypi.org/project/trycast)
 
 ---
