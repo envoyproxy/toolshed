@@ -397,7 +397,7 @@ async def test_shellcheck_problem_files(patches, files):
                 else {})
             == getattr(
                 shellcheck,
-                check.ACodeCheck.problem_files.cache_name)[
+                check.AFileCodeCheck.problem_files.cache_name)[
                     "problem_files"])
 
     if not files:

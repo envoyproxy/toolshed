@@ -123,7 +123,8 @@ class Shellcheck(_subprocess.ASubprocessHandler):
             yield filename, info
 
 
-class AShellcheckCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
+class AShellcheckCheck(
+        abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod
     def run_shellcheck(self, path: str, *args) -> typing.ProblemDict:

@@ -8,7 +8,7 @@ import abstracts
 from envoy.code import check
 
 
-@abstracts.implementer(check.ACodeCheck)
+@abstracts.implementer(check.AFileCodeCheck)
 class DummyCodeCheck:
 
     @property
@@ -33,7 +33,7 @@ async def test_code_check_constructor(fix, pool, loop):
         kwargs["pool"] = pool
 
     with pytest.raises(TypeError):
-        check.ACodeCheck("DIRECTORY", **kwargs)
+        check.AFileCodeCheck("DIRECTORY", **kwargs)
 
     code_check = DummyCodeCheck("DIRECTORY", **kwargs)
     assert code_check.directory == "DIRECTORY"
@@ -62,7 +62,7 @@ async def test_code_check_files(patches, files, dir_files):
     directory = MagicMock()
     code_check = DummyCodeCheck(directory)
     patched = patches(
-        ("ACodeCheck.checker_files",
+        ("AFileCodeCheck.checker_files",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.base")
     directory_files = AsyncMock(return_value=dir_files)
@@ -81,6 +81,6 @@ async def test_code_check_files(patches, files, dir_files):
     assert (
         getattr(
             code_check,
-            check.ACodeCheck.files.cache_name)[
+            check.AFileCodeCheck.files.cache_name)[
                 "files"]
         == result)

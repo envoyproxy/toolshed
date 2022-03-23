@@ -30,6 +30,8 @@ def test_checker_constructor(patches, args, kwargs):
 
     assert checker.fs_directory_class == directory.Directory
     assert "fs_directory_class" not in directory.__dict__
+    assert checker.extensions_class == check.ExtensionsCheck
+    assert "extensions_class" not in directory.__dict__
     assert checker.flake8_class == check.Flake8Check
     assert "flake8_class" not in directory.__dict__
     assert checker.git_directory_class == directory.GitDirectory
@@ -63,7 +65,8 @@ def test_checker_path(patches):
     [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
 @pytest.mark.parametrize(
     "sub",
-    [check.Flake8Check,
+    [check.ExtensionsCheck,
+     check.Flake8Check,
      check.GlintCheck,
      check.ShellcheckCheck,
      check.YapfCheck])

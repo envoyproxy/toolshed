@@ -284,7 +284,7 @@ async def test_yapf_problem_files(patches, files):
             == m_dict.return_value
             == getattr(
                 yapf,
-                check.ACodeCheck.problem_files.cache_name)[
+                check.AFileCodeCheck.problem_files.cache_name)[
                     "problem_files"])
 
     assert (

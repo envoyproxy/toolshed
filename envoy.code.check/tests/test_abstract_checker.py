@@ -56,6 +56,10 @@ class DummyCodeChecker:
         return super().fs_directory_class
 
     @property
+    def extensions_class(self):
+        return super().extensions_class
+
+    @property
     def flake8_class(self):
         return super().flake8_class
 
@@ -91,7 +95,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         "checker.Checker.__init__",
         prefix="envoy.code.check.abstract.checker")
     iface_props = [
-        "fs_directory_class", "flake8_class",
+        "extensions_class", "fs_directory_class", "flake8_class",
         "git_directory_class", "glint_class",
         "shellcheck_class", "yapf_class"]
 
@@ -111,7 +115,9 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         == [tuple(args), kwargs])
     assert (
         checker.checks
-        == ("glint", "python_yapf", "python_flake8", "shellcheck"))
+        == ("extensions_fuzzed", "extensions_metadata",
+            "extensions_registered",
+            "glint", "python_yapf", "python_flake8", "shellcheck"))
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(checker, prop)
@@ -161,6 +167,36 @@ async def test_abstract_checker_checks(patches, subcheck):
     assert (
         m_check.call_args
         == [(m_tool.return_value, ), {}])
+
+
+def test_abstract_checker_extensions(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.args",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.directory",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.check_kwargs",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.extensions_class",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+
+    with patched as (m_args, m_dir, m_kwargs, m_tool):
+        m_kwargs.return_value = kwargs
+        assert (
+            checker.extensions
+            == m_tool.return_value.return_value)
+
+    kwargs["extensions_build_config"] = (
+        m_args.return_value.extensions_build_config)
+    assert (
+        m_tool.return_value.call_args
+        == [(m_dir.return_value,),
+            kwargs])
+
+    assert "extensions" in checker.__dict__
 
 
 @pytest.mark.parametrize(
@@ -231,6 +267,31 @@ def test_abstract_checker_all_files(patches):
             == m_args.return_value.all_files)
 
     assert "all_files" not in checker.__dict__
+
+
+@pytest.mark.parametrize("build_config", [None, "BUILD CONFIG"])
+def test_abstract_checker_disabled_checks(patches, build_config):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+    disabled_dict = {
+        k: check.abstract.checker.NO_EXTENSIONS_ERROR_MSG
+        for k
+        in ["extensions_fuzzed",
+            "extensions_metadata",
+            "extensions_registered"]}
+
+    with patched as (m_args, ):
+        m_args.return_value.extensions_build_config = build_config
+        assert (
+            checker.disabled_checks
+            == ({}
+                if build_config
+                else disabled_dict))
+
+    assert "disabled_checks" in checker.__dict__
 
 
 def test_abstract_checker_changed_since(patches):
@@ -424,6 +485,98 @@ def test_abstract_checker_path(patches):
     assert "path" not in checker.__dict__
 
 
+@pytest.mark.parametrize("fuzzed", [True, False])
+async def test_abstract_checker_check_extensions_fuzzed(patches, fuzzed):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.extensions",
+         dict(new_callable=PropertyMock)),
+        "ACodeChecker.error",
+        "ACodeChecker.succeed",
+        prefix="envoy.code.check.abstract.checker")
+
+    with patched as (m_extensions, m_error, m_succeed):
+        m_extensions.return_value.all_fuzzed = fuzzed
+        assert not await checker.check_extensions_fuzzed()
+
+    if fuzzed:
+        assert (
+            m_succeed.call_args
+            == [("extensions_fuzzed",
+                 ["All network filters are fuzzed"]), {}])
+        assert not m_error.called
+    else:
+        assert (
+            m_error.call_args
+            == [("extensions_fuzzed",
+                 ["Check that all network filters robust against untrusted "
+                  "downstreams are fuzzed by adding them to filterNames() "
+                  f"in {m_extensions.return_value.fuzz_test_path}"]),
+                {}])
+        assert not m_succeed.called
+
+
+async def test_abstract_checker_check_extensions_metadata(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.extensions",
+         dict(new_callable=PropertyMock)),
+        "ACodeChecker.error",
+        "ACodeChecker.succeed",
+        prefix="envoy.code.check.abstract.checker")
+    errors = {}
+    for k in range(0, 10):
+        errors[f"K{k}"] = (
+            [f"E{k}.{i}" for i in range(0, 7)]
+            if k % 2
+            else [])
+
+    with patched as (m_extensions, m_error, m_succeed):
+        m_extensions.return_value.metadata_errors = errors
+        assert not await checker.check_extensions_metadata()
+
+    assert (
+        m_error.call_args_list
+        == [[("extensions_metadata", v)]
+            for k, v in errors.items()
+            if (int(k[1:]) % 2)])
+    assert (
+        m_succeed.call_args_list
+        == [[("extensions_metadata", [k])]
+            for k in errors
+            if not (int(k[1:]) % 2)])
+
+
+@pytest.mark.parametrize(
+    "errors",
+    [[],
+     [f"E{i}" for i in range(0, 5)]])
+async def test_abstract_checker_check_extensions_registered(patches, errors):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.extensions",
+         dict(new_callable=PropertyMock)),
+        "ACodeChecker.error",
+        "ACodeChecker.succeed",
+        prefix="envoy.code.check.abstract.checker")
+
+    with patched as (m_extensions, m_error, m_succeed):
+        m_extensions.return_value.registration_errors = errors
+        assert not await checker.check_extensions_registered()
+
+    if errors:
+        assert (
+            m_error.call_args
+            == [("extensions_registered", errors), {}])
+        assert not m_succeed.called
+    else:
+        assert (
+            m_succeed.call_args
+            == [("extensions_registered",
+                 ["Registered metadata matches found extensions"]), {}])
+        assert not m_error.called
+
+
 @pytest.mark.parametrize(
     "files",
     [[],
@@ -472,7 +625,7 @@ def test_abstract_checker__check_output(patches, files, problem_files):
             for succeed in success])
 
 
-async def test_abstract_checker_code_check(patches):
+async def test_abstract_checker__code_check(patches):
     checker = DummyCodeChecker()
     patched = patches(
         ("ACodeChecker.loop",

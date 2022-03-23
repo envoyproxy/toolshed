@@ -126,7 +126,7 @@ class Flake8App:
         return self.manager.is_path_excluded(path)
 
 
-class AFlake8Check(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
+class AFlake8Check(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     """Flake8 check for a fileset."""
 
     @classmethod

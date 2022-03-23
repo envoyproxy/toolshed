@@ -9,6 +9,11 @@ from aio.core import directory
 from envoy.code import check
 
 
+@abstracts.implementer(check.AExtensionsCheck)
+class ExtensionsCheck:
+    pass
+
+
 @abstracts.implementer(check.AFlake8Check)
 class Flake8Check:
     pass
@@ -31,6 +36,10 @@ class YapfCheck:
 
 @abstracts.implementer(check.ACodeChecker)
 class CodeChecker:
+
+    @property
+    def extensions_class(self):
+        return ExtensionsCheck
 
     @property
     def flake8_class(self):
