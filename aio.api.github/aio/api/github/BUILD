@@ -13,7 +13,9 @@ pytooling_library(
         "abstract/api.py",
         "abstract/base.py",
         "abstract/commit.py",
-        "abstract/issues.py",
+        "abstract/issues/__init__.py",
+        "abstract/issues/issues.py",
+        "abstract/issues/tracker.py",
         "abstract/iterator.py",
         "abstract/label.py",
         "abstract/release.py",
@@ -22,6 +24,7 @@ pytooling_library(
         "__init__.py",
         "api.py",
         "exceptions.py",
+        "interface.py",
         "utils.py",
     ],
 )

@@ -6,10 +6,11 @@ from packaging import version
 
 import abstracts
 
-from aio.api.github import utils
+from aio.api.github import interface, utils
 from .base import GithubRepoEntity
 
 
+@abstracts.implementer(interface.IGithubRelease)
 class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
     """A Github release."""
 
@@ -25,3 +26,7 @@ class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
     @cached_property
     def version(self) -> Union[version.LegacyVersion, version.Version]:
         return version.parse(self.tag_name)
+
+    @property
+    def tag_name(self):
+        return self.data["tag_name"]
