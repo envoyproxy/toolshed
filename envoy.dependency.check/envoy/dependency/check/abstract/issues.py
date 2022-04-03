@@ -8,7 +8,7 @@ from packaging import version
 
 import abstracts
 
-from aio.api import github
+from aio.api import github as _github
 from aio.core.functional import async_property
 
 from envoy.dependency.check import abstract
@@ -44,7 +44,7 @@ class AGithubDependencyIssue(metaclass=abstracts.Abstraction):
     def __init__(
             self,
             issues: "abstract.AGithubDependencyIssues",
-            issue: github.AGithubIssue) -> None:
+            issue: _github.AGithubIssue) -> None:
         self.issues = issues
         self.issue = issue
 
@@ -103,9 +103,10 @@ class AGithubDependencyIssue(metaclass=abstracts.Abstraction):
             if "version" in self.parsed
             else None)
 
-    async def close(self) -> github.AGithubIssue:
+    async def close(self) -> _github.AGithubIssue:
         """Close this issue."""
-        return await self.issue.close()
+        # TODO(phlax): remove ignore once package dep is updated
+        return await self.issue.close()  # type:ignore
 
     async def close_duplicate(
             self,
@@ -164,7 +165,7 @@ class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
     async def __aiter__(
             self) -> AsyncGenerator[
                 AGithubDependencyIssue,
-                github.GithubIssue]:
+                _github.AGithubIssue]:
         async for issue in self.iter_issues():
             issue = self.issue_class(self, issue)
             if issue.dep:
@@ -222,7 +223,7 @@ class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
         return tuple(issues)
 
     @cached_property
-    def repo(self) -> github.AGithubRepo:
+    def repo(self) -> _github.AGithubRepo:
         """Github repo."""
         return self.github[self.repo_name]
 
@@ -240,11 +241,11 @@ class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
 
     async def create(
             self,
-            dep: "abstract.ADependency") -> AGithubDependencyIssue:
+            dep: "abstract.ADependency") -> "abstract.AGithubDependencyIssue":
         """Create an issue for a dependency."""
         issue_title = await self.issue_title(dep)
         if issue_title in await self.titles:
-            raise github.exceptions.IssueExists(issue_title)
+            raise _github.exceptions.IssueExists(issue_title)
         return self.issue_class(
             self,
             await self.repo.issues.create(
@@ -268,7 +269,7 @@ class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
             title_prefix=self.title_prefix,
             newer_release=await dep.newer_release)
 
-    def iter_issues(self) -> github.AGithubIterator:
+    def iter_issues(self) -> _github.AGithubIterator:
         """Issues search iterator."""
         return self.repo.issues.search(
             self.issues_search_tpl.format(self=self))
