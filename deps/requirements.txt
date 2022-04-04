@@ -1,7 +1,7 @@
 abstracts>=0.0.12
 aio.api.github>=0.0.5
 aio.api.nist
-aio.core>=0.8.1
+aio.core>=0.8.2
 aio.run.checker>=0.5.1
 aio.run.runner>=0.3.2
 aiodocker
