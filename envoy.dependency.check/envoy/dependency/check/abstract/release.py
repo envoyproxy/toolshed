@@ -43,10 +43,10 @@ class ADependencyGithubRelease(
 
     def __init__(
             self,
-            repo: _github.AGithubRepo,
+            repo: _github.IGithubRepo,
             version: str,
             asset_url: Optional[str] = None,
-            release: Optional[_github.AGithubRelease] = None,
+            release: Optional[_github.IGithubRelease] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None,
             pool: Optional[futures.Executor] = None) -> None:
         self.repo = repo
@@ -57,7 +57,7 @@ class ADependencyGithubRelease(
         self._loop = loop
 
     @async_property(cache=True)
-    async def commit(self) -> Optional[_github.AGithubCommit]:
+    async def commit(self) -> Optional[_github.IGithubCommit]:
         """Github commit for this release."""
         try:
             return await self.repo.commit(self.tag_name)  # type:ignore
@@ -72,15 +72,15 @@ class ADependencyGithubRelease(
         return utils.dt_to_utc_isoformat(await self.timestamp)
 
     @property
-    def github(self) -> _github.AGithubAPI:
-        return self.repo.github  # type:ignore
+    def github(self) -> _github.IGithubAPI:
+        return self.repo.github
 
     @property
     def min_data_size_to_hash_in_proc(self) -> int:
         return MIN_DATA_SIZE_TO_HASH_IN_PROC
 
     @async_property(cache=True)
-    async def release(self) -> Optional[_github.AGithubRelease]:
+    async def release(self) -> Optional[_github.IGithubRelease]:
         """Github release."""
         if self._release:
             return self._release
@@ -107,7 +107,7 @@ class ADependencyGithubRelease(
         return await self._hash_file_data(await response.read())
 
     @async_property(cache=True)
-    async def tag(self) -> Optional[_github.AGithubTag]:
+    async def tag(self) -> Optional[_github.IGithubTag]:
         """Github tag."""
         try:
             return await self.repo.tag(self.tag_name)  # type:ignore

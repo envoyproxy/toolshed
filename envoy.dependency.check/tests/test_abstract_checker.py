@@ -9,6 +9,7 @@ import gidgethub
 
 import abstracts
 
+from aio.api import github
 from aio.core.functional import async_property
 from aio.core.tasks import ConcurrentError
 from aio.run.checker import Checker
@@ -252,7 +253,7 @@ def test_checker_disabled_checks(patches, token):
 def test_checker_github(patches):
     checker = DummyDependencyChecker()
     patched = patches(
-        "github",
+        "_github",
         ("ADependencyChecker.access_token",
          dict(new_callable=PropertyMock)),
         ("ADependencyChecker.session",
@@ -486,22 +487,56 @@ async def test_checker_check_release_dates(patches):
         == [[(mock,), {}] for mock in deps])
 
 
-async def test_checker_check_release_issues(patches):
+@pytest.mark.parametrize(
+    "raises", [None, BaseException, github.exceptions.IssueCreateError])
+async def test_checker_check_release_issues(patches, raises):
     checker = DummyDependencyChecker()
     patched = patches(
+        ("ADependencyChecker.active_check",
+         dict(new_callable=PropertyMock)),
         ("ADependencyChecker.github_dependencies",
          dict(new_callable=PropertyMock)),
         "ADependencyChecker.dep_release_issue_check",
+        "ADependencyChecker.error",
         "ADependencyChecker.release_issues_missing_dep_check",
         "ADependencyChecker.release_issues_duplicate_check",
         "ADependencyChecker.release_issues_labels_check",
         prefix="envoy.dependency.check.abstract.checker")
     deps = [MagicMock() for i in range(0, 5)]
 
-    with patched as (m_deps, m_dep_check, m_issue_check, m_dupes, m_labels):
+    with patched as patchy:
+        (m_active, m_deps, m_dep_check,
+         m_error, m_issue_check, m_dupes, m_labels) = patchy
+        if raises:
+            error = raises("AN ERROR OCCURRED")
+            m_labels.side_effect = error
         m_deps.return_value = deps
-        assert not await checker.check_release_issues()
+        if not raises or raises == github.exceptions.IssueCreateError:
+            assert not await checker.check_release_issues()
+        else:
+            with pytest.raises(BaseException) as e:
+                await checker.check_release_issues()
 
+    if raises:
+        assert not m_deps.called
+        assert not m_issue_check.called
+        assert not m_dupes.called
+        assert not m_dep_check.called
+        if raises == github.exceptions.IssueCreateError:
+            assert (
+                m_error.call_args
+                == [(m_active.return_value,
+                     ['Release issues check failed: AN ERROR OCCURRED']),
+                    {}])
+            return
+        assert not m_error.called
+        assert not m_active.called
+        assert (
+            e.value.args
+            == ('AN ERROR OCCURRED',))
+        return
+    assert not m_active.called
+    assert not m_error.called
     assert (
         m_labels.call_args
         == [(), {}])
@@ -713,7 +748,7 @@ async def test_checker_dep_issue_check(
         (m_active, m_issue, m_manage,
          m_succeed, m_warn, m_close, m_create) = patchy
         dep_issues = AsyncMock(return_value=issues_dict)
-        m_issue.return_value.dep_issues = dep_issues()
+        m_issue.return_value.__getitem__.return_value.issues = dep_issues()
         m_manage.return_value = fix
         assert not await checker.dep_release_issue_check(dep)
 
@@ -942,14 +977,18 @@ async def test_checker_release_issues_duplicate_check(patches, fix, dupes):
 
     with patched as (m_active, m_issues, m_manage, m_warn, m_succeed, m_close):
         m_manage.return_value = fix
-        m_issues.return_value.duplicate_issues = dupe_iter()
+        (m_issues.return_value.__getitem__
+                 .return_value.duplicate_issues) = dupe_iter()
         assert not await checker.release_issues_duplicate_check()
 
+    assert (
+        m_issues.return_value.__getitem__.call_args
+        == [("releases", ), {}])
     assert (
         m_warn.call_args_list
         == [[(m_active.return_value,
               [f"Duplicate issue for dependency (#{issue.number}): "
-               f"{issue.dep}"]), {}]
+               f"{issue.key}"]), {}]
             for issue in mock_dupes])
     if fix:
         assert (
@@ -986,10 +1025,14 @@ async def test_checker_release_issues_labels_check(patches, missing_labels):
         prefix="envoy.dependency.check.abstract.checker")
 
     with patched as (m_active, m_issues, m_error, m_succeed):
-        m_issues.return_value.missing_labels = AsyncMock(
-            return_value=missing_labels)()
+        (m_issues.return_value.__getitem__
+                 .return_value.missing_labels) = AsyncMock(
+                     return_value=missing_labels)()
         assert not await checker.release_issues_labels_check()
 
+    assert (
+        m_issues.return_value.__getitem__.call_args
+        == [("releases", ), {}])
     assert (
         m_error.call_args_list
         == [[(m_active.return_value,
@@ -1214,10 +1257,14 @@ async def test_checker_preload_release_issues(patches):
         prefix="envoy.dependency.check.abstract.checker")
 
     with patched as (m_issues, ):
-        m_issues.return_value.missing_labels = AsyncMock()()
-        m_issues.return_value.dep_issues = AsyncMock()()
+        issues_tracker = m_issues.return_value.__getitem__
+        issues_tracker.return_value.missing_labels = AsyncMock()()
+        issues_tracker.return_value.issues = AsyncMock()()
         assert not await checker.preload_release_issues()
 
+    assert (
+        issues_tracker.call_args
+        == [("releases", ), {}])
     assert (
         ADependencyChecker.preload_release_issues.when
         == ('release_issues', ))
@@ -1262,13 +1309,13 @@ async def test_checker_release_issues_missing_dep_check(
     for issue in open_issues:
         mock_issue = MagicMock()
         if not issue:
-            ids.append(mock_issue.dep)
+            ids.append(mock_issue.key)
         mock_issues.append(mock_issue)
 
     with patched as patchy:
         (m_active, m_ids, m_issues,
          m_manage, m_warn, m_succeed, m_close) = patchy
-        m_issues.return_value.open_issues = AsyncMock(
+        m_issues.return_value.__getitem__.return_value.open_issues = AsyncMock(
             return_value=mock_issues)()
         m_ids.return_value = ids
         m_manage.return_value = fix
@@ -1277,13 +1324,13 @@ async def test_checker_release_issues_missing_dep_check(
     assert (
         m_warn.call_args_list
         == [[(m_active.return_value,
-              [f"Missing dependency (#{issue.number}): {issue.dep}"]), {}]
-            for issue in mock_issues if issue.dep not in ids])
+              [f"Missing dependency (#{issue.number}): {issue.key}"]), {}]
+            for issue in mock_issues if issue.key not in ids])
     if fix:
         assert (
             m_close.call_args_list
             == [[(issue, ), {}]
-                for issue in mock_issues if issue.dep not in ids])
+                for issue in mock_issues if issue.key not in ids])
     else:
         assert not m_close.called
     if not should_fail:
@@ -1341,12 +1388,16 @@ async def test_checker__dep_release_issue_create(
     dep = MagicMock()
 
     with patched as (m_active, m_issues, m_log, m_error):
-        m_issues.return_value.missing_labels = AsyncMock(
+        issues_tracker = m_issues.return_value.__getitem__
+        issues_tracker.return_value.missing_labels = AsyncMock(
             return_value=missing_labels)()
         create = AsyncMock()
-        m_issues.return_value.create = create
+        issues_tracker.return_value.create = create
         assert not await checker._dep_release_issue_create(issue, dep)
 
+    assert (
+        issues_tracker.call_args
+        == [("releases", ), {}])
     if missing_labels:
         assert (
             m_error.call_args
@@ -1371,7 +1422,7 @@ async def test_checker__dep_release_issue_create(
     assert len(m_log.return_value.notice.call_args_list) == 2
     assert (
         new_issue.close_old.call_args
-        == [(issue, dep), {}])
+        == [(issue, ), dict(dep=dep)])
     assert (
         m_log.return_value.notice.call_args_list[1]
         == [(f"Closed old issue (#{issue.number}): "
@@ -1388,21 +1439,25 @@ async def test_checker__release_issue_close_duplicate(patches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
     issue = AsyncMock()
-    issue.dep = "DEP"
+    issue.key = "DEP"
     current_issue = AsyncMock()
     issues_dict = dict(DEP=current_issue)
 
     with patched as (m_issues, m_log):
-        dep_issues = AsyncMock(return_value=issues_dict)
-        m_issues.return_value.dep_issues = dep_issues()
+        tracked_issues = AsyncMock(return_value=issues_dict)
+        (m_issues.return_value.__getitem__
+                 .return_value.issues) = tracked_issues()
         assert not await checker._release_issue_close_duplicate(issue)
 
+    assert (
+        m_issues.return_value.__getitem__.call_args
+        == [("releases", ), {}])
     assert (
         current_issue.close_duplicate.call_args
         == [(issue, ), {}])
     assert (
         m_log.return_value.notice.call_args
-        == [(f"Closed duplicate issue (#{issue.number}): {issue.dep}\n"
+        == [(f"Closed duplicate issue (#{issue.number}): {issue.key}\n"
              f" {issue.title}\n"
              f"current issue #({current_issue.number}):\n"
              f" {current_issue.title}", ),

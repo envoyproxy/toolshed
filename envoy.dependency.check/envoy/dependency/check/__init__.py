@@ -6,16 +6,17 @@ from .abstract import (
     ADependencyCVE,
     ADependencyCVEs,
     ADependencyGithubRelease,
-    AGithubDependencyIssue,
-    AGithubDependencyIssues)
+    AGithubDependencyReleaseIssue,
+    AGithubDependencyReleaseIssues)
 from .checker import (
     Dependency,
     DependencyChecker,
     DependencyCVE,
     DependencyCVEs,
     DependencyGithubRelease,
-    GithubDependencyIssue,
-    GithubDependencyIssues)
+    GithubDependencyIssuesTracker,
+    GithubDependencyReleaseIssue,
+    GithubDependencyReleaseIssues)
 from .cmd import run, main
 from . import checker
 
@@ -27,16 +28,18 @@ __all__ = (
     "ADependencyCVE",
     "ADependencyCVEs",
     "ADependencyGithubRelease",
-    "AGithubDependencyIssue",
-    "AGithubDependencyIssues",
+    "AGithubDependencyReleaseIssue",
+    "AGithubDependencyReleaseIssues",
+    "AGithubIssueManager",
     "checker",
     "Dependency",
     "DependencyChecker",
     "DependencyCVE",
     "DependencyCVEs",
     "DependencyGithubRelease",
-    "GithubDependencyIssue",
-    "GithubDependencyIssues",
+    "GithubDependencyIssuesTracker",
+    "GithubDependencyReleaseIssue",
+    "GithubDependencyReleaseIssues",
     "exceptions",
     "main",
     "run",

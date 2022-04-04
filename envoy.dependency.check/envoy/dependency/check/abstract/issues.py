@@ -1,17 +1,12 @@
 
-import re
 from functools import cached_property
-from typing import (
-    Any, AsyncGenerator, Dict, Optional, Pattern, Tuple, Type, Union)
+from typing import Dict, Optional, Tuple, Union
 
 from packaging import version
 
 import abstracts
 
 from aio.api import github as _github
-from aio.core.functional import async_property
-
-from envoy.dependency.check import abstract
 
 
 GITHUB_REPO_LOCATION = "envoyproxy/envoy"
@@ -28,9 +23,6 @@ New Version: {newer_release.tag_name}@{newer_release_date}
 Upstream releases: https://github.com/{full_name}/releases
 New Issue Link: https://github.com/{repo_location}/issues/{number}
 """
-ISSUE_AUTHOR = "app/github-actions"
-ISSUES_SEARCH_TPL = ("in:title {self.title_prefix} is:open "
-                     "is:issue author:{self.issue_author}")
 TITLE_PREFIX = "Newer release available"
 TITLE_RE_TPL = r"{title_prefix} [`]?([\w\-\.]+)[`]?: ([\w\-\.]+)"
 TITLE_TPL = (
@@ -38,238 +30,108 @@ TITLE_TPL = (
     "(current: {dep.github_version_name})")
 
 
-class AGithubDependencyIssue(metaclass=abstracts.Abstraction):
+@abstracts.implementer(_github.IGithubTrackedIssue)
+class AGithubDependencyReleaseIssue(
+        _github.AGithubTrackedIssue,
+        metaclass=abstracts.Abstraction):
     """Github issue associated with a dependency."""
 
-    def __init__(
-            self,
-            issues: "abstract.AGithubDependencyIssues",
-            issue: _github.AGithubIssue) -> None:
-        self.issues = issues
-        self.issue = issue
-
     @property
-    def body(self) -> str:
-        """Github issue body."""
-        return self.issue.body
-
-    @property
-    def closing_tpl(self) -> str:
-        """String template for closing comment."""
-        return self.issues.closing_tpl
-
-    @property
-    def dep(self) -> Optional[str]:
-        """Associated dependency id."""
-        return self.parsed.get("dep")
-
-    @property
-    def number(self) -> int:
-        """Github issue number."""
-        return self.issue.number
-
-    @cached_property
-    def parsed(self) -> Dict[str, str]:
-        """Parsed element from issue title."""
-        parsed = self.title_re.search(self.title)
-        return (
-            dict(dep=parsed.group(1),
-                 version=parsed.group(2))
-            if parsed
-            else {})
-
-    @property
-    def repo_name(self) -> str:
-        """Github repo name."""
-        return self.issues.repo_name
-
-    @property
-    def title(self) -> str:
-        """Github issue title."""
-        return self.issue.title
-
-    @property
-    def title_re(self) -> Pattern[str]:
-        return self.issues.title_re
+    def parse_vars(self) -> Tuple[str, ...]:
+        return ("key", "version")
 
     @cached_property
     def version(self) -> Optional[
             Union[
                 version.LegacyVersion,
                 version.Version]]:
-        """Version parsed from the title."""
+        """Parsed dependency version of an issue."""
         return (
             version.parse(self.parsed["version"])
             if "version" in self.parsed
             else None)
 
-    async def close(self) -> _github.AGithubIssue:
-        """Close this issue."""
-        # TODO(phlax): remove ignore once package dep is updated
-        return await self.issue.close()  # type:ignore
-
-    async def close_duplicate(
-            self,
-            old_issue: "AGithubDependencyIssue") -> None:
-        """Close a duplicate issue of this one."""
-        # TODO: add "closed as duplicate" comment
-        await old_issue.close()
-
     async def close_old(
             self,
-            old_issue: "AGithubDependencyIssue",
-            dep: "abstract.ADependency") -> None:
-        """Close old associated issue."""
+            old_issue: "AGithubDependencyReleaseIssue",
+            **kwargs) -> None:
         # TODO: reassign any users old -> new issue
-        newer_release = await dep.newer_release
+        newer_release = await kwargs["dep"].newer_release
         await old_issue.comment(
             self.closing_tpl.format(
                 newer_release=newer_release,
                 newer_release_date=await newer_release.date,
-                full_name=dep.repo.name,
+                full_name=kwargs["dep"].repo.name,
                 repo_location=self.repo_name,
                 number=self.number))
         await old_issue.close()
 
-    async def comment(self, comment: str) -> Any:
-        """Comment on this issue."""
-        return await self.issue.comment(comment)
 
+@abstracts.implementer(_github.IGithubTrackedIssues)
+class AGithubDependencyReleaseIssues(
+        _github.AGithubTrackedIssues,
+        metaclass=abstracts.Abstraction):
+    """Github issues associated with released dependencies."""
 
-class AGithubDependencyIssues(metaclass=abstracts.Abstraction):
-    """Github issues associated with dependencies."""
+    @property
+    def body_tpl(self) -> str:
+        return BODY_TPL
 
-    def __init__(
-            self,
-            github,
-            body_tpl: str = BODY_TPL,
-            closing_tpl: str = CLOSING_TPL,
-            issue_author: str = ISSUE_AUTHOR,
-            issues_search_tpl: str = ISSUES_SEARCH_TPL,
-            labels: Tuple[str, ...] = LABELS,
-            repo_name: str = GITHUB_REPO_LOCATION,
-            title_prefix: str = TITLE_PREFIX,
-            title_re_tpl: str = TITLE_RE_TPL,
-            title_tpl: str = TITLE_TPL) -> None:
-        self.github = github
-        self.body_tpl = body_tpl
-        self.closing_tpl = closing_tpl
-        self.issue_author = issue_author
-        self.issues_search_tpl = issues_search_tpl
-        self.labels = labels
-        self.repo_name = repo_name
-        self.title_prefix = title_prefix
-        self.title_re_tpl = title_re_tpl
-        self.title_tpl = title_tpl
+    @property
+    def closing_tpl(self) -> str:
+        return CLOSING_TPL
 
-    async def __aiter__(
-            self) -> AsyncGenerator[
-                AGithubDependencyIssue,
-                _github.AGithubIssue]:
-        async for issue in self.iter_issues():
-            issue = self.issue_class(self, issue)
-            if issue.dep:
-                yield issue
+    @property
+    def issue_author(self) -> str:
+        return super().issue_author
 
-    @async_property(cache=True)
-    async def dep_issues(self) -> Dict[str, AGithubDependencyIssue]:
-        """Dependency dictionary of current issues."""
-        issues: Dict[str, AGithubDependencyIssue] = {}
-        for issue in await self.open_issues:
-            if issue.dep in issues:
-                if issue.version <= issues[issue.dep].version:
-                    continue
-            issues[issue.dep] = issue
-        return issues
+    @property
+    def issues_search_tpl(self) -> str:
+        return super().issues_search_tpl
 
-    @async_property
-    async def duplicate_issues(
-            self) -> AsyncGenerator[
-                AGithubDependencyIssue,
-                AGithubDependencyIssue]:
-        """Iterate duplicate issues."""
-        dep_issues = await self.dep_issues
-        for issue in await self.open_issues:
-            if issue not in dep_issues.values():
-                yield issue
+    @property
+    def labels(self) -> Tuple[str, ...]:
+        return LABELS
 
-    @property  # type:ignore
-    @abstracts.interfacemethod
-    def issue_class(self) -> Type[AGithubDependencyIssue]:
-        """Issue class."""
-        raise NotImplementedError
+    @property
+    def repo_name(self) -> str:
+        return GITHUB_REPO_LOCATION
 
-    @async_property(cache=True)
-    async def missing_labels(self) -> Tuple[str, ...]:
-        """Missing Github issue labels."""
-        found = []
-        async for label in self.repo.labels:
-            if label.name in self.labels:
-                found.append(label.name)
-            if len(found) == len(self.labels):
-                break
-        return tuple(
-            label
-            for label
-            in self.labels
-            if label not in found)
+    @property
+    def title_prefix(self) -> str:
+        return TITLE_PREFIX
 
-    @async_property(cache=True)
-    async def open_issues(self) -> Tuple[AGithubDependencyIssue, ...]:
-        """All current open, matching issues."""
-        issues = []
-        async for issue in self:
-            issues.append(issue)
-        return tuple(issues)
+    @property
+    def title_re_tpl(self) -> str:
+        return TITLE_RE_TPL
 
-    @cached_property
-    def repo(self) -> _github.AGithubRepo:
-        """Github repo."""
-        return self.github[self.repo_name]
+    @property
+    def title_tpl(self) -> str:
+        return TITLE_TPL
 
-    @cached_property
-    def title_re(self) -> Pattern[str]:
-        """Regex for matching/parsing issue titles."""
-        return re.compile(
-            self.title_re_tpl.format(
-                title_prefix=self.title_prefix))
-
-    @async_property(cache=True)
-    async def titles(self) -> Tuple[str, ...]:
-        """Tuple of current issue titles."""
-        return tuple(issue.title for issue in await self.open_issues)
-
-    async def create(
-            self,
-            dep: "abstract.ADependency") -> "abstract.AGithubDependencyIssue":
-        """Create an issue for a dependency."""
-        issue_title = await self.issue_title(dep)
-        if issue_title in await self.titles:
-            raise _github.exceptions.IssueExists(issue_title)
-        return self.issue_class(
-            self,
-            await self.repo.issues.create(
-                issue_title,
-                body=await self.issue_body(dep),
-                labels=self.labels))
-
-    async def issue_body(self, dep: "abstract.ADependency") -> str:
-        """Issue body for a dependency."""
-        newer_release = await dep.newer_release
+    async def issue_body(self, **kwargs) -> str:
+        newer_release = await kwargs["dep"].newer_release
         return self.body_tpl.format(
-            dep=dep,
+            dep=kwargs["dep"],
             newer_release=newer_release,
             newer_release_date=await newer_release.date,
-            release_date=await dep.release.date)
+            release_date=await kwargs["dep"].release.date)
 
-    async def issue_title(self, dep: "abstract.ADependency") -> str:
-        """Issue title for a dependency."""
+    async def issue_title(self, **kwargs) -> str:
         return self.title_tpl.format(
-            dep=dep,
+            dep=kwargs["dep"],
             title_prefix=self.title_prefix,
-            newer_release=await dep.newer_release)
+            newer_release=await kwargs["dep"].newer_release)
 
-    def iter_issues(self) -> _github.AGithubIterator:
-        """Issues search iterator."""
-        return self.repo.issues.search(
-            self.issues_search_tpl.format(self=self))
+    def track_issue(  # type:ignore[override]
+            self,
+            issues: Dict[str, AGithubDependencyReleaseIssue],
+            issue: AGithubDependencyReleaseIssue) -> bool:
+        if issue.key not in issues:
+            return True
+        existing_issue_version = issues[issue.key].version
+        if not existing_issue_version:
+            return bool(issue.version)
+        if not issue.version:
+            return bool(existing_issue_version)
+        return issue.version > existing_issue_version
