@@ -4,10 +4,11 @@ from functools import cached_property
 
 import abstracts
 
-from aio.api.github import utils
+from aio.api.github import interface, utils
 from .base import GithubRepoEntity
 
 
+@abstracts.implementer(interface.IGithubCommit)
 class AGithubCommit(GithubRepoEntity, metaclass=abstracts.Abstraction):
     """A Github commit."""
 

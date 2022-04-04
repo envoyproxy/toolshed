@@ -129,7 +129,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             self.release_class(
                 self.repo,
                 newer_release.tag_name,
-                release=newer_release)
+                release=newer_release)  # type:ignore
             if (newer_release
                 and (version.parse(newer_release.tag_name)
                      != self.release.version))
@@ -204,7 +204,8 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
     @cached_property
     def repo(self) -> github.AGithubRepo:
         """Github repo for this dependency."""
-        return self.github[f"{self.organization}/{self.project}"]
+        return self.github[
+            f"{self.organization}/{self.project}"]  # type: ignore
 
     @cached_property
     def url_components(self) -> List[str]:

@@ -25,49 +25,107 @@ def test_abstract_issue_constructor(patches):
     args = tuple(f"ARG{i}" for i in range(0, 3))
     kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
     patched = patches(
-        "GithubRepoEntity.__init__",
-        prefix="aio.api.github.abstract.issues")
+        "abstract.base.GithubRepoEntity.__init__",
+        ("AGithubIssue.number",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.api.github.abstract.issues.issues")
 
-    with patched as (m_super, ):
+    with patched as (m_super, m_number):
         m_super.return_value = None
+        m_number.return_value = 23
         issue = DummyGithubIssue(*args, **kwargs)
+        issue.repo = MagicMock()
+        assert (
+            str(issue)
+            == f"<{issue.__class__.__name__} {issue.repo.name}#23>")
 
     assert isinstance(issue, github.abstract.base.GithubRepoEntity)
     assert (
         m_super.call_args
         == [args, kwargs])
-    issue.repo = MagicMock()
-    issue.number = 23
+
+
+@pytest.mark.parametrize("number", range(0, 3))
+@pytest.mark.parametrize("other_number", range(0, 3))
+def test_issue_dunder_gt(patches, number, other_number):
+    issue1 = DummyGithubIssue("REPO1", "DATA")
+    issue2 = DummyGithubIssue("REPO2", "DATA")
+    patched = patches(
+        ("AGithubIssue.number",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.api.github.abstract.issues.issues")
+    tracker = MagicMock()
+
+    def get_number(*args, **kwargs):
+        if not tracker.called:
+            tracker()
+            return number
+        return other_number
+
+    with patched as (m_number, ):
+        m_number.side_effect = get_number
+        assert (issue1 > issue2) == (number > other_number)
+
+
+@pytest.mark.parametrize("number", range(0, 3))
+@pytest.mark.parametrize("other_number", range(0, 3))
+def test_issue_dunder_lt(patches, number, other_number):
+    issue1 = DummyGithubIssue("REPO", "DATA")
+    issue2 = DummyGithubIssue("REPO", "DATA")
+    patched = patches(
+        ("AGithubIssue.number",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.api.github.abstract.issues.issues")
+    tracker = MagicMock()
+
+    def get_number(*args, **kwargs):
+        if not tracker.called:
+            tracker()
+            return number
+        return other_number
+
+    with patched as (m_number, ):
+        m_number.side_effect = get_number
+        assert (issue1 < issue2) == (number < other_number)
+
+
+@pytest.mark.parametrize("prop", ["body", "title"])
+async def test_abstract_issue_props(prop):
+    data = MagicMock()
+    issue = DummyGithubIssue("REPO", data)
     assert (
-        str(issue)
-        == f"<{issue.__class__.__name__} {issue.repo.name}#23>")
+        getattr(issue, prop)
+        == data.__getitem__.return_value)
+    assert (
+        data.__getitem__.call_args
+        == [(prop, ), {}])
 
 
-@pytest.mark.parametrize("number", range(0, 3))
-@pytest.mark.parametrize("other_number", range(0, 3))
-def test_issue_dunder_gt(number, other_number):
-    issue1 = DummyGithubIssue("REPO", "DATA")
-    issue1.number = number
-    issue2 = DummyGithubIssue("REPO", "DATA")
-    issue2.number = other_number
-    assert (issue1 > issue2) == (number > other_number)
+async def test_abstract_issue_number(patches):
+    data = MagicMock()
+    issue = DummyGithubIssue("REPO", data)
+    patched = patches(
+        "int",
+        prefix="aio.api.github.abstract.issues.issues")
 
+    with patched as (m_int, ):
+        assert (
+            issue.number
+            == m_int.return_value)
 
-@pytest.mark.parametrize("number", range(0, 3))
-@pytest.mark.parametrize("other_number", range(0, 3))
-def test_issue_dunder_lt(number, other_number):
-    issue1 = DummyGithubIssue("REPO", "DATA")
-    issue1.number = number
-    issue2 = DummyGithubIssue("REPO", "DATA")
-    issue2.number = other_number
-    assert (issue1 < issue2) == (number < other_number)
+    assert (
+        m_int.call_args
+        == [(data.__getitem__.return_value, ), {}])
+    assert (
+        data.__getitem__.call_args
+        == [("number", ), {}])
 
 
 async def test_abstract_issue_close(patches):
     issue = DummyGithubIssue("REPO", "DATA")
     patched = patches(
         "AGithubIssue.edit",
-        prefix="aio.api.github.abstract.issues")
+        prefix="aio.api.github.abstract.issues.issues")
     with patched as (m_edit, ):
         assert (
             await issue.close()
@@ -77,14 +135,21 @@ async def test_abstract_issue_close(patches):
         == [(), dict(state="closed")])
 
 
-async def test_abstract_issue_comment():
+async def test_abstract_issue_comment(patches):
     repo = MagicMock()
     repo.post = AsyncMock()
     issue = DummyGithubIssue(repo, "DATA")
-    issue.number = 23
-    assert (
-        await issue.comment("COMMENT")
-        == repo.post.return_value)
+    patched = patches(
+        ("AGithubIssue.number",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.api.github.abstract.issues.issues")
+
+    with patched as (m_number, ):
+        m_number.return_value = 23
+        assert (
+            await issue.comment("COMMENT")
+            == repo.post.return_value)
+
     assert (
         repo.post.call_args
         == [("issues/23/comments", ),
@@ -97,12 +162,14 @@ async def test_abstract_issue_edit(patches, kwargs):
     repo = MagicMock()
     repo.patch = AsyncMock()
     issue = DummyGithubIssue(repo, "DATA")
-    issue.number = 23
     patched = patches(
         "AGithubIssue.__init__",
-        prefix="aio.api.github.abstract.issues")
+        ("AGithubIssue.number",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.api.github.abstract.issues.issues")
 
-    with patched as (m_init, ):
+    with patched as (m_init, m_number):
+        m_number.return_value = 23
         m_init.return_value = None
         result = await issue.edit(**kwargs)
 
@@ -236,7 +303,7 @@ def test_abstract_issues_inflater(patches, repo1, repo2):
     patched = patches(
         "partial",
         "AGithubIssues._inflate",
-        prefix="aio.api.github.abstract.issues")
+        prefix="aio.api.github.abstract.issues.issues")
 
     with patched as (m_partial, m_inflate):
         assert (
@@ -263,7 +330,7 @@ def test_abstract_issues_search(patches, repo):
     patched = patches(
         "AGithubIssues.inflater",
         "AGithubIssues.search_query",
-        prefix="aio.api.github.abstract.issues")
+        prefix="aio.api.github.abstract.issues.issues")
 
     with patched as (m_inflater, m_query):
         assert (
@@ -288,7 +355,7 @@ def test_abstract_issues_search_query(patches):
         "urllib",
         ("AGithubIssues.filter",
          dict(new_callable=PropertyMock)),
-        prefix="aio.api.github.abstract.issues")
+        prefix="aio.api.github.abstract.issues.issues")
 
     with patched as (m_url, m_filter):
         assert (

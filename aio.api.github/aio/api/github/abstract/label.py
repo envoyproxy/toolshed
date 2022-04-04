@@ -1,9 +1,11 @@
 
 import abstracts
 
+from aio.api.github import interface
 from .base import GithubRepoEntity
 
 
+@abstracts.implementer(interface.IGithubLabel)
 class AGithubLabel(GithubRepoEntity, metaclass=abstracts.Abstraction):
     """A Github label."""
 

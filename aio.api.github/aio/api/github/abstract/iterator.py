@@ -8,7 +8,10 @@ import abstracts
 
 from aio.core.functional import async_property
 
+from aio.api.github import interface
 
+
+@abstracts.implementer(interface.IGithubIterator)
 class AGithubIterator(metaclass=abstracts.Abstraction):
     """Async iterator to wrap gidgethub API and provide `total_count`."""
 
@@ -25,7 +28,6 @@ class AGithubIterator(metaclass=abstracts.Abstraction):
         self._inflate = kwargs.pop("inflate", None)
 
     async def __aiter__(self) -> AsyncGenerator[Any, None]:
-        """Async iterate an API call, inflating the results."""
         aiter = self.api.getiter(
             self.query, *self.args, **self.kwargs)
         async for item in aiter:
@@ -51,7 +53,6 @@ class AGithubIterator(metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def total_count(self) -> int:
-        """Get `total_count` without iterating all items."""
         # https://github.com/brettcannon/gidgethub/discussions/153
         if self.api.rate_limit is not None:
             self.api.rate_limit.remaining -= 1

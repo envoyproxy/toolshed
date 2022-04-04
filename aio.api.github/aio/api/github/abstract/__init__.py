@@ -1,7 +1,12 @@
 
 from .api import AGithubAPI
 from .commit import AGithubCommit
-from .issues import AGithubIssue, AGithubIssues
+from .issues import (
+    AGithubIssue,
+    AGithubIssues,
+    AGithubIssuesTracker,
+    AGithubTrackedIssue,
+    AGithubTrackedIssues)
 from .iterator import AGithubIterator
 from .label import AGithubLabel
 from .release import AGithubRelease
@@ -14,8 +19,11 @@ __all__ = (
     "AGithubCommit",
     "AGithubIssue",
     "AGithubIssues",
+    "AGithubIssuesTracker",
     "AGithubIterator",
     "AGithubLabel",
     "AGithubRelease",
     "AGithubRepo",
-    "AGithubTag")
+    "AGithubTag",
+    "AGithubTrackedIssue",
+    "AGithubTrackedIssues")

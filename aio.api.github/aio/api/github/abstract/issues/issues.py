@@ -7,12 +7,13 @@ import gidgethub
 
 import abstracts
 
-from aio.api.github import abstract, exceptions
-
-from .base import GithubRepoEntity
+from aio.api.github import abstract, exceptions, interface
 
 
-class AGithubIssue(GithubRepoEntity, metaclass=abstracts.Abstraction):
+@abstracts.implementer(interface.IGithubIssue)
+class AGithubIssue(
+        abstract.base.GithubRepoEntity,
+        metaclass=abstracts.Abstraction):
     """A Github issue."""
 
     def __gt__(self, other) -> bool:
@@ -24,33 +25,49 @@ class AGithubIssue(GithubRepoEntity, metaclass=abstracts.Abstraction):
     def __str__(self):
         return f"<{self.__class__.__name__} {self.repo.name}#{self.number}>"
 
-    async def close(self) -> "AGithubIssue":
+    @property
+    def body(self) -> str:
+        return self.data["body"]
+
+    @property
+    def number(self) -> int:
+        return int(self.data["number"])
+
+    @property
+    def title(self) -> str:
+        return self.data["title"]
+
+    async def close(self) -> interface.IGithubIssue:
         return await self.edit(state="closed")
 
     async def comment(self, comment: str) -> Any:
-        """Add a comment to the issue."""
         # TODO: add comment class
         return await self.repo.post(
             f"issues/{self.number}/comments", data=dict(body=comment))
 
-    async def edit(self, **kwargs) -> "AGithubIssue":
+    async def edit(self, **kwargs) -> interface.IGithubIssue:
         """Edit the issue."""
         return self.__class__(
             self.repo,
             await self.repo.patch(f"issues/{self.number}", data=kwargs))
 
 
+@abstracts.implementer(interface.IGithubIssues)
 class AGithubIssues(metaclass=abstracts.Abstraction):
     """Github issues."""
 
     def __init__(
             self,
-            github: "abstract.AGithubAPI",
-            repo: "abstract.AGithubRepo" = None,
+            github: interface.IGithubAPI,
+            repo: interface.IGithubRepo = None,
             filter: str = "") -> None:
-        self.github = github
+        self._github = github
         self.repo = repo
         self._filter = filter
+
+    @property
+    def github(self) -> interface.IGithubAPI:
+        return self._github
 
     @cached_property
     def filter(self) -> str:
@@ -63,8 +80,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
         filters = " ".join(filter_parts)
         return filters and f"{filters} " or filters
 
-    async def create(self, title: str, **kwargs) -> AGithubIssue:
-        """Create an issue."""
+    async def create(self, title: str, **kwargs) -> interface.IGithubIssue:
         repo = kwargs.pop("repo", None) or self.repo
         if not repo:
             raise exceptions.IssueCreateError(
@@ -80,7 +96,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
                 f"Recieved: {e}")
         return self.github.issue_class(repo, data)
 
-    def inflater(self, repo: "abstract.AGithubRepo" = None) -> Callable:
+    def inflater(self, repo: interface.IGithubRepo = None) -> Callable:
         """Return default or custom callable to inflate a `GithubIssue`."""
         repo = repo or self.repo
         if not repo:
@@ -90,8 +106,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
     def search(
             self,
             query: str,
-            repo: "abstract.AGithubRepo" = None) -> "abstract.AGithubIterator":
-        """Search for issues."""
+            repo: interface.IGithubRepo = None) -> interface.IGithubIterator:
         return self.github.getiter(
             self.search_query(query),
             inflate=self.inflater(repo))
@@ -101,7 +116,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
         q = urllib.parse.quote(f"{self.filter}{query}")
         return f"/search/issues?q={q}"
 
-    def _inflate(self, result: Dict) -> AGithubIssue:
+    def _inflate(self, result: Dict) -> interface.IGithubIssue:
         """Inflate an issue, finding the repo from the issue url."""
         return self.github.issue_class(
             self.github.repo_from_url(result["repository_url"]),

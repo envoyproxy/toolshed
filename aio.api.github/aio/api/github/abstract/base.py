@@ -1,7 +1,7 @@
 
 from typing import Any, Callable, Dict
 
-from aio.api.github import abstract
+from aio.api.github import interface
 
 
 UNSET = object()
@@ -10,12 +10,12 @@ UNSET = object()
 class GithubEntity:
     """Base Github entity class."""
 
-    def __init__(self, github: "abstract.AGithubAPI", data: Dict) -> None:
+    def __init__(self, github: interface.IGithubAPI, data: Dict) -> None:
         self._github = github
         self.data = data
 
     @property
-    def github(self) -> "abstract.AGithubAPI":
+    def github(self) -> "interface.IGithubAPI":
         """Github API."""
         return self._github
 
@@ -38,11 +38,11 @@ class GithubEntity:
 class GithubRepoEntity(GithubEntity):
     """Base Github repo entity class."""
 
-    def __init__(self, repo: "abstract.AGithubRepo", data: Dict) -> None:
+    def __init__(self, repo: interface.IGithubRepo, data: Dict) -> None:
         self.repo = repo
         self.data = data
 
     @property
-    def github(self) -> "abstract.AGithubAPI":
+    def github(self) -> interface.IGithubAPI:
         """Github API."""
         return self.repo.github

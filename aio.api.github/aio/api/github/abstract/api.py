@@ -10,15 +10,10 @@ import gidgethub.aiohttp
 
 import abstracts
 
-from .commit import AGithubCommit
-from .issues import AGithubIssue, AGithubIssues
-from .iterator import AGithubIterator
-from .label import AGithubLabel
-from .release import AGithubRelease
-from .repo import AGithubRepo
-from .tag import AGithubTag
+from aio.api.github import interface
 
 
+@abstracts.implementer(interface.IGithubAPI)
 class AGithubAPI(metaclass=abstracts.Abstraction):
     """Github API wrapper.
 
@@ -31,12 +26,11 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
             self,
             session: aiohttp.ClientSession,
             *args, **kwargs) -> None:
-        self.session = session
+        self._session = session
         self.args = args
         self.kwargs = kwargs
 
-    def __getitem__(self, k) -> AGithubRepo:
-        """Return a `GithubRepository` for `k`"""
+    def __getitem__(self, k) -> interface.IGithubRepo:
         # TODO: make this work with user and organization
         #  and validate `k`
         return self.repo_class(self, k)
@@ -57,31 +51,22 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def commit_class(self) -> Type[AGithubCommit]:
-        """Github commit class."""
+    def commit_class(self) -> Type[interface.IGithubCommit]:
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def label_class(self) -> Type[AGithubLabel]:
-        """Github label class."""
+    def issue_class(self) -> Type[interface.IGithubIssue]:
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def issue_class(self) -> Type[AGithubIssue]:
-        """Github issue class."""
+    def issues_class(self) -> Type[interface.IGithubIssues]:
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def issues_class(self) -> Type[AGithubIssues]:
-        """Github issues class."""
-        raise NotImplementedError
-
-    @property  # type:ignore
-    @abstracts.interfacemethod
-    def iterator_class(self) -> Type[AGithubIterator]:
+    def iterator_class(self) -> Type[interface.IGithubIterator]:
         """Github iterator class.
 
         Provides both an async iterator and a `total_count` async prop.
@@ -90,44 +75,46 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def release_class(self) -> Type[AGithubRelease]:
-        """Github release class."""
+    def label_class(self) -> Type[interface.IGithubLabel]:
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def repo_class(self) -> Type[AGithubRepo]:
+    def release_class(self) -> Type[interface.IGithubRelease]:
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def repo_class(self) -> Type[interface.IGithubRepo]:
         """Github repo class."""
         raise NotImplementedError
 
+    @property
+    def session(self) -> aiohttp.ClientSession:
+        return self._session
+
     @property  # type:ignore
     @abstracts.interfacemethod
-    def tag_class(self) -> Type[AGithubTag]:
-        """Github tag class."""
+    def tag_class(self) -> Type[interface.IGithubTag]:
         raise NotImplementedError
 
     async def getitem(self, *args, **kwargs) -> Any:
-        """Call the `gidgethub.getitem` api."""
         # print("GETITEM", args, kwargs)
         return await self.api.getitem(*args, **kwargs)
 
-    def getiter(self, *args, **kwargs) -> AGithubIterator:
-        """Return a `GithubIterator` wrapping `gidgethub.getiter`."""
+    def getiter(self, *args, **kwargs) -> interface.IGithubIterator:
         # print("GETITER", args, kwargs)
         return self.iterator_class(self.api, *args, **kwargs)
 
     async def patch(self, *args, **kwargs):
-        """Call the `gidgethub.patch` api."""
         # print("PATCH", args, kwargs)
         return await self.api.patch(*args, **kwargs)
 
     async def post(self, *args, **kwargs):
-        """Call the `gidgethub.post` api."""
         # print("POST", args, kwargs)
         return await self.api.post(*args, **kwargs)
 
     def repo_from_url(self, url):
-        """Return the corresponding `GithubRepo` for an api url."""
         repo_url = f"{self.api.base_url}/repos/"
         if not url.startswith(repo_url):
             return None
