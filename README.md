@@ -35,14 +35,14 @@ pypi: https://pypi.org/project/aio.api.bazel
 
 #### [aio.api.github](aio.api.github)
 
-version: 0.0.6.dev0
+version: 0.1.0
 
 pypi: https://pypi.org/project/aio.api.github
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.2
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [packaging](https://pypi.org/project/packaging)
