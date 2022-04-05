@@ -151,16 +151,16 @@ pypi: https://pypi.org/project/envoy.code.check
 
 #### [envoy.dependency.check](envoy.dependency.check)
 
-version: 0.0.7.dev0
+version: 0.1.0
 
 pypi: https://pypi.org/project/envoy.dependency.check
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.0.5
+- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.0
 - [aio.api.nist](https://pypi.org/project/aio.api.nist)
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.2
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.1
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0

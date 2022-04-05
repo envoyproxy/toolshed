@@ -2,7 +2,7 @@ from unittest.mock import PropertyMock
 
 import pytest
 
-from aio.api import nist
+from aio.api import github, nist
 
 from envoy.dependency import check
 
@@ -25,7 +25,7 @@ def test_checker_checker_constructor(patches):
     assert "cves_class" not in checker.__dict__
     assert checker.dependency_class == check.Dependency
     assert "dependency_class" not in checker.__dict__
-    assert checker.issues_class == check.GithubDependencyIssues
+    assert checker.issues_class == check.GithubDependencyIssuesTracker
     assert "issues_class" not in checker.__dict__
 
 
@@ -89,14 +89,14 @@ def test_checker_release_constructor(patches):
 
 def test_checker_issue_constructor(patches):
     patched = patches(
-        "check.AGithubDependencyIssue.__init__",
+        "check.AGithubDependencyReleaseIssue.__init__",
         prefix="envoy.dependency.check.checker")
 
     with patched as (m_super, ):
         m_super.return_value = None
-        issue = check.GithubDependencyIssue("ISSUES", "ISSUE")
+        issue = check.GithubDependencyReleaseIssue("ISSUES", "ISSUE")
 
-    assert isinstance(issue, check.AGithubDependencyIssue)
+    assert isinstance(issue, check.AGithubDependencyReleaseIssue)
     assert (
         m_super.call_args
         == [("ISSUES", "ISSUE"), {}])
@@ -104,19 +104,49 @@ def test_checker_issue_constructor(patches):
 
 def test_checker_issues_constructor(patches):
     patched = patches(
-        "check.AGithubDependencyIssues.__init__",
+        "check.AGithubDependencyReleaseIssues.__init__",
         prefix="envoy.dependency.check.checker")
 
     with patched as (m_super, ):
         m_super.return_value = None
-        issues = check.GithubDependencyIssues("GITHUB")
+        issues = check.GithubDependencyReleaseIssues("GITHUB")
 
-    assert isinstance(issues, check.AGithubDependencyIssues)
+    assert isinstance(issues, check.AGithubDependencyReleaseIssues)
     assert (
         m_super.call_args
         == [("GITHUB", ), {}])
-    assert issues.issue_class == check.GithubDependencyIssue
+    assert issues.issue_class == check.GithubDependencyReleaseIssue
     assert "issue_class" not in issues.__dict__
+
+
+def test_checker_issues_tracker_constructor(patches):
+    patched = patches(
+        "github.AGithubIssuesTracker.__init__",
+        prefix="envoy.dependency.check.checker")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        tracker = check.GithubDependencyIssuesTracker()
+
+    assert isinstance(tracker, github.IGithubIssuesTracker)
+    assert (
+        m_super.call_args
+        == [(), {}])
+
+
+def test_checker_issues_tracker_tracked_issues(patches):
+    tracker = check.GithubDependencyIssuesTracker("GITHUB")
+    patched = patches(
+        "GithubDependencyReleaseIssues",
+        prefix="envoy.dependency.check.checker")
+    tracker.github = "GITHUB"
+
+    with patched as (m_release, ):
+        assert (
+            tracker.tracked_issues
+            == dict(releases=m_release.return_value))
+
+    assert "tracked_issues" in tracker.__dict__
 
 
 @pytest.mark.parametrize("config", [None, "CONFIG"])

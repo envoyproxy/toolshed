@@ -1,10 +1,10 @@
 
 from functools import cached_property
-from typing import List, Optional, Type
+from typing import Dict, List, Optional, Type
 
 import abstracts
 
-from aio.api import nist
+from aio.api import github, nist
 
 from envoy.dependency import check
 
@@ -47,17 +47,26 @@ class DependencyGithubRelease:
     pass
 
 
-@abstracts.implementer(check.AGithubDependencyIssue)
-class GithubDependencyIssue:
+@abstracts.implementer(check.AGithubDependencyReleaseIssue)
+class GithubDependencyReleaseIssue:
     pass
 
 
-@abstracts.implementer(check.AGithubDependencyIssues)
-class GithubDependencyIssues:
+@abstracts.implementer(github.IGithubTrackedIssues)
+class GithubDependencyReleaseIssues(check.AGithubDependencyReleaseIssues):
 
     @property
-    def issue_class(self) -> Type[GithubDependencyIssue]:
-        return GithubDependencyIssue
+    def issue_class(self) -> Type[GithubDependencyReleaseIssue]:
+        return GithubDependencyReleaseIssue
+
+
+@abstracts.implementer(github.IGithubIssuesTracker)
+class GithubDependencyIssuesTracker(github.AGithubIssuesTracker):
+
+    @cached_property
+    def tracked_issues(self) -> Dict:
+        return dict(
+            releases=GithubDependencyReleaseIssues(self.github))
 
 
 @abstracts.implementer(check.ADependencyChecker)
@@ -80,5 +89,5 @@ class DependencyChecker:
         return super().dependency_metadata
 
     @property
-    def issues_class(self) -> Type[check.AGithubDependencyIssues]:
-        return GithubDependencyIssues
+    def issues_class(self) -> Type[github.IGithubIssuesTracker]:
+        return GithubDependencyIssuesTracker

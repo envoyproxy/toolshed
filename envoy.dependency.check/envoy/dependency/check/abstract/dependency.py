@@ -24,7 +24,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             self,
             id: str,
             metadata: "typing.DependencyMetadataDict",
-            github: github.AGithubAPI,
+            github: github.IGithubAPI,
             loop: Optional[asyncio.AbstractEventLoop] = None,
             pool: Optional[futures.Executor] = None) -> None:
         self.id = id
@@ -202,7 +202,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             return None
 
     @cached_property
-    def repo(self) -> github.AGithubRepo:
+    def repo(self) -> github.IGithubRepo:
         """Github repo for this dependency."""
         return self.github[
             f"{self.organization}/{self.project}"]  # type: ignore
