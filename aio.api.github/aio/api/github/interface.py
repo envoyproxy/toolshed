@@ -309,6 +309,14 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
     """Associated Github issues for a specific problem type."""
 
     @abstracts.interfacemethod
+    def __init__(
+            self,
+            github: IGithubAPI,
+            issue_author: Optional[str] = None,
+            repo_name: Optional[str] = None) -> None:
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
     async def __aiter__(
             self) -> AsyncGenerator[
                 IGithubTrackedIssue,
