@@ -1,4 +1,5 @@
 
+import inspect
 from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 
 import pytest
@@ -641,6 +642,9 @@ async def test_checker_on_checks_begin(patches):
         assert not await checker.on_checks_begin()
 
     assert (
+        checker._preloader
+        == m_asyncio.create_task.return_value)
+    assert (
         m_asyncio.create_task.call_args
         == [(m_preload.return_value, ), {}])
     assert (
@@ -1152,8 +1156,8 @@ async def test_checker_begin_checks(patches, to_run, to_pre):
          dict(new_callable=PropertyMock)),
         "Checker.on_checks_begin",
         prefix="aio.run.checker.checker")
-
     expected = [c for c in to_run if c not in to_pre]
+    checker._preloader = AsyncMock()()
 
     with patched as (m_q, m_run, m_checks, m_begin):
         m_run.return_value = to_run
@@ -1162,9 +1166,11 @@ async def test_checker_begin_checks(patches, to_run, to_pre):
         assert not await checker.begin_checks()
 
     assert (
+        inspect.getcoroutinestate(checker._preloader)
+        == inspect.CORO_CLOSED)
+    assert (
         m_begin.call_args
         == [(), {}])
-
     if not expected:
         assert not m_q.return_value.put.called
     assert (

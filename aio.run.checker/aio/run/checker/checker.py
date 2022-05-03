@@ -290,7 +290,7 @@ class Checker(runner.Runner):
     async def on_checks_begin(self) -> None:
         """Callback hook called before all checks."""
         # Set up preload tasks
-        asyncio.create_task(self.preload())
+        self._preloader = asyncio.create_task(self.preload())
         self._notify_checks()
         self._notify_preload()
 
@@ -387,6 +387,7 @@ class Checker(runner.Runner):
         for check in self.checks_to_run:
             if check not in self.preload_checks:
                 await self.check_queue.put(check)
+        await self._preloader
 
     async def on_preload(self, task: str) -> None:
         """Event fired after each preload task completes."""
