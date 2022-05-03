@@ -40,7 +40,7 @@ class NewlineChecker(directory.ADirectoryContext):
                     != b'\n'))
 
 
-class AGlintCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
+class AGlintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod
     def have_newlines(cls, path: str, *paths: str) -> Set[str]:

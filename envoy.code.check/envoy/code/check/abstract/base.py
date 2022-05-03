@@ -24,6 +24,9 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
         self._loop = loop
         self._pool = pool
 
+
+class AFileCodeCheck(ACodeCheck, metaclass=abstracts.Abstraction):
+
     @async_property
     @abstracts.interfacemethod
     async def checker_files(self) -> Set[str]:

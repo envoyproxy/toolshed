@@ -1,14 +1,17 @@
 
-from . import abstract, typing
+from . import abstract, exceptions, typing
 from .abstract import (
     ACodeCheck,
     ACodeChecker,
+    AExtensionsCheck,
     AFlake8Check,
+    AFileCodeCheck,
     AGlintCheck,
     AShellcheckCheck,
     AYapfCheck)
 from .checker import (
     CodeChecker,
+    ExtensionsCheck,
     Flake8Check,
     GlintCheck,
     ShellcheckCheck,
@@ -21,12 +24,16 @@ __all__ = (
     "abstract",
     "ACodeCheck",
     "ACodeChecker",
+    "AExtensionsCheck",
+    "AFileCodeCheck",
     "AFlake8Check",
     "AGlintCheck",
     "AShellcheckCheck",
     "AYapfCheck",
     "checker",
     "CodeChecker",
+    "exceptions",
+    "ExtensionsCheck",
     "Flake8Check",
     "GlintCheck",
     "main",

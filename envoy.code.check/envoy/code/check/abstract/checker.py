@@ -30,6 +30,9 @@ GLINT_ADVICE = (
 GREP_EXCLUDE_GLOBS = (r"\#*", r"\.#*", r"*~")
 GREP_EXCLUDE_DIR_GLOBS = (r"build", r"build*", r"generated", r"\.*", r"src")
 
+NO_EXTENSIONS_ERROR_MSG = (
+    "`--extensions_build_config` not provided, disabling extensions checks")
+
 
 class CodeCheckerSummary(checker.CheckerSummary):
 
@@ -47,11 +50,27 @@ class ACodeChecker(
         metaclass=abstracts.Abstraction):
     """Code checker."""
 
-    checks = ("glint", "python_yapf", "python_flake8", "shellcheck")
+    checks = (
+        "extensions_fuzzed",
+        "extensions_metadata",
+        "extensions_registered",
+        "glint",
+        "python_yapf",
+        "python_flake8",
+        "shellcheck")
 
     @property
     def all_files(self) -> bool:
         return self.args.all_files
+
+    @cached_property
+    def disabled_checks(self):
+        disabled = {}
+        if not self.args.extensions_build_config:
+            disabled["extensions_fuzzed"] = NO_EXTENSIONS_ERROR_MSG
+            disabled["extensions_metadata"] = NO_EXTENSIONS_ERROR_MSG
+            disabled["extensions_registered"] = NO_EXTENSIONS_ERROR_MSG
+        return disabled
 
     @property
     def exclude_from_grep(self) -> Tuple[str, ...]:
@@ -101,6 +120,19 @@ class ACodeChecker(
         if not self.all_files:
             kwargs["changed"] = self.changed_since
         return kwargs
+
+    @cached_property
+    def extensions(self) -> "abstract.AExtensionsCheck":
+        """Extensions checker."""
+        return self.extensions_class(
+            self.directory,
+            extensions_build_config=self.args.extensions_build_config,
+            **self.check_kwargs)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def extensions_class(self) -> Type["abstract.AExtensionsCheck"]:
+        raise NotImplementedError
 
     @cached_property
     def flake8(self) -> "abstract.AFlake8Check":
@@ -176,6 +208,38 @@ class ACodeChecker(
         parser.add_argument("-m", "--matching", action="append")
         parser.add_argument("-x", "--excluding", action="append")
         parser.add_argument("-s", "--since")
+        parser.add_argument("--extensions_build_config")
+
+    async def check_extensions_fuzzed(self) -> None:
+        """Check for glint issues."""
+        if self.extensions.all_fuzzed:
+            self.succeed(
+                "extensions_fuzzed",
+                ["All network filters are fuzzed"])
+        else:
+            self.error(
+                "extensions_fuzzed",
+                ["Check that all network filters robust against untrusted "
+                 "downstreams are fuzzed by adding them to filterNames() "
+                 f"in {self.extensions.fuzz_test_path}"])
+
+    async def check_extensions_metadata(self) -> None:
+        """Check for glint issues."""
+        for extension, errors in self.extensions.metadata_errors.items():
+            if errors:
+                self.error("extensions_metadata", errors)
+            else:
+                self.succeed("extensions_metadata", [f"{extension}"])
+
+    async def check_extensions_registered(self) -> None:
+        """Check for glint issues."""
+        errors = self.extensions.registration_errors
+        if errors:
+            self.error("extensions_registered", errors)
+        else:
+            self.succeed(
+                "extensions_registered",
+                ["Registered metadata matches found extensions"])
 
     async def check_glint(self) -> None:
         """Check for glint issues."""
@@ -234,7 +298,7 @@ class ACodeChecker(
                     self.active_check,
                     [path])
 
-    async def _code_check(self, check: "abstract.ACodeCheck") -> None:
+    async def _code_check(self, check: "abstract.AFileCodeCheck") -> None:
         await self.loop.run_in_executor(
             None,
             self._check_output,

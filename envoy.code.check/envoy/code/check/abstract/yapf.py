@@ -88,7 +88,7 @@ class YapfFiles(directory.ADirectoryContext):
                         self.path)))
 
 
-class AYapfCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
+class AYapfCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod
     def yapf_files(
