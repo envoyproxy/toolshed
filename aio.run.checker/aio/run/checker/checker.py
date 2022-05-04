@@ -21,6 +21,7 @@ class Checker(runner.Runner):
     """
     _active_check = ""
     checks: Tuple[str, ...] = ()
+    _preloader: Optional[asyncio.Task] = None
 
     def __init__(self, *args) -> None:
         super().__init__(*args)
@@ -387,7 +388,8 @@ class Checker(runner.Runner):
         for check in self.checks_to_run:
             if check not in self.preload_checks:
                 await self.check_queue.put(check)
-        await self._preloader
+        if self._preloader:
+            await self._preloader
 
     async def on_preload(self, task: str) -> None:
         """Event fired after each preload task completes."""
