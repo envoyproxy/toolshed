@@ -115,7 +115,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.1.1.dev0
+version: 0.1.1
 
 pypi: https://pypi.org/project/envoy.base.utils
 
@@ -123,6 +123,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.core](https://pypi.org/project/aio.core) >=0.3.0
+- [packaging](https://pypi.org/project/packaging)
 - [pytz](https://pypi.org/project/pytz)
 - [pyyaml](https://pypi.org/project/pyyaml)
 - [trycast](https://pypi.org/project/trycast)

@@ -8,4 +8,14 @@ pytooling_library(
         "//deps:pytz",
         "//deps:trycast",
     ],
+    sources=[
+        "__init__.py",
+        "abstract/__init__.py",
+        "abstract/project.py",
+        "exceptions.py",
+        "interface.py",
+        "project.py",
+        "typing.py",
+        "utils.py",
+    ],
 )

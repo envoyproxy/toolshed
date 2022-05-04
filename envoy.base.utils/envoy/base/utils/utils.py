@@ -13,6 +13,8 @@ from typing import (
     Any, AsyncGenerator, Callable, Generator,
     Iterator, List, Optional, Set, Type, Union)
 
+from packaging import version
+
 import pytz
 
 import yaml
@@ -92,9 +94,13 @@ def untar(*tarballs: Union[pathlib.Path, str]) -> Iterator[pathlib.Path]:
         yield extract(tmpdir, *tarballs)
 
 
-def from_yaml(path: Union[pathlib.Path, str]) -> Union[dict, list, str, int]:
+def from_yaml(path: Union[pathlib.Path, str], type: Type = None) -> Any:
     """Returns the loaded python object from a yaml file given by `path`"""
-    return yaml.safe_load(pathlib.Path(path).read_text())
+    data = yaml.safe_load(pathlib.Path(path).read_text())
+    return (
+        data
+        if type is None
+        else typed(type, data))
 
 
 def to_yaml(
@@ -203,3 +209,7 @@ def last_n_bytes_of(target: Union[str, pathlib.Path], n: int = 1) -> bytes:
         f.seek(0, os.SEEK_END)
         f.seek(f.tell() - n)
         return f.read(n)
+
+
+def minor_version_for(_version: version.Version) -> version.Version:
+    return version.Version(f"{_version.major}.{_version.minor}")
