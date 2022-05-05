@@ -118,15 +118,31 @@ def test_util_untar(patches, tarballs):
         == [(m_tmp.return_value.__enter__.return_value, ) + tarballs, {}])
 
 
-def test_util_from_yaml(patches):
+@pytest.mark.parametrize("type", [None, False, "TYPE"])
+def test_util_from_yaml(patches, type):
+    args = (
+        (type, )
+        if type is not None
+        else ())
     patched = patches(
         "pathlib",
         "yaml",
+        "typed",
         prefix="envoy.base.utils.utils")
 
-    with patched as (m_plib, m_yaml):
-        assert utils.from_yaml("PATH") == m_yaml.safe_load.return_value
+    with patched as (m_plib, m_yaml, m_typed):
+        assert (
+            utils.from_yaml("PATH", *args)
+            == (m_yaml.safe_load.return_value
+                if type is None
+                else m_typed.return_value))
 
+    if type is None:
+        assert not m_typed.called
+    else:
+        assert (
+            m_typed.call_args
+            == [(type, m_yaml.safe_load.return_value, ), {}])
     assert (
         m_plib.Path.call_args
         == [("PATH", ), {}])
@@ -369,3 +385,19 @@ def test_last_n_bytes_of(patches, n):
     assert (
         m_open.return_value.__enter__.return_value.read.call_args
         == [(n or 1, ), {}])
+
+
+def test_minor_version_for(patches):
+    patched = patches(
+        "version",
+        prefix="envoy.base.utils.utils")
+    version = MagicMock()
+
+    with patched as (m_version, ):
+        assert (
+            utils.minor_version_for(version)
+            == m_version.Version.return_value)
+
+    assert (
+        m_version.Version.call_args
+        == [(f"{version.major}.{version.minor}", ), {}])
