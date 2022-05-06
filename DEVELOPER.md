@@ -85,6 +85,21 @@ $ ./pants test --debug envoy.dependency.check::
 
 ```
 
+### Passing arguments to `pytest`
+
+Sometimes it can be useful to pass arguments to pytest when running tests.
+
+For example, the following would run debug testing for tests containing `checker_cves`
+
+```console
+
+$ ./pants test --debug envoy.dependency.check:: -- -k checker_cves
+
+```
+
+See the [pytest documentation](https://docs.pytest.org/en/latest/how-to/usage.html) for further
+information on pytest command line options.
+
 ### Linting the code
 
 The repo is linted with `flake8` and the default config.
@@ -187,3 +202,11 @@ into the code.
 This is not the case for `bazel build` or any other code path that run in subprocesses and/or
 swallows `stdin`/`stdout`. In this case you may wish to use `remote-pdb` to workaround this limitation,
 and debug forking processes.
+
+Additional arguments can be specified on the command line as in the following example:
+
+```console
+
+$ bazel run //tools/dependency:check -- -v debug -c release_dates --github_token=$(cat MYTOKEN)
+
+```
