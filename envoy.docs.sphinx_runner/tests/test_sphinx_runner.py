@@ -1,3 +1,4 @@
+from typing import Dict
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
@@ -99,7 +100,10 @@ def test_sphinx_runner_config_file(patches):
 
     assert (
         m_utils.to_yaml.call_args
-        == [(m_configs.return_value, m_fpath.return_value), {}])
+        == [(m_utils.typed.return_value, m_fpath.return_value), {}])
+    assert (
+        m_utils.typed.call_args
+        == [(Dict, m_configs.return_value), {}])
     assert "config_file" in runner.__dict__
 
 
@@ -131,6 +135,7 @@ def test_sphinx_runner_configs(patches, validate):
         docker_image_tag_name="docker_image_tag_name",
         validator_path="validator_path",
         descriptor_path="descriptor_path",
+        intersphinx_mapping="intersphinx_mapping",
         validate_fragments="validate_fragments")
 
     patched = patches(
@@ -220,6 +225,39 @@ def test_sphinx_runner_html_dir(patches):
         m_build.return_value.joinpath.call_args
         == [('generated', 'html'), {}])
     assert "html_dir" in runner.__dict__
+
+
+@pytest.mark.parametrize("versions_exists", [True, False])
+def test_sphinx_runner_intersphinx_mapping(patches, versions_exists):
+    runner = DummySphinxRunner()
+    patched = patches(
+        "utils",
+        ("SphinxRunner.versions_path", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+    versions = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    mangled = {
+        f"v{k}": [
+            f"https://www.envoyproxy.io/docs/envoy/v{v}",
+            f"inventories/v{k}/objects.inv"]
+        for k, v
+        in versions.items()}
+
+    with patched as (m_utils, m_versions):
+        m_utils.from_yaml.return_value = versions
+        m_versions.return_value.exists.return_value = versions_exists
+        assert (
+            runner.intersphinx_mapping
+            == (mangled if versions_exists else {}))
+
+    assert (
+        m_versions.return_value.exists.call_args
+        == [(), {}])
+    if versions_exists:
+        assert (
+            m_utils.from_yaml.call_args
+            == [(m_versions.return_value, Dict[str, str]), {}])
+    else:
+        assert not m_utils.from_yaml.called
 
 
 def test_sphinx_runner_output_path(patches):
@@ -450,6 +488,23 @@ def test_sphinx_runner_version_string(patches, docs_tag):
                 == [(slice(None, 6, None),), {}])
 
     assert "version_string" not in runner.__dict__
+
+
+def test_sphinx_runner_versions_path(patches):
+    runner = DummySphinxRunner()
+    patched = patches(
+        ("SphinxRunner.rst_dir", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+
+    with patched as (m_dir, ):
+        assert (
+            runner.versions_path
+            == m_dir.return_value.joinpath.return_value)
+
+    assert (
+        m_dir.return_value.joinpath.call_args
+        == [("versions.yaml", ), {}])
+    assert "versions_path" in runner.__dict__
 
 
 def test_sphinx_runner_add_arguments(patches):

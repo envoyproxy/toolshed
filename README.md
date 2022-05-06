@@ -266,16 +266,16 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.1.1.dev0
+version: 0.1.1
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
 ##### requirements:
 
-- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.0
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.2
 - [colorama](https://pypi.org/project/colorama)
 - [docutils](https://pypi.org/project/docutils) ~=0.16.0
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.1
 - [pygments](https://pypi.org/project/pygments) >=2.11.1
 - [sphinx](https://pypi.org/project/sphinx)
 - [sphinx-copybutton](https://pypi.org/project/sphinx-copybutton)
