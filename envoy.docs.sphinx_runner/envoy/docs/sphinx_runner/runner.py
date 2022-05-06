@@ -7,7 +7,7 @@ import shutil
 import sys
 import tarfile
 from functools import cached_property
-from typing import List, Optional
+from typing import Dict, List, Optional, TypedDict
 
 from colorama import Fore, Style  # type:ignore
 
@@ -18,6 +18,21 @@ from aio.run import runner
 from envoy.base import utils
 
 from .exceptions import SphinxBuildError, SphinxEnvError
+
+
+class BaseConfigDict(TypedDict):
+    version_string: str
+    release_level: str
+    blob_sha: str
+    version_number: str
+    docker_image_tag_name: str
+
+
+class ConfigDict(BaseConfigDict, total=False):
+    validator_path: str
+    descriptor_path: str
+    skip_validation: str
+    intersphinx_mapping: Dict[str, List[str]]
 
 
 class SphinxRunner(runner.Runner):
@@ -51,7 +66,9 @@ class SphinxRunner(runner.Runner):
     def config_file(self) -> pathlib.Path:
         """Populates a config file with self.configs and returns the file
         path."""
-        return utils.to_yaml(self.configs, self.config_file_path)
+        return utils.to_yaml(
+            utils.typed(Dict, self.configs),
+            self.config_file_path)
 
     @property
     def config_file_path(self) -> pathlib.Path:
@@ -59,9 +76,9 @@ class SphinxRunner(runner.Runner):
         return self.build_dir.joinpath("build.yaml")
 
     @cached_property
-    def configs(self) -> dict:
+    def configs(self) -> ConfigDict:
         """Build configs derived from provided args."""
-        _configs = dict(
+        _configs: ConfigDict = dict(
             version_string=self.version_string,
             release_level=self.release_level,
             blob_sha=self.blob_sha,
@@ -74,6 +91,7 @@ class SphinxRunner(runner.Runner):
                 _configs["descriptor_path"] = str(self.descriptor_path)
         else:
             _configs["skip_validation"] = "true"
+        _configs["intersphinx_mapping"] = self.intersphinx_mapping
         return _configs
 
     @property
@@ -101,6 +119,17 @@ class SphinxRunner(runner.Runner):
     def html_dir(self) -> pathlib.Path:
         """Path to (temporary) directory for outputting html."""
         return self.build_dir.joinpath("generated", "html")
+
+    @property
+    def intersphinx_mapping(self) -> Dict[str, List[str]]:
+        return (
+            {f"v{k}": [
+                f"https://www.envoyproxy.io/docs/envoy/v{v}",
+                f"inventories/v{k}/objects.inv"]
+             for k, v
+             in utils.from_yaml(self.versions_path, Dict[str, str]).items()}
+            if self.versions_path.exists()
+            else {})
 
     @property
     def output_path(self) -> pathlib.Path:
@@ -180,6 +209,10 @@ class SphinxRunner(runner.Runner):
             f"tag-{self.docs_tag}"
             if self.docs_tag
             else f"{self.version_number}-{self.build_sha[:6]}")
+
+    @cached_property
+    def versions_path(self):
+        return self.rst_dir.joinpath("versions.yaml")
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
