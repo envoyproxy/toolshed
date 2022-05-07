@@ -19,6 +19,7 @@ def test_project_constructor(patches):
         m_super.call_args
         == [args, kwargs])
     assert project.changelogs_class == utils.project.Changelogs
+    assert project.inventories_class == utils.project.Inventories
 
 
 def test_changelogs_constructor(patches):

@@ -27,9 +27,18 @@ class Changelogs(abstract.AChangelogs):
         return Changelog
 
 
+@abstracts.implementer(interface.IInventories)
+class Inventories(abstract.AInventories):
+    pass
+
+
 @abstracts.implementer(interface.IProject)
 class Project(abstract.AProject):
 
     @property
     def changelogs_class(self) -> Type[interface.IChangelogs]:
         return Changelogs
+
+    @property
+    def inventories_class(self) -> Type[interface.IInventories]:
+        return Inventories

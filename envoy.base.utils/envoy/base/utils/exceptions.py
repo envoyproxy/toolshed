@@ -5,3 +5,11 @@ class TypeCastingError(TypeError):
 
 class ChangelogError(Exception):
     pass
+
+
+class ReleaseError(Exception):
+    pass
+
+
+class DevError(Exception):
+    pass

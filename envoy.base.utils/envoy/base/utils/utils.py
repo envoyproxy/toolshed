@@ -13,7 +13,7 @@ from typing import (
     Any, AsyncGenerator, Callable, Generator,
     Iterator, List, Optional, Set, Type, Union)
 
-from packaging import version
+from packaging import version as _version
 
 import pytz
 
@@ -211,5 +211,14 @@ def last_n_bytes_of(target: Union[str, pathlib.Path], n: int = 1) -> bytes:
         return f.read(n)
 
 
-def minor_version_for(_version: version.Version) -> version.Version:
-    return version.Version(f"{_version.major}.{_version.minor}")
+def minor_version_for(version: _version.Version) -> _version.Version:
+    return _version.Version(f"{version.major}.{version.minor}")
+
+
+def increment_version(
+        version: _version.Version,
+        patch: bool = False) -> _version.Version:
+    return _version.Version(
+        f"{version.major}.{version.minor}.{version.micro + 1}"
+        if patch
+        else f"{version.major}.{version.minor + 1}.{version.micro}")

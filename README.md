@@ -115,14 +115,18 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.1.2.dev0
+version: 0.1.2
 
 pypi: https://pypi.org/project/envoy.base.utils
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.3.0
+- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.2
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.2
+- [frozendict](https://pypi.org/project/frozendict)
+- [jinja2](https://pypi.org/project/jinja2)
 - [packaging](https://pypi.org/project/packaging)
 - [pytz](https://pypi.org/project/pytz)
 - [pyyaml](https://pypi.org/project/pyyaml)

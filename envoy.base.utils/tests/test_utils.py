@@ -389,7 +389,7 @@ def test_last_n_bytes_of(patches, n):
 
 def test_minor_version_for(patches):
     patched = patches(
-        "version",
+        "_version",
         prefix="envoy.base.utils.utils")
     version = MagicMock()
 
@@ -401,3 +401,30 @@ def test_minor_version_for(patches):
     assert (
         m_version.Version.call_args
         == [(f"{version.major}.{version.minor}", ), {}])
+
+
+@pytest.mark.parametrize("patch", [None, True, False])
+def test_increment_version(patches, patch):
+    args = (
+        (patch, )
+        if patch is not None
+        else ())
+    patched = patches(
+        "_version",
+        prefix="envoy.base.utils.utils")
+    version = MagicMock()
+    version.minor = 7
+    version.micro = 23
+    expected = (
+        f"{version.major}.8.23"
+        if not patch
+        else f"{version.major}.7.24")
+
+    with patched as (m_version, ):
+        assert (
+            utils.increment_version(version, *args)
+            == m_version.Version.return_value)
+
+    assert (
+        m_version.Version.call_args
+        == [(expected, ), {}])
