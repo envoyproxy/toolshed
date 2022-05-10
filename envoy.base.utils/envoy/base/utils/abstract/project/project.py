@@ -158,13 +158,15 @@ class AProject(metaclass=abstracts.Abstraction):
             yield path
         await self._git_commit(changed, msg)
 
-    async def dev(self) -> typing.ProjectDevResultDict:
+    async def dev(
+            self,
+            patch: bool = False) -> typing.ProjectDevResultDict:
         if self.is_dev:
             raise exceptions.DevError("Project is already set to dev")
         if self.changelogs.is_pending:
             raise exceptions.DevError(
                 "Current changelog date is already set to `Pending`")
-        new_version = utils.increment_version(self.version)
+        new_version = utils.increment_version(self.version, patch=patch)
         self.write_version(new_version, dev=True)
         self.changelogs.write_version(self.version)
         self.changelogs.write_current()
@@ -211,18 +213,24 @@ class AProject(metaclass=abstracts.Abstraction):
         self.version_path.write_text(
             f"{self.version_string(version, dev=dev)}\n")
 
+    async def _exec(self, command: str) -> None:
+        result = await asyncio.subprocess.create_subprocess_shell(
+            command,
+            cwd=self.path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE)
+        stdout, stderr = await result.communicate()
+        if result.returncode != 0:
+            raise exceptions.CommitError(
+                "\n".join([
+                    stdout.decode("utf-8"),
+                    stderr.decode("utf-8")]))
+
     async def _git_commit(self, changed: Tuple[str, ...], msg: str) -> None:
-        # TODO: add some err handling, perhaps use git lib
-        await asyncio.subprocess.create_subprocess_exec(
-            "git", "add", *changed,
-            cwd=self.path,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL)
-        await asyncio.subprocess.create_subprocess_exec(
-            "git", "commit", *changed, "-m", msg,
-            cwd=self.path,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL)
+        await self._exec(
+            " ".join(("git", "add", *changed)))
+        await self._exec(
+            " ".join(("git", "commit", *changed, "-m", f"'{msg}'")))
 
     def _patch_versions(
             self,
