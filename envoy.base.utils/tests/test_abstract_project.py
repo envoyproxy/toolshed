@@ -539,7 +539,8 @@ async def test_abstract_project_commit(patches):
 
 @pytest.mark.parametrize("dev", [True, False])
 @pytest.mark.parametrize("pending", [True, False])
-async def test_abstract_project_dev(patches, dev, pending):
+@pytest.mark.parametrize("patch", [None, True, False])
+async def test_abstract_project_dev(patches, dev, pending, patch):
     project = DummyProject()
     patched = patches(
         "utils",
@@ -552,6 +553,10 @@ async def test_abstract_project_dev(patches, dev, pending):
         "AProject.version_string",
         "AProject.write_version",
         prefix="envoy.base.utils.abstract.project.project")
+    kwargs = (
+        {}
+        if patch is None
+        else dict(patch=patch))
 
     with patched as (m_utils, m_clogs, m_dev, m_version, m_str, m_write):
         m_dev.return_value = dev
@@ -559,10 +564,10 @@ async def test_abstract_project_dev(patches, dev, pending):
 
         if dev or pending:
             with pytest.raises(exceptions.DevError) as e:
-                await project.dev()
+                await project.dev(**kwargs)
         else:
             assert (
-                await project.dev()
+                await project.dev(**kwargs)
                 == dict(
                     date="Pending",
                     version=m_str.return_value,
@@ -583,7 +588,7 @@ async def test_abstract_project_dev(patches, dev, pending):
         return
     assert (
         m_utils.increment_version.call_args
-        == [(m_version.return_value, ), {}])
+        == [(m_version.return_value, ), dict(patch=patch or False)])
     assert (
         m_write.call_args
         == [(m_utils.increment_version.return_value, ),
@@ -734,26 +739,69 @@ def test_abstract_project_write_version(patches, dev):
 async def test_abstract_project__git_commit(patches):
     project = DummyProject()
     patched = patches(
-        "asyncio",
-        ("AProject.path",
-         dict(new_callable=PropertyMock)),
+        "AProject._exec",
         prefix="envoy.base.utils.abstract.project.project")
     changed = tuple(f"C{i}" for i in range(0, 5))
     msg = MagicMock()
 
-    with patched as (m_aio, m_path):
-        aexec = AsyncMock()
-        m_aio.subprocess.create_subprocess_exec = aexec
+    with patched as (m_exec, ):
         assert not await project._git_commit(changed, msg)
 
-    kwa = dict(
-        stdout=m_aio.subprocess.DEVNULL,
-        stderr=m_aio.subprocess.DEVNULL,
-        cwd=m_path.return_value)
     assert (
-        aexec.call_args_list
-        == [[("git", "add", *changed), kwa],
-            [("git", "commit", *changed, "-m", msg), kwa]])
+        m_exec.call_args_list
+        == [[(" ".join(["git", "add", *changed]), ),
+             {}],
+            [(" ".join(["git", "commit", *changed, "-m", f"'{msg}'"]), ),
+             {}]])
+
+
+@pytest.mark.parametrize("returns", [None, 0, 23, "cabbage"])
+async def test_abstract_project__exec(patches, returns):
+    project = DummyProject()
+    patched = patches(
+        "asyncio",
+        ("AProject.path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.project")
+    command = MagicMock()
+
+    with patched as (m_aio, m_path):
+        shell = AsyncMock()
+        comm = AsyncMock()
+        stdout = MagicMock()
+        stdout.decode.return_value = "STDOUT"
+        stderr = MagicMock()
+        stderr.decode.return_value = "STDERR"
+        comm.return_value = [stdout, stderr]
+        shell.return_value.communicate = comm
+        shell.return_value.returncode = returns
+        m_aio.subprocess.create_subprocess_shell = shell
+        if returns != 0:
+            with pytest.raises(exceptions.CommitError) as e:
+                await project._exec(command)
+        else:
+            assert not await project._exec(command)
+
+    assert (
+        shell.call_args
+        == [(command, ),
+            dict(stdout=m_aio.subprocess.PIPE,
+                 stderr=m_aio.subprocess.PIPE,
+                 cwd=m_path.return_value)])
+    assert (
+        comm.call_args
+        == [(), {}])
+    if returns == 0:
+        assert not stdout.decode.called
+        assert not stderr.decode.called
+        return
+    assert e.value.args[0] == 'STDOUT\nSTDERR'
+    assert (
+        stdout.decode.call_args
+        == [("utf-8", ), {}])
+    assert (
+        stderr.decode.call_args
+        == [("utf-8", ), {}])
 
 
 @pytest.mark.parametrize("is_dev", [True, False])

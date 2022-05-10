@@ -47,6 +47,10 @@ class ProjectRunner(runner.Runner):
     def nosync(self) -> bool:
         return self.args.nosync
 
+    @property
+    def patch(self) -> bool:
+        return self.args.patch
+
     @cached_property
     def path(self) -> pathlib.Path:
         return pathlib.Path(self.args.path)
@@ -70,6 +74,7 @@ class ProjectRunner(runner.Runner):
         parser.add_argument("--github_token")
         parser.add_argument("--nosync", action="store_true")
         parser.add_argument("--nocommit", action="store_true")
+        parser.add_argument("--patch", action="store_true")
 
     async def commit(
             self,
@@ -104,10 +109,10 @@ class ProjectRunner(runner.Runner):
         self.notify_complete(change)
 
     async def run_dev(self) -> typing.ProjectDevResultDict:
-        change = await self.project.dev()
-        self.log.success(f"[version] {change['version']}-dev")
+        change = await self.project.dev(patch=self.patch)
+        self.log.success(f"[version] {change['version']}")
         self.log.success(
-            f"[changelog] Added: {change['old_version']}")
+            f"[changelog] add: {change['old_version']}")
         return change
 
     async def run_release(self) -> typing.ProjectReleaseResultDict:

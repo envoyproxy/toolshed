@@ -13,3 +13,7 @@ class ReleaseError(Exception):
 
 class DevError(Exception):
     pass
+
+
+class CommitError(Exception):
+    pass
