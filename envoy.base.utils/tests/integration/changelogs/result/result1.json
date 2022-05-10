@@ -1,0 +1,25 @@
+{
+  "behavior_changes": [
+    {
+      "area": "config",
+      "change": "due to the switch to using work-in-progress annotations and warnings to indicate APIs\nsubject to change, the following API packages have been force migrated from ``v3alpha`` to ``v3``:\n``envoy.extensions.access_loggers.open_telemetry.v3``,\n``envoy.extensions.cache.simple_http_cache.v3``,\n``envoy.watchdog.v3``. If your production deployment was using one of these APIs, you will be\nforced to potentially vendor the old proto file to continue serving old versions of Envoy."
+    },
+    {
+      "area": "config",
+      "change": "the ``--bootstrap-version`` CLI flag has been removed, Envoy has only been able to accept v3\nbootstrap configurations since 1.18.0."
+    }
+  ],
+  "minor_behavior_changes": [
+    {
+      "area": "client_ssl_auth filter",
+      "change": "now sets additional termination details and ``UAEX`` response flag when the client certificate is not in the allowed-list."
+    },
+    {
+      "area": "config",
+      "change": "configuration files ending in .yml now load as YAML."
+    },
+    {
+      "area": "config",
+      "change": "configuration file extensions now ignore case when deciding the file type. E.g., .JSON files load as JSON."}
+  ]
+}

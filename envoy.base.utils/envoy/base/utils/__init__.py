@@ -8,6 +8,7 @@ from .utils import (
     extract,
     ExtractError,
     from_yaml,
+    increment_version,
     is_tarlike,
     coverage_with_data_file,
     minor_version_for,
@@ -21,6 +22,8 @@ from .utils import (
     last_n_bytes_of)
 from . import interface, typing
 from .project import Changelog, ChangelogEntry, Changelogs, Project
+from .project_cmd import project_cmd
+from .project_runner import ProjectRunner
 from .interface import IProject
 
 
@@ -35,6 +38,7 @@ __all__ = (
     "extract",
     "ExtractError",
     "from_yaml",
+    "increment_version",
     "interface",
     "IProject",
     "is_sha",
@@ -43,6 +47,8 @@ __all__ = (
     "coverage_with_data_file",
     "minor_version_for",
     "Project",
+    "ProjectRunner",
+    "project_cmd",
     "typed",
     "untar",
     "TAR_EXTS",
