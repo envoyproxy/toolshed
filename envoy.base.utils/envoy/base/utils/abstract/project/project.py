@@ -41,6 +41,9 @@ class AProject(metaclass=abstracts.Abstraction):
 
     @cached_property
     def archived_versions(self) -> Tuple[_version.Version, ...]:
+        # This assumes that the previous changelogs are present and correct
+        # eg. if you remove some of the recent changelogs its assumption
+        # will break, and it will detect the wrong versions as stable/archived
         non_archive = (5 if self.is_main_dev else 4)
         return tuple(
             reversed(
