@@ -460,6 +460,9 @@ def test_abstract_changelogs_dump_yaml(patches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
     data = MagicMock()
+    items = {f"K{i}": (i % 2) for i in range(0, 10)}
+    filtered = {k: v for k, v in items.items() if v}
+    data.items.return_value = items.items()
     sections = [f"S{s}" for s in range(0, 3)]
 
     with patched as (m_re, m_yaml):
@@ -475,7 +478,7 @@ def test_abstract_changelogs_dump_yaml(patches):
 
     assert (
         m_yaml.return_value.dump.call_args
-        == [(data, ),
+        == [(filtered, ),
             dict(default_flow_style=False,
                  default_style=None,
                  sort_keys=False)])
@@ -817,12 +820,16 @@ def test_abstract_changelogs_yaml_change_presenter():
     changelogs = DummyChangelogs("PROJECT")
     dumper = MagicMock()
     data = MagicMock()
+    normal = data.rstrip.return_value
     assert (
         changelogs.yaml_change_presenter(dumper, data)
         == dumper.represent_scalar.return_value)
     assert (
+        data.rstrip.call_args
+        == [("\n", ), {}])
+    assert (
         dumper.represent_scalar.call_args
-        == [('tag:yaml.org,2002:str', data),
+        == [('tag:yaml.org,2002:str', f"{normal}\n"),
             dict(style="|")])
 
 

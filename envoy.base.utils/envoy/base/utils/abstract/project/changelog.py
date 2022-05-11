@@ -270,7 +270,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     def dump_yaml(self, data: typing.ChangelogDict) -> str:
         output = self.yaml.dump(
-            data,
+            {k: v
+             for k, v
+             in data.items()
+             if v},
             default_flow_style=False,
             default_style=None,
             sort_keys=False)
@@ -352,8 +355,11 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             self,
             dumper: _yaml.Dumper,
             data: typing.Change) -> _yaml.ScalarNode:
+        normal = data.rstrip("\n")
         return dumper.represent_scalar(
-            'tag:yaml.org,2002:str', data, style='|')
+            'tag:yaml.org,2002:str',
+            f"{normal}\n",
+            style='|')
 
     @cached_property
     def _yaml_changelogs_version(self) -> _version.Version:
