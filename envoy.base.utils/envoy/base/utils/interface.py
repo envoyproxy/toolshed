@@ -107,6 +107,12 @@ class IChangelog(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    def path(self) -> pathlib.Path:
+        """Path to this changelog."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def release_date(self) -> str:
         """Datestamp of this changelog."""
         raise NotImplementedError
@@ -289,6 +295,12 @@ class IProject(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    def rel_version_path(self) -> pathlib.Path:
+        """Path to the project version file."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def repo(self) -> _github.IGithubRepo:
         """Project github repo."""
         raise NotImplementedError
@@ -309,12 +321,6 @@ class IProject(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     def version(self) -> _version.Version:
         """Current project version."""
-        raise NotImplementedError
-
-    @property  # type:ignore
-    @abstracts.interfacemethod
-    def version_path(self) -> pathlib.Path:
-        """Path to the project version file."""
         raise NotImplementedError
 
     @abstracts.interfacemethod

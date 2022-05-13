@@ -169,16 +169,21 @@ def test_abstract_changelogs_current(patches):
     assert "current" in changelogs.__dict__
 
 
-def test_abstract_changelogs_current_path():
+def test_abstract_changelogs_current_path(patches):
     project = MagicMock()
     changelogs = DummyChangelogs(project)
-    assert (
-        changelogs.current_path
-        == project.path.joinpath.return_value)
+    patched = patches(
+        ("AChangelogs.rel_current_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_rel, ):
+        assert (
+            changelogs.current_path
+            == project.path.joinpath.return_value)
     assert (
         project.path.joinpath.call_args
-        == [(abstract.project.changelog.CHANGELOG_CURRENT_PATH, ),
-            {}])
+        == [(m_rel.return_value, ), {}])
     assert "current_path" not in changelogs.__dict__
 
 
@@ -238,6 +243,23 @@ def test_abstract_changelogs_paths(patches):
         project.path.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_PATH_GLOB, ), {}])
     assert "paths" not in changelogs.__dict__
+
+
+def test_abstract_changelogs_rel_current_path(patches):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        "pathlib",
+        "CHANGELOG_CURRENT_PATH",
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_plib, m_path):
+        assert (
+            changelogs.rel_current_path
+            == m_plib.Path.return_value)
+
+    assert (
+        m_plib.Path.call_args
+        == [(m_path, ), {}])
 
 
 @pytest.mark.parametrize(
@@ -924,10 +946,27 @@ def test_abstract_changelog_constructor():
 
     changelog = DummyChangelog("VERSION", "PATH")
     assert changelog._version == "VERSION"
+    assert changelog.version == "VERSION"
+    assert "version" not in changelog.__dict__
     assert changelog.path == "PATH"
 
     with pytest.raises(NotImplementedError):
         changelog.entry_class
+
+
+def test_abstract_changelog_base_version(patches):
+    changelog = DummyChangelog("VERSION", "PATH")
+    patched = patches(
+        ("AChangelog.version",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_version, ):
+        assert (
+            changelog.base_version
+            == m_version.return_value.base_version)
+
+    assert "base_version" not in changelog.__dict__
 
 
 @pytest.mark.parametrize(
@@ -1009,15 +1048,6 @@ def test_abstract_changelog_release_date(patches):
         m_data.return_value.__getitem__.call_args
         == [("date", ), {}])
     assert "release_date" not in changelog.__dict__
-
-
-def test_abstract_changelog_version():
-    version = MagicMock()
-    changelog = DummyChangelog(version, "PATH")
-    assert (
-        changelog.version
-        == version.base_version)
-    assert "version" not in changelog.__dict__
 
 
 def test_abstract_changelog_entries(patches):

@@ -157,7 +157,7 @@ def test_abstract_project_github(patches, github):
         if github is not None
         else {})
     kwargs["github_token"] = MagicMock()
-    project = DummyProject("VERSION", **kwargs)
+    project = DummyProject(**kwargs)
     patched = patches(
         "_github",
         ("AProject.session",
@@ -310,13 +310,30 @@ def test_abstract_project_path(patches):
     assert "path" in project.__dict__
 
 
+def test_abstract_project_rel_version_path(patches):
+    project = DummyProject()
+    patched = patches(
+        "pathlib",
+        "VERSION_PATH",
+        prefix="envoy.base.utils.abstract.project.project")
+
+    with patched as (m_plib, m_path):
+        assert (
+            project.rel_version_path
+            == m_plib.Path.return_value)
+
+    assert (
+        m_plib.Path.call_args
+        == [(m_path, ), {}])
+
+
 @pytest.mark.parametrize("repo", [None, "REPO"])
 def test_abstract_project_repo(patches, repo):
     kwargs = (
         dict(repo=repo)
         if repo is not None
         else {})
-    project = DummyProject("VERSION", **kwargs)
+    project = DummyProject(**kwargs)
     patched = patches(
         ("AProject.github",
          dict(new_callable=PropertyMock)),
@@ -343,7 +360,7 @@ def test_abstract_project_session(patches, session):
         dict(session=session)
         if session is not None
         else {})
-    project = DummyProject("VERSION", **kwargs)
+    project = DummyProject(**kwargs)
     patched = patches(
         "aiohttp",
         prefix="envoy.base.utils.abstract.project.project")
@@ -450,16 +467,18 @@ def test_abstract_project_version_path(patches):
     patched = patches(
         ("AProject.path",
          dict(new_callable=PropertyMock)),
+        ("AProject.rel_version_path",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.project")
 
-    with patched as (m_path, ):
+    with patched as (m_path, m_rel):
         assert (
             project.version_path
             == m_path.return_value.joinpath.return_value)
 
     assert (
         m_path.return_value.joinpath.call_args
-        == [(abstract.project.project.VERSION_PATH, ), {}])
+        == [(m_rel.return_value, ), {}])
     assert "version_path" in project.__dict__
 
 
