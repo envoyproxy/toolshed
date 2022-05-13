@@ -213,8 +213,8 @@ class IProject(metaclass=abstracts.Interface):
 
     def __init__(
             self,
-            version: str,
             path: Union[pathlib.Path, str] = ".",
+            version: Optional[_version.Version] = None,
             github: Optional[_github.IGithubAPI] = None,
             repo: Optional[_github.IGithubRepo] = None,
             github_token: Optional[str] = None,
@@ -309,6 +309,12 @@ class IProject(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     def version(self) -> _version.Version:
         """Current project version."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def version_path(self) -> pathlib.Path:
+        """Path to the project version file."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
