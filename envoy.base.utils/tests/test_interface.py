@@ -69,6 +69,10 @@ class DummyProject:
     def version(self):
         return interface.IProject.version.fget(self)
 
+    @property
+    def version_path(self):
+        return interface.IProject.version_path.fget(self)
+
     async def commit(self):
         return await interface.IProject.commit(self)
 
@@ -96,7 +100,7 @@ async def test_iface_project_constructor():
         "dev_version", "is_dev", "is_main_dev",
         "inventories", "inventories_class",
         "minor_version", "minor_versions", "path", "repo",
-        "session", "stable_versions", "version"]
+        "session", "stable_versions", "version", "version_path"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
