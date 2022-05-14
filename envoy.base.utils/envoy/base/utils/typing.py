@@ -42,7 +42,7 @@ class ChangelogSourceDict(BaseChangelogDict, total=False):
     deprecated: Optional[SourceChangeList]
 
 
-class ChangelogDict(BaseChangelogDict, total=False):
+class ChangelogChangeSectionsDict(TypedDict, total=False):
     # This should match envoy:changelogs/sections.yaml
     changes: Optional[ChangeList]
     behavior_changes: Optional[ChangeList]
@@ -51,6 +51,10 @@ class ChangelogDict(BaseChangelogDict, total=False):
     removed_config_or_runtime: Optional[ChangeList]
     new_features: Optional[ChangeList]
     deprecated: Optional[ChangeList]
+
+
+class ChangelogDict(BaseChangelogDict, ChangelogChangeSectionsDict):
+    pass
 
 
 ChangelogPathsDict = Dict[_version.Version, pathlib.Path]

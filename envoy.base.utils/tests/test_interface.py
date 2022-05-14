@@ -54,6 +54,10 @@ class DummyProject:
         return interface.IProject.path.fget(self)
 
     @property
+    def rel_version_path(self):
+        return interface.IProject.rel_version_path.fget(self)
+
+    @property
     def repo(self):
         return interface.IProject.repo.fget(self)
 
@@ -68,10 +72,6 @@ class DummyProject:
     @property
     def version(self):
         return interface.IProject.version.fget(self)
-
-    @property
-    def version_path(self):
-        return interface.IProject.version_path.fget(self)
 
     async def commit(self):
         return await interface.IProject.commit(self)
@@ -99,8 +99,9 @@ async def test_iface_project_constructor():
         "archived_versions", "changelogs", "changelogs_class",
         "dev_version", "is_dev", "is_main_dev",
         "inventories", "inventories_class",
-        "minor_version", "minor_versions", "path", "repo",
-        "session", "stable_versions", "version", "version_path"]
+        "minor_version", "minor_versions", "path",
+        "rel_version_path", "repo",
+        "session", "stable_versions", "version"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
@@ -315,6 +316,10 @@ class DummyChangelog:
         return interface.IChangelog.entry_class.fget(self)
 
     @property
+    def path(self):
+        return interface.IChangelog.path.fget(self)
+
+    @property
     def release_date(self):
         return interface.IChangelog.release_date.fget(self)
 
@@ -333,7 +338,7 @@ def test_iface_changelog_constructor():
     changelog = DummyChangelog()
 
     iface_props = [
-        "data", "entry_class", "release_date", "version"]
+        "data", "entry_class", "path", "release_date", "version"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):

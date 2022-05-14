@@ -123,7 +123,11 @@ class AChangelog(metaclass=abstracts.Abstraction):
 
     def __init__(self, version: _version.Version, path: pathlib.Path) -> None:
         self._version = version
-        self.path = path
+        self._path = path
+
+    @property
+    def base_version(self) -> str:
+        return self.version.base_version
 
     @cached_property
     def data(self) -> typing.ChangelogDict:
@@ -150,12 +154,16 @@ class AChangelog(metaclass=abstracts.Abstraction):
         raise NotImplementedError
 
     @property
+    def path(self) -> pathlib.Path:
+        return self._path
+
+    @property
     def release_date(self) -> str:
         return self.data["date"]
 
     @property
-    def version(self) -> str:
-        return self._version.base_version
+    def version(self) -> _version.Version:
+        return self._version
 
     def entries(self, section: str) -> List[interface.IChangelogEntry]:
         return sorted(
@@ -205,7 +213,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @property
     def current_path(self) -> pathlib.Path:
-        return self.project.path.joinpath(CHANGELOG_CURRENT_PATH)
+        return self.project.path.joinpath(self.rel_current_path)
 
     @cached_property
     def current_tpl(self) -> jinja2.Template:
@@ -222,6 +230,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         return (
             *self.project.path.glob(CHANGELOG_PATH_GLOB),
             self.current_path)
+
+    @property
+    def rel_current_path(self) -> pathlib.Path:
+        return pathlib.Path(CHANGELOG_CURRENT_PATH)
 
     @cached_property
     def section_re(self) -> Pattern:

@@ -115,6 +115,10 @@ class AProject(metaclass=abstracts.Abstraction):
     def repo(self) -> _github.IGithubRepo:
         return self._repo or self.github[ENVOY_REPO]
 
+    @property
+    def rel_version_path(self) -> pathlib.Path:
+        return pathlib.Path(VERSION_PATH)
+
     @cached_property
     def session(self) -> aiohttp.ClientSession:
         """HTTP client session."""
@@ -138,7 +142,7 @@ class AProject(metaclass=abstracts.Abstraction):
 
     @cached_property
     def version_path(self) -> pathlib.Path:
-        return self.path.joinpath(VERSION_PATH)
+        return self.path.joinpath(self.rel_version_path)
 
     def changes_for_commit(
             self,
