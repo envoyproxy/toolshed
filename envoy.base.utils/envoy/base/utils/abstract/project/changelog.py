@@ -2,6 +2,7 @@
 import pathlib
 import re
 import types
+from datetime import datetime
 from functools import cached_property
 from typing import (
     Dict, ItemsView, Iterator, KeysView,
@@ -32,6 +33,7 @@ date: Pending
 {% if description %}# {{ description }}{% endif -%}
 {% endfor %}
 """
+DATE_FORMAT = "%B %-d, %Y"
 
 # These are for parsing pre 1.23 rst changelogs and can be removed when that is
 # no longer required
@@ -218,6 +220,14 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     @cached_property
     def current_tpl(self) -> jinja2.Template:
         return jinja2.Template(CHANGELOG_CURRENT_TPL)
+
+    @property
+    def date_format(self) -> str:
+        return DATE_FORMAT
+
+    @property
+    def datestamp(self) -> str:
+        return datetime.utcnow().date().strftime(self.date_format)
 
     @property
     def is_pending(self) -> bool:

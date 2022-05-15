@@ -103,32 +103,6 @@ def test_abstract_project_changelogs(patches):
     assert "changelogs" in project.__dict__
 
 
-def test_abstract_project_datestamp(patches):
-    project = DummyProject()
-    patched = patches(
-        "datetime",
-        "DATE_FORMAT",
-        prefix="envoy.base.utils.abstract.project.project")
-
-    with patched as (m_dt, m_fmt):
-        assert (
-            project.datestamp
-            == (m_dt.utcnow.return_value
-                    .date.return_value
-                    .strftime.return_value))
-
-    assert (
-        m_dt.utcnow.call_args
-        == [(), {}])
-    assert (
-        m_dt.utcnow.return_value.date.call_args
-        == [(), {}])
-    assert (
-        m_dt.utcnow.return_value.date.return_value.strftime.call_args
-        == [(m_fmt, ), {}])
-    assert "datestamp" not in project.__dict__
-
-
 @pytest.mark.parametrize("is_dev", [True, False])
 def test_abstract_project_dev_version(patches, is_dev):
     project = DummyProject()
@@ -648,8 +622,6 @@ async def test_abstract_project_release(patches, is_dev):
     patched = patches(
         ("AProject.changelogs",
          dict(new_callable=PropertyMock)),
-        ("AProject.datestamp",
-         dict(new_callable=PropertyMock)),
         ("AProject.is_dev",
          dict(new_callable=PropertyMock)),
         ("AProject.version",
@@ -657,7 +629,7 @@ async def test_abstract_project_release(patches, is_dev):
         "AProject.write_version",
         prefix="envoy.base.utils.abstract.project.project")
 
-    with patched as (m_clogs, m_stamp, m_dev, m_version, m_write):
+    with patched as (m_clogs, m_dev, m_version, m_write):
         m_dev.return_value = is_dev
         if not is_dev:
             with pytest.raises(exceptions.ReleaseError) as e:
@@ -665,7 +637,7 @@ async def test_abstract_project_release(patches, is_dev):
         else:
             assert (
                 await project.release()
-                == dict(date=m_stamp.return_value,
+                == dict(date=m_clogs.return_value.datestamp,
                         version=m_version.return_value.base_version))
 
     if not is_dev:
@@ -675,7 +647,7 @@ async def test_abstract_project_release(patches, is_dev):
         return
     assert (
         m_clogs.return_value.write_date.call_args
-        == [(m_stamp.return_value, ), {}])
+        == [(m_clogs.return_value.datestamp, ), {}])
     assert (
         m_write.call_args
         == [(m_version.return_value, ), {}])
