@@ -166,6 +166,18 @@ class IChangelogs(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    def date_format(self) -> str:
+        """Changelog date format."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def datestamp(self) -> str:
+        """Formatted current UTC date."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def is_pending(self) -> bool:
         """Flag indicating whether the current changelog is set to
         `Pending`."""

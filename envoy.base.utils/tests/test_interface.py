@@ -222,6 +222,14 @@ class DummyChangelogs:
         return interface.IChangelogs.current.fget(self)
 
     @property
+    def date_format(self):
+        return interface.IChangelogs.date_format.fget(self)
+
+    @property
+    def datestamp(self):
+        return interface.IChangelogs.datestamp.fget(self)
+
+    @property
     def is_pending(self):
         return interface.IChangelogs.is_pending.fget(self)
 
@@ -262,7 +270,7 @@ async def test_iface_changelogs_constructor():
 
     iface_props = [
         "changelog_class", "changelog_paths", "changelogs",
-        "current", "is_pending", "sections"]
+        "current", "date_format", "datestamp", "is_pending", "sections"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):

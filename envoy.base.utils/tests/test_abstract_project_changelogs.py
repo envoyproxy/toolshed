@@ -28,6 +28,10 @@ def test_abstract_changelogs_constructor():
 
     changelogs = DummyChangelogs("PROJECT")
     assert changelogs.project == "PROJECT"
+    assert (
+        changelogs.date_format
+        == abstract.project.changelog.DATE_FORMAT)
+    assert "date_format" not in changelogs.__dict__
 
     with pytest.raises(NotImplementedError):
         changelogs.changelog_class
@@ -202,6 +206,33 @@ def test_abstract_changelogs_current_tpl(patches):
     assert (
         m_jinja.Template.call_args
         == [(m_tpl, ), {}])
+
+
+def test_abstract_project_datestamp(patches):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        "datetime",
+        ("AChangelogs.date_format",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_dt, m_fmt):
+        assert (
+            changelogs.datestamp
+            == (m_dt.utcnow.return_value
+                    .date.return_value
+                    .strftime.return_value))
+
+    assert (
+        m_dt.utcnow.call_args
+        == [(), {}])
+    assert (
+        m_dt.utcnow.return_value.date.call_args
+        == [(), {}])
+    assert (
+        m_dt.utcnow.return_value.date.return_value.strftime.call_args
+        == [(m_fmt.return_value, ), {}])
+    assert "datestamp" not in changelogs.__dict__
 
 
 @pytest.mark.parametrize("pending", [None, "Pending", "cabbage"])

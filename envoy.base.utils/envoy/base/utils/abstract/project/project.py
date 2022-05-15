@@ -1,7 +1,6 @@
 
 import asyncio
 import pathlib
-from datetime import datetime
 from functools import cached_property
 from typing import AsyncGenerator, List, Optional, Tuple, Type, Union
 
@@ -16,7 +15,6 @@ from envoy.base import utils
 from envoy.base.utils import exceptions, interface, typing
 
 
-DATE_FORMAT = "%B %-d, %Y"
 ENVOY_REPO = "envoyproxy/envoy"
 VERSION_PATH = "VERSION.txt"
 
@@ -57,10 +55,6 @@ class AProject(metaclass=abstracts.Abstraction):
     @abstracts.interfacemethod
     def changelogs_class(self) -> Type[interface.IChangelogs]:
         raise NotImplementedError
-
-    @property
-    def datestamp(self) -> str:
-        return datetime.utcnow().date().strftime(DATE_FORMAT)
 
     @cached_property
     def dev_version(self) -> Optional[_version.Version]:
@@ -192,7 +186,7 @@ class AProject(metaclass=abstracts.Abstraction):
             raise exceptions.ReleaseError(
                 "Project is not set to dev")
         self.write_version(self.version)
-        date = self.datestamp
+        date = self.changelogs.datestamp
         self.changelogs.write_date(date)
         return dict(
             date=date,
