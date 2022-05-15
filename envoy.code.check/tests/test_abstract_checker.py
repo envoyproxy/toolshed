@@ -281,6 +281,31 @@ async def test_abstract_checker_preload_changelog(patches):
         == ("changelog", ))
 
 
+async def test_abstract_checker_preload_extensions(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.extensions",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+
+    with patched as (m_extensions, m_log):
+        metadata = AsyncMock()
+        metadata.return_value.__len__.return_value = 23
+        m_extensions.return_value.metadata = metadata()
+        assert not await checker.preload_extensions()
+
+    assert (
+        check.ACodeChecker.preload_extensions.when
+        == ("extensions_fuzzed",
+            "extensions_metadata",
+            "extensions_registered", ))
+    assert (
+        m_log.return_value.debug.call_args
+        == [("Preloaded extensions (23)", ), {}])
+
+
 @pytest.mark.parametrize(
     "preloader",
     (("glint", "glint"),
@@ -637,7 +662,8 @@ async def test_abstract_checker_check_extensions_fuzzed(patches, fuzzed):
         prefix="envoy.code.check.abstract.checker")
 
     with patched as (m_extensions, m_error, m_succeed):
-        m_extensions.return_value.all_fuzzed = fuzzed
+        m_extensions.return_value.all_fuzzed = AsyncMock(
+            return_value=fuzzed)()
         assert not await checker.check_extensions_fuzzed()
 
     if fuzzed:
@@ -673,7 +699,8 @@ async def test_abstract_checker_check_extensions_metadata(patches):
             else [])
 
     with patched as (m_extensions, m_error, m_succeed):
-        m_extensions.return_value.metadata_errors = errors
+        m_extensions.return_value.metadata_errors = AsyncMock(
+            return_value=errors)()
         assert not await checker.check_extensions_metadata()
 
     assert (
@@ -702,7 +729,8 @@ async def test_abstract_checker_check_extensions_registered(patches, errors):
         prefix="envoy.code.check.abstract.checker")
 
     with patched as (m_extensions, m_error, m_succeed):
-        m_extensions.return_value.registration_errors = errors
+        m_extensions.return_value.registration_errors = AsyncMock(
+            return_value=errors)()
         assert not await checker.check_extensions_registered()
 
     if errors:

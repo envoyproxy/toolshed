@@ -1,6 +1,5 @@
 
-import types
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
@@ -67,7 +66,7 @@ def test_extensions_all_extensions(patches):
 
 @pytest.mark.parametrize("fuzzed", range(0, 3))
 @pytest.mark.parametrize("robust", range(0, 3))
-def test_extensions_all_fuzzed(patches, fuzzed, robust):
+async def test_extensions_all_fuzzed(patches, fuzzed, robust):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -79,9 +78,9 @@ def test_extensions_all_fuzzed(patches, fuzzed, robust):
 
     with patched as (m_fuzzed, m_robust):
         m_fuzzed.return_value = fuzzed
-        m_robust.return_value = robust
+        m_robust.side_effect = AsyncMock(return_value=robust)
         assert (
-            checker.all_fuzzed
+            await checker.all_fuzzed
             == (fuzzed == robust))
 
     assert "all_fuzzed" not in checker.__dict__
@@ -256,7 +255,7 @@ def test_extensions_fuzzed_filter_names_re(patches):
     assert "fuzzed_filter_names_re" in checker.__dict__
 
 
-def test_extensions_metadata(patches):
+async def test_extensions_metadata(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -270,11 +269,14 @@ def test_extensions_metadata(patches):
     contrib = {f"KCONTRIB{i}": f"VCONTRIB{i}" for i in range(0, 5)}
 
     with patched as (m_dict, m_core, m_contrib):
-        m_core.return_value = core
-        m_contrib.return_value = contrib
+        m_core.side_effect = AsyncMock(return_value=core)
+        m_contrib.side_effect = AsyncMock(return_value=contrib)
         assert (
-            checker.metadata
-            == m_dict.return_value)
+            await checker.metadata
+            == m_dict.return_value
+            == getattr(
+                checker,
+                check.AExtensionsCheck.metadata.cache_name)["metadata"])
 
     assert (
         m_dict.call_args
@@ -284,47 +286,42 @@ def test_extensions_metadata(patches):
 @pytest.mark.parametrize("mtype", ["core", "contrib"])
 @pytest.mark.parametrize(
     "raises", [None, BaseException, utils.exceptions.TypeCastingError])
-def test_extensions_metadata_data(patches, mtype, raises):
+async def test_extensions_metadata_data(patches, mtype, raises):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
-        "utils.from_yaml",
-        "utils.typed",
         (f"AExtensionsCheck.metadata_{mtype}_path",
          dict(new_callable=PropertyMock)),
+        "AExtensionsCheck._metadata",
         prefix="envoy.code.check.abstract.extensions")
 
-    with patched as (m_yaml, m_typed, m_path):
+    with patched as (m_path, m_meta):
         if raises:
-            m_typed.side_effect = raises("AN ERROR OCCURRED")
+            m_meta.side_effect = raises("AN ERROR OCCURRED")
 
         if raises == utils.exceptions.TypeCastingError:
             ConfigError = check.exceptions.ExtensionsConfigurationError
             with pytest.raises(ConfigError) as e:
-                getattr(checker, f"metadata_{mtype}")
+                await getattr(checker, f"metadata_{mtype}")
         elif raises:
             with pytest.raises(raises):
-                getattr(checker, f"metadata_{mtype}")
+                await getattr(checker, f"metadata_{mtype}")
         else:
             assert (
-                getattr(checker, f"metadata_{mtype}")
-                == m_typed.return_value)
+                await getattr(checker, f"metadata_{mtype}")
+                == m_meta.return_value)
 
-    assert (
-        m_typed.call_args
-        == [(check.typing.ExtensionsMetadataDict,
-             m_yaml.return_value), {}])
-    assert (
-        m_yaml.call_args
-        == [(m_path.return_value, ), {}])
+    assert not hasattr(
+        checker,
+        getattr(
+            check.AExtensionsCheck,
+            f"metadata_{mtype}").cache_name)
+
     if raises == utils.exceptions.TypeCastingError:
         assert (
             e.value.args[0]
             == (f"Failed to parse {mtype} metadata "
                 f"({m_path.return_value}): AN ERROR OCCURRED"))
-    assert (
-        (f"metadata_{mtype}" in checker.__dict__)
-        is (not raises))
 
 
 def test_extensions_metadata_contrib_path():
@@ -355,7 +352,7 @@ def test_extensions_metadata_core_path():
     assert "metadata_core_path" not in checker.__dict__
 
 
-def test_extensions_metadata_errors(patches):
+async def test_extensions_metadata_errors(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -366,9 +363,10 @@ def test_extensions_metadata_errors(patches):
     meta = [f"KMETA{i}" for i in range(0, 5)]
 
     with patched as (m_meta, m_check):
-        m_meta.return_value = meta
+        ameta = AsyncMock(return_value=meta)
+        m_meta.side_effect = ameta
         assert (
-            checker.metadata_errors
+            await checker.metadata_errors
             == {k: m_check.return_value
                 for k in meta})
 
@@ -378,7 +376,7 @@ def test_extensions_metadata_errors(patches):
     assert "metadata_errors" not in checker.__dict__
 
 
-def test_extensions_metadata_missing(patches):
+async def test_extensions_metadata_missing(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -392,16 +390,17 @@ def test_extensions_metadata_missing(patches):
     expected = set([f"K{i}" for i in range(0, 10) if not i % 2])
 
     with patched as (m_all, m_meta):
+        ameta = AsyncMock(return_value=meta)
+        m_meta.side_effect = ameta
         m_all.return_value = all_ext
-        m_meta.return_value = meta
         assert (
-            checker.metadata_missing
+            await checker.metadata_missing
             == expected)
 
     assert "metadata_missing" not in checker.__dict__
 
 
-def test_extensions_metadata_only(patches):
+async def test_extensions_metadata_only(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -422,12 +421,13 @@ def test_extensions_metadata_only(patches):
         if (not i % 2 and i not in range(7, 13))])
 
     with patched as (m_all, m_meta, m_meta_only):
+        ameta = AsyncMock(return_value=meta)
+        m_meta.side_effect = ameta
         m_all.return_value = all_ext
-        m_meta.return_value = meta
         m_meta_only.return_value = meta_only
 
         assert (
-            checker.metadata_only
+            await checker.metadata_only
             == expected)
 
     assert "metadata_only" not in checker.__dict__
@@ -451,7 +451,7 @@ def test_extensions_metadata_only_extensions(patches):
     assert "metadata_only_extensions" not in checker.__dict__
 
 
-def test_extensions_registration_errors(patches):
+async def test_extensions_registration_errors(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -464,10 +464,12 @@ def test_extensions_registration_errors(patches):
     only = [f"ONLY{i}" for i in reversed(range(0, 10))]
 
     with patched as (m_missing, m_only):
-        m_missing.return_value = missing
-        m_only.return_value = only
+        amissing = AsyncMock(return_value=missing)
+        m_missing.side_effect = amissing
+        aonly = AsyncMock(return_value=only)
+        m_only.side_effect = aonly
         assert (
-            checker.registration_errors
+            await checker.registration_errors
             == [*[f"Metadata for unused extension found: {extension}"
                   for extension
                   in sorted(only)],
@@ -478,7 +480,7 @@ def test_extensions_registration_errors(patches):
     assert "registration_errors" not in checker.__dict__
 
 
-def test_extensions_robust_to_downstream_count(patches):
+async def test_extensions_robust_to_downstream_count(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -506,13 +508,14 @@ def test_extensions_robust_to_downstream_count(patches):
             security_posture="NOT_robust_to_untrusted_downstream"))
 
     with patched as (m_meta, ):
-        m_meta.return_value = metadata
-        assert checker.robust_to_downstream_count == 3
+        meta = AsyncMock(return_value=metadata)
+        m_meta.side_effect = meta
+        assert await checker.robust_to_downstream_count == 3
 
     assert "robust_to_downstream_count" not in checker.__dict__
 
 
-def test_extensions_check_metadata(patches):
+async def test_extensions_check_metadata(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -530,10 +533,10 @@ def test_extensions_check_metadata(patches):
         m_sec.return_value = sec
         m_status.return_value = status
         assert (
-            checker.check_metadata(extension)
-            == (list(cats)
-                + list(sec)
-                + list(f"STATUS{i}" for i in range(0, 5))))
+            await checker.check_metadata(extension)
+            == (*cats,
+                *sec,
+                *(f"STATUS{i}" for i in range(0, 5))))
 
     for source in m_cats, m_sec, m_status:
         assert (
@@ -552,7 +555,8 @@ def test_extensions_check_metadata(patches):
     [("A", "B", "C", "D"),
      ("A", "B"),
      ("B", "C", "D")])
-def test_extensions__check_metadata_categories(patches, ext_cats, all_cats):
+async def test_extensions__check_metadata_categories(
+        patches, ext_cats, all_cats):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -561,44 +565,43 @@ def test_extensions__check_metadata_categories(patches, ext_cats, all_cats):
         ("AExtensionsCheck.metadata",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.extensions")
+    if not ext_cats:
+        expected = (
+            "Missing extension category for EXTENSION. "
+            "Please make sure the target is an envoy_cc_extension "
+            "and category is set", )
+    else:
+        wrong_cats = [cat for cat in ext_cats if cat not in all_cats]
+        if wrong_cats:
+            expected = tuple(
+                f"Unknown extension category for EXTENSION: {cat}. "
+                "Please add it to tools/extensions/extensions_check.py"
+                for cat
+                in wrong_cats)
+        else:
+            expected = ()
 
     with patched as (m_cats, m_meta):
+        meta = AsyncMock()
+        m_meta.side_effect = meta
         m_cats.return_value = all_cats
-        (m_meta.return_value.__getitem__
-               .return_value.get.return_value) = ext_cats
-        _result = checker._check_metadata_categories("EXTENSION")
-        assert isinstance(_result, types.GeneratorType)
-        result = list(_result)
+        (meta.return_value.__getitem__
+             .return_value.get.return_value) = ext_cats
+        assert (
+            await checker._check_metadata_categories("EXTENSION")
+            == expected)
 
     assert (
-        list(m_meta.return_value.__getitem__.call_args)
+        list(meta.return_value.__getitem__.call_args)
         == [('EXTENSION',), {}])
     assert (
-        list(m_meta.return_value.__getitem__.return_value.get.call_args)
+        list(meta.return_value.__getitem__.return_value.get.call_args)
         == [('categories', ()), {}])
-
-    if not ext_cats:
-        assert (
-            result
-            == ["Missing extension category for EXTENSION. "
-                "Please make sure the target is an envoy_cc_extension "
-                "and category is set"])
-        return
-
-    wrong_cats = [cat for cat in ext_cats if cat not in all_cats]
-    if wrong_cats:
-        assert (
-            result
-            == [f"Unknown extension category for EXTENSION: {cat}. "
-                "Please add it to tools/extensions/extensions_check.py"
-                for cat in wrong_cats])
-        return
-
-    assert result == []
 
 
 @pytest.mark.parametrize("sec_posture", [None, "A", "Z"])
-def test_extensions__check_metadata_security_posture(patches, sec_posture):
+async def test_extensions__check_metadata_security_posture(
+        patches, sec_posture):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -609,38 +612,37 @@ def test_extensions__check_metadata_security_posture(patches, sec_posture):
         prefix="envoy.code.check.abstract.extensions")
     postures = ["A", "B", "C"]
 
+    if not sec_posture:
+        expected = (
+            "Missing security posture for EXTENSION. "
+            "Please make sure the target is an "
+            "envoy_cc_extension and security_posture is set", )
+    elif sec_posture not in postures:
+        expected = (f"Unknown security posture for EXTENSION: {sec_posture}", )
+    else:
+        expected = ()
+
     with patched as (m_sec, m_meta):
+        meta = AsyncMock()
+        m_meta.side_effect = meta
         m_sec.return_value = postures
-        (m_meta.return_value.__getitem__
-               .return_value.__getitem__.return_value) = sec_posture
-        _result = checker._check_metadata_security_posture("EXTENSION")
-        assert isinstance(_result, types.GeneratorType)
-        result = list(_result)
+        (meta.return_value.__getitem__
+             .return_value.__getitem__.return_value) = sec_posture
+        assert (
+            await checker._check_metadata_security_posture("EXTENSION")
+            == expected)
 
     assert (
-        list(m_meta.return_value.__getitem__.call_args)
+        list(meta.return_value.__getitem__.call_args)
         == [('EXTENSION',), {}])
     assert (
-        list(m_meta.return_value.__getitem__
-                   .return_value.__getitem__.call_args)
+        list(meta.return_value.__getitem__
+                 .return_value.__getitem__.call_args)
         == [('security_posture',), {}])
-
-    if not sec_posture:
-        assert (
-            result
-            == ["Missing security posture for EXTENSION. "
-                "Please make sure the target is an "
-                "envoy_cc_extension and security_posture is set"])
-    elif sec_posture not in postures:
-        assert (
-            result
-            == [f"Unknown security posture for EXTENSION: {sec_posture}"])
-    else:
-        assert result == []
 
 
 @pytest.mark.parametrize("status", ["A", "Z"])
-def test_extensions__check_metadata_status(patches, status):
+async def test_extensions__check_metadata_status(patches, status):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -652,22 +654,44 @@ def test_extensions__check_metadata_status(patches, status):
     status_values = ["A", "B", "C"]
 
     with patched as (m_status, m_meta):
+        meta = AsyncMock()
+        m_meta.side_effect = meta
         m_status.return_value = status_values
-        (m_meta.return_value.__getitem__
-               .return_value.__getitem__.return_value) = status
-        _result = checker._check_metadata_status("EXTENSION")
-        assert isinstance(_result, types.GeneratorType)
-        result = list(_result)
+        (meta.return_value.__getitem__
+             .return_value.__getitem__.return_value) = status
+        assert (
+            await checker._check_metadata_status("EXTENSION")
+            == ((f'Unknown status for EXTENSION: {status}', )
+                if status not in status_values
+                else ()))
 
     assert (
-        list(m_meta.return_value.__getitem__.call_args)
+        list(meta.return_value.__getitem__.call_args)
         == [('EXTENSION',), {}])
     assert (
-        list(m_meta.return_value.__getitem__
-                   .return_value.__getitem__.call_args)
+        list(meta.return_value.__getitem__
+                 .return_value.__getitem__.call_args)
         == [('status',), {}])
 
-    if status not in status_values:
-        assert result == [f'Unknown status for EXTENSION: {status}']
-    else:
-        assert result == []
+
+async def test_extensions__metadata(patches):
+    checker = check.AExtensionsCheck(
+        "DIRECTORY", extensions_build_config="BUILD")
+    patched = patches(
+        "typing",
+        "utils",
+        ("AExtensionsCheck.execute",
+         dict(new_callable=AsyncMock)),
+        prefix="envoy.code.check.abstract.extensions")
+    path = MagicMock()
+
+    with patched as (m_typing, m_utils, m_exec):
+        assert (
+            await checker._metadata(path)
+            == m_exec.return_value)
+
+    assert (
+        m_exec.call_args
+        == [(m_utils.from_yaml,
+             path,
+             m_typing.ExtensionsMetadataDict), {}])
