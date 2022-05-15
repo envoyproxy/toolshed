@@ -5,6 +5,7 @@ import pytest
 
 from aio.core import directory
 
+from envoy.base import utils
 from envoy.code import check
 
 
@@ -38,10 +39,14 @@ def test_checker_constructor(patches, args, kwargs):
     assert "git_directory_class" not in directory.__dict__
     assert checker.glint_class == check.GlintCheck
     assert "glint_class" not in directory.__dict__
+    assert checker.project_class == utils.Project
+    assert "project_class" not in directory.__dict__
     assert checker.shellcheck_class == check.ShellcheckCheck
     assert "shellcheck_class" not in directory.__dict__
     assert checker.yapf_class == check.YapfCheck
     assert "yapf_class" not in directory.__dict__
+    assert checker.changelog_class == check.ChangelogCheck
+    assert "changelog_class" not in directory.__dict__
 
 
 def test_checker_path(patches):
@@ -65,7 +70,10 @@ def test_checker_path(patches):
     [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
 @pytest.mark.parametrize(
     "sub",
-    [check.ExtensionsCheck,
+    [check.ChangelogChangesChecker,
+     check.ChangelogCheck,
+     check.ChangelogStatus,
+     check.ExtensionsCheck,
      check.Flake8Check,
      check.GlintCheck,
      check.ShellcheckCheck,
@@ -82,3 +90,33 @@ def test_checker_constructors(patches, args, kwargs, sub):
     assert (
         m_super.call_args
         == [tuple(args), kwargs])
+
+
+def test_changelog_check_constructor():
+    checker = check.ChangelogCheck("PROJECT", "DIRECTORY")
+    assert checker.project == "PROJECT"
+    assert checker.directory == "DIRECTORY"
+    assert checker.changes_checker_class == check.ChangelogChangesChecker
+    assert checker.changelog_status_class == check.ChangelogStatus
+
+
+def test_changeschecker_checkers(patches):
+    checker = check.ChangelogChangesChecker("SECTIONS")
+    patched = patches(
+        "BackticksCheck",
+        "PunctuationCheck",
+        "ReflinksCheck",
+        prefix="envoy.code.check.checker")
+
+    with patched as (m_bticks, m_punc, m_refs):
+        assert (
+            checker.change_checkers
+            == (m_bticks.return_value,
+                m_punc.return_value,
+                m_refs.return_value))
+
+    for _check in m_bticks, m_punc, m_refs:
+        assert (
+            _check.call_args
+            == [(), {}])
+    assert "change_checkers" in checker.__dict__
