@@ -1,10 +1,14 @@
 
+import json
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+import yaml as _yaml
+
 from envoy.base import utils
 from envoy.code import check
+from envoy.code.check import exceptions
 
 
 @pytest.mark.parametrize(
@@ -117,30 +121,27 @@ def test_extensions_configured_extensions(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
-        "json",
-        "pathlib",
+        "cast",
         "typing",
-        "utils",
+        "AExtensionsCheck._from_json",
         prefix="envoy.code.check.abstract.extensions")
 
-    with patched as (m_json, m_plib, m_typing, m_utils):
+    with patched as (m_cast, m_typing, m_json):
         assert (
             checker.configured_extensions
-            == m_utils.typed.return_value)
+            == m_cast.return_value)
 
     assert (
-        m_utils.typed.call_args
-        == [(m_typing.ConfiguredExtensionsDict, m_json.loads.return_value),
+        m_cast.call_args
+        == [(m_typing.ConfiguredExtensionsDict,
+             m_json.return_value), {}])
+    assert (
+        m_json.call_args
+        == [("BUILD",
+             m_typing.ConfiguredExtensionsDict,
+             "Failed to parse extensions {path}:\n{e}",
+             "Extensions parsing error: {path}:\n{e}"),
             {}])
-    assert (
-        m_json.loads.call_args
-        == [(m_plib.Path.return_value.read_text.return_value, ), {}])
-    assert (
-        m_plib.Path.call_args
-        == [("BUILD", ), {}])
-    assert (
-        m_plib.Path.return_value.read_text.call_args
-        == [(), {}])
     assert "configured_extensions" in checker.__dict__
 
 
@@ -148,24 +149,28 @@ def test_extensions_extensions_schema(patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
+        "cast",
         "typing",
-        "utils",
         ("AExtensionsCheck.extensions_schema_path",
          dict(new_callable=PropertyMock)),
+        "AExtensionsCheck._from_yaml",
         prefix="envoy.code.check.abstract.extensions")
 
-    with patched as (m_typing, m_utils, m_path):
+    with patched as (m_cast, m_typing, m_path, m_yaml):
         assert (
             checker.extensions_schema
-            == m_utils.typed.return_value)
-
+            == m_cast.return_value)
     assert (
-        m_utils.typed.call_args
+        m_cast.call_args
         == [(m_typing.ExtensionsSchemaDict,
-             m_utils.from_yaml.return_value), {}])
+             m_yaml.return_value), {}])
     assert (
-        m_utils.from_yaml.call_args
-        == [(m_path.return_value, ), {}])
+        m_yaml.call_args
+        == [(m_path.return_value,
+             m_typing.ExtensionsSchemaDict,
+             "Failed to parse extensions schema {path}:\n{e}",
+             "Extensions schema parsing error: {path}:\n{e}"),
+            {}])
     assert "extensions_schema" in checker.__dict__
 
 
@@ -284,9 +289,7 @@ async def test_extensions_metadata(patches):
 
 
 @pytest.mark.parametrize("mtype", ["core", "contrib"])
-@pytest.mark.parametrize(
-    "raises", [None, BaseException, utils.exceptions.TypeCastingError])
-async def test_extensions_metadata_data(patches, mtype, raises):
+async def test_extensions_metadata_data(patches, mtype):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -296,32 +299,15 @@ async def test_extensions_metadata_data(patches, mtype, raises):
         prefix="envoy.code.check.abstract.extensions")
 
     with patched as (m_path, m_meta):
-        if raises:
-            m_meta.side_effect = raises("AN ERROR OCCURRED")
-
-        if raises == utils.exceptions.TypeCastingError:
-            ConfigError = check.exceptions.ExtensionsConfigurationError
-            with pytest.raises(ConfigError) as e:
-                await getattr(checker, f"metadata_{mtype}")
-        elif raises:
-            with pytest.raises(raises):
-                await getattr(checker, f"metadata_{mtype}")
-        else:
-            assert (
-                await getattr(checker, f"metadata_{mtype}")
-                == m_meta.return_value)
+        assert (
+            await getattr(checker, f"metadata_{mtype}")
+            == m_meta.return_value)
 
     assert not hasattr(
         checker,
         getattr(
             check.AExtensionsCheck,
             f"metadata_{mtype}").cache_name)
-
-    if raises == utils.exceptions.TypeCastingError:
-        assert (
-            e.value.args[0]
-            == (f"Failed to parse {mtype} metadata "
-                f"({m_path.return_value}): AN ERROR OCCURRED"))
 
 
 def test_extensions_metadata_contrib_path():
@@ -674,24 +660,176 @@ async def test_extensions__check_metadata_status(patches, status):
         == [('status',), {}])
 
 
-async def test_extensions__metadata(patches):
+@pytest.mark.parametrize(
+    "raises",
+    [None,
+     BaseException,
+     FileNotFoundError,
+     utils.exceptions.TypeCastingError,
+     json.JSONDecodeError])
+def test_extensions__from_json(patches, raises):
+    checker = check.AExtensionsCheck(
+        "DIRECTORY", extensions_build_config="BUILD")
+    patched = patches(
+        "logger",
+        "typing",
+        "utils.from_json",
+        prefix="envoy.code.check.abstract.extensions")
+    config_error = raises in [FileNotFoundError, json.JSONDecodeError]
+    no_error = (not raises or raises == utils.exceptions.TypeCastingError)
+    path = MagicMock()
+    type = MagicMock()
+    err_message = MagicMock()
+    warn_message = MagicMock()
+
+    with patched as (m_log, m_typing, m_json):
+        if raises:
+            error = raises("AN ERROR OCCURRED", "X", 23)
+            error.value = "ERROR_VALUE"
+            m_json.side_effect = error
+        if no_error:
+            assert (
+                checker._from_json(path, type, err_message, warn_message)
+                == (m_json.return_value
+                    if not raises
+                    else error.value))
+        elif config_error:
+            ConfigError = check.exceptions.ExtensionsConfigurationError
+            with pytest.raises(ConfigError) as e:
+                checker._from_json(path, type, err_message, warn_message)
+        else:
+            with pytest.raises(raises) as e:
+                checker._from_json(path, type, err_message, warn_message)
+
+    assert (
+        m_json.call_args
+        == [(path, type), {}])
+    if raises == utils.exceptions.TypeCastingError:
+        assert (
+            m_log.warning.call_args
+            == [(warn_message.format.return_value, ), {}])
+        assert (
+            warn_message.format.call_args
+            == [(), dict(path=path, e=error)])
+        return
+    assert not m_log.warning.called
+    assert not warn_message.format.called
+    if config_error:
+        assert (
+            e.value.args[0]
+            == err_message.format.return_value)
+        assert (
+            err_message.format.call_args
+            == [(), dict(path=path, e=error)])
+        return
+    assert not err_message.format.called
+
+
+@pytest.mark.parametrize(
+    "raises",
+    [None,
+     BaseException,
+     FileNotFoundError,
+     utils.exceptions.TypeCastingError,
+     _yaml.reader.ReaderError])
+def test_extensions__from_yaml(patches, raises):
+    checker = check.AExtensionsCheck(
+        "DIRECTORY", extensions_build_config="BUILD")
+    patched = patches(
+        "logger",
+        "typing",
+        "utils.from_yaml",
+        prefix="envoy.code.check.abstract.extensions")
+    config_error = raises in [FileNotFoundError, _yaml.reader.ReaderError]
+    no_error = (not raises or raises == utils.exceptions.TypeCastingError)
+    path = MagicMock()
+    type = MagicMock()
+    err_message = MagicMock()
+    warn_message = MagicMock()
+
+    with patched as (m_log, m_typing, m_yaml):
+        if raises:
+            error = raises("AN ERROR OCCURRED", "X", 23, "Y", "Z")
+            error.value = "ERROR_VALUE"
+            m_yaml.side_effect = error
+        if no_error:
+            assert (
+                checker._from_yaml(path, type, err_message, warn_message)
+                == (m_yaml.return_value
+                    if not raises
+                    else error.value))
+        elif config_error:
+            ConfigError = check.exceptions.ExtensionsConfigurationError
+            with pytest.raises(ConfigError) as e:
+                checker._from_yaml(path, type, err_message, warn_message)
+        else:
+            with pytest.raises(raises) as e:
+                checker._from_yaml(path, type, err_message, warn_message)
+
+    assert (
+        m_yaml.call_args
+        == [(path, type), {}])
+    if raises == utils.exceptions.TypeCastingError:
+        assert (
+            m_log.warning.call_args
+            == [(warn_message.format.return_value, ), {}])
+        assert (
+            warn_message.format.call_args
+            == [(), dict(path=path, e=error)])
+        return
+    assert not m_log.warning.called
+    assert not warn_message.format.called
+    if config_error:
+        assert (
+            e.value.args[0]
+            == err_message.format.return_value)
+        assert (
+            err_message.format.call_args
+            == [(), dict(path=path, e=error)])
+        return
+    assert not err_message.format.called
+
+
+@pytest.mark.parametrize(
+    "raises",
+    [None,
+     BaseException,
+     utils.exceptions.TypeCastingError,
+     FileNotFoundError])
+async def test_extensions__metadata(patches, raises):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
         "typing",
-        "utils",
+        "utils.from_yaml",
         ("AExtensionsCheck.execute",
          dict(new_callable=AsyncMock)),
         prefix="envoy.code.check.abstract.extensions")
     path = MagicMock()
 
-    with patched as (m_typing, m_utils, m_exec):
-        assert (
-            await checker._metadata(path)
-            == m_exec.return_value)
+    with patched as (m_typing, m_yaml, m_exec):
+        if raises:
+            error = raises("AN ERROR OCCURRED")
+            m_exec.side_effect = error
+
+        if raises == BaseException:
+            with pytest.raises(raises):
+                await checker._metadata(path)
+        elif raises:
+            with pytest.raises(exceptions.ExtensionsConfigurationError) as e:
+                await checker._metadata(path)
+        else:
+            assert (
+                await checker._metadata(path)
+                == m_exec.return_value)
 
     assert (
         m_exec.call_args
-        == [(m_utils.from_yaml,
+        == [(m_yaml,
              path,
              m_typing.ExtensionsMetadataDict), {}])
+    if raises and not raises == BaseException:
+        assert (
+            e.value.args[0]
+            == ("Failed to parse extensions metadata "
+                f"({path}): {error}"))

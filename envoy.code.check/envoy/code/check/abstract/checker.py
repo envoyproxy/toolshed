@@ -13,8 +13,9 @@ from aio.core import directory as _directory, event, subprocess
 from aio.core.tasks import inflate
 from aio.run import checker
 
+from envoy.base import utils
 from envoy.base.utils import IProject
-from envoy.code.check import abstract, typing
+from envoy.code.check import abstract, exceptions, typing
 
 
 # TODO: Add a README in envoy repo with info on how to fix and maybe use
@@ -294,7 +295,9 @@ class ACodeChecker(
         """Check for shellcheck issues."""
         await self._code_check(self.shellcheck)
 
-    @checker.preload(when=["changelog"])
+    @checker.preload(
+        when=["changelog"],
+        catches=[utils.exceptions.ChangelogParseError])
     async def preload_changelog(self) -> None:
         preloader = inflate(
             self.changelog,
@@ -305,9 +308,11 @@ class ACodeChecker(
     @checker.preload(
         when=["extensions_fuzzed",
               "extensions_metadata",
-              "extensions_registered"])
+              "extensions_registered"],
+        catches=[exceptions.ExtensionsConfigurationError])
     async def preload_extensions(self) -> None:
         metadata = await self.extensions.metadata
+        self.extensions.extensions_schema
         self.log.debug(f"Preloaded extensions ({len(metadata)})")
 
     @checker.preload(

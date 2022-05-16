@@ -9,7 +9,7 @@ from aio.core import directory
 from envoy.code import check
 
 
-async def test_glint_have_newlines(patches):
+async def test_glint_no_newlines(patches):
     patched = patches(
         "NewlineChecker",
         prefix="envoy.code.check.abstract.glint")
@@ -18,14 +18,14 @@ async def test_glint_have_newlines(patches):
 
     with patched as (m_newlines, ):
         assert (
-            check.AGlintCheck.have_newlines(path, *paths)
-            == m_newlines.return_value.have_newlines.return_value)
+            check.AGlintCheck.no_newlines(path, *paths)
+            == m_newlines.return_value.no_newlines.return_value)
 
     assert (
         m_newlines.call_args
         == [(path, ), {}])
     assert (
-        m_newlines.return_value.have_newlines.call_args
+        m_newlines.return_value.no_newlines.call_args
         == [(tuple(paths), ), {}])
 
 
@@ -127,7 +127,7 @@ async def test_glint_files_with_no_newline(patches):
         ("AGlintCheck.files",
          dict(new_callable=PropertyMock)),
         "AGlintCheck.execute_in_batches",
-        "AGlintCheck.have_newlines",
+        "AGlintCheck.no_newlines",
         prefix="envoy.code.check.abstract.glint")
     batched = [
         set(x for x in range(0, 10)),
@@ -310,7 +310,7 @@ def test_glint_newline_checker_constructor():
 
 
 @pytest.mark.parametrize("n", range(1, 5))
-def test_glint_newline_checker_have_newlines(patches, n):
+def test_glint_newline_checker_no_newlines(patches, n):
     nl_checker = check.abstract.glint.NewlineChecker("PATH")
     patched = patches(
         "set",
@@ -334,7 +334,7 @@ def test_glint_newline_checker_have_newlines(patches, n):
     with patched as (m_set, m_dir_ctx, m_utils):
         m_utils.last_n_bytes_of.side_effect = byter.last_n_bytes_of
         assert (
-            nl_checker.have_newlines(paths)
+            nl_checker.no_newlines(paths)
             == m_set.return_value)
         pathgen = m_set.call_args[0][0]
         assert isinstance(pathgen, types.GeneratorType)

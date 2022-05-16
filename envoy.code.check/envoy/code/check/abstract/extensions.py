@@ -2,10 +2,13 @@
 import asyncio
 import itertools
 import json
+import logging
 import pathlib
 import re
 from functools import cached_property
-from typing import Dict, List, Pattern, Set, Tuple
+from typing import Any, cast, Dict, List, Pattern, Set, Tuple, Type, Union
+
+import yaml as _yaml
 
 import abstracts
 
@@ -13,6 +16,9 @@ from aio.core.functional import async_property
 
 from envoy.base import utils
 from envoy.code.check import abstract, exceptions, typing
+
+
+logger = logging.getLogger(__name__)
 
 
 FILTER_NAMES_PATTERN = "NetworkFilterNames::get()"
@@ -53,10 +59,13 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @cached_property
     def configured_extensions(self) -> typing.ConfiguredExtensionsDict:
-        return utils.typed(
+        return cast(
             typing.ConfiguredExtensionsDict,
-            json.loads(
-                pathlib.Path(self.extensions_build_config).read_text()))
+            self._from_json(
+                self.extensions_build_config,
+                typing.ConfiguredExtensionsDict,
+                "Failed to parse extensions {path}:\n{e}",
+                "Extensions parsing error: {path}:\n{e}"))
 
     @property
     def extension_categories(self) -> typing.ExtensionsSchemaCategoriesList:
@@ -74,9 +83,13 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @cached_property
     def extensions_schema(self) -> typing.ExtensionsSchemaDict:
-        return utils.typed(
+        return cast(
             typing.ExtensionsSchemaDict,
-            utils.from_yaml(self.extensions_schema_path))
+            self._from_yaml(
+                self.extensions_schema_path,
+                typing.ExtensionsSchemaDict,
+                "Failed to parse extensions schema {path}:\n{e}",
+                "Extensions schema parsing error: {path}:\n{e}"))
 
     @property
     def extensions_schema_path(self) -> pathlib.Path:
@@ -104,12 +117,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def metadata_contrib(self) -> typing.ExtensionsMetadataDict:
-        try:
-            return await self._metadata(self.metadata_contrib_path)
-        except utils.exceptions.TypeCastingError as e:
-            raise exceptions.ExtensionsConfigurationError(
-                "Failed to parse contrib metadata "
-                f"({self.metadata_contrib_path}): {e}")
+        return await self._metadata(self.metadata_contrib_path)
 
     @property
     def metadata_contrib_path(self) -> pathlib.Path:
@@ -117,12 +125,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def metadata_core(self) -> typing.ExtensionsMetadataDict:
-        try:
-            return await self._metadata(self.metadata_core_path)
-        except utils.exceptions.TypeCastingError as e:
-            raise exceptions.ExtensionsConfigurationError(
-                "Failed to parse core metadata "
-                f"({self.metadata_core_path}): {e}")
+        return await self._metadata(self.metadata_core_path)
 
     @property
     def metadata_core_path(self) -> pathlib.Path:
@@ -217,8 +220,45 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             return (f"Unknown status for {extension}: {status}", )
         return ()
 
+    def _from_json(
+            self,
+            path: Union[str, pathlib.Path],
+            type: Type,
+            err_message: str,
+            warn_message: str) -> Any:
+        # Parse JSON, handling errors
+        try:
+            return utils.from_json(path, type)
+        except (json.JSONDecodeError, FileNotFoundError) as e:
+            raise exceptions.ExtensionsConfigurationError(
+                err_message.format(path=path, e=e))
+        except utils.TypeCastingError as e:
+            logger.warning(warn_message.format(path=path, e=e))
+            return e.value
+
+    def _from_yaml(
+            self,
+            path: Union[str, pathlib.Path],
+            type: Type,
+            err_message: str,
+            warn_message: str) -> Any:
+        # Parse YAML, handling errors
+        try:
+            return utils.from_yaml(path, type)
+        except (_yaml.reader.ReaderError, FileNotFoundError) as e:
+            raise exceptions.ExtensionsConfigurationError(
+                err_message.format(path=path, e=e))
+        except utils.TypeCastingError as e:
+            logger.warning(warn_message.format(path=path, e=e))
+            return e.value
+
     async def _metadata(self, path) -> typing.ExtensionsMetadataDict:
-        return await self.execute(
-            utils.from_yaml,
-            path,
-            typing.ExtensionsMetadataDict)
+        try:
+            return await self.execute(
+                utils.from_yaml,
+                path,
+                typing.ExtensionsMetadataDict)
+        except (utils.exceptions.TypeCastingError, FileNotFoundError) as e:
+            raise exceptions.ExtensionsConfigurationError(
+                "Failed to parse extensions metadata "
+                f"({path}): {e}")
