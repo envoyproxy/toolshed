@@ -67,7 +67,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.8.3
+version: 0.8.4.dev0
 
 pypi: https://pypi.org/project/aio.core
 
@@ -115,7 +115,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.2.7
+version: 0.2.8.dev0
 
 pypi: https://pypi.org/project/envoy.base.utils
 
