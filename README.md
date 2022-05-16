@@ -67,7 +67,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.8.3.dev0
+version: 0.8.3
 
 pypi: https://pypi.org/project/aio.core
 
@@ -77,7 +77,7 @@ pypi: https://pypi.org/project/aio.core
 - [aiofiles](https://pypi.org/project/aiofiles)
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [orjson](https://pypi.org/project/orjson)
-- [trycast](https://pypi.org/project/trycast)
+- [trycast](https://pypi.org/project/trycast) >=0.7.3
 
 ---
 
@@ -115,7 +115,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.2.7.dev0
+version: 0.2.7
 
 pypi: https://pypi.org/project/envoy.base.utils
 
@@ -130,7 +130,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 - [packaging](https://pypi.org/project/packaging)
 - [pytz](https://pypi.org/project/pytz)
 - [pyyaml](https://pypi.org/project/pyyaml)
-- [trycast](https://pypi.org/project/trycast)
+- [trycast](https://pypi.org/project/trycast) >=0.7.3
 
 ---
 

@@ -6,6 +6,7 @@ pytooling_library(
         "//deps:aiofiles",
         "//deps:aiohttp",
         "//deps:orjson",
+        "//deps:trycast",
     ],
     sources=[
         "__init__.py",

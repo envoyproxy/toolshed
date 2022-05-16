@@ -42,7 +42,7 @@ sphinx-tabs
 sphinxcontrib-httpdomain
 sphinxcontrib-serializinghtml
 sphinxext-rediraffe
-trycast
+trycast>=0.7.3
 types-orjson
 types-setuptools
 uvloop
