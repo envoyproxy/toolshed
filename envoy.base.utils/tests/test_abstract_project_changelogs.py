@@ -299,33 +299,49 @@ def test_abstract_changelogs_rel_current_path(patches):
 def test_abstract_changelogs_sections(patches, raises):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
+        "cast",
         "utils.from_yaml",
+        "logger",
         ("AChangelogs.sections_path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
 
-    with patched as (m_yaml, m_path):
+    with patched as (m_cast, m_yaml, m_logger, m_path):
         if raises:
             error = raises("AN ERROR OCCURRED", 7, 23, "Y", "Z")
             m_yaml.side_effect = error
         if raises == Exception:
             with pytest.raises(Exception):
                 changelogs.sections
-        elif raises:
+        elif raises == yaml.reader.ReaderError:
             with pytest.raises(exceptions.ChangelogError) as e:
                 changelogs.sections
         else:
             assert (
                 changelogs.sections
-                == m_yaml.return_value)
+                == (m_yaml.return_value
+                    if not raises
+                    else m_cast.return_value))
+
+    if raises == exceptions.TypeCastingError:
+        assert (
+            m_cast.call_args
+            == [(typing.ChangelogSectionsDict, error.value), {}])
+        assert (
+            m_logger.warning.call_args
+            == [("Changelog section parsing error: "
+                f"({m_path.return_value})\n{error}", ), {}])
+    else:
+        assert not m_logger.called
+        assert not m_cast.called
 
     assert (
         m_yaml.call_args
         == [(m_path.return_value, typing.ChangelogSectionsDict), {}])
     assert (
         ("sections" in changelogs.__dict__)
-        == (not raises))
-    if not raises or raises == Exception:
+        == (not raises or raises == exceptions.TypeCastingError))
+    if raises != yaml.reader.ReaderError:
         return
     assert (
         e.value.args[0]
@@ -1006,8 +1022,8 @@ def test_abstract_changelog_base_version(patches):
 def test_abstract_changelog_data(patches, raises):
     changelog = DummyChangelog("VERSION", "PATH")
     patched = patches(
+        "cast",
         "utils.from_yaml",
-        "utils.typed",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
 
@@ -1019,7 +1035,7 @@ def test_abstract_changelog_data(patches, raises):
             changes[k] = None
     changes["date"] = "NOTCHANGE"
 
-    with patched as (m_yaml, m_typed, m_typing):
+    with patched as (m_cast, m_yaml, m_typing):
         m_yaml.return_value.items.return_value = changes.items()
         if raises:
             error = raises("AN ERROR OCCURRED", 7, 23, "Y", "Z")
@@ -1028,12 +1044,12 @@ def test_abstract_changelog_data(patches, raises):
             with pytest.raises(Exception):
                 changelog.data
         elif raises:
-            with pytest.raises(exceptions.ChangelogError) as e:
+            with pytest.raises(exceptions.ChangelogParseError) as e:
                 changelog.data
         else:
             assert (
                 changelog.data
-                == m_typed.return_value)
+                == m_cast.return_value)
 
     assert (
         m_yaml.call_args
@@ -1043,8 +1059,8 @@ def test_abstract_changelog_data(patches, raises):
     elif raises:
         assert (
             e.value.args[0]
-            == ("Failed to parse changelog "
-                f"(PATH): {str(error)}"))
+            == ("Failed to parse: "
+                f"PATH\n{str(error)}"))
         return
 
     expected = {
@@ -1058,7 +1074,7 @@ def test_abstract_changelog_data(patches, raises):
         in changes.items()
         if v}
     assert (
-        m_typed.call_args
+        m_cast.call_args
         == [(m_typing.ChangelogDict, expected), {}])
     assert "data" in changelog.__dict__
 

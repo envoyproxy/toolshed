@@ -198,13 +198,10 @@ def test_ellipsize(text_length, max_length):
         == expected)
 
 
-@pytest.mark.parametrize(
-    "casted",
-    [(), [], False, None, "", "X", ["Y"]])
-def test_typed(patches, casted):
+@pytest.mark.parametrize("assignable", [True, False])
+def test_typed(patches, assignable):
     patched = patches(
-        "trycast",
-        "ellipsize",
+        "isassignable",
         prefix="envoy.base.utils.utils")
 
     class DummyValue:
@@ -214,27 +211,23 @@ def test_typed(patches, casted):
 
     value = DummyValue()
 
-    with patched as (m_try, m_elips):
-        m_try.return_value = casted
+    with patched as (m_assig, ):
+        m_assig.return_value = assignable
 
-        if casted is None:
+        if not assignable:
             with pytest.raises(utils.TypeCastingError) as e:
                 utils.typed("TYPE", value)
 
             assert (
                 e.value.args[0]
-                == ("Value has wrong type or shape for Type "
-                    f"TYPE: {m_elips.return_value}"))
-            assert (
-                m_elips.call_args
-                == [("VALUE", 10), {}])
+                == ("Value has wrong type or shape for "
+                    "TYPE\nVALUE"))
         else:
             assert utils.typed("TYPE", value) == value
-            assert not m_elips.called
 
     assert (
-        m_try.call_args
-        == [("TYPE", value), {}])
+        m_assig.call_args
+        == [(value, "TYPE"), {}])
 
 
 @pytest.mark.parametrize("filter", [True, False])

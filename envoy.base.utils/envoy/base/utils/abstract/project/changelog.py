@@ -1,11 +1,12 @@
 
+import logging
 import pathlib
 import re
 import types
 from datetime import datetime
 from functools import cached_property
 from typing import (
-    Dict, ItemsView, Iterator, KeysView,
+    cast, Dict, ItemsView, Iterator, KeysView,
     List, Pattern, Set, Tuple, Type, ValuesView)
 
 from frozendict import frozendict
@@ -17,6 +18,9 @@ import abstracts
 
 from envoy.base import utils
 from envoy.base.utils import exceptions, interface, typing
+
+
+logger = logging.getLogger(__name__)
 
 
 CHANGELOG_PATH_GLOB = "changelogs/*.*.*.yaml"
@@ -136,9 +140,9 @@ class AChangelog(metaclass=abstracts.Abstraction):
         try:
             data = utils.from_yaml(self.path, typing.ChangelogSourceDict)
         except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
-            raise exceptions.ChangelogError(
-                f"Failed to parse changelog ({self.path}): {e}")
-        return utils.typed(
+            raise exceptions.ChangelogParseError(
+                f"Failed to parse: {self.path}\n{e}")
+        return cast(
             typing.ChangelogDict,
             {k: (v
                  if k == "date"
@@ -255,10 +259,15 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             return utils.from_yaml(
                 self.sections_path,
                 typing.ChangelogSectionsDict)
-        except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
+        except _yaml.reader.ReaderError as e:
             raise exceptions.ChangelogError(
                 "Failed to parse changelog sections "
                 f"({self.sections_path}): {e}")
+        except utils.TypeCastingError as e:
+            logger.warning(
+                "Changelog section parsing error: "
+                f"({self.sections_path})\n{e}")
+            return cast(typing.ChangelogSectionsDict, e.value)
 
     @property
     def sections_path(self) -> pathlib.Path:
