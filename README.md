@@ -84,7 +84,7 @@ pypi: https://pypi.org/project/aio.core
 
 #### [aio.run.checker](aio.run.checker)
 
-version: 0.5.4
+version: 0.5.5.dev0
 
 pypi: https://pypi.org/project/aio.run.checker
 
@@ -115,7 +115,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.2.6
+version: 0.2.7.dev0
 
 pypi: https://pypi.org/project/envoy.base.utils
 
