@@ -430,7 +430,7 @@ class Checker(runner.Runner):
             self.removed_checks.add(check)
             self.error(
                 check,
-                [f"Check disabled: data download ({task}) failed {e}"])
+                [f"Check disabled, `{task}` failed: {e}"])
 
     async def preload(self) -> None:
         """Async preload data for checks."""
