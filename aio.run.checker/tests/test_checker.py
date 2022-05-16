@@ -1340,7 +1340,7 @@ async def test_checker_on_preload_task_failed(patches, checks, removed):
     assert (
         m_error.call_args_list
         == [[(check,
-              ["Check disabled: data download (TASK) failed ERROR"], ),
+              ["Check disabled, `TASK` failed: ERROR"], ),
              {}]
             for check in to_remove])
 
