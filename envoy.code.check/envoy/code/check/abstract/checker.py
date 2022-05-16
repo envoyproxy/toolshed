@@ -247,7 +247,7 @@ class ACodeChecker(
 
     async def check_extensions_fuzzed(self) -> None:
         """Check for glint issues."""
-        if self.extensions.all_fuzzed:
+        if await self.extensions.all_fuzzed:
             self.succeed(
                 "extensions_fuzzed",
                 ["All network filters are fuzzed"])
@@ -260,7 +260,8 @@ class ACodeChecker(
 
     async def check_extensions_metadata(self) -> None:
         """Check for glint issues."""
-        for extension, errors in self.extensions.metadata_errors.items():
+        errors = await self.extensions.metadata_errors
+        for extension, errors in errors.items():
             if errors:
                 self.error("extensions_metadata", errors)
             else:
@@ -268,7 +269,7 @@ class ACodeChecker(
 
     async def check_extensions_registered(self) -> None:
         """Check for glint issues."""
-        errors = self.extensions.registration_errors
+        errors = await self.extensions.registration_errors
         if errors:
             self.error("extensions_registered", errors)
         else:
@@ -300,6 +301,14 @@ class ACodeChecker(
             lambda c: (c.errors, ))
         async for changelog in preloader:
             self.log.debug(f"Preloaded changelog: {changelog.version}")
+
+    @checker.preload(
+        when=["extensions_fuzzed",
+              "extensions_metadata",
+              "extensions_registered"])
+    async def preload_extensions(self) -> None:
+        metadata = await self.extensions.metadata
+        self.log.debug(f"Preloaded extensions ({len(metadata)})")
 
     @checker.preload(
         when=["python_flake8"],
