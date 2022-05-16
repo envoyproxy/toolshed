@@ -19,7 +19,7 @@ import pytz
 
 import yaml
 
-from trycast import trycast  # type:ignore
+from trycast import isassignable  # type:ignore
 
 from .exceptions import TypeCastingError
 
@@ -138,12 +138,12 @@ def typed(tocast: Type, value: Any) -> Any:
 
     raises TypeError if cast value is `None`
     """
-
-    if trycast(tocast, value) is not None:
+    if isassignable(value, tocast):
         return value
     raise TypeCastingError(
-        "Value has wrong type or shape for Type "
-        f"{tocast}: {ellipsize(str(value), 10)}")
+        "Value has wrong type or shape for "
+        f"{tocast}\n{value}",
+        value=value)
 
 
 async def async_list(
