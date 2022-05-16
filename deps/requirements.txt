@@ -2,7 +2,7 @@ abstracts>=0.0.12
 aio.api.github>=0.1.1
 aio.api.nist
 aio.core>=0.8.2
-aio.run.checker>=0.5.3
+aio.run.checker>=0.5.4
 aio.run.runner>=0.3.2
 aiodocker
 aiofiles
@@ -10,7 +10,7 @@ aiohttp
 colorama
 coloredlogs
 docutils~=0.16.0
-envoy.base.utils>=0.2.5
+envoy.base.utils>=0.2.6
 envoy.distribution.distrotest>=0.0.7
 envoy.distribution.release>=0.0.7
 envoy.distribution.repo>=0.0.5
