@@ -399,7 +399,23 @@ def test_abstract_directory__batched_grep(patches):
              *grep_args)])
 
 
-async def test_abstract_git_directory_find_git_files_changed_since():
+def test_abstract_git_directory_find_git_deleted_files():
+    finder = MagicMock()
+    git_command = MagicMock()
+    assert (
+        directory.GitDirectory.find_git_deleted_files(
+            finder,
+            git_command)
+        == finder.return_value)
+    assert (
+        finder.call_args
+        == [(git_command,
+             "ls-files",
+             "--deleted"),
+            {}])
+
+
+def test_abstract_git_directory_find_git_files_changed_since():
     finder = MagicMock()
     git_command = MagicMock()
     since = MagicMock()
@@ -481,6 +497,34 @@ async def test_abstract_git_directory_changed_files(patches):
              "CHANGED"), {}])
 
 
+async def test_abstract_git_directory_deleted_files(patches):
+    direct = DummyGitDirectory("PATH")
+    patched = patches(
+        "AGitDirectory.find_git_deleted_files",
+        ("AGitDirectory.finder",
+         dict(new_callable=PropertyMock)),
+        ("AGitDirectory.git_command",
+         dict(new_callable=PropertyMock)),
+        ("AGitDirectory.execute",
+         dict(new_callable=AsyncMock)),
+        prefix="aio.core.directory.abstract.directory")
+
+    with patched as (m_find, m_finder, m_command, m_execute):
+        assert (
+            await direct.deleted_files
+            == m_execute.return_value
+            == getattr(
+                direct,
+                directory.AGitDirectory.deleted_files.cache_name)[
+                    "deleted_files"])
+
+    assert (
+        m_execute.call_args
+        == [(m_find,
+             m_finder.return_value,
+             m_command.return_value), {}])
+
+
 @pytest.mark.parametrize(
     "files",
     [set(),
@@ -505,7 +549,7 @@ async def test_abstract_git_directory_files(
         "set",
         ("AGitDirectory.changed_files",
          dict(new_callable=PropertyMock)),
-        "ADirectory.get_files",
+        "AGitDirectory.get_files",
         prefix="aio.core.directory.abstract.directory")
 
     with patched as (m_set, m_changed, m_files):
@@ -595,6 +639,28 @@ def test_abstract_git_directory_grep_command_args(patches, git):
             == (m_command.return_value, "grep", "--cached"))
 
     assert "grep_command_args" not in direct.__dict__
+
+
+async def test_abstract_git_directory_get_files(patches):
+    direct = DummyGitDirectory("PATH")
+    patched = patches(
+        "ADirectory.get_files",
+        ("AGitDirectory.deleted_files",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.abstract.directory")
+    files = set([f"F{i}" for i in range(0, 10)])
+    deleted = set([f"F{i}" for i in range(7, 13)])
+
+    with patched as (m_super, m_deleted):
+        m_super.return_value = files
+        m_deleted.side_effect = AsyncMock(return_value=deleted)
+        assert (
+            await direct.get_files()
+            == (files - deleted))
+
+    assert (
+        m_super.call_args
+        == [(), {}])
 
 
 @abstracts.implementer(directory.IDirectoryContext)

@@ -224,6 +224,16 @@ class AGitDirectory(ADirectory):
     """
 
     @classmethod
+    def find_git_deleted_files(
+            cls,
+            finder: ADirectoryFileFinder,
+            git_command: str) -> Set[str]:
+        return finder(
+            git_command,
+            "ls-files",
+            "--deleted")
+
+    @classmethod
     def find_git_files_changed_since(
             cls,
             finder: ADirectoryFileFinder,
@@ -250,6 +260,15 @@ class AGitDirectory(ADirectory):
             self.finder,
             self.git_command,
             self.changed)
+
+    @async_property(cache=True)
+    async def deleted_files(self) -> Set[str]:
+        """Files that have changed since `self.changed`, which can be the name
+        of a git object (branch etc) or a commit hash."""
+        return await self.execute(
+            self.find_git_deleted_files,
+            self.finder,
+            self.git_command)
 
     @async_property(cache=True)
     async def files(self) -> Set[str]:
@@ -284,3 +303,8 @@ class AGitDirectory(ADirectory):
     @property
     def grep_command_args(self) -> Tuple[str, ...]:
         return self.git_command, "grep", "--cached"
+
+    async def get_files(self) -> Set[str]:
+        return (
+            await super().get_files()
+            - await self.deleted_files)
