@@ -29,23 +29,27 @@ class NewlineChecker(directory.ADirectoryContext):
     @debug.logging(
         log=__name__,
         show_cpu=True)
-    def have_newlines(self, paths: Iterable[str]) -> Set[str]:
+    def no_newlines(self, paths: Iterable[str]) -> Set[str]:
         """Check files for final newline."""
         with self.in_directory:
             return set(
                 target
                 for target
                 in paths
-                if (utils.last_n_bytes_of(target)
-                    != b'\n'))
+                if not self._has_newline(target))
+
+    def _has_newline(self, target) -> bool:
+        return (
+            utils.last_n_bytes_of(target)
+            == b'\n')
 
 
 class AGlintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod
-    def have_newlines(cls, path: str, *paths: str) -> Set[str]:
+    def no_newlines(cls, path: str, *paths: str) -> Set[str]:
         """Check files for final newline."""
-        return NewlineChecker(path).have_newlines(paths)
+        return NewlineChecker(path).no_newlines(paths)
 
     @classmethod
     def filter_files(
@@ -82,7 +86,7 @@ class AGlintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     async def files_with_no_newline(self) -> Set[str]:
         """Files with no final newline."""
         batched = self.execute_in_batches(
-            partial(self.have_newlines, self.directory.path),
+            partial(self.no_newlines, self.directory.path),
             *await self.files)
         no_newline = set()
         async for batch in batched:

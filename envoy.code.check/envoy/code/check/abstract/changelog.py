@@ -119,6 +119,7 @@ class AChangelogStatus(event.AExecutive):
     @async_property(cache=True)
     async def data(self) -> utils.typing.ChangelogDict:
         # parse changelog data in executor
+        # return self.changelog.data
         return await self.execute(
             getattr,
             self.changelog,
@@ -148,10 +149,13 @@ class AChangelogStatus(event.AExecutive):
 
     @async_property(cache=True)
     async def errors(self) -> Tuple[str, ...]:
-        return (
-            *self.check_version(),
-            *await self.check_date(),
-            *await self.check_sections())
+        try:
+            return (
+                *self.check_version(),
+                *await self.check_date(),
+                *await self.check_sections())
+        except utils.exceptions.ChangelogParseError as e:
+            return (f"{self.version}: {e}", )
 
     @async_property
     async def invalid_date(self) -> Optional[str]:

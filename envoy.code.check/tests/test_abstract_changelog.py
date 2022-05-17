@@ -6,6 +6,7 @@ import pytest
 
 from aio.core import event
 
+from envoy.base import utils
 from envoy.code import check
 
 
@@ -243,9 +244,14 @@ def test_changelogstatus_duplicate_current(patches, is_current, exists):
     assert "duplicate_current" not in status.__dict__
 
 
-async def test_changelogstatus_errors(patches):
+@pytest.mark.parametrize(
+    "raises",
+    [None, BaseException, utils.exceptions.ChangelogParseError])
+async def test_changelogstatus_errors(patches, raises):
     status = check.AChangelogStatus(MagicMock(), MagicMock())
     patched = patches(
+        ("AChangelogStatus.version",
+         dict(new_callable=PropertyMock)),
         "AChangelogStatus.check_date",
         "AChangelogStatus.check_sections",
         "AChangelogStatus.check_version",
@@ -254,21 +260,36 @@ async def test_changelogstatus_errors(patches):
     date_errors = [f"D{i}" for i in range(0, 5)]
     sections_errors = [f"S{i}" for i in range(0, 5)]
 
-    with patched as (m_date, m_sections, m_version):
+    with patched as (m_version, m_date, m_sections, m_versions):
+        if raises:
+            error = raises("AN ERROR OCCURRED")
+            m_date.side_effect = error
         m_date.return_value = date_errors
         m_sections.return_value = sections_errors
-        m_version.return_value = version_errors
+        m_versions.return_value = version_errors
+        if raises == BaseException:
+            with pytest.raises(raises):
+                await status.errors
+            return
         assert (
             await status.errors
-            == (*version_errors, *date_errors, *sections_errors)
+            == ((*version_errors, *date_errors, *sections_errors)
+                if not raises
+                else (f"{m_version.return_value}: {error}", ))
             == getattr(
                 status,
                 check.AChangelogStatus.errors.cache_name)["errors"])
 
-    for provider in [m_date, m_sections, m_version]:
+    for provider in [m_versions, m_date]:
         assert (
             provider.call_args
             == [(), {}])
+    if not raises:
+        assert (
+            m_sections.call_args
+            == [(), {}])
+    else:
+        assert not m_sections.called
 
 
 @pytest.mark.parametrize("raises", [None, Exception, ValueError])
