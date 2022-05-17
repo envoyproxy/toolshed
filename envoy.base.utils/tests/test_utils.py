@@ -119,6 +119,42 @@ def test_util_untar(patches, tarballs):
 
 
 @pytest.mark.parametrize("type", [None, False, "TYPE"])
+def test_util_from_json(patches, type):
+    args = (
+        (type, )
+        if type is not None
+        else ())
+    patched = patches(
+        "pathlib",
+        "json",
+        "typed",
+        prefix="envoy.base.utils.utils")
+
+    with patched as (m_plib, m_json, m_typed):
+        assert (
+            utils.from_json("PATH", *args)
+            == (m_json.loads.return_value
+                if type is None
+                else m_typed.return_value))
+
+    if type is None:
+        assert not m_typed.called
+    else:
+        assert (
+            m_typed.call_args
+            == [(type, m_json.loads.return_value, ), {}])
+    assert (
+        m_plib.Path.call_args
+        == [("PATH", ), {}])
+    assert (
+        m_json.loads.call_args
+        == [(m_plib.Path.return_value.read_text.return_value, ), {}])
+    assert (
+        m_plib.Path.return_value.read_text.call_args
+        == [(), {}])
+
+
+@pytest.mark.parametrize("type", [None, False, "TYPE"])
 def test_util_from_yaml(patches, type):
     args = (
         (type, )
