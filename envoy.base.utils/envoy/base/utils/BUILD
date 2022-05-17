@@ -8,6 +8,7 @@ pytooling_library(
         "//deps:aio.run.runner",
         "//deps:frozendict",
         "//deps:jinja2",
+        "//deps:orjson",
         "//deps:packaging",
         "//deps:pytz",
         "//deps:pyyaml",

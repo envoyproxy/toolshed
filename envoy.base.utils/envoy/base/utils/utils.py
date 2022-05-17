@@ -25,6 +25,12 @@ from .exceptions import TypeCastingError
 
 from aio.core import functional
 
+# condition needed due to https://github.com/bazelbuild/rules_python/issues/622
+try:
+    import orjson as json
+except ImportError:
+    import json  # type:ignore
+
 
 # See here for a list of known tar file extensions:
 #   https://en.wikipedia.org/wiki/Tar_(computing)#Suffixes_for_compressed_files
@@ -92,6 +98,15 @@ def untar(*tarballs: Union[pathlib.Path, str]) -> Iterator[pathlib.Path]:
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         yield extract(tmpdir, *tarballs)
+
+
+def from_json(path: Union[pathlib.Path, str], type: Type = None) -> Any:
+    """Returns the loaded python object from a JSON file given by `path`"""
+    data = json.loads(pathlib.Path(path).read_text())
+    return (
+        data
+        if type is None
+        else typed(type, data))
 
 
 def from_yaml(path: Union[pathlib.Path, str], type: Type = None) -> Any:
