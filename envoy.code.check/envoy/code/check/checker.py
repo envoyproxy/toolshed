@@ -51,6 +51,11 @@ class ReflinksCheck(check.AReflinksCheck):
     pass
 
 
+@abstracts.implementer(check.ARuntimeGuardsCheck)
+class RuntimeGuardsCheck:
+    pass
+
+
 @abstracts.implementer(check.AChangelogChangesChecker)
 class ChangelogChangesChecker:
 
@@ -109,6 +114,10 @@ class CodeChecker:
     @property
     def project_class(self) -> Type[IProject]:
         return Project
+
+    @property
+    def runtime_guards_class(self):
+        return RuntimeGuardsCheck
 
     @property
     def shellcheck_class(self):

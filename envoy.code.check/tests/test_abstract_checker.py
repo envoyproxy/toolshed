@@ -80,6 +80,10 @@ class DummyCodeChecker:
         return super().project_class
 
     @property
+    def runtime_guards_class(self):
+        return super().runtime_guards_class
+
+    @property
     def shellcheck_class(self):
         return super().shellcheck_class
 
@@ -105,7 +109,8 @@ def test_abstract_checker_constructor(patches, args, kwargs):
     iface_props = [
         "extensions_class", "fs_directory_class", "flake8_class",
         "git_directory_class", "glint_class", "project_class",
-        "shellcheck_class", "yapf_class", "changelog_class"]
+        "runtime_guards_class", "shellcheck_class", "yapf_class",
+        "changelog_class"]
 
     with patched as (m_super, ):
         m_super.return_value = None
@@ -126,34 +131,11 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         == ("changelog",
             "extensions_fuzzed", "extensions_metadata",
             "extensions_registered",
-            "glint", "python_yapf", "python_flake8",
+            "glint", "python_yapf", "python_flake8", "runtime_guards",
             "shellcheck"))
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(checker, prop)
-
-
-@pytest.mark.parametrize("all_files", [True, False])
-def test_abstract_checker_grep_globs(patches, all_files):
-    checker = DummyCodeChecker()
-    patched = patches(
-        "GREP_EXCLUDE_GLOBS",
-        "GREP_EXCLUDE_DIR_GLOBS",
-        ("ACodeChecker.all_files",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.code.check.abstract.checker")
-
-    with patched as (m_globs, m_dir_globs, m_all):
-        m_all.return_value = all_files
-        assert (
-            checker.exclude_from_grep
-            == (m_globs if all_files else ()))
-        assert (
-            checker.exclude_dirs_from_grep
-            == (m_dir_globs if all_files else ()))
-
-    assert "exclude_from_grep" not in checker.__dict__
-    assert "exclude_dirs_from_grep" not in checker.__dict__
 
 
 @pytest.mark.parametrize(
@@ -306,6 +288,24 @@ async def test_abstract_checker_preload_extensions(patches):
         == [("Preloaded extensions (23)", ), {}])
 
 
+async def test_abstract_checker_preload_runtime_guards(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.runtime_guards",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+
+    with patched as (m_guards, ):
+        missing = AsyncMock()
+        m_guards.return_value.missing = missing()
+        assert not await checker.preload_runtime_guards()
+
+    assert missing.called
+    assert (
+        check.ACodeChecker.preload_runtime_guards.when
+        == ("runtime_guards", ))
+
+
 @pytest.mark.parametrize(
     "preloader",
     (("glint", "glint"),
@@ -391,8 +391,6 @@ def test_abstract_checker_changelog(patches):
     patched = patches(
         ("ACodeChecker.changelog_class",
          dict(new_callable=PropertyMock)),
-        ("ACodeChecker.directory",
-         dict(new_callable=PropertyMock)),
         ("ACodeChecker.check_kwargs",
          dict(new_callable=PropertyMock)),
         ("ACodeChecker.project",
@@ -400,7 +398,7 @@ def test_abstract_checker_changelog(patches):
         prefix="envoy.code.check.abstract.checker")
     kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
 
-    with patched as (m_class, m_dir, m_kwa, m_project):
+    with patched as (m_class, m_kwa, m_project):
         m_kwa.return_value = kwargs
         assert (
             checker.changelog
@@ -408,8 +406,7 @@ def test_abstract_checker_changelog(patches):
 
     assert (
         m_class.return_value.call_args
-        == [(m_project.return_value,
-             m_dir.return_value), kwargs])
+        == [(m_project.return_value, ), kwargs])
     assert "changelog" in checker.__dict__
 
 
@@ -442,47 +439,22 @@ def test_abstract_checker_check_kwargs(patches):
 def test_abstract_checker_directory(patches):
     checker = DummyCodeChecker()
     patched = patches(
-        ("ACodeChecker.directory_class",
-         dict(new_callable=PropertyMock)),
         ("ACodeChecker.directory_kwargs",
          dict(new_callable=PropertyMock)),
-        ("ACodeChecker.path",
+        ("ACodeChecker.project",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
 
-    with patched as (m_class, m_kwargs, m_path):
+    with patched as (m_kwargs, m_project):
         m_kwargs.return_value = dict(foo="BAR")
         assert (
             checker.directory
-            == m_class.return_value.return_value)
+            == m_project.return_value.directory.filtered.return_value)
 
     assert (
-        m_class.return_value.call_args
-        == [(m_path.return_value, ), dict(foo="BAR")])
+        m_project.return_value.directory.filtered.call_args
+        == [(), dict(foo="BAR")])
     assert "directory" in checker.__dict__
-
-
-@pytest.mark.parametrize("all_files", [True, False])
-def test_abstract_checker_directory_class(patches, all_files):
-    checker = DummyCodeChecker()
-    patched = patches(
-        ("ACodeChecker.all_files",
-         dict(new_callable=PropertyMock)),
-        ("ACodeChecker.fs_directory_class",
-         dict(new_callable=PropertyMock)),
-        ("ACodeChecker.git_directory_class",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.code.check.abstract.checker")
-
-    with patched as (m_all, m_class, m_git_class):
-        m_all.return_value = all_files
-        assert (
-            checker.directory_class
-            == (m_class.return_value
-                if all_files
-                else m_git_class.return_value))
-
-    assert "directory_class" not in checker.__dict__
 
 
 @pytest.mark.parametrize("all_files", [True, False])
@@ -498,20 +470,11 @@ def test_abstract_checker_directory_kwargs(patches, all_files):
          dict(new_callable=PropertyMock)),
         ("ACodeChecker.grep_matching_re",
          dict(new_callable=PropertyMock)),
-        ("ACodeChecker.exclude_from_grep",
-         dict(new_callable=PropertyMock)),
-        ("ACodeChecker.exclude_dirs_from_grep",
-         dict(new_callable=PropertyMock)),
-        ("ACodeChecker.loop",
-         dict(new_callable=PropertyMock)),
-        ("ACodeChecker.pool",
-         dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
 
     with patched as patchy:
         (m_dict, m_all, m_changed, m_exc_re,
-         m_match_re, m_exc, m_exc_dirs,
-         m_loop, m_pool) = patchy
+         m_match_re) = patchy
         m_all.return_value = all_files
         assert (
             checker.directory_kwargs
@@ -522,10 +485,7 @@ def test_abstract_checker_directory_kwargs(patches, all_files):
         == [(),
             dict(exclude_matcher=m_exc_re.return_value,
                  path_matcher=m_match_re.return_value,
-                 exclude=m_exc.return_value,
-                 exclude_dirs=m_exc_dirs.return_value,
-                 loop=m_loop.return_value,
-                 pool=m_pool.return_value)])
+                 untracked=all_files)])
     if all_files:
         assert not m_dict.return_value.__setitem__.called
         assert not m_changed.called
@@ -607,6 +567,30 @@ def test_abstract_checker_project(patches):
         m_class.return_value.call_args
         == [(m_path.return_value, ), {}])
     assert "project" in checker.__dict__
+
+
+def test_abstract_checker_runtime_guards(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.check_kwargs",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.project",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.runtime_guards_class",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+
+    with patched as (m_kwargs, m_project, m_class):
+        m_kwargs.return_value = kwargs
+        assert (
+            checker.runtime_guards
+            == m_class.return_value.return_value)
+
+    assert (
+        m_class.return_value.call_args
+        == [(m_project.return_value, ), kwargs])
+    assert "runtime_guards" in checker.__dict__
 
 
 async def test_abstract_checker_check_changelogs(patches):
@@ -744,6 +728,46 @@ async def test_abstract_checker_check_extensions_registered(patches, errors):
             == [("extensions_registered",
                  ["Registered metadata matches found extensions"]), {}])
         assert not m_error.called
+
+
+async def test_abstract_checker_check_runtime_guards(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.log",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.runtime_guards",
+         dict(new_callable=PropertyMock)),
+        "ACodeChecker.error",
+        "ACodeChecker.succeed",
+        prefix="envoy.code.check.abstract.checker")
+    _status = [None, 0, "", "XX", {}, "YY", None, "ZZ"]
+
+    async def status():
+        for i, stat in enumerate(_status):
+            yield f"GUARD{i}", stat
+
+    with patched as (m_log, m_guards, m_error, m_succeed):
+        m_guards.return_value.status = status()
+        assert not await checker.check_runtime_guards()
+
+    assert (
+        m_log.return_value.info.call_args_list
+        == [[(f"Ignoring runtime guard: GUARD{i}", ), {}]
+            for i, status
+            in enumerate(_status)
+            if status is None])
+    assert (
+        m_error.call_args_list
+        == [[("runtime_guards", [f"Missing from changelogs: GUARD{i}"]), {}]
+            for i, status
+            in enumerate(_status)
+            if status is not None and not status])
+    assert (
+        m_succeed.call_args_list
+        == [[("runtime_guards", [f"In changelogs: GUARD{i}"]), {}]
+            for i, status
+            in enumerate(_status)
+            if status])
 
 
 @pytest.mark.parametrize(

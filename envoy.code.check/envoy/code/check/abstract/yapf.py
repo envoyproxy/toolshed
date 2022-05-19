@@ -39,15 +39,19 @@ class YapfFormatCheck(directory.ADirectoryContext):
     def check_results(self) -> Iterator["typing.YapfProblemTuple"]:
         """Iterate Yapf check results."""
         for path in self.args:
-            result = self.handle_result(
-                path,
-                yapf.yapf_api.FormatFile(
-                    os.path.join(self.path, path),
-                    style_config=self.config_path,
-                    in_place=self.fix,
-                    print_diff=not self.fix))
-            if result:
-                yield result
+            try:
+                result = self.handle_result(
+                    path,
+                    yapf.yapf_api.FormatFile(
+                        os.path.join(self.path, path),
+                        style_config=self.config_path,
+                        in_place=self.fix,
+                        print_diff=not self.fix))
+            except yapf.errors.YapfError as e:
+                yield path, [f"Yaml check failed: {path}\n{e}"]
+            else:
+                if result:
+                    yield result
 
     def handle_result(
             self,

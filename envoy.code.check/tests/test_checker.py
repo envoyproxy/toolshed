@@ -41,6 +41,8 @@ def test_checker_constructor(patches, args, kwargs):
     assert "glint_class" not in directory.__dict__
     assert checker.project_class == utils.Project
     assert "project_class" not in directory.__dict__
+    assert checker.runtime_guards_class == check.RuntimeGuardsCheck
+    assert "runtime_guards_class" not in directory.__dict__
     assert checker.shellcheck_class == check.ShellcheckCheck
     assert "shellcheck_class" not in directory.__dict__
     assert checker.yapf_class == check.YapfCheck
@@ -92,10 +94,18 @@ def test_checker_constructors(patches, args, kwargs, sub):
         == [tuple(args), kwargs])
 
 
-def test_changelog_check_constructor():
-    checker = check.ChangelogCheck("PROJECT", "DIRECTORY")
-    assert checker.project == "PROJECT"
-    assert checker.directory == "DIRECTORY"
+def test_changelog_check_constructor(patches):
+    patched = patches(
+        "check.AChangelogCheck.__init__",
+        prefix="envoy.code.check.checker")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        checker = check.ChangelogCheck("PROJECT", "DIRECTORY")
+
+    assert (
+        m_super.call_args
+        == [("PROJECT", "DIRECTORY"), {}])
     assert checker.changes_checker_class == check.ChangelogChangesChecker
     assert checker.changelog_status_class == check.ChangelogStatus
 
