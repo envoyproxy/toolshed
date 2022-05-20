@@ -35,7 +35,7 @@ pypi: https://pypi.org/project/aio.api.bazel
 
 #### [aio.api.github](aio.api.github)
 
-version: 0.1.2
+version: 0.1.3.dev0
 
 pypi: https://pypi.org/project/aio.api.github
 
@@ -54,7 +54,7 @@ pypi: https://pypi.org/project/aio.api.github
 
 #### [aio.api.nist](aio.api.nist)
 
-version: 0.0.2
+version: 0.0.3.dev0
 
 pypi: https://pypi.org/project/aio.api.nist
 
