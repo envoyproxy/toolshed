@@ -43,9 +43,11 @@ pypi: https://pypi.org/project/aio.api.github
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.core](https://pypi.org/project/aio.core) >=0.8.2
-- [aiohttp](https://pypi.org/project/aiohttp)
+- [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [gidgethub](https://pypi.org/project/gidgethub)
+- [multidict](https://pypi.org/project/multidict) >=6.0.2
 - [packaging](https://pypi.org/project/packaging)
+- [yarl](https://pypi.org/project/yarl) >=1.7.2
 
 ---
 
@@ -67,7 +69,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.8.5.dev0
+version: 0.8.5
 
 pypi: https://pypi.org/project/aio.core
 
@@ -75,9 +77,11 @@ pypi: https://pypi.org/project/aio.core
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aiofiles](https://pypi.org/project/aiofiles)
-- [aiohttp](https://pypi.org/project/aiohttp)
+- [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
+- [multidict](https://pypi.org/project/multidict) >=6.0.2
 - [orjson](https://pypi.org/project/orjson)
 - [trycast](https://pypi.org/project/trycast) >=0.7.3
+- [yarl](https://pypi.org/project/yarl) >=1.7.2
 
 ---
 
@@ -138,7 +142,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code.check](envoy.code.check)
 
-version: 0.1.1
+version: 0.1.2.dev0
 
 pypi: https://pypi.org/project/envoy.code.check
 

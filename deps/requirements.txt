@@ -6,7 +6,7 @@ aio.run.checker>=0.5.4
 aio.run.runner>=0.3.2
 aiodocker
 aiofiles
-aiohttp
+aiohttp>=3.8.1
 colorama
 coloredlogs
 docutils~=0.16.0
@@ -24,9 +24,10 @@ flake8
 frozendict
 gidgethub
 jinja2
-orjson
+multidict>=6.0.2
 mypy>=0.931
 mypy-abstracts
+orjson
 packaging
 pygments>=2.11.1
 pytest-patches
@@ -49,3 +50,4 @@ uvloop
 verboselogs
 wheel-inspect
 yapf
+yarl>=1.7.2
