@@ -6,6 +6,7 @@ pytooling_library(
         "//deps:aio.core",
         "//deps:aio.api.github",
         "//deps:aio.run.runner",
+        "//deps:aiohttp",
         "//deps:frozendict",
         "//deps:jinja2",
         "//deps:orjson",
