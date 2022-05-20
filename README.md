@@ -148,16 +148,16 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code.check](envoy.code.check)
 
-version: 0.1.2.dev0
+version: 0.1.2
 
 pypi: https://pypi.org/project/envoy.code.check
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.4
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.5
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.4
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.2.8
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.2.9
 - [flake8](https://pypi.org/project/flake8)
 - [packaging](https://pypi.org/project/packaging)
 - [pep8-naming](https://pypi.org/project/pep8-naming)
@@ -168,22 +168,24 @@ pypi: https://pypi.org/project/envoy.code.check
 
 #### [envoy.dependency.check](envoy.dependency.check)
 
-version: 0.1.1.dev0
+version: 0.1.1
 
 pypi: https://pypi.org/project/envoy.dependency.check
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.0
-- [aio.api.nist](https://pypi.org/project/aio.api.nist)
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.2
-- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.1
-- [aiohttp](https://pypi.org/project/aiohttp)
+- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.2
+- [aio.api.nist](https://pypi.org/project/aio.api.nist) >=0.0.2
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.5
+- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.4
+- [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [jinja2](https://pypi.org/project/jinja2)
+- [multidict](https://pypi.org/project/multidict) >=6.0.2
 - [packaging](https://pypi.org/project/packaging)
+- [yarl](https://pypi.org/project/yarl) >=1.7.2
 
 ---
 
@@ -282,7 +284,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.1.2.dev0
+version: 0.1.2
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
@@ -291,7 +293,7 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.2
 - [colorama](https://pypi.org/project/colorama)
 - [docutils](https://pypi.org/project/docutils) ~=0.16.0
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.1
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.2.9
 - [pygments](https://pypi.org/project/pygments) >=2.11.1
 - [sphinx](https://pypi.org/project/sphinx)
 - [sphinx-copybutton](https://pypi.org/project/sphinx-copybutton)
