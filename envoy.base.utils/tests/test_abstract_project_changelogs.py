@@ -132,7 +132,7 @@ def test_abstract_changelogs_changelogs(patches):
 
     assert (
         m_class.return_value.call_args_list
-        == [[(p, m_paths.return_value.__getitem__.return_value), {}]
+        == [[("PROJECT", p, m_paths.return_value.__getitem__.return_value), {}]
             for p in paths])
     assert (
         m_paths.return_value.__getitem__.call_args_list
@@ -986,41 +986,10 @@ class DummyChangelog(abstract.AChangelog):
         return super().entry_class
 
 
-def test_abstract_changelog_constructor():
-
-    with pytest.raises(TypeError):
-        abstract.AChangelog("VERSION", "PATH")
-
-    changelog = DummyChangelog("VERSION", "PATH")
-    assert changelog._version == "VERSION"
-    assert changelog.version == "VERSION"
-    assert "version" not in changelog.__dict__
-    assert changelog.path == "PATH"
-
-    with pytest.raises(NotImplementedError):
-        changelog.entry_class
-
-
-def test_abstract_changelog_base_version(patches):
-    changelog = DummyChangelog("VERSION", "PATH")
-    patched = patches(
-        ("AChangelog.version",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.base.utils.abstract.project.changelog")
-
-    with patched as (m_version, ):
-        assert (
-            changelog.base_version
-            == m_version.return_value.base_version)
-
-    assert "base_version" not in changelog.__dict__
-
-
 @pytest.mark.parametrize(
     "raises",
     [None, Exception, yaml.reader.ReaderError, exceptions.TypeCastingError])
-def test_abstract_changelog_data(patches, raises):
-    changelog = DummyChangelog("VERSION", "PATH")
+def test_abstract_changelog_get_data(patches, raises):
     patched = patches(
         "cast",
         "utils.from_yaml",
@@ -1034,6 +1003,7 @@ def test_abstract_changelog_data(patches, raises):
         else:
             changes[k] = None
     changes["date"] = "NOTCHANGE"
+    path = MagicMock()
 
     with patched as (m_cast, m_yaml, m_typing):
         m_yaml.return_value.items.return_value = changes.items()
@@ -1042,25 +1012,25 @@ def test_abstract_changelog_data(patches, raises):
             m_yaml.side_effect = error
         if raises == Exception:
             with pytest.raises(Exception):
-                changelog.data
+                abstract.AChangelog.get_data(path)
         elif raises:
             with pytest.raises(exceptions.ChangelogParseError) as e:
-                changelog.data
+                abstract.AChangelog.get_data(path)
         else:
             assert (
-                changelog.data
+                abstract.AChangelog.get_data(path)
                 == m_cast.return_value)
 
     assert (
         m_yaml.call_args
-        == [("PATH", m_typing.ChangelogSourceDict), {}])
+        == [(path, m_typing.ChangelogSourceDict), {}])
     if raises == Exception:
         return
     elif raises:
         assert (
             e.value.args[0]
             == ("Failed to parse: "
-                f"PATH\n{str(error)}"))
+                f"{path}\n{str(error)}"))
         return
 
     expected = {
@@ -1076,11 +1046,63 @@ def test_abstract_changelog_data(patches, raises):
     assert (
         m_cast.call_args
         == [(m_typing.ChangelogDict, expected), {}])
-    assert "data" in changelog.__dict__
+
+
+def test_abstract_changelog_constructor():
+
+    with pytest.raises(TypeError):
+        abstract.AChangelog("PROECT", "VERSION", "PATH")
+
+    changelog = DummyChangelog("PROECT", "VERSION", "PATH")
+    assert changelog._version == "VERSION"
+    assert changelog.version == "VERSION"
+    assert "version" not in changelog.__dict__
+    assert changelog.path == "PATH"
+
+    with pytest.raises(NotImplementedError):
+        changelog.entry_class
+
+
+def test_abstract_changelog_base_version(patches):
+    changelog = DummyChangelog("PROECT", "VERSION", "PATH")
+    patched = patches(
+        ("AChangelog.version",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_version, ):
+        assert (
+            changelog.base_version
+            == m_version.return_value.base_version)
+
+    assert "base_version" not in changelog.__dict__
+
+
+async def test_abstract_changelog_data(patches):
+    project = MagicMock()
+    project.execute = AsyncMock()
+    changelog = DummyChangelog(project, "VERSION", "PATH")
+    patched = patches(
+        "AChangelog.get_data",
+        ("AChangelog.path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_get, m_path):
+        assert (
+            await changelog.data
+            == project.execute.return_value
+            == getattr(
+                changelog,
+                abstract.AChangelog.data.cache_name)["data"])
+
+    assert (
+        project.execute.call_args
+        == [(m_get, m_path.return_value), {}])
 
 
 def test_abstract_changelog_release_date(patches):
-    changelog = DummyChangelog("VERSION", "PATH")
+    changelog = DummyChangelog("PROECT", "VERSION", "PATH")
     patched = patches(
         ("AChangelog.data",
          dict(new_callable=PropertyMock)),
@@ -1097,8 +1119,8 @@ def test_abstract_changelog_release_date(patches):
     assert "release_date" not in changelog.__dict__
 
 
-def test_abstract_changelog_entries(patches):
-    changelog = DummyChangelog("VERSION", "PATH")
+async def test_abstract_changelog_entries(patches):
+    changelog = DummyChangelog("PROECT", "VERSION", "PATH")
     patched = patches(
         "sorted",
         ("AChangelog.data",
@@ -1109,9 +1131,11 @@ def test_abstract_changelog_entries(patches):
     entries = [f"E{e}" for e in range(0, 5)]
 
     with patched as (m_sort, m_data, m_entry):
-        m_data.return_value.__getitem__.return_value = entries
+        data = MagicMock()
+        data.__getitem__.return_value = entries
+        m_data.side_effect = AsyncMock(return_value=data)
         assert (
-            changelog.entries("SECTION")
+            await changelog.entries("SECTION")
             == m_sort.return_value)
         result = m_sort.call_args[0][0]
         assert isinstance(result, types.GeneratorType)
@@ -1125,7 +1149,7 @@ def test_abstract_changelog_entries(patches):
         m_entry.return_value.call_args_list
         == [[("SECTION", e), {}] for e in entries])
     assert (
-        m_data.return_value.__getitem__.call_args
+        data.__getitem__.call_args
         == [("SECTION", ), {}])
 
 

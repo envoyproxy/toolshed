@@ -3,6 +3,8 @@ from typing import Type
 
 import abstracts
 
+from aio.core import directory
+
 from envoy.base.utils import abstract, interface
 
 
@@ -38,6 +40,10 @@ class Project(abstract.AProject):
     @property
     def changelogs_class(self) -> Type[interface.IChangelogs]:
         return Changelogs
+
+    @property
+    def directory_class(self) -> Type[directory.ADirectory]:
+        return directory.GitDirectory
 
     @property
     def inventories_class(self) -> Type[interface.IInventories]:

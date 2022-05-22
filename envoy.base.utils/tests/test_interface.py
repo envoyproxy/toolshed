@@ -42,6 +42,10 @@ class DummyProject:
         return interface.IProject.is_main_dev.fget(self)
 
     @property
+    def loop(self):
+        return interface.IProject.loop.fget(self)
+
+    @property
     def minor_version(self):
         return interface.IProject.minor_version.fget(self)
 
@@ -52,6 +56,10 @@ class DummyProject:
     @property
     def path(self):
         return interface.IProject.path.fget(self)
+
+    @property
+    def pool(self):
+        return interface.IProject.pool.fget(self)
 
     @property
     def rel_version_path(self):
@@ -79,6 +87,13 @@ class DummyProject:
     async def dev(self):
         return await interface.IProject.dev(self)
 
+    async def execute(self, *args, **kwargs):
+        return await interface.IProject.execute(self, *args, **kwargs)
+
+    async def execute_in_batches(self, *args, **kwargs):
+        return await interface.IProject.execute_in_batches(
+            self, *args, **kwargs)
+
     def is_current(self, version):
         return interface.IProject.is_current(self, version)
 
@@ -98,8 +113,8 @@ async def test_iface_project_constructor():
     iface_props = [
         "archived_versions", "changelogs", "changelogs_class",
         "dev_version", "is_dev", "is_main_dev",
-        "inventories", "inventories_class",
-        "minor_version", "minor_versions", "path",
+        "inventories", "inventories_class", "loop",
+        "minor_version", "minor_versions", "path", "pool",
         "rel_version_path", "repo",
         "session", "stable_versions", "version"]
 
@@ -121,6 +136,16 @@ async def test_iface_project_is_current():
 
     with pytest.raises(NotImplementedError):
         project.is_current("VERSION")
+
+
+@pytest.mark.parametrize("execute", ["execute", "execute_in_batches"])
+async def test_iface_project_execution(execute):
+    project = DummyProject()
+    args = [f"A{i}" for i in range(0, 5)]
+    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+
+    with pytest.raises(NotImplementedError):
+        await getattr(project, execute)(*args, **kwargs)
 
 
 @abstracts.implementer(interface.IInventories)
