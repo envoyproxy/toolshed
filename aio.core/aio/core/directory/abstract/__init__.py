@@ -1,8 +1,13 @@
 
-from .directory import ADirectory, ADirectoryFileFinder, AGitDirectory
+from .directory import (
+    ADirectory,
+    ADirectoryFileFinder,
+    AGitDirectory,
+    AGitDirectoryFileFinder)
 
 
 __all__ = (
     "ADirectory",
     "ADirectoryFileFinder",
-    "AGitDirectory")
+    "AGitDirectory",
+    "AGitDirectoryFileFinder")
