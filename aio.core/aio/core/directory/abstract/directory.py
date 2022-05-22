@@ -1,12 +1,13 @@
 
 import asyncio
 import pathlib
+import re
 import shutil
 import subprocess as subprocess
 from concurrent import futures
 from functools import cached_property, partial
 from typing import (
-    AsyncIterator, Dict, Iterable, List, Optional,
+    AsyncIterator, Dict, Iterable, List, Mapping, Optional,
     Pattern, Set, Tuple, Type, Union)
 
 import abstracts
@@ -17,6 +18,7 @@ from aio.core.functional import async_property, async_set, AwaitableGenerator
 
 GREP_MIN_BATCH_SIZE = 500
 GREP_MAX_BATCH_SIZE = 2000
+GIT_LS_FILES_EOL_RE = r"^i/[\s]+w/(?P<eol>[a-z]*)[\s]+attr/[\s]+(?P<name>.*)"
 
 
 @abstracts.implementer(_subprocess.ISubprocessHandler)
@@ -50,7 +52,7 @@ class ADirectoryFileFinder(
         return set(
             path
             for path
-            in response.stdout.split("\n")
+            in self.parse_response(response)
             if self.include_path(
                 path,
                 self.path_matcher,
@@ -61,6 +63,56 @@ class ADirectoryFileFinder(
             response: subprocess.CompletedProcess) -> Dict[str, List[str]]:
         # TODO: Handle errors in directory classes
         return super().handle_error(response)
+
+    def parse_response(
+            self,
+            response: subprocess.CompletedProcess) -> Iterable[str]:
+        return response.stdout.split("\n")
+
+
+class AGitDirectoryFileFinder(
+        ADirectoryFileFinder,
+        metaclass=abstracts.Abstraction):
+
+    def __init__(
+            self,
+            path: str,
+            path_matcher: Optional[Pattern[str]] = None,
+            exclude_matcher:  Optional[Pattern[str]] = None,
+            match_all_files: bool = False) -> None:
+        self.match_all_files = match_all_files
+        super().__init__(
+            path,
+            path_matcher=path_matcher,
+            exclude_matcher=exclude_matcher)
+
+    @cached_property
+    def matcher(self):
+        return re.compile(GIT_LS_FILES_EOL_RE)
+
+    def parse_response(
+            self,
+            response: subprocess.CompletedProcess) -> Iterable[str]:
+        if not self.match_all_files:
+            return super().parse_response(response)
+        files = []
+        for line in super().parse_response(response):
+            filename = self._get_file(line)
+            if filename:
+                files.append(filename)
+        return files
+
+    def _get_file(self, line: str) -> Optional[str]:
+        eol, name = self._parse_line(line)
+        if eol and eol not in ["-text", "none"]:
+            return name
+
+    def _parse_line(self, line: str) -> Tuple[Optional[str], Optional[str]]:
+        matched = self.matcher.match(line)
+        return (
+            matched.groups()
+            if matched
+            else (None, None))
 
 
 @abstracts.implementer(event.IExecutive)
@@ -113,6 +165,11 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     def finder(self) -> ADirectoryFileFinder:
         return self.finder_class(
             str(self.path),
+            **self.finder_kwargs)
+
+    @property
+    def finder_kwargs(self) -> Mapping:
+        return dict(
             path_matcher=self.path_matcher,
             exclude_matcher=self.exclude_matcher)
 
@@ -161,10 +218,25 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     def grep_min_batch_size(self) -> int:
         return GREP_MIN_BATCH_SIZE
 
+    @property
+    def init_kwargs(self) -> Mapping:
+        return dict(
+            path=self.path,
+            path_matcher=self.path_matcher,
+            exclude_matcher=self.exclude_matcher,
+            text_only=self.text_only,
+            loop=self.loop,
+            pool=self.pool)
+
     @cached_property
     def path(self) -> pathlib.Path:
         """Path to this directory."""
         return pathlib.Path(self._path)
+
+    def filtered(self, **kwargs):
+        init_kwargs = self.init_kwargs
+        init_kwargs.update(kwargs)
+        return self.__class__(**init_kwargs)
 
     async def get_files(self) -> Set[str]:
         return await self.grep(["-l"], "")
@@ -226,7 +298,7 @@ class AGitDirectory(ADirectory):
     @classmethod
     def find_git_deleted_files(
             cls,
-            finder: ADirectoryFileFinder,
+            finder: AGitDirectoryFileFinder,
             git_command: str) -> Set[str]:
         return finder(
             git_command,
@@ -236,7 +308,7 @@ class AGitDirectory(ADirectory):
     @classmethod
     def find_git_files_changed_since(
             cls,
-            finder: ADirectoryFileFinder,
+            finder: AGitDirectoryFileFinder,
             git_command: str,
             since: str) -> Set[str]:
         return finder(
@@ -247,8 +319,21 @@ class AGitDirectory(ADirectory):
             "--diff-filter=ACMR",
             "--ignore-submodules=all")
 
+    @classmethod
+    def find_git_untracked_files(
+            cls,
+            finder: AGitDirectoryFileFinder,
+            git_command: str) -> Set[str]:
+        return finder(
+            git_command,
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "--eol")
+
     def __init__(self, *args, **kwargs) -> None:
         self.changed = kwargs.pop("changed", None)
+        self.untracked = kwargs.pop("untracked", None)
         super().__init__(*args, **kwargs)
 
     @async_property(cache=True)
@@ -292,6 +377,12 @@ class AGitDirectory(ADirectory):
             & await self.changed_files)
 
     @property
+    def finder_kwargs(self) -> Mapping:
+        return dict(
+            **super().finder_kwargs,
+            match_all_files=self.untracked)
+
+    @property
     def git_command(self) -> str:
         """Path to the `git` command."""
         git_command = shutil.which("git")
@@ -304,7 +395,19 @@ class AGitDirectory(ADirectory):
     def grep_command_args(self) -> Tuple[str, ...]:
         return self.git_command, "grep", "--cached"
 
+    @property
+    def init_kwargs(self) -> Mapping:
+        return dict(**super().init_kwargs, untracked=self.untracked)
+
+    @async_property
+    async def untracked_files(self):
+        return await self.execute(
+            self.find_git_untracked_files,
+            self.finder,
+            self.git_command)
+
     async def get_files(self) -> Set[str]:
         return (
-            await super().get_files()
-            - await self.deleted_files)
+            await super().get_files() - await self.deleted_files
+            if not self.untracked
+            else await self.untracked_files)

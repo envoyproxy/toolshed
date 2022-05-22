@@ -50,7 +50,7 @@ def test_git_directory_constructor(patches, args, kwargs):
     assert (
         m_super.call_args
         == [tuple(args), kwargs])
-    assert direct.finder_class == directory.DirectoryFileFinder
+    assert direct.finder_class == directory.GitDirectoryFileFinder
 
 
 @abstracts.implementer(directory.ADirectory)
@@ -204,6 +204,42 @@ def test_abstract_directory_grep_exclusion_args(exclude, exclude_dirs):
     assert "grep_exclusion_args" not in direct.__dict__
 
 
+def test_abstract_directory_init_kwargs(patches):
+    matcher = MagicMock()
+    exclude = MagicMock()
+    text_only = MagicMock()
+    direct = DummyDirectory(
+        "PATH",
+        path_matcher=matcher,
+        exclude_matcher=exclude,
+        text_only=text_only)
+    patched = patches(
+        "dict",
+        ("ADirectory.path",
+         dict(new_callable=PropertyMock)),
+        ("ADirectory.loop",
+         dict(new_callable=PropertyMock)),
+        ("ADirectory.pool",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.abstract.directory")
+
+    with patched as (m_dict, m_path, m_loop, m_pool):
+        assert (
+            direct.init_kwargs
+            == m_dict.return_value)
+
+    assert (
+        m_dict.call_args
+        == [(),
+            dict(path=m_path.return_value,
+                 path_matcher=matcher,
+                 exclude_matcher=exclude,
+                 text_only=text_only,
+                 loop=m_loop.return_value,
+                 pool=m_pool.return_value)])
+    assert "init_kwargs" not in direct.__dict__
+
+
 def test_abstract_finder(patches):
     direct = DummyDirectory("PATH")
     patched = patches(
@@ -244,6 +280,28 @@ def test_abstract_directory_path(patches):
         m_plib.Path.call_args
         == [("PATH", ), {}])
     assert "path" in direct.__dict__
+
+
+def test_abstract_directory_filtered(patches):
+    direct = DummyDirectory("PATH")
+    patched = patches(
+        "ADirectory.__init__",
+        ("ADirectory.init_kwargs",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.abstract.directory")
+    init_kwargs = {f"K{i}": f"VINIT{i}" for i in range(0, 7)}
+    kwargs = {f"K{i}": f"VINIT{i}" for i in range(0, 7)}
+    expected = init_kwargs.copy()
+    expected.update(kwargs)
+
+    with patched as (m_class, m_init):
+        m_class.return_value = None
+        m_init.return_value = init_kwargs
+        assert isinstance(direct.filtered(**kwargs), DummyDirectory)
+
+    assert (
+        m_class.call_args
+        == [(), expected])
 
 
 def test_abstract_directory_absolute_path(patches):
@@ -436,6 +494,24 @@ def test_abstract_git_directory_find_git_files_changed_since():
             {}])
 
 
+def test_abstract_git_directory_find_git_untracked_files():
+    finder = MagicMock()
+    git_command = MagicMock()
+    assert (
+        directory.GitDirectory.find_git_untracked_files(
+            finder,
+            git_command)
+        == finder.return_value)
+    assert (
+        finder.call_args
+        == [(git_command,
+             "ls-files",
+             "--others",
+             "--exclude-standard",
+             "--eol"),
+            {}])
+
+
 @pytest.mark.parametrize(
     "args",
     [[], [f"ARG{i}" for i in range(0, 5)]])
@@ -601,6 +677,28 @@ async def test_abstract_git_directory_files(
             == [(), {}])
 
 
+def test_abstract_git_directory_finder_kwargs(patches):
+    untracked = MagicMock()
+    direct = DummyGitDirectory("PATH", untracked=untracked)
+    patched = patches(
+        "dict",
+        ("ADirectory.finder_kwargs",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.abstract.directory")
+    super_kwargs = {f"K{i}": f"V{i}" for i in range(0, 7)}
+
+    with patched as (m_dict, m_super):
+        m_super.return_value = super_kwargs
+        assert (
+            direct.finder_kwargs
+            == m_dict.return_value)
+
+    assert (
+        m_dict.call_args
+        == [(), dict(**super_kwargs, match_all_files=untracked)])
+    assert "finder_kwargs" not in direct.__dict__
+
+
 @pytest.mark.parametrize("git", [None, "GIT"])
 def test_abstract_git_directory_git_command(patches, git):
     direct = DummyGitDirectory("PATH")
@@ -639,6 +737,53 @@ def test_abstract_git_directory_grep_command_args(patches, git):
             == (m_command.return_value, "grep", "--cached"))
 
     assert "grep_command_args" not in direct.__dict__
+
+
+def test_abstract_git_directory_init_kwargs(patches):
+    untracked = MagicMock()
+    direct = DummyGitDirectory("PATH", untracked=untracked)
+    patched = patches(
+        "dict",
+        ("ADirectory.init_kwargs",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.abstract.directory")
+    super_kwargs = {f"K{i}": f"V{i}" for i in range(0, 7)}
+
+    with patched as (m_dict, m_super):
+        m_super.return_value = super_kwargs
+        assert (
+            direct.init_kwargs
+            == m_dict.return_value)
+
+    assert (
+        m_dict.call_args
+        == [(), dict(**super_kwargs, untracked=untracked)])
+    assert "init_kwargs" not in direct.__dict__
+
+
+async def test_abstract_git_directory_untracked_files(patches):
+    direct = DummyGitDirectory("PATH")
+    patched = patches(
+        "AGitDirectory.find_git_untracked_files",
+        ("AGitDirectory.finder",
+         dict(new_callable=PropertyMock)),
+        ("AGitDirectory.git_command",
+         dict(new_callable=PropertyMock)),
+        ("AGitDirectory.execute",
+         dict(new_callable=AsyncMock)),
+        prefix="aio.core.directory.abstract.directory")
+
+    with patched as (m_files, m_finder, m_git, m_exec):
+        assert (
+            await direct.untracked_files
+            == m_exec.return_value)
+
+    assert (
+        m_exec.call_args
+        == [(m_files, m_finder.return_value, m_git.return_value), {}])
+    assert not hasattr(
+        direct,
+        directory.AGitDirectory.untracked_files.cache_name)
 
 
 async def test_abstract_git_directory_get_files(patches):
@@ -820,15 +965,16 @@ def test_finder_handle(patches, n):
         "set",
         "_subprocess.ASubprocessHandler.handle_error",
         "ADirectoryFileFinder.include_path",
+        "ADirectoryFileFinder.parse_response",
         prefix="aio.core.directory.abstract.directory")
     response = MagicMock()
     paths = [f"PATH{i}" for i in range(0, 7)]
-    response.stdout.split.return_value = paths
 
     def include(path, *args):
         return int(path[-1]) % n
 
-    with patched as (m_set, m_super, m_include):
+    with patched as (m_set, m_super, m_include, m_parse):
+        m_parse.return_value = paths
         m_include.side_effect = include
         assert (
             finder.handle(response)
@@ -841,8 +987,8 @@ def test_finder_handle(patches, n):
         result
         == [p for i, p in enumerate(paths) if i % n])
     assert (
-        response.stdout.split.call_args
-        == [("\n", ), {}])
+        m_parse.call_args
+        == [(response, ), {}])
     assert (
         m_include.call_args_list
         == [[(p, path_matcher, exclude_matcher), {}]
@@ -864,6 +1010,146 @@ def test_finder_handle_error(patches):
     assert (
         m_super.call_args
         == [(response, ), {}])
+
+
+def test_finder_parse_response():
+    finder = DummyDirectoryFileFinder("PATH")
+    response = MagicMock()
+    assert (
+        finder.parse_response(response)
+        == response.stdout.split.return_value)
+    assert (
+        response.stdout.split.call_args
+        == [("\n", ), {}])
+
+
+@abstracts.implementer(directory.AGitDirectoryFileFinder)
+class DummyGitDirectoryFileFinder:
+    pass
+
+
+@pytest.mark.parametrize("path_matcher", [None, 0, [], (), "MATCHER"])
+@pytest.mark.parametrize("exclude_matcher", [None, 0, [], (), "MATCHER"])
+@pytest.mark.parametrize("all_files", [None, True, False])
+def test_git_finder_constructor(
+        patches, path_matcher, exclude_matcher, all_files):
+    patched = patches(
+        "ADirectoryFileFinder.__init__",
+        prefix="aio.core.directory.abstract.directory")
+    kwargs = {}
+    if path_matcher is not None:
+        kwargs["path_matcher"] = path_matcher
+    if exclude_matcher is not None:
+        kwargs["exclude_matcher"] = exclude_matcher
+    if all_files is not None:
+        kwargs["match_all_files"] = all_files
+    path = MagicMock()
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        finder = DummyGitDirectoryFileFinder(path, **kwargs)
+
+    assert (
+        m_super.call_args
+        == [(path, ),
+            dict(path_matcher=path_matcher,
+                 exclude_matcher=exclude_matcher)])
+    assert finder.match_all_files == (all_files or False)
+
+
+def test_git_finder_matcher(patches):
+    finder = DummyGitDirectoryFileFinder("PATH")
+    patched = patches(
+        "re",
+        "GIT_LS_FILES_EOL_RE",
+        prefix="aio.core.directory.abstract.directory")
+
+    with patched as (m_re, m_ls_re):
+        assert (
+            finder.matcher
+            == m_re.compile.return_value)
+
+    assert (
+        m_re.compile.call_args
+        == [(m_ls_re, ), {}])
+    assert "matcher" in finder.__dict__
+
+
+@pytest.mark.parametrize("all_files", [True, False])
+def test_git_finder_parse_response(patches, all_files):
+    finder = DummyGitDirectoryFileFinder("PATH", match_all_files=all_files)
+    patched = patches(
+        "ADirectoryFileFinder.parse_response",
+        "AGitDirectoryFileFinder._get_file",
+        prefix="aio.core.directory.abstract.directory")
+    response = MagicMock()
+    files = [f"F{i}" for i in range(0, 10)]
+    filtered = [f"F{i}" for i in range(0, 10) if i % 2]
+
+    def get(line):
+        if int(line[1:]) % 2:
+            return line
+
+    with patched as (m_super, m_get):
+        m_get.side_effect = get
+        m_super.return_value = files
+        assert (
+            finder.parse_response(response)
+            == (filtered
+                if all_files
+                else files))
+
+    assert m_super.call_args == [(response, ), {}]
+    if all_files:
+        assert (
+            m_get.call_args_list
+            == [[(f, ), {}]
+                for f in files])
+    else:
+        assert not m_get.called
+
+
+@pytest.mark.parametrize("eol", [None, 0, [], (), "", "EOL", "-text", "none"])
+def test_git_finder__get_file(patches, eol):
+    finder = DummyGitDirectoryFileFinder("PATH")
+    patched = patches(
+        "AGitDirectoryFileFinder._parse_line",
+        prefix="aio.core.directory.abstract.directory")
+    name = MagicMock()
+    line = MagicMock()
+
+    with patched as (m_parse, ):
+        m_parse.return_value = eol, name
+        assert (
+            finder._get_file(line)
+            == (name
+                if (eol
+                    and eol not in ["-text", "none"])
+                else None))
+
+
+@pytest.mark.parametrize("matched", [True, False])
+def test_git_finder__parse_line(patches, matched):
+    finder = DummyGitDirectoryFileFinder("PATH")
+    patched = patches(
+        ("AGitDirectoryFileFinder.matcher",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.core.directory.abstract.directory")
+    line = MagicMock()
+    _matched = MagicMock() if matched else None
+
+    with patched as (m_matcher, ):
+        m_matcher.return_value.match.return_value = _matched
+        assert (
+            finder._parse_line(line)
+            == (_matched.groups.return_value
+                if matched
+                else (None, None)))
+
+    if matched:
+        assert (
+            _matched.groups.call_args
+            == [(), {}])
 
 
 def test_directory_utils_directory_context(patches):

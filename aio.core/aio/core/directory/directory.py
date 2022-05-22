@@ -19,9 +19,14 @@ class DirectoryFileFinder:
     pass
 
 
+@abstracts.implementer(directory.AGitDirectoryFileFinder)
+class GitDirectoryFileFinder:
+    pass
+
+
 @abstracts.implementer(directory.AGitDirectory)
 class GitDirectory:
 
     @property
-    def finder_class(self) -> Type[directory.ADirectoryFileFinder]:
-        return DirectoryFileFinder
+    def finder_class(self) -> Type[directory.AGitDirectoryFileFinder]:
+        return GitDirectoryFileFinder
