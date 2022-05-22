@@ -10,6 +10,7 @@ from packaging import version as _version
 import abstracts
 
 from aio.api import github as _github
+from aio.core import event
 
 from envoy.base.utils import typing
 
@@ -91,7 +92,10 @@ class IChangelogEntry(metaclass=abstracts.Interface):
 class IChangelog(metaclass=abstracts.Interface):
     """A changelog."""
 
-    def __init__(self, version: _version.Version, path: pathlib.Path) -> None:
+    def __init__(
+            self,
+            version: _version.Version,
+            path: pathlib.Path) -> None:
         raise NotImplementedError
 
     @property  # type:ignore
@@ -227,7 +231,7 @@ class IChangelogs(metaclass=abstracts.Interface):
         raise NotImplementedError
 
 
-class IProject(metaclass=abstracts.Interface):
+class IProject(event.IExecutive, metaclass=abstracts.Interface):
 
     def __init__(
             self,

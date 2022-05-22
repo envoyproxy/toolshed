@@ -17,6 +17,10 @@ class DummyProject(abstract.AProject):
         return super().changelogs_class
 
     @property
+    def directory_class(self):
+        return super().directory_class
+
+    @property
     def inventories_class(self):
         return super().inventories_class
 
@@ -34,7 +38,10 @@ def test_abstract_project_constructor(path):
     project = DummyProject(*args)
     assert project._path == (path or ".")
 
-    iface_props = ["changelogs_class", "inventories_class"]
+    iface_props = [
+        "changelogs_class",
+        "directory_class",
+        "inventories_class"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
@@ -122,6 +129,53 @@ def test_abstract_project_dev_version(patches, is_dev):
                 else None))
 
     assert "dev_version" in project.__dict__
+
+
+def test_abstract_project_directory(patches):
+    project = DummyProject()
+    patched = patches(
+        ("AProject.directory_class",
+         dict(new_callable=PropertyMock)),
+        ("AProject.directory_kwargs",
+         dict(new_callable=PropertyMock)),
+        ("AProject.path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.project")
+    kwargs = {f"K{i}": f"V{i}" for i in range(0, 10)}
+
+    with patched as (m_class, m_kwargs, m_path):
+        m_kwargs.return_value = kwargs
+        assert (
+            project.directory
+            == m_class.return_value.return_value)
+
+    assert (
+        m_class.return_value.call_args
+        == [(m_path.return_value, ), kwargs])
+    assert "directory" in project.__dict__
+
+
+def test_abstract_project_directory_kwargs(patches):
+    project = DummyProject()
+    patched = patches(
+        "dict",
+        ("AProject.loop",
+         dict(new_callable=PropertyMock)),
+        ("AProject.pool",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.project")
+
+    with patched as (m_dict, m_loop, m_pool):
+        assert (
+            project.directory_kwargs
+            == m_dict.return_value)
+
+    assert (
+        m_dict.call_args
+        == [(),
+            dict(loop=m_loop.return_value,
+                 pool=m_pool.return_value)])
+    assert "directory_kwargs" not in project.__dict__
 
 
 @pytest.mark.parametrize("github", [None, "GITHUB"])

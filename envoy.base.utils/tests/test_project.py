@@ -1,4 +1,6 @@
 
+from aio.core import directory
+
 from envoy.base import utils
 
 
@@ -19,6 +21,7 @@ def test_project_constructor(patches):
         m_super.call_args
         == [args, kwargs])
     assert project.changelogs_class == utils.project.Changelogs
+    assert project.directory_class == directory.GitDirectory
     assert project.inventories_class == utils.project.Inventories
 
 

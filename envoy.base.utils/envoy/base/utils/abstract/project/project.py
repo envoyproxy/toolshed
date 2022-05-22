@@ -1,8 +1,9 @@
 
 import asyncio
 import pathlib
+from concurrent import futures
 from functools import cached_property
-from typing import AsyncGenerator, List, Optional, Tuple, Type, Union
+from typing import AsyncGenerator, List, Mapping, Optional, Tuple, Type, Union
 
 import aiohttp
 from packaging import version as _version
@@ -10,6 +11,7 @@ from packaging import version as _version
 import abstracts
 
 from aio.api import github as _github
+from aio.core import directory as _directory, event
 
 from envoy.base import utils
 from envoy.base.utils import exceptions, interface, typing
@@ -20,7 +22,7 @@ VERSION_PATH = "VERSION.txt"
 
 
 @abstracts.implementer(interface.IProject)
-class AProject(metaclass=abstracts.Abstraction):
+class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
@@ -29,13 +31,17 @@ class AProject(metaclass=abstracts.Abstraction):
             github: Optional[_github.IGithubAPI] = None,
             repo: Optional[_github.IGithubRepo] = None,
             github_token: Optional[str] = None,
-            session: Optional[aiohttp.ClientSession] = None) -> None:
+            session: Optional[aiohttp.ClientSession] = None,
+            loop: Optional[asyncio.AbstractEventLoop] = None,
+            pool: Optional[futures.Executor] = None) -> None:
         self._version = version
         self._path = path
         self._github = github
         self.github_token = github_token
         self._repo = repo
         self._session = session
+        self._loop = loop
+        self._pool = pool
 
     @cached_property
     def archived_versions(self) -> Tuple[_version.Version, ...]:
@@ -59,6 +65,24 @@ class AProject(metaclass=abstracts.Abstraction):
     @cached_property
     def dev_version(self) -> Optional[_version.Version]:
         return self.changelogs.current if self.is_dev else None
+
+    @cached_property
+    def directory(self) -> _directory.ADirectory:
+        """Greppable directory - optionally in a git repo, depending on whether
+        we want to look at all files.
+        """
+        return self.directory_class(self.path, **self.directory_kwargs)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def directory_class(self) -> Type[_directory.ADirectory]:
+        raise NotImplementedError
+
+    @property
+    def directory_kwargs(self) -> Mapping:
+        return dict(
+            pool=self.pool,
+            loop=self.loop)
 
     @cached_property
     def github(self) -> _github.IGithubAPI:

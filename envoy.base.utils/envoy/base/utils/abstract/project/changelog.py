@@ -16,6 +16,8 @@ import yaml as _yaml
 
 import abstracts
 
+from aio.core.functional import async_property
+
 from envoy.base import utils
 from envoy.base.utils import exceptions, interface, typing
 
@@ -127,21 +129,13 @@ class AChangelogEntry(metaclass=abstracts.Abstraction):
 @abstracts.implementer(interface.IChangelog)
 class AChangelog(metaclass=abstracts.Abstraction):
 
-    def __init__(self, version: _version.Version, path: pathlib.Path) -> None:
-        self._version = version
-        self._path = path
-
-    @property
-    def base_version(self) -> str:
-        return self.version.base_version
-
-    @cached_property
-    def data(self) -> typing.ChangelogDict:
+    @classmethod
+    def get_data(cls, path) -> typing.ChangelogDict:
         try:
-            data = utils.from_yaml(self.path, typing.ChangelogSourceDict)
+            data = utils.from_yaml(path, typing.ChangelogSourceDict)
         except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
             raise exceptions.ChangelogParseError(
-                f"Failed to parse: {self.path}\n{e}")
+                f"Failed to parse: {path}\n{e}")
         return cast(
             typing.ChangelogDict,
             {k: (v
@@ -153,6 +147,25 @@ class AChangelog(metaclass=abstracts.Abstraction):
              for k, v
              in data.items()
              if v})
+
+    def __init__(
+            self,
+            project,
+            version: _version.Version,
+            path: pathlib.Path) -> None:
+        self.project = project
+        self._version = version
+        self._path = path
+
+    @property
+    def base_version(self) -> str:
+        return self.version.base_version
+
+    @async_property(cache=True)
+    async def data(self) -> typing.ChangelogDict:
+        # parse changelog data in executor
+        # return self.get_data(self.path)
+        return await self.project.execute(self.get_data, self.path)
 
     @property  # type:ignore
     @abstracts.interfacemethod
@@ -171,11 +184,11 @@ class AChangelog(metaclass=abstracts.Abstraction):
     def version(self) -> _version.Version:
         return self._version
 
-    def entries(self, section: str) -> List[interface.IChangelogEntry]:
+    async def entries(self, section: str) -> List[interface.IChangelogEntry]:
         return sorted(
             self.entry_class(section, entry)
             for entry
-            in self.data[section])  # type:ignore
+            in (await self.data)[section])  # type:ignore
 
 
 @abstracts.implementer(interface.IChangelogs)
@@ -209,7 +222,8 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     @cached_property
     def changelogs(self) -> typing.ChangelogsDict:
         return {
-            k: self.changelog_class(k, self.changelog_paths[k])
+            k: self.changelog_class(
+                self.project, k, self.changelog_paths[k],)
             for k
             in reversed(sorted(self.changelog_paths.keys()))}
 
