@@ -11,6 +11,7 @@ import abstracts
 
 from aio.api import github as _github
 from aio.core import directory as _directory, event
+from aio.core.functional import async_property
 
 from envoy.base.utils import typing
 
@@ -115,9 +116,9 @@ class IChangelog(metaclass=abstracts.Interface):
         """Path to this changelog."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @async_property
     @abstracts.interfacemethod
-    def release_date(self) -> str:
+    async def release_date(self) -> str:
         """Datestamp of this changelog."""
         raise NotImplementedError
 
@@ -180,9 +181,9 @@ class IChangelogs(metaclass=abstracts.Interface):
         """Formatted current UTC date."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @async_property
     @abstracts.interfacemethod
-    def is_pending(self) -> bool:
+    async def is_pending(self) -> bool:
         """Flag indicating whether the current changelog is set to
         `Pending`."""
         raise NotImplementedError
