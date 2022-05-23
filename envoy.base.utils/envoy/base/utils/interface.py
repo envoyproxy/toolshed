@@ -10,7 +10,7 @@ from packaging import version as _version
 import abstracts
 
 from aio.api import github as _github
-from aio.core import event
+from aio.core import directory as _directory, event
 
 from envoy.base.utils import typing
 
@@ -264,6 +264,17 @@ class IProject(event.IExecutive, metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     def dev_version(self) -> Optional[_version.Version]:
         """Returns the current version iff its a dev version."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def directory(self) -> _directory.ADirectory:
+        """The project directory."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def directory_class(self) -> Type[_directory.ADirectory]:
         raise NotImplementedError
 
     @property  # type:ignore
