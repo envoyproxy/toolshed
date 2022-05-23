@@ -607,7 +607,8 @@ async def test_abstract_project_dev(patches, dev, pending, patch):
 
     with patched as (m_utils, m_clogs, m_dev, m_version, m_str, m_write):
         m_dev.return_value = dev
-        m_clogs.return_value.is_pending = pending
+        m_clogs.return_value.is_pending = AsyncMock(
+            return_value=pending)()
 
         if dev or pending:
             with pytest.raises(exceptions.DevError) as e:
@@ -632,6 +633,8 @@ async def test_abstract_project_dev(patches, dev, pending, patch):
             == ("Project is already set to dev"
                 if dev
                 else "Current changelog date is already set to `Pending`"))
+        if dev:
+            await m_clogs.return_value.is_pending
         return
     assert (
         m_utils.increment_version.call_args
@@ -685,6 +688,7 @@ async def test_abstract_project_release(patches, is_dev):
 
     with patched as (m_clogs, m_dev, m_version, m_write):
         m_dev.return_value = is_dev
+        m_clogs.return_value.write_date = AsyncMock()
         if not is_dev:
             with pytest.raises(exceptions.ReleaseError) as e:
                 await project.release()

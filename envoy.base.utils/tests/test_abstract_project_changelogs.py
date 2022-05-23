@@ -236,7 +236,7 @@ def test_abstract_project_datestamp(patches):
 
 
 @pytest.mark.parametrize("pending", [None, "Pending", "cabbage"])
-def test_abstract_changelogs_is_pending(patches, pending):
+async def test_abstract_changelogs_is_pending(patches, pending):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "AChangelogs.__getitem__",
@@ -245,9 +245,10 @@ def test_abstract_changelogs_is_pending(patches, pending):
         prefix="envoy.base.utils.abstract.project.changelog")
 
     with patched as (m_get, m_current):
-        m_get.return_value.release_date = pending
+        m_get.return_value.release_date = AsyncMock(
+            return_value=pending)()
         assert (
-            changelogs.is_pending
+            await changelogs.is_pending
             == (pending == "Pending"))
 
     assert (
@@ -800,7 +801,7 @@ def test_abstract_changelogs_write_current(patches):
 
 
 @pytest.mark.parametrize("pending", [True, False])
-def test_abstract_changelogs_write_date(patches, pending):
+async def test_abstract_changelogs_write_date(patches, pending):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "AChangelogs.__getitem__",
@@ -815,12 +816,15 @@ def test_abstract_changelogs_write_date(patches, pending):
     date = MagicMock()
 
     with patched as (m_get, m_current, m_path, m_pending, m_yaml):
-        m_pending.return_value = pending
+        data = AsyncMock()
+        data.return_value.copy = MagicMock()
+        m_get.return_value.data = data()
+        m_pending.side_effect = AsyncMock(return_value=pending)
         if not pending:
             with pytest.raises(exceptions.ReleaseError) as e:
-                changelogs.write_date(date)
+                await changelogs.write_date(date)
         else:
-            assert not changelogs.write_date(date)
+            assert not await changelogs.write_date(date)
 
     if not pending:
         assert (
@@ -830,20 +834,21 @@ def test_abstract_changelogs_write_date(patches, pending):
         assert not m_get.called
         assert not m_path.called
         assert not m_yaml.called
+        await m_get.return_value.data
         return
 
     assert (
         m_get.call_args
         == [(m_current.return_value, ), {}])
     assert (
-        m_get.return_value.data.copy.call_args
+        data.return_value.copy.call_args
         == [(), {}])
     assert (
         m_path.return_value.write_text.call_args
         == [(m_yaml.return_value, ), {}])
     assert (
         m_yaml.call_args
-        == [(m_get.return_value.data.copy.return_value, ), {}])
+        == [(data.return_value.copy.return_value, ), {}])
 
 
 @pytest.mark.parametrize("exists", [True, False])
@@ -1101,7 +1106,7 @@ async def test_abstract_changelog_data(patches):
         == [(m_get, m_path.return_value), {}])
 
 
-def test_abstract_changelog_release_date(patches):
+async def test_abstract_changelog_release_date(patches):
     changelog = DummyChangelog("PROECT", "VERSION", "PATH")
     patched = patches(
         ("AChangelog.data",
@@ -1109,12 +1114,14 @@ def test_abstract_changelog_release_date(patches):
         prefix="envoy.base.utils.abstract.project.changelog")
 
     with patched as (m_data, ):
+        data = AsyncMock()
+        m_data.side_effect = data
         assert (
-            changelog.release_date
-            == m_data.return_value.__getitem__.return_value)
+            await changelog.release_date
+            == data.return_value.__getitem__.return_value)
 
     assert (
-        m_data.return_value.__getitem__.call_args
+        data.return_value.__getitem__.call_args
         == [("date", ), {}])
     assert "release_date" not in changelog.__dict__
 

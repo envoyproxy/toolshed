@@ -176,9 +176,9 @@ class AChangelog(metaclass=abstracts.Abstraction):
     def path(self) -> pathlib.Path:
         return self._path
 
-    @property
-    def release_date(self) -> str:
-        return self.data["date"]
+    @async_property
+    async def release_date(self) -> str:
+        return (await self.data)["date"]
 
     @property
     def version(self) -> _version.Version:
@@ -247,10 +247,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def datestamp(self) -> str:
         return datetime.utcnow().date().strftime(self.date_format)
 
-    @property
-    def is_pending(self) -> bool:
+    @async_property
+    async def is_pending(self) -> bool:
         return (
-            self[self.current].release_date
+            await self[self.current].release_date
             == "Pending")
 
     @property
@@ -380,11 +380,11 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         self.current_path.write_text(
             self.current_tpl.render(sections=sections).lstrip())
 
-    def write_date(self, date: str) -> None:
-        if not self.is_pending:
+    async def write_date(self, date: str) -> None:
+        if not await self.is_pending:
             raise exceptions.ReleaseError(
                 "Current changelog date is not set to `Pending`")
-        data = self[self.current].data.copy()
+        data = (await self[self.current].data).copy()
         data["date"] = date
         self.current_path.write_text(self.dump_yaml(data))
 

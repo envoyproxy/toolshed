@@ -3,6 +3,8 @@ import pytest
 
 import abstracts
 
+from aio.core.functional import async_property
+
 from envoy.base.utils import interface
 
 
@@ -262,9 +264,9 @@ class DummyChangelogs:
     def datestamp(self):
         return interface.IChangelogs.datestamp.fget(self)
 
-    @property
-    def is_pending(self):
-        return interface.IChangelogs.is_pending.fget(self)
+    @async_property
+    async def is_pending(self):
+        return await interface.IChangelogs.is_pending.async_result(self)
 
     @property
     def sections(self):
@@ -303,7 +305,7 @@ async def test_iface_changelogs_constructor():
 
     iface_props = [
         "changelog_class", "changelog_paths", "changelogs",
-        "current", "date_format", "datestamp", "is_pending", "sections"]
+        "current", "date_format", "datestamp", "sections"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
@@ -316,6 +318,12 @@ async def test_iface_changelogs_constructor():
     for method in iface_methods:
         with pytest.raises(NotImplementedError):
             getattr(changelogs, method)()
+
+    iface_async_props = ["is_pending"]
+
+    for prop in iface_async_props:
+        with pytest.raises(NotImplementedError):
+            await getattr(changelogs, prop)
 
     iface_async_methods = ["sync"]
 
@@ -360,9 +368,9 @@ class DummyChangelog:
     def path(self):
         return interface.IChangelog.path.fget(self)
 
-    @property
-    def release_date(self):
-        return interface.IChangelog.release_date.fget(self)
+    @async_property
+    async def release_date(self):
+        return await interface.IChangelog.release_date.async_result(self)
 
     @property
     def version(self):
@@ -372,18 +380,24 @@ class DummyChangelog:
         return interface.IChangelog.entries(self, section)
 
 
-def test_iface_changelog_constructor():
+async def test_iface_changelog_constructor():
     with pytest.raises(TypeError):
         interface.IChangelog()
 
     changelog = DummyChangelog()
 
     iface_props = [
-        "data", "entry_class", "path", "release_date", "version"]
+        "data", "entry_class", "path", "version"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(changelog, prop)
+
+    iface_async_props = ["release_date"]
+
+    for prop in iface_async_props:
+        with pytest.raises(NotImplementedError):
+            await getattr(changelog, prop)
 
 
 async def test_iface_changelog_entries():

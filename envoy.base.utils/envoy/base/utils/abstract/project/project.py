@@ -188,7 +188,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             patch: bool = False) -> typing.ProjectDevResultDict:
         if self.is_dev:
             raise exceptions.DevError("Project is already set to dev")
-        if self.changelogs.is_pending:
+        if await self.changelogs.is_pending:
             raise exceptions.DevError(
                 "Current changelog date is already set to `Pending`")
         new_version = utils.increment_version(self.version, patch=patch)
@@ -211,7 +211,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
                 "Project is not set to dev")
         self.write_version(self.version)
         date = self.changelogs.datestamp
-        self.changelogs.write_date(date)
+        await self.changelogs.write_date(date)
         return dict(
             date=date,
             version=self.version.base_version)
