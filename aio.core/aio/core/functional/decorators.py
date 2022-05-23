@@ -120,8 +120,7 @@ class async_property:  # noqa: N801
         return self.set_prop_cache(instance, await self.fun(instance))
 
     async def load_cooperatively(self, instance: Any) -> Any:
-        loader = self.get_loader(instance)
-        if not loader:
+        if not (loader := self.get_loader(instance)):
             # Unhashable type, just load
             return await self.load(instance)
         if not await loader:

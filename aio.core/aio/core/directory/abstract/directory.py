@@ -97,8 +97,7 @@ class AGitDirectoryFileFinder(
             return super().parse_response(response)
         files = []
         for line in super().parse_response(response):
-            filename = self._get_file(line)
-            if filename:
+            if filename := self._get_file(line):
                 files.append(filename)
         return files
 
@@ -191,8 +190,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     @property
     def grep_command_args(self) -> Tuple[str, ...]:
         """Path args for the `grep` command."""
-        grep_command = shutil.which("grep")
-        if grep_command:
+        if grep_command := shutil.which("grep"):
             return grep_command, "-r"
         raise _subprocess.exceptions.OSCommandError(
             "Unable to find `grep` command")
@@ -365,8 +363,7 @@ class AGitDirectory(ADirectory):
         # the reverse - get the `changed_files` and bail if there are none.
         files = None
         if self.path_matcher or self.exclude_matcher:
-            files = await self.get_files()
-            if not files:
+            if not (files := await self.get_files()):
                 return set()
         elif not await self.changed_files:
             return set()
@@ -385,8 +382,7 @@ class AGitDirectory(ADirectory):
     @property
     def git_command(self) -> str:
         """Path to the `git` command."""
-        git_command = shutil.which("git")
-        if git_command:
+        if git_command := shutil.which("git"):
             return git_command
         raise _subprocess.exceptions.OSCommandError(
             "Unable to find the `git` command")

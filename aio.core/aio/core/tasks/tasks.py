@@ -343,8 +343,7 @@ class Concurrent:
         """Asynchronously yield results as they become available."""
         while True:
             # Wait for some output
-            result = await self.out.get()
-            if result is _sentinel:
+            if (result := await self.out.get()) is _sentinel:
                 # All done!
                 await self.close()
                 break
