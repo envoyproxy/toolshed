@@ -14,8 +14,10 @@ class ACPE(metaclass=abstracts.Abstraction):
     @lru_cache(maxsize=None)
     def from_string(cls, cpe_str: str) -> "ACPE":
         """Generate a CPE object from a CPE string."""
-        components = cpe_str.split(':')
-        if len(components) < 6 or not cpe_str.startswith('cpe:2.3:'):
+        invalid_string = (
+            len(components := cpe_str.split(':')) < 6
+            or not cpe_str.startswith('cpe:2.3:'))
+        if invalid_string:
             raise exceptions.CPEError(
                 f"CPE string ({cpe_str}) must be a valid CPE v2.3 string")
         return cls(*components[2:6])
