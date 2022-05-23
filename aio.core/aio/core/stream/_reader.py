@@ -29,8 +29,7 @@ class Reader(AsyncStream):
 
     async def __aiter__(self) -> AsyncGenerator[bytes, AsyncBufferedReader]:
         while True:
-            chunk = await self.buffer.read(self.chunk_size)
-            if not chunk:
+            if not (chunk := await self.buffer.read(self.chunk_size)):
                 break
             yield chunk
 
