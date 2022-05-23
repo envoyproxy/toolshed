@@ -4,13 +4,11 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
-from aio.core import event
-
 from envoy.base import utils
 from envoy.code import check
 
 
-class DummyChangelogCheck(check.AChangelogCheck):
+class _DummyChangelogCheck(check.AChangelogCheck):
 
     @property
     def changelog_status_class(self):
@@ -21,14 +19,28 @@ class DummyChangelogCheck(check.AChangelogCheck):
         return super().changes_checker_class
 
 
-def test_changelogcheck_constructor():
-    with pytest.raises(TypeError):
-        check.AChangelogCheck("PROJECT", "DIRECTORY")
+class DummyChangelogCheck(_DummyChangelogCheck):
 
-    changelog = DummyChangelogCheck("PROJECT", "DIRECTORY")
-    assert changelog.project == "PROJECT"
-    assert changelog.directory == "DIRECTORY"
-    assert isinstance(changelog, check.ACodeCheck)
+    def __init__(self):
+        pass
+
+
+def test_changelogcheck_constructor(patches):
+    patched = patches(
+        "abstract.AProjectCodeCheck.__init__",
+        prefix="envoy.code.check.abstract.changelog")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        with pytest.raises(TypeError):
+            check.AChangelogCheck("PROJECT", "DIRECTORY")
+
+        changelog = _DummyChangelogCheck("PROJECT", "DIRECTORY")
+
+    assert isinstance(changelog, check.AProjectCodeCheck)
+    assert (
+        m_super.call_args
+        == [("PROJECT", "DIRECTORY"), {}])
 
     iface_props = ["changelog_status_class", "changes_checker_class"]
     for prop in iface_props:
@@ -37,7 +49,7 @@ def test_changelogcheck_constructor():
 
 
 def test_changelogcheck_dunder_iter(patches):
-    changelog = DummyChangelogCheck("PROJECT", "DIRECTORY")
+    changelog = DummyChangelogCheck()
     patched = patches(
         ("AChangelogCheck.changelogs",
          dict(new_callable=PropertyMock)),
@@ -55,7 +67,8 @@ def test_changelogcheck_dunder_iter(patches):
 
 def test_changelogcheck_changes_checker(patches):
     project = MagicMock()
-    changelog = DummyChangelogCheck(project, "DIRECTORY")
+    changelog = DummyChangelogCheck()
+    changelog.project = project
     patched = patches(
         ("AChangelogCheck.changes_checker_class",
          dict(new_callable=PropertyMock)),
@@ -76,7 +89,8 @@ def test_changelogcheck_changelogs(patches):
     project = MagicMock()
     clogs = {f"K{i}": f"V{i}" for i in range(0, 5)}
     project.changelogs.values.return_value = clogs.values()
-    changelog = DummyChangelogCheck(project, "DIRECTORY")
+    changelog = DummyChangelogCheck()
+    changelog.project = project
     patched = patches(
         "tuple",
         ("AChangelogCheck.changelog_status_class",
@@ -108,9 +122,6 @@ def test_changelogstatus_constructor():
     status = check.AChangelogStatus(_check, changelog)
     assert status._check == _check
     assert status.changelog == changelog
-    assert isinstance(status, event.IReactive)
-    assert status._loop == _check.loop
-    assert status._pool == _check.pool
     assert status.project == _check.project
     assert "project" not in status.__dict__
     assert status.checker == _check.changes_checker
@@ -119,24 +130,17 @@ def test_changelogstatus_constructor():
     assert "version" not in status.__dict__
 
 
-async def test_changelogstatus_data(patches):
-    status = check.AChangelogStatus(MagicMock(), MagicMock())
-    patched = patches(
-        ("AChangelogStatus.execute",
-         dict(new_callable=AsyncMock)),
-        prefix="envoy.code.check.abstract.changelog")
-
-    with patched as (m_exec, ):
-        assert (
-            await status.data
-            == m_exec.return_value
-            == getattr(
-                status,
-                check.AChangelogStatus.data.cache_name)["data"])
-
+async def test_changelogstatus_data():
+    clog = MagicMock()
+    data = AsyncMock()
+    clog.data = data()
+    status = check.AChangelogStatus(MagicMock(), clog)
     assert (
-        m_exec.call_args
-        == [(getattr, status.changelog, "data"), {}])
+        await status.data
+        == data.return_value)
+    assert not hasattr(
+        status,
+        check.AChangelogStatus.data.cache_name)
 
 
 async def test_changelogstatus_date(patches):
@@ -548,25 +552,27 @@ def test_changelogstatus_check_version(
 
 
 async def test_changelogstatus_check_sections(patches):
-    status = check.AChangelogStatus(MagicMock(), MagicMock())
+    checker = MagicMock()
+    status = check.AChangelogStatus(checker, MagicMock())
     patched = patches(
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
         ("AChangelogStatus.sections",
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.version",
          dict(new_callable=PropertyMock)),
-        ("AChangelogStatus.execute",
-         dict(new_callable=AsyncMock)),
         prefix="envoy.code.check.abstract.changelog")
 
-    with patched as (m_sections, m_version, m_exec):
+    with patched as (m_project, m_sections, m_version):
         sections = AsyncMock()
         m_sections.side_effect = sections
+        m_project.return_value.execute = AsyncMock()
         assert (
             await status.check_sections()
-            == m_exec.return_value)
+            == m_project.return_value.execute.return_value)
 
     assert (
-        m_exec.call_args
+        m_project.return_value.execute.call_args
         == [(status.checker.check_sections,
              m_version.return_value,
              sections.return_value), {}])

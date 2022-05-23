@@ -8,7 +8,6 @@ from packaging import version as _version
 
 import abstracts
 
-from aio.core import event
 from aio.core.functional import async_property
 
 from envoy.base import utils
@@ -96,8 +95,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
                 "(this is no longer used)")
 
 
-@abstracts.implementer(event.IExecutive)
-class AChangelogStatus(event.AExecutive):
+class AChangelogStatus(metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
@@ -105,25 +103,14 @@ class AChangelogStatus(event.AExecutive):
             changelog: utils.interface.IChangelog) -> None:
         self._check = check
         self.changelog = changelog
-        self._loop = check.loop
-        self._pool = check.pool
 
     @property
-    def project(self):
-        return self._check.project
-
-    @property
-    def checker(self):
+    def checker(self) -> AChangelogChangesChecker:
         return self._check.changes_checker
 
-    @async_property(cache=True)
+    @async_property
     async def data(self) -> utils.typing.ChangelogDict:
-        # parse changelog data in executor
-        # return self.changelog.data
-        return await self.execute(
-            getattr,
-            self.changelog,
-            "data")
+        return await self.changelog.data
 
     @async_property
     async def date(self) -> str:
@@ -182,6 +169,10 @@ class AChangelogStatus(event.AExecutive):
              or not self.project.is_dev)
             and await self.is_pending)
 
+    @property
+    def project(self) -> utils.interface.IProject:
+        return self._check.project
+
     @async_property
     async def sections(self) -> utils.typing.ChangelogChangeSectionsDict:
         return utils.typed(
@@ -218,7 +209,7 @@ class AChangelogStatus(event.AExecutive):
     async def check_sections(self) -> Tuple[str, ...]:
         # Runs checker in executor, uncomment following line for debugging
         # return self.checker.check_sections(self.version, await self.sections)
-        return await self.execute(
+        return await self.project.execute(
             self.checker.check_sections,
             self.version,
             await self.sections)
@@ -241,17 +232,9 @@ class AChangelogStatus(event.AExecutive):
 
 
 class AChangelogCheck(
-        abstract.ACodeCheck,
+        abstract.AProjectCodeCheck,
         metaclass=abstracts.Abstraction):
     """Changelog check."""
-
-    def __init__(
-            self,
-            project: utils.interface.IProject,
-            *args,
-            **kwargs) -> None:
-        self.project = project
-        super().__init__(*args, **kwargs)
 
     def __iter__(self) -> Iterator[AChangelogStatus]:
         for changelog in self.changelogs:

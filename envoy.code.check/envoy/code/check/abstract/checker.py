@@ -5,7 +5,7 @@ import argparse
 import pathlib
 import re
 from functools import cached_property
-from typing import Dict, Mapping, Optional, Pattern, Set, Tuple, Type
+from typing import Dict, Mapping, Optional, Pattern, Set, Type
 
 import abstracts
 
@@ -28,10 +28,6 @@ GLINT_ADVICE = (
     "      - no trailing whitespace\n"
     "      - no preceding mixed tabs/spaces\n"
     "      - all files end with a newline")
-
-# This is excluding at least some of the things that `.gitignore` would.
-GREP_EXCLUDE_GLOBS = (r"\#*", r"\.#*", r"*~")
-GREP_EXCLUDE_DIR_GLOBS = (r"build", r"build*", r"generated", r"\.*", r"src")
 
 NO_EXTENSIONS_ERROR_MSG = (
     "`--extensions_build_config` not provided, disabling extensions checks")
@@ -61,6 +57,7 @@ class ACodeChecker(
         "glint",
         "python_yapf",
         "python_flake8",
+        "runtime_guards",
         "shellcheck")
 
     @property
@@ -77,17 +74,6 @@ class ACodeChecker(
         return disabled
 
     @property
-    def exclude_from_grep(self) -> Tuple[str, ...]:
-        """Globs to exclude when grepping, ignored if `git grep` is used."""
-        return GREP_EXCLUDE_GLOBS if self.all_files else ()
-
-    @property
-    def exclude_dirs_from_grep(self) -> Tuple[str, ...]:
-        """Glob directories to exclude when grepping, ignored if `git grep` is
-        used."""
-        return GREP_EXCLUDE_DIR_GLOBS if self.all_files else ()
-
-    @property
     def changed_since(self) -> Optional[str]:
         return self.args.since
 
@@ -96,7 +82,6 @@ class ACodeChecker(
         """Changelog checker."""
         return self.changelog_class(
             self.project,
-            self.directory,
             **self.check_kwargs)
 
     @property  # type:ignore
@@ -116,24 +101,14 @@ class ACodeChecker(
         """Greppable directory - optionally in a git repo, depending on whether
         we want to look at all files.
         """
-        return self.directory_class(self.path, **self.directory_kwargs)
-
-    @property
-    def directory_class(self) -> Type["_directory.ADirectory"]:
-        return (
-            self.fs_directory_class
-            if self.all_files
-            else self.git_directory_class)
+        return self.project.directory.filtered(**self.directory_kwargs)
 
     @property
     def directory_kwargs(self) -> Dict:
         kwargs: Dict = dict(
             exclude_matcher=self.grep_excluding_re,
             path_matcher=self.grep_matching_re,
-            exclude=self.exclude_from_grep,
-            exclude_dirs=self.exclude_dirs_from_grep,
-            pool=self.pool,
-            loop=self.loop)
+            untracked=self.all_files)
         if not self.all_files:
             kwargs["changed"] = self.changed_since
         return kwargs
@@ -201,6 +176,18 @@ class ACodeChecker(
     @property  # type:ignore
     @abstracts.interfacemethod
     def project_class(self) -> Type[IProject]:
+        raise NotImplementedError
+
+    @cached_property
+    def runtime_guards(self) -> "abstract.ARuntimeGuardsCheck":
+        """Shellcheck checker."""
+        return self.runtime_guards_class(
+            self.project,
+            **self.check_kwargs)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def runtime_guards_class(self) -> Type["abstract.ARuntimeGuardsCheck"]:
         raise NotImplementedError
 
     @cached_property
@@ -291,6 +278,20 @@ class ACodeChecker(
         """Check for yapf issues."""
         await self._code_check(self.yapf)
 
+    async def check_runtime_guards(self) -> None:
+        """Check for shellcheck issues."""
+        async for guard, status in self.runtime_guards.status:
+            if status is None:
+                self.log.info(f"Ignoring runtime guard: {guard}")
+            elif not status:
+                self.error(
+                    "runtime_guards",
+                    [f"Missing from changelogs: {guard}"])
+            else:
+                self.succeed(
+                    "runtime_guards",
+                    [f"In changelogs: {guard}"])
+
     async def check_shellcheck(self) -> None:
         """Check for shellcheck issues."""
         await self._code_check(self.shellcheck)
@@ -332,6 +333,12 @@ class ACodeChecker(
         catches=[subprocess.exceptions.OSCommandError])
     async def preload_shellcheck(self) -> None:
         await self.shellcheck.problem_files
+
+    @checker.preload(
+        when=["runtime_guards"],
+        catches=[subprocess.exceptions.OSCommandError])
+    async def preload_runtime_guards(self) -> None:
+        await self.runtime_guards.missing
 
     @checker.preload(
         when=["python_yapf"],

@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+import yapf
+
 from aio.core import directory
 
 from envoy.code import check
@@ -22,38 +24,55 @@ def test_yapf_yapfformatcheck_constructor(args):
 
 
 @pytest.mark.parametrize("n", range(1, 5))
+@pytest.mark.parametrize("e", [[1, 3], [2, 4], [3, 7]])
+@pytest.mark.parametrize("raises", [None, Exception, yapf.errors.YapfError])
 @pytest.mark.parametrize("fix", [True, False])
-def test_yapf_yapfformatcheck_check_results(patches, n, fix):
+def test_yapf_yapfformatcheck_check_results(patches, n, e, raises, fix):
     args = [f"ARG{i}" for i in range(0, 7)]
     yapf_check = check.abstract.yapf.YapfFormatCheck(
         "PATH", "CONFIG_PATH", fix, *args)
     patched = patches(
         "os",
-        "yapf",
+        "yapf.yapf_api",
         ("YapfFormatCheck.path",
          dict(new_callable=PropertyMock)),
         "YapfFormatCheck.handle_result",
         prefix="envoy.code.check.abstract.yapf")
+    _expected = []
 
     def handle(path, *args):
         i = int(path[-1])
+        if i in e and raises:
+            if raises == yapf.errors.YapfError:
+                _expected.append(
+                    (path,
+                     [f"Yaml check failed: {path}\nAN ERROR OCCURRED"]))
+            raise raises("AN ERROR OCCURRED")
         if i % n:
+            _expected.append(path)
             return path
 
     with patched as (m_os, m_yapf, m_path, m_handle):
         m_handle.side_effect = handle
         resultgen = yapf_check.check_results
-        assert isinstance(resultgen, types.GeneratorType)
-        assert (
-            list(resultgen)
-            == [p for p in args if (int(p[-1]) % n)])
+        if raises == Exception:
+            with pytest.raises(Exception):
+                resultlist = list(resultgen)
+        else:
+            resultlist = list(resultgen)
 
+    assert isinstance(resultgen, types.GeneratorType)
+    if raises == Exception:
+        return
+    assert (
+        resultlist
+        == _expected)
     assert (
         m_handle.call_args_list
-        == [[(p, m_yapf.yapf_api.FormatFile.return_value), {}]
+        == [[(p, m_yapf.FormatFile.return_value), {}]
             for p in args])
     assert (
-        m_yapf.yapf_api.FormatFile.call_args_list
+        m_yapf.FormatFile.call_args_list
         == [[(m_os.path.join.return_value, ),
              dict(style_config="CONFIG_PATH",
                   in_place=fix,

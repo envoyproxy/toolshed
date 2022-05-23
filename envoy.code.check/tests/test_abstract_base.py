@@ -84,3 +84,26 @@ async def test_code_check_files(patches, files, dir_files):
             check.AFileCodeCheck.files.cache_name)[
                 "files"]
         == result)
+
+
+@abstracts.implementer(check.AProjectCodeCheck)
+class DummyProjectCodeCheck:
+    pass
+
+
+async def test_project_code_check_constructor(patches):
+    args = [f"A{i}" for i in range(0, 5)]
+    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    project = MagicMock()
+    patched = patches(
+        "ACodeCheck.__init__",
+        prefix="envoy.code.check.abstract.base")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        checker = DummyProjectCodeCheck(project, *args, **kwargs)
+
+    assert isinstance(checker, check.ACodeCheck)
+    assert (
+        m_super.call_args
+        == [(project.directory, *args), kwargs])
