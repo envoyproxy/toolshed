@@ -76,8 +76,7 @@ class ACVE(metaclass=abstracts.Abstraction):
                 cpe = self.cpe_class.from_string(cpe_match.pop('cpe23Uri'))
                 if self.include_version(cpe_match, cpe):
                     cpe_set.add(cpe)
-            children = node.get('children', [])
-            if children:
+            if children := node.get('children', []):
                 self.gather_cpes(children, cpe_set)
 
     def include_version(
