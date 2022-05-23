@@ -26,6 +26,14 @@ class DummyProject:
         return interface.IProject.dev_version.fget(self)
 
     @property
+    def directory(self):
+        return interface.IProject.directory.fget(self)
+
+    @property
+    def directory_class(self):
+        return interface.IProject.directory_class.fget(self)
+
+    @property
     def inventories(self):
         return interface.IProject.inventories.fget(self)
 
@@ -112,7 +120,7 @@ async def test_iface_project_constructor():
 
     iface_props = [
         "archived_versions", "changelogs", "changelogs_class",
-        "dev_version", "is_dev", "is_main_dev",
+        "dev_version", "directory", "directory_class", "is_dev", "is_main_dev",
         "inventories", "inventories_class", "loop",
         "minor_version", "minor_versions", "path", "pool",
         "rel_version_path", "repo",
