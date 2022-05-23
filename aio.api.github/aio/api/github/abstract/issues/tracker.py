@@ -100,8 +100,7 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
                 interface.IGithubTrackedIssue,
                 interface.IGithubIssue]:
         async for issue in self.iter_issues():
-            issue = self.issue_class(self, issue)
-            if issue.key:
+            if (issue := self.issue_class(self, issue)).key:
                 yield issue
 
     @property  # type:ignore

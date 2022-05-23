@@ -42,7 +42,7 @@ pypi: https://pypi.org/project/aio.api.github
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.5
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.6
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [multidict](https://pypi.org/project/multidict) >=6.0.2
