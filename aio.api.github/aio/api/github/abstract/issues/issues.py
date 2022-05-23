@@ -81,8 +81,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
         return filters and f"{filters} " or filters
 
     async def create(self, title: str, **kwargs) -> interface.IGithubIssue:
-        repo = kwargs.pop("repo", None) or self.repo
-        if not repo:
+        if not (repo := kwargs.pop("repo", None) or self.repo):
             raise exceptions.IssueCreateError(
                 f"To create an issue, either `{self.__class__.__name__}` "
                 "must be instantiated with a `repo` or `create` must be "
@@ -98,8 +97,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
 
     def inflater(self, repo: interface.IGithubRepo = None) -> Callable:
         """Return default or custom callable to inflate a `GithubIssue`."""
-        repo = repo or self.repo
-        if not repo:
+        if not (repo := repo or self.repo):
             return self._inflate
         return partial(self.github.issue_class, repo)
 

@@ -115,7 +115,5 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
         return await self.api.post(*args, **kwargs)
 
     def repo_from_url(self, url):
-        repo_url = f"{self.api.base_url}/repos/"
-        if not url.startswith(repo_url):
-            return None
-        return self["/".join(url[len(repo_url):].split("/")[:2])]
+        if url.startswith(repo_url := f"{self.api.base_url}/repos/"):
+            return self["/".join(url[len(repo_url):].split("/")[:2])]
