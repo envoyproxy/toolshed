@@ -515,8 +515,7 @@ class Checker(runner.Runner):
         while True:
             if not self.remaining_checks:
                 break
-            check = await self.check_queue.get()
-            if check is _sentinel:
+            if (check := await self.check_queue.get()) is _sentinel:
                 break
             await self._run_check(check)
             self.check_queue.task_done()
@@ -601,11 +600,10 @@ class CheckerSummary(object):
         """Print a summary section."""
         max_display = self.max_problems_of(problem_type, len(problems))
         title = self.problem_title(problem_type, len(problems), max_display)
-        lines = problems[:max_display]
         section = [
             f"{problem_type.upper()} Summary [{check}]{title}",
             "-" * 80]
-        if lines:
+        if lines := problems[:max_display]:
             section += [line.split("\n")[0] for line in lines]
         return "\n".join(section + [""])
 
