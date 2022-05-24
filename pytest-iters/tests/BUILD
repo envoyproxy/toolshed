@@ -1,4 +1,4 @@
-pytooling_tests("pytest-patches")
+pytooling_tests("pytest-iters")
 
 python_test_utils(
     name="utils",

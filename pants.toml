@@ -24,6 +24,7 @@ use_coverage = true
 [pytest]
 extra_requirements = [
     "pytest-cov>=2.10.1,<2.12",
+    "pytest-iters>=0.0.2",
     "pytest-patches"]
 lockfile = ".pytest.lock"
 
