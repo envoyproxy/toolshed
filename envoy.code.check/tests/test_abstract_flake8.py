@@ -170,12 +170,12 @@ async def test_flake8_flake8_errors(patches):
             check.AFlake8Check.flake8_errors.cache_name))
 
 
-def test_flake8_handle_errors(patches):
+def test_flake8_handle_errors(iters, patches):
     flake8 = check.AFlake8Check("DIRECTORY")
     patched = patches(
         "AFlake8Check._parse_error",
         prefix="envoy.code.check.abstract.flake8")
-    errors = [MagicMock() for i in range(0, 5)]
+    errors = iters(cb=lambda i: MagicMock())
 
     class Handler:
         counter = 0
@@ -312,13 +312,13 @@ def test_flake8app_include_file(
 
 
 @pytest.mark.parametrize("n", range(1, 5))
-def test_flake8app_include_files(patches, n):
+def test_flake8app_include_files(iters, patches, n):
     flake8 = check.abstract.flake8.Flake8App("PATH", "ARGS")
     patched = patches(
         "os",
         "Flake8App.include_file",
         prefix="envoy.code.check.abstract.flake8")
-    files = [f"F{i}" for i in range(0, 7)]
+    files = iters(cb=lambda i: f"F{i}", count=7)
 
     class Includer:
         counter = 0
@@ -440,7 +440,7 @@ def test_flake8app__include_directory(patches, paths, exclude):
 
 @pytest.mark.parametrize("any_paths", [True, False])
 @pytest.mark.parametrize("is_excluded", [True, False])
-def test_flake8app__include_path(patches, any_paths, is_excluded):
+def test_flake8app__include_path(iters, patches, any_paths, is_excluded):
     flake8 = check.abstract.flake8.Flake8App("PATH", "ARGS")
     patched = patches(
         "any",
@@ -448,7 +448,7 @@ def test_flake8app__include_path(patches, any_paths, is_excluded):
          dict(new_callable=PropertyMock)),
         "Flake8App._is_excluded",
         prefix="envoy.code.check.abstract.flake8")
-    paths = [MagicMock() for x in range(0, 5)]
+    paths = iters(cb=lambda i: MagicMock())
     path = MagicMock()
 
     def iter_paths():

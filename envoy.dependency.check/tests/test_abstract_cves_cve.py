@@ -49,10 +49,10 @@ def test_cve_data(data):
     assert data not in cve.__dict__
 
 
-def test_cve_cpes(patches):
+def test_cve_cpes(iters, patches):
     cve_data = MagicMock()
     cpe_class = MagicMock()
-    cpes = [dict(CPE=f"CPE{i}") for i in range(0, 5)]
+    cpes = iters(cb=lambda i: dict(CPE=f"CPE{i}"))
     cve_data.__getitem__.return_value = cpes
     cve = DummyDependencyCVE(cve_data, cpe_class)
     patched = patches(
@@ -104,13 +104,13 @@ def test_cve_fail_tpl(patches):
     assert "fail_tpl" not in cve.__dict__
 
 
-def test_cve_formatted_description(patches):
+def test_cve_formatted_description(iters, patches):
     cve = DummyDependencyCVE("CVE_DATA", "CPE_CLASS")
     patched = patches(
         "textwrap",
         ("ADependencyCVE.description", dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.cves.cve")
-    wrapped = [f"XX{i}" for i in range(0, 5)]
+    wrapped = iters(cb=lambda i: f"XX{i}")
 
     with patched as (m_wrap, m_description):
         m_wrap.wrap.return_value = wrapped

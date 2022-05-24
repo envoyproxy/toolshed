@@ -131,7 +131,7 @@ def test_abstract_project_dev_version(patches, is_dev):
     assert "dev_version" in project.__dict__
 
 
-def test_abstract_project_directory(patches):
+def test_abstract_project_directory(iters, patches):
     project = DummyProject()
     patched = patches(
         ("AProject.directory_class",
@@ -141,7 +141,7 @@ def test_abstract_project_directory(patches):
         ("AProject.path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.project")
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 10)}
+    kwargs = iters(dict, count=10)
 
     with patched as (m_class, m_kwargs, m_path):
         m_kwargs.return_value = kwargs
@@ -511,7 +511,7 @@ def test_abstract_project_version_path(patches):
 
 
 @pytest.mark.parametrize("version", [True, False])
-def test_abstract_project_changes_for_commit(patches, version):
+def test_abstract_project_changes_for_commit(iters, patches, version):
     project = DummyProject()
     patched = patches(
         "any",
@@ -523,8 +523,8 @@ def test_abstract_project_changes_for_commit(patches, version):
         ("AProject.inventories",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.project")
-    clogs = set([f"C{i}" for i in range(0, 7)])
-    inv = set([f"C{i}" for i in range(3, 10)])
+    clogs = iters(set, count=7)
+    inv = iters(set, start=3, count=7)
     update = MagicMock()
     expected = clogs | inv
 
@@ -559,14 +559,14 @@ def test_abstract_project_changes_for_commit(patches, version):
         == [[("dev", ), {}], [("release", ), {}]])
 
 
-async def test_abstract_project_commit(patches):
+async def test_abstract_project_commit(iters, patches):
     project = DummyProject()
     patched = patches(
         "AProject.changes_for_commit",
         "AProject._git_commit",
         prefix="envoy.base.utils.abstract.project.project")
     update = MagicMock()
-    changes = [f"C{i}" for i in range(0, 7)]
+    changes = iters(count=7)
     results = []
     msg = MagicMock()
 
@@ -785,12 +785,12 @@ def test_abstract_project_write_version(patches, dev):
             dict(dev=dev)])
 
 
-async def test_abstract_project__git_commit(patches):
+async def test_abstract_project__git_commit(iters, patches):
     project = DummyProject()
     patched = patches(
         "AProject._exec",
         prefix="envoy.base.utils.abstract.project.project")
-    changed = tuple(f"C{i}" for i in range(0, 5))
+    changed = iters(tuple)
     msg = MagicMock()
 
     with patched as (m_exec, ):

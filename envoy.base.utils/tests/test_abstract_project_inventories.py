@@ -54,13 +54,13 @@ def test_abstract_inventories_dunder_getitem(patches):
         == [("KEY",), {}])
 
 
-def test_abstract_inventories_dunder_iter(patches):
+def test_abstract_inventories_dunder_iter(iters, patches):
     inventories = DummyInventories("PROJECT")
     patched = patches(
         ("AInventories.inventories",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.inventory")
-    invs = [f"INV{c}" for c in range(0, 5)]
+    invs = iters()
 
     with patched as (m_invs, ):
         m_invs.return_value = invs
@@ -71,14 +71,14 @@ def test_abstract_inventories_dunder_iter(patches):
             == invs)
 
 
-def test_abstract_inventories_inventories(patches):
+def test_abstract_inventories_inventories(iters, patches):
     inventories = DummyInventories("PROJECT")
     patched = patches(
         "_version",
         ("AInventories.paths",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.inventory")
-    paths = [MagicMock() for p in range(0, 5)]
+    paths = iters(cb=lambda i: MagicMock())
 
     with patched as (m_version, m_paths):
         m_paths.return_value = paths
@@ -111,12 +111,14 @@ def test_abstract_inventories_paths():
     assert "paths" not in inventories.__dict__
 
 
-async def test_abstract_inventories_syncable(patches):
-    releases = []
-    for i in range(0, 10):
+async def test_abstract_inventories_syncable(iters, patches):
+
+    def mock_release(i):
         release = MagicMock()
         release.version = i
-        releases.append(release)
+        return release
+
+    releases = iters(cb=lambda i: mock_release(i), count=10)
 
     async def repo_releases():
         for release in releases:
@@ -185,7 +187,7 @@ async def test_abstract_inventories_syncable(patches):
         abstract.AInventories.syncable.cache_name)
 
 
-def test_abstract_inventories_versions(patches):
+def test_abstract_inventories_versions(iters, patches):
     inventories = DummyInventories("PROJECT")
     patched = patches(
         "_version",
@@ -193,7 +195,7 @@ def test_abstract_inventories_versions(patches):
         ("AInventories.versions_path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.inventory")
-    versions = {f"K{v}": f"V{v}" for v in range(0, 5)}
+    versions = iters(dict)
 
     with patched as (m_version, m_utils, m_path):
         m_utils.from_yaml.return_value.items.return_value = versions.items()
@@ -451,7 +453,7 @@ def test_abstract_inventories_write_inventory(patches):
     [(lambda x: True),
      (lambda x: False),
      (lambda x: int(x[1:]) % 2)])
-async def test_abstract_inventories_sync(patches, fetch):
+async def test_abstract_inventories_sync(iters, patches, fetch):
     inventories = DummyInventories("PROJECT")
     patched = patches(
         ("AInventories.syncable",
@@ -460,7 +462,7 @@ async def test_abstract_inventories_sync(patches, fetch):
         "AInventories.write_inventory",
         "AInventories.write_versions",
         prefix="envoy.base.utils.abstract.project.inventory")
-    syncable = {f"K{s}": f"V{s}" for s in range(0, 10)}
+    syncable = iters(dict, count=10)
 
     with patched as (m_syncable, m_fetch, m_write_inv, m_write_ver):
         sync = AsyncMock()

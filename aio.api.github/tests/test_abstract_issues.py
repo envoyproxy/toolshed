@@ -21,9 +21,9 @@ class DummyGithubIssues:
     pass
 
 
-def test_abstract_issue_constructor(patches):
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+def test_abstract_issue_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
     patched = patches(
         "abstract.base.GithubRepoEntity.__init__",
         ("AGithubIssue.number",
@@ -225,9 +225,9 @@ def test_abstract_issues_filter(repo, filter):
 @pytest.mark.parametrize("repo2", [None, "REPO2"])
 @pytest.mark.parametrize(
     "raises", [None, Exception, gidgethub.GitHubException])
-async def test_abstract_issues_create(repo1, repo2, raises):
+async def test_abstract_issues_create(iters, repo1, repo2, raises):
     github = MagicMock()
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+    kwargs = iters(dict, count=3)
     repo1 = (
         MagicMock()
         if repo1

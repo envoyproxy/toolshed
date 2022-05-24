@@ -96,13 +96,13 @@ def test_preload_dunder_get(patches, cls, instance):
 @pytest.mark.parametrize(
     "blocks",
     [None, (), [], [f"C{i}" for i in range(0, 5)]])
-def test_preload_blocks(patches, blocks):
+def test_preload_blocks(iters, patches, blocks):
     preloader = checker.preload("WHEN")
     patched = patches(
         ("preload.when",
          dict(new_callable=PropertyMock)),
         prefix="aio.run.checker.decorators")
-    when = tuple(f"C{i}" for i in range(0, 5))
+    when = iters(tuple, cb=lambda i: f"C{i}")
     preloader._blocks = blocks
 
     with patched as (m_when, ):
@@ -164,18 +164,18 @@ def test_preload_when(when):
 @pytest.mark.parametrize("fun", [True, False])
 @pytest.mark.parametrize("args", [True, False])
 @pytest.mark.parametrize("kwargs", [True, False])
-def test_preload_fun(fun, args, kwargs):
+def test_preload_fun(iters, fun, args, kwargs):
     preloader = checker.preload("WHEN")
     preloader._fun = (
         MagicMock()
         if fun
         else None)
     args = (
-        [f"ARG{i}" for i in range(0, 5)]
+        iters()
         if args
         else [])
     kwargs = (
-        {f"K{i}": f"V{i}" for i in range(0, 5)}
+        iters(dict)
         if kwargs
         else {})
 

@@ -71,13 +71,13 @@ def test_abstract_changelogs_dunder_getitem(patches):
         == [("KEY",), {}])
 
 
-def test_abstract_changelogs_dunder_iter(patches):
+def test_abstract_changelogs_dunder_iter(iters, patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         ("AChangelogs.changelogs",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
-    clogs = [f"CLOG{c}" for c in range(0, 5)]
+    clogs = iters()
 
     with patched as (m_clogs, ):
         m_clogs.return_value = clogs
@@ -88,14 +88,14 @@ def test_abstract_changelogs_dunder_iter(patches):
             == clogs)
 
 
-def test_abstract_changelogs_changelog_paths(patches):
+def test_abstract_changelogs_changelog_paths(iters, patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         ("AChangelogs.paths",
          dict(new_callable=PropertyMock)),
         "AChangelogs._version_from_path",
         prefix="envoy.base.utils.abstract.project.changelog")
-    paths = [f"P{p}" for p in range(0, 5)]
+    paths = iters(cb=lambda x: f"P{x}")
 
     with patched as (m_paths, m_version):
         m_paths.return_value = paths
@@ -111,7 +111,7 @@ def test_abstract_changelogs_changelog_paths(patches):
     assert "changelog_paths" in changelogs.__dict__
 
 
-def test_abstract_changelogs_changelogs(patches):
+def test_abstract_changelogs_changelogs(iters, patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "reversed",
@@ -121,7 +121,7 @@ def test_abstract_changelogs_changelogs(patches):
         ("AChangelogs.changelog_paths",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
-    paths = [f"P{p}" for p in range(0, 5)]
+    paths = iters(cb=lambda x: f"P{x}")
 
     with patched as (m_rev, m_sort, m_class, m_paths):
         m_rev.return_value = paths
@@ -257,14 +257,14 @@ async def test_abstract_changelogs_is_pending(patches, pending):
     assert "is_pending" not in changelogs.__dict__
 
 
-def test_abstract_changelogs_paths(patches):
+def test_abstract_changelogs_paths(iters, patches):
     project = MagicMock()
     changelogs = DummyChangelogs(project)
     patched = patches(
         ("AChangelogs.current_path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
-    paths = [f"P{p}" for p in range(0, 5)]
+    paths = iters()
     project.path.glob.return_value = paths
 
     with patched as (m_path, ):
@@ -521,7 +521,7 @@ def test_abstract_changelogs_changes_for_commit(patches, current, dev, items):
             for p in expected_rel])
 
 
-def test_abstract_changelogs_dump_yaml(patches):
+def test_abstract_changelogs_dump_yaml(iters, patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         ("AChangelogs.section_re",
@@ -530,10 +530,10 @@ def test_abstract_changelogs_dump_yaml(patches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
     data = MagicMock()
-    items = {f"K{i}": (i % 2) for i in range(0, 10)}
+    items = iters(dict, cb=lambda i: (f"K{i}", (i % 2)), count=10)
     filtered = {k: v for k, v in items.items() if v}
     data.items.return_value = items.items()
-    sections = [f"S{s}" for s in range(0, 3)]
+    sections = iters(cb=lambda x: f"S{x}", count=3)
 
     with patched as (m_re, m_yaml):
         m_re.return_value.findall.return_value = sections
@@ -688,12 +688,14 @@ def test_abstract_changelogs_should_sync(
         assert not m_contains.called
 
 
-async def test_abstract_changelogs_sync(patches):
-    releases = []
-    for i in range(0, 10):
+async def test_abstract_changelogs_sync(iters, patches):
+
+    def mock_release(i):
         release = MagicMock()
         release.version = i
-        releases.append(release)
+        return release
+
+    releases = iters(cb=mock_release, count=10)
 
     async def repo_releases():
         for release in releases:
@@ -759,7 +761,7 @@ def test_abstract_changelogs_write_changelog(patches):
         == [(version, text), {}])
 
 
-def test_abstract_changelogs_write_current(patches):
+def test_abstract_changelogs_write_current(iters, patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         ("AChangelogs.current_path",
@@ -769,7 +771,7 @@ def test_abstract_changelogs_write_current(patches):
         ("AChangelogs.sections",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
-    sections = {f"K{s}": MagicMock() for s in range(0, 10)}
+    sections = iters(dict, cb=lambda x: (f"K{x}", MagicMock()), count=10)
     sections["changes"] = MagicMock()
 
     with patched as (m_path, m_tpl, m_sections):
@@ -994,17 +996,17 @@ class DummyChangelog(abstract.AChangelog):
 @pytest.mark.parametrize(
     "raises",
     [None, Exception, yaml.reader.ReaderError, exceptions.TypeCastingError])
-def test_abstract_changelog_get_data(patches, raises):
+def test_abstract_changelog_get_data(iters, patches, raises):
     patched = patches(
         "cast",
         "utils.from_yaml",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
 
-    changes = {f"K{c}": c for c in range(0, 10)}
+    changes = iters(dict, count=10, cb=lambda c: (f"K{c}", c))
     for k, v in changes.items():
         if v % 2:
-            changes[k] = [MagicMock() for i in range(0, 7)]
+            changes[k] = iters(cb=lambda i: MagicMock(), count=7)
         else:
             changes[k] = None
     changes["date"] = "NOTCHANGE"
@@ -1126,7 +1128,7 @@ async def test_abstract_changelog_release_date(patches):
     assert "release_date" not in changelog.__dict__
 
 
-async def test_abstract_changelog_entries(patches):
+async def test_abstract_changelog_entries(iters, patches):
     changelog = DummyChangelog("PROECT", "VERSION", "PATH")
     patched = patches(
         "sorted",
@@ -1135,7 +1137,7 @@ async def test_abstract_changelog_entries(patches):
         ("AChangelog.entry_class",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
-    entries = [f"E{e}" for e in range(0, 5)]
+    entries = iters()
 
     with patched as (m_sort, m_data, m_entry):
         data = MagicMock()
@@ -1255,7 +1257,7 @@ def test_legacy_changelog_changelog(changelog):
             assert isinstance(log["change"], typing.Change)
 
 
-def test_legacy_changelog_data(patches):
+def test_legacy_changelog_data(iters, patches):
     legacy = abstract.project.changelog.LegacyChangelog("CONTENT")
     patched = patches(
         "dict",
@@ -1266,7 +1268,7 @@ def test_legacy_changelog_data(patches):
         ("LegacyChangelog.date",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
-    clog = {f"K{c}": c for c in range(0, 10)}
+    clog = iters(dict, cb=lambda i: (f"K{i}", i), count=10)
 
     with patched as (m_dict, m_utils, m_typing, m_clog, m_date):
         m_clog.return_value = clog

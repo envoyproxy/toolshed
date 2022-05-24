@@ -228,7 +228,7 @@ def test_rst_backticks_check_single_tick_re(patches):
     assert "single_tick_re" in checker.__dict__
 
 
-def test_rst_backticks__find_single_ticks(patches):
+def test_rst_backticks__find_single_ticks(iters, patches):
     checker = check.ABackticksCheck()
     patched = patches(
         ("ABackticksCheck.single_tick_re",
@@ -236,7 +236,7 @@ def test_rst_backticks__find_single_ticks(patches):
         "ABackticksCheck._strip_valid_refs",
         prefix="envoy.code.check.abstract.rst")
     text = MagicMock()
-    bad_ticks = [MagicMock() for i in range(0, 5)]
+    bad_ticks = iters(cb=lambda i: MagicMock())
 
     with patched as (m_re, m_strip):
         m_re.return_value.findall.return_value = bad_ticks
@@ -258,7 +258,7 @@ def test_rst_backticks__find_single_ticks(patches):
             == [(slice(1, -1), ), {}])
 
 
-def test_rst_backticks__strip_valid_refs(patches):
+def test_rst_backticks__strip_valid_refs(iters, patches):
     checker = check.ABackticksCheck()
     patched = patches(
         ("ABackticksCheck.link_ticks_re",
@@ -267,8 +267,8 @@ def test_rst_backticks__strip_valid_refs(patches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.rst")
     text = MagicMock()
-    link_ticks = [f"L{i}" for i in range(0, 3)]
-    ref_ticks = [f"R{i}" for i in range(0, 3)]
+    link_ticks = iters(cb=lambda i: f"L{i}", count=3)
+    ref_ticks = iters(cb=lambda i: f"R{i}", count=3)
 
     with patched as (m_link_re, m_ref_re):
         m_ref_re.return_value.findall.return_value = ref_ticks

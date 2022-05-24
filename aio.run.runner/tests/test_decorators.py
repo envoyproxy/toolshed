@@ -139,10 +139,10 @@ def _cleanup_runner(async_fun, raises):
 
 @pytest.mark.parametrize("async_fun", [True, False])
 @pytest.mark.parametrize("raises", [True, False])
-async def test_cleansup(async_fun, raises):
+async def test_cleansup(iters, async_fun, raises):
     run = _cleanup_runner(async_fun, raises)
-    args = [f"ARG{i}" for i in range(0, 3)]
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+    args = iters(count=3)
+    kwargs = iters(dict, count=3)
 
     assert run.run.__wrapped__.__cleansup__ is True
     assert run.run_async.__wrapped__.__cleansup__ is True

@@ -27,14 +27,14 @@ def test_abstract_iterator_constructor(args, kwargs):
     assert iterator.kwargs == kwargs
 
 
-async def test_abstract_iterator_dunder_aiter(patches):
+async def test_abstract_iterator_dunder_aiter(iters, patches):
     iterator = DummyGithubIterator("API", "QUERY")
-    iterator.args = tuple(f"ARG{i}" for i in range(0, 3))
-    iterator.kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+    iterator.args = iters(tuple, count=3)
+    iterator.kwargs = iters(dict, count=3)
     patched = patches(
         "AGithubIterator.inflate",
         prefix="aio.api.github.abstract.iterator")
-    iterables = tuple(f"RESULT{i}" for i in range(0, 3))
+    iterables = iters(tuple, count=3)
     iterator.api = MagicMock()
     results = []
 

@@ -86,7 +86,8 @@ async def test_event_executive_execute(patches, args, kwargs):
 @pytest.mark.parametrize("max_batch_size", [None, *range(0, 5)])
 @pytest.mark.parametrize("min_batch_size", [None, *range(0, 5)])
 async def test_event_executive_execute_in_batches(
-        patches, args, kwargs, concurrency, max_batch_size, min_batch_size):
+        iters, patches, args, kwargs, concurrency, max_batch_size,
+        min_batch_size):
     executive = DummyExecutive()
     patched = patches(
         "functional",
@@ -103,7 +104,7 @@ async def test_event_executive_execute_in_batches(
     if min_batch_size is not None:
         call_kwargs["min_batch_size"] = min_batch_size
     c_kwargs["limit"] = concurrency
-    batches = [f"BATCH{i}" for i in range(0, 5)]
+    batches = iters()
 
     with patched as (m_func, m_tasks, m_exec):
         concurrent = AsyncMock()

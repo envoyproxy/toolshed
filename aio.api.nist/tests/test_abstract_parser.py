@@ -85,13 +85,13 @@ def test_parser_query_fields(patches):
     assert "query_fields" in parser.__dict__
 
 
-def test_parser_tracked_cpes(patches):
+def test_parser_tracked_cpes(iters, patches):
     tracked_cpes = MagicMock()
     parser = DummyNISTParser(tracked_cpes)
     patched = patches(
         "ANISTParser._tracked_cpe",
         prefix="aio.api.nist.abstract.parser")
-    cpes = [(f"CPEK{i}", f"CPEV{i}") for i in range(0, 5)]
+    cpes = iters(dict).items()
     tracked_cpes.items.return_value = cpes
 
     with patched as (m_tracked, ):
@@ -107,14 +107,14 @@ def test_parser_tracked_cpes(patches):
     assert "tracked_cpes" in parser.__dict__
 
 
-def test_parser_add_cpe_revmap(patches):
+def test_parser_add_cpe_revmap(iters, patches):
     parser = DummyNISTParser("TRACKED_CPES")
     patched = patches(
         ("ANISTParser.cpe_revmap",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.nist.abstract.parser")
     cve = MagicMock()
-    cve.cpes = [MagicMock() for c in range(0, 5)]
+    cve.cpes = iters(cb=lambda i: MagicMock())
 
     with patched as (m_revmap, ):
         assert not parser.add_cpe_revmap(cve)
@@ -256,7 +256,7 @@ def test_parser_include_cve(patches, is_v3, ignored, nodes):
 
 
 @pytest.mark.parametrize("include", range(1, 10))
-def test_parser_iter_cve_json(patches, include):
+def test_parser_iter_cve_json(iters, patches, include):
     parser = DummyNISTParser("TRACKED_CPES")
     patched = patches(
         ("ANISTParser.query_fields",
@@ -265,7 +265,7 @@ def test_parser_iter_cve_json(patches, include):
         "ANISTParser._junzip_items",
         prefix="aio.api.nist.abstract.parser")
     data = MagicMock()
-    cves = [MagicMock() for c in range(0, 7)]
+    cves = iters(cb=lambda i: MagicMock(), count=7)
 
     def parser_returns(x):
         if x % include:
@@ -295,7 +295,7 @@ def test_parser_iter_cve_json(patches, include):
             if i % include])
 
 
-def test_parser_parse_cve_data(patches):
+def test_parser_parse_cve_data(iters, patches):
     parser = DummyNISTParser("TRACKED_CPES")
     patched = patches(
         ("ANISTParser.cpe_revmap",
@@ -306,7 +306,7 @@ def test_parser_parse_cve_data(patches):
         "ANISTParser.iter_cve_json",
         prefix="aio.api.nist.abstract.parser")
     data = MagicMock()
-    cves = [(c, MagicMock()) for c in range(0, 5)]
+    cves = iters(dict, cb=lambda i: (i, MagicMock())).items()
 
     with patched as (m_revmap, m_cves, m_add, m_iter):
         m_iter.return_value = cves

@@ -285,7 +285,7 @@ def test_checker_github(patches):
      [True, True, True]])
 @pytest.mark.parametrize("raises", [BaseException, exceptions.BadGithubURL])
 def test_checker_github_dependencies(
-        patches, github_urls, github_versions, raises):
+        iters, patches, github_urls, github_versions, raises):
     checker = DummyDependencyChecker()
     patched = patches(
         "tuple",
@@ -298,7 +298,7 @@ def test_checker_github_dependencies(
     expected = []
     not_github = []
     errors = []
-    urls = [f"URL{i}" for i in range(0, 3)]
+    urls = iters(count=3)
     error = raises("AN ERROR OCCURRED")
     for i, github_url in enumerate(github_urls):
         github_version = github_versions[i]
@@ -451,14 +451,14 @@ def test_checker_add_arguments(patches):
             [('--cve_config',), {}]])
 
 
-async def test_checker_check_cves(patches):
+async def test_checker_check_cves(iters, patches):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.dependencies",
          dict(new_callable=PropertyMock)),
         "ADependencyChecker.dep_cve_check",
         prefix="envoy.dependency.check.abstract.checker")
-    deps = [MagicMock() for i in range(0, 5)]
+    deps = iters(cb=lambda i: MagicMock())
 
     with patched as (m_deps, m_check):
         m_deps.return_value = deps
@@ -469,14 +469,14 @@ async def test_checker_check_cves(patches):
         == [[(mock,), {}] for mock in deps])
 
 
-async def test_checker_check_release_dates(patches):
+async def test_checker_check_release_dates(iters, patches):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.github_dependencies",
          dict(new_callable=PropertyMock)),
         "ADependencyChecker.dep_date_check",
         prefix="envoy.dependency.check.abstract.checker")
-    deps = [MagicMock() for i in range(0, 5)]
+    deps = iters(cb=lambda i: MagicMock())
 
     with patched as (m_deps, m_check):
         m_deps.return_value = deps
@@ -489,7 +489,7 @@ async def test_checker_check_release_dates(patches):
 
 @pytest.mark.parametrize(
     "raises", [None, BaseException, github.exceptions.IssueCreateError])
-async def test_checker_check_release_issues(patches, raises):
+async def test_checker_check_release_issues(iters, patches, raises):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.active_check",
@@ -502,7 +502,7 @@ async def test_checker_check_release_issues(patches, raises):
         "ADependencyChecker.release_issues_duplicate_check",
         "ADependencyChecker.release_issues_labels_check",
         prefix="envoy.dependency.check.abstract.checker")
-    deps = [MagicMock() for i in range(0, 5)]
+    deps = iters(cb=lambda i: MagicMock())
 
     with patched as patchy:
         (m_active, m_deps, m_dep_check,
@@ -551,14 +551,14 @@ async def test_checker_check_release_issues(patches, raises):
         == [[(mock,), {}] for mock in deps])
 
 
-async def test_checker_check_releases(patches):
+async def test_checker_check_releases(iters, patches):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.github_dependencies",
          dict(new_callable=PropertyMock)),
         "ADependencyChecker.dep_release_check",
         prefix="envoy.dependency.check.abstract.checker")
-    deps = [MagicMock() for i in range(0, 5)]
+    deps = iters(cb=lambda i: MagicMock())
 
     with patched as (m_deps, m_check):
         m_deps.return_value = deps
@@ -569,14 +569,14 @@ async def test_checker_check_releases(patches):
         == [[(mock,), {}] for mock in deps])
 
 
-async def test_checker_check_release_sha(patches):
+async def test_checker_check_release_sha(iters, patches):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.dependencies",
          dict(new_callable=PropertyMock)),
         "ADependencyChecker.dep_release_sha_check",
         prefix="envoy.dependency.check.abstract.checker")
-    deps = [MagicMock() for i in range(0, 5)]
+    deps = iters(cb=lambda i: MagicMock())
 
     with patched as (m_deps, m_check):
         m_deps.return_value = deps
@@ -589,7 +589,7 @@ async def test_checker_check_release_sha(patches):
 
 @pytest.mark.parametrize("cpe", [True, False])
 @pytest.mark.parametrize("failed", [0, 1, 3])
-async def test_checker_dep_cve_check(patches, cpe, failed):
+async def test_checker_dep_cve_check(iters, patches, cpe, failed):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.active_check",
@@ -603,7 +603,7 @@ async def test_checker_dep_cve_check(patches, cpe, failed):
         prefix="envoy.dependency.check.abstract.checker")
     dep = MagicMock()
     dep.cpe = cpe
-    failures = [MagicMock() for x in range(0, failed)]
+    failures = iters(cb=lambda i: MagicMock(), count=failed)
 
     async def iter_failure(dep):
         for fail in failures:

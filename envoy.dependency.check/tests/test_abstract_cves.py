@@ -198,7 +198,7 @@ async def test_cves_data(patches, loaded):
 
 
 @pytest.mark.parametrize("loaded", [True, False])
-async def test_cves_downloads(patches, loaded):
+async def test_cves_downloads(iters, patches, loaded):
     cves = DummyDependencyCVEs("DEPENDENCIES")
     patched = patches(
         ("ADependencyCVEs.cpe_class",
@@ -219,10 +219,10 @@ async def test_cves_downloads(patches, loaded):
 
     class DummyDownloader:
         cves = MagicMock()
-        _cves = [(f"ID{i}", f"CVE{i}") for i in range(0, 5)]
+        _cves = iters(dict, cb=lambda i: (f"ID{i}", f"CVE{i}")).items()
         cves.items.return_value = _cves
         cpe_revmap = MagicMock()
-        urls = [f"URL{i}" for i in range(0, 5)]
+        urls = iters()
 
         async def __aiter__(self):
             events("DOWNLOADING")
@@ -255,7 +255,7 @@ async def test_cves_downloads(patches, loaded):
         async for download in cves.downloads:
             results.append(download)
 
-    assert results == [f"URL{i}" for i in range(0, 5)]
+    assert results == iters()
     assert not hasattr(
         cves,
         check.ADependencyCVEs.data.cache_name)
@@ -393,8 +393,8 @@ def test_cves_session(patches, session):
         == [(), {}])
 
 
-def test_cves_tracked_cpes(patches):
-    mock_deps = [MagicMock() for m in range(0, 5)]
+def test_cves_tracked_cpes(iters, patches):
+    mock_deps = iters(cb=lambda i: MagicMock())
     mock_deps[3].cpe = None
     cves = DummyDependencyCVEs(mock_deps)
     patched = patches(

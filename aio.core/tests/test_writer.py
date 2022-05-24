@@ -6,8 +6,8 @@ import pytest
 from aio.core import stream
 
 
-def test_stream_writer_constructor(patches):
-    args = [f"ARG{i}" for i in range(0, 3)]
+def test_stream_writer_constructor(iters, patches):
+    args = iters()
     kwargs = dict(foo="FOO", bar="BAR")
     patched = patches(
         "AsyncStream.__init__",

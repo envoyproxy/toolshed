@@ -111,7 +111,7 @@ pypi: https://pypi.org/project/aio.run.runner
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.6
 - [coloredlogs](https://pypi.org/project/coloredlogs)
 - [frozendict](https://pypi.org/project/frozendict)
 - [uvloop](https://pypi.org/project/uvloop)
@@ -177,10 +177,10 @@ pypi: https://pypi.org/project/envoy.dependency.check
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.2
 - [aio.api.nist](https://pypi.org/project/aio.api.nist) >=0.0.2
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.5
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.6
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.4
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.2
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [jinja2](https://pypi.org/project/jinja2)
 - [multidict](https://pypi.org/project/multidict) >=6.0.2

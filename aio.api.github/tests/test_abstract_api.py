@@ -90,9 +90,9 @@ def test_abstract_api_dunder_getitem(patches):
         == [(api, "REPO"), {}])
 
 
-def test_abstract_api_api(patches):
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+def test_abstract_api_api(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
     api = DummyGithubAPI("SESSION", *args, **kwargs)
     patched = patches(
         ("AGithubAPI.api_class",
@@ -111,14 +111,14 @@ def test_abstract_api_api(patches):
     assert "api" in api.__dict__
 
 
-async def test_abstract_api_getitem(patches):
+async def test_abstract_api_getitem(iters, patches):
     api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.github.abstract.api")
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
 
     with patched as (m_api, ):
         m_api.return_value.getitem = AsyncMock()
@@ -131,7 +131,7 @@ async def test_abstract_api_getitem(patches):
         == [args, kwargs])
 
 
-def test_abstract_api_getiter(patches):
+def test_abstract_api_getiter(iters, patches):
     api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
@@ -139,8 +139,8 @@ def test_abstract_api_getiter(patches):
         ("AGithubAPI.iterator_class",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.github.abstract.api")
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
 
     with patched as (m_api, m_iter):
         assert (
@@ -152,14 +152,14 @@ def test_abstract_api_getiter(patches):
         == [(m_api.return_value, ) + args, kwargs])
 
 
-async def test_abstract_api_patch(patches):
+async def test_abstract_api_patch(iters, patches):
     api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.github.abstract.api")
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
 
     with patched as (m_api, ):
         m_api.return_value.patch = AsyncMock()
@@ -172,14 +172,14 @@ async def test_abstract_api_patch(patches):
         == [args, kwargs])
 
 
-async def test_abstract_api_post(patches):
+async def test_abstract_api_post(iters, patches):
     api = DummyGithubAPI("SESSION")
     patched = patches(
         ("AGithubAPI.api",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.github.abstract.api")
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
 
     with patched as (m_api, ):
         m_api.return_value.post = AsyncMock()

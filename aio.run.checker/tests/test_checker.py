@@ -1547,7 +1547,7 @@ def test_checker_preloader_catches(patches):
 @pytest.mark.parametrize(
     "pending", [[], ["T1"], ["T1", "T3", "T6"], ["T7"], ["T8", "T9"]])
 def test_checker__check_should_run(
-        patches, preloads, preloaded, removed, pending):
+        iters, patches, preloads, preloaded, removed, pending):
     checker = Checker()
     patched = patches(
         ("Checker.checks_to_run",
@@ -1561,7 +1561,7 @@ def test_checker__check_should_run(
         ("Checker.removed_checks",
          dict(new_callable=PropertyMock)),
         prefix="aio.run.checker.checker")
-    tasks = [f"T{i}" for i in range(0, 5)]
+    tasks = iters(cb=lambda i: f"T{i}")
     task_pending = any(t in tasks for t in pending)
 
     with patched as (m_run, m_preloads, m_pending, m_preloaded, m_removed):
@@ -1594,13 +1594,13 @@ def test_checker__check_should_run(
         == [("CHECK", ), {}])
 
 
-def test_checker__notify_checks(patches):
+def test_checker__notify_checks(iters, patches):
     checker = Checker("path1", "path2", "path3")
     patched = patches(
         ("Checker.checks_to_run", dict(new_callable=PropertyMock)),
         ("Checker.log", dict(new_callable=PropertyMock)),
         prefix="aio.run.checker.checker")
-    checks = [f"C{i}" for i in range(0, 5)]
+    checks = iters()
     joined_checks = ", ".join(checks)
 
     with patched as (m_checks, m_log):
@@ -1807,7 +1807,7 @@ async def test_checker__run_from_queue(patches, checks):
     "when", [[], ["C1"], ["C1", "C3", "C6"], ["C7"], ["C8", "C9"]])
 @pytest.mark.parametrize(
     "unless", [[], ["C1"], ["C1", "C3", "C6"], ["C7"], ["C8", "C9"]])
-def test_checker__task_should_preload(patches, pending, when, unless):
+def test_checker__task_should_preload(iters, patches, pending, when, unless):
     checker = Checker()
     patched = patches(
         ("Checker.preload_checks_data",
@@ -1817,7 +1817,7 @@ def test_checker__task_should_preload(patches, pending, when, unless):
         ("Checker.preload_pending_tasks",
          dict(new_callable=PropertyMock)),
         prefix="aio.run.checker.checker")
-    checks_to_run = [f"C{i}" for i in range(0, 5)]
+    checks_to_run = iters(cb=lambda i: f"C{i}")
     handler = MagicMock()
     when_matches = any(c in checks_to_run for c in when)
     unless_matches = any(c in checks_to_run for c in unless)
