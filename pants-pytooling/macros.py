@@ -70,6 +70,10 @@ def pytooling_tests(
     #   pytest.ini files
     if "//deps:pytest-asyncio" not in dependencies:
         dependencies.append("//deps:pytest-asyncio")
+    if "//deps:pytest-iters" not in dependencies:
+        dependencies.append("//deps:pytest-iters")
+    if "//deps:pytest-patches" not in dependencies:
+        dependencies.append("//deps:pytest-patches")
 
     python_tests(
         dependencies=dependencies,

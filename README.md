@@ -389,7 +389,7 @@ pypi: https://pypi.org/project/mypy-abstracts
 
 #### [pytest-iters](pytest-iters)
 
-version: 0.0.3
+version: 0.0.4.dev0
 
 pypi: https://pypi.org/project/pytest-iters
 
