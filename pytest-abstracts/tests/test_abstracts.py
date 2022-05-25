@@ -5,8 +5,8 @@ def test_iface_fixture(testdir):
 
     # create a temporary pytest test module
     testdir.makepyfile("""
-        def test_sth(abstracts):
-            assert str(abstracts).startswith("<function _abstracts at")
+        def test_sth(iface):
+            assert str(iface).startswith("<function _iface at")
     """)
 
     # run pytest with the following cmd args

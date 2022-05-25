@@ -201,10 +201,12 @@ class IChangelogs(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
     def items(self) -> ItemsView[_version.Version, IChangelog]:
+        """Items from `self.changelogs`."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
     def keys(self) -> KeysView[_version.Version]:
+        """Keys from `self.changelogs`."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
@@ -214,6 +216,7 @@ class IChangelogs(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
     def values(self) -> ValuesView[IChangelog]:
+        """Values from `self.changelogs`."""
         raise NotImplementedError
 
     @abstracts.interfacemethod

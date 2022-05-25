@@ -104,17 +104,17 @@ class IGithubAPI(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def repo_from_url(self, url):
+    def repo_from_url(self, url: str) -> "IGithubRepo":
         """Return the corresponding `GithubRepo` for an api url."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def patch(self, *args, **kwargs):
+    async def patch(self, *args, **kwargs) -> Any:
         """Call the `gidgethub.patch` api."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def post(self, *args, **kwargs):
+    async def post(self, *args, **kwargs) -> Any:
         """Call the `gidgethub.post` api."""
         raise NotImplementedError
 
@@ -433,7 +433,7 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def iter_issues(self):
+    def iter_issues(self) -> IGithubIterator:
         """Issues search iterator."""
         raise NotImplementedError
 

@@ -114,23 +114,19 @@ class DummyProject:
         return await interface.IProject.sync(self)
 
 
+@pytest.mark.parametrize(
+    "interface",
+    [interface.IProject,
+     interface.IInventories,
+     interface.IChangelogs,
+     interface.IChangelog,
+     interface.IChangelogEntry])
+def test_interfaces(iface, interface):
+    iface(interface).check()
+
+
 async def test_iface_project_constructor():
-    with pytest.raises(TypeError):
-        interface.IProject()
-
     project = DummyProject()
-
-    iface_props = [
-        "archived_versions", "changelogs", "changelogs_class",
-        "dev_version", "directory", "directory_class", "is_dev", "is_main_dev",
-        "inventories", "inventories_class", "loop",
-        "minor_version", "minor_versions", "path", "pool",
-        "rel_version_path", "repo",
-        "session", "stable_versions", "version"]
-
-    for prop in iface_props:
-        with pytest.raises(NotImplementedError):
-            getattr(project, prop)
 
     iface_async_methods = [
         "commit", "dev",
@@ -139,13 +135,6 @@ async def test_iface_project_constructor():
     for method in iface_async_methods:
         with pytest.raises(NotImplementedError):
             await getattr(project, method)()
-
-
-async def test_iface_project_is_current():
-    project = DummyProject()
-
-    with pytest.raises(NotImplementedError):
-        project.is_current("VERSION")
 
 
 @pytest.mark.parametrize("execute", ["execute", "execute_in_batches"])
@@ -191,17 +180,7 @@ class DummyInventories:
 
 
 async def test_iface_inventories_constructor():
-    with pytest.raises(TypeError):
-        interface.IInventories()
-
     inventories = DummyInventories()
-
-    iface_props = [
-        "inventories", "paths", "versions", "versions_path"]
-
-    for prop in iface_props:
-        with pytest.raises(NotImplementedError):
-            getattr(inventories, prop)
 
     iface_methods = [
         "__iter__"]
@@ -222,13 +201,6 @@ async def test_iface_inventories_dunder_getitem():
 
     with pytest.raises(NotImplementedError):
         inventories.__getitem__("K")
-
-
-async def test_iface_inventories_changes_for_commit():
-    inventories = DummyInventories()
-
-    with pytest.raises(NotImplementedError):
-        inventories.changes_for_commit("CHANGE")
 
 
 @abstracts.implementer(interface.IChangelogs)
@@ -298,22 +270,9 @@ class DummyChangelogs:
 
 
 async def test_iface_changelogs_constructor():
-    with pytest.raises(TypeError):
-        interface.IChangelogs()
-
     changelogs = DummyChangelogs()
 
-    iface_props = [
-        "changelog_class", "changelog_paths", "changelogs",
-        "current", "date_format", "datestamp", "sections"]
-
-    for prop in iface_props:
-        with pytest.raises(NotImplementedError):
-            getattr(changelogs, prop)
-
-    iface_methods = [
-        "__iter__", "items", "keys", "values",
-        "write_current", "write_date"]
+    iface_methods = ["__iter__"]
 
     for method in iface_methods:
         with pytest.raises(NotImplementedError):
@@ -337,13 +296,6 @@ async def test_iface_changelogs_dunder_getitem():
 
     with pytest.raises(NotImplementedError):
         changelogs.__getitem__("K")
-
-
-async def test_iface_changelogs_changes_for_commit():
-    changelogs = DummyChangelogs()
-
-    with pytest.raises(NotImplementedError):
-        changelogs.changes_for_commit("CHANGE")
 
 
 async def test_iface_changelogs_write_version():
@@ -381,17 +333,7 @@ class DummyChangelog:
 
 
 async def test_iface_changelog_constructor():
-    with pytest.raises(TypeError):
-        interface.IChangelog()
-
     changelog = DummyChangelog()
-
-    iface_props = [
-        "data", "entry_class", "path", "version"]
-
-    for prop in iface_props:
-        with pytest.raises(NotImplementedError):
-            getattr(changelog, prop)
 
     iface_async_props = ["release_date"]
 
@@ -423,20 +365,6 @@ class DummyChangelogEntry:
     @property
     def change(self):
         return interface.IChangelogEntry.change.fget(self)
-
-
-def test_iface_changelogentry_constructor():
-    with pytest.raises(TypeError):
-        interface.IChangelogEntry()
-
-    changelog = DummyChangelogEntry()
-
-    iface_props = [
-        "area", "change"]
-
-    for prop in iface_props:
-        with pytest.raises(NotImplementedError):
-            getattr(changelog, prop)
 
 
 def test_iface_changelogentry_dunder_ltgt():
