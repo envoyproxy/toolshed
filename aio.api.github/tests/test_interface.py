@@ -68,16 +68,6 @@ class DummyGithubAPI:
         return github.IGithubAPI.repo_from_url(self, url)
 
 
-@abstracts.implementer(github.IGithubIssues)
-class DummyGithubIssues:
-
-    async def create(self, title, **kwargs):
-        return github.IGithubIssues.create(self, title, **kwargs)
-
-    def search(self, query, repo=None):
-        return github.IGithubIssues.search(self, query, repo)
-
-
 @abstracts.implementer(github.IGithubTrackedIssue)
 class DummyGithubTrackedIssue:
 
@@ -205,9 +195,18 @@ class DummyGithubTrackedIssues:
         return github.IGithubTrackedIssues.track_issue(self, issues, issue)
 
 
+@pytest.mark.parametrize(
+    "interface",
+    [github.IGithubIterator,
+     github.IGithubAPI,
+     github.IGithubIssues,
+     github.IGithubTrackedIssue,
+     github.IGithubTrackedIssues])
+def test_interfaces(iface, interface):
+    iface(interface).check()
+
+
 def test_iface_iterator_constructor():
-    with pytest.raises(TypeError):
-        github.IGithubIterator()
 
     iterator = DummyGithubIterator()
 
@@ -222,22 +221,6 @@ async def test_iface_iterator_total_count():
         await iterator.total_count
 
 
-def test_iface_api_constructor():
-    with pytest.raises(TypeError):
-        github.IGithubAPI()
-
-    api = DummyGithubAPI()
-
-    iface_props = [
-        "commit_class", "issue_class", "issues_class",
-        "label_class", "release_class",
-        "session", "tag_class"]
-
-    for prop in iface_props:
-        with pytest.raises(NotImplementedError):
-            getattr(api, prop)
-
-
 @pytest.mark.parametrize("args", [(), range(0, 5)])
 @pytest.mark.parametrize(
     "kwargs", [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
@@ -248,23 +231,6 @@ async def test_iface_api_getitem(args, kwargs):
         await api.getitem(*args, **kwargs)
 
 
-@pytest.mark.parametrize("args", [(), range(0, 5)])
-@pytest.mark.parametrize(
-    "kwargs", [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
-def test_iface_api_getiter(args, kwargs):
-    api = DummyGithubAPI()
-
-    with pytest.raises(NotImplementedError):
-        api.getiter(*args, **kwargs)
-
-
-def test_iface_api_repo_from_url():
-    api = DummyGithubAPI()
-
-    with pytest.raises(NotImplementedError):
-        api.repo_from_url("URL")
-
-
 def test_iface_api_dunder_getitem():
     api = DummyGithubAPI()
 
@@ -272,58 +238,12 @@ def test_iface_api_dunder_getitem():
         api["KEY"]
 
 
-async def test_iface_api_patch():
-    api = DummyGithubAPI()
-
-    with pytest.raises(NotImplementedError):
-        await api.patch("QUERY", "DATA")
-
-
-async def test_iface_api_post():
-    api = DummyGithubAPI()
-
-    with pytest.raises(NotImplementedError):
-        await api.post("QUERY", "DATA")
-
-
-def test_iface_issues_constructor():
-    with pytest.raises(TypeError):
-        github.IGithubIssues()
-
-    assert DummyGithubIssues()
-
-
-async def test_iface_issues_create():
-    issues = DummyGithubIssues()
-
-    with pytest.raises(NotImplementedError):
-        await issues.create("TITLE")
-
-
-def test_iface_issues_search():
-    issues = DummyGithubIssues()
-
-    with pytest.raises(NotImplementedError):
-        issues.search("QUERY", "REPO")
-
-
 async def test_iface_tracked_issue_constructor():
-    with pytest.raises(TypeError):
-        github.IGithubTrackedIssue()
-
     tracked_issue = DummyGithubTrackedIssue()
 
     with pytest.raises(NotImplementedError):
         return github.IGithubTrackedIssue.__init__(
             tracked_issue, "ISSUES", "ISSUE")
-
-    iface_props = [
-        "body", "closing_tpl", "key", "number",
-        "parsed", "repo_name", "title"]
-
-    for prop in iface_props:
-        with pytest.raises(NotImplementedError):
-            getattr(tracked_issue, prop)
 
     iface_async_methods = ["close", "close_duplicate"]
 
@@ -332,28 +252,8 @@ async def test_iface_tracked_issue_constructor():
             await getattr(tracked_issue, method)()
 
 
-async def test_iface_tracked_issue_comment():
-    tracked_issue = DummyGithubTrackedIssue()
-
-    with pytest.raises(NotImplementedError):
-        await tracked_issue.comment("COMMENT")
-
-
 async def test_iface_tracked_issues_constructor():
-    with pytest.raises(TypeError):
-        github.IGithubTrackedIssues()
-
     tracked_issues = DummyGithubTrackedIssues()
-
-    iface_props = [
-        "closing_tpl", "github",
-        "issue_author", "issue_class", "issues_search_tpl",
-        "labels", "repo", "repo_name",
-        "title_prefix", "title_re", "titles"]
-
-    for prop in iface_props:
-        with pytest.raises(NotImplementedError):
-            getattr(tracked_issues, prop)
 
     iface_async_props = [
         "duplicate_issues", "issues", "missing_labels", "open_issues"]
@@ -364,9 +264,6 @@ async def test_iface_tracked_issues_constructor():
 
     with pytest.raises(NotImplementedError):
         tracked_issues.__aiter__()
-
-    with pytest.raises(NotImplementedError):
-        tracked_issues.iter_issues()
 
 
 @pytest.mark.parametrize(
@@ -379,10 +276,3 @@ async def test_iface_tracked_issues_kwargs_methods(kwargs):
     for method in iface_async_methods:
         with pytest.raises(NotImplementedError):
             await getattr(tracked_issues, method)(**kwargs)
-
-
-def test_iface_tracked_issues_track_issue():
-    tracked_issues = DummyGithubTrackedIssues()
-
-    with pytest.raises(NotImplementedError):
-        tracked_issues.track_issue("ISSUES", "ISSUE")
