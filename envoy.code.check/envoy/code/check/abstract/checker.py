@@ -225,8 +225,7 @@ class ACodeChecker(
 
     async def check_changelog(self):
         for changelog in self.changelog:
-            errors = await changelog.errors
-            if errors:
+            if errors := await changelog.errors:
                 self.error("changelog", errors)
             else:
                 self.succeed(
@@ -257,8 +256,7 @@ class ACodeChecker(
 
     async def check_extensions_registered(self) -> None:
         """Check for glint issues."""
-        errors = await self.extensions.registration_errors
-        if errors:
+        if errors := await self.extensions.registration_errors:
             self.error("extensions_registered", errors)
         else:
             self.succeed(
