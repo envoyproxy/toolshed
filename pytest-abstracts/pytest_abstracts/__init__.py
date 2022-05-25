@@ -1,9 +1,12 @@
 
 import inspect
+from functools import cached_property
 from typing import Callable
 from unittest.mock import MagicMock
 
 import pytest  # type:ignore
+
+import abstracts
 
 
 class InterfaceException(Exception):
@@ -14,6 +17,79 @@ class InterfaceCheck:
 
     def __init__(self, iface):
         self.iface = iface
+
+    @cached_property
+    def async_methods(self):
+        return tuple(
+            name
+            for name, fun
+            in self.members.items()
+            if (not name.startswith("_")
+                and not isinstance(fun, property)
+                and inspect.iscoroutinefunction(fun.__wrapped__)))
+
+    @cached_property
+    def async_properties(self):
+        return tuple(
+            name
+            for name, fun
+            in self.members.items()
+            if (not name.startswith("_")
+                and isinstance(fun, property)
+                and inspect.iscoroutinefunction(fun.fget.__wrapped__)))
+
+    @cached_property
+    def properties(self):
+        return tuple(
+            name
+            for name, fun in self.members.items()
+            if isinstance(fun, property)
+            and not inspect.iscoroutinefunction(fun.fget.__wrapped__))
+
+    @cached_property
+    def members(self):
+        return dict(inspect.getmembers(self.iface))
+
+    @cached_property
+    def methods(self):
+        return tuple(
+            name
+            for name, fun
+            in self.members.items()
+            if (not name.startswith("_")
+                and not isinstance(fun, property)
+                and not inspect.iscoroutinefunction(fun.__wrapped__)))
+
+    @cached_property
+    def dummy(self):
+        this = self
+
+        @abstracts.implementer(self.iface)
+        class Dummy:
+            for _prop in this.properties:
+                locals()[_prop] = property(
+                    getattr(this.iface, _prop).fget.__wrapped__)
+
+            for _async_prop in this.async_properties:
+                locals()[_async_prop] = getattr(
+                    this.iface, _async_prop).fget.__wrapped__
+
+            for _method in this.methods:
+                locals()[_method] = getattr(
+                    this.iface, _method).__wrapped__
+
+            for _async_method in this.async_methods:
+                locals()[_async_method] = getattr(
+                    this.iface, _async_method).__wrapped__
+
+            for _local in ["_prop", "_method", "_async_method", "_async_prop"]:
+                if _local in locals():
+                    del locals()[_local]
+            if "_local" in locals():
+                del locals()["_local"]
+
+        Dummy.__qualname__ = f"Dummy{self.iface.__name__}"
+        return Dummy
 
     def check(self):
         with pytest.raises(TypeError):

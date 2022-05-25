@@ -389,12 +389,13 @@ pypi: https://pypi.org/project/mypy-abstracts
 
 #### [pytest-abstracts](pytest-abstracts)
 
-version: 0.0.3.dev0
+version: 0.0.3
 
 pypi: https://pypi.org/project/pytest-abstracts
 
 ##### requirements:
 
+- [abstracts](https://pypi.org/project/abstracts)
 - [pytest](https://pypi.org/project/pytest) >=3.5.0
 
 ---
