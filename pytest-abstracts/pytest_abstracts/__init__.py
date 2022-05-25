@@ -39,6 +39,16 @@ class InterfaceCheck:
                 and inspect.iscoroutinefunction(fun.fget.__wrapped__)))
 
     @cached_property
+    def dunder_methods(self):
+        return tuple(
+            name
+            for name, fun
+            in self.members.items()
+            if (name.startswith("__")
+                and name.endswith("__")
+                and hasattr(fun, "__wrapped__")))
+
+    @cached_property
     def properties(self):
         return tuple(
             name
@@ -66,6 +76,14 @@ class InterfaceCheck:
 
         @abstracts.implementer(self.iface)
         class Dummy:
+            for _method in this.dunder_methods:
+                if _method == "__init__":
+                    locals()[_method] = lambda *args, **kwargs: None
+                    __super_init__ = this.iface.__init__.__wrapped__
+                else:
+                    locals()[_method] = getattr(
+                        this.iface, _method).__wrapped__
+
             for _prop in this.properties:
                 locals()[_prop] = property(
                     getattr(this.iface, _prop).fget.__wrapped__)
