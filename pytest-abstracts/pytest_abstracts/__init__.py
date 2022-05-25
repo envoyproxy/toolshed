@@ -109,45 +109,66 @@ class InterfaceCheck:
         Dummy.__qualname__ = f"Dummy{self.iface.__name__}"
         return Dummy
 
-    def check(self):
+    async def check(self):
         with pytest.raises(TypeError):
             self.iface()
 
-        for name, fun in inspect.getmembers(self.iface):
-            if name.startswith("__"):
-                self.check_slot_method(name, fun)
-            elif name.startswith("_"):
-                self.check_private_method(name, fun)
-            elif not hasattr(fun, "fget"):
-                self.check_method(name, fun)
-            else:
-                self.check_property(name, fun)
+        dummy = self.dummy()
 
-    def check_method(self, name, method):
-        if hasattr(method, "_fun"):
-            # __wrapped__ ?
-            method = method._fun
-        self.has_docstring(name, method)
+        for name in self.dunder_methods:
+            await self.check_method(dummy, name)
+        for name in self.async_methods:
+            await self.check_method(dummy, name)
+        for name in self.async_properties:
+            await self.check_method(dummy, name)
+        for name in self.properties:
+            self.check_property(dummy, name)
+
+    def _call_method(self, method):
+        return method(
+            *([MagicMock()]
+              * len(list(p
+                    for name, p
+                    in inspect.signature(method).parameters.items()
+                    if p.kind
+                    in [p.POSITIONAL_OR_KEYWORD,
+                        p.POSITIONAL_ONLY,
+                        p.VAR_POSITIONAL]))))
+
+    async def check_method(self, dummy, name):
+        method = getattr(dummy, name)
+        if inspect.isasyncgenfunction(method):
+            with pytest.raises(NotImplementedError):
+                async for item in self._call_method(method):
+                    pass
+            return
+        elif inspect.iscoroutinefunction(method):
+            with pytest.raises(NotImplementedError):
+                await self._call_method(method)
+        elif inspect.isgeneratorfunction(method):
+            with pytest.raises(NotImplementedError):
+                for item in self._call_method(method):
+                    pass
+        elif name == "__init__":
+            with pytest.raises(NotImplementedError):
+                self._call_method(getattr(dummy, "__super_init__"))
+        else:
+            with pytest.raises(NotImplementedError):
+                self._call_method(method)
+        if not name.startswith("__"):
+            self.has_docstring(name, method)
+
+        if name == "__init__":
+            method = getattr(dummy, "__super_init__")
         self.has_signature(name, method)
+
+    def check_property(self, dummy, name):
         with pytest.raises(NotImplementedError):
-            method(*[MagicMock()] * len(inspect.signature(method).parameters))
-
-    def check_private_method(self, name, method):
-        pass
-
-    def check_property(self, name, prop):
-        pass
-
-        with pytest.raises(NotImplementedError):
-            prop.fget()
-
-    def check_slot_method(self, name, method):
-        pass
+            getattr(dummy, name)
 
     def has_docstring(self, name, fun):
         if not fun.__doc__:
             self._except(f"Missing docstring: {name}")
-        pass
 
     def has_signature(self, name, fun):
         try:
