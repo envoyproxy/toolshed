@@ -389,8 +389,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         self.current_path.write_text(self.dump_yaml(data))
 
     def write_version(self, version: _version.Version) -> None:
-        version_file = self.changelog_path(version)
-        if version_file.exists():
+        if (version_file := self.changelog_path(version)).exists():
             raise exceptions.DevError(
                 f"Version file ({version_file}) already exists")
         version_file.write_text(

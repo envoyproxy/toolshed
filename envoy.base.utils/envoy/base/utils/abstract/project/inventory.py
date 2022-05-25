@@ -123,8 +123,7 @@ class AInventories(metaclass=abstracts.Abstraction):
         versions = {}
         syncable = (await self.syncable).items()
         for minor, version in syncable:
-            content = await self.fetch(version)
-            if content:
+            if content := await self.fetch(version):
                 self.write_inventory(version, content)
                 versions[minor] = version
         if versions:
