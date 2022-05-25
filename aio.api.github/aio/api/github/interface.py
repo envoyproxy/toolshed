@@ -8,8 +8,6 @@ import abstracts
 
 import aiohttp
 
-from aio.core.functional import async_property
-
 
 class IGithubCommit(metaclass=abstracts.Interface):
     pass
@@ -34,11 +32,13 @@ class IGithubTag(metaclass=abstracts.Interface):
 class IGithubIterator(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
-    def __aiter__(self) -> AsyncGenerator[Any, None]:
+    async def __aiter__(self) -> AsyncGenerator[Any, None]:
         """Async iterate an API call, inflating the results."""
+        if False:
+            yield
         raise NotImplementedError
 
-    @async_property
+    @property  # type:ignore
     @abstracts.interfacemethod
     async def total_count(self) -> int:
         """Get `total_count` without iterating all items."""
@@ -48,7 +48,7 @@ class IGithubIterator(metaclass=abstracts.Interface):
 class IGithubAPI(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
-    def __getitem__(self, k) -> "IGithubRepo":
+    def __getitem__(self, k: str) -> "IGithubRepo":
         """Return a `GithubRepository` for `k`"""
         raise NotImplementedError
 
@@ -322,6 +322,8 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
                 IGithubTrackedIssue,
                 IGithubIssue]:
         """Iterate matching issues."""
+        if False:
+            yield
         raise NotImplementedError
 
     @property  # type:ignore
@@ -330,7 +332,7 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
         """String template for closing comment."""
         raise NotImplementedError
 
-    @async_property
+    @property  # type:ignore
     @abstracts.interfacemethod
     async def duplicate_issues(
             self) -> AsyncGenerator[
@@ -357,7 +359,7 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
         """Issue class."""
         raise NotImplementedError
 
-    @async_property  # type:ignore
+    @property  # type:ignore
     @abstracts.interfacemethod
     async def issues(self) -> Dict[str, IGithubTrackedIssue]:
         """Dictionary of current tracked issues."""
@@ -375,13 +377,13 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
         """Labels to mark issues with."""
         raise NotImplementedError
 
-    @async_property
+    @property  # type:ignore
     @abstracts.interfacemethod
     async def missing_labels(self) -> Tuple[str, ...]:
         """Missing Github issue labels."""
         raise NotImplementedError
 
-    @async_property  # type:ignore
+    @property  # type:ignore
     @abstracts.interfacemethod
     async def open_issues(self) -> Tuple[IGithubTrackedIssue, ...]:
         """All current open, matching issues."""
