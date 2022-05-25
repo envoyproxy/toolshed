@@ -1,6 +1,6 @@
 
 
-def test_abstracts_fixture(testdir):
+def test_iface_fixture(testdir):
     """Make sure that pytest accepts our fixture."""
 
     # create a temporary pytest test module
