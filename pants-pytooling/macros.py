@@ -68,6 +68,8 @@ def pytooling_tests(
 
     # TODO: remove this if we add separate per-package
     #   pytest.ini files
+    if "//deps:pytest-abstracts" not in dependencies:
+        dependencies.append("//deps:pytest-abstracts")
     if "//deps:pytest-asyncio" not in dependencies:
         dependencies.append("//deps:pytest-asyncio")
     if "//deps:pytest-iters" not in dependencies:
