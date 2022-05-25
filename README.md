@@ -387,6 +387,19 @@ pypi: https://pypi.org/project/mypy-abstracts
 ---
 
 
+#### [pytest-abstracts](pytest-abstracts)
+
+version: 0.0.2
+
+pypi: https://pypi.org/project/pytest-abstracts
+
+##### requirements:
+
+- [pytest](https://pypi.org/project/pytest) >=3.5.0
+
+---
+
+
 #### [pytest-iters](pytest-iters)
 
 version: 0.0.4.dev0
