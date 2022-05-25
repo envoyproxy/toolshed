@@ -129,8 +129,7 @@ class AGithubDependencyReleaseIssues(
             issue: AGithubDependencyReleaseIssue) -> bool:
         if issue.key not in issues:
             return True
-        existing_issue_version = issues[issue.key].version
-        if not existing_issue_version:
+        if not (existing_issue_version := issues[issue.key].version):
             return bool(issue.version)
         if not issue.version:
             return bool(existing_issue_version)
