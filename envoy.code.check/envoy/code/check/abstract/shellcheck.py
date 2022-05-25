@@ -186,8 +186,7 @@ class AShellcheckCheck(
     @cached_property
     def shellcheck_command(self) -> str:
         """Shellcheck command, should be available in the running system."""
-        command = shutil.which("shellcheck")
-        if command:
+        if command := shutil.which("shellcheck"):
             return command
         raise _subprocess.exceptions.OSCommandError(
             "Unable to find shellcheck command")

@@ -115,8 +115,7 @@ class AYapfCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     @async_property
     async def checker_files(self) -> Set[str]:
         # todo: add grep for py shebang files
-        py_files = await self.py_files
-        if not py_files:
+        if not (py_files := await self.py_files):
             return set()
         resources = set()
         batches = self.execute_in_batches(

@@ -194,8 +194,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
 
     async def check_date(self) -> Tuple[str, ...]:
         errors = []
-        invalid_date = await self.invalid_date
-        if invalid_date:
+        if invalid_date := await self.invalid_date:
             errors.append(f"Format not recognized \"{invalid_date}\"")
         if await self.dev_not_pending:
             errors.append("Should be set to `Pending`")
