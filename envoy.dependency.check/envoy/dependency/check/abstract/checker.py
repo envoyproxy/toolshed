@@ -238,8 +238,7 @@ class ADependencyChecker(
             dep: "abstract.ADependency") -> None:
         """Check issues for dependency."""
         issue = (await self.issues["releases"].issues).get(dep.id)
-        newer_release = await dep.newer_release
-        if not newer_release:
+        if not (newer_release := await dep.newer_release):
             if issue:
                 # There is an open issue, but the dep is already
                 # up-to-date.
@@ -278,8 +277,7 @@ class ADependencyChecker(
             self,
             dep: "abstract.ADependency") -> None:
         """Check releases for dependency."""
-        newer_release = await dep.newer_release
-        if newer_release:
+        if newer_release := await dep.newer_release:
             self.warn(
                 self.active_check,
                 [f"Newer release ({newer_release.tag_name}): {dep.id}\n"

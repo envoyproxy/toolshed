@@ -146,8 +146,7 @@ class ADependencyGithubRelease(
     async def timestamp_tag(self) -> datetime:
         """Timestamp of this release, resolved from the release, tag, or
         commit, in that order."""
-        release = await self.release
-        if release:
+        if release := await self.release:
             return release.published_at
         if await self.tag:
             return (await (await self.tag).commit).timestamp
