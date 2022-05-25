@@ -48,13 +48,13 @@ def test_changelogcheck_constructor(patches):
             getattr(changelog, prop)
 
 
-def test_changelogcheck_dunder_iter(patches):
+def test_changelogcheck_dunder_iter(iters, patches):
     changelog = DummyChangelogCheck()
     patched = patches(
         ("AChangelogCheck.changelogs",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.changelog")
-    clogs = [f"C{i}" for i in range(0, 5)]
+    clogs = iters()
 
     with patched as (m_clogs, ):
         m_clogs.return_value = clogs
@@ -85,9 +85,9 @@ def test_changelogcheck_changes_checker(patches):
     assert "changes_checker" in changelog.__dict__
 
 
-def test_changelogcheck_changelogs(patches):
+def test_changelogcheck_changelogs(iters, patches):
     project = MagicMock()
-    clogs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    clogs = iters(dict)
     project.changelogs.values.return_value = clogs.values()
     changelog = DummyChangelogCheck()
     changelog.project = project
@@ -251,7 +251,7 @@ def test_changelogstatus_duplicate_current(patches, is_current, exists):
 @pytest.mark.parametrize(
     "raises",
     [None, BaseException, utils.exceptions.ChangelogParseError])
-async def test_changelogstatus_errors(patches, raises):
+async def test_changelogstatus_errors(iters, patches, raises):
     status = check.AChangelogStatus(MagicMock(), MagicMock())
     patched = patches(
         ("AChangelogStatus.version",
@@ -260,9 +260,9 @@ async def test_changelogstatus_errors(patches, raises):
         "AChangelogStatus.check_sections",
         "AChangelogStatus.check_version",
         prefix="envoy.code.check.abstract.changelog")
-    version_errors = [f"V{i}" for i in range(0, 5)]
-    date_errors = [f"D{i}" for i in range(0, 5)]
-    sections_errors = [f"S{i}" for i in range(0, 5)]
+    version_errors = iters(cb=lambda i: f"V{i}")
+    date_errors = iters(cb=lambda i: f"D{i}")
+    sections_errors = iters(cb=lambda i: f"S{i}")
 
     with patched as (m_version, m_date, m_sections, m_versions):
         if raises:
@@ -406,14 +406,14 @@ async def test_changelogstatus_pending_not_dev(
         check.AChangelogStatus.pending_not_dev.cache_name)
 
 
-async def test_changelogstatus_sections(patches):
+async def test_changelogstatus_sections(iters, patches):
     status = check.AChangelogStatus(MagicMock(), "CHANGELOG")
     patched = patches(
         "utils",
         ("AChangelogStatus.data",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.changelog")
-    section_data = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    section_data = iters(dict)
     section_data["date"] = MagicMock()
 
     with patched as (m_utils, m_data):
@@ -613,7 +613,7 @@ def test_changeschecker_max_version_for_changes_section(patches):
     assert "max_version_for_changes_section" in changelog.__dict__
 
 
-def test_changeschecker_check_entry(patches):
+def test_changeschecker_check_entry(iters, patches):
     changelog = DummyChangelogChangesChecker("SECTIONS")
     patched = patches(
         "tuple",
@@ -623,7 +623,7 @@ def test_changeschecker_check_entry(patches):
     version = MagicMock()
     section = MagicMock()
     entry = MagicMock()
-    checkers = [MagicMock() for i in range(0, 5)]
+    checkers = iters(cb=lambda i: MagicMock())
     changelog.error_message = MagicMock()
 
     with patched as (m_tuple, m_checkers):
@@ -669,7 +669,7 @@ def test_changeschecker_check_entry(patches):
     [None,
      [],
      [f"D{i}" for i in range(0, 5)]])
-def test_changeschecker_check_section(patches, name_error, data):
+def test_changeschecker_check_section(iters, patches, name_error, data):
     changelog = DummyChangelogChangesChecker("SECTIONS")
     patched = patches(
         "itertools",
@@ -678,7 +678,7 @@ def test_changeschecker_check_section(patches, name_error, data):
         prefix="envoy.code.check.abstract.changelog")
     version = MagicMock()
     section = MagicMock()
-    errors = [f"E{i}" for i in range(0, 5)]
+    errors = iters()
     expected = []
     if name_error:
         expected.append(name_error)
@@ -707,7 +707,7 @@ def test_changeschecker_check_section(patches, name_error, data):
         == [(resultgen, ), {}])
 
 
-def test_changeschecker_check_sections(patches):
+def test_changeschecker_check_sections(iters, patches):
     changelog = DummyChangelogChangesChecker("SECTIONS")
     patched = patches(
         "itertools",
@@ -715,7 +715,7 @@ def test_changeschecker_check_sections(patches):
         "AChangelogChangesChecker.check_section",
         prefix="envoy.code.check.abstract.changelog")
     version = MagicMock()
-    sections = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    sections = iters(dict)
 
     with patched as (m_iter, m_tuple, m_check):
         assert (

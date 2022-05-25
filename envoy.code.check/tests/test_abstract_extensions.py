@@ -44,7 +44,7 @@ def test_extensions_constructor(patches, args, kwargs, build_config):
         == [tuple(args), kwargs])
 
 
-def test_extensions_all_extensions(patches):
+def test_extensions_all_extensions(iters, patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -53,8 +53,8 @@ def test_extensions_all_extensions(patches):
         ("AExtensionsCheck.configured_extensions",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.extensions")
-    builtin_exts = [f"EXT{i}" for i in range(2, 10)]
-    configured_exts = {f"EXT{i}": f"EXT_DATA{i}" for i in range(0, 5)}
+    builtin_exts = iters(cb=lambda i: f"EXT{i}", start=2, count=8)
+    configured_exts = iters(dict, cb=lambda i: (f"EXT{i}", f"EXT_DATA{i}"))
 
     with patched as (m_builtin, m_exts):
         m_exts.return_value = configured_exts
@@ -202,7 +202,7 @@ def test_extensions_fuzz_test_path():
     assert "fuzz_test_path" not in checker.__dict__
 
 
-def test_extensions_fuzzed_count(patches):
+def test_extensions_fuzzed_count(iters, patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -212,7 +212,7 @@ def test_extensions_fuzzed_count(patches):
         ("AExtensionsCheck.fuzzed_filter_names_re",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.extensions")
-    lines = [f"L{i}" for i in range(0, 5)]
+    lines = iters()
 
     with patched as (m_len, m_path, m_re):
         (m_path.return_value.read_text
@@ -260,7 +260,7 @@ def test_extensions_fuzzed_filter_names_re(patches):
     assert "fuzzed_filter_names_re" in checker.__dict__
 
 
-async def test_extensions_metadata(patches):
+async def test_extensions_metadata(iters, patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -270,8 +270,8 @@ async def test_extensions_metadata(patches):
         ("AExtensionsCheck.metadata_contrib",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.extensions")
-    core = {f"KCORE{i}": f"VCORE{i}" for i in range(0, 5)}
-    contrib = {f"KCONTRIB{i}": f"VCONTRIB{i}" for i in range(0, 5)}
+    core = iters(dict, cb=lambda i: (f"KCORE{i}", f"VCORE{i}"))
+    contrib = iters(dict, cb=lambda i: (f"KCONTRIB{i}", f"VCONTRIB{i}"))
 
     with patched as (m_dict, m_core, m_contrib):
         m_core.side_effect = AsyncMock(return_value=core)
@@ -338,7 +338,7 @@ def test_extensions_metadata_core_path():
     assert "metadata_core_path" not in checker.__dict__
 
 
-async def test_extensions_metadata_errors(patches):
+async def test_extensions_metadata_errors(iters, patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -346,7 +346,7 @@ async def test_extensions_metadata_errors(patches):
          dict(new_callable=PropertyMock)),
         "AExtensionsCheck.check_metadata",
         prefix="envoy.code.check.abstract.extensions")
-    meta = [f"KMETA{i}" for i in range(0, 5)]
+    meta = iters()
 
     with patched as (m_meta, m_check):
         ameta = AsyncMock(return_value=meta)
@@ -362,7 +362,7 @@ async def test_extensions_metadata_errors(patches):
     assert "metadata_errors" not in checker.__dict__
 
 
-async def test_extensions_metadata_missing(patches):
+async def test_extensions_metadata_missing(iters, patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -371,7 +371,7 @@ async def test_extensions_metadata_missing(patches):
         ("AExtensionsCheck.metadata",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.extensions")
-    all_ext = set([f"K{i}" for i in range(0, 10)])
+    all_ext = iters(set, cb=lambda i: f"K{i}", count=10)
     meta = {f"K{i}": f"V{i}" for i in range(0, 10) if i % 2}
     expected = set([f"K{i}" for i in range(0, 10) if not i % 2])
 
@@ -386,7 +386,7 @@ async def test_extensions_metadata_missing(patches):
     assert "metadata_missing" not in checker.__dict__
 
 
-async def test_extensions_metadata_only(patches):
+async def test_extensions_metadata_only(iters, patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -398,8 +398,8 @@ async def test_extensions_metadata_only(patches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.extensions")
     all_ext = set([f"K{i}" for i in range(0, 20) if i % 2])
-    meta = {f"K{i}": f"V{i}" for i in range(0, 20)}
-    meta_only = set([f"K{i}" for i in range(7, 13)])
+    meta = iters(dict, count=20)
+    meta_only = iters(set, cb=lambda i: f"K{i}", start=7, count=6)
     expected = set([
         f"K{i}"
         for i
@@ -501,7 +501,7 @@ async def test_extensions_robust_to_downstream_count(patches):
     assert "robust_to_downstream_count" not in checker.__dict__
 
 
-async def test_extensions_check_metadata(patches):
+async def test_extensions_check_metadata(iters, patches):
     checker = check.AExtensionsCheck(
         "DIRECTORY", extensions_build_config="BUILD")
     patched = patches(
@@ -509,8 +509,8 @@ async def test_extensions_check_metadata(patches):
         "AExtensionsCheck._check_metadata_security_posture",
         "AExtensionsCheck._check_metadata_status",
         prefix="envoy.code.check.abstract.extensions")
-    cats = [f"CAT{i}" for i in range(0, 5)]
-    sec = tuple(f"SEC{i}" for i in range(0, 5))
+    cats = iters(cb=lambda i: f"CAT{i}")
+    sec = iters(tuple, cb=lambda i: f"SEC{i}")
     status = (f"STATUS{i}" for i in range(0, 5))
     extension = MagicMock()
 

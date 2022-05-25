@@ -103,7 +103,7 @@ def test_queue_logger_queue(patches):
 
 
 @pytest.mark.parametrize("respect", [None, True, False])
-def test_queue_logger_listener(patches, respect):
+def test_queue_logger_listener(iters, patches, respect):
     kwargs = {}
     if respect is not None:
         kwargs["respect_handler_level"] = respect
@@ -116,7 +116,7 @@ def test_queue_logger_listener(patches, respect):
         ("QueueLogger.queue",
          dict(new_callable=PropertyMock)),
         prefix="aio.core.log.logging")
-    handlers = [f"H{i}" for i in range(0, 5)]
+    handlers = iters()
 
     with patched as (m_handlers, m_class, m_q):
         m_handlers.return_value = handlers

@@ -125,12 +125,12 @@ def test_subprocess_handler_constructor(patches, encoding, args, kwargs):
     assert "args" not in handler.__dict__
 
 
-def test_subprocess_handler_dunder_call(patches):
+def test_subprocess_handler_dunder_call(iters, patches):
     handler = DummySubprocessHandler("PATH")
     patched = patches(
         "ASubprocessHandler.run",
         prefix="aio.core.subprocess.handler")
-    args = [f"ARG{i}" for i in range(0, 5)]
+    args = iters()
 
     with patched as (m_run, ):
         assert (
@@ -269,7 +269,7 @@ def test_subprocess_handler_has_failed(patches):
         == [(response.returncode, ), {}])
 
 
-def test_subprocess_handler_run(patches):
+def test_subprocess_handler_run(iters, patches):
     handler = DummySubprocessHandler("PATH")
     patched = patches(
         "ASubprocessHandler.handle_response",
@@ -277,8 +277,8 @@ def test_subprocess_handler_run(patches):
         "ASubprocessHandler.subprocess_args",
         "ASubprocessHandler.subprocess_kwargs",
         prefix="aio.core.subprocess.handler")
-    args = [f"ARG{i}" for i in range(0, 5)]
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    args = iters()
+    kwargs = iters(dict)
 
     with patched as (m_handle, m_run, m_args, m_kwargs):
         m_args.side_effect = lambda *la: la
@@ -301,13 +301,13 @@ def test_subprocess_handler_run(patches):
         == [(), kwargs])
 
 
-def test_subprocess_handler_run_subprocess(patches):
+def test_subprocess_handler_run_subprocess(iters, patches):
     handler = DummySubprocessHandler("PATH")
     patched = patches(
         "subprocess",
         prefix="aio.core.subprocess.handler")
-    args = [f"ARG{i}" for i in range(0, 5)]
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    args = iters()
+    kwargs = iters(dict)
 
     with patched as (m_subproc, ):
         assert (
@@ -319,14 +319,14 @@ def test_subprocess_handler_run_subprocess(patches):
         == [tuple(args), kwargs])
 
 
-def test_subprocess_handler_subprocess_args(patches):
+def test_subprocess_handler_subprocess_args(iters, patches):
     handler = DummySubprocessHandler("PATH")
     patched = patches(
         ("ASubprocessHandler.args",
          dict(new_callable=PropertyMock)),
         prefix="aio.core.subprocess.handler")
-    args = [f"ARG{i}" for i in range(3, 10)]
-    self_args = [f"ARG{i}" for i in range(0, 7)]
+    args = iters(start=3, count=7)
+    self_args = iters(count=7)
     expected = ((*self_args, *args), )
 
     with patched as (m_args, ):
@@ -336,14 +336,14 @@ def test_subprocess_handler_subprocess_args(patches):
             == expected)
 
 
-def test_subprocess_handler_subprocess_kwargs(patches):
+def test_subprocess_handler_subprocess_kwargs(iters, patches):
     handler = DummySubprocessHandler("PATH")
     patched = patches(
         ("ASubprocessHandler.kwargs",
          dict(new_callable=PropertyMock)),
         prefix="aio.core.subprocess.handler")
-    kwargs = {f"K{i}": f"V2{i}" for i in range(3, 10)}
-    self_kwargs = {f"K{i}": f"V1{i}" for i in range(0, 7)}
+    kwargs = iters(dict, cb=lambda i: (f"K{i}", f"V2{i}"), start=3, count=7)
+    self_kwargs = iters(dict, count=7)
     expected = self_kwargs.copy()
     expected.update(kwargs)
 

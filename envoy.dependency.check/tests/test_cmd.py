@@ -23,12 +23,12 @@ def test_cmd_main(patches, args):
         == [(), {}])
 
 
-def test_cmd_run(patches):
+def test_cmd_run(iters, patches):
     patched = patches(
         "sys",
         "main",
         prefix="envoy.dependency.check.cmd")
-    args = tuple(f"ARG{i}" for i in range(0, 5))
+    args = iters(tuple)
 
     with patched as (m_sys, m_main):
         m_sys.argv.__getitem__.return_value = args

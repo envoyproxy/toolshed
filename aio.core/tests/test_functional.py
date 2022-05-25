@@ -19,7 +19,7 @@ from aio.core import functional
 @pytest.mark.parametrize("cache", [None, True, False])
 @pytest.mark.parametrize("raises", [True, False])
 @pytest.mark.parametrize("result", [None, False, "X", 23])
-async def test_functional_async_property(cache, raises, result):
+async def test_functional_async_property(iters, cache, raises, result):
     m_async = AsyncMock(return_value=result)
 
     class SomeError(Exception):
@@ -32,7 +32,7 @@ async def test_functional_async_property(cache, raises, result):
         decorator = functional.async_property(cache=cache)
         iter_decorator = functional.async_property(cache=cache)
 
-    items = [f"ITEM{i}" for i in range(0, 5)]
+    items = iters()
 
     class Klass:
 
@@ -331,7 +331,7 @@ async def test_collections_async_set(patches, predicate, result):
 
 
 @pytest.mark.parametrize("fork", [None, True, False])
-async def test_collections_async_map(patches, fork):
+async def test_collections_async_map(iters, patches, fork):
     patched = patches(
         "futures",
         "list",
@@ -340,7 +340,7 @@ async def test_collections_async_map(patches, fork):
     kwargs = {}
     if fork is not None:
         kwargs["fork"] = fork
-    future_results = [MagicMock() for x in range(0, 10)]
+    future_results = iters(cb=lambda x: MagicMock(), count=10)
     results = []
     iterable = list(range(0, 7))
     fun = MagicMock()
@@ -664,14 +664,14 @@ def test_collection_query_dunder_getitem(patches):
         == [(qs, ), {}])
 
 
-def test_collection_query_iter_queries(patches):
+def test_collection_query_iter_queries(iters, patches):
     query = functional.CollectionQuery("DATA")
     patched = patches(
         "str",
         "CollectionQuery.query",
         prefix="aio.core.functional.collections")
     qs = MagicMock()
-    items = [(i, f"I{i}") for i in range(0, 5)]
+    items = iters(cb=lambda x: (x, f"I{x}"))
     qs.items.return_value = items
 
     with patched as (m_str, m_query):
@@ -724,15 +724,15 @@ def test_collection_query_query(patches, parts):
 
 
 @pytest.mark.parametrize("is_int", [True, False])
-def test_collection_query_spliterator(patches, is_int):
+def test_collection_query_spliterator(iters, patches, is_int):
     query = functional.CollectionQuery("DATA")
     patched = patches(
         "isinstance",
         prefix="aio.core.functional.collections")
     qs = MagicMock()
-    int_items = [i for i in range(0, 5)]
-    intable_items = [str(i) for i in range(5, 10)]
-    str_items = [str(f"I{i}") for i in range(5, 10)]
+    int_items = iters(cb=lambda x: x)
+    intable_items = iters(cb=lambda x: str(x), start=5, count=5)
+    str_items = iters(start=5, count=5)
     items = (
         int_items
         + intable_items
@@ -941,10 +941,10 @@ def test_searchable_collection_dunder_getitem():
         == [(k, ), {}])
 
 
-def test_searchable_collection_dunder_iter():
+def test_searchable_collection_dunder_iter(iters):
     collection = MagicMock()
     coll = functional.collections._SearchableCollection(collection)
-    items = [f"C{i}" for i in range(0, 5)]
+    items = iters()
     collection.__iter__.return_value = items
     assert list(coll.__iter__()) == items
     assert (
@@ -965,8 +965,8 @@ def test_searchable_collection_dunder_len():
 
 @pytest.mark.parametrize("item_count", range(0, 20))
 @pytest.mark.parametrize("batch_size", range(0, 7))
-def test_batches(item_count, batch_size):
-    items = [MagicMock() for m in range(0, item_count)]
+def test_batches(iters, item_count, batch_size):
+    items = iters(cb=lambda x: MagicMock(), count=item_count)
     actual_batch_size = batch_size or 1
     batch_iter = functional.batches(items, batch_size)
     assert isinstance(batch_iter, types.GeneratorType)

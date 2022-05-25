@@ -98,14 +98,12 @@ def test_shellcheck_parse_error_line(patches, matched):
             == [[(0, ), {}], [(1, ), {}]])
 
 
-def test_shellcheck__render_errors(patches):
+def test_shellcheck__render_errors(iters, patches):
     shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
     patched = patches(
         "Shellcheck._render_file_errors",
         prefix="envoy.code.check.abstract.shellcheck")
-    errors = [
-        (MagicMock(), MagicMock())
-        for i in range(0, 5)]
+    errors = iters(cb=lambda i: (MagicMock(), MagicMock()))
 
     with patched as (m_render, ):
         assert (
@@ -122,15 +120,15 @@ def test_shellcheck__render_errors(patches):
 
 
 @pytest.mark.parametrize("line_nums", range(0, 5))
-def test_shellcheck__render_file_errors(patches, line_nums):
+def test_shellcheck__render_file_errors(iters, patches, line_nums):
     shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
     patched = patches(
         "str",
         prefix="envoy.code.check.abstract.shellcheck")
     path = MagicMock()
     errors = MagicMock()
-    line_numbers = [MagicMock() for i in range(0, line_nums)]
-    lines = [f"LINE{i}" for i in range(0, 3)]
+    line_numbers = iters(cb=lambda i: MagicMock(), count=line_nums)
+    lines = iters(count=3)
     line_or_lines = (
         "lines"
         if line_nums > 1
@@ -266,12 +264,12 @@ def test_shellcheck__shellcheck_errors(patches, input):
               'line_numbers': ['23']})])
 
 
-def test_shellcheck_checker_run_shellcheck(patches):
+def test_shellcheck_checker_run_shellcheck(iters, patches):
     patched = patches(
         "Shellcheck",
         prefix="envoy.code.check.abstract.shellcheck")
     path = MagicMock()
-    args = [MagicMock() for x in range(0, 5)]
+    args = iters(cb=lambda i: MagicMock())
 
     with patched as (m_shellcheck, ):
         assert (

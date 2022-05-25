@@ -9,9 +9,9 @@ class DummyGithubLabel:
     pass
 
 
-def test_abstract_label_constructor(patches):
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+def test_abstract_label_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
     patched = patches(
         "GithubRepoEntity.__init__",
         prefix="aio.api.github.abstract.label")

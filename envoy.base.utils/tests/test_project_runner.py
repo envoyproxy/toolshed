@@ -8,9 +8,9 @@ from aio.run.runner import Runner
 from envoy.base import utils
 
 
-def test_projectrunner_constructor(patches):
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+def test_projectrunner_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
     patched = patches(
         "runner.Runner.__init__",
         prefix="envoy.base.utils.project_runner")
@@ -171,7 +171,7 @@ def test_projecrunner_add_arguments(patches):
              {'action': 'store_true'}]])
 
 
-async def test_projectrunner_commit(patches):
+async def test_projectrunner_commit(iters, patches):
     runner = utils.ProjectRunner()
     patched = patches(
         ("ProjectRunner.log",
@@ -181,7 +181,7 @@ async def test_projectrunner_commit(patches):
         "ProjectRunner.msg_for_commit",
         prefix="envoy.base.utils.project_runner")
     change = MagicMock()
-    paths = [f"P{i}" for i in range(0, 5)]
+    paths = iters()
 
     async def committer(c, m):
         for p in paths:
@@ -423,13 +423,13 @@ async def test_projectrunner_run_sync(patches):
 
 
 @pytest.mark.parametrize("change", [True, False])
-def test_projectrunner__log_changelog(patches, change):
+def test_projectrunner__log_changelog(iters, patches, change):
     runner = utils.ProjectRunner()
     patched = patches(
         ("ProjectRunner.log",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.project_runner")
-    changes = {f"K{i}": f"v{i}" for i in range(0, 5)}
+    changes = iters(dict)
     if not change:
         change = {}
     else:
@@ -451,14 +451,14 @@ def test_projectrunner__log_changelog(patches, change):
 
 
 @pytest.mark.parametrize("change", [True, False])
-def test_projectrunner__log_inventory(patches, change):
+def test_projectrunner__log_inventory(iters, patches, change):
     runner = utils.ProjectRunner()
     patched = patches(
         "utils",
         ("ProjectRunner.log",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.project_runner")
-    changes = {f"K{i}": (i % 2) for i in range(0, 10)}
+    changes = iters(dict, cb=lambda i: (f"K{i}", (i % 2)), count=10)
     if not change:
         change = {}
     else:

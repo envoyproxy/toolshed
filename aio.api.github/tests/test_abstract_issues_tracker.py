@@ -347,8 +347,9 @@ async def test_issues_key_issues(patches, open_issues, is_tracked):
      [f"LABEL{i}" for i in range(0, 3)],
      [f"LABEL{i}" for i in range(0, 10)],
      [f"LABEL{i}" for i in range(2, 7)]])
-async def test_abstract_tracked_issues_missing_labels(patches, repo_labels):
-    labels = [f"LABEL{i}" for i in range(1, 5)]
+async def test_abstract_tracked_issues_missing_labels(
+        iters, patches, repo_labels):
+    labels = iters(cb=lambda i: f"LABEL{i}", start=1, count=4)
     issues = DummyGithubTrackedIssues("GITHUB")
     patched = patches(
         ("AGithubTrackedIssues.labels",
@@ -501,7 +502,7 @@ async def test_abstract_tracked_issues_titles(patches, titles):
 
 
 @pytest.mark.parametrize("in_titles", [True, False])
-async def test_abstract_tracked_issues_create(patches, in_titles):
+async def test_abstract_tracked_issues_create(iters, patches, in_titles):
     issues = DummyGithubTrackedIssues("GITHUB")
     patched = patches(
         ("AGithubTrackedIssues.labels",
@@ -515,7 +516,7 @@ async def test_abstract_tracked_issues_create(patches, in_titles):
         "AGithubTrackedIssues.issue_body",
         "AGithubTrackedIssues.issue_title",
         prefix="aio.api.github.abstract.issues.tracker")
-    titles = [f"TITLE{i}" for i in range(0, 5)]
+    titles = iters()
     kwargs = dict(foo=MagicMock())
 
     with patched as (m_labels, m_repo, m_class, m_titles, m_body, m_title):

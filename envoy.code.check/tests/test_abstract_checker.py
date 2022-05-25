@@ -161,7 +161,7 @@ async def test_abstract_checker_checks(patches, subcheck):
         == [(m_tool.return_value, ), {}])
 
 
-def test_abstract_checker_extensions(patches):
+def test_abstract_checker_extensions(iters, patches):
     checker = DummyCodeChecker()
     patched = patches(
         ("ACodeChecker.args",
@@ -173,7 +173,7 @@ def test_abstract_checker_extensions(patches):
         ("ACodeChecker.extensions_class",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    kwargs = iters(dict)
 
     with patched as (m_args, m_dir, m_kwargs, m_tool):
         m_kwargs.return_value = kwargs
@@ -197,7 +197,7 @@ def test_abstract_checker_extensions(patches):
       "flake8",
       "yapf",
       "shellcheck")))
-def test_abstract_checker_tools(patches, tool):
+def test_abstract_checker_tools(iters, patches, tool):
     checker = DummyCodeChecker()
     patched = patches(
         ("ACodeChecker.directory",
@@ -207,7 +207,7 @@ def test_abstract_checker_tools(patches, tool):
         (f"ACodeChecker.{tool}_class",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    kwargs = iters(dict)
 
     with patched as (m_dir, m_kwargs, m_tool):
         m_kwargs.return_value = kwargs
@@ -386,7 +386,7 @@ def test_abstract_checker_changed_since(patches):
     assert "changed_since" not in checker.__dict__
 
 
-def test_abstract_checker_changelog(patches):
+def test_abstract_checker_changelog(iters, patches):
     checker = DummyCodeChecker()
     patched = patches(
         ("ACodeChecker.changelog_class",
@@ -396,7 +396,7 @@ def test_abstract_checker_changelog(patches):
         ("ACodeChecker.project",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    kwargs = iters(dict)
 
     with patched as (m_class, m_kwa, m_project):
         m_kwa.return_value = kwargs
@@ -569,7 +569,7 @@ def test_abstract_checker_project(patches):
     assert "project" in checker.__dict__
 
 
-def test_abstract_checker_runtime_guards(patches):
+def test_abstract_checker_runtime_guards(iters, patches):
     checker = DummyCodeChecker()
     patched = patches(
         ("ACodeChecker.check_kwargs",
@@ -579,7 +579,7 @@ def test_abstract_checker_runtime_guards(patches):
         ("ACodeChecker.runtime_guards_class",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+    kwargs = iters(dict)
 
     with patched as (m_kwargs, m_project, m_class):
         m_kwargs.return_value = kwargs
@@ -667,7 +667,7 @@ async def test_abstract_checker_check_extensions_fuzzed(patches, fuzzed):
         assert not m_succeed.called
 
 
-async def test_abstract_checker_check_extensions_metadata(patches):
+async def test_abstract_checker_check_extensions_metadata(iters, patches):
     checker = DummyCodeChecker()
     patched = patches(
         ("ACodeChecker.extensions",
@@ -678,7 +678,7 @@ async def test_abstract_checker_check_extensions_metadata(patches):
     errors = {}
     for k in range(0, 10):
         errors[f"K{k}"] = (
-            [f"E{k}.{i}" for i in range(0, 7)]
+            iters(cb=lambda i: f"E{k}.{i}", count=7)
             if k % 2
             else [])
 

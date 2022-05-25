@@ -27,8 +27,8 @@ def test_yapf_yapfformatcheck_constructor(args):
 @pytest.mark.parametrize("e", [[1, 3], [2, 4], [3, 7]])
 @pytest.mark.parametrize("raises", [None, Exception, yapf.errors.YapfError])
 @pytest.mark.parametrize("fix", [True, False])
-def test_yapf_yapfformatcheck_check_results(patches, n, e, raises, fix):
-    args = [f"ARG{i}" for i in range(0, 7)]
+def test_yapf_yapfformatcheck_check_results(iters, patches, n, e, raises, fix):
+    args = iters(count=7)
     yapf_check = check.abstract.yapf.YapfFormatCheck(
         "PATH", "CONFIG_PATH", fix, *args)
     patched = patches(
@@ -162,12 +162,12 @@ def test_yapf_yapffiles_filter_files(patches):
         == [(m_path.return_value, ), {}])
 
 
-def test_yapf_yapf_files(patches):
+def test_yapf_yapf_files(iters, patches):
     patched = patches(
         "YapfFiles",
         prefix="envoy.code.check.abstract.yapf")
     path = MagicMock()
-    files = [MagicMock() for i in range(0, 5)]
+    files = iters(cb=lambda i: MagicMock())
 
     with patched as (m_yapf_files, ):
         assert (
@@ -183,13 +183,13 @@ def test_yapf_yapf_files(patches):
 
 
 @pytest.mark.parametrize("fix", [None, True, False])
-def test_yapf_yapf_format(patches, fix):
+def test_yapf_yapf_format(iters, patches, fix):
     patched = patches(
         "YapfFormatCheck",
         prefix="envoy.code.check.abstract.yapf")
     root_path = MagicMock()
     config_path = MagicMock()
-    args = [MagicMock() for i in range(0, 5)]
+    args = iters(cb=lambda i: MagicMock())
     fix = MagicMock()
 
     with patched as (m_yapf, ):

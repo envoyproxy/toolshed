@@ -7,8 +7,8 @@ from aio.core import stream
 
 
 @pytest.mark.parametrize("size", [None, 0, 23])
-def test_stream_reader_constructor(patches, size):
-    args = [f"ARG{i}" for i in range(0, 3)]
+def test_stream_reader_constructor(iters, patches, size):
+    args = iters()
     kwargs = dict(foo="FOO", bar="BAR")
     kwargs.update(dict(size=size) if size is not None else {})
     patched = patches(

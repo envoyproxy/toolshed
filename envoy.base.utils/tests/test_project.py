@@ -4,9 +4,9 @@ from aio.core import directory
 from envoy.base import utils
 
 
-def test_project_constructor(patches):
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+def test_project_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
     patched = patches(
         "abstract.AProject.__init__",
         prefix="envoy.base.utils.project")
@@ -25,9 +25,9 @@ def test_project_constructor(patches):
     assert project.inventories_class == utils.project.Inventories
 
 
-def test_changelogs_constructor(patches):
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+def test_changelogs_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
     patched = patches(
         "abstract.AChangelogs.__init__",
         prefix="envoy.base.utils.project")
@@ -43,9 +43,9 @@ def test_changelogs_constructor(patches):
     assert changelogs.changelog_class == utils.project.Changelog
 
 
-def test_changelog_constructor(patches):
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+def test_changelog_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
     patched = patches(
         "abstract.AChangelog.__init__",
         prefix="envoy.base.utils.project")
@@ -61,9 +61,9 @@ def test_changelog_constructor(patches):
     assert changelog.entry_class == utils.project.ChangelogEntry
 
 
-def test_changelog_entry_constructor(patches):
-    args = tuple(f"ARG{i}" for i in range(0, 3))
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 3)}
+def test_changelog_entry_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
     patched = patches(
         "abstract.AChangelogEntry.__init__",
         prefix="envoy.base.utils.project")

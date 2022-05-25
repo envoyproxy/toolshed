@@ -9,12 +9,12 @@ from aio.core import directory
 from envoy.code import check
 
 
-async def test_glint_no_newlines(patches):
+async def test_glint_no_newlines(iters, patches):
     patched = patches(
         "NewlineChecker",
         prefix="envoy.code.check.abstract.glint")
     path = MagicMock()
-    paths = [MagicMock() for i in range(0, 3)]
+    paths = iters(cb=lambda i: MagicMock(), count=3)
 
     with patched as (m_newlines, ):
         assert (

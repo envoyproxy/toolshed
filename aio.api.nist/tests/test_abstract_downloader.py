@@ -54,13 +54,13 @@ def test_downloader_constructor(ignored_cves, session, since, cve_fields):
         downloader.parser_class
 
 
-async def test_downloader_dunder_aiter(patches):
+async def test_downloader_dunder_aiter(iters, patches):
     downloader = DummyNISTDownloader("TRACKED_CPES")
     patched = patches(
         ("ANISTDownloader.downloads",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.nist.abstract.downloader")
-    downloads = [MagicMock() for x in range(0, 5)]
+    downloads = iters(cb=lambda i: MagicMock())
     results = []
 
     async def iter_downloads():
@@ -76,14 +76,14 @@ async def test_downloader_dunder_aiter(patches):
     assert results == downloads
 
 
-async def test_downloader_downloads(patches):
+async def test_downloader_downloads(iters, patches):
     downloader = DummyNISTDownloader("TRACKED_CPES")
     patched = patches(
         "concurrent",
         ("ANISTDownloader.downloaders",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.nist.abstract.downloader")
-    downloads = [MagicMock() for x in range(0, 5)]
+    downloads = iters(cb=lambda i: MagicMock())
     results = []
 
     async def iter_downloads(dls):
@@ -102,7 +102,7 @@ async def test_downloader_downloads(patches):
         == [(m_downloaders.return_value, ), {}])
 
 
-def test_downloader_downloaders(patches):
+def test_downloader_downloaders(iters, patches):
     downloader = DummyNISTDownloader("TRACKED_CPES")
     patched = patches(
         ("ANISTDownloader.download_and_parse",
@@ -227,7 +227,7 @@ def test_downloader_session(patches, session):
     assert "session" in downloader.__dict__
 
 
-def test_downloader_urls(patches):
+def test_downloader_urls(iters, patches):
     downloader = DummyNISTDownloader("DEPENDENCIES")
     patched = patches(
         ("ANISTDownloader.nist_url_tpl", dict(new_callable=PropertyMock)),
@@ -235,7 +235,7 @@ def test_downloader_urls(patches):
         prefix="aio.api.nist.abstract.downloader")
 
     with patched as (m_tpl, m_years):
-        m_years.return_value = [f"Y{i}" for i in range(0, 5)]
+        m_years.return_value = iters()
         assert (
             downloader.urls
             == set([

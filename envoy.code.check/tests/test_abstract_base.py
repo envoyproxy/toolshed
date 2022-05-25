@@ -91,9 +91,9 @@ class DummyProjectCodeCheck:
     pass
 
 
-async def test_project_code_check_constructor(patches):
-    args = [f"A{i}" for i in range(0, 5)]
-    kwargs = {f"K{i}": f"V{i}" for i in range(0, 5)}
+async def test_project_code_check_constructor(iters, patches):
+    args = iters()
+    kwargs = iters(dict)
     project = MagicMock()
     patched = patches(
         "ACodeCheck.__init__",

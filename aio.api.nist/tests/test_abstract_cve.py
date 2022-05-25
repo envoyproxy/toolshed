@@ -61,13 +61,13 @@ def test_cve_cpes(patches):
     assert "cpes" in cve.__dict__
 
 
-def test_cve_cve_dict(patches):
-    cve_data = {f"K{i}": f"V{i}" for i in range(0, 5)}
+def test_cve_cve_dict(iters, patches):
+    cve_data = iters(dict)
     cve = DummyCVE(cve_data, "TRACKED_CPES", "CPE_CLASS")
     patched = patches(
         ("ACVE.cpes", dict(new_callable=PropertyMock)),
         prefix="aio.api.nist.abstract.cve")
-    cpes = [MagicMock() for c in range(0, 5)]
+    cpes = iters(cb=lambda i: MagicMock())
     expected = dict(**cve_data)
     expected.update(
         **dict(cpes=tuple(

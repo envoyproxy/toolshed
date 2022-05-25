@@ -604,7 +604,7 @@ def test_dependency_repo(patches):
 
 
 @pytest.mark.parametrize("github_url", [True, False])
-def test_dependency_url_components(patches, github_url):
+def test_dependency_url_components(iters, patches, github_url):
     dependency = DummyDependency2("ID", "METADATA", "GITHUB")
     patched = patches(
         ("ADependency.github_url",
@@ -612,7 +612,7 @@ def test_dependency_url_components(patches, github_url):
         ("ADependency.urls",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.dependency")
-    urls = [f"URL{i}" for i in range(0, 5)]
+    urls = iters()
 
     with patched as (m_url, m_urls):
         if not github_url:
