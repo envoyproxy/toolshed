@@ -30,7 +30,7 @@ mypy-abstracts
 orjson
 packaging
 pygments>=2.11.1
-pytest-abstracts>=0.0.2
+pytest-abstracts>=0.0.4
 pytest-iters>=0.0.3
 pytest-patches
 pytest-asyncio>=0.17.0
