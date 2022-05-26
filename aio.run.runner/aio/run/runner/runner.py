@@ -9,7 +9,7 @@ import pathlib
 import sys
 import tempfile
 from functools import cached_property
-from typing import Dict, Optional
+from typing import cast, Dict, Optional
 
 from frozendict import frozendict
 
@@ -31,9 +31,11 @@ from aio.core import event, log as _log
 from .decorators import cleansup
 
 
+SUCCESS = 27
 LOG_LEVELS = (
     ("debug", logging.DEBUG),
     ("info", logging.INFO),
+    ("success", SUCCESS),
     ("warn", logging.WARN),
     ("error", logging.ERROR))
 LOG_FIELD_STYLES: frozendict = frozendict(
@@ -56,11 +58,18 @@ class BazelRunError(Exception):
     pass
 
 
+class VerboseLogger(verboselogs.VerboseLogger):
+
+    def success(self, msg, *args, **kw) -> None:
+        if self.isEnabledFor(SUCCESS):
+            self._log(SUCCESS, msg, args, **kw)
+
+
 class BaseLogFilter(logging.Filter):
 
     def __init__(
             self,
-            app_logger: verboselogs.VerboseLogger,
+            app_logger: VerboseLogger,
             *args, **kwargs) -> None:
         self.app_logger = app_logger
 
@@ -103,9 +112,9 @@ class Runner(event.AReactive):
         return self.parser.parse_known_args(self._args)[1]
 
     @cached_property
-    def log(self) -> verboselogs.VerboseLogger:
+    def log(self) -> VerboseLogger:
         """Instantiated logger."""
-        app_logger = verboselogs.VerboseLogger(self.name)
+        app_logger = VerboseLogger(self.name)
         coloredlogs.install(
             field_styles=self.log_field_styles,
             level_styles=self.log_level_styles,
@@ -114,7 +123,9 @@ class Runner(event.AReactive):
             logger=app_logger,
             isatty=True)
         app_logger.setLevel(self.verbosity)
-        return _log.QueueLogger(app_logger).start()
+        return cast(
+            VerboseLogger,
+            _log.QueueLogger(app_logger).start())
 
     @property
     def log_field_styles(self):
@@ -166,6 +177,9 @@ class Runner(event.AReactive):
     def root_logger(self) -> logging.Logger:
         """Instantiated logger."""
         logging.basicConfig(level=self.log_level)
+        logging._nameToLevel["SUCCESS"] = SUCCESS
+        logging._levelToName[SUCCESS] = "SUCCESS"
+        del logging._levelToName[35]
         root_logger = logging.getLogger()
         root_logger.removeHandler(root_logger.handlers[0])
         root_logger.addHandler(self.root_log_handler)

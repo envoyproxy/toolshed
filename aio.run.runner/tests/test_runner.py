@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
+import verboselogs
+
 from aio.core import event
 from aio.run import runner
 
@@ -13,6 +15,38 @@ class DummyRunner(runner.Runner):
 
     def __init__(self):
         self.args = PropertyMock()
+
+
+def test_verbose_logger():
+    logger = runner.runner.VerboseLogger("LOGGER")
+    assert isinstance(logger, verboselogs.VerboseLogger)
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_verbose_logger_success(iters, patches, enabled):
+    logger = runner.runner.VerboseLogger("LOGGER")
+    patched = patches(
+        "SUCCESS",
+        "VerboseLogger._log",
+        "VerboseLogger.isEnabledFor",
+        prefix="aio.run.runner.runner")
+    args = iters(tuple)
+    kwargs = iters(dict)
+    msg = MagicMock()
+
+    with patched as (m_success, m_log, m_enabled):
+        m_enabled.return_value = enabled
+        assert not logger.success(msg, *args, **kwargs)
+
+    assert (
+        m_enabled.call_args
+        == [(m_success, ), {}])
+    if not enabled:
+        assert not m_log.called
+    else:
+        assert (
+            m_log.call_args
+            == [(m_success, msg, args), kwargs])
 
 
 def test_base_log_filter():
@@ -149,9 +183,10 @@ def test_runner_extra_args(patches):
 
 def test_runner_log(patches):
     patched = patches(
+        "cast",
         "coloredlogs",
-        "verboselogs",
         "_log",
+        "VerboseLogger",
         ("Runner.log_field_styles",
          dict(new_callable=PropertyMock)),
         ("Runner.log_fmt",
@@ -166,15 +201,15 @@ def test_runner_log(patches):
         prefix="aio.run.runner.runner")
 
     with patched as patchy:
-        (m_color, m_verb, m_log, m_fstyle, m_fmt,
+        (m_cast, m_color, m_log, m_verb, m_fstyle, m_fmt,
          m_lstyle, m_name, m_verbosity, m_setup) = patchy
         run = runner.Runner('path1', 'path2', 'path3')
         assert (
             run.log
-            == m_log.QueueLogger.return_value.start.return_value)
+            == m_cast.return_value)
 
     assert (
-        m_verb.VerboseLogger.call_args
+        m_verb.call_args
         == [(m_name.return_value, ), {}])
     assert (
         m_color.install.call_args
@@ -184,13 +219,13 @@ def test_runner_log(patches):
              'field_styles': m_fstyle.return_value,
              'level': m_verbosity.return_value,
              'level_styles': m_lstyle.return_value,
-             'logger': m_verb.VerboseLogger.return_value}])
+             'logger': m_verb.return_value}])
     assert (
-        m_verb.VerboseLogger.return_value.setLevel.call_args
+        m_verb.return_value.setLevel.call_args
         == [(m_verbosity.return_value, ), {}])
     assert (
         m_log.QueueLogger.call_args
-        == [(m_verb.VerboseLogger.return_value, ), {}])
+        == [(m_verb.return_value, ), {}])
     assert (
         m_log.QueueLogger.return_value.start.call_args
         == [(), {}])
@@ -303,17 +338,27 @@ def test_runner_root_logger(patches):
     run = DummyRunner()
     patched = patches(
         "logging",
+        "SUCCESS",
         ("Runner.log_level",
          dict(new_callable=PropertyMock)),
         ("Runner.root_log_handler",
          dict(new_callable=PropertyMock)),
         prefix="aio.run.runner.runner")
 
-    with patched as (m_logging, m_level, m_handler):
+    with patched as (m_logging, m_success, m_level, m_handler):
         assert (
             run.root_logger
             == m_logging.getLogger.return_value)
 
+    assert (
+        m_logging._nameToLevel.__setitem__.call_args
+        == [("SUCCESS", m_success), {}])
+    assert (
+        m_logging._levelToName.__setitem__.call_args
+        == [(m_success, "SUCCESS"), {}])
+    assert (
+        m_logging._levelToName.__delitem__.call_args
+        == [(35, ), {}])
     assert (
         m_logging.basicConfig.call_args
         == [(), dict(level=m_level.return_value)])
@@ -427,7 +472,6 @@ def test_runner_verbosity(patches):
 def test_runner_add_arguments():
     run = DummyRunner()
     parser = MagicMock()
-
     assert run.add_arguments(parser) is None
 
     assert (
@@ -436,12 +480,13 @@ def test_runner_add_arguments():
               '-v'),
              {'choices': ['debug',
                           'info',
+                          "success",
                           'warn',
                           'error'],
               'default': 'info',
               'help': 'Application log level'}],
             [('--log-level', '-l'),
-             {'choices': ['debug', 'info', 'warn', 'error'],
+             {'choices': ['debug', 'info', "success", 'warn', 'error'],
               'default': 'warn',
               'help': 'Log level for non-application logs'}]])
 
