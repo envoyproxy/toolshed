@@ -1,4 +1,5 @@
 
+import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
@@ -346,6 +347,33 @@ def test_abstract_checker_all_files(patches):
     assert "all_files" not in checker.__dict__
 
 
+def test_abstract_checker_binaries(iters, patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        "dict",
+        ("ACodeChecker.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+    binaries = iters(cb=lambda i: f"K{i}:V{i}")
+
+    with patched as (m_dict, m_args):
+        m_args.return_value.binary = binaries
+        assert (
+            checker.binaries
+            == m_dict.return_value)
+        resultgen = m_dict.call_args[0][0]
+        resultlist = list(resultgen)
+
+    assert isinstance(resultgen, types.GeneratorType)
+    assert (
+        m_dict.call_args
+        == [(resultgen, ), {}])
+    assert (
+        resultlist
+        == [bin.split(":") for bin in binaries])
+    assert "binaries" in checker.__dict__
+
+
 @pytest.mark.parametrize("build_config", [None, "BUILD CONFIG"])
 def test_abstract_checker_disabled_checks(patches, build_config):
     checker = DummyCodeChecker()
@@ -414,6 +442,8 @@ def test_abstract_checker_check_kwargs(patches):
     checker = DummyCodeChecker()
     patched = patches(
         "dict",
+        ("ACodeChecker.binaries",
+         dict(new_callable=PropertyMock)),
         ("ACodeChecker.fix",
          dict(new_callable=PropertyMock)),
         ("ACodeChecker.loop",
@@ -422,7 +452,7 @@ def test_abstract_checker_check_kwargs(patches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
 
-    with patched as (m_dict, m_fix, m_loop, m_pool):
+    with patched as (m_dict, m_bin, m_fix, m_loop, m_pool):
         assert (
             checker.check_kwargs
             == m_dict.return_value)
@@ -430,10 +460,11 @@ def test_abstract_checker_check_kwargs(patches):
     assert (
         m_dict.call_args
         == [(),
-            dict(fix=m_fix.return_value,
+            dict(binaries=m_bin.return_value,
+                 fix=m_fix.return_value,
                  loop=m_loop.return_value,
                  pool=m_pool.return_value)])
-    assert "check_kwargs" not in checker.__dict__
+    assert "check_kwargs" in checker.__dict__
 
 
 def test_abstract_checker_directory(patches):

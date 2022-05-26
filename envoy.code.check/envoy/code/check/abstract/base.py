@@ -19,12 +19,18 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
             self,
             directory: ADirectory,
             fix: bool = False,
+            binaries: Optional[Dict[str, str]] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None,
             pool: Optional[futures.Executor] = None) -> None:
         self.directory = directory
         self._fix = fix
         self._loop = loop
         self._pool = pool
+        self._binaries = binaries
+
+    @property
+    def binaries(self):
+        return self._binaries
 
 
 class AFileCodeCheck(ACodeCheck, metaclass=abstracts.Abstraction):
