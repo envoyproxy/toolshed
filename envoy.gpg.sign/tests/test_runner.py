@@ -217,11 +217,11 @@ def test_packager_add_arguments():
     assert (
         parser.add_argument.call_args_list
         == [[('--verbosity', '-v'),
-             {'choices': ['debug', 'info', 'warn', 'error'],
+             {'choices': ['debug', 'info', "success", 'warn', 'error'],
               'default': 'info',
               'help': 'Application log level'}],
             [('--log-level', '-l'),
-             {'choices': ['debug', 'info', 'warn', 'error'],
+             {'choices': ['debug', 'info', "success", 'warn', 'error'],
               'default': 'warn',
               'help': 'Log level for non-application logs'}],
             [('path',),
