@@ -69,7 +69,7 @@ class ACodeChecker(
         return dict(
             binary.split(":")
             for binary
-            in self.args.binary)
+            in self.args.binary or [])
 
     @cached_property
     def disabled_checks(self):

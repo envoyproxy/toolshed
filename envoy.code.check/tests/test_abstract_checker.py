@@ -347,7 +347,8 @@ def test_abstract_checker_all_files(patches):
     assert "all_files" not in checker.__dict__
 
 
-def test_abstract_checker_binaries(iters, patches):
+@pytest.mark.parametrize("bins", [True, False])
+def test_abstract_checker_binaries(iters, patches, bins):
     checker = DummyCodeChecker()
     patched = patches(
         "dict",
@@ -357,7 +358,7 @@ def test_abstract_checker_binaries(iters, patches):
     binaries = iters(cb=lambda i: f"K{i}:V{i}")
 
     with patched as (m_dict, m_args):
-        m_args.return_value.binary = binaries
+        m_args.return_value.binary = (binaries if bins else None)
         assert (
             checker.binaries
             == m_dict.return_value)
@@ -370,7 +371,7 @@ def test_abstract_checker_binaries(iters, patches):
         == [(resultgen, ), {}])
     assert (
         resultlist
-        == [bin.split(":") for bin in binaries])
+        == [bin.split(":") for bin in (binaries if bins else [])])
     assert "binaries" in checker.__dict__
 
 
