@@ -21,12 +21,15 @@ class DummyCodeCheck:
 
 
 @pytest.mark.parametrize("fix", [None, True, False])
+@pytest.mark.parametrize("binaries", [None, "BINARIES"])
 @pytest.mark.parametrize("pool", [None, "POOL"])
 @pytest.mark.parametrize("loop", [None, "LOOP"])
-async def test_code_check_constructor(fix, pool, loop):
+async def test_code_check_constructor(fix, binaries, pool, loop):
     kwargs = {}
     if fix is not None:
         kwargs["fix"] = fix
+    if binaries is not None:
+        kwargs["binaries"] = binaries
     if loop is not None:
         kwargs["loop"] = loop
     if pool is not None:
@@ -40,6 +43,9 @@ async def test_code_check_constructor(fix, pool, loop):
     assert code_check._fix == (fix if fix is not None else False)
     assert code_check.fix == code_check._fix
     assert "fix" not in code_check.__dict__
+    assert code_check._binaries == binaries
+    assert code_check.binaries == binaries
+    assert "binaries" not in code_check.__dict__
     assert code_check._loop == loop
     assert code_check._pool == pool
 

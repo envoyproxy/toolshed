@@ -477,27 +477,53 @@ async def test_shellcheck_shebang_files(patches):
             check.AShellcheckCheck.shebang_files.cache_name))
 
 
+@pytest.mark.parametrize("binfile", [True, False])
 @pytest.mark.parametrize("command", [None, False, "", "COMMAND"])
-def test_shellcheck_shellcheck_command(patches, command):
+def test_shellcheck_shellcheck_command(patches, command, binfile):
     shellcheck = check.AShellcheckCheck("DIRECTORY")
     patched = patches(
+        "pathlib",
         "shutil",
+        ("AShellcheckCheck.binaries",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.shellcheck")
 
-    with patched as (m_shutil, ):
+    with patched as (m_plib, m_shutil, m_bins):
+        m_bins.return_value.__contains__.return_value = binfile
         m_shutil.which.return_value = command
-        if not command:
+        if command or binfile:
+            assert (
+                shellcheck.shellcheck_command
+                == (m_plib.Path.return_value.absolute.return_value
+                    if binfile
+                    else command))
+        else:
             with pytest.raises(subprocess.exceptions.OSCommandError) as e:
                 shellcheck.shellcheck_command
             assert e.value.args[0] == 'Unable to find shellcheck command'
-        else:
-            assert shellcheck.shellcheck_command == command
 
     assert (
-        m_shutil.which.call_args
+        m_bins.return_value.__contains__.call_args
         == [("shellcheck", ), {}])
-    if command:
+    if command or binfile:
         assert "shellcheck_command" in shellcheck.__dict__
+    if binfile:
+        assert not m_shutil.called
+        assert (
+            m_plib.Path.call_args
+            == [(m_bins.return_value.__getitem__.return_value, ), {}])
+        assert (
+            m_bins.return_value.__getitem__.call_args
+            == [("shellcheck", ), {}])
+        assert (
+            m_plib.Path.return_value.absolute.call_args
+            == [(), {}])
+    else:
+        assert not m_plib.Path.called
+        assert not m_bins.return_value.__getitem__.called
+        assert (
+            m_shutil.which.call_args
+            == [("shellcheck", ), {}])
 
 
 def test_shellcheck_shellcheck_executable(patches):

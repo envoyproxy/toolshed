@@ -65,6 +65,13 @@ class ACodeChecker(
         return self.args.all_files
 
     @cached_property
+    def binaries(self) -> Dict[str, str]:
+        return dict(
+            binary.split(":")
+            for binary
+            in self.args.binary)
+
+    @cached_property
     def disabled_checks(self):
         disabled = {}
         if not self.args.extensions_build_config:
@@ -89,10 +96,11 @@ class ACodeChecker(
     def changelog_class(self) -> Type["abstract.AChangelogCheck"]:
         raise NotImplementedError
 
-    @property
+    @cached_property
     def check_kwargs(self) -> Mapping:
         return dict(
             fix=self.fix,
+            binaries=self.binaries,
             loop=self.loop,
             pool=self.pool)
 
@@ -220,6 +228,7 @@ class ACodeChecker(
         parser.add_argument("-a", "--all_files", action="store_true")
         parser.add_argument("-m", "--matching", action="append")
         parser.add_argument("-x", "--excluding", action="append")
+        parser.add_argument("-b", "--binary", action="append")
         parser.add_argument("-s", "--since")
         parser.add_argument("--extensions_build_config")
 

@@ -1,4 +1,5 @@
 
+import pathlib
 import re
 import shutil
 import subprocess
@@ -184,8 +185,10 @@ class AShellcheckCheck(
         return "|".join(SHEBANG_RE)
 
     @cached_property
-    def shellcheck_command(self) -> str:
+    def shellcheck_command(self) -> str | pathlib.Path:
         """Shellcheck command, should be available in the running system."""
+        if "shellcheck" in self.binaries:
+            return pathlib.Path(self.binaries["shellcheck"]).absolute()
         if command := shutil.which("shellcheck"):
             return command
         raise _subprocess.exceptions.OSCommandError(
