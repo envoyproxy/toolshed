@@ -148,7 +148,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code.check](envoy.code.check)
 
-version: 0.2.0
+version: 0.2.1
 
 pypi: https://pypi.org/project/envoy.code.check
 

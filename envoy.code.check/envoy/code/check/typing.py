@@ -1,5 +1,5 @@
 
-from typing import Dict, List, Tuple, TypedDict
+from typing import Dict, List, Optional, Tuple, TypedDict
 
 
 ProblemDict = Dict[str, List[str]]
@@ -11,8 +11,8 @@ YapfCheckResultTuple = Tuple[str, YapfResultTuple]
 
 class BaseExtensionMetadataDict(TypedDict):
     categories: List[str]
-    security_posture: List[str]
-    status: List[str]
+    security_posture: str
+    status: str
 
 
 class ExtensionMetadataDict(BaseExtensionMetadataDict, total=False):
@@ -31,11 +31,16 @@ class ExtensionSecurityPostureMetadataDict(TypedDict):
     description: str
 
 
+class ExtensionStatusMetadataDict(TypedDict):
+    name: str
+    description: Optional[str]
+
+
 class ExtensionsSchemaDict(TypedDict):
     builtin: ExtensionsSchemaBuiltinList
     security_postures: List[ExtensionSecurityPostureMetadataDict]
     categories: ExtensionsSchemaCategoriesList
-    status_values: ExtensionsSchemaStatusValuesList
+    status_values: List[ExtensionStatusMetadataDict]
 
 
 ConfiguredExtensionsDict = Dict[str, str]

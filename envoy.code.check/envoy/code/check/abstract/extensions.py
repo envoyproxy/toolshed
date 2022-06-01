@@ -79,11 +79,6 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             for posture
             in self.extensions_schema["security_postures"]]
 
-    @property
-    def extension_status_values(
-            self) -> typing.ExtensionsSchemaStatusValuesList:
-        return self.extensions_schema["status_values"]
-
     @cached_property
     def extensions_schema(self) -> typing.ExtensionsSchemaDict:
         return cast(
@@ -97,6 +92,14 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     @property
     def extensions_schema_path(self) -> pathlib.Path:
         return self.directory.path.joinpath(EXTENSIONS_SCHEMA)
+
+    @property
+    def extension_status_values(
+            self) -> typing.ExtensionsSchemaStatusValuesList:
+        return [
+            posture["name"]
+            for posture
+            in self.extensions_schema["status_values"]]
 
     @property
     def fuzz_test_path(self) -> pathlib.Path:
