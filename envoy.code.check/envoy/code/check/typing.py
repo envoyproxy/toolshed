@@ -11,8 +11,8 @@ YapfCheckResultTuple = Tuple[str, YapfResultTuple]
 
 class BaseExtensionMetadataDict(TypedDict):
     categories: List[str]
-    security_posture: str
-    status: str
+    security_posture: List[str]
+    status: List[str]
 
 
 class ExtensionMetadataDict(BaseExtensionMetadataDict, total=False):
@@ -20,17 +20,20 @@ class ExtensionMetadataDict(BaseExtensionMetadataDict, total=False):
 
 
 ExtensionsMetadataDict = Dict[str, ExtensionMetadataDict]
-
-
 ExtensionsSchemaCategoriesList = List[str]
 ExtensionsSchemaBuiltinList = List[str]
 ExtensionsSchemaSecurityPosturesList = List[str]
 ExtensionsSchemaStatusValuesList = List[str]
 
 
+class ExtensionSecurityPostureMetadataDict(TypedDict):
+    name: str
+    description: str
+
+
 class ExtensionsSchemaDict(TypedDict):
     builtin: ExtensionsSchemaBuiltinList
-    security_postures: ExtensionsSchemaSecurityPosturesList
+    security_postures: List[ExtensionSecurityPostureMetadataDict]
     categories: ExtensionsSchemaCategoriesList
     status_values: ExtensionsSchemaStatusValuesList
 

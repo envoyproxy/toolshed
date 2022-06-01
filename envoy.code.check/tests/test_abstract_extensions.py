@@ -94,7 +94,6 @@ async def test_extensions_all_fuzzed(patches, fuzzed, robust):
     "item",
     (("builtin_extensions", "builtin"),
      ("extension_categories", "categories"),
-     ("extension_security_postures", "security_postures"),
      ("extension_status_values", "status_values")))
 def test_extensions_schema(patches, item):
     prop, key = item
@@ -143,6 +142,32 @@ def test_extensions_configured_extensions(patches):
              "Extensions parsing error: {path}:\n{e}"),
             {}])
     assert "configured_extensions" in checker.__dict__
+
+
+def test_extensions_extensions_security_postures(iters, patches):
+    checker = check.AExtensionsCheck(
+        "DIRECTORY", extensions_build_config="BUILD")
+    patched = patches(
+        ("AExtensionsCheck.extensions_schema",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.extensions")
+    postures = iters(cb=lambda i: MagicMock())
+
+    with patched as (m_schema, ):
+        m_schema.return_value.__getitem__.return_value = postures
+        assert (
+            checker.extension_security_postures
+            == [p.__getitem__.return_value
+                for p
+                in postures])
+
+    assert (
+        m_schema.return_value.__getitem__.call_args
+        == [("security_postures", ), {}])
+    for p in postures:
+        assert (
+            p.__getitem__.call_args
+            == [("name", ), {}])
 
 
 def test_extensions_extensions_schema(patches):
