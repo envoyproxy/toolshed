@@ -26,6 +26,8 @@ from .project import Changelog, ChangelogEntry, Changelogs, Project
 from .project_cmd import project_cmd
 from .project_runner import ProjectRunner
 from .interface import IProject
+from .jinja_env import JinjaEnvironment
+from .jinja_env_cmd import jinja_env_cmd
 
 
 __all__ = (
@@ -45,6 +47,8 @@ __all__ = (
     "IProject",
     "is_sha",
     "is_tarlike",
+    "JinjaEnvironment",
+    "jinja_env_cmd",
     "last_n_bytes_of",
     "coverage_with_data_file",
     "minor_version_for",
