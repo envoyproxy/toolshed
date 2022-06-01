@@ -74,7 +74,10 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     @property
     def extension_security_postures(
             self) -> typing.ExtensionsSchemaSecurityPosturesList:
-        return self.extensions_schema["security_postures"]
+        return [
+            posture["name"]
+            for posture
+            in self.extensions_schema["security_postures"]]
 
     @property
     def extension_status_values(
