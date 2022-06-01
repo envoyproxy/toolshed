@@ -93,8 +93,7 @@ async def test_extensions_all_fuzzed(patches, fuzzed, robust):
 @pytest.mark.parametrize(
     "item",
     (("builtin_extensions", "builtin"),
-     ("extension_categories", "categories"),
-     ("extension_status_values", "status_values")))
+     ("extension_categories", "categories")))
 def test_extensions_schema(patches, item):
     prop, key = item
     checker = check.AExtensionsCheck(
@@ -211,6 +210,32 @@ def test_extensions_extensions_schema_path():
         directory.path.joinpath.call_args
         == [(check.abstract.extensions.EXTENSIONS_SCHEMA, ), {}])
     assert "extensions_schema_path" not in checker.__dict__
+
+
+def test_extensions_extensions_status_values(iters, patches):
+    checker = check.AExtensionsCheck(
+        "DIRECTORY", extensions_build_config="BUILD")
+    patched = patches(
+        ("AExtensionsCheck.extensions_schema",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.extensions")
+    postures = iters(cb=lambda i: MagicMock())
+
+    with patched as (m_schema, ):
+        m_schema.return_value.__getitem__.return_value = postures
+        assert (
+            checker.extension_status_values
+            == [p.__getitem__.return_value
+                for p
+                in postures])
+
+    assert (
+        m_schema.return_value.__getitem__.call_args
+        == [("status_values", ), {}])
+    for p in postures:
+        assert (
+            p.__getitem__.call_args
+            == [("name", ), {}])
 
 
 def test_extensions_fuzz_test_path():
