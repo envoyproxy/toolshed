@@ -26,6 +26,8 @@ from .project import Changelog, ChangelogEntry, Changelogs, Project
 from .project_cmd import project_cmd
 from .project_runner import ProjectRunner
 from .interface import IProject
+from .data_env import DataEnvironment
+from .data_env_cmd import data_env_cmd
 from .jinja_env import JinjaEnvironment
 from .jinja_env_cmd import jinja_env_cmd
 
@@ -36,6 +38,8 @@ __all__ = (
     "Changelog",
     "ChangelogEntry",
     "Changelogs",
+    "DataEnvironment",
+    "data_env_cmd",
     "dt_to_utc_isoformat",
     "ellipsize",
     "extract",
