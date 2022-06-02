@@ -24,6 +24,8 @@ pytooling_library(
         "abstract/project/project.py",
         "exceptions.py",
         "interface.py",
+        "jinja_env.py",
+        "jinja_env_cmd.py",
         "project.py",
         "project_cmd.py",
         "project_runner.py",
