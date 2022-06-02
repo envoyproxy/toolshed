@@ -22,6 +22,8 @@ pytooling_library(
         "abstract/project/changelog.py",
         "abstract/project/inventory.py",
         "abstract/project/project.py",
+        "data_env.py",
+        "data_env_cmd.py",
         "exceptions.py",
         "interface.py",
         "jinja_env.py",
