@@ -370,17 +370,25 @@ def test_sphinx_runner_rst_tar(patches):
     assert "rst_tar" not in runner.__dict__
 
 
-def test_sphinx_runner_sphinx_args(patches):
+@pytest.mark.parametrize("verbosity", [None, "", "info", "warn", "OTHER"])
+def test_sphinx_runner_sphinx_args(patches, verbosity):
     runner = DummySphinxRunner()
     patched = patches(
+        ("SphinxRunner.args", dict(new_callable=PropertyMock)),
         ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
         ("SphinxRunner.rst_dir", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
+    sphinx_args = (
+        []
+        if verbosity == "info"
+        else ["-q"])
 
-    with patched as (m_html, m_rst):
+    with patched as (m_args, m_html, m_rst):
+        m_args.return_value.verbosity = verbosity
         assert (
             runner.sphinx_args
-            == ['-W', '--keep-going', '--color', '-b', 'html',
+            == sphinx_args + [
+                '-W', '--keep-going', '--color', '-b', 'html',
                 str(m_rst.return_value),
                 str(m_html.return_value)])
 

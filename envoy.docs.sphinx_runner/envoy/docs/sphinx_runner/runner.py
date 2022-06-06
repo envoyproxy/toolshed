@@ -170,7 +170,11 @@ class SphinxRunner(runner.Runner):
     @property
     def sphinx_args(self) -> List[str]:
         """Command args for sphinx."""
-        return [
+        sphinx_args = (
+            []
+            if self.args.verbosity == "info"
+            else ["-q"])
+        return sphinx_args + [
             "-W", "--keep-going", "--color", "-b", "html",
             str(self.rst_dir), str(self.html_dir)]
 
