@@ -175,7 +175,11 @@ class SphinxRunner(runner.Runner):
             if self.args.verbosity == "info"
             else ["-q"])
         return sphinx_args + [
-            "-W", "--keep-going", "--color", "-b", "html",
+            "-W",
+            "-j", "auto",
+            "--keep-going",
+            "--color",
+            "-b", "html",
             str(self.rst_dir), str(self.html_dir)]
 
     @property

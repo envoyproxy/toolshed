@@ -388,7 +388,8 @@ def test_sphinx_runner_sphinx_args(patches, verbosity):
         assert (
             runner.sphinx_args
             == sphinx_args + [
-                '-W', '--keep-going', '--color', '-b', 'html',
+                '-W', "-j", "auto",
+                '--keep-going', '--color', '-b', 'html',
                 str(m_rst.return_value),
                 str(m_html.return_value)])
 

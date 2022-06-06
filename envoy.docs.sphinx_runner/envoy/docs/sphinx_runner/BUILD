@@ -15,4 +15,11 @@ pytooling_library(
         "//deps:sphinxcontrib-serializinghtml",
         "//deps:sphinxext-rediraffe"
     ],
+    sources=[
+        "__init__.py",
+        "cmd.py",
+        "exceptions.py",
+        "runner.py",
+        "ext/httpdomain.py",
+    ],
 )
