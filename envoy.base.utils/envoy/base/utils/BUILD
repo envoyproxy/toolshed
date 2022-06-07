@@ -28,6 +28,8 @@ pytooling_library(
         "interface.py",
         "jinja_env.py",
         "jinja_env_cmd.py",
+        "parallel_cmd.py",
+        "parallel_runner.py",
         "project.py",
         "project_cmd.py",
         "project_runner.py",
