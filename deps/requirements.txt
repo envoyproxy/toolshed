@@ -29,6 +29,7 @@ mypy>=0.931
 mypy-abstracts
 orjson
 packaging
+protobuf
 pygments>=2.11.1
 pytest-abstracts>=0.0.4
 pytest-iters>=0.0.3

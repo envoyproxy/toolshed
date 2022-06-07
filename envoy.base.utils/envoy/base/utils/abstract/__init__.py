@@ -5,11 +5,13 @@ from .project import (
     AChangelogs,
     AInventories,
     AProject)
-
+from .protobuf import AProtobufSet, AProtobufValidator
 
 __all__ = (
     "AChangelog",
     "AChangelogEntry",
     "AChangelogs",
     "AInventories",
-    "AProject", )
+    "AProject",
+    "AProtobufSet",
+    "AProtobufValidator")
