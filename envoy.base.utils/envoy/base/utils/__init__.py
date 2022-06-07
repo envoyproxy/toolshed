@@ -22,6 +22,8 @@ from .utils import (
     tar_mode,
     last_n_bytes_of)
 from . import interface, typing
+from .parallel_cmd import parallel_cmd
+from .parallel_runner import ParallelRunner
 from .project import Changelog, ChangelogEntry, Changelogs, Project
 from .project_cmd import project_cmd
 from .project_runner import ProjectRunner
@@ -56,6 +58,9 @@ __all__ = (
     "last_n_bytes_of",
     "coverage_with_data_file",
     "minor_version_for",
+    "Parallel",
+    "ParallelRunner",
+    "parallel_cmd",
     "Project",
     "ProjectRunner",
     "project_cmd",
