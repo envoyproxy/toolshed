@@ -21,5 +21,7 @@ pytooling_library(
         "exceptions.py",
         "runner.py",
         "ext/httpdomain.py",
+        "ext/powershell_lexer.py",
+        "ext/validating_code_block.py",
     ],
 )
