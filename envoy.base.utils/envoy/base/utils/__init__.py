@@ -27,6 +27,7 @@ from .parallel_runner import ParallelRunner
 from .project import Changelog, ChangelogEntry, Changelogs, Project
 from .project_cmd import project_cmd
 from .project_runner import ProjectRunner
+from .protobuf import ProtobufSet, ProtobufValidator
 from .interface import IProject
 from .data_env import DataEnvironment
 from .data_env_cmd import data_env_cmd
@@ -64,6 +65,8 @@ __all__ = (
     "Project",
     "ProjectRunner",
     "project_cmd",
+    "ProtobufSet",
+    "ProtobufValidator",
     "typed",
     "untar",
     "TAR_EXTS",

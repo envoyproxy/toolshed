@@ -5,6 +5,7 @@ from typing import (
     Optional, Set, Tuple, Type, Union, ValuesView)
 
 import aiohttp
+from google.protobuf import descriptor_pool
 from packaging import version as _version
 
 import abstracts
@@ -13,6 +14,37 @@ from aio.api import github as _github
 from aio.core import directory as _directory, event
 
 from envoy.base.utils import typing
+
+
+class IProtobufSet(metaclass=abstracts.Interface):
+
+    @abstracts.interfacemethod
+    def __init__(self, descriptor_path: str | pathlib.Path) -> None:
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def descriptor_pool(self) -> descriptor_pool.DescriptorPool:
+        raise NotImplementedError
+
+
+class IProtobufValidator(metaclass=abstracts.Interface):
+
+    @abstracts.interfacemethod
+    def __init__(self, descriptor_path: str | pathlib.Path) -> None:
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
+    def protobuf_set_class(self) -> Type[IProtobufSet]:
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
+    def validate_fragment(self, fragment: str, type_name: str = "") -> None:
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
+    def validate_yaml(self, fragment: str, type_name: str = "") -> None:
+        raise NotImplementedError
 
 
 class IInventories(metaclass=abstracts.Interface):

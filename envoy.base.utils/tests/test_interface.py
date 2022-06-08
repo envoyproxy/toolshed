@@ -6,7 +6,9 @@ from envoy.base.utils import interface
 
 @pytest.mark.parametrize(
     "interface",
-    [interface.IProject,
+    [interface.IProtobufSet,
+     interface.IProtobufValidator,
+     interface.IProject,
      interface.IInventories,
      interface.IChangelogs,
      interface.IChangelog,
