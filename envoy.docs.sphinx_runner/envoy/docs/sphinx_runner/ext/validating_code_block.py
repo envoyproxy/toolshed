@@ -1,13 +1,17 @@
+
 import os
-import subprocess
 from functools import cached_property
+from typing import Dict, List
 
-import yaml
+from docutils.parsers.rst import directives
 
-from docutils.parsers.rst import directives  # type:ignore
+from google.protobuf.json_format import ParseError
 
+from sphinx.application import Sphinx
 from sphinx.directives.code import CodeBlock
 from sphinx.errors import ExtensionError
+
+from envoy.base.utils import interface, from_yaml, ProtobufValidator
 
 
 class ValidatingCodeBlock(CodeBlock):
@@ -22,47 +26,25 @@ class ValidatingCodeBlock(CodeBlock):
     required_arguments = CodeBlock.required_arguments
     optional_arguments = CodeBlock.optional_arguments
     final_argument_whitespace = CodeBlock.final_argument_whitespace
-    option_spec = {
-        'type-name': directives.unchanged,
-    }
+    option_spec = {"type-name": directives.unchanged}
     option_spec.update(CodeBlock.option_spec)
 
     @cached_property
-    def configs(self) -> dict:
-        _configs = dict(
-            descriptor_path="",
-            skip_validation=False,
-            validator_path=(
-                "bazel-bin/tools/config_validation/validate_fragment"))
-        if os.environ.get("ENVOY_DOCS_BUILD_CONFIG"):
-            with open(os.environ["ENVOY_DOCS_BUILD_CONFIG"]) as f:
-                _configs.update(yaml.safe_load(f.read()))
+    def configs(self) -> Dict:
+        _configs = dict(skip_validation=False)
+        if config_path := os.environ.get("ENVOY_DOCS_BUILD_CONFIG"):
+            _configs.update(from_yaml(config_path))
         return _configs
-
-    @property
-    def descriptor_path(self) -> str:
-        return self.configs["descriptor_path"]
 
     @property
     def skip_validation(self) -> bool:
         return bool(self.configs["skip_validation"])
 
-    @property
-    def validator_args(self) -> tuple:
-        args = (
-            self.options.get('type-name'),
-            '-s',
-            '\n'.join(self.content))
-        return (
-            args + ("--descriptor_path", self.descriptor_path)
-            if self.descriptor_path
-            else args)
+    @cached_property
+    def proto_validator(self) -> interface.IProtobufValidator:
+        return ProtobufValidator(self.configs["descriptor_path"])
 
-    @property
-    def validator_path(self) -> str:
-        return self.configs["validator_path"]
-
-    def run(self):
+    def run(self) -> List:
         source, line = self.state_machine.get_source_and_line(self.lineno)
         # built-in directives.unchanged_required option validator produces
         # a confusing error message
@@ -71,27 +53,25 @@ class ValidatingCodeBlock(CodeBlock):
                 f"Expected type name in: {source} line: {line}")
 
         if not self.skip_validation:
-            completed = (
-                subprocess.run(
-                    (self.validator_path,) + self.validator_args,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    encoding='utf-8'))
-            if completed.returncode != 0:
-                raise ExtensionError(
-                    "Failed config validation for type: "
-                    f"'{self.options.get('type-name')}' in: {source} line: "
-                    f"{line}:\n {completed.stderr}")
-
+            self._validate(source, line)
         self.options.pop('type-name', None)
         return list(super().run())
 
+    def _validate(self, source: str, line: int) -> None:
+        try:
+            self.proto_validator.validate_yaml(
+                '\n'.join(self.content),
+                self.options.get('type-name'))
+        except (ParseError, KeyError):
+            raise ExtensionError(
+                "Failed config validation for type: "
+                f"'{self.options.get('type-name')}' in: {source} line: "
+                f"{line}")
 
-def setup(app):
+
+def setup(app: Sphinx) -> Dict:
     app.add_directive("validated-code-block", ValidatingCodeBlock)
-
-    return {
-        'version': '0.1',
-        'parallel_read_safe': True,
-        'parallel_write_safe': True,
-    }
+    return dict(
+        version="0.1",
+        parallel_read_safe=True,
+        parallel_write_safe=True)

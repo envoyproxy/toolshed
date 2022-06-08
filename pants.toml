@@ -45,8 +45,10 @@ extra_requirements = [
      "mypy-abstracts"]
 extra_type_stubs = [
      "types-aiofiles",
+     "types-docutils",
      "types-frozendict",
      "types-protobuf",
+     "types-pygments",
      "types-pytz",
      "types-pyyaml"]
 args = [
