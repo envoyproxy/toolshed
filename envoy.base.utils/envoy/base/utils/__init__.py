@@ -21,13 +21,23 @@ from .utils import (
     is_sha,
     tar_mode,
     last_n_bytes_of)
-from . import interface, typing
+from . import abstract, interface, typing
+from .abstract import (
+    AChangelog,
+    AChangelogEntry,
+    AChangelogs,
+    AInventories,
+    AProject,
+    AProtobufSet,
+    AProtobufValidator,
+    AProtocProtocol)
+
 from .parallel_cmd import parallel_cmd
 from .parallel_runner import ParallelRunner
 from .project import Changelog, ChangelogEntry, Changelogs, Project
 from .project_cmd import project_cmd
 from .project_runner import ProjectRunner
-from .protobuf import ProtobufSet, ProtobufValidator
+from .protobuf import ProtobufSet, ProtobufValidator, ProtocProtocol
 from .interface import IProject
 from .data_env import DataEnvironment
 from .data_env_cmd import data_env_cmd
@@ -36,7 +46,17 @@ from .jinja_env_cmd import jinja_env_cmd
 
 
 __all__ = (
+    "abstract",
+    "AChangelog",
+    "AChangelogEntry",
+    "AChangelogs",
+    "AInventories",
+    "AProject",
+    "AProtobufSet",
+    "AProtobufValidator",
+    "AProtocProtocol",
     "async_list",
+    "bazel_worker_cmd",
     "cd_and_return",
     "Changelog",
     "ChangelogEntry",
@@ -67,6 +87,7 @@ __all__ = (
     "project_cmd",
     "ProtobufSet",
     "ProtobufValidator",
+    "ProtocProtocol",
     "typed",
     "untar",
     "TAR_EXTS",

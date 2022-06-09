@@ -3,8 +3,9 @@ pytooling_library(
     "envoy.base.utils",
     dependencies=[
         "//deps:abstracts",
-        "//deps:aio.core",
+        "//deps:aio.api.bazel",
         "//deps:aio.api.github",
+        "//deps:aio.core",
         "//deps:aio.run.runner",
         "//deps:aiohttp",
         "//deps:frozendict",
