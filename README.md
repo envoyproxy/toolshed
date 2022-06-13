@@ -22,13 +22,15 @@ pypi: https://pypi.org/project/abstracts
 
 #### [aio.api.bazel](aio.api.bazel)
 
-version: 0.0.2.dev0
+version: 0.0.2
 
 pypi: https://pypi.org/project/aio.api.bazel
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+- [aio.core](https://pypi.org/project/aio.core) >=0.8.9
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
 
 ---
 
