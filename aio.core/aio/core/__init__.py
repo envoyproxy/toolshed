@@ -4,9 +4,11 @@ from . import (
     directory,
     event,
     functional,
+    pipe,
     stream,
     subprocess,
-    tasks)
+    tasks,
+    utils)
 
 
 __all__ = (
@@ -14,6 +16,8 @@ __all__ = (
     "directory",
     "event",
     "functional",
+    "pipe",
     "stream",
     "subprocess",
-    "tasks")
+    "tasks",
+    "utils")
