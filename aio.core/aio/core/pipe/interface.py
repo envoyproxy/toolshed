@@ -1,4 +1,8 @@
 
+import argparse
+
+from typing import Any
+
 import abstracts
 
 
@@ -19,9 +23,16 @@ class IStdinStdoutProcessor(IProcessor, metaclass=abstracts.Interface):
 class IProcessProtocol(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
-    def __init__(self, *args, **kwargs):
+    def __init__(
+            self,
+            processor: IProcessor,
+            args: argparse.Namespace) -> None:
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def __call__(self, incoming):
+    async def __call__(self, request: Any) -> Any:
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
+    async def process(self, request: Any) -> Any:
         raise NotImplementedError

@@ -584,9 +584,7 @@ async def test_stdinstdoutprocessor_send(patches):
 
     with patched as (m_out_q, m_log):
         m_out_q.return_value.put = AsyncMock()
-        assert (
-            await processor.send(msg)
-            == m_out_q.return_value.put.return_value)
+        assert not await processor.send(msg)
 
     assert (
         m_log.call_args
