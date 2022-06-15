@@ -72,7 +72,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.8.8
+version: 0.8.9
 
 pypi: https://pypi.org/project/aio.core
 

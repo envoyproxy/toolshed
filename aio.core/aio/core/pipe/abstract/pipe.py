@@ -3,7 +3,7 @@ import argparse
 import asyncio
 import sys
 from functools import cached_property
-from typing import Any, Callable, TextIO, Tuple
+from typing import Any, Awaitable, Callable, TextIO, Tuple
 
 import abstracts
 
@@ -13,6 +13,10 @@ from aio.core.pipe import interface
 
 @abstracts.implementer(interface.IProcessProtocol)
 class AProcessProtocol(metaclass=abstracts.Abstraction):
+
+    @classmethod
+    def add_protocol_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        pass
 
     def __init__(
             self,
@@ -34,7 +38,9 @@ class AStdinStdoutProcessor(metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
-            protocol: interface.IProcessProtocol,
+            protocol: Callable[
+                [interface.IStdinStdoutProcessor],
+                Awaitable[interface.IProcessProtocol]],
             stdin: TextIO = sys.stdin,
             stdout: TextIO = sys.stdout,
             log: Callable[[str], None] = None) -> None:

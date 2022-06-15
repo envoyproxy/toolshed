@@ -22,6 +22,11 @@ class IStdinStdoutProcessor(IProcessor, metaclass=abstracts.Interface):
 
 class IProcessProtocol(metaclass=abstracts.Interface):
 
+    @classmethod
+    @abstracts.interfacemethod
+    def add_protocol_arguments(cls, parser: argparse.ArgumentParser) -> None:
+        raise NotImplementedError
+
     @abstracts.interfacemethod
     def __init__(
             self,
