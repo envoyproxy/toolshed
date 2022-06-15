@@ -22,7 +22,7 @@ pypi: https://pypi.org/project/abstracts
 
 #### [aio.api.bazel](aio.api.bazel)
 
-version: 0.0.2
+version: 0.0.3.dev0
 
 pypi: https://pypi.org/project/aio.api.bazel
 
