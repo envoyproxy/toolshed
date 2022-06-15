@@ -169,9 +169,9 @@ class AStdinStdoutProcessor(metaclass=abstracts.Abstraction):
         self.log(f"RECV: {recv}")
         return recv
 
-    async def send(self, msg: Any) -> Any:
+    async def send(self, msg: Any) -> None:
         self.log(f"SEND: {msg}")
-        return await self.out_q.put(msg)
+        await self.out_q.put(msg)
 
     async def start(self) -> None:
         self.log("PROCESSOR START")
