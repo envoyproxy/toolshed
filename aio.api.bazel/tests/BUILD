@@ -1,6 +1,6 @@
 
 pytooling_tests(
-    "aio.api.github",
+    "aio.api.bazel",
     dependencies=[
         "//deps:abstracts",
         "//deps:aio.core",
