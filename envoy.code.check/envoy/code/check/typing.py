@@ -17,6 +17,7 @@ class BaseExtensionMetadataDict(TypedDict):
 
 class ExtensionMetadataDict(BaseExtensionMetadataDict, total=False):
     undocumented: bool
+    type_urls: List[str]
 
 
 ExtensionsMetadataDict = Dict[str, ExtensionMetadataDict]
