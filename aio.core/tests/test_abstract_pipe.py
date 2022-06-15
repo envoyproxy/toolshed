@@ -4,9 +4,12 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+import abstracts
+
 from aio.core import pipe
 
 
+@abstracts.implementer(pipe.IProcessProtocol)
 class DummyProcessProtocol(pipe.AProcessProtocol):
     _do_process = False
 
