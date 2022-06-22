@@ -6,6 +6,7 @@ import json
 import math
 import os
 import pathlib
+import re
 from functools import cached_property
 from typing import Optional, Tuple, Type
 
@@ -26,6 +27,7 @@ NO_GITHUB_TOKEN_ERROR_MSG = (
     "No Github access token supplied "
     "via environment variable `GITHUB_TOKEN` "
     "or argument `--github_token`")
+NO_ISSUE_DEPENDENCIES = r"com_google_protobuf_protoc_[a-zA-Z0-9_]+$"
 
 
 class ADependencyChecker(
@@ -238,6 +240,22 @@ class ADependencyChecker(
             dep: "abstract.ADependency") -> None:
         """Check issues for dependency."""
         issue = (await self.issues["releases"].issues).get(dep.id)
+
+        # TODO: move the exclusion logic to tracker
+        if self._no_dep_issues.match(dep.id):
+            if issue:
+                # There is an open issue, but the dep shoudl be ignored.
+                self.warn(
+                    self.active_check,
+                    [f"Incorrect issue: {dep.id} #{issue.number}"])
+                if self.fix:
+                    await self._dep_release_issue_close_stale(issue, dep)
+            else:
+                # No issue required
+                self.log.info(
+                    f"Ignored by depdendency issue tracker: {dep.id}")
+            return
+
         if not (newer_release := await dep.newer_release):
             if issue:
                 # There is an open issue, but the dep is already
@@ -417,6 +435,10 @@ class ADependencyChecker(
                 d.recent_commits))
         async for dep in preloader:
             self.log.debug(f"Preloaded release data: {dep.id}")
+
+    @cached_property
+    def _no_dep_issues(self):
+        return re.compile(NO_ISSUE_DEPENDENCIES)
 
     async def _dep_release_issue_close_stale(
             self,
