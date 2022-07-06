@@ -68,6 +68,18 @@ def test_sphinx_runner_build_sha(patches, build_sha):
     assert "build_sha" not in runner.__dict__
 
 
+def test_sphinx_runner_build_target(patches):
+    runner = DummySphinxRunner()
+    patched = patches(
+        ("SphinxRunner.args", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+
+    with patched as (m_args, ):
+        assert runner.build_target == m_args.return_value.build_target
+
+    assert "build_target" not in runner.__dict__
+
+
 def test_sphinx_runner_colors(patches):
     runner = DummySphinxRunner()
     patched = patches(
@@ -260,6 +272,18 @@ def test_sphinx_runner_intersphinx_mapping(patches, versions_exists):
         assert not m_utils.from_yaml.called
 
 
+def test_sphinx_runner_jobs(patches):
+    runner = DummySphinxRunner()
+    patched = patches(
+        ("SphinxRunner.args", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+
+    with patched as (m_args, ):
+        assert runner.jobs == m_args.return_value.jobs
+
+    assert "jobs" not in runner.__dict__
+
+
 def test_sphinx_runner_output_path(patches):
     runner = DummySphinxRunner()
     patched = patches(
@@ -367,7 +391,7 @@ def test_sphinx_runner_rst_tar(patches):
     assert (
         m_plib.Path.call_args
         == [(m_args.return_value.rst_tar, ), {}])
-    assert "rst_tar" not in runner.__dict__
+    assert "rst_tar" in runner.__dict__
 
 
 @pytest.mark.parametrize("verbosity", [None, "", "info", "warn", "OTHER"])
@@ -375,6 +399,8 @@ def test_sphinx_runner_sphinx_args(patches, verbosity):
     runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.build_target", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.jobs", dict(new_callable=PropertyMock)),
         ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
         ("SphinxRunner.rst_dir", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -383,17 +409,35 @@ def test_sphinx_runner_sphinx_args(patches, verbosity):
         if verbosity == "info"
         else ["-q"])
 
-    with patched as (m_args, m_html, m_rst):
+    with patched as (m_args, m_target, m_jobs, m_html, m_rst):
         m_args.return_value.verbosity = verbosity
         assert (
             runner.sphinx_args
             == sphinx_args + [
-                '-W', "-j", "auto",
-                '--keep-going', '--color', '-b', 'html',
+                '-W', "-j", m_jobs.return_value,
+                '--keep-going', '--color', '-b', m_target.return_value,
                 str(m_rst.return_value),
                 str(m_html.return_value)])
 
     assert "sphinx_args" not in runner.__dict__
+
+
+@pytest.mark.parametrize("gz", [True, False])
+def test_sphinx_runner_tarmode(patches, gz):
+    runner = DummySphinxRunner()
+    patched = patches(
+        ("SphinxRunner.output_path", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+
+    with patched as (m_path, ):
+        m_path.return_value.name.endswith.return_value = gz
+        assert (
+            runner.tarmode
+            == ("w:gz"
+                if gz
+                else "w"))
+
+    assert "tarmode" not in runner.__dict__
 
 
 @pytest.mark.parametrize("validator_path", ["", None, "VALIDATOR"])
@@ -532,7 +576,9 @@ def test_sphinx_runner_add_arguments(patches):
     assert (
         parser.add_argument.call_args_list
         == [[('--build_sha',), {}],
+            [("--build_target", ), dict(default="html")],
             [('--docs_tag',), {}],
+            [("-j", "--jobs", ), dict(default="auto")],
             [('--version_file',), {}],
             [('--validator_path',), {}],
             [('--descriptor_path',), {}],
@@ -551,11 +597,13 @@ def test_sphinx_runner_add_arguments(patches):
 def test_sphinx_runner_build_html(patches, fails):
     runner = DummySphinxRunner()
     patched = patches(
+        "debug",
         "sphinx_build",
+        ("SphinxRunner.jobs", dict(new_callable=PropertyMock)),
         ("SphinxRunner.sphinx_args", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_sphinx, m_args):
+    with patched as (m_debug, m_sphinx, m_jobs, m_args):
         m_sphinx.side_effect = lambda s: fails
         e = None
         if fails:
@@ -564,6 +612,9 @@ def test_sphinx_runner_build_html(patches, fails):
         else:
             runner.build_html()
 
+    assert (
+        m_debug.call_args
+        == [(m_jobs.return_value,), {}])
     assert (
         m_sphinx.call_args
         == [(m_args.return_value,), {}])
@@ -690,9 +741,10 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
         ("SphinxRunner.log", dict(new_callable=PropertyMock)),
         ("SphinxRunner.output_path", dict(new_callable=PropertyMock)),
         ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.tarmode", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_tar, m_utils, m_shutil, m_log, m_out, m_html):
+    with patched as (m_tar, m_utils, m_shutil, m_log, m_out, m_html, m_mode):
         m_utils.is_tarlike.return_value = tarlike
         m_out.return_value.exists.return_value = exists
         m_out.return_value.is_file.return_value = is_file
@@ -737,7 +789,7 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
     assert not m_shutil.copytree.called
     assert (
         m_tar.open.call_args
-        == [(m_out.return_value, 'w'), {}])
+        == [(m_out.return_value, m_mode.return_value), {}])
     assert (
         m_tar.open.return_value.__enter__.return_value.add.call_args
         == [(m_html.return_value,), {'arcname': '.'}])

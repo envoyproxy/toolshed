@@ -1,4 +1,5 @@
 import argparse
+import contextlib
 import os
 import pathlib
 import platform
@@ -6,6 +7,7 @@ import re
 import shutil
 import sys
 import tarfile
+import time
 from functools import cached_property
 from typing import Dict, List, Optional, TypedDict
 
@@ -18,6 +20,20 @@ from aio.run import runner
 from envoy.base import utils
 
 from .exceptions import SphinxBuildError, SphinxEnvError
+
+
+# TODO: remove this once build perf work is complete
+@contextlib.contextmanager
+def debug(jobs):
+    total_cores = os.cpu_count()
+    used_cores = total_cores if jobs == "auto" else jobs
+    start = time.time()
+    try:
+        yield
+    finally:
+        print(
+            f"Sphinx ran ({used_cores}/{total_cores} cores) "
+            f"in {time.time() - start}s")
 
 
 class BaseConfigDict(TypedDict):
@@ -53,6 +69,11 @@ class SphinxRunner(runner.Runner):
     def build_sha(self) -> str:
         """Returns either a provided build_sha or a default."""
         return self.args.build_sha or self._build_sha
+
+    @property
+    def build_target(self) -> str:
+        """Sphinx build target - `html` by default"""
+        return self.args.build_target
 
     @cached_property
     def colors(self) -> dict:
@@ -132,6 +153,11 @@ class SphinxRunner(runner.Runner):
             else {})
 
     @property
+    def jobs(self) -> str:
+        """Number of parallel jobs to run with Sphinx, defaults to `auto`."""
+        return self.args.jobs
+
+    @property
     def output_path(self) -> pathlib.Path:
         """Path to tar file or directory for saving generated html docs."""
         return pathlib.Path(self.args.output_path)
@@ -162,7 +188,7 @@ class SphinxRunner(runner.Runner):
             utils.extract(rst_dir, self.rst_tar)
         return rst_dir
 
-    @property
+    @cached_property
     def rst_tar(self) -> pathlib.Path:
         """Path to the rst tarball."""
         return pathlib.Path(self.args.rst_tar)
@@ -176,11 +202,19 @@ class SphinxRunner(runner.Runner):
             else ["-q"])
         return sphinx_args + [
             "-W",
-            "-j", "auto",
+            "-j", self.jobs,
             "--keep-going",
             "--color",
-            "-b", "html",
+            "-b", self.build_target,
             str(self.rst_dir), str(self.html_dir)]
+
+    @property
+    def tarmode(self) -> str:
+        """Mode to write tarball in - eg `w` or `w:gz`."""
+        return (
+            "w:gz"
+            if self.output_path.name.endswith(".gz")
+            else "w")
 
     @property
     def validate_fragments(self) -> bool:
@@ -225,7 +259,9 @@ class SphinxRunner(runner.Runner):
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
         parser.add_argument("--build_sha")
+        parser.add_argument("--build_target", default="html")
         parser.add_argument("--docs_tag")
+        parser.add_argument("-j", "--jobs", default="auto")
         parser.add_argument("--version_file")
         parser.add_argument("--validator_path")
         parser.add_argument("--descriptor_path")
@@ -238,8 +274,9 @@ class SphinxRunner(runner.Runner):
         parser.add_argument("output_path")
 
     def build_html(self) -> None:
-        if sphinx_build(self.sphinx_args):
-            raise SphinxBuildError("BUILD FAILED")
+        with debug(self.jobs):
+            if sphinx_build(self.sphinx_args):
+                raise SphinxBuildError("BUILD FAILED")
 
     def build_summary(self) -> None:
         print()
@@ -283,7 +320,7 @@ class SphinxRunner(runner.Runner):
         if not utils.is_tarlike(self.output_path):
             shutil.copytree(self.html_dir, self.output_path)
             return
-        with tarfile.open(self.output_path, "w") as tar:
+        with tarfile.open(self.output_path, self.tarmode) as tar:
             tar.add(self.html_dir, arcname=".")
 
     @runner.cleansup
