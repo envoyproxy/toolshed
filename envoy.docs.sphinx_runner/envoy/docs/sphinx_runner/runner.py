@@ -239,6 +239,7 @@ class SphinxRunner(runner.Runner):
     @cached_property
     def version_number(self) -> str:
         """Semantic version."""
+        # TODO: Use `packaging.version.Version`
         return (
             self.args.version
             if self.args.version
@@ -301,9 +302,12 @@ class SphinxRunner(runner.Runner):
             raise SphinxEnvError(
                 "Given git tag does not match the VERSION file content:"
                 f"{self.docs_tag} vs v{self.version_number}")
+        minor_version = ".".join(self.docs_tag.split(".")[:-1])
         # this should probs only check the first line
         version_current = self.rst_dir.joinpath(
-            "version_history", "current.rst").read_text()
+            "version_history",
+            f"{minor_version}",
+            f"{self.docs_tag}.rst").read_text()
         if self.version_number not in version_current:
             raise SphinxEnvError(
                 f"Git tag ({self.version_number}) not found in "

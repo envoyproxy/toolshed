@@ -665,8 +665,8 @@ def test_sphinx_runner_build_summary(patches):
 
 @pytest.mark.parametrize("py_compat", [True, False])
 @pytest.mark.parametrize("release_level", ["pre-release", "tagged"])
-@pytest.mark.parametrize("version_number", ["1.17", "1.23", "1.43"])
-@pytest.mark.parametrize("docs_tag", ["v1.17", "v1.23", "v1.73"])
+@pytest.mark.parametrize("version_number", ["1.17.0", "1.23.1", "1.43.7"])
+@pytest.mark.parametrize("docs_tag", ["v1.17.0", "v1.23.1", "v1.73.3"])
 @pytest.mark.parametrize(
     "current", ["XXX v1.17 ZZZ", "AAA v1.23 VVV", "BBB v1.73 EEE"])
 def test_sphinx_runner_check_env(
@@ -718,9 +718,10 @@ def test_sphinx_runner_check_env(
                 f"{docs_tag} vs v{version_number}", ))
         return
 
+    minor_version = ".".join(docs_tag.split(".")[:-1])
     assert (
         m_rst.return_value.joinpath.call_args
-        == [("version_history", "current.rst"), {}])
+        == [("version_history", minor_version, f"{docs_tag}.rst"), {}])
 
     if version_number not in current:
         assert (
