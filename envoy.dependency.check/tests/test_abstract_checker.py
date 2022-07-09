@@ -54,7 +54,6 @@ def test_checker_constructor():
         == ("cves",
             "release_dates",
             "release_issues",
-            "release_sha",
             "releases"))
 
     iface_props = [
