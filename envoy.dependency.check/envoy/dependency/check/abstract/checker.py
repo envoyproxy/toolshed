@@ -39,7 +39,6 @@ class ADependencyChecker(
         "cves",
         "release_dates",
         "release_issues",
-        "release_sha",
         "releases")
 
     @property
