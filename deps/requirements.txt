@@ -6,7 +6,6 @@ aio.core>=0.8.9
 aio.run.checker>=0.5.5
 aio.run.runner>=0.3.3
 aiodocker
-aiofiles
 aiohttp>=3.8.1
 colorama
 coloredlogs

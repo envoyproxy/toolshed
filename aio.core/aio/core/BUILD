@@ -3,9 +3,6 @@ pytooling_library(
     "aio.core",
     dependencies=[
         "//deps:abstracts",
-        "//deps:aiofiles",
-        "//deps:aiohttp",
-        "//deps:orjson",
         "//deps:trycast",
     ],
     sources=[

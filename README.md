@@ -74,19 +74,14 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.8.10.dev0
+version: 0.9.0
 
 pypi: https://pypi.org/project/aio.core
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aiofiles](https://pypi.org/project/aiofiles)
-- [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
-- [multidict](https://pypi.org/project/multidict) >=6.0.2
-- [orjson](https://pypi.org/project/orjson)
 - [trycast](https://pypi.org/project/trycast) >=0.7.3
-- [yarl](https://pypi.org/project/yarl) >=1.7.2
 
 ---
 
