@@ -18,7 +18,7 @@ envoy.distribution.repo>=0.0.5
 envoy.distribution.verify>=0.0.8
 envoy.docker.utils>=0.0.2
 envoy.github.abstract>=0.0.21
-envoy.github.release>=0.0.11
+envoy.github.release>=0.0.14
 envoy.gpg.identity>=0.1.0
 envoy.gpg.sign>=0.1.0
 flake8
