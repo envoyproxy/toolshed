@@ -44,6 +44,7 @@ config = "mypy.ini"
 extra_requirements = [
      "mypy-abstracts"]
 extra_type_stubs = [
+     "types-aiofiles",
      "types-docutils",
      "types-frozendict",
      "types-protobuf",

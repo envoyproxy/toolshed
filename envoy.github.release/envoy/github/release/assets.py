@@ -7,13 +7,12 @@ import aiohttp
 
 import abstracts
 
-from aio.core import stream
-
 from envoy.base import utils
 
 from envoy.github.abstract import (
     AGithubReleaseAssetsFetcher, AGithubReleaseAssetsPusher,
     GithubReleaseError)
+from envoy.github.release import stream
 
 
 @abstracts.implementer(AGithubReleaseAssetsFetcher)

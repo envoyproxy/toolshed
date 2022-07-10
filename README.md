@@ -74,7 +74,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.9.1
+version: 0.9.2.dev0
 
 pypi: https://pypi.org/project/aio.core
 
@@ -333,11 +333,12 @@ pypi: https://pypi.org/project/envoy.github.release
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.13
-- [aio.core](https://pypi.org/project/aio.core) >=0.3.0
-- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
+- [aiofiles](https://pypi.org/project/aiofiles)
 - [aiohttp](https://pypi.org/project/aiohttp)
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.21
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.6
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.22
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [packaging](https://pypi.org/project/packaging)
 - [verboselogs](https://pypi.org/project/verboselogs)
