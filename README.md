@@ -326,7 +326,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 
 #### [envoy.github.release](envoy.github.release)
 
-version: 0.0.14
+version: 0.0.15.dev0
 
 pypi: https://pypi.org/project/envoy.github.release
 
