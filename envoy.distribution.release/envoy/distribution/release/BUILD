@@ -7,7 +7,9 @@ pytooling_library(
         "//deps:aio.run.runner",
         "//deps:envoy.base.utils",
         "//deps:envoy.github.abstract",
-        "//deps:envoy.github.release",
+        # TEMP
+        # "//deps:envoy.github.release",
+        "//envoy.github.release/envoy/github/release/__init__.py",
     ],
     tags=["abstract-types"],
 )

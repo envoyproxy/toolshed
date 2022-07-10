@@ -5,7 +5,8 @@ pytooling_tests(
         "//deps:abstracts",
         "//deps:aio.core",
         "//deps:envoy.github.abstract",
-        "//deps:envoy.github.release",
-        "//deps:pytest-asyncio",
+        # TEMP
+        # "//deps:envoy.github.release",
+        "//envoy.github.release/envoy/github/release/__init__.py",
     ],
 )
