@@ -221,7 +221,7 @@ pypi: https://pypi.org/project/envoy.distribution.distrotest
 
 #### [envoy.distribution.release](envoy.distribution.release)
 
-version: 0.0.8.dev0
+version: 0.0.8
 
 pypi: https://pypi.org/project/envoy.distribution.release
 
