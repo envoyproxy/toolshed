@@ -326,6 +326,8 @@ def test_cves_nist_downloader(patches):
          dict(new_callable=PropertyMock)),
         ("ADependencyCVEs.pool",
          dict(new_callable=PropertyMock)),
+        ("ADependencyCVEs.preloaded_cve_data",
+         dict(new_callable=PropertyMock)),
         ("ADependencyCVEs.session",
          dict(new_callable=PropertyMock)),
         ("ADependencyCVEs.scan_year_start",
@@ -335,7 +337,7 @@ def test_cves_nist_downloader(patches):
         prefix="envoy.dependency.check.abstract.cves.cves")
 
     with patched as patchy:
-        (m_fields, m_ignored, m_class, m_pool,
+        (m_fields, m_ignored, m_class, m_pool, m_pre,
          m_session, m_start, m_tracked) = patchy
         assert cves.nist_downloader == m_class.return_value.return_value
 
@@ -347,6 +349,7 @@ def test_cves_nist_downloader(patches):
                 ignored_cves=m_ignored.return_value,
                 since=m_start.return_value,
                 pool=m_pool.return_value,
+                cve_data=m_pre.return_value,
                 session=m_session.return_value)])
     assert "nist_downloader" in cves.__dict__
 

@@ -1,8 +1,10 @@
 
-import asyncio
 import abc
+import asyncio
+import io
 import logging
 import pathlib
+import tarfile
 from collections import defaultdict
 from concurrent import futures
 from functools import cached_property
@@ -33,11 +35,13 @@ class ADependencyCVEs(event.AReactive, metaclass=abstracts.Abstraction):
             self,
             dependencies: Tuple["abstract.ADependency", ...],
             config_path: Optional[str] = None,
+            preloaded_cve_data: Optional[str] = None,
             session: Optional[aiohttp.ClientSession] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None,
             pool: Optional[futures.Executor] = None) -> None:
         self.dependencies = dependencies
         self._config_path = config_path
+        self._preloaded_cve_data = preloaded_cve_data
         self._session = session
         self._loop = loop
         self._pool = pool
@@ -128,6 +132,7 @@ class ADependencyCVEs(event.AReactive, metaclass=abstracts.Abstraction):
             self.tracked_cpes,
             cve_fields=self.cve_fields,
             ignored_cves=self.ignored_cves,
+            cve_data=self.preloaded_cve_data,
             since=self.scan_year_start,
             pool=self.pool,
             session=self.session)
@@ -137,6 +142,10 @@ class ADependencyCVEs(event.AReactive, metaclass=abstracts.Abstraction):
     def nist_downloader_class(self) -> Type["nist.abstract.ANISTDownloader"]:
         """NIST downloader class."""
         raise NotImplementedError
+
+    @property
+    def preloaded_cve_data(self) -> Optional[str]:
+        return self._preloaded_cve_data
 
     @property
     def scan_year_start(self) -> Optional[int]:
@@ -177,3 +186,12 @@ class ADependencyCVEs(event.AReactive, metaclass=abstracts.Abstraction):
         cpe = self.cpe_class.from_string(dep.cpe).vendor_normalized
         for cpe_cve in sorted(cpe_revmap.get(cpe, [])):
             yield cves[cpe_cve]
+
+    async def download_cves(self, path: str) -> None:
+        with tarfile.open(path, "w") as tar:
+            for url in self.nist_downloader.urls:
+                response = await self.nist_downloader.download(url)
+                data = io.BytesIO(await response.read())
+                info = tarfile.TarInfo(name=url.split("/")[-1])
+                info.size = len(data.getvalue())
+                tar.addfile(info, fileobj=data)

@@ -58,6 +58,7 @@ class ADependencyChecker(
         return self.cves_class(
             self.dependencies,
             config_path=self.cve_config,
+            preloaded_cve_data=self.preloaded_cve_data,
             session=self.session,
             loop=self.loop,
             pool=self.pool)
@@ -108,6 +109,10 @@ class ADependencyChecker(
             disabled["releases"] = NO_GITHUB_TOKEN_ERROR_MSG
         return disabled
 
+    @property
+    def download_cves(self) -> str:
+        return self.args.download_cves
+
     @cached_property
     def github(self) -> _github.IGithubAPI:
         """Github API."""
@@ -144,6 +149,10 @@ class ADependencyChecker(
         raise NotImplementedError
 
     @property
+    def preloaded_cve_data(self) -> str:
+        return self.args.cve_data
+
+    @property
     def repository_locations_path(self) -> pathlib.Path:
         return pathlib.Path(self.args.repository_locations)
 
@@ -162,6 +171,14 @@ class ADependencyChecker(
         parser.add_argument('--github_token')
         parser.add_argument('--repository_locations')
         parser.add_argument('--cve_config')
+        parser.add_argument('--cve_data')
+        parser.add_argument('--download_cves')
+
+    async def run(self) -> None:
+        # TODO: figure out a better way for preloading data and saving it
+        if self.download_cves:
+            return await self.cves.download_cves(self.download_cves)
+        await super().run()
 
     async def check_cves(self) -> None:
         """Scan for CVEs in a parsed NIST CVE database."""

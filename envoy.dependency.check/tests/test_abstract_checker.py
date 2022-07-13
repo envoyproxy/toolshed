@@ -132,11 +132,15 @@ def test_checker_cves(patches):
          dict(new_callable=PropertyMock)),
         ("ADependencyChecker.pool",
          dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.preloaded_cve_data",
+         dict(new_callable=PropertyMock)),
         ("ADependencyChecker.session",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
 
-    with patched as (m_deps, m_config, m_class, m_loop, m_pool, m_session):
+    with patched as patchy:
+        (m_deps, m_config, m_class,
+         m_loop, m_pool, m_pre, m_session) = patchy
         assert checker.cves == m_class.return_value.return_value
 
     assert (
@@ -145,6 +149,7 @@ def test_checker_cves(patches):
             dict(config_path=m_config.return_value,
                  loop=m_loop.return_value,
                  pool=m_pool.return_value,
+                 preloaded_cve_data=m_pre.return_value,
                  session=m_session.return_value)])
     assert "cves" in checker.__dict__
 
@@ -447,7 +452,9 @@ def test_checker_add_arguments(patches):
         parser.add_argument.call_args_list
         == [[('--github_token',), {}],
             [('--repository_locations',), {}],
-            [('--cve_config',), {}]])
+            [('--cve_config',), {}],
+            [('--cve_data',), {}],
+            [('--download_cves',), {}]])
 
 
 async def test_checker_check_cves(iters, patches):
