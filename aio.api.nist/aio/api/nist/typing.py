@@ -1,13 +1,13 @@
 from datetime import date
 from typing import (
     Any, Coroutine, Dict, Generator, List, Optional, Set,
-    Tuple, TypedDict)
+    Tuple, TypedDict, Union)
 
 from packaging import version
 
 import aiohttp
 
-from aio.api.nist import abstract, typing
+from aio.api.nist import abstract, interface, typing
 
 
 # NDIST CVE data format
@@ -66,6 +66,11 @@ CVEDataTuple = Tuple[CVEDict, CPERevmapDict]
 TrackedCPEDict = Dict[str, TrackedCPEFilterDict]
 TrackedCPEMatchingDict = Dict[str, "abstract.ACVEMatcher"]
 DownloadGenerator = Generator[
-    Coroutine[Any, Any, aiohttp.ClientResponse],
+    Coroutine[
+        Any,
+        Any,
+        Union[
+            aiohttp.ClientResponse,
+            "interface.IPredownload"]],
     str,
     None]

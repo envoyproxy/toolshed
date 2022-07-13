@@ -1,6 +1,6 @@
 """aio.api.nist."""
 
-from . import abstract, exceptions, typing
+from . import abstract, exceptions, interface, typing
 from .abstract import (
     ACPE,
     ACVE,
@@ -24,6 +24,7 @@ __all__ = (
     "CPE",
     "CVE",
     "CVEMatcher",
+    "interface",
     "NISTDownloader",
     "NISTParser",
     "exceptions",
