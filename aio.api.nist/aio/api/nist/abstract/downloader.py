@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import tarfile
 from concurrent import futures
 from datetime import datetime
 from functools import cached_property
@@ -15,7 +16,7 @@ from aio.core import event
 from aio.core.functional import async_property, QueryDict
 from aio.core.tasks import concurrent
 
-from aio.api.nist import abstract, typing
+from aio.api.nist import abstract, interface, typing
 
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,14 @@ NIST_URL_TPL = (
 SCAN_FROM_YEAR = 2018
 
 
+@abstracts.implementer(interface.IPredownload)
+class Predownload:
+    url = ""
+
+    def __init__(self, url):
+        self.url = f"[CACHED] {url}"
+
+
 @abstracts.implementer(event.IExecutive)
 class ANISTDownloader(event.AExecutive, metaclass=abstracts.Abstraction):
 
@@ -32,6 +41,7 @@ class ANISTDownloader(event.AExecutive, metaclass=abstracts.Abstraction):
             self,
             tracked_cpes: "typing.TrackedCPEDict",
             cve_fields: Optional[QueryDict] = None,
+            cve_data: Optional[str] = None,
             ignored_cves: Optional[Set] = None,
             since: Optional[int] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None,
@@ -39,6 +49,7 @@ class ANISTDownloader(event.AExecutive, metaclass=abstracts.Abstraction):
             session: Optional[aiohttp.ClientSession] = None) -> None:
         self._since = since
         self.cve_fields = cve_fields
+        self.cve_data = cve_data
         self.ignored_cves = ignored_cves
         self.tracked_cpes = tracked_cpes
         self._session = session
@@ -62,6 +73,16 @@ class ANISTDownloader(event.AExecutive, metaclass=abstracts.Abstraction):
     @property
     def downloaders(self) -> "typing.DownloadGenerator":
         """Download co-routines for NIST data."""
+        if self.cve_data:
+            with tarfile.open(self.cve_data) as tar:
+                for url in self.urls:
+                    preloaded = tar.extractfile(url.split("/")[-1])
+                    yield self.download_and_parse(
+                        url,
+                        (preloaded.read()
+                         if preloaded
+                         else None))
+            return
         for url in self.urls:
             yield self.download_and_parse(url)
 
@@ -129,13 +150,26 @@ class ANISTDownloader(event.AExecutive, metaclass=abstracts.Abstraction):
         self.cves.update(cves)
         self.cpe_revmap.update(cpe_revmap)
 
-    async def download_and_parse(self, url: str) -> aiohttp.ClientResponse:
-        """Async download and parsing of CVE data."""
+    async def download(self, url: str) -> aiohttp.ClientResponse:
+        """Async download of CVE data."""
         download = await self.session.get(url)
         logger.debug(f"Downloading CVE data: {url}")
-        self.add(*await self.parse(url, await download.read()))
-        logger.debug(f"CVE data saved: {url}")
         return download
+
+    async def download_and_parse(
+            self,
+            url: str,
+            data: Optional[bytes] = None) -> (
+                aiohttp.ClientResponse
+                | interface.IPredownload):
+        """Async download and parsing of CVE data."""
+        download = None
+        if not data:
+            download = await self.download(url)
+            data = await download.read()
+        self.add(*await self.parse(url, data))
+        logger.debug(f"CVE data saved: {url}")
+        return download or Predownload(url)
 
     async def parse(self, url: str, data: bytes) -> "typing.CVEDataTuple":
         """Parse incoming data in executor."""

@@ -15,6 +15,7 @@ pytooling_library(
         "abstract/matcher.py",
         "__init__.py",
         "exceptions.py",
+        "interface.py",
         "nist.py",
         "typing.py",
     ],

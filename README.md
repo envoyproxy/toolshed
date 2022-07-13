@@ -56,14 +56,14 @@ pypi: https://pypi.org/project/aio.api.github
 
 #### [aio.api.nist](aio.api.nist)
 
-version: 0.0.3.dev0
+version: 0.0.3
 
 pypi: https://pypi.org/project/aio.api.nist
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.6
+- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [multidict](https://pypi.org/project/multidict) >=6.0.2
 - [packaging](https://pypi.org/project/packaging)
