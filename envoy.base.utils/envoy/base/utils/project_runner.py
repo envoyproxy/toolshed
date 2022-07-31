@@ -7,6 +7,7 @@ from typing import Optional
 import aiohttp
 from frozendict import frozendict
 
+from aio.api.github import exceptions as github_exceptions
 from aio.run import runner
 
 from envoy.base import utils
@@ -19,7 +20,8 @@ NOTIFY_MSGS: frozendict = frozendict(
         "Release created ({change[release][version]}): "
         "{change[release][date]}"),
     dev="Repo set to dev ({change[dev][version]})",
-    sync="Repo synced")
+    sync="Repo synced",
+    publish="Repo published")
 COMMIT_MSGS: frozendict = frozendict(
     release="repo: Release `{change[release][version]}`",
     dev="repo: Dev `{change[dev][version]}`",
@@ -41,7 +43,9 @@ class ProjectRunner(runner.Runner):
 
     @property
     def nocommit(self) -> bool:
-        return self.args.nocommit
+        return (
+            self.args.command == "publish"
+            or self.args.nocommit)
 
     @property
     def nosync(self) -> bool:
@@ -69,7 +73,9 @@ class ProjectRunner(runner.Runner):
 
     def add_arguments(self, parser) -> None:
         super().add_arguments(parser)
-        parser.add_argument("command", choices=["sync", "release", "dev"])
+        parser.add_argument(
+            "command",
+            choices=["sync", "release", "dev", "publish"])
         parser.add_argument("path", default=".")
         parser.add_argument("--github_token")
         parser.add_argument("--nosync", action="store_true")
@@ -86,6 +92,8 @@ class ProjectRunner(runner.Runner):
 
     async def handle_action(self) -> typing.ProjectChangeDict:
         change: typing.ProjectChangeDict = {}
+        if self.command == "publish":
+            return dict(publish=await self.run_publish())
         if self.command == "dev":
             change["dev"] = await self.run_dev()
         if self.command == "release":
@@ -101,7 +109,11 @@ class ProjectRunner(runner.Runner):
         self.log.notice(NOTIFY_MSGS[self.command].format(change=change))
 
     @runner.cleansup
-    @runner.catches((exceptions.DevError, exceptions.ReleaseError))
+    @runner.catches(
+        (exceptions.DevError,
+         exceptions.ReleaseError,
+         github_exceptions.TagError,
+         github_exceptions.TagExistsError))
     async def run(self) -> None:
         change = await self.handle_action()
         if not self.nocommit:
@@ -113,6 +125,14 @@ class ProjectRunner(runner.Runner):
         self.log.success(f"[version] {change['version']}")
         self.log.success(
             f"[changelog] add: {change['old_version']}")
+        return change
+
+    async def run_publish(self) -> typing.ProjectPublishResultDict:
+        change = await self.project.publish()
+        self.log.success(
+            f"[release] Release ({change['tag_name']}) "
+            f"created from branch: {change['branch']}\n"
+            f"    {change['url']}")
         return change
 
     async def run_release(self) -> typing.ProjectReleaseResultDict:

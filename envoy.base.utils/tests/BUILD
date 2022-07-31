@@ -4,6 +4,7 @@ pytooling_tests(
     dependencies=[
         ":data",
         "//deps:abstracts",
+        "//deps:aio.api.github",
         "//deps:aio.core",
         "//deps:aio.run.runner",
         "//deps:pyyaml",

@@ -89,8 +89,16 @@ class ProjectSyncResultDict(TypedDict):
     inventory: SyncResultDict
 
 
+class ProjectPublishResultDict(TypedDict):
+    branch: str
+    date: str
+    tag_name: str
+    url: str
+
+
 class ProjectChangeDict(TypedDict, total=False):
     dev: ProjectDevResultDict
+    publish: ProjectPublishResultDict
     release: ProjectReleaseResultDict
     sync: ProjectSyncResultDict
 

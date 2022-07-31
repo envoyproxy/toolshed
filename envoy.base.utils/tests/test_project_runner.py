@@ -25,7 +25,7 @@ def test_projectrunner_constructor(iters, patches):
         == [args, kwargs])
 
 
-@pytest.mark.parametrize("prop", ["command", "nocommit", "nosync", "patch"])
+@pytest.mark.parametrize("prop", ["command", "nosync", "patch"])
 def test_projectrunner_arg_props(patches, prop):
     runner = utils.ProjectRunner()
     patched = patches(
@@ -79,6 +79,25 @@ def test_projectrunner_github_token(patches, token):
     assert (
         m_plib.Path.return_value.read_text.return_value.strip.call_args
         == [(), {}])
+
+
+@pytest.mark.parametrize("command", [None, "COMMAND", "publish"])
+@pytest.mark.parametrize("nocommit", [True, False])
+def test_projectrunner_nocommit(patches, command, nocommit):
+    runner = utils.ProjectRunner()
+    patched = patches(
+        ("ProjectRunner.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_args, ):
+        m_args.return_value.command = command
+        m_args.return_value.nocommit = nocommit
+        assert (
+            runner.nocommit
+            == (command == "publish" or nocommit))
+
+    assert "nocommit" not in runner.__dict__
 
 
 def test_projectrunner_path(patches):
@@ -159,7 +178,7 @@ def test_projecrunner_add_arguments(patches):
     assert (
         parser.add_argument.call_args_list
         == [[('command',),
-             {'choices': ['sync', 'release', 'dev']}],
+             {'choices': ['sync', 'release', 'dev', 'publish']}],
             [('path',),
              {'default': '.'}],
             [('--github_token',), {}],
@@ -205,7 +224,7 @@ async def test_projectrunner_commit(iters, patches):
         == [(change, ), {}])
 
 
-@pytest.mark.parametrize("action", ["dev", "release", "sync"])
+@pytest.mark.parametrize("action", ["dev", "release", "sync", "publish"])
 @pytest.mark.parametrize("nosync", [True, False])
 async def test_projectrunner_handle_action(patches, action, nosync):
     runner = utils.ProjectRunner()
@@ -215,15 +234,23 @@ async def test_projectrunner_handle_action(patches, action, nosync):
         ("ProjectRunner.nosync",
          dict(new_callable=PropertyMock)),
         "ProjectRunner.run_dev",
+        "ProjectRunner.run_publish",
         "ProjectRunner.run_release",
         "ProjectRunner.run_sync",
         prefix="envoy.base.utils.project_runner")
 
-    with patched as (m_command, m_nosync, m_dev, m_release, m_sync):
+    with patched as (m_command, m_nosync, m_dev, m_publish, m_release, m_sync):
         m_command.return_value = action
         m_nosync.return_value = nosync
         result = await runner.handle_action()
 
+    if action == "publish":
+        assert (
+            m_publish.call_args
+            == [(), {}])
+        assert result == dict(publish=m_publish.return_value)
+        assert not m_sync.called
+        return
     if action == "dev":
         assert (
             m_dev.call_args
@@ -292,6 +319,40 @@ def test_projectrunner_notify_complete(patches):
     assert (
         m_msgs.__getitem__.return_value.format.call_args
         == [(), dict(change=change)])
+
+
+async def test_projectrunner_publish(patches):
+    runner = utils.ProjectRunner()
+    patched = patches(
+        ("ProjectRunner.log",
+         dict(new_callable=PropertyMock)),
+        ("ProjectRunner.project",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.project_runner")
+    publish = AsyncMock()
+
+    with patched as (m_log, m_project, ):
+        m_project.return_value.publish = publish
+        assert (
+            await runner.run_publish()
+            == publish.return_value)
+
+    change = publish.return_value
+    log_message = (
+        f"[release] Release ({change.__getitem__.return_value}) "
+        f"created from branch: {change.__getitem__.return_value}\n"
+        f"    {change.__getitem__.return_value}")
+    assert (
+        m_log.return_value.success.call_args
+        == [(log_message, ), {}])
+    assert (
+        change.__getitem__.call_args_list
+        == [[("tag_name", ), {}],
+            [("branch", ), {}],
+            [("url", ), {}]])
+    assert (
+        publish.call_args
+        == [(), {}])
 
 
 @pytest.mark.parametrize("nocommit", [True, False])
