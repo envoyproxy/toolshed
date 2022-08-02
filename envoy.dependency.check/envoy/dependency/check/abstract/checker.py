@@ -174,12 +174,6 @@ class ADependencyChecker(
         parser.add_argument('--cve_data')
         parser.add_argument('--download_cves')
 
-    async def run(self) -> None:
-        # TODO: figure out a better way for preloading data and saving it
-        if self.download_cves:
-            return await self.cves.download_cves(self.download_cves)
-        await super().run()
-
     async def check_cves(self) -> None:
         """Scan for CVEs in a parsed NIST CVE database."""
         for dep in self.dependencies:
@@ -451,6 +445,12 @@ class ADependencyChecker(
                 d.recent_commits))
         async for dep in preloader:
             self.log.debug(f"Preloaded release data: {dep.id}")
+
+    async def run(self) -> Optional[int]:
+        # TODO: figure out a better way for preloading data and saving it
+        if self.download_cves:
+            return await self.cves.download_cves(self.download_cves)
+        return await super().run()
 
     @cached_property
     def _no_dep_issues(self):

@@ -1352,6 +1352,39 @@ async def test_checker_release_issues_missing_dep_check(
         assert not m_succeed.called
 
 
+@pytest.mark.parametrize("download_cves", [True, False])
+async def test_checker_run(patches, download_cves):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        "checker.Checker.run",
+        ("ADependencyChecker.cves",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.download_cves",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+    cves_download = AsyncMock()
+
+    with patched as (m_super, m_cves, m_download):
+        m_download.return_value = download_cves
+        m_cves.return_value.download_cves = cves_download
+        assert (
+            await checker.run()
+            == (m_super.return_value
+                if not download_cves
+                else cves_download.return_value))
+
+    if download_cves:
+        assert not m_super.called
+        assert (
+            cves_download.call_args
+            == [(download_cves, ), {}])
+        return
+    assert not cves_download.called
+    assert (
+        m_super.call_args
+        == [(), {}])
+
+
 async def test_checker__dep_release_issue_close_stale(patches):
     checker = DummyDependencyChecker()
     patched = patches(
