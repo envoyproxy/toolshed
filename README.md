@@ -166,7 +166,7 @@ pypi: https://pypi.org/project/envoy.code.check
 
 #### [envoy.dependency.check](envoy.dependency.check)
 
-version: 0.1.5
+version: 0.1.6.dev0
 
 pypi: https://pypi.org/project/envoy.dependency.check
 
