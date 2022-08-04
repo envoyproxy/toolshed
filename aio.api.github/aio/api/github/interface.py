@@ -158,6 +158,14 @@ class IGithubRepo(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
+    async def create_release(
+            self,
+            branch: str,
+            name: str) -> Dict[str, str | Dict]:
+        """Create a release for this repo."""
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
     async def highest_release(
             self,
             since: Optional[datetime] = None) -> Optional["IGithubRelease"]:
@@ -186,6 +194,11 @@ class IGithubRepo(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     async def tag(self, name: str) -> "IGithubTag":
         """Fetch a tag for this repo."""
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
+    async def tag_exists(self, tag_name: str) -> str:
+        """Check whether a tag already exists."""
         raise NotImplementedError
 
 
