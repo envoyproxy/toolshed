@@ -37,7 +37,7 @@ pypi: https://pypi.org/project/aio.api.bazel
 
 #### [aio.api.github](aio.api.github)
 
-version: 0.1.3
+version: 0.1.4
 
 pypi: https://pypi.org/project/aio.api.github
 
