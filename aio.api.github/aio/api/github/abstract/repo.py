@@ -4,6 +4,8 @@ from datetime import datetime
 from functools import cached_property, partial
 from typing import Any, Dict, Optional, Type
 
+import gidgethub
+
 import abstracts
 
 from aio.api.github import exceptions, interface, utils
@@ -57,6 +59,19 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             query,
             inflate=partial(self.github.commit_class, self))
 
+    async def create_release(
+            self,
+            branch: str,
+            tag_name: str) -> Dict[str, str | Dict]:
+        if await self.tag_exists(tag_name):
+            raise exceptions.TagExistsError(
+                f"Cannot create tag, already exists: {tag_name}")
+        return await self.post(
+            "releases",
+            dict(tag_name=tag_name,
+                 name=tag_name,
+                 target_commitish=branch))
+
     async def getitem(self, query: str) -> Any:
         """Call the `gidgethub.getitem` api for this repo."""
         return await self.github.getitem(self.github_endpoint(query))
@@ -102,8 +117,14 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
     async def patch(self, query: str, data: Optional[Dict] = None) -> Any:
         return await self.github.patch(self.github_endpoint(query), data=data)
 
-    async def post(self, query: str, data: Optional[Dict] = None) -> Any:
-        return await self.github.post(self.github_endpoint(query), data=data)
+    async def post(
+            self,
+            query: str,
+            data: Optional[Dict] = None, **kwargs) -> Any:
+        return await self.github.post(
+            self.github_endpoint(query),
+            data=data,
+            **kwargs)
 
     async def release(self, name: str) -> "interface.IGithubRelease":
         return self.github.release_class(
@@ -123,6 +144,14 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             raise exceptions.TagNotFound(name)
         tag = await self.github.getitem(ref_tag["object"]["url"])
         return self.github.tag_class(self, tag)
+
+    async def tag_exists(self, tag_name: str) -> bool:
+        try:
+            await self.getitem(f"releases/tags/{tag_name}")
+            return True
+        except gidgethub.BadRequest:
+            pass
+        return False
 
     def tags(self) -> "interface.IGithubIterator":
         """Iterate tags for this repo."""

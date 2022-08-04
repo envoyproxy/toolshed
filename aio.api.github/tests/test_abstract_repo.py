@@ -3,6 +3,8 @@ from unittest.mock import AsyncMock, PropertyMock, MagicMock
 
 import pytest
 
+import gidgethub
+
 import abstracts
 
 from aio.api import github as base_github
@@ -163,6 +165,43 @@ def test_abstract_repo_commits(patches, since):
     assert (
         m_partial.call_args
         == [(github.commit_class, repo), {}])
+
+
+@pytest.mark.parametrize("exists", [True, False])
+async def test_abstract_repo_create_release(patches, exists):
+    repo = DummyGithubRepo("GITHUB", "NAME")
+    patched = patches(
+        "AGithubRepo.post",
+        "AGithubRepo.tag_exists",
+        prefix="aio.api.github.abstract.repo")
+
+    with patched as (m_post, m_exists):
+        m_exists.return_value = exists
+        if exists:
+            with pytest.raises(base_github.exceptions.TagExistsError) as e:
+                await repo.create_release("BRANCH", "TAG_NAME")
+        else:
+            assert (
+                await repo.create_release("BRANCH", "TAG_NAME")
+                == m_post.return_value)
+
+    assert (
+        m_exists.call_args
+        == [("TAG_NAME", ), {}])
+
+    if exists:
+        assert (
+            e.value.args[0]
+            == "Cannot create tag, already exists: TAG_NAME")
+        assert not m_post.called
+        return
+    assert (
+        m_post.call_args
+        == [("releases",
+             dict(tag_name="TAG_NAME",
+                  name="TAG_NAME",
+                  target_commitish="BRANCH")),
+            {}])
 
 
 async def test_abstract_repo_getitem(patches):
@@ -377,6 +416,31 @@ async def test_abstract_repo_tag(patches, is_tag):
                   .__getitem__.return_value
                   .__getitem__.call_args)
         == [("url", ), {}])
+
+
+@pytest.mark.parametrize(
+    "raises", [None, gidgethub.BadRequest, Exception])
+async def test_abstract_repo_tag_exists(patches, raises):
+    repo = DummyGithubRepo("GITHUB", "NAME")
+    patched = patches(
+        "AGithubRepo.getitem",
+        prefix="aio.api.github.abstract.repo")
+
+    with patched as (m_getitem, ):
+        if raises:
+            m_getitem.side_effect = raises("BOOM", "PHRASE")
+
+        if raises and raises != gidgethub.BadRequest:
+            with pytest.raises(raises):
+                await repo.tag_exists("TAG_NAME")
+        else:
+            assert (
+                await repo.tag_exists("TAG_NAME")
+                == (True if not raises else False))
+
+    assert (
+        m_getitem.call_args
+        == [("releases/tags/TAG_NAME", ), {}])
 
 
 def test_abstract_repo_tags(patches):
