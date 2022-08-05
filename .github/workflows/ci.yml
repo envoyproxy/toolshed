@@ -61,7 +61,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
         path: ~/.cache/pants/setup
     - name: Run pants (type) check
-      run: "./pants check ::"
+      run: "./pants check $(./pants roots | tr '\n' ',' | sed  's/,/:: /g' -)"
 
   docs:
     runs-on: ubuntu-latest
