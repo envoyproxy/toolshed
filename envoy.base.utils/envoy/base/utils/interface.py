@@ -416,6 +416,11 @@ class IProject(event.IExecutive, metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
+    async def publish(self) -> typing.ProjectPublishResultDict:
+        """Publish a project release."""
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
     async def release(self) -> typing.ProjectReleaseResultDict:
         """Switch the project to "release" mode."""
         raise NotImplementedError

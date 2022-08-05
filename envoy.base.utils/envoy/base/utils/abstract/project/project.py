@@ -18,6 +18,7 @@ from envoy.base.utils import exceptions, interface, typing
 
 
 ENVOY_REPO = "envoyproxy/envoy"
+MAIN_BRANCH = "main"
 VERSION_PATH = "VERSION.txt"
 
 
@@ -105,8 +106,16 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         return self.version.is_devrelease
 
     @property
+    def is_main(self) -> bool:
+        return self.version.micro == 0
+
+    @property
     def is_main_dev(self) -> bool:
-        return self.is_dev and self.version.micro == 0
+        return self.is_dev and self.is_main
+
+    @property
+    def main_branch(self) -> str:
+        return MAIN_BRANCH
 
     @cached_property
     def minor_version(self) -> _version.Version:
@@ -204,6 +213,22 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         return (
             self.version.base_version
             == version.base_version)
+
+    async def publish(self) -> typing.ProjectPublishResultDict:
+        if self.is_dev:
+            raise _github.exceptions.TagError(
+                f"Cannot tag a dev version: {self.version}")
+        branch = (
+            self.main_branch
+            if self.is_main
+            else f"release/v{self.minor_version}")
+        release = await self.repo.create_release(branch, f"v{self.version}")
+        # TODO: add asset upload
+        return dict(
+            branch=release["target_commitish"],
+            date=release["published_at"],
+            tag_name=release["tag_name"],
+            url=release["html_url"])
 
     async def release(self) -> typing.ProjectReleaseResultDict:
         if not self.is_dev:

@@ -6,6 +6,8 @@ import pytest
 
 import abstracts
 
+from aio.api import github as _github
+
 from envoy.base.utils import abstract, exceptions, interface
 
 
@@ -46,6 +48,11 @@ def test_abstract_project_constructor(path):
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(project, prop)
+
+    assert (
+        project.main_branch
+        == abstract.project.project.MAIN_BRANCH)
+    assert "main_branch" not in project.__dict__
 
 
 @pytest.mark.parametrize("main_dev", [True, False])
@@ -243,23 +250,40 @@ def test_abstract_project_is_dev(patches):
     assert "is_dev" not in project.__dict__
 
 
-@pytest.mark.parametrize("is_dev", [True, False])
 @pytest.mark.parametrize("micro", [None, 0, 1, "cabbage"])
-def test_abstract_project_is_main_dev(patches, is_dev, micro):
+def test_abstract_project_is_main(patches, micro):
     project = DummyProject()
     patched = patches(
-        ("AProject.is_dev",
-         dict(new_callable=PropertyMock)),
         ("AProject.version",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.project")
 
-    with patched as (m_dev, m_version):
-        m_dev.return_value = is_dev
+    with patched as (m_version, ):
         m_version.return_value.micro = micro
         assert (
             project.is_main_dev
-            == (is_dev and micro == 0))
+            == (micro == 0))
+
+    assert "is_main" not in project.__dict__
+
+
+@pytest.mark.parametrize("is_dev", [True, False])
+@pytest.mark.parametrize("is_main", [True, False])
+def test_abstract_project_is_main_dev(patches, is_dev, is_main):
+    project = DummyProject()
+    patched = patches(
+        ("AProject.is_dev",
+         dict(new_callable=PropertyMock)),
+        ("AProject.is_main",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.project")
+
+    with patched as (m_dev, m_main):
+        m_dev.return_value = is_dev
+        m_main.return_value = is_main
+        assert (
+            project.is_main_dev
+            == (is_dev and is_main))
 
     assert "is_main_dev" not in project.__dict__
 
@@ -671,6 +695,66 @@ def test_abstract_project_is_current(patches, self_version, other_version):
         assert (
             project.is_current(_other_version)
             == (self_version == other_version))
+
+
+@pytest.mark.parametrize("is_dev", [True, False])
+@pytest.mark.parametrize("is_main", [True, False])
+async def test_abstract_project_publish(patches, is_dev, is_main):
+    project = DummyProject()
+    patched = patches(
+        ("AProject.is_dev",
+         dict(new_callable=PropertyMock)),
+        ("AProject.is_main",
+         dict(new_callable=PropertyMock)),
+        ("AProject.main_branch",
+         dict(new_callable=PropertyMock)),
+        ("AProject.minor_version",
+         dict(new_callable=PropertyMock)),
+        ("AProject.repo",
+         dict(new_callable=PropertyMock)),
+        ("AProject.version",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.project")
+    create_release = AsyncMock()
+
+    with patched as (m_dev, m_main, m_main_branch, m_minor, m_repo, m_version):
+        m_dev.return_value = is_dev
+        m_main.return_value = is_main
+        m_repo.return_value.create_release = create_release
+
+        if is_dev:
+            with pytest.raises(_github.exceptions.TagError) as e:
+                await project.publish()
+        else:
+            release_item = create_release.return_value.__getitem__.return_value
+            assert (
+                await project.publish()
+                == dict(
+                    branch=release_item,
+                    date=release_item,
+                    tag_name=release_item,
+                    url=release_item))
+
+    if is_dev:
+        assert not create_release.called
+        assert not m_main.called
+        assert (
+            e.value.args[0]
+            == f"Cannot tag a dev version: {m_version.return_value}")
+        return
+    branch = (
+        m_main_branch.return_value
+        if is_main
+        else f"release/v{m_minor.return_value}")
+    assert (
+        create_release.call_args
+        == [(branch, f"v{m_version.return_value}"), {}])
+    assert (
+        create_release.return_value.__getitem__.call_args_list
+        == [[("target_commitish", ), {}],
+            [("published_at", ), {}],
+            [("tag_name", ), {}],
+            [("html_url", ), {}]])
 
 
 @pytest.mark.parametrize("is_dev", [True, False])
