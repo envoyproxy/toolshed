@@ -193,22 +193,33 @@ def test_sphinx_runner_descriptor_path(patches):
     assert "descriptor_path" not in runner.__dict__
 
 
-def test_sphinx_runner_docker_image_tag_name(patches):
+@pytest.mark.parametrize("is_dev", [True, False])
+@pytest.mark.parametrize("minor", range(2, 5))
+@pytest.mark.parametrize("micro", range(0, 10))
+def test_sphinx_runner_docker_image_tag_name(patches, is_dev, minor, micro):
     runner = DummySphinxRunner()
     patched = patches(
-        "re",
+        "Version",
         ("SphinxRunner.version_number", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_re, m_version):
+    latest_minor = (
+        minor - 1
+        if (is_dev
+            and micro == 0)
+        else minor)
+
+    with patched as (m_semver, m_version):
+        m_semver.return_value.is_devrelease = is_dev
+        m_semver.return_value.minor = minor
+        m_semver.return_value.micro = micro
         assert (
             runner.docker_image_tag_name
-            == m_re.sub.return_value)
+            == f"v{m_semver.return_value.major}.{latest_minor}-latest")
 
     assert (
-        m_re.sub.call_args
-        == [('([0-9]+\\.[0-9]+)\\.[0-9]+.*', 'v\\1-latest',
-             m_version.return_value), {}])
+        m_semver.call_args
+        == [(m_version.return_value, ), {}])
     assert "docker_image_tag_name" not in runner.__dict__
 
 
