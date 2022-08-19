@@ -6,6 +6,7 @@ pytooling_library(
         "//deps:envoy.base.utils",
         "//deps:colorama",
         "//deps:docutils",
+        "//deps:packaging",
         "//deps:pygments",
         "//deps:sphinx",
         "//deps:sphinx-copybutton",

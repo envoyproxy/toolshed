@@ -3,13 +3,14 @@ import contextlib
 import os
 import pathlib
 import platform
-import re
 import shutil
 import sys
 import tarfile
 import time
 from functools import cached_property
 from typing import Dict, List, Optional, TypedDict
+
+from packaging.version import Version
 
 from colorama import Fore, Style  # type:ignore
 
@@ -126,10 +127,13 @@ class SphinxRunner(runner.Runner):
     @property
     def docker_image_tag_name(self) -> str:
         """Tag name of current docker image."""
-        return re.sub(
-            r"([0-9]+\.[0-9]+)\.[0-9]+.*",
-            r"v\1-latest",
-            self.version_number)
+        semver = Version(self.version_number)
+        minor = (
+            semver.minor - 1
+            if (semver.is_devrelease
+                and semver.micro == 0)
+            else semver.minor)
+        return f"v{semver.major}.{minor}-latest"
 
     @property
     def docs_tag(self) -> str:
