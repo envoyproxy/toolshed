@@ -8,7 +8,7 @@ import abstracts
 
 from aio.core.functional import async_property
 
-from envoy.code.check import abstract
+from envoy.code.check import abstract, interface
 
 
 EXPECTED_MISSING_GUARDS = (
@@ -24,6 +24,7 @@ RELOADABLE_MATCH_RE = r"``envoy.reloadable[._][a-z0-9_.]+``"
 RUNTIME_GUARDS_CONFIG_PATH = "source/common/runtime/runtime_features.cc"
 
 
+@abstracts.implementer(interface.IRuntimeGuardsCheck)
 class ARuntimeGuardsCheck(
         abstract.AProjectCodeCheck,
         metaclass=abstracts.Abstraction):

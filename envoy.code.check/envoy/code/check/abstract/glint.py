@@ -14,7 +14,7 @@ from aio.core.functional import async_property
 from aio.run import checker
 
 from envoy.base import utils
-from envoy.code.check import abstract, typing
+from envoy.code.check import abstract, interface, typing
 
 
 NOGLINT_RE = (
@@ -45,6 +45,7 @@ class NewlineChecker(directory.ADirectoryContext):
             == b'\n')
 
 
+@abstracts.implementer(interface.IGlintCheck)
 class AGlintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod

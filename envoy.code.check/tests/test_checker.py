@@ -17,7 +17,7 @@ from envoy.code import check
     [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
 def test_checker_constructor(patches, args, kwargs):
     patched = patches(
-        "check.ACodeChecker.__init__",
+        "abstract.ACodeChecker.__init__",
         prefix="envoy.code.check.checker")
 
     with patched as (m_super, ):
@@ -54,7 +54,7 @@ def test_checker_constructor(patches, args, kwargs):
 def test_checker_path(patches):
     checker = check.CodeChecker()
     patched = patches(
-        ("check.ACodeChecker.path",
+        ("abstract.ACodeChecker.path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.checker")
 
@@ -82,7 +82,7 @@ def test_checker_path(patches):
      check.YapfCheck])
 def test_checker_constructors(patches, args, kwargs, sub):
     patched = patches(
-        f"check.A{sub.__name__}.__init__",
+        f"abstract.A{sub.__name__}.__init__",
         prefix="envoy.code.check.checker")
 
     with patched as (m_super, ):
@@ -96,7 +96,7 @@ def test_checker_constructors(patches, args, kwargs, sub):
 
 def test_changelog_check_constructor(patches):
     patched = patches(
-        "check.AChangelogCheck.__init__",
+        "abstract.AChangelogCheck.__init__",
         prefix="envoy.code.check.checker")
 
     with patched as (m_super, ):

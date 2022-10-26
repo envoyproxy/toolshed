@@ -15,7 +15,7 @@ from aio.run import checker
 
 from envoy.base import utils
 from envoy.base.utils import IProject
-from envoy.code.check import abstract, exceptions, typing
+from envoy.code.check import exceptions, interface, typing
 
 
 # TODO: Add a README in envoy repo with info on how to fix and maybe use
@@ -42,7 +42,7 @@ class CodeCheckerSummary(checker.CheckerSummary):
             self.writer_for("error")(GLINT_ADVICE)
 
 
-@abstracts.implementer(event.IReactive)
+@abstracts.implementer(interface.ICodeChecker)
 class ACodeChecker(
         checker.Checker,
         event.AReactive,
@@ -85,7 +85,7 @@ class ACodeChecker(
         return self.args.since
 
     @cached_property
-    def changelog(self) -> "abstract.AChangelogCheck":
+    def changelog(self) -> "interface.IChangelogCheck":
         """Changelog checker."""
         return self.changelog_class(
             self.project,
@@ -93,7 +93,7 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def changelog_class(self) -> Type["abstract.AChangelogCheck"]:
+    def changelog_class(self) -> Type["interface.IChangelogCheck"]:
         raise NotImplementedError
 
     @cached_property
@@ -122,7 +122,7 @@ class ACodeChecker(
         return kwargs
 
     @cached_property
-    def extensions(self) -> "abstract.AExtensionsCheck":
+    def extensions(self) -> "interface.IExtensionsCheck":
         """Extensions checker."""
         return self.extensions_class(
             self.directory,
@@ -131,17 +131,17 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def extensions_class(self) -> Type["abstract.AExtensionsCheck"]:
+    def extensions_class(self) -> Type["interface.IExtensionsCheck"]:
         raise NotImplementedError
 
     @cached_property
-    def flake8(self) -> "abstract.AFlake8Check":
+    def flake8(self) -> "interface.IFlake8Check":
         """Flake8 checker."""
         return self.flake8_class(self.directory, **self.check_kwargs)
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def flake8_class(self) -> Type["abstract.AFlake8Check"]:
+    def flake8_class(self) -> Type["interface.IFlake8Check"]:
         raise NotImplementedError
 
     @property  # type:ignore
@@ -155,13 +155,13 @@ class ACodeChecker(
         raise NotImplementedError
 
     @cached_property
-    def glint(self) -> "abstract.AGlintCheck":
+    def glint(self) -> "interface.IGlintCheck":
         """Glint checker."""
         return self.glint_class(self.directory, **self.check_kwargs)
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def glint_class(self) -> Type["abstract.AGlintCheck"]:
+    def glint_class(self) -> Type["interface.IGlintCheck"]:
         raise NotImplementedError
 
     @property
@@ -187,7 +187,7 @@ class ACodeChecker(
         raise NotImplementedError
 
     @cached_property
-    def runtime_guards(self) -> "abstract.ARuntimeGuardsCheck":
+    def runtime_guards(self) -> "interface.IRuntimeGuardsCheck":
         """Shellcheck checker."""
         return self.runtime_guards_class(
             self.project,
@@ -195,17 +195,17 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def runtime_guards_class(self) -> Type["abstract.ARuntimeGuardsCheck"]:
+    def runtime_guards_class(self) -> Type["interface.IRuntimeGuardsCheck"]:
         raise NotImplementedError
 
     @cached_property
-    def shellcheck(self) -> "abstract.AShellcheckCheck":
+    def shellcheck(self) -> "interface.IShellcheckCheck":
         """Shellcheck checker."""
         return self.shellcheck_class(self.directory, **self.check_kwargs)
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def shellcheck_class(self) -> Type["abstract.AShellcheckCheck"]:
+    def shellcheck_class(self) -> Type["interface.IShellcheckCheck"]:
         raise NotImplementedError
 
     @property
@@ -214,13 +214,13 @@ class ACodeChecker(
         return CodeCheckerSummary
 
     @cached_property
-    def yapf(self) -> "abstract.AYapfCheck":
+    def yapf(self) -> "interface.IYapfCheck":
         """YAPF checker."""
         return self.yapf_class(self.directory, **self.check_kwargs)
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def yapf_class(self) -> Type["abstract.AYapfCheck"]:
+    def yapf_class(self) -> Type["interface.IYapfCheck"]:
         raise NotImplementedError
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -374,7 +374,7 @@ class ACodeChecker(
                     self.active_check,
                     problem_files[path].warnings)
 
-    async def _code_check(self, check: "abstract.AFileCodeCheck") -> None:
+    async def _code_check(self, check: "interface.IFileCodeCheck") -> None:
         await self.loop.run_in_executor(
             None,
             self._check_output,
