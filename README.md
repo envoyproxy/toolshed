@@ -147,7 +147,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code.check](envoy.code.check)
 
-version: 0.3.0
+version: 0.3.1
 
 pypi: https://pypi.org/project/envoy.code.check
 
@@ -160,6 +160,7 @@ pypi: https://pypi.org/project/envoy.code.check
 - [flake8](https://pypi.org/project/flake8) >=5.0.4
 - [packaging](https://pypi.org/project/packaging)
 - [pep8-naming](https://pypi.org/project/pep8-naming)
+- [yamllint](https://pypi.org/project/yamllint)
 - [yapf](https://pypi.org/project/yapf)
 
 ---

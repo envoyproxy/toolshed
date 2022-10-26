@@ -53,8 +53,8 @@ def test_checker_summary_print_summary(patches, glint_errors):
 class DummyCodeChecker:
 
     @property
-    def fs_directory_class(self):
-        return super().fs_directory_class
+    def changelog_class(self):
+        return super().changelog_class
 
     @property
     def extensions_class(self):
@@ -63,6 +63,10 @@ class DummyCodeChecker:
     @property
     def flake8_class(self):
         return super().flake8_class
+
+    @property
+    def fs_directory_class(self):
+        return super().fs_directory_class
 
     @property
     def git_directory_class(self):
@@ -89,12 +93,12 @@ class DummyCodeChecker:
         return super().shellcheck_class
 
     @property
-    def yapf_class(self):
-        return super().yapf_class
+    def yamllint_class(self):
+        return super().yamllint_class
 
     @property
-    def changelog_class(self):
-        return super().changelog_class
+    def yapf_class(self):
+        return super().yapf_class
 
 
 @pytest.mark.parametrize(
@@ -111,7 +115,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         "extensions_class", "fs_directory_class", "flake8_class",
         "git_directory_class", "glint_class", "project_class",
         "runtime_guards_class", "shellcheck_class", "yapf_class",
-        "changelog_class"]
+        "changelog_class", "yamllint_class"]
 
     with patched as (m_super, ):
         m_super.return_value = None
@@ -133,7 +137,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
             "extensions_fuzzed", "extensions_metadata",
             "extensions_registered",
             "glint", "python_yapf", "python_flake8", "runtime_guards",
-            "shellcheck"))
+            "shellcheck", "yamllint"))
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(checker, prop)
@@ -144,7 +148,8 @@ def test_abstract_checker_constructor(patches, args, kwargs):
     (("glint", "glint"),
      ("python_flake8", "flake8"),
      ("python_yapf", "yapf"),
-     ("shellcheck", "shellcheck")))
+     ("shellcheck", "shellcheck"),
+     ("yamllint", "yamllint")))
 async def test_abstract_checker_checks(patches, subcheck):
     checkname, tool = subcheck
     checker = DummyCodeChecker()
@@ -197,7 +202,8 @@ def test_abstract_checker_extensions(iters, patches):
     (("glint",
       "flake8",
       "yapf",
-      "shellcheck")))
+      "shellcheck",
+      "yamllint")))
 def test_abstract_checker_tools(iters, patches, tool):
     checker = DummyCodeChecker()
     patched = patches(
@@ -312,7 +318,8 @@ async def test_abstract_checker_preload_runtime_guards(patches):
     (("glint", "glint"),
      ("python_flake8", "flake8"),
      ("python_yapf", "yapf"),
-     ("shellcheck", "shellcheck")))
+     ("shellcheck", "shellcheck"),
+     ("yamllint", "yamllint")))
 async def test_abstract_checker_preloaders(patches, preloader):
     when, name = preloader
     checker = DummyCodeChecker()

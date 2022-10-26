@@ -36,6 +36,11 @@ class YapfCheck(abstract.AYapfCheck):
     pass
 
 
+@abstracts.implementer(abstract.AYamllintCheck)
+class YamllintCheck:
+    pass
+
+
 @abstracts.implementer(interface.IRSTCheck)
 class BackticksCheck(abstract.ABackticksCheck):
     pass
@@ -131,3 +136,7 @@ class CodeChecker(abstract.ACodeChecker):
     @property
     def yapf_class(self):
         return YapfCheck
+
+    @property
+    def yamllint_class(self):
+        return YamllintCheck

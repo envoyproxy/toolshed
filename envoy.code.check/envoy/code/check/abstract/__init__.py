@@ -14,6 +14,7 @@ from .rst import (
     AReflinksCheck)
 from .runtime_guards import ARuntimeGuardsCheck
 from .shellcheck import AShellcheckCheck
+from .yamllint import AYamllintCheck
 from .yapf import AYapfCheck
 from . import (
     base,
@@ -23,6 +24,7 @@ from . import (
     glint,
     shellcheck,
     changelog,
+    yamllint,
     yapf)
 
 
@@ -42,6 +44,7 @@ __all__ = (
     "AReflinksCheck",
     "ARuntimeGuardsCheck",
     "AShellcheckCheck",
+    "AYamllintCheck",
     "AYapfCheck",
     "base",
     "checker",
@@ -50,4 +53,5 @@ __all__ = (
     "extensions",
     "shellcheck",
     "changelog",
+    "yamllint",
     "yapf")

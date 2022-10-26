@@ -49,6 +49,8 @@ def test_checker_constructor(patches, args, kwargs):
     assert "yapf_class" not in directory.__dict__
     assert checker.changelog_class == check.ChangelogCheck
     assert "changelog_class" not in directory.__dict__
+    assert checker.yamllint_class == check.YamllintCheck
+    assert "yamllint_class" not in directory.__dict__
 
 
 def test_checker_path(patches):
