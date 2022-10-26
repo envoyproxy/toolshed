@@ -809,12 +809,19 @@ async def test_abstract_checker_check_runtime_guards(patches):
      [f"F{i}" for i in range(5, 10)],
      [f"F{i}" for i in range(0, 10)]])
 @pytest.mark.parametrize(
-    "problem_files",
+    "error_files",
     [{},
      {f"F{i}": f"P{i}" for i in range(0, 5)},
      {f"F{i}": f"P{i}" for i in range(5, 10)},
      {f"F{i}": f"P{i}" for i in range(0, 10)}])
-def test_abstract_checker__check_output(patches, files, problem_files):
+@pytest.mark.parametrize(
+    "warning_files",
+    [{},
+     {f"F{i}": f"P{i}" for i in range(0, 5)},
+     {f"F{i}": f"P{i}" for i in range(5, 10)},
+     {f"F{i}": f"P{i}" for i in range(0, 10)}])
+def test_abstract_checker__check_output(
+        patches, files, error_files, warning_files):
     checker = DummyCodeChecker()
     patched = patches(
         "sorted",
@@ -822,28 +829,53 @@ def test_abstract_checker__check_output(patches, files, problem_files):
          dict(new_callable=PropertyMock)),
         "ACodeChecker.error",
         "ACodeChecker.succeed",
+        "ACodeChecker.warn",
         prefix="envoy.code.check.abstract.checker")
     check_files = MagicMock()
     errors = []
+    warnings = []
     success = []
+    problems = {}
     for f in files:
-        if f in problem_files:
+        problems[f] = MagicMock()
+        if f in error_files:
             errors.append(f)
+            problems[f].errors = []
+            problems[f].warnings = None
+        elif f in warning_files:
+            warnings.append(f)
+            problems[f].warnings = []
+            problems[f].errors = None
         else:
+            del problems[f]
             success.append(f)
 
-    with patched as (m_sorted, m_active, m_error, m_succeed):
+    for f in error_files:
+        if f not in files:
+            continue
+        problems[f].errors.append(error_files[f])
+
+    for f in warning_files:
+        if f not in files or f in error_files:
+            continue
+        problems[f].warnings.append(warning_files[f])
+
+    with patched as (m_sorted, m_active, m_error, m_succeed, m_warning):
         m_sorted.return_value = files
         assert not checker._check_output(
-            check_files, problem_files)
+            check_files, problems)
 
     assert (
         m_sorted.call_args
         == [(check_files, ), {}])
     assert (
         m_error.call_args_list
-        == [[(m_active.return_value, problem_files[error]), {}]
+        == [[(m_active.return_value, [error_files[error]]), {}]
             for error in errors])
+    assert (
+        m_warning.call_args_list
+        == [[(m_active.return_value, [warning_files[warning]]), {}]
+            for warning in warnings])
     assert (
         m_succeed.call_args_list
         == [[(m_active.return_value, [succeed]), {}]

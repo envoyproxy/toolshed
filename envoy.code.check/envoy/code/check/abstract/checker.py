@@ -360,14 +360,19 @@ class ACodeChecker(
         # This can be slow/blocking for large result sets, run
         # in a separate thread
         for path in sorted(check_files):
-            if path in problem_files:
-                self.error(
-                    self.active_check,
-                    problem_files[path])
-            else:
+            if path not in problem_files:
                 self.succeed(
                     self.active_check,
                     [path])
+                continue
+            if problem_files[path].errors:
+                self.error(
+                    self.active_check,
+                    problem_files[path].errors)
+            if problem_files[path].warnings:
+                self.warn(
+                    self.active_check,
+                    problem_files[path].warnings)
 
     async def _code_check(self, check: "abstract.AFileCodeCheck") -> None:
         await self.loop.run_in_executor(

@@ -10,6 +10,7 @@ import abstracts
 
 from aio.core import subprocess as _subprocess
 from aio.core.functional import async_property
+from aio.run import checker
 
 from envoy.code.check import abstract, typing
 
@@ -72,7 +73,7 @@ class Shellcheck(_subprocess.ASubprocessHandler):
                     str,
                     ShellcheckErrorDict]]) -> typing.ProblemDict:
         return {
-            k: self._render_file_errors(k, v)
+            k: checker.Problems(errors=self._render_file_errors(k, v))
             for k, v
             in errors}
 

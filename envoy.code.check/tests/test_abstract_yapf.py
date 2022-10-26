@@ -34,26 +34,26 @@ def test_yapf_yapfformatcheck_check_results(iters, patches, n, e, raises, fix):
     patched = patches(
         "os",
         "yapf.yapf_api",
+        "checker",
         ("YapfFormatCheck.path",
          dict(new_callable=PropertyMock)),
         "YapfFormatCheck.handle_result",
         prefix="envoy.code.check.abstract.yapf")
     _expected = []
 
-    def handle(path, *args):
+    def handle(m_checker, path, *args):
         i = int(path[-1])
         if i in e and raises:
             if raises == yapf.errors.YapfError:
                 _expected.append(
-                    (path,
-                     [f"Yaml check failed: {path}\nAN ERROR OCCURRED"]))
+                    (path, m_checker.Problems.return_value))
             raise raises("AN ERROR OCCURRED")
         if i % n:
             _expected.append(path)
             return path
 
-    with patched as (m_os, m_yapf, m_path, m_handle):
-        m_handle.side_effect = handle
+    with patched as (m_os, m_yapf, m_checker, m_path, m_handle):
+        m_handle.side_effect = partial(handle, m_checker)
         resultgen = yapf_check.check_results
         if raises == Exception:
             with pytest.raises(Exception):
@@ -67,6 +67,17 @@ def test_yapf_yapfformatcheck_check_results(iters, patches, n, e, raises, fix):
     assert (
         resultlist
         == _expected)
+
+    yapf_errors = []
+    for result in _expected:
+        if isinstance(result, str):
+            continue
+        yapf_errors.append(result[0])
+    assert (
+        m_checker.Problems.call_args_list
+        == [[(), dict(errors=[f'Yaml check failed: {e}\nAN ERROR OCCURRED'])]
+            for e in yapf_errors])
+
     assert (
         m_handle.call_args_list
         == [[(p, m_yapf.FormatFile.return_value), {}]
@@ -90,18 +101,32 @@ def test_yapf_yapfformatcheck_check_results(iters, patches, n, e, raises, fix):
 @pytest.mark.parametrize(
     "reformatted",
     [None, True, False, "", [], "REFORMATTED"])
-def test_yapf_yapfformatcheck_handle_result(changed, reformatted):
+def test_yapf_yapfformatcheck_handle_result(patches, changed, reformatted):
     yapf_check = check.abstract.yapf.YapfFormatCheck(
         "PATH", "CONFIG_PATH", "FIX")
     path = MagicMock()
     encoding = MagicMock()
-    assert (
-        yapf_check.handle_result(path, (reformatted, encoding, changed))
-        == (None
-            if not (changed or reformatted)
-            else ((path, [f"Issues found: {path}\n{reformatted}"])
-                  if reformatted
-                  else (path, [f"Issues found (fixed): {path}"]))))
+    patched = patches(
+        "checker",
+        prefix="envoy.code.check.abstract.yapf")
+
+    with patched as (m_checker, ):
+        assert (
+            yapf_check.handle_result(path, (reformatted, encoding, changed))
+            == (None
+                if not (changed or reformatted)
+                else (path, m_checker.Problems.return_value)))
+
+    if reformatted:
+        assert (
+            m_checker.Problems.call_args
+            == [(), dict(errors=[f"Issues found: {path}\n{reformatted}"])])
+    elif changed:
+        assert (
+            m_checker.Problems.call_args
+            == [(), dict(errors=[f"Issues found (fixed): {path}"])])
+    else:
+        assert not m_checker.Problems.called
 
 
 def test_yapf_yapfformatcheck_run_checks(patches):

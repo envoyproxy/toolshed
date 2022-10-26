@@ -4,7 +4,7 @@ import logging
 import os
 import pathlib
 from functools import cached_property, lru_cache
-from typing import List, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 from flake8.main.application import Application  # type:ignore
 from flake8 import (  # type:ignore
@@ -15,6 +15,7 @@ import abstracts
 
 from aio.core.functional import async_property
 from aio.core.directory.utils import directory_context
+from aio.run import checker
 
 from envoy.code.check import abstract, typing
 
@@ -193,12 +194,15 @@ class AFlake8Check(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     def handle_errors(self, errors: List[str]) -> typing.ProblemDict:
         """Turn flake8 error list -> `ProblemDict`."""
-        flake8_errors: typing.ProblemDict = {}
+        flake8_errors: Dict[str, List[str]] = {}
         for error in errors:
             path, message = self._parse_error(error)
             flake8_errors[path] = flake8_errors.get(path, [])
             flake8_errors[path].append(message)
-        return flake8_errors
+        return {
+            p: checker.Problems(errors=errors)
+            for p, errors
+            in flake8_errors.items()}
 
     def _parse_error(self, error: str) -> Tuple[str, str]:
         path = error.split(":")[0]

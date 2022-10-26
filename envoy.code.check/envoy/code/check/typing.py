@@ -1,10 +1,12 @@
 
 from typing import Dict, List, Optional, Tuple, TypedDict
 
+from aio.run import checker
 
-ProblemDict = Dict[str, List[str]]
 
-YapfProblemTuple = Tuple[str, List[str]]
+ProblemDict = Dict[str, checker.interface.IProblems]
+
+YapfProblemTuple = Tuple[str, checker.interface.IProblems]
 YapfResultTuple = Tuple[str, str, bool]
 YapfCheckResultTuple = Tuple[str, YapfResultTuple]
 
