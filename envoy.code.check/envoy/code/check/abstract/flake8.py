@@ -24,7 +24,8 @@ FLAKE8_CONFIG = '.flake8'
 
 
 # Workaround for https://github.com/PyCQA/flake8/issues/1390
-logging.getLogger("flake8.options.manager").setLevel(logging.ERROR)
+# logging.getLogger("flake8.options.manager").setLevel(logging.ERROR)
+logger = logging.getLogger(__name__)
 
 
 class Flake8Application(Application):
@@ -69,6 +70,10 @@ class Flake8App:
         return flake8_app
 
     @property
+    def exclude(self) -> List[str]:
+        return self.manager.options.exclude
+
+    @property
     def manager(self) -> flake8_checker.Manager:
         """Flake8 file checker manager."""
         return self.app.file_checker_manager
@@ -92,7 +97,7 @@ class Flake8App:
     def run_checks(self, paths: Set[str]) -> List[str]:
         """Run flake8 checks."""
         with directory_context(self.path):
-            self.app.run_checks(files=paths)
+            self.app.file_checker_manager.start(paths)
             self.app.report()
         return self.app._results
 
@@ -124,7 +129,18 @@ class Flake8App:
         return not exclude
 
     def _is_excluded(self, path: str) -> bool:
-        return self.manager.is_path_excluded(path)
+        if not self.exclude:
+            return False
+        basename = os.path.basename(path)
+        if flake8_utils.fnmatch(basename, self.exclude):
+            logger.debug(f'"{basename}" has been excluded')
+            return True
+
+        absolute_path = os.path.abspath(path)
+        match = flake8_utils.fnmatch(absolute_path, self.exclude)
+        logger.debug(
+            f'"{absolute_path}" has {"" if match else "not "}been excluded')
+        return match
 
 
 @abstracts.implementer(interface.IFlake8Check)

@@ -253,6 +253,21 @@ def test_flake8app_app(patches):
     assert "app" in flake8app.__dict__
 
 
+def test_flake8app_exclude(patches):
+    flake8app = check.abstract.flake8.Flake8App("PATH", "ARGS")
+    patched = patches(
+        ("Flake8App.manager",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.flake8")
+
+    with patched as (m_manager, ):
+        assert (
+            flake8app.exclude
+            == m_manager.return_value.options.exclude)
+
+    assert "exclude" not in flake8app.__dict__
+
+
 def test_flake8app_manager(patches):
     flake8app = check.abstract.flake8.Flake8App("PATH", "ARGS")
     patched = patches(
@@ -372,8 +387,8 @@ def test_flake8app_run_checks(patches):
         m_dir_ctx.call_args
         == [("PATH", ), {}])
     assert (
-        m_app.return_value.run_checks.call_args
-        == [(), dict(files=paths)])
+        m_app.return_value.file_checker_manager.start.call_args
+        == [(paths, ), {}])
     assert (
         m_app.return_value.report.call_args
         == [(), {}])
@@ -490,21 +505,69 @@ def test_flake8app__include_path(iters, patches, any_paths, is_excluded):
     assert flake8._include_path.cache_info().currsize >= 1
 
 
-def test_flake8__is_excluded(patches):
+@pytest.mark.parametrize("exclude", [True, False])
+@pytest.mark.parametrize("base_match", [True, False])
+@pytest.mark.parametrize("abs_match", [True, False])
+def test_flake8__is_excluded(patches, exclude, base_match, abs_match):
     flake8 = check.abstract.flake8.Flake8App("PATH", "ARGS")
     patched = patches(
+        "os",
+        "flake8_utils",
+        "logger",
+        ("Flake8App.exclude",
+         dict(new_callable=PropertyMock)),
         ("Flake8App.manager",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.flake8")
+    base_path = MagicMock()
+    abs_path = MagicMock()
+    exclude = (MagicMock() if exclude else False)
 
-    with patched as (m_manager, ):
+    def _fnmatch(path, exclude):
+        if path == base_path:
+            return base_match
+        return abs_match
+
+    with patched as (m_os, m_utils, m_logger, m_exclude, m_manager):
+        m_exclude.return_value = exclude
+        m_utils.fnmatch.side_effect = _fnmatch
+        m_os.path.basename.return_value = base_path
+        m_os.path.abspath.return_value = abs_path
+
         assert (
             flake8._is_excluded("EXCPATH")
-            == (m_manager.return_value.is_path_excluded.return_value))
+            == (exclude
+                and (base_match or abs_match)))
+
+    if not exclude:
+        assert not m_os.path.basename.called
+        assert not m_os.path.abspath.called
+        assert not m_utils.fnmatch.called
+        assert not m_logger.debug.called
+        return
 
     assert (
-        m_manager.return_value.is_path_excluded.call_args
+        m_os.path.basename.call_args
         == [("EXCPATH", ), {}])
+    assert (
+        m_utils.fnmatch.call_args_list[0]
+        == [(base_path, exclude), {}])
+    if base_match:
+        assert (
+            m_logger.debug.call_args
+            == [(f'"{base_path}" has been excluded', ), {}])
+        assert len(m_utils.fnmatch.call_args_list) == 1
+        assert not m_os.path.abspath.called
+        return
+    assert (
+        m_utils.fnmatch.call_args_list[1]
+        == [(abs_path, exclude), {}])
+    assert (
+        m_logger.debug.call_args
+        == [(
+            f'"{abs_path}" has '
+            f'{"" if abs_match else "not "}been excluded', ),
+            {}])
 
 
 def test_flake8application_constructor():
