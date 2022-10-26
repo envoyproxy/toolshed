@@ -631,4 +631,9 @@ class CheckerSummary(object):
 
 @abstracts.implementer(abstract.AProblems)
 class Problems:
-    pass
+
+    def __init__(
+            self,
+            errors: Optional[List[str]] = None,
+            warnings: Optional[List[str]] = None) -> None:
+        abstract.AProblems.__init__(self, errors=errors, warnings=warnings)
