@@ -10,6 +10,7 @@ from aio.core.directory import ADirectory
 from aio.core.functional import async_property
 
 from envoy.base import utils
+from envoy.code.check import interface
 
 
 @abstracts.implementer(event.IExecutive)
@@ -33,6 +34,7 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
         return self._binaries
 
 
+@abstracts.implementer(interface.IFileCodeCheck)
 class AFileCodeCheck(ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
@@ -59,6 +61,7 @@ class AFileCodeCheck(ACodeCheck, metaclass=abstracts.Abstraction):
         raise NotImplementedError
 
 
+@abstracts.implementer(interface.IProjectCodeCheck)
 class AProjectCodeCheck(ACodeCheck,  metaclass=abstracts.Abstraction):
 
     def __init__(

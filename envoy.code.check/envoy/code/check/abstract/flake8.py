@@ -17,7 +17,7 @@ from aio.core.functional import async_property
 from aio.core.directory.utils import directory_context
 from aio.run import checker
 
-from envoy.code.check import abstract, typing
+from envoy.code.check import abstract, interface, typing
 
 
 FLAKE8_CONFIG = '.flake8'
@@ -127,6 +127,7 @@ class Flake8App:
         return self.manager.is_path_excluded(path)
 
 
+@abstracts.implementer(interface.IFlake8Check)
 class AFlake8Check(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     """Flake8 check for a fileset."""
 

@@ -8,84 +8,85 @@ import abstracts
 from aio.core import directory
 
 from envoy.base.utils import IProject, Project
-from envoy.code import check
+from envoy.code.check import abstract, interface
 
 
-@abstracts.implementer(check.AExtensionsCheck)
-class ExtensionsCheck:
+@abstracts.implementer(interface.IExtensionsCheck)
+class ExtensionsCheck(abstract.AExtensionsCheck):
     pass
 
 
-@abstracts.implementer(check.AFlake8Check)
-class Flake8Check:
+@abstracts.implementer(interface.IFlake8Check)
+class Flake8Check(abstract.AFlake8Check):
     pass
 
 
-@abstracts.implementer(check.AGlintCheck)
-class GlintCheck:
+@abstracts.implementer(interface.IGlintCheck)
+class GlintCheck(abstract.AGlintCheck):
     pass
 
 
-@abstracts.implementer(check.AShellcheckCheck)
-class ShellcheckCheck:
+@abstracts.implementer(interface.IShellcheckCheck)
+class ShellcheckCheck(abstract.AShellcheckCheck):
     pass
 
 
-@abstracts.implementer(check.AYapfCheck)
-class YapfCheck:
+@abstracts.implementer(interface.IYapfCheck)
+class YapfCheck(abstract.AYapfCheck):
     pass
 
 
-@abstracts.implementer(check.interface.IRSTCheck)
-class BackticksCheck(check.ABackticksCheck):
+@abstracts.implementer(interface.IRSTCheck)
+class BackticksCheck(abstract.ABackticksCheck):
     pass
 
 
-@abstracts.implementer(check.interface.IRSTCheck)
-class PunctuationCheck(check.APunctuationCheck):
+@abstracts.implementer(interface.IRSTCheck)
+class PunctuationCheck(abstract.APunctuationCheck):
     pass
 
 
-@abstracts.implementer(check.interface.IRSTCheck)
-class ReflinksCheck(check.AReflinksCheck):
+@abstracts.implementer(interface.IRSTCheck)
+class ReflinksCheck(abstract.AReflinksCheck):
     pass
 
 
-@abstracts.implementer(check.ARuntimeGuardsCheck)
-class RuntimeGuardsCheck:
+@abstracts.implementer(interface.IRuntimeGuardsCheck)
+class RuntimeGuardsCheck(abstract.ARuntimeGuardsCheck):
     pass
 
 
-@abstracts.implementer(check.AChangelogChangesChecker)
-class ChangelogChangesChecker:
+@abstracts.implementer(interface.IChangelogChangesChecker)
+class ChangelogChangesChecker(abstract.AChangelogChangesChecker):
 
     @cached_property
-    def change_checkers(self) -> Tuple[check.interface.IRSTCheck, ...]:
+    def change_checkers(self) -> Tuple[interface.IRSTCheck, ...]:
         return (
             BackticksCheck(),
             PunctuationCheck(),
             ReflinksCheck())
 
 
-@abstracts.implementer(check.AChangelogStatus)
-class ChangelogStatus:
+@abstracts.implementer(interface.IChangelogStatus)
+class ChangelogStatus(abstract.AChangelogStatus):
     pass
 
 
-@abstracts.implementer(check.AChangelogCheck)
-class ChangelogCheck:
+@abstracts.implementer(interface.IChangelogCheck)
+class ChangelogCheck(abstract.AChangelogCheck):
 
     @property
-    def changes_checker_class(self) -> Type[check.AChangelogChangesChecker]:
+    def changes_checker_class(
+            self) -> Type[interface.IChangelogChangesChecker]:
         return ChangelogChangesChecker
 
     @property
-    def changelog_status_class(self) -> Type[check.AChangelogStatus]:
+    def changelog_status_class(self) -> Type[interface.IChangelogStatus]:
         return ChangelogStatus
 
 
-@abstracts.implementer(check.ACodeChecker)
-class CodeChecker:
+@abstracts.implementer(interface.ICodeChecker)
+class CodeChecker(abstract.ACodeChecker):
 
     @property
     def extensions_class(self):

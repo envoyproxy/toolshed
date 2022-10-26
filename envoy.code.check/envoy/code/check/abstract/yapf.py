@@ -15,7 +15,7 @@ from aio.core.functional import (
     AwaitableGenerator)
 from aio.run import checker
 
-from envoy.code.check import abstract, typing
+from envoy.code.check import abstract, interface, typing
 
 
 YAPF_CONFIG = '.style.yapf'
@@ -95,6 +95,7 @@ class YapfFiles(directory.ADirectoryContext):
                         self.path)))
 
 
+@abstracts.implementer(interface.IYapfCheck)
 class AYapfCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod

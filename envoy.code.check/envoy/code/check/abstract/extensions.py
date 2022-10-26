@@ -15,7 +15,7 @@ import abstracts
 from aio.core.functional import async_property
 
 from envoy.base import utils
-from envoy.code.check import abstract, exceptions, typing
+from envoy.code.check import abstract, exceptions, interface, typing
 
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,7 @@ CONTRIB_METADATA_PATH = "contrib/extensions_metadata.yaml"
 EXTENSIONS_SCHEMA = "tools/extensions/extensions_schema.yaml"
 
 
+@abstracts.implementer(interface.IExtensionsCheck)
 class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     """Extensions check."""
 

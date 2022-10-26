@@ -17,6 +17,7 @@ from envoy.code.check import abstract, interface
 MAX_VERSION_FOR_CHANGES_SECTION = "1.16"
 
 
+@abstracts.implementer(interface.IChangelogChangesChecker)
 class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
     error_message = (
         "{version}/{section}/{entry[area]}: "
@@ -95,17 +96,18 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
                 "(this is no longer used)")
 
 
+@abstracts.implementer(interface.IChangelogStatus)
 class AChangelogStatus(metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
-            check: "AChangelogCheck",
+            check: interface.IChangelogCheck,
             changelog: utils.interface.IChangelog) -> None:
         self._check = check
         self.changelog = changelog
 
     @property
-    def checker(self) -> AChangelogChangesChecker:
+    def checker(self) -> interface.IChangelogChangesChecker:
         return self._check.changes_checker
 
     @async_property
@@ -230,32 +232,34 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             in errors)
 
 
+@abstracts.implementer(interface.IChangelogCheck)
 class AChangelogCheck(
         abstract.AProjectCodeCheck,
         metaclass=abstracts.Abstraction):
     """Changelog check."""
 
-    def __iter__(self) -> Iterator[AChangelogStatus]:
+    def __iter__(self) -> Iterator[interface.IChangelogStatus]:
         for changelog in self.changelogs:
             yield changelog
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def changes_checker_class(self) -> Type[AChangelogChangesChecker]:
+    def changes_checker_class(
+            self) -> Type[interface.IChangelogChangesChecker]:
         raise NotImplementedError
 
     @cached_property
-    def changes_checker(self) -> AChangelogChangesChecker:
+    def changes_checker(self) -> interface.IChangelogChangesChecker:
         return self.changes_checker_class(
             self.project.changelogs.sections)
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def changelog_status_class(self) -> Type[AChangelogStatus]:
+    def changelog_status_class(self) -> Type[interface.IChangelogStatus]:
         raise NotImplementedError
 
     @cached_property
-    def changelogs(self) -> Tuple[AChangelogStatus, ...]:
+    def changelogs(self) -> Tuple[interface.IChangelogStatus, ...]:
         return tuple(
             self.changelog_status_class(self, changelog)
             for changelog

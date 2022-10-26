@@ -12,7 +12,7 @@ from aio.core import subprocess as _subprocess
 from aio.core.functional import async_property
 from aio.run import checker
 
-from envoy.code.check import abstract, typing
+from envoy.code.check import abstract, interface, typing
 
 
 SHELLCHECK_ERROR_LINE_RE = r"In ([\w\-\_\./]+) line ([0-9]+):"
@@ -125,6 +125,7 @@ class Shellcheck(_subprocess.ASubprocessHandler):
             yield filename, info
 
 
+@abstracts.implementer(interface.IShellcheckCheck)
 class AShellcheckCheck(
         abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
