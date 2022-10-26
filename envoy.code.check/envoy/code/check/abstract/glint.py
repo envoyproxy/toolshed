@@ -11,6 +11,7 @@ import abstracts
 from aio.core.dev import debug
 from aio.core import directory
 from aio.core.functional import async_property
+from aio.run import checker
 
 from envoy.base import utils
 from envoy.code.check import abstract, typing
@@ -121,7 +122,8 @@ class AGlintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
             problems: Tuple[
                 Set[str], Set[str], Set[str]]) -> typing.ProblemDict:
         return {
-            path: list(self._check_path(path, *problems))
+            path: checker.Problems(
+                errors=list(self._check_path(path, *problems)))
             for path
             in (problems[0] | problems[1] | problems[2])}
 

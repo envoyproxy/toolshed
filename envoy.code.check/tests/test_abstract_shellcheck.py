@@ -101,17 +101,22 @@ def test_shellcheck_parse_error_line(patches, matched):
 def test_shellcheck__render_errors(iters, patches):
     shellcheck = check.abstract.shellcheck.Shellcheck("PATH")
     patched = patches(
+        "checker",
         "Shellcheck._render_file_errors",
         prefix="envoy.code.check.abstract.shellcheck")
     errors = iters(cb=lambda i: (MagicMock(), MagicMock()))
 
-    with patched as (m_render, ):
+    with patched as (m_checker, m_render):
         assert (
             shellcheck._render_errors(errors)
-            == {e: m_render.return_value
+            == {e: m_checker.Problems.return_value
                 for e, info
                 in errors})
 
+    assert (
+        m_checker.Problems.call_args_list
+        == [[(), dict(errors=m_render.return_value)]
+            for e in errors])
     assert (
         m_render.call_args_list
         == [[(e, info), {}]

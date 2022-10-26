@@ -13,6 +13,7 @@ from aio.core.dev import debug
 from aio.core.functional import (
     async_property,
     AwaitableGenerator)
+from aio.run import checker
 
 from envoy.code.check import abstract, typing
 
@@ -48,7 +49,8 @@ class YapfFormatCheck(directory.ADirectoryContext):
                         in_place=self.fix,
                         print_diff=not self.fix))
             except yapf.errors.YapfError as e:
-                yield path, [f"Yaml check failed: {path}\n{e}"]
+                yield path, checker.Problems(
+                    errors=[f"Yaml check failed: {path}\n{e}"])
             else:
                 if result:
                     yield result
@@ -64,9 +66,10 @@ class YapfFormatCheck(directory.ADirectoryContext):
             return None
         return (
             path,
-            ([f"Issues found (fixed): {path}"]
+            (checker.Problems(errors=[f"Issues found (fixed): {path}"])
              if changed and not reformatted
-             else [f"Issues found: {path}\n{reformatted}"]))
+             else checker.Problems(
+                     errors=[f"Issues found: {path}\n{reformatted}"])))
 
     @debug.logging(
         log=__name__,

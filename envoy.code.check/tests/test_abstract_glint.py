@@ -163,6 +163,7 @@ async def test_glint__check_problems(patches):
     glint = check.AGlintCheck("DIRECTORY")
     patched = patches(
         "list",
+        "checker",
         "AGlintCheck._check_path",
         prefix="envoy.code.check.abstract.glint")
     batched = [
@@ -171,11 +172,16 @@ async def test_glint__check_problems(patches):
         set(x for x in range(5, 13))]
     expected = batched[0] | batched[1] | batched[2]
 
-    with patched as (m_list, m_check):
+    with patched as (m_list, m_checker, m_check):
         assert (
             await glint._check_problems(batched)
-            == {p: m_list.return_value
+            == {p: m_checker.Problems.return_value
                 for p in expected})
+
+    assert (
+        m_checker.Problems.call_args_list
+        == [[(), dict(errors=m_list.return_value)]
+            for e in expected])
 
     assert (
         m_list.call_args_list

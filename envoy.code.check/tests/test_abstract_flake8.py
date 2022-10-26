@@ -173,6 +173,7 @@ async def test_flake8_flake8_errors(patches):
 def test_flake8_handle_errors(iters, patches):
     flake8 = check.AFlake8Check("DIRECTORY")
     patched = patches(
+        "checker",
         "AFlake8Check._parse_error",
         prefix="envoy.code.check.abstract.flake8")
     errors = iters(cb=lambda i: MagicMock())
@@ -188,12 +189,17 @@ def test_flake8_handle_errors(iters, patches):
 
     handler = Handler()
 
-    with patched as (m_parse, ):
+    with patched as (m_checker, m_parse):
         m_parse.side_effect = handler._parse_error
         assert (
             flake8.handle_errors(errors)
-            == {'PATH1': ['MESSAGE1', 'MESSAGE3', 'MESSAGE5'],
-                'PATH2': ['MESSAGE2', 'MESSAGE4']})
+            == {'PATH1': m_checker.Problems.return_value,
+                'PATH2': m_checker.Problems.return_value})
+
+    assert (
+        m_checker.Problems.call_args_list
+        == [[(), dict(errors=['MESSAGE1', 'MESSAGE3', 'MESSAGE5'])],
+            [(), dict(errors=['MESSAGE2', 'MESSAGE4'])]])
 
     assert (
         m_parse.call_args_list
