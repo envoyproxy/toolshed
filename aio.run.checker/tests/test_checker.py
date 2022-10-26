@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 import pytest
 
 from aio.run.checker import (
-    Checker, CheckerSummary)
+    abstract, Checker, CheckerSummary, Problems)
 from aio.run.runner import Runner
 
 
@@ -1853,3 +1853,7 @@ def test_checker__task_should_preload(iters, patches, pending, when, unless):
         handler.get.call_args_list
         == [[('when', []), {}],
             [('unless', []), {}]])
+
+
+def test_checker_problems():
+    assert isinstance(Problems(), abstract.AProblems)
