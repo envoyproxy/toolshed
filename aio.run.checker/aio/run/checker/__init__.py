@@ -1,13 +1,19 @@
 
-from . import decorators
+from . import abstract, decorators, interface
 from .checker import (
     Checker,
-    CheckerSummary)
+    CheckerSummary,
+    Problems)
 from .decorators import preload
+from .interface import IProblems
 
 
 __all__ = (
+    "abstract",
     "Checker",
     "CheckerSummary",
     "decorators",
-    "preload")
+    "interface",
+    "IProblems",
+    "preload",
+    "Problems")

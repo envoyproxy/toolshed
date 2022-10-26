@@ -7,7 +7,10 @@ from typing import (
     Awaitable, Callable, Dict, Iterable, List, Optional, Sequence,
     Set, Tuple, Type)
 
+import abstracts
+
 from aio.run import runner
+from aio.run.checker import abstract
 
 
 _sentinel = object()
@@ -624,3 +627,8 @@ class CheckerSummary(object):
             self.checker.log.notice
             if problem_type == "warnings"
             else self.checker.log.error)
+
+
+@abstracts.implementer(abstract.AProblems)
+class Problems:
+    pass
