@@ -6,6 +6,8 @@ from aio.run import checker
 
 ProblemDict = Dict[str, checker.interface.IProblems]
 
+YamllintProblemTuple = Tuple[str, checker.interface.IProblems]
+
 YapfProblemTuple = Tuple[str, checker.interface.IProblems]
 YapfResultTuple = Tuple[str, str, bool]
 YapfCheckResultTuple = Tuple[str, YapfResultTuple]

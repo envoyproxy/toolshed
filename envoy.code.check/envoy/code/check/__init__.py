@@ -16,6 +16,7 @@ from .abstract import (
     AReflinksCheck,
     ARuntimeGuardsCheck,
     AShellcheckCheck,
+    AYamllintCheck,
     AYapfCheck)
 from .checker import (
     ChangelogChangesChecker,
@@ -27,6 +28,7 @@ from .checker import (
     GlintCheck,
     RuntimeGuardsCheck,
     ShellcheckCheck,
+    YamllintCheck,
     YapfCheck)
 from .cmd import run, main
 from . import checker, interface
@@ -49,6 +51,7 @@ __all__ = (
     "AReflinksCheck",
     "ARuntimeGuardsCheck",
     "AShellcheckCheck",
+    "AYamllintCheck",
     "AYapfCheck",
     "ChangelogChangesChecker",
     "ChangelogCheck",
@@ -67,4 +70,5 @@ __all__ = (
     "RuntimeGuardsCheck",
     "ShellcheckCheck",
     "typing",
+    "YamllintCheck",
     "YapfCheck")

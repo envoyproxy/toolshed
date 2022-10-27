@@ -8,6 +8,7 @@ pytooling_library(
         "//deps:envoy.base.utils",
         "//deps:flake8",
         "//deps:packaging",
+        "//deps:yamllint",
         "//deps:yapf",
     ],
     sources=[
@@ -22,6 +23,7 @@ pytooling_library(
         "abstract/rst.py",
         "abstract/runtime_guards.py",
         "abstract/shellcheck.py",
+        "abstract/yamllint.py",
         "abstract/yapf.py",
         "checker.py",
         "cmd.py",

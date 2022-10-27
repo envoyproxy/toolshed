@@ -98,6 +98,10 @@ class IShellcheckCheck(IFileCodeCheck, metaclass=abstracts.Interface):
     pass
 
 
+class IYamllintCheck(IFileCodeCheck, metaclass=abstracts.Interface):
+    pass
+
+
 class IYapfCheck(IFileCodeCheck, metaclass=abstracts.Interface):
     pass
 

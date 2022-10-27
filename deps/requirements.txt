@@ -53,5 +53,6 @@ types-setuptools
 uvloop
 verboselogs
 wheel-inspect
+yamllint
 yapf
 yarl>=1.7.2

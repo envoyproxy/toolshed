@@ -7,6 +7,8 @@ import re
 from functools import cached_property
 from typing import Dict, Mapping, Optional, Pattern, Set, Type
 
+from yamllint.config import YamlLintConfigError  # type:ignore
+
 import abstracts
 
 from aio.core import directory as _directory, event, subprocess
@@ -58,7 +60,8 @@ class ACodeChecker(
         "python_yapf",
         "python_flake8",
         "runtime_guards",
-        "shellcheck")
+        "shellcheck",
+        "yamllint")
 
     @property
     def all_files(self) -> bool:
@@ -214,13 +217,23 @@ class ACodeChecker(
         return CodeCheckerSummary
 
     @cached_property
-    def yapf(self) -> "interface.IYapfCheck":
+    def yamllint(self) -> interface.IYamllintCheck:
+        """Yamllint checker."""
+        return self.yamllint_class(self.directory, **self.check_kwargs)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def yamllint_class(self) -> Type[interface.IYamllintCheck]:
+        raise NotImplementedError
+
+    @cached_property
+    def yapf(self) -> interface.IYapfCheck:
         """YAPF checker."""
         return self.yapf_class(self.directory, **self.check_kwargs)
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def yapf_class(self) -> Type["interface.IYapfCheck"]:
+    def yapf_class(self) -> Type[interface.IYapfCheck]:
         raise NotImplementedError
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -303,6 +316,10 @@ class ACodeChecker(
         """Check for shellcheck issues."""
         await self._code_check(self.shellcheck)
 
+    async def check_yamllint(self) -> None:
+        """Check for yamllint issues."""
+        await self._code_check(self.yamllint)
+
     @checker.preload(
         when=["changelog"],
         catches=[utils.exceptions.ChangelogParseError])
@@ -346,6 +363,14 @@ class ACodeChecker(
         catches=[subprocess.exceptions.OSCommandError])
     async def preload_runtime_guards(self) -> None:
         await self.runtime_guards.missing
+
+    @checker.preload(
+        when=["yamllint"],
+        catches=[
+            subprocess.exceptions.OSCommandError,
+            YamlLintConfigError])
+    async def preload_yamllint(self) -> None:
+        await self.yamllint.problem_files
 
     @checker.preload(
         when=["python_yapf"],
