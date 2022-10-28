@@ -428,7 +428,7 @@ class DistroTestImage(object):
     async def images(self) -> Iterable[str]:
         """The currently built Docker image tag names."""
         return chain.from_iterable(
-            [image["RepoTags"]
+            [image["RepoTags"] or []
              for image
              in await self.docker.images.list()])
 
