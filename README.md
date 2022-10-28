@@ -120,7 +120,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.3.8.dev0
+version: 0.3.8
 
 pypi: https://pypi.org/project/envoy.base.utils
 
