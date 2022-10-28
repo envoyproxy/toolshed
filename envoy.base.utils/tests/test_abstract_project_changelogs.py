@@ -544,7 +544,9 @@ def test_abstract_changelogs_dump_yaml(iters, patches):
                   .return_value.replace.return_value)
         assert (
             changelogs.dump_yaml(data)
-            == f"{output}\n")
+            == (f"{output}\n"
+                if not output.endswith("\n")
+                else output))
 
     assert (
         m_yaml.return_value.dump.call_args

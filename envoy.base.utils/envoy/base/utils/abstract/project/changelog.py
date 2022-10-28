@@ -324,7 +324,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             sort_keys=False)
         for section in self.section_re.findall(output):
             output = output.replace(section, f"\n{section}")
-        return f"{output}\n"
+        return (
+            f"{output}\n"
+            if not output.endswith("\n")
+            else output)
 
     async def fetch(self, version: _version.Version) -> str:
         return await (
