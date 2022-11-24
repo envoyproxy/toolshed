@@ -24,6 +24,7 @@ from envoy.code.check import abstract, typing
 
 YAMLLINT_CONFIG = '.yamllint'
 YAMLLINT_MATCH_RE = (
+    r"[\w/\.]*\.yml$",
     r"[\w/\.]*\.yaml$", )
 YAMLLINT_NOMATCH_RE = (
     r"[\w/\.]*\.template\.yaml$",
