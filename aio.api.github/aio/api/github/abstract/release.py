@@ -24,7 +24,7 @@ class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
             published_at=utils.dt_from_js_isoformat)
 
     @cached_property
-    def version(self) -> Union[version.LegacyVersion, version.Version]:
+    def version(self) -> Union[version.Version]:
         return version.parse(self.tag_name)
 
     @property

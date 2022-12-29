@@ -1,6 +1,6 @@
 
 from functools import cached_property
-from typing import Dict, Optional, Tuple, Union
+from typing import Dict, Optional, Tuple
 
 from packaging import version
 
@@ -41,10 +41,7 @@ class AGithubDependencyReleaseIssue(
         return ("key", "version")
 
     @cached_property
-    def version(self) -> Optional[
-            Union[
-                version.LegacyVersion,
-                version.Version]]:
+    def version(self) -> Optional[version.Version]:
         """Parsed dependency version of an issue."""
         return (
             version.parse(self.parsed["version"])

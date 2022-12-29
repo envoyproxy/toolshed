@@ -6,7 +6,7 @@ import time
 from concurrent import futures
 from datetime import datetime
 from functools import cached_property
-from typing import Optional, Union
+from typing import Optional
 
 from packaging import version
 
@@ -156,9 +156,7 @@ class ADependencyGithubRelease(
 
     @cached_property
     def version(
-            self) -> Union[
-                version.LegacyVersion,
-                version.Version]:
+            self) -> version.Version:
         """Semantic version of this release."""
         return version.parse(self.tag_name)
 
