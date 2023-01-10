@@ -18,6 +18,7 @@ from envoy.code.check import abstract, interface, typing
 
 
 NOGLINT_RE = (
+    r"[\w\W/-]*\.go$",
     r"[\w\W/-]*\.patch$",
     r"^test/[\w/]*_corpus/[\w/]*",
     r"^tools/[\w/]*_corpus/[\w/]*",
