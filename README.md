@@ -37,7 +37,7 @@ pypi: https://pypi.org/project/aio.api.bazel
 
 #### [aio.api.github](aio.api.github)
 
-version: 0.1.5
+version: 0.1.6.dev0
 
 pypi: https://pypi.org/project/aio.api.github
 
@@ -48,7 +48,7 @@ pypi: https://pypi.org/project/aio.api.github
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [multidict](https://pypi.org/project/multidict) >=6.0.2
-- [packaging](https://pypi.org/project/packaging)
+- [packaging](https://pypi.org/project/packaging) >=23.0
 - [yarl](https://pypi.org/project/yarl) >=1.7.2
 
 ---
