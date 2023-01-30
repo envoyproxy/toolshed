@@ -147,7 +147,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code.check](envoy.code.check)
 
-version: 0.3.6
+version: 0.3.7.dev0
 
 pypi: https://pypi.org/project/envoy.code.check
 
@@ -192,7 +192,7 @@ pypi: https://pypi.org/project/envoy.dependency.check
 
 #### [envoy.dependency.pip_check](envoy.dependency.pip_check)
 
-version: 0.1.4
+version: 0.1.5.dev0
 
 pypi: https://pypi.org/project/envoy.dependency.pip_check
 
@@ -207,7 +207,7 @@ pypi: https://pypi.org/project/envoy.dependency.pip_check
 
 #### [envoy.distribution.distrotest](envoy.distribution.distrotest)
 
-version: 0.0.10
+version: 0.0.11.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.distrotest
 
@@ -256,7 +256,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 
 #### [envoy.distribution.verify](envoy.distribution.verify)
 
-version: 0.0.11
+version: 0.0.12.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.verify
 
@@ -284,7 +284,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.1.11
+version: 0.1.12.dev0
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
@@ -329,7 +329,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 
 #### [envoy.github.release](envoy.github.release)
 
-version: 0.0.15
+version: 0.0.16.dev0
 
 pypi: https://pypi.org/project/envoy.github.release
 
@@ -365,7 +365,7 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 
 #### [envoy.gpg.sign](envoy.gpg.sign)
 
-version: 0.1.1
+version: 0.1.2.dev0
 
 pypi: https://pypi.org/project/envoy.gpg.sign
 
