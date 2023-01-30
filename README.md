@@ -168,7 +168,7 @@ pypi: https://pypi.org/project/envoy.code.check
 
 #### [envoy.dependency.check](envoy.dependency.check)
 
-version: 0.1.6
+version: 0.1.7.dev0
 
 pypi: https://pypi.org/project/envoy.dependency.check
 
@@ -223,7 +223,7 @@ pypi: https://pypi.org/project/envoy.distribution.distrotest
 
 #### [envoy.distribution.release](envoy.distribution.release)
 
-version: 0.0.9
+version: 0.0.10.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.release
 
@@ -238,7 +238,7 @@ pypi: https://pypi.org/project/envoy.distribution.release
 
 #### [envoy.distribution.repo](envoy.distribution.repo)
 
-version: 0.0.8
+version: 0.0.9.dev0
 
 pypi: https://pypi.org/project/envoy.distribution.repo
 
