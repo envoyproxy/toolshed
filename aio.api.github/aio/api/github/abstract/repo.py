@@ -98,7 +98,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
                 not release.prerelease
                 and release.version
                 and (not highest_release
-                     or release.version >= highest_release.version))
+                     or (release.version >= highest_release.version)))
             if is_higher:
                 highest_release = release
         return highest_release

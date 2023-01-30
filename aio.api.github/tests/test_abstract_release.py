@@ -1,6 +1,10 @@
 
 from unittest.mock import MagicMock, PropertyMock
 
+import pytest
+
+from packaging import version
+
 import abstracts
 
 from aio.api import github
@@ -72,19 +76,31 @@ def test_abstract_release_tag_name(patches):
     assert "tag_name" not in release.__dict__
 
 
-def test_abstract_release_version(patches):
+@pytest.mark.parametrize("raises", [None, Exception, version.InvalidVersion])
+def test_abstract_release_version(patches, raises):
     release = DummyGithubRelease("REPO", "DATA")
     patched = patches(
-        "version",
+        "version.parse",
         ("AGithubRelease.tag_name",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.github.abstract.release")
 
     with patched as (m_version, m_tag):
-        assert release.version == m_version.parse.return_value
+        if raises:
+            m_version.side_effect = raises("AN ERROR OCCURRED")
+        if raises == Exception:
+            with pytest.raises(Exception):
+                release.version
+        elif not raises:
+            assert release.version == m_version.return_value
+        else:
+            assert not release.version
 
     assert (
-        m_version.parse.call_args
+        m_version.call_args
         == [(m_tag.return_value, ), {}])
 
-    assert "version" in release.__dict__
+    if raises != Exception:
+        assert "version" in release.__dict__
+    else:
+        assert "version" not in release.__dict__
