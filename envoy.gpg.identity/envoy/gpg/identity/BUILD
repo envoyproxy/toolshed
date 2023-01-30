@@ -2,7 +2,7 @@
 pytooling_library(
     "envoy.gpg.identity",
     dependencies=[
-        "//deps:aio.core",
-        "//deps:python-gnupg",
+        "//deps:reqs#aio.core",
+        "//deps:reqs#python-gnupg",
     ],
 )

@@ -2,13 +2,13 @@
 pytooling_tests(
     "envoy.dependency.check",
     dependencies=[
-        "//deps:abstracts",
-        "//deps:aio.api.github",
-        "//deps:aio.api.nist",
-        "//deps:aio.core",
-        "//deps:aio.run.checker",
-        "//deps:envoy.base.utils",
-        "//deps:aiohttp",
-        "//deps:packaging",
+        "//deps:reqs#abstracts",
+        "//deps:reqs#aio.api.github",
+        "//deps:reqs#aio.api.nist",
+        "//deps:reqs#aio.core",
+        "//deps:reqs#aio.run.checker",
+        "//deps:reqs#envoy.base.utils",
+        "//deps:reqs#aiohttp",
+        "//deps:reqs#packaging",
     ],
 )

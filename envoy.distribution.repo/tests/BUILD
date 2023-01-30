@@ -2,10 +2,10 @@
 pytooling_tests(
     "envoy.distribution.repo",
     dependencies=[
-        "//deps:abstracts",
-        "//deps:aio.core",
-        "//deps:aio.run.runner",
-        "//deps:envoy.base.utils",
-        "//deps:pytest-asyncio",
+        "//deps:reqs#abstracts",
+        "//deps:reqs#aio.core",
+        "//deps:reqs#aio.run.runner",
+        "//deps:reqs#envoy.base.utils",
+        "//deps:reqs#pytest-asyncio",
     ],
 )

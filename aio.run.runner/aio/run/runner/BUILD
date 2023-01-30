@@ -2,11 +2,11 @@
 pytooling_library(
     "aio.run.runner",
     dependencies=[
-        "//deps:abstracts",
-        "//deps:aio.core",
-        "//deps:coloredlogs",
-        "//deps:frozendict",
-        "//deps:uvloop",
-        "//deps:verboselogs",
+        "//deps:reqs#abstracts",
+        "//deps:reqs#aio.core",
+        "//deps:reqs#coloredlogs",
+        "//deps:reqs#frozendict",
+        "//deps:reqs#uvloop",
+        "//deps:reqs#verboselogs",
     ],
 )

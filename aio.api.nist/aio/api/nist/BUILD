@@ -2,9 +2,9 @@
 pytooling_library(
     "aio.api.nist",
     dependencies=[
-        "//deps:abstracts",
-        "//deps:aio.core",
-        "//deps:aiohttp",
+        "//deps:reqs#abstracts",
+        "//deps:reqs#aio.core",
+        "//deps:reqs#aiohttp",
     ],
     sources=[
         "abstract/__init__.py",

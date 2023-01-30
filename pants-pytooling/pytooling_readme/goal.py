@@ -1,12 +1,13 @@
 
 import difflib
 import pathlib
-from typing import cast, Callable, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from pants.engine.addresses import UnparsedAddressInputs
 from pants.engine.console import Console
 from pants.engine.goal import Goal, GoalSubsystem
 from pants.engine.internals.selectors import MultiGet
+from pants.option.option_types import StrOption
 from pants.engine.rules import Get, collect_rules, goal_rule
 from pants.engine.target import Targets
 from pants.engine.unions import UnionMembership
@@ -33,27 +34,14 @@ class ReadmeSubsystem(GoalSubsystem):
     name = "readme"
     help = "Create a README file."
 
-    @classmethod
-    def register_options(cls, register: Callable) -> None:
-        super().register_options(register)
-        register(
-            "--check",
-            type=str,
-            default="",
-            help="Check generated output against a README file.")
-        register(
-            "--fix",
-            type=str,
-            default="",
-            help="Fix README file with generated output.")
-
-    @property
-    def check(self) -> str:
-        return cast(str, self.options.check)
-
-    @property
-    def fix(self) -> str:
-        return cast(str, self.options.fix)
+    check = StrOption(
+        "--check",
+        default="",
+        help="...")
+    fix = StrOption(
+        "--fix",
+        default="",
+        help="...")
 
 
 class Readme(Goal):
