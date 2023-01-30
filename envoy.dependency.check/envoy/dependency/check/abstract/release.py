@@ -155,10 +155,12 @@ class ADependencyGithubRelease(
         return await self.timestamp_commit
 
     @cached_property
-    def version(
-            self) -> version.Version:
+    def version(self) -> Optional[version.Version]:
         """Semantic version of this release."""
-        return version.parse(self.tag_name)
+        try:
+            return version.parse(self.tag_name)
+        except version.InvalidVersion:
+            return None
 
     def should_hash_in_proc(self, data: bytes) -> bool:
         """Conditionally generate SHA hashes based on incoming data."""
