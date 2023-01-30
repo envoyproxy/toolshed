@@ -3,7 +3,7 @@
 def _dep_on_myself(namespace: str) -> list:
     # This prevents dependency conflicts on a package's own upstream
     return [
-        f"!//deps:{namespace}",
+        # f"!//deps:reqs#{namespace}",
         f"{namespace}/{namespace.replace('.', '/').replace('-', '_')}"]
 
 
@@ -68,14 +68,14 @@ def pytooling_tests(
 
     # TODO: remove this if we add separate per-package
     #   pytest.ini files
-    if "//deps:pytest-abstracts" not in dependencies:
-        dependencies.append("//deps:pytest-abstracts")
-    if "//deps:pytest-asyncio" not in dependencies:
-        dependencies.append("//deps:pytest-asyncio")
-    if "//deps:pytest-iters" not in dependencies:
-        dependencies.append("//deps:pytest-iters")
-    if "//deps:pytest-patches" not in dependencies:
-        dependencies.append("//deps:pytest-patches")
+    if "//deps:reqs#pytest-abstracts" not in dependencies:
+        dependencies.append("//deps:reqs#pytest-abstracts")
+    if "//deps:reqs#pytest-asyncio" not in dependencies:
+        dependencies.append("//deps:reqs#pytest-asyncio")
+    if "//deps:reqs#pytest-iters" not in dependencies:
+        dependencies.append("//deps:reqs#pytest-iters")
+    if "//deps:reqs#pytest-patches" not in dependencies:
+        dependencies.append("//deps:reqs#pytest-patches")
 
     python_tests(
         dependencies=dependencies,

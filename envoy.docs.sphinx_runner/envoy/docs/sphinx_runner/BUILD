@@ -2,19 +2,19 @@
 pytooling_library(
     "envoy.docs.sphinx_runner",
     dependencies=[
-        "//deps:aio.run.runner",
-        "//deps:envoy.base.utils",
-        "//deps:colorama",
-        "//deps:docutils",
-        "//deps:packaging",
-        "//deps:pygments",
-        "//deps:sphinx",
-        "//deps:sphinx-copybutton",
-        "//deps:sphinx-rtd-theme",
-        "//deps:sphinx-tabs",
-        "//deps:sphinxcontrib-httpdomain",
-        "//deps:sphinxcontrib-serializinghtml",
-        "//deps:sphinxext-rediraffe"
+        "//deps:reqs#aio.run.runner",
+        "//deps:reqs#envoy.base.utils",
+        "//deps:reqs#colorama",
+        "//deps:reqs#docutils",
+        "//deps:reqs#packaging",
+        "//deps:reqs#pygments",
+        "//deps:reqs#sphinx",
+        "//deps:reqs#sphinx-copybutton",
+        "//deps:reqs#sphinx-rtd-theme",
+        "//deps:reqs#sphinx-tabs",
+        "//deps:reqs#sphinxcontrib-httpdomain",
+        "//deps:reqs#sphinxcontrib-serializinghtml",
+        "//deps:reqs#sphinxext-rediraffe"
     ],
     sources=[
         "__init__.py",

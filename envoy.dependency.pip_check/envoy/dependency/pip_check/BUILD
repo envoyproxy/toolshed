@@ -2,8 +2,8 @@
 pytooling_library(
     "envoy.dependency.pip_check",
     dependencies=[
-        "//deps:abstracts",
-        "//deps:aio.run.checker",
-        "//deps:envoy.base.utils",
+        "//deps:reqs#abstracts",
+        "//deps:reqs#aio.run.checker",
+        "//deps:reqs#envoy.base.utils",
     ],
 )

@@ -1,2 +1,7 @@
 
-pytooling_library("mypy-abstracts")
+pytooling_library(
+    "mypy-abstracts",
+    dependencies=[
+        "//deps:reqs#mypy",
+    ],
+)

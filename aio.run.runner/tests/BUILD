@@ -2,7 +2,7 @@
 pytooling_tests(
     "aio.run.runner",
     dependencies=[
-        "//deps:abstracts",
-        "//deps:aio.core",
+        "//deps:reqs#abstracts",
+        "//deps:reqs#aio.core",
     ],
 )

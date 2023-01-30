@@ -3,9 +3,9 @@ pytooling_library(
     "envoy.distribution.distrotest",
     dependencies=[
         ":data",
-        "//deps:aio.run.checker",
-        "//deps:envoy.base.utils",
-        "//deps:envoy.docker.utils",
+        "//deps:reqs#aio.run.checker",
+        "//deps:reqs#envoy.base.utils",
+        "//deps:reqs#envoy.docker.utils",
     ],
 )
 

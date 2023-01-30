@@ -2,8 +2,8 @@
 pytooling_tests(
     "envoy.distribution.verify",
     dependencies=[
-        "//deps:aio.run.checker",
-        "//deps:envoy.base.utils",
-        "//deps:envoy.distribution.distrotest",
+        "//deps:reqs#aio.run.checker",
+        "//deps:reqs#envoy.base.utils",
+        "//deps:reqs#envoy.distribution.distrotest",
     ],
 )

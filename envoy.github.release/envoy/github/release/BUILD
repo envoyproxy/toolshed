@@ -2,12 +2,12 @@
 pytooling_library(
     "envoy.github.release",
     dependencies=[
-        "//deps:abstracts",
-        "//deps:aio.core",
-        "//deps:aio.run.runner",
-        "//deps:aiofiles",
-        "//deps:envoy.github.abstract",
-        "//deps:envoy.base.utils",
+        "//deps:reqs#abstracts",
+        "//deps:reqs#aio.core",
+        "//deps:reqs#aio.run.runner",
+        "//deps:reqs#aiofiles",
+        "//deps:reqs#envoy.github.abstract",
+        "//deps:reqs#envoy.base.utils",
     ],
     tags=["abstract-types"],
     sources=[
