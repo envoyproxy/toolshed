@@ -168,19 +168,19 @@ pypi: https://pypi.org/project/envoy.code.check
 
 #### [envoy.dependency.check](envoy.dependency.check)
 
-version: 0.1.6.dev0
+version: 0.1.6
 
 pypi: https://pypi.org/project/envoy.dependency.check
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.2
+- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.5
 - [aio.api.nist](https://pypi.org/project/aio.api.nist) >=0.0.3
 - [aio.core](https://pypi.org/project/aio.core) >=0.9.1
-- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.5
+- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.6
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.9
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [jinja2](https://pypi.org/project/jinja2)
 - [multidict](https://pypi.org/project/multidict) >=6.0.2
@@ -223,33 +223,33 @@ pypi: https://pypi.org/project/envoy.distribution.distrotest
 
 #### [envoy.distribution.release](envoy.distribution.release)
 
-version: 0.0.9.dev0
+version: 0.0.9
 
 pypi: https://pypi.org/project/envoy.distribution.release
 
 ##### requirements:
 
-- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.21
-- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.11
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.22
+- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.14
 
 ---
 
 
 #### [envoy.distribution.repo](envoy.distribution.repo)
 
-version: 0.0.8.dev0
+version: 0.0.8
 
 pypi: https://pypi.org/project/envoy.distribution.repo
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.3.0
-- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.1.0
-- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.21
-- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.11
+- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.9
+- [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.22
+- [envoy.github.release](https://pypi.org/project/envoy.github.release) >=0.0.14
 
 ---
 
