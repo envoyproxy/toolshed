@@ -4,6 +4,8 @@ from typing import (
     Any, AsyncGenerator, Dict,
     Optional, Pattern, Tuple, Type)
 
+from packaging import version
+
 import abstracts
 
 import aiohttp
@@ -21,7 +23,12 @@ class IGithubRelease(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def tag_name(self):
+    def tag_name(self) -> str:
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def version(self) -> Optional[version.Version]:
         raise NotImplementedError
 
 

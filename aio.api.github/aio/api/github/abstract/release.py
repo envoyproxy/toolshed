@@ -1,6 +1,6 @@
 
 from functools import cached_property
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, Optional
 
 from packaging import version
 
@@ -24,9 +24,12 @@ class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
             published_at=utils.dt_from_js_isoformat)
 
     @cached_property
-    def version(self) -> Union[version.Version]:
-        return version.parse(self.tag_name)
+    def version(self) -> Optional[version.Version]:
+        try:
+            return version.parse(self.tag_name)
+        except version.InvalidVersion:
+            return None
 
     @property
-    def tag_name(self):
+    def tag_name(self) -> str:
         return self.data["tag_name"]
