@@ -284,7 +284,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.1.12
+version: 0.2.0
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
@@ -292,16 +292,16 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
 - [colorama](https://pypi.org/project/colorama)
-- [docutils](https://pypi.org/project/docutils) ~=0.18.0
+- [docutils](https://pypi.org/project/docutils) ~=0.19.0
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.10
 - [envoy.code.check](https://pypi.org/project/envoy.code.check) >=0.3.6
 - [packaging](https://pypi.org/project/packaging) >=23.0
 - [pygments](https://pypi.org/project/pygments) >=2.11.1
 - [pyyaml](https://pypi.org/project/pyyaml)
 - [sphinx-copybutton](https://pypi.org/project/sphinx-copybutton)
-- [sphinx-rtd-theme](https://pypi.org/project/sphinx-rtd-theme) >=1.2.0rc3
-- [sphinx-tabs](https://pypi.org/project/sphinx-tabs) >=3.4.1
-- [sphinx](https://pypi.org/project/sphinx) <6,>=5.3.0
+- [sphinx-tabs](https://pypi.org/project/sphinx-tabs)
+- [sphinx](https://pypi.org/project/sphinx) ==6.0.1
+- [sphinx_rtd_theme](https://pypi.org/project/sphinx_rtd_theme)
 - [sphinxcontrib-httpdomain](https://pypi.org/project/sphinxcontrib-httpdomain)
 - [sphinxcontrib-serializinghtml](https://pypi.org/project/sphinxcontrib-serializinghtml)
 - [sphinxext-rediraffe](https://pypi.org/project/sphinxext-rediraffe)

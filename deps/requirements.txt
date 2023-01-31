@@ -10,7 +10,7 @@ aiofiles
 aiohttp>=3.8.1
 colorama
 coloredlogs
-docutils~=0.16.0
+docutils~=0.19.0
 envoy.base.utils>=0.3.10
 envoy.distribution.distrotest>=0.0.10
 envoy.distribution.release>=0.0.8
@@ -40,10 +40,12 @@ python-gnupg
 pytz
 pyyaml
 setuptools
-sphinx
-sphinx-copybutton
-sphinx-rtd-theme
-sphinx-tabs
+sphinx==6.0.1
+sphinx-copybutton>=0.5.1
+# These are pinned upstream mostly for continued legacy python version support
+# TODO(phlax): use upstream when available
+https://github.com/phlax/sphinx_rtd_theme/archive/11a587c63fd2237003e60a7359e8503c7ea094a1.zip#egg=sphinx_rtd_theme
+https://github.com/phlax/sphinx-tabs/archive/338fda565dbf917650503b3cf0d35760f7fe07df.zip#egg=sphinx-tabs
 sphinxcontrib-httpdomain
 sphinxcontrib-serializinghtml
 sphinxext-rediraffe
