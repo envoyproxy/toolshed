@@ -3,6 +3,8 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+from packaging import version
+
 import gidgethub
 
 import abstracts
@@ -445,21 +447,33 @@ async def test_release_timestamp_tag(patches, has_release, has_tag):
         == result)
 
 
-def test_release_version(patches):
+@pytest.mark.parametrize("raises", [None, Exception, version.InvalidVersion])
+def test_release_version(patches, raises):
     release = DummyDependencyGithubRelease("REPO", "VERSION")
     patched = patches(
-        "version",
+        "version.parse",
         ("ADependencyGithubRelease.tag_name",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.release")
 
     with patched as (m_version, m_tagname):
-        assert release.version == m_version.parse.return_value
+        if raises:
+            m_version.side_effect = raises("AN ERROR OCCURRED")
+        if raises == version.InvalidVersion:
+            assert not release.version
+        elif not raises:
+            assert release.version == m_version.return_value
+        else:
+            with pytest.raises(Exception):
+                release.version
 
     assert (
-        m_version.parse.call_args
+        m_version.call_args
         == [(m_tagname.return_value, ), {}])
-    assert "version" in release.__dict__
+    if raises != Exception:
+        assert "version" in release.__dict__
+    else:
+        assert "version" not in release.__dict__
 
 
 @pytest.mark.parametrize("min_len", range(0, 5))
