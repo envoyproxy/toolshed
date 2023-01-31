@@ -7,8 +7,6 @@ pytooling_tests(
         "//deps:reqs#colorama",
         "//deps:reqs#sphinx",
         "//deps:reqs#sphinx-copybutton",
-        "//deps:reqs#sphinx-rtd-theme",
-        "//deps:reqs#sphinx-tabs",
         "//deps:reqs#sphinxcontrib-httpdomain",
         "//deps:reqs#sphinxcontrib-serializinghtml",
         "//deps:reqs#sphinxext-rediraffe",
