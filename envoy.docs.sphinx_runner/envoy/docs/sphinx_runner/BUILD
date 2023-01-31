@@ -15,12 +15,13 @@ pytooling_library(
         "//deps:reqs#sphinxcontrib-serializinghtml",
         "//deps:reqs#sphinxext-rediraffe",
         "./sphinx_rtd_theme",
-        "./ext",
+        "./sphinx_tabs",
     ],
     sources=[
         "__init__.py",
         "cmd.py",
         "exceptions.py",
         "runner.py",
+        "ext/*.py",
     ],
 )
