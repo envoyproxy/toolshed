@@ -10,8 +10,7 @@ pytooling_library(
         "//deps:reqs#pygments",
         "//deps:reqs#sphinx",
         "//deps:reqs#sphinx-copybutton",
-        "//deps:reqs#sphinx-rtd-theme",
-        "//deps:reqs#sphinx-tabs",
+        "//deps:reqs#sphinxcontrib-jquery",
         "//deps:reqs#sphinxcontrib-httpdomain",
         "//deps:reqs#sphinxcontrib-serializinghtml",
         "//deps:reqs#sphinxext-rediraffe"
