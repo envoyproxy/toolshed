@@ -13,15 +13,14 @@ pytooling_library(
         "//deps:reqs#sphinxcontrib-jquery",
         "//deps:reqs#sphinxcontrib-httpdomain",
         "//deps:reqs#sphinxcontrib-serializinghtml",
-        "//deps:reqs#sphinxext-rediraffe"
+        "//deps:reqs#sphinxext-rediraffe",
+        "./sphinx_rtd_theme",
+        "./ext",
     ],
     sources=[
         "__init__.py",
         "cmd.py",
         "exceptions.py",
         "runner.py",
-        "ext/httpdomain.py",
-        "ext/powershell_lexer.py",
-        "ext/validating_code_block.py",
     ],
 )
