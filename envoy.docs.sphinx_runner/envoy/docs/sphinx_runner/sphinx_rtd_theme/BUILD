@@ -10,5 +10,9 @@ python_sources(
 resources(
     name="assets",
     sources=[
+        "*.html",
+        "*.conf",
+        "./locale/**/*.po",
+        "./locale/**/*.pot",
         "./static/**/*.css",
         "./static/**/*.js"])
