@@ -15,4 +15,9 @@ resources(
         "./locale/**/*.po",
         "./locale/**/*.pot",
         "./static/**/*.css",
-        "./static/**/*.js"])
+        "./static/**/*.js",
+        "./static/**/*.woff",
+        "./static/**/*.woff2",
+        "./static/**/*.eot",
+        "./static/**/*.ttf",
+        "./static/**/*.svg"])
