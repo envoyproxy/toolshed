@@ -187,6 +187,16 @@ def test_projecrunner_add_arguments(patches):
             [('--nocommit',),
              {'action': 'store_true'}],
             [('--patch',),
+             {'action': 'store_true'}],
+            [('--publish-assets',),
+             {'default': ''}],
+            [('--publish-commitish',),
+             {'default': ''}],
+            [('--publish-dev',),
+             {'action': 'store_true'}],
+            [('--publish-latest',),
+             {'action': 'store_true'}],
+            [('--publish-generate-notes',),
              {'action': 'store_true'}]])
 
 
@@ -229,6 +239,8 @@ async def test_projectrunner_commit(iters, patches):
 async def test_projectrunner_handle_action(patches, action, nosync):
     runner = utils.ProjectRunner()
     patched = patches(
+        ("ProjectRunner.args",
+         dict(new_callable=PropertyMock)),
         ("ProjectRunner.command",
          dict(new_callable=PropertyMock)),
         ("ProjectRunner.nosync",
@@ -239,7 +251,9 @@ async def test_projectrunner_handle_action(patches, action, nosync):
         "ProjectRunner.run_sync",
         prefix="envoy.base.utils.project_runner")
 
-    with patched as (m_command, m_nosync, m_dev, m_publish, m_release, m_sync):
+    with patched as patchy:
+        (m_args, m_command, m_nosync,
+         m_dev, m_publish, m_release, m_sync) = patchy
         m_command.return_value = action
         m_nosync.return_value = nosync
         result = await runner.handle_action()
@@ -247,7 +261,11 @@ async def test_projectrunner_handle_action(patches, action, nosync):
     if action == "publish":
         assert (
             m_publish.call_args
-            == [(), {}])
+            == [(),
+                dict(assets=m_args.return_value.publish_assets,
+                     commitish=m_args.return_value.publish_commitish,
+                     dev=m_args.return_value.publish_dev,
+                     latest=m_args.return_value.publish_latest)])
         assert result == dict(publish=m_publish.return_value)
         assert not m_sync.called
         return
@@ -340,7 +358,7 @@ async def test_projectrunner_publish(patches):
     change = publish.return_value
     log_message = (
         f"[release] Release ({change.__getitem__.return_value}) "
-        f"created from branch: {change.__getitem__.return_value}\n"
+        f"created from branch/commit: {change.__getitem__.return_value}\n"
         f"    {change.__getitem__.return_value}")
     assert (
         m_log.return_value.success.call_args
@@ -348,7 +366,7 @@ async def test_projectrunner_publish(patches):
     assert (
         change.__getitem__.call_args_list
         == [[("tag_name", ), {}],
-            [("branch", ), {}],
+            [("commitish", ), {}],
             [("url", ), {}]])
     assert (
         publish.call_args
