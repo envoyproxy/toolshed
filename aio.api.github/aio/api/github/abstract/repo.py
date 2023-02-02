@@ -61,16 +61,28 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
 
     async def create_release(
             self,
-            branch: str,
-            tag_name: str) -> Dict[str, str | Dict]:
+            commitish: str,
+            tag_name: str,
+            body: Optional[str] = None,
+            latest: Optional[bool] = False,
+            generate_release_notes: Optional[bool] = False) -> (
+                Dict[str, str | Dict]):
         if await self.tag_exists(tag_name):
             raise exceptions.TagExistsError(
                 f"Cannot create tag, already exists: {tag_name}")
-        return await self.post(
-            "releases",
-            dict(tag_name=tag_name,
-                 name=tag_name,
-                 target_commitish=branch))
+        url_vars = dict(
+            tag_name=tag_name,
+            name=tag_name,
+            target_commitish=commitish,
+            make_latest=("true" if latest else "false"))
+        if body is not None:
+            url_vars["body"] = body
+        if generate_release_notes is not None:
+            url_vars["generate_release_notes"] = (
+                "true"
+                if generate_release_notes
+                else "false")
+        return await self.post("releases", url_vars)
 
     async def getitem(self, query: str) -> Any:
         """Call the `gidgethub.getitem` api for this repo."""

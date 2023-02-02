@@ -168,21 +168,33 @@ def test_abstract_repo_commits(patches, since):
 
 
 @pytest.mark.parametrize("exists", [True, False])
-async def test_abstract_repo_create_release(patches, exists):
+@pytest.mark.parametrize("body", [None, "", "BODY"])
+@pytest.mark.parametrize("latest", [None, True, False])
+@pytest.mark.parametrize("generate", [None, True, False])
+async def test_abstract_repo_create_release(
+        patches, exists, body, latest, generate):
     repo = DummyGithubRepo("GITHUB", "NAME")
     patched = patches(
         "AGithubRepo.post",
         "AGithubRepo.tag_exists",
         prefix="aio.api.github.abstract.repo")
 
+    kwargs = {}
+    if body is not None:
+        kwargs["body"] = body
+    if latest is not None:
+        kwargs["latest"] = latest
+    if generate is not None:
+        kwargs["generate_release_notes"] = generate
+
     with patched as (m_post, m_exists):
         m_exists.return_value = exists
         if exists:
             with pytest.raises(base_github.exceptions.TagExistsError) as e:
-                await repo.create_release("BRANCH", "TAG_NAME")
+                await repo.create_release("BRANCH", "TAG_NAME", **kwargs)
         else:
             assert (
-                await repo.create_release("BRANCH", "TAG_NAME")
+                await repo.create_release("BRANCH", "TAG_NAME", **kwargs)
                 == m_post.return_value)
 
     assert (
@@ -195,12 +207,18 @@ async def test_abstract_repo_create_release(patches, exists):
             == "Cannot create tag, already exists: TAG_NAME")
         assert not m_post.called
         return
+    expected = dict(
+        tag_name="TAG_NAME",
+        name="TAG_NAME",
+        target_commitish="BRANCH",
+        make_latest=("true" if latest else "false"),
+        generate_release_notes=("true" if generate else "false"),)
+    if body is not None:
+        expected["body"] = body
     assert (
         m_post.call_args
         == [("releases",
-             dict(tag_name="TAG_NAME",
-                  name="TAG_NAME",
-                  target_commitish="BRANCH")),
+             expected),
             {}])
 
 
