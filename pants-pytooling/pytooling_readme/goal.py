@@ -62,18 +62,18 @@ class ReadmeGoal:
     @property
     def action(self) -> Optional[str]:
         """Action, if set."""
-        if self.readme_subsystem.options.check:
+        if self.readme_subsystem.check:
             return "check"
-        if self.readme_subsystem.options.fix:
+        if self.readme_subsystem.fix:
             return "fix"
 
     @property
     def action_file(self) -> Optional[pathlib.Path]:
         """File to work on with fix/check."""
-        if self.readme_subsystem.options.check:
-            return pathlib.Path(self.readme_subsystem.options.check)
-        if self.readme_subsystem.options.fix:
-            return pathlib.Path(self.readme_subsystem.options.fix)
+        if self.readme_subsystem.check:
+            return pathlib.Path(self.readme_subsystem.check)
+        if self.readme_subsystem.fix:
+            return pathlib.Path(self.readme_subsystem.fix)
 
     @property
     def target_types(self) -> Targets:
