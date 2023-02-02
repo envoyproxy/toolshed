@@ -90,7 +90,7 @@ class ProjectSyncResultDict(TypedDict):
 
 
 class ProjectPublishResultDict(TypedDict):
-    branch: str
+    commitish: str
     date: str
     tag_name: str
     url: str

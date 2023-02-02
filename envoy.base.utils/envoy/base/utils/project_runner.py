@@ -82,6 +82,12 @@ class ProjectRunner(runner.Runner):
         parser.add_argument("--nocommit", action="store_true")
         parser.add_argument("--patch", action="store_true")
 
+        parser.add_argument("--publish-assets", default="")
+        parser.add_argument("--publish-commitish", default="")
+        parser.add_argument("--publish-dev", action="store_true")
+        parser.add_argument("--publish-latest", action="store_true")
+        parser.add_argument("--publish-generate-notes", action="store_true")
+
     async def commit(
             self,
             change: typing.ProjectChangeDict) -> None:
@@ -93,7 +99,12 @@ class ProjectRunner(runner.Runner):
     async def handle_action(self) -> typing.ProjectChangeDict:
         change: typing.ProjectChangeDict = {}
         if self.command == "publish":
-            return dict(publish=await self.run_publish())
+            return dict(
+                publish=await self.run_publish(
+                    assets=self.args.publish_assets,
+                    commitish=self.args.publish_commitish,
+                    dev=self.args.publish_dev,
+                    latest=self.args.publish_latest))
         if self.command == "dev":
             change["dev"] = await self.run_dev()
         if self.command == "release":
@@ -127,11 +138,11 @@ class ProjectRunner(runner.Runner):
             f"[changelog] add: {change['old_version']}")
         return change
 
-    async def run_publish(self) -> typing.ProjectPublishResultDict:
-        change = await self.project.publish()
+    async def run_publish(self, **kwargs) -> typing.ProjectPublishResultDict:
+        change = await self.project.publish(**kwargs)
         self.log.success(
             f"[release] Release ({change['tag_name']}) "
-            f"created from branch: {change['branch']}\n"
+            f"created from branch/commit: {change['commitish']}\n"
             f"    {change['url']}")
         return change
 

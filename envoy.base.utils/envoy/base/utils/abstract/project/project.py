@@ -214,18 +214,29 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             self.version.base_version
             == version.base_version)
 
-    async def publish(self) -> typing.ProjectPublishResultDict:
-        if self.is_dev:
+    async def publish(
+            self,
+            assets: Optional[pathlib.Path] = None,
+            commitish: Optional[str] = None,
+            dev: Optional[bool] = None,
+            latest: Optional[bool] = None) -> typing.ProjectPublishResultDict:
+        if not dev and self.is_dev:
             raise _github.exceptions.TagError(
                 f"Cannot tag a dev version: {self.version}")
-        branch = (
-            self.main_branch
-            if self.is_main
-            else f"release/v{self.minor_version}")
-        release = await self.repo.create_release(branch, f"v{self.version}")
+        commitish = (
+            commitish
+            if commitish
+            else (self.main_branch
+                  if self.is_main
+                  else f"release/v{self.minor_version}"))
+        release = await self.repo.create_release(
+            commitish,
+            f"v{self.version}",
+            latest=latest or (self.is_main and not self.is_dev),
+            assets=assets)
         # TODO: add asset upload
         return dict(
-            branch=release["target_commitish"],
+            commitish=release["target_commitish"],
             date=release["published_at"],
             tag_name=release["tag_name"],
             url=release["html_url"])
