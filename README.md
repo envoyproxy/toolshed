@@ -120,14 +120,14 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.3.12.dev0
+version: 0.4.0
 
 pypi: https://pypi.org/project/envoy.base.utils
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.7
+- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.8
 - [aio.core](https://pypi.org/project/aio.core) >=0.9.1
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
