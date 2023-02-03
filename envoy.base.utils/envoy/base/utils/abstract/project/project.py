@@ -232,8 +232,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         release = await self.repo.create_release(
             commitish,
             f"v{self.version}",
-            latest=latest or (self.is_main and not self.is_dev),
-            assets=assets)
+            latest=latest or (self.is_main and not self.is_dev))
         # TODO: add asset upload
         return dict(
             commitish=release["target_commitish"],

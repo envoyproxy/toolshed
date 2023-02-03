@@ -758,9 +758,7 @@ async def test_abstract_project_publish(
         m_main_branch.return_value
         if is_main
         else f"release/v{m_minor.return_value}")
-    expected = dict(
-        assets=assets,
-        latest=(latest or (is_main and not is_dev)))
+    expected = dict(latest=(latest or (is_main and not is_dev)))
     assert (
         create_release.call_args
         == [(branch, f"v{m_version.return_value}"), expected])
