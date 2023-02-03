@@ -70,7 +70,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
         if await self.tag_exists(tag_name):
             raise exceptions.TagExistsError(
                 f"Cannot create tag, already exists: {tag_name}")
-        url_vars = dict(
+        url_vars: Dict[str, bool | str] = dict(
             tag_name=tag_name,
             name=tag_name,
             target_commitish=commitish,
@@ -78,10 +78,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
         if body is not None:
             url_vars["body"] = body
         if generate_release_notes is not None:
-            url_vars["generate_release_notes"] = (
-                "true"
-                if generate_release_notes
-                else "false")
+            url_vars["generate_release_notes"] = generate_release_notes
         return await self.post("releases", url_vars)
 
     async def getitem(self, query: str) -> Any:

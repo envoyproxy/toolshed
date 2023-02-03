@@ -167,7 +167,7 @@ class IGithubRepo(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     async def create_release(
             self,
-            branch: str,
+            commitish: str,
             name: str) -> Dict[str, str | Dict]:
         """Create a release for this repo."""
         raise NotImplementedError
