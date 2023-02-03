@@ -127,11 +127,13 @@ def test_projectrunner_project(patches):
          dict(new_callable=PropertyMock)),
         ("ProjectRunner.path",
          dict(new_callable=PropertyMock)),
+        ("ProjectRunner.repo",
+         dict(new_callable=PropertyMock)),
         ("ProjectRunner.session",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.project_runner")
 
-    with patched as (m_utils, m_token, m_path, m_session):
+    with patched as (m_utils, m_token, m_path, m_repo, m_session):
         assert (
             runner.project
             == m_utils.Project.return_value)
@@ -141,6 +143,7 @@ def test_projectrunner_project(patches):
         == [(),
             dict(path=m_path.return_value,
                  session=m_session.return_value,
+                 repo=m_repo.return_value,
                  github_token=m_token.return_value)])
     assert "project" in runner.__dict__
 
@@ -162,7 +165,7 @@ def test_projectrunner_session(patches):
     assert "session" in runner.__dict__
 
 
-def test_projecrunner_add_arguments(patches):
+def test_projectrunner_add_arguments(patches):
     runner = utils.ProjectRunner()
     parser = MagicMock()
     patched = patches(
@@ -188,6 +191,8 @@ def test_projecrunner_add_arguments(patches):
              {'action': 'store_true'}],
             [('--patch',),
              {'action': 'store_true'}],
+            [('--repo',),
+             {'default': ''}],
             [('--publish-assets',),
              {'default': ''}],
             [('--publish-commitish',),

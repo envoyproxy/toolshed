@@ -30,7 +30,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             path: Union[pathlib.Path, str] = ".",
             version: Optional[_version.Version] = None,
             github: Optional[_github.IGithubAPI] = None,
-            repo: Optional[_github.IGithubRepo] = None,
+            repo: Optional[str | _github.IGithubRepo] = None,
             github_token: Optional[str] = None,
             session: Optional[aiohttp.ClientSession] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None,
@@ -140,7 +140,11 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
 
     @cached_property
     def repo(self) -> _github.IGithubRepo:
-        return self._repo or self.github[ENVOY_REPO]
+        if isinstance(self._repo, _github.IGithubRepo):
+            return self._repo
+        if self._repo:
+            return self.github[self._repo]
+        return self.github[ENVOY_REPO]
 
     @property
     def rel_version_path(self) -> pathlib.Path:

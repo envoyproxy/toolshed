@@ -64,7 +64,12 @@ class ProjectRunner(runner.Runner):
         return utils.Project(
             path=self.path,
             session=self.session,
+            repo=self.repo,
             github_token=self.github_token)
+
+    @cached_property
+    def repo(self) -> Optional[str]:
+        return self.args.repo
 
     @cached_property
     def session(self) -> aiohttp.ClientSession:
@@ -81,6 +86,7 @@ class ProjectRunner(runner.Runner):
         parser.add_argument("--nosync", action="store_true")
         parser.add_argument("--nocommit", action="store_true")
         parser.add_argument("--patch", action="store_true")
+        parser.add_argument("--repo", default="")
 
         parser.add_argument("--publish-assets", default="")
         parser.add_argument("--publish-commitish", default="")

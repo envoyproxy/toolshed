@@ -379,26 +379,34 @@ def test_abstract_project_rel_version_path(patches):
         == [(m_path, ), {}])
 
 
-@pytest.mark.parametrize("repo", [None, "REPO"])
-def test_abstract_project_repo(patches, repo):
+@pytest.mark.parametrize("repo", [None, "", "REPO"])
+@pytest.mark.parametrize("is_str", [True, False])
+def test_abstract_project_repo(patches, repo, is_str):
     kwargs = (
         dict(repo=repo)
         if repo is not None
         else {})
     project = DummyProject(**kwargs)
     patched = patches(
+        "isinstance",
         ("AProject.github",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.project")
 
-    with patched as (m_github, ):
-        assert (
-            project.repo
-            == (m_github.return_value.__getitem__.return_value
-                if not repo
-                else repo))
-    if repo:
+    with patched as (m_inst, m_github):
+        m_inst.return_value = not is_str
+        if not is_str:
+            assert project.repo == repo
+        else:
+            assert (
+                project.repo
+                == m_github.return_value.__getitem__.return_value)
+    if not is_str:
         assert not m_github.called
+    elif repo:
+        assert (
+            m_github.return_value.__getitem__.call_args
+            == [(repo, ), {}])
     else:
         assert (
             m_github.return_value.__getitem__.call_args
