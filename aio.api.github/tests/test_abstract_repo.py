@@ -212,7 +212,7 @@ async def test_abstract_repo_create_release(
         name="TAG_NAME",
         target_commitish="BRANCH",
         make_latest=("true" if latest else "false"),
-        generate_release_notes=("true" if generate else "false"),)
+        generate_release_notes=generate or False)
     if body is not None:
         expected["body"] = body
     assert (
