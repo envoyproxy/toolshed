@@ -12,8 +12,8 @@ resources(
     sources=[
         "*.html",
         "*.conf",
+        "./locale/*.pot",
         "./locale/**/*.po",
-        "./locale/**/*.pot",
         "./static/**/*.css",
         "./static/**/*.js",
         "./static/**/*.woff",
