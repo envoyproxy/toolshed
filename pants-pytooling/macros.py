@@ -49,7 +49,7 @@ def pytooling_package(
         wheel=True,
         sdist=True,
         **kwargs)
-   readme_snippet(
+    readme_snippet(
        name="package_snippet",
        artefacts=[
            f"{namespace}:build_artefacts",
