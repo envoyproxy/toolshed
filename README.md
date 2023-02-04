@@ -147,7 +147,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 #### [envoy.code.check](envoy.code.check)
 
-version: 0.3.7.dev0
+version: 0.4.0
 
 pypi: https://pypi.org/project/envoy.code.check
 
@@ -156,7 +156,7 @@ pypi: https://pypi.org/project/envoy.code.check
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.core](https://pypi.org/project/aio.core) >=0.9.1
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.9
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.4.1
 - [flake8](https://pypi.org/project/flake8) >=6
 - [packaging](https://pypi.org/project/packaging) >=23.0
 - [pep8-naming](https://pypi.org/project/pep8-naming)
