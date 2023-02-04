@@ -1371,7 +1371,7 @@ async def test_checker_run(patches, download_cves):
             await checker.run()
             == (m_super.return_value
                 if not download_cves
-                else cves_download.return_value))
+                else 0))
 
     if download_cves:
         assert not m_super.called

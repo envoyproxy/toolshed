@@ -90,7 +90,7 @@ class ACVE(metaclass=abstracts.Abstraction):
             if str(cpe) in self.tracked_cpes
             else False)
 
-    def update_fields(self, data) -> "typing.CVEDict":
+    def update_fields(self, data) -> Optional["typing.CVEDict"]:
         """Add requested fields for matched CVE."""
         # todo: if nodes are requested dont delete just rename if required
         del self.cve_dict["nodes"]
