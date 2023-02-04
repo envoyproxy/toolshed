@@ -12,16 +12,6 @@ on:
       released
 
 jobs:
-#  debug:
-#    runs-on: ubuntu-latest
-#    steps:
-#    - uses: actions/checkout@v2
-#    - name: Setup upterm session
-#      uses: lhotari/action-upterm@v1
-#      with:
-#        limit-access-to-actor: true
-#        limit-access-to-users: phlax
-
   test:
     runs-on: ubuntu-latest
     if: github.repository_owner == 'envoyproxy'
@@ -87,6 +77,24 @@ jobs:
        path: ~/.cache/pants
    - name: Run pants README
      run: "./scripts/pants readme --check=README.md ::"
+
+ debug:
+   runs-on: ubuntu-latest
+   steps:
+   - uses: actions/checkout@v3
+   - uses: actions/setup-python@v4
+     with:
+       python-version: "3.9"
+   - name: Cache pants
+     uses: actions/cache@v3
+     with:
+       key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
+       path: ~/.cache/pants
+   - name: Setup upterm session
+     uses: lhotari/action-upterm@v1
+     with:
+       limit-access-to-actor: true
+       limit-access-to-users: phlax
 
   package:
     runs-on: ubuntu-latest
