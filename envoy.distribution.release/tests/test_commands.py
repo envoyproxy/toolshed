@@ -102,7 +102,7 @@ async def test_release_command_delete(patches):
     with patched as (m_release, ):
         mock_delete = AsyncMock()
         m_release.return_value.delete = mock_delete
-        assert await command.run() == mock_delete.return_value
+        assert await command.run() == 0
 
     assert (
         mock_delete.call_args

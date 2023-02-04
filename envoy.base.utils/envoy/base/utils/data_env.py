@@ -9,7 +9,8 @@ from envoy.base import utils
 
 class DataEnvironment:
 
-    @classmethod
+    # TODO(phlax): classproperty is deprecated from 3.11
+    @classmethod  # type: ignore
     @property
     def parser_create(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
@@ -18,7 +19,8 @@ class DataEnvironment:
         parser.add_argument("-f", "--format", default="json")
         return parser
 
-    @classmethod
+    # TODO(phlax): classproperty is deprecated from 3.11
+    @classmethod  # type: ignore
     @property
     def parser_load(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()

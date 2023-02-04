@@ -449,7 +449,8 @@ class ADependencyChecker(
     async def run(self) -> Optional[int]:
         # TODO: figure out a better way for preloading data and saving it
         if self.download_cves:
-            return await self.cves.download_cves(self.download_cves)
+            await self.cves.download_cves(self.download_cves)
+            return 0
         return await super().run()
 
     @cached_property

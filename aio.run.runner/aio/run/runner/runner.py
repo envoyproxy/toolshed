@@ -239,7 +239,7 @@ class Runner(event.AReactive):
     async def cleanup(self) -> None:
         self._cleanup_tempdir()
 
-    def exit(self) -> int:
+    def exit(self) -> Optional[int]:
         self.root_logger.handlers[0].setLevel(logging.FATAL)
         self.stdout.handlers[0].setLevel(logging.FATAL)
 

@@ -44,7 +44,8 @@ class CreateCommand:
 class DeleteCommand:
 
     async def run(self) -> Optional[int]:
-        return await self.release.delete()
+        await self.release.delete()
+        return 0
 
 
 @abstracts.implementer(AGithubReleaseCommand)

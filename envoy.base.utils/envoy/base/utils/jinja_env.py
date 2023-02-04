@@ -9,7 +9,8 @@ import jinja2
 
 class JinjaEnvironment:
 
-    @classmethod
+    # TODO(phlax): classproperty is deprecated from 3.11
+    @classmethod  # type:ignore
     @property
     def parser_create(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
@@ -18,7 +19,8 @@ class JinjaEnvironment:
         parser.add_argument("-f", "--filter", action="append")
         return parser
 
-    @classmethod
+    # TODO(phlax): classproperty is deprecated from 3.11
+    @classmethod  # type:ignore
     @property
     def parser_load(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
