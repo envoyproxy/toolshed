@@ -72,7 +72,8 @@ jobs:
         path: ~/.cache/pants
     - name: Run pants (type) check
       run: "./scripts/pants check ::"
- docs:
+
+  docs:
    runs-on: ubuntu-latest
    steps:
    - uses: actions/checkout@v3
