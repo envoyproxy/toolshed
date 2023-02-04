@@ -86,7 +86,7 @@ jobs:
        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
        path: ~/.cache/pants
    - name: Run pants README
-     run: "PANTS_SHA=25f1cee6b5796f001e8f993b1c2b207eb673a6a4 ./scripts/pants readme --check=README.md ::"
+     run: "./scripts/pants readme --check=README.md ::"
 
   package:
     runs-on: ubuntu-latest
