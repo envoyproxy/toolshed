@@ -97,7 +97,8 @@ class Flake8App:
     def run_checks(self, paths: Set[str]) -> List[str]:
         """Run flake8 checks."""
         with directory_context(self.path):
-            self.app.file_checker_manager.start(paths)
+            self.app.options.filenames = paths
+            self.app.file_checker_manager.start()
             self.app.report()
         return self.app._results
 

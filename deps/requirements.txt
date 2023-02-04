@@ -21,7 +21,7 @@ envoy.github.abstract>=0.0.22
 envoy.github.release>=0.0.15
 envoy.gpg.identity>=0.1.0
 envoy.gpg.sign>=0.1.0
-flake8>=5.0.4
+flake8>=6
 frozendict
 gidgethub
 jinja2
