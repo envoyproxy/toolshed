@@ -6,7 +6,7 @@ backend_packages = [
     "pants.backend.python.lint.docformatter",
     "pants.backend.python.lint.flake8",
     "pants.backend.python.typecheck.mypy",
-    "pytooling_distribution"]
+    "pytooling_distribution",
     "pytooling_readme"]
 #   "pytooling_readme.package"]
 pants_ignore = ["not"]
