@@ -386,9 +386,10 @@ def test_flake8app_run_checks(patches):
     assert (
         m_dir_ctx.call_args
         == [("PATH", ), {}])
+    assert m_app.return_value.options.filenames == paths
     assert (
         m_app.return_value.file_checker_manager.start.call_args
-        == [(paths, ), {}])
+        == [(), {}])
     assert (
         m_app.return_value.report.call_args
         == [(), {}])

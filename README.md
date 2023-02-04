@@ -157,7 +157,7 @@ pypi: https://pypi.org/project/envoy.code.check
 - [aio.core](https://pypi.org/project/aio.core) >=0.9.1
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.9
-- [flake8](https://pypi.org/project/flake8) >=5.0.4
+- [flake8](https://pypi.org/project/flake8) >=6
 - [packaging](https://pypi.org/project/packaging) >=23.0
 - [pep8-naming](https://pypi.org/project/pep8-naming)
 - [yamllint](https://pypi.org/project/yamllint)
