@@ -43,6 +43,10 @@ enabled = false
 marker_filenames = ["setup.cfg"]
 root_patterns = ["pants-pytooling"]
 
+[flake8]
+version = "flake8>=6"
+lockfile = ".flake8.lock"
+
 [mypy]
 config = "mypy.ini"
 extra_requirements = [
