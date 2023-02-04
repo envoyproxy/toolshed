@@ -7,6 +7,7 @@ pytooling_library(
         "//deps:reqs#colorama",
         "//deps:reqs#docutils",
         "//deps:reqs#packaging",
+        "//deps:reqs#protobuf",
         "//deps:reqs#pygments",
         "//deps:reqs#sphinx",
         "//deps:reqs#sphinx-copybutton",
