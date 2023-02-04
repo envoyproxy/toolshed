@@ -91,7 +91,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
         path: ~/.cache/pants
     - name: Run pants README
-      run: "ls ~/work/_temp/*sh && cat ~/work/_temp/*sh"
+      run: "cat ~/work/_temp/*sh"
 
   debug:
     runs-on: ubuntu-latest
