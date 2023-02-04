@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+if [[ ! -e ~/.cache/pants/bin/pants ]]; then
+    mkdir -p ~/.cache/pants/bin
+    ./scripts/pantsup.sh -d ~/.cache/pants/bin
+fi
+
+exec ~/.cache/pants/bin/pants "$@"

@@ -24,9 +24,9 @@ jobs:
       uses: actions/cache@v3
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        path: ~/.cache/pants
     - name: Run pants test
-      run: "./pants test ::"
+      run: "./scripts/pants test ::"
     - name: Archive code coverage results
       uses: actions/upload-artifact@v3
       with:
@@ -44,9 +44,9 @@ jobs:
       uses: actions/cache@v3
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        path: ~/.cache/pants
     - name: Run pants lint
-      run: "./pants lint ::"
+      run: "./scripts/pants lint ::"
 
   typecheck:
     runs-on: ubuntu-latest
@@ -59,9 +59,10 @@ jobs:
       uses: actions/cache@v3
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        path: ~/.cache/pants
     - name: Run pants (type) check
-      run: "./pants check ::"
+      run: "./scripts/pants check ::"
+
   docs:
     runs-on: ubuntu-latest
     steps:
@@ -73,9 +74,42 @@ jobs:
       uses: actions/cache@v3
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        path: ~/.cache/pants
     - name: Run pants README
-      run: "./pants readme --check=README.md ::"
+      run: "./scripts/pants readme --check=README.md ::"
+
+  debug0:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+    - name: Cache pants
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
+        path: ~/.cache/pants
+    - name: Run pants README
+      run: "cat ~/work/_temp/*sh"
+
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-python@v4
+      with:
+        python-version: "3.9"
+    - name: Cache pants
+      uses: actions/cache@v3
+      with:
+        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
+        path: ~/.cache/pants
+    - name: Setup upterm session
+      uses: lhotari/action-upterm@v1
+      with:
+        limit-access-to-actor: true
+        limit-access-to-users: phlax
 
   package:
     runs-on: ubuntu-latest
@@ -93,9 +127,9 @@ jobs:
       uses: actions/cache@v3
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        path: ~/.cache/pants
     - name: Run pants package
-      run: "./pants package ::"
+      run: "./scripts/pants package ::"
     - name: Archive created packages
       uses: actions/upload-artifact@v3
       with:

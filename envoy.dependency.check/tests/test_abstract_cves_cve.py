@@ -63,7 +63,7 @@ def test_cve_cpes(iters, patches):
         assert cve.cpes == m_set.return_value
         gen = m_set.call_args[0][0]
         assert isinstance(gen, types.GeneratorType)
-        assert(
+        assert (
             list(gen)
             == [cpe_class.return_value] * len(cpes))
 
