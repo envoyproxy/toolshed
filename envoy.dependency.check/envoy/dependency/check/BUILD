@@ -8,6 +8,7 @@ pytooling_library(
         "//deps:reqs#aio.core",
         "//deps:reqs#aio.run.checker",
         "//deps:reqs#envoy.base.utils",
+        "//deps:reqs#gidgethub",
         "//deps:reqs#jinja2",
         "//deps:reqs#aiohttp",
         "//deps:reqs#packaging",
