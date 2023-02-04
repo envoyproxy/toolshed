@@ -808,7 +808,7 @@ def test_collection_query_traverse(
             with pytest.raises(Exception) as e:
                 query.traverse(qs, data, path)
         else:
-            assert(
+            assert (
                 query.traverse(qs, data, path)
                 == (m_mapping.return_value
                     if is_mapping
