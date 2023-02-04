@@ -49,12 +49,12 @@ def pytooling_package(
         wheel=True,
         sdist=True,
         **kwargs)
-#    readme_snippet(
-#        name="package_snippet",
-#        artefacts=[
-#            f"{namespace}:build_artefacts",
-#            "//templates:README.package.md.tmpl"],
-#        text=["//tools/readme:summarize"])
+   readme_snippet(
+       name="package_snippet",
+       artefacts=[
+           f"{namespace}:build_artefacts",
+           "//templates:README.package.md.tmpl"],
+       text=["//tools/readme:summarize"])
 
 
 def pytooling_tests(

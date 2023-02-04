@@ -1,13 +1,13 @@
 [GLOBAL]
 pythonpath = ["%(buildroot)s/pants-pytooling"]
-pants_version = "2.15.0rc2"
+pants_version = "2.14.1"
 backend_packages = [
     "pants.backend.python",
     "pants.backend.python.lint.docformatter",
     "pants.backend.python.lint.flake8",
     "pants.backend.python.typecheck.mypy",
     "pytooling_distribution"]
-#    "pytooling_readme"]
+    "pytooling_readme"]
 #   "pytooling_readme.package"]
 pants_ignore = ["not"]
 build_file_prelude_globs = [
