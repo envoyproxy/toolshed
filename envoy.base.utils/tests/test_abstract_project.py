@@ -288,6 +288,41 @@ def test_abstract_project_is_main_dev(patches, is_dev, is_main):
     assert "is_main_dev" not in project.__dict__
 
 
+async def test_abstract_project_json_data(patches, iters):
+    project = DummyProject()
+    patched = patches(
+        "json",
+        "tuple",
+        ("AProject.version",
+         dict(new_callable=PropertyMock)),
+        ("AProject.stable_versions",
+         dict(new_callable=PropertyMock)),
+        "AProject.version_string",
+        prefix="envoy.base.utils.abstract.project.project")
+    tuples = iters(cb=lambda i: MagicMock())
+
+    with patched as (m_json, m_tuple, m_version, m_stables, m_vstring):
+        m_stables.return_value = tuples
+        assert (
+            await project.json_data
+            == m_json.dumps.return_value)
+        tuplegen = m_tuple.call_args[0][0]
+        tuplelist = list(tuplegen)
+
+    expected = dict(
+        version=str(m_version.return_value),
+        version_string=m_vstring.return_value,
+        stable_versions=m_tuple.return_value)
+    assert (
+        m_json.dumps.call_args
+        == [(expected, ), {}])
+    assert isinstance(tuplegen, types.GeneratorType)
+    assert tuplelist == [str(t) for t in tuples]
+    assert not hasattr(
+        project,
+        abstract.AProject.json_data.cache_name)
+
+
 def test_abstract_project_minor_version(patches):
     project = DummyProject()
     patched = patches(

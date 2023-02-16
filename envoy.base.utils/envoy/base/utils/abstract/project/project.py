@@ -1,9 +1,12 @@
 
 import asyncio
+import json
 import pathlib
 from concurrent import futures
 from functools import cached_property
-from typing import AsyncGenerator, List, Mapping, Optional, Tuple, Type, Union
+from typing import (
+    AsyncGenerator, List, Mapping, Optional,
+    Tuple, Type, Union)
 
 import aiohttp
 from packaging import version as _version
@@ -12,6 +15,7 @@ import abstracts
 
 from aio.api import github as _github
 from aio.core import directory as _directory, event
+from aio.core.functional import async_property
 
 from envoy.base import utils
 from envoy.base.utils import exceptions, interface, typing
@@ -112,6 +116,20 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
     @property
     def is_main_dev(self) -> bool:
         return self.is_dev and self.is_main
+
+    @async_property
+    async def json_data(self) -> str:
+        """JSON representation of project data."""
+        return json.dumps(
+            dict(
+                version=str(self.version),
+                version_string=self.version_string(
+                    self.version,
+                    self.version.dev is not None),
+                stable_versions=tuple(
+                    str(v)
+                    for v
+                    in self.stable_versions)))
 
     @property
     def main_branch(self) -> str:

@@ -350,6 +350,12 @@ class IProject(event.IExecutive, metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    async def json_data(self) -> str:
+        """Changes grouped by change type."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def minor_version(self) -> _version.Version:
         """Minor version for the current version."""
         raise NotImplementedError
