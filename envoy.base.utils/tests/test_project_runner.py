@@ -8,7 +8,9 @@ from aio.run.runner import Runner
 from envoy.base import utils
 
 
-def test_projectrunner_constructor(iters, patches):
+# BaseProjectRunner
+
+def test_baseprojectrunner_constructor(iters, patches):
     args = iters(tuple, count=3)
     kwargs = iters(dict, count=3)
     patched = patches(
@@ -17,7 +19,7 @@ def test_projectrunner_constructor(iters, patches):
 
     with patched as (m_super, ):
         m_super.return_value = None
-        runner = utils.ProjectRunner(*args, **kwargs)
+        runner = utils.project_runner.BaseProjectRunner(*args, **kwargs)
 
     assert isinstance(runner, Runner)
     assert (
@@ -25,30 +27,14 @@ def test_projectrunner_constructor(iters, patches):
         == [args, kwargs])
 
 
-@pytest.mark.parametrize("prop", ["command", "nosync", "patch"])
-def test_projectrunner_arg_props(patches, prop):
-    runner = utils.ProjectRunner()
-    patched = patches(
-        ("ProjectRunner.args",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.base.utils.project_runner")
-
-    with patched as (m_args, ):
-        assert (
-            getattr(runner, prop)
-            == getattr(m_args.return_value, prop))
-
-    assert prop not in runner.__dict__
-
-
 @pytest.mark.parametrize("token", [None, "TOKEN"])
-def test_projectrunner_github_token(patches, token):
-    runner = utils.ProjectRunner()
+def test_baseprojectrunner_github_token(patches, token):
+    runner = utils.project_runner.BaseProjectRunner()
     patched = patches(
         "os",
         "pathlib",
         "ENV_GITHUB_TOKEN",
-        ("ProjectRunner.args",
+        ("BaseProjectRunner.args",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.project_runner")
 
@@ -81,6 +67,121 @@ def test_projectrunner_github_token(patches, token):
         == [(), {}])
 
 
+def test_baseprojectrunner_path(patches):
+    runner = utils.project_runner.BaseProjectRunner()
+    patched = patches(
+        "pathlib",
+        ("BaseProjectRunner.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_plib, m_args):
+        assert (
+            runner.path
+            == m_plib.Path.return_value)
+
+    assert (
+        m_plib.Path.call_args
+        == [(m_args.return_value.path, ), {}])
+    assert "path" in runner.__dict__
+
+
+def test_baseprojectrunner_project(patches):
+    runner = utils.project_runner.BaseProjectRunner()
+    patched = patches(
+        "utils",
+        ("BaseProjectRunner.github_token",
+         dict(new_callable=PropertyMock)),
+        ("BaseProjectRunner.path",
+         dict(new_callable=PropertyMock)),
+        ("BaseProjectRunner.repo_name",
+         dict(new_callable=PropertyMock)),
+        ("BaseProjectRunner.session",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_utils, m_token, m_path, m_repo, m_session):
+        assert (
+            runner.project
+            == m_utils.Project.return_value)
+
+    assert (
+        m_utils.Project.call_args
+        == [(),
+            dict(path=m_path.return_value,
+                 session=m_session.return_value,
+                 repo=m_repo.return_value,
+                 github_token=m_token.return_value)])
+    assert "project" in runner.__dict__
+
+
+def test_baseprojectrunner_repo_name(patches):
+    runner = utils.project_runner.BaseProjectRunner()
+    patched = patches(
+        ("BaseProjectRunner.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_args, ):
+        assert (
+            runner.repo_name
+            == m_args.return_value.repo)
+
+    assert "repo_name" not in runner.__dict__
+
+
+def test_baseprojectrunner_session(patches):
+    runner = utils.project_runner.BaseProjectRunner()
+    patched = patches(
+        "aiohttp",
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_aiohttp, ):
+        assert (
+            runner.session
+            == m_aiohttp.ClientSession.return_value)
+
+    assert (
+        m_aiohttp.ClientSession.call_args
+        == [(), {}])
+    assert "session" in runner.__dict__
+
+
+# ProjectRunner
+
+def test_projectrunner_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
+    patched = patches(
+        "BaseProjectRunner.__init__",
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        runner = utils.ProjectRunner(*args, **kwargs)
+
+    assert isinstance(runner, utils.project_runner.BaseProjectRunner)
+    assert (
+        m_super.call_args
+        == [args, kwargs])
+
+
+@pytest.mark.parametrize("prop", ["command", "nosync", "patch"])
+def test_projectrunner_arg_props(patches, prop):
+    runner = utils.ProjectRunner()
+    patched = patches(
+        ("ProjectRunner.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_args, ):
+        assert (
+            getattr(runner, prop)
+            == getattr(m_args.return_value, prop))
+
+    assert prop not in runner.__dict__
+
+
 @pytest.mark.parametrize("command", [None, "COMMAND", "publish"])
 @pytest.mark.parametrize("nocommit", [True, False])
 def test_projectrunner_nocommit(patches, command, nocommit):
@@ -100,76 +201,11 @@ def test_projectrunner_nocommit(patches, command, nocommit):
     assert "nocommit" not in runner.__dict__
 
 
-def test_projectrunner_path(patches):
-    runner = utils.ProjectRunner()
-    patched = patches(
-        "pathlib",
-        ("ProjectRunner.args",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.base.utils.project_runner")
-
-    with patched as (m_plib, m_args):
-        assert (
-            runner.path
-            == m_plib.Path.return_value)
-
-    assert (
-        m_plib.Path.call_args
-        == [(m_args.return_value.path, ), {}])
-    assert "path" in runner.__dict__
-
-
-def test_projectrunner_project(patches):
-    runner = utils.ProjectRunner()
-    patched = patches(
-        "utils",
-        ("ProjectRunner.github_token",
-         dict(new_callable=PropertyMock)),
-        ("ProjectRunner.path",
-         dict(new_callable=PropertyMock)),
-        ("ProjectRunner.repo",
-         dict(new_callable=PropertyMock)),
-        ("ProjectRunner.session",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.base.utils.project_runner")
-
-    with patched as (m_utils, m_token, m_path, m_repo, m_session):
-        assert (
-            runner.project
-            == m_utils.Project.return_value)
-
-    assert (
-        m_utils.Project.call_args
-        == [(),
-            dict(path=m_path.return_value,
-                 session=m_session.return_value,
-                 repo=m_repo.return_value,
-                 github_token=m_token.return_value)])
-    assert "project" in runner.__dict__
-
-
-def test_projectrunner_session(patches):
-    runner = utils.ProjectRunner()
-    patched = patches(
-        "aiohttp",
-        prefix="envoy.base.utils.project_runner")
-
-    with patched as (m_aiohttp, ):
-        assert (
-            runner.session
-            == m_aiohttp.ClientSession.return_value)
-
-    assert (
-        m_aiohttp.ClientSession.call_args
-        == [(), {}])
-    assert "session" in runner.__dict__
-
-
 def test_projectrunner_add_arguments(patches):
     runner = utils.ProjectRunner()
     parser = MagicMock()
     patched = patches(
-        "runner.Runner.add_arguments",
+        "BaseProjectRunner.add_arguments",
         prefix="envoy.base.utils.project_runner")
 
     with patched as (m_super, ):
@@ -578,3 +614,60 @@ def test_projectrunner__log_inventory(iters, patches, change):
             for v, sync
             in changes.items()
             if sync])
+
+
+def test_projectdatarunner_constructor(iters, patches):
+    args = iters(tuple, count=3)
+    kwargs = iters(dict, count=3)
+    patched = patches(
+        "BaseProjectRunner.__init__",
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_super, ):
+        m_super.return_value = None
+        runner = utils.ProjectDataRunner(*args, **kwargs)
+
+    assert isinstance(runner, utils.project_runner.BaseProjectRunner)
+    assert (
+        m_super.call_args
+        == [args, kwargs])
+
+
+def test_projecdatatrunner_add_arguments(patches):
+    runner = utils.ProjectDataRunner()
+    parser = MagicMock()
+    patched = patches(
+        "BaseProjectRunner.add_arguments",
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_super, ):
+        runner.add_arguments(parser)
+
+    assert (
+        m_super.call_args
+        == [(parser, ), {}])
+    assert (
+        parser.add_argument.call_args_list
+        == [[('path',),
+             {'default': '.'}],
+            [('--repo',),
+             {'default': ''}],
+            [('--github_token',), {}]])
+
+
+async def test_projectdatarunner_run(patches):
+    runner = utils.ProjectDataRunner()
+    patched = patches(
+        "print",
+        ("ProjectDataRunner.project",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_print, m_project):
+        json_data = AsyncMock()
+        m_project.return_value.json_data = json_data()
+        assert not await runner.run()
+
+    assert (
+        m_print.call_args
+        == [(json_data.return_value, ), {}])

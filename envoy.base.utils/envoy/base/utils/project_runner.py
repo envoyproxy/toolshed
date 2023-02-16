@@ -28,7 +28,7 @@ COMMIT_MSGS: frozendict = frozendict(
     sync="repo: Sync")
 
 
-class ProjectRunner(runner.Runner):
+class BaseProjectRunner(runner.Runner):
 
     @property
     def github_token(self) -> Optional[str]:
@@ -36,6 +36,30 @@ class ProjectRunner(runner.Runner):
         if self.args.github_token:
             return pathlib.Path(self.args.github_token).read_text().strip()
         return os.getenv(ENV_GITHUB_TOKEN)
+
+    @cached_property
+    def path(self) -> pathlib.Path:
+        return pathlib.Path(self.args.path)
+
+    @cached_property
+    def project(self) -> interface.IProject:
+        return utils.Project(
+            path=self.path,
+            session=self.session,
+            repo=self.repo_name,
+            github_token=self.github_token)
+
+    @property
+    def repo_name(self) -> Optional[str]:
+        return self.args.repo
+
+    @cached_property
+    def session(self) -> aiohttp.ClientSession:
+        """HTTP client session."""
+        return aiohttp.ClientSession()
+
+
+class ProjectRunner(BaseProjectRunner):
 
     @property
     def command(self) -> bool:
@@ -54,27 +78,6 @@ class ProjectRunner(runner.Runner):
     @property
     def patch(self) -> bool:
         return self.args.patch
-
-    @cached_property
-    def path(self) -> pathlib.Path:
-        return pathlib.Path(self.args.path)
-
-    @cached_property
-    def project(self) -> interface.IProject:
-        return utils.Project(
-            path=self.path,
-            session=self.session,
-            repo=self.repo,
-            github_token=self.github_token)
-
-    @cached_property
-    def repo(self) -> Optional[str]:
-        return self.args.repo
-
-    @cached_property
-    def session(self) -> aiohttp.ClientSession:
-        """HTTP client session."""
-        return aiohttp.ClientSession()
 
     def add_arguments(self, parser) -> None:
         super().add_arguments(parser)
@@ -182,3 +185,16 @@ class ProjectRunner(runner.Runner):
                 self.log.warning(
                     "[inventory] newer version available "
                     f"({version}), but no inventory found")
+
+
+class ProjectDataRunner(BaseProjectRunner):
+
+    def add_arguments(self, parser) -> None:
+        super().add_arguments(parser)
+        parser.add_argument("path", default=".")
+        parser.add_argument("--repo", default="")
+        parser.add_argument("--github_token")
+
+    @runner.cleansup
+    async def run(self) -> None:
+        print(await self.project.json_data)

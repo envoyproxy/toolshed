@@ -26,7 +26,8 @@ from .parallel_cmd import parallel_cmd
 from .parallel_runner import ParallelRunner
 from .project import Changelog, ChangelogEntry, Changelogs, Project
 from .project_cmd import project_cmd
-from .project_runner import ProjectRunner
+from .project_data_cmd import project_data_cmd
+from .project_runner import ProjectDataRunner, ProjectRunner
 from .protobuf import ProtobufSet, ProtobufValidator
 from .interface import IProject
 from .data_env import DataEnvironment
@@ -63,8 +64,10 @@ __all__ = (
     "ParallelRunner",
     "parallel_cmd",
     "Project",
+    "ProjectDataRunner",
     "ProjectRunner",
     "project_cmd",
+    "project_data_cmd",
     "ProtobufSet",
     "ProtobufValidator",
     "typed",

@@ -34,6 +34,7 @@ pytooling_library(
         "parallel_runner.py",
         "project.py",
         "project_cmd.py",
+        "project_data_cmd.py",
         "project_runner.py",
         "protobuf.py",
         "typing.py",
