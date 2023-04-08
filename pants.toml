@@ -55,6 +55,7 @@ extra_type_stubs = [
      "types-aiofiles",
      "types-docutils",
      "types-frozendict",
+     "types-orjson",
      "types-protobuf",
      "types-pygments",
      "types-pytz",
