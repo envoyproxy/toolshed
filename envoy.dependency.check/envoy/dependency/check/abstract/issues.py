@@ -43,10 +43,13 @@ class AGithubDependencyReleaseIssue(
     @cached_property
     def version(self) -> Optional[version.Version]:
         """Parsed dependency version of an issue."""
-        return (
-            version.parse(self.parsed["version"])
-            if "version" in self.parsed
-            else None)
+        try:
+            return (
+                version.parse(self.parsed["version"])
+                if "version" in self.parsed
+                else None)
+        except version.InvalidVersion:
+            return None
 
     async def close_old(
             self,

@@ -1,6 +1,8 @@
 
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
+from packaging import version
+
 import pytest
 
 import abstracts
@@ -33,31 +35,44 @@ def test_issue_constructor():
 
 
 @pytest.mark.parametrize("parsed", [True, False])
-def test_issue_version(patches, parsed):
+@pytest.mark.parametrize("raises", [None, Exception, version.InvalidVersion])
+def test_issue_version(patches, parsed, raises):
     issue = DummyGithubDependencyReleaseIssue("ISSUES", "ISSUE")
     patched = patches(
-        "version",
+        "version.parse",
         ("AGithubDependencyReleaseIssue.parsed",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.issues")
 
     with patched as (m_version, m_parsed):
+        if raises:
+            error = raises("An error occurred")
+            m_version.side_effect = error
         m_parsed.return_value = (
             dict(version=23)
             if parsed
             else {})
-        assert (
-            issue.version
-            == (m_version.parse.return_value
-                if parsed
-                else None))
+        if not parsed:
+            assert not issue.version
+        elif raises == version.InvalidVersion:
+            assert not issue.version
+        elif raises:
+            with pytest.raises(raises):
+                issue.version
+        else:
+            assert (
+                issue.version
+                == m_version.return_value)
 
-    assert "version" in issue.__dict__
     if not parsed:
-        assert not m_version.parse.called
+        assert not m_version.called
         return
+    if raises and raises != version.InvalidVersion:
+        assert "version" not in issue.__dict__
+    else:
+        assert "version" in issue.__dict__
     assert (
-        m_version.parse.call_args
+        m_version.call_args
         == [(23, ), {}])
 
 
