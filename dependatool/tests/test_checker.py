@@ -1,6 +1,8 @@
 
 from unittest.mock import PropertyMock
 
+from aio.core import directory
+
 import dependatool
 
 
@@ -25,3 +27,9 @@ def test_abstract_dependatool_check_tools(patches):
 
     assert m_pip.call_args == [(checker, ), {}]
     assert "check_tools" in checker.__dict__
+
+
+def test_abstract_dependatool_directory_class(patches):
+    checker = dependatool.DependatoolChecker("path1", "path2", "path3")
+    assert checker.directory_class == directory.GitDirectory
+    assert "directory_class" not in checker.__dict__

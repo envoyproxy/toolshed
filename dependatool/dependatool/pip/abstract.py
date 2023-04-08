@@ -1,9 +1,11 @@
 
-import pathlib
+import os
 from functools import cached_property
 from typing import Iterable
 
 import abstracts
+
+from aio.core.functional import async_property
 
 from dependatool import ADependatoolCheck
 
@@ -26,12 +28,12 @@ class ADependatoolPipCheck(object):
             for update in self.checker.config["updates"]
             if update["package-ecosystem"] == "pip")
 
-    @cached_property
-    def requirements_dirs(self) -> set[str]:
+    @async_property(cache=True)
+    async def requirements_dirs(self) -> set[str]:
         """Set of found directories in the repo containing requirements.txt."""
         return set(
-            f"/{f.parent.relative_to(self.checker.path)}"
-            for f in self.checker.path.glob("**/*")
+            os.path.dirname(f"/{f}")
+            for f in await self.checker.directory.files
             if self.dir_matches(f))
 
     @property
@@ -42,10 +44,10 @@ class ADependatoolPipCheck(object):
         """Check that dependabot config matches requirements.txt files found in
         repo."""
         missing_dirs = self.config.difference(
-            self.requirements_dirs)
-        missing_config = self.requirements_dirs.difference(
+            await self.requirements_dirs)
+        missing_config = (await self.requirements_dirs).difference(
             self.config)
-        correct = self.requirements_dirs.intersection(
+        correct = (await self.requirements_dirs).intersection(
             self.config)
         if correct:
             self.success(correct)
@@ -60,13 +62,13 @@ class ADependatoolPipCheck(object):
                 (f"Missing dependabot config for {self.requirements_filename} "
                  "in dir"))
 
-    def dir_matches(self, path: pathlib.Path) -> bool:
+    def dir_matches(self, path: str) -> bool:
         """For given file path, check if its a requirements file and whether
         its parent directory is excluded."""
         return (
-            path.name == self.requirements_filename
+            os.path.basename(path) == self.requirements_filename
             and not self.checker.ignored_dirs.match(
-                f"/{path.parent.relative_to(self.checker.path)}"))
+                os.path.dirname(f"/{path}")))
 
     def errors(self, missing: Iterable, msg: str) -> None:
         for dirname in sorted(missing):

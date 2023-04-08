@@ -1,16 +1,9 @@
 
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
 import dependatool
-
-
-class DummyDependatoolChecker(dependatool.ADependatoolChecker):
-
-    @property
-    def path(self):
-        return super().path
 
 
 class DummyDependatoolPipCheck(dependatool.pip.ADependatoolPipCheck):
@@ -43,10 +36,11 @@ def test_pip_abstract_check_config():
 @pytest.mark.parametrize(
     "matches",
     [[], range(0, 3), range(0, 5), range(3, 7)])
-def test_pip_abstract_check_requirements_dirs(patches, matches):
+async def test_pip_abstract_check_requirements_dirs(patches, matches):
     checker = MagicMock()
     check = DummyDependatoolPipCheck(checker)
     patched = patches(
+        "os",
         "ADependatoolPipCheck.dir_matches",
         prefix="dependatool.pip.abstract")
     dirs = [MagicMock() for i in range(0, 5)]
@@ -62,24 +56,26 @@ def test_pip_abstract_check_requirements_dirs(patches, matches):
 
     matcher = Matcher()
 
-    with patched as (m_matches, ):
+    with patched as (m_os, m_matches):
         m_matches.side_effect = matcher.match_dirs
-        checker.path.glob.return_value = dirs
-
+        checker.directory.files = AsyncMock(return_value=dirs)()
         assert (
-            check.requirements_dirs
-            == {f"/{f.parent.relative_to.return_value}"
-                for f in expected})
+            await check.requirements_dirs
+            == {m_os.path.dirname.return_value
+                for f in expected}
+            == getattr(
+                check,
+                dependatool.ADependatoolPipCheck.requirements_dirs.cache_name)[
+                    "requirements_dirs"])
 
     assert (
         m_matches.call_args_list
         == [[(d, ), {}] for d in dirs])
 
-    for exp in expected:
-        assert (
-            exp.parent.relative_to.call_args
-            == [(checker.path,), {}])
-    assert "requirements_dirs" in check.__dict__
+    assert (
+        m_os.path.dirname.call_args_list
+        == [[(f"/{m}", ), {}]
+            for m in expected])
 
 
 TEST_REQS = (
@@ -107,7 +103,7 @@ async def test_pip_abstract_check_check(patches, requirements):
 
     with patched as (m_config, m_dirs, m_fname, m_success, m_errors):
         m_config.return_value = config
-        m_dirs.return_value = dirs
+        m_dirs.side_effect = AsyncMock(return_value=dirs)
         assert not await check.check()
 
     if config & dirs:
@@ -153,15 +149,15 @@ def test_pip_abstract_check_dir_matches(patches, name_matches, dir_ignored):
     checker = MagicMock()
     check = DummyDependatoolPipCheck(checker)
     patched = patches(
+        "os",
         ("ADependatoolPipCheck.requirements_filename",
          dict(new_callable=PropertyMock)),
         prefix="dependatool.pip.abstract")
     path = MagicMock()
-    path.name = "PATH_NAME"
 
-    with patched as (m_filename, ):
+    with patched as (m_os, m_filename):
         if name_matches:
-            m_filename.return_value = "PATH_NAME"
+            m_os.path.basename.return_value = m_filename.return_value
         checker.ignored_dirs.match.return_value = (
             True
             if dir_ignored
@@ -170,16 +166,18 @@ def test_pip_abstract_check_dir_matches(patches, name_matches, dir_ignored):
             check.dir_matches(path)
             == (name_matches and not dir_ignored))
 
+    assert m_os.path.basename.call_args == [(path, ), {}]
     if not name_matches:
         assert not checker.ignored_dirs.match.called
         assert not checker.path.parent.relative_to.called
+        assert not m_os.path.dirname.called
         return
     assert (
         checker.ignored_dirs.match.call_args
-        == [(f"/{path.parent.relative_to.return_value}", ), {}])
+        == [(m_os.path.dirname.return_value, ), {}])
     assert (
-        path.parent.relative_to.call_args
-        == [(checker.path, ), {}])
+        m_os.path.dirname.call_args
+        == [(f"/{path}", ), {}])
 
 
 def test_pip_abstract_check_success(patches):
