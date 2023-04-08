@@ -20,6 +20,7 @@ pytooling_library(
         "abstract/extensions.py",
         "abstract/flake8.py",
         "abstract/glint.py",
+        "abstract/gofmt.py",
         "abstract/rst.py",
         "abstract/runtime_guards.py",
         "abstract/shellcheck.py",

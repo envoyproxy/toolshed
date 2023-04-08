@@ -12,9 +12,9 @@ import yaml as _yaml
 
 import abstracts
 
+from aio.core import functional, utils
 from aio.core.functional import async_property
 
-from envoy.base import utils
 from envoy.code.check import abstract, exceptions, interface, typing
 
 
@@ -239,7 +239,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         except (json.JSONDecodeError, FileNotFoundError) as e:
             raise exceptions.ExtensionsConfigurationError(
                 err_message.format(path=path, e=e))
-        except utils.TypeCastingError as e:
+        except functional.exceptions.TypeCastingError as e:
             logger.warning(warn_message.format(path=path, e=e))
             return e.value
 
@@ -255,17 +255,18 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         except (_yaml.reader.ReaderError, FileNotFoundError) as e:
             raise exceptions.ExtensionsConfigurationError(
                 err_message.format(path=path, e=e))
-        except utils.TypeCastingError as e:
+        except functional.exceptions.TypeCastingError as e:
             logger.warning(warn_message.format(path=path, e=e))
             return e.value
 
     async def _metadata(self, path) -> typing.ExtensionsMetadataDict:
+        errors = (functional.exceptions.TypeCastingError, FileNotFoundError)
         try:
             return await self.execute(
                 utils.from_yaml,
                 path,
                 typing.ExtensionsMetadataDict)
-        except (utils.exceptions.TypeCastingError, FileNotFoundError) as e:
+        except errors as e:
             raise exceptions.ExtensionsConfigurationError(
                 "Failed to parse extensions metadata "
                 f"({path}): {e}")

@@ -12,6 +12,8 @@ YapfProblemTuple = Tuple[str, checker.interface.IProblems]
 YapfResultTuple = Tuple[str, str, bool]
 YapfCheckResultTuple = Tuple[str, YapfResultTuple]
 
+GofmtProblemTuple = Tuple[str, checker.interface.IProblems]
+
 
 class BaseExtensionMetadataDict(TypedDict):
     categories: List[str]

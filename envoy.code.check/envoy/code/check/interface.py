@@ -94,6 +94,10 @@ class IGlintCheck(IFileCodeCheck, metaclass=abstracts.Interface):
     pass
 
 
+class IGofmtCheck(IFileCodeCheck, metaclass=abstracts.Interface):
+    pass
+
+
 class IShellcheckCheck(IFileCodeCheck, metaclass=abstracts.Interface):
     pass
 

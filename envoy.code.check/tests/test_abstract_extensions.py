@@ -6,7 +6,8 @@ import pytest
 
 import yaml as _yaml
 
-from envoy.base import utils
+from aio.core import functional
+
 from envoy.code import check
 from envoy.code.check import exceptions
 
@@ -715,7 +716,7 @@ async def test_extensions__check_metadata_status(patches, status):
     [None,
      BaseException,
      FileNotFoundError,
-     utils.exceptions.TypeCastingError,
+     functional.exceptions.TypeCastingError,
      json.JSONDecodeError])
 def test_extensions__from_json(patches, raises):
     checker = check.AExtensionsCheck(
@@ -726,7 +727,7 @@ def test_extensions__from_json(patches, raises):
         "utils.from_json",
         prefix="envoy.code.check.abstract.extensions")
     config_error = raises in [FileNotFoundError, json.JSONDecodeError]
-    no_error = (not raises or raises == utils.exceptions.TypeCastingError)
+    no_error = (not raises or raises == functional.exceptions.TypeCastingError)
     path = MagicMock()
     type = MagicMock()
     err_message = MagicMock()
@@ -754,7 +755,7 @@ def test_extensions__from_json(patches, raises):
     assert (
         m_json.call_args
         == [(path, type), {}])
-    if raises == utils.exceptions.TypeCastingError:
+    if raises == functional.exceptions.TypeCastingError:
         assert (
             m_log.warning.call_args
             == [(warn_message.format.return_value, ), {}])
@@ -780,7 +781,7 @@ def test_extensions__from_json(patches, raises):
     [None,
      BaseException,
      FileNotFoundError,
-     utils.exceptions.TypeCastingError,
+     functional.exceptions.TypeCastingError,
      _yaml.reader.ReaderError])
 def test_extensions__from_yaml(patches, raises):
     checker = check.AExtensionsCheck(
@@ -791,7 +792,7 @@ def test_extensions__from_yaml(patches, raises):
         "utils.from_yaml",
         prefix="envoy.code.check.abstract.extensions")
     config_error = raises in [FileNotFoundError, _yaml.reader.ReaderError]
-    no_error = (not raises or raises == utils.exceptions.TypeCastingError)
+    no_error = (not raises or raises == functional.exceptions.TypeCastingError)
     path = MagicMock()
     type = MagicMock()
     err_message = MagicMock()
@@ -819,7 +820,7 @@ def test_extensions__from_yaml(patches, raises):
     assert (
         m_yaml.call_args
         == [(path, type), {}])
-    if raises == utils.exceptions.TypeCastingError:
+    if raises == functional.exceptions.TypeCastingError:
         assert (
             m_log.warning.call_args
             == [(warn_message.format.return_value, ), {}])
@@ -844,7 +845,7 @@ def test_extensions__from_yaml(patches, raises):
     "raises",
     [None,
      BaseException,
-     utils.exceptions.TypeCastingError,
+     functional.exceptions.TypeCastingError,
      FileNotFoundError])
 async def test_extensions__metadata(patches, raises):
     checker = check.AExtensionsCheck(

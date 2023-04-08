@@ -57,6 +57,7 @@ class ACodeChecker(
         "extensions_metadata",
         "extensions_registered",
         "glint",
+        "gofmt",
         "python_yapf",
         "python_flake8",
         "runtime_guards",
@@ -165,6 +166,16 @@ class ACodeChecker(
     @property  # type:ignore
     @abstracts.interfacemethod
     def glint_class(self) -> Type["interface.IGlintCheck"]:
+        raise NotImplementedError
+
+    @cached_property
+    def gofmt(self) -> "interface.IGofmtCheck":
+        """Gofmt checker."""
+        return self.gofmt_class(self.directory, **self.check_kwargs)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def gofmt_class(self) -> Type["interface.IGofmtCheck"]:
         raise NotImplementedError
 
     @property
@@ -289,6 +300,10 @@ class ACodeChecker(
         """Check for glint issues."""
         await self._code_check(self.glint)
 
+    async def check_gofmt(self) -> None:
+        """Check for gofmt issues."""
+        await self._code_check(self.gofmt)
+
     # TODO: catch errors in checkers as well as preloaders
     async def check_python_flake8(self) -> None:
         """Check for flake8 issues."""
@@ -351,6 +366,12 @@ class ACodeChecker(
         catches=[subprocess.exceptions.OSCommandError])
     async def preload_glint(self) -> None:
         await self.glint.problem_files
+
+    @checker.preload(
+        when=["gofmt"],
+        catches=[subprocess.exceptions.OSCommandError])
+    async def preload_gofmt(self) -> None:
+        await self.gofmt.problem_files
 
     @checker.preload(
         when=["shellcheck"],
