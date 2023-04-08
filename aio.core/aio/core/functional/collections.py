@@ -8,7 +8,7 @@ from .utils import maybe_coro, typed
 
 
 async def async_iterator(
-        iterable: AsyncIterable,
+        iterable: AsyncGenerator | AsyncIterable,
         predicate: Optional[
             Union[
                 Callable[[Any], bool],
@@ -29,15 +29,17 @@ async def async_iterator(
 
 
 async def async_list(
-        iterable: AsyncIterable,
+        gen: AsyncGenerator | AsyncIterable,
+        filter: Optional[Callable] = None,
         predicate: Optional[
             Union[
                 Callable[[Any], bool],
                 Awaitable[bool]]] = None,
         result: Optional[Callable[[Any], Any]] = None) -> List:
-    """Create a list from the results of an async generator."""
+    """Turn an async generator into a here and now list, with optional
+    filter."""
     results = list()
-    iterator = async_iterator(iterable, predicate=predicate, result=result)
+    iterator = async_iterator(gen, predicate=predicate, result=result)
     async for item in iterator:
         results.append(item)
     return results

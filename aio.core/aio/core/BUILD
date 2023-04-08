@@ -3,6 +3,8 @@ pytooling_library(
     "aio.core",
     dependencies=[
         "//deps:reqs#abstracts",
+        "//deps:reqs#pytz",
+        "//deps:reqs#pyyaml",
         "//deps:reqs#trycast",
     ],
     sources=[
@@ -43,6 +45,9 @@ pytooling_library(
         "tasks/tasks.py",
         "utils/__init__.py",
         "utils/context.py",
+        "utils/data.py",
+        "utils/date.py",
+        "utils/exceptions.py",
         "utils/resolve.py",
     ],
 )
