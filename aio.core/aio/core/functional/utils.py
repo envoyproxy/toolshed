@@ -9,7 +9,7 @@ from typing import (
     Any, Awaitable, Callable,
     Iterable, Iterator, List, Optional, Sized, Type, Union)
 
-from trycast import trycast  # type:ignore
+from trycast import isassignable  # type:ignore
 
 # condition needed due to https://github.com/bazelbuild/rules_python/issues/622
 try:
@@ -88,13 +88,13 @@ def typed(tocast: Type, value: Any) -> Any:
 
     raises TypeError if cast value is `None`
     """
-
-    if trycast(tocast, value) is not None:
+    if isassignable(value, tocast):
         return value
     raise exceptions.TypeCastingError(
         "Value has wrong type or shape for Type "
         f"{tocast}: "
-        f"{textwrap.shorten(str(value), width=10, placeholder='...')}")
+        f"{textwrap.shorten(str(value), width=10, placeholder='...')}",
+        value=value)
 
 
 # TODO: add async versions of the `batch` utils

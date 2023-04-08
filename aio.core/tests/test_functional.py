@@ -584,22 +584,25 @@ def test_utils_junzip(patches):
         == [(data, ), {}])
 
 
-@pytest.mark.parametrize(
-    "casted",
-    [(), [], False, None, "", "X", ["Y"]])
-def test_typed(patches, casted):
+@pytest.mark.parametrize("assignable", [True, False])
+def test_typed(patches, assignable):
     patched = patches(
-        "trycast",
+        "isassignable",
         "textwrap",
         "str",
         prefix="aio.core.functional.utils")
 
-    value = MagicMock()
+    class DummyValue:
 
-    with patched as (m_try, m_wrap, m_str):
-        m_try.return_value = casted
+        def __str__(self):
+            return "VALUE"
 
-        if casted is None:
+    value = DummyValue()
+
+    with patched as (m_assig, m_wrap, m_str):
+        m_assig.return_value = assignable
+
+        if not assignable:
             with pytest.raises(functional.exceptions.TypeCastingError) as e:
                 functional.utils.typed("TYPE", value)
 
@@ -620,8 +623,8 @@ def test_typed(patches, casted):
             assert not m_str.called
 
     assert (
-        m_try.call_args
-        == [("TYPE", value), {}])
+        m_assig.call_args
+        == [(value, "TYPE"), {}])
 
 
 def test_collection_query_constructor():

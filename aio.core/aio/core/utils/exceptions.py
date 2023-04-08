@@ -1,0 +1,4 @@
+
+
+class ExtractError(Exception):
+    pass

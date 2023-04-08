@@ -74,13 +74,15 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.9.2.dev0
+version: 0.10.0
 
 pypi: https://pypi.org/project/aio.core
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+- [pytz](https://pypi.org/project/pytz)
+- [pyyaml](https://pypi.org/project/pyyaml)
 - [trycast](https://pypi.org/project/trycast) >=0.7.3
 
 ---
