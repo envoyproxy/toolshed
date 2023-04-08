@@ -2,35 +2,35 @@ from unittest.mock import MagicMock, patch, PropertyMock
 
 import pytest
 
-from envoy.dependency import pip_check
+import dependatool
 
 
-class DummyPipChecker(pip_check.APipChecker):
+class DummyDependatool(dependatool.ADependatool):
 
     @property
     def path(self):
         return super().path
 
 
-def test_abstract_pip_checker_constructor():
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_constructor():
+    checker = DummyDependatool("path1", "path2", "path3")
     assert checker.checks == ("dependabot",)
     assert (
         checker.dependabot_config_path
-        == pip_check.abstract.DEPENDABOT_CONFIG
+        == dependatool.abstract.DEPENDABOT_CONFIG
         == ".github/dependabot.yml")
     assert (
         checker.requirements_filename
-        == pip_check.abstract.REQUIREMENTS_FILENAME
+        == dependatool.abstract.REQUIREMENTS_FILENAME
         == "requirements.txt")
     assert checker.args.paths == ['path1', 'path2', 'path3']
 
 
-def test_abstract_pip_checker_config_requirements():
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_config_requirements():
+    checker = DummyDependatool("path1", "path2", "path3")
 
     config_mock = patch(
-        "envoy.dependency.pip_check.abstract.APipChecker.dependabot_config",
+        "dependatool.abstract.ADependatool.dependabot_config",
         new_callable=PropertyMock)
 
     with config_mock as m_config:
@@ -45,12 +45,12 @@ def test_abstract_pip_checker_config_requirements():
 
 
 @pytest.mark.parametrize("isdict", [True, False])
-def test_abstract_pip_checker_dependabot_config(patches, isdict):
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_dependabot_config(patches, isdict):
+    checker = DummyDependatool("path1", "path2", "path3")
     patched = patches(
         "utils",
-        ("APipChecker.path", dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.pip_check.abstract")
+        ("ADependatool.path", dict(new_callable=PropertyMock)),
+        prefix="dependatool.abstract")
 
     with patched as (m_utils, m_path):
         if isdict:
@@ -59,7 +59,7 @@ def test_abstract_pip_checker_dependabot_config(patches, isdict):
         if isdict:
             assert checker.dependabot_config == m_utils.from_yaml.return_value
         else:
-            with pytest.raises(pip_check.PipConfigurationError) as e:
+            with pytest.raises(dependatool.PipConfigurationError) as e:
                 checker.dependabot_config
 
             assert (
@@ -75,21 +75,21 @@ def test_abstract_pip_checker_dependabot_config(patches, isdict):
         == [(m_path.return_value.joinpath.return_value,), {}])
 
 
-def test_abstract_pip_checker_path(patches):
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_path(patches):
+    checker = DummyDependatool("path1", "path2", "path3")
     patched = patches(
         ("checker.Checker.path", dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.pip_check.abstract")
+        prefix="dependatool.abstract")
 
     with patched as (m_super, ):
         assert checker.path == m_super.return_value
 
 
-def test_abstract_pip_checker_ignored_dirs(patches):
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_ignored_dirs(patches):
+    checker = DummyDependatool("path1", "path2", "path3")
     patched = patches(
         "re",
-        prefix="envoy.dependency.pip_check.abstract")
+        prefix="dependatool.abstract")
 
     with patched as (m_re, ):
         assert (
@@ -98,19 +98,19 @@ def test_abstract_pip_checker_ignored_dirs(patches):
 
     assert (
         m_re.compile.call_args
-        == [("|".join(pip_check.abstract.IGNORED_DIRS), ), {}])
+        == [("|".join(dependatool.abstract.IGNORED_DIRS), ), {}])
     assert "ignored_dirs" in checker.__dict__
 
 
 @pytest.mark.parametrize(
     "matches",
     [[], range(0, 3), range(0, 5), range(3, 7)])
-def test_abstract_pip_checker_requirements_dirs(patches, matches):
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_requirements_dirs(patches, matches):
+    checker = DummyDependatool("path1", "path2", "path3")
     patched = patches(
-        ("APipChecker.path", dict(new_callable=PropertyMock)),
-        "APipChecker.dir_matches",
-        prefix="envoy.dependency.pip_check.abstract")
+        ("ADependatool.path", dict(new_callable=PropertyMock)),
+        "ADependatool.dir_matches",
+        prefix="dependatool.abstract")
     dirs = [MagicMock() for i in range(0, 5)]
     expected = [d for i, d in enumerate(dirs) if i in matches]
 
@@ -153,17 +153,20 @@ TEST_REQS = (
 
 
 @pytest.mark.parametrize("requirements", TEST_REQS)
-async def test_abstract_pip_checker_check_dependabot(patches, requirements):
+async def test_abstract_dependatool_check_dependabot(patches, requirements):
     config, dirs = requirements
-    checker = DummyPipChecker("path1", "path2", "path3")
+    checker = DummyDependatool("path1", "path2", "path3")
 
     patched = patches(
-        ("APipChecker.config_requirements", dict(new_callable=PropertyMock)),
-        ("APipChecker.requirements_dirs", dict(new_callable=PropertyMock)),
-        ("APipChecker.requirements_filename", dict(new_callable=PropertyMock)),
-        "APipChecker.dependabot_success",
-        "APipChecker.dependabot_errors",
-        prefix="envoy.dependency.pip_check.abstract")
+        ("ADependatool.config_requirements",
+         dict(new_callable=PropertyMock)),
+        ("ADependatool.requirements_dirs",
+         dict(new_callable=PropertyMock)),
+        ("ADependatool.requirements_filename",
+         dict(new_callable=PropertyMock)),
+        "ADependatool.dependabot_success",
+        "ADependatool.dependabot_errors",
+        prefix="dependatool.abstract")
 
     with patched as (m_config, m_dirs, m_fname, m_success, m_errors):
         m_config.return_value = config
@@ -195,14 +198,15 @@ async def test_abstract_pip_checker_check_dependabot(patches, requirements):
         assert not m_errors.called
 
 
-def test_abstract_pip_checker_dependabot_success(patches):
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_dependabot_success(patches):
+    checker = DummyDependatool("path1", "path2", "path3")
     success = set(["C", "D", "B", "A"])
 
     patched = patches(
-        "APipChecker.succeed",
-        ("APipChecker.requirements_filename", dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.pip_check.abstract")
+        "ADependatool.succeed",
+        ("ADependatool.requirements_filename",
+         dict(new_callable=PropertyMock)),
+        prefix="dependatool.abstract")
 
     with patched as (m_succeed, m_fname):
         checker.dependabot_success(success)
@@ -213,15 +217,15 @@ def test_abstract_pip_checker_dependabot_success(patches):
              [f"{m_fname.return_value}: {x}" for x in sorted(success)]),  {}])
 
 
-def test_abstract_pip_checker_dependabot_errors(patches):
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_dependabot_errors(patches):
+    checker = DummyDependatool("path1", "path2", "path3")
     errors = set(["C", "D", "B", "A"])
     msg = "ERROR MESSAGE"
 
     patched = patches(
-        "APipChecker.error",
-        ("APipChecker.name", dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.pip_check.abstract")
+        "ADependatool.error",
+        ("ADependatool.name", dict(new_callable=PropertyMock)),
+        prefix="dependatool.abstract")
 
     with patched as (m_error, m_name):
         checker.dependabot_errors(errors, msg)
@@ -234,16 +238,16 @@ def test_abstract_pip_checker_dependabot_errors(patches):
 
 @pytest.mark.parametrize("name_matches", [True, False])
 @pytest.mark.parametrize("dir_ignored", [True, False])
-def test_abstract_pip_checker_dir_matches(patches, name_matches, dir_ignored):
-    checker = DummyPipChecker("path1", "path2", "path3")
+def test_abstract_dependatool_dir_matches(patches, name_matches, dir_ignored):
+    checker = DummyDependatool("path1", "path2", "path3")
     patched = patches(
-        ("APipChecker.ignored_dirs",
+        ("ADependatool.ignored_dirs",
          dict(new_callable=PropertyMock)),
-        ("APipChecker.path",
+        ("ADependatool.path",
          dict(new_callable=PropertyMock)),
-        ("APipChecker.requirements_filename",
+        ("ADependatool.requirements_filename",
          dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.pip_check.abstract")
+        prefix="dependatool.abstract")
     path = MagicMock()
     path.name = "PATH_NAME"
 

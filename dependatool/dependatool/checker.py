@@ -6,11 +6,11 @@ from functools import cached_property
 import abstracts
 
 
-from .abstract import APipChecker
+from .abstract import ADependatool
 
 
-@abstracts.implementer(APipChecker)
-class PipChecker:
+@abstracts.implementer(ADependatool)
+class Dependatool:
 
     @cached_property
     def path(self) -> pathlib.Path:
