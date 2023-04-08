@@ -16,7 +16,13 @@ from dependatool.exceptions import PipConfigurationError
 
 
 DEPENDABOT_CONFIG = ".github/dependabot.yml"
-IGNORED_DIRS = (r"^/tools/dev$", r"^/tools/dev/src")
+IGNORED_DIRS = (
+    r"^/tools/dev$",
+    r"^/tools/dev/src",
+    "^/examples/shared/envoy",
+    "^/examples/vrp",
+    "^/examples/wasm",
+    "^/examples/win")
 
 # TODO(phlax): add checks for:
 #      - requirements can be installed together
@@ -27,7 +33,7 @@ IGNORED_DIRS = (r"^/tools/dev$", r"^/tools/dev/src")
 class ADependatoolChecker(
         checker.Checker,
         metaclass=abstracts.Abstraction):
-    checks = ("pip",)
+    checks = ("docker", "pip")
     _config = DEPENDABOT_CONFIG
 
     @cached_property

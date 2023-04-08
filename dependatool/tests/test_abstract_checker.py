@@ -18,7 +18,7 @@ class DummyDependatoolChecker(dependatool.ADependatoolChecker):
 
 def test_abstract_checker_dependatool_constructor():
     checker = DummyDependatoolChecker("path1", "path2", "path3")
-    assert checker.checks == ("pip",)
+    assert checker.checks == ("docker", "pip")
     assert (
         checker.config_path
         == dependatool.abstract.checker.DEPENDABOT_CONFIG
