@@ -120,7 +120,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [dependatool](dependatool)
 
-version: 0.2.1.dev0
+version: 0.2.1
 
 pypi: https://pypi.org/project/dependatool
 

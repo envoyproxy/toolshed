@@ -33,7 +33,7 @@ IGNORED_DIRS = (
 class ADependatoolChecker(
         checker.Checker,
         metaclass=abstracts.Abstraction):
-    checks = ("docker", "pip")
+    checks = ("docker", "gomod", "pip")
     _config = DEPENDABOT_CONFIG
 
     @cached_property
