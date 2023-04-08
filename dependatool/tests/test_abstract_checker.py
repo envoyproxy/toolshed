@@ -8,6 +8,10 @@ import dependatool
 class DummyDependatoolChecker(dependatool.ADependatoolChecker):
 
     @property
+    def directory_class(self):
+        return super().directory_class
+
+    @property
     def path(self):
         return super().path
 
@@ -53,14 +57,48 @@ def test_abstract_checker_dependatool_config(patches, isdict):
         == [(m_path.return_value.joinpath.return_value,), {}])
 
 
-def test_abstract_checker_dependatool_path(patches):
+def test_abstract_checker_dependatool_directory(patches):
     checker = DummyDependatoolChecker("path1", "path2", "path3")
     patched = patches(
-        ("checker.Checker.path", dict(new_callable=PropertyMock)),
+        ("ADependatoolChecker.directory_class",
+         dict(new_callable=PropertyMock)),
+        ("ADependatoolChecker.directory_kwargs",
+         dict(new_callable=PropertyMock)),
+        ("ADependatoolChecker.path",
+         dict(new_callable=PropertyMock)),
         prefix="dependatool.abstract.checker")
 
-    with patched as (m_super, ):
-        assert checker.path == m_super.return_value
+    with patched as (m_class, m_kwargs, m_path):
+        m_kwargs.return_value = dict(foo="BAR")
+        assert (
+            checker.directory
+            == m_class.return_value.return_value)
+
+    assert (
+        m_class.return_value.call_args
+        == [(m_path.return_value, ), dict(foo="BAR")])
+    assert "directory" in checker.__dict__
+
+
+def test_abstract_checker_dependatool_directory_kwargs(patches):
+    checker = DummyDependatoolChecker("path1", "path2", "path3")
+    patched = patches(
+        "dict",
+        ("ADependatoolChecker.loop",
+         dict(new_callable=PropertyMock)),
+        ("ADependatoolChecker.pool",
+         dict(new_callable=PropertyMock)),
+        prefix="dependatool.abstract.checker")
+
+    with patched as (m_dict, m_loop, m_pool):
+        assert (
+            checker.directory_kwargs
+            == m_dict.return_value)
+
+    assert (
+        m_dict.call_args
+        == [(), dict(loop=m_loop.return_value, pool=m_pool.return_value)])
+    assert "directory_kwargs" not in checker.__dict__
 
 
 def test_abstract_checker_dependatool_ignored_dirs(patches):
@@ -78,6 +116,16 @@ def test_abstract_checker_dependatool_ignored_dirs(patches):
         m_re.compile.call_args
         == [("|".join(dependatool.abstract.checker.IGNORED_DIRS), ), {}])
     assert "ignored_dirs" in checker.__dict__
+
+
+def test_abstract_checker_dependatool_path(patches):
+    checker = DummyDependatoolChecker("path1", "path2", "path3")
+    patched = patches(
+        ("checker.Checker.path", dict(new_callable=PropertyMock)),
+        prefix="dependatool.abstract.checker")
+
+    with patched as (m_super, ):
+        assert checker.path == m_super.return_value
 
 
 async def test_abstract_checker__run_check(patches):

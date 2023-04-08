@@ -3,9 +3,11 @@ import abc
 import pathlib
 import re
 from functools import cached_property
+from typing import Mapping, Type
 
 import abstracts
 
+from aio.core import directory as _directory, event
 from aio.run import checker
 
 from envoy.base import utils
@@ -21,9 +23,17 @@ IGNORED_DIRS = (r"^/tools/dev$", r"^/tools/dev/src")
 #      - pip-compile formatting
 
 
-class ADependatoolChecker(checker.Checker, metaclass=abstracts.Abstraction):
+@abstracts.implementer(event.AExecutive)
+class ADependatoolChecker(
+        checker.Checker,
+        metaclass=abstracts.Abstraction):
     checks = ("pip",)
     _config = DEPENDABOT_CONFIG
+
+    @cached_property
+    @abstracts.interfacemethod
+    def check_tools(self):
+        raise NotImplementedError
 
     @cached_property
     def config(self) -> dict:
@@ -36,14 +46,27 @@ class ADependatoolChecker(checker.Checker, metaclass=abstracts.Abstraction):
                 f"{self.config_path}")
         return result
 
-    @cached_property
-    @abstracts.interfacemethod
-    def check_tools(self):
-        raise NotImplementedError
-
     @property
     def config_path(self) -> str:
         return self._config
+
+    @cached_property
+    def directory(self) -> _directory.ADirectory:
+        """Greppable directory - optionally in a git repo, depending on whether
+        we want to look at all files.
+        """
+        return self.directory_class(self.path, **self.directory_kwargs)
+
+    @property
+    def directory_kwargs(self) -> Mapping:
+        return dict(
+            pool=self.pool,
+            loop=self.loop)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def directory_class(self) -> Type[_directory.ADirectory]:
+        raise NotImplementedError
 
     @cached_property
     def ignored_dirs(self) -> re.Pattern:
