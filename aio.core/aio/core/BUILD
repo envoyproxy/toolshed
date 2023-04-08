@@ -41,6 +41,8 @@ pytooling_library(
         "tasks/__init__.py",
         "tasks/exceptions.py",
         "tasks/tasks.py",
-        "utils.py",
+        "utils/__init__.py",
+        "utils/context.py",
+        "utils/resolve.py",
     ],
 )

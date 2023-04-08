@@ -20,7 +20,7 @@ def test_captured_dunder_str(patches, result, warnings):
     patched = patches(
         ("Captured._warning_str",
          dict(new_callable=PropertyMock)),
-        prefix="aio.core.utils")
+        prefix="aio.core.utils.context")
     if result == str:
         captured.result = " RESULT  "
     elif result:
@@ -41,7 +41,7 @@ def test_captured__warning_str(iters, patches):
     captured = utils.Captured()
     patched = patches(
         "str",
-        prefix="aio.core.utils")
+        prefix="aio.core.utils.context")
     captured.warnings = iters(cb=lambda i: MagicMock())
 
     with patched as (m_str, ):
@@ -65,7 +65,7 @@ def test_captured__warnings(patches):
     patched = patches(
         "Captured",
         "_warnings",
-        prefix="aio.core.utils")
+        prefix="aio.core.utils.context")
     w = MagicMock()
     cap = MagicMock()
 
