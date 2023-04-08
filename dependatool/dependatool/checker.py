@@ -9,6 +9,7 @@ import abstracts
 from aio.core import directory
 
 from .abstract import ADependatoolChecker
+from .docker import DependatoolDockerCheck
 from .pip import DependatoolPipCheck
 
 
@@ -21,7 +22,9 @@ class DependatoolChecker:
 
     @cached_property
     def check_tools(self):
-        return dict(pip=DependatoolPipCheck(self))
+        return dict(
+            docker=DependatoolDockerCheck(self),
+            pip=DependatoolPipCheck(self))
 
     @property
     def directory_class(self) -> Type[directory.ADirectory]:
