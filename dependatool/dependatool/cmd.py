@@ -1,11 +1,11 @@
 
 import sys
 
-from .checker import PipChecker
+from .checker import Dependatool
 
 
 def main(*args: str) -> int:
-    return PipChecker(*args)()
+    return Dependatool(*args)()
 
 
 def cmd():

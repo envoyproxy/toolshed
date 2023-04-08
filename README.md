@@ -118,6 +118,21 @@ pypi: https://pypi.org/project/aio.run.runner
 ---
 
 
+#### [dependatool](dependatool)
+
+version: 0.2.0
+
+pypi: https://pypi.org/project/dependatool
+
+##### requirements:
+
+- [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
+- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.9
+
+---
+
+
 #### [envoy.base.utils](envoy.base.utils)
 
 version: 0.4.3.dev0
@@ -186,21 +201,6 @@ pypi: https://pypi.org/project/envoy.dependency.check
 - [multidict](https://pypi.org/project/multidict) >=6.0.2
 - [packaging](https://pypi.org/project/packaging)
 - [yarl](https://pypi.org/project/yarl) >=1.7.2
-
----
-
-
-#### [envoy.dependency.pip_check](envoy.dependency.pip_check)
-
-version: 0.1.5.dev0
-
-pypi: https://pypi.org/project/envoy.dependency.pip_check
-
-##### requirements:
-
-- [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.9
 
 ---
 

@@ -23,7 +23,7 @@ REQUIREMENTS_FILENAME = "requirements.txt"
 #      - pip-compile formatting
 
 
-class APipChecker(checker.Checker, metaclass=abstracts.Abstraction):
+class ADependatool(checker.Checker, metaclass=abstracts.Abstraction):
     checks = ("dependabot",)
     _dependabot_config = DEPENDABOT_CONFIG
     _requirements_filename = REQUIREMENTS_FILENAME

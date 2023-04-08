@@ -1,6 +1,6 @@
 
 pytooling_library(
-    "envoy.dependency.pip_check",
+    "dependatool",
     dependencies=[
         "//deps:reqs#abstracts",
         "//deps:reqs#aio.run.checker",
