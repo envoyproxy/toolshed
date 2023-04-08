@@ -1,13 +1,17 @@
 
-from .abstract import ADependatool
+from .abstract import ADependatoolCheck, ADependatoolChecker
 from .exceptions import PipConfigurationError
-from .checker import Dependatool
+from .checker import DependatoolChecker
 from .cmd import cmd, main
+from .pip import ADependatoolPipCheck, DependatoolPipCheck
 
 
 __all__ = (
-    "ADependatool",
+    "ADependatoolCheck",
+    "ADependatoolChecker",
+    "ADependatoolPipCheck",
     "cmd",
     "main",
     "PipConfigurationError",
-    "Dependatool")
+    "DependatoolChecker",
+    "DependatoolPipCheck")
