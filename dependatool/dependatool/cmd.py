@@ -1,11 +1,11 @@
 
 import sys
 
-from .checker import Dependatool
+from .checker import DependatoolChecker
 
 
 def main(*args: str) -> int:
-    return Dependatool(*args)()
+    return DependatoolChecker(*args)()
 
 
 def cmd():

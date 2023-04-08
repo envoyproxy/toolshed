@@ -1,0 +1,59 @@
+
+import abc
+import pathlib
+import re
+from functools import cached_property
+
+import abstracts
+
+from aio.run import checker
+
+from envoy.base import utils
+
+from dependatool.exceptions import PipConfigurationError
+
+
+DEPENDABOT_CONFIG = ".github/dependabot.yml"
+IGNORED_DIRS = (r"^/tools/dev$", r"^/tools/dev/src")
+
+# TODO(phlax): add checks for:
+#      - requirements can be installed together
+#      - pip-compile formatting
+
+
+class ADependatoolChecker(checker.Checker, metaclass=abstracts.Abstraction):
+    checks = ("pip",)
+    _config = DEPENDABOT_CONFIG
+
+    @cached_property
+    def config(self) -> dict:
+        """Parsed dependabot config."""
+        result = utils.from_yaml(
+            self.path.joinpath(self.config_path))
+        if not isinstance(result, dict):
+            raise PipConfigurationError(
+                "Unable to parse dependabot config: "
+                f"{self.config_path}")
+        return result
+
+    @cached_property
+    @abstracts.interfacemethod
+    def check_tools(self):
+        raise NotImplementedError
+
+    @property
+    def config_path(self) -> str:
+        return self._config
+
+    @cached_property
+    def ignored_dirs(self) -> re.Pattern:
+        return re.compile("|".join(IGNORED_DIRS))
+
+    @property
+    @abc.abstractmethod
+    def path(self) -> pathlib.Path:
+        return super().path
+
+    # TODO: make this public
+    async def _run_check(self, check):
+        await self.check_tools[check].check()

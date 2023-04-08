@@ -6,4 +6,17 @@ pytooling_library(
         "//deps:reqs#aio.run.checker",
         "//deps:reqs#envoy.base.utils",
     ],
+    sources=[
+        "__init__.py",
+        "abstract/__init__.py",
+        "abstract/check.py",
+        "abstract/checker.py",
+        "checker.py",
+        "cmd.py",
+        "exceptions.py",
+        "pip/__init__.py",
+        "pip/abstract.py",
+        "pip/check.py",
+        "typing.py",
+    ],
 )
