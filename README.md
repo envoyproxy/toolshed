@@ -122,15 +122,15 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [dependatool](dependatool)
 
-version: 0.2.2.dev0
+version: 0.2.2
 
 pypi: https://pypi.org/project/dependatool
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.0
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
-- [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.9
 
 ---
 

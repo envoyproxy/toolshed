@@ -7,10 +7,8 @@ from typing import Mapping, Type
 
 import abstracts
 
-from aio.core import directory as _directory, event
+from aio.core import directory as _directory, event, utils
 from aio.run import checker
-
-from envoy.base import utils
 
 from dependatool.exceptions import PipConfigurationError
 
