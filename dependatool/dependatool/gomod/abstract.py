@@ -31,7 +31,7 @@ class ADependatoolGomodCheck(object):
 
     @async_property(cache=True)
     async def gomodfile_dirs(self) -> set[str]:
-        """Set of found directories in the repo containing gomodfile.txt."""
+        """Set of found directories in the repo containing a go.mod file."""
         return set(
             os.path.dirname(f"/{f}")
             for f in await self.checker.directory.files
@@ -68,6 +68,7 @@ class ADependatoolGomodCheck(object):
         parent directory is excluded."""
         return (
             bool(self.gomodfile_filename.match(os.path.basename(path)))
+            and os.stat(path).st_size > 1
             and not self.checker.ignored_dirs.match(
                 os.path.dirname(f"/{path}")))
 
