@@ -26,6 +26,11 @@ class GlintCheck(abstract.AGlintCheck):
     pass
 
 
+@abstracts.implementer(interface.IGofmtCheck)
+class GofmtCheck(abstract.AGofmtCheck):
+    pass
+
+
 @abstracts.implementer(interface.IShellcheckCheck)
 class ShellcheckCheck(abstract.AShellcheckCheck):
     pass
@@ -112,6 +117,10 @@ class CodeChecker(abstract.ACodeChecker):
     @property
     def glint_class(self):
         return GlintCheck
+
+    @property
+    def gofmt_class(self):
+        return GofmtCheck
 
     @cached_property
     def path(self) -> pathlib.Path:

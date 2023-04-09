@@ -77,6 +77,10 @@ class DummyCodeChecker:
         return super().glint_class
 
     @property
+    def gofmt_class(self):
+        return super().gofmt_class
+
+    @property
     def path(self):
         return super().path
 
@@ -113,7 +117,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         prefix="envoy.code.check.abstract.checker")
     iface_props = [
         "extensions_class", "fs_directory_class", "flake8_class",
-        "git_directory_class", "glint_class", "project_class",
+        "git_directory_class", "glint_class", "gofmt_class", "project_class",
         "runtime_guards_class", "shellcheck_class", "yapf_class",
         "changelog_class", "yamllint_class"]
 
@@ -136,8 +140,8 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         == ("changelog",
             "extensions_fuzzed", "extensions_metadata",
             "extensions_registered",
-            "glint", "python_yapf", "python_flake8", "runtime_guards",
-            "shellcheck", "yamllint"))
+            "glint", "gofmt", "python_yapf", "python_flake8",
+            "runtime_guards", "shellcheck", "yamllint"))
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
             getattr(checker, prop)
@@ -146,6 +150,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
 @pytest.mark.parametrize(
     "subcheck",
     (("glint", "glint"),
+     ("gofmt", "gofmt"),
      ("python_flake8", "flake8"),
      ("python_yapf", "yapf"),
      ("shellcheck", "shellcheck"),
@@ -200,6 +205,7 @@ def test_abstract_checker_extensions(iters, patches):
 @pytest.mark.parametrize(
     "tool",
     (("glint",
+      "gofmt",
       "flake8",
       "yapf",
       "shellcheck",
@@ -316,6 +322,7 @@ async def test_abstract_checker_preload_runtime_guards(patches):
 @pytest.mark.parametrize(
     "preloader",
     (("glint", "glint"),
+     ("gofmt", "gofmt"),
      ("python_flake8", "flake8"),
      ("python_yapf", "yapf"),
      ("shellcheck", "shellcheck"),

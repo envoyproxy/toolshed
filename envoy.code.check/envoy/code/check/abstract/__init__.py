@@ -8,6 +8,7 @@ from .checker import ACodeChecker
 from .extensions import AExtensionsCheck
 from .flake8 import AFlake8Check
 from .glint import AGlintCheck
+from .gofmt import AGofmtCheck
 from .rst import (
     ABackticksCheck,
     APunctuationCheck,
@@ -22,6 +23,7 @@ from . import (
     extensions,
     flake8,
     glint,
+    gofmt,
     shellcheck,
     changelog,
     yamllint,
@@ -39,6 +41,7 @@ __all__ = (
     "AFileCodeCheck",
     "AFlake8Check",
     "AGlintCheck",
+    "AGofmtCheck",
     "AProjectCodeCheck",
     "APunctuationCheck",
     "AReflinksCheck",
@@ -50,6 +53,7 @@ __all__ = (
     "checker",
     "flake8",
     "glint",
+    "gofmt",
     "extensions",
     "shellcheck",
     "changelog",

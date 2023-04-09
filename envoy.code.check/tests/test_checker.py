@@ -39,6 +39,8 @@ def test_checker_constructor(patches, args, kwargs):
     assert "git_directory_class" not in directory.__dict__
     assert checker.glint_class == check.GlintCheck
     assert "glint_class" not in directory.__dict__
+    assert checker.gofmt_class == check.GofmtCheck
+    assert "gofmt_class" not in directory.__dict__
     assert checker.project_class == utils.Project
     assert "project_class" not in directory.__dict__
     assert checker.runtime_guards_class == check.RuntimeGuardsCheck
