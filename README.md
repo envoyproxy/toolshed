@@ -286,7 +286,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.2.6.dev0
+version: 0.2.6
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
@@ -301,7 +301,7 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 - [pygments](https://pypi.org/project/pygments) >=2.11.1
 - [pyyaml](https://pypi.org/project/pyyaml)
 - [sphinx-copybutton](https://pypi.org/project/sphinx-copybutton)
-- [sphinx](https://pypi.org/project/sphinx) ==6.0.1
+- [sphinx](https://pypi.org/project/sphinx) >=6.2.0
 - [sphinxcontrib-httpdomain](https://pypi.org/project/sphinxcontrib-httpdomain)
 - [sphinxcontrib-jquery](https://pypi.org/project/sphinxcontrib-jquery) >=3.0.0
 - [sphinxcontrib-serializinghtml](https://pypi.org/project/sphinxcontrib-serializinghtml)

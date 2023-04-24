@@ -40,7 +40,7 @@ python-gnupg
 pytz
 pyyaml
 setuptools
-sphinx==6.0.1
+sphinx>=6.2.0
 sphinx-copybutton>=0.5.1
 # These are pinned upstream mostly for continued legacy python version support
 # TODO(phlax): use upstream when available
