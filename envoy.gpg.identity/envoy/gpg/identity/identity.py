@@ -111,7 +111,9 @@ class GPGIdentity(object):
         if not (self.provided_name or self.provided_email):
             return None
         return (
-            formataddr((self.provided_name, self.provided_email))
+            formataddr(
+                (self.provided_name,
+                 self.provided_email)).replace('"', "")
             if (self.provided_name and self.provided_email)
             else (self.provided_name or self.provided_email))
 

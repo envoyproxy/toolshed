@@ -353,13 +353,13 @@ pypi: https://pypi.org/project/envoy.github.release
 
 #### [envoy.gpg.identity](envoy.gpg.identity)
 
-version: 0.1.1.dev0
+version: 0.1.1
 
 pypi: https://pypi.org/project/envoy.gpg.identity
 
 ##### requirements:
 
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.0
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.0
 - [python-gnupg](https://pypi.org/project/python-gnupg)
 
 ---
