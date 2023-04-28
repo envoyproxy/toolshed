@@ -1,25 +1,26 @@
 
 from .exceptions import TypeCastingError
+from .tar import (
+    extract,
+    ExtractError,
+    is_tarlike,
+    TAR_EXTS,
+    tar_mode,
+    untar)
 from .utils import (
     async_list,
     cd_and_return,
     dt_to_utc_isoformat,
     ellipsize,
-    extract,
-    ExtractError,
     from_json,
     from_yaml,
     increment_version,
-    is_tarlike,
     coverage_with_data_file,
     minor_version_for,
     typed,
-    untar,
-    TAR_EXTS,
     to_yaml,
     to_bytes,
     is_sha,
-    tar_mode,
     last_n_bytes_of)
 from . import interface, typing
 from .parallel_cmd import parallel_cmd

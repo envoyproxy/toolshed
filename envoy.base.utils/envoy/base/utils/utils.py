@@ -6,12 +6,11 @@ import contextlib
 import datetime
 import os
 import pathlib
-import tarfile
 import tempfile
 from configparser import ConfigParser
 from typing import (
     Any, AsyncGenerator, Callable, Generator,
-    Iterator, List, Optional, Set, Type, Union)
+    Iterator, List, Optional, Type, Union)
 
 from packaging import version as _version
 
@@ -23,24 +22,11 @@ from trycast import isassignable  # type:ignore
 
 from .exceptions import TypeCastingError
 
-from aio.core import functional
-
 # condition needed due to https://github.com/bazelbuild/rules_python/issues/622
 try:
     import orjson as json
 except ImportError:
     import json  # type:ignore
-
-
-# See here for a list of known tar file extensions:
-#   https://en.wikipedia.org/wiki/Tar_(computing)#Suffixes_for_compressed_files
-# not all are listed here, and some extensions may require additional software
-# to handle. This list can be updated as required
-TAR_EXTS: Set[str] = {"tar", "tar.gz", "tar.xz", "tar.bz2"}
-
-
-class ExtractError(Exception):
-    pass
 
 
 # this is testing specific - consider moving to tools.testing.utils
@@ -60,44 +46,6 @@ def coverage_with_data_file(data_file: str) -> Iterator[str]:
         with open(tmprc, "w") as f:
             parser.write(f)
         yield tmprc
-
-
-def extract(
-        path: Union[pathlib.Path, str],
-        *tarballs: Union[pathlib.Path, str]) -> pathlib.Path:
-    if not tarballs:
-        raise ExtractError(f"No tarballs specified for extraction to {path}")
-    openers = functional.nested(
-        *tuple(tarfile.open(tarball) for tarball in tarballs))
-
-    with openers as tarfiles:
-        for tar in tarfiles:
-            tar.extractall(path=path)
-    return pathlib.Path(path)
-
-
-@contextlib.contextmanager
-def untar(*tarballs: Union[pathlib.Path, str]) -> Iterator[pathlib.Path]:
-    """Untar a tarball into a temporary directory.
-
-    for example to list the contents of a tarball:
-
-    ```
-    import os
-
-    from tooling.base.utils import untar
-
-
-    with untar("path/to.tar") as tmpdir:
-        print(os.listdir(tmpdir))
-
-    ```
-
-    the created temp directory will be cleaned up on
-    exiting the contextmanager
-    """
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yield extract(tmpdir, *tarballs)
 
 
 def from_json(path: Union[pathlib.Path, str], type: Type = None) -> Any:
@@ -128,16 +76,6 @@ def to_yaml(
     path = pathlib.Path(path)
     path.write_text(yaml.dump(data))
     return path
-
-
-def is_tarlike(path: Union[pathlib.Path, str]) -> bool:
-    """Returns a bool based on whether a file looks like a tar file depending
-    on its file extension.
-
-    This allows for a provided path to save to, to dynamically be either
-    considered a directory (to create) or a tar file (to create).
-    """
-    return any(str(path).endswith(ext) for ext in TAR_EXTS)
 
 
 def ellipsize(text: str, max_len: int) -> str:
@@ -202,14 +140,6 @@ def is_sha(text: str) -> bool:
     except ValueError:
         return False
     return True
-
-
-def tar_mode(path: Union[pathlib.Path, str], mode="r") -> str:
-    suffixes = ["gz", "bz2", "xz"]
-    for suffix in suffixes:
-        if str(path).endswith(f".{suffix}"):
-            return f"{mode}:{suffix}"
-    return mode
 
 
 def dt_to_utc_isoformat(dt: datetime.datetime) -> str:

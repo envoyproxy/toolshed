@@ -50,74 +50,6 @@ def test_util_coverage_with_data_file(patches):
         == [(m_open.return_value.__enter__.return_value,), {}])
 
 
-@pytest.mark.parametrize(
-    "tarballs",
-    [(), tuple("TARB{i}" for i in range(0, 3))])
-def test_util_extract(patches, tarballs):
-    patched = patches(
-        "functional",
-        "pathlib",
-        "tarfile.open",
-        prefix="envoy.base.utils.utils")
-
-    with patched as (m_fun, m_plib, m_open):
-        _extractions = [MagicMock(), MagicMock()]
-        m_fun.nested.return_value.__enter__.return_value = _extractions
-
-        if tarballs:
-            assert utils.extract("PATH", *tarballs) == m_plib.Path.return_value
-        else:
-            with pytest.raises(utils.ExtractError) as e:
-                utils.extract("PATH", *tarballs)
-
-    if not tarballs:
-        assert (
-            e.value.args[0]
-            == 'No tarballs specified for extraction to PATH')
-        assert not m_fun.nested.called
-        assert not m_open.called
-        for _extract in _extractions:
-            assert not _extract.extractall.called
-        return
-
-    assert (
-        m_plib.Path.call_args
-        == [("PATH", ), {}])
-
-    for _extract in _extractions:
-        assert (
-            _extract.extractall.call_args
-            == [(), dict(path="PATH")])
-
-    assert (
-        m_open.call_args_list
-        == [[(tarb, ), {}] for tarb in tarballs])
-    assert (
-        m_fun.nested.call_args
-        == [tuple(m_open.return_value for x in tarballs), {}])
-
-
-@pytest.mark.parametrize(
-    "tarballs",
-    [(), tuple("TARB{i}" for i in range(0, 3))])
-def test_util_untar(patches, tarballs):
-    patched = patches(
-        "tempfile.TemporaryDirectory",
-        "extract",
-        prefix="envoy.base.utils.utils")
-
-    with patched as (m_tmp, m_extract):
-        with utils.untar(*tarballs) as tmpdir:
-            assert tmpdir == m_extract.return_value
-
-    assert (
-        m_tmp.call_args
-        == [(), {}])
-    assert (
-        m_extract.call_args
-        == [(m_tmp.return_value.__enter__.return_value, ) + tarballs, {}])
-
-
 @pytest.mark.parametrize("type", [None, False, "TYPE"])
 def test_util_from_json(patches, type):
     args = (
@@ -208,18 +140,6 @@ def test_util_to_yaml(patches):
     assert (
         m_plib.Path.call_args
         == [("PATH", ), {}])
-
-
-@pytest.mark.parametrize(
-    "path",
-    ["x.foo", "x.bar", "x.tar", "x.tar.xz", "x.xz"])
-def test_is_tarlike(patches, path):
-    matches = False
-    for ext in utils.TAR_EXTS:
-        if path.endswith(ext):
-            matches = True
-            break
-    assert utils.is_tarlike(path) == matches
 
 
 @pytest.mark.parametrize("text_length", range(0, 10))
@@ -337,27 +257,6 @@ def test_is_sha(patches, length, raises):
             == [(text, 16), {}])
     else:
         assert not m_int.called
-
-
-@pytest.mark.parametrize("mode", [None, "r", "w"])
-@pytest.mark.parametrize(
-    "path",
-    ["foo", "foo.tar", "foo.tar.gz", "foo.tar.xz", "foo.tar.bz2"])
-def test_tar_mode(mode, path):
-    m_path = MagicMock()
-    m_path.__str__.return_value = path
-    expected = mode or "r"
-    suffixes = ["gz", "bz2", "xz"]
-    for suffix in suffixes:
-        if str(path).endswith(f".{suffix}"):
-            expected = f"{mode or 'r'}:{suffix}"
-            break
-    kwargs = {}
-    if mode:
-        kwargs["mode"] = mode
-    assert (
-        utils.tar_mode(m_path, **kwargs)
-        == expected)
 
 
 def test_dt_to_utc_isoformat(patches):

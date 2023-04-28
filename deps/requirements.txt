@@ -58,3 +58,4 @@ wheel-inspect
 yamllint
 yapf
 yarl>=1.7.2
+zstandard

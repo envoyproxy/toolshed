@@ -158,6 +158,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 - [pyyaml](https://pypi.org/project/pyyaml)
 - [trycast](https://pypi.org/project/trycast) >=0.7.3
 - [yarl](https://pypi.org/project/yarl) >=1.7.2
+- [zstandard](https://pypi.org/project/zstandard)
 
 ---
 
