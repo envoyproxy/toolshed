@@ -2,11 +2,13 @@
 import sys
 
 from .runner import PackageSigningRunner
+from .bin import BinarySigningUtil
 from .deb import DebSigningUtil
 from .rpm import RPMSigningUtil
 
 
 def _register_utils() -> None:
+    PackageSigningRunner.register_util("bin", BinarySigningUtil)
     PackageSigningRunner.register_util("deb", DebSigningUtil)
     PackageSigningRunner.register_util("rpm", RPMSigningUtil)
 
