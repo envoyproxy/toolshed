@@ -288,7 +288,10 @@ def test_identity_identity_id(patches, name, email):
         assert (
             m_format.call_args
             == [(('NAME', 'EMAIL'),), {}])
-        assert result == m_format.return_value
+        assert (
+            m_format.return_value.replace.call_args
+            == [('"', ''), {}])
+        assert result == m_format.return_value.replace.return_value
         return
 
     assert not m_format.called
