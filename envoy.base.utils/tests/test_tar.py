@@ -334,10 +334,7 @@ def test_util__opener(prefix):
     with utils.tar._opener(tarball, prefix) as result:
         pass
 
-    if not prefix:
-        assert result == tarball.__enter__.return_value
-    else:
-        assert result == (prefix, tarball.__enter__.return_value)
+    assert result == (prefix, tarball.__enter__.return_value)
 
 
 @pytest.mark.parametrize("matching", [True, False])
