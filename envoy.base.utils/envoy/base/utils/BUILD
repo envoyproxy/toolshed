@@ -15,6 +15,7 @@ pytooling_library(
         "//deps:reqs#protobuf",
         "//deps:reqs#pyyaml",
         "//deps:reqs#trycast",
+        "//deps:reqs#zstandard",
     ],
     sources=[
         "__init__.py",
@@ -38,6 +39,7 @@ pytooling_library(
         "project_runner.py",
         "protobuf.py",
         "typing.py",
+        "tar.py",
         "utils.py",
         "yaml.py",
     ],
