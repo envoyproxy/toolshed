@@ -122,9 +122,9 @@ def _mv_paths(path: pathlib.Path, mappings: Optional[dict[str, str]]) -> None:
         shutil.move(src_path, dest_path)
 
 
-def _open(path: pathlib.Path | str) -> ContextManager[
-        tuple[str, tarfile.TarFile]
-        | tarfile.TarFile]:
+def _open(
+        path: pathlib.Path | str) -> (
+            ContextManager[tuple[str, tarfile.TarFile]]):
     """For a given tarball path if it contains `:` split prefix, path,
     otherwise prefix is empty.
 
@@ -157,14 +157,9 @@ def _open_zst(path: pathlib.Path | str) -> tarfile.TarFile:
 @contextlib.contextmanager
 def _opener(
         tarball: tarfile.TarFile,
-        prefix: str = "") -> Iterator[
-            tuple[str, tarfile.TarFile]
-            | tarfile.TarFile]:
+        prefix: str = "") -> Iterator[tuple[str, tarfile.TarFile]]:
     with tarball as t:
-        yield (
-            (prefix, t)
-            if prefix
-            else t)
+        yield prefix, t
 
 
 def _rm_paths(path: pathlib.Path, matching: Optional[Pattern[str]]):
