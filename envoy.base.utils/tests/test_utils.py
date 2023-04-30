@@ -1,15 +1,9 @@
-import importlib
 import pathlib
 from unittest.mock import MagicMock
 
 import pytest
 
 from envoy.base import utils
-
-
-# this is necessary to fix coverage as these libs are imported before pytest
-# is invoked
-importlib.reload(utils)
 
 
 def test_util_coverage_with_data_file(patches):
@@ -356,3 +350,39 @@ def test_increment_version(patches, patch):
     assert (
         m_version.Version.call_args
         == [(expected, ), {}])
+
+
+@pytest.mark.parametrize("pair", [0, 1, 2, 3])
+def test_tuple_pair(patches, pair):
+    patched = patches(
+        "len",
+        prefix="envoy.base.utils.utils")
+    input = MagicMock()
+    separator = MagicMock()
+
+    with patched as (m_len, ):
+        m_len.return_value = pair
+        if pair != 2:
+            with pytest.raises(utils.TuplePairError) as e:
+                utils.tuple_pair(input, separator)
+        else:
+            assert (
+                utils.tuple_pair(input, separator)
+                == (input.split.return_value.__getitem__.return_value,
+                    input.split.return_value.__getitem__.return_value))
+
+    assert (
+        input.split.call_args
+        == [(separator, ), {}])
+    assert (
+        m_len.call_args
+        == [(input.split.return_value, ), {}])
+    if pair != 2:
+        assert (
+            e.value.args[0]
+            == f"Provided string did not split ({separator}) in 2: {input}")
+        assert not input.split.return_value.__getitem__.called
+        return
+    assert (
+        input.split.return_value.__getitem__.call_args_list
+        == [[(i, ), {}] for i in (0, 1)])

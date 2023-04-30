@@ -15,7 +15,7 @@ import shutil
 import tarfile
 import tempfile
 from typing import (
-    ContextManager, Iterator, Optional, Pattern, Set, Union)
+    ContextManager, Iterator, Optional, Pattern, Set)
 
 import zstandard
 
@@ -34,7 +34,7 @@ class ExtractError(Exception):
     pass
 
 
-def is_tarlike(path: Union[pathlib.Path, str]) -> bool:
+def is_tarlike(path: pathlib.Path | str) -> bool:
     """Returns a bool based on whether a file looks like a tar file depending
     on its file extension.
 
@@ -44,7 +44,7 @@ def is_tarlike(path: Union[pathlib.Path, str]) -> bool:
     return any(str(path).endswith(ext) for ext in TAR_EXTS)
 
 
-def tar_mode(path: Union[pathlib.Path, str], mode="r") -> str:
+def tar_mode(path: pathlib.Path | str, mode="r") -> str:
     for suffix in COMPRESSION_EXTS:
         if str(path).endswith(f".{suffix}"):
             return f"{mode}:{suffix}"
@@ -54,8 +54,8 @@ def tar_mode(path: Union[pathlib.Path, str], mode="r") -> str:
 # Extraction
 
 def extract(
-        path: Union[pathlib.Path, str],
-        *tarballs: Union[pathlib.Path, str],
+        path: pathlib.Path | str,
+        *tarballs: pathlib.Path | str,
         matching: Optional[Pattern[str]] = None,
         mappings: Optional[dict[str, str]] = None) -> pathlib.Path:
     if not tarballs:
@@ -75,7 +75,7 @@ def extract(
 
 @contextlib.contextmanager
 def untar(
-        *tarballs: Union[pathlib.Path, str],
+        *tarballs: pathlib.Path | str,
         matching: Optional[Pattern[str]] = None,
         mappings: Optional[dict[str, str]] = None) -> Iterator[pathlib.Path]:
     """Untar a tarball into a temporary directory.
@@ -188,26 +188,57 @@ def _should_extract(
 
 def pack(
         path: str | pathlib.Path,
-        out: str | pathlib.Path) -> None:
-    (_pack_zst(path, out)
+        out: str | pathlib.Path,
+        include: Optional[Pattern[str]] = None) -> None:
+    (_pack_zst(path, out, include=include)
      if str(out).endswith(".zst")
-     else _pack(path, out))
+     else _pack(path, out, include=include))
 
 
 def _pack(
         path: str | pathlib.Path,
-        out: str | pathlib.Path) -> None:
+        out: str | pathlib.Path,
+        include: Optional[Pattern[str]] = None) -> None:
     with tarfile.open(out, mode=tar_mode(out, mode="w")) as tar:
-        tar.add(path, arcname=".")
+        tar.add(_prune(path, include), arcname=".")
 
 
 def _pack_zst(
         path: str | pathlib.Path,
-        out: str | pathlib.Path) -> None:
+        out: str | pathlib.Path,
+        include: Optional[Pattern[str]] = None) -> None:
     tarout = io.BytesIO()
     cctx = zstandard.ZstdCompressor(threads=-1)
     with tarfile.open(fileobj=tarout, mode="w") as tar:
-        tar.add(path, arcname=".")
+        tar.add(_prune(path, include), arcname=".")
         tarout.seek(0)
         with open(out, "wb") as writeout:
             cctx.copy_stream(tarout, writeout)
+
+
+def _prune(
+        path: str | pathlib.Path,
+        include: Optional[Pattern[str]] = None) -> pathlib.Path:
+    path = pathlib.Path(path)
+    if not include:
+        return path
+    for sub in path.glob("*"):
+        if not include.match(sub.name):
+            (shutil.rmtree(sub)
+             if sub.is_dir()
+             else sub.unlink())
+    return path
+
+
+# Repacking
+
+@contextlib.contextmanager
+def repack(
+        out: str | pathlib.Path,
+        *paths: str | pathlib.Path,
+        matching: Optional[Pattern[str]] = None,
+        mappings: Optional[dict[str, str]] = None,
+        include: Optional[Pattern[str]] = None) -> Iterator[pathlib.Path]:
+    with untar(*paths, matching=matching, mappings=mappings) as tardir:
+        yield tardir
+        pack(tardir, out, include=include)

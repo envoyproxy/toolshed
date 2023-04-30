@@ -167,3 +167,16 @@ def increment_version(
         f"{version.major}.{version.minor}.{version.micro + 1}"
         if patch
         else f"{version.major}.{version.minor + 1}.{version.micro}")
+
+
+class TuplePairError(Exception):
+    pass
+
+
+def tuple_pair(input: str, separator: str = ":") -> tuple[str, str]:
+    """This allows dict generators to split items and pass type checking."""
+    pair = input.split(separator)
+    if len(pair) != 2:
+        raise TuplePairError(
+            f"Provided string did not split ({separator}) in 2: {input}")
+    return pair[0], pair[1]
