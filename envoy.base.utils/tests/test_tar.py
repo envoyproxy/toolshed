@@ -41,43 +41,44 @@ def test_tar_mode(mode, path):
 @pytest.mark.parametrize("tarballs", [0, 3])
 @pytest.mark.parametrize("mappings", [0, 3])
 @pytest.mark.parametrize("matching", [True, False])
-def test_util_extract(patches, tarballs, mappings, matching, iters):
+@pytest.mark.parametrize("inmem", [None, True, False])
+def test_util_extract(patches, tarballs, mappings, matching, inmem, iters):
+    kwargs = dict(inmem=inmem) if inmem is not None else {}
+    inmem = inmem if inmem is not None else True
     patched = patches(
-        "functional",
         "pathlib",
         "_extract",
         "_mv_paths",
         "_rm_paths",
         "_open",
         prefix="envoy.base.utils.tar")
-
     tarballs = iters(tuple, cb=lambda i: f"TARB{i}", count=tarballs)
     mappings = iters(dict, count=mappings)
     matching = MagicMock() if matching else None
 
-    with patched as (m_fun, m_plib, m_extract, m_mv, m_rm, m_open):
-        _extractions = iters(cb=lambda x: [MagicMock(), MagicMock()])
-        m_fun.nested.return_value.__enter__.return_value = _extractions
-
+    with patched as (m_plib, m_extract, m_mv, m_rm, m_open):
+        _extraction = [MagicMock(), MagicMock()]
+        m_open.return_value.__enter__.return_value = _extraction
         if tarballs:
             assert (
                 utils.extract(
                     "PATH", *tarballs,
                     mappings=mappings,
-                    matching=matching)
+                    matching=matching,
+                    **kwargs)
                 == m_plib.Path.return_value)
         else:
             with pytest.raises(utils.ExtractError) as e:
                 utils.extract(
                     "PATH", *tarballs,
                     mappings=mappings,
-                    matching=matching)
+                    matching=matching,
+                    **kwargs)
 
     if not tarballs:
         assert (
             e.value.args[0]
             == 'No tarballs specified for extraction to PATH')
-        assert not m_fun.nested.called
         assert not m_open.called
         assert not m_mv.called
         assert not m_rm.called
@@ -85,20 +86,16 @@ def test_util_extract(patches, tarballs, mappings, matching, iters):
         if matching:
             assert not matching.match.called
         return
-
     assert (
         m_plib.Path.call_args
         == [("PATH", ), {}])
     assert (
         m_open.call_args_list
-        == [[(tarb, ), {}] for tarb in tarballs])
-    assert (
-        m_fun.nested.call_args
-        == [tuple(m_open.return_value for x in tarballs), {}])
+        == [[(tarb, inmem), {}] for tarb in tarballs])
     assert (
         m_extract.call_args_list
-        == [[(m_plib.Path.return_value, *extract, matching, mappings), {}]
-            for extract in _extractions])
+        == [[(m_plib.Path.return_value, *_extraction, matching, mappings), {}]
+            for tarb in tarballs])
     assert (
         m_mv.call_args
         == [(m_plib.Path.return_value, mappings), {}])
@@ -138,7 +135,10 @@ def test_util_pack(patches, zst):
         == [(path, out), dict(include=include)])
 
 
-def test_util_repack(patches, iters):
+@pytest.mark.parametrize("inmem", [None, True, False])
+def test_util_repack(patches, inmem, iters):
+    kwargs = dict(inmem=inmem) if inmem is not None else {}
+    inmem = inmem if inmem is not None else True
     patched = patches(
         "untar",
         "pack",
@@ -155,7 +155,8 @@ def test_util_repack(patches, iters):
             *paths,
             matching=matching,
             mappings=mappings,
-            include=include)
+            include=include,
+            **kwargs)
         with repack as tardir:
             assert not m_pack.called
 
@@ -166,7 +167,8 @@ def test_util_repack(patches, iters):
         m_untar.call_args
         == [tuple(paths),
             dict(matching=matching,
-                 mappings=mappings)])
+                 mappings=mappings,
+                 inmem=inmem)])
     assert (
         m_pack.call_args
         == [(tardir, out), dict(include=include)])
@@ -175,7 +177,10 @@ def test_util_repack(patches, iters):
 @pytest.mark.parametrize(
     "tarballs",
     [(), tuple("TARB{i}" for i in range(0, 3))])
-def test_util_untar(patches, tarballs, iters):
+@pytest.mark.parametrize("inmem", [None, True, False])
+def test_util_untar(patches, tarballs, inmem, iters):
+    kwargs = dict(inmem=inmem) if inmem is not None else {}
+    inmem = inmem if inmem is not None else True
     patched = patches(
         "tempfile.TemporaryDirectory",
         "extract",
@@ -187,7 +192,8 @@ def test_util_untar(patches, tarballs, iters):
         untarred = utils.untar(
             *tarballs,
             matching=matching,
-            mappings=mappings)
+            mappings=mappings,
+            **kwargs)
         with untarred as tmpdir:
             assert tmpdir == m_extract.return_value
 
@@ -197,7 +203,7 @@ def test_util_untar(patches, tarballs, iters):
     assert (
         m_extract.call_args
         == [(m_tmp.return_value.__enter__.return_value, ) + tarballs,
-            dict(matching=matching, mappings=mappings)])
+            dict(matching=matching, mappings=mappings, inmem=inmem)])
 
 
 @pytest.mark.parametrize("tarballs", [0, 3])
@@ -239,15 +245,11 @@ def test_util__extract(patches, tarballs, mappings, matching, iters):
     assert (
         tar.extract.call_args_list
         == [[(member, ),
-             dict(path=path.joinpath.return_value.joinpath.return_value)]
+             dict(path=path.joinpath.return_value)]
             for member in members if member() % 2])
     assert (
         path.joinpath.call_args_list
         == [[(prefix, ), {}]
-            for member in members if member() % 2])
-    assert (
-        path.joinpath.return_value.joinpath.call_args_list
-        == [[(member.name, ), {}]
             for member in members if member() % 2])
 
 
@@ -281,7 +283,10 @@ def test_util__mv_paths(patches, mappings, iters):
 
 @pytest.mark.parametrize("prefix", [True, False])
 @pytest.mark.parametrize("zst", [True, False])
-def test_util__open(patches, prefix, zst):
+@pytest.mark.parametrize("inmem", [None, True, False])
+def test_util__open(patches, prefix, zst, inmem):
+    args = (inmem, ) if inmem is not None else ()
+    inmem = inmem if inmem is not None else True
     patched = patches(
         "str",
         "tarfile",
@@ -304,7 +309,7 @@ def test_util__open(patches, prefix, zst):
             _path = m_str.return_value
         _path.endswith.return_value = zst
         assert (
-            utils.tar._open(path)
+            utils.tar._open(path, *args)
             == m_open.return_value)
 
     assert (
@@ -329,7 +334,7 @@ def test_util__open(patches, prefix, zst):
             == [(m_zst.return_value, _prefix), {}])
         assert (
             m_zst.call_args
-            == [(_path, ), {}])
+            == [(_path, inmem), {}])
         return
     assert (
         m_tar.open.call_args
@@ -340,23 +345,27 @@ def test_util__open(patches, prefix, zst):
     assert not m_zst.called
 
 
-def test_util__open_zst(patches):
+@pytest.mark.parametrize("inmem", [None, True, False])
+def test_util__open_zst(patches, inmem):
+    args = (inmem, ) if inmem is not None else ()
+    inmem = inmem if inmem is not None else True
     patched = patches(
         "io",
         "pathlib",
         "tarfile",
+        "tempfile",
         "zstandard",
         prefix="envoy.base.utils.tar")
     path = MagicMock()
     infile = MagicMock()
 
-    with patched as (m_io, m_plib, m_tar, m_zst):
+    with patched as (m_io, m_plib, m_tar, m_temp, m_zst):
         (m_plib.Path.return_value
                     .expanduser.return_value
                     .open.return_value
                     .__enter__.return_value) = infile
         assert (
-            utils.tar._open_zst(path)
+            utils.tar._open_zst(path, *args)
             == m_tar.open.return_value)
 
     assert (
@@ -368,9 +377,18 @@ def test_util__open_zst(patches):
     assert (
         m_zst.ZstdDecompressor.call_args
         == [(), {}])
-    assert (
-        m_io.BytesIO.call_args
-        == [(), {}])
+    if inmem:
+        assert (
+            m_io.BytesIO.call_args
+            == [(), {}])
+        assert not m_temp.TemporaryFile.called
+        file_handler = m_io.BytesIO.return_value
+    else:
+        assert (
+            m_temp.TemporaryFile.call_args
+            == [(), dict(suffix=".tar")])
+        assert not m_io.BytesIO.called
+        file_handler = m_temp.TemporaryFile.return_value
     assert (
         (m_plib.Path.return_value
                     .expanduser.return_value
@@ -378,23 +396,33 @@ def test_util__open_zst(patches):
         == [("rb", ), {}])
     assert (
         m_zst.ZstdDecompressor.return_value.copy_stream.call_args
-        == [(infile, m_io.BytesIO.return_value), {}])
+        == [(infile, file_handler), {}])
     assert (
-        m_io.BytesIO.return_value.seek.call_args
+        file_handler.seek.call_args
         == [(0, ), {}])
     assert (
         m_tar.open.call_args
-        == [(), dict(fileobj=m_io.BytesIO.return_value)])
+        == [(), dict(fileobj=file_handler)])
 
 
 @pytest.mark.parametrize("prefix", [True, False])
-def test_util__opener(prefix):
+@pytest.mark.parametrize("fileobj", [True, False])
+def test_util__opener(prefix, fileobj):
     tarball = MagicMock()
     prefix = MagicMock() if prefix else prefix
+    _fileobj = MagicMock()
+    tdict = dict(fileobj=_fileobj) if fileobj else {}
+    tarball.__enter__.return_value.__dict__ = tdict
 
     with utils.tar._opener(tarball, prefix) as result:
-        pass
+        assert not _fileobj.close.called
 
+    if fileobj:
+        assert (
+            _fileobj.close.call_args
+            == [(), {}])
+    else:
+        assert not _fileobj.close.called
     assert result == (prefix, tarball.__enter__.return_value)
 
 
