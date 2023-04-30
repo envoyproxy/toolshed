@@ -1,4 +1,5 @@
 
+import types
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
@@ -35,18 +36,6 @@ def test_packager_cls_register_util():
         sign.PackageSigningRunner._signing_utils
         == (('util1', Util1),
             ('util2', Util2),))
-
-
-def test_packager_extract(patches):
-    packager = sign.PackageSigningRunner("x", "y", "z")
-    patched = patches(
-        ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
-        prefix="envoy.gpg.sign.runner")
-
-    with patched as (m_args, ):
-        assert packager.extract == m_args.return_value.extract
-
-    assert "extract" not in packager.__dict__
 
 
 def test_packager_gen_key(patches):
@@ -103,6 +92,18 @@ def test_packager_gnupg_tempdir(patches):
     assert "gnupg_tempdir" in packager.__dict__
 
 
+def test_packager_infiles(patches):
+    packager = sign.PackageSigningRunner("x", "y", "z")
+    patched = patches(
+        ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.sign.runner")
+
+    with patched as (m_args, ):
+        assert packager.infiles == m_args.return_value.infiles
+
+    assert "infiles" not in packager.__dict__
+
+
 def test_packager_maintainer(patches):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
@@ -150,7 +151,6 @@ def test_packager_maintainer_email(patches):
 
 def test_packager_maintainer_name(patches):
     packager = sign.PackageSigningRunner("x", "y", "z")
-
     patched = patches(
         ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.sign.runner")
@@ -159,6 +159,47 @@ def test_packager_maintainer_name(patches):
         assert packager.maintainer_name == m_args.return_value.maintainer_name
 
     assert "maintainer_name" not in packager.__dict__
+
+
+@pytest.mark.parametrize("mappings", [None, 0, 3, 5])
+def test_packager_mappings(patches, iters, mappings):
+    packager = sign.PackageSigningRunner("x", "y", "z")
+    mappings = iters(count=mappings) if mappings is not None else mappings
+    patched = patches(
+        "dict",
+        "utils",
+        ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.sign.runner")
+
+    with patched as (m_dict, m_utils, m_args):
+        m_args.return_value.mapping = mappings
+        assert packager.mappings == m_dict.return_value
+        resultiter = m_dict.call_args[0][0]
+        result = list(resultiter)
+
+    assert isinstance(resultiter, types.GeneratorType)
+    assert (
+        result
+        == list(
+            m_utils.tuple_pair.return_value
+            for m in mappings or []))
+    assert (
+        m_utils.tuple_pair.call_args_list
+        == [[(m, ), {}]
+            for m in mappings or []])
+    assert "mappings" not in packager.__dict__
+
+
+def test_packager_outfile(patches):
+    packager = sign.PackageSigningRunner("x", "y", "z")
+    patched = patches(
+        ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
+        prefix="envoy.gpg.sign.runner")
+
+    with patched as (m_args, ):
+        assert packager.outfile == m_args.return_value.out
+
+    assert "outfile" not in packager.__dict__
 
 
 def test_packager_package_type(patches):
@@ -174,32 +215,43 @@ def test_packager_package_type(patches):
     assert "package_type" not in packager.__dict__
 
 
-def test_packager_path(patches):
+def test_packager_repack(patches, iters):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
-        "pathlib",
-        ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
+        "re",
+        "utils",
+        ("PackageSigningRunner.infiles",
+         dict(new_callable=PropertyMock)),
+        ("PackageSigningRunner.outfile",
+         dict(new_callable=PropertyMock)),
+        ("PackageSigningRunner.mappings",
+         dict(new_callable=PropertyMock)),
+        ("PackageSigningRunner.signing_key_path",
+         dict(new_callable=PropertyMock)),
+        ("PackageSigningRunner.signing_utils",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.sign.runner")
+    infiles = iters()
+    signing_utils = iters(list)
 
-    with patched as (m_plib, m_args):
-        assert packager.path == m_plib.Path.return_value
+    with patched as (m_re, m_utils, m_in, m_out, m_map, m_key_path, m_sign):
+        m_in.return_value = infiles
+        m_sign.return_value = signing_utils
+        assert packager.repack == m_utils.repack.return_value
 
     assert (
-        m_plib.Path.call_args
-        == [(m_args.return_value.path, ), {}])
-    assert "path" not in packager.__dict__
-
-
-def test_packager_tar(patches):
-    packager = sign.PackageSigningRunner("x", "y", "z")
-    patched = patches(
-        ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
-        prefix="envoy.gpg.sign.runner")
-
-    with patched as (m_args, ):
-        assert packager.tar == m_args.return_value.tar
-
-    assert "tar" not in packager.__dict__
+        m_utils.repack.call_args
+        == [(m_out.return_value,
+             *infiles),
+            dict(mappings=m_map.return_value,
+                 matching=m_re.compile.return_value,
+                 include=m_re.compile.return_value)])
+    assert (
+        m_re.compile.call_args_list
+        == [[("^(?!^(dbg|utils)).*", ), {}],
+            [(f"{m_key_path.return_value}"
+              f"|{'|'.join(signing_utils)}", ), {}]])
+    assert "repack" not in packager.__dict__
 
 
 def test_packager_signing_utils():
@@ -224,15 +276,10 @@ def test_packager_add_arguments():
              {'choices': ['debug', 'info', "success", 'warn', 'error'],
               'default': 'warn',
               'help': 'Log level for non-application logs'}],
-            [('path',),
-             {'default': '',
-              'help': 'Path to the directory containing packages to sign'}],
-            [('--extract',),
-             {'action': 'store_true',
-              'help': (
-                  'If set, treat the path as a tarball containing directories '
-                  'according to package_type')}],
-            [('--tar',),
+            [('infiles',),
+             {'nargs': '+',
+              'help': 'Paths to the tarballs containing packages to sign'}],
+            [('--out',),
              {'help': 'Path to save the signed packages as tar file'}],
             [('--type',),
              {'choices': ['util1', 'util2', ''],
@@ -251,14 +298,15 @@ def test_packager_add_arguments():
            [('--gen-key',),
             {'action': 'store_true',
              'help': 'If set, create the signing key (requires '
-                     '`--maintainer-name` and `--maintainer-email`) '}]])
+                     '`--maintainer-name` and `--maintainer-email`) '}],
+           [('-m', '--mapping'),
+            {'action': 'append'}]])
 
 
 def test_packager_add_key(patches):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
         "utils",
-        "pathlib",
         ("PackageSigningRunner.maintainer",
          dict(new_callable=PropertyMock)),
         ("PackageSigningRunner.signing_key_path",
@@ -266,44 +314,18 @@ def test_packager_add_key(patches):
         prefix="envoy.gpg.sign.runner")
     path = MagicMock()
 
-    with patched as (m_utils, m_plib, m_maintainer, m_keypath):
+    with patched as (m_utils, m_maintainer, m_keypath):
         assert not packager.add_key(path)
 
     assert (
-        m_utils.typed.call_args
-        == [(m_plib.Path, path), {}])
-    m_path = m_utils.typed.return_value
-    assert (
-        m_path.joinpath.call_args
+        path.joinpath.call_args
         == [(m_keypath.return_value, ), {}])
     assert (
-        m_path.joinpath.return_value.write_text.call_args
+        path.joinpath.return_value.write_text.call_args
         == [(m_maintainer.return_value.export_key.return_value, ), {}])
     assert (
         m_maintainer.return_value.export_key.call_args
         == [(), {}])
-
-
-def test_packager_archive(patches):
-    packager = sign.PackageSigningRunner("x", "y", "z")
-    patched = patches(
-        "tarfile",
-        "utils",
-        ("PackageSigningRunner.tar", dict(new_callable=PropertyMock)),
-        prefix="envoy.gpg.sign.runner")
-
-    with patched as (m_tarfile, m_utils, m_tar):
-        assert not packager.archive("PATH")
-
-    assert (
-        m_tarfile.open.call_args
-        == [(m_tar.return_value, m_utils.tar_mode.return_value), {}])
-    assert (
-        m_utils.tar_mode.call_args
-        == [(m_tar.return_value, ), dict(mode="w")])
-    assert (
-        m_tarfile.open.return_value.__enter__.return_value.add.call_args
-        == [('PATH',), {'arcname': '.'}])
 
 
 @pytest.mark.parametrize("indict", [True, False])
@@ -357,34 +379,29 @@ def test_packager_get_signing_util(patches):
 async def test_packager_run(patches, extract):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
-        "PackageSigningRunner.sign_tarball",
-        "PackageSigningRunner.sign_directory",
-        ("PackageSigningRunner.extract", dict(new_callable=PropertyMock)),
+        "PackageSigningRunner.add_key",
+        "PackageSigningRunner.sign_all",
+        ("PackageSigningRunner.repack", dict(new_callable=PropertyMock)),
         ("PackageSigningRunner.log", dict(new_callable=PropertyMock)),
+        ("PackageSigningRunner.outfile", dict(new_callable=PropertyMock)),
         prefix="envoy.gpg.sign.runner")
 
     assert (
         packager.run.__wrapped__.__catches__
         == (identity.GPGError, sign.SigningError))
 
-    with patched as (m_tarb, m_dir, m_extract, m_log):
-        m_extract.return_value = extract
+    with patched as (m_key, m_sign, m_repack, m_log, m_out):
         assert not await packager.run()
 
     assert (
-        m_log.return_value.success.call_args
-        == [('Successfully signed packages',), {}])
-
-    if extract:
-        assert (
-            m_tarb.call_args
-            == [(), {}])
-        assert not m_dir.called
-        return
-    assert not m_tarb.called
+        m_sign.call_args
+        == [(m_repack.return_value.__enter__.return_value, ), {}])
     assert (
-        m_dir.call_args
-        == [(), {}])
+        m_key.call_args
+        == [(m_repack.return_value.__enter__.return_value, ), {}])
+    assert (
+        m_log.return_value.success.call_args
+        == [(f'Successfully signed packages: {m_out.return_value}',), {}])
 
 
 def test_packager_sign(patches):
@@ -440,74 +457,3 @@ def test_packager_sign_all(patches, listdir, utils):
     assert (
         m_sign.call_args_list
         == [[(_glob[k], ), {}] for k in expected])
-
-
-@pytest.mark.parametrize("tar", [True, False])
-def test_packager_sign_directory(patches, tar):
-    packager = sign.PackageSigningRunner("x", "y", "z")
-    patched = patches(
-        "PackageSigningRunner.archive",
-        "PackageSigningRunner.sign",
-        ("PackageSigningRunner.path", dict(new_callable=PropertyMock)),
-        ("PackageSigningRunner.tar", dict(new_callable=PropertyMock)),
-        prefix="envoy.gpg.sign.runner")
-
-    with patched as (m_archive, m_sign, m_path, m_tar):
-        m_tar.return_value = tar
-        assert not packager.sign_directory()
-
-    assert (
-        m_sign.call_args
-        == [(m_path.return_value, ), {}])
-    if not tar:
-        assert not m_archive.called
-        return
-
-    assert (
-        m_archive.call_args
-        == [(m_path.return_value, ), {}])
-
-
-@pytest.mark.parametrize("tar", [True, False])
-def test_packager_sign_tarball(patches, tar):
-    packager = sign.PackageSigningRunner("x", "y", "z")
-    patched = patches(
-        "utils",
-        "PackageSigningRunner.add_key",
-        "PackageSigningRunner.archive",
-        "PackageSigningRunner.sign_all",
-        ("PackageSigningRunner.path", dict(new_callable=PropertyMock)),
-        ("PackageSigningRunner.tar", dict(new_callable=PropertyMock)),
-        prefix="envoy.gpg.sign.runner")
-
-    with patched as (m_utils, m_addkey, m_archive, m_sign, m_path, m_tar):
-        m_tar.return_value = tar
-        if not tar:
-            with pytest.raises(sign.SigningError) as e:
-                packager.sign_tarball()
-        else:
-            assert not packager.sign_tarball()
-
-    if not tar:
-        assert (
-            e.value.args[0]
-            == ("You must set a `--tar` file to save to when "
-                "`--extract` is set"))
-        assert not m_utils.untar.called
-        assert not m_addkey.called
-        assert not m_sign.called
-        assert not m_archive.called
-        return
-
-    assert (
-        m_utils.untar.call_args
-        == [(m_path.return_value,), {}])
-    assert (
-        m_sign.call_args
-        == [(m_utils.untar.return_value.__enter__.return_value,), {}])
-    assert (
-        m_addkey.call_args
-        == [(m_utils.untar.return_value.__enter__.return_value,), {}])
-    assert (
-        m_archive.call_args
-        == [(m_utils.untar.return_value.__enter__.return_value,), {}])

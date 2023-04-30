@@ -1,10 +1,10 @@
 
 import argparse
 import pathlib
-import tarfile
+import re
 import tempfile
 from functools import cached_property
-from typing import Optional, Type, Union
+from typing import Optional, Type
 
 from aio.run import runner
 
@@ -33,10 +33,6 @@ class PackageSigningRunner(runner.Runner):
         cls._signing_utils = getattr(cls, "_signing_utils") + ((name, util),)
 
     @property
-    def extract(self) -> bool:
-        return self.args.extract
-
-    @property
     def gen_key(self) -> bool:
         return self.args.gen_key
 
@@ -50,6 +46,11 @@ class PackageSigningRunner(runner.Runner):
     @cached_property
     def gnupg_tempdir(self) -> tempfile.TemporaryDirectory:
         return tempfile.TemporaryDirectory()
+
+    @property
+    def infiles(self) -> str:
+        """Path to the packages directory."""
+        return self.args.infiles
 
     @cached_property
     def maintainer(self) -> identity.GPGIdentity:
@@ -76,14 +77,31 @@ class PackageSigningRunner(runner.Runner):
         return self.args.maintainer_name
 
     @property
+    def mappings(self) -> dict[str, str]:
+        return dict(
+            utils.tuple_pair(m)
+            for m
+            in (self.args.mapping or []))
+
+    @property
+    def outfile(self) -> str:
+        return self.args.out
+
+    @property
     def package_type(self) -> str:
         """Package type - eg deb/rpm"""
         return self.args.package_type
 
     @property
-    def path(self) -> pathlib.Path:
-        """Path to the packages directory."""
-        return pathlib.Path(self.args.path)
+    def repack(self):
+        return utils.repack(
+            self.outfile,
+            *self.infiles,
+            mappings=self.mappings,
+            matching=re.compile("^(?!^(dbg|utils)).*"),
+            include=re.compile(
+                f"{self.signing_key_path}"
+                f"|{'|'.join(self.signing_utils)}"))
 
     @property
     def signing_key_path(self) -> str:
@@ -94,24 +112,14 @@ class PackageSigningRunner(runner.Runner):
         """Configured signing utils - eg `DebSigningUtil`, `RPMSigningUtil`"""
         return dict(getattr(self, "_signing_utils"))
 
-    @property
-    def tar(self) -> str:
-        return self.args.tar
-
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
         parser.add_argument(
-            "path",
-            default="",
-            help="Path to the directory containing packages to sign")
+            "infiles",
+            nargs="+",
+            help="Paths to the tarballs containing packages to sign")
         parser.add_argument(
-            "--extract",
-            action="store_true",
-            help=(
-                "If set, treat the path as a tarball containing directories "
-                "according to package_type"))
-        parser.add_argument(
-            "--tar",
+            "--out",
             help="Path to save the signed packages as tar file")
         parser.add_argument(
             "--type",
@@ -136,16 +144,13 @@ class PackageSigningRunner(runner.Runner):
             help=(
                 "If set, create the signing key (requires "
                 "`--maintainer-name` and `--maintainer-email`) "))
+        parser.add_argument(
+            "-m", "--mapping",
+            action="append")
 
-    def add_key(self, path: Union[pathlib.Path, str]) -> None:
-        # todo(phlax): always return pathlib.Path from untar and avoid
-        #    the `utils.typed`
-        utils.typed(pathlib.Path, path).joinpath(
+    def add_key(self, path: pathlib.Path) -> None:
+        path.joinpath(
             self.signing_key_path).write_text(self.maintainer.export_key())
-
-    def archive(self, path: Union[pathlib.Path, str]) -> None:
-        with tarfile.open(self.tar, utils.tar_mode(self.tar, mode="w")) as tar:
-            tar.add(path, arcname=".")
 
     async def cleanup(self):
         if "gnupg_tempdir" in self.__dict__:
@@ -158,33 +163,18 @@ class PackageSigningRunner(runner.Runner):
     @runner.catches((identity.GPGError, SigningError))
     @runner.cleansup
     async def run(self) -> None:
-        if self.extract:
-            self.sign_tarball()
-        else:
-            self.sign_directory()
-        self.log.success("Successfully signed packages")
+        with self.repack as tmpdir:
+            self.sign_all(tmpdir)
+            self.add_key(tmpdir)
+        self.log.success(f"Successfully signed packages: {self.outfile}")
 
     def sign(self, path: pathlib.Path) -> None:
         self.log.notice(
             f"Signing {path.name}s ({self.maintainer}) {str(path)}")
-        self.get_signing_util(path).sign()
+        util = self.get_signing_util(path)
+        util.sign()
 
     def sign_all(self, path: pathlib.Path) -> None:
         for directory in path.glob("*"):
             if directory.name in self.signing_utils:
                 self.sign(directory)
-
-    def sign_directory(self) -> None:
-        self.sign(self.path)
-        if self.tar:
-            self.archive(self.path)
-
-    def sign_tarball(self) -> None:
-        if not self.tar:
-            raise SigningError(
-                "You must set a `--tar` file to save to "
-                "when `--extract` is set")
-        with utils.untar(self.path) as tardir:
-            self.sign_all(tardir)
-            self.add_key(tardir)
-            self.archive(tardir)

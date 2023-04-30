@@ -3,7 +3,7 @@ import pathlib
 import shutil
 import subprocess
 from functools import cached_property
-from typing import Optional, Tuple, Union
+from typing import Iterable, Optional
 
 import verboselogs  # type:ignore
 
@@ -21,7 +21,7 @@ class DirectorySigningUtil:
 
     def __init__(
             self,
-            path: Union[pathlib.Path, str],
+            path: pathlib.Path | str,
             maintainer: identity.GPGIdentity,
             log: verboselogs.VerboseLogger,
             command: Optional[str] = ""):
@@ -53,7 +53,7 @@ class DirectorySigningUtil:
         return pathlib.Path(self._path)
 
     @property
-    def pkg_files(self) -> Tuple[pathlib.Path, ...]:
+    def pkg_files(self) -> Iterable[pathlib.Path]:
         """Tuple of paths to package files to sign."""
         # TODO?(phlax): check maintainer/packager field matches key id
         return tuple(
