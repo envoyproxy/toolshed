@@ -353,7 +353,7 @@ pypi: https://pypi.org/project/envoy.github.release
 
 #### [envoy.gpg.identity](envoy.gpg.identity)
 
-version: 0.1.1
+version: 0.1.2.dev0
 
 pypi: https://pypi.org/project/envoy.gpg.identity
 
