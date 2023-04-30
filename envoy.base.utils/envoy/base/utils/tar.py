@@ -19,8 +19,6 @@ from typing import (
 
 import zstandard
 
-from aio.core import functional
-
 
 # See here for a list of known tar file extensions:
 #   https://en.wikipedia.org/wiki/Tar_(computing)#Suffixes_for_compressed_files
@@ -57,17 +55,14 @@ def extract(
         path: pathlib.Path | str,
         *tarballs: pathlib.Path | str,
         matching: Optional[Pattern[str]] = None,
-        mappings: Optional[dict[str, str]] = None) -> pathlib.Path:
+        mappings: Optional[dict[str, str]] = None,
+        inmem: bool = True) -> pathlib.Path:
     if not tarballs:
         raise ExtractError(f"No tarballs specified for extraction to {path}")
-    openers = functional.nested(
-        *tuple(_open(tarball) for tarball in tarballs))
     path = pathlib.Path(path)
-
-    with openers as tarfiles:
-        for prefix, tar in tarfiles:
+    for tarball in tarballs:
+        with _open(tarball, inmem) as (prefix, tar):
             _extract(path, prefix, tar, matching, mappings)
-
     _mv_paths(path, mappings)
     _rm_paths(path, matching)
     return path
@@ -77,7 +72,8 @@ def extract(
 def untar(
         *tarballs: pathlib.Path | str,
         matching: Optional[Pattern[str]] = None,
-        mappings: Optional[dict[str, str]] = None) -> Iterator[pathlib.Path]:
+        mappings: Optional[dict[str, str]] = None,
+        inmem: bool = True) -> Iterator[pathlib.Path]:
     """Untar a tarball into a temporary directory.
 
     for example to list the contents of a tarball:
@@ -100,7 +96,8 @@ def untar(
         yield extract(
             tmpdir, *tarballs,
             matching=matching,
-            mappings=mappings)
+            mappings=mappings,
+            inmem=inmem)
 
 
 def _extract(
@@ -116,7 +113,7 @@ def _extract(
         if _should_extract(member, matching, mappings):
             tar.extract(
                 member,
-                path=path.joinpath(prefix).joinpath(member.name))
+                path=path.joinpath(prefix))
 
 
 def _mv_paths(path: pathlib.Path, mappings: Optional[dict[str, str]]) -> None:
@@ -128,7 +125,8 @@ def _mv_paths(path: pathlib.Path, mappings: Optional[dict[str, str]]) -> None:
 
 
 def _open(
-        path: pathlib.Path | str) -> (
+        path: pathlib.Path | str,
+        inmem: bool = True) -> (
             ContextManager[tuple[str, tarfile.TarFile]]):
     """For a given tarball path if it contains `:` split prefix, path,
     otherwise prefix is empty.
@@ -143,16 +141,21 @@ def _open(
         if ":" in _path
         else ("", _path))
     return (
-        _opener(_open_zst(_path), prefix)
+        _opener(_open_zst(_path, inmem), prefix)
         if _path.endswith(".zst")
         else _opener(tarfile.open(_path), prefix))
 
 
-def _open_zst(path: pathlib.Path | str) -> tarfile.TarFile:
+def _open_zst(
+        path: pathlib.Path | str,
+        inmem: bool = True) -> tarfile.TarFile:
     """extract .zst file."""
     archive = pathlib.Path(path).expanduser()
     dctx = zstandard.ZstdDecompressor()
-    outfile = io.BytesIO()
+    outfile = (
+        io.BytesIO()
+        if inmem
+        else tempfile.TemporaryFile(suffix=".tar"))
     with archive.open("rb") as infile:
         dctx.copy_stream(infile, outfile)
     outfile.seek(0)
@@ -165,6 +168,8 @@ def _opener(
         prefix: str = "") -> Iterator[tuple[str, tarfile.TarFile]]:
     with tarball as t:
         yield prefix, t
+        if "fileobj" in t.__dict__:
+            t.__dict__["fileobj"].close()
 
 
 def _rm_paths(path: pathlib.Path, matching: Optional[Pattern[str]]):
@@ -238,7 +243,10 @@ def repack(
         *paths: str | pathlib.Path,
         matching: Optional[Pattern[str]] = None,
         mappings: Optional[dict[str, str]] = None,
-        include: Optional[Pattern[str]] = None) -> Iterator[pathlib.Path]:
-    with untar(*paths, matching=matching, mappings=mappings) as tardir:
+        include: Optional[Pattern[str]] = None,
+        inmem: bool = True) -> Iterator[pathlib.Path]:
+    extracted = untar(
+        *paths, matching=matching, mappings=mappings, inmem=inmem)
+    with extracted as tardir:
         yield tardir
         pack(tardir, out, include=include)
