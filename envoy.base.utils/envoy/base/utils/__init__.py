@@ -5,6 +5,7 @@ from .tar import (
     ExtractError,
     is_tarlike,
     pack,
+    repack,
     TAR_EXTS,
     tar_mode,
     untar)
@@ -22,7 +23,9 @@ from .utils import (
     to_yaml,
     to_bytes,
     is_sha,
-    last_n_bytes_of)
+    last_n_bytes_of,
+    tuple_pair,
+    TuplePairError)
 from . import interface, typing
 from .parallel_cmd import parallel_cmd
 from .parallel_runner import ParallelRunner
@@ -73,11 +76,14 @@ __all__ = (
     "project_data_cmd",
     "ProtobufSet",
     "ProtobufValidator",
+    "repack",
     "typed",
     "untar",
     "TAR_EXTS",
     "tar_mode",
     "to_bytes",
     "to_yaml",
+    "tuple_pair",
+    "TuplePairError",
     "TypeCastingError",
     "typing")

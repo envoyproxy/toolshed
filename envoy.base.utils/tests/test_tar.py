@@ -4,10 +4,6 @@ import pytest
 
 from envoy.base import utils
 
-# this is necessary to fix coverage as these libs are imported before pytest
-# is invoked
-# importlib.reload(utils)
-
 
 @pytest.mark.parametrize(
     "path",
@@ -109,6 +105,71 @@ def test_util_extract(patches, tarballs, mappings, matching, iters):
     assert (
         m_rm.call_args
         == [(m_plib.Path.return_value, matching), {}])
+
+
+@pytest.mark.parametrize("zst", [True, False])
+def test_util_pack(patches, zst):
+    patched = patches(
+        "str",
+        "_pack",
+        "_pack_zst",
+        prefix="envoy.base.utils.tar")
+    path = MagicMock()
+    out = MagicMock()
+    include = MagicMock()
+
+    with patched as (m_str, m_pack, m_zst):
+        m_str.return_value.endswith.return_value = zst
+        assert not utils.pack(path, out, include)
+
+    assert (
+        m_str.call_args
+        == [(out, ), {}])
+    assert (
+        m_str.return_value.endswith.call_args
+        == [(".zst", ), {}])
+    if zst:
+        assert (
+            m_zst.call_args
+            == [(path, out), dict(include=include)])
+        return
+    assert (
+        m_pack.call_args
+        == [(path, out), dict(include=include)])
+
+
+def test_util_repack(patches, iters):
+    patched = patches(
+        "untar",
+        "pack",
+        prefix="envoy.base.utils.tar")
+    paths = iters(cb=MagicMock)
+    out = MagicMock()
+    include = MagicMock()
+    matching = MagicMock()
+    mappings = MagicMock()
+
+    with patched as (m_untar, m_pack):
+        repack = utils.repack(
+            out,
+            *paths,
+            matching=matching,
+            mappings=mappings,
+            include=include)
+        with repack as tardir:
+            assert not m_pack.called
+
+    assert (
+        tardir
+        == m_untar.return_value.__enter__.return_value)
+    assert (
+        m_untar.call_args
+        == [tuple(paths),
+            dict(matching=matching,
+                 mappings=mappings)])
+    assert (
+        m_pack.call_args
+        == [(tardir, out), dict(include=include)])
 
 
 @pytest.mark.parametrize(
@@ -399,46 +460,18 @@ def test_util__should_extract(patches, matching, matches, mappings):
 
 
 @pytest.mark.parametrize("zst", [True, False])
-def test_util_pack(patches, zst):
-    patched = patches(
-        "str",
-        "_pack",
-        "_pack_zst",
-        prefix="envoy.base.utils.tar")
-    path = MagicMock()
-    out = MagicMock()
-
-    with patched as (m_str, m_pack, m_zst):
-        m_str.return_value.endswith.return_value = zst
-        assert not utils.pack(path, out)
-
-    assert (
-        m_str.call_args
-        == [(out, ), {}])
-    assert (
-        m_str.return_value.endswith.call_args
-        == [(".zst", ), {}])
-    if zst:
-        assert (
-            m_zst.call_args
-            == [(path, out), {}])
-        return
-    assert (
-        m_pack.call_args
-        == [(path, out), {}])
-
-
-@pytest.mark.parametrize("zst", [True, False])
 def test_util__pack(patches, zst):
     patched = patches(
         "tarfile",
         "tar_mode",
+        "_prune",
         prefix="envoy.base.utils.tar")
     path = MagicMock()
     out = MagicMock()
+    include = MagicMock()
 
-    with patched as (m_tar, m_mode):
-        assert not utils.tar._pack(path, out)
+    with patched as (m_tar, m_mode, m_prune):
+        assert not utils.tar._pack(path, out, include)
 
     assert (
         m_tar.open.call_args
@@ -450,8 +483,11 @@ def test_util__pack(patches, zst):
             dict(mode="w")])
     assert (
         m_tar.open.return_value.__enter__.return_value.add.call_args
-        == [(path, ),
+        == [(m_prune.return_value, ),
             dict(arcname=".")])
+    assert (
+        m_prune.call_args
+        == [(path, include), {}])
 
 
 @pytest.mark.parametrize("zst", [True, False])
@@ -461,12 +497,14 @@ def test_util__pack_zst(patches, zst):
         "open",
         "tarfile",
         "zstandard",
+        "_prune",
         prefix="envoy.base.utils.tar")
     path = MagicMock()
     out = MagicMock()
+    include = MagicMock()
 
-    with patched as (m_io, m_open, m_tar, m_zst):
-        assert not utils.tar._pack_zst(path, out)
+    with patched as (m_io, m_open, m_tar, m_zst, m_prune):
+        assert not utils.tar._pack_zst(path, out, include)
 
     assert (
         m_io.BytesIO.call_args
@@ -481,7 +519,10 @@ def test_util__pack_zst(patches, zst):
                  mode="w")])
     assert (
         m_tar.open.return_value.__enter__.return_value.add.call_args
-        == [(path, ), dict(arcname=".")])
+        == [(m_prune.return_value, ), dict(arcname=".")])
+    assert (
+        m_prune.call_args
+        == [(path, include), {}])
     assert (
         m_io.BytesIO.return_value.seek.call_args
         == [(0, ), {}])
@@ -493,3 +534,66 @@ def test_util__pack_zst(patches, zst):
         == [(m_io.BytesIO.return_value,
              m_open.return_value.__enter__.return_value),
             {}])
+
+
+@pytest.mark.parametrize("include", [True, False])
+def test_util__prune(patches, include, iters):
+    patched = patches(
+        "pathlib",
+        "shutil",
+        prefix="envoy.base.utils.tar")
+    path = MagicMock()
+    include = MagicMock() if include else include
+    if include:
+        include.match.side_effect = lambda x: bool(x % 3)
+
+    def submock(i):
+        mock = MagicMock()
+        mock.is_dir.return_value = bool(i % 2)
+        mock.name = i
+        return mock
+
+    globs = iters(cb=submock, count=10)
+
+    with patched as (m_plib, m_shutil):
+        m_plib.Path.return_value.glob.return_value = globs
+        assert (
+            utils.tar._prune(path, include)
+            == m_plib.Path.return_value)
+
+    assert (
+        m_plib.Path.call_args
+        == [(path, ), {}])
+    if not include:
+        assert not m_plib.Path.return_value.glob.called
+        assert not m_shutil.called
+        return
+    assert (
+        m_plib.Path.return_value.glob.call_args
+        == [("*", ), {}])
+    assert (
+        include.match.call_args_list
+        == [[(g.name, ), {}]
+            for g in globs])
+    assert (
+        include.match.call_args_list
+        == [[(g.name, ), {}]
+            for g in globs])
+    assert (
+        m_shutil.rmtree.call_args_list
+        == [[(g, ), {}]
+            for g in globs if (not g.name % 3 and g.name % 2)])
+    for sub in globs:
+        if sub.name % 3:
+            assert not sub.is_dir.called
+            assert not sub.unlink.called
+            return
+        assert (
+            sub.is_dir.call_args
+            == [(), {}])
+        if sub.name % 2:
+            assert not sub.unlink.called
+            return
+        assert (
+            sub.unlink.call_args
+            == [(), {}])
