@@ -396,3 +396,100 @@ def test_util__should_extract(patches, matching, matches, mappings):
     assert (
         m_bool.call_args
         == [((matching and matches) or (member.name in mappings), ), {}])
+
+
+@pytest.mark.parametrize("zst", [True, False])
+def test_util_pack(patches, zst):
+    patched = patches(
+        "str",
+        "_pack",
+        "_pack_zst",
+        prefix="envoy.base.utils.tar")
+    path = MagicMock()
+    out = MagicMock()
+
+    with patched as (m_str, m_pack, m_zst):
+        m_str.return_value.endswith.return_value = zst
+        assert not utils.pack(path, out)
+
+    assert (
+        m_str.call_args
+        == [(out, ), {}])
+    assert (
+        m_str.return_value.endswith.call_args
+        == [(".zst", ), {}])
+    if zst:
+        assert (
+            m_zst.call_args
+            == [(path, out), {}])
+        return
+    assert (
+        m_pack.call_args
+        == [(path, out), {}])
+
+
+@pytest.mark.parametrize("zst", [True, False])
+def test_util__pack(patches, zst):
+    patched = patches(
+        "tarfile",
+        "tar_mode",
+        prefix="envoy.base.utils.tar")
+    path = MagicMock()
+    out = MagicMock()
+
+    with patched as (m_tar, m_mode):
+        assert not utils.tar._pack(path, out)
+
+    assert (
+        m_tar.open.call_args
+        == [(out, ),
+            dict(mode=m_mode.return_value)])
+    assert (
+        m_mode.call_args
+        == [(out, ),
+            dict(mode="w")])
+    assert (
+        m_tar.open.return_value.__enter__.return_value.add.call_args
+        == [(path, ),
+            dict(arcname=".")])
+
+
+@pytest.mark.parametrize("zst", [True, False])
+def test_util__pack_zst(patches, zst):
+    patched = patches(
+        "io",
+        "open",
+        "tarfile",
+        "zstandard",
+        prefix="envoy.base.utils.tar")
+    path = MagicMock()
+    out = MagicMock()
+
+    with patched as (m_io, m_open, m_tar, m_zst):
+        assert not utils.tar._pack_zst(path, out)
+
+    assert (
+        m_io.BytesIO.call_args
+        == [(), {}])
+    assert (
+        m_zst.ZstdCompressor.call_args
+        == [(), dict(threads=-1)])
+    assert (
+        m_tar.open.call_args
+        == [(),
+            dict(fileobj=m_io.BytesIO.return_value,
+                 mode="w")])
+    assert (
+        m_tar.open.return_value.__enter__.return_value.add.call_args
+        == [(path, ), dict(arcname=".")])
+    assert (
+        m_io.BytesIO.return_value.seek.call_args
+        == [(0, ), {}])
+    assert (
+        m_open.call_args
+        == [(out, "wb"), {}])
+    assert (
+        m_zst.ZstdCompressor.return_value.copy_stream.call_args
+        == [(m_io.BytesIO.return_value,
+             m_open.return_value.__enter__.return_value),
+            {}])

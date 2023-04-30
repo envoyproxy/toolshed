@@ -3,6 +3,11 @@
 #   multi-path extraction, zst support, filtering
 #
 
+# TODO:
+# - improve the inconsistent api here
+# - use asyncio and move to aio.core
+# - remove zst when https://bugs.python.org/issue37095 is resolved
+
 import contextlib
 import io
 import pathlib
@@ -22,6 +27,7 @@ from aio.core import functional
 # not all are listed here, and some extensions may require additional software
 # to handle. This list can be updated as required
 TAR_EXTS: Set[str] = {"tar", "tar.gz", "tar.xz", "tar.bz2", "tar.zst"}
+COMPRESSION_EXTS: Set[str] = {"gz", "bz2", "xz"}
 
 
 class ExtractError(Exception):
@@ -39,8 +45,7 @@ def is_tarlike(path: Union[pathlib.Path, str]) -> bool:
 
 
 def tar_mode(path: Union[pathlib.Path, str], mode="r") -> str:
-    suffixes = ["gz", "bz2", "xz"]
-    for suffix in suffixes:
+    for suffix in COMPRESSION_EXTS:
         if str(path).endswith(f".{suffix}"):
             return f"{mode}:{suffix}"
     return mode
@@ -177,3 +182,32 @@ def _should_extract(
     return bool(
         (matching and matching.match(member.name))
         or (member.name in (mappings or {})))
+
+
+# Packing
+
+def pack(
+        path: str | pathlib.Path,
+        out: str | pathlib.Path) -> None:
+    (_pack_zst(path, out)
+     if str(out).endswith(".zst")
+     else _pack(path, out))
+
+
+def _pack(
+        path: str | pathlib.Path,
+        out: str | pathlib.Path) -> None:
+    with tarfile.open(out, mode=tar_mode(out, mode="w")) as tar:
+        tar.add(path, arcname=".")
+
+
+def _pack_zst(
+        path: str | pathlib.Path,
+        out: str | pathlib.Path) -> None:
+    tarout = io.BytesIO()
+    cctx = zstandard.ZstdCompressor(threads=-1)
+    with tarfile.open(fileobj=tarout, mode="w") as tar:
+        tar.add(path, arcname=".")
+        tarout.seek(0)
+        with open(out, "wb") as writeout:
+            cctx.copy_stream(tarout, writeout)
