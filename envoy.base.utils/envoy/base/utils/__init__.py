@@ -4,6 +4,7 @@ from .tar import (
     extract,
     ExtractError,
     is_tarlike,
+    pack,
     TAR_EXTS,
     tar_mode,
     untar)
@@ -61,6 +62,7 @@ __all__ = (
     "last_n_bytes_of",
     "coverage_with_data_file",
     "minor_version_for",
+    "pack",
     "Parallel",
     "ParallelRunner",
     "parallel_cmd",
