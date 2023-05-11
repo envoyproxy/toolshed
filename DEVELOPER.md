@@ -1,9 +1,9 @@
 # Developer documentation
 
 
-## Pytooling packages
+## Toolshed packages
 
-The pytooling repo originated from the CI tooling in the main Envoy repo.
+The toolshed repo originated from the CI tooling in the main Envoy repo.
 
 Gradually the tools are being integrated and refactored, with improved testing and performance.
 
@@ -114,12 +114,12 @@ $ ./pants lint ::
 
 ## Testing code in an Envoy environment with `bazel`
 
-Ordinarily Envoy uses the pytooling code from its published pypi packages.
+Ordinarily Envoy uses the toolshed code from its published pypi packages.
 
-When working on code in pytooling it is often helpful to test and introspect changes from
+When working on code in toolshed it is often helpful to test and introspect changes from
 an Envoy environment without publishing to pypi.
 
-### Setting up the Envoy <> pytooling environment
+### Setting up the Envoy <> toolshed environment
 
 There are a couple of changes that need to be made in the Envoy environment.
 
@@ -131,26 +131,26 @@ For example to work on the `envoy.dependency.check` package, edit `tools/dev/req
 adding the following (adjusted to your environment):
 
 ```console
--e file:///src/workspace/pytooling/envoy.dependency.check#egg=envoy.dependency.check&cachebust=000
+-e file:///src/workspace/toolshed/envoy.dependency.check#egg=envoy.dependency.check&cachebust=000
 
 ```
 
-In this example, my pytooling directory is located in `/src/workspace/pytooling`.
+In this example, my toolshed directory is located in `/src/workspace/toolshed`.
 
 Whatever file path that you put here must be accessible to your Envoy environment, so if you are running inside a container,
-you may need to mount your pytooling directory to a matching path.
+you may need to mount your toolshed directory to a matching path.
 
 Also note the `cachebust` parameter.
 
-When making changes to your pytooling code Bazel does not know to rebuild the package and will default
+When making changes to your toolshed code Bazel does not know to rebuild the package and will default
 to using its cached version. You can change the value of `cachebust` to expire Bazel's cache.
 
-You can also test pytooling (or other Python) code directly from a repo, please see example given
+You can also test toolshed (or other Python) code directly from a repo, please see example given
 in `tools/dev/requirements.txt`
 
 #### Step 2: use of dev requirements in Bazel
 
-Much of the pytooling code is accessed by Envoy by way of a Python `entry_point`.
+Much of the toolshed code is accessed by Envoy by way of a Python `entry_point`.
 
 It does this using a macro which wraps the `entry_point` from `rules_python`.
 
