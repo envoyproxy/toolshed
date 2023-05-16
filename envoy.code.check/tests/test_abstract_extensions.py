@@ -289,7 +289,7 @@ def test_extensions_fuzzed_count(iters, patches):
         (m_path.return_value.read_text
                .return_value.splitlines
                .return_value.__getitem__.call_args)
-        == [(slice(None, 50), ), {}])
+        == [(slice(None, 60), ), {}])
     assert "fuzzed_count" not in checker.__dict__
 
 
