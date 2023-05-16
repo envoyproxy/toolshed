@@ -21,9 +21,9 @@ from envoy.code.check import abstract, exceptions, interface, typing
 logger = logging.getLogger(__name__)
 
 
-FILTER_NAMES_PATTERN = "NetworkFilterNames::get()"
+FILTER_NAMES_PATTERN = "envoy\\.filters\\.network"
 FUZZ_TEST_PATH = (
-    "test/extensions/filters/network/common/fuzz/uber_per_readfilter.cc")
+    "test/extensions/filters/network/common/fuzz/BUILD")
 METADATA_PATH = "source/extensions/extensions_metadata.yaml"
 METADATA_ONLY_EXTENSIONS = (
     "envoy.filters.network.envoy_mobile_http_connection_manager", )
@@ -108,11 +108,11 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @property
     def fuzzed_count(self) -> int:
-        # Hack-ish! We only search the first 50 lines to capture the filters
-        # in `filterNames()`.
+        # Hack-ish! We only search the first 60 lines to capture the filters
+        # in `READFILTER_FUZZ_FILTERS`.
         return len(
             self.fuzzed_filter_names_re.findall(
-                "".join(self.fuzz_test_path.read_text().splitlines()[:50])))
+                "".join(self.fuzz_test_path.read_text().splitlines()[:60])))
 
     @cached_property
     def fuzzed_filter_names_re(self) -> Pattern:
