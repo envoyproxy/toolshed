@@ -17,7 +17,18 @@ const run = async (): Promise<void> => {
     if (!pullRequest) return
 
     const comment = github.context.payload.comment
-    if (!comment || !comment.body.startsWith('/retest')) return
+    if (!comment) return
+
+    let isRetest = false
+    comment.body.split('\r\n').forEach((line: string) => {
+      if (line.startsWith('/retest')) {
+        if (!line.startsWith('/retest envoy')) {
+          isRetest = true
+          return
+        }
+      }
+    })
+    if (!isRetest) return
 
     const pullRequestResponse = await octokit.request(pullRequest.url)
     const fullPullRequest = pullRequestResponse.data
