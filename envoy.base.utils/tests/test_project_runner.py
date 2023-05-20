@@ -229,6 +229,8 @@ def test_projectrunner_add_arguments(patches):
              {'action': 'store_true'}],
             [('--repo',),
              {'default': ''}],
+            [('--dry-run',),
+             {'action': 'store_true'}],
             [('--publish-assets',),
              {'default': ''}],
             [('--publish-commitish',),
@@ -303,7 +305,8 @@ async def test_projectrunner_handle_action(patches, action, nosync):
         assert (
             m_publish.call_args
             == [(),
-                dict(assets=m_args.return_value.publish_assets,
+                dict(dry_run=m_args.return_value.dry_run,
+                     assets=m_args.return_value.publish_assets,
                      commitish=m_args.return_value.publish_commitish,
                      dev=m_args.return_value.publish_dev,
                      latest=m_args.return_value.publish_latest)])

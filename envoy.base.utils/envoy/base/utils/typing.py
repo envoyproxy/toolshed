@@ -94,6 +94,7 @@ class ProjectPublishResultDict(TypedDict):
     date: str
     tag_name: str
     url: str
+    dry_run: str
 
 
 class ProjectChangeDict(TypedDict, total=False):
