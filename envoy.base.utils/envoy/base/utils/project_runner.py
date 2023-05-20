@@ -21,7 +21,7 @@ NOTIFY_MSGS: frozendict = frozendict(
         "{change[release][date]}"),
     dev="Repo set to dev ({change[dev][version]})",
     sync="Repo synced",
-    publish="Repo published")
+    publish="Repo published{change[publish][dry_run]}")
 COMMIT_MSGS: frozendict = frozendict(
     release="repo: Release `{change[release][version]}`",
     dev="repo: Dev `{change[dev][version]}`",
@@ -90,7 +90,7 @@ class ProjectRunner(BaseProjectRunner):
         parser.add_argument("--nocommit", action="store_true")
         parser.add_argument("--patch", action="store_true")
         parser.add_argument("--repo", default="")
-
+        parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--publish-assets", default="")
         parser.add_argument("--publish-commitish", default="")
         parser.add_argument("--publish-dev", action="store_true")
@@ -110,6 +110,7 @@ class ProjectRunner(BaseProjectRunner):
         if self.command == "publish":
             return dict(
                 publish=await self.run_publish(
+                    dry_run=self.args.dry_run,
                     assets=self.args.publish_assets,
                     commitish=self.args.publish_commitish,
                     dev=self.args.publish_dev,

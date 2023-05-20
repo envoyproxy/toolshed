@@ -740,15 +740,17 @@ def test_abstract_project_is_current(patches, self_version, other_version):
             == (self_version == other_version))
 
 
+@pytest.mark.parametrize("dry_run", [True, False])
 @pytest.mark.parametrize("is_dev", [True, False])
 @pytest.mark.parametrize("is_main", [True, False])
 @pytest.mark.parametrize("assets", [None, "", "ASSETS"])
 @pytest.mark.parametrize("dev", [None, True, False])
 @pytest.mark.parametrize("latest", [None, "", "LATEST"])
 async def test_abstract_project_publish(
-        patches, is_dev, is_main, assets, dev, latest):
+        patches, dry_run, is_dev, is_main, assets, dev, latest):
     project = DummyProject()
     patched = patches(
+        "datetime",
         ("AProject.is_dev",
          dict(new_callable=PropertyMock)),
         ("AProject.is_main",
@@ -763,7 +765,7 @@ async def test_abstract_project_publish(
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.project")
     create_release = AsyncMock()
-    kwargs = {}
+    kwargs = dict(dry_run=dry_run)
 
     if assets is not None:
         kwargs["assets"] = assets
@@ -772,14 +774,29 @@ async def test_abstract_project_publish(
     if latest is not None:
         kwargs["latest"] = latest
 
-    with patched as (m_dev, m_main, m_main_branch, m_minor, m_repo, m_version):
+    with patched as patchy:
+        (m_dt, m_dev, m_main, m_main_branch,
+         m_minor, m_repo, m_version) = patchy
         m_dev.return_value = is_dev
         m_main.return_value = is_main
         m_repo.return_value.create_release = create_release
+        branch = (
+            m_main_branch.return_value
+            if is_main
+            else f"release/v{m_minor.return_value}")
 
-        if not dev and is_dev:
+        if not dev and is_dev and not dry_run:
             with pytest.raises(_github.exceptions.TagError) as e:
                 await project.publish(**kwargs)
+        elif dry_run:
+            assert (
+                await project.publish(**kwargs)
+                == dict(
+                    commitish=branch,
+                    date=m_dt.now.return_value.strftime.return_value,
+                    tag_name=f"v{m_version.return_value}",
+                    url=f"test://releases/v{m_version.return_value}",
+                    dry_run=" (dry run)"))
         else:
             release_item = create_release.return_value.__getitem__.return_value
             assert (
@@ -788,19 +805,25 @@ async def test_abstract_project_publish(
                     commitish=release_item,
                     date=release_item,
                     tag_name=release_item,
-                    url=release_item))
+                    url=release_item,
+                    dry_run=""))
 
-    if not dev and is_dev:
+    if not dev and is_dev and not dry_run:
         assert not create_release.called
         assert not m_main.called
+        assert not m_dt.now.called
         assert (
             e.value.args[0]
             == f"Cannot tag a dev version: {m_version.return_value}")
         return
-    branch = (
-        m_main_branch.return_value
-        if is_main
-        else f"release/v{m_minor.return_value}")
+    if dry_run:
+        assert not create_release.called
+        assert m_dt.now.call_args == [(), {}]
+        assert (
+            m_dt.now.return_value.strftime.call_args
+            == [("%m/%d/%Y %H:%M:%S", ), {}])
+        return
+    assert not m_dt.now.called
     expected = dict(latest=(latest or (is_main and not is_dev)))
     assert (
         create_release.call_args

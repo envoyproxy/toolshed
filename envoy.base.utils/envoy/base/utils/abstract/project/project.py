@@ -3,6 +3,7 @@ import asyncio
 import json
 import pathlib
 from concurrent import futures
+from datetime import datetime
 from functools import cached_property
 from typing import (
     AsyncGenerator, List, Mapping, Optional,
@@ -238,11 +239,12 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
 
     async def publish(
             self,
+            dry_run: bool = False,
             assets: Optional[pathlib.Path] = None,
             commitish: Optional[str] = None,
             dev: Optional[bool] = None,
             latest: Optional[bool] = None) -> typing.ProjectPublishResultDict:
-        if not dev and self.is_dev:
+        if not dev and self.is_dev and not dry_run:
             raise _github.exceptions.TagError(
                 f"Cannot tag a dev version: {self.version}")
         commitish = (
@@ -251,16 +253,25 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             else (self.main_branch
                   if self.is_main
                   else f"release/v{self.minor_version}"))
+        latest = latest or (self.is_main and not self.is_dev)
+        if dry_run:
+            return dict(
+                commitish=commitish,
+                date=datetime.now().strftime("%m/%d/%Y %H:%M:%S"),
+                tag_name=f"v{self.version}",
+                url=f"test://releases/v{self.version}",
+                dry_run=" (dry run)")
         release = await self.repo.create_release(
             commitish,
             f"v{self.version}",
-            latest=latest or (self.is_main and not self.is_dev))
+            latest=latest)
         # TODO: add asset upload
         return dict(
             commitish=release["target_commitish"],
             date=release["published_at"],
             tag_name=release["tag_name"],
-            url=release["html_url"])
+            url=release["html_url"],
+            dry_run="")
 
     async def release(self) -> typing.ProjectReleaseResultDict:
         if not self.is_dev:
