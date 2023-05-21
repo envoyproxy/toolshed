@@ -26,11 +26,11 @@ def test_abstract_commit_constructor(iters, patches):
     assert (
         m_super.call_args
         == [args, kwargs])
-    commit.repo = MagicMock()
+    commit._repo = MagicMock()
     commit.sha = "SHA"
     assert (
         str(commit)
-        == f"<{commit.__class__.__name__} {commit.repo.name}#{commit.sha}>")
+        == f"<{commit.__class__.__name__} {commit._repo.name}#{commit.sha}>")
 
 
 def test_abstract_commit_timestamp(patches):

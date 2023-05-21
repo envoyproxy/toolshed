@@ -13,8 +13,10 @@ from .abstract import (
     AGithubIterator,
     AGithubLabel,
     AGithubRelease,
+    AGithubReleaseAssets,
     AGithubRepo,
     AGithubTag)
+from . import interface
 
 
 @abstracts.implementer(AGithubCommit)
@@ -44,6 +46,14 @@ class GithubLabel:
 
 @abstracts.implementer(AGithubRelease)
 class GithubRelease:
+
+    @property
+    def assets_class(self) -> Type["interface.IGithubReleaseAssets"]:
+        return GithubReleaseAssets
+
+
+@abstracts.implementer(AGithubReleaseAssets)
+class GithubReleaseAssets:
     pass
 
 

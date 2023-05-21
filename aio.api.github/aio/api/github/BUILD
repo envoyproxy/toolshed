@@ -25,6 +25,7 @@ pytooling_library(
         "api.py",
         "exceptions.py",
         "interface.py",
+        "typing.py",
         "utils.py",
     ],
 )

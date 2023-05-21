@@ -62,6 +62,15 @@ def test_label_constructor():
 def test_release_constructor():
     release = github.GithubRelease("GITHUB", "DATA")
     assert isinstance(release, github.AGithubRelease)
+    assert isinstance(release, github.IGithubRelease)
+    assert release.assets_class == github.GithubReleaseAssets
+    assert "assets_class" not in release.__dict__
+
+
+def test_release_assets_constructor():
+    release = github.GithubReleaseAssets("RELEASE")
+    assert isinstance(release, github.AGithubReleaseAssets)
+    assert isinstance(release, github.IGithubReleaseAssets)
 
 
 def test_repo_constructor():

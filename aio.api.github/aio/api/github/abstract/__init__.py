@@ -9,7 +9,7 @@ from .issues import (
     AGithubTrackedIssues)
 from .iterator import AGithubIterator
 from .label import AGithubLabel
-from .release import AGithubRelease
+from .release import AGithubRelease, AGithubReleaseAssets
 from .repo import AGithubRepo
 from .tag import AGithubTag
 
@@ -23,6 +23,7 @@ __all__ = (
     "AGithubIterator",
     "AGithubLabel",
     "AGithubRelease",
+    "AGithubReleaseAssets",
     "AGithubRepo",
     "AGithubTag",
     "AGithubTrackedIssue",

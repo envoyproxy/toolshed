@@ -26,11 +26,11 @@ def test_abstract_tag_constructor(iters, patches):
     assert (
         m_super.call_args
         == [args, kwargs])
-    tag.repo = MagicMock()
+    tag._repo = MagicMock()
     tag.tag = "TAG_NAME"
     assert (
         str(tag)
-        == f"<{tag.__class__.__name__} {tag.repo.name}@TAG_NAME>")
+        == f"<{tag.__class__.__name__} {tag._repo.name}@TAG_NAME>")
 
 
 async def test_abstract_tag_commit(patches):

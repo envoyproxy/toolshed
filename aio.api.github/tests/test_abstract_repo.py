@@ -168,18 +168,19 @@ def test_abstract_repo_commits(patches, since):
 
 
 @pytest.mark.parametrize("exists", [True, False])
+@pytest.mark.parametrize("dry_run", [True, False])
 @pytest.mark.parametrize("body", [None, "", "BODY"])
 @pytest.mark.parametrize("latest", [None, True, False])
 @pytest.mark.parametrize("generate", [None, True, False])
 async def test_abstract_repo_create_release(
-        patches, exists, body, latest, generate):
+        patches, exists, dry_run, body, latest, generate):
     repo = DummyGithubRepo("GITHUB", "NAME")
     patched = patches(
-        "AGithubRepo.post",
+        "AGithubRepo.release",
         "AGithubRepo.tag_exists",
         prefix="aio.api.github.abstract.repo")
 
-    kwargs = {}
+    kwargs = dict(dry_run=dry_run)
     if body is not None:
         kwargs["body"] = body
     if latest is not None:
@@ -187,25 +188,25 @@ async def test_abstract_repo_create_release(
     if generate is not None:
         kwargs["generate_release_notes"] = generate
 
-    with patched as (m_post, m_exists):
+    with patched as (m_release, m_exists):
         m_exists.return_value = exists
-        if exists:
+        if exists and not dry_run:
             with pytest.raises(base_github.exceptions.TagExistsError) as e:
                 await repo.create_release("BRANCH", "TAG_NAME", **kwargs)
         else:
             assert (
                 await repo.create_release("BRANCH", "TAG_NAME", **kwargs)
-                == m_post.return_value)
+                == m_release.return_value)
 
     assert (
         m_exists.call_args
         == [("TAG_NAME", ), {}])
 
-    if exists:
+    if exists and not dry_run:
         assert (
             e.value.args[0]
             == "Cannot create tag, already exists: TAG_NAME")
-        assert not m_post.called
+        assert not m_release.called
         return
     expected = dict(
         tag_name="TAG_NAME",
@@ -216,10 +217,10 @@ async def test_abstract_repo_create_release(
     if body is not None:
         expected["body"] = body
     assert (
-        m_post.call_args
-        == [("releases",
+        m_release.call_args
+        == [("TAG_NAME",
              expected),
-            {}])
+            dict(dry_run=dry_run)])
 
 
 async def test_abstract_repo_getitem(patches):
@@ -356,18 +357,34 @@ async def test_abstract_repo_post(patches, data):
         == [("QUERY", ), {}])
 
 
-async def test_abstract_repo_release(patches):
+@pytest.mark.parametrize("data", [True, False])
+@pytest.mark.parametrize("dry_run", [True, False])
+async def test_abstract_repo_release(patches, data, dry_run):
     github = MagicMock()
+    github.release_class.create = AsyncMock()
     repo = DummyGithubRepo(github, "NAME")
     patched = patches(
         "AGithubRepo.getitem",
         prefix="aio.api.github.abstract.repo")
+    kwargs = dict(dry_run=dry_run)
+    if data:
+        kwargs["data"] = MagicMock()
 
     with patched as (m_getitem, ):
         assert (
-            await repo.release("RELEASE_NAME")
-            == github.release_class.return_value)
+            await repo.release("RELEASE_NAME", **kwargs)
+            == (github.release_class.return_value
+                if not data
+                else github.release_class.create.return_value))
 
+    if data:
+        assert not github.release_class.called
+        assert not m_getitem.called
+        assert (
+            github.release_class.create.call_args
+            == [(repo, kwargs["data"], dry_run), {}])
+        return
+    assert not github.release_class.create.called
     assert (
         github.release_class.call_args
         == [(repo, m_getitem.return_value), {}])
