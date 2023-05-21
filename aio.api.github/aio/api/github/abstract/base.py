@@ -11,8 +11,8 @@ class GithubEntity:
     """Base Github entity class."""
 
     def __init__(self, github: interface.IGithubAPI, data: Dict) -> None:
-        self._github = github
         self.data = data
+        self._github = github
 
     @property
     def github(self) -> "interface.IGithubAPI":
@@ -39,10 +39,14 @@ class GithubRepoEntity(GithubEntity):
     """Base Github repo entity class."""
 
     def __init__(self, repo: interface.IGithubRepo, data: Dict) -> None:
-        self.repo = repo
         self.data = data
+        self._repo = repo
 
     @property
     def github(self) -> interface.IGithubAPI:
         """Github API."""
         return self.repo.github
+
+    @property
+    def repo(self) -> interface.IGithubRepo:
+        return self._repo

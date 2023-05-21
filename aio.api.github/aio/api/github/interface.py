@@ -23,12 +23,29 @@ class IGithubRelease(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    def repo(self) -> str:
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def tag_name(self) -> str:
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    def upload_url(self) -> str:
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def version(self) -> Optional[version.Version]:
+        raise NotImplementedError
+
+
+class IGithubReleaseAssets(metaclass=abstracts.Interface):
+
+    @abstracts.interfacemethod
+    def __init__(self, release: "IGithubRelease", name: str) -> None:
         raise NotImplementedError
 
 

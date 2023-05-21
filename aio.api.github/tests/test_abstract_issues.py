@@ -34,10 +34,10 @@ def test_abstract_issue_constructor(iters, patches):
         m_super.return_value = None
         m_number.return_value = 23
         issue = DummyGithubIssue(*args, **kwargs)
-        issue.repo = MagicMock()
+        issue._repo = MagicMock()
         assert (
             str(issue)
-            == f"<{issue.__class__.__name__} {issue.repo.name}#23>")
+            == f"<{issue.__class__.__name__} {issue._repo.name}#23>")
 
     assert isinstance(issue, github.abstract.base.GithubRepoEntity)
     assert (

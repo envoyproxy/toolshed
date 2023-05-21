@@ -1,4 +1,5 @@
 
+import logging
 import pathlib
 from datetime import datetime
 from functools import cached_property, partial
@@ -10,6 +11,9 @@ import abstracts
 
 from aio.api.github import exceptions, interface, utils
 from . import base
+
+
+logger = logging.getLogger(__name__)
 
 
 class AGithubRepo(metaclass=abstracts.Abstraction):
@@ -63,11 +67,12 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             self,
             commitish: str,
             tag_name: str,
+            dry_run: bool = False,
             body: Optional[str] = None,
             latest: Optional[bool] = False,
             generate_release_notes: Optional[bool] = False) -> (
-                Dict[str, str | Dict]):
-        if await self.tag_exists(tag_name):
+                "interface.IGithubRelease"):
+        if await self.tag_exists(tag_name) and not dry_run:
             raise exceptions.TagExistsError(
                 f"Cannot create tag, already exists: {tag_name}")
         url_vars: Dict[str, bool | str] = dict(
@@ -79,7 +84,10 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             url_vars["body"] = body
         if generate_release_notes is not None:
             url_vars["generate_release_notes"] = generate_release_notes
-        return await self.post("releases", url_vars)
+        logger.debug(
+            f"Create {'DRY RUN ' if dry_run else ''}release "
+            f"({tag_name}):\n  {url_vars}")
+        return await self.release(tag_name, url_vars, dry_run=dry_run)
 
     async def getitem(self, query: str) -> Any:
         """Call the `gidgethub.getitem` api for this repo."""
@@ -92,7 +100,10 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
 
     def github_endpoint(self, rel_path: str) -> str:
         """Github API path for provided relative path."""
-        return str(self.github_path.joinpath(rel_path))
+        return (
+            rel_path
+            if rel_path.startswith("https://")
+            else str(self.github_path.joinpath(rel_path)))
 
     async def highest_release(
             self,
@@ -135,7 +146,13 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             data=data,
             **kwargs)
 
-    async def release(self, name: str) -> "interface.IGithubRelease":
+    async def release(
+            self,
+            name: str,
+            data: dict = None,
+            dry_run: bool = False) -> "interface.IGithubRelease":
+        if data:
+            return await self.github.release_class.create(self, data, dry_run)
         return self.github.release_class(
             self,
             await self.getitem(f"releases/tags/{name}"))
