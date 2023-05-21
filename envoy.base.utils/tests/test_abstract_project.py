@@ -747,10 +747,11 @@ def test_abstract_project_is_current(patches, self_version, other_version):
 @pytest.mark.parametrize("dev", [None, True, False])
 @pytest.mark.parametrize("latest", [None, "", "LATEST"])
 async def test_abstract_project_publish(
-        patches, dry_run, is_dev, is_main, assets, dev, latest):
+        patches, iters, dry_run, is_dev, is_main, assets, dev, latest):
     project = DummyProject()
     patched = patches(
-        "datetime",
+        "dict",
+        "utils",
         ("AProject.is_dev",
          dict(new_callable=PropertyMock)),
         ("AProject.is_main",
@@ -764,18 +765,25 @@ async def test_abstract_project_publish(
         ("AProject.version",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.project")
-    create_release = AsyncMock()
     kwargs = dict(dry_run=dry_run)
-
     if assets is not None:
         kwargs["assets"] = assets
     if dev is not None:
         kwargs["dev"] = dev
     if latest is not None:
         kwargs["latest"] = latest
+    pushed_assets = iters()
+
+    async def pushed(*args, **kwargs):
+        for result in pushed_assets:
+            yield result
+    release = MagicMock()
+    release.assets.push.side_effect = pushed
+    create_release = AsyncMock(return_value=release)
+    results = []
 
     with patched as patchy:
-        (m_dt, m_dev, m_main, m_main_branch,
+        (m_dict, m_utils, m_dev, m_main, m_main_branch,
          m_minor, m_repo, m_version) = patchy
         m_dev.return_value = is_dev
         m_main.return_value = is_main
@@ -784,56 +792,48 @@ async def test_abstract_project_publish(
             m_main_branch.return_value
             if is_main
             else f"release/v{m_minor.return_value}")
-
         if not dev and is_dev and not dry_run:
             with pytest.raises(_github.exceptions.TagError) as e:
-                await project.publish(**kwargs)
-        elif dry_run:
-            assert (
-                await project.publish(**kwargs)
-                == dict(
-                    commitish=branch,
-                    date=m_dt.now.return_value.strftime.return_value,
-                    tag_name=f"v{m_version.return_value}",
-                    url=f"test://releases/v{m_version.return_value}",
-                    dry_run=" (dry run)"))
+                async for result in project.publish(**kwargs):
+                    pass
         else:
-            release_item = create_release.return_value.__getitem__.return_value
-            assert (
-                await project.publish(**kwargs)
-                == dict(
-                    commitish=release_item,
-                    date=release_item,
-                    tag_name=release_item,
-                    url=release_item,
-                    dry_run=""))
+            async for result in project.publish(**kwargs):
+                results.append(result)
 
     if not dev and is_dev and not dry_run:
         assert not create_release.called
         assert not m_main.called
-        assert not m_dt.now.called
         assert (
             e.value.args[0]
             == f"Cannot tag a dev version: {m_version.return_value}")
         return
-    if dry_run:
-        assert not create_release.called
-        assert m_dt.now.call_args == [(), {}]
-        assert (
-            m_dt.now.return_value.strftime.call_args
-            == [("%m/%d/%Y %H:%M:%S", ), {}])
-        return
-    assert not m_dt.now.called
-    expected = dict(latest=(latest or (is_main and not is_dev)))
+    expected = dict(
+        latest=(latest or (is_main and not is_dev)),
+        dry_run=dry_run)
     assert (
         create_release.call_args
         == [(branch, f"v{m_version.return_value}"), expected])
+    assert results[0] == m_dict.return_value
+    if not assets:
+        assert not m_utils.untar.called
+        assert not release.assets.push.called
+        assert len(results) == 1
+        return
     assert (
-        create_release.return_value.__getitem__.call_args_list
-        == [[("target_commitish", ), {}],
-            [("published_at", ), {}],
-            [("tag_name", ), {}],
-            [("html_url", ), {}]])
+        m_utils.untar.call_args
+        == [(assets, ), {}])
+    assert results[1:] == pushed_assets
+    assert (
+        release.assets.push.call_args
+        == [(m_utils.untar.return_value
+                          .__enter__.return_value
+                          .joinpath.return_value, ),
+            dict(dry_run=dry_run)])
+    assert (
+        (m_utils.untar.return_value
+                      .__enter__.return_value
+                      .joinpath.call_args)
+        == [("bin", ), {}])
 
 
 @pytest.mark.parametrize("is_dev", [True, False])

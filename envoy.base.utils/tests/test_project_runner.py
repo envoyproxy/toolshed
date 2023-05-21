@@ -383,38 +383,98 @@ def test_projectrunner_notify_complete(patches):
         == [(), dict(change=change)])
 
 
-async def test_projectrunner_publish(patches):
+@pytest.mark.parametrize("nochange", [True, False])
+@pytest.mark.parametrize("dry_run", [True, False])
+async def test_projectrunner_publish(patches, nochange, dry_run):
     runner = utils.ProjectRunner()
     patched = patches(
+        "utils",
         ("ProjectRunner.log",
          dict(new_callable=PropertyMock)),
         ("ProjectRunner.project",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.project_runner")
-    publish = AsyncMock()
+    kwargs = dict(dry_run=dry_run)
+    changemock = MagicMock()
+    assetmocks = []
 
-    with patched as (m_log, m_project, ):
-        m_project.return_value.publish = publish
+    async def publish(**kwargs):
+        if nochange:
+            return
+        yield changemock
+        for i in range(0, 5):
+            assetmock = MagicMock()
+            assetmock.__contains__.return_value = i % 2
+            assetmocks.append(assetmock)
+            yield assetmock
+
+    with patched as (m_utils, m_log, m_project, ):
+        m_project.return_value.publish.side_effect = publish
+        if nochange:
+            with pytest.raises(utils.exceptions.PublishError) as e:
+                await runner.run_publish(**kwargs)
+        else:
+            assert (
+                await runner.run_publish(**kwargs)
+                == m_utils.typed.return_value)
+
+    assert (
+        m_project.return_value.publish.call_args
+        == [(), kwargs])
+    if nochange:
+        assert e.value.args[0] == "Unknown publishing error"
+        assert not m_utils.typed.called
+        assert not m_log.called
+        return
+    assert (
+        m_utils.typed.call_args
+        == [(utils.typing.ProjectPublishResultDict, changemock), {}])
+    dry_run = (
+        " (dry run)"
+        if dry_run
+        else "")
+    release_msg = (
+        f"[release] Release ({changemock.__getitem__.return_value}) "
+        f"created{dry_run} from branch/commit: "
+        f"{changemock.__getitem__.return_value}")
+    assert (
+        m_log.return_value.success.call_args_list[0]
+        == [(release_msg, ), {}])
+    assert (
+        changemock.__getitem__.call_args_list
+        == [[(k, ), {}]
+            for k
+            in ("tag_name", "commitish")])
+    assert (
+        m_log.return_value.error.call_args_list
+        == [[((
+            f"[release] Something went wrong uploading{dry_run}: "
+            f"{result.__getitem__.return_value} -> "
+            f"{result.__getitem__.return_value}\n"
+            f"{result.__getitem__.return_value}"), ), {}]
+            for i, result in enumerate(assetmocks)
+            if i % 2])
+    assert (
+        m_log.return_value.success.call_args_list[1:]
+        == [[((
+            f"[release] Artefact uploaded{dry_run}: "
+            f"{result.__getitem__.return_value} -> "
+            f"{result.__getitem__.return_value}"), ), {}]
+            for i, result in enumerate(assetmocks)
+            if not i % 2])
+    for i, mock in enumerate(assetmocks):
         assert (
-            await runner.run_publish()
-            == publish.return_value)
-
-    change = publish.return_value
-    log_message = (
-        f"[release] Release ({change.__getitem__.return_value}) "
-        f"created from branch/commit: {change.__getitem__.return_value}\n"
-        f"    {change.__getitem__.return_value}")
-    assert (
-        m_log.return_value.success.call_args
-        == [(log_message, ), {}])
-    assert (
-        change.__getitem__.call_args_list
-        == [[("tag_name", ), {}],
-            [("commitish", ), {}],
-            [("url", ), {}]])
-    assert (
-        publish.call_args
-        == [(), {}])
+            mock.__contains__.call_args
+            == [("error", ), {}])
+        ks = (
+            ("name", "url")
+            if not i % 2
+            else ("name", "url", "error"))
+        assert (
+            mock.__getitem__.call_args_list
+            == [[(k, ), {}]
+                for k
+                in ks])
 
 
 @pytest.mark.parametrize("nocommit", [True, False])
