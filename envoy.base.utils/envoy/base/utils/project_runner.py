@@ -21,7 +21,7 @@ NOTIFY_MSGS: frozendict = frozendict(
         "{change[release][date]}"),
     dev="Repo set to dev ({change[dev][version]})",
     sync="Repo synced",
-    publish="Repo published{change[publish][dry_run]}")
+    publish="Repo published{change[publish][dry_run]}: {change[publish][url]}")
 COMMIT_MSGS: frozendict = frozendict(
     release="repo: Release `{change[release][version]}`",
     dev="repo: Dev `{change[dev][version]}`",
@@ -133,6 +133,7 @@ class ProjectRunner(BaseProjectRunner):
     @runner.catches(
         (exceptions.DevError,
          exceptions.ReleaseError,
+         exceptions.PublishError,
          github_exceptions.TagError,
          github_exceptions.TagExistsError))
     async def run(self) -> None:
@@ -149,12 +150,30 @@ class ProjectRunner(BaseProjectRunner):
         return change
 
     async def run_publish(self, **kwargs) -> typing.ProjectPublishResultDict:
-        change = await self.project.publish(**kwargs)
-        self.log.success(
-            f"[release] Release ({change['tag_name']}) "
-            f"created from branch/commit: {change['commitish']}\n"
-            f"    {change['url']}")
-        return change
+        change = None
+        dry_run = (
+            " (dry run)"
+            if kwargs.get("dry_run")
+            else "")
+        async for result in self.project.publish(**kwargs):
+            if not change:
+                change = result
+                self.log.success(
+                    f"[release] Release ({change['tag_name']}) "
+                    f"created{dry_run} from branch/commit: "
+                    f"{change['commitish']}")
+                continue
+            if "error" in result:
+                self.log.error(
+                    f"[release] Something went wrong uploading{dry_run}: "
+                    f"{result['name']} -> {result['url']}\n{result['error']}")
+                continue
+            self.log.success(
+                f"[release] Artefact uploaded{dry_run}: "
+                f"{result['name']} -> {result['url']}")
+        if not change:
+            raise exceptions.PublishError("Unknown publishing error")
+        return utils.typed(typing.ProjectPublishResultDict, change)
 
     async def run_release(self) -> typing.ProjectReleaseResultDict:
         change = await self.project.release()

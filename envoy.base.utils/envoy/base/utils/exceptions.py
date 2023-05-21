@@ -27,3 +27,7 @@ class DevError(Exception):
 
 class CommitError(Exception):
     pass
+
+
+class PublishError(Exception):
+    pass

@@ -3,10 +3,9 @@ import asyncio
 import json
 import pathlib
 from concurrent import futures
-from datetime import datetime
 from functools import cached_property
 from typing import (
-    AsyncGenerator, List, Mapping, Optional,
+    AsyncGenerator, AsyncIterator, List, Mapping, Optional,
     Tuple, Type, Union)
 
 import aiohttp
@@ -243,7 +242,9 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             assets: Optional[pathlib.Path] = None,
             commitish: Optional[str] = None,
             dev: Optional[bool] = None,
-            latest: Optional[bool] = None) -> typing.ProjectPublishResultDict:
+            latest: Optional[bool] = None) -> AsyncIterator[
+                typing.ProjectPublishResultDict
+                | _github.typing.AssetUploadResultDict]:
         if not dev and self.is_dev and not dry_run:
             raise _github.exceptions.TagError(
                 f"Cannot tag a dev version: {self.version}")
@@ -254,24 +255,25 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
                   if self.is_main
                   else f"release/v{self.minor_version}"))
         latest = latest or (self.is_main and not self.is_dev)
-        if dry_run:
-            return dict(
-                commitish=commitish,
-                date=datetime.now().strftime("%m/%d/%Y %H:%M:%S"),
-                tag_name=f"v{self.version}",
-                url=f"test://releases/v{self.version}",
-                dry_run=" (dry run)")
         release = await self.repo.create_release(
             commitish,
             f"v{self.version}",
-            latest=latest)
-        # TODO: add asset upload
-        return dict(
-            commitish=release["target_commitish"],
-            date=release["published_at"],
-            tag_name=release["tag_name"],
-            url=release["html_url"],
-            dry_run="")
+            latest=latest,
+            dry_run=dry_run)
+        yield dict(
+            commitish=release.target_commitish,
+            date=release.published_at.isoformat(),
+            tag_name=release.tag_name,
+            url=release.html_url,
+            dry_run=" (dry run)" if dry_run else "")
+        if not assets:
+            return
+        with utils.untar(assets) as tmpdir:
+            tasks = release.assets.push(
+                tmpdir.joinpath("bin"),
+                dry_run=dry_run)
+            async for result in tasks:
+                yield result
 
     async def release(self) -> typing.ProjectReleaseResultDict:
         if not self.is_dev:
