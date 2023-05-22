@@ -14,7 +14,8 @@ env/
 build/
 develop-eggs/
 dist/
-!retest/dist
+!gh-actions/retest/dist
+!gh-actions/status/dist
 downloads/
 eggs/
 .eggs/
