@@ -435,3 +435,10 @@ class IProject(event.IExecutive, metaclass=abstracts.Interface):
     async def sync(self) -> typing.ProjectSyncResultDict:
         """Synchronize project resources."""
         raise NotImplementedError
+
+    @abstracts.interfacemethod
+    async def trigger(
+            self,
+            **kwargs) -> typing.ProjectTriggerResultDict:
+        """Trigger a project workflow."""
+        raise NotImplementedError

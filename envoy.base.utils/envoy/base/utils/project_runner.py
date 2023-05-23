@@ -1,4 +1,5 @@
 
+import json
 import os
 import pathlib
 from functools import cached_property
@@ -21,7 +22,8 @@ NOTIFY_MSGS: frozendict = frozendict(
         "{change[release][date]}"),
     dev="Repo set to dev ({change[dev][version]})",
     sync="Repo synced",
-    publish="Repo published{change[publish][dry_run]}: {change[publish][url]}")
+    publish="Repo published{change[publish][dry_run]}: {change[publish][url]}",
+    trigger="Workflow ({change[trigger][workflow]}) triggered")
 COMMIT_MSGS: frozendict = frozendict(
     release="repo: Release `{change[release][version]}`",
     dev="repo: Dev `{change[dev][version]}`",
@@ -68,7 +70,7 @@ class ProjectRunner(BaseProjectRunner):
     @property
     def nocommit(self) -> bool:
         return (
-            self.args.command == "publish"
+            self.args.command in ["publish", "trigger"]
             or self.args.nocommit)
 
     @property
@@ -83,8 +85,10 @@ class ProjectRunner(BaseProjectRunner):
         super().add_arguments(parser)
         parser.add_argument(
             "command",
-            choices=["sync", "release", "dev", "publish"])
+            choices=["sync", "release", "dev", "publish", "trigger"])
         parser.add_argument("path", default=".")
+        parser.add_argument("--app-key", default="GITHUB_APP_KEY")
+        parser.add_argument("--app-keyfile", default="")
         parser.add_argument("--github_token")
         parser.add_argument("--nosync", action="store_true")
         parser.add_argument("--nocommit", action="store_true")
@@ -96,6 +100,11 @@ class ProjectRunner(BaseProjectRunner):
         parser.add_argument("--publish-dev", action="store_true")
         parser.add_argument("--publish-latest", action="store_true")
         parser.add_argument("--publish-generate-notes", action="store_true")
+        parser.add_argument("--trigger-ref", default="")
+        parser.add_argument("--trigger-app-id", default="")
+        parser.add_argument("--trigger-installation-id", default="")
+        parser.add_argument("--trigger-workflow", default="")
+        parser.add_argument("--trigger-inputs", default="")
 
     async def commit(
             self,
@@ -119,8 +128,10 @@ class ProjectRunner(BaseProjectRunner):
             change["dev"] = await self.run_dev()
         if self.command == "release":
             change["release"] = await self.run_release()
-        if not self.nosync:
+        if not self.nosync and self.command in ["dev", "release", "sync"]:
             change["sync"] = await self.run_sync()
+        if self.command == "trigger":
+            change["trigger"] = await self.run_trigger()
         return change
 
     def msg_for_commit(self, change: typing.ProjectChangeDict) -> str:
@@ -186,6 +197,25 @@ class ProjectRunner(BaseProjectRunner):
         self._log_changelog(change["changelog"])
         self._log_inventory(change["inventory"])
         return change
+
+    async def run_trigger(self, **kwargs) -> typing.ProjectTriggerResultDict:
+        if self.args.app_keyfile:
+            key = pathlib.Path(self.args.app_keyfile).read_bytes()
+        else:
+            key = os.environ[self.args.app_key].encode("utf-8")
+        inputs = (
+            json.loads(self.args.trigger_inputs)
+            if self.args.trigger_inputs
+            else {})
+        data = dict(
+            ref=self.args.trigger_ref,
+            inputs=inputs)
+        return await self.project.trigger(
+            workflow=self.args.trigger_workflow,
+            app_id=self.args.trigger_app_id,
+            installation_id=self.args.trigger_installation_id,
+            key=key,
+            data=data)
 
     def _log_changelog(self, results: typing.SyncResultDict) -> None:
         if not results:

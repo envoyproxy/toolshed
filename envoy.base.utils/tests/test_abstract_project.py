@@ -908,6 +908,30 @@ async def test_abstract_project_sync(patches):
         == [[(0, ), {}], [(1, ), {}]])
 
 
+async def test_abstract_project_trigger(patches):
+    project = DummyProject()
+    patched = patches(
+        "dict",
+        ("AProject.repo",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.project")
+    kwargs = dict(workflow="WORKFLOW", foo="BAR")
+
+    with patched as (m_dict, m_repo):
+        dispatch = AsyncMock()
+        m_repo.return_value.actions.workflows.dispatch.side_effect = dispatch
+        assert (
+            await project.trigger(**kwargs)
+            == m_dict.return_value)
+
+    assert (
+        dispatch.call_args
+        == [(), kwargs])
+    assert (
+        m_dict.call_args
+        == [(), dict(workflow="WORKFLOW")])
+
+
 @pytest.mark.parametrize("dev", [None, True, False])
 def test_abstract_project_version_string(dev):
     project = DummyProject()

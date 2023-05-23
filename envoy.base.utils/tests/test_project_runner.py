@@ -217,9 +217,13 @@ def test_projectrunner_add_arguments(patches):
     assert (
         parser.add_argument.call_args_list
         == [[('command',),
-             {'choices': ['sync', 'release', 'dev', 'publish']}],
+             {'choices': ['sync', 'release', 'dev', 'publish', 'trigger']}],
             [('path',),
              {'default': '.'}],
+            [('--app-key',),
+             {'default': 'GITHUB_APP_KEY'}],
+            [('--app-keyfile',),
+             {'default': ''}],
             [('--github_token',), {}],
             [('--nosync',),
              {'action': 'store_true'}],
@@ -240,7 +244,17 @@ def test_projectrunner_add_arguments(patches):
             [('--publish-latest',),
              {'action': 'store_true'}],
             [('--publish-generate-notes',),
-             {'action': 'store_true'}]])
+             {'action': 'store_true'}],
+            [('--trigger-ref',),
+             {'default': ''}],
+            [('--trigger-app-id',),
+             {'default': ''}],
+            [('--trigger-installation-id',),
+             {'default': ''}],
+            [('--trigger-workflow',),
+             {'default': ''}],
+            [('--trigger-inputs',),
+             {'default': ''}]])
 
 
 async def test_projectrunner_commit(iters, patches):
@@ -277,7 +291,8 @@ async def test_projectrunner_commit(iters, patches):
         == [(change, ), {}])
 
 
-@pytest.mark.parametrize("action", ["dev", "release", "sync", "publish"])
+@pytest.mark.parametrize(
+    "action", ["dev", "release", "sync", "publish", "trigger"])
 @pytest.mark.parametrize("nosync", [True, False])
 async def test_projectrunner_handle_action(patches, action, nosync):
     runner = utils.ProjectRunner()
@@ -292,11 +307,13 @@ async def test_projectrunner_handle_action(patches, action, nosync):
         "ProjectRunner.run_publish",
         "ProjectRunner.run_release",
         "ProjectRunner.run_sync",
+        "ProjectRunner.run_trigger",
         prefix="envoy.base.utils.project_runner")
 
     with patched as patchy:
         (m_args, m_command, m_nosync,
-         m_dev, m_publish, m_release, m_sync) = patchy
+         m_dev, m_publish, m_release, m_sync,
+         m_trigger) = patchy
         m_command.return_value = action
         m_nosync.return_value = nosync
         result = await runner.handle_action()
@@ -325,7 +342,12 @@ async def test_projectrunner_handle_action(patches, action, nosync):
             == [(), {}])
         assert result["release"] == m_release.return_value
         assert "dev" not in result
-    if nosync:
+    if action == "trigger":
+        assert (
+            m_trigger.call_args
+            == [(), {}])
+        assert result["trigger"] == m_trigger.return_value
+    if nosync or action == "trigger":
         assert "sync" not in result
         assert not m_sync.called
         return
@@ -603,6 +625,70 @@ async def test_projectrunner_run_sync(patches):
         sync.return_value.__getitem__.call_args_list
         == [[("changelog", ), {}],
             [("inventory", ), {}]])
+
+
+@pytest.mark.parametrize("keyfile", [True, False])
+@pytest.mark.parametrize("inputs", [True, False])
+async def test_projectrunner_run_trigger(patches, keyfile, inputs):
+    runner = utils.ProjectRunner()
+    patched = patches(
+        "dict",
+        "json",
+        "os",
+        "pathlib",
+        ("ProjectRunner.args",
+         dict(new_callable=PropertyMock)),
+        ("ProjectRunner.project",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.project_runner")
+
+    with patched as (m_dict, m_json, m_os, m_plib, m_args, m_project):
+        m_args.return_value.app_keyfile = keyfile
+        m_args.return_value.trigger_inputs = inputs
+        trigger = AsyncMock()
+        m_project.return_value.trigger = trigger
+        assert (
+            await runner.run_trigger()
+            == trigger.return_value)
+
+    if keyfile:
+        assert not m_os.environ.__getitem__.called
+        assert (
+            m_plib.Path.call_args
+            == [(m_args.return_value.app_keyfile, ), {}])
+        assert (
+            m_plib.Path.return_value.read_bytes.call_args
+            == [(), {}])
+        key = m_plib.Path.return_value.read_bytes.return_value
+    else:
+        assert (
+            m_os.environ.__getitem__.call_args
+            == [(m_args.return_value.app_key, ), {}])
+        assert (
+            m_os.environ.__getitem__.return_value.encode.call_args
+            == [("utf-8", ), {}])
+        key = m_os.environ.__getitem__.return_value.encode.return_value
+    if inputs:
+        assert (
+            m_json.loads.call_args
+            == [(inputs, ), {}])
+        expected_inputs = m_json.loads.return_value
+    else:
+        assert not m_json.loads.called
+        expected_inputs = {}
+    assert (
+        m_dict.call_args
+        == [(),
+            dict(ref=m_args.return_value.trigger_ref,
+                 inputs=expected_inputs)])
+    assert (
+        trigger.call_args
+        == [(),
+            dict(workflow=m_args.return_value.trigger_workflow,
+                 app_id=m_args.return_value.trigger_app_id,
+                 installation_id=m_args.return_value.trigger_installation_id,
+                 key=key,
+                 data=m_dict.return_value)])
 
 
 @pytest.mark.parametrize("change", [True, False])
