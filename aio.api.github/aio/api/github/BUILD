@@ -10,6 +10,8 @@ pytooling_library(
     ],
     sources=[
         "abstract/__init__.py",
+        "abstract/actions/__init__.py",
+        "abstract/actions/actions.py",
         "abstract/api.py",
         "abstract/base.py",
         "abstract/commit.py",

@@ -1,4 +1,5 @@
 
+from .actions import AGithubActions, AGithubWorkflows
 from .api import AGithubAPI
 from .commit import AGithubCommit
 from .issues import (
@@ -15,6 +16,7 @@ from .tag import AGithubTag
 
 
 __all__ = (
+    "AGithubActions",
     "AGithubAPI",
     "AGithubCommit",
     "AGithubIssue",
@@ -27,4 +29,5 @@ __all__ = (
     "AGithubRepo",
     "AGithubTag",
     "AGithubTrackedIssue",
-    "AGithubTrackedIssues")
+    "AGithubTrackedIssues",
+    "AGithubWorkflows")

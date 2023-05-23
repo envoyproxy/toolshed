@@ -6,6 +6,7 @@ import gidgethub.aiohttp
 import abstracts
 
 from .abstract import (
+    AGithubActions,
     AGithubAPI,
     AGithubCommit,
     AGithubIssue,
@@ -15,8 +16,19 @@ from .abstract import (
     AGithubRelease,
     AGithubReleaseAssets,
     AGithubRepo,
-    AGithubTag)
+    AGithubTag,
+    AGithubWorkflows)
 from . import interface
+
+
+@abstracts.implementer(AGithubActions)
+class GithubActions:
+    pass
+
+
+@abstracts.implementer(AGithubWorkflows)
+class GithubWorkflows:
+    pass
 
 
 @abstracts.implementer(AGithubCommit)
@@ -74,6 +86,10 @@ class GithubAPI:
         AGithubAPI.__init__(self, session, *args, **kwargs)
 
     @property
+    def actions_class(self) -> Type[AGithubActions]:
+        return GithubActions
+
+    @property
     def api_class(self) -> Type[gidgethub.aiohttp.GitHubAPI]:
         return super().api_class
 
@@ -108,3 +124,7 @@ class GithubAPI:
     @property
     def tag_class(self) -> Type[AGithubTag]:
         return GithubTag
+
+    @property
+    def workflows_class(self) -> Type[AGithubWorkflows]:
+        return GithubWorkflows

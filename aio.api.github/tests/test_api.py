@@ -19,6 +19,7 @@ def test_api_constructor(patches):
     assert (
         m_super.call_args
         == [(api, ) + args, kwargs])
+    assert api.actions_class == github.GithubActions
     assert api.commit_class == github.GithubCommit
     assert api.issue_class == github.GithubIssue
     assert api.issues_class == github.GithubIssues
@@ -27,6 +28,7 @@ def test_api_constructor(patches):
     assert api.release_class == github.GithubRelease
     assert api.repo_class == github.GithubRepo
     assert api.tag_class == github.GithubTag
+    assert api.workflows_class == github.GithubWorkflows
 
 
 def test_api_api_class(patches):

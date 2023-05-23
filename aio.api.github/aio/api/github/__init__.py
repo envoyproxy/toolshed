@@ -5,6 +5,7 @@ from . import exceptions
 from . import interface
 from . import utils
 from .api import (
+    GithubActions,
     GithubAPI,
     GithubCommit,
     GithubIssue,
@@ -14,8 +15,10 @@ from .api import (
     GithubRelease,
     GithubReleaseAssets,
     GithubRepo,
-    GithubTag)
+    GithubTag,
+    GithubWorkflows)
 from .abstract import (
+    AGithubActions,
     AGithubAPI,
     AGithubCommit,
     AGithubIssue,
@@ -28,8 +31,10 @@ from .abstract import (
     AGithubRepo,
     AGithubTag,
     AGithubTrackedIssue,
-    AGithubTrackedIssues)
+    AGithubTrackedIssues,
+    AGithubWorkflows)
 from .interface import (
+    IGithubActions,
     IGithubAPI,
     IGithubCommit,
     IGithubIssue,
@@ -42,11 +47,13 @@ from .interface import (
     IGithubRepo,
     IGithubTag,
     IGithubTrackedIssue,
-    IGithubTrackedIssues)
+    IGithubTrackedIssues,
+    IGithubWorkflows)
 
 
 __all__ = (
     "abstract",
+    "AGithubActions",
     "AGithubAPI",
     "AGithubCommit",
     "AGithubIssue",
@@ -60,7 +67,9 @@ __all__ = (
     "AGithubTag",
     "AGithubTrackedIssue",
     "AGithubTrackedIssues",
+    "AGithubWorkflows",
     "exceptions",
+    "GithubActions",
     "GithubAPI",
     "GithubCommit",
     "GithubLabel",
@@ -71,6 +80,8 @@ __all__ = (
     "GithubReleaseAssets",
     "GithubRepo",
     "GithubTag",
+    "GithubWorkflows",
+    "IGithubActions",
     "IGithubAPI",
     "IGithubCommit",
     "IGithubIssue",
@@ -84,5 +95,6 @@ __all__ = (
     "IGithubTag",
     "IGithubTrackedIssue",
     "IGithubTrackedIssues",
+    "IGithubWorkflows",
     "interface",
     "utils")

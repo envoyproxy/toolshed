@@ -6,6 +6,8 @@ from typing import (
 
 from packaging import version
 
+import gidgethub.abc
+
 import abstracts
 
 import aiohttp
@@ -78,6 +80,18 @@ class IGithubAPI(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    def api(self) -> Type[gidgethub.abc.GitHubAPI]:
+        """Github API."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def actions_class(self) -> Type["IGithubActions"]:
+        """Github actions class."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def commit_class(self) -> Type["IGithubCommit"]:
         """Github commit class."""
         raise NotImplementedError
@@ -140,6 +154,12 @@ class IGithubAPI(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     async def post(self, *args, **kwargs) -> Any:
         """Call the `gidgethub.post` api."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def workflows_class(self) -> Type["IGithubWorkflows"]:
+        """Github workflows class."""
         raise NotImplementedError
 
 
@@ -254,6 +274,36 @@ class IGithubIssue(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     async def comment(self, comment: str) -> Any:
         """Add a comment to this issue."""
+        raise NotImplementedError
+
+
+class IGithubActions(metaclass=abstracts.Interface):
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def github(self) -> IGithubAPI:
+        """Github API."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def repo(self) -> IGithubRepo:
+        """Github repo."""
+        raise NotImplementedError
+
+
+class IGithubWorkflows(metaclass=abstracts.Interface):
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def github(self) -> IGithubAPI:
+        """Github API."""
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def repo(self) -> IGithubRepo:
+        """Github repo."""
         raise NotImplementedError
 
 
