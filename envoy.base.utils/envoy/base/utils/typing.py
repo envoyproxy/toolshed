@@ -97,11 +97,16 @@ class ProjectPublishResultDict(TypedDict):
     dry_run: str
 
 
+class ProjectTriggerResultDict(TypedDict):
+    workflow: str
+
+
 class ProjectChangeDict(TypedDict, total=False):
     dev: ProjectDevResultDict
     publish: ProjectPublishResultDict
     release: ProjectReleaseResultDict
     sync: ProjectSyncResultDict
+    trigger: ProjectTriggerResultDict
 
 
 VersionDict = Dict[_version.Version, _version.Version]

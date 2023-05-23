@@ -294,6 +294,11 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             changelog=results[0],
             inventory=results[1])
 
+    async def trigger(self, **kwargs) -> typing.ProjectTriggerResultDict:
+        await self.repo.actions.workflows.dispatch(**kwargs)
+        return dict(
+            workflow=kwargs["workflow"])
+
     def version_string(
             self,
             version: _version.Version,
