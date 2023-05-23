@@ -22,6 +22,16 @@ def test_abstract_repo_constructor():
     assert str(repo) == f"<{repo.__class__.__name__} NAME>"
 
 
+def test_abstract_repo_actions(patches):
+    github = MagicMock()
+    repo = DummyGithubRepo(github, "NAME")
+    assert repo.actions == github.actions_class.return_value
+    assert (
+        github.actions_class.call_args
+        == [(), dict(repo=repo)])
+    assert "actions" in repo.__dict__
+
+
 @pytest.mark.parametrize(
     "releases",
     [(),

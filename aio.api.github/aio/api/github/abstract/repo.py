@@ -27,6 +27,10 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
         return f"<{self.__class__.__name__} {self.name}>"
 
     @cached_property
+    def actions(self) -> "interface.IGithubActions":
+        return self.github.actions_class(repo=self)
+
+    @cached_property
     def github_path(self) -> pathlib.PurePosixPath:
         """Github API repos path."""
         return pathlib.PurePosixPath(f"/repos/{self.name}")

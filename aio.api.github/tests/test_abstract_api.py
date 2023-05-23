@@ -14,6 +14,10 @@ from aio.api import github
 class DummyGithubAPI:
 
     @property
+    def actions_class(self):
+        return super().actions_class
+
+    @property
     def api_class(self):
         return super().api_class
 
@@ -49,6 +53,10 @@ class DummyGithubAPI:
     def tag_class(self):
         return super().tag_class
 
+    @property
+    def workflows_class(self):
+        return super().workflows_class
+
 
 @pytest.mark.parametrize(
     "args", [(), tuple(f"ARG{i}" for i in range(0, 3))])
@@ -64,8 +72,8 @@ def test_abstract_api_constructor(args, kwargs):
     assert api.args == args
     assert api.kwargs == kwargs
     props = (
-        "commit", "issue", "issues", "iterator",
-        "label", "release", "repo", "tag")
+        "actions", "commit", "issue", "issues", "iterator",
+        "label", "release", "repo", "tag", "workflows")
 
     for prop in props:
         with pytest.raises(NotImplementedError):

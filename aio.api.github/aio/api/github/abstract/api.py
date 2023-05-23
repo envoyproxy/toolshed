@@ -6,6 +6,7 @@ from typing import Any, Type
 import aiohttp
 
 import gidgethub
+import gidgethub.abc
 import gidgethub.aiohttp
 
 import abstracts
@@ -34,6 +35,11 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
         # TODO: make this work with user and organization
         #  and validate `k`
         return self.repo_class(self, k)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def actions_class(self) -> Type[interface.IGithubActions]:
+        raise NotImplementedError
 
     @cached_property
     def api(self) -> gidgethub.aiohttp.GitHubAPI:
@@ -96,6 +102,11 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
     @property  # type:ignore
     @abstracts.interfacemethod
     def tag_class(self) -> Type[interface.IGithubTag]:
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def workflows_class(self) -> Type[interface.IGithubWorkflows]:
         raise NotImplementedError
 
     async def getitem(self, *args, **kwargs) -> Any:
