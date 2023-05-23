@@ -171,6 +171,11 @@ class IGithubRepo(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    def actions(self) -> "IGithubActions":
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     def github(self) -> IGithubAPI:
         raise NotImplementedError
 
