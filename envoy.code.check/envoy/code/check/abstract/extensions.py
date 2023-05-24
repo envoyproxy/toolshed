@@ -4,9 +4,10 @@ import itertools
 import json
 import logging
 import pathlib
-import re
 from functools import cached_property
-from typing import Any, cast, Dict, List, Pattern, Set, Tuple, Type, Union
+from typing import (
+    Any, cast, Dict, List,
+    Optional, Set, Tuple, Type, Union)
 
 import yaml as _yaml
 
@@ -20,8 +21,6 @@ from envoy.code.check import abstract, exceptions, interface, typing
 
 logger = logging.getLogger(__name__)
 
-
-FILTER_NAMES_PATTERN = "envoy\\.filters\\.network"
 FUZZ_TEST_PATH = (
     "test/extensions/filters/network/common/fuzz/BUILD")
 METADATA_PATH = "source/extensions/extensions_metadata.yaml"
@@ -40,6 +39,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             *args,
             **kwargs) -> None:
         self.extensions_build_config = kwargs.pop("extensions_build_config")
+        self._fuzzed_count = kwargs.pop("extensions_fuzzed_count", None)
         super().__init__(*args, **kwargs)
 
     @cached_property
@@ -50,6 +50,9 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def all_fuzzed(self) -> bool:
+        if self.fuzzed_count is None:
+            logger.warning("Fuzz check called but fuzz count not set.")
+            return True
         return (
             await self.robust_to_downstream_count
             == self.fuzzed_count)
@@ -107,16 +110,8 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         return self.directory.path.joinpath(FUZZ_TEST_PATH)
 
     @property
-    def fuzzed_count(self) -> int:
-        # Hack-ish! We only search the first 60 lines to capture the filters
-        # in `READFILTER_FUZZ_FILTERS`.
-        return len(
-            self.fuzzed_filter_names_re.findall(
-                "".join(self.fuzz_test_path.read_text().splitlines()[:60])))
-
-    @cached_property
-    def fuzzed_filter_names_re(self) -> Pattern:
-        return re.compile(FILTER_NAMES_PATTERN)
+    def fuzzed_count(self) -> Optional[int]:
+        return self._fuzzed_count
 
     @async_property(cache=True)
     async def metadata(self) -> typing.ExtensionsMetadataDict:

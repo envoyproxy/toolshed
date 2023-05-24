@@ -33,6 +33,9 @@ GLINT_ADVICE = (
 
 NO_EXTENSIONS_ERROR_MSG = (
     "`--extensions_build_config` not provided, disabling extensions checks")
+NO_EXTENSIONS_FUZZ_ERROR_MSG = (
+    "`--extensions_fuzzed_count` not provided, "
+    "disabling extensions fuzz checks")
 
 
 class CodeCheckerSummary(checker.CheckerSummary):
@@ -82,6 +85,8 @@ class ACodeChecker(
             disabled["extensions_fuzzed"] = NO_EXTENSIONS_ERROR_MSG
             disabled["extensions_metadata"] = NO_EXTENSIONS_ERROR_MSG
             disabled["extensions_registered"] = NO_EXTENSIONS_ERROR_MSG
+        elif self.args.extensions_fuzzed_count is None:
+            disabled["extensions_fuzzed"] = NO_EXTENSIONS_FUZZ_ERROR_MSG
         return disabled
 
     @property
@@ -255,6 +260,7 @@ class ACodeChecker(
         parser.add_argument("-b", "--binary", action="append")
         parser.add_argument("-s", "--since")
         parser.add_argument("--extensions_build_config")
+        parser.add_argument("--extensions_fuzzed_count")
 
     async def check_changelog(self):
         for changelog in self.changelog:
