@@ -136,6 +136,7 @@ class ACodeChecker(
         return self.extensions_class(
             self.directory,
             extensions_build_config=self.args.extensions_build_config,
+            extensions_fuzzed_count=self.args.extensions_fuzzed_count,
             **self.check_kwargs)
 
     @property  # type:ignore
