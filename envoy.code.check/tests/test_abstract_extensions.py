@@ -21,9 +21,13 @@ from envoy.code.check import exceptions
     [{},
      {f"K{i}": f"V{i}" for i in range(0, 5)}])
 @pytest.mark.parametrize("build_config", [None, "BUILD_CONFIG"])
-def test_extensions_constructor(patches, args, kwargs, build_config):
+@pytest.mark.parametrize("fuzzed_count", [None, 23])
+def test_extensions_constructor(
+        patches, args, kwargs, build_config, fuzzed_count):
     if build_config is not None:
         kwargs["extensions_build_config"] = build_config
+    if fuzzed_count is not None:
+        kwargs["extensions_fuzzed_count"] = fuzzed_count
     patched = patches(
         "abstract.ACodeCheck.__init__",
         prefix="envoy.code.check.abstract.extensions")
@@ -38,8 +42,12 @@ def test_extensions_constructor(patches, args, kwargs, build_config):
             checker = check.AExtensionsCheck(*args, **kwargs)
 
     assert checker.extensions_build_config == build_config
+    assert checker.fuzzed_count == fuzzed_count
+    assert "fuzzed_count" not in checker.__dict__
     if build_config:
         del kwargs["extensions_build_config"]
+    if fuzzed_count:
+        del kwargs["extensions_fuzzed_count"]
     assert (
         m_super.call_args
         == [tuple(args), kwargs])
@@ -69,7 +77,7 @@ def test_extensions_all_extensions(iters, patches):
     assert "all_extensions" in checker.__dict__
 
 
-@pytest.mark.parametrize("fuzzed", range(0, 3))
+@pytest.mark.parametrize("fuzzed", [None] + list(range(0, 3)))
 @pytest.mark.parametrize("robust", range(0, 3))
 async def test_extensions_all_fuzzed(patches, fuzzed, robust):
     checker = check.AExtensionsCheck(
@@ -86,7 +94,9 @@ async def test_extensions_all_fuzzed(patches, fuzzed, robust):
         m_robust.side_effect = AsyncMock(return_value=robust)
         assert (
             await checker.all_fuzzed
-            == (fuzzed == robust))
+            == ((fuzzed == robust)
+                if fuzzed is not None
+                else True))
 
     assert "all_fuzzed" not in checker.__dict__
 
@@ -251,64 +261,6 @@ def test_extensions_fuzz_test_path():
         directory.path.joinpath.call_args
         == [(check.abstract.extensions.FUZZ_TEST_PATH, ), {}])
     assert "fuzz_test_path" not in checker.__dict__
-
-
-def test_extensions_fuzzed_count(iters, patches):
-    checker = check.AExtensionsCheck(
-        "DIRECTORY", extensions_build_config="BUILD")
-    patched = patches(
-        "len",
-        ("AExtensionsCheck.fuzz_test_path",
-         dict(new_callable=PropertyMock)),
-        ("AExtensionsCheck.fuzzed_filter_names_re",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.code.check.abstract.extensions")
-    lines = iters()
-
-    with patched as (m_len, m_path, m_re):
-        (m_path.return_value.read_text
-               .return_value.splitlines
-               .return_value.__getitem__.return_value) = lines
-        assert (
-            checker.fuzzed_count
-            == m_len.return_value)
-
-    assert (
-        m_len.call_args
-        == [(m_re.return_value.findall.return_value, ), {}])
-    assert (
-        m_re.return_value.findall.call_args
-        == [("".join(lines), ), {}])
-    assert (
-        m_path.return_value.read_text.call_args
-        == [(), {}])
-    assert (
-        m_path.return_value.read_text.return_value.splitlines.call_args
-        == [(), {}])
-    assert (
-        (m_path.return_value.read_text
-               .return_value.splitlines
-               .return_value.__getitem__.call_args)
-        == [(slice(None, 60), ), {}])
-    assert "fuzzed_count" not in checker.__dict__
-
-
-def test_extensions_fuzzed_filter_names_re(patches):
-    checker = check.AExtensionsCheck(
-        "DIRECTORY", extensions_build_config="BUILD")
-    patched = patches(
-        "re",
-        prefix="envoy.code.check.abstract.extensions")
-
-    with patched as (m_re, ):
-        assert (
-            checker.fuzzed_filter_names_re
-            == m_re.compile.return_value)
-
-    assert (
-        m_re.compile.call_args
-        == [(check.abstract.extensions.FILTER_NAMES_PATTERN, ), {}])
-    assert "fuzzed_filter_names_re" in checker.__dict__
 
 
 async def test_extensions_metadata(iters, patches):

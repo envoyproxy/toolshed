@@ -390,25 +390,32 @@ def test_abstract_checker_binaries(iters, patches, bins):
 
 
 @pytest.mark.parametrize("build_config", [None, "BUILD CONFIG"])
-def test_abstract_checker_disabled_checks(patches, build_config):
+@pytest.mark.parametrize("fuzzed_count", [None, 0, 23])
+def test_abstract_checker_disabled_checks(patches, build_config, fuzzed_count):
     checker = DummyCodeChecker()
     patched = patches(
         ("ACodeChecker.args",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.checker")
-    disabled_dict = {
-        k: check.abstract.checker.NO_EXTENSIONS_ERROR_MSG
-        for k
-        in ["extensions_fuzzed",
-            "extensions_metadata",
-            "extensions_registered"]}
+    if not build_config:
+        disabled_dict = {
+            k: check.abstract.checker.NO_EXTENSIONS_ERROR_MSG
+            for k
+            in ["extensions_fuzzed",
+                "extensions_metadata",
+                "extensions_registered"]}
+    elif fuzzed_count is None:
+        disabled_dict = dict(
+            extensions_fuzzed=(check.abstract.checker
+                                    .NO_EXTENSIONS_FUZZ_ERROR_MSG))
 
     with patched as (m_args, ):
         m_args.return_value.extensions_build_config = build_config
+        m_args.return_value.extensions_fuzzed_count = fuzzed_count
         assert (
             checker.disabled_checks
             == ({}
-                if build_config
+                if build_config and (fuzzed_count is not None)
                 else disabled_dict))
 
     assert "disabled_checks" in checker.__dict__
