@@ -194,6 +194,8 @@ def test_abstract_checker_extensions(iters, patches):
 
     kwargs["extensions_build_config"] = (
         m_args.return_value.extensions_build_config)
+    kwargs["extensions_fuzzed_count"] = (
+        m_args.return_value.extensions_fuzzed_count)
     assert (
         m_tool.return_value.call_args
         == [(m_dir.return_value,),
