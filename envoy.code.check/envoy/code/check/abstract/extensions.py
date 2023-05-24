@@ -111,7 +111,11 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     @property
     def fuzzed_count(self) -> Optional[int]:
-        return self._fuzzed_count
+        # TODO: shift this to the arg parse
+        return (
+            int(self._fuzzed_count)
+            if self._fuzzed_count is not None
+            else None)
 
     @async_property(cache=True)
     async def metadata(self) -> typing.ExtensionsMetadataDict:

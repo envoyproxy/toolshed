@@ -42,8 +42,6 @@ def test_extensions_constructor(
             checker = check.AExtensionsCheck(*args, **kwargs)
 
     assert checker.extensions_build_config == build_config
-    assert checker.fuzzed_count == fuzzed_count
-    assert "fuzzed_count" not in checker.__dict__
     if build_config:
         del kwargs["extensions_build_config"]
     if fuzzed_count:
@@ -261,6 +259,30 @@ def test_extensions_fuzz_test_path():
         directory.path.joinpath.call_args
         == [(check.abstract.extensions.FUZZ_TEST_PATH, ), {}])
     assert "fuzz_test_path" not in checker.__dict__
+
+
+@pytest.mark.parametrize("fuzzed_count", [None] + list(range(0, 3)))
+def test_extensions_fuzzed_count(patches, fuzzed_count):
+    checker = check.AExtensionsCheck(
+        "DIRECTORY", extensions_build_config="BUILD")
+    patched = patches(
+        "int",
+        prefix="envoy.code.check.abstract.extensions")
+    checker._fuzzed_count = fuzzed_count
+
+    with patched as (m_int, ):
+        assert (
+            checker.fuzzed_count
+            == (m_int.return_value
+                if fuzzed_count is not None
+                else None))
+    assert "fuzzed_count" not in checker.__dict__
+    if fuzzed_count is None:
+        assert not m_int.called
+        return
+    assert (
+        m_int.call_args
+        == [(fuzzed_count, ), {}])
 
 
 async def test_extensions_metadata(iters, patches):
