@@ -22,7 +22,7 @@ from envoy.code.check import abstract, exceptions, interface, typing
 logger = logging.getLogger(__name__)
 
 FUZZ_TEST_PATH = (
-    "test/extensions/filters/network/common/fuzz/BUILD")
+    "test/extensions/filters/network/common/fuzz/config.bzl")
 METADATA_PATH = "source/extensions/extensions_metadata.yaml"
 METADATA_ONLY_EXTENSIONS = (
     "envoy.filters.network.envoy_mobile_http_connection_manager", )
