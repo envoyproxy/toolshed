@@ -1,0 +1,19 @@
+name: 'Jq'
+description: 'Mangle JSON with Jq.'
+author: 'phlax'
+inputs:
+  input:
+    description: >
+      Input string to mangle.
+    default: ""
+  options:
+    description: >
+      Jq command options.
+    default: ""
+  filter:
+    description: >
+      Jq filter expression.
+    default: "."
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
