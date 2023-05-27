@@ -1,0 +1,27 @@
+name: 'Hashfiles'
+description: 'Hash files from a javascript list.'
+author: 'phlax'
+inputs:
+  files:
+    description: >
+      File paths to hash.
+    default: ""
+  failEmpty:
+    description: >
+      Fail if the resulting hash is empty.
+    default: true
+  format:
+    description: >
+      Input format, one of `json`, `delimited`.
+    default: delimited
+  delimiter:
+    description: >
+      Delimiter if format is `delimited`
+    default: "\n"
+  verbose:
+    description: >
+      Hash verbosely.
+    default: false
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
