@@ -17,7 +17,7 @@ inputs:
   delimiter:
     description: >
       Delimiter if format is `delimited`
-    default: "\n"
+    default: "\\n"
   verbose:
     description: >
       Hash verbosely.
