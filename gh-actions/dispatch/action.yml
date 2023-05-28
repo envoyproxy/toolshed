@@ -1,0 +1,28 @@
+name: 'Dispatch'
+description: 'Dispatch Github workflow.'
+author: 'phlax'
+inputs:
+  repository:
+    description: >
+      Repository to dispatch workflow in.
+    default: ""
+  ref:
+    description: >
+      Repository ref to dispatch.
+  key:
+    description: >
+      App key for dispatch.
+  app_id:
+    type: number
+    description: >
+      App ID for dispatch.
+  installation_id:
+    type: number
+    description: >
+      App installation ID for dispatch.
+  workflow:
+    description: >
+      Workflow to dispatch.
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

@@ -91,7 +91,7 @@ not
 __tests__/runner/*
 
 # Ignore node_modules by default (not for release)
-node_modules
+**/node_modules
 
 # =========================
 # Node.js-Specific Ignores
