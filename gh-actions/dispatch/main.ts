@@ -3,6 +3,9 @@ import * as core from '@actions/core'
 import {Endpoints} from '@octokit/types'
 import {Octokit} from '@octokit/rest'
 import * as github from '@actions/github'
+// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+// @ts-ignore
+import * as yaml from 'js-yaml'
 
 type listInstallationsResponse = Endpoints['GET /app/installations']['response']
 
@@ -11,6 +14,7 @@ const run = async (): Promise<void> => {
     const repository = core.getInput('repository')
     if (!repository || repository === '') return
     const ref = core.getInput('ref')
+    const providedInputs = core.getInput('inputs')
     const privateKey = core.getInput('key')
     const appId = core.getInput('app_id')
     let installationId = parseInt(core.getInput('installation_id'))
@@ -32,6 +36,17 @@ const run = async (): Promise<void> => {
       installationId,
     })
 
+    const parsedInputs = yaml.load(providedInputs)
+    const inputs: {[key: string]: string | number | boolean} = {}
+
+    for (const [key, value] of Object.entries(parsedInputs)) {
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        inputs[key] = value
+      } else {
+        inputs[key] = JSON.stringify(value)
+      }
+    }
+
     // @ts-expect-error
     if (!resp || !resp.token) {
       throw new Error('Unable to authenticate')
@@ -40,6 +55,7 @@ const run = async (): Promise<void> => {
       action: `POST /repos/${repository}/actions/workflows/${workflow}/dispatches`,
       params: {
         ref,
+        inputs,
       },
     }
     // @ts-expect-error
