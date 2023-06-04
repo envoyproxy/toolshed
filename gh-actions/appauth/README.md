@@ -17,7 +17,7 @@ jobs:
 
     - uses: some-action
       env:
-        GITHUB_TOKEN: ${{ steps.auth.outputs.value }}
+        GITHUB_TOKEN: ${{ steps.auth.outputs.token }}
 
 
 ```
