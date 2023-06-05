@@ -36,7 +36,13 @@ const run = async (): Promise<void> => {
     }
 
     // @ts-expect-error
-    core.setOutput('value', resp.token)
+    const token = resp.token
+    core.setOutput('token', token)
+    core.setSecret('token')
+
+    // TODO: remove these
+    core.setOutput('value', token)
+    core.setSecret('value')
   } catch (error) {
     if (error instanceof Error) {
       console.error(error.message)
