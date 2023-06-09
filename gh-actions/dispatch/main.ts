@@ -36,14 +36,17 @@ const run = async (): Promise<void> => {
       installationId,
     })
 
-    const parsedInputs = yaml.load(providedInputs)
     const inputs: {[key: string]: string | number | boolean} = {}
 
-    for (const [key, value] of Object.entries(parsedInputs)) {
-      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        inputs[key] = value
-      } else {
-        inputs[key] = JSON.stringify(value)
+    if (providedInputs) {
+      const parsedInputs = yaml.load(providedInputs)
+
+      for (const [key, value] of Object.entries(parsedInputs)) {
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+          inputs[key] = value
+        } else {
+          inputs[key] = JSON.stringify(value)
+        }
       }
     }
 
