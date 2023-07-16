@@ -1,0 +1,44 @@
+
+inputs:
+  command:
+    type: string
+    required: true
+  target:
+    type: string
+    required: true
+  filename:
+    type: string
+    required: true
+
+  owner:
+    type: string
+    default: runner:docker
+  tmp_path:
+    type: string
+    default: /tmp/cache
+  version:
+    type: string
+    default: v000
+
+runs:
+  using: "composite"
+  steps:
+  - run: |
+      sudo mkdir -p ${{ inputs.tmp_path }}
+      sudo mount -t tmpfs none ${{ inputs.tmp_path }}
+      sudo chown -R ${{ inputs.owner }} ${{ inputs.tmp_path }}
+    shell: bash
+  - name: Restore cache
+    id: cache-restore
+    uses: actions/cache/restore@v3
+    with:
+      path: ${{ inputs.tmp_path }}
+      key: ${{ inputs.target }}-${{ inputs.version }}
+  - run: |
+      CACHE_COMMAND="$(realpath ${{ inputs.command }})"
+      cd ${{ inputs.tmp_path }} || exit 1
+      sudo "$CACHE_COMMAND" "${{ inputs.target }}" "${{ inputs.filename }}"
+      cd - || exit 1
+      sudo umount ${{ inputs.tmp_path }}
+      sudo rm -rf ${{ inputs.tmp_path }}
+    shell: bash
