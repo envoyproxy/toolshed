@@ -3,42 +3,55 @@ inputs:
   command:
     type: string
     required: true
-  target:
-    type: string
-    required: true
-  filename:
+  key:
     type: string
     required: true
 
   owner:
     type: string
     default: runner:docker
-  tmp_path:
+  path_script:
+    type: string
+    default: /tmp/cachescript
+  path_tmp:
     type: string
     default: /tmp/cache
-  version:
-    type: string
-    default: v000
+  run_as_sudo:
+    type: boolean
+    default: true
+  mount_tmpfs:
+    type: boolean
+    default: true
 
 runs:
   using: "composite"
   steps:
   - run: |
-      sudo mkdir -p ${{ inputs.tmp_path }}
-      sudo mount -t tmpfs none ${{ inputs.tmp_path }}
-      sudo chown -R ${{ inputs.owner }} ${{ inputs.tmp_path }}
+      sudo mkdir -p ${{ inputs.path_tmp }}
+      if [[ "${{ inputs.mount_tmpfs }}" == 'true' ]]; then
+          sudo mount -t tmpfs none ${{ inputs.path_tmp }}
+      fi
+      sudo chown -R ${{ inputs.owner }} ${{ inputs.path_tmp }}
     shell: bash
   - name: Restore cache
     id: cache-restore
     uses: actions/cache/restore@v3
     with:
-      path: ${{ inputs.tmp_path }}
-      key: ${{ inputs.target }}-${{ inputs.version }}
+      path: ${{ inputs.path_tmp }}
+      key: ${{ inputs.key }}
   - run: |
-      CACHE_COMMAND="$(realpath ${{ inputs.command }})"
-      cd ${{ inputs.tmp_path }} || exit 1
-      sudo "$CACHE_COMMAND" "${{ inputs.target }}" "${{ inputs.filename }}"
+      echo "#!/bin/bash -e" > "${{ inputs.path_script }}"
+      chmod +x "${{ inputs.path_script }}"
+      echo "${{ inputs.command }}" >> "${{ inputs.path_script }}"
+      cd ${{ inputs.path_tmp }} || exit 1
+      if [[ "${{ inputs.run_as_sudo }}" == 'true' ]]; then
+          sudo "${{ inputs.path_script }}"
+      else
+          "${{ inputs.path_script }}"
+      fi
       cd - || exit 1
-      sudo umount ${{ inputs.tmp_path }}
-      sudo rm -rf ${{ inputs.tmp_path }}
+      if [[ "${{ inputs.mount_tmpfs }}" == 'true' ]]; then
+          sudo umount ${{ inputs.path_tmp }}
+      fi
+      sudo rm -rf ${{ inputs.path_tmp }}
     shell: bash
