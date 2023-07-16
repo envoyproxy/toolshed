@@ -1,0 +1,18 @@
+
+inputs:
+  image_tag:
+    type: string
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/cache/restore@actions-v0.0.4
+    with:
+      key: ${{ inputs.image_tag }}
+      command: |
+        systemctl stop docker
+        mv /var/lib/docker /var/lib/docker.orig
+        mkdir -p /var/lib/docker
+        zstd --stdout -d docker.tar.zst | tar -xf - -C /var/lib/docker
+        systemctl start docker

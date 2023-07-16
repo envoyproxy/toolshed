@@ -1,0 +1,20 @@
+
+inputs:
+  image_tag:
+    type: string
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.0.4
+    with:
+      key: "${{ inputs.image_tag }}"
+      command: |
+        systemctl stop docker
+        mv /var/lib/docker /var/lib/docker.orig
+        mkdir /var/lib/docker
+        systemctl start docker
+        docker pull ${{ inputs.image_tag }}
+        systemctl stop docker
+        tar cf - -C /var/lib/docker . | zstd - -T0 -o docker.tar.zst
