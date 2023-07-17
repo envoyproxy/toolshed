@@ -24,7 +24,7 @@ runs:
     env:
       TMPFILE_PATH:
   - name: Run (/tmp/actionfile.tmp)
-    uses:
+    uses: /tmp/actionfile.tmp
   - name: Cleanup (/tmp/actionfile.tmp)
     if: always()
     shell: bash
