@@ -1,0 +1,23 @@
+
+inputs:
+  url:
+    type: string
+    required: true
+
+outputs:
+  path:
+    value: ${{ steps.fetch.outputs.path }}
+
+runs:
+  using: "composite"
+  steps:
+  - run: |
+      echo "FETCH ${{ inputs.url }}"
+      tmpdir=$(mktemp -d)
+      cd "$tmpdir"
+      curl -sLO "${{ inputs.url }}"
+      filepath="$(realpath "$(basename "${{ inputs.url }}")")"
+      echo "::set-output name=path::${filepath}"
+      cd -
+    shell: bash
+    id: fetch
