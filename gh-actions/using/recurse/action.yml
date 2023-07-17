@@ -10,9 +10,10 @@ inputs:
 runs:
   using: composite
   steps:
-  # /tmp/actionfile.tmp/action.yml **must** be hardcoded
+  # .tmp.action/action.yml **must** be hardcoded
   - run: |
-      cat << EOF > /tmp/actionfile.tmp/action.yml
+      mkdir -p .tmp.action
+      cat << EOF > .tmp.action/action.yml
       runs:
         using: composite
         steps:
@@ -24,9 +25,9 @@ runs:
     shell: bash
     env:
       TMPFILE_PATH:
-  - name: Run (/tmp/actionfile.tmp)
-    uses: /tmp/actionfile.tmp
-  - name: Cleanup (/tmp/actionfile.tmp)
+  - name: Run (.tmp.action)
+    uses: ./.tmp.action
+  - name: Cleanup (.tmp.action)
     if: always()
     shell: bash
-    run: rm -rf /tmp/actionfile.tmp
+    run: rm -rf .tmp.action
