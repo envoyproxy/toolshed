@@ -10,8 +10,9 @@ inputs:
 runs:
   using: composite
   steps:
+  # /tmp/actionfile.tmp/action.yml **must** be hardcoded
   - run: |
-      cat << EOF > /tmp/actionfile.tmp
+      cat << EOF > /tmp/actionfile.tmp/action.yml
       runs:
         using: composite
         steps:
