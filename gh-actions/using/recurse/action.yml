@@ -23,8 +23,6 @@ runs:
           with: ${{ inputs.with || '{}' }}
       EOF
     shell: bash
-    env:
-      TMPFILE_PATH:
   - name: Run (.tmp.action)
     uses: ./.tmp.action
   - name: Cleanup (.tmp.action)
