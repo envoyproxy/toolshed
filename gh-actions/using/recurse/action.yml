@@ -1,0 +1,31 @@
+
+inputs:
+  uses:
+    type: string
+    required: true
+  with:
+    type: string
+    default:
+
+runs:
+  using: composite
+  steps:
+  - run: |
+      cat << EOF > /tmp/actionfile.tmp
+      runs:
+        using: composite
+        steps:
+        - name: Run (${{ inputs.uses }})
+          id: run
+          uses: ${{ inputs.uses }}
+          with: ${{ inputs.with || '{}' }}
+      EOF
+    shell: bash
+    env:
+      TMPFILE_PATH:
+  - name: Run (/tmp/actionfile.tmp)
+    uses:
+  - name: Cleanup (/tmp/actionfile.tmp)
+    if: always()
+    shell: bash
+    run: rm -rf /tmp/actionfile.tmp
