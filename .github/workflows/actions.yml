@@ -117,3 +117,20 @@ jobs:
     - run: cd gh-actions/retest && npm install
     # - run: cd gh-actions/retest && npm run lint
     - run: cd gh-actions/retest && npm test
+
+  yaml_tojson:
+    runs-on: ubuntu-22.04
+    needs: []
+    strategy:
+      matrix:
+        node-version:
+        - 16.x
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: cd gh-actions/yaml/tojson && npm install
+    - run: cd gh-actions/yaml/tojson && npm run lint
+    - run: cd gh-actions/yaml/tojson && npm test
