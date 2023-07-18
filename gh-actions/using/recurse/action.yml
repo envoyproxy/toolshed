@@ -11,6 +11,12 @@ runs:
   using: composite
   steps:
   # .tmp.action/action.yml **must** be hardcoded
+
+  - using: envoyproxy/toolshed/gh-actions/yaml/tojson@a442888705014ca8fc28cea452518df1dc0030dd
+    id: yaml
+    with:
+      yaml: ${{ inputs.with }}
+
   - run: |
       mkdir -p .tmp.action
       cat << EOF > .tmp.action/action.yml
@@ -20,7 +26,7 @@ runs:
         - name: Run (${{ inputs.uses }})
           id: run
           uses: ${{ inputs.uses }}
-          with: ${{ inputs.with || '{}' }}
+          with: ${{ steps.yaml.outputs.json || '{}' }}
       EOF
     shell: bash
   - name: Run (.tmp.action)
