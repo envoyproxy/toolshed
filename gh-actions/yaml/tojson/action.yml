@@ -1,0 +1,12 @@
+name: 'toJSON'
+description: 'Convert Yaml to JSON.'
+author: 'phlax'
+inputs:
+  yaml:
+    type: string
+    description: >
+      Yaml string to convert.
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'

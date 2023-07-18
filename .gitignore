@@ -14,7 +14,7 @@ env/
 build/
 develop-eggs/
 dist/
-!gh-actions/*/dist
+!gh-actions/**/dist
 downloads/
 eggs/
 .eggs/
