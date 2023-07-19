@@ -17,7 +17,7 @@ runs:
       cd "$tmpdir"
       curl -sLO "${{ inputs.url }}"
       filepath="$(realpath "$(basename "${{ inputs.url }}")")"
-      echo "::set-output name=path::${filepath}"
+      echo "path=${filepath}" >> $GITHUB_OUTPUT
       cd -
     shell: bash
     id: fetch
