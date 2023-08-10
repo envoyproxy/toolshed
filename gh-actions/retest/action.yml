@@ -1,6 +1,6 @@
 name: 'Retest'
 description: 'Re-run failed GitHub Workflow runs on PRs by commenting "/retest".'
-author: 'JP Simard'
+author: 'JP Simard/phlax'
 inputs:
   token:
     description: >
@@ -10,6 +10,15 @@ inputs:
       repository. Note that the token will be accessible to all repository
       collaborators.
     default: ${{ github.token }}
+  azp_org:
+    description: >
+      AZP org used for retest AZP pipelines
+    default:
+  azp_token:
+    description: >
+      AZP token used for retest AZP pipelines
+    default:
+
 runs:
   using: 'node16'
   main: 'dist/index.js'
