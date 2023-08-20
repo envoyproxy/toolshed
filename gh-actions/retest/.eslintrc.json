@@ -8,6 +8,18 @@
     "plugin:prettier/recommended"
   ],
   "rules": {
+    "@typescript-eslint/no-unused-vars": [
+      "off",
+      {
+          "argsIgnorePattern": "^_"
+      }
+    ],
+    "getter-return": [
+        "error",
+        {
+            "allowImplicit": true
+        }
+    ],
     "prettier/prettier": [
       "error",
       {
@@ -24,11 +36,12 @@
     "@typescript-eslint/camelcase": ["error", { "properties": "never" }]
   },
   "env": {
+    "es2020": true,
     "node": true,
     "jest": true
   },
   "parserOptions": {
-    "ecmaVersion": 2018,
+    "ecmaVersion": 2020,
     "sourceType": "module"
   }
 }
