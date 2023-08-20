@@ -1,13 +1,12 @@
 [GLOBAL]
 pythonpath = ["%(buildroot)s/pants-toolshed"]
-pants_version = "2.14.1"
+pants_version = "2.17.0rc3"
 backend_packages = [
     "pants.backend.python",
     "pants.backend.python.lint.docformatter",
     "pants.backend.python.lint.flake8",
-    "pants.backend.python.typecheck.mypy",
-    "toolshed_distribution",
-    "toolshed_readme"]
+    "pants.backend.python.typecheck.mypy"]
+# "toolshed_distribution"]
 #   "toolshed_readme.package"]
 pants_ignore = ["not"]
 build_file_prelude_globs = [
