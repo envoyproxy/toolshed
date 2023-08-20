@@ -106,7 +106,6 @@ class RetestCommand {
     }
     const retestables = await this.getRetestables(pr)
     if (Object.keys(retestables).length === 0) {
-      console.log(`Nothing to retest: ${this.name}`)
       return 0
     }
     await this.retestRuns(pr, retestables)
@@ -126,7 +125,11 @@ class RetestCommand {
   retestOctokit = async (check: Retest): Promise<void> => {
     const rerunURL = `POST ${check.url}/rerun-failed-jobs`
     const rerunResponse = await this.env.octokit.request(rerunURL)
-    console.log(`Retried: ${rerunResponse.status}`)
+    if ([200, 201].includes(rerunResponse.status)) {
+      console.log(`Retry success: (${check.name})`)
+    } else {
+      console.log(`Retry failed: (${check.name}) ... ${rerunResponse.status}`)
+    }
   }
 
   retestRuns = async (pr: PR, retestables: Array<Retest>): Promise<void> => {
@@ -319,7 +322,11 @@ class RetestCommands {
       comment_id: this.env.comment.id,
       content: reaction,
     })
-    console.log(`Reacted to comment: ${addReactionResponse.status}`)
+    if ([200, 201].includes(addReactionResponse.status)) {
+      console.log(`Reacted to comment ${reaction}`)
+    } else {
+      console.log(`Failed reacting to comment ${reaction}`)
+    }
   }
 
   retest = async (): Promise<void> => {
