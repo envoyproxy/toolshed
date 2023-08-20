@@ -115,8 +115,6 @@ class RetestCommand {
   retestExternal = async (check: Retest): Promise<any | void> => {
     let response: AxiosResponse
     if (check.method == 'patch') {
-      console.log(`CONFIG: ${check.config}`)
-      console.log(`URL ${check.url}`)
       try {
         response = await axios.patch(check.url, {}, check.config)
         /* eslint-disable  prettier/prettier */
@@ -125,9 +123,9 @@ class RetestCommand {
           console.log('No response received')
           return
         }
-        console.log(error.response.data)
-        console.log(error.response.status)
-        console.log(error.response.headers)
+        console.error(`External API call failed: ${check.url}`)
+        console.error(error.response.status)
+        console.error(error.response.data)
         return
       }
     } else {
