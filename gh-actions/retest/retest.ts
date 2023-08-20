@@ -284,7 +284,6 @@ class RetestCommands {
     } else {
       console.log('No creds for AZP')
     }
-    console.log(`RETURNING ENV ${pr} ...`)
     return {
       token,
       octokit,
