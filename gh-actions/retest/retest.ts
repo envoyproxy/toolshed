@@ -115,7 +115,21 @@ class RetestCommand {
   retestExternal = async (check: Retest): Promise<any | void> => {
     let response: AxiosResponse
     if (check.method == 'patch') {
-      response = await axios.patch(check.url, {}, check.config)
+      console.log(`CONFIG: ${check.config}`)
+      console.log(`URL ${check.url}`)
+      try {
+        response = await axios.patch(check.url, {}, check.config)
+        /* eslint-disable  prettier/prettier */
+      } catch (error: any) {
+        if (!axios.isAxiosError(error) || !error.response) {
+          console.log('No response received')
+          return
+        }
+        console.log(error.response.data)
+        console.log(error.response.status)
+        console.log(error.response.headers)
+        return
+      }
     } else {
       return
     }
@@ -238,14 +252,14 @@ class AZPRetestCommand extends RetestCommand {
       const name = `[${subcheck}](${link})`
       const config = {
         headers: {
-          Authorization: `Basic ${this.env.azpToken}`,
+          authorization: `basic ${this.env.azpToken}`,
           'content-type': 'application/json;odata=verbose',
         },
       }
       for (const check of subchecks) {
         if (check.conclusion && check.conclusion !== 'success') {
           const [_, buildId, project] = checkId.split('|')
-          const url = `https://dev.azure.com/${this.env.azpOrg}/${project}/_apis/build/builds/${buildId}?retry=true&api-version=5.1`
+          const url = `https://dev.azure.com/${this.env.azpOrg}/${project}/_apis/build/builds/${buildId}?retry=true&api-version=6.0`
           retestables.push({
             url,
             name,
