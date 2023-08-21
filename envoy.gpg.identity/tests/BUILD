@@ -1,2 +1,2 @@
 
-pytooling_tests("envoy.gpg.identity")
+toolshed_tests("envoy.gpg.identity")

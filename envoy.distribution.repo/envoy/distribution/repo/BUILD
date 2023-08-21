@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "envoy.distribution.repo",
     dependencies=[
         "//deps:reqs#abstracts",

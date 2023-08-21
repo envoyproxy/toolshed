@@ -1,5 +1,5 @@
 
-pytooling_tests(
+toolshed_tests(
     "envoy.docs.sphinx_runner",
     dependencies=[
         "//deps:reqs#aio.run.runner",

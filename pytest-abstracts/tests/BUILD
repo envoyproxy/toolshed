@@ -1,5 +1,5 @@
 
-pytooling_tests(
+toolshed_tests(
     "pytest-abstracts",
     dependencies=[
         "//deps:reqs#abstracts",

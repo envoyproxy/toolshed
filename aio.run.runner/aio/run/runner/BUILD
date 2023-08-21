@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "aio.run.runner",
     dependencies=[
         "//deps:reqs#abstracts",

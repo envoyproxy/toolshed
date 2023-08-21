@@ -7,7 +7,7 @@ def _dep_on_myself(namespace: str) -> list:
         f"{namespace}/{namespace.replace('.', '/').replace('-', '_')}"]
 
 
-def pytooling_library(
+def toolshed_library(
         namespace: str,
         dependencies=None,  # Optional[List]
         **kwargs) -> None:
@@ -23,7 +23,7 @@ def pytooling_library(
         **kwargs)
 
 
-def pytooling_package(
+def toolshed_package(
         namespace: str,
         dependencies=None,  # Optional[List] = None,
         library_kwargs=None,  # Optional[Dict] = None,
@@ -40,7 +40,7 @@ def pytooling_package(
         skip_mypy=True,
         dependencies=dependencies,
         **library_kwargs or {})
-    pytooling_distribution(
+    toolshed_distribution(
         name="package",
         dependencies=dependencies,
         provides=setup_py(
@@ -57,7 +57,7 @@ def pytooling_package(
         text=["//tools/readme:summarize"])
 
 
-def pytooling_tests(
+def toolshed_tests(
         namespace: str,
         dependencies=None,  # Optional[List] = None,
         **kwargs) -> None:

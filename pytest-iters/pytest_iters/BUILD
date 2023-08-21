@@ -1,2 +1,2 @@
 
-pytooling_library("pytest-iters")
+toolshed_library("pytest-iters")

@@ -1,2 +1,2 @@
 
-pytooling_package("envoy.gpg.sign")
+toolshed_package("envoy.gpg.sign")

@@ -1,2 +1,2 @@
 
-pytooling_tests("abstracts")
+toolshed_tests("abstracts")

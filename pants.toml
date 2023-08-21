@@ -1,17 +1,17 @@
 [GLOBAL]
-pythonpath = ["%(buildroot)s/pants-pytooling"]
+pythonpath = ["%(buildroot)s/pants-toolshed"]
 pants_version = "2.14.1"
 backend_packages = [
     "pants.backend.python",
     "pants.backend.python.lint.docformatter",
     "pants.backend.python.lint.flake8",
     "pants.backend.python.typecheck.mypy",
-    "pytooling_distribution",
-    "pytooling_readme"]
-#   "pytooling_readme.package"]
+    "toolshed_distribution",
+    "toolshed_readme"]
+#   "toolshed_readme.package"]
 pants_ignore = ["not"]
 build_file_prelude_globs = [
-  "pants-pytooling/macros.py",
+  "pants-toolshed/macros.py",
 ]
 plugins = ["jinja2"]
 
@@ -41,7 +41,7 @@ enabled = false
 
 [source]
 marker_filenames = ["setup.cfg"]
-root_patterns = ["pants-pytooling"]
+root_patterns = ["pants-toolshed"]
 
 [flake8]
 version = "flake8>=6"

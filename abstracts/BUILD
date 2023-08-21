@@ -1,2 +1,2 @@
 
-pytooling_package("abstracts")
+toolshed_package("abstracts")

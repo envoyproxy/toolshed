@@ -1,2 +1,2 @@
 
-pytooling_library("pytest-patches")
+toolshed_library("pytest-patches")

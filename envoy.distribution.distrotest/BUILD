@@ -1,2 +1,2 @@
 
-pytooling_package("envoy.distribution.distrotest")
+toolshed_package("envoy.distribution.distrotest")

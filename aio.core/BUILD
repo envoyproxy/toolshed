@@ -1,2 +1,2 @@
 
-pytooling_package("aio.core")
+toolshed_package("aio.core")

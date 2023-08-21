@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "aio.api.nist",
     dependencies=[
         "//deps:reqs#abstracts",

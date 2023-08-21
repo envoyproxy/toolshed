@@ -1,2 +1,2 @@
 
-pytooling_package("dependatool")
+toolshed_package("dependatool")

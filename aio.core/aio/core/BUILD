@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "aio.core",
     dependencies=[
         "//deps:reqs#abstracts",

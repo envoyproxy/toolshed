@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "envoy.docs.sphinx_runner",
     dependencies=[
         "//deps:reqs#aio.run.runner",
