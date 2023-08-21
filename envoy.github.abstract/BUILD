@@ -1,2 +1,2 @@
 
-pytooling_package("envoy.github.abstract")
+toolshed_package("envoy.github.abstract")

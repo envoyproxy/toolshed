@@ -1,5 +1,5 @@
 
-pytooling_tests(
+toolshed_tests(
     "envoy.base.utils",
     dependencies=[
         ":data",

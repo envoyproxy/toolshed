@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "envoy.gpg.sign",
     dependencies=[
         "//deps:reqs#aio.run.runner",

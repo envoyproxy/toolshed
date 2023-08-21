@@ -1,5 +1,5 @@
 
-pytooling_tests(
+toolshed_tests(
     "envoy.github.release",
     dependencies=[
         "//deps:reqs#aio.core",

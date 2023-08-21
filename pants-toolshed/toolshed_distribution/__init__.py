@@ -1,4 +1,4 @@
-"""pytooling_distribution plugin."""
+"""toolshed_distribution plugin."""
 
 from pants.backend.python.goals.setup_py import SetupKwargsRequest
 from pants.backend.python.target_types import PythonDistribution
@@ -15,5 +15,5 @@ class PytoolingSetupKwargsRequest(SetupKwargsRequest):
 class PytoolingDistribution(Target):
     """Pytooling distribution."""
     help = "Pytooling distribution"
-    alias = "pytooling_distribution"
+    alias = "toolshed_distribution"
     core_fields = PythonDistribution.core_fields

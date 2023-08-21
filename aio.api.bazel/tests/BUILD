@@ -1,5 +1,5 @@
 
-pytooling_tests(
+toolshed_tests(
     "aio.api.bazel",
     dependencies=[
         "//deps:reqs#abstracts",

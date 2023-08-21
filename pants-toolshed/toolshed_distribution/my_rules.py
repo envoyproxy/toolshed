@@ -70,7 +70,7 @@ class PytoolingSetupKwargsResponse:
 
 
 @rule
-async def pytooling_setup_kwargs(
+async def toolshed_setup_kwargs(
         request: PytoolingSetupKwargsRequest) -> SetupKwargs:
     return PytoolingSetupKwargsResponse(request).kwargs
 

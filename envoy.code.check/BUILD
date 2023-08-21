@@ -1,2 +1,2 @@
 
-pytooling_package("envoy.code.check")
+toolshed_package("envoy.code.check")

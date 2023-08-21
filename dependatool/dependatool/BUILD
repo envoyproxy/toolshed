@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "dependatool",
     dependencies=[
         "//deps:reqs#abstracts",

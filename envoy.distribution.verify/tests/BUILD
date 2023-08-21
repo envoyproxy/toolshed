@@ -1,5 +1,5 @@
 
-pytooling_tests(
+toolshed_tests(
     "envoy.distribution.verify",
     dependencies=[
         "//deps:reqs#aio.run.checker",

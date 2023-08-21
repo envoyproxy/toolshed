@@ -1,2 +1,2 @@
 
-pytooling_package("aio.api.bazel")
+toolshed_package("aio.api.bazel")

@@ -1,2 +1,2 @@
 
-pytooling_package("envoy.dependency.check")
+toolshed_package("envoy.dependency.check")

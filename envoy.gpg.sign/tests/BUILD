@@ -1,5 +1,5 @@
 
-pytooling_tests(
+toolshed_tests(
     "envoy.gpg.sign",
     dependencies=[
         "//deps:reqs#aio.run.runner",

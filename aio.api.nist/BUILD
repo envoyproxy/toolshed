@@ -1,2 +1,2 @@
 
-pytooling_package("aio.api.nist")
+toolshed_package("aio.api.nist")

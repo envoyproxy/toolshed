@@ -1,2 +1,2 @@
 
-pytooling_package("envoy.distribution.verify")
+toolshed_package("envoy.distribution.verify")

@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "envoy.dependency.check",
     dependencies=[
         "//deps:reqs#abstracts",

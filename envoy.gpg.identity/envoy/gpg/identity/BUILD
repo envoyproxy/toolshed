@@ -1,5 +1,5 @@
 
-pytooling_library(
+toolshed_library(
     "envoy.gpg.identity",
     dependencies=[
         "//deps:reqs#aio.core",

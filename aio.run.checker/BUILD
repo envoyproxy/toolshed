@@ -1,2 +1,2 @@
 
-pytooling_package("aio.run.checker")
+toolshed_package("aio.run.checker")

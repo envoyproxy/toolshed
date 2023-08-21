@@ -1,2 +1,2 @@
 
-pytooling_tests("dependatool")
+toolshed_tests("dependatool")

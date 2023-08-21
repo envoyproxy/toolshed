@@ -1,2 +1,2 @@
 
-pytooling_package("aio.api.github")
+toolshed_package("aio.api.github")
