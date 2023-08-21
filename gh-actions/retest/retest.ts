@@ -343,8 +343,15 @@ class RetestCommands {
 
   retest = async (): Promise<void> => {
     let retested = 0
+    let isRetest = false
     for (const retester of this.retesters) {
+      if (retester.isRetest) {
+        isRetest = true
+      }
       retested += await retester.retest()
+    }
+    if (!isRetest) {
+      return
     }
     if (retested === 0) {
       await this.addReaction('confused')
