@@ -28,18 +28,18 @@ runs:
   - run: |
       docker run \
           -d \
-          -p ${{ parameters.port }}:5000 \
+          -p ${{ inputs.port }}:5000 \
           --restart always \
-          --name ${{ parameters.name }} \
-          ${{ parameters.windows != true && parameters.image || parameters.windows_image }}
+          --name ${{ inputs.name }} \
+          ${{ inputs.windows != true && inputs.image || inputs.windows_image }}
     shell: bash
   - run: |
-      if [[ -z "${{ parameters.as }}" ]]; then
-          IMAGE_NAME="$(echo "${{ parameters.load }}" | cut -d/ -f2-)"
+      if [[ -z "${{ inputs.as }}" ]]; then
+          IMAGE_NAME="$(echo "${{ inputs.load }}" | cut -d/ -f2-)"
       else
-          IMAGE_NAME="${{ parameters.as }}"
+          IMAGE_NAME="${{ inputs.as }}"
       fi
-      docker tag "${{ parameters.load }}" "localhost:${{ parameters.port }}/${IMAGE_NAME}"
-      docker push "localhost:${{ parameters.port }}/${IMAGE_NAME}"
+      docker tag "${{ inputs.load }}" "localhost:${{ inputs.port }}/${IMAGE_NAME}"
+      docker push "localhost:${{ inputs.port }}/${IMAGE_NAME}"
     shell: bash
-    if: ${{ parameters.load != '' }}
+    if: ${{ inputs.load != '' }}
