@@ -1,0 +1,45 @@
+
+inputs:
+  image:
+    type: string
+    default: registry:2
+  windows_image:
+    type: string
+    default: stefanscherer/registry-windows:2.6.2
+  name:
+    type: string
+    default: registry
+  port:
+    type: number
+    default: 5000
+  windows:
+    type: boolean
+    default: false
+  load:
+    type: string
+    default:
+  as:
+    type: string
+    default:
+
+runs:
+  using: "composite"
+  steps:
+  - run: |
+      docker run \
+          -d \
+          -p ${{ parameters.port }}:5000 \
+          --restart always \
+          --name ${{ parameters.name }} \
+          ${{ parameters.windows != true && parameters.image || parameters.windows_image }}
+    shell: bash
+  - run: |
+      if [[ -z "${{ parameters.as }}" ]]; then
+          IMAGE_NAME="$(echo "${{ parameters.load }}" | cut -d/ -f2-)"
+      else
+          IMAGE_NAME="${{ parameters.as }}"
+      fi
+      docker tag "${{ parameters.load }}" "localhost:${{ parameters.port }}/${IMAGE_NAME}"
+      docker push "localhost:${{ parameters.port }}/${IMAGE_NAME}"
+    shell: bash
+    if: ${{ parameters.load != '' }}
