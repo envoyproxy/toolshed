@@ -3,18 +3,12 @@ inputs:
   image:
     type: string
     default: registry:2
-  windows_image:
-    type: string
-    default: stefanscherer/registry-windows:2.6.2
   name:
     type: string
     default: registry
   port:
     type: number
     default: 5000
-  windows:
-    type: boolean
-    default: false
   load:
     type: string
     default:
@@ -31,7 +25,7 @@ runs:
           -p ${{ inputs.port }}:5000 \
           --restart always \
           --name ${{ inputs.name }} \
-          ${{ inputs.windows != true && inputs.image || inputs.windows_image }}
+          ${{ inputs.image }}
     shell: bash
   - run: |
       if [[ -z "${{ inputs.as }}" ]]; then
