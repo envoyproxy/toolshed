@@ -15,6 +15,9 @@ inputs:
   as:
     type: string
     default:
+  wait_for_container:
+    type: number
+    default: 5
 
 runs:
   using: "composite"
@@ -26,6 +29,9 @@ runs:
           --restart always \
           --name ${{ inputs.name }} \
           ${{ inputs.image }}
+      if [[ "${{ inputs.wait_for_container }}" ]]; then
+          sleep "${{ inputs.wait_for_container }}"
+      fi
     shell: bash
   - run: |
       if [[ -z "${{ inputs.as }}" ]]; then
