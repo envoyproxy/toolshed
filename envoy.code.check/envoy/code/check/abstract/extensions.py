@@ -29,6 +29,9 @@ METADATA_ONLY_EXTENSIONS = (
 CONTRIB_METADATA_PATH = "contrib/extensions_metadata.yaml"
 EXTENSIONS_SCHEMA = "tools/extensions/extensions_schema.yaml"
 
+# TODO(phlax): remove this workaround if/when per-category status is added
+UPSTREAM_EXTENSION_CATEGORY = "http.upstream"
+
 
 @abstracts.implementer(interface.IExtensionsCheck)
 class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
@@ -188,7 +191,8 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
                 await asyncio.gather(
                     self._check_metadata_categories(extension),
                     self._check_metadata_security_posture(extension),
-                    self._check_metadata_status(extension))))
+                    self._check_metadata_status(extension),
+                    self._check_metadata_status_upstream(extension))))
 
     async def _check_metadata_categories(
             self, extension: str) -> Tuple[str, ...]:
@@ -224,6 +228,23 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         status = (await self.metadata)[extension]["status"]
         if status not in self.extension_status_values:
             return (f"Unknown status for {extension}: {status}", )
+        return ()
+
+    async def _check_metadata_status_upstream(
+            self, extension: str) -> Tuple[str, ...]:
+        metadata = (await self.metadata)[extension]
+        status = metadata.get("status_upstream")
+        categories = metadata.get("categories", ())
+        if status and (UPSTREAM_EXTENSION_CATEGORY not in categories):
+            return (
+                f"Do not set ({extension}) `status_upstream` for extensions "
+                f"that are not part of `{UPSTREAM_EXTENSION_CATEGORY}`", )
+        if not status and UPSTREAM_EXTENSION_CATEGORY in categories:
+            return (
+                f"You must set ({extension}) `status_upstream` for extensions "
+                f"that are part of `{UPSTREAM_EXTENSION_CATEGORY}`", )
+        if status and status not in self.extension_status_values:
+            return (f"Unknown `status_upstream` for {extension}: {status}", )
         return ()
 
     def _from_json(
