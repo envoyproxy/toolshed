@@ -533,23 +533,27 @@ async def test_extensions_check_metadata(iters, patches):
         "AExtensionsCheck._check_metadata_categories",
         "AExtensionsCheck._check_metadata_security_posture",
         "AExtensionsCheck._check_metadata_status",
+        "AExtensionsCheck._check_metadata_status_upstream",
         prefix="envoy.code.check.abstract.extensions")
     cats = iters(cb=lambda i: f"CAT{i}")
     sec = iters(tuple, cb=lambda i: f"SEC{i}")
     status = (f"STATUS{i}" for i in range(0, 5))
+    status_upstream = (f"STATUS_UPSTREAM{i}" for i in range(0, 5))
     extension = MagicMock()
 
-    with patched as (m_cats, m_sec, m_status):
+    with patched as (m_cats, m_sec, m_status, m_status_upstream):
         m_cats.return_value = cats
         m_sec.return_value = sec
         m_status.return_value = status
+        m_status_upstream.return_value = status_upstream
         assert (
             await checker.check_metadata(extension)
             == (*cats,
                 *sec,
-                *(f"STATUS{i}" for i in range(0, 5))))
+                *(f"STATUS{i}" for i in range(0, 5)),
+                *(f"STATUS_UPSTREAM{i}" for i in range(0, 5))))
 
-    for source in m_cats, m_sec, m_status:
+    for source in m_cats, m_sec, m_status, m_status_upstream:
         assert (
             getattr(source, "call_args")
             == [(extension, ), {}])
@@ -683,6 +687,60 @@ async def test_extensions__check_metadata_status(patches, status):
         list(meta.return_value.__getitem__
                  .return_value.__getitem__.call_args)
         == [('status',), {}])
+
+
+@pytest.mark.parametrize("status", [None, "A", "Z"])
+@pytest.mark.parametrize("should_exist", [True, False])
+async def test_extensions__check_metadata_status_upstream(
+        patches, status, should_exist):
+    checker = check.AExtensionsCheck(
+        "DIRECTORY", extensions_build_config="BUILD")
+    patched = patches(
+        ("AExtensionsCheck.extension_status_values",
+         dict(new_callable=PropertyMock)),
+        ("AExtensionsCheck.metadata",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.extensions")
+    status_values = ["A", "B", "C"]
+    categories = MagicMock()
+    categories.__contains__.return_value = should_exist
+    upstream_status_category = "http.upstream"
+
+    def metadata_get(k, default=None):
+        if k == "status_upstream":
+            return status
+        return categories
+
+    with patched as (m_status, m_meta):
+        meta = AsyncMock()
+        m_meta.side_effect = meta
+        m_status.return_value = status_values
+        (meta.return_value.__getitem__
+             .return_value.get.side_effect) = metadata_get
+        if status and not should_exist:
+            expected = (
+                "Do not set (EXTENSION) `status_upstream` for extensions "
+                f"that are not part of `{upstream_status_category}`", )
+        elif not status and should_exist:
+            expected = (
+                "You must set (EXTENSION) `status_upstream` for extensions "
+                f"that are part of `{upstream_status_category}`", )
+        elif status and status not in status_values:
+            expected = (f'Unknown `status_upstream` for EXTENSION: {status}', )
+        else:
+            expected = ()
+        assert (
+            await checker._check_metadata_status_upstream("EXTENSION")
+            == expected)
+
+    assert (
+        list(meta.return_value.__getitem__.call_args)
+        == [('EXTENSION',), {}])
+    assert (
+        list(meta.return_value.__getitem__
+                 .return_value.get.call_args_list)
+        == [[('status_upstream',), {}],
+            [('categories', ()), {}]])
 
 
 @pytest.mark.parametrize(
