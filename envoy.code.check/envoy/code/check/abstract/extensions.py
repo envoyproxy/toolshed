@@ -30,7 +30,7 @@ CONTRIB_METADATA_PATH = "contrib/extensions_metadata.yaml"
 EXTENSIONS_SCHEMA = "tools/extensions/extensions_schema.yaml"
 
 # TODO(phlax): remove this workaround if/when per-category status is added
-UPSTREAM_EXTENSION_CATEGORY = "http.upstream"
+UPSTREAM_EXTENSION_CATEGORY = "envoy.filters.http.upstream"
 
 
 @abstracts.implementer(interface.IExtensionsCheck)
