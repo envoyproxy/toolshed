@@ -704,7 +704,7 @@ async def test_extensions__check_metadata_status_upstream(
     status_values = ["A", "B", "C"]
     categories = MagicMock()
     categories.__contains__.return_value = should_exist
-    upstream_status_category = "http.upstream"
+    upstream_status_category = "envoy.filters.http.upstream"
 
     def metadata_get(k, default=None):
         if k == "status_upstream":
