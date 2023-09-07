@@ -19,12 +19,12 @@ class BaseExtensionMetadataDict(TypedDict):
     categories: List[str]
     security_posture: str
     status: str
-    status_upstream: str
 
 
 class ExtensionMetadataDict(BaseExtensionMetadataDict, total=False):
     undocumented: bool
     type_urls: List[str]
+    status_upstream: str
 
 
 ExtensionsMetadataDict = Dict[str, ExtensionMetadataDict]
