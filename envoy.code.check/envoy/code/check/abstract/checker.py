@@ -58,6 +58,7 @@ class ACodeChecker(
         "changelog",
         "extensions_fuzzed",
         "extensions_metadata",
+        "extensions_owners",
         "extensions_registered",
         "glint",
         "gofmt",
@@ -135,6 +136,8 @@ class ACodeChecker(
         """Extensions checker."""
         return self.extensions_class(
             self.directory,
+            owners=self.args.owners,
+            codeowners=self.args.codeowners,
             extensions_build_config=self.args.extensions_build_config,
             extensions_fuzzed_count=self.args.extensions_fuzzed_count,
             **self.check_kwargs)
@@ -260,6 +263,8 @@ class ACodeChecker(
         parser.add_argument("-x", "--excluding", action="append")
         parser.add_argument("-b", "--binary", action="append")
         parser.add_argument("-s", "--since")
+        parser.add_argument("--codeowners")
+        parser.add_argument("--owners")
         parser.add_argument("--extensions_build_config")
         parser.add_argument("--extensions_fuzzed_count")
 
@@ -293,6 +298,15 @@ class ACodeChecker(
                 self.error("extensions_metadata", errors)
             else:
                 self.succeed("extensions_metadata", [f"{extension}"])
+
+    async def check_extensions_owners(self) -> None:
+        """Check for glint issues."""
+        checks = await self.extensions.owners_errors
+        for extension, errors in sorted(checks.items()):
+            if errors:
+                self.error("extensions_owners", errors)
+            else:
+                self.succeed("extensions_owners", [f"{extension}"])
 
     async def check_extensions_registered(self) -> None:
         """Check for glint issues."""
@@ -361,6 +375,11 @@ class ACodeChecker(
         metadata = await self.extensions.metadata
         self.extensions.extensions_schema
         self.log.debug(f"Preloaded extensions ({len(metadata)})")
+
+    @checker.preload(when=["extensions_owners"])
+    async def preload_extensions_owners(self) -> None:
+        await self.extensions.owners_errors
+        self.log.debug("Preloaded extensions owners")
 
     @checker.preload(
         when=["python_flake8"],

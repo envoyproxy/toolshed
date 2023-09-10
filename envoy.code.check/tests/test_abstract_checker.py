@@ -139,6 +139,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         checker.checks
         == ("changelog",
             "extensions_fuzzed", "extensions_metadata",
+            "extensions_owners",
             "extensions_registered",
             "glint", "gofmt", "python_yapf", "python_flake8",
             "runtime_guards", "shellcheck", "yamllint"))
@@ -196,6 +197,10 @@ def test_abstract_checker_extensions(iters, patches):
         m_args.return_value.extensions_build_config)
     kwargs["extensions_fuzzed_count"] = (
         m_args.return_value.extensions_fuzzed_count)
+    kwargs["owners"] = (
+        m_args.return_value.owners)
+    kwargs["codeowners"] = (
+        m_args.return_value.codeowners)
     assert (
         m_tool.return_value.call_args
         == [(m_dir.return_value,),
@@ -301,6 +306,29 @@ async def test_abstract_checker_preload_extensions(patches):
     assert (
         m_log.return_value.debug.call_args
         == [("Preloaded extensions (23)", ), {}])
+
+
+async def test_abstract_checker_preload_extensions_owners(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.extensions",
+         dict(new_callable=PropertyMock)),
+        ("ACodeChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+
+    with patched as (m_extensions, m_log):
+        owners = AsyncMock()
+        m_extensions.return_value.owners_errors = owners()
+        assert not await checker.preload_extensions_owners()
+
+    assert owners.called
+    assert (
+        check.ACodeChecker.preload_extensions_owners.when
+        == ("extensions_owners", ))
+    assert (
+        m_log.return_value.debug.call_args
+        == [("Preloaded extensions owners", ), {}])
 
 
 async def test_abstract_checker_preload_runtime_guards(patches):
@@ -750,6 +778,38 @@ async def test_abstract_checker_check_extensions_metadata(iters, patches):
     assert (
         m_succeed.call_args_list
         == [[("extensions_metadata", [k])]
+            for k in errors
+            if not (int(k[1:]) % 2)])
+
+
+async def test_abstract_checker_check_extensions_owners(iters, patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        ("ACodeChecker.extensions",
+         dict(new_callable=PropertyMock)),
+        "ACodeChecker.error",
+        "ACodeChecker.succeed",
+        prefix="envoy.code.check.abstract.checker")
+    errors = {}
+    for k in range(0, 10):
+        errors[f"K{k}"] = (
+            iters(cb=lambda i: f"E{k}.{i}", count=7)
+            if k % 2
+            else [])
+
+    with patched as (m_extensions, m_error, m_succeed):
+        m_extensions.return_value.owners_errors = AsyncMock(
+            return_value=errors)()
+        assert not await checker.check_extensions_owners()
+
+    assert (
+        m_error.call_args_list
+        == [[("extensions_owners", v)]
+            for k, v in errors.items()
+            if (int(k[1:]) % 2)])
+    assert (
+        m_succeed.call_args_list
+        == [[("extensions_owners", [k])]
             for k in errors
             if not (int(k[1:]) % 2)])
 

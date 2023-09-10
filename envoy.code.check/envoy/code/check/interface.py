@@ -82,6 +82,11 @@ class IExtensionsCheck(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
+    async def owners_errors(self) -> Dict[str, Tuple[str, ...]]:
+        raise NotImplementedError
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
     async def registration_errors(self) -> List[str]:
         raise NotImplementedError
 
