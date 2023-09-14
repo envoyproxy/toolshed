@@ -11,11 +11,11 @@ toolshed_library(
         "//deps:reqs#pygments",
         "//deps:reqs#sphinx",
         "//deps:reqs#sphinx-copybutton",
+        "//deps:reqs#sphinx-rtd-theme",
         "//deps:reqs#sphinxcontrib-jquery",
         "//deps:reqs#sphinxcontrib-httpdomain",
         "//deps:reqs#sphinxcontrib-serializinghtml",
         "//deps:reqs#sphinxext-rediraffe",
-        "./sphinx_rtd_theme",
         "./sphinx_tabs",
     ],
     sources=[

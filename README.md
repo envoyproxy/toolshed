@@ -302,6 +302,7 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 - [pygments](https://pypi.org/project/pygments) >=2.11.1
 - [pyyaml](https://pypi.org/project/pyyaml)
 - [sphinx-copybutton](https://pypi.org/project/sphinx-copybutton)
+- [sphinx-rtd-theme](https://pypi.org/project/sphinx-rtd-theme) >=2.0.0rc2
 - [sphinx](https://pypi.org/project/sphinx) >=6.2.0
 - [sphinxcontrib-httpdomain](https://pypi.org/project/sphinxcontrib-httpdomain)
 - [sphinxcontrib-jquery](https://pypi.org/project/sphinxcontrib-jquery) >=3.0.0
