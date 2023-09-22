@@ -5,7 +5,6 @@ import pathlib
 import platform
 import shutil
 import sys
-import tarfile
 import time
 from functools import cached_property
 from typing import Dict, List, Optional, TypedDict
@@ -328,8 +327,7 @@ class SphinxRunner(runner.Runner):
         if not utils.is_tarlike(self.output_path):
             shutil.copytree(self.html_dir, self.output_path)
             return
-        with tarfile.open(self.output_path, self.tarmode) as tar:
-            tar.add(self.html_dir, arcname=".")
+        utils.pack(self.html_dir, self.output_path)
 
     @runner.cleansup
     @runner.catches((SphinxBuildError, SphinxEnvError))

@@ -747,7 +747,6 @@ def test_sphinx_runner_check_env(
 def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
     runner = DummySphinxRunner()
     patched = patches(
-        "tarfile",
         "utils",
         "shutil",
         ("SphinxRunner.log", dict(new_callable=PropertyMock)),
@@ -756,7 +755,7 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
         ("SphinxRunner.tarmode", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_tar, m_utils, m_shutil, m_log, m_out, m_html, m_mode):
+    with patched as (m_utils, m_shutil, m_log, m_out, m_html, m_mode):
         m_utils.is_tarlike.return_value = tarlike
         m_out.return_value.exists.return_value = exists
         m_out.return_value.is_file.return_value = is_file
@@ -792,7 +791,7 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
         == [(m_out.return_value, ), {}])
 
     if not tarlike:
-        assert not m_tar.open.called
+        assert not m_utils.pack.called
         assert (
             m_shutil.copytree.call_args
             == [(m_html.return_value, m_out.return_value, ), {}])
@@ -800,11 +799,8 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
 
     assert not m_shutil.copytree.called
     assert (
-        m_tar.open.call_args
-        == [(m_out.return_value, m_mode.return_value), {}])
-    assert (
-        m_tar.open.return_value.__enter__.return_value.add.call_args
-        == [(m_html.return_value,), {'arcname': '.'}])
+        m_utils.pack.call_args
+        == [(m_html.return_value, m_out.return_value), {}])
 
 
 @pytest.mark.parametrize("check_fails", [True, False])
