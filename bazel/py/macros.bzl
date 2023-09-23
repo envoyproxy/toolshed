@@ -4,7 +4,7 @@ load("@pip3//:requirements.bzl", "requirement", base_entry_point = "entry_point"
 def entry_point(
         name,
         pkg,
-        entry_point_script = "@envoy-toolshed//py:entry_point.py",
+        entry_point_script = "@envoy_toolshed//py:entry_point.py",
         entry_point_alias = base_entry_point,
         script = None,
         data = None,

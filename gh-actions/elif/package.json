@@ -1,5 +1,5 @@
 {
-  "name": "@envoy-toolshed/elif",
+  "name": "@envoy_toolshed/elif",
   "version": "1.0.0",
   "description": "Conditionally select a value.",
   "repository": {
