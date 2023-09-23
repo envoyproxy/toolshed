@@ -9,7 +9,7 @@ backend_packages = [
     "toolshed_distribution",
     "toolshed_readme"]
 #   "toolshed_readme.package"]
-pants_ignore = ["not"]
+pants_ignore = ["not", "/bazel/"]
 build_file_prelude_globs = [
   "pants-toolshed/macros.py",
 ]
