@@ -62,8 +62,10 @@ update_sha () {
 }
 
 update_version () {
-    local match_ln search="$1" replace="$2"
+    local match_ln search replace
     match_ln="$1"
+    search="$2"
+    replace="$2"
     echo "Updating version: ${search} -> ${replace}"
     sed -i "${match_ln}s/${search}/${replace}/" "$VERSION_FILE"
 }
