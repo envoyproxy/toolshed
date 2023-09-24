@@ -1,4 +1,4 @@
-load("@python3//:defs.bzl", "interpreter")
+load("@python3_11//:defs.bzl", "interpreter")
 load("@rules_python//python:pip.bzl", "pip_parse")
 load("//:versions.bzl", "VERSIONS")
 
