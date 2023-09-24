@@ -82,7 +82,7 @@ update_dependency () {
         echo "Unable to find sha for ${DEP}/${VERSION}" >&2
         exit 1
     fi
-    update_version "${dep_ln}" "${EXISTING_VERSION}" "{VERSION}"
+    update_version "${dep_ln}" "${EXISTING_VERSION}" "${VERSION}"
     update_sha "${EXISTING_SHA}" "${sha}"
 }
 
