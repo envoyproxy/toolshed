@@ -1,3 +1,5 @@
+load("@aspect_bazel_lib//lib:jq.bzl", "jq")
+load("//:macros.bzl", "json_data")
 load("//:versions.bzl", "VERSIONS")
 
 json_data(
