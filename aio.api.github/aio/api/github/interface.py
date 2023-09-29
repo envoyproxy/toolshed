@@ -241,6 +241,11 @@ class IGithubRepo(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
+    async def releases(self, name: str) -> "IGithubIterator":
+        """Fetch releases for this repo."""
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
     async def tag(self, name: str) -> "IGithubTag":
         """Fetch a tag for this repo."""
         raise NotImplementedError
