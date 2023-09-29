@@ -37,7 +37,7 @@ pypi: https://pypi.org/project/aio.api.bazel
 
 #### [aio.api.github](aio.api.github)
 
-version: 0.2.5
+version: 0.2.6.dev0
 
 pypi: https://pypi.org/project/aio.api.github
 
@@ -137,14 +137,14 @@ pypi: https://pypi.org/project/dependatool
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.4.12.dev0
+version: 0.4.12
 
 pypi: https://pypi.org/project/envoy.base.utils
 
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.2.4
+- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.2.5
 - [aio.core](https://pypi.org/project/aio.core) >=0.9.1
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1

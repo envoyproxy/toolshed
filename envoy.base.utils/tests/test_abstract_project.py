@@ -293,31 +293,56 @@ async def test_abstract_project_json_data(patches, iters):
     patched = patches(
         "json",
         "tuple",
+        "AwaitableGenerator",
+        ("AProject.repo",
+         dict(new_callable=PropertyMock)),
         ("AProject.version",
          dict(new_callable=PropertyMock)),
         ("AProject.stable_versions",
          dict(new_callable=PropertyMock)),
         "AProject.version_string",
         prefix="envoy.base.utils.abstract.project.project")
-    tuples = iters(cb=lambda i: MagicMock())
+    stables = iters(cb=lambda i: MagicMock())
+    releases = iters(cb=lambda i: MagicMock())
 
-    with patched as (m_json, m_tuple, m_version, m_stables, m_vstring):
-        m_stables.return_value = tuples
+    with patched as patchy:
+        (m_json, m_tuple, m_await,
+         m_repo, m_version, m_stables, m_vstring) = patchy
+        m_stables.return_value = stables
+        m_await.side_effect = AsyncMock(return_value=releases)
         assert (
             await project.json_data
             == m_json.dumps.return_value)
-        tuplegen = m_tuple.call_args[0][0]
-        tuplelist = list(tuplegen)
+        stablegen = m_tuple.call_args_list[0][0][0]
+        stablelist = list(stablegen)
+        releasegen = m_tuple.call_args_list[1][0][0]
+        releaselist = list(releasegen)
 
     expected = dict(
         version=str(m_version.return_value),
         version_string=m_vstring.return_value,
-        stable_versions=m_tuple.return_value)
+        stable_versions=m_tuple.return_value,
+        releases=m_tuple.return_value)
     assert (
         m_json.dumps.call_args
         == [(expected, ), {}])
-    assert isinstance(tuplegen, types.GeneratorType)
-    assert tuplelist == [str(t) for t in tuples]
+    assert isinstance(stablegen, types.GeneratorType)
+    assert stablelist == [str(t) for t in stables]
+    assert isinstance(releasegen, types.GeneratorType)
+    assert releaselist == [
+        release.data.__getitem__.return_value
+        for release
+        in releases]
+    for release in releases:
+        assert (
+            release.data.__getitem__.call_args
+            == [("tag_name", ), {}])
+    assert (
+        m_await.call_args
+        == [(m_repo.return_value.releases.return_value, ), {}])
+    assert (
+        m_repo.return_value.releases.call_args
+        == [(), {}])
     assert not hasattr(
         project,
         abstract.AProject.json_data.cache_name)
