@@ -134,10 +134,15 @@ class SphinxRunner(runner.Runner):
             else semver.minor)
         return f"v{semver.major}.{minor}-latest"
 
-    @property
+    @cached_property
     def docs_tag(self) -> str:
         """Tag name - ie named version for this docs build"""
-        return self.args.docs_tag
+        if self.args.docs_tag:
+            return self.args.docs_tag
+        return (
+            ""
+            if self.version_number.endswith("-dev")
+            else f"v{self.version_number}")
 
     @cached_property
     def html_dir(self) -> pathlib.Path:
