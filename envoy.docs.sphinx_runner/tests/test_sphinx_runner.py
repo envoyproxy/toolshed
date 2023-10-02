@@ -223,16 +223,33 @@ def test_sphinx_runner_docker_image_tag_name(patches, is_dev, minor, micro):
     assert "docker_image_tag_name" not in runner.__dict__
 
 
-def test_sphinx_runner_docs_tag(patches):
+@pytest.mark.parametrize("docs_tag", [None, "", "SOME_DOCS_TAG"])
+@pytest.mark.parametrize("version_dev", [True, False])
+def test_sphinx_runner_docs_tag(patches, docs_tag, version_dev):
     runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.version_number", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_args, ):
-        assert runner.docs_tag == m_args.return_value.docs_tag
+    with patched as (m_args, m_version):
+        m_args.return_value.docs_tag = docs_tag
+        m_version.return_value.endswith.return_value = version_dev
+        assert (
+            runner.docs_tag
+            == (m_args.return_value.docs_tag
+                if docs_tag
+                else (""
+                      if version_dev
+                      else f"v{m_version.return_value}")))
 
-    assert "docs_tag" not in runner.__dict__
+    assert "docs_tag" in runner.__dict__
+    if docs_tag:
+        assert not m_version.called
+        return
+    assert (
+        m_version.return_value.endswith.call_args
+        == [("-dev", ), {}])
 
 
 def test_sphinx_runner_html_dir(patches):
