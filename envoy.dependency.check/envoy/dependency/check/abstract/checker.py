@@ -231,7 +231,7 @@ class ADependencyChecker(
             dep: "abstract.ADependency") -> None:
         """Check dates for dependency."""
         if not await dep.release.date:
-            self.error(
+            self.warn(
                 self.active_check,
                 [f"{dep.id} is a GitHub repository with no inferrable "
                  "release date"])
