@@ -657,6 +657,7 @@ async def test_checker_dep_date_check(patches, gh_date, mismatch):
          dict(new_callable=PropertyMock)),
         "ADependencyChecker.error",
         "ADependencyChecker.succeed",
+        "ADependencyChecker.warn",
         prefix="envoy.dependency.check.abstract.checker")
 
     class DummyDepRelease:
@@ -679,17 +680,18 @@ async def test_checker_dep_date_check(patches, gh_date, mismatch):
 
     dep = DummyDep()
 
-    with patched as (m_active, m_error, m_succeed):
+    with patched as (m_active, m_error, m_succeed, m_warn):
         assert not await checker.dep_date_check(dep)
 
     if not gh_date:
         assert (
-            m_error.call_args
+            m_warn.call_args
             == [(m_active.return_value,
                  ["DUMMY_DEP is a GitHub repository with no inferrable "
                   "release date"]),
                 {}])
         assert not m_succeed.called
+        assert not m_error.called
         return
     if mismatch:
         assert (
@@ -699,8 +701,10 @@ async def test_checker_dep_date_check(patches, gh_date, mismatch):
                   f"DUMMY_RELEASE_DATE != {gh_date}"]),
                 {}])
         assert not m_succeed.called
+        assert not m_warn.called
         return
     assert not m_error.called
+    assert not m_warn.called
     assert (
         m_succeed.call_args
         == [(m_active.return_value,
