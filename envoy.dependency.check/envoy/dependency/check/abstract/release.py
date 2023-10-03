@@ -67,9 +67,13 @@ class ADependencyGithubRelease(
             raise e
 
     @async_property(cache=True)
-    async def date(self) -> str:
+    async def date(self) -> Optional[str]:
         """UTC date of this release."""
-        return utils.dt_to_utc_isoformat(await self.timestamp)
+        # TODO(phlax): add tests for this and related fun
+        return (
+            utils.dt_to_utc_isoformat(timestamp)
+            if (timestamp := await self.timestamp)
+            else None)
 
     @property
     def github(self) -> _github.IGithubAPI:
@@ -130,7 +134,7 @@ class ADependencyGithubRelease(
         return not utils.is_sha(self.tag_name)
 
     @async_property(cache=True)
-    async def timestamp(self) -> datetime:
+    async def timestamp(self) -> Optional[datetime]:
         """Timestamp of this release."""
         return (
             await self.timestamp_tag
@@ -138,12 +142,15 @@ class ADependencyGithubRelease(
             else await self.timestamp_commit)
 
     @async_property(cache=True)
-    async def timestamp_commit(self) -> datetime:
+    async def timestamp_commit(self) -> Optional[datetime]:
         """Timestamp of the commit of this release."""
-        return (await self.commit).timestamp
+        return (
+            commit.timestamp
+            if (commit := await self.commit)
+            else None)
 
     @async_property(cache=True)
-    async def timestamp_tag(self) -> datetime:
+    async def timestamp_tag(self) -> Optional[datetime]:
         """Timestamp of this release, resolved from the release, tag, or
         commit, in that order."""
         if release := await self.release:

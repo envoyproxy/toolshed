@@ -186,7 +186,7 @@ pypi: https://pypi.org/project/envoy.code.check
 
 #### [envoy.dependency.check](envoy.dependency.check)
 
-version: 0.1.9.dev0
+version: 0.1.9
 
 pypi: https://pypi.org/project/envoy.dependency.check
 
@@ -287,7 +287,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.2.9
+version: 0.2.10.dev0
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
