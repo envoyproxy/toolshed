@@ -218,10 +218,11 @@ def test_util__extract(patches, tarballs, mappings, matching, iters):
     members = iters(cb=lambda x: MagicMock(return_value=x))
     tar.getmembers.return_value = members
     patched = patches(
+        "logger",
         "_should_extract",
         prefix="envoy.base.utils.tar")
 
-    with patched as (m_should, ):
+    with patched as (m_logger, m_should):
         m_should.side_effect = lambda x, y, z: x() % 2
         assert not utils.tar._extract(path, prefix, tar, matching, mappings)
 
@@ -236,6 +237,7 @@ def test_util__extract(patches, tarballs, mappings, matching, iters):
         assert not tar.extract.called
         assert not m_should.called
         assert len(path.joinpath.call_args_list) == 1
+        assert not m_logger.debug.called
         return
     assert not tar.extractall.called
     assert (
@@ -248,8 +250,9 @@ def test_util__extract(patches, tarballs, mappings, matching, iters):
              dict(path=path.joinpath.return_value)]
             for member in members if member() % 2])
     assert (
-        path.joinpath.call_args_list
-        == [[(prefix, ), {}]
+        m_logger.debug.call_args_list
+        == [[(f"Extracting: {member.name} "
+              f"-> {path.joinpath.return_value}", ), {}]
             for member in members if member() % 2])
 
 

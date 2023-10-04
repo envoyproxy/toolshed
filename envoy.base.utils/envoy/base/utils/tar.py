@@ -10,6 +10,7 @@
 
 import contextlib
 import io
+import logging
 import pathlib
 import shutil
 import tarfile
@@ -19,6 +20,8 @@ from typing import (
 
 import zstandard
 
+
+logger = logging.getLogger(__name__)
 
 # See here for a list of known tar file extensions:
 #   https://en.wikipedia.org/wiki/Tar_(computing)#Suffixes_for_compressed_files
@@ -111,13 +114,17 @@ def _extract(
         return
     for member in tar.getmembers():
         if _should_extract(member, matching, mappings):
+            member_path = path.joinpath(prefix)
+            logger.debug(
+                f"Extracting: {member.name} -> {member_path}")
             tar.extract(
                 member,
-                path=path.joinpath(prefix))
+                path=member_path)
 
 
 def _mv_paths(path: pathlib.Path, mappings: Optional[dict[str, str]]) -> None:
     for src, dest in (mappings or {}).items():
+        logger.debug(f"Moving: {src} -> {dest}")
         src_path = path.joinpath(src)
         dest_path = path.joinpath(dest)
         dest_path.parent.mkdir(exist_ok=True, parents=True)
