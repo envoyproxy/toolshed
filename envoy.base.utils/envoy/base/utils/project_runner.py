@@ -5,6 +5,8 @@ import pathlib
 from functools import cached_property
 from typing import Optional
 
+from packaging import version as _version
+
 import aiohttp
 from frozendict import frozendict
 
@@ -15,7 +17,12 @@ from envoy.base import utils
 from envoy.base.utils import exceptions, interface, typing
 
 
-ENV_GITHUB_TOKEN = 'GITHUB_TOKEN'
+ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
+# TODO: move these to config
+ENVOY_DOCKER_IMAGE = (
+    "https://hub.docker.com/r/envoyproxy/envoy/tags?page=1&name=")
+ENVOY_DOCS = "https://www.envoyproxy.io/docs/envoy"
+ENVOY_REPO = "https://github.com/envoyproxy/envoy"
 NOTIFY_MSGS: frozendict = frozendict(
     release=(
         "Release created ({change[release][version]}): "
@@ -25,7 +32,20 @@ NOTIFY_MSGS: frozendict = frozendict(
     publish="Repo published{change[publish][dry_run]}: {change[publish][url]}",
     trigger="Workflow ({change[trigger][workflow]}) triggered")
 COMMIT_MSGS: frozendict = frozendict(
-    release="repo: Release `{change[release][version]}`",
+    release="""
+repo: Release {version_string}
+
+{change[release][message]}
+*Docker images*:
+    {envoy_docker_image}{version_string}
+*Docs*:
+    {envoy_docs}/{version_string}/
+*Release notes*:
+    {envoy_docs}/{version_string}/version_history/{minor_version}/{version_string}
+*Full changelog*:
+    {envoy_repo}/compare/{previous_release_version}...{version_string}
+
+""",
     dev="repo: Dev `{change[dev][version]}`",
     sync="repo: Sync")
 
@@ -81,6 +101,13 @@ class ProjectRunner(BaseProjectRunner):
     def patch(self) -> bool:
         return self.args.patch
 
+    @property
+    def release_message(self) -> str:
+        return (
+            pathlib.Path(message_path).read_text()
+            if (message_path := self.args.release_message_path)
+            else "")
+
     def add_arguments(self, parser) -> None:
         super().add_arguments(parser)
         parser.add_argument(
@@ -95,6 +122,7 @@ class ProjectRunner(BaseProjectRunner):
         parser.add_argument("--patch", action="store_true")
         parser.add_argument("--repo", default="")
         parser.add_argument("--dry-run", action="store_true")
+        parser.add_argument("--release-message-path", default="")
         parser.add_argument("--publish-assets", default="")
         parser.add_argument("--publish-commitish", default="")
         parser.add_argument("--publish-dev", action="store_true")
@@ -127,7 +155,8 @@ class ProjectRunner(BaseProjectRunner):
         if self.command == "dev":
             change["dev"] = await self.run_dev()
         if self.command == "release":
-            change["release"] = await self.run_release()
+            change["release"] = await self.run_release(
+                release_message=self.release_message)
         if not self.nosync and self.command in ["dev", "release", "sync"]:
             change["sync"] = await self.run_sync()
         if self.command == "trigger":
@@ -135,7 +164,16 @@ class ProjectRunner(BaseProjectRunner):
         return change
 
     def msg_for_commit(self, change: typing.ProjectChangeDict) -> str:
-        return COMMIT_MSGS[self.command].format(change=change)
+        release_version = _version.Version(change["release"]["version"])
+        return COMMIT_MSGS[self.command].format(
+            change=change,
+            version_string=f"v{release_version}",
+            minor_version=f"v{utils.minor_version_for(release_version)}",
+            previous_release_version=(
+                f"v{self._previous_version(release_version)}"),
+            envoy_docker_image=ENVOY_DOCKER_IMAGE,
+            envoy_docs=ENVOY_DOCS,
+            envoy_repo=ENVOY_REPO)
 
     def notify_complete(self, change: typing.ProjectChangeDict) -> None:
         self.log.notice(NOTIFY_MSGS[self.command].format(change=change))
@@ -186,10 +224,16 @@ class ProjectRunner(BaseProjectRunner):
             raise exceptions.PublishError("Unknown publishing error")
         return utils.typed(typing.ProjectPublishResultDict, change)
 
-    async def run_release(self) -> typing.ProjectReleaseResultDict:
+    async def run_release(
+            self,
+            release_message: str = "") -> typing.ProjectReleaseResultDict:
         change = await self.project.release()
         self.log.success(f"[version] {change['version']}")
         self.log.success(f"[changelog] current: {change['date']}")
+        change["message"] = (
+            f"{release_message.strip()}\n"
+            if release_message
+            else "")
         return change
 
     async def run_sync(self) -> typing.ProjectSyncResultDict:
@@ -235,6 +279,14 @@ class ProjectRunner(BaseProjectRunner):
                 self.log.warning(
                     "[inventory] newer version available "
                     f"({version}), but no inventory found")
+
+    def _previous_version(
+            self,
+            version: _version.Version) -> _version.Version:
+        return _version.Version(
+            f"{version.major}."
+            f"{version.minor - (1 if version.micro == 0 else 0)}."
+            f"{version.micro - (1 if version.micro != 0 else 0)}")
 
 
 class ProjectDataRunner(BaseProjectRunner):
