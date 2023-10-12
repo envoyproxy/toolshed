@@ -241,6 +241,8 @@ def test_projectrunner_add_arguments(patches):
              {'default': ''}],
             [('--publish-commitish',),
              {'default': ''}],
+            [('--publish-commit-message',),
+             {'action': 'store_true'}],
             [('--publish-dev',),
              {'action': 'store_true'}],
             [('--publish-latest',),
@@ -330,6 +332,8 @@ async def test_projectrunner_handle_action(patches, action, nosync):
                      assets=m_args.return_value.publish_assets,
                      commitish=m_args.return_value.publish_commitish,
                      dev=m_args.return_value.publish_dev,
+                     publish_commit_message=(
+                         m_args.return_value.publish_commit_message),
                      latest=m_args.return_value.publish_latest)])
         assert result == dict(publish=m_publish.return_value)
         assert not m_sync.called

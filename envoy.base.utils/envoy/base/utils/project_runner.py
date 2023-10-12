@@ -125,6 +125,7 @@ class ProjectRunner(BaseProjectRunner):
         parser.add_argument("--release-message-path", default="")
         parser.add_argument("--publish-assets", default="")
         parser.add_argument("--publish-commitish", default="")
+        parser.add_argument("--publish-commit-message", action="store_true")
         parser.add_argument("--publish-dev", action="store_true")
         parser.add_argument("--publish-latest", action="store_true")
         parser.add_argument("--publish-generate-notes", action="store_true")
@@ -150,6 +151,7 @@ class ProjectRunner(BaseProjectRunner):
                     dry_run=self.args.dry_run,
                     assets=self.args.publish_assets,
                     commitish=self.args.publish_commitish,
+                    publish_commit_message=self.args.publish_commit_message,
                     dev=self.args.publish_dev,
                     latest=self.args.publish_latest))
         if self.command == "dev":

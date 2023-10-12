@@ -90,6 +90,7 @@ class ProjectSyncResultDict(TypedDict):
 
 
 class ProjectPublishResultDict(TypedDict):
+    body: str
     commitish: str
     date: str
     tag_name: str
