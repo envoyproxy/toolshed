@@ -235,6 +235,8 @@ def test_projectrunner_add_arguments(patches):
              {'default': ''}],
             [('--dry-run',),
              {'action': 'store_true'}],
+            [('--release-message-path',),
+             {'default': ''}],
             [('--publish-assets',),
              {'default': ''}],
             [('--publish-commitish',),
@@ -303,6 +305,8 @@ async def test_projectrunner_handle_action(patches, action, nosync):
          dict(new_callable=PropertyMock)),
         ("ProjectRunner.nosync",
          dict(new_callable=PropertyMock)),
+        ("ProjectRunner.release_message",
+         dict(new_callable=PropertyMock)),
         "ProjectRunner.run_dev",
         "ProjectRunner.run_publish",
         "ProjectRunner.run_release",
@@ -311,7 +315,7 @@ async def test_projectrunner_handle_action(patches, action, nosync):
         prefix="envoy.base.utils.project_runner")
 
     with patched as patchy:
-        (m_args, m_command, m_nosync,
+        (m_args, m_command, m_nosync, m_msg,
          m_dev, m_publish, m_release, m_sync,
          m_trigger) = patchy
         m_command.return_value = action
@@ -339,7 +343,7 @@ async def test_projectrunner_handle_action(patches, action, nosync):
     if action == "release":
         assert (
             m_release.call_args
-            == [(), {}])
+            == [(), dict(release_message=m_msg.return_value)])
         assert result["release"] == m_release.return_value
         assert "dev" not in result
     if action == "trigger":
@@ -360,13 +364,16 @@ async def test_projectrunner_handle_action(patches, action, nosync):
 def test_projectrunner_msg_for_commit(patches):
     runner = utils.ProjectRunner()
     patched = patches(
+        "_version",
         "COMMIT_MSGS",
+        "utils",
+        "ProjectRunner._previous_version",
         ("ProjectRunner.command",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.project_runner")
     change = MagicMock()
 
-    with patched as (m_msgs, m_command):
+    with patched as (m_version, m_msgs, m_utils, m_previous, m_command):
         assert (
             runner.msg_for_commit(change)
             == m_msgs.__getitem__.return_value.format.return_value)
@@ -376,7 +383,27 @@ def test_projectrunner_msg_for_commit(patches):
         == [(m_command.return_value, ), {}])
     assert (
         m_msgs.__getitem__.return_value.format.call_args
-        == [(), dict(change=change)])
+        == [(),
+            dict(change=change,
+                 version_string=f"v{m_version.Version.return_value}",
+                 minor_version=f"v{m_utils.minor_version_for.return_value}",
+                 previous_release_version=f"v{m_previous.return_value}",
+                 envoy_docker_image=utils.project_runner.ENVOY_DOCKER_IMAGE,
+                 envoy_docs=utils.project_runner.ENVOY_DOCS,
+                 envoy_repo=utils.project_runner.ENVOY_REPO)])
+
+    assert (
+        m_utils.minor_version_for.call_args
+        == [(m_version.Version.return_value, ), {}])
+    assert (
+        m_version.Version.call_args
+        == [(change.__getitem__.return_value.__getitem__.return_value, ), {}])
+    assert (
+        change.__getitem__.call_args
+        == [("release", ), {}])
+    assert (
+        change.__getitem__.return_value.__getitem__.call_args
+        == [("version", ), {}])
 
 
 def test_projectrunner_notify_complete(patches):
@@ -562,8 +589,15 @@ async def test_projectrunner_run_dev(patches):
             [("old_version", ), {}]])
 
 
-async def test_projectrunner_run_release(patches):
+@pytest.mark.parametrize("release_message", [None, "", "MESSAGE"])
+async def test_projectrunner_run_release(patches, release_message):
     runner = utils.ProjectRunner()
+    message_mock = MagicMock()
+    message_mock.__bool__.return_value = bool(release_message)
+    kwargs = (
+        dict(release_message=message_mock)
+        if release_message is not None
+        else {})
     patched = patches(
         ("ProjectRunner.log",
          dict(new_callable=PropertyMock)),
@@ -575,7 +609,7 @@ async def test_projectrunner_run_release(patches):
         release = AsyncMock()
         m_project.return_value.release = release
         assert (
-            await runner.run_release()
+            await runner.run_release(**kwargs)
             == release.return_value)
 
     assert (
@@ -592,6 +626,18 @@ async def test_projectrunner_run_release(patches):
         release.return_value.__getitem__.call_args_list
         == [[("version", ), {}],
             [("date", ), {}]])
+    assert (
+        release.return_value.__setitem__.call_args
+        == [("message",
+             f"{message_mock.strip.return_value}\n"
+             if release_message
+             else "", ),
+            {}])
+    assert (
+        message_mock.strip.call_args
+        == ([(), {}]
+            if release_message
+            else None))
 
 
 async def test_projectrunner_run_sync(patches):
@@ -763,6 +809,31 @@ def test_projectrunner__log_inventory(iters, patches, change):
             for v, sync
             in changes.items()
             if sync])
+
+
+@pytest.mark.parametrize("micro", range(0, 5))
+def test_projectrunner__previous_version(patches, micro):
+    runner = utils.ProjectRunner()
+    patched = patches(
+        "_version",
+        prefix="envoy.base.utils.project_runner")
+    version = MagicMock()
+    version.micro = micro
+
+    with patched as (m_version, ):
+        assert (
+            runner._previous_version(version)
+            == m_version.Version.return_value)
+    expected_micro = (
+        micro - (1 if micro != 0 else 0))
+    assert (
+        m_version.Version.call_args
+        == [(f"{version.major}."
+             f"{version.minor.__sub__.return_value}."
+             f"{expected_micro}", ), {}])
+    assert (
+        version.minor.__sub__.call_args
+        == [(1 if micro == 0 else 0, ), {}])
 
 
 def test_projectdatarunner_constructor(iters, patches):
