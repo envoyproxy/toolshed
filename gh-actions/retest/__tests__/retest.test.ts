@@ -2,7 +2,7 @@ import * as github from '@actions/github'
 import * as core from '@actions/core'
 import {WebhookPayload} from '@actions/github/lib/interfaces'
 import nock from 'nock'
-import run from '../retest'
+import run from '../main'
 
 beforeEach(() => {
   jest.resetModules()
