@@ -771,8 +771,11 @@ def test_abstract_project_is_current(patches, self_version, other_version):
 @pytest.mark.parametrize("assets", [None, "", "ASSETS"])
 @pytest.mark.parametrize("dev", [None, True, False])
 @pytest.mark.parametrize("latest", [None, "", "LATEST"])
+@pytest.mark.parametrize("publish_commit", [None, True, False])
+@pytest.mark.parametrize("commitish", [None, "", "COMMITISH"])
 async def test_abstract_project_publish(
-        patches, iters, dry_run, is_dev, is_main, assets, dev, latest):
+        patches, iters, dry_run, is_dev, is_main,
+        assets, dev, latest, publish_commit, commitish):
     project = DummyProject()
     patched = patches(
         "dict",
@@ -797,6 +800,10 @@ async def test_abstract_project_publish(
         kwargs["dev"] = dev
     if latest is not None:
         kwargs["latest"] = latest
+    if publish_commit is not None:
+        kwargs["publish_commit_message"] = publish_commit
+    if commitish is not None:
+        kwargs["commitish"] = commitish
     pushed_assets = iters()
 
     async def pushed(*args, **kwargs):
@@ -805,6 +812,8 @@ async def test_abstract_project_publish(
     release = MagicMock()
     release.assets.push.side_effect = pushed
     create_release = AsyncMock(return_value=release)
+    commit = MagicMock()
+    get_commit = AsyncMock(return_value=commit)
     results = []
 
     with patched as patchy:
@@ -813,10 +822,14 @@ async def test_abstract_project_publish(
         m_dev.return_value = is_dev
         m_main.return_value = is_main
         m_repo.return_value.create_release = create_release
+        m_repo.return_value.commit = get_commit
         branch = (
-            m_main_branch.return_value
-            if is_main
-            else f"release/v{m_minor.return_value}")
+            commitish
+            if commitish
+            else (
+                m_main_branch.return_value
+                if is_main
+                else f"release/v{m_minor.return_value}"))
         if not dev and is_dev and not dry_run:
             with pytest.raises(_github.exceptions.TagError) as e:
                 async for result in project.publish(**kwargs):
@@ -827,18 +840,63 @@ async def test_abstract_project_publish(
 
     if not dev and is_dev and not dry_run:
         assert not create_release.called
+        assert not get_commit.called
+        assert not commit.data.__getitem__.called
         assert not m_main.called
         assert (
             e.value.args[0]
             == f"Cannot tag a dev version: {m_version.return_value}")
         return
+    if not publish_commit:
+        assert not get_commit.called
+        assert not commit.data.__getitem__.called
+    else:
+        assert (
+            get_commit.call_args
+            == [(commitish, ), {}])
+        assert (
+            commit.data.__getitem__.call_args
+            == [(0, ), {}])
+        assert (
+            (commit.data.__getitem__.return_value
+                   .__getitem__.call_args)
+            == [("commit", ), {}])
+        assert (
+            (commit.data.__getitem__.return_value
+                   .__getitem__.return_value
+                   .__getitem__.call_args)
+            == [("message", ), {}])
+    assert (
+        release.published_at.isoformat.call_args
+        == [(), {}])
+
+    commit_message = (
+        commit.data.__getitem__.return_value
+              .__getitem__.return_value
+              .__getitem__.return_value)
     expected = dict(
         latest=(latest or (is_main and not is_dev)),
-        dry_run=dry_run)
+        dry_run=dry_run,
+        body=(
+            commit_message
+            if publish_commit
+            else None))
     assert (
         create_release.call_args
         == [(branch, f"v{m_version.return_value}"), expected])
     assert results[0] == m_dict.return_value
+    assert (
+        m_dict.call_args
+        == [(),
+            dict(commitish=release.target_commitish,
+                 body=(
+                     commit_message
+                     if publish_commit
+                     else ""),
+                 date=release.published_at.isoformat.return_value,
+                 tag_name=release.tag_name,
+                 url=release.html_url,
+                 dry_run=" (dry run)" if dry_run else "")])
     if not assets:
         assert not m_utils.untar.called
         assert not release.assets.push.called

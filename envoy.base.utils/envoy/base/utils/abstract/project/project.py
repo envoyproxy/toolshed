@@ -246,6 +246,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             dry_run: bool = False,
             assets: Optional[pathlib.Path] = None,
             commitish: Optional[str] = None,
+            publish_commit_message: Optional[bool] = None,
             dev: Optional[bool] = None,
             latest: Optional[bool] = None) -> AsyncIterator[
                 typing.ProjectPublishResultDict
@@ -253,6 +254,10 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         if not dev and self.is_dev and not dry_run:
             raise _github.exceptions.TagError(
                 f"Cannot tag a dev version: {self.version}")
+        commit_message: Optional[str] = None
+        if publish_commit_message:
+            commit = await self.repo.commit(commitish)
+            commit_message = commit.data[0]["commit"]["message"]
         commitish = (
             commitish
             if commitish
@@ -264,9 +269,11 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             commitish,
             f"v{self.version}",
             latest=latest,
+            body=commit_message,
             dry_run=dry_run)
         yield dict(
             commitish=release.target_commitish,
+            body=commit_message or "",
             date=release.published_at.isoformat(),
             tag_name=release.tag_name,
             url=release.html_url,
