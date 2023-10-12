@@ -29,7 +29,10 @@ NOTIFY_MSGS: frozendict = frozendict(
         "{change[release][date]}"),
     dev="Repo set to dev ({change[dev][version]})",
     sync="Repo synced",
-    publish="Repo published{change[publish][dry_run]}: {change[publish][url]}",
+    publish="""
+Repo published{change[publish][dry_run]}: {change[publish][url]}\n
+{change[publish][body]}
+""",
     trigger="Workflow ({change[trigger][workflow]}) triggered")
 COMMIT_MSGS: frozendict = frozendict(
     release="""
@@ -178,7 +181,9 @@ class ProjectRunner(BaseProjectRunner):
             envoy_repo=ENVOY_REPO)
 
     def notify_complete(self, change: typing.ProjectChangeDict) -> None:
-        self.log.notice(NOTIFY_MSGS[self.command].format(change=change))
+        self.log.notice(
+            NOTIFY_MSGS[self.command].format(
+                change=change).lstrip())
 
     @runner.cleansup
     @runner.catches(

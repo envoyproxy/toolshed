@@ -426,7 +426,9 @@ def test_projectrunner_notify_complete(patches):
 
     assert (
         m_log.return_value.notice.call_args
-        == [(m_msgs.__getitem__.return_value.format.return_value, ),
+        == [(m_msgs.__getitem__.return_value
+                   .format.return_value
+                   .lstrip.return_value, ),
             {}])
     assert (
         m_msgs.__getitem__.call_args
@@ -434,6 +436,9 @@ def test_projectrunner_notify_complete(patches):
     assert (
         m_msgs.__getitem__.return_value.format.call_args
         == [(), dict(change=change)])
+    assert (
+        m_msgs.__getitem__.return_value.format.return_value.lstrip.call_args
+        == [(), {}])
 
 
 @pytest.mark.parametrize("nochange", [True, False])
