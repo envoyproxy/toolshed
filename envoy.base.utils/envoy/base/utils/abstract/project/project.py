@@ -257,7 +257,10 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         commit_message: Optional[str] = None
         if publish_commit_message:
             commit = await self.repo.commit(commitish)
-            commit_message = commit.data[0]["commit"]["message"]
+            commit_message = (
+                commit.data[0]
+                if not commitish
+                else commit.data)["commit"]["message"]
         commitish = (
             commitish
             if commitish
