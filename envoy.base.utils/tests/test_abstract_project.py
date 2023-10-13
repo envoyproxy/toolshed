@@ -847,33 +847,34 @@ async def test_abstract_project_publish(
             e.value.args[0]
             == f"Cannot tag a dev version: {m_version.return_value}")
         return
+    commit_data = commit.data
     if not publish_commit:
         assert not get_commit.called
-        assert not commit.data.__getitem__.called
+        assert not commit_data.__getitem__.called
     else:
         assert (
             get_commit.call_args
             == [(commitish, ), {}])
+        if not commitish:
+            assert (
+                commit.data.__getitem__.call_args
+                == [(0, ), {}])
+            commit_data = commit.data.__getitem__.return_value
         assert (
-            commit.data.__getitem__.call_args
-            == [(0, ), {}])
-        assert (
-            (commit.data.__getitem__.return_value
-                   .__getitem__.call_args)
+            commit_data.__getitem__.call_args
             == [("commit", ), {}])
         assert (
-            (commit.data.__getitem__.return_value
-                   .__getitem__.return_value
-                   .__getitem__.call_args)
+            (commit_data.__getitem__.return_value
+                        .__getitem__.call_args)
             == [("message", ), {}])
     assert (
         release.published_at.isoformat.call_args
         == [(), {}])
 
     commit_message = (
-        commit.data.__getitem__.return_value
-              .__getitem__.return_value
-              .__getitem__.return_value)
+        commit_data
+        .__getitem__.return_value
+        .__getitem__.return_value)
     expected = dict(
         latest=(latest or (is_main and not is_dev)),
         dry_run=dry_run,
