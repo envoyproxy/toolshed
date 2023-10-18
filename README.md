@@ -137,7 +137,7 @@ pypi: https://pypi.org/project/dependatool
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.4.16
+version: 0.4.17
 
 pypi: https://pypi.org/project/envoy.base.utils
 
