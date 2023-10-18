@@ -49,7 +49,7 @@ repo: Release {version_string}
     {envoy_repo}/compare/{previous_release_version}...{version_string}
 
 """,
-    dev="repo: Dev v{change[dev][version].split('-')[0]}",
+    dev="repo: Dev v{version_string}",
     sync="repo: Sync")
 
 
@@ -174,6 +174,7 @@ class ProjectRunner(BaseProjectRunner):
             envoy_docker_image=ENVOY_DOCKER_IMAGE,
             envoy_docs=ENVOY_DOCS,
             envoy_repo=ENVOY_REPO)
+        # TODO(phlax): improve tests here
         if change.get("release", {}).get("version"):
             release_version = _version.Version(change["release"]["version"])
             minor_version = utils.minor_version_for(release_version)
@@ -182,6 +183,10 @@ class ProjectRunner(BaseProjectRunner):
                 dict(version_string=f"v{release_version}",
                      minor_version=f"v{minor_version}",
                      previous_release_version=(f"v{previous_version}")))
+        if change.get("dev", {}).get("version"):
+            release_version = _version.Version(change["dev"]["version"])
+            kwargs.update(
+                dict(version_string=f"v{release_version}"))
         return COMMIT_MSGS[self.command].format(**kwargs)
 
     def notify_complete(self, change: typing.ProjectChangeDict) -> None:
