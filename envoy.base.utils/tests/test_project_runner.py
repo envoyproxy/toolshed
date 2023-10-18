@@ -385,11 +385,13 @@ def test_projectrunner_msg_for_commit(patches):
     assert (
         m_msgs.__getitem__.call_args
         == [(m_command.return_value, ), {}])
+    # this is not entirely correct, parametrize this test
+    version_string = m_version.Version.return_value.base_version
     assert (
         m_msgs.__getitem__.return_value.format.call_args
         == [(),
             dict(change=change,
-                 version_string=f"v{m_version.Version.return_value}",
+                 version_string=f"v{version_string}",
                  minor_version=f"v{m_utils.minor_version_for.return_value}",
                  previous_release_version=f"v{m_previous.return_value}",
                  envoy_docker_image=utils.project_runner.ENVOY_DOCKER_IMAGE,
