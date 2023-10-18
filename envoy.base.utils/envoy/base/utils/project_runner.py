@@ -49,7 +49,7 @@ repo: Release {version_string}
     {envoy_repo}/compare/{previous_release_version}...{version_string}
 
 """,
-    dev="repo: Dev v{version_string}",
+    dev="repo: Dev {version_string}",
     sync="repo: Sync")
 
 
@@ -186,7 +186,7 @@ class ProjectRunner(BaseProjectRunner):
         if change.get("dev", {}).get("version"):
             release_version = _version.Version(change["dev"]["version"])
             kwargs.update(
-                dict(version_string=f"v{release_version}"))
+                dict(version_string=f"v{release_version.base_version}"))
         return COMMIT_MSGS[self.command].format(**kwargs)
 
     def notify_complete(self, change: typing.ProjectChangeDict) -> None:
