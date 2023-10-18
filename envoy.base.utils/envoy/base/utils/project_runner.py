@@ -49,7 +49,7 @@ repo: Release {version_string}
     {envoy_repo}/compare/{previous_release_version}...{version_string}
 
 """,
-    dev="repo: Dev `{change[dev][version]}`",
+    dev="repo: Dev v{change[dev][version]}",
     sync="repo: Sync")
 
 
