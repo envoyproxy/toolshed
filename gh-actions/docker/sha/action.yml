@@ -11,7 +11,7 @@ runs:
   using: composite
   steps:
   - run: |
-      sha="$(docker buildx imagetools inspect ${{ github.inputs.image }} \
+      sha="$(docker buildx imagetools inspect ${{ inputs.image }} \
         | grep -E "^Digest:" \
         | cut -d: -f3)"
       echo "sha=${sha}" >> "$GITHUB_OUTPUT"
