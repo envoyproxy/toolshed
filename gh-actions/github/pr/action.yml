@@ -1,0 +1,56 @@
+
+inputs:
+  base:
+    type: string
+    required: true
+  body:
+    type: string
+    required: true
+  branch:
+    type: string
+    required: true
+  committer-name:
+    type: string
+    required: true
+  committer-email:
+    type: string
+    required: true
+  title:
+    type: string
+    required: true
+  GITHUB_TOKEN:
+    type: string
+    required: true
+
+  committer-message:
+    type: string
+  working-directory:
+    type: string
+    default: .
+
+runs:
+  using: composite
+  steps:
+  - run: |
+      git config --global user.name "$COMMITTER_NAME"
+      git config --global user.email "$COMMITTER_EMAIL"
+      git checkout -b "$BRANCH_NAME"
+      git commit . -m "$COMMIT_MESSAGE"
+      git push --no-verify --set-upstream origin "$BRANCH_NAME"
+      gh pr create \
+          -B "$BASE_BRANCH" \
+          -H "$BRANCH_NAME" \
+          --title "$PR_TITLE" \
+          --body "$PR_BODY"
+    env:
+      COMMITTER_NAME: ${{ inputs.committer-name }}
+      COMMITTER_EMAIL: ${{ inputs.committer-email }}
+      GH_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+      PR_TITLE: ${{ inputs.title }}
+      PR_BODY: ${{ inputs.body }}
+      COMMIT_MESSAGE: ${{ inputs.commit-message || inputs.title }}
+      BRANCH_NAME: ${{ inputs.branch }}
+      BASE_BRANCH: ${{ inputs.base }}
+    name: Create a PR
+    working-directory: ${{ inputs.working-directory }}
+    shell: bash
