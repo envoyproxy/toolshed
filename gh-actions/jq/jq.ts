@@ -9,6 +9,7 @@ const run = async (): Promise<void> => {
     if (!input || input === '') return
 
     const options = core.getInput('options')
+    const envVar = core.getInput('env_var')
 
     const filter = core.getInput('filter')
     if (!filter || filter === '') return
@@ -17,20 +18,22 @@ const run = async (): Promise<void> => {
     core.info(`options: ${options}`)
     core.info(`filter: ${filter}`)
 
-    const args: string[] = []
-    args.push(options)
-    args.push(`${filter}`)
-
-    console.log(`jq ${args.join(' ')}`)
-    console.log(`> '${input}'`)
-    const proc = spawn('jq', args)
-    proc.process.stdin.setEncoding('utf-8')
-    proc.process.stdin.write(`${input}`)
-    proc.process.stdin.end()
+    // preferably use spawn/stdin
+    const shellCommand = `echo '${input}' | jq ${options} '${filter}'`
+    console.log(`Running shell command: ${shellCommand}`)
+    const proc = spawn('sh', ['-c', shellCommand])
     const response = await proc
     const stdout = response.stdout
     core.setOutput('value', stdout)
+    if (envVar) {
+      process.env[envVar] = stdout
+      core.exportVariable(envVar, stdout)
+    }
   } catch (error) {
+    const e = error as Record<'stderr', string>
+    if (e.stderr) {
+      console.error(`jq stderr: ${e.stderr}`)
+    }
     if (error instanceof Error) {
       console.error(error.message)
     }
