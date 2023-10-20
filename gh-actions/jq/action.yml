@@ -14,6 +14,10 @@ inputs:
     description: >
       Jq filter expression.
     default: "."
+  env_var:
+    description: >
+      Env var to save output to
+    default: ""
 runs:
   using: 'node16'
   main: 'dist/index.js'
