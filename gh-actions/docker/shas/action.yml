@@ -1,0 +1,40 @@
+inputs:
+  images:
+    type: string
+    required: true
+  env_prefix:
+    type: string
+    default: OUTPUT
+outputs:
+  shas:
+    value: ${{ steps.images.outputs.shas }}
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/yaml/tojson@actions-v0.0.23
+    id: yaml
+    with:
+      yaml: ${{ inputs.images }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.0.23
+    id: json_actions
+    with:
+      input: ${{ steps.yaml.outputs.json }}
+      filter: |
+        {runs: {using: "composite", steps: [to_entries[] | {
+          uses: "envoyproxy/toolshed/gh-actions/docker/sha@actions-v0.0.23",
+          id: .key,
+          with: {
+            image: .value,
+            env_var: "${{ inputs.env_prefix }}_\(.key)",
+        }}]}}
+  - run: |
+      mkdir -p .tmp.action
+      echo '${{ steps.json_actions.outputs.value }}' > .tmp.action/action.yml
+    shell: bash
+  - name: Run (.tmp.action)
+    uses: ./.tmp.action
+  - name: Cleanup (.tmp.action)
+    if: always()
+    shell: bash
+    run: rm -rf .tmp.action
