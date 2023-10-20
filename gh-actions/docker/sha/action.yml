@@ -4,7 +4,8 @@ inputs:
     type: string
     required: true
 outputs:
-  sha: ${{ steps.image.outputs.sha }}
+  sha:
+    value: ${{ steps.image.outputs.sha }}
 
 runs:
   using: composite
