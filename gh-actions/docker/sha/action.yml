@@ -1,0 +1,18 @@
+
+inputs:
+  image:
+    type: string
+    required: true
+outputs:
+  sha: ${{ steps.image.outputs.sha }}
+
+runs:
+  using: composite
+  steps:
+  - run: |
+      sha="$(docker buildx imagetools inspect ${{ github.inputs.image }} \
+        | grep -E "^Digest:" \
+        | cut -d: -f3)"
+      echo "sha=${sha}" >> "$GITHUB_OUTPUT"
+    id: image
+    shell: bash
