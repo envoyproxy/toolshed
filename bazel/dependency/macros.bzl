@@ -5,6 +5,7 @@ def updater(
         version_file,
         jq_toolchain = "@jq_toolchains//:resolved_toolchain",
         update_script = "@envoy_toolshed//dependency:bazel-update.sh",
+        post_script = None,
         data = None,
         deps = None,
         dep_search = None,
@@ -20,6 +21,7 @@ def updater(
         **kwargs,
 ):
     toolchains = [jq_toolchain] + (toolchains or [])
+    deps = deps or []
     data = (data or []) + [
         jq_toolchain,
         update_script,
@@ -55,13 +57,17 @@ def updater(
     if version_selector:
         env["VERSION_SELECTOR"] = version_selector
 
+    if post_script:
+        data += [post_script]
+        env["VERSION_UPDATE_POST_SCRIPT"] = "$(location %s)" % post_script
+
     native.sh_binary(
         name = name,
         srcs = [update_script],
         data = data,
         env = env,
         args = args,
-        deps = deps or [],
+        deps = deps,
         toolchains = toolchains,
         **kwargs,
     )
