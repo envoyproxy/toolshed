@@ -2,28 +2,47 @@
 
 set -o pipefail
 
-JQ="$1"
-UPDATE_TOOL="$2"
-VERSION_FILE="$3"
-DEP_DATA="$4"
-DEP="$5"
-VERSION="$6"
+VERSION_FILE="$1"
+DEP_DATA="$2"
+DEP="$3"
+VERSION="$4"
 
-if [[ -z "$DEP" || -z "$VERSION" ]]; then
-    echo "You need to supply dependency and sha to update"
+JQ="${JQ_BIN:-jq}"
+if [[ -z "$JQ" || ! -x "$JQ" ]]; then
+    echo "jq binary not found: ${JQ}" >&2
     exit 1
+fi
+if [[ -z "$DEP" || -z "$VERSION" ]]; then
+    echo "You need to supply dependency and sha to update" >&2
+    exit 1
+fi
+if [[ -n "$VERSION_PATH_REPLACE" ]]; then
+    IFS=':' read -ra path_replace <<< "$VERSION_PATH_REPLACE"
+    VERSION_FILE="${VERSION_FILE/${path_replace[0]}/${path_replace[1]}/}"
 fi
 
 pushd "${BUILD_WORKSPACE_DIRECTORY}" &> /dev/null
 VERSION_FILE="$(realpath "${VERSION_FILE}")"
 popd &> /dev/null
-EXISTING_VERSION="$("${JQ}" -r ".${DEP}.version" "${DEP_DATA}")"
-EXISTING_SHA="$("${JQ}" -r ".${DEP}.sha256" "${DEP_DATA}")"
-REPO="$(${JQ} -r ".${DEP}.repo" "${DEP_DATA}")"
-URL="$(${JQ} -r ".${DEP}.url" "${DEP_DATA}")"
-DEP_SEARCH="\"${DEP}\": {"
-VERSION_SEARCH="\"version\": \"${EXISTING_VERSION}\","
-SHA_SEARCH="\"sha256\": \"${EXISTING_SHA}\","
+REPO_SELECTOR="${REPO_SELECTOR:-".__DEP__.repo"}"
+REPO_SELECTOR="${REPO_SELECTOR/__DEP__/${DEP}}"
+REPO="$("${JQ}" -r "${REPO_SELECTOR}" "${DEP_DATA}")"
+SHA_SELECTOR="${SHA_SELECTOR:-".__DEP__.sha256"}"
+SHA_SELECTOR="${SHA_SELECTOR/__DEP__/${DEP}}"
+EXISTING_SHA="$("${JQ}" -r "${SHA_SELECTOR}" "${DEP_DATA}")"
+VERSION_SELECTOR="${VERSION_SELECTOR:-".__DEP__.version"}"
+VERSION_SELECTOR="${VERSION_SELECTOR/__DEP__/${DEP}}"
+EXISTING_VERSION="$("${JQ}" -r "${VERSION_SELECTOR}" "${DEP_DATA}")"
+URL_SELECTOR="${URL_SELECTOR:-".__DEP__.urls[0]"}"
+URL_SELECTOR="${URL_SELECTOR/__DEP__/${DEP}}"
+URL="$(${JQ} -r "${URL_SELECTOR}" "${DEP_DATA}")"
+DEP_SEARCH="${DEP_SEARCH:-"\"__DEP__\": {"}"
+DEP_SEARCH="${DEP_SEARCH/__DEP__/${DEP}}"
+VERSION_SEARCH="${VERSION_SEARCH:-"\"version\": \"__EXISTING_VERSION__\","}"
+VERSION_SEARCH="${VERSION_SEARCH/__EXISTING_VERSION__/$EXISTING_VERSION}"
+SHA_SEARCH="${SHA_SEARCH:-"\"sha256\": \"__EXISTING_SHA__\","}"
+SHA_SEARCH="${SHA_SEARCH/__EXISTING_SHA__/$EXISTING_SHA}"
+
 
 get_sha () {
     local url sha repo version url
@@ -32,11 +51,12 @@ get_sha () {
     version="$3"
     url="${url//\{repo\}/${repo}}"
     url="${url//\{version\}/${version}}"
+    url="${url//${EXISTING_VERSION}/${version}}"
     sha="$(curl -sfL "${url}" | sha256sum | cut -d' ' -f1)" || {
         echo "Failed to fetch asset (${url})" >&2
         exit 1
     }
-    printf "$sha"
+    printf '%s' "$sha"
 }
 
 find_version_line () {
@@ -54,7 +74,7 @@ find_version_line () {
         | head -n1 \
         | cut -d: -f1)"
     version_match_ln="$((match_ln + version_match_ln - 1))"
-    printf "$version_match_ln"
+    printf '%s' "$version_match_ln"
 }
 
 find_sha_line () {
@@ -72,7 +92,7 @@ find_sha_line () {
         | head -n1 \
         | cut -d: -f1)"
     sha_match_ln="$((match_ln + sha_match_ln - 1))"
-    printf "$sha_match_ln"
+    printf '%s' "$sha_match_ln"
 }
 
 update_sha () {
