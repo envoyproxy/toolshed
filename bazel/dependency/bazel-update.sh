@@ -20,6 +20,9 @@ if [[ -n "$VERSION_PATH_REPLACE" ]]; then
     IFS=':' read -ra path_replace <<< "$VERSION_PATH_REPLACE"
     VERSION_FILE="${VERSION_FILE/${path_replace[0]}/${path_replace[1]}/}"
 fi
+if [[ -n "$VERSION_UPDATE_POST_SCRIPT" ]]; then
+    VERSION_UPDATE_POST_SCRIPT="$(realpath "${VERSION_UPDATE_POST_SCRIPT}")"
+fi
 
 pushd "${BUILD_WORKSPACE_DIRECTORY}" &> /dev/null
 VERSION_FILE="$(realpath "${VERSION_FILE}")"
@@ -135,3 +138,8 @@ update_dependency () {
 }
 
 update_dependency
+
+if [[ -n "$VERSION_UPDATE_POST_SCRIPT" ]]; then
+    . "$VERSION_UPDATE_POST_SCRIPT"
+    post_version_update
+fi
