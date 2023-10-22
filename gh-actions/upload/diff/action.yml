@@ -1,0 +1,26 @@
+
+inputs:
+  name:
+    required: true
+  working-directory:
+    required: true
+
+runs:
+  using: composite
+  steps:
+  - run: |
+      tmpdir="$(mktemp -d)"
+      git diff > "${tmpdir}/${{ inputs.name }}.diff"
+      echo "tmpdir=${tmpdir}" >> $GITHUB_OUTPUT
+    id: diff
+    name: Create diff
+    working-directory: ${{ inputs.working-directory }}
+    shell: bash
+  - uses: actions/upload-artifact@v3
+    with:
+      name: ${{ inputs.name }}.diff
+      path: ${{ steps.diff.output.tmpdir }}/${{ inputs.name }}.diff
+  - run: |
+      rm -rf ${{ steps.diff.output.tmpdir }}
+    name: Remove tmpdir
+    shell: bash
