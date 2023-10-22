@@ -19,8 +19,8 @@ runs:
   - uses: actions/upload-artifact@v3
     with:
       name: ${{ inputs.name }}.diff
-      path: ${{ steps.diff.output.tmpdir }}/${{ inputs.name }}.diff
+      path: ${{ steps.diff.outputs.tmpdir }}/${{ inputs.name }}.diff
   - run: |
-      rm -rf ${{ steps.diff.output.tmpdir }}
+      rm -rf ${{ steps.diff.outputs.tmpdir }}
     name: Remove tmpdir
     shell: bash
