@@ -1,0 +1,38 @@
+
+inputs:
+  config:
+    type: string
+    required: true
+  app_id:
+    type: string
+  app_key:
+    type: string
+
+outputs:
+  token:
+    value: ${{ steps.appauth.outputs.token }}
+
+runs:
+  using: composite
+  steps:
+  - name: Fetch token for app auth
+    id: appauth
+    uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.0.23
+    with:
+      app_id: ${{ inputs.app_id }}
+      key: ${{ inputs.app_key }}
+  - name: Parse YAML config
+    id: parsed
+    uses: envoyproxy/toolshed/gh-actions/yaml/tojson@actions-v0.0.23
+    with:
+      yaml: ${{ inputs.config || '{}' }}
+  - name: Add auth token to config
+    id: config
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.0.23
+    with:
+      input: ${{ steps.parsed.outputs.json }}
+      filter: |
+        . + { "token": "${{ steps.appauth.outputs.token }}" }
+  - uses: actions/checkout@v4
+    name: Checkout repository
+    with: ${{ fromJSON(steps.config.outputs.value) }}
