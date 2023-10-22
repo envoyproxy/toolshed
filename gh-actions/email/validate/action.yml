@@ -1,0 +1,27 @@
+
+inputs:
+  email:
+    type: string
+    required: true
+
+
+runs:
+  using: composite
+  steps:
+  - run: |
+      EMAIL=$(echo $EMAIL | tr '[:upper:]' '[:lower:]')
+      full_regex=".*[[:space:]]<.*>$"
+      if [[ ! "${EMAIL}" =~ $full_regex ]]; then
+          echo "Invalid email provided ${EMAIL}"
+          exit 1
+      fi
+      PR_EMAIL=$(echo "$EMAIL" | grep -o '<[^>]*>' | sed 's/<\(.*\)>/\1/')
+      email_regex="^(([a-z0-9]+((\.|\-|\_|\+)?[a-z0-9]?)*[a-z0-9]+)|[a-z0-9]+)@(([a-z0-9]+)+((\.|\-|\_)?([a-z0-9]+)+)*)+\.([a-z]{2,})+$"
+      if [[ ! "${PR_EMAIL}" =~ $email_regex ]]; then
+          echo "Invalid email provided ${EMAIL}"
+          exit 1
+      fi
+    name: Validate email
+    env:
+      EMAIL: ${{ inputs.email }}
+    shell: bash
