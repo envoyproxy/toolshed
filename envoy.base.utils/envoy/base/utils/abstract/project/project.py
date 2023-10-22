@@ -348,14 +348,14 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             msg: str,
             author: Optional[str] = None) -> None:
         author_args = (
-            ["--author", author]
+            ["--author", f"'{author}'"]
             if author
             else [])
         await self._exec(
             " ".join(("git", "add", *changed)))
         await self._exec(
             " ".join((
-                "git", "commit", *changed, *author_args,
+                "git", "commit", *author_args, *changed,
                 "-m", f"'{msg}'")))
 
     def _patch_versions(
