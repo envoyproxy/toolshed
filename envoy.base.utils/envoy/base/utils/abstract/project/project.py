@@ -213,11 +213,12 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
     async def commit(
             self,
             change: typing.ProjectChangeDict,
-            msg: str) -> AsyncGenerator:
+            msg: str,
+            author: Optional[str] = None) -> AsyncGenerator:
         changed = self.changes_for_commit(change)
         for path in changed:
             yield path
-        await self._git_commit(changed, msg)
+        await self._git_commit(changed, msg, author)
 
     async def dev(
             self,
@@ -341,11 +342,21 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
                     stdout.decode("utf-8"),
                     stderr.decode("utf-8")]))
 
-    async def _git_commit(self, changed: Tuple[str, ...], msg: str) -> None:
+    async def _git_commit(
+            self,
+            changed: Tuple[str, ...],
+            msg: str,
+            author: Optional[str] = None) -> None:
+        author_args = (
+            ["--author", author]
+            if author
+            else [])
         await self._exec(
             " ".join(("git", "add", *changed)))
         await self._exec(
-            " ".join(("git", "commit", *changed, "-m", f"'{msg}'")))
+            " ".join((
+                "git", "commit", *changed, *author_args,
+                "-m", f"'{msg}'")))
 
     def _patch_versions(
             self,

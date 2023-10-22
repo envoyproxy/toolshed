@@ -87,6 +87,13 @@ class BaseProjectRunner(runner.Runner):
 class ProjectRunner(BaseProjectRunner):
 
     @property
+    def author(self) -> str:
+        return (
+            self.args.release_author
+            if self.args.command in ["release"]
+            else "")
+
+    @property
     def command(self) -> bool:
         return self.args.command
 
@@ -125,6 +132,7 @@ class ProjectRunner(BaseProjectRunner):
         parser.add_argument("--patch", action="store_true")
         parser.add_argument("--repo", default="")
         parser.add_argument("--dry-run", action="store_true")
+        parser.add_argument("--release-author", default="")
         parser.add_argument("--release-message-path", default="")
         parser.add_argument("--publish-assets", default="")
         parser.add_argument("--publish-commitish", default="")
@@ -142,7 +150,7 @@ class ProjectRunner(BaseProjectRunner):
             self,
             change: typing.ProjectChangeDict) -> None:
         msg = self.msg_for_commit(change)
-        async for path in self.project.commit(change, msg):
+        async for path in self.project.commit(change, msg, author=self.author):
             self.log.info(f"[git] add: {path}")
         self.log.info(f"[git] commit: \"{msg}\"")
 
@@ -242,6 +250,7 @@ class ProjectRunner(BaseProjectRunner):
 
     async def run_release(
             self,
+            author: str = "",
             release_message: str = "") -> typing.ProjectReleaseResultDict:
         change = await self.project.release()
         self.log.success(f"[version] {change['version']}")

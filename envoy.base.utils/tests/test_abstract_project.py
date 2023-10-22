@@ -661,10 +661,11 @@ async def test_abstract_project_commit(iters, patches):
     changes = iters(count=7)
     results = []
     msg = MagicMock()
+    author = MagicMock()
 
     with patched as (m_changes, m_commit):
         m_changes.return_value = changes
-        async for result in project.commit(update, msg):
+        async for result in project.commit(update, msg, author):
             results.append(result)
 
     assert results == changes
@@ -673,7 +674,7 @@ async def test_abstract_project_commit(iters, patches):
         == [(update, ), {}])
     assert (
         m_commit.call_args
-        == [(changes, msg), {}])
+        == [(changes, msg, author), {}])
 
 
 @pytest.mark.parametrize("dev", [True, False])
