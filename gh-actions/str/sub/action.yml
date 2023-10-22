@@ -1,0 +1,33 @@
+
+inputs:
+  string:
+    required: true
+  start:
+    type: number
+    default: 0
+  length:
+    type: number
+    required: true
+  min:
+    type: number
+
+outputs:
+  string:
+    value: ${{ steps.substr.outputs.string }}
+
+runs:
+  using: composite
+  steps:
+  - run: |
+      if [[ -z "$MIN" || "${#STRING}" -lt "${MIN}"  ]]; then
+          echo "string=${STRING}" >> $GITHUB_OUTPUT
+      else
+          echo "string=${STRING:$START:$LENGTH}" >> $GITHUB_OUTPUT
+      fi
+    id: substr
+    shell: bash
+    env:
+      STRING: ${{ inputs.string }}
+      START: ${{ inputs.start }}
+      LENGTH: ${{ inputs.length }}
+      MIN: ${{ inputs.min }}
