@@ -235,6 +235,8 @@ def test_projectrunner_add_arguments(patches):
              {'default': ''}],
             [('--dry-run',),
              {'action': 'store_true'}],
+            [('--release-author',),
+             {'default': ''}],
             [('--release-message-path',),
              {'default': ''}],
             [('--publish-assets',),
@@ -264,6 +266,8 @@ def test_projectrunner_add_arguments(patches):
 async def test_projectrunner_commit(iters, patches):
     runner = utils.ProjectRunner()
     patched = patches(
+        ("ProjectRunner.author",
+         dict(new_callable=PropertyMock)),
         ("ProjectRunner.log",
          dict(new_callable=PropertyMock)),
         ("ProjectRunner.project",
@@ -273,17 +277,17 @@ async def test_projectrunner_commit(iters, patches):
     change = MagicMock()
     paths = iters()
 
-    async def committer(c, m):
+    async def committer(c, m, **kwargs):
         for p in paths:
             yield p
 
-    with patched as (m_log, m_proj, m_msg):
+    with patched as (m_author, m_log, m_proj, m_msg):
         m_proj.return_value.commit.side_effect = committer
         assert not await runner.commit(change)
 
     assert (
         m_proj.return_value.commit.call_args
-        == [(change, m_msg.return_value), {}])
+        == [(change, m_msg.return_value), dict(author=m_author.return_value)])
     assert (
         m_log.return_value.info.call_args_list
         == ([[(f"[git] add: {p}", ), {}]
