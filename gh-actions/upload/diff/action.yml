@@ -2,19 +2,34 @@
 inputs:
   name:
     required: true
+  diff:
+    default: ''
+  show:
+    type: boolean
+    default: false
   working-directory:
-    required: true
+    default: ''
+
 
 runs:
   using: composite
   steps:
   - run: |
       tmpdir="$(mktemp -d)"
-      git diff > "${tmpdir}/${{ inputs.name }}.diff"
+      DIFF_ARGS=()
+      if [[ -n "${{ inputs.diff }}" ]]; then
+          DIFF_ARGS+=(${{ inputs.diff }})
+      fi
+      git diff ${DIFF_ARGS[@]} > "${tmpdir}/${{ inputs.name }}.diff"
       echo "tmpdir=${tmpdir}" >> $GITHUB_OUTPUT
     id: diff
     name: Create diff
-    working-directory: ${{ inputs.working-directory }}
+    working-directory: ${{ inputs.working-directory || '.' }}
+    shell: bash
+  - run: |
+      cat "${{ steps.diff.outputs.tmpdir }}/${{ inputs.name }}.diff"
+    name: Show diff
+    if: ${{ inputs.show }}
     shell: bash
   - uses: actions/upload-artifact@v3
     with:
