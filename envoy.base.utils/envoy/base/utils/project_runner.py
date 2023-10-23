@@ -39,13 +39,13 @@ COMMIT_MSGS: frozendict = frozendict(
 repo: Release {version_string}
 
 {change[release][message]}
-*Docker images*:
+**Docker images**:
     {envoy_docker_image}{version_string}
-*Docs*:
+**Docs**:
     {envoy_docs}/{version_string}/
-*Release notes*:
+**Release notes**:
     {envoy_docs}/{version_string}/version_history/{minor_version}/{version_string}
-*Full changelog*:
+**Full changelog**:
     {envoy_repo}/compare/{previous_release_version}...{version_string}
 
 """,
