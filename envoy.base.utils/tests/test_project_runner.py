@@ -239,6 +239,8 @@ def test_projectrunner_add_arguments(patches):
              {'default': ''}],
             [('--release-message-path',),
              {'default': ''}],
+            [('--release-signoff',),
+             {'nargs': '*'}],
             [('--publish-assets',),
              {'default': ''}],
             [('--publish-commitish',),
@@ -369,22 +371,42 @@ async def test_projectrunner_handle_action(patches, action, nosync):
     assert result["sync"] == m_sync.return_value
 
 
-def test_projectrunner_msg_for_commit(patches):
+@pytest.mark.parametrize("signoffs", [0, 3, 5])
+def test_projectrunner_msg_for_commit(iters, patches, signoffs):
     runner = utils.ProjectRunner()
     patched = patches(
         "_version",
         "COMMIT_MSGS",
         "utils",
         "ProjectRunner._previous_version",
+        ("ProjectRunner.author",
+         dict(new_callable=PropertyMock)),
         ("ProjectRunner.command",
+         dict(new_callable=PropertyMock)),
+        ("ProjectRunner.signoffs",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.project_runner")
     change = MagicMock()
+    signoff_iters = iters(count=signoffs)
+    author = (
+        signoff_iters[2]
+        if signoffs >= 3
+        else "")
 
-    with patched as (m_version, m_msgs, m_utils, m_previous, m_command):
+    with patched as patchy:
+        (m_version, m_msgs, m_utils,
+         m_previous, m_author, m_command, m_signoff) = patchy
+        m_signoff.return_value = signoff_iters
+        m_author.return_value = author
+        expected = m_msgs.__getitem__.return_value.format.return_value
+        if signoffs:
+            expected = f"{expected}"
+            for signoff in signoff_iters:
+                if signoff != author:
+                    expected = f"{expected}\nSigned-off-by: {signoff}"
         assert (
             runner.msg_for_commit(change)
-            == m_msgs.__getitem__.return_value.format.return_value)
+            == expected)
 
     assert (
         m_msgs.__getitem__.call_args
