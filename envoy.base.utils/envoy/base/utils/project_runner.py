@@ -50,7 +50,7 @@ repo: Release {version_string}
 
 """,
     dev="repo: Dev {version_string}",
-    sync="repo: Sync")
+    sync="repo: Sync version histories")
 
 
 class BaseProjectRunner(runner.Runner):
