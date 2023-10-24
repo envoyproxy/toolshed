@@ -30,6 +30,13 @@ inputs:
   working-directory:
     type: string
     default: .
+  diff-upload:
+    type: string
+    default: ""
+  diff-show:
+    type: boolean
+    default: false
+
 
 runs:
   using: composite
@@ -53,6 +60,17 @@ runs:
       COMMIT_MESSAGE: ${{ inputs.commit-message || inputs.title }}
     name: Commit changes
     working-directory: ${{ inputs.working-directory }}
+    shell: bash
+  - name: Upload diff
+    uses: envoyproxy/toolshed/gh-actions/upload/diff@actions-v0.0.27
+    if: inputs.diff-upload
+    with:
+      diff: HEAD^1
+      name: inputs.diff-upload
+      show: inputs.diff-show
+  - run: |
+      git diff HEAD^1
+    if: ! inputs.diff-upload && inputs.diff-show
     shell: bash
   - run: |
       LAST_COMMIT=$(git log -1 --pretty=%B | tail -n +2)
