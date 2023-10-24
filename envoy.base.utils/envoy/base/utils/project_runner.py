@@ -208,6 +208,8 @@ class ProjectRunner(BaseProjectRunner):
             kwargs.update(
                 dict(version_string=f"v{release_version.base_version}"))
         msg = COMMIT_MSGS[self.command].format(**kwargs)
+        if self.author:
+            msg = f"{msg}\nSigned-off-by: {self.author}"
         for signoff in self.signoffs:
             if signoff != self.author:
                 msg = f"{msg}\nSigned-off-by: {signoff}"
@@ -266,7 +268,6 @@ class ProjectRunner(BaseProjectRunner):
 
     async def run_release(
             self,
-            author: str = "",
             release_message: str = "") -> typing.ProjectReleaseResultDict:
         change = await self.project.release()
         self.log.success(f"[version] {change['version']}")
