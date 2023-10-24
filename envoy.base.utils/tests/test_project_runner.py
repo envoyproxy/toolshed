@@ -371,8 +371,9 @@ async def test_projectrunner_handle_action(patches, action, nosync):
     assert result["sync"] == m_sync.return_value
 
 
-@pytest.mark.parametrize("signoffs", [0, 3, 5])
-def test_projectrunner_msg_for_commit(iters, patches, signoffs):
+@pytest.mark.parametrize("signoffs", [0, 2, 3, 5])
+@pytest.mark.parametrize("author", [True, False])
+def test_projectrunner_msg_for_commit(iters, patches, signoffs, author):
     runner = utils.ProjectRunner()
     patched = patches(
         "_version",
@@ -388,21 +389,27 @@ def test_projectrunner_msg_for_commit(iters, patches, signoffs):
         prefix="envoy.base.utils.project_runner")
     change = MagicMock()
     signoff_iters = iters(count=signoffs)
-    author = (
+    author_id = (
         signoff_iters[2]
-        if signoffs >= 3
+        if signoffs >= 3 and author
         else "")
+    author_id = (
+        MagicMock()
+        if author and not author_id
+        else author_id)
 
     with patched as patchy:
         (m_version, m_msgs, m_utils,
          m_previous, m_author, m_command, m_signoff) = patchy
         m_signoff.return_value = signoff_iters
-        m_author.return_value = author
+        m_author.return_value = author_id
         expected = m_msgs.__getitem__.return_value.format.return_value
+        if author:
+            expected = f"{expected}\nSigned-off-by: {author_id}"
         if signoffs:
             expected = f"{expected}"
             for signoff in signoff_iters:
-                if signoff != author:
+                if signoff != author_id:
                     expected = f"{expected}\nSigned-off-by: {signoff}"
         assert (
             runner.msg_for_commit(change)
