@@ -94,6 +94,14 @@ class ProjectRunner(BaseProjectRunner):
             else "")
 
     @property
+    def signoffs(self) -> set[str]:
+        return (
+            set(self.args.release_signoff)
+            if (self.args.command in ["release"]
+                and self.args.release_signoff)
+            else set())
+
+    @property
     def command(self) -> bool:
         return self.args.command
 
@@ -134,6 +142,7 @@ class ProjectRunner(BaseProjectRunner):
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--release-author", default="")
         parser.add_argument("--release-message-path", default="")
+        parser.add_argument("--release-signoff", nargs="*")
         parser.add_argument("--publish-assets", default="")
         parser.add_argument("--publish-commitish", default="")
         parser.add_argument("--publish-commit-message", action="store_true")
@@ -150,7 +159,10 @@ class ProjectRunner(BaseProjectRunner):
             self,
             change: typing.ProjectChangeDict) -> None:
         msg = self.msg_for_commit(change)
-        async for path in self.project.commit(change, msg, author=self.author):
+        commit = self.project.commit(
+            change, msg,
+            author=self.author)
+        async for path in commit:
             self.log.info(f"[git] add: {path}")
         self.log.info(f"[git] commit: \"{msg}\"")
 
@@ -195,7 +207,11 @@ class ProjectRunner(BaseProjectRunner):
             release_version = _version.Version(change["dev"]["version"])
             kwargs.update(
                 dict(version_string=f"v{release_version.base_version}"))
-        return COMMIT_MSGS[self.command].format(**kwargs)
+        msg = COMMIT_MSGS[self.command].format(**kwargs)
+        for signoff in self.signoffs:
+            if signoff != self.author:
+                msg = f"{msg}\nSigned-off-by: {signoff}"
+        return msg
 
     def notify_complete(self, change: typing.ProjectChangeDict) -> None:
         self.log.notice(
