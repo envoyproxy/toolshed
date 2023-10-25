@@ -39,6 +39,9 @@ inputs:
   dry-run:
     type: boolean
     default: false
+  wip:
+    type: boolean
+    default: false
 
 
 runs:
@@ -66,11 +69,11 @@ runs:
     shell: bash
   - name: Upload diff
     uses: envoyproxy/toolshed/gh-actions/upload/diff@actions-v0.0.27
-    if: inputs.diff-upload
+    if: ${{ inputs.diff-upload }}
     with:
       diff: HEAD^1
-      name: inputs.diff-upload
-      show: inputs.diff-show
+      name: ${{ inputs.diff-upload }}
+      show: ${{ inputs.diff-show }}
   - run: |
       git diff HEAD^1
     if: ${{ ! inputs.diff-upload && inputs.diff-show }}
@@ -92,7 +95,10 @@ runs:
           -H "$BRANCH_NAME" \
           --title "$PR_TITLE" \
           --body "$PR_BODY"
-    if: ${{ ! inputs.dry-run }}
+      if [[ "${{ inputs.wip }}" == "true" ]]; then
+          gh pr ready "$BRANCH_NAME" --undo
+      fi
+    if: ${{ ! inputs.dry-run || inputs.dry-run == 'false' }}
     env:
       GH_TOKEN: ${{ inputs.GITHUB_TOKEN }}
       PR_TITLE: ${{ inputs.title }}
