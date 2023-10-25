@@ -73,7 +73,7 @@ runs:
       show: inputs.diff-show
   - run: |
       git diff HEAD^1
-    if: ! inputs.diff-upload && inputs.diff-show
+    if: ${{ ! inputs.diff-upload && inputs.diff-show }}
     shell: bash
   - run: |
       LAST_COMMIT=$(git log -1 --pretty=%B | tail -n +2)
