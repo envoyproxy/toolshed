@@ -36,6 +36,9 @@ inputs:
   diff-show:
     type: boolean
     default: false
+  dry-run:
+    type: boolean
+    default: false
 
 
 runs:
@@ -89,6 +92,7 @@ runs:
           -H "$BRANCH_NAME" \
           --title "$PR_TITLE" \
           --body "$PR_BODY"
+    if: ! inputs.dry-run
     env:
       GH_TOKEN: ${{ inputs.GITHUB_TOKEN }}
       PR_TITLE: ${{ inputs.title }}
