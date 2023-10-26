@@ -14,10 +14,16 @@ inputs:
     default: false
   error-match:
     type: string
-    default: ERROR
-  warn-on-error:
-    type: boolean
-    default: false
+    default: |
+      ERROR
+  notice-match:
+    type: string
+    default: |
+      NOTICE
+  warning-match:
+    type: string
+    default: |
+      WARNING
 
   env:
     type: string
@@ -53,14 +59,29 @@ runs:
       fi
       TMP_OUTPUT=$(mktemp)
       "${COMMAND[@]}" 2> >(tee "$TMP_OUTPUT") || {
-          OUTPUT="$(grep ${{ inputs.error-match }} "$TMP_OUTPUT" | tail -n 1)"
-          rm -rf "$TMP_OUTPUT"
-          echo "${OUTPUT_PREFIX} ${OUTPUT}"
-          if [[ "${{ inputs.catch-errors }}" != "true" && "${{ inputs.warn-on-error }}" != "true" ]]; then
-              exit 1
-          fi
+          FAILED=true
       }
+      OUTPUT="$(cat "$TMP_OUTPUT")"
       rm -rf "$TMP_OUTPUT"
+      bubble_messages () {
+          message_type="$1"
+          matcher="$2"
+          IFS=$'\n' read -ra matches <<< "${matcher}"
+          for match in "${matches[@]}"; do
+              echo "MATCH(${message_type}): ${match}"
+              if ! echo "$OUTPUT" | grep -q "$match"; then
+                  continue
+              fi
+              matched="$(echo "$OUTPUT" | grep "$match")"
+              while read -r message; do
+                  echo "::${message_type}::${message}"
+              done < <(echo "$matched" | grep -o ".*" || :)
+          done
+      }
+      bubble_messages error "${{ inputs.error-match }}"
+      bubble_messages warning "${{ inputs.warning-match }}"
+      bubble_messages notice "${{ inputs.notice-match }}"
+      if [[ -n "$FAILED" && "${{ inputs.catch-errors }}" != "true" ]]; then
+          exit 1
+      fi
     shell: bash
-    env:
-      OUTPUT_PREFIX: ${{ inputs.warn-on-error == 'true' && '::warn::' || '::error::' }}
