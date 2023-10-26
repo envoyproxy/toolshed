@@ -32,9 +32,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - id: set_env
-    name: 'Set CI env ${{ inputs.target }}'
-    run: |
+  - run: |
       if [[ "${#INPUT_ENV}" -ne 0 ]]; then
           SOURCETMP="$(mktemp)"
           # TODO(phlax): Fix escaping
@@ -42,10 +40,6 @@ runs:
           . "$SOURCETMP"
           rm -rf "$SOURCETMP"
       fi
-    shell: bash
-    env:
-      INPUT_ENV: ${{ inputs.env }}
-  - run: |
       COMMAND=()
       if [[ -n "${{ inputs.container-command }}" ]]; then
           COMMAND+=(${{ inputs.container-command }})
@@ -68,7 +62,6 @@ runs:
           matcher="$2"
           IFS=$'\n' read -ra matches <<< "${matcher}"
           for match in "${matches[@]}"; do
-              echo "MATCH(${message_type}): ${match}"
               if ! echo "$OUTPUT" | grep -q "$match"; then
                   continue
               fi
@@ -85,3 +78,5 @@ runs:
           exit 1
       fi
     shell: bash
+    env:
+      INPUT_ENV: ${{ inputs.env }}
