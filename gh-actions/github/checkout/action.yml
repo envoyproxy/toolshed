@@ -44,10 +44,11 @@ runs:
     name: Checkout repository
     with: ${{ fromJSON(steps.config.outputs.value) }}
   - name: Configure committer
-    if: ${{ committer-name && committer-email }}
+    if: ${{ inputs.committer-name && inputs.committer-email }}
     run: |
       git config --global user.name $COMMITTER_NAME
       git config --global user.email $COMMITTER_EMAIL
     env:
-      COMMITTER_NAME: ${{ committer-name }}
-      COMMITTER_EMAIL: ${{ committer-email }}
+      COMMITTER_NAME: ${{ inputs.committer-name }}
+      COMMITTER_EMAIL: ${{ inputs.committer-email }}
+    shell: bash
