@@ -95,10 +95,11 @@ class ProjectRunner(BaseProjectRunner):
 
     @property
     def signoffs(self) -> set[str]:
+        # TODO: use dict_keys to preserve order
         return (
-            set(self.args.release_signoff)
-            if (self.args.command in ["release"]
-                and self.args.release_signoff)
+            set(self.args.signoff)
+            if (self.args.command in ["release", "sync", "dev"]
+                and self.args.signoff)
             else set())
 
     @property
@@ -142,7 +143,7 @@ class ProjectRunner(BaseProjectRunner):
         parser.add_argument("--dry-run", action="store_true")
         parser.add_argument("--release-author", default="")
         parser.add_argument("--release-message-path", default="")
-        parser.add_argument("--release-signoff", nargs="*")
+        parser.add_argument("--signoff", nargs="*")
         parser.add_argument("--publish-assets", default="")
         parser.add_argument("--publish-commitish", default="")
         parser.add_argument("--publish-commit-message", action="store_true")

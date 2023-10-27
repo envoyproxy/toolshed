@@ -239,7 +239,7 @@ def test_projectrunner_add_arguments(patches):
              {'default': ''}],
             [('--release-message-path',),
              {'default': ''}],
-            [('--release-signoff',),
+            [('--signoff',),
              {'nargs': '*'}],
             [('--publish-assets',),
              {'default': ''}],
