@@ -25,7 +25,7 @@ inputs:
     default: |
       WARNING
 
-  env:
+  source:
     type: string
 
 
@@ -36,7 +36,7 @@ runs:
       if [[ "${#INPUT_ENV}" -ne 0 ]]; then
           SOURCETMP="$(mktemp)"
           # TODO(phlax): Fix escaping
-          echo "${{ inputs.env }}" > "$SOURCETMP"
+          printf "%s" '${{ inputs.source }}' > "$SOURCETMP"
           . "$SOURCETMP"
           rm -rf "$SOURCETMP"
       fi
@@ -79,4 +79,4 @@ runs:
       fi
     shell: bash
     env:
-      INPUT_ENV: ${{ inputs.env }}
+      INPUT_ENV: ${{ inputs.source }}
