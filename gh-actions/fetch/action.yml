@@ -3,6 +3,8 @@ inputs:
   url:
     type: string
     required: true
+  path:
+    type: string
 
 outputs:
   path:
@@ -12,9 +14,13 @@ runs:
   using: "composite"
   steps:
   - run: |
-      echo "FETCH ${{ inputs.url }}"
-      tmpdir=$(mktemp -d)
-      cd "$tmpdir"
+      if [[ -n "${{ inputs.path }}" ]]; then
+          path="${{ inputs.path }}"
+      else
+          path=$(mktemp -d)
+      fi
+      mkdir -p "$path"
+      cd "$path"
       curl -sLO "${{ inputs.url }}"
       filepath="$(realpath "$(basename "${{ inputs.url }}")")"
       echo "path=${filepath}" >> $GITHUB_OUTPUT
