@@ -16,7 +16,7 @@ from aio.core import event
 from aio.core.functional import async_property, QueryDict
 from aio.core.tasks import concurrent
 
-from aio.api.nist import abstract, interface, typing
+from aio.api.nist import abstract, exceptions, interface, typing
 
 
 logger = logging.getLogger(__name__)
@@ -166,6 +166,9 @@ class ANISTDownloader(event.AExecutive, metaclass=abstracts.Abstraction):
         download = None
         if not data:
             download = await self.download(url)
+            if download.status != 200:
+                raise exceptions.CVEDownloadError(
+                    f"Download failed {url}: {download.reason}")
             data = await download.read()
         self.add(*await self.parse(url, data))
         logger.debug(f"CVE data saved: {url}")
