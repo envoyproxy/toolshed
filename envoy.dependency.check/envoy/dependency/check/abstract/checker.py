@@ -16,7 +16,7 @@ import gidgethub
 
 import abstracts
 
-from aio.api import github as _github
+from aio.api import github as _github, nist
 from aio.run import checker
 from aio.core.tasks import ConcurrentError, inflate
 
@@ -397,7 +397,7 @@ class ADependencyChecker(
 
     @checker.preload(
         when=["cves"],
-        catches=[exceptions.CVECheckError])
+        catches=[exceptions.CVECheckError, nist.exceptions.NISTError])
     async def preload_cves(self) -> None:
         async for download in self.cves.downloads:
             self.log.debug(f"Preloaded cve data: {download}")
