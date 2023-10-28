@@ -13,3 +13,7 @@ class CVEError(NISTError):
 
 class CVECheckError(NISTError):
     pass
+
+
+class CVEDownloadError(NISTError):
+    pass

@@ -5,6 +5,7 @@ toolshed_library(
         "//deps:reqs#abstracts",
         "//deps:reqs#aio.core",
         "//deps:reqs#aiohttp",
+        "//deps:reqs#packaging",
     ],
     sources=[
         "abstract/__init__.py",

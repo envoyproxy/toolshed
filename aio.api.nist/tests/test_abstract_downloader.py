@@ -284,42 +284,72 @@ def test_downloader_add(patches):
         == [(cpe_revmap, ), {}])
 
 
-async def test_downloader_download_and_parse(patches):
+@pytest.mark.parametrize("data", [True, False])
+@pytest.mark.parametrize("raises", [True, False])
+async def test_downloader_download_and_parse(patches, data, raises):
     downloader = DummyNISTDownloader("URLS", "TRACKED_CPES")
     patched = patches(
         "logger",
-        ("ANISTDownloader.session",
-         dict(new_callable=PropertyMock)),
+        "ANISTDownloader.download",
         "ANISTDownloader.add",
         "ANISTDownloader.parse",
+        "Predownload",
         prefix="aio.api.nist.abstract.downloader")
     url = MagicMock()
+    _data = MagicMock()
+    kwargs = (
+        dict(data=_data)
+        if data
+        else {})
 
-    with patched as (m_logger, m_session, m_add, m_parse):
+    with patched as (m_logger, m_download, m_add, m_parse, m_pre):
+        m_download.return_value.status = (
+            200
+            if not raises
+            else 500)
         m_parse.return_value = "FOO", "BAR"
-        m_session.return_value.get = AsyncMock()
-        assert (
-            await downloader.download_and_parse(url)
-            == m_session.return_value.get.return_value)
+        if raises and not data:
+            with pytest.raises(nist.exceptions.CVEDownloadError) as e:
+                await downloader.download_and_parse(url, **kwargs)
+        else:
+            assert (
+                await downloader.download_and_parse(url, **kwargs)
+                == (m_download.return_value
+                    if not data
+                    else m_pre.return_value))
 
+    if data:
+        assert not m_download.called
+    else:
+        assert not m_pre.called
+        assert (
+            m_download.call_args
+            == [(url, ), {}])
+        if not raises:
+            assert (
+                m_download.return_value.read.call_args
+                == [(), {}])
+        else:
+            assert (
+                e.value.args[0]
+                == f"Download failed {url}: {m_download.return_value.reason}")
+            assert not m_add.called
+            assert not m_parse.called
+            assert not m_logger.debug.called
+            return
     assert (
-        m_session.return_value.get.call_args
-        == [(url, ), {}])
-    assert (
-        m_logger.debug.call_args_list
-        == [[(f"Downloading CVE data: {url}", ), {}],
-            [(f"CVE data saved: {url}", ), {}]])
+        m_logger.debug.call_args
+        == [(f"CVE data saved: {url}", ), {}])
     assert (
         m_add.call_args
         == [("FOO", "BAR"), {}])
     assert (
         m_parse.call_args
         == [(url,
-             m_session.return_value.get.return_value.read.return_value, ),
+             (m_download.return_value.read.return_value
+              if not data
+              else _data), ),
             {}])
-    assert (
-        m_session.return_value.get.return_value.read.call_args
-        == [(), {}])
 
 
 async def test_downloader_parse(patches):
