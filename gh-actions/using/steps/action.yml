@@ -1,0 +1,25 @@
+
+inputs:
+  steps:
+    type: string
+    required: true
+  name:
+    default:
+
+runs:
+  using: composite
+  steps:
+  - id: create-steps
+    shell: bash
+    # This allows latebinding using `%{{ }}`
+    # For example, to use output from a previous step you can use
+    # %{{ steps.stepname.outputs }}
+    run: ${{ github.action_path }}/create-steps.sh
+    env:
+      STEPS: ${{ inputs.steps }}
+  - name: Run (${{ inputs.name || '.tmp.action' }})
+    uses: ./.tmp.action
+  - name: Cleanup (.tmp.action)
+    if: always()
+    shell: bash
+    run: rm -rf .tmp.action
