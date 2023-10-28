@@ -9,7 +9,7 @@ import gidgethub
 
 import abstracts
 
-from aio.api import github
+from aio.api import github, nist
 from aio.core.functional import async_property
 from aio.core.tasks import ConcurrentError
 from aio.run.checker import Checker
@@ -1205,7 +1205,7 @@ async def test_checker_preload_cves(patches, downloads):
         == ())
     assert (
         ADependencyChecker.preload_cves.catches
-        == (exceptions.CVECheckError,))
+        == (exceptions.CVECheckError, nist.exceptions.NISTError))
 
 
 @pytest.mark.parametrize(
