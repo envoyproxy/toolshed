@@ -8,26 +8,36 @@ const run = async (): Promise<void> => {
     const input = core.getInput('input')
     if (!input || input === '') return
 
+    const encode = core.getInput('encode')
+    const decode = core.getInput('decode')
     const options = core.getInput('options')
     const envVar = core.getInput('env_var')
 
     const filter = core.getInput('filter')
     if (!filter || filter === '') return
-
     core.info(`input: ${input}`)
+    core.info(`encode: ${encode}`)
+    core.info(`decode: ${decode}`)
     core.info(`options: ${options}`)
     core.info(`filter: ${filter}`)
-
+    let encodePipe = ''
+    if (encode && encode !== 'false') {
+      encodePipe = '| base64 -w0'
+    }
+    let decodePipe = ''
+    if (decode && decode !== 'false') {
+      decodePipe = '| base64 -d'
+    }
     // preferably use spawn/stdin
-    const shellCommand = `echo '${input}' | jq ${options} '${filter}'`
+    const shellCommand = `echo '${input}' ${decodePipe} | jq ${options} '${filter} ${encodePipe}'`
     console.log(`Running shell command: ${shellCommand}`)
     const proc = spawn('sh', ['-c', shellCommand])
     const response = await proc
     const stdout = response.stdout
-    core.setOutput('value', stdout)
+    core.setOutput('value', stdout.trim())
     if (envVar) {
       process.env[envVar] = stdout
-      core.exportVariable(envVar, stdout)
+      core.exportVariable(envVar, stdout.trim())
     }
   } catch (error) {
     const e = error as Record<'stderr', string>
