@@ -6,6 +6,16 @@ inputs:
     description: >
       Input string to mangle.
     default: ""
+  decode:
+    description: >
+      Decode input from base64.
+    type: boolean
+    default: false
+  encode:
+    description: >
+      Encode output to base64.
+    type: boolean
+    default: false
   options:
     description: >
       Jq command options.

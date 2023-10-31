@@ -1,0 +1,51 @@
+
+inputs:
+  pr:
+    type: number
+    required: true
+  repository:
+    type: string
+  token:
+    type: string
+
+outputs:
+  sha:
+    value: ${{ steps.result.outputs.sha }}
+
+runs:
+  using: composite
+  steps:
+  - id: fetch
+    run: |
+      CURL_ARGS=(-s)
+      # Make the API request to retrieve pull request data
+      if [[ -n "${{ inputs.token }}" ]]; then
+          CURL_ARGS+=(-H "Authorization: token ${{ inputs.token }}")
+      fi
+      DATA=$(curl "${CURL_ARGS[@]}" $URL | base64 -w0)
+      if [[ $? -ne 0 || -z "$DATA" ]]; then
+          echo "Failed to retrieve pull request data."
+          exit 1
+      fi
+      echo "response=${DATA}" >> $GITHUB_OUTPUT
+    shell: bash
+    env:
+      URL: https://api.github.com/repos/${{ inputs.repository }}/pulls/${{ inputs.pr }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.3
+    id: jq
+    with:
+      input: ${{ steps.fetch.outputs.response }}
+      decode: true
+      options: -r
+      filter: |
+        .merge_commit_sha // ""
+  - run: |
+      # Check if the merge commit SHA is not null
+      if [[ -n "${{ steps.jq.outputs.value }}" ]]; then
+          echo "sha=${{ steps.jq.outputs.value }}" >> $GITHUB_OUTPUT
+      else
+          echo "Merge commit information not found for pull request ${{ inputs.pr }}." >&2
+          exit 1
+      fi
+    id: result
+    shell: bash
