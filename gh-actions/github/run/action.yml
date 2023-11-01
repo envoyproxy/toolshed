@@ -70,12 +70,24 @@ runs:
           while IFS=$'\n' read -r line; do
               matches+=("$line")
           done <<< "$matcher"
+          declare -a issued_warnings
           for match in "${matches[@]}"; do
               matched="$(echo "$OUTPUT" | grep "$match" || :)"
               if [[ -z "$matched" ]]; then
                   continue
               fi
               while read -r message; do
+                  found=0
+                  for issued in "${issued_warnings[@]}"; do
+                      if [[ "$issued" == "$message" ]]; then
+                          found=1
+                          break
+                      fi
+                  done
+                  if [[ $found -ne 0 ]]; then
+                      continue
+                  fi
+                  issued_warnings+=("$message")
                   echo "::${message_type}::${message}"
               done < <(echo "$matched" | grep -o ".*" || :)
           done
