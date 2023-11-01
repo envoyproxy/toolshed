@@ -57,15 +57,20 @@ runs:
       }
       OUTPUT="$(cat "$TMP_OUTPUT")"
       rm -rf "$TMP_OUTPUT"
+
       bubble_messages () {
-          message_type="$1"
-          matcher="$2"
-          IFS=$'\n' read -ra matches <<< "${matcher}"
+          local message_type="$1" \
+                matcher="$2" \
+                matches=()
+          matcher=${matcher%"${matcher##*[![:space:]]}"}
+          while IFS=$'\n' read -r line; do
+              matches+=("$line")
+          done <<< "$matcher"
           for match in "${matches[@]}"; do
-              if ! echo "$OUTPUT" | grep -q "$match"; then
+              matched="$(echo "$OUTPUT" | grep "$match" || :)"
+              if [[ -z "$matched" ]]; then
                   continue
               fi
-              matched="$(echo "$OUTPUT" | grep "$match")"
               while read -r message; do
                   echo "::${message_type}::${message}"
               done < <(echo "$matched" | grep -o ".*" || :)
