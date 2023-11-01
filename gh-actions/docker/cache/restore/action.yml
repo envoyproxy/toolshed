@@ -11,7 +11,7 @@ runs:
     with:
       key: ${{ inputs.image_tag }}
       command: |
-        systemctl stop docker
+        systemctl stop docker docker.socket
         mv /var/lib/docker /var/lib/docker.orig
         mkdir -p /var/lib/docker
         zstd --stdout -d docker.tar.zst | tar -xf - -C /var/lib/docker
