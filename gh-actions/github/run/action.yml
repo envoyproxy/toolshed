@@ -16,6 +16,8 @@ inputs:
     type: string
     default: |
       ERROR
+      error:
+      Error:
   notice-match:
     type: string
     default: |
@@ -24,6 +26,8 @@ inputs:
     type: string
     default: |
       WARNING
+      warning:
+      Warning:
 
   source:
     type: string
