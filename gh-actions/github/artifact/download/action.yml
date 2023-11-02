@@ -1,0 +1,40 @@
+
+inputs:
+  name:
+    type: string
+    required: true
+  path:
+    type: string
+    required: true
+  run-id:
+    type: string
+    required: true
+
+runs:
+  using: composite
+  steps:
+  - name: 'Download artifact'
+    uses: actions/github-script@v6
+    with:
+      script: |
+        let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: ${{ inputs.run-id }},
+        });
+        let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
+            return artifact.name == "${{ inputs.name }}"
+        })[0];
+        let download = await github.rest.actions.downloadArtifact({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            artifact_id: matchArtifact.id,
+            archive_format: 'zip',
+        });
+        let fs = require('fs');
+        fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/${{ inputs.name }}.zip`, Buffer.from(download.data));
+
+  - run: |
+      cd ${{ inputs.path }}
+      unzip ${GITHUB_WORKSPACE}/${{ inputs.name }}.zip
+    shell: bash
