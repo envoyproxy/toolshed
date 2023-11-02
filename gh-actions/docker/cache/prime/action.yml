@@ -3,10 +3,33 @@ inputs:
   image_tag:
     type: string
     required: true
+  lock-repository:
+    type: string
+  lock-id:
+    type: string
+  lock-token:
+    type: string
+  lock-app-id:
+    type: string
+  lock-app-key:
+    type: string
 
 runs:
   using: "composite"
   steps:
+  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.7
+    if: ${{ inputs.lock-app-id && inputs.lock-app-key }}
+    name: Fetch app auth
+    id: appauth
+    with:
+      app_id: ${{ inputs.lock-app-id }}
+      key: ${{ inputs.lock-app-key }}
+  - uses: envoyproxy/toolshed/gh-actions/github/mutex@371ca8f70a594fab435c21b74d098d54e2d3a045
+    if: ${{ steps.appauth.outputs.token || inputs.lock-token }}
+    with:
+      key: ${{ inputs.lock-id || inputs.image_tag }}
+      repository: ${{ inputs.lock-repository }}
+      token: ${{ steps.appauth.outputs.token || inputs.lock-token }}
   - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.1.7
     with:
       key: "${{ inputs.image_tag }}"
