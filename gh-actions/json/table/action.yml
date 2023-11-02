@@ -1,0 +1,46 @@
+
+inputs:
+  title:
+    type: string
+  header:
+    type: string
+    default: |
+      | Variable | Value |
+      | --- | --- |
+  json:
+    type: string
+    required: true
+  filter:
+    default: |
+      to_entries | map("| \(.key) | \(.value) |") | join("\n")
+  print-summary:
+    type: boolean
+    default: true
+
+outputs:
+  table:
+    value: ${{ steps.table.outputs.value }}
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.7
+    name: Generate table
+    id: table
+    with:
+      input: ${{ inputs.json }}
+      options: -r
+      filter: ${{ inputs.filter }}
+  - name: Summary
+    if: ${{ inputs.print-summary }}
+    run: |
+      {
+        echo "${TITLE}"
+        printf '%s' "${HEADER}"
+        echo "${TABLE}"
+      } >> $GITHUB_STEP_SUMMARY
+    env:
+      TITLE: ${{ inputs.title && format('### {0}', inputs.title) }}
+      TABLE: ${{ steps.table.outputs.value }}
+      HEADER: ${{ inputs.header }}
+    shell: bash
