@@ -20,10 +20,10 @@ runs:
   using: composite
   steps:
   - run: |
-      if [[ "$MIN" -le 0 || "${#STRING}" -lt "${MIN}" ]]; then
-          echo "string=${STRING}" >> $GITHUB_OUTPUT
-      else
+      if [[ "$MIN" -gt 0 && "${#STRING}" -ge "${MIN}" ]]; then
           echo "string=${STRING:$START:$LENGTH}" >> $GITHUB_OUTPUT
+      else
+          echo "string=${STRING}" >> $GITHUB_OUTPUT
       fi
     id: substr
     shell: bash
