@@ -14,7 +14,6 @@ env/
 build/
 develop-eggs/
 dist/
-!gh-actions/**/dist
 downloads/
 eggs/
 .eggs/
@@ -177,3 +176,6 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+!gh-actions/**/dist
+!gh-actions/github/mutex/lib
