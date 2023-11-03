@@ -14,6 +14,11 @@ inputs:
   lock-app-key:
     type: string
 
+outputs:
+  cached:
+    value: ${{ steps.prime.outputs.cached }}
+
+
 runs:
   using: "composite"
   steps:
@@ -31,6 +36,7 @@ runs:
       repository: ${{ inputs.lock-repository }}
       token: ${{ steps.appauth.outputs.token || inputs.lock-token }}
   - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.1.7
+    id: prime
     with:
       key: "${{ inputs.image_tag }}"
       command: |
