@@ -3,6 +3,8 @@ inputs:
   command:
     type: string
     required: true
+  args:
+    type: string
   command-prefix:
     type: string
     default:
@@ -49,7 +51,7 @@ runs:
           COMMAND+=(${{ inputs.container-command }})
       fi
       if [[ -n "${{ inputs.container-command }}" && -n "${{ inputs.command-prefix }}" ]]; then
-          COMMAND+=('${{ inputs.command-prefix }} ${{ inputs.command }}')
+          COMMAND+=(bash -c '${{ inputs.command-prefix }} ${{ inputs.command }}')
       else
           COMMAND+=(
               ${{ inputs.command-prefix }}
