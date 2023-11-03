@@ -23,6 +23,10 @@ inputs:
     type: boolean
     default: true
 
+outputs:
+  cached:
+    value: ${{ steps.cache-restore.outputs.cache-hit }}
+
 runs:
   using: "composite"
   steps:
