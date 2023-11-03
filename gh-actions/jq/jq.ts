@@ -12,6 +12,7 @@ const run = async (): Promise<void> => {
     const decode = core.getInput('decode')
     const options = core.getInput('options')
     const envVar = core.getInput('env_var')
+    const printResult = core.getInput('print-result')
 
     const filter = core.getInput('filter')
     if (!filter || filter === '') return
@@ -30,7 +31,7 @@ const run = async (): Promise<void> => {
     }
     // preferably use spawn/stdin
     const shellCommand = `echo '${input}' ${decodePipe} | jq ${options} '${filter} ${encodePipe}'`
-    console.log(`Running shell command: ${shellCommand}`)
+    // console.log(`Running shell command: ${shellCommand}`)
     const proc = spawn('sh', ['-c', shellCommand])
     const response = await proc
     const stdout = response.stdout
@@ -38,6 +39,9 @@ const run = async (): Promise<void> => {
     if (envVar) {
       process.env[envVar] = stdout
       core.exportVariable(envVar, stdout.trim())
+    }
+    if (printResult && printResult !== 'false') {
+      process.stdout.write(stdout.trim())
     }
   } catch (error) {
     const e = error as Record<'stderr', string>
