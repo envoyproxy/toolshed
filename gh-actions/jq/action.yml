@@ -28,6 +28,9 @@ inputs:
     description: >
       Env var to save output to
     default: ""
+  print-result:
+    type: boolean
+    default: false
 runs:
   using: 'node16'
   main: 'dist/index.js'
