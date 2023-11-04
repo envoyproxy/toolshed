@@ -51,13 +51,16 @@ runs:
           COMMAND+=(${{ inputs.container-command }})
       fi
       if [[ -n "${{ inputs.container-command }}" && -n "${{ inputs.command-prefix }}" ]]; then
-          COMMAND+=(bash -c '${{ inputs.command-prefix }} ${{ inputs.command }}')
+          COMMAND+=('${{ inputs.command-prefix }} ${{ inputs.command }}')
       else
           COMMAND+=(
               ${{ inputs.command-prefix }}
               ${{ inputs.command }})
       fi
       TMP_OUTPUT=$(mktemp)
+      if [[ -n "$RUNNER_DEBUG" || -n "$CI_DEBUG" ]]; then
+          echo "DEBUG: RUN ${COMMAND[*]}" >&2
+      fi
       "${COMMAND[@]}" 2> >(tee "$TMP_OUTPUT") || {
           FAILED=true
       }
