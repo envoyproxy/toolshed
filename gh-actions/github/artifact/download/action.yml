@@ -36,5 +36,5 @@ runs:
 
   - run: |
       cd ${{ inputs.path }}
-      unzip ${GITHUB_WORKSPACE}/${{ inputs.name }}.zip
+      unzip -q ${GITHUB_WORKSPACE}/${{ inputs.name }}.zip
     shell: bash
