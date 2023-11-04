@@ -5,9 +5,6 @@ inputs:
     required: true
   args:
     type: string
-  command-prefix:
-    type: string
-    default:
   container-command:
     type: string
     default:
@@ -47,16 +44,15 @@ runs:
           rm -rf "$SOURCETMP"
       fi
       COMMAND=()
-      if [[ -n "${{ inputs.container-command }}" ]]; then
+      read -ra ARGS <<< "${{ inputs.args }}"
+      ACTUAL_COMMAND=(
+          ${{ inputs.command }}
+          ${ARGS[@]})
+      CONTAINER_COMMAND="${{ inputs.container-command }}"
+      if [[ "${#CONTAINER_COMMAND}" -ne 0 ]]; then
           COMMAND+=(${{ inputs.container-command }})
       fi
-      if [[ -n "${{ inputs.container-command }}" && -n "${{ inputs.command-prefix }}" ]]; then
-          COMMAND+=('${{ inputs.command-prefix }} ${{ inputs.command }}')
-      else
-          COMMAND+=(
-              ${{ inputs.command-prefix }}
-              ${{ inputs.command }})
-      fi
+      COMMAND+=("${ACTUAL_COMMAND[@]}")
       TMP_OUTPUT=$(mktemp)
       if [[ -n "$RUNNER_DEBUG" || -n "$CI_DEBUG" ]]; then
           echo "DEBUG: RUN ${COMMAND[*]}" >&2
