@@ -25,7 +25,7 @@ runs:
     id: data
     run: |
       DATA=$(cat ${{ runner.temp }}/env.json)
-      printf 'data=%s' "${DATA}" >> $GITHUB_OUTPUT
+      echo "data=${DATA}" >> $GITHUB_OUTPUT
     shell: bash
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
     id: toenv
