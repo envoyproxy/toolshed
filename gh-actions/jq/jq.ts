@@ -16,11 +16,11 @@ const run = async (): Promise<void> => {
 
     const filter = core.getInput('filter')
     if (!filter || filter === '') return
-    core.info(`input: ${input}`)
-    core.info(`encode: ${encode}`)
-    core.info(`decode: ${decode}`)
-    core.info(`options: ${options}`)
-    core.info(`filter: ${filter}`)
+    core.debug(`input: ${input}`)
+    core.debug(`encode: ${encode}`)
+    core.debug(`decode: ${decode}`)
+    core.debug(`options: ${options}`)
+    core.debug(`filter: ${filter}`)
     let encodePipe = ''
     if (encode && encode !== 'false') {
       encodePipe = '| base64 -w0'
