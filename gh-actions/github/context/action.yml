@@ -1,0 +1,57 @@
+
+inputs:
+  resources:
+    type: string
+    default: |
+      github
+      runner
+      job
+      needs
+      steps
+      step
+      env
+      vars
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+    name: Config
+    id: config
+    with:
+      input: ${{ inputs.resources }}
+      options: -Rs
+      filter: |
+        split("\n") | map(select(length > 0))
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+    name: Print `github`
+    if: ${{ contains(fromJSON(steps.config.outputs.value), 'github') }}
+    with:
+      input: ${{ toJSON(github) }}
+      options: -C
+      filter: '.'
+      print-result: true
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+    name: Print `runner`
+    if: ${{ contains(fromJSON(steps.config.outputs.value), 'runner') }}
+    with:
+      input: ${{ toJSON(runner) }}
+      options: -C
+      filter: '.'
+      print-result: true
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+    name: Print job
+    if: ${{ contains(fromJSON(steps.config.outputs.value), 'job') }}
+    with:
+      input: ${{ toJSON(job) }}
+      options: -C
+      filter: '.'
+      print-result: true
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+    name: Print env
+    if: ${{ contains(fromJSON(steps.config.outputs.value), 'env') }}
+    with:
+      input: ${{ toJSON(env) }}
+      options: -C
+      filter: '.'
+      print-result: true
