@@ -15,7 +15,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
     name: Config
     id: config
     with:
@@ -23,7 +23,7 @@ runs:
       options: -Rs
       filter: |
         split("\n") | map(select(length > 0))
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
     name: Print `github`
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'github') }}
     with:
@@ -31,7 +31,7 @@ runs:
       options: -C
       filter: '.'
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
     name: Print `runner`
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'runner') }}
     with:
@@ -39,7 +39,7 @@ runs:
       options: -C
       filter: '.'
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
     name: Print job
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'job') }}
     with:
@@ -47,7 +47,7 @@ runs:
       options: -C
       filter: '.'
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.10
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
     name: Print env
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'env') }}
     with:
