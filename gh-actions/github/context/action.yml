@@ -39,6 +39,9 @@ runs:
       input: ${{ toJSON(github) }}
       options: -C
       print-result: true
+      use-tmp-file: true
+      filter: |
+        del(.token)
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.14
     name: Print runner
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'runner') }}
