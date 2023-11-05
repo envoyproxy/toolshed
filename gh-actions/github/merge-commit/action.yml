@@ -31,7 +31,7 @@ runs:
     shell: bash
     env:
       URL: https://api.github.com/repos/${{ inputs.repository }}/pulls/${{ inputs.pr }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.12
     id: jq
     with:
       input: ${{ steps.fetch.outputs.response }}
