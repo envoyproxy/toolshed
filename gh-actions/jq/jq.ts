@@ -1,7 +1,10 @@
 import * as core from '@actions/core'
+import fs from 'fs'
+import os from 'os'
 // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
 // @ts-ignore
-import {spawn} from '@await/spawn'
+import tmp from 'tmp'
+import {exec} from 'child_process'
 
 const run = async (): Promise<void> => {
   try {
@@ -29,20 +32,38 @@ const run = async (): Promise<void> => {
     if (decode && decode !== 'false') {
       decodePipe = '| base64 -d'
     }
-    // preferably use spawn/stdin
-    const shellCommand = `printf "%s" '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
+    let shellCommand = `printf '%s' '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
+    if (os.platform() === 'win32') {
+      const script = `#!/bin/bash
+${shellCommand}
+`
+      const tmpFile = tmp.fileSync()
+      fs.writeFileSync(tmpFile.name, script)
+      shellCommand = `bash ${tmpFile.name}`
+    }
     core.debug(`Running shell command: ${shellCommand}`)
-    const proc = spawn('sh', ['-c', shellCommand])
-    const response = await proc
-    const stdout = response.stdout
-    core.setOutput('value', stdout.trim())
-    if (envVar) {
-      process.env[envVar] = stdout
-      core.exportVariable(envVar, stdout.trim())
-    }
-    if (printResult && printResult !== 'false') {
-      process.stdout.write(stdout.trim())
-    }
+    const proc = exec(shellCommand, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error: ${error}`)
+        return
+      }
+      core.setOutput('value', stdout.trim())
+      if (envVar) {
+        process.env[envVar] = stdout
+        core.exportVariable(envVar, stdout.trim())
+      }
+      if (printResult && printResult !== 'false') {
+        process.stdout.write(stdout.trim())
+      }
+      if (stderr) {
+        core.error(`stderr: ${stderr}`)
+      }
+    })
+    proc.on('exit', (code) => {
+      if (code !== 0) {
+        core.error(`Child process exited with code ${code}`)
+      }
+    })
   } catch (error) {
     const e = error as Record<'stderr', string>
     if (e.stderr) {
