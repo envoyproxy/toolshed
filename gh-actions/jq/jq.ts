@@ -33,17 +33,21 @@ const run = async (): Promise<void> => {
     if (decode) {
       decodePipe = '| base64 -d'
     }
+    let tmpFile
     let shellCommand = `printf '%s' '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
     if (os.platform() === 'win32' || useTmpFile) {
       const script = `#!/bin/bash
 ${shellCommand}
 `
-      const tmpFile = tmp.fileSync()
+      tmpFile = tmp.fileSync()
       fs.writeFileSync(tmpFile.name, script)
       shellCommand = `bash ${tmpFile.name}`
     }
     core.debug(`Running shell command: ${shellCommand}`)
     const proc = exec(shellCommand, (error, stdout, stderr) => {
+      if (tmpFile) {
+        tmpFile.removeCallback()
+      }
       if (error) {
         console.error(`Error: ${error}`)
         return
