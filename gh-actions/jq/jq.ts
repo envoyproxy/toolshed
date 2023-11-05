@@ -31,7 +31,7 @@ const run = async (): Promise<void> => {
     }
     // preferably use spawn/stdin
     const shellCommand = `printf "%s" '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
-    console.debug(`Running shell command: ${shellCommand}`)
+    core.debug(`Running shell command: ${shellCommand}`)
     const proc = spawn('sh', ['-c', shellCommand])
     const response = await proc
     const stdout = response.stdout
