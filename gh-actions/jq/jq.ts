@@ -30,8 +30,8 @@ const run = async (): Promise<void> => {
       decodePipe = '| base64 -d'
     }
     // preferably use spawn/stdin
-    const shellCommand = `echo '${input}' ${decodePipe} | jq ${options} '${filter} ${encodePipe}'`
-    // console.log(`Running shell command: ${shellCommand}`)
+    const shellCommand = `printf "%s" '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
+    console.debug(`Running shell command: ${shellCommand}`)
     const proc = spawn('sh', ['-c', shellCommand])
     const response = await proc
     const stdout = response.stdout
