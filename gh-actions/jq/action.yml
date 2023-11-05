@@ -31,6 +31,9 @@ inputs:
   print-result:
     type: boolean
     default: false
+  use-tmp-file:
+    type: boolean
+    default: false
 runs:
   using: 'node16'
   main: 'dist/index.js'

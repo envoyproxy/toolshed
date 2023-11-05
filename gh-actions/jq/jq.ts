@@ -11,11 +11,12 @@ const run = async (): Promise<void> => {
     const input = core.getInput('input')
     if (!input || input === '') return
 
-    const encode = core.getInput('encode')
-    const decode = core.getInput('decode')
+    const useTmpFile = core.getBooleanInput('use-tmp-file')
+    const encode = core.getBooleanInput('encode')
+    const decode = core.getBooleanInput('decode')
     const options = core.getInput('options')
     const envVar = core.getInput('env_var')
-    const printResult = core.getInput('print-result')
+    const printResult = core.getBooleanInput('print-result')
 
     const filter = core.getInput('filter')
     if (!filter || filter === '') return
@@ -25,15 +26,15 @@ const run = async (): Promise<void> => {
     core.debug(`options: ${options}`)
     core.debug(`filter: ${filter}`)
     let encodePipe = ''
-    if (encode && encode !== 'false') {
+    if (encode) {
       encodePipe = '| base64 -w0'
     }
     let decodePipe = ''
-    if (decode && decode !== 'false') {
+    if (decode) {
       decodePipe = '| base64 -d'
     }
     let shellCommand = `printf '%s' '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
-    if (os.platform() === 'win32') {
+    if (os.platform() === 'win32' || useTmpFile) {
       const script = `#!/bin/bash
 ${shellCommand}
 `
@@ -52,14 +53,14 @@ ${shellCommand}
         process.env[envVar] = stdout
         core.exportVariable(envVar, stdout.trim())
       }
-      if (printResult && printResult !== 'false') {
+      if (printResult) {
         process.stdout.write(stdout.trim())
       }
       if (stderr) {
         core.error(`stderr: ${stderr}`)
       }
     })
-    proc.on('exit', (code) => {
+    proc.on('exit', code => {
       if (code !== 0) {
         core.error(`Child process exited with code ${code}`)
       }
