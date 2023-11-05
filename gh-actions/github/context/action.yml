@@ -11,11 +11,20 @@ inputs:
       step
       env
       vars
+  env:
+    type: string
+  job:
+    type: string
+  needs:
+    type: string
+  vars:
+    type: string
+
 
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.12
     name: Config
     id: config
     with:
@@ -23,35 +32,45 @@ runs:
       options: -Rs
       filter: |
         split("\n") | map(select(length > 0))
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
-    name: Print `github`
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.12
+    name: Print github
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'github') }}
     with:
       input: ${{ toJSON(github) }}
       options: -C
-      filter: '.'
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
-    name: Print `runner`
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.12
+    name: Print runner
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'runner') }}
     with:
       input: ${{ toJSON(runner) }}
       options: -C
-      filter: '.'
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.12
     name: Print job
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'job') }}
     with:
-      input: ${{ toJSON(job) }}
+      input: ${{ inputs.job || toJSON(job) }}
       options: -C
-      filter: '.'
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.11
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.12
     name: Print env
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'env') }}
     with:
-      input: ${{ toJSON(env) }}
+      input: ${{ inputs.env || toJSON(env) }}
       options: -C
-      filter: '.'
+      print-result: true
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.12
+    name: Print env
+    if: ${{ contains(fromJSON(steps.config.outputs.value), 'needs') && inputs.needs }}
+    with:
+      input: ${{ inputs.needs }}
+      options: -C
+      print-result: true
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.12
+    name: Print env
+    if: ${{ contains(fromJSON(steps.config.outputs.value), 'vars') && inputs.vars }}
+    with:
+      input: ${{ inputs.vars }}
+      options: -C
       print-result: true
