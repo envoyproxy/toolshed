@@ -29,20 +29,20 @@ runs:
   steps:
   - name: Fetch token for app auth
     id: appauth
-    uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.17
+    uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.18
     if: ${{ inputs.app_id && inputs.app_key }}
     with:
       app_id: ${{ inputs.app_id }}
       key: ${{ inputs.app_key }}
   - name: Parse YAML config
     id: parsed
-    uses: envoyproxy/toolshed/gh-actions/yaml/tojson@actions-v0.1.17
+    uses: envoyproxy/toolshed/gh-actions/yaml/tojson@actions-v0.1.18
     with:
       yaml: ${{ inputs.config || '{}' }}
   - name: Add auth token to config
     id: config
     if: ${{ steps.appauth.outputs.token }}
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.17
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.18
     with:
       input: ${{ steps.parsed.outputs.json }}
       filter: |
