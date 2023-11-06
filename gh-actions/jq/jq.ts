@@ -1,8 +1,6 @@
 import * as core from '@actions/core'
 import fs from 'fs'
 import os from 'os'
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
 import tmp from 'tmp'
 import {exec} from 'child_process'
 
@@ -17,8 +15,8 @@ const run = async (): Promise<void> => {
     const options = core.getInput('options')
     const envVar = core.getInput('env_var')
     const printResult = core.getBooleanInput('print-result')
-
     const filter = core.getInput('filter')
+
     if (!filter || filter === '') return
     core.debug(`input: ${input}`)
     core.debug(`encode: ${encode}`)
@@ -33,10 +31,10 @@ const run = async (): Promise<void> => {
     if (decode) {
       decodePipe = '| base64 -d'
     }
-    let tmpFile
+    let tmpFile: tmp.FileResult;
     let shellCommand = `printf '%s' '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
     if (os.platform() === 'win32' || useTmpFile) {
-      const script = `#!/bin/bash
+      const script = `#!/bin/bash -e
 ${shellCommand}
 `
       tmpFile = tmp.fileSync()
@@ -66,7 +64,7 @@ ${shellCommand}
     })
     proc.on('exit', code => {
       if (code !== 0) {
-        core.error(`Child process exited with code ${code}`)
+        core.setFailed(`Child process exited with code ${code}`)
       }
     })
   } catch (error) {
