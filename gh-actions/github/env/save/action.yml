@@ -1,5 +1,8 @@
 
 inputs:
+  name:
+    type: string
+    default: env
   env:
     type: string
     required: true
@@ -13,10 +16,10 @@ runs:
     shell: bash
     run: |
       OUTPUT_DIR=$(mktemp -d)
-      echo '${{ inputs.env }}' >> "$OUTPUT_DIR/env.json"
+      echo '${{ inputs.env }}' >> "$OUTPUT_DIR/${{ inputs.name }}.json"
       echo "directory=${OUTPUT_DIR}" >> $GITHUB_OUTPUT
   - name: Upload environment data
     uses: actions/upload-artifact@v3
     with:
-      name: env
+      name: ${{ inputs.name }}
       path: ${{ steps.save.outputs.directory }}
