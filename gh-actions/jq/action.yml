@@ -19,7 +19,7 @@ inputs:
   options:
     description: >
       Jq command options.
-    default: ""
+    default: "-c"
   filter:
     description: >
       Jq filter expression.
