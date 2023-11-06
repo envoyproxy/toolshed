@@ -17,6 +17,8 @@ outputs:
 runs:
   using: composite
   steps:
+  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.18
+    name: Github context
   - name: Download environment data
     id: download
     uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.1.18
@@ -37,3 +39,9 @@ runs:
       options: -r
       filter: |
         to_entries[] | .key + "=" + (.value | tostring)
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.18
+    name: Print env data
+    with:
+      input: ${{ steps.data.outputs.value }}
+      options: -C
+      print-result: true
