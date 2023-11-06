@@ -1,0 +1,50 @@
+
+inputs:
+  checks:
+    type: string
+    required: true
+  repository:
+    type: string
+  app-id:
+    type: string
+  app-key:
+    type: string
+
+
+outputs:
+  checks:
+    value: ${{ steps.checks.outputs.value }}
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.18
+    name: Print checks
+    with:
+      input: ${{ inputs.checks }}
+      options: -C
+      print-result: true
+  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.18
+    name: App auth
+    id: appauth
+    with:
+      app_id: ${{ inputs.app-id }}
+      key: ${{ inputs.app-key }}
+  - name: Start checks
+    id: start-checks
+    shell: bash
+    run: |
+      while IFS=$\n read -r check; do
+          INPUT=$(echo "$check" | jq -c 'del(.id)')
+          CHECK_ID=$(echo "$check" | jq -r '.id')
+          CHECK_RUN_ID=$(printf '%s' "$INPUT" | gh api -XPOST --input - --jq '.id' repos/${{ inputs.repository || github.repository }}/check-runs)
+          echo "check-run-${CHECK_ID}=${CHECK_RUN_ID}" >> $GITHUB_OUTPUT
+      done <<< "$CHECKS"
+    env:
+      GH_TOKEN: ${{ steps.appauth.outputs.token }}
+      CHECKS: ${{ inputs.checks }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.18
+    name: Checks
+    id: checks
+    with:
+      input: ${{ toJSON(steps.start-checks.outputs) }}

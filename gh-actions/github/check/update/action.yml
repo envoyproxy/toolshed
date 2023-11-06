@@ -1,0 +1,44 @@
+
+inputs:
+  id:
+    type: string
+    required: true
+  data:
+    type: string
+    required: true
+  repository:
+    type: string
+  app-id:
+    type: string
+  app-key:
+    type: string
+
+
+outputs:
+  checks:
+    value: ${{ steps.checks.outputs.value }}
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.18
+    name: App auth
+    id: appauth
+    with:
+      key: '${{ inputs.app-key }}'
+      app_id: ${{ inputs.app-id }}
+  - name: Progress status check
+    id: progress
+    run: |
+      response=$(echo $INPUT | gh api -XPATCH --input - repos/${{ inputs.repository || github.repository }}/check-runs/${{ inputs.id }})
+      echo "response=${response}" >> $GITHUB_OUTPUT
+    shell: bash
+    env:
+      INPUT: ${{ inputs.data }}
+      GH_TOKEN: ${{ steps.appauth.outputs.token }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.18
+    name: Print check response
+    with:
+      input: ${{ steps.progress.outputs.response }}
+      options: -C
+      print-result: true
