@@ -1,5 +1,5 @@
-name: 'Dispatch'
-description: 'Dispatch Github workflow.'
+name: 'Appauth'
+description: 'Appauth Github workflow.'
 author: 'phlax'
 inputs:
   key:
@@ -13,6 +13,15 @@ inputs:
     type: number
     description: >
       App installation ID for dispatch.
+  token:
+    type: string
+    description: |
+      Token to use if no key/id supplied.
+  token-ok:
+    type: boolean
+    default: false
+    description: |
+      Dont warn if token used.
 
 runs:
   using: 'node16'

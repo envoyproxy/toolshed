@@ -8,9 +8,23 @@ type listInstallationsResponse = Endpoints['GET /app/installations']['response']
 const run = async (): Promise<void> => {
   try {
     const privateKey = core.getInput('key')
-    if (!privateKey || privateKey === '') return
     const appId = core.getInput('app_id')
-    if (!appId || appId === '') return
+    const providedToken = core.getInput('token')
+    const tokenOk = core.getBooleanInput('token-ok')
+
+    if (privateKey === '' || appId === '') {
+      if (providedToken === '') {
+        core.error('You must either provide app id/key or token, none provided')
+        core.setFailed('No appauth token provided')
+        return
+      }
+      if (!tokenOk) {
+        core.warning('No app id/key provided, using token')
+      }
+      core.setOutput('token', providedToken)
+      core.setSecret('token')
+      return
+    }
 
     let installationId = parseInt(core.getInput('installation_id'))
     const appOctokit = new Octokit({
@@ -45,9 +59,9 @@ const run = async (): Promise<void> => {
     core.setSecret('value')
   } catch (error) {
     if (error instanceof Error) {
-      console.error(error.message)
+      core.error(error.message)
     }
-    core.setFailed(`dispatch failure: ${error}`)
+    core.setFailed(`Appauth failure: ${error}`)
   }
 }
 
