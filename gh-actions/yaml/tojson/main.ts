@@ -7,8 +7,9 @@ const run = async (): Promise<void> => {
   try {
     const yamlString = core.getInput('yaml')
     if (!yamlString || yamlString === '') return
+    const compact = core.getBooleanInput('compact')
     const yamlObject = yaml.load(yamlString)
-    const jsonString = JSON.stringify(yamlObject)
+    const jsonString = compact ? JSON.stringify(yamlObject) : JSON.stringify(yamlObject, null, 2)
     core.setOutput('json', jsonString)
   } catch (error) {
     if (error instanceof Error) {

@@ -6,6 +6,10 @@ inputs:
     type: string
     description: >
       Yaml string to convert.
+  compact:
+    type: boolean
+    description: >
+      Compact JSON output.
 
 runs:
   using: 'node16'
