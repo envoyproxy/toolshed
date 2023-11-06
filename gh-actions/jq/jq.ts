@@ -31,7 +31,7 @@ const run = async (): Promise<void> => {
     if (decode) {
       decodePipe = '| base64 -d'
     }
-    let tmpFile: tmp.FileResult;
+    let tmpFile: tmp.FileResult
     let shellCommand = `printf '%s' '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
     if (os.platform() === 'win32' || useTmpFile) {
       const script = `#!/bin/bash -e
