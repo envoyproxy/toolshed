@@ -11,6 +11,12 @@ inputs:
   catch-errors:
     type: boolean
     default: false
+  diskspace-hack:
+    type: boolean
+    default: false
+  diskspace-hack-paths:
+    type: string
+    default:
   error-match:
     type: string
     default: |
@@ -21,6 +27,38 @@ inputs:
     type: string
     default: |
       NOTICE
+  report-pre:
+    type: string
+    default: |
+      - run: |
+          echo "disk space at beginning of build:"
+          df -h
+        shell: bash
+  report-post:
+    type: string
+    default: |
+      - run: |
+          echo "disk space at end of build:"
+          df -h
+        shell: bash
+  steps-pre:
+    type: string
+    default:
+  steps-pre-name:
+    type: string
+    default:
+  steps-post:
+    type: string
+    default:
+  steps-post-name:
+    type: string
+    default:
+  upload-name:
+    type: string
+    default:
+  upload-path:
+    type: string
+    default:
   warning-match:
     type: string
     default: |
@@ -35,6 +73,22 @@ inputs:
 runs:
   using: composite
   steps:
+  - if: ${{ fromJSON(inputs.diskspace-hack) }}
+    name: Free diskspace
+    uses: envoyproxy/toolshed/gh-actions/diskspace@b3733ee24a6e7f41c0e72e3eec55ef965cb214f8
+    with:
+      to_remove: ${{ inputs.diskskpack-hack-paths }}
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.20
+    name: Pre report
+    if: ${{ inputs.report-pre }}
+    with:
+      steps: ${{ inputs.report-pre }}
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.20
+    name: Run pre steps
+    if: ${{ inputs.steps-pre }}
+    with:
+      name: ${{ inputs.steps-pre-name }}
+      steps: ${{ inputs.steps-pre }}
   - run: |
       if [[ "${#INPUT_ENV}" -ne 0 ]]; then
           SOURCETMP="$(mktemp)"
@@ -102,3 +156,20 @@ runs:
     shell: bash
     env:
       INPUT_ENV: ${{ inputs.source }}
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.20
+    name: Run post steps
+    if: ${{ inputs.steps-post }}
+    with:
+      name: ${{ inputs.steps-post-name }}
+      steps: ${{ inputs.steps-post }}
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.20
+    name: Post report
+    if: ${{ inputs.report-post }}
+    with:
+      steps: ${{ inputs.report-post }}
+  - uses: actions/upload-artifact@v3
+    name: Upload artefacts
+    if: ${{ inputs.upload-name && inputs.upload-path }}
+    with:
+      name: ${{ inputs.upload-name }}
+      path: ${{ inputs.upload-path }}
