@@ -3,6 +3,9 @@ import fs from 'fs'
 import os from 'os'
 import tmp from 'tmp'
 import {exec} from 'child_process'
+// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
+// @ts-ignore
+import * as yaml from 'js-yaml'
 
 const run = async (): Promise<void> => {
   try {
@@ -16,6 +19,8 @@ const run = async (): Promise<void> => {
     const envVar = core.getInput('env_var')
     const printResult = core.getBooleanInput('print-result')
     const filter = core.getInput('filter')
+    const sanitize = core.getBooleanInput('sanitize-input')
+    const inputFormat = core.getInput('input-format')
 
     if (!filter || filter === '') return
     core.debug(`input: ${input}`)
@@ -31,15 +36,22 @@ const run = async (): Promise<void> => {
     if (decode) {
       decodePipe = '| base64 -d'
     }
+    let sanitizedInput
+    if (sanitize && inputFormat === 'json') {
+      sanitizedInput = JSON.stringify(JSON.parse(input), null, 2)
+    } else if (inputFormat === 'yaml') {
+      const yamlObject = yaml.load(input)
+      sanitizedInput = JSON.stringify(yamlObject, null, 2)
+    } else {
+      sanitizedInput = input
+    }
+
     let tmpFile: tmp.FileResult
-    let shellCommand = `printf '%s' '${input}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
+    let shellCommand = `printf '%s' '${sanitizedInput}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
     if (os.platform() === 'win32' || useTmpFile) {
-      const script = `#!/bin/bash -e
-${shellCommand}
-`
       tmpFile = tmp.fileSync()
-      fs.writeFileSync(tmpFile.name, script)
-      shellCommand = `bash ${tmpFile.name}`
+      fs.writeFileSync(tmpFile.name, sanitizedInput)
+      shellCommand = `cat ${tmpFile.name} ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
     }
     core.debug(`Running shell command: ${shellCommand}`)
     const proc = exec(shellCommand, (error, stdout, stderr) => {
