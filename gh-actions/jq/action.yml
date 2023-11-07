@@ -33,7 +33,13 @@ inputs:
     default: false
   use-tmp-file:
     type: boolean
-    default: false
+    default: true
+  input-format:
+    type: string
+    default: json
+  sanitize-input:
+    type: boolean
+    default: true
 runs:
   using: 'node16'
   main: 'dist/index.js'

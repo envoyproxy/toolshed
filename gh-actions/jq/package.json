@@ -43,6 +43,7 @@
   },
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@await/spawn": "^9.0.0"
+    "@await/spawn": "^9.0.0",
+    "js-yaml": "^4.1.0"
   }
 }
