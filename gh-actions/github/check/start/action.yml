@@ -18,13 +18,13 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.23
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.24
     name: Print checks
     with:
       input: ${{ inputs.checks }}
       options: -C
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.23
+  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.24
     name: App auth
     id: appauth
     with:
@@ -43,7 +43,7 @@ runs:
     env:
       GH_TOKEN: ${{ steps.appauth.outputs.token }}
       CHECKS: ${{ inputs.checks }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.23
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.24
     name: Checks
     id: checks
     with:
