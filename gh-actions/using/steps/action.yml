@@ -14,7 +14,13 @@ runs:
     # This allows latebinding using `%{{ }}`
     # For example, to use output from a previous step you can use
     # %{{ steps.stepname.outputs }}
-    run: ${{ github.action_path }}/create-steps.sh
+    run: |
+      ACTION_PATH='${{ github.action_path }}'
+      if [[ ${{ runner.os  }} == "Windows" ]]; then
+          ACTION_PATH=$(echo $ACTION_PATH | tr '/' '\\')
+      fi
+      ls -alh "${ACTION_PATH}/create-steps.sh"
+      "${ACTION_PATH}/create-steps.sh"
     env:
       STEPS: ${{ inputs.steps }}
   - name: Run (${{ inputs.name || '.tmp.action' }})
