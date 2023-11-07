@@ -22,8 +22,10 @@ runs:
     shell: bash
     run: |
       OUTPUT_DIR=$(mktemp -d)
-      echo '${{ inputs.env }}' >> "$OUTPUT_DIR/${{ inputs.name }}.json"
+      echo '%s' "$INPUT_ENV"  >> "$OUTPUT_DIR/${{ inputs.name }}.json"
       echo "directory=${OUTPUT_DIR}" >> $GITHUB_OUTPUT
+    env:
+      INPUT_ENV: ${{ inputs.env }}
   - name: Upload environment data
     uses: actions/upload-artifact@v3
     with:
