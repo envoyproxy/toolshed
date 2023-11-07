@@ -13,6 +13,9 @@ inputs:
   committer-email:
     type: string
     default:
+  ref-is-ancestor:
+    type: boolean
+    default: false
   strip-prefix:
     type: string
     default:
@@ -47,9 +50,42 @@ runs:
       input: ${{ steps.parsed.outputs.json }}
       filter: |
         . + { "token": "${{ steps.appauth.outputs.token }}" }
+
+  # If ref-is-ancestor and the ref are set, fetch-depth should not be 1
+  # If its not set or set to 1 it will be changed to 0
+  # Otherwise the current value is preserved, allowing you to specify the
+  # depth of the checked ancestor.
+  - name: Remove ref
+    id: updated-config-noref
+    if: ${{ inputs.ref-is-ancestor && toJSON(steps.config.outputs.value).ref }}
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.19
+    with:
+      input: ${{ steps.config.outputs.value }}
+      filter: |
+        | del(.ref)
+  - name: Set fetch-depth if required
+    id: updated-config
+    if: ${{ steps.updated-config-noref.outputs.value && contains(fromJSON('[1, "1", ""]'), toJSON(steps.config.outputs.value).fetch-depth) }}
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.19
+    with:
+      input: ${{ steps.updated-config-noref.outputs.value }}
+      filter: |
+        . + { "fetch-depth": 0 }
+
   - uses: actions/checkout@v4
     name: Checkout repository
-    with: ${{ fromJSON(steps.appauth.outputs.token && steps.config.outputs.value || steps.parsed.outputs.json) }}
+    with: ${{ fromJSON(steps.appauth.outputs.token && (steps.updated-config.outputs.value || steps.config.outputs.value) || steps.parsed.outputs.json) }}
+  - run: |
+      if ! git merge-base --is-ancestor "${REF}" HEAD; then
+          echo "Provided ref (${REF}) is not an ancestor of current branch" >&2
+          exit 1
+      fi
+      git checkout "${REF}"
+    if: ${{ inputs.ref-is-ancestor && toJSON(steps.config.outputs.value).ref }}
+    name: Check provided ref
+    shell: bash
+    env:
+      REF: ${{ toJSON(steps.config.outputs.value).ref }}
   - name: Configure committer
     if: ${{ inputs.committer-name && inputs.committer-email }}
     run: |
