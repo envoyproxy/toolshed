@@ -102,8 +102,10 @@ runs:
       ACTUAL_COMMAND=(
           ${{ inputs.command }}
           ${ARGS[@]})
-      CONTAINER_COMMAND="${{ inputs.container-command }}"
+      # allow mangling of command in presteps
       if [[ "${#CONTAINER_COMMAND}" -ne 0 ]]; then
+          COMMAND+=(${CONTAINER_COMMAND})
+      else
           COMMAND+=(${{ inputs.container-command }})
       fi
       COMMAND+=("${ACTUAL_COMMAND[@]}")
