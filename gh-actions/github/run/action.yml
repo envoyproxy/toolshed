@@ -75,15 +75,15 @@ runs:
   steps:
   - if: ${{ fromJSON(inputs.diskspace-hack) }}
     name: Free diskspace
-    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.27
+    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.28
     with:
       to_remove: ${{ inputs.diskskpack-hack-paths }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.27
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.28
     name: Pre report
     if: ${{ inputs.report-pre }}
     with:
       steps: ${{ inputs.report-pre }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.27
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.28
     name: Run pre steps
     if: ${{ inputs.steps-pre }}
     with:
@@ -158,13 +158,13 @@ runs:
     shell: bash
     env:
       INPUT_ENV: ${{ inputs.source }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.27
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.28
     name: Run post steps
     if: ${{ inputs.steps-post }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.27
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.28
     name: Post report
     if: ${{ inputs.report-post }}
     with:

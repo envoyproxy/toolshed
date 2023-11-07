@@ -11,7 +11,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.27
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.28
     name: Print check proxy data
     with:
       input: ${{ inputs.env }}
@@ -22,7 +22,7 @@ runs:
     shell: bash
     run: |
       OUTPUT_DIR=$(mktemp -d)
-      echo '%s' "$INPUT_ENV"  >> "$OUTPUT_DIR/${{ inputs.name }}.json"
+      printf "%s" "$INPUT_ENV"  >> "$OUTPUT_DIR/${{ inputs.name }}.json"
       echo "directory=${OUTPUT_DIR}" >> $GITHUB_OUTPUT
     env:
       INPUT_ENV: ${{ inputs.env }}
