@@ -23,6 +23,7 @@ runs:
     with:
       input: ${{ inputs.checks }}
       options: -C
+      sanitize-input: false
       print-result: true
   - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.26
     name: App auth
