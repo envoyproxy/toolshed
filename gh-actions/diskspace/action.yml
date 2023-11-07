@@ -1,10 +1,8 @@
 inputs:
   to_remove:
     type: string
-    default: |
-      /opt/hostedtoolcache
-      /usr/local/lib/android
-      /usr/local/.ghcup
+    default:
+
 
 runs:
   using: composite
@@ -14,14 +12,21 @@ runs:
     run: |
       echo "Disk space before cruft removal"
       df -h
-
-      TO_REMOVE=(${{ inputs.to_remove }})
-
+      if [[ -n "${{ inputs.to_remove }}" ]]; then
+          TO_REMOVE=(${{ inputs.to_remove }})
+      else
+          TO_REMOVE=(${DEFAULT_DIRECTORIES})
+      fi
       for removal in "${TO_REMOVE[@]}"; do
           echo "Removing: ${removal} ..."
           sudo rm -rf "$removal"
       done
 
-      echo "Disk after before cruft removal"
+      echo "Disk after cruft removal"
       df -h
+    env:
+      DEFAULT_DIRECTORIES: |
+        /opt/hostedtoolcache
+        /usr/local/lib/android
+        /usr/local/.ghcup
     shell: bash
