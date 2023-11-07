@@ -39,7 +39,7 @@ runs:
           INPUT=$(echo "$check" | jq -c 'del(.id)')
           CHECK_ID=$(echo "$check" | jq -r '.id')
           CHECK_RUN_ID=$(printf '%s' "$INPUT" | gh api -XPOST --input - --jq '.id' repos/${{ inputs.repository || github.repository }}/check-runs)
-          echo "check-run-${CHECK_ID}=${CHECK_RUN_ID}" >> $GITHUB_OUTPUT
+          echo "${CHECK_ID}=${CHECK_RUN_ID}" >> $GITHUB_OUTPUT
       done <<< "$CHECKS"
     env:
       GH_TOKEN: ${{ steps.appauth.outputs.token }}
