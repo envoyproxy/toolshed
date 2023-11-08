@@ -2,6 +2,8 @@
 inputs:
   title:
     type: string
+  summary:
+    type: string
   header:
     type: string
     default: |
@@ -16,6 +18,9 @@ inputs:
   print-summary:
     type: boolean
     default: true
+  collapse:
+    type: boolean
+    default: false
 
 outputs:
   table:
@@ -32,7 +37,7 @@ runs:
       options: -r
       filter: ${{ inputs.filter }}
   - name: Summary
-    if: ${{ inputs.print-summary }}
+    if: ${{ inputs.print-summary && ! inputs.collapse }}
     run: |
       {
         echo "${TITLE}"
@@ -43,4 +48,37 @@ runs:
       TITLE: ${{ inputs.title && format('### {0}', inputs.title) }}
       TABLE: ${{ steps.table.outputs.value }}
       HEADER: ${{ inputs.header }}
+    shell: bash
+
+  - name: Indent table
+    run: |
+      TABLE=$(echo '${{ steps.table.outputs.value }}' | sed  's#^#  #')
+      HEADER=$(echo -n '${{ inputs.header }}' | sed  's#^#  #')
+      echo "table<<nEOFn" >> $GITHUB_OUTPUT
+      printf "%s\n" "${HEADER}" >> $GITHUB_OUTPUT
+      echo "${TABLE}" >> $GITHUB_OUTPUT
+      echo "nEOFn" >> $GITHUB_OUTPUT
+
+    id: indented
+    if: ${{ inputs.print-summary && inputs.collapse }}
+    shell: bash
+
+  - name: Summary
+    if: ${{ inputs.print-summary && inputs.collapse }}
+    run: |
+      echo "CREATING COLLAPSE ..."
+      {
+        printf '%s' "${TABLE}"
+      } >> $GITHUB_STEP_SUMMARY
+    env:
+      TABLE: |
+
+        <details>
+          <summary><b>${{ inputs.title }}</b></summary>
+
+          ### ${{ inputs.summary }}
+
+        ${{ steps.indented.outputs.table }}
+
+        </details>
     shell: bash
