@@ -24,7 +24,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.27
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.28
     name: Generate table
     id: table
     with:
