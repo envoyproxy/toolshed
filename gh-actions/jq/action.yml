@@ -34,6 +34,9 @@ inputs:
   use-tmp-file:
     type: boolean
     default: true
+  use-tmp-file-filter:
+    type: boolean
+    default: false
   input-format:
     type: string
     default: json
