@@ -13,6 +13,7 @@ const run = async (): Promise<void> => {
     if (!input || input === '') return
 
     const useTmpFile = core.getBooleanInput('use-tmp-file')
+    const useTmpFileForFilter = core.getBooleanInput('use-tmp-file-filter')
     const encode = core.getBooleanInput('encode')
     const decode = core.getBooleanInput('decode')
     const options = core.getInput('options')
@@ -47,16 +48,29 @@ const run = async (): Promise<void> => {
     }
 
     let tmpFile: tmp.FileResult
-    let shellCommand = `printf '%s' '${sanitizedInput}' ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
+    let tmpFileFilter: tmp.FileResult
+    let filterArg
+
+    if (os.platform() === 'win32' || useTmpFileForFilter) {
+      tmpFileFilter = tmp.fileSync()
+      fs.writeFileSync(tmpFileFilter.name, filter)
+      filterArg = `-f ${tmpFileFilter.name}`
+    } else {
+      filterArg = `'${filter}'`
+    }
+    let shellCommand = `printf '%s' '${sanitizedInput}' ${decodePipe} | jq ${options} ${filterArg} ${encodePipe}`
     if (os.platform() === 'win32' || useTmpFile) {
       tmpFile = tmp.fileSync()
       fs.writeFileSync(tmpFile.name, sanitizedInput)
-      shellCommand = `cat ${tmpFile.name} ${decodePipe} | jq ${options} '${filter}' ${encodePipe}`
+      shellCommand = `cat ${tmpFile.name} ${decodePipe} | jq ${options} ${filterArg} ${encodePipe}`
     }
     core.debug(`Running shell command: ${shellCommand}`)
     const proc = exec(shellCommand, (error, stdout, stderr) => {
       if (tmpFile) {
         tmpFile.removeCallback()
+      }
+      if (tmpFileFilter) {
+        tmpFileFilter.removeCallback()
       }
       if (error) {
         console.error(`Error: ${error}`)
