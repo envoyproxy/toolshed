@@ -41,6 +41,9 @@ inputs:
           echo "disk space at end of build:"
           df -h
         shell: bash
+  summary-post:
+    type: string
+    default:
   steps-pre:
     type: string
     default:
@@ -66,6 +69,9 @@ inputs:
       warning:
       Warning:
 
+  context:
+    type: string
+
   source:
     type: string
 
@@ -75,20 +81,22 @@ runs:
   steps:
   - if: ${{ fromJSON(inputs.diskspace-hack) }}
     name: Free diskspace
-    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.29
+    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.30
     with:
       to_remove: ${{ inputs.diskskpack-hack-paths }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.29
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
     name: Pre report
     if: ${{ inputs.report-pre }}
     with:
       steps: ${{ inputs.report-pre }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.29
+      context: ${{ inputs.context }}
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
     name: Run pre steps
     if: ${{ inputs.steps-pre }}
     with:
       name: ${{ inputs.steps-pre-name }}
       steps: ${{ inputs.steps-pre }}
+      context: ${{ inputs.context }}
   - run: |
       if [[ "${#INPUT_ENV}" -ne 0 ]]; then
           SOURCETMP="$(mktemp)"
@@ -158,20 +166,28 @@ runs:
     shell: bash
     env:
       INPUT_ENV: ${{ inputs.source }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.29
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
     name: Run post steps
     if: ${{ inputs.steps-post }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.29
+      context: ${{ inputs.context }}
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
     name: Post report
     if: ${{ inputs.report-post }}
     with:
       steps: ${{ inputs.report-post }}
+      context: ${{ inputs.context }}
   - uses: actions/upload-artifact@v3
     name: Upload artefacts
     if: ${{ inputs.upload-name && inputs.upload-path }}
     with:
       name: ${{ inputs.upload-name }}
       path: ${{ inputs.upload-path }}
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
+    name: Job summary
+    if: ${{ inputs.summary-post }}
+    with:
+      steps: ${{ inputs.summary-post }}
+      context: ${{ inputs.context }}
