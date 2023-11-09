@@ -36,7 +36,7 @@ inputs:
     default: true
   use-tmp-file-filter:
     type: boolean
-    default: false
+    default: true
   input-format:
     type: string
     default: json
