@@ -1,4 +1,3 @@
-
 inputs:
   command:
     type: string
@@ -150,7 +149,8 @@ runs:
       fi
       TMP_STDERR=$(mktemp)
       echo "stderr-path=${TMP_STDERR}" >> $GITHUB_OUTPUT
-      $COMMAND 2> >(tee "$TMP_STDERR") || {
+      read -ra COMMAND_PARTS <<< "$COMMAND"
+      "${COMMAND_PARTS[@]}" 2> >(tee "$TMP_STDERR") || {
           echo "exit-code=$?" >> $GITHUB_OUTPUT
           exit 0
       }
