@@ -68,6 +68,9 @@ inputs:
       WARNING
       warning:
       Warning:
+  working-directory:
+    type: string
+    default: .
 
   context:
     type: string
@@ -97,7 +100,6 @@ runs:
       name: ${{ inputs.steps-pre-name }}
       steps: ${{ inputs.steps-pre }}
       context: ${{ inputs.context }}
-
   - run: |
       if [[ "${#INPUT_ENV}" -ne 0 ]]; then
           SOURCETMP="$(mktemp)"
@@ -141,6 +143,7 @@ runs:
 
 
   - run: |
+      cd $TARGET_PATH
       if [[ -n "${SOURCETMP}" ]]; then
           . "$SOURCETMP"
           rm -rf "$SOURCETMP"
@@ -157,6 +160,7 @@ runs:
     env:
       COMMAND: ${{ steps.command.outputs.command }}
       SOURCETMP: ${{ steps.source.outputs.file }}
+      TARGET_PATH: ${{ inputs.working-directory }}
   - run: |
       STDERR="$(cat "$TMP_STDERR")"
       rm -rf "$TMP_STDERR"
