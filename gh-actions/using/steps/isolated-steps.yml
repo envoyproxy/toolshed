@@ -1,0 +1,4 @@
+runs:
+  using: composite
+  steps:
+${__STEPS__}
