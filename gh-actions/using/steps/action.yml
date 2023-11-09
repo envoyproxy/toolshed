@@ -3,8 +3,18 @@ inputs:
   steps:
     type: string
     required: true
+  isolated:
+    type: boolean
+    default: false
   name:
     default:
+  context:
+    type: string
+
+outputs:
+  steps:
+    value: ${{ steps.steps.outputs.steps && toJSON(steps.steps.outputs.steps) || '' }}
+
 
 runs:
   using: composite
@@ -19,12 +29,18 @@ runs:
       if [[ ${{ runner.os  }} == "Windows" ]]; then
           ACTION_PATH=$(echo $ACTION_PATH | tr '/' '\\')
       fi
-      ls -alh "${ACTION_PATH}/create-steps.sh"
-      "${ACTION_PATH}/create-steps.sh"
+      "${ACTION_PATH}/create-steps.sh" "${ACTION_PATH}/${TEMPLATE}"
     env:
       STEPS: ${{ inputs.steps }}
+      TEMPLATE: ${{ !fromJSON(inputs.isolated) && 'steps.yml' || 'isolated-steps.yml' }}
+  - run: |
+      cat .tmp.action/action.yml
+    shell: bash
   - name: Run (${{ inputs.name || '.tmp.action' }})
     uses: ./.tmp.action
+    id: steps
+    with:
+      context: ${{ !fromJSON(inputs.isolated) && inputs.context || '' }}
   - name: Cleanup (.tmp.action)
     if: always()
     shell: bash

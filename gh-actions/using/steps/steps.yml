@@ -1,0 +1,12 @@
+inputs:
+  context:
+    type: string
+
+outputs:
+  steps:
+    value: ${{ toJSON(steps) }}
+
+runs:
+  using: composite
+  steps:
+${__STEPS__}
