@@ -81,30 +81,37 @@ runs:
   steps:
   - if: ${{ fromJSON(inputs.diskspace-hack) }}
     name: Free diskspace
-    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.30
+    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.31
     with:
       to_remove: ${{ inputs.diskskpack-hack-paths }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.31
     name: Pre report
     if: ${{ inputs.report-pre }}
     with:
       steps: ${{ inputs.report-pre }}
       context: ${{ inputs.context }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.31
     name: Run pre steps
     if: ${{ inputs.steps-pre }}
     with:
       name: ${{ inputs.steps-pre-name }}
       steps: ${{ inputs.steps-pre }}
       context: ${{ inputs.context }}
+
   - run: |
       if [[ "${#INPUT_ENV}" -ne 0 ]]; then
           SOURCETMP="$(mktemp)"
           # TODO(phlax): Fix escaping
           printf "%s" '${{ inputs.source }}' > "$SOURCETMP"
-          . "$SOURCETMP"
-          rm -rf "$SOURCETMP"
       fi
+      echo "file=${SOURCETMP}" >> $GITHUB_OUTPUT
+    if: ${{ inputs.source }}
+    id: source
+    env:
+      INPUT_ENV: ${{ inputs.source }}
+    shell: bash
+
+  - run: |
       COMMAND=()
       read -ra ARGS <<< "${{ inputs.args }}"
       ACTUAL_COMMAND=(
@@ -117,16 +124,42 @@ runs:
           COMMAND+=(${{ inputs.container-command }})
       fi
       COMMAND+=("${ACTUAL_COMMAND[@]}")
-      TMP_OUTPUT=$(mktemp)
-      if [[ -n "$RUNNER_DEBUG" || -n "$CI_DEBUG" ]]; then
-          echo "DEBUG: RUN ${COMMAND[*]}" >&2
-      fi
-      "${COMMAND[@]}" 2> >(tee "$TMP_OUTPUT") || {
-          FAILED=true
-      }
-      OUTPUT="$(cat "$TMP_OUTPUT")"
-      rm -rf "$TMP_OUTPUT"
+      echo "command=${COMMAND[*]}" >> $GITHUB_OUTPUT
+    id: command
+    shell: bash
 
+  - run: |
+      echo "DEBUG: RUN ${COMMAND}" >&2
+      if [[ -e "$SOURCETMP" ]]; then
+          cat $SOURCETMP
+      fi
+    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
+    env:
+      COMMAND: ${{ steps.command.outputs.command }}
+      SOURCETMP: ${{ steps.source.outputs.file }}
+    shell: bash
+
+
+  - run: |
+      if [[ -n "${SOURCETMP}" ]]; then
+          . "$SOURCETMP"
+          rm -rf "$SOURCETMP"
+      fi
+      TMP_STDERR=$(mktemp)
+      echo "stderr-path=${TMP_STDERR}" >> $GITHUB_OUTPUT
+      $COMMAND 2> >(tee "$TMP_STDERR") || {
+          echo "exit-code=$?" >> $GITHUB_OUTPUT
+          exit 0
+      }
+      echo "exit-code=0" >> $GITHUB_OUTPUT
+    shell: bash
+    id: run
+    env:
+      COMMAND: ${{ steps.command.outputs.command }}
+      SOURCETMP: ${{ steps.source.outputs.file }}
+  - run: |
+      STDERR="$(cat "$TMP_STDERR")"
+      rm -rf "$TMP_STDERR"
       bubble_messages () {
           local message_type="$1" \
                 matcher="$2" \
@@ -137,7 +170,7 @@ runs:
           done <<< "$matcher"
           declare -a issued_warnings
           for match in "${matches[@]}"; do
-              matched="$(echo "$OUTPUT" | grep "$match" || :)"
+              matched="$(echo "${STDERR}" | grep "$match" || :)"
               if [[ -z "$matched" ]]; then
                   continue
               fi
@@ -160,34 +193,46 @@ runs:
       bubble_messages error "${{ inputs.error-match }}"
       bubble_messages warning "${{ inputs.warning-match }}"
       bubble_messages notice "${{ inputs.notice-match }}"
-      if [[ -n "$FAILED" && "${{ inputs.catch-errors }}" != "true" ]]; then
-          exit 1
-      fi
     shell: bash
     env:
-      INPUT_ENV: ${{ inputs.source }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
+      TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.31
+    name: Generate run context
+    id: context
+    with:
+      input: ${{ toJSON(steps.run.outputs) }}
+      filter: >-
+        {"run": .,
+         "context": ${{ inputs.context }}}
+
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.31
     name: Run post steps
     if: ${{ inputs.steps-post }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
-      context: ${{ inputs.context }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
+      context: ${{ steps.context.outputs.value }}
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.31
     name: Post report
     if: ${{ inputs.report-post }}
     with:
       steps: ${{ inputs.report-post }}
-      context: ${{ inputs.context }}
+      context: ${{ steps.context.outputs.value }}
   - uses: actions/upload-artifact@v3
     name: Upload artefacts
     if: ${{ inputs.upload-name && inputs.upload-path }}
     with:
       name: ${{ inputs.upload-name }}
       path: ${{ inputs.upload-path }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.30
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.31
     name: Job summary
     if: ${{ inputs.summary-post }}
     with:
       steps: ${{ inputs.summary-post }}
-      context: ${{ inputs.context }}
+      context: ${{ steps.context.outputs.value }}
+  - run: |
+      exit ${EXIT_CODE}
+    shell: bash
+    env:
+      EXIT_CODE: ${{ !fromJSON(inputs.catch-errors) && steps.run.outputs.exit-code || 0 }}

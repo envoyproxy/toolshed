@@ -11,7 +11,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.30
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.31
     name: Print check proxy data
     with:
       input: ${{ inputs.env }}
