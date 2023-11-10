@@ -7,6 +7,9 @@ import {exec} from 'child_process'
 // @ts-ignore
 import * as yaml from 'js-yaml'
 
+declare const atob: (encodedString: string) => string
+declare const btoa: (rawString: string) => string
+
 const run = async (): Promise<void> => {
   try {
     const input = core.getInput('input')
@@ -29,22 +32,16 @@ const run = async (): Promise<void> => {
     core.debug(`decode: ${decode}`)
     core.debug(`options: ${options}`)
     core.debug(`filter: ${filter}`)
-    let encodePipe = ''
-    if (encode) {
-      encodePipe = '| base64 -w0'
-    }
-    let decodePipe = ''
+
+    let mangledInput = input
     if (decode) {
-      decodePipe = '| base64 -d'
+      mangledInput = decodeURIComponent(escape(atob(input)))
     }
-    let sanitizedInput
     if (sanitize && inputFormat === 'json') {
-      sanitizedInput = JSON.stringify(JSON.parse(input), null, 2)
+      mangledInput = JSON.stringify(JSON.parse(mangledInput), null, 2)
     } else if (inputFormat === 'yaml') {
-      const yamlObject = yaml.load(input)
-      sanitizedInput = JSON.stringify(yamlObject, null, 2)
-    } else {
-      sanitizedInput = input
+      const yamlObject = yaml.load(mangledInput)
+      mangledInput = JSON.stringify(yamlObject, null, 2)
     }
 
     let tmpFile: tmp.FileResult
@@ -58,11 +55,11 @@ const run = async (): Promise<void> => {
     } else {
       filterArg = `'${filter}'`
     }
-    let shellCommand = `printf '%s' '${sanitizedInput}' ${decodePipe} | jq ${options} ${filterArg} ${encodePipe}`
+    let shellCommand = `printf '%s' '${mangledInput}' | jq ${options} ${filterArg}`
     if (os.platform() === 'win32' || useTmpFile) {
       tmpFile = tmp.fileSync()
-      fs.writeFileSync(tmpFile.name, sanitizedInput)
-      shellCommand = `cat ${tmpFile.name} ${decodePipe} | jq ${options} ${filterArg} ${encodePipe}`
+      fs.writeFileSync(tmpFile.name, mangledInput)
+      shellCommand = `cat ${tmpFile.name} | jq ${options} ${filterArg}`
     }
     core.debug(`Running shell command: ${shellCommand}`)
     const proc = exec(shellCommand, (error, stdout, stderr) => {
@@ -76,13 +73,17 @@ const run = async (): Promise<void> => {
         console.error(`Error: ${error}`)
         return
       }
-      core.setOutput('value', stdout.trim())
+      let output = stdout.trim()
+      if (encode) {
+        output = btoa(unescape(encodeURIComponent(stdout)))
+      }
+      core.setOutput('value', output)
       if (envVar) {
-        process.env[envVar] = stdout
-        core.exportVariable(envVar, stdout.trim())
+        process.env[envVar] = output
+        core.exportVariable(envVar, output)
       }
       if (printResult) {
-        process.stdout.write(stdout.trim())
+        process.stdout.write(output)
       }
       if (stderr) {
         core.error(`stderr: ${stderr}`)
