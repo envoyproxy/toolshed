@@ -60,8 +60,8 @@ runs:
       TABLE=$(echo '${{ steps.table.outputs.value }}' | sed  's#^#  #')
       HEADER=$(echo -n '${{ inputs.header }}' | sed  's#^#  #')
       echo "table<<nEOFn" >> $GITHUB_OUTPUT
-      printf "%s\n" "${HEADER}" >> $GITHUB_OUTPUT
-      echo "${TABLE}" >> $GITHUB_OUTPUT
+      printf '%s\n' "${HEADER}" >> $GITHUB_OUTPUT
+      printf '%s\n' "${TABLE}" >> $GITHUB_OUTPUT
       echo "nEOFn" >> $GITHUB_OUTPUT
 
     id: indented
