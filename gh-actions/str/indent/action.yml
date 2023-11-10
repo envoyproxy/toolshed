@@ -7,24 +7,6 @@ inputs:
     type: number
     required: true
 
-outputs:
-  string:
-    value: ${{ steps.string.outputs.value }}
-
-
 runs:
-  using: composite
-  steps:
-  - name: Indent string
-    run: |
-      if [[ "${{ inputs.indent }}" -ne 0 ]]; then
-          INDENT=$(printf '%*s' "${{ inputs.indent }}" '')
-          STRING=$(echo '${{ inputs.string }}' | sed "s#^#${INDENT}#")
-      else
-          STRING='${{ inputs.string }}'
-      fi
-      echo "value<<nEOFn" >> $GITHUB_OUTPUT
-      printf '%s\n' "${STRING}" >> $GITHUB_OUTPUT
-      echo "nEOFn" >> $GITHUB_OUTPUT
-    id: string
-    shell: bash
+  using: 'node16'
+  main: 'dist/index.js'
