@@ -22,23 +22,30 @@ runs:
       if [[ -n "${{ inputs.token }}" ]]; then
           CURL_ARGS+=(-H "Authorization: token ${{ inputs.token }}")
       fi
-      DATA=$(curl "${CURL_ARGS[@]}" $URL | base64 -w0)
+      DATA="$(curl "${CURL_ARGS[@]}" $URL)"
       if [[ $? -ne 0 || -z "$DATA" ]]; then
           echo "Failed to retrieve pull request data."
           exit 1
       fi
-      echo "response=${DATA}" >> $GITHUB_OUTPUT
+      echo "response<<nEOFn" >> $GITHUB_OUTPUT
+      printf '%s\n' "${DATA}" >> $GITHUB_OUTPUT
+      echo "nEOFn" >> $GITHUB_OUTPUT
     shell: bash
     env:
       URL: https://api.github.com/repos/${{ inputs.repository }}/pulls/${{ inputs.pr }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.35
+  - uses: envoyproxy/toolshed/gh-actions/jq@342236d83f4b99385dcb34822de6a26008e2c3a5
     id: jq
     with:
       input: ${{ steps.fetch.outputs.response }}
-      decode: true
       options: -r
       filter: |
         .merge_commit_sha // ""
+  - uses: envoyproxy/toolshed/gh-actions/jq@342236d83f4b99385dcb34822de6a26008e2c3a5
+    if: ${{ ! steps.jq.outputs.value }}
+    with:
+      input: ${{ steps.fetch.outputs.response }}
+      options: -C
+      print-result: true
   - run: |
       # Check if the merge commit SHA is not null
       if [[ -n "${{ steps.jq.outputs.value }}" ]]; then
