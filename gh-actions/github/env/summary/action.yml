@@ -77,7 +77,7 @@ runs:
         </details>
 
     name: Summary
-  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.33
+  - uses: envoyproxy/toolshed/gh-actions/json/table@f3d8cbbf31e1bcd1c8d7c1f0253fc1ebd8c73eaf
     name: Environment summary
     id: table
     with:
@@ -88,15 +88,15 @@ runs:
       collapse: true
   - run: |
       echo "value<<nEOFn" >> $GITHUB_OUTPUT
-      printf "%s\n" "${REQUEST}" >> $GITHUB_OUTPUT
-      printf "%s\n" "${TABLE}" >> $GITHUB_OUTPUT
+      printf '%s\n' "${REQUEST}" >> $GITHUB_OUTPUT
+      printf '%s\n' "${TABLE}" >> $GITHUB_OUTPUT
       echo "nEOFn" >> $GITHUB_OUTPUT
     shell: bash
     id: raw-output
     env:
       REQUEST: ${{ steps.request.outputs.value }}
       TABLE: ${{ steps.table.outputs.summary }}
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.33
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@35fe22387f62e303e3078e13c350ac2f9272d6f8
     id: output
     with:
       string: ${{ steps.raw-output.outputs.value }}
@@ -111,4 +111,4 @@ runs:
     id: summary
     if: ${{ inputs.output-path }}
     env:
-      REQUEST: ${{ steps.output.outputs.value }}
+      REQUEST: ${{ steps.output.outputs.string }}
