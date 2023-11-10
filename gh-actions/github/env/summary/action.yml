@@ -53,7 +53,7 @@ runs:
       filter: >-
         . as $message
         | {"title": ($message | split("\n")[0]),
-           "body": ($message | "> " + (split("\n")[1:] | join("\n> ")))}
+           "body": ($message | "  > " + (split("\n")[1:] | join("\n  > ")))}
 
   - run: |
       echo "value<<EOF" >> $GITHUB_OUTPUT
@@ -73,7 +73,7 @@ runs:
         <details>
           <summary><b>${{ fromJSON(steps.change.outputs.value).title }}</b></summary>
 
-          ${{ fromJSON(steps.change.outputs.value).body }}
+        ${{ fromJSON(steps.change.outputs.value).body }}
         </details>
 
     name: Summary
@@ -96,7 +96,7 @@ runs:
     env:
       REQUEST: ${{ steps.request.outputs.value }}
       TABLE: ${{ steps.table.outputs.summary }}
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.34
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@6ec3089bf02cf2209668a8a93eb0d76aada74544
     id: output
     with:
       string: ${{ steps.raw-output.outputs.value }}
