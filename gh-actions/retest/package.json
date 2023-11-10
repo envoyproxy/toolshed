@@ -46,6 +46,6 @@
     "@octokit/rest": "^20.0.1",
     "@octokit/webhooks": "^12.0.3",
     "@octokit/webhooks-definitions": "^3.67.3",
-    "axios": "^1.4.0"
+    "axios": "^1.6.0"
   }
 }
