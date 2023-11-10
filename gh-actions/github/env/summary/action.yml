@@ -1,0 +1,114 @@
+inputs:
+  append:
+    type: boolean
+    default: true
+  env:
+    type: string
+    required: true
+  env-filter:
+    type: string
+    required: true
+  icon:
+    type: string
+    required: true
+  indent:
+    type: number
+    default: 0
+  link:
+    type: string
+    required: false
+  message:
+    type: string
+    required: true
+  output-path:
+    type: string
+  sha:
+    type: string
+    required: true
+  title:
+    type: string
+    required: true
+
+outputs:
+  summary:
+    value: ${{ steps.output.outputs.string }}
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.32
+    id: sha-short
+    with:
+      string: ${{ inputs.sha }}
+      length: 7
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.32
+    name: Change title
+    id: change
+    with:
+      input: ${{ inputs.message }}
+      options: -Rs
+      sanitize-input: false
+      filter: >-
+        . as $message
+        | {"title": ($message | split("\n")[0]),
+           "body": ($message | "> " + (split("\n")[1:] | join("\n> ")))}
+
+  - run: |
+      echo "value<<EOF" >> $GITHUB_OUTPUT
+      printf "%s\n" "${TITLE}" >> $GITHUB_OUTPUT
+      echo "${BODY}" >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
+    shell: bash
+    id: request
+    env:
+      TITLE: >-
+        ##
+        ${{ inputs.icon }}
+        Request (${{ inputs.link && format('[{0}]({1})', inputs.title, inputs.link) || inputs.title }})
+      BODY: |
+        <img src="${{ github.event.sender.avatar_url }}" alt="${{ github.actor }}" width="18" height="18"> @${{ github.actor }} [`${{ steps.sha-short.outputs.string }}`](https://github.com/${{ github.repository }}/commit/${{ steps.sha-short.outputs.string }})
+
+        <details>
+          <summary><b>${{ fromJSON(steps.change.outputs.value).title }}</b></summary>
+
+          ${{ fromJSON(steps.change.outputs.value).body }}
+        </details>
+
+    name: Summary
+  - uses: envoyproxy/toolshed/gh-actions/json/table@0f9b905e5eedd3bdeda264f082f8e2ace9611cd5
+    name: Environment summary
+    id: table
+    with:
+      json: ${{ inputs.env }}
+      filter: ${{ inputs.env-filter }}
+      title: Environment
+      summary: Request variables
+      collapse: true
+  - run: |
+      echo "value<<nEOFn" >> $GITHUB_OUTPUT
+      printf "%s\n" "${REQUEST}" >> $GITHUB_OUTPUT
+      printf "%s\n" "${TABLE}" >> $GITHUB_OUTPUT
+      echo "nEOFn" >> $GITHUB_OUTPUT
+    shell: bash
+    id: raw-output
+    env:
+      REQUEST: ${{ steps.request.outputs.value }}
+      TABLE: ${{ steps.table.outputs.summary }}
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@57a5a8fcd65b6591fc616931b241681a39606d8b
+    id: output
+    with:
+      string: ${{ steps.raw-output.outputs.value }}
+      indent: ${{ inputs.indent }}
+  - run: |
+      if [[ "${{ inputs.output-path }}" == "GITHUB_STEP_SUMMARY" ]]; then
+          printf '%s\n' "${REQUEST}" >> $GITHUB_STEP_SUMMARY
+      else
+          printf '%s\n' "${REQUEST}" >> ${{ inputs.output-path }}
+      fi
+    shell: bash
+    id: summary
+    if: ${{ inputs.output-path }}
+    env:
+      REQUEST: ${{ steps.output.outputs.value }}
