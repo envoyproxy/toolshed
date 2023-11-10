@@ -17,10 +17,14 @@ runs:
   steps:
   - name: Indent string
     run: |
-      INDENT=$(printf '%*s' "${{ inputs.indent }}" '')
-      STRING=$(echo '${{ inputs.string }}' | sed "s#^#${INDENT}#")
+      if [[ "${{ inputs.indent }}" -ne 0 ]]; then
+          INDENT=$(printf '%*s' "${{ inputs.indent }}" '')
+          STRING=$(echo '${{ inputs.string }}' | sed "s#^#${INDENT}#")
+      else
+          STRING='${{ inputs.string }}'
+      fi
       echo "value<<nEOFn" >> $GITHUB_OUTPUT
-      printf "%s\n" "${STRING}" >> $GITHUB_OUTPUT
+      printf '%s\n' "${STRING}" >> $GITHUB_OUTPUT
       echo "nEOFn" >> $GITHUB_OUTPUT
     id: string
     shell: bash
