@@ -1,5 +1,8 @@
 
 inputs:
+  append:
+    type: boolean
+    default: true
   title:
     type: string
   summary:
@@ -15,9 +18,8 @@ inputs:
   filter:
     default: |
       to_entries | map("| \(.key) | \(.value) |") | join("\n")
-  print-summary:
-    type: boolean
-    default: true
+  output-path:
+    type: string
   collapse:
     type: boolean
     default: false
@@ -25,6 +27,9 @@ inputs:
 outputs:
   table:
     value: ${{ steps.table.outputs.value }}
+  summary:
+    value: ${{ steps.summary.outputs.value }}
+
 
 runs:
   using: composite
@@ -37,7 +42,7 @@ runs:
       options: -r
       filter: ${{ inputs.filter }}
   - name: Summary
-    if: ${{ inputs.print-summary && ! inputs.collapse }}
+    if: ${{ ! inputs.collapse }}
     run: |
       {
         echo "${TITLE}"
@@ -60,16 +65,15 @@ runs:
       echo "nEOFn" >> $GITHUB_OUTPUT
 
     id: indented
-    if: ${{ inputs.print-summary && inputs.collapse }}
+    if: ${{ inputs.collapse }}
     shell: bash
 
   - name: Summary
-    if: ${{ inputs.print-summary && inputs.collapse }}
+    if: ${{ inputs.collapse }}
     run: |
-      echo "CREATING COLLAPSE ..."
-      {
-        printf '%s' "${TABLE}"
-      } >> $GITHUB_STEP_SUMMARY
+      echo "value<<nEOFn" >> $GITHUB_OUTPUT
+      printf "%s\n" "${TABLE}" >> $GITHUB_OUTPUT
+      echo "nEOFn" >> $GITHUB_OUTPUT
     env:
       TABLE: |
 
@@ -82,3 +86,15 @@ runs:
 
         </details>
     shell: bash
+    id: summary
+
+  - run: |
+      if [[ "${{ inputs.output-path }}" == "GITHUB_STEP_SUMMARY" ]]; then
+          printf '%s\n' "${REQUEST}" >> $GITHUB_STEP_SUMMARY
+      else
+          printf '%s\n' "${REQUEST}" >> ${{ inputs.output-path }}
+      fi
+    shell: bash
+    if: ${{ inputs.output-path }}
+    env:
+      REQUEST: ${{ steps.summary.outputs.value }}
