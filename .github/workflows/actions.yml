@@ -118,6 +118,22 @@ jobs:
     # - run: cd gh-actions/retest && npm run lint
     - run: cd gh-actions/retest && npm test
 
+  indent:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        node-version:
+        - 16.x
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: cd gh-actions/str/indent && npm install
+    - run: cd gh-actions/str/indent && npm run lint
+    - run: cd gh-actions/str/indent && npm test
+
   yaml_tojson:
     runs-on: ubuntu-22.04
     needs: []
