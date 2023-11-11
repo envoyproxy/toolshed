@@ -6,6 +6,10 @@ inputs:
   run-id:
     type: string
     required: true
+  check-name:
+    type: string
+    default:
+
 
 outputs:
   data:
@@ -38,3 +42,14 @@ runs:
       input: ${{ steps.data.outputs.value }}
       options: -C
       print-result: true
+
+  - uses: envoyproxy/toolshed/gh-actions/github/env/save@actions-v0.1.36
+    name: Save env
+    if: ${{ inputs.check-name }}
+    with:
+      name: env-proxy
+      env-format: yaml
+      env: |
+        workflow-env: ${{ inputs.run-id }}
+        check-name: ${{ inputs.check-name }}
+        startup-conclusion: ${{ github.event.workflow_run.conclusion }}

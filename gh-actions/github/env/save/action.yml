@@ -6,15 +6,27 @@ inputs:
   env:
     type: string
     required: true
+  env-format:
+    type: string
+  env-filter:
+    type: string
 
 
 runs:
   using: composite
   steps:
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.36
+    name: Check proxy data
+    id: env
+    with:
+      input: |
+        ${{ inputs.env }}
+      input-format: ${{ inputs.env-format }}
+      filter: ${{ inputs.env-filter || '.' }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.36
     name: Print check proxy data
     with:
-      input: ${{ inputs.env }}
+      input: ${{ steps.env.outputs.value }}
       options: -C
       print-result: true
   - name: Save environment data
@@ -25,7 +37,7 @@ runs:
       printf "%s" "$INPUT_ENV"  >> "$OUTPUT_DIR/${{ inputs.name }}.json"
       echo "directory=${OUTPUT_DIR}" >> $GITHUB_OUTPUT
     env:
-      INPUT_ENV: ${{ inputs.env }}
+      INPUT_ENV: ${{ steps.env.outputs.value }}
   - name: Upload environment data
     uses: actions/upload-artifact@v3
     with:
