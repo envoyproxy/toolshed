@@ -83,16 +83,16 @@ runs:
   steps:
   - if: ${{ fromJSON(inputs.diskspace-hack) }}
     name: Free diskspace
-    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.36
+    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.37
     with:
       to_remove: ${{ inputs.diskskpack-hack-paths }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.36
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.37
     name: Pre report
     if: ${{ inputs.report-pre }}
     with:
       steps: ${{ inputs.report-pre }}
       context: ${{ inputs.context }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.36
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.37
     name: Run pre steps
     if: ${{ inputs.steps-pre }}
     with:
@@ -201,7 +201,7 @@ runs:
     env:
       TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.36
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.37
     name: Generate run context
     id: context
     with:
@@ -210,14 +210,14 @@ runs:
         {"run": .,
          "context": ${{ inputs.context }}}
 
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.36
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.37
     name: Run post steps
     if: ${{ inputs.steps-post }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.36
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.37
     name: Post report
     if: ${{ inputs.report-post }}
     with:
@@ -229,7 +229,7 @@ runs:
     with:
       name: ${{ inputs.upload-name }}
       path: ${{ inputs.upload-path }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.36
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.37
     name: Job summary
     if: ${{ inputs.summary-post }}
     with:
