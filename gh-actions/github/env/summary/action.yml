@@ -70,32 +70,14 @@ runs:
         | {"title": ($message | split("\n")[0]),
            "body": ($message | "  > " + (split("\n")[1:] | join("\n  > ")))}
 
-  - run: |
-      if [[ -n "$TITLE" ]]; then
-          printf 'title=%s' "${TITLE}" >> "$GITHUB_OUTPUT"
-      fi
-      if [[ -n "${{ inputs.link }}" ]]; then
-          REF_TITLE=(
-              "${{ ! inputs.pr && 'postsubmit' || 'pr' }}/"
-              "${{ inputs.pr && format('{0}/', inputs.pr) || '' }}"
-              "${{ inputs.target-branch }}"
-              "@${{ steps.sha-short.outputs.string }}")
-      else
-          REF_SHA_LINK="[${{ steps.sha-short.outputs.string }}](https://github.com/${{ github.repository }}/commit/${{ inputs.sha }})"
-          REF_TITLE=(
-              "${{ ! inputs.pr && 'postsubmit' || 'pr' }}/")
-          if [[ -n "${{ inputs.pr }}" ]]; then
-              REF_TITLE+=("[${{ inputs.pr }}](https://github.com/${{ github.repository }}/pull/${{ inputs.pr }})/")
-          fi
-          REF_TITLE+=(
-              "${{ inputs.target-branch }}"
-              "@${REF_SHA_LINK}")
-      fi
-      IFS=; echo "title=${REF_TITLE[*]}" >> "$GITHUB_OUTPUT"
-    shell: bash
+  - uses: envoyproxy/toolshed/gh-actions/github/env/title@6620a66a7fd17194fd7cdda83399c6bd7d837571
     id: title
-    env:
-      TITLE: ${{ inputs.title }}
+    with:
+      link: ${{ inputs.link }}
+      pr: ${{ inputs.pr }}
+      sha: ${{ inputs.sha }}
+      target-branch: ${{ inputs.target-branch }}
+      title: ${{ inputs.title }}
 
   - run: |
       echo "link=$PR_LINK" >> $GITHUB_OUTPUT

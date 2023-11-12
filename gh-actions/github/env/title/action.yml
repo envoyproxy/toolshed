@@ -1,0 +1,55 @@
+inputs:
+  link:
+    type: string
+    required: false
+  pr:
+    type: number
+  sha:
+    type: string
+    required: true
+  target-branch:
+    type: string
+    required: false
+  title:
+    type: string
+    required: false
+
+outputs:
+  title:
+    value: ${{ steps.title.outputs.title }}
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.37
+    id: sha-short
+    with:
+      string: ${{ inputs.sha }}
+      length: 7
+  - run: |
+      if [[ -n "$TITLE" ]]; then
+          printf 'title=%s' "${TITLE}" >> "$GITHUB_OUTPUT"
+      fi
+      if [[ -n "${{ inputs.link }}" ]]; then
+          REF_TITLE=(
+              "${{ ! inputs.pr && 'postsubmit' || 'pr' }}/"
+              "${{ inputs.pr && format('{0}/', inputs.pr) || '' }}"
+              "${{ inputs.target-branch }}"
+              "@${{ steps.sha-short.outputs.string }}")
+      else
+          REF_SHA_LINK="[${{ steps.sha-short.outputs.string }}](https://github.com/${{ github.repository }}/commit/${{ inputs.sha }})"
+          REF_TITLE=(
+              "${{ ! inputs.pr && 'postsubmit' || 'pr' }}/")
+          if [[ -n "${{ inputs.pr }}" ]]; then
+              REF_TITLE+=("[${{ inputs.pr }}](https://github.com/${{ github.repository }}/pull/${{ inputs.pr }})/")
+          fi
+          REF_TITLE+=(
+              "${{ inputs.target-branch }}"
+              "@${REF_SHA_LINK}")
+      fi
+      IFS=; echo "title=${REF_TITLE[*]}" >> "$GITHUB_OUTPUT"
+    shell: bash
+    id: title
+    env:
+      TITLE: ${{ inputs.title }}
