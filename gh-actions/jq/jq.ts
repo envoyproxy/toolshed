@@ -86,7 +86,7 @@ const run = async (): Promise<void> => {
         process.stdout.write(output)
       }
       if (stderr) {
-        core.error(`stderr: ${stderr}`)
+        process.stderr.write(`stderr: ${stderr}`)
       }
     })
     proc.on('exit', code => {
