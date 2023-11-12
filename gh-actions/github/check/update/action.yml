@@ -21,7 +21,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.37
+  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.38
     name: App auth
     id: appauth
     with:
@@ -36,7 +36,7 @@ runs:
     env:
       INPUT: ${{ inputs.data }}
       GH_TOKEN: ${{ steps.appauth.outputs.token }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.37
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.38
     name: Print check response
     with:
       input: ${{ steps.progress.outputs.response }}
