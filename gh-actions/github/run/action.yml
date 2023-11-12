@@ -140,8 +140,9 @@ runs:
       SOURCETMP: ${{ steps.source.outputs.file }}
     shell: bash
 
-
   - run: |
+      STARTED="$(date +%s)"
+      echo "started=$STARTED" >> $GITHUB_OUTPUT
       cd $TARGET_PATH
       if [[ -n "${SOURCETMP}" ]]; then
           . "$SOURCETMP"
@@ -150,11 +151,13 @@ runs:
       TMP_STDERR=$(mktemp)
       echo "stderr-path=${TMP_STDERR}" >> $GITHUB_OUTPUT
       read -ra COMMAND_PARTS <<< "$COMMAND"
+      EXIT_CODE=0
       "${COMMAND_PARTS[@]}" 2> >(tee "$TMP_STDERR") || {
-          echo "exit-code=$?" >> $GITHUB_OUTPUT
-          exit 0
+          EXIT_CODE=$?
       }
-      echo "exit-code=0" >> $GITHUB_OUTPUT
+      COMPLETED="$(date +%s)"
+      echo "completed=$COMPLETED" >> $GITHUB_OUTPUT
+      echo "exit-code=${EXIT_CODE}" >> $GITHUB_OUTPUT
     shell: bash
     id: run
     env:
