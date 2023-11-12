@@ -44,8 +44,24 @@ runs:
     env:
       GH_TOKEN: ${{ steps.appauth.outputs.token }}
       CHECKS: ${{ inputs.checks }}
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.38
+    name: Started
+    id: started
+    with:
+      input: ${{ toJSON(steps.start-checks.outputs) }}
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.38
     name: Checks
     id: checks
     with:
-      input: ${{ toJSON(steps.start-checks.outputs) }}
+      options: -sc
+      input: ${{ inputs.checks }}
+      sanitize-input: false
+      filter: |
+        (reduce .[] as $item ({}; . + {($item.id): $item.conclusion})
+        | to_entries
+        | map(select(.value))
+        | from_entries)
+        as $skipped
+        | ${{ steps.started.outputs.value }} * $skipped
