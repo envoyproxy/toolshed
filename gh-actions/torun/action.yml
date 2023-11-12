@@ -1,0 +1,27 @@
+name: 'Torun'
+description: 'Figure out what to run.'
+author: 'phlax'
+inputs:
+  config:
+    description: >
+      JSON configuration
+    type: string
+    required: true
+  paths:
+    description: >
+      Changed paths
+    type: string
+    required: true
+  branch:
+    description: >
+      Branch of change
+    type: string
+    required: true
+  event:
+    description: >
+      Change event
+    type: string
+    required: true
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
