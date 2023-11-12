@@ -1,0 +1,13 @@
+
+outputs:
+  timestamp:
+    value: ${{ steps.timestamp.outputs.now }}
+
+runs:
+  using: composite
+  steps:
+  - id: timestamp
+    run: |
+      TIMESTAMP="$(date +%s)"
+      echo "now=$TIMESTAMP" >> $GITHUB_OUTPUT
+    shell: bash
