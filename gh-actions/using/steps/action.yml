@@ -10,6 +10,9 @@ inputs:
     default:
   context:
     type: string
+  step-format:
+    type: string
+    default: yaml
 
 outputs:
   steps:
@@ -31,6 +34,7 @@ runs:
       fi
       "${ACTION_PATH}/create-steps.sh" "${ACTION_PATH}/${TEMPLATE}"
     env:
+      FORMAT: ${{ inputs.format }}
       STEPS: ${{ inputs.steps }}
       TEMPLATE: ${{ !fromJSON(inputs.isolated) && 'steps.yml' || 'isolated-steps.yml' }}
   - run: |
