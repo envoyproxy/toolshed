@@ -140,9 +140,10 @@ runs:
       SOURCETMP: ${{ steps.source.outputs.file }}
     shell: bash
 
+  - uses: envoyproxy/toolshed/gh-actions/date@14c6c17be9e07f3c88eda15c946cb64260ca56f6
+    id: started
+
   - run: |
-      STARTED="$(date +%s)"
-      echo "started=$STARTED" >> $GITHUB_OUTPUT
       cd $TARGET_PATH
       if [[ -n "${SOURCETMP}" ]]; then
           . "$SOURCETMP"
@@ -150,13 +151,13 @@ runs:
       fi
       TMP_STDERR=$(mktemp)
       echo "stderr-path=${TMP_STDERR}" >> $GITHUB_OUTPUT
+      TMP_STDOUT=$(mktemp)
+      echo "stdout-path=${TMP_STDOUT}" >> $GITHUB_OUTPUT
       read -ra COMMAND_PARTS <<< "$COMMAND"
       EXIT_CODE=0
-      "${COMMAND_PARTS[@]}" 2> >(tee "$TMP_STDERR") || {
+      "${COMMAND_PARTS[@]}" > "$TMP_STDOUT" 2> >(tee "$TMP_STDERR") || {
           EXIT_CODE=$?
       }
-      COMPLETED="$(date +%s)"
-      echo "completed=$COMPLETED" >> $GITHUB_OUTPUT
       echo "exit-code=${EXIT_CODE}" >> $GITHUB_OUTPUT
     shell: bash
     id: run
@@ -164,9 +165,11 @@ runs:
       COMMAND: ${{ steps.command.outputs.command }}
       SOURCETMP: ${{ steps.source.outputs.file }}
       TARGET_PATH: ${{ inputs.working-directory }}
+  - uses: envoyproxy/toolshed/gh-actions/date@14c6c17be9e07f3c88eda15c946cb64260ca56f6
+    id: completed
+
   - run: |
       STDERR="$(cat "$TMP_STDERR")"
-      rm -rf "$TMP_STDERR"
       bubble_messages () {
           local message_type="$1" \
                 matcher="$2" \
@@ -210,8 +213,10 @@ runs:
     with:
       input: ${{ toJSON(steps.run.outputs) }}
       filter: >-
-        {"run": .,
-         "context": ${{ inputs.context }}}
+        . + {"started": ${{ steps.started.outputs.timestamp }},
+             "completed": ${{ steps.completed.outputs.timestamp }}}
+        | {"run": .,
+           "context": ${{ inputs.context }}}
 
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.39
     name: Run post steps
@@ -239,7 +244,11 @@ runs:
       steps: ${{ inputs.summary-post }}
       context: ${{ steps.context.outputs.value }}
   - run: |
+      rm -rf "$TMP_STDOUT"
+      rm -rf "$TMP_STDERR"
       exit ${EXIT_CODE}
     shell: bash
     env:
       EXIT_CODE: ${{ !fromJSON(inputs.catch-errors) && steps.run.outputs.exit-code || 0 }}
+      TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
+      TMP_STDOUT: ${{ steps.run.outputs.stdout-path }}
