@@ -40,7 +40,7 @@ runs:
   - run: |
       cat .tmp.action/action.yml
     shell: bash
-    # if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
+    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
   - name: Run (${{ inputs.name || '.tmp.action' }})
     uses: ./.tmp.action
     id: steps
