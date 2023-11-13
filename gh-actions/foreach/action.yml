@@ -14,18 +14,18 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.42
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.43
     name: Items
     id: items
     with:
       input: ${{ inputs.items }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.42
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.43
     name: Steps (JSON)
     id: steps-json
     with:
       input: ${{ inputs.steps }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.42
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.43
     name: Steps
     id: steps-subs
     with:
@@ -39,14 +39,14 @@ runs:
         | map(.key as $k | $out | . + [($steps | walk(if type == "string" then sub("\\$KEY"; "\($k)") else . end))])
         | flatten
 
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.42
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.43
     id: steps-run
     with:
       steps: ${{ steps.steps-subs.outputs.value }}
       context: ${{ steps.items.outputs.value }}
       step-format: json
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.42
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.43
     id: steps
     with:
       input: ${{ steps.steps-run.outputs.steps }}
