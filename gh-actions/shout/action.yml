@@ -1,0 +1,20 @@
+
+inputs:
+  sh:
+    type: string
+    required: true
+
+outputs:
+  out:
+    value: ${{ steps.out.outputs.out }}
+
+runs:
+  using: composite
+  steps:
+  - id: out
+    run: |
+      RESULT="$(${{ inputs.sh }})"
+      echo "out<<EOF" >> $GITHUB_OUTPUT
+      printf "%s\n" "${RESULT}" >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
+    shell: bash
