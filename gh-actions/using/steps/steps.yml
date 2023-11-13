@@ -8,5 +8,4 @@ outputs:
 
 runs:
   using: composite
-  steps:
-${__STEPS__}
+  steps: ${__STEPS__}
