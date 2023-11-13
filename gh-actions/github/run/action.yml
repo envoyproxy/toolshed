@@ -83,16 +83,16 @@ runs:
   steps:
   - if: ${{ fromJSON(inputs.diskspace-hack) }}
     name: Free diskspace
-    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.39
+    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.41
     with:
       to_remove: ${{ inputs.diskskpack-hack-paths }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.41
     name: Pre report
     if: ${{ inputs.report-pre }}
     with:
       steps: ${{ inputs.report-pre }}
       context: ${{ inputs.context }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.41
     name: Run pre steps
     if: ${{ inputs.steps-pre }}
     with:
@@ -140,7 +140,7 @@ runs:
       SOURCETMP: ${{ steps.source.outputs.file }}
     shell: bash
 
-  - uses: envoyproxy/toolshed/gh-actions/date@14c6c17be9e07f3c88eda15c946cb64260ca56f6
+  - uses: envoyproxy/toolshed/gh-actions/date@actions-v0.1.41
     id: started
 
   - run: |
@@ -165,7 +165,7 @@ runs:
       COMMAND: ${{ steps.command.outputs.command }}
       SOURCETMP: ${{ steps.source.outputs.file }}
       TARGET_PATH: ${{ inputs.working-directory }}
-  - uses: envoyproxy/toolshed/gh-actions/date@14c6c17be9e07f3c88eda15c946cb64260ca56f6
+  - uses: envoyproxy/toolshed/gh-actions/date@actions-v0.1.41
     id: completed
 
   - run: |
@@ -207,7 +207,7 @@ runs:
     env:
       TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.41
     name: Generate run context
     id: context
     with:
@@ -218,14 +218,14 @@ runs:
         | {"run": .,
            "context": ${{ inputs.context }}}
 
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.41
     name: Run post steps
     if: ${{ inputs.steps-post }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.41
     name: Post report
     if: ${{ inputs.report-post }}
     with:
@@ -237,7 +237,7 @@ runs:
     with:
       name: ${{ inputs.upload-name }}
       path: ${{ inputs.upload-path }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.41
     name: Job summary
     if: ${{ inputs.summary-post }}
     with:
