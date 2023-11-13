@@ -4,7 +4,8 @@ mkdir -p .tmp.action
 if [[ "$FORMAT" == "yaml" ]]; then
     __STEPS__=$(printf "%s\n" "${STEPS}" \
         | sed 's/\([^\\]\)%{{ /\1${{ /g; s/^/  /')
-    __STEPS__="\n${__STEPS__}"
+    __STEPS__="
+${__STEPS__}"
 else
     __STEPS__=$(printf "%s\n" "${STEPS}" \
         | sed 's/\([^\\]\)%{{ /\1${{ /g')
