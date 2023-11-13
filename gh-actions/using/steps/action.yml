@@ -34,7 +34,7 @@ runs:
       fi
       "${ACTION_PATH}/create-steps.sh" "${ACTION_PATH}/${TEMPLATE}"
     env:
-      FORMAT: ${{ inputs.format }}
+      FORMAT: ${{ inputs.step-format || 'yaml' }}
       STEPS: ${{ inputs.steps }}
       TEMPLATE: ${{ !fromJSON(inputs.isolated) && 'steps.yml' || 'isolated-steps.yml' }}
   - run: |
