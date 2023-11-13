@@ -30,7 +30,6 @@ runs:
     id: steps-subs
     with:
       input: ${{ steps.steps-json.outputs.value }}
-      print-result: true
       filter: |
         ${{ steps.items.outputs.value }} as $items
         | . as $steps
