@@ -48,17 +48,17 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.40
     id: sha-short
     with:
       string: ${{ inputs.sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.40
     id: base-sha-short
     with:
       string: ${{ inputs.base-sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.40
     name: Change
     id: change
     with:
@@ -70,7 +70,7 @@ runs:
         | {"title": ($message | split("\n")[0]),
            "body": ($message | "  > " + (split("\n")[1:] | join("\n  > ")))}
 
-  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.40
     id: title
     with:
       link: ${{ inputs.link }}
@@ -113,7 +113,7 @@ runs:
         </details>
 
     name: Summary
-  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.40
     name: Environment summary
     id: table
     with:
@@ -132,7 +132,7 @@ runs:
     env:
       REQUEST: ${{ steps.request.outputs.value }}
       TABLE: ${{ steps.table.outputs.summary }}
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.39
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.40
     id: output
     with:
       string: ${{ steps.raw-output.outputs.value }}
