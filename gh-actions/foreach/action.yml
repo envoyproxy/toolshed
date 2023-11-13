@@ -50,6 +50,5 @@ runs:
     id: steps
     with:
       input: ${{ steps.steps-run.outputs.steps }}
-      print-result: true
       filter: |
         fromjson
