@@ -18,8 +18,9 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.43
-    name: Print checks
+  - name: Print checks
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.43
+    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
     with:
       input: ${{ inputs.checks }}
       options: -C
