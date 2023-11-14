@@ -22,7 +22,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.43
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.45
     id: sha-short
     with:
       string: ${{ inputs.sha }}
