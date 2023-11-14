@@ -104,7 +104,7 @@ runs:
         ${{ inputs.icon }}
         Request (${{ inputs.link && format('[{0}]({1})', steps.title.outputs.title, inputs.link) || steps.title.outputs.title }})
       BODY: |
-        <img src="${{ github.event.sender.avatar_url }}" alt="${{ github.actor }}" width="18" height="18"> @${{ github.actor }} [`${{ steps.sha-short.outputs.string }}`](https://github.com/${{ github.repository }}/commit/${{ steps.sha-short.outputs.string }}) ${{ steps.pr.outputs.link }}
+        <img src="${{ github.event.sender.avatar_url }}" alt="${{ github.actor }}" width="18" height="18"> @${{ github.actor }} [`${{ steps.sha-short.outputs.string }}`](https://github.com/${{ github.repository }}/commit/${{ inputs.sha }}) ${{ steps.pr.outputs.link }}
 
         <details>
           <summary><b>${{ fromJSON(steps.change.outputs.value).title }}</b></summary>
@@ -128,14 +128,14 @@ runs:
       printf '%s\n' "${TABLE}" >> $GITHUB_OUTPUT
       echo "nEOFn" >> $GITHUB_OUTPUT
     shell: bash
-    id: raw-output
+    id: request-output
     env:
       REQUEST: ${{ steps.request.outputs.value }}
       TABLE: ${{ steps.table.outputs.summary }}
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.43
     id: output
     with:
-      string: ${{ steps.raw-output.outputs.value }}
+      string: ${{ steps.request-output.outputs.value }}
       indent: ${{ inputs.indent }}
   - run: |
       if [[ "${{ inputs.output-path }}" == "GITHUB_STEP_SUMMARY" ]]; then
