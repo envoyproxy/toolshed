@@ -21,17 +21,11 @@ const run = async (): Promise<void> => {
     const decode = core.getBooleanInput('decode')
     const options = core.getInput('options')
     const envVar = core.getInput('env_var')
+    const printOutput = core.getBooleanInput('print-output')
     const printResult = core.getBooleanInput('print-result')
     const filter = core.getInput('filter')
     const sanitize = core.getBooleanInput('sanitize-input')
     const inputFormat = core.getInput('input-format')
-
-    if (!filter || filter === '') return
-    core.debug(`input: ${input}`)
-    core.debug(`encode: ${encode}`)
-    core.debug(`decode: ${decode}`)
-    core.debug(`options: ${options}`)
-    core.debug(`filter: ${filter}`)
 
     let mangledInput = input
     if (decode) {
@@ -74,6 +68,15 @@ const run = async (): Promise<void> => {
         return
       }
       let output = stdout.trim()
+      if (printResult) {
+        const tmpFileResult = tmp.fileSync()
+        fs.writeFileSync(tmpFileResult.name, output)
+        shellCommand = `cat ${tmpFileResult.name} | jq -C '.'`
+        exec(shellCommand, (_, result) => {
+          process.stdout.write(result.trim())
+          tmpFileResult.removeCallback()
+        })
+      }
       if (encode) {
         output = btoa(unescape(encodeURIComponent(stdout)))
       }
@@ -82,8 +85,8 @@ const run = async (): Promise<void> => {
         process.env[envVar] = output
         core.exportVariable(envVar, output)
       }
-      if (printResult) {
-        process.stdout.write(output)
+      if (printOutput) {
+        process.stdout.write(output.trim())
       }
       if (stderr) {
         process.stderr.write(`stderr: ${stderr}`)
