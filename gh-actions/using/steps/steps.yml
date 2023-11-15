@@ -1,6 +1,8 @@
 inputs:
   context:
     type: string
+  secret:
+    type: string
 
 outputs:
   steps:

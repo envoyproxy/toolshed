@@ -10,6 +10,8 @@ inputs:
     default:
   context:
     type: string
+  secret:
+    type: string
   step-format:
     type: string
     default: yaml
@@ -46,6 +48,7 @@ runs:
     id: steps
     with:
       context: ${{ !fromJSON(inputs.isolated) && inputs.context || '' }}
+      secret: ${{ !fromJSON(inputs.isolated) && inputs.secret || '' }}
   - name: Cleanup (.tmp.action)
     if: always()
     shell: bash
