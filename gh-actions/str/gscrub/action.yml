@@ -1,0 +1,20 @@
+
+inputs:
+  string:
+    type: string
+    required: true
+  replacements:
+    type: str
+    default: |
+      - $
+      - %
+  seed:
+    type: str
+    default: ☠
+  reverse:
+    type: boolean
+    default: false
+
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
