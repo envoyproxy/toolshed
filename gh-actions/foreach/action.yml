@@ -15,7 +15,7 @@ inputs:
 
 outputs:
   out:
-    value: ${{ steps.steps.outputs.value }}
+    value: ${{ steps.steps.outputs.steps }}
 
 runs:
   using: composite
@@ -38,6 +38,7 @@ runs:
     id: steps-subs
     with:
       input: ${{ steps.steps-json.outputs.value }}
+      print-result: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
       filter: |
         . as $steps
         | ${{ steps.context.outputs.value }}
@@ -48,17 +49,10 @@ runs:
         | map(.key as $k | $out | . + [($steps | walk(if type == "string" then sub("\\$KEY"; "\($k)") else . end))])
         | flatten
 
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@60b83941cdf43a14899625689a17b0db1932e38c
-    id: steps-run
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.46
+    id: steps
     with:
       steps: ${{ steps.steps-subs.outputs.value }}
       context: ${{ steps.context.outputs.value }}
       secret: ${{ inputs.secret }}
       step-format: json
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.46
-    id: steps
-    with:
-      input: ${{ steps.steps-run.outputs.steps }}
-      filter: |
-        fromjson
