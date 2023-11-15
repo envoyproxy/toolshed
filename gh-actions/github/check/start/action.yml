@@ -9,6 +9,8 @@ inputs:
     type: string
   app-key:
     type: string
+  token:
+    type: string
 
 
 outputs:
@@ -28,6 +30,7 @@ runs:
       print-result: true
   - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.46
     name: App auth
+    if: ${{ inputs.app-id && inputs.app-key }}
     id: appauth
     with:
       app_id: ${{ inputs.app-id }}
@@ -39,11 +42,15 @@ runs:
       while IFS=$\n read -r check; do
           INPUT=$(echo "$check" | jq -c 'del(.id)')
           CHECK_ID=$(echo "$check" | jq -r '.id')
+
+          if [[ -z "$INPUT" || -z "$CHECK_ID" ]]; then
+              continue
+          fi
           CHECK_RUN_ID=$(printf '%s' "$INPUT" | gh api -XPOST --input - --jq '.id' repos/${{ inputs.repository || github.repository }}/check-runs)
           echo "${CHECK_ID}=${CHECK_RUN_ID}" >> $GITHUB_OUTPUT
       done <<< "$CHECKS"
     env:
-      GH_TOKEN: ${{ steps.appauth.outputs.token }}
+      GH_TOKEN: ${{ steps.appauth.outputs.token || inputs.token }}
       CHECKS: ${{ inputs.checks }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.46
