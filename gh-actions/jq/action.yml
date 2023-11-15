@@ -28,6 +28,9 @@ inputs:
     description: >
       Env var to save output to
     default: ""
+  print-output:
+    type: boolean
+    default: false
   print-result:
     type: boolean
     default: false
