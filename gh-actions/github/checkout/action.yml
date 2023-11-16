@@ -48,7 +48,7 @@ runs:
     if: ${{ steps.appauth.outputs.token }}
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     with:
-      input: ${{ steps.parsed.outputs.json }}
+      input: ${{ steps.parsed.outputs.value }}
       filter: |
         . + { "token": "${{ steps.appauth.outputs.token }}" }
 
@@ -75,7 +75,7 @@ runs:
 
   - uses: actions/checkout@v4
     name: Checkout repository
-    with: ${{ fromJSON(steps.appauth.outputs.token && (steps.updated-config.outputs.value || steps.config.outputs.value) || steps.parsed.outputs.json) }}
+    with: ${{ fromJSON(steps.appauth.outputs.token && (steps.updated-config.outputs.value || steps.config.outputs.value) || steps.parsed.outputs.value) }}
   - run: |
       if ! git merge-base --is-ancestor "${REF}" HEAD; then
           echo "Provided ref (${REF}) is not an ancestor of current branch" >&2
