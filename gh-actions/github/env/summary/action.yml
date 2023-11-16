@@ -16,9 +16,6 @@ inputs:
   indent:
     type: number
     default: 0
-  desanitize:
-    type: boolean
-    required: true
   link:
     type: string
     required: false
@@ -61,25 +58,18 @@ runs:
     with:
       string: ${{ inputs.base-sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/str/desanitize@actions-v0.1.48
-    name: Change
-    id: change-desanitized
-    if: ${{ fromJSON(inputs.desanitize) }}
-    with:
-      string: ${{ inputs.message }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: Change
     id: change
     with:
-      input: ${{ fromJSON(inputs.desanitize) && steps.change-desanitized.outputs.string || inputs.message }}
+      input: ${{ inputs.message }}
       options: -Rs
-      sanitize-input: false
+      input-format: text
       filter: >-
         . as $message
         | ($message | split("\n")[0]) as $title
         | ($message | "  > " + (split("\n")[1:] | join("\n  > ")))
         | {"title": $title, "body": .}
-
   - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.48
     id: title
     with:
@@ -88,7 +78,6 @@ runs:
       sha: ${{ inputs.sha }}
       target-branch: ${{ inputs.target-branch }}
       title: ${{ inputs.title }}
-
   - run: |
       echo "link=$PR_LINK" >> $GITHUB_OUTPUT
     shell: bash
@@ -100,7 +89,6 @@ runs:
         [#${{ inputs.pr }}](https://github.com/${{ github.repository }}/pull/${{ inputs.pr }})
         [`merge`](https://github.com/${{ github.repository }}/commit/${{ inputs.ref }})
         [`${{ inputs.target-branch }}@${{ steps.base-sha-short.outputs.string }}`](https://github.com/${{ github.repository }}/commit/${{ inputs.base-sha }})
-
   - run: |
       echo "value<<EOF" >> $GITHUB_OUTPUT
       printf "%s\n" "${TITLE}" >> $GITHUB_OUTPUT
