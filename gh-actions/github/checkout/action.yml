@@ -39,9 +39,10 @@ runs:
       key: ${{ inputs.app_key }}
   - name: Parse YAML config
     id: parsed
-    uses: envoyproxy/toolshed/gh-actions/yaml/tojson@actions-v0.1.48
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     with:
-      yaml: ${{ inputs.config || '{}' }}
+      input: ${{ inputs.config || '{}' }}
+      input-format: yaml
   - name: Add auth token to config
     id: config
     if: ${{ steps.appauth.outputs.token }}

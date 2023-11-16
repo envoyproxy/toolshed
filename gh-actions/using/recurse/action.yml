@@ -12,10 +12,11 @@ runs:
   steps:
   # .tmp.action/action.yml **must** be hardcoded
 
-  - uses: envoyproxy/toolshed/gh-actions/yaml/tojson@actions-v0.1.48
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     id: yaml
     with:
-      yaml: ${{ inputs.with }}
+      input: ${{ inputs.with }}
+      input-format: yaml
 
   - run: |
       mkdir -p .tmp.action
