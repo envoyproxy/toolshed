@@ -24,16 +24,13 @@ const run = async (): Promise<void> => {
     const printOutput = core.getBooleanInput('print-output')
     const printResult = core.getBooleanInput('print-result')
     const filter = core.getInput('filter')
-    const sanitize = core.getBooleanInput('sanitize-input')
     const inputFormat = core.getInput('input-format')
 
     let mangledInput = input
     if (decode) {
       mangledInput = decodeURIComponent(escape(atob(input)))
     }
-    if (sanitize && inputFormat === 'json') {
-      mangledInput = JSON.stringify(JSON.parse(mangledInput), null, 2)
-    } else if (inputFormat === 'yaml') {
+    if (inputFormat === 'yaml') {
       const yamlObject = yaml.load(mangledInput)
       mangledInput = JSON.stringify(yamlObject, null, 2)
     }
