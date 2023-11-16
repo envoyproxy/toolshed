@@ -43,9 +43,6 @@ inputs:
   input-format:
     type: string
     default: json
-  sanitize-input:
-    type: boolean
-    default: true
 runs:
   using: 'node16'
   main: 'dist/index.js'

@@ -25,8 +25,8 @@ runs:
     if: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
     with:
       input: ${{ inputs.checks }}
+      input-format: text
       options: -C
-      sanitize-input: false
       print-result: true
   - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.48
     name: App auth
@@ -65,7 +65,7 @@ runs:
     with:
       options: -sc
       input: ${{ inputs.checks }}
-      sanitize-input: false
+      input-format: json-slurp
       filter: |
         (reduce .[] as $item ({}; . + {($item.id): $item.conclusion})
         | to_entries
