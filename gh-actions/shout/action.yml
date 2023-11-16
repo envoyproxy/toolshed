@@ -2,7 +2,10 @@
 inputs:
   sh:
     type: string
-    required: true
+    default:
+  string:
+    type: string
+    default:
 
 outputs:
   out:
@@ -11,10 +14,33 @@ outputs:
 runs:
   using: composite
   steps:
-  - id: out
+  - if: ${{ inputs.sh }}
+    id: sh
     run: |
-      RESULT="$(${{ inputs.sh }})"
+      # Output multi-line result from command
+      RESULT="$(${SH})"
       echo "out<<EOF" >> $GITHUB_OUTPUT
       printf "%s\n" "${RESULT}" >> $GITHUB_OUTPUT
       echo "EOF" >> $GITHUB_OUTPUT
+    env:
+      STRING: ${{ inputs.sh }}
     shell: bash
+  - if: ${{ inputs.string }}
+    id: echo
+    run: |
+      # Output multi-line var
+      echo "out<<EOF" >> $GITHUB_OUTPUT
+      printf "%s\n" "${STRING}" >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
+    env:
+      STRING: ${{ inputs.string }}
+    shell: bash
+  - id: out
+    run: |
+      # Output result
+      echo "out<<EOF" >> $GITHUB_OUTPUT
+      printf "%s\n" "${OUTPUT}" >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
+    shell: bash
+    env:
+      OUTPUT: ${{ steps.sh.outputs.out || steps.echo.outputs.out }}
