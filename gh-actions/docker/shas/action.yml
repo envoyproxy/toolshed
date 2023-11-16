@@ -12,10 +12,11 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/yaml/tojson@actions-v0.1.48
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     id: yaml
     with:
-      yaml: ${{ inputs.images }}
+      input: ${{ inputs.images }}
+      input-format: yaml
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     id: json_actions
     with:
