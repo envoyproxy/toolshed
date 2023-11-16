@@ -16,6 +16,9 @@ inputs:
   indent:
     type: number
     default: 0
+  desanitize:
+    type: boolean
+    required: true
   link:
     type: string
     required: false
@@ -58,17 +61,24 @@ runs:
     with:
       string: ${{ inputs.base-sha }}
       length: 7
+  - uses: envoyproxy/toolshed/gh-actions/str/desanitize@ae313bf5cb24a44c3b7f1ab87d4f0765a26cb2ba
+    name: Change
+    id: change-desanitized
+    if: ${{ fromJSON(inputs.desanitize) }}
+    with:
+      string: ${{ inputs.message }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.46
     name: Change
     id: change
     with:
-      input: ${{ inputs.message }}
+      input: ${{ fromJSON(inputs.desanitize) && steps.change-desanitized.outputs.string || inputs.message }}
       options: -Rs
       sanitize-input: false
       filter: >-
         . as $message
-        | {"title": ($message | split("\n")[0]),
-           "body": ($message | "  > " + (split("\n")[1:] | join("\n  > ")))}
+        | ($message | split("\n")[0]) as $title
+        | ($message | "  > " + (split("\n")[1:] | join("\n  > ")))
+        | {"title": $title, "body": .}
 
   - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.46
     id: title
