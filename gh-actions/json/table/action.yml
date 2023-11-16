@@ -34,7 +34,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.47
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: Generate table
     id: table
     with:
@@ -57,13 +57,13 @@ runs:
 
   - name: Indent table
     run: |
+      # Indent table
       TABLE=$(echo '${{ steps.table.outputs.value }}' | sed  's#^#  #')
       HEADER=$(echo -n '${{ inputs.header }}' | sed  's#^#  #')
       echo "table<<nEOFn" >> $GITHUB_OUTPUT
       printf '%s\n' "${HEADER}" >> $GITHUB_OUTPUT
       printf '%s\n' "${TABLE}" >> $GITHUB_OUTPUT
       echo "nEOFn" >> $GITHUB_OUTPUT
-
     id: indented
     if: ${{ inputs.collapse }}
     shell: bash

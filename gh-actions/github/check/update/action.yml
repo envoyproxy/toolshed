@@ -12,6 +12,9 @@ inputs:
     type: string
   app-key:
     type: string
+  token:
+    type: string
+    default:
 
 
 outputs:
@@ -21,9 +24,10 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.47
+  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.48
     name: App auth
     id: appauth
+    if: ${{ inputs.app-id && inputs.app-key }}
     with:
       key: '${{ inputs.app-key }}'
       app_id: ${{ inputs.app-id }}
@@ -35,8 +39,8 @@ runs:
     shell: bash
     env:
       INPUT: ${{ inputs.data }}
-      GH_TOKEN: ${{ steps.appauth.outputs.token }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.47
+      GH_TOKEN: ${{ inputs.token || steps.appauth.outputs.token }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: Print check response
     with:
       input: ${{ steps.progress.outputs.response }}
