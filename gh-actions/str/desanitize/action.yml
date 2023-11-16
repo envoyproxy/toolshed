@@ -26,12 +26,12 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.47
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     id: replacements
     with:
       input: ${{ inputs.replacements }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.47
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: String
     id: string
     with:
@@ -48,6 +48,5 @@ runs:
             (if (. == "") then $input else . end) as $string
             | select($replacement != "")
             | "\($marker)\($seed + $replacement + "{{" | @base64)\($marker)" as $placeholder
-            | ($placeholder | debug)
             | $string
             | gsub($placeholder; ($replacement | if . == "\\$" then "$" else . end) + "{{"))

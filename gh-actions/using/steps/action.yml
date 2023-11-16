@@ -30,6 +30,7 @@ runs:
     # For example, to use output from a previous step you can use
     # %{{ steps.stepname.outputs }}
     run: |
+      # Interpolate %{{ vars }}
       ACTION_PATH='${{ github.action_path }}'
       if [[ ${{ runner.os  }} == "Windows" ]]; then
           ACTION_PATH=$(echo $ACTION_PATH | tr '/' '\\')
@@ -42,7 +43,7 @@ runs:
   - run: |
       cat .tmp.action/action.yml
     shell: bash
-    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
+    if: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
   - name: Run (${{ inputs.name || '.tmp.action' }})
     uses: ./.tmp.action
     id: steps

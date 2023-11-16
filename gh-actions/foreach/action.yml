@@ -6,6 +6,9 @@ inputs:
   items:
     type: string
     required: true
+  name:
+    type: string
+    default:
   secret:
     type: string
     required: true
@@ -20,25 +23,25 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.47
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: Context
     id: context
     with:
       input: ${{ inputs.context || '{}' }}
       filter: |
         . * {"items": ${{ inputs.items }}}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.47
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: Steps (JSON)
     id: steps-json
     with:
       input: ${{ inputs.steps }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.47
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: Steps
     id: steps-subs
     with:
       input: ${{ steps.steps-json.outputs.value }}
-      print-result: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || false) || fromJSON(env.RUNNER_DEBUG || false) }}
       filter: |
         . as $steps
         | ${{ steps.context.outputs.value }}
@@ -49,9 +52,10 @@ runs:
         | map(.key as $k | $out | . + [($steps | walk(if type == "string" then sub("\\$KEY"; "\($k)") else . end))])
         | flatten
 
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.47
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.48
     id: steps
     with:
+      name: ${{ inputs.name }}
       steps: ${{ steps.steps-subs.outputs.value }}
       context: ${{ steps.context.outputs.value }}
       secret: ${{ inputs.secret }}
