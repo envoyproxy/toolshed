@@ -20,6 +20,7 @@ runs:
   using: composite
   steps:
   - run: |
+      # Output substring
       if [[ "$MIN" -le 0 || "${#STRING}" -ge "${MIN}" ]]; then
           echo "string=${STRING:$START:$LENGTH}" >> $GITHUB_OUTPUT
       else

@@ -30,6 +30,11 @@ inputs:
       else
         .
       end
+      | if (type == "object") then
+          tojson
+        else
+          .
+        end
       | if (type == "string" and test("\n")) then
           (split("\n")[0] + "..." )
         else
@@ -77,7 +82,7 @@ runs:
     shell: bash
 
   - id: mutated-cells
-    uses: envoyproxy/toolshed/gh-actions/shout@525366851aad5eb26a338a629dd2a9f349ffc109
+    uses: envoyproxy/toolshed/gh-actions/shout@f3005401833e04683797bb960efc3ede162570ee
     with:
       string: >-
         . as $table
@@ -103,7 +108,7 @@ runs:
 
   - name: Summary
     if: ${{ ! inputs.collapse }}
-    uses: envoyproxy/toolshed/gh-actions/shout@525366851aad5eb26a338a629dd2a9f349ffc109
+    uses: envoyproxy/toolshed/gh-actions/shout@f3005401833e04683797bb960efc3ede162570ee
     with:
       string: |
         ${{ inputs.title && format('### {0}', inputs.title) }}
@@ -119,7 +124,7 @@ runs:
 
   - name: Summary
     if: ${{ inputs.collapse }}
-    uses: envoyproxy/toolshed/gh-actions/shout@525366851aad5eb26a338a629dd2a9f349ffc109
+    uses: envoyproxy/toolshed/gh-actions/shout@f3005401833e04683797bb960efc3ede162570ee
     with:
       string: |
 
