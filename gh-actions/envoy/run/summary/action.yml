@@ -1,0 +1,146 @@
+inputs:
+  context:
+    type: string
+    required: true
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@d92e00e7721fee7b399fdfdee8c039f294f54899
+    with:
+      input: ${{ inputs.context }}
+      print-result: true
+      options: -C
+  - uses: envoyproxy/toolshed/gh-actions/jq@d92e00e7721fee7b399fdfdee8c039f294f54899
+    name: Advice
+    id: advice
+    with:
+      input: ${{ inputs.context }}
+      options: -r
+      filter: >-
+        .context.config.check.advice
+        | .["${{ fromJSON(inputs.context).context.target }}"]
+          // ""
+
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@d92e00e7721fee7b399fdfdee8c039f294f54899
+    id: container
+    if: ${{ fromJSON(inputs.context).context.container-command || env.CONTAINER_COMMAND }}
+    with:
+      string: |
+          #### Container command
+
+          The command was run inside a Docker container environment, which
+          was invoked by the following command
+
+          ```console
+          $ ${{ env.CONTAINER_COMMAND || fromJSON(inputs.context).context.container-command }}
+          ```
+      indent: 2
+
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@d92e00e7721fee7b399fdfdee8c039f294f54899
+    id: steps-pre-steps
+    if: ${{ fromJSON(inputs.context).context.steps-pre }}
+    with:
+      string: |
+        The following steps were run to prepare the CI environment:
+
+        ```yaml
+        ${{ fromJSON(inputs.context).context.steps-pre }}
+        ```
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@d92e00e7721fee7b399fdfdee8c039f294f54899
+    id: steps-pre
+    if: ${{ fromJSON(inputs.context).context.steps-pre }}
+    with:
+      string: |
+        <details>
+          <summary><b>Pre-steps</b></summary>
+
+        ${{ steps.steps-pre-steps.outputs.string }}
+
+        </details>
+      indent: 2
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@d92e00e7721fee7b399fdfdee8c039f294f54899
+    id: steps-post-steps
+    if: ${{ fromJSON(inputs.context).context.steps-post }}
+    with:
+      string: |
+        The following steps were run to cleanup or test the CI environment:
+
+        ```yaml
+        ${{ fromJSON(inputs.context).context.steps-post }}
+        ```
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@d92e00e7721fee7b399fdfdee8c039f294f54899
+    id: steps-post
+    if: ${{ fromJSON(inputs.context).context.steps-post }}
+    with:
+      string: |
+        <details>
+          <summary><b>Post-steps</b></summary>
+
+        ${{ steps.steps-post-steps.outputs.string }}
+
+        </details>
+      indent: 2
+
+  - run: |
+      echo "$TITLE" >> $GITHUB_STEP_SUMMARY
+      echo "$BODY" >> $GITHUB_STEP_SUMMARY
+    shell: bash
+    env:
+      TITLE: >-
+        ##
+        ${{ fromJSON(inputs.context).context.config.envoy.icon }}
+        ${{ github.workflow }}: ${{ fromJSON(inputs.context).context.target }}
+
+      BODY: |
+        <details>
+          <summary><b>CI command</b></summary>
+
+          #### Command
+
+          The following command was run:
+
+          ```console
+          $ ${{ fromJSON(inputs.context).context.command }} ${{ fromJSON(inputs.context).context.args || fromJSON(inputs.context).context.target }}
+          ```
+
+        ${{ steps.container.outputs.string }}
+
+          > **Note**
+          > The above commands are specific to the CI environment and may need to be adjusted to run locally.
+
+        ${{ steps.steps-pre.outputs.string }}
+
+        ${{ steps.steps-post.outputs.string }}
+
+        </details>
+  - run: |
+      echo "$BODY" >> $GITHUB_STEP_SUMMARY
+    shell: bash
+    if: ${{ fromJSON(inputs.context).run.exit-code == '0' }}
+    env:
+      BODY: |
+        ### :heavy_check_mark: Command completed successfully
+  - run: |
+      echo "$BODY" >> $GITHUB_STEP_SUMMARY
+    shell: bash
+    if: ${{ fromJSON(inputs.context).run.exit-code != '0' }}
+    env:
+      BODY: |
+        ### :x: Command failed with exit code ${{ fromJSON(inputs.context).run.exit-code }}
+        ${{ fromJSON(inputs.context).context.catch-errors && '#### :warning: Error was caught' || '' }}
+  - run: |
+      echo "$BODY" >> $GITHUB_STEP_SUMMARY
+    shell: bash
+    if: ${{ steps.advice.outputs.value }}
+    env:
+      BODY: |
+
+        ----
+
+        <details>
+          <summary><b>${{ github.workflow }} advice</b></summary>
+
+          ${{ steps.advice.outputs.value }}
+
+        </details>
