@@ -31,6 +31,9 @@ inputs:
   sha:
     type: string
     required: true
+  column-filter:
+    type: string
+    default:
   target-branch:
     type: string
     required: false
@@ -48,17 +51,17 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.48
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
     id: sha-short
     with:
       string: ${{ inputs.sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.48
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
     id: base-sha-short
     with:
       string: ${{ inputs.base-sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
+  - uses: envoyproxy/toolshed/gh-actions/jq@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
     name: Change
     id: change
     with:
@@ -70,7 +73,7 @@ runs:
         | ($message | split("\n")[0]) as $title
         | ($message | "  > " + (split("\n")[1:] | join("\n  > ")))
         | {"title": $title, "body": .}
-  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.48
+  - uses: envoyproxy/toolshed/gh-actions/github/env/title@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
     id: title
     with:
       link: ${{ inputs.link }}
@@ -111,31 +114,30 @@ runs:
         </details>
 
     name: Summary
-  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.48
+
+  - uses: envoyproxy/toolshed/gh-actions/json/table@1ae0dff8a3299fb1326508130e011b6fd196292f
     name: Environment summary
     id: table
     with:
       json: ${{ inputs.env }}
       filter: ${{ inputs.env-filter }}
+      column-filter: ${{ inputs.column-filter }}
       title: Environment
       summary: Request
       collapse: true
-  - run: |
-      echo "value<<nEOFn" >> $GITHUB_OUTPUT
-      printf '%s\n' "${REQUEST}" >> $GITHUB_OUTPUT
-      printf '%s\n' "${TABLE}" >> $GITHUB_OUTPUT
-      echo "nEOFn" >> $GITHUB_OUTPUT
-    shell: bash
+  - uses: envoyproxy/toolshed/gh-actions/shout@1ae0dff8a3299fb1326508130e011b6fd196292f
     id: request-output
-    env:
-      REQUEST: ${{ steps.request.outputs.value }}
-      TABLE: ${{ steps.table.outputs.summary }}
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.48
+    with:
+      string: |
+        ${{ steps.request.outputs.value }}
+        ${{ steps.table.outputs.summary }}
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
     id: output
     with:
-      string: ${{ steps.request-output.outputs.value }}
+      string: ${{ steps.request-output.outputs.out }}
       indent: ${{ inputs.indent }}
   - run: |
+      # Output to ${{ inputs.output-path }}
       if [[ "${{ inputs.output-path }}" == "GITHUB_STEP_SUMMARY" ]]; then
           printf '%s\n' "${REQUEST}" >> $GITHUB_STEP_SUMMARY
       else
