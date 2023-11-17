@@ -65,7 +65,7 @@ runs:
   #
   # Only specified bots are trusted.
   - id: trusted
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
       input: |
         ${{ inputs.trusted-bots || 'NOBOTS' }}
@@ -81,11 +81,11 @@ runs:
           end) as $trusted
         | {trusted: ($trusted and ${{ ! startswith(github.event_name, 'pull_request') }})}
 
-  - uses: envoyproxy/toolshed/gh-actions/github/context@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.50
     name: Github context
     if: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Config to json
     id: config
     with:
@@ -93,7 +93,7 @@ runs:
       input: ${{ inputs.config }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Checks to json
     id: checks
     with:
@@ -102,7 +102,7 @@ runs:
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
 
   # Turn CI advice yaml -> json
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: CI advice
     id: checks-advice
     with:
@@ -112,19 +112,19 @@ runs:
         with_entries(
           select(.value.advice?)
           | (.value = .value.advice))
-  - uses: envoyproxy/toolshed/gh-actions/foreach@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.50
     id: inflated
     with:
       items: ${{ steps.checks-advice.outputs.value }}
       steps: |
-        - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+        - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
           id: $KEY
           with:
             input: |
               %{{ fromJSON(inputs.context)['$KEY'] }}
             input-format: yaml
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Inflated check config
     id: inflated-output
     with:
@@ -132,7 +132,7 @@ runs:
       filter: |
         fromjson
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Check config
     id: checks-config
     with:
@@ -150,7 +150,7 @@ runs:
             | .value.advice = ($update[$k] // {}))
 
   - id: ref-name
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
       input: "${{ github.ref_name }}"
       input-format: text
@@ -160,7 +160,7 @@ runs:
         sub("^refs/pull/"; "")
         | sub("^refs/heads/"; "")
 
-  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@actions-v0.1.50
     id: merge-commit
     if: ${{ startswith(github.event_name, 'pull_request') }}
     with:
@@ -177,7 +177,7 @@ runs:
   #  step generation*
   - id: commit-message
     name: Get commit message from the github context
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
       input: |
         ${{ toJSON(github) }}
@@ -190,7 +190,7 @@ runs:
     id: version-string
     shell: bash
   - id: version
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
       input: '{}'
       filter: |
@@ -202,7 +202,7 @@ runs:
            patch: (.[2] | rtrimstr("-dev") | fromjson),
            "dev": $isdev}
 
-  - uses: envoyproxy/toolshed/gh-actions/shout@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
     id: diff
     with:
       sh: >-
@@ -213,7 +213,7 @@ runs:
         origin/main
 
   - id: changed
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     if: ${{ startswith(github.event_name, 'pull_request') }}
     with:
       options: -Rsc
@@ -223,7 +223,7 @@ runs:
         split("\n")
 
   - id: base-request
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
       input-format: yaml
       input: |
@@ -235,7 +235,7 @@ runs:
         trusted: ${{ fromJSON(steps.trusted.outputs.value).trusted }}
         version: ${{ steps.version.outputs.value }}
   - id: pr-request
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     if: ${{ startswith(github.event_name, 'pull_request') }}
     with:
       input-format: yaml
@@ -247,7 +247,7 @@ runs:
       filter: |
         . * ${{ steps.base-request.outputs.value }}
   - id: push-request
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     if: ${{ ! startswith(github.event_name, 'pull_request') }}
     with:
       input-format: yaml
@@ -260,11 +260,11 @@ runs:
 
   - name: Run config
     id: run-config
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
       input-format: yaml
       input: ${{ inputs.run }}
-  - uses: envoyproxy/toolshed/gh-actions/torun@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.1.50
     id: torun
     with:
       branch: ${{ steps.ref-name.outputs.value }}
@@ -275,7 +275,7 @@ runs:
   # CI is only enabled if its the Envoy repo or specifically enabled in config
   - name: Check CI vars
     id: ci-vars
-    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
       input-format: yaml
       input: |
@@ -283,7 +283,7 @@ runs:
         ci-mobile: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_MOBILE_CI }}
         ci-windows: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_WINDOWS_CI }}
         ci-macos: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_MACOS_CI }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Generate env json
     id: repo-run
     with:
@@ -300,7 +300,7 @@ runs:
             && '| with_entries(if .key | test("^build-macos") then .value = false else . end)'
             || '' }}
   # This allows you to set eg ENVOY_CI_RUN_MOBILE_COVERAGE and force `mobile-coverage` to `true`
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     id: run-filter
     with:
      input: ${{ inputs.vars }}
@@ -317,7 +317,7 @@ runs:
                                 | ascii_downcase) + "\"] = true"
              else empty end)
        | join(" | ")
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Enable custom CI
     id: run
     with:
@@ -326,7 +326,7 @@ runs:
         ${{ steps.run-filter.outputs.value }}
         | walk(if . == "" then false else . end)
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Create data
     id: data
     with:
