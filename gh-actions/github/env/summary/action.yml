@@ -51,17 +51,17 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.49
     id: sha-short
     with:
       string: ${{ inputs.sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.49
     id: base-sha-short
     with:
       string: ${{ inputs.base-sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/jq@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.49
     name: Change
     id: change
     with:
@@ -73,7 +73,7 @@ runs:
         | ($message | split("\n")[0]) as $title
         | ($message | "  > " + (split("\n")[1:] | join("\n  > ")))
         | {"title": $title, "body": .}
-  - uses: envoyproxy/toolshed/gh-actions/github/env/title@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
+  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.49
     id: title
     with:
       link: ${{ inputs.link }}
@@ -115,7 +115,7 @@ runs:
 
     name: Summary
 
-  - uses: envoyproxy/toolshed/gh-actions/json/table@1ae0dff8a3299fb1326508130e011b6fd196292f
+  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.49
     name: Environment summary
     id: table
     with:
@@ -125,13 +125,13 @@ runs:
       title: Environment
       summary: Request
       collapse: true
-  - uses: envoyproxy/toolshed/gh-actions/shout@1ae0dff8a3299fb1326508130e011b6fd196292f
+  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.49
     id: request-output
     with:
       string: |
         ${{ steps.request.outputs.value }}
         ${{ steps.table.outputs.summary }}
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@c1859f5e5b8d62e62441662f2ebafd0b5dd52414
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.49
     id: output
     with:
       string: ${{ steps.request-output.outputs.out }}
