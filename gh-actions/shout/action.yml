@@ -6,6 +6,9 @@ inputs:
   string:
     type: string
     default:
+  output-path:
+    type: string
+    default:
 
 outputs:
   out:
@@ -41,6 +44,18 @@ runs:
       echo "out<<EOF" >> $GITHUB_OUTPUT
       printf "%s\n" "${OUTPUT}" >> $GITHUB_OUTPUT
       echo "EOF" >> $GITHUB_OUTPUT
+    shell: bash
+    env:
+      OUTPUT: ${{ steps.sh.outputs.out || steps.echo.outputs.out }}
+  - if: ${{ inputs.output-path }}
+    run: |
+      # Output result to path ${{ inputs.output-path }}
+      if [[ "${{ input.output-path }} == "GITHUB_STEP_SUMMARY" ]]; then
+          OUTPUT_PATH="${GITHUB_STEP_SUMMARY}"
+      else
+          OUTPUT_PATH="${{ inputs.output-path }}"
+      fi
+      printf "%s\n" "${OUTPUT}" >> $OUTPUT_PATH
     shell: bash
     env:
       OUTPUT: ${{ steps.sh.outputs.out || steps.echo.outputs.out }}
