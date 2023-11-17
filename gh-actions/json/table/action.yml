@@ -3,21 +3,26 @@ inputs:
   append:
     type: boolean
     default: true
+  column-filter:
+    type: string
+    default:
+  columns:
+    type: number
+    default: 2
   title:
     type: string
   summary:
     type: string
-  header:
+  headers:
     type: string
     default: |
-      | Variable | Value |
-      | --- | --- |
+      - Variable
+      - Value
   json:
     type: string
     required: true
   filter:
-    default: |
-      to_entries | map("| \(.key) | \(.value) |") | join("\n")
+    default:
   output-path:
     type: string
   collapse:
@@ -28,64 +33,78 @@ outputs:
   table:
     value: ${{ steps.table.outputs.value }}
   summary:
-    value: ${{ steps.summary.outputs.value }}
+    value: ${{ steps.summary.outputs.out }}
 
 
 runs:
   using: composite
   steps:
+  - id: headers
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
+    with:
+      input: |
+        ${{ inputs.headers }}
+      input-format: yaml
+      filter: >-
+        ("| " + (. | join(" | ")) + " |")
+        + "\n"
+        + ("| " + "--- | " * ${{ inputs.columns }})
+  - id: columns
+    run: |
+      # Use k for 1-col, k/v for 2-col, and k/v/v for more
+      if [[ "${{ inputs.columns }}" -eq 1 ]]; then
+          FILTER='to_entries | map("| \(.key) |")'
+      elif [[ "${{ inputs.columns }}" -eq 2 ]]; then
+          FILTER='to_entries | map("| \(.key) | \(.value) |")'
+      else
+          FILTER='to_entries | map([.key, (.value | to_entries | map(.value))])'
+      fi
+      printf 'filter=%s' "$FILTER" >> $GITHUB_OUTPUT
+    shell: bash
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: Generate table
     id: table
     with:
       input: ${{ inputs.json }}
       options: -r
-      filter: ${{ inputs.filter }}
+      filter: |
+        ${{ inputs.filter || '.' }}
+        | ${{ inputs.column-filter || steps.columns.outputs.filter }}
+        | join("\n") as $columns
+        | ${{ steps.headers.outputs.value }}
+        | . + "\n" + $columns
+
   - name: Summary
     if: ${{ ! inputs.collapse }}
-    run: |
-      {
-        echo "${TITLE}"
-        printf '%s' "${HEADER}"
-        echo "${TABLE}"
-      } >> $GITHUB_STEP_SUMMARY
-    env:
-      TITLE: ${{ inputs.title && format('### {0}', inputs.title) }}
-      TABLE: ${{ steps.table.outputs.value }}
-      HEADER: ${{ inputs.header }}
-    shell: bash
+    uses: envoyproxy/toolshed/gh-actions/shout@484dc5785da004c9c430d08351a7bd62f7ed38c8
+    with:
+      string: |
+        ${{ inputs.title && format('### {0}', inputs.title) }}
+        ${{ steps.table.outputs.value }}
+      output-path: GITHUB_STEP_SUMMARY
 
-  - name: Indent table
-    run: |
-      # Indent table
-      TABLE=$(echo '${{ steps.table.outputs.value }}' | sed  's#^#  #')
-      HEADER=$(echo -n '${{ inputs.header }}' | sed  's#^#  #')
-      echo "table<<nEOFn" >> $GITHUB_OUTPUT
-      printf '%s\n' "${HEADER}" >> $GITHUB_OUTPUT
-      printf '%s\n' "${TABLE}" >> $GITHUB_OUTPUT
-      echo "nEOFn" >> $GITHUB_OUTPUT
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.48
     id: indented
     if: ${{ inputs.collapse }}
-    shell: bash
+    with:
+      string: ${{ steps.table.outputs.value }}
+      indent: 2
 
   - name: Summary
     if: ${{ inputs.collapse }}
-    run: |
-      echo "value<<nEOFn" >> $GITHUB_OUTPUT
-      printf "%s\n" "${TABLE}" >> $GITHUB_OUTPUT
-      echo "nEOFn" >> $GITHUB_OUTPUT
-    env:
-      TABLE: |
+    uses: envoyproxy/toolshed/gh-actions/shout@484dc5785da004c9c430d08351a7bd62f7ed38c8
+    with:
+      string: |
 
         <details>
           <summary><b>${{ inputs.title }}</b></summary>
 
           ### ${{ inputs.summary }}
 
-        ${{ steps.indented.outputs.table }}
+        ${{ steps.indented.outputs.string }}
 
         </details>
-    shell: bash
     id: summary
 
   - run: |
@@ -97,4 +116,4 @@ runs:
     shell: bash
     if: ${{ inputs.output-path }}
     env:
-      REQUEST: ${{ steps.summary.outputs.value }}
+      REQUEST: ${{ steps.summary.outputs.out }}
