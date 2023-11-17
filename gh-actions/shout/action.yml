@@ -50,7 +50,7 @@ runs:
   - if: ${{ inputs.output-path }}
     run: |
       # Output result to path ${{ inputs.output-path }}
-      if [[ "${{ input.output-path }} == "GITHUB_STEP_SUMMARY" ]]; then
+      if [[ "${{ inputs.output-path }} == "GITHUB_STEP_SUMMARY" ]]; then
           OUTPUT_PATH="${GITHUB_STEP_SUMMARY}"
       else
           OUTPUT_PATH="${{ inputs.output-path }}"
