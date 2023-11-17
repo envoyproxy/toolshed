@@ -26,7 +26,7 @@ runs:
       printf "%s\n" "${RESULT}" >> $GITHUB_OUTPUT
       echo "EOF" >> $GITHUB_OUTPUT
     env:
-      STRING: ${{ inputs.sh }}
+      SH: ${{ inputs.sh }}
     shell: bash
   - if: ${{ inputs.string }}
     id: echo
