@@ -23,6 +23,20 @@ inputs:
     required: true
   filter:
     default:
+  sanitize-filter:
+    default: >-
+      if type == "null" then
+        ""
+      else
+        .
+      end
+      | if (type == "string" and test("\n")) then
+          (split("\n")[0] + "..." )
+        else
+          .
+        end
+  mutate-cells:
+    default: .
   output-path:
     type: string
   collapse:
@@ -53,14 +67,24 @@ runs:
     run: |
       # Use k for 1-col, k/v for 2-col, and k/v/v for more
       if [[ "${{ inputs.columns }}" -eq 1 ]]; then
-          FILTER='to_entries | map("| \(.key) |")'
+          FILTER='to_entries | map([.key])'
       elif [[ "${{ inputs.columns }}" -eq 2 ]]; then
-          FILTER='to_entries | map("| \(.key) | \(.value) |")'
+          FILTER='to_entries | map([.key, .value])'
       else
           FILTER='to_entries | map([.key, (.value | to_entries | map(.value))])'
       fi
       printf 'filter=%s' "$FILTER" >> $GITHUB_OUTPUT
     shell: bash
+
+  - id: mutated-cells
+    uses: envoyproxy/toolshed/gh-actions/shout@525366851aad5eb26a338a629dd2a9f349ffc109
+    with:
+      string: >-
+        . as $table
+        | map(. as $row
+              | map(. as $cell
+                    | ${{ inputs.mutate-cells || '.' }}
+                    | ${{ inputs.sanitize-filter || '.' }}))
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.48
     name: Generate table
@@ -71,13 +95,15 @@ runs:
       filter: |
         ${{ inputs.filter || '.' }}
         | ${{ inputs.column-filter || steps.columns.outputs.filter }}
+        | ${{ steps.mutated-cells.outputs.out }}
+        | map(join("|"))
         | join("\n") as $columns
         | ${{ steps.headers.outputs.value }}
         | . + "\n" + $columns
 
   - name: Summary
     if: ${{ ! inputs.collapse }}
-    uses: envoyproxy/toolshed/gh-actions/shout@484dc5785da004c9c430d08351a7bd62f7ed38c8
+    uses: envoyproxy/toolshed/gh-actions/shout@525366851aad5eb26a338a629dd2a9f349ffc109
     with:
       string: |
         ${{ inputs.title && format('### {0}', inputs.title) }}
@@ -93,7 +119,7 @@ runs:
 
   - name: Summary
     if: ${{ inputs.collapse }}
-    uses: envoyproxy/toolshed/gh-actions/shout@484dc5785da004c9c430d08351a7bd62f7ed38c8
+    uses: envoyproxy/toolshed/gh-actions/shout@525366851aad5eb26a338a629dd2a9f349ffc109
     with:
       string: |
 
