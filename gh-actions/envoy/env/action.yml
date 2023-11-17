@@ -1,0 +1,339 @@
+inputs:
+  token:
+    type: string
+    required: true
+  agent-ubuntu:
+    type: string
+    required: true
+  build_image_tag:
+    type: string
+    required: true
+  build_image_repo:
+    type: string
+    required: true
+  build_image_mobile_sha:
+    type: string
+    required: true
+  build_image_sha:
+    type: string
+    required: true
+  checks:
+    type: string
+    required: true
+  config:
+    type: string
+    required: true
+  run:
+    type: string
+    required: true
+  vars:
+    type: string
+    required: true
+  marker:
+    type: string
+    default: "☠☠☠"
+  ref:
+    type: string
+  ref-sha:
+    type: string
+  ref-name:
+    type: string
+  replacements:
+    type: string
+    default: |
+      - "%"
+  seed:
+    type: string
+    default: "☠❂⚓"
+  started:
+    type: number
+    required: true
+  trusted_bots:
+    type: string
+    default: |
+      trigger-release-envoy[bot]
+
+outputs:
+  data:
+    value: ${{ steps.data.outputs.value }}
+
+
+runs:
+  using: composite
+  steps:
+  # Pull request/targets are _never_ trusted.
+  #
+  # Only specified bots are trusted.
+  - id: trusted
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    with:
+      input: |
+        ${{ inputs.trusted-bots || 'NOBOTS' }}
+      options: -sRc
+      input-format: text
+      filter: |
+        "${{ contains(github.actor, '[bot]') && github.actor || '' }}" as $bot
+        | (if $bot == "" then
+             true
+          else
+            (split("\n")
+            | index($bot) != null)
+          end) as $trusted
+        | {trusted: ($trusted and ${{ ! startswith(github.event_name, 'pull_request') }})}
+
+  - uses: envoyproxy/toolshed/gh-actions/github/context@5f8c5c9a54896720b70297887c69425194586ca9
+    name: Github context
+    if: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    name: Config to json
+    id: config
+    with:
+      input-format: yaml
+      input: ${{ inputs.config }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    name: Checks to json
+    id: checks
+    with:
+      input-format: yaml
+      input: ${{ inputs.checks }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+
+  # Turn CI advice yaml -> json
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    name: CI advice
+    id: checks-advice
+    with:
+      input: ${{ steps.checks.outputs.value }}
+      options: -r
+      filter: >-
+        with_entries(
+          select(.value.advice?)
+          | (.value = .value.advice))
+  - uses: envoyproxy/toolshed/gh-actions/foreach@5f8c5c9a54896720b70297887c69425194586ca9
+    id: inflated
+    with:
+      items: ${{ steps.checks-advice.outputs.value }}
+      steps: |
+        - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+          id: $KEY
+          with:
+            input: |
+              %{{ fromJSON(inputs.context)['$KEY'] }}
+            input-format: yaml
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    name: Inflated check config
+    id: inflated-output
+    with:
+      input: ${{ steps.inflated.outputs.out }}
+      filter: |
+        fromjson
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    name: Check config
+    id: checks-config
+    with:
+      input: ${{ steps.checks-advice.outputs.value }}
+      filter: |
+        keys as $keys
+        | ${{ steps.inflated-output.outputs.value }}
+        | with_entries(
+            select(.key as $k | $keys | index($k))
+            | (.value = (.value.outputs)))
+        | . as $update
+        | ${{ steps.checks.outputs.value }}
+        | with_entries(
+            .key as $k
+            | .value.advice = ($update[$k] // {}))
+
+  - id: ref-name
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    with:
+      input: "${{ github.ref_name }}"
+      input-format: text
+      options: -rR
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+      filter: |
+        sub("^refs/pull/"; "")
+        | sub("^refs/heads/"; "")
+
+  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@5f8c5c9a54896720b70297887c69425194586ca9
+    id: merge-commit
+    if: ${{ startswith(github.event_name, 'pull_request') }}
+    with:
+      repository: ${{ github.repository }}
+      pr: ${{ github.event.number }}
+      token: ${{ inputs.token }}
+
+  ## WARNING: THIS IS A REQUEST ATTACK VECTOR
+  # The body of the commit message has any suspect strings - eg `${{` or `%{{`
+  #  interpolated out.
+  # When interpolating back the message it cannot be used in any `using/steps`
+  #  or related actions (eg foreach) - in those cases it should be safe to interpolate
+  #  back in the generated steps, but *the interpolated data should never be passed to the
+  #  step generation*
+  - id: commit-message
+    name: Get commit message from the github context
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    with:
+      input: |
+        ${{ toJSON(github) }}
+      filter: |
+        .event.head_commit.message // .event.pull_request.title + "\n" + .event.pull_request.body
+
+  - run: |
+      VERSION=$(cat VERSION.txt)
+      echo "string=$VERSION" >> $GITHUB_OUTPUT
+    id: version-string
+    shell: bash
+  - id: version
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    with:
+      input: '{}'
+      filter: |
+        "${{ steps.version-string.outputs.string }}"
+        | endswith("-dev") as $isdev
+        | split(".")
+        | {major: (.[0] | fromjson),
+           minor: (.[1] | fromjson),
+           patch: (.[2] | rtrimstr("-dev") | fromjson),
+           "dev": $isdev}
+
+  - uses: envoyproxy/toolshed/gh-actions/shout@5f8c5c9a54896720b70297887c69425194586ca9
+    id: diff
+    with:
+      sh: >-
+        git
+        diff
+        --name-only
+        ${{ steps.merge-commit.outputs.sha }}
+        origin/main
+
+  - id: changed
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    if: ${{ startswith(github.event_name, 'pull_request') }}
+    with:
+      options: -Rsc
+      input-format: text
+      input: ${{ steps.diff.outputs.out }}
+      filter: |
+        split("\n")
+
+  - id: base-request
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    with:
+      input-format: yaml
+      input: |
+        build-image: ${{ inputs.build_image_repo }}:${{ inputs.build_image_tag }}@sha256:${{ inputs.build_image_sha }}
+        build-image-mobile: ${{ inputs.build_image_repo }}:mobile-${{ inputs.build_image_tag }}@sha256:${{ inputs.build_image_mobile_sha }}
+        message: ${{ steps.commit-message.outputs.value }}
+        started: ${{ inputs.started }}
+        target-branch: ${{ steps.ref-name.outputs.value }}
+        trusted: ${{ fromJSON(steps.trusted.outputs.value).trusted }}
+        version: ${{ steps.version.outputs.value }}
+  - id: pr-request
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    if: ${{ startswith(github.event_name, 'pull_request') }}
+    with:
+      input-format: yaml
+      input: |
+        base-sha: ${{ github.sha }}
+        pr: ${{ github.event.number }}
+        ref: ${{ steps.merge-commit.outputs.sha }}
+        sha: ${{ inputs.ref-sha || github.event.pull_request.head.sha || github.sha }}
+      filter: |
+        . * ${{ steps.base-request.outputs.value }}
+  - id: push-request
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    if: ${{ ! startswith(github.event_name, 'pull_request') }}
+    with:
+      input-format: yaml
+      input: |
+        ref: ${{ steps.context.outputs.repo_ref || '' }}
+        sha: ${{ inputs.ref-sha || github.sha }}
+        started: ${{ inputs.started }}
+      filter: |
+        . * ${{ steps.base-request.outputs.value }}
+
+  - name: Run config
+    id: run-config
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    with:
+      input-format: yaml
+      input: ${{ inputs.run }}
+  - uses: envoyproxy/toolshed/gh-actions/torun@5f8c5c9a54896720b70297887c69425194586ca9
+    id: torun
+    with:
+      branch: ${{ steps.ref-name.outputs.value }}
+      event: ${{ github.event_name }}
+      config: ${{ steps.run-config.outputs.value }}
+      paths: ${{ steps.changed.outputs.value || '[]' }}
+
+  # CI is only enabled if its the Envoy repo or specifically enabled in config
+  - name: Check CI vars
+    id: ci-vars
+    uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    with:
+      input-format: yaml
+      input: |
+        ci: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_CI }}
+        ci-mobile: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_MOBILE_CI }}
+        ci-windows: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_WINDOWS_CI }}
+        ci-macos: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_MACOS_CI }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    name: Generate env json
+    id: repo-run
+    with:
+      input: ${{ steps.torun.outputs.runs }}
+      filter: >-
+        .
+        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-mobile
+            && '| with_entries(if .key | test("^mobile-") then .value = false else . end)'
+            || '' }}
+        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-windows
+            && '| with_entries(if .key | test("^build-windows") then .value = false else . end)'
+            || '' }}
+        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-macos
+            && '| with_entries(if .key | test("^build-macos") then .value = false else . end)'
+            || '' }}
+  # This allows you to set eg ENVOY_CI_RUN_MOBILE_COVERAGE and force `mobile-coverage` to `true`
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    id: run-filter
+    with:
+     input: ${{ inputs.vars }}
+     options: -r
+     filter: >-
+       to_entries
+       | map(select(.key
+           | startswith("ENVOY_CI_RUN")))
+       | map(.key as $k
+           | .value == "1"
+           | if . then ".[\""
+                          + ($k | sub("ENVOY_CI_RUN_"; "")
+                                | gsub("_"; "-")
+                                | ascii_downcase) + "\"] = true"
+             else empty end)
+       | join(" | ")
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    name: Enable custom CI
+    id: run
+    with:
+      input: ${{ steps.repo-run.outputs.value }}
+      filter: >-
+        ${{ steps.run-filter.outputs.value }}
+        | walk(if . == "" then false else . end)
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@5f8c5c9a54896720b70297887c69425194586ca9
+    name: Create data
+    id: data
+    with:
+      input: |
+        {"request": ${{ steps.pr-request.outputs.value || steps.push-request.outputs.value }},
+         "run": ${{ steps.run.outputs.value }},
+         "ci": {"agent-ubuntu": "${{ inputs.agent-ubuntu }}"},
+         "checks": ${{ steps.checks-config.outputs.value }},
+         "config": ${{ steps.config.outputs.value }}}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
