@@ -136,7 +136,7 @@ runs:
         <details>
           <summary><b>${{ inputs.title }}</b></summary>
 
-          ### ${{ inputs.summary }}
+          #### ${{ inputs.summary }}
 
         ${{ steps.indented.outputs.string }}
 
