@@ -1,57 +1,26 @@
 inputs:
-  token:
-    type: string
-    required: true
-  agent-ubuntu:
-    type: string
-    required: true
-  build_image_tag:
-    type: string
-    required: true
-  build_image_repo:
-    type: string
-    required: true
-  build_image_mobile_sha:
-    type: string
-    required: true
-  build_image_sha:
-    type: string
-    required: true
-  checks:
-    type: string
-    required: true
   config:
     type: string
     required: true
-  run:
-    type: string
-    required: true
-  vars:
-    type: string
-    required: true
-  marker:
-    type: string
-    default: "☠☠☠"
   ref:
     type: string
   ref-sha:
     type: string
   ref-name:
     type: string
-  replacements:
-    type: string
-    default: |
-      - "%"
-  seed:
-    type: string
-    default: "☠❂⚓"
   started:
     type: number
+    required: true
+  token:
+    type: string
     required: true
   trusted_bots:
     type: string
     default: |
       trigger-release-envoy[bot]
+  vars:
+    type: string
+    required: true
 
 outputs:
   data:
@@ -86,10 +55,9 @@ runs:
     if: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
-    name: Config to json
+    name: Parse config
     id: config
     with:
-      input-format: yaml
       input: ${{ inputs.config }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
 
@@ -98,7 +66,7 @@ runs:
     id: checks
     with:
       input-format: yaml
-      input: ${{ inputs.checks }}
+      input: ${{ fromJSON(steps.config.outputs.value).checks }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
 
   # Turn CI advice yaml -> json
@@ -251,15 +219,15 @@ runs:
     with:
       input-format: yaml
       input: |
-        default: ${{ inputs.build_image_repo }}:${{ inputs.build_image_tag }}@sha256:${{ inputs.build_image_sha }}
-        mobile: ${{ inputs.build_image_repo }}:mobile-${{ inputs.build_image_tag }}@sha256:${{ inputs.build_image_mobile_sha }}
+        default: ${{ fromJSON(steps.config.outputs.value).build_image_repo }}:${{ fromJSON(steps.config.outputs.value).build_image_tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build_image_sha }}
+        mobile: ${{ fromJSON(steps.config.outputs.value).build_image_repo }}:mobile-${{ fromJSON(steps.config.outputs.value).build_image_tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build_image_mobile_sha }}
 
   - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
     id: requested-build-images-wf
     with:
       sh: >-
         cat
-        ./.github/workflows/request.yml
+        ./.github/actions/config/action.yml
   - id: requested-build-images
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
@@ -267,11 +235,11 @@ runs:
       input: ${{ steps.requested-build-images-wf.outputs.out }}
       print-result: true
       filter: |
-        .jobs.request.with
-        | .build_image_repo as $repo
-        | .build_image_tag as $tag
-        | .build_image_sha as $sha
-        | .build_image_mobile_sha as $mobile_sha
+        .inputs
+        | .build_image_repo.default as $repo
+        | .build_image_tag.default as $tag
+        | .build_image_sha.default as $sha
+        | .build_image_mobile_sha.default as $mobile_sha
         | {"build-image": "\($repo):\($tag)@sha256:\($sha)",
            "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobile_sha)"}
 
@@ -280,8 +248,6 @@ runs:
     with:
       input-format: yaml
       input: |
-        build-image: ${{ inputs.build_image_repo }}:${{ inputs.build_image_tag }}@sha256:${{ inputs.build_image_sha }}
-        build-image-mobile: ${{ inputs.build_image_repo }}:mobile-${{ inputs.build_image_tag }}@sha256:${{ inputs.build_image_mobile_sha }}
         message: ${{ steps.commit-message.outputs.value }}
         started: ${{ inputs.started }}
         target-branch: ${{ steps.ref-name.outputs.value }}
@@ -319,7 +285,7 @@ runs:
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     with:
       input-format: yaml
-      input: ${{ inputs.run }}
+      input: ${{ fromJSON(steps.config.outputs.value).run }}
   - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.1.50
     id: torun
     with:
@@ -389,7 +355,7 @@ runs:
       input: |
         {"request": ${{ steps.pr-request.outputs.value || steps.push-request.outputs.value }},
          "run": ${{ steps.run.outputs.value }},
-         "ci": {"agent-ubuntu": "${{ inputs.agent-ubuntu }}"},
+         "ci": {"agent-ubuntu": "${{ fromJSON(steps.config.outputs.value).agent-ubuntu }}"},
          "checks": ${{ steps.checks-config.outputs.value }},
          "config": ${{ steps.config.outputs.value }}}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
