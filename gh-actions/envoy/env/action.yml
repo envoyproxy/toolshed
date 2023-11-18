@@ -189,18 +189,6 @@ runs:
       echo "string=$VERSION" >> $GITHUB_OUTPUT
     id: version-string
     shell: bash
-  - id: version
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
-    with:
-      input: '{}'
-      filter: |
-        "${{ steps.version-string.outputs.string }}"
-        | endswith("-dev") as $isdev
-        | split(".")
-        | {major: (.[0] | fromjson),
-           minor: (.[1] | fromjson),
-           patch: (.[2] | rtrimstr("-dev") | fromjson),
-           "dev": $isdev}
 
   - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
     id: diff
@@ -209,18 +197,83 @@ runs:
         git
         diff
         --name-only
-        ${{ steps.merge-commit.outputs.sha }}
-        origin/main
+        ${{ steps.merge-commit.outputs.sha || 'HEAD^1' }}
+        origin/${{ steps.ref-name.outputs.value }}
 
   - id: changed
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
-    if: ${{ startswith(github.event_name, 'pull_request') }}
     with:
       options: -Rsc
       input-format: text
       input: ${{ steps.diff.outputs.out }}
       filter: |
         split("\n")
+
+  - id: version
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+    with:
+      input: ${{ steps.changed.outputs.value || '[]' }}
+      filter: |
+        (index("VERSION.txt") != null) as $changed
+        | "${{ steps.version-string.outputs.string }}"
+        | endswith("-dev") as $isdev
+        | split(".")
+        | {major: (.[0] | fromjson),
+           minor: (.[1] | fromjson),
+           patch: (.[2] | rtrimstr("-dev") | fromjson),
+           "dev": $isdev,
+           "changed": $changed}
+
+  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
+    id: version-current-string
+    with:
+      sh: >-
+        git
+        show
+        ${{ startswith(github.event_name, 'pull_request') && format('origin/{0}', steps.ref-name.outputs.value) || 'HEAD^1' }}:VERSION.txt
+
+  - id: version-current
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+    with:
+      input: "{}"
+      options: -Rsc
+      filter: |
+        "${{ steps.version-current-string.outputs.out }}"
+        | endswith("-dev") as $isdev
+        | split(".")
+        | {major: (.[0] | fromjson),
+           minor: (.[1] | fromjson),
+           patch: (.[2] | rtrimstr("-dev") | fromjson),
+           "dev": $isdev}
+
+  - id: build-images
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+    with:
+      input-format: yaml
+      input: |
+        default: ${{ inputs.build_image_repo }}:${{ inputs.build_image_tag }}@sha256:${{ inputs.build_image_sha }}
+        mobile: ${{ inputs.build_image_repo }}:mobile-${{ inputs.build_image_tag }}@sha256:${{ inputs.build_image_mobile_sha }}
+
+  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
+    id: requested-build-images-wf
+    with:
+      sh: >-
+        cat
+        ./.github/workflows/request.yml
+  - id: requested-build-images
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+    with:
+      input-format: yaml
+      input: ${{ steps.requested-build-images-wf.outputs.out }}
+      print-result: true
+      filter: |
+        .jobs.request.with
+        | .build_image_repo as $repo
+        | .build_image_tag as $tag
+        | .build_image_sha as $sha
+        | .build_image_mobile_sha as $mobile_sha
+        | {"build-image": "\($repo):\($tag)@sha256:\($sha)",
+           "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobile_sha)"}
 
   - id: base-request
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
@@ -234,6 +287,9 @@ runs:
         target-branch: ${{ steps.ref-name.outputs.value }}
         trusted: ${{ fromJSON(steps.trusted.outputs.value).trusted }}
         version: ${{ steps.version.outputs.value }}
+        version-current: ${{ steps.version-current.outputs.value }}
+        build-images: ${{ steps.requested-build-images.outputs.value }}
+        build-images-current: ${{ steps.build-images.outputs.value }}
   - id: pr-request
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     if: ${{ startswith(github.event_name, 'pull_request') }}
@@ -270,7 +326,7 @@ runs:
       branch: ${{ steps.ref-name.outputs.value }}
       event: ${{ github.event_name }}
       config: ${{ steps.run-config.outputs.value }}
-      paths: ${{ steps.changed.outputs.value || '[]' }}
+      paths: ${{ startswith(github.event_name, 'pull_request') && steps.changed.outputs.value || '[]' }}
 
   # CI is only enabled if its the Envoy repo or specifically enabled in config
   - name: Check CI vars
