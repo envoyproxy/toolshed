@@ -4,10 +4,10 @@ inputs:
     default: true
   base-sha:
     type: string
-  env:
+  column-filter:
     type: string
-    required: true
-  env-filter:
+    default:
+  data:
     type: string
     required: true
   icon:
@@ -31,7 +31,7 @@ inputs:
   sha:
     type: string
     required: true
-  column-filter:
+  tables:
     type: string
     default:
   target-branch:
@@ -61,6 +61,12 @@ runs:
     with:
       string: ${{ inputs.base-sha }}
       length: 7
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+    name: Tables
+    id: tables
+    with:
+      input: ${{ inputs.tables }}
+      input-format: yaml
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Change
     id: change
@@ -115,22 +121,50 @@ runs:
 
     name: Summary
 
-  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.50
-    name: Environment summary
-    id: table
+  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.50
+    id: data-tables
     with:
-      json: ${{ inputs.env }}
-      filter: ${{ inputs.env-filter }}
-      column-filter: ${{ inputs.column-filter }}
-      title: Environment
-      summary: Request
-      collapse: true
+      context: ${{ inputs.data }}
+      items: ${{ steps.tables.outputs.value }}
+      steps: |
+        - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+          id: context-$KEY
+          with:
+            input: >-
+              %{{ inputs.context }}
+            filter: |
+              .items["$KEY"]
+            print-result: true
+        - uses: envoyproxy/toolshed/gh-actions/json/table@4338e92714618d53f2f05fbfc30dbedd55ec7ff0
+          id: table-$KEY
+          with:
+            json: |
+              %{{ inputs.context }}
+            filter: >-
+              %{{ fromJSON(steps.context-$KEY.outputs.value).filter }}
+            title: >-
+              %{{ fromJSON(steps.context-$KEY.outputs.value).title }}
+            summary: >-
+              %{{ fromJSON(steps.context-$KEY.outputs.value).table-title }}
+            collapse: >-
+              %{{ fromJSON(steps.context-$KEY.outputs.value).collapse }}
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+    name: Inflated data tables
+    id: formatted-tables
+    with:
+      input: ${{ toJSON(fromJSON(fromJSON(steps.data-tables.outputs.out)).*.outputs.summary) }}
+      print-result: true
+      options: -r
+      filter: |
+        "  " + join("  \n")
+
   - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
     id: request-output
     with:
       string: |
         ${{ steps.request.outputs.value }}
-        ${{ steps.table.outputs.summary }}
+        ${{ steps.formatted-tables.outputs.value }}
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.50
     id: output
     with:
