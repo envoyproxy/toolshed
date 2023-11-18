@@ -11,6 +11,9 @@ inputs:
     default: 2
   title:
     type: string
+  show-empty:
+    type: boolean
+    default: false
   summary:
     type: string
   headers:
@@ -63,8 +66,19 @@ outputs:
 runs:
   using: composite
   steps:
+  - id: row-count
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+    with:
+      input: |
+        ${{ inputs.json }}
+      options: -r
+      filter: >-
+        ${{ inputs.filter || '.' }}
+        | length
+
   - id: headers
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
+    if: ${{ steps.row-count.outputs.value != 0 || inputs.show-empty }}
     with:
       input: |
         ${{ inputs.headers }}
@@ -74,6 +88,7 @@ runs:
         + "\n"
         + ("| " + "--- | " * ${{ inputs.columns }})
   - id: columns
+    if: ${{ steps.row-count.outputs.value != 0 || inputs.show-empty }}
     run: |
       # Use k for 1-col, k/v for 2-col, and k/v/v for more
       if [[ "${{ inputs.columns }}" -eq 1 ]]; then
@@ -87,6 +102,7 @@ runs:
     shell: bash
 
   - id: mutated-cells
+    if: ${{ steps.row-count.outputs.value != 0 || inputs.show-empty }}
     uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
     with:
       string: >-
@@ -99,6 +115,7 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.50
     name: Generate table
     id: table
+    if: ${{ steps.row-count.outputs.value != '0' || fromJSON(inputs.show-empty) }}
     with:
       input: ${{ inputs.json }}
       options: -r
@@ -112,7 +129,7 @@ runs:
         | . + "\n" + $columns
 
   - name: Summary
-    if: ${{ ! inputs.collapse }}
+    if: ${{ (steps.row-count.outputs.value != '0' || fromJSON(inputs.show-empty)) && ! inputs.collapse }}
     uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
     with:
       string: |
@@ -128,7 +145,7 @@ runs:
       indent: 2
 
   - name: Summary
-    if: ${{ inputs.collapse }}
+    if: ${{ (steps.row-count.outputs.value != '0' || fromJSON(inputs.show-empty)) && inputs.collapse }}
     uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.50
     with:
       string: |
@@ -150,6 +167,6 @@ runs:
           printf '%s\n' "${REQUEST}" >> ${{ inputs.output-path }}
       fi
     shell: bash
-    if: ${{ inputs.output-path }}
+    if: ${{ (steps.row-count.outputs.value != '0' || fromJSON(inputs.show-empty)) && inputs.output-path }}
     env:
       REQUEST: ${{ steps.summary.outputs.out }}
