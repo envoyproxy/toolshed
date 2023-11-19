@@ -6,12 +6,12 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.53
     with:
       input: ${{ inputs.context }}
       print-result: true
       options: -C
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.53
     name: Advice
     id: advice
     with:
@@ -22,7 +22,7 @@ runs:
         | .["${{ fromJSON(inputs.context).context.target }}"]
           // ""
 
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.52
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.53
     id: container
     if: ${{ fromJSON(inputs.context).context.container-command || env.CONTAINER_COMMAND }}
     with:
@@ -37,7 +37,7 @@ runs:
           ```
       indent: 2
 
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.52
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.53
     id: steps-pre-steps
     if: ${{ fromJSON(inputs.context).context.steps-pre }}
     with:
@@ -47,7 +47,7 @@ runs:
         ```yaml
         ${{ fromJSON(inputs.context).context.steps-pre }}
         ```
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.52
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.53
     id: steps-pre
     if: ${{ fromJSON(inputs.context).context.steps-pre }}
     with:
@@ -59,7 +59,7 @@ runs:
 
         </details>
       indent: 2
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.52
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.53
     id: steps-post-steps
     if: ${{ fromJSON(inputs.context).context.steps-post }}
     with:
@@ -69,7 +69,7 @@ runs:
         ```yaml
         ${{ fromJSON(inputs.context).context.steps-post }}
         ```
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.52
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.53
     id: steps-post
     if: ${{ fromJSON(inputs.context).context.steps-post }}
     with:
