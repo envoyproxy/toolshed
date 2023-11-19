@@ -135,7 +135,7 @@ runs:
             filter: |
               .items["$KEY"]
             print-result: true
-        - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.51
+        - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.52
           id: table-$KEY
           with:
             json: |
