@@ -233,7 +233,7 @@ runs:
     with:
       input-format: yaml
       input: ${{ steps.requested-build-images-wf.outputs.out }}
-      print-result: true
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
       filter: |
         .inputs
         | .build_image_repo.default as $repo
