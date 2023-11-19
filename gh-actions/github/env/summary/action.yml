@@ -134,7 +134,7 @@ runs:
               %{{ inputs.context }}
             filter: |
               .items["$KEY"]
-            print-result: true
+            print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
         - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.52
           id: table-$KEY
           with:
