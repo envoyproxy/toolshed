@@ -51,23 +51,23 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.52
     id: sha-short
     with:
       string: ${{ inputs.sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.52
     id: base-sha-short
     with:
       string: ${{ inputs.base-sha }}
       length: 7
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
     name: Tables
     id: tables
     with:
       input: ${{ inputs.tables }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
     name: Change
     id: change
     with:
@@ -79,7 +79,7 @@ runs:
         | ($message | split("\n")[0]) as $title
         | ($message | "  > " + (split("\n")[1:] | join("\n  > ")))
         | {"title": $title, "body": .}
-  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.52
     id: title
     with:
       link: ${{ inputs.link }}
@@ -121,13 +121,13 @@ runs:
 
     name: Summary
 
-  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.52
     id: data-tables
     with:
       context: ${{ inputs.data }}
       items: ${{ steps.tables.outputs.value }}
       steps: |
-        - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.51
+        - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
           id: context-$KEY
           with:
             input: >-
@@ -149,7 +149,7 @@ runs:
             collapse: >-
               %{{ fromJSON(steps.context-$KEY.outputs.value).collapse }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
     name: Inflated data tables
     id: formatted-tables
     with:
@@ -159,13 +159,13 @@ runs:
       filter: |
         "  " + join("  \n")
 
-  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.52
     id: request-output
     with:
       string: |
         ${{ steps.request.outputs.value }}
         ${{ steps.formatted-tables.outputs.value }}
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.51
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.52
     id: output
     with:
       string: ${{ steps.request-output.outputs.out }}
