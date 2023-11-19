@@ -29,12 +29,10 @@ const run = async (): Promise<void> => {
     let mangledInput = input
     if (inputFormat.endsWith('-path')) {
       mangledInput = fs.readFileSync(input, 'utf-8')
-      console.log(`read input from file ${mangledInput}`)
     } else if (decode) {
       mangledInput = decodeURIComponent(escape(atob(input)))
     }
     if (inputFormat.startsWith('yaml')) {
-      console.log(`parsing yaml`)
       const yamlObject = yaml.load(mangledInput)
       mangledInput = JSON.stringify(yamlObject, null, 2)
     }
