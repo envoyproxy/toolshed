@@ -3,90 +3,106 @@ inputs:
   config:
     type: string
     required: true
-  app_id:
+  branch:
     type: string
-  app_key:
-    type: string
+    required: true
   committer-name:
     type: string
     default:
   committer-email:
     type: string
     default:
-  ref-is-ancestor:
-    type: boolean
-    default: false
+  pr:
+    type: number
+    default:
+  token:
+    type: string
+    default:
   strip-prefix:
     type: string
     default:
 
 outputs:
-  token:
-    value: ${{ steps.appauth.outputs.token }}
   branch_name:
-    value: ${{ steps.branch.outputs.name }}
+    value: ${{ steps.branch.outputs.value }}
 
 
 runs:
   using: composite
   steps:
-  - name: Fetch token for app auth
-    id: appauth
-    uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.52
-    if: ${{ inputs.app_id && inputs.app_key }}
+  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@0648c76f6ea0ad60b4ffe25723b003627db912b3
+    id: merge-commit
+    name: Fetch merge commit hash
+    if: ${{ inputs.pr }}
     with:
-      app_id: ${{ inputs.app_id }}
-      key: ${{ inputs.app_key }}
+      repository: ${{ github.repository }}
+      pr: ${{ inputs.pr }}
+      token: ${{ inputs.token || github.token }}
+  # If its not a pr and the ref is set, fetch-depth should not be 1 as it
+  # wont be able to check ancestry
+  # If its not set or set to 1 it will be changed to 0
+  # Otherwise the current value is preserved, allowing you to specify the
+  # depth of the checked ancestor.
   - name: Parse YAML config
-    id: parsed
+    id: parsed-config
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
     with:
       input: ${{ inputs.config || '{}' }}
       input-format: yaml
-  - name: Add auth token to config
+      print-result: true
+      filter: |
+        if "${{ steps.merge-commit.outputs.sha }}" != "" then
+          .ref = "${{ steps.merge-commit.outputs.sha }}"
+        elif (.ref | type == "null") then
+          del(.ref)
+        else
+          .
+        end
+        | if ${{ ! inputs.pr }} and .ref then
+            if .["fetch-depth"] == 1 or .["fetch-depth"] == "" then
+               .["fetch-depth"] = 0
+            else
+              .
+            end
+          else
+            .
+          end
+        | if ${{ ! inputs.pr }} then
+            .ref = "${{ inputs.branch }}"
+          else
+            .
+          end
+
+  # Add token to config separately and last to minimize leak risk
+  - name: Config
     id: config
-    if: ${{ steps.appauth.outputs.token }}
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
     with:
-      input: ${{ steps.parsed.outputs.value }}
+      input: ${{ inputs.token || 'NOTOKEN' }}
+      options: -R
+      input-format: secret
       filter: |
-        . + { "token": "${{ steps.appauth.outputs.token }}" }
-
-  # If ref-is-ancestor and the ref are set, fetch-depth should not be 1
-  # If its not set or set to 1 it will be changed to 0
-  # Otherwise the current value is preserved, allowing you to specify the
-  # depth of the checked ancestor.
-  - name: Remove ref
-    id: updated-config-noref
-    if: ${{ inputs.ref-is-ancestor && toJSON(steps.config.outputs.value).ref }}
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
-    with:
-      input: ${{ steps.config.outputs.value }}
-      filter: |
-        | del(.ref)
-  - name: Set fetch-depth if required
-    id: updated-config
-    if: ${{ steps.updated-config-noref.outputs.value && contains(fromJSON('[1, "1", ""]'), toJSON(steps.config.outputs.value).fetch-depth) }}
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
-    with:
-      input: ${{ steps.updated-config-noref.outputs.value }}
-      filter: |
-        . + { "fetch-depth": 0 }
-
+        . as $token
+        | ${{ steps.parsed-config.outputs.value }} as $config
+        | if $token == "NOTOKEN" then
+            $config
+          else
+            ($config | .token = $token)
+          end
   - uses: actions/checkout@v4
     name: Checkout repository
-    with: ${{ fromJSON(steps.appauth.outputs.token && (steps.updated-config.outputs.value || steps.config.outputs.value) || steps.parsed.outputs.value) }}
+    with: ${{ fromJSON(steps.config.outputs.value) }}
   - run: |
       if ! git merge-base --is-ancestor "${REF}" HEAD; then
           echo "Provided ref (${REF}) is not an ancestor of current branch" >&2
           exit 1
       fi
       git checkout "${REF}"
-    if: ${{ inputs.ref-is-ancestor && toJSON(steps.config.outputs.value).ref }}
+    if: ${{ ! inputs.pr && fromJSON(steps.config.outputs.value).ref != inputs.branch }}
     name: Check provided ref
     shell: bash
     env:
-      REF: ${{ toJSON(steps.config.outputs.value).ref }}
+      REF: ${{ fromJSON(steps.config.outputs.value).ref }}
   - name: Configure committer
     if: ${{ inputs.committer-name && inputs.committer-email }}
     run: |
@@ -96,10 +112,13 @@ runs:
       COMMITTER_NAME: ${{ inputs.committer-name }}
       COMMITTER_EMAIL: ${{ inputs.committer-email }}
     shell: bash
-  - run: |
-      REF_NAME="$(git rev-parse --abbrev-ref HEAD)"
-      BRANCHNAME="${REF_NAME#${{ inputs.strip-prefix }}}"
-      echo "name=${BRANCHNAME}" >> $GITHUB_OUTPUT
-    name: Get branch name
-    id: branch
-    shell: bash
+  - id: branch
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
+    with:
+      input: ${{ inputs.branch }}
+      input-format: text
+      options: -rR
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+      filter: |
+        sub("^refs/pull/"; "")
+        | sub("^refs/heads/"; "")
