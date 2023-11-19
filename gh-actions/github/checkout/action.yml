@@ -153,7 +153,7 @@ runs:
       input: ${{ inputs.branch }}
       input-format: text
       options: -rR
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+      print-result: ${{ (fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false')) && true || false }}
       filter: |
         sub("^refs/pull/"; "")
         | sub("^refs/heads/"; "")
