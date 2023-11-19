@@ -1,5 +1,8 @@
 
 inputs:
+  ancestor-fetch-depth:
+    type: number
+    default: 20
   config:
     type: string
     required: true
@@ -12,12 +15,18 @@ inputs:
   committer-email:
     type: string
     default:
+  fetch-merge-commit:
+    type: boolean
+    default: true
   pr:
     type: number
     default:
   token:
     type: string
     default:
+  show-progress:
+    type: boolean
+    default: false
   strip-prefix:
     type: string
     default:
@@ -33,11 +42,17 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@0648c76f6ea0ad60b4ffe25723b003627db912b3
     id: merge-commit
     name: Fetch merge commit hash
-    if: ${{ inputs.pr }}
+    if: ${{ inputs.pr && fromJSON(inputs.fetch-merge-commit) }}
     with:
       repository: ${{ github.repository }}
       pr: ${{ inputs.pr }}
       token: ${{ inputs.token || github.token }}
+  - name: Incoming YAML config
+    id: incoming-config
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
+    with:
+      input: ${{ inputs.config || '{}' }}
+      input-format: yaml
   # If its not a pr and the ref is set, fetch-depth should not be 1 as it
   # wont be able to check ancestry
   # If its not set or set to 1 it will be changed to 0
@@ -47,8 +62,7 @@ runs:
     id: parsed-config
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
     with:
-      input: ${{ inputs.config || '{}' }}
-      input-format: yaml
+      input: ${{ steps.incoming-config.outputs.value }}
       print-result: true
       filter: |
         if "${{ steps.merge-commit.outputs.sha }}" != "" then
@@ -58,9 +72,14 @@ runs:
         else
           .
         end
+        | if (. | has("show-progress") | not) and "${{ inputs.show-progress }}" != "" then
+            .["show-progress"] = ${{ inputs.show-progress }}
+          else
+            .
+          end
         | if ${{ ! inputs.pr }} and .ref then
             if .["fetch-depth"] == 1 or .["fetch-depth"] == "" then
-               .["fetch-depth"] = 0
+               .["fetch-depth"] = ${{ inputs.ancestor-fetch-depth }}
             else
               .
             end
@@ -72,6 +91,22 @@ runs:
           else
             .
           end
+
+  - name: Git config
+    shell: bash
+    run: |
+      git config --global advice.detachedHead false
+
+  - name: Requested ref
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.52
+    if: ${{ ! inputs.pr && fromJSON(steps.incoming-config.outputs.value).ref }}
+    id: requested-ref
+    with:
+      input: ${{ steps.incoming-config.outputs.value }}
+      print-result: true
+      filter: |
+        .ref
+        | "Checkout: \(.)"
 
   # Add token to config separately and last to minimize leak risk
   - name: Config
@@ -98,11 +133,11 @@ runs:
           exit 1
       fi
       git checkout "${REF}"
-    if: ${{ ! inputs.pr && fromJSON(steps.config.outputs.value).ref != inputs.branch }}
+    if: ${{ ! inputs.pr && fromJSON(steps.incoming-config.outputs.value).ref }}
     name: Check provided ref
     shell: bash
     env:
-      REF: ${{ fromJSON(steps.config.outputs.value).ref }}
+      REF: ${{ fromJSON(steps.incoming-config.outputs.value).ref }}
   - name: Configure committer
     if: ${{ inputs.committer-name && inputs.committer-email }}
     run: |
