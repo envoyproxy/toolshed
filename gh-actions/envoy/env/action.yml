@@ -59,8 +59,7 @@ runs:
     name: Current config
     id: config
     with:
-      print-result: true
-      # ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       input-format: yaml
       input: ${{ steps.config-current-text.outputs.out }}
 
