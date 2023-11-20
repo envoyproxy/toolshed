@@ -24,7 +24,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     name: Config
     id: config
     with:
@@ -33,7 +33,7 @@ runs:
       options: -Rs
       filter: |
         split("\n") | map(select(length > 0))
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     name: Print github
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'github') }}
     with:
@@ -43,35 +43,35 @@ runs:
       use-tmp-file: true
       filter: |
         del(.token)
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     name: Print runner
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'runner') }}
     with:
       input: ${{ toJSON(runner) }}
       options: -C
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     name: Print job
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'job') }}
     with:
       input: ${{ inputs.job || toJSON(job) }}
       options: -C
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     name: Print env
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'env') }}
     with:
       input: ${{ inputs.env || toJSON(env) }}
       options: -C
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     name: Print env
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'needs') && inputs.needs }}
     with:
       input: ${{ inputs.needs }}
       options: -C
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     name: Print env
     if: ${{ contains(fromJSON(steps.config.outputs.value), 'vars') && inputs.vars }}
     with:
