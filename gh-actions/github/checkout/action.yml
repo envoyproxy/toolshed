@@ -39,7 +39,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@actions-v0.1.55
+  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@actions-v0.1.56
     id: merge-commit
     name: Fetch merge commit hash
     if: ${{ inputs.pr && fromJSON(inputs.fetch-merge-commit) }}
@@ -49,7 +49,7 @@ runs:
       token: ${{ inputs.token || github.token }}
   - name: Incoming YAML config
     id: incoming-config
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     with:
       input: ${{ inputs.config || '{}' }}
       input-format: yaml
@@ -60,7 +60,7 @@ runs:
   # depth of the checked ancestor.
   - name: Parse YAML config
     id: parsed-config
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     with:
       input: ${{ steps.incoming-config.outputs.value }}
       print-result: true
@@ -98,7 +98,7 @@ runs:
       git config --global advice.detachedHead false
 
   - name: Requested ref
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     if: ${{ ! inputs.pr && fromJSON(steps.incoming-config.outputs.value).ref }}
     id: requested-ref
     with:
@@ -111,7 +111,7 @@ runs:
   # Add token to config separately and last to minimize leak risk
   - name: Config
     id: config
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     with:
       input: ${{ inputs.token || 'NOTOKEN' }}
       options: -R
@@ -148,7 +148,7 @@ runs:
       COMMITTER_EMAIL: ${{ inputs.committer-email }}
     shell: bash
   - id: branch
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     with:
       input: ${{ inputs.branch }}
       input-format: text
