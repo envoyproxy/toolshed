@@ -121,10 +121,18 @@ runs:
 
     name: Summary
 
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+    id: table-data
+    with:
+      input: ${{ inputs.data }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      filter: |
+        {request}
+
   - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.54
     id: data-tables
     with:
-      context: ${{ inputs.data }}
+      context: ${{ steps.table-data.outputs.value }}
       items: ${{ steps.tables.outputs.value }}
       steps: |
         - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
@@ -134,7 +142,7 @@ runs:
               %{{ inputs.context }}
             filter: |
               .items["$KEY"]
-            print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+            print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
         - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.54
           id: table-$KEY
           with:
@@ -154,7 +162,7 @@ runs:
     id: formatted-tables
     with:
       input: ${{ toJSON(fromJSON(fromJSON(steps.data-tables.outputs.out)).*.outputs.summary) }}
-      print-result: true
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       options: -r
       filter: |
         "  " + join("  \n")
