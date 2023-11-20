@@ -2,6 +2,9 @@ inputs:
   config:
     type: string
     required: true
+  config-file:
+    type: string
+    default: ./.github/actions/config/config.yml
   ref:
     type: string
   ref-sha:
@@ -59,63 +62,7 @@ runs:
     id: config
     with:
       input: ${{ inputs.config }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
-    name: Checks to json
-    id: checks
-    with:
-      input-format: yaml
-      input: ${{ fromJSON(steps.config.outputs.value).checks }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
-
-  # Turn CI advice yaml -> json
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
-    name: CI advice
-    id: checks-advice
-    with:
-      input: ${{ steps.checks.outputs.value }}
-      options: -r
-      filter: >-
-        with_entries(
-          select(.value.advice?)
-          | (.value = .value.advice))
-  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.54
-    id: inflated
-    with:
-      items: ${{ steps.checks-advice.outputs.value }}
-      steps: |
-        - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
-          id: $KEY
-          with:
-            input: |
-              %{{ fromJSON(inputs.context)['$KEY'] }}
-            input-format: yaml
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
-    name: Inflated check config
-    id: inflated-output
-    with:
-      input: ${{ steps.inflated.outputs.out }}
-      filter: |
-        fromjson
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
-    name: Check config
-    id: checks-config
-    with:
-      input: ${{ steps.checks-advice.outputs.value }}
-      filter: |
-        keys as $keys
-        | ${{ steps.inflated-output.outputs.value }}
-        | with_entries(
-            select(.key as $k | $keys | index($k))
-            | (.value = (.value.outputs)))
-        | . as $update
-        | ${{ steps.checks.outputs.value }}
-        | with_entries(
-            .key as $k
-            | .value.advice = ($update[$k] // {}))
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
 
   - id: ref-name
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
@@ -123,7 +70,7 @@ runs:
       input: "${{ github.ref_name }}"
       input-format: text
       options: -rR
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
         sub("^refs/pull/"; "")
         | sub("^refs/heads/"; "")
@@ -219,29 +166,28 @@ runs:
     with:
       input-format: yaml
       input: |
-        default: ${{ fromJSON(steps.config.outputs.value).build_image_repo }}:${{ fromJSON(steps.config.outputs.value).build_image_tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build_image_sha }}
-        mobile: ${{ fromJSON(steps.config.outputs.value).build_image_repo }}:mobile-${{ fromJSON(steps.config.outputs.value).build_image_tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build_image_mobile_sha }}
+        default: ${{ fromJSON(steps.config.outputs.value).build-image.repo }}:${{ fromJSON(steps.config.outputs.value).build-image.tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build-image.sha }}
+        mobile: ${{ fromJSON(steps.config.outputs.value).build-image.repo }}:mobile-${{ fromJSON(steps.config.outputs.value).build-image.tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build-image.mobile-sha }}
 
   - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.54
     id: requested-build-images-wf
     with:
       sh: >-
         cat
-        ./.github/actions/config/action.yml
+        ${{ inputs.config-file }}
   - id: requested-build-images
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
     with:
       input-format: yaml
       input: ${{ steps.requested-build-images-wf.outputs.out }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
-        .inputs
-        | .build_image_repo.default as $repo
-        | .build_image_tag.default as $tag
-        | .build_image_sha.default as $sha
-        | .build_image_mobile_sha.default as $mobile_sha
+        .["build-image"].repo as $repo
+        | .["build-image"].tag as $tag
+        | .["build-image"].sha as $sha
+        | .["build-image"]["mobile-sha"] as $mobileSha
         | {"build-image": "\($repo):\($tag)@sha256:\($sha)",
-           "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobile_sha)"}
+           "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
 
   - id: base-request
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
@@ -254,8 +200,8 @@ runs:
         trusted: ${{ fromJSON(steps.trusted.outputs.value).trusted }}
         version: ${{ steps.version.outputs.value }}
         version-current: ${{ steps.version-current.outputs.value }}
-        build-images: ${{ steps.requested-build-images.outputs.value }}
-        build-images-current: ${{ steps.build-images.outputs.value }}
+        build-image: ${{ steps.requested-build-images.outputs.value }}
+        build-image-current: ${{ steps.build-images.outputs.value }}
   - id: pr-request
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
     if: ${{ startswith(github.event_name, 'pull_request') }}
@@ -285,7 +231,7 @@ runs:
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
     with:
       input-format: yaml
-      input: ${{ fromJSON(steps.config.outputs.value).run }}
+      input: ${{ toJSON(fromJSON(steps.config.outputs.value).run) }}
   - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.1.54
     id: torun
     with:
@@ -348,6 +294,37 @@ runs:
         ${{ steps.run-filter.outputs.value }}
         | walk(if . == "" then false else . end)
 
+  # Any checks that are required but are not scheduled to be run
+  # are explicitly skipped
+  - uses: envoyproxy/toolshed/gh-actions/jq@e0054bff3d74f75cc330c9b66776602baf0950a2
+    name: Checks config
+    id: checks-config
+    with:
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      input: ${{ steps.config.outputs.value }}
+      filter: >-
+        .checks as $checks
+        | ${{ steps.run.outputs.value }} as $run
+        | $checks
+        | with_entries(
+            .key as $k
+            | debug
+            | .value as $v
+            | $v["on-run"] as $reqs
+            | (any(($reqs // [])[]; $run[.])) as $dorun
+            | select($dorun or $v.required)
+            | del(.value["on-run"], .value.required)
+            | .value.id = $k
+            | if $dorun then
+                (.value.action = "RUN")
+              else
+                (.value.action = "SKIP")
+              end)
+        | to_entries
+        | sort_by(.key)
+        | sort_by(.value.action)
+        | from_entries
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
     name: Create data
     id: data
@@ -358,4 +335,4 @@ runs:
          "ci": {"agent-ubuntu": "${{ fromJSON(steps.config.outputs.value).agent-ubuntu }}"},
          "checks": ${{ steps.checks-config.outputs.value }},
          "config": ${{ steps.config.outputs.value }}}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
