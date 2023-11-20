@@ -48,21 +48,6 @@ runs:
     name: Github context
     if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
 
-  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.55
-    id: config-current-text
-    with:
-      sh: >-
-        git
-        show
-        ${{ startswith(github.event_name, 'pull_request') && format('origin/{0}', steps.ref-name.outputs.value) || 'HEAD' }}:${{ inputs.config-file }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
-    name: Current config
-    id: config
-    with:
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      input-format: yaml
-      input: ${{ steps.config-current-text.outputs.out }}
-
   - id: ref-name
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     with:
@@ -74,6 +59,20 @@ runs:
         sub("^refs/pull/"; "")
         | sub("^refs/heads/"; "")
 
+  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.55
+    id: config-current-text
+    with:
+      sh: >-
+        git
+        show
+        origin/${{ steps.ref-name.outputs.value }}:${{ inputs.config-file }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
+    name: Current config
+    id: config
+    with:
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      input-format: yaml
+      input: ${{ steps.config-current-text.outputs.out }}
   - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@actions-v0.1.55
     id: merge-commit
     if: ${{ startswith(github.event_name, 'pull_request') }}
@@ -144,15 +143,13 @@ runs:
            patch: (.[2] | rtrimstr("-dev") | fromjson),
            "dev": $isdev,
            "changed": $changed}
-
   - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.55
     id: version-current-string
     with:
       sh: >-
         git
         show
-        ${{ startswith(github.event_name, 'pull_request') && format('origin/{0}', steps.ref-name.outputs.value) || 'HEAD^1' }}:VERSION.txt
-
+        origin/${{ steps.ref-name.outputs.value }}:VERSION.txt
   - id: version-current
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.55
     with:
