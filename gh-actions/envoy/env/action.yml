@@ -1,16 +1,7 @@
 inputs:
-  config:
-    type: string
-    required: true
   config-file:
     type: string
-    default: ./.github/actions/config/config.yml
-  ref:
-    type: string
-  ref-sha:
-    type: string
-  ref-name:
-    type: string
+    default: ./.github/config.yml
   started:
     type: number
     required: true
@@ -55,14 +46,23 @@ runs:
 
   - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.54
     name: Github context
-    if: ${{ fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false') }}
+    if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
 
+  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.54
+    id: config-current-text
+    with:
+      sh: >-
+        git
+        show
+        ${{ startswith(github.event_name, 'pull_request') && format('origin/{0}', steps.ref-name.outputs.value) || 'HEAD' }}:${{ inputs.config-file }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
-    name: Parse config
+    name: Current config
     id: config
     with:
-      input: ${{ inputs.config }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      print-result: true
+      # ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      input-format: yaml
+      input: ${{ steps.config-current-text.outputs.out }}
 
   - id: ref-name
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
@@ -98,13 +98,22 @@ runs:
         ${{ toJSON(github) }}
       filter: |
         .event.head_commit.message // .event.pull_request.title + "\n" + .event.pull_request.body
-
   - run: |
       VERSION=$(cat VERSION.txt)
       echo "string=$VERSION" >> $GITHUB_OUTPUT
     id: version-string
     shell: bash
-
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
+    name: Validate given version string
+    with:
+      input-format: string
+      options: -R
+      input: ${{ steps.version-string.outputs.string }}
+      filter: |
+        . as $version
+        | test("^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?\\+?[0-9A-Za-z-]*$")
+          or error("Version string does not meet expectations")
+        | $version
   - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.54
     id: diff
     with:
@@ -114,7 +123,6 @@ runs:
         --name-only
         ${{ steps.merge-commit.outputs.sha || 'HEAD^1' }}
         origin/${{ steps.ref-name.outputs.value }}
-
   - id: changed
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
     with:
@@ -123,7 +131,6 @@ runs:
       input: ${{ steps.diff.outputs.out }}
       filter: |
         split("\n")
-
   - id: version
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
     with:
@@ -169,23 +176,17 @@ runs:
         default: ${{ fromJSON(steps.config.outputs.value).build-image.repo }}:${{ fromJSON(steps.config.outputs.value).build-image.tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build-image.sha }}
         mobile: ${{ fromJSON(steps.config.outputs.value).build-image.repo }}:mobile-${{ fromJSON(steps.config.outputs.value).build-image.tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build-image.mobile-sha }}
 
-  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.54
-    id: requested-build-images-wf
-    with:
-      sh: >-
-        cat
-        ${{ inputs.config-file }}
   - id: requested-build-images
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.54
     with:
-      input-format: yaml
-      input: ${{ steps.requested-build-images-wf.outputs.out }}
+      input-format: yaml-path
+      input: ${{ inputs.config-file }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
         .["build-image"].repo as $repo
-        | .["build-image"].tag as $tag
-        | .["build-image"].sha as $sha
-        | .["build-image"]["mobile-sha"] as $mobileSha
+        | (.["build-image"].tag | . as $r | test("^[0-9a-fA-F]{40}$") or error("tag is not 40-char sha") | $r) as $tag
+        | (.["build-image"].sha | . as $r | test("^[0-9a-fA-F]{64}$") or error("sha is not 64-char sha") | $r) as $sha
+        | (.["build-image"]["mobile-sha"] | . as $r | test("^[0-9a-fA-F]{64}$") or error("mobile-sha is not 64-char sha") | $r) as $mobileSha
         | {"build-image": "\($repo):\($tag)@sha256:\($sha)",
            "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
 
@@ -211,7 +212,7 @@ runs:
         base-sha: ${{ github.sha }}
         pr: ${{ github.event.number }}
         ref: ${{ steps.merge-commit.outputs.sha }}
-        sha: ${{ inputs.ref-sha || github.event.pull_request.head.sha || github.sha }}
+        sha: ${{ github.event.pull_request.head.sha || github.sha }}
       filter: |
         . * ${{ steps.base-request.outputs.value }}
   - id: push-request
@@ -221,7 +222,7 @@ runs:
       input-format: yaml
       input: |
         ref: ${{ steps.context.outputs.repo_ref || '' }}
-        sha: ${{ inputs.ref-sha || github.sha }}
+        sha: ${{ github.sha }}
         started: ${{ inputs.started }}
       filter: |
         . * ${{ steps.base-request.outputs.value }}
@@ -308,7 +309,6 @@ runs:
         | $checks
         | with_entries(
             .key as $k
-            | debug
             | .value as $v
             | $v["on-run"] as $reqs
             | (any(($reqs // [])[]; $run[.])) as $dorun
