@@ -9,8 +9,8 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     with:
       input: ${{ inputs.context }}
-      print-result: true
-      options: -C
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     name: Advice
     id: advice
@@ -22,9 +22,29 @@ runs:
         | .["${{ fromJSON(inputs.context).context.target }}"]
           // ""
 
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
+    name: Runtime information
+    id: run-info
+    with:
+      input: ${{ inputs.context }}
+      print-result: true
+      filter: >-
+        {"runs-on": .context["runs-on"],
+         "exit-code": .run["exit-code"],
+         started: .run.started,
+         completed: .run.completed,
+         "run-time": "\(.run.completed - .run.started)s"}
+
+  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.56
+    name: Run information summary
+    id: run-summary
+    with:
+      json: ${{ steps.run-info.outputs.value }}
+      title: Runtime information
+
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.56
     id: container
-    if: ${{ fromJSON(inputs.context).context.container-command || env.CONTAINER_COMMAND }}
+    if: ${{ fromJSON(inputs.context).run.container-command }}
     with:
       string: |
           #### Container command
@@ -33,13 +53,13 @@ runs:
           was invoked by the following command
 
           ```console
-          $ ${{ env.CONTAINER_COMMAND || fromJSON(inputs.context).context.container-command }}
+          $ ${{ fromJSON(inputs.context).run.container-command }}
           ```
       indent: 2
 
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.56
     id: steps-pre-steps
-    if: ${{ fromJSON(inputs.context).context.steps-pre }}
+    if: ${{ fromJSON(inputs.context).run.steps-pre != '""' }}
     with:
       string: |
         The following steps were run to prepare the CI environment:
@@ -49,7 +69,7 @@ runs:
         ```
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.56
     id: steps-pre
-    if: ${{ fromJSON(inputs.context).context.steps-pre }}
+    if: ${{ fromJSON(inputs.context).run.steps-pre != '""' }}
     with:
       string: |
         <details>
@@ -61,17 +81,17 @@ runs:
       indent: 2
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.56
     id: steps-post-steps
-    if: ${{ fromJSON(inputs.context).context.steps-post }}
+    if: ${{ fromJSON(inputs.context).run.steps-post != '""' }}
     with:
       string: |
         The following steps were run to cleanup or test the CI environment:
 
         ```yaml
-        ${{ fromJSON(inputs.context).context.steps-post }}
+        ${{ fromJSON(inputs.context).run.steps-post }}
         ```
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.56
     id: steps-post
-    if: ${{ fromJSON(inputs.context).context.steps-post }}
+    if: ${{ fromJSON(inputs.context).run.steps-post != '""' }}
     with:
       string: |
         <details>
@@ -93,6 +113,8 @@ runs:
         ${{ github.workflow }}: ${{ fromJSON(inputs.context).context.target }}
 
       BODY: |
+        ${{ steps.run-summary.outputs.summary }}
+
         <details>
           <summary><b>CI command</b></summary>
 
@@ -101,7 +123,7 @@ runs:
           The following command was run:
 
           ```console
-          $ ${{ fromJSON(inputs.context).context.command }} ${{ fromJSON(inputs.context).context.args || fromJSON(inputs.context).context.target }}
+          $ ${{ fromJSON(inputs.context).run.command }}
           ```
 
         ${{ steps.container.outputs.string }}
@@ -139,7 +161,7 @@ runs:
         ----
 
         <details>
-          <summary><b>${{ github.workflow }} advice</b></summary>
+          <summary><b>${{ github.workflow }} (${{ fromJSON(inputs.context).context.target }}) advice</b></summary>
 
           ${{ steps.advice.outputs.value }}
 
