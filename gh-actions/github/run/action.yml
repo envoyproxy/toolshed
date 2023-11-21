@@ -7,6 +7,8 @@ inputs:
   container-command:
     type: string
     default:
+  context:
+    type: string
   catch-errors:
     type: boolean
     default: false
@@ -40,6 +42,8 @@ inputs:
           echo "disk space at end of build:"
           df -h
         shell: bash
+  source:
+    type: string
   summary-post:
     type: string
     default:
@@ -71,11 +75,17 @@ inputs:
     type: string
     default: .
 
-  context:
-    type: string
-
-  source:
-    type: string
+outputs:
+  command:
+    value: ${{ steps.command.outputs.actual }}
+  completed:
+    value: ${{ steps.completed.outputs.timestamp }}
+  container-command:
+    value: ${{ steps.command.outputs.container-command }}
+  exit-code:
+    value: ${{ steps.run.outputs.exit-code }}
+  started:
+    value: ${{ steps.started.outputs.timestamp }}
 
 
 runs:
@@ -113,6 +123,7 @@ runs:
     shell: bash
 
   - run: |
+      # Put the command and args together
       COMMAND=()
       read -ra ARGS <<< "${{ inputs.args }}"
       ACTUAL_COMMAND=(
@@ -120,11 +131,14 @@ runs:
           ${ARGS[@]})
       # allow mangling of command in presteps
       if [[ "${#CONTAINER_COMMAND}" -ne 0 ]]; then
-          COMMAND+=(${CONTAINER_COMMAND})
+          read -ra ACTUAL_CONTAINER_COMMAND <<< "${CONTAINER_COMMAND}"
       else
-          COMMAND+=(${{ inputs.container-command }})
+          read -ra ACTUAL_CONTAINER_COMMAND <<< "${{ inputs.container-command }}"
       fi
+      COMMAND+=("${ACTUAL_CONTAINER_COMMAND[@]}")
       COMMAND+=("${ACTUAL_COMMAND[@]}")
+      echo "container=${ACTUAL_CONTAINER_COMMAND[*]}" >> $GITHUB_OUTPUT
+      echo "actual=${ACTUAL_COMMAND[*]}" >> $GITHUB_OUTPUT
       echo "command=${COMMAND[*]}" >> $GITHUB_OUTPUT
     id: command
     shell: bash
@@ -142,7 +156,6 @@ runs:
 
   - uses: envoyproxy/toolshed/gh-actions/date@actions-v0.1.56
     id: started
-
   - run: |
       cd $TARGET_PATH
       if [[ -n "${SOURCETMP}" ]]; then
@@ -208,13 +221,32 @@ runs:
       TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
+    name: Generate run context (steps-pre)
+    id: context-steps-pre
+    with:
+      input: ${{ inputs.steps-pre || '""' }}
+      options: -Rs
+      input-format: string
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
+    name: Generate run context (steps-post)
+    id: context-steps-post
+    with:
+      input: ${{ inputs.steps-post || '""' }}
+      options: -Rs
+      input-format: string
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     name: Generate run context
     id: context
     with:
       input: ${{ toJSON(steps.run.outputs) }}
       filter: >-
-        . + {"started": ${{ steps.started.outputs.timestamp }},
-             "completed": ${{ steps.completed.outputs.timestamp }}}
+        . * {"started": ${{ steps.started.outputs.timestamp }},
+             "container-command": "${{ steps.command.outputs.container }}",
+             "command": "${{ steps.command.outputs.actual }}",
+             "completed": ${{ steps.completed.outputs.timestamp }},
+             "steps-pre": ${{ steps.context-steps-pre.outputs.value }},
+             "steps-post": ${{ steps.context-steps-post.outputs.value }},
+             "exit-code": (.["exit-code"] | fromjson)}
         | {"run": .,
            "context": ${{ inputs.context }}}
 
