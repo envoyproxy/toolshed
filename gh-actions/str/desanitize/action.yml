@@ -26,12 +26,12 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
     id: replacements
     with:
       input: ${{ inputs.replacements }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
     name: String
     id: string
     with:
