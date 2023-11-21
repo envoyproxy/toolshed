@@ -47,12 +47,6 @@ runs:
       repository: ${{ github.repository }}
       pr: ${{ inputs.pr }}
       token: ${{ inputs.token || github.token }}
-  - name: Incoming YAML config
-    id: incoming-config
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
-    with:
-      input: ${{ inputs.config || '{}' }}
-      input-format: yaml
   # If its not a pr and the ref is set, fetch-depth should not be 1 as it
   # wont be able to check ancestry
   # If its not set or set to 1 it will be changed to 0
@@ -62,7 +56,8 @@ runs:
     id: parsed-config
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
     with:
-      input: ${{ steps.incoming-config.outputs.value }}
+      input: ${{ inputs.config || '{}' }}
+      input-format: yaml
       print-result: true
       filter: |
         if "${{ steps.merge-commit.outputs.sha }}" != "" then
@@ -87,27 +82,17 @@ runs:
             .
           end
         | if ${{ ! inputs.pr }} then
-            .ref = "${{ inputs.branch }}"
+            if .ref then
+              .["requested-ref"] = .ref
+            else . end
+            | .ref = "${{ inputs.branch }}"
           else
             .
           end
-
   - name: Git config
     shell: bash
     run: |
       git config --global advice.detachedHead false
-
-  - name: Requested ref
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.56
-    if: ${{ ! inputs.pr && fromJSON(steps.incoming-config.outputs.value).ref }}
-    id: requested-ref
-    with:
-      input: ${{ steps.incoming-config.outputs.value }}
-      print-result: true
-      filter: |
-        .ref
-        | "Checkout: \(.)"
-
   # Add token to config separately and last to minimize leak risk
   - name: Config
     id: config
@@ -124,6 +109,7 @@ runs:
           else
             ($config | .token = $token)
           end
+        | del(.["requested-ref"])
   - uses: actions/checkout@v4
     name: Checkout repository
     with: ${{ fromJSON(steps.config.outputs.value) }}
@@ -133,11 +119,11 @@ runs:
           exit 1
       fi
       git checkout "${REF}"
-    if: ${{ ! inputs.pr && fromJSON(steps.incoming-config.outputs.value).ref }}
+    if: ${{ fromJSON(steps.parsed-config.outputs.value).requested-ref }}
     name: Check provided ref
     shell: bash
     env:
-      REF: ${{ fromJSON(steps.incoming-config.outputs.value).ref }}
+      REF: ${{ fromJSON(steps.parsed-config.outputs.value).requested-ref }}
   - name: Configure committer
     if: ${{ inputs.committer-name && inputs.committer-email }}
     run: |
