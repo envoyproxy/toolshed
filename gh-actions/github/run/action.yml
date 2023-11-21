@@ -1,9 +1,9 @@
 inputs:
+  args:
+    type: string
   command:
     type: string
     required: true
-  args:
-    type: string
   container-command:
     type: string
     default:
@@ -96,6 +96,20 @@ runs:
     uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.57
     with:
       to_remove: ${{ inputs.diskskpack-hack-paths }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    name: Generate run context (steps-pre)
+    id: context-steps-pre
+    with:
+      input: ${{ inputs.steps-pre || '""' }}
+      options: -Rs
+      input-format: string
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    name: Generate run context (steps-post)
+    id: context-steps-post
+    with:
+      input: ${{ inputs.steps-post || '""' }}
+      options: -Rs
+      input-format: string
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.57
     name: Pre report
     if: ${{ inputs.report-pre }}
@@ -155,6 +169,7 @@ runs:
     shell: bash
 
   - uses: envoyproxy/toolshed/gh-actions/date@actions-v0.1.57
+    if: ${{ always() }}
     id: started
   - run: |
       cd $TARGET_PATH
@@ -178,9 +193,17 @@ runs:
       COMMAND: ${{ steps.command.outputs.command }}
       SOURCETMP: ${{ steps.source.outputs.file }}
       TARGET_PATH: ${{ inputs.working-directory }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    id: cancelled
+    if: ${{ cancelled() }}
+    with:
+      input: "{}"
+      options: -r
+      filter: |
+        true
   - uses: envoyproxy/toolshed/gh-actions/date@actions-v0.1.57
+    if: ${{ always() }}
     id: completed
-
   - run: |
       STDERR="$(cat "$TMP_STDERR")"
       bubble_messages () {
@@ -217,72 +240,68 @@ runs:
       bubble_messages warning "${{ inputs.warning-match }}"
       bubble_messages notice "${{ inputs.notice-match }}"
     shell: bash
+    if: ${{ ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false')) }}
     env:
       TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
-    name: Generate run context (steps-pre)
-    id: context-steps-pre
-    with:
-      input: ${{ inputs.steps-pre || '""' }}
-      options: -Rs
-      input-format: string
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
-    name: Generate run context (steps-post)
-    id: context-steps-post
-    with:
-      input: ${{ inputs.steps-post || '""' }}
-      options: -Rs
-      input-format: string
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
     name: Generate run context
     id: context
+    if: ${{ always() }}
     with:
       input: ${{ toJSON(steps.run.outputs) }}
       filter: >-
         . * {"started": ${{ steps.started.outputs.timestamp }},
+             "cancelled": ${{ steps.cancelled.outputs.value || 'false' }},
              "container-command": "${{ steps.command.outputs.container }}",
              "command": "${{ steps.command.outputs.actual }}",
              "completed": ${{ steps.completed.outputs.timestamp }},
              "steps-pre": ${{ steps.context-steps-pre.outputs.value }},
              "steps-post": ${{ steps.context-steps-post.outputs.value }},
-             "exit-code": (.["exit-code"] | fromjson)}
+             "exit-code": (.["exit-code"] // "0" | fromjson)}
         | {"run": .,
            "context": ${{ inputs.context }}}
 
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.57
     name: Run post steps
-    if: ${{ inputs.steps-post }}
+    if: ${{ inputs.steps-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.57
-    name: Post report
-    if: ${{ inputs.report-post }}
-    with:
-      steps: ${{ inputs.report-post }}
-      context: ${{ steps.context.outputs.value }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
     id: post-failed
-    if: ${{ failure() || cancelled() }}
+    if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
     with:
       input: ${{ steps.context.outputs.value }}
       filter: |
         .run["post-steps-failed"] = true
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.57
+    name: Post report
+    if: ${{ inputs.report-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
+    with:
+      steps: ${{ inputs.report-post }}
+      context: ${{ steps.context.outputs.value }}
   - uses: actions/upload-artifact@v3
     name: Upload artefacts
-    if: ${{ inputs.upload-name && inputs.upload-path }}
+    if: ${{ inputs.upload-name && inputs.upload-path && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
       name: ${{ inputs.upload-name }}
       path: ${{ inputs.upload-path }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
     id: upload-failed
-    if: ${{ failure() || cancelled() }}
+    if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
         .run["upload-failed"] = true
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    id: run-cancelled
+    if: ${{ cancelled() }}
+    with:
+      input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
+      filter: |
+        .run["cancelled"] = true
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.57
     name: Job summary
     if: ${{ always() && inputs.summary-post }}
@@ -292,14 +311,20 @@ runs:
   - run: |
       rm -rf "$TMP_STDOUT"
       rm -rf "$TMP_STDERR"
-      if [[ "${EXIT_CODE}" -ne 0 ]]; then
+      if [[ -n "${CANCELLED}" ]]; then
+          # Unfortunately theres no way to indicate that the job was cancelled without it also
+          # then showing the entire workflow as cancelled, despite the cancellation happening
+          # due to failure
+          echo "Run cancelled" >&2
+          exit 0
+      elif [[ "${EXIT_CODE}" -ne 0 ]]; then
           echo "Run failed" >&2
           exit ${EXIT_CODE}
-      elif [[ "${#STEPS_POST_ERR}" -ne 0 ]]; then
+      elif [[ -n "${STEPS_POST_ERR}" ]]; then
           echo "Post steps failed" >&2
           echo "::error::Post steps failed" >&2
           exit 1
-      elif [[ "${#UPLOAD_ERR}" -ne 0 ]]; then
+      elif [[ -n "${UPLOAD_ERR}" ]]; then
           echo "Upload failed" >&2
           echo "::error::Upload failed" >&2
           exit 1
@@ -309,7 +334,8 @@ runs:
     if: ${{ always() }}
     env:
       EXIT_CODE: ${{ !fromJSON(inputs.catch-errors) && steps.run.outputs.exit-code || 0 }}
-      STEPS_POST_ERR: ${{ toJSON(fromJSON(steps.post-failed.outputs.value || '{}').run) }}
-      UPLOAD_ERR: ${{ toJSON(fromJSON(steps.upload-failed.outputs.value || '{}').run) }}
+      CANCELLED: ${{ steps.cancelled.outputs.value != '' && true || '' }}
+      STEPS_POST_ERR: ${{ steps.post-failed.outputs.value != '' && true || '' }}
+      UPLOAD_ERR: ${{ steps.upload-failed.outputs.value != '' && true || '' }}
       TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
       TMP_STDOUT: ${{ steps.run.outputs.stdout-path }}
