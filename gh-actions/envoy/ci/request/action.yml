@@ -288,7 +288,7 @@ runs:
     with:
       input: ${{ steps.repo-run.outputs.value }}
       filter: >-
-        ${{ steps.run-filter.outputs.value }}
+        ${{ steps.run-filter.outputs.value || '.' }}
         | walk(if . == "" then false else . end)
 
   # Any checks that are required but are not scheduled to be run
