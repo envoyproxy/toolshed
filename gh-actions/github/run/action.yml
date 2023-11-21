@@ -263,24 +263,53 @@ runs:
     with:
       steps: ${{ inputs.report-post }}
       context: ${{ steps.context.outputs.value }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    id: post-failed
+    if: ${{ failure() || cancelled() }}
+    with:
+      input: ${{ steps.context.outputs.value }}
+      filter: |
+        .run["post-steps-failed"] = true
   - uses: actions/upload-artifact@v3
     name: Upload artefacts
     if: ${{ inputs.upload-name && inputs.upload-path }}
     with:
       name: ${{ inputs.upload-name }}
       path: ${{ inputs.upload-path }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    id: upload-failed
+    if: ${{ failure() || cancelled() }}
+    with:
+      input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
+      filter: |
+        .run["upload-failed"] = true
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.57
     name: Job summary
-    if: ${{ inputs.summary-post }}
+    if: ${{ always() && inputs.summary-post }}
     with:
       steps: ${{ inputs.summary-post }}
-      context: ${{ steps.context.outputs.value }}
+      context: ${{ steps.upload-failed.outputs.value || steps.post-failed.outputs.value || steps.context.outputs.value }}
   - run: |
       rm -rf "$TMP_STDOUT"
       rm -rf "$TMP_STDERR"
+      if [[ "${EXIT_CODE}" -ne 0 ]]; then
+          echo "Run failed" >&2
+          exit ${EXIT_CODE}
+      elif [[ "${#STEPS_POST_ERR}" -ne 0 ]]; then
+          echo "Post steps failed" >&2
+          echo "::error::Post steps failed" >&2
+          exit 1
+      elif [[ "${#UPLOAD_ERR}" -ne 0 ]]; then
+          echo "Upload failed" >&2
+          echo "::error::Upload failed" >&2
+          exit 1
+      fi
       exit ${EXIT_CODE}
     shell: bash
+    if: ${{ always() }}
     env:
       EXIT_CODE: ${{ !fromJSON(inputs.catch-errors) && steps.run.outputs.exit-code || 0 }}
+      STEPS_POST_ERR: ${{ toJSON(fromJSON(steps.post-failed.outputs.value || '{}').run) }}
+      UPLOAD_ERR: ${{ toJSON(fromJSON(steps.upload-failed.outputs.value || '{}').run) }}
       TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
       TMP_STDOUT: ${{ steps.run.outputs.stdout-path }}
