@@ -40,22 +40,17 @@ runs:
     shell: bash
   - id: out
     run: |
-      # Output result
-      echo "out<<EOF" >> $GITHUB_OUTPUT
-      printf "%s\n" "${OUTPUT}" >> $GITHUB_OUTPUT
-      echo "EOF" >> $GITHUB_OUTPUT
-    shell: bash
-    env:
-      OUTPUT: ${{ steps.sh.outputs.out || steps.echo.outputs.out }}
-  - if: ${{ inputs.output-path }}
-    run: |
-      # Output result to path ${{ inputs.output-path }}
-      if [[ "${{ inputs.output-path }} == "GITHUB_STEP_SUMMARY" ]]; then
+      # Output result ${{ inputs.output-path && format('to path {0}', inputs.output-path) || '' }}
+      if [[ "${OUTPUT_PATH}" == "GITHUB_STEP_SUMMARY" ]]; then
           OUTPUT_PATH="${GITHUB_STEP_SUMMARY}"
-      else
-          OUTPUT_PATH="${{ inputs.output-path }}"
       fi
-      printf "%s\n" "${OUTPUT}" >> $OUTPUT_PATH
+      echo "out<<EOF" >> $GITHUB_OUTPUT
+      printf '%s\n' "${OUTPUT}" >> $GITHUB_OUTPUT
+      echo "EOF" >> $GITHUB_OUTPUT
+      if [[ -n "$OUTPUT_PATH" ]]; then
+          printf '%s\n' "${OUTPUT}" >> $OUTPUT_PATH
+      fi
     shell: bash
     env:
       OUTPUT: ${{ steps.sh.outputs.out || steps.echo.outputs.out }}
+      OUTPUT_PATH: ${{ inputs.output-path }}
