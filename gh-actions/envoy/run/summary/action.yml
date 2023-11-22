@@ -7,10 +7,10 @@ runs:
   using: composite
   steps:
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
     with:
       input: ${{ inputs.context }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-
+      print-result: true
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
     name: Advice
     id: advice
@@ -19,7 +19,7 @@ runs:
       options: -r
       filter: >-
         .context.config.check.advice
-        | .["${{ fromJSON(inputs.context).context.target }}"]
+        | .["${{ fromJSON(inputs.context || '{}').context.target }}"]
           // ""
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
@@ -31,6 +31,9 @@ runs:
       filter: >-
         {"runs-on": .context["runs-on"],
          "exit-code": .run["exit-code"],
+         "upload-failed": (.run["upload-failed"] // false ),
+         "post-steps-failed": (.run["post-steps-failed"] // false ),
+         cancelled: .run.cancelled,
          started: .run.started,
          completed: .run.completed,
          "run-time": "\(.run.completed - .run.started)s"}
@@ -59,7 +62,7 @@ runs:
 
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
     id: steps-pre-steps
-    if: ${{ fromJSON(inputs.context).run.steps-pre != '""' }}
+    if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-pre) }}
     with:
       string: |
         The following steps were run to prepare the CI environment:
@@ -69,7 +72,7 @@ runs:
         ```
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
     id: steps-pre
-    if: ${{ fromJSON(inputs.context).run.steps-pre != '""' }}
+    if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-pre) }}
     with:
       string: |
         <details>
@@ -81,7 +84,7 @@ runs:
       indent: 2
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
     id: steps-post-steps
-    if: ${{ fromJSON(inputs.context).run.steps-post != '""' }}
+    if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-post) }}
     with:
       string: |
         The following steps were run to cleanup or test the CI environment:
@@ -91,7 +94,7 @@ runs:
         ```
   - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
     id: steps-post
-    if: ${{ fromJSON(inputs.context).run.steps-post != '""' }}
+    if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-post) }}
     with:
       string: |
         <details>
@@ -136,21 +139,31 @@ runs:
         ${{ steps.steps-post.outputs.string }}
 
         </details>
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    id: conclusion
+    with:
+      input: ${{ inputs.context }}
+      options: -r
+      filter: |
+        if .run.cancelled then
+          ":x: Run was cancelled"
+        elif .run["exit-code"] != 0 then
+          ":x: Command failed with exit code \(.run["exit-code"])"
+        elif .run["post-steps-failed"] then
+          ":x: Post steps failed"
+        elif .run["upload-failed"] then
+          ":x: Upload failed"
+        else
+          ":heavy_check_mark: Command completed successfully"
+        end
   - run: |
       echo "$BODY" >> $GITHUB_STEP_SUMMARY
     shell: bash
-    if: ${{ fromJSON(inputs.context).run.exit-code == '0' }}
     env:
       BODY: |
-        ### :heavy_check_mark: Command completed successfully
-  - run: |
-      echo "$BODY" >> $GITHUB_STEP_SUMMARY
-    shell: bash
-    if: ${{ fromJSON(inputs.context).run.exit-code != '0' }}
-    env:
-      BODY: |
-        ### :x: Command failed with exit code ${{ fromJSON(inputs.context).run.exit-code }}
-        ${{ fromJSON(inputs.context).context.catch-errors && '#### :warning: Error was caught' || '' }}
+        ### ${{ steps.conclusion.outputs.value }}
+        ${{ fromJSON(inputs.context).context.catch-errors && fromJSON(inputs.context).run.exit-code != 0  && '#### :warning: Error was caught' || '' }}
   - run: |
       echo "$BODY" >> $GITHUB_STEP_SUMMARY
     shell: bash
