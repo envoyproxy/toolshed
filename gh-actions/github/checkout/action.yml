@@ -93,6 +93,8 @@ runs:
     shell: bash
     run: |
       git config --global advice.detachedHead false
+      git config --global init.defaultBranch main
+
   # Add token to config separately and last to minimize leak risk
   - name: Config
     id: config
