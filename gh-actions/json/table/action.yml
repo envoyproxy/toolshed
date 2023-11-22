@@ -3,6 +3,12 @@ inputs:
   append:
     type: boolean
     default: true
+  collapse:
+    type: boolean
+    default: true
+  collapse-open:
+    type: boolean
+    default: false
   column-filter:
     type: string
     default:
@@ -52,9 +58,6 @@ inputs:
     default: .
   output-path:
     type: string
-  collapse:
-    type: boolean
-    default: false
 
 outputs:
   table:
@@ -67,7 +70,7 @@ runs:
   using: composite
   steps:
   - id: row-count
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+    uses: envoyproxy/toolshed/gh-actions/jq@c16d272827d4bf8f46194e1020077a21ddc447d5
     with:
       input: |
         ${{ inputs.json }}
@@ -75,10 +78,9 @@ runs:
       filter: >-
         ${{ inputs.filter || '.' }}
         | length
-
   - id: headers
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
-    if: ${{ steps.row-count.outputs.value != 0 || inputs.show-empty }}
+    uses: envoyproxy/toolshed/gh-actions/jq@c16d272827d4bf8f46194e1020077a21ddc447d5
+    if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
     with:
       input: |
         ${{ inputs.headers }}
@@ -88,7 +90,7 @@ runs:
         + "\n"
         + ("| " + "--- | " * ${{ inputs.columns }})
   - id: columns
-    if: ${{ steps.row-count.outputs.value != 0 || inputs.show-empty }}
+    if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
     run: |
       # Use k for 1-col, k/v for 2-col, and k/v/v for more
       if [[ "${{ inputs.columns }}" -eq 1 ]]; then
@@ -100,10 +102,9 @@ runs:
       fi
       printf 'filter=%s' "$FILTER" >> $GITHUB_OUTPUT
     shell: bash
-
   - id: mutated-cells
-    if: ${{ steps.row-count.outputs.value != 0 || inputs.show-empty }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.57
+    if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
+    uses: envoyproxy/toolshed/gh-actions/shout@c16d272827d4bf8f46194e1020077a21ddc447d5
     with:
       string: >-
         . as $table
@@ -111,11 +112,10 @@ runs:
               | map(. as $cell
                     | ${{ inputs.mutate-cells || '.' }}
                     | ${{ inputs.sanitize-filter || '.' }}))
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/jq@c16d272827d4bf8f46194e1020077a21ddc447d5
     name: Generate table
     id: table
-    if: ${{ steps.row-count.outputs.value != '0' || fromJSON(inputs.show-empty) }}
+    if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
     with:
       input: ${{ inputs.json }}
       options: -r
@@ -127,30 +127,18 @@ runs:
         | join("\n") as $columns
         | ${{ steps.headers.outputs.value }}
         | . + "\n" + $columns
-
-  - name: Summary
-    if: ${{ (steps.row-count.outputs.value != '0' || fromJSON(inputs.show-empty)) && ! inputs.collapse }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.57
-    with:
-      string: |
-        ${{ inputs.title && format('### {0}', inputs.title) }}
-        ${{ steps.table.outputs.value }}
-      output-path: GITHUB_STEP_SUMMARY
-
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@c16d272827d4bf8f46194e1020077a21ddc447d5
     id: indented
-    if: ${{ inputs.collapse }}
+    if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && fromJSON(inputs.collapse) }}
     with:
       string: ${{ steps.table.outputs.value }}
       indent: 2
-
-  - name: Summary
-    if: ${{ (steps.row-count.outputs.value != '0' || fromJSON(inputs.show-empty)) && inputs.collapse }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.57
+  - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && fromJSON(inputs.collapse) }}
+    uses: envoyproxy/toolshed/gh-actions/shout@c16d272827d4bf8f46194e1020077a21ddc447d5
     with:
       string: |
 
-        <details>
+        <details ${{ fromJSON(inputs.collapse-open) && 'open' || '' }}>
           <summary><b>${{ inputs.title }}</b></summary>
 
           #### ${{ inputs.summary }}
@@ -160,13 +148,15 @@ runs:
         </details>
     id: summary
 
-  - run: |
-      if [[ "${{ inputs.output-path }}" == "GITHUB_STEP_SUMMARY" ]]; then
-          printf '%s\n' "${REQUEST}" >> $GITHUB_STEP_SUMMARY
-      else
-          printf '%s\n' "${REQUEST}" >> ${{ inputs.output-path }}
-      fi
-    shell: bash
-    if: ${{ (steps.row-count.outputs.value != '0' || fromJSON(inputs.show-empty)) && inputs.output-path }}
-    env:
-      REQUEST: ${{ steps.summary.outputs.out }}
+  - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && inputs.output-path && ! fromJSON(inputs.collapse) }}
+    uses: envoyproxy/toolshed/gh-actions/shout@c16d272827d4bf8f46194e1020077a21ddc447d5
+    with:
+      string: |
+        ${{ inputs.title && format('### {0}', inputs.title) }}
+        ${{ steps.table.outputs.value }}
+      output-path: ${{ inputs.output-path }}
+  - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && inputs.output-path && fromJSON(inputs.collapse) }}
+    uses: envoyproxy/toolshed/gh-actions/shout@c16d272827d4bf8f46194e1020077a21ddc447d5
+    with:
+      string: ${{ steps.summary.outputs.out }}
+      output-path: ${{ inputs.output-path }}
