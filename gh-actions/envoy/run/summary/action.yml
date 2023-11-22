@@ -6,12 +6,12 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
     if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
     with:
       input: ${{ inputs.context }}
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
     name: Advice
     id: advice
     with:
@@ -22,7 +22,7 @@ runs:
         | .["${{ fromJSON(inputs.context || '{}').context.target }}"]
           // ""
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
     name: Runtime information
     id: run-info
     with:
@@ -38,14 +38,14 @@ runs:
          completed: .run.completed,
          "run-time": "\(.run.completed - .run.started)s"}
 
-  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.59
     name: Run information summary
     id: run-summary
     with:
       json: ${{ steps.run-info.outputs.value }}
       title: Runtime information
 
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.59
     id: container
     if: ${{ fromJSON(inputs.context).run.container-command }}
     with:
@@ -60,7 +60,7 @@ runs:
           ```
       indent: 2
 
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.59
     id: steps-pre-steps
     if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-pre) }}
     with:
@@ -70,7 +70,7 @@ runs:
         ```yaml
         ${{ fromJSON(inputs.context).context.steps-pre }}
         ```
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.59
     id: steps-pre
     if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-pre) }}
     with:
@@ -82,7 +82,7 @@ runs:
 
         </details>
       indent: 2
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.59
     id: steps-post-steps
     if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-post) }}
     with:
@@ -92,7 +92,7 @@ runs:
         ```yaml
         ${{ fromJSON(inputs.context).run.steps-post }}
         ```
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.59
     id: steps-post
     if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-post) }}
     with:
@@ -140,7 +140,7 @@ runs:
 
         </details>
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.57
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
     id: conclusion
     with:
       input: ${{ inputs.context }}
