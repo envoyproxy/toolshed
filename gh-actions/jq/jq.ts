@@ -25,6 +25,7 @@ const run = async (): Promise<void> => {
     const filterFun = core.getInput('filter-fun')
     const printOutput = core.getBooleanInput('print-output')
     const printResult = core.getBooleanInput('print-result')
+    const trimResult = core.getBooleanInput('trim-result')
     const filter = core.getInput('filter')
     const inputFormat = core.getInput('input-format')
 
@@ -86,13 +87,13 @@ const run = async (): Promise<void> => {
         console.error(`Error: ${error}`)
         return
       }
-      let output = stdout.trim()
+      let output = trimResult ? stdout.trim() : stdout
       if (printResult) {
         const tmpFileResult = tmp.fileSync()
         fs.writeFileSync(tmpFileResult.name, output)
         shellCommand = `cat ${tmpFileResult.name} | jq -C '.'`
         exec(shellCommand, (_, result) => {
-          process.stdout.write(result.trim())
+          process.stdout.write(trimResult ? result.trim() : result)
           tmpFileResult.removeCallback()
         })
       }
@@ -105,7 +106,7 @@ const run = async (): Promise<void> => {
         core.exportVariable(envVar, output)
       }
       if (printOutput) {
-        process.stdout.write(output.trim())
+        process.stdout.write(trimResult ? output.trim() : output)
       }
       if (stderr) {
         process.stderr.write(`stderr: ${stderr}`)

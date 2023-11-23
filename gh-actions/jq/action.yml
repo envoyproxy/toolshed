@@ -38,6 +38,9 @@ inputs:
   print-result:
     type: boolean
     default: false
+  trim-result:
+    type: boolean
+    default: true
   use-tmp-file:
     type: boolean
     default: true
