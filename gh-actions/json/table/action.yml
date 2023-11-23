@@ -70,7 +70,7 @@ runs:
   using: composite
   steps:
   - id: row-count
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.60
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.61
     with:
       input: |
         ${{ inputs.json }}
@@ -79,7 +79,7 @@ runs:
         ${{ inputs.filter || '.' }}
         | length
   - id: headers
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.60
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.61
     if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
     with:
       input: |
@@ -104,7 +104,7 @@ runs:
     shell: bash
   - id: mutated-cells
     if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.60
+    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.61
     with:
       string: >-
         . as $table
@@ -112,7 +112,7 @@ runs:
               | map(. as $cell
                     | ${{ inputs.mutate-cells || '.' }}
                     | ${{ inputs.sanitize-filter || '.' }}))
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.60
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.61
     name: Generate table
     id: table
     if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
@@ -133,7 +133,7 @@ runs:
           else . end
 
   - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.60
+    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.61
     with:
       string: |
 
@@ -148,14 +148,14 @@ runs:
     id: summary
 
   - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && inputs.output-path && ! fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.60
+    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.61
     with:
       string: |
         ${{ inputs.title && format('### {0}', inputs.title) }}
         ${{ steps.table.outputs.value }}
       output-path: ${{ inputs.output-path }}
   - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && inputs.output-path && fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.60
+    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.61
     with:
       string: ${{ steps.summary.outputs.out }}
       output-path: ${{ inputs.output-path }}
