@@ -1,5 +1,5 @@
-def indent:
+def indent(width):
   split("\n")
-  | map("  " + .)
+  | map(" " * width + .)
   | join("\n")
   ;
