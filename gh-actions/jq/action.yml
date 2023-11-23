@@ -24,6 +24,10 @@ inputs:
     description: >
       Jq filter expression.
     default: "."
+  filter-fun:
+    description: >
+      Jq filter functions.
+    default:
   env_var:
     description: >
       Env var to save output to
