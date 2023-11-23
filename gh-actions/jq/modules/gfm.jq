@@ -1,12 +1,14 @@
+import "str" as str;
+
 def collapse(title):
   "
-  <details>
-    <summary><b>\(title)</b></summary>
+<details>
+  <summary><b>\(title)</b></summary>
 
-    \(.)
+\(. | str::indent(2))
 
-  </details>
-  "
+</details>
+"
   ;
 
 def action(name):
@@ -15,4 +17,18 @@ def action(name):
   else
     ":heavy_check_mark: \(.)"
   end
+  ;
+
+def fence(name):
+  "
+```\(name)
+\(.)
+```
+"
+  ;
+
+def blockquote:
+  split("\n")
+  | map("> " + .)
+  | join("\n")
   ;
