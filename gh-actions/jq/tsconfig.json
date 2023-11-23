@@ -12,6 +12,9 @@
     "removeComments": false,
     "preserveConstEnums": true
   },
-  "include": ["**/*.ts"],
+  "include": [
+      "**/*.ts",
+      "**/modules/*.jq"
+  ],
   "exclude": ["node_modules"]
 }

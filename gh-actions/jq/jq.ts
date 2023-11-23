@@ -1,6 +1,7 @@
 import * as core from '@actions/core'
 import fs from 'fs'
 import os from 'os'
+import * as path from 'path'
 import tmp from 'tmp'
 import {exec} from 'child_process'
 // eslint-disable-next-line @typescript-eslint/ban-ts-ignore
@@ -21,11 +22,13 @@ const run = async (): Promise<void> => {
     const decode = core.getBooleanInput('decode')
     const options = core.getInput('options')
     const envVar = core.getInput('env_var')
+    const filterFun = core.getInput('filter-fun')
     const printOutput = core.getBooleanInput('print-output')
     const printResult = core.getBooleanInput('print-result')
     const filter = core.getInput('filter')
     const inputFormat = core.getInput('input-format')
 
+    let mangledFilter = filter
     let mangledInput = input
     if (inputFormat.endsWith('-path')) {
       mangledInput = fs.readFileSync(input, 'utf-8')
@@ -38,20 +41,35 @@ const run = async (): Promise<void> => {
     }
     let tmpFile: tmp.FileResult
     let tmpFileFilter: tmp.FileResult
+    let tmpDirFun: tmp.DirResult
     let filterArg
+    let filterFunArg = ''
+
+    const modPath = path.join(__dirname, '../modules')
+    mangledFilter = `import "str" as str; ${mangledFilter}`
+    filterFunArg = `-L ${modPath}`
+
+    if (filterFun) {
+      tmpDirFun = tmp.dirSync()
+      const funFilename = 'fun.jq'
+      const funPath = path.join(tmpDirFun.name, funFilename)
+      fs.writeFileSync(funPath, filterFun)
+      filterFunArg = `-L ${tmpDirFun}`
+      mangledFilter = `import "fun" as fun; ${mangledFilter}`
+    }
 
     if (os.platform() === 'win32' || useTmpFileForFilter) {
       tmpFileFilter = tmp.fileSync()
-      fs.writeFileSync(tmpFileFilter.name, filter)
+      fs.writeFileSync(tmpFileFilter.name, mangledFilter)
       filterArg = `-f ${tmpFileFilter.name}`
     } else {
-      filterArg = `'${filter}'`
+      filterArg = `'${mangledFilter}'`
     }
-    let shellCommand = `printf '%s' '${mangledInput}' | jq ${options} ${filterArg}`
+    let shellCommand = `printf '%s' '${mangledInput}' | jq ${options} ${filterFunArg} ${filterArg}`
     if (os.platform() === 'win32' || useTmpFile) {
       tmpFile = tmp.fileSync()
       fs.writeFileSync(tmpFile.name, mangledInput)
-      shellCommand = `cat ${tmpFile.name} | jq ${options} ${filterArg}`
+      shellCommand = `cat ${tmpFile.name} | jq ${options} ${filterFunArg} ${filterArg}`
     }
     core.debug(`Running shell command: ${shellCommand}`)
     const proc = exec(shellCommand, (error, stdout, stderr) => {
@@ -60,6 +78,9 @@ const run = async (): Promise<void> => {
       }
       if (tmpFileFilter) {
         tmpFileFilter.removeCallback()
+      }
+      if (tmpDirFun) {
+        tmpDirFun.removeCallback()
       }
       if (error) {
         console.error(`Error: ${error}`)
