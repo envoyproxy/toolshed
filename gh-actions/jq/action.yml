@@ -32,6 +32,9 @@ inputs:
     description: >
       Env var to save output to
     default: ""
+  output-path:
+    type: string
+    default:
   print-output:
     type: boolean
     default: false

@@ -28,6 +28,7 @@ const run = async (): Promise<void> => {
     const trimResult = core.getBooleanInput('trim-result')
     const filter = core.getInput('filter')
     const inputFormat = core.getInput('input-format')
+    const outputPath = core.getInput('output-path')
 
     let mangledFilter = filter
     let mangledInput = input
@@ -98,7 +99,7 @@ const run = async (): Promise<void> => {
         })
       }
       if (encode) {
-        output = btoa(unescape(encodeURIComponent(stdout)))
+        output = btoa(unescape(encodeURIComponent(output)))
       }
       core.setOutput('value', output)
       if (envVar) {
@@ -107,6 +108,13 @@ const run = async (): Promise<void> => {
       }
       if (printOutput) {
         process.stdout.write(trimResult ? output.trim() : output)
+      }
+      if (outputPath) {
+        if (outputPath == 'GITHUB_STEP_SUMMARY') {
+          core.summary.addRaw(output).write()
+        } else {
+          fs.writeFileSync(outputPath, output)
+        }
       }
       if (stderr) {
         process.stderr.write(`stderr: ${stderr}`)
