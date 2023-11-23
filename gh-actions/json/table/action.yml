@@ -70,7 +70,7 @@ runs:
   using: composite
   steps:
   - id: row-count
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
+    uses: envoyproxy/toolshed/gh-actions/jq@e93429ea562db85f9b037048c0ca5c86c02367f9
     with:
       input: |
         ${{ inputs.json }}
@@ -79,7 +79,7 @@ runs:
         ${{ inputs.filter || '.' }}
         | length
   - id: headers
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
+    uses: envoyproxy/toolshed/gh-actions/jq@e93429ea562db85f9b037048c0ca5c86c02367f9
     if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
     with:
       input: |
@@ -104,7 +104,7 @@ runs:
     shell: bash
   - id: mutated-cells
     if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.59
+    uses: envoyproxy/toolshed/gh-actions/shout@e93429ea562db85f9b037048c0ca5c86c02367f9
     with:
       string: >-
         . as $table
@@ -112,13 +112,14 @@ runs:
               | map(. as $cell
                     | ${{ inputs.mutate-cells || '.' }}
                     | ${{ inputs.sanitize-filter || '.' }}))
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
+  - uses: envoyproxy/toolshed/gh-actions/jq@e93429ea562db85f9b037048c0ca5c86c02367f9
     name: Generate table
     id: table
     if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
     with:
       input: ${{ inputs.json }}
       options: -r
+      print-result: true
       filter: |
         ${{ inputs.filter || '.' }}
         | ${{ inputs.column-filter || steps.columns.outputs.filter }}
@@ -127,14 +128,12 @@ runs:
         | join("\n") as $columns
         | ${{ steps.headers.outputs.value }}
         | . + "\n" + $columns
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.59
-    id: indented
-    if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && fromJSON(inputs.collapse) }}
-    with:
-      string: ${{ steps.table.outputs.value }}
-      indent: 2
+        | if ${{ inputs.collapse }} then
+            str::indent(2)
+          else . end
+
   - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.59
+    uses: envoyproxy/toolshed/gh-actions/shout@e93429ea562db85f9b037048c0ca5c86c02367f9
     with:
       string: |
 
@@ -143,20 +142,20 @@ runs:
 
           #### ${{ inputs.summary }}
 
-        ${{ steps.indented.outputs.string }}
+        ${{ steps.table.outputs.value }}
 
         </details>
     id: summary
 
   - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && inputs.output-path && ! fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.59
+    uses: envoyproxy/toolshed/gh-actions/shout@e93429ea562db85f9b037048c0ca5c86c02367f9
     with:
       string: |
         ${{ inputs.title && format('### {0}', inputs.title) }}
         ${{ steps.table.outputs.value }}
       output-path: ${{ inputs.output-path }}
   - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && inputs.output-path && fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.59
+    uses: envoyproxy/toolshed/gh-actions/shout@e93429ea562db85f9b037048c0ca5c86c02367f9
     with:
       string: ${{ steps.summary.outputs.out }}
       output-path: ${{ inputs.output-path }}
