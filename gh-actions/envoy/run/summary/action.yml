@@ -147,7 +147,7 @@ runs:
           end
         | .advice = ($context.config.check.advice[$context.target] // "")
         | if .advice != "" then
-            .advice |= gfm::collapse("${{ inputs.template-title-advice }}")
+            .advice |= ({content: ., title: (. | "${{ inputs.template-title-advice }}")} | gfm::collapse)
           else
             .advice = ""
           end
@@ -165,7 +165,8 @@ runs:
           else
             gfm::fence("yaml") as $stepsPreCode
             | "${{ inputs.template-steps-pre }}"
-            | gfm::collapse("Pre-steps")
+            | {title: "Pre-steps", content: .}
+            | gfm::collapse
           end
         | .presteps as $stepsPre
         | $context["steps-post"]
@@ -174,7 +175,8 @@ runs:
           else
             gfm::fence("yaml") as $stepsPostCode
             | "${{ inputs.template-steps-post }}"
-            | gfm::collapse("Post-steps")
+            | {title: "Post-steps", content: .}
+            | gfm::collapse
           end
         | .poststeps as $stepsPost
         | ("$ \($run["container-command"])" | gfm::fence("console")) as $containerCommand
@@ -182,6 +184,7 @@ runs:
         | ("${{ inputs.run-note }}" | gfm::blockquote) as $runNote
         | (("$ " + $run.command) | gfm::fence("console")) as $runCommand
         | "${{ inputs.template-command }}"
-        | gfm::collapse("CI command") as $commandInfo
+        | {title: "CI command", content: .}
+        | gfm::collapse as $commandInfo
         | "${{ steps.run-summary.outputs.summary }}" as $runSummary
         | "${{ inputs.template }}"
