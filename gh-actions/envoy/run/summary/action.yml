@@ -2,27 +2,105 @@ inputs:
   context:
     type: string
     required: true
+  run-note:
+    type: string
+    default: |
+      **Note**
+      The above commands are specific to the CI environment and may need to be adjusted to run locally.
+  template:
+    type: string
+    default: |
+      ## \($context.config.envoy.icon) \($context.config.check.name): \($context.target)
+
+      \($runSummary)
+
+      \($commandInfo)
+
+      ### \($conclusion)
+      \($warning)
+
+      \($advice)
+
+  template-command:
+    type: string
+    default: |
+      #### Command
+
+      The following command was run:
+
+      \($runCommand)
+
+      \($containerInfo)
+
+      \($runNote)
+
+      \($stepsPre)
+
+      \($stepsPost)
+
+  template-container-info:
+    type: string
+    default: |
+      #### Container command
+
+      The command was run inside a Docker container environment, which
+      was invoked by the following command
+
+      \($containerCommand)
+
+  template-steps-pre:
+    type: string
+    default: |
+      The following steps were run to prepare the CI environment:
+
+      \($stepsPreCode)
+
+  template-steps-post:
+    type: string
+    default: |
+      The following steps were run to cleanup or test the CI environment:
+
+      \($stepsPostCode)
+
+  template-title-advice:
+    type: string
+    default: >-
+      Envoy/prechecks (\($context.target)) advice
+  template-title-failure:
+    type: string
+    default: >-
+      Command failed with exit code \($exitCode)
+  title-failure-cancelled:
+    type: string
+    default: >-
+      Run was cancelled
+  title-failure-post-steps:
+    type: string
+    default: >-
+      Upload failed
+  title-failure-upload:
+    type: string
+    default: >-
+      Upload failed
+  title-success:
+    type: string
+    default: >-
+      Command completed successfully
+  warning-catch-error:
+    type: string
+    default: >-
+      #### :warning: Error was caught
+
 
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.60
+  - uses: envoyproxy/toolshed/gh-actions/jq@f979ac89545ef39225b44c435fca344389364d36
     if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
     with:
       input: ${{ inputs.context }}
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.60
-    name: Advice
-    id: advice
-    with:
-      input: ${{ inputs.context }}
-      options: -r
-      filter: >-
-        .context.config.check.advice
-        | .["${{ fromJSON(inputs.context || '{}').context.target }}"]
-          // ""
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.60
+  - uses: envoyproxy/toolshed/gh-actions/jq@f979ac89545ef39225b44c435fca344389364d36
     name: Runtime information
     id: run-info
     with:
@@ -37,145 +115,73 @@ runs:
          started: .run.started,
          completed: .run.completed,
          "run-time": "\(.run.completed - .run.started)s"}
-
-  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.60
+  - uses: envoyproxy/toolshed/gh-actions/json/table@f979ac89545ef39225b44c435fca344389364d36
     name: Run information summary
     id: run-summary
     with:
       json: ${{ steps.run-info.outputs.value }}
       title: Runtime information
-
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.60
-    id: container
-    if: ${{ fromJSON(inputs.context).run.container-command }}
-    with:
-      string: |
-          #### Container command
-
-          The command was run inside a Docker container environment, which
-          was invoked by the following command
-
-          ```console
-          $ ${{ fromJSON(inputs.context).run.container-command }}
-          ```
-      indent: 2
-
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.60
-    id: steps-pre-steps
-    if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-pre) }}
-    with:
-      string: |
-        The following steps were run to prepare the CI environment:
-
-        ```yaml
-        ${{ fromJSON(inputs.context).context.steps-pre }}
-        ```
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.60
-    id: steps-pre
-    if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-pre) }}
-    with:
-      string: |
-        <details>
-          <summary><b>Pre-steps</b></summary>
-
-        ${{ steps.steps-pre-steps.outputs.string }}
-
-        </details>
-      indent: 2
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.60
-    id: steps-post-steps
-    if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-post) }}
-    with:
-      string: |
-        The following steps were run to cleanup or test the CI environment:
-
-        ```yaml
-        ${{ fromJSON(inputs.context).run.steps-post }}
-        ```
-  - uses: envoyproxy/toolshed/gh-actions/str/indent@actions-v0.1.60
-    id: steps-post
-    if: ${{ ! contains(fromJSON('["", "\"\""]'), fromJSON(inputs.context).run.steps-post) }}
-    with:
-      string: |
-        <details>
-          <summary><b>Post-steps</b></summary>
-
-        ${{ steps.steps-post-steps.outputs.string }}
-
-        </details>
-      indent: 2
-
-  - run: |
-      echo "$TITLE" >> $GITHUB_STEP_SUMMARY
-      echo "$BODY" >> $GITHUB_STEP_SUMMARY
-    shell: bash
-    env:
-      TITLE: >-
-        ##
-        ${{ fromJSON(inputs.context).context.config.envoy.icon }}
-        ${{ github.workflow }}: ${{ fromJSON(inputs.context).context.target }}
-
-      BODY: |
-        ${{ steps.run-summary.outputs.summary }}
-
-        <details>
-          <summary><b>CI command</b></summary>
-
-          #### Command
-
-          The following command was run:
-
-          ```console
-          $ ${{ fromJSON(inputs.context).run.command }}
-          ```
-
-        ${{ steps.container.outputs.string }}
-
-          > **Note**
-          > The above commands are specific to the CI environment and may need to be adjusted to run locally.
-
-        ${{ steps.steps-pre.outputs.string }}
-
-        ${{ steps.steps-post.outputs.string }}
-
-        </details>
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.60
-    id: conclusion
+  - uses: envoyproxy/toolshed/gh-actions/jq@f979ac89545ef39225b44c435fca344389364d36
     with:
       input: ${{ inputs.context }}
       options: -r
+      output-path: GITHUB_STEP_SUMMARY
+      print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
-        if .run.cancelled then
-          ":x: Run was cancelled"
-        elif .run["exit-code"] != 0 then
-          ":x: Command failed with exit code \(.run["exit-code"])"
-        elif .run["post-steps-failed"] then
-          ":x: Post steps failed"
-        elif .run["upload-failed"] then
-          ":x: Upload failed"
-        else
-          ":heavy_check_mark: Command completed successfully"
-        end
-  - run: |
-      echo "$BODY" >> $GITHUB_STEP_SUMMARY
-    shell: bash
-    env:
-      BODY: |
-        ### ${{ steps.conclusion.outputs.value }}
-        ${{ fromJSON(inputs.context).context.catch-errors && fromJSON(inputs.context).run.exit-code != 0  && '#### :warning: Error was caught' || '' }}
-  - run: |
-      echo "$BODY" >> $GITHUB_STEP_SUMMARY
-    shell: bash
-    if: ${{ steps.advice.outputs.value }}
-    env:
-      BODY: |
-
-        ----
-
-        <details>
-          <summary><b>${{ github.workflow }} (${{ fromJSON(inputs.context).context.target }}) advice</b></summary>
-
-          ${{ steps.advice.outputs.value }}
-
-        </details>
+        .context as $context
+        | .run as $run
+        | .run["exit-code"] as $exitCode
+        | $context["catch-errors"] as $catchErrors
+        | .run["upload-failed"] as $uploadFailed
+        | {}
+        | if $run.cancelled then
+            .conclusion = ("${{ inputs.title-failure-cancelled }}" | gfm::action("failure"))
+          elif $exitCode != 0 then
+            .conclusion = ("${{ inputs.template-title-failure }}" | gfm::action("failure"))
+          elif $run["post-steps-failed"] then
+            .conclusion = ("${{ inputs.title-failure-post-steps }}"  | gfm::action("failure"))
+          elif $uploadFailed then
+            .conclusion = ("${{ inputs.title-failure-upload }}" | gfm::action("failure"))
+          else
+            .conclusion = ("${{ inputs.title-success }}" | gfm::action("success"))
+          end
+        | .advice = ($context.config.check.advice[$context.target] // "")
+        | if .advice != "" then
+            .advice |= gfm::collapse("${{ inputs.template-title-advice }}")
+          else
+            .advice = ""
+          end
+        | if ($catchErrors and $exitCode) then
+            .warning = "${{ inputs.warning-catch-error }}"
+          else
+            .warning = ""
+          end
+        | .conclusion as $conclusion
+        | .warning as $warning
+        | .advice as $advice
+        | $context["steps-pre"]
+        | if ((. | type == "null") or (. = "")) then
+            .presteps = ""
+          else
+            gfm::fence("yaml") as $stepsPreCode
+            | "${{ inputs.template-steps-pre }}"
+            | gfm::collapse("Pre-steps")
+          end
+        | .presteps as $stepsPre
+        | $context["steps-post"]
+        | if ((. | type == "null") or (. = "")) then
+            .poststeps = ""
+          else
+            gfm::fence("yaml") as $stepsPostCode
+            | "${{ inputs.template-steps-post }}"
+            | gfm::collapse("Post-steps")
+          end
+        | .poststeps as $stepsPost
+        | ("$ \($run["container-command"])" | gfm::fence("console")) as $containerCommand
+        | "${{ inputs.template-container-info }}" as $containerInfo
+        | ("${{ inputs.run-note }}" | gfm::blockquote) as $runNote
+        | (("$ " + $run.command) | gfm::fence("console")) as $runCommand
+        | "${{ inputs.template-command }}"
+        | gfm::collapse("CI command") as $commandInfo
+        | "${{ steps.run-summary.outputs.summary }}" as $runSummary
+        | "${{ inputs.template }}"
