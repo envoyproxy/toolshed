@@ -79,13 +79,13 @@ outputs:
   command:
     value: ${{ steps.command.outputs.actual }}
   completed:
-    value: ${{ steps.completed.outputs.timestamp }}
+    value: ${{ steps.completed.outputs.value }}
   container-command:
     value: ${{ steps.command.outputs.container-command }}
   exit-code:
     value: ${{ steps.run.outputs.exit-code }}
   started:
-    value: ${{ steps.started.outputs.timestamp }}
+    value: ${{ steps.started.outputs.value }}
 
 
 runs:
@@ -167,10 +167,13 @@ runs:
       COMMAND: ${{ steps.command.outputs.command }}
       SOURCETMP: ${{ steps.source.outputs.file }}
     shell: bash
-
-  - uses: envoyproxy/toolshed/gh-actions/date@actions-v0.1.62
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
     if: ${{ always() }}
     id: started
+    with:
+      input: "{}"
+      options: -r
+      filter: now
   - run: |
       cd $TARGET_PATH
       if [[ -n "${SOURCETMP}" ]]; then
@@ -201,9 +204,13 @@ runs:
       options: -r
       filter: |
         true
-  - uses: envoyproxy/toolshed/gh-actions/date@actions-v0.1.62
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
     if: ${{ always() }}
     id: completed
+    with:
+      input: "{}"
+      options: -r
+      filter: now
   - run: |
       STDERR="$(cat "$TMP_STDERR")"
       bubble_messages () {
@@ -251,11 +258,11 @@ runs:
     with:
       input: ${{ toJSON(steps.run.outputs) }}
       filter: >-
-        . * {"started": ${{ steps.started.outputs.timestamp }},
+        . * {"started": ${{ steps.started.outputs.value }},
              "cancelled": ${{ steps.cancelled.outputs.value || 'false' }},
              "container-command": "${{ steps.command.outputs.container }}",
              "command": "${{ steps.command.outputs.actual }}",
-             "completed": ${{ steps.completed.outputs.timestamp }},
+             "completed": ${{ steps.completed.outputs.value }},
              "steps-pre": ${{ steps.context-steps-pre.outputs.value }},
              "steps-post": ${{ steps.context-steps-post.outputs.value }},
              "exit-code": (.["exit-code"] // "0" | fromjson)}
