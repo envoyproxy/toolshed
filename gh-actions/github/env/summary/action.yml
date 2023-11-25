@@ -51,34 +51,6 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.62
-    id: sha-short
-    with:
-      string: ${{ inputs.sha }}
-      length: 7
-  - uses: envoyproxy/toolshed/gh-actions/str/sub@actions-v0.1.62
-    id: base-sha-short
-    with:
-      string: ${{ inputs.base-sha }}
-      length: 7
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
-    name: Tables
-    id: tables
-    with:
-      input: ${{ inputs.tables }}
-      input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
-    name: Change
-    id: change
-    with:
-      input: ${{ inputs.message }}
-      options: -Rs
-      input-format: text
-      filter: >-
-        . as $message
-        | ($message | split("\n")[0]) as $title
-        | ($message | "  > " + (split("\n")[1:] | join("\n  > ")))
-        | {"title": $title, "body": .}
   - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.62
     id: title
     with:
@@ -87,52 +59,20 @@ runs:
       sha: ${{ inputs.sha }}
       target-branch: ${{ inputs.target-branch }}
       title: ${{ inputs.title }}
-  - run: |
-      echo "link=$PR_LINK" >> $GITHUB_OUTPUT
-    shell: bash
-    id: pr
-    if: ${{ inputs.pr }}
-    env:
-      PR_LINK: >-
-        ![](https://raw.githubusercontent.com/primer/octicons/main/icons/git-pull-request-16.svg)
-        [#${{ inputs.pr }}](https://github.com/${{ github.repository }}/pull/${{ inputs.pr }})
-        [`merge`](https://github.com/${{ github.repository }}/commit/${{ inputs.ref }})
-        [`${{ inputs.target-branch }}@${{ steps.base-sha-short.outputs.string }}`](https://github.com/${{ github.repository }}/commit/${{ inputs.base-sha }})
-  - run: |
-      echo "value<<EOF" >> $GITHUB_OUTPUT
-      printf "%s\n" "${TITLE}" >> $GITHUB_OUTPUT
-      echo "${BODY}" >> $GITHUB_OUTPUT
-      echo "EOF" >> $GITHUB_OUTPUT
-    shell: bash
-    id: request
-    env:
-      TITLE: >-
-        ##
-        ${{ inputs.icon }}
-        Request (${{ inputs.link && format('[{0}]({1})', steps.title.outputs.title, inputs.link) || steps.title.outputs.title }})
-      BODY: |
-        <img src="${{ github.event.sender.avatar_url }}" alt="${{ github.actor }}" width="18" height="18"> @${{ github.actor }} [`${{ steps.sha-short.outputs.string }}`](https://github.com/${{ github.repository }}/commit/${{ inputs.sha }}) ${{ steps.pr.outputs.link }}
-
-        <details>
-          <summary><b>${{ fromJSON(steps.change.outputs.value).title }}</b></summary>
-
-        ${{ fromJSON(steps.change.outputs.value).body }}
-        </details>
-
-    name: Summary
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
-    id: table-data
+    name: Tables
+    id: tables
     with:
-      input: ${{ inputs.data }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      filter: |
-        {request}
+      input: ${{ inputs.tables }}
+      input-format: yaml
 
   - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.62
     id: data-tables
     with:
-      context: ${{ steps.table-data.outputs.value }}
+      context: ${{ inputs.data }}
+      context-filter: |
+        {request}
       items: ${{ steps.tables.outputs.value }}
       steps: |
         - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
@@ -158,23 +98,52 @@ runs:
               %{{ fromJSON(steps.context-$KEY.outputs.value).collapse }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
-    name: Inflated data tables
-    id: formatted-tables
+    id: table-output
     with:
       input: ${{ toJSON(fromJSON(fromJSON(steps.data-tables.outputs.out)).*.outputs.summary) }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      options: -r
-      filter: |
-        "  " + join("  \n")
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
-    id: output
+    id: request
     with:
-      input: |
-        ${{ steps.request.outputs.value }}
-        ${{ steps.formatted-tables.outputs.value }}
-      input-format: text
-      options: -Rrs
+      input: ${{ toJSON(inputs) }}
+      options: -r
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       output-path: ${{ inputs.output-path }}
-      trim-result: false
       filter: |
-        str::indent(${{ inputs.indent }})
+        . as $inputs
+        | .icon as $icon
+        | .sha as $sha
+        | if $inputs.pr != "" then
+            .["base-sha"] as $baseSha
+            | "![](https://raw.githubusercontent.com/primer/octicons/main/icons/git-pull-request-16.svg)" as $prIcon
+            | "[#\(.pr)}](https://github.com/${{ github.repository }}/pull/\(.pr))" as $prLink
+            | "[`merge`](https://github.com/${{ github.repository }}/commit/\(.ref))" as $mergeLink
+            | "[`\(.["target-branch"])@\($baseSha[:7])`](https://github.com/${{ github.repository }}/commit/\($baseSha))" as $commitLink
+            | "\($prIcon) \($prLink) \($mergeLink) \($commitLink)"
+          else
+            ""
+          end
+        | . as $pr
+        | ${{ steps.table-output.outputs.value }}
+        | join("\n") as $tables
+        | "${{ inputs.link && format('[{0}]({1})', steps.title.outputs.title, inputs.link) || steps.title.outputs.title }}" as $link
+        | "${{ github.event.sender.avatar_url }}" as $avatarIcon
+        | "${{ github.actor }}" as $actor
+        | "[`\($sha[:7])`](https://github.com/${{ github.repository }}/commit/\($sha))" as $commitLink
+        | $inputs.message as $message
+        | ($message | split("\n")[0]) as $title
+        | ($message | "  > " + (split("\n")[1:] | join("\n  > "))) as $body
+        | {title: $title, content: $body}
+        | gfm::collapse as $change
+        | {"title": $title, "body": .}
+
+        | "
+        ## \($icon) Request \($link)
+
+        <img src=\"\($avatarIcon)\" alt=\"\($actor)\" width=\"18\" height=\"18\"> @\($actor) \($commitLink) \($pr)
+
+        \($change)
+
+        \($tables)
+        "
