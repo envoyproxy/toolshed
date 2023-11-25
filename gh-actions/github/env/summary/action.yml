@@ -43,7 +43,7 @@ inputs:
 
 outputs:
   summary:
-    value: ${{ steps.output.outputs.string }}
+    value: ${{ toJSON(steps.output.outputs.value) }}
   title:
     value: ${{ steps.title.outputs.value }}
 
@@ -103,7 +103,7 @@ runs:
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
-    id: request
+    id: output
     with:
       input: ${{ toJSON(inputs) }}
       options: -r
@@ -116,7 +116,7 @@ runs:
         | if $inputs.pr != "" then
             .["base-sha"] as $baseSha
             | "![](https://raw.githubusercontent.com/primer/octicons/main/icons/git-pull-request-16.svg)" as $prIcon
-            | "[#\(.pr)}](https://github.com/${{ github.repository }}/pull/\(.pr))" as $prLink
+            | "[#\(.pr)](https://github.com/${{ github.repository }}/pull/\(.pr))" as $prLink
             | "[`merge`](https://github.com/${{ github.repository }}/commit/\(.ref))" as $mergeLink
             | "[`\(.["target-branch"])@\($baseSha[:7])`](https://github.com/${{ github.repository }}/commit/\($baseSha))" as $commitLink
             | "\($prIcon) \($prLink) \($mergeLink) \($commitLink)"
@@ -132,13 +132,12 @@ runs:
         | "[`\($sha[:7])`](https://github.com/${{ github.repository }}/commit/\($sha))" as $commitLink
         | $inputs.message as $message
         | ($message | split("\n")[0]) as $title
-        | ($message | "  > " + (split("\n")[1:] | join("\n  > "))) as $body
+        | ($message | "> " + (split("\n")[1:] | join("\n> "))) as $body
         | {title: $title, content: $body}
         | gfm::collapse as $change
         | {"title": $title, "body": .}
-
         | "
-        ## \($icon) Request \($link)
+        ## \($icon) Request (\($link))
 
         <img src=\"\($avatarIcon)\" alt=\"\($actor)\" width=\"18\" height=\"18\"> @\($actor) \($commitLink) \($pr)
 
@@ -146,3 +145,4 @@ runs:
 
         \($tables)
         "
+        | str::indent($inputs.indent // "0" | fromjson)
