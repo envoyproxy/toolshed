@@ -3,6 +3,9 @@ inputs:
   context:
     type: string
     required: true
+  context-filter:
+    type: string
+    default: .
   items:
     type: string
     required: true
@@ -29,7 +32,8 @@ runs:
     with:
       input: ${{ inputs.context || '{}' }}
       filter: |
-        . * {"items": ${{ inputs.items }}}
+        ${{ inputs.context-filter }}
+        | . * {"items": ${{ inputs.items }}}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
     name: Steps (JSON)
     id: steps-json
