@@ -45,21 +45,20 @@ outputs:
   summary:
     value: ${{ steps.output.outputs.string }}
   title:
-    value: ${{ steps.title.outputs.title }}
+    value: ${{ steps.title.outputs.value }}
 
 
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.63
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.63
     id: title
     with:
-      link: ${{ inputs.link }}
-      pr: ${{ inputs.pr }}
-      sha: ${{ inputs.sha }}
-      target-branch: ${{ inputs.target-branch }}
-      title: ${{ inputs.title }}
-
+      input: ${{ toJSON(inputs) }}
+      options: -r
+      filter: |
+        .repository = "${{ github.repository }}"
+        | gfm::event_title
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.63
     name: Tables
     id: tables
@@ -127,7 +126,7 @@ runs:
         | . as $pr
         | ${{ steps.table-output.outputs.value }}
         | join("\n") as $tables
-        | "${{ inputs.link && format('[{0}]({1})', steps.title.outputs.title, inputs.link) || steps.title.outputs.title }}" as $link
+        | "${{ inputs.link && format('[{0}]({1})', steps.title.outputs.value, inputs.link) || steps.title.outputs.value }}" as $link
         | "${{ github.event.sender.avatar_url }}" as $avatarIcon
         | "${{ github.actor }}" as $actor
         | "[`\($sha[:7])`](https://github.com/${{ github.repository }}/commit/\($sha))" as $commitLink
