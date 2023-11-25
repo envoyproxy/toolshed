@@ -51,7 +51,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.62
+  - uses: envoyproxy/toolshed/gh-actions/github/env/title@actions-v0.1.63
     id: title
     with:
       link: ${{ inputs.link }}
@@ -60,14 +60,14 @@ runs:
       target-branch: ${{ inputs.target-branch }}
       title: ${{ inputs.title }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.63
     name: Tables
     id: tables
     with:
       input: ${{ inputs.tables }}
       input-format: yaml
 
-  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.62
+  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.63
     id: data-tables
     with:
       context: ${{ inputs.data }}
@@ -75,7 +75,7 @@ runs:
         {request}
       items: ${{ steps.tables.outputs.value }}
       steps: |
-        - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
+        - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.63
           id: context-$KEY
           with:
             input: >-
@@ -83,7 +83,7 @@ runs:
             filter: |
               .items["$KEY"]
             print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-        - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.62
+        - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.63
           id: table-$KEY
           with:
             json: |
@@ -97,13 +97,13 @@ runs:
             collapse: >-
               %{{ fromJSON(steps.context-$KEY.outputs.value).collapse }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.63
     id: table-output
     with:
       input: ${{ toJSON(fromJSON(fromJSON(steps.data-tables.outputs.out)).*.outputs.summary) }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.62
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.63
     id: request
     with:
       input: ${{ toJSON(inputs) }}
