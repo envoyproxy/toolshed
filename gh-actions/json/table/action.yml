@@ -25,8 +25,8 @@ inputs:
   headers:
     type: string
     default: |
-      - Variable
-      - Value
+      Variable
+      Value
   json:
     type: string
     required: true
@@ -55,107 +55,64 @@ inputs:
           .
         end
   mutate-cells:
-    default: .
+    default: .cell
   output-path:
     type: string
+
+  template-table:
+    type: string
+    default: |
+      #### \($title)
+
+      \($table)
 
 outputs:
   table:
     value: ${{ steps.table.outputs.value }}
   summary:
-    value: ${{ steps.summary.outputs.out }}
+    value: ${{ steps.summary.outputs.value }}
 
 
 runs:
   using: composite
   steps:
-  - id: row-count
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.61
-    with:
-      input: |
-        ${{ inputs.json }}
-      options: -r
-      filter: >-
-        ${{ inputs.filter || '.' }}
-        | length
-  - id: headers
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.61
-    if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
-    with:
-      input: |
-        ${{ inputs.headers }}
-      input-format: yaml
-      filter: >-
-        ("| " + (. | join(" | ")) + " |")
-        + "\n"
-        + ("| " + "--- | " * ${{ inputs.columns }})
-  - id: columns
-    if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
-    run: |
-      # Use k for 1-col, k/v for 2-col, and k/v/v for more
-      if [[ "${{ inputs.columns }}" -eq 1 ]]; then
-          FILTER='to_entries | map([.key])'
-      elif [[ "${{ inputs.columns }}" -eq 2 ]]; then
-          FILTER='to_entries | map([.key, .value])'
-      else
-          FILTER='to_entries | map([.key, (.value | to_entries | map(.value))])'
-      fi
-      printf 'filter=%s' "$FILTER" >> $GITHUB_OUTPUT
-    shell: bash
-  - id: mutated-cells
-    if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.61
-    with:
-      string: >-
-        . as $table
-        | map(. as $row
-              | map(. as $cell
-                    | ${{ inputs.mutate-cells || '.' }}
-                    | ${{ inputs.sanitize-filter || '.' }}))
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.61
     name: Generate table
     id: table
-    if: ${{ fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty) }}
     with:
       input: ${{ inputs.json }}
-      options: -r
       trim-result: false
+      options: -r
       filter: |
-        ${{ inputs.filter || '.' }}
-        | ${{ inputs.column-filter || steps.columns.outputs.filter }}
-        | ${{ steps.mutated-cells.outputs.out }}
-        | map(join("|"))
-        | join("\n") as $columns
-        | ${{ steps.headers.outputs.value }}
-        | . + "\n" + $columns
-        | if ${{ inputs.collapse }} then
-            str::indent(2)
-          else . end
+        . as $data
+        | "${{ inputs.headers }}"
+        | split("\n")
+        | map(. | str::trim | select(length > 0)) as $headers
+        | {data: $data, headers: $headers}
+        | gfm::table(${{ inputs.filter || '.' }};
+                     ${{ fromJSON(inputs.show-empty) && '.' || '"" | halt_error(0)' }};
+                     ${{ inputs.mutate-cells || '.cell' }};
+                     ${{ inputs.sanitize-filter || '.' }})
 
-  - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.61
-    with:
-      string: |
-
-        <details ${{ fromJSON(inputs.collapse-open) && 'open' || '' }}>
-          <summary><b>${{ inputs.title }}</b></summary>
-
-          #### ${{ inputs.summary }}
-
-        ${{ steps.table.outputs.value }}
-
-        </details>
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.61
     id: summary
-
-  - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && inputs.output-path && ! fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.61
+    if: ${{ steps.table.outputs.value }}
     with:
-      string: |
-        ${{ inputs.title && format('### {0}', inputs.title) }}
-        ${{ steps.table.outputs.value }}
-      output-path: ${{ inputs.output-path }}
-  - if: ${{ (fromJSON(steps.row-count.outputs.value) != 0 || fromJSON(inputs.show-empty)) && inputs.output-path && fromJSON(inputs.collapse) }}
-    uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.61
-    with:
-      string: ${{ steps.summary.outputs.out }}
+      input: ${{ toJSON(inputs) }}
+      options: -r
+      filter: |
+        . as $input
+        | .["template-table"] as $templateTable
+        | "${{ steps.table.outputs.value }}" as $table
+        | $input.summary as $summary
+        | $input.title as $title
+        | if $input.collapse then
+            $title as $_title
+            | $summary as $title
+            | "${{ inputs.template-table }}"
+            | {title: $_title, content: ., open: ${{ fromJSON(inputs.collapse-open) }}}
+            | gfm::collapse
+          else
+            "${{ inputs.template-table }}"
+          end
       output-path: ${{ inputs.output-path }}
