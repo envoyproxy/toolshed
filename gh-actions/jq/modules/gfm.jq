@@ -68,3 +68,33 @@ def table(filter; ifempty; cells; sanitize):
 \($rows)
 "
 ;
+
+def event_title:
+  .
+  | .link as $link
+  | .sha as $sha
+  | .repo as $repo
+  | .title as $title
+  | .["target-branch"] as $targetBranch
+  | .pr as $pr
+  | {}
+  | if $title != "" then
+      .link = $title
+    elif $link != "" then
+      if $pr != "" then
+          .link = "pr/\($pr)"
+        else
+          .link = "postsubmit"
+        end
+      | .link |= "\(.)/\($targetBranch)@\($sha[:7])"
+    else
+      if $pr != "" then
+        .link = "pr/[\($pr)](https://github.com/\($repo)/pull/\($pr))"
+      else
+        .link = "postsubmit"
+      end
+      | "[\($sha[:7])](https://github.com/\($repo)/commit/\($sha))" as $shaLink
+      | .link |= "\(.)/\($targetBranch)@\($shaLink)"
+    end
+ | .link
+;
