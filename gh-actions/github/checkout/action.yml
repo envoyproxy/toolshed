@@ -27,6 +27,8 @@ inputs:
   show-progress:
     type: boolean
     default: false
+  ssh-key:
+    type: string
   strip-prefix:
     type: string
     default:
@@ -95,26 +97,38 @@ runs:
       git config --global advice.detachedHead false
       git config --global init.defaultBranch main
 
-  # Add token to config separately and last to minimize leak risk
+  # Add ssh-key and token to config separately and last to minimize leak risk
   - name: Config
-    id: config
+    id: config-token
+    if: ${{ inputs.ssh-key == '' }}
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
     with:
-      input: ${{ inputs.token || 'NOTOKEN' }}
+      input: ${{ inputs.token || github.token }}
       options: -R
       input-format: secret
       filter: |
         . as $token
         | ${{ steps.parsed-config.outputs.value }} as $config
-        | if $token == "NOTOKEN" then
-            $config
-          else
-            ($config | .token = $token)
-          end
+        | $config
+        | .token = $token
+        | del(.["requested-ref"])
+  - name: Config
+    id: config-ssh
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
+    if: ${{ inputs.ssh-key != '' }}
+    with:
+      input: ${{ inputs.ssh-key }}
+      options: -R
+      input-format: secret
+      filter: |
+        . as $sshKey
+        | ${{ steps.parsed-config.outputs.value }} as $config
+        | $config
+        | .["ssh-key"] = $sshKey
         | del(.["requested-ref"])
   - uses: actions/checkout@v4
     name: Checkout repository
-    with: ${{ fromJSON(steps.config.outputs.value) }}
+    with: ${{ fromJSON(steps.config-ssh.outputs.value || steps.config-token.outputs.value) }}
   - run: |
       if ! git merge-base --is-ancestor "${REF}" HEAD; then
           echo "Provided ref (${REF}) is not an ancestor of current branch" >&2
