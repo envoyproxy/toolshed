@@ -159,26 +159,26 @@ runs:
         | .conclusion as $conclusion
         | .warning as $warning
         | .advice as $advice
-        | $context["steps-pre"]
-        | if ((. | type == "null") or (. = "")) then
-            .presteps = ""
+        | $run["steps-pre"]
+        | if (. | type == "null") or (. == "") or (. == "\"\"") then
+            ""
           else
             gfm::fence("yaml") as $stepsPreCode
             | "${{ inputs.template-steps-pre }}"
-            | {title: "Pre-steps", content: .}
+            | {title: "Pre-steps", content: ., indent: 0}
             | gfm::collapse
           end
-        | .presteps as $stepsPre
-        | $context["steps-post"]
-        | if ((. | type == "null") or (. = "")) then
-            .poststeps = ""
+        | . as $stepsPre
+        | $run["steps-post"]
+        | if (. | type == "null") or (. == "") or (. == "\"\"") then
+            ""
           else
             gfm::fence("yaml") as $stepsPostCode
             | "${{ inputs.template-steps-post }}"
-            | {title: "Post-steps", content: .}
+            | {title: "Post-steps", content: ., indent: 0}
             | gfm::collapse
           end
-        | .poststeps as $stepsPost
+        | . as $stepsPost
         | ("$ \($run["container-command"])" | gfm::fence("console")) as $containerCommand
         | "${{ inputs.template-container-info }}" as $containerInfo
         | ("${{ inputs.run-note }}" | gfm::blockquote) as $runNote
