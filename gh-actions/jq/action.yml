@@ -5,7 +5,7 @@ inputs:
   input:
     description: >
       Input string to mangle.
-    default: ""
+    default: "{}"
   decode:
     description: >
       Decode input from base64.
