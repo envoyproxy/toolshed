@@ -8,7 +8,7 @@ inputs:
     required: true
   branch:
     type: string
-    required: true
+    required: false
   committer-name:
     type: string
     default:
@@ -83,14 +83,16 @@ runs:
           else
             .
           end
+        | .branch = "${{ inputs.branch }}" // .branch // "main"
         | if ${{ ! inputs.pr }} then
             if .ref then
               .["requested-ref"] = .ref
             else . end
-            | .ref = "${{ inputs.branch }}"
+            | .ref = .branch
           else
             .
           end
+
   - name: Git config
     shell: bash
     run: |
@@ -111,7 +113,7 @@ runs:
         | ${{ steps.parsed-config.outputs.value }} as $config
         | $config
         | .token = $token
-        | del(.["requested-ref"])
+        | del(.branch, .["requested-ref"])
   - name: Config
     id: config-ssh
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.59
@@ -125,7 +127,7 @@ runs:
         | ${{ steps.parsed-config.outputs.value }} as $config
         | $config
         | .["ssh-key"] = $sshKey
-        | del(.["requested-ref"])
+        | del(.branch, .["requested-ref"])
   - uses: actions/checkout@v4
     name: Checkout repository
     with: ${{ fromJSON(steps.config-ssh.outputs.value || steps.config-token.outputs.value) }}
@@ -152,7 +154,7 @@ runs:
   - id: branch
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
     with:
-      input: ${{ inputs.branch }}
+      input: ${{ fromJSON(steps.parsed-config.outputs.value).branch }}
       input-format: text
       options: -rR
       print-result: ${{ (fromJSON(env.CI_DEBUG || 'false') || fromJSON(env.RUNNER_DEBUG || 'false')) && true || false }}
