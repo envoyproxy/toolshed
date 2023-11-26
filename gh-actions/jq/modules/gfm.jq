@@ -6,11 +6,15 @@ def collapse:
   else
     .open = ""
   end
+  | if (.indent | type == "null") then
+      .indent = 2
+    else . end
+  | .indent as $indent
   | "
 <details \(.open)>
   <summary><b>\(.title)</b></summary>
 
-\(.content | str::indent(2))
+\(.content | str::indent($indent))
 
 </details>
 "
