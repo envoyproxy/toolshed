@@ -93,30 +93,30 @@ runs:
   steps:
   - if: ${{ fromJSON(inputs.diskspace-hack) }}
     name: Free diskspace
-    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.64
+    uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.65
     with:
       to_remove: ${{ inputs.diskskpack-hack-paths }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     name: Generate run context (steps-pre)
     id: context-steps-pre
     with:
       input: ${{ inputs.steps-pre || '""' }}
       options: -Rs
       input-format: string
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     name: Generate run context (steps-post)
     id: context-steps-post
     with:
       input: ${{ inputs.steps-post || '""' }}
       options: -Rs
       input-format: string
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.65
     name: Pre report
     if: ${{ inputs.report-pre }}
     with:
       steps: ${{ inputs.report-pre }}
       context: ${{ inputs.context }}
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.65
     name: Run pre steps
     if: ${{ inputs.steps-pre }}
     with:
@@ -167,11 +167,10 @@ runs:
       COMMAND: ${{ steps.command.outputs.command }}
       SOURCETMP: ${{ steps.source.outputs.file }}
     shell: bash
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     if: ${{ always() }}
     id: started
     with:
-      input: "{}"
       options: -r
       filter: now
   - run: |
@@ -196,19 +195,17 @@ runs:
       COMMAND: ${{ steps.command.outputs.command }}
       SOURCETMP: ${{ steps.source.outputs.file }}
       TARGET_PATH: ${{ inputs.working-directory }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     id: cancelled
     if: ${{ cancelled() }}
     with:
-      input: "{}"
       options: -r
       filter: |
         true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     if: ${{ always() }}
     id: completed
     with:
-      input: "{}"
       options: -r
       filter: now
   - run: |
@@ -251,7 +248,7 @@ runs:
     env:
       TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     name: Generate run context
     id: context
     if: ${{ always() }}
@@ -269,21 +266,21 @@ runs:
         | {"run": .,
            "context": ${{ inputs.context }}}
 
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.65
     name: Run post steps
     if: ${{ inputs.steps-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     id: post-failed
     if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
     with:
       input: ${{ steps.context.outputs.value }}
       filter: |
         .run["post-steps-failed"] = true
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.65
     name: Post report
     if: ${{ inputs.report-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
@@ -295,21 +292,21 @@ runs:
     with:
       name: ${{ inputs.upload-name }}
       path: ${{ inputs.upload-path }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     id: upload-failed
     if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
         .run["upload-failed"] = true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     id: run-cancelled
     if: ${{ cancelled() }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
         .run["cancelled"] = true
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.64
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.65
     name: Job summary
     if: ${{ always() && inputs.summary-post }}
     with:
