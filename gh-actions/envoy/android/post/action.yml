@@ -1,4 +1,16 @@
 
+inputs:
+  apk:
+    type: string
+    required: true
+  app:
+    type: string
+    required: true
+  status:
+    type: string
+    required: true
+
+
 runs:
   using: composite
   steps:
@@ -6,12 +18,12 @@ runs:
     shell: bash
     run: |
       cd mobile
-      "${ANDROID_HOME}/platform-tools/adb" install -r --no-incremental bazel-bin/examples/java/hello_world/hello_envoy.apk
-      "${ANDROID_HOME}/platform-tools/adb" shell am start -n io.envoyproxy.envoymobile.helloenvoy/.MainActivity
+      "${ANDROID_HOME}/platform-tools/adb" install -r --no-incremental ${{ inputs.apk }}
+      "${ANDROID_HOME}/platform-tools/adb" shell am start -n ${{ inputs.app }}
   - name: 'Check connectivity'
     shell: bash
     run: |
-      timeout 30 "${ANDROID_HOME}"/platform-tools/adb logcat -e "received headers with status 301" -m 1 || {
+      timeout 30 "${ANDROID_HOME}/platform-tools/adb" logcat -e "received headers with status ${{ inputs.status }}" -m 1 || {
           echo "Failed checking for headers in adb logcat" >&2
           timeout 30 "${ANDROID_HOME}"/platform-tools/adb logcat || {
               echo "Failed dumping adb logcat" >&2
