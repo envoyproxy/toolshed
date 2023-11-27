@@ -205,10 +205,21 @@ runs:
       options: -r
       filter: now
   - run: |
+      onerror () {
+          EXIT_CODE="$?"
+          if [[ -z "$SOURCED" ]]; then
+              echo "Sourcing (${TMP_SOURCE}) failed with ${EXIT_CODE}" >&2
+              cat "$TMP_SOURCE" >&2
+              echo "exit-code=${EXIT_CODE}" >> $GITHUB_OUTPUT
+          fi
+          exit 0
+      }
+      trap onerror EXIT
       cd $TARGET_PATH
       if [[ -n "${TMP_SOURCE}" ]]; then
           . "$TMP_SOURCE"
       fi
+      SOURCED=1
       echo "stderr-path=${TMP_STDERR}" >> $GITHUB_OUTPUT
       echo "stdout-path=${TMP_STDOUT}" >> $GITHUB_OUTPUT
       read -ra COMMAND_PARTS <<< "$COMMAND"
