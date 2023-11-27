@@ -118,18 +118,7 @@ runs:
           with:
             name: $KEY
             path: >-
-              "%{{ fromJSON(inputs.context).items['$KEY'] }}"
-
-  - run: |
-      echo "DEBUG: RUN ${COMMAND}" >&2
-      if [[ -e "$TMP_SOURCE" ]]; then
-          cat $TMP_SOURCE
-      fi
-    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
-    env:
-      COMMAND: ${{ steps.command.outputs.command }}
-    shell: bash
-
+              %{{ fromJSON(inputs.context).items['$KEY'] }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.66
     name: Generate run context (steps-pre)
     id: context-steps-pre
@@ -188,7 +177,6 @@ runs:
       fi
       echo "TMP_STDERR=$(mktemp)" >> $GITHUB_ENV
       echo "TMP_STDOUT=$(mktemp)" >> $GITHUB_ENV
-
     id: paths
     env:
       INPUT_ENV: ${{ inputs.source }}
@@ -201,7 +189,14 @@ runs:
       input: |
         ${{ inputs.source }}
       options: -Rsr
-      output-path: ${{ steps.paths.output.source }}
+      output-path: ${{ steps.paths.outputs.source }}
+
+  - run: |
+      if [[ -e "$TMP_SOURCE" ]]; then
+          cat $TMP_SOURCE
+      fi
+    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
+    shell: bash
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.66
     if: ${{ always() }}
