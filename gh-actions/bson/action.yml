@@ -19,12 +19,11 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.66
     id: command
     with:
-      filter: ${{ inputs.input }}
+      input: ${{ inputs.input }}
       input-format: yaml
       print-output: true
       options: -r
       filter: ${{ inputs.filter }}
-  - if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
-    id: output
+  - id: output
     run: ${{ steps.command.outputs.value }}
     shell: bash
