@@ -66,32 +66,26 @@ runs:
           .ref = "${{ steps.merge-commit.outputs.sha }}"
         elif (.ref | type == "null") then
           del(.ref)
-        else
-          .
-        end
+        else . end
         | if (. | has("show-progress") | not) and "${{ inputs.show-progress }}" != "" then
             .["show-progress"] = ${{ inputs.show-progress }}
-          else
-            .
-          end
+          else . end
         | if ${{ ! inputs.pr }} and .ref then
             if .["fetch-depth"] == 1 or .["fetch-depth"] == "" then
                .["fetch-depth"] = ${{ inputs.ancestor-fetch-depth }}
-            else
-              .
-            end
-          else
-            .
-          end
-        | .branch = "${{ inputs.branch }}" // .branch // "main"
+            else . end
+          else . end
+        | if "${{ inputs.branch }}" != "" then
+            .branch = "${{ inputs.branch }}"
+          elif (.branch | type == "null") or (.branch == "") then
+            .branch = "main"
+          else . end
         | if ${{ ! inputs.pr }} then
             if .ref then
               .["requested-ref"] = .ref
             else . end
             | .ref = .branch
-          else
-            .
-          end
+          else . end
 
   - name: Git config
     shell: bash
