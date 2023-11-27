@@ -302,22 +302,14 @@ runs:
         | {"run": .,
            "context": ${{ inputs.context }}}
 
-  - if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.66
-    id: bins
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.66
+    if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
     with:
       input: ${{ inputs.container-output }}
-      input-format: yaml
-      print-output: true
-      options: -r
       filter: |
-        .
-        | to_entries
+        to_entries
         | map("mkdir -p $(dirname \(.value))\n\(env.CONTAINER_COMMAND) cat \(.key)  > \(.value)")
         | join("\n")
-  - if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
-    run: ${{ steps.bins.outputs.value }}
-    shell: bash
 
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.66
     name: Run post steps
