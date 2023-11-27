@@ -109,7 +109,6 @@ runs:
     with:
       input: ${{ inputs.downloads }}
       input-format: yaml
-      print-result: true
   - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.65
     if: ${{ steps.download-config.outputs.value }}
     with:
