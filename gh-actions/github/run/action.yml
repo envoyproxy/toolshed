@@ -7,6 +7,9 @@ inputs:
   container-command:
     type: string
     default:
+  container-output:
+    type: string
+    default:
   context:
     type: string
   catch-errors:
@@ -16,6 +19,9 @@ inputs:
     type: boolean
     default: false
   diskspace-hack-paths:
+    type: string
+    default:
+  downloads:
     type: string
     default:
   error-match:
@@ -97,6 +103,35 @@ runs:
     with:
       to_remove: ${{ inputs.diskskpack-hack-paths }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
+    name: Generate download config
+    if: ${{ inputs.downloads }}
+    id: download-config
+    with:
+      input: ${{ inputs.downloads }}
+      input-format: yaml
+      print-result: true
+  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.65
+    if: ${{ steps.download-config.outputs.value }}
+    with:
+      items: ${{ steps.download-config.outputs.value }}
+      steps: |
+        - uses: actions/download-artifact@v3
+          with:
+            name: $KEY
+            path: >-
+              "%{{ fromJSON(inputs.context).items['$KEY'] }}"
+
+  - run: |
+      echo "DEBUG: RUN ${COMMAND}" >&2
+      if [[ -e "$TMP_SOURCE" ]]; then
+          cat $TMP_SOURCE
+      fi
+    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
+    env:
+      COMMAND: ${{ steps.command.outputs.command }}
+    shell: bash
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     name: Generate run context (steps-pre)
     id: context-steps-pre
     with:
@@ -123,18 +158,6 @@ runs:
       name: ${{ inputs.steps-pre-name }}
       steps: ${{ inputs.steps-pre }}
       context: ${{ inputs.context }}
-  - run: |
-      if [[ "${#INPUT_ENV}" -ne 0 ]]; then
-          SOURCETMP="$(mktemp)"
-          # TODO(phlax): Fix escaping
-          printf "%s" '${{ inputs.source }}' > "$SOURCETMP"
-      fi
-      echo "file=${SOURCETMP}" >> $GITHUB_OUTPUT
-    if: ${{ inputs.source }}
-    id: source
-    env:
-      INPUT_ENV: ${{ inputs.source }}
-    shell: bash
 
   - run: |
       # Put the command and args together
@@ -152,21 +175,35 @@ runs:
       COMMAND+=("${ACTUAL_CONTAINER_COMMAND[@]}")
       COMMAND+=("${ACTUAL_COMMAND[@]}")
       echo "container=${ACTUAL_CONTAINER_COMMAND[*]}" >> $GITHUB_OUTPUT
+      echo "CONTAINER_COMMAND=${ACTUAL_CONTAINER_COMMAND[*]}" >> $GITHUB_ENV
       echo "actual=${ACTUAL_COMMAND[*]}" >> $GITHUB_OUTPUT
       echo "command=${COMMAND[*]}" >> $GITHUB_OUTPUT
     id: command
     shell: bash
 
   - run: |
-      echo "DEBUG: RUN ${COMMAND}" >&2
-      if [[ -e "$SOURCETMP" ]]; then
-          cat $SOURCETMP
+      if [[ "${#INPUT_ENV}" -ne 0 ]]; then
+          SOURCETMP="$(mktemp)"
+          echo "TMP_SOURCE=${SOURCETMP}" >> $GITHUB_ENV
+          echo "source=${SOURCETMP}" >> $GITHUB_OUTPUT
       fi
-    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
+      echo "TMP_STDERR=$(mktemp)" >> $GITHUB_ENV
+      echo "TMP_STDOUT=$(mktemp)" >> $GITHUB_ENV
+
+    id: paths
     env:
-      COMMAND: ${{ steps.command.outputs.command }}
-      SOURCETMP: ${{ steps.source.outputs.file }}
+      INPUT_ENV: ${{ inputs.source }}
     shell: bash
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
+    if: ${{ inputs.source }}
+    id: source
+    with:
+      input: |
+        ${{ inputs.source }}
+      options: -Rsr
+      output-path: ${{ steps.paths.output.source }}
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     if: ${{ always() }}
     id: started
@@ -175,13 +212,10 @@ runs:
       filter: now
   - run: |
       cd $TARGET_PATH
-      if [[ -n "${SOURCETMP}" ]]; then
-          . "$SOURCETMP"
-          rm -rf "$SOURCETMP"
+      if [[ -n "${TMP_SOURCE}" ]]; then
+          . "$TMP_SOURCE"
       fi
-      TMP_STDERR=$(mktemp)
       echo "stderr-path=${TMP_STDERR}" >> $GITHUB_OUTPUT
-      TMP_STDOUT=$(mktemp)
       echo "stdout-path=${TMP_STDOUT}" >> $GITHUB_OUTPUT
       read -ra COMMAND_PARTS <<< "$COMMAND"
       EXIT_CODE=0
@@ -193,7 +227,6 @@ runs:
     id: run
     env:
       COMMAND: ${{ steps.command.outputs.command }}
-      SOURCETMP: ${{ steps.source.outputs.file }}
       TARGET_PATH: ${{ inputs.working-directory }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     id: cancelled
@@ -245,8 +278,6 @@ runs:
       bubble_messages notice "${{ inputs.notice-match }}"
     shell: bash
     if: ${{ ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false')) }}
-    env:
-      TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
     name: Generate run context
@@ -265,6 +296,23 @@ runs:
              "exit-code": (.["exit-code"] // "0" | fromjson)}
         | {"run": .,
            "context": ${{ inputs.context }}}
+
+  - if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.65
+    id: bins
+    with:
+      input: ${{ inputs.container-output }}
+      input-format: yaml
+      print-output: true
+      options: -r
+      filter: |
+        .
+        | to_entries
+        | map("mkdir -p $(dirname \(.value))\n\(env.CONTAINER_COMMAND) cat \(.key)  > \(.value)")
+        | join("\n")
+  - if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
+    run: ${{ steps.bins.outputs.value }}
+    shell: bash
 
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.1.65
     name: Run post steps
@@ -315,6 +363,9 @@ runs:
   - run: |
       rm -rf "$TMP_STDOUT"
       rm -rf "$TMP_STDERR"
+      if [[ -n "$TMP_SOURCE" && -e "$TMP_SOURCE" ]]; then
+          rm -rf "$TMP_SOURCE"
+      fi
       if [[ -n "${CANCELLED}" ]]; then
           # Unfortunately theres no way to indicate that the job was cancelled without it also
           # then showing the entire workflow as cancelled, despite the cancellation happening
@@ -341,5 +392,3 @@ runs:
       CANCELLED: ${{ steps.cancelled.outputs.value != '' && true || '' }}
       STEPS_POST_ERR: ${{ steps.post-failed.outputs.value != '' && true || '' }}
       UPLOAD_ERR: ${{ steps.upload-failed.outputs.value != '' && true || '' }}
-      TMP_STDERR: ${{ steps.run.outputs.stderr-path }}
-      TMP_STDOUT: ${{ steps.run.outputs.stdout-path }}
