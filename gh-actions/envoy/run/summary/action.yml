@@ -112,9 +112,11 @@ runs:
          "upload-failed": (.run["upload-failed"] // false ),
          "post-steps-failed": (.run["post-steps-failed"] // false ),
          cancelled: .run.cancelled,
+         "job-started": .context["job-started"],
          started: .run.started,
          completed: .run.completed,
-         "run-time": "\(.run.completed - .run.started)s"}
+         "run-time": "\(.run.completed - .run.started)s",
+         "job-time": "\(.run.completed - .context["job-started"])s"}
   - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.65
     name: Run information summary
     id: run-summary
