@@ -32,11 +32,13 @@ inputs:
 
       \($containerInfo)
 
-      \($runNote)
+      \($source)
 
       \($stepsPre)
 
       \($stepsPost)
+
+      \($runNote)
 
   template-container-info:
     type: string
@@ -47,6 +49,22 @@ inputs:
       was invoked by the following command
 
       \($containerCommand)
+
+      \($entrypoint)
+
+  template-entrypoint:
+    type: string
+    default: |
+      The container used the following entrypoint
+
+      \($entrypointCode)
+
+  template-source:
+    type: string
+    default: |
+      The following code was sourced prior to execution
+
+      \($sourceCode)
 
   template-steps-pre:
     type: string
@@ -162,25 +180,37 @@ runs:
         | .warning as $warning
         | .advice as $advice
         | $run["steps-pre"]
-        | if (. | type == "null") or (. == "") or (. == "\"\"") then
-            ""
-          else
+        | if (. | str::isempty | not) then
             gfm::fence("yaml") as $stepsPreCode
             | "${{ inputs.template-steps-pre }}"
             | {title: "Pre-steps", content: ., indent: 0}
             | gfm::collapse
-          end
+          else "" end
         | . as $stepsPre
         | $run["steps-post"]
-        | if (. | type == "null") or (. == "") or (. == "\"\"") then
-            ""
-          else
+        | if (. | str::isempty | not) then
             gfm::fence("yaml") as $stepsPostCode
             | "${{ inputs.template-steps-post }}"
             | {title: "Post-steps", content: ., indent: 0}
             | gfm::collapse
-          end
+          else "" end
         | . as $stepsPost
+        | $run.entrypoint
+        | if (. | str::isempty | not) then
+            gfm::fence("bash") as $entrypointCode
+            | "${{ inputs.template-entrypoint }}"
+            | {title: "Container entrypoint", content: ., indent: 0}
+            | gfm::collapse
+          else "" end
+        | . as $entrypoint
+        | $run.source
+        | if (. | str::isempty | not) then
+            gfm::fence("bash") as $sourceCode
+            | "${{ inputs.template-source }}"
+            | {title: "Source", content: ., indent: 0}
+            | gfm::collapse
+          else "" end
+        | . as $source
         | ("$ \($run["container-command"])" | gfm::fence("console")) as $containerCommand
         | "${{ inputs.template-container-info }}" as $containerInfo
         | ("${{ inputs.run-note }}" | gfm::blockquote) as $runNote
