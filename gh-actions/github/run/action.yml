@@ -24,6 +24,9 @@ inputs:
   downloads:
     type: string
     default:
+  entrypoint:
+    type: string
+    default:
   error-match:
     type: string
     default: |
@@ -119,6 +122,46 @@ runs:
             name: $KEY
             path: >-
               %{{ fromJSON(inputs.context).items['$KEY'] }}
+
+  - run: |
+      if [[ "${#SOURCE_DATA}" -ne 0 ]]; then
+          SOURCETMP="$(mktemp)"
+          echo "TMP_SOURCE=${SOURCETMP}" >> $GITHUB_ENV
+          echo "source=${SOURCETMP}" >> $GITHUB_OUTPUT
+      fi
+      if [[ "${#ENTRYPOINT_DATA}" -ne 0 ]]; then
+          ENTRYPOINT="$(mktemp)"
+          chmod +x $ENTRYPOINT
+          echo "TMP_ENTRYPOINT=${ENTRYPOINT}" >> $GITHUB_ENV
+          echo "entrypoint=${ENTRYPOINT}" >> $GITHUB_OUTPUT
+      fi
+      echo "TMP_STDERR=$(mktemp)" >> $GITHUB_ENV
+      echo "TMP_STDOUT=$(mktemp)" >> $GITHUB_ENV
+    id: paths
+    env:
+      ENTRYPOINT_DATA: ${{ inputs.entrypoint }}
+      SOURCE_DATA: ${{ inputs.source }}
+    shell: bash
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.67
+    if: ${{ inputs.entrypoint }}
+    id: entrypoint
+    with:
+      input: |
+        ${{ inputs.entrypoint }}
+      options: -Rsr
+      output-path: ${{ steps.paths.outputs.entrypoint }}
+      print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.67
+    if: ${{ inputs.source }}
+    id: source
+    with:
+      input: |
+        ${{ inputs.source }}
+      options: -Rsr
+      output-path: ${{ steps.paths.outputs.source }}
+      print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.67
     name: Generate run context (steps-pre)
     id: context-steps-pre
@@ -154,12 +197,9 @@ runs:
       ACTUAL_COMMAND=(
           ${{ inputs.command }}
           ${ARGS[@]})
-      # allow mangling of command in presteps
-      if [[ "${#CONTAINER_COMMAND}" -ne 0 ]]; then
-          read -ra ACTUAL_CONTAINER_COMMAND <<< "${CONTAINER_COMMAND}"
-      else
-          read -ra ACTUAL_CONTAINER_COMMAND <<< "${{ inputs.container-command }}"
-      fi
+      CONTAINER_COMMAND="${CONTAINER_COMMAND:-${{ inputs.container-command }}}"
+      CONTAINER_COMMAND="$(echo $CONTAINER_COMMAND | envsubst)"
+      read -ra ACTUAL_CONTAINER_COMMAND <<< "${CONTAINER_COMMAND}"
       COMMAND+=("${ACTUAL_CONTAINER_COMMAND[@]}")
       COMMAND+=("${ACTUAL_COMMAND[@]}")
       echo "container=${ACTUAL_CONTAINER_COMMAND[*]}" >> $GITHUB_OUTPUT
@@ -167,35 +207,6 @@ runs:
       echo "actual=${ACTUAL_COMMAND[*]}" >> $GITHUB_OUTPUT
       echo "command=${COMMAND[*]}" >> $GITHUB_OUTPUT
     id: command
-    shell: bash
-
-  - run: |
-      if [[ "${#INPUT_ENV}" -ne 0 ]]; then
-          SOURCETMP="$(mktemp)"
-          echo "TMP_SOURCE=${SOURCETMP}" >> $GITHUB_ENV
-          echo "source=${SOURCETMP}" >> $GITHUB_OUTPUT
-      fi
-      echo "TMP_STDERR=$(mktemp)" >> $GITHUB_ENV
-      echo "TMP_STDOUT=$(mktemp)" >> $GITHUB_ENV
-    id: paths
-    env:
-      INPUT_ENV: ${{ inputs.source }}
-    shell: bash
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.67
-    if: ${{ inputs.source }}
-    id: source
-    with:
-      input: |
-        ${{ inputs.source }}
-      options: -Rsr
-      output-path: ${{ steps.paths.outputs.source }}
-
-  - run: |
-      if [[ -e "$TMP_SOURCE" ]]; then
-          cat $TMP_SOURCE
-      fi
-    if: ${{ env.CI_DEBUG || env.RUNNER_DEBUG }}
     shell: bash
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.67
@@ -360,13 +371,13 @@ runs:
   - run: |
       rm -rf "$TMP_STDOUT"
       rm -rf "$TMP_STDERR"
+      if [[ -n "$TMP_ENTRYPOINT" && -e "$TMP_ENTRYPOINT" ]]; then
+          rm -rf "$TMP_ENTRYPOINT"
+      fi
       if [[ -n "$TMP_SOURCE" && -e "$TMP_SOURCE" ]]; then
           rm -rf "$TMP_SOURCE"
       fi
       if [[ -n "${CANCELLED}" ]]; then
-          # Unfortunately theres no way to indicate that the job was cancelled without it also
-          # then showing the entire workflow as cancelled, despite the cancellation happening
-          # due to failure
           echo "Run cancelled" >&2
           exit 0
       elif [[ "${EXIT_CODE}" -ne 0 ]]; then
