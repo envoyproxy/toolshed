@@ -230,8 +230,6 @@ runs:
           . "$TMP_SOURCE"
       fi
       SOURCED=1
-      echo "stderr-path=${TMP_STDERR}" >> $GITHUB_OUTPUT
-      echo "stdout-path=${TMP_STDOUT}" >> $GITHUB_OUTPUT
       read -ra COMMAND_PARTS <<< "$COMMAND"
       EXIT_CODE=0
       "${COMMAND_PARTS[@]}" > >(tee "$TMP_STDOUT") 2> >(tee "$TMP_STDERR") || {
@@ -305,8 +303,10 @@ runs:
           "started": (.started.outputs.value | fromjson),
           "cancelled": (.cancelled.outputs.value // "false" | fromjson),
           "container-command": .command.outputs.container,
-          "command": .command.outputs.command,
+          "command": .command.outputs.actual,
           "completed": (.completed.outputs.value | fromjson),
+          "entrypoint": (.entrypoint.outputs.value | if str::isempty then "" else . end),
+          "source": (.source.outputs.value | if str::isempty then "" else . end),
           "steps-pre": (.["context-steps-pre"].outputs.value | fromjson | if str::isempty then "" else . end),
           "steps-post": (.["context-steps-post"].outputs.value | fromjson | if str::isempty then "" else . end),
           "exit-code": (.run.outputs["exit-code"] // "0" | fromjson)}
