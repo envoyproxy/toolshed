@@ -8,3 +8,7 @@ def trim:
   sub("^ +"; "")
   | sub(" +$"; "")
 ;
+
+def isempty:
+  (. | type == "null") or (. == "") or (. == "\"\"") or (. == "''")
+;
