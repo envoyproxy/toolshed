@@ -144,24 +144,23 @@ runs:
     shell: bash
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.67
-    if: ${{ inputs.entrypoint }}
     id: entrypoint
     with:
       input: |
         ${{ inputs.entrypoint }}
+      input-format: string
       options: -Rsr
       output-path: ${{ steps.paths.outputs.entrypoint }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.67
-    if: ${{ inputs.source }}
     id: source
     with:
       input: |
         ${{ inputs.source }}
+      input-format: string
       options: -Rsr
       output-path: ${{ steps.paths.outputs.source }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.67
     name: Generate run context (steps-pre)
     id: context-steps-pre
@@ -300,16 +299,17 @@ runs:
     id: context
     if: ${{ always() }}
     with:
-      input: ${{ toJSON(steps.run.outputs) }}
+      input: ${{ toJSON(steps) }}
       filter: >-
-        . * {"started": ${{ steps.started.outputs.value }},
-             "cancelled": ${{ steps.cancelled.outputs.value || 'false' }},
-             "container-command": "${{ steps.command.outputs.container }}",
-             "command": "${{ steps.command.outputs.actual }}",
-             "completed": ${{ steps.completed.outputs.value }},
-             "steps-pre": ${{ steps.context-steps-pre.outputs.value }},
-             "steps-post": ${{ steps.context-steps-post.outputs.value }},
-             "exit-code": (.["exit-code"] // "0" | fromjson)}
+        .run.outputs * {
+          "started": (.started.outputs.value | fromjson),
+          "cancelled": (.cancelled.outputs.value // "false" | fromjson),
+          "container-command": .command.outputs.container,
+          "command": .command.outputs.command,
+          "completed": (.completed.outputs.value | fromjson),
+          "steps-pre": (.["context-steps-pre"].outputs.value | fromjson | if str::isempty then "" else . end),
+          "steps-post": (.["context-steps-post"].outputs.value | fromjson | if str::isempty then "" else . end),
+          "exit-code": (.run.outputs["exit-code"] // "0" | fromjson)}
         | {"run": .,
            "context": ${{ inputs.context }}}
 
