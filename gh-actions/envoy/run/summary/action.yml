@@ -211,8 +211,12 @@ runs:
             | gfm::collapse
           else "" end
         | . as $source
-        | ("$ \($run["container-command"])" | gfm::fence("console")) as $containerCommand
-        | "${{ inputs.template-container-info }}" as $containerInfo
+        | if ($run["container-command"] | str::isempty | not) then
+            "$ \($run["container-command"])"
+            | gfm::fence("console") as $containerCommand
+            | "${{ inputs.template-container-info }}"
+          else "" end
+        | . as $containerInfo
         | ("${{ inputs.run-note }}" | gfm::blockquote) as $runNote
         | (("$ " + $run.command) | gfm::fence("console")) as $runCommand
         | "${{ inputs.template-command }}"
