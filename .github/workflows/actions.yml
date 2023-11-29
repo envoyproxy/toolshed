@@ -14,7 +14,6 @@ jobs:
         include:
           - name: appauth
           - name: dispatch
-          - name: elif
           - name: github/mutex
           - name: hashfiles
           - name: jq
