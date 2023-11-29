@@ -13,7 +13,7 @@ outputs:
   command:
     value: ${{ steps.command.outputs.value }}
   output:
-    value: ${{ steps.output.outputs.value }}
+    value: ${{ steps.output.outputs.output }}
 
 
 runs:
@@ -24,9 +24,10 @@ runs:
     with:
       input: ${{ inputs.input }}
       input-format: yaml
-      print-output: true
+      print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       options: -r
       filter: ${{ inputs.filter }}
   - id: output
-    run: ${{ steps.command.outputs.value }}
+    run: |
+      ${{ steps.command.outputs.value }}
     shell: bash
