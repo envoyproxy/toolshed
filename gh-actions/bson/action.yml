@@ -1,3 +1,4 @@
+
 inputs:
   input:
     type: string
@@ -9,8 +10,10 @@ inputs:
 outputs:
   exit-code:
     value: ${{ steps.command.outputs.actual }}
+  command:
+    value: ${{ steps.command.outputs.value }}
   output:
-    value: ${{ steps.completed.outputs.output }}
+    value: ${{ steps.output.outputs.value }}
 
 
 runs:
