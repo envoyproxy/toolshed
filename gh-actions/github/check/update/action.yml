@@ -8,41 +8,71 @@ inputs:
     required: true
   repository:
     type: string
-  app-id:
+    default: ${{ github.repository }}
+  template-script-current:
     type: string
-  app-key:
+    default: |
+      # Find current check (\($name)) for run attempt (\($attempt))
+      RESPONSE=\"$(gh api repos/\($repo)/commits/\($head_sha)/check-runs?status=in_progress&status=queued&check_name=\($name)&filter=latest)\"
+      echo \"output=$RESPONSE\" >> $GITHUB_OUTPUT
+  template-script-update:
     type: string
+    default: |
+      # Update check (\($name))
+      CHECKS=\($checks)
+      RESPONSE=\"$(echo $CHECKS | gh api -XPATCH --input - repos/\($repo)/check-runs/\($id))\"
+      echo \"output=$RESPONSE\" >> $GITHUB_OUTPUT
   token:
     type: string
-    default:
-
+    default: ${{ github.token }}
 
 outputs:
   checks:
     value: ${{ steps.checks.outputs.value }}
 
+
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.70
-    name: App auth
-    id: appauth
-    if: ${{ inputs.app-id && inputs.app-key }}
+  # If the original check is already completed, we have been retested and we need to find the real one
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.70
+    name: Find check
+    if: ${{ fromJSON(inputs.data).status == 'completed' && github.run_attempt }}
+    id: current-checks
     with:
-      key: '${{ inputs.app-key }}'
-      app_id: ${{ inputs.app-id }}
-  - name: Progress status check
-    id: progress
-    run: |
-      response=$(echo $INPUT | gh api -XPATCH --input - repos/${{ inputs.repository || github.repository }}/check-runs/${{ inputs.id }})
-      echo "response=${response}" >> $GITHUB_OUTPUT
-    shell: bash
+      input: ${{ inputs.data }}
+      filter: |
+        ${{ github.run_attempt }} as $attempt
+        | "${{ inputs.repository }}" as $repo
+        | .name as $name
+        | .head_sha as $head_sha
+        | "${{ inputs.template-script-current }}"
     env:
-      INPUT: ${{ inputs.data }}
-      GH_TOKEN: ${{ inputs.token || steps.appauth.outputs.token }}
+      GH_TOKEN: ${{ inputs.token }}
+  - name: Progress status check
+    uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.70
+    with:
+      input: ${{ inputs.data }}
+      filter: |
+        .
+        | ${{ inputs.id }} as $id
+        | .name as $name
+        | "${{ inputs.repository }}" as $repo
+        | ${{ steps.current-checks.outputs.output || 'null' }} as $current
+        | if $current != null then
+            .id = $current.check_runs[0].id
+          else
+            .id = $id
+          end
+        | .id as $id
+        | tojson
+        | @sh as $checks
+        | "${{ inputs.template-script-update }}"
+    env:
+      GH_TOKEN: ${{ inputs.token }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.70
     name: Print check response
+    id: checks
     with:
-      input: ${{ steps.progress.outputs.response }}
-      options: -C
-      print-result: true
+      input: ${{ steps.progress.outputs.output }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
