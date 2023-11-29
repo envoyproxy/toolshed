@@ -17,6 +17,7 @@ inputs:
     type: string
     description: |
       Token to use if no key/id supplied.
+
   token-ok:
     type: boolean
     default: false
@@ -24,5 +25,5 @@ inputs:
       Dont warn if token used.
 
 runs:
-  using: 'node16'
+  using: node20
   main: 'dist/index.js'
