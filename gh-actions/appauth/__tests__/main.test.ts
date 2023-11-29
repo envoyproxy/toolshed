@@ -9,6 +9,11 @@ beforeEach(() => {
     return ''
   })
 
+  jest.spyOn(core, 'getBooleanInput').mockImplementation((name: string): boolean => {
+    if (name === 'token-ok') return true
+    return false
+  })
+
   process.env['GITHUB_REPOSITORY'] = 'example/repository'
 })
 

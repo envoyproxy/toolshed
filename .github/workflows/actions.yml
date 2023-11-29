@@ -23,10 +23,10 @@ jobs:
           - name: status
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version || '16.x' }}
+    - name: Use Node.js ${{ matrix.node-version || '20.x' }}
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version || '16.x' }}
+        node-version: ${{ matrix.node-version || '20.x' }}
     - run: cd gh-actions/${{ matrix.name }} && npm install
     - run: cd gh-actions/${{ matrix.name }} && npm run lint
       if: ${{ matrix.name != 'status' }}

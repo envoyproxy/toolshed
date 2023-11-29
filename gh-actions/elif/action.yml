@@ -13,5 +13,5 @@ inputs:
     description: >
       Fail if the resulting hash is empty.
 runs:
-  using: 'node16'
+  using: node20
   main: 'dist/index.js'

@@ -20,8 +20,8 @@
     "node",
     "setup"
   ],
-  "author": "Sibz@EntityZero",
-  "license": "MIT",
+  "author": "ryan@synca.io",
+  "license": "Apache2",
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@octokit/rest": "^19.0.13"
@@ -29,7 +29,7 @@
   "devDependencies": {
     "@octokit/types": "^2.16.2",
     "@types/node": "^12.20.55",
-    "@zeit/ncc": "^0.20.5",
+    "@vercel/ncc": "^0.34.0",
     "ava": "^5.2.0",
     "ts-node": "^8.10.2",
     "typescript": "^3.9.10"

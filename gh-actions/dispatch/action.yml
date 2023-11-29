@@ -28,5 +28,5 @@ inputs:
       Yaml k/v string of inputs to send, values are stringified with JSON, if they
       are not one of string, number, boolean already.
 runs:
-  using: 'node16'
+  using: node20
   main: 'dist/index.js'
