@@ -1,153 +1,34 @@
-name: Github actions
+name: Github/actions
 
 on:
   push:
   pull_request:
 
+
 jobs:
-  appauth:
+  gh-actions:
     runs-on: ubuntu-22.04
     strategy:
+      fail-fast: false
       matrix:
-        node-version:
-        - 16.x
+        include:
+          - name: appauth
+          - name: dispatch
+          - name: elif
+          - name: github/mutex
+          - name: hashfiles
+          - name: jq
+          - name: retest
+          - name: torun
+          - name: status
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Use Node.js ${{ matrix.node-version || '16.x' }}
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/appauth && npm install
-    - run: cd gh-actions/appauth && npm run lint
-    - run: cd gh-actions/appauth && npm test
-
-  dispatch:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        node-version:
-        - 16.x
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/dispatch && npm install
-    - run: cd gh-actions/dispatch && npm run lint
-    - run: cd gh-actions/dispatch && npm test
-
-  elif:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        node-version:
-        - 16.x
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/elif && npm install
-    - run: cd gh-actions/elif && npm run lint
-    - run: cd gh-actions/elif && npm test
-
-  hashfiles:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        node-version:
-        - 16.x
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/hashfiles && npm install
-    - run: cd gh-actions/hashfiles && npm run lint
-    - run: cd gh-actions/hashfiles && npm test
-
-  jq:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        node-version:
-        - 16.x
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/jq && npm install
-    - run: cd gh-actions/jq && npm run lint
-    - run: cd gh-actions/jq && npm test
-
-  retest:
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        node-version:
-        - 18.x
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/retest && npm install
-    - run: cd gh-actions/retest && npm run lint
-    - run: cd gh-actions/retest && npm test
-
-  status:
-    runs-on: ubuntu-22.04
-    needs: []
-    strategy:
-      matrix:
-        node-version:
-        - 16.x
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/retest && npm install
-    # - run: cd gh-actions/retest && npm run lint
-    - run: cd gh-actions/retest && npm test
-
-  torun:
-    runs-on: ubuntu-22.04
-    needs: []
-    strategy:
-      matrix:
-        node-version:
-        - 16.x
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/retest && npm install
-    - run: cd gh-actions/retest && npm run lint
-    - run: cd gh-actions/retest && npm test
-
-  github_mutex:
-    runs-on: ubuntu-22.04
-    needs: []
-    strategy:
-      matrix:
-        node-version:
-        - 16.x
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - run: cd gh-actions/github/mutex && npm install
-    - run: cd gh-actions/github/mutex && npm run lint
-    - run: cd gh-actions/github/mutex && npm test
+        node-version: ${{ matrix.node-version || '16.x' }}
+    - run: cd gh-actions/${{ matrix.name }} && npm install
+    - run: cd gh-actions/${{ matrix.name }} && npm run lint
+      if: ${{ matrix.name != 'status' }}
+    - run: cd gh-actions/${{ matrix.name }} && npm test
+      if: ${{ matrix.name != 'status' }}
