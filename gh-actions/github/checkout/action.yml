@@ -41,7 +41,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@actions-v0.1.70
+  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@actions-v0.1.71
     id: merge-commit
     name: Fetch merge commit hash
     if: ${{ inputs.pr && fromJSON(inputs.fetch-merge-commit) }}
@@ -56,7 +56,7 @@ runs:
   # depth of the checked ancestor.
   - name: Parse YAML config
     id: parsed-config
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.70
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
     with:
       input: ${{ inputs.config || '{}' }}
       input-format: yaml
@@ -97,7 +97,7 @@ runs:
   - name: Config
     id: config-token
     if: ${{ inputs.ssh-key == '' }}
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.70
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
     with:
       input: ${{ inputs.token || github.token }}
       options: -R
@@ -110,7 +110,7 @@ runs:
         | del(.branch, .["requested-ref"])
   - name: Config
     id: config-ssh
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.70
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
     if: ${{ inputs.ssh-key != '' }}
     with:
       input: ${{ inputs.ssh-key }}
@@ -146,7 +146,7 @@ runs:
       COMMITTER_EMAIL: ${{ inputs.committer-email }}
     shell: bash
   - id: branch
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.70
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
     with:
       input: ${{ fromJSON(steps.parsed-config.outputs.value).branch }}
       input-format: text
