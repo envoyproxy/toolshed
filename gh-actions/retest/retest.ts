@@ -6,7 +6,7 @@ import axios, {AxiosResponse} from 'axios'
 import {GitHub} from '@actions/github/lib/utils'
 
 type GithubReactionType = 'rocket' | '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'eyes'
-type WorkflowRunsType = Endpoints['GET /repos/{owner}/{repo}/actions/runs']['response']
+type CheckRunsType = Endpoints['GET /repos/{owner}/{repo}/commits/{ref}/check-runs']['response']
 type CreateReactionType = RestEndpointMethodTypes['reactions']['createForIssueComment']
 
 function cachedProperty(_: unknown, key: string, descriptor: PropertyDescriptor): PropertyDescriptor {
@@ -135,8 +135,10 @@ class RetestCommand {
   }
 
   retestOctokit = async (check: Retest): Promise<void> => {
-    const rerunURL = `POST ${check.url}/rerun-failed-jobs`
-    const rerunResponse = await this.env.octokit.request(rerunURL)
+    const method = check.method || 'POST'
+    const rerunURL = `${method} ${check.url}`
+    console.log(check.config)
+    const rerunResponse = await this.env.octokit.request(rerunURL, check.config || {})
     if ([200, 201].includes(rerunResponse.status)) {
       console.log(`Retry success: (${check.name})`)
     } else {
@@ -159,26 +161,20 @@ class RetestCommand {
   }
 
   getRetestables = async (pr: PR): Promise<Array<Retest>> => {
-    console.log(pr)
+    core.debug(JSON.stringify(pr))
     return []
   }
 
-  listWorkflowRunsForPR = async (pr: PR): Promise<WorkflowRunsType['data']['workflow_runs'] | void> => {
-    const response: WorkflowRunsType = await this.env.octokit.actions.listWorkflowRunsForRepo({
+  listCheckRunsForPR = async (pr: PR): Promise<CheckRunsType['data']['check_runs']> => {
+    const response: CheckRunsType = await this.env.octokit.checks.listForRef({
       owner: this.env.owner,
       repo: this.env.repo,
-      branch: pr.branch,
+      ref: pr.commit,
+      filter: 'latest',
     })
-
-    const workflowRuns = response.data
-    if (!workflowRuns) return
-
-    const runs = workflowRuns.workflow_runs
-    if (!runs) return
-
-    return runs.filter((run: any) => {
-      return run.head_sha === pr.commit
-    })
+    const checks = response.data
+    if (!checks) return []
+    return checks.check_runs
   }
 }
 
@@ -190,21 +186,47 @@ class GithubRetestCommand extends RetestCommand {
   }
 
   getRetestables = async (pr: PR): Promise<Array<Retest>> => {
-    // Get failed Workflow runs for the latest PR commit
-    const runs = await this.listWorkflowRunsForPR(pr)
-    if (!runs) return []
-    const failedRuns = runs.filter((run: any) => {
-      return run.conclusion === 'cancelled' || run.conclusion === 'failure' || run.conclusion === 'timed_out'
+    const checks = await this.listCheckRunsForPR(pr)
+    const failedChecks: any[] = []
+    checks.forEach(async (check: any) => {
+      if (check.conclusion === 'failure' || check.conclusion === 'cancelled') {
+        failedChecks.push({
+          name: check.name || 'unknown',
+          url: `/repos/${this.env.owner}/${this.env.repo}/actions/runs/${check.external_id}/rerun-failed-jobs`,
+          octokit: true,
+        })
+
+        // skip if this check has been restarted previously
+
+        // Update the old check to mention restart
+
+        // Create a new check from the old
+        const toDelete = ['pull_requests', 'app', 'check_suite', 'conclusion', 'node_id', 'started_at', 'completed_at', 'id']
+        Object.keys(check).forEach((key) => {
+          if (key.startsWith("url") || key.endsWith("url") || toDelete.includes(key)) {
+            delete check[key]
+          }
+        })
+        Object.keys(check.output).forEach((key) => {
+          if (key.startsWith("annotation")) {
+            delete check.output[key]
+          }
+        })
+        check.output.title = check.output.title.replace('failure', 'restarted')
+        const lines = check.output.text.split('\n')
+        const line0 = lines[0].replace('Check run finished (failure :x:)', 'Check run restarted')
+        check.output.text = `${line0}\n${lines.slice(1).join('\n')}`
+        check.output.summary = 'Check is running again'
+        check.status = 'in_progress'
+        failedChecks.push({
+          name: check.name || 'unknown',
+          url: `/repos/${this.env.owner}/${this.env.repo}/check-runs`,
+          octokit: true,
+          config: {data: check},
+        })
+      }
     })
-    const retestables: Array<Retest> = []
-    for (const run of failedRuns) {
-      retestables.push({
-        name: run.name || 'unknown',
-        url: run.url,
-        octokit: true,
-      })
-    }
-    return retestables
+    return failedChecks
   }
 }
 
