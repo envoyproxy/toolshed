@@ -30,11 +30,17 @@ runs:
   - name: Run app
     run: |
       cd mobile
-      ./bazelw run ${{ inputs.args }} ${{ inputs.app }} &> /tmp/envoy.log &
+      ./bazelw run $ARGS $APP &> /tmp/envoy.log &
     shell: bash
+    env:
+      # TODO: handle these correctly with `read -ra`
+      ARGS: ${{ inputs.args }}
+      APP: ${{ inputs.app }}
   - run: |
-      sed '/received headers with status ${{ inputs.status }}/q' <(touch /tmp/envoy.log && tail -F /tmp/envoy.log)
+      sed '/received headers with status ${STATUS}/q' <(touch /tmp/envoy.log && tail -F /tmp/envoy.log)
     shell:  bash
+    env:
+      STATUS: ${{ inputs.status }}
     if: ${{ inputs.status }}
     name: Check connectivity
   - run: cat /tmp/envoy.log
