@@ -12,9 +12,22 @@ inputs:
     type: string
     default: |
       trigger-release-envoy[bot]
+  template-script-ref-file:
+    type: string
+    default: |
+      # fetch \($branch):\($filename)
+      OUTPUT=\"$(git show \($branch):\($filename))\"
+  template-script-diff:
+    type: string
+    default: |
+      # git diff changes from \($them)
+      OUTPUT=\"$(git diff --name-only \($them) \($branch))\"
   vars:
     type: string
     required: true
+  version-file:
+    type: string
+    default: VERSION.txt
 
 outputs:
   data:
@@ -58,21 +71,22 @@ runs:
       filter: |
         sub("^refs/pull/"; "")
         | sub("^refs/heads/"; "")
-
-  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.71
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.71
     id: config-current-text
     with:
-      sh: >-
-        git
-        show
-        origin/${{ steps.ref-name.outputs.value }}:${{ inputs.config-file }}
+      input: "{}"
+      filter: |
+        "${{ inputs.config-file }}" as $filename
+        | "origin/${{ steps.ref-name.outputs.value }}" as $branch
+        | ("${{ inputs.template-script-ref-file }}" | bash::output)
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
     name: Current config
     id: config
     with:
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       input-format: yaml
-      input: ${{ steps.config-current-text.outputs.out }}
+      input: ${{ steps.config-current-text.outputs.output }}
   - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@actions-v0.1.71
     id: merge-commit
     if: ${{ startswith(github.event_name, 'pull_request') }}
@@ -80,7 +94,6 @@ runs:
       repository: ${{ github.repository }}
       pr: ${{ github.event.number }}
       token: ${{ inputs.token }}
-
   ## WARNING: THIS IS A REQUEST ATTACK VECTOR
   - id: commit-message
     name: Get commit message from the github context
@@ -90,7 +103,6 @@ runs:
         ${{ toJSON(github.event) }}
       filter: |
         .head_commit.message // .pull_request.title + "\n" + .pull_request.body
-
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
     name: Validate given version string
     id: version-string
@@ -99,26 +111,19 @@ runs:
       options: -Rr
       input: VERSION.txt
       filter: |
-        . as $version
-        | test("^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z-]+(\\.[0-9A-Za-z-]+)*)?\\+?[0-9A-Za-z-]*$")
-          or error("Version string does not meet expectations")
-        | $version
-
-  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.71
+        validate::version
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.71
     id: diff
     with:
-      sh: >-
-        git
-        diff
-        --name-only
-        ${{ steps.merge-commit.outputs.sha || 'HEAD^1' }}
-        origin/${{ steps.ref-name.outputs.value }}
-  - id: changed
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
+      input: "{}"
+      filter: |
+        "${{ steps.merge-commit.outputs.sha || 'HEAD^1' }}" as $them
+        | "origin/${{ steps.ref-name.outputs.value }}" as $branch
+        | ("${{ inputs.template-script-diff }}" | bash::output)
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
+    id: changed
     with:
-      options: -Rsc
-      input-format: text
-      input: ${{ steps.diff.outputs.out }}
+      input: ${{ steps.diff.outputs.value }}
       filter: |
         split("\n")
   - id: version
@@ -135,19 +140,20 @@ runs:
            patch: (.[2] | rtrimstr("-dev") | fromjson),
            "dev": $isdev,
            "changed": $changed}
-  - uses: envoyproxy/toolshed/gh-actions/shout@actions-v0.1.71
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.71
     id: version-current-string
     with:
-      sh: >-
-        git
-        show
-        origin/${{ steps.ref-name.outputs.value }}:VERSION.txt
+      input: "{}"
+      filter: |
+        "${{ inputs.version-file }}" as $filename
+        | "origin/${{ steps.ref-name.outputs.value }}" as $branch
+        | ("${{ inputs.template-script-ref-file }}" | bash::output)
   - id: version-current
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
     with:
       options: -Rsc
       filter: |
-        "${{ steps.version-current-string.outputs.out }}"
+        "${{ steps.version-current-string.outputs.output }}"
         | endswith("-dev") as $isdev
         | split(".")
         | {major: (.[0] | fromjson),
@@ -171,9 +177,9 @@ runs:
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
         .["build-image"].repo as $repo
-        | (.["build-image"].tag | . as $r | test("^[0-9a-fA-F]{40}$") or error("tag is not 40-char sha") | $r) as $tag
-        | (.["build-image"].sha | . as $r | test("^[0-9a-fA-F]{64}$") or error("sha is not 64-char sha") | $r) as $sha
-        | (.["build-image"]["mobile-sha"] | . as $r | test("^[0-9a-fA-F]{64}$") or error("mobile-sha is not 64-char sha") | $r) as $mobileSha
+        | (.["build-image"].tag | validate::sha(40)) as $tag
+        | (.["build-image"].sha | validate::sha(64)) as $sha
+        | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
         | {"build-image": "\($repo):\($tag)@sha256:\($sha)",
            "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
 

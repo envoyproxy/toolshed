@@ -1,3 +1,4 @@
+# TODO: fold this into jq action
 
 inputs:
   input:
