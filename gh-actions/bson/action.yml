@@ -20,7 +20,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
     id: command
     with:
       input: ${{ inputs.input }}
