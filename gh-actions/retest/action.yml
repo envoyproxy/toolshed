@@ -18,6 +18,18 @@ inputs:
     description: >
       AZP token used for retest AZP pipelines
     default:
+  comment-id:
+    description: >-
+      ID of comment for response
+    required: true
+    type: number
+  pr-url:
+    description: >-
+      URL to fetch PR information
+    required: true
+  args:
+    description: >-
+      Args passed to command (not currently used)
 
 runs:
   using: node20

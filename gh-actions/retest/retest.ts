@@ -48,9 +48,8 @@ type OctokitType = InstanceType<typeof GitHub>
 type Env = {
   octokit: OctokitType
   token: string
-  comment: OctokitType['context']['payload']['issue']['comment']
-  issue: OctokitType['context']['payload']['issue']
-  pr: OctokitType['context']['payload']['issue']['pull_request']
+  comment: number
+  pr: string
   nwo: string
   owner: string
   repo: string
@@ -67,10 +66,10 @@ class RetestCommand {
   }
 
   getPR = async (): Promise<PR | void> => {
-    if (!this.env.pr || !this.env.pr.url) {
+    if (!this.env.pr || !this.env.pr) {
       return
     }
-    const response: OctokitResponse<any> = await this.env.octokit.request(this.env.pr.url)
+    const response: OctokitResponse<any> = await this.env.octokit.request(this.env.pr)
     const data = response.data
     if (!data) return
     return {
@@ -80,26 +79,11 @@ class RetestCommand {
     }
   }
 
-  @cachedProperty
-  get isRetest(): boolean {
-    let isRetest = false
-    this.env.comment.body.split('\r\n').forEach((line: string) => {
-      if (line.startsWith('/retest')) {
-        if (!line.startsWith('/retest envoy')) {
-          isRetest = true
-          return
-        }
-      }
-    })
-    return isRetest
-  }
-
   retest = async (): Promise<number> => {
     if (!this.env) {
       console.log(`Failed parsing env`)
       return 0
     }
-    if (!this.isRetest) return 0
     const pr = await this.getPR()
     if (!pr) {
       return 0
@@ -137,7 +121,6 @@ class RetestCommand {
   retestOctokit = async (check: Retest): Promise<void> => {
     const method = check.method || 'POST'
     const rerunURL = `${method} ${check.url}`
-    console.log(check.config)
     const rerunResponse = await this.env.octokit.request(rerunURL, check.config || {})
     if ([200, 201].includes(rerunResponse.status)) {
       console.log(`Retry success: (${check.name})`)
@@ -195,11 +178,7 @@ class GithubRetestCommand extends RetestCommand {
           url: `/repos/${this.env.owner}/${this.env.repo}/actions/runs/${check.external_id}/rerun-failed-jobs`,
           octokit: true,
         })
-
-        // skip if this check has been restarted previously
-
-        // Update the old check to mention restart
-
+        // TODO: Update the old check to mention restart
         // Create a new check from the old
         const toDelete = ['pull_requests', 'app', 'check_suite', 'conclusion', 'node_id', 'started_at', 'completed_at', 'id']
         Object.keys(check).forEach((key) => {
@@ -303,18 +282,16 @@ class RetestCommands {
   @cachedProperty
   get env(): Env | void | undefined {
     let azpOrg, azpToken
-    const token = process.env['GITHUB_TOKEN'] || core.getInput('token')
+    const token = core.getInput('token') || process.env['GITHUB_TOKEN']
     if (!token || token === '') return
+    const pr = core.getInput('pr-url')
+    if (!pr || pr === '') return
+    const comment = parseInt(core.getInput('comment-id'))
+    if (!comment) return
     const octokit = github.getOctokit(token)
     // Create the octokit client
     const nwo = process.env['GITHUB_REPOSITORY'] || '/'
     const [owner, repo] = nwo.split('/')
-    const issue = github.context.payload.issue
-    if (!issue) return
-    const pr = issue.pull_request
-    if (!pr) return
-    const comment = github.context.payload.comment
-    if (!comment) return
     if (core.getInput('azp_org') && core.getInput('azp_token')) {
       azpOrg = core.getInput('azp_org')
       azpToken = core.getInput('azp_token')
@@ -327,9 +304,8 @@ class RetestCommands {
       nwo,
       owner,
       repo,
-      issue,
-      pr,
       comment,
+      pr,
       azpOrg,
       azpToken,
     }
@@ -353,7 +329,7 @@ class RetestCommands {
     const addReactionResponse: CreateReactionType['response'] = await this.env.octokit.reactions.createForIssueComment({
       owner: this.env.owner,
       repo: this.env.repo,
-      comment_id: this.env.comment.id,
+      comment_id: this.env.comment,
       content: reaction,
     })
     if ([200, 201].includes(addReactionResponse.status)) {
@@ -365,15 +341,8 @@ class RetestCommands {
 
   retest = async (): Promise<void> => {
     let retested = 0
-    let isRetest = false
     for (const retester of this.retesters) {
-      if (retester.isRetest) {
-        isRetest = true
-      }
       retested += await retester.retest()
-    }
-    if (!isRetest) {
-      return
     }
     if (retested === 0) {
       await this.addReaction('confused')
