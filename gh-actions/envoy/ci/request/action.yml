@@ -15,13 +15,13 @@ inputs:
   template-script-ref-file:
     type: string
     default: |
-      # fetch \($branch):\($filename)
-      OUTPUT=\"$(git show \($branch):\($filename))\"
+      # fetch \($ref):\($filename)
+      OUTPUT=\"$(git show \($ref):\($filename))\"
   template-script-diff:
     type: string
     default: |
-      # git diff changes from \($them)
-      OUTPUT=\"$(git diff --name-only \($them) \($branch))\"
+      # git diff changes from \($ref)
+      OUTPUT=\"$(git diff --name-only \($ref) \($remote))\"
   vars:
     type: string
     required: true
@@ -74,10 +74,9 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.73
     id: config-current-text
     with:
-      input: "{}"
       filter: |
         "${{ inputs.config-file }}" as $filename
-        | "origin/${{ steps.ref-name.outputs.value }}" as $branch
+        | "origin/${{ steps.ref-name.outputs.value }}" as $ref
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
@@ -115,10 +114,9 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.73
     id: diff
     with:
-      input: "{}"
       filter: |
-        "${{ steps.merge-commit.outputs.sha || 'HEAD^1' }}" as $them
-        | "origin/${{ steps.ref-name.outputs.value }}" as $branch
+        "${{ steps.merge-commit.outputs.sha || 'HEAD^1' }}" as $ref
+        | "origin/${{ steps.ref-name.outputs.value }}" as $remote
         | ("${{ inputs.template-script-diff }}" | bash::output)
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
     id: changed
@@ -143,10 +141,9 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.73
     id: version-current-string
     with:
-      input: "{}"
       filter: |
         "${{ inputs.version-file }}" as $filename
-        | "origin/${{ steps.ref-name.outputs.value }}" as $branch
+        | "origin/${{ steps.ref-name.outputs.value }}" as $ref
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
   - id: version-current
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
@@ -164,10 +161,14 @@ runs:
   - id: build-images
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
     with:
-      input-format: yaml
-      input: |
-        default: ${{ fromJSON(steps.config.outputs.value).build-image.repo }}:${{ fromJSON(steps.config.outputs.value).build-image.tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build-image.sha }}
-        mobile: ${{ fromJSON(steps.config.outputs.value).build-image.repo }}:mobile-${{ fromJSON(steps.config.outputs.value).build-image.tag }}@sha256:${{ fromJSON(steps.config.outputs.value).build-image.mobile-sha }}
+      input: ${{ steps.config.outputs.value }}
+      filter: |
+        .["build-image"].repo as $repo
+        | .["build-image"].tag as $tag
+        | .["build-image"].sha as $sha
+        | .["build-image"]["mobile-sha"] as $mobileSha
+        | {default: "\($repo):\($tag)@sha256:\($sha)",
+           mobile: "\($repo)::mobile-\($tag)@sha256:\($mobileSha)"}
 
   - id: requested-build-images
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
@@ -245,22 +246,6 @@ runs:
         ci-mobile: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_MOBILE_CI }}
         ci-windows: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_WINDOWS_CI }}
         ci-macos: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_MACOS_CI }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
-    name: Generate env json
-    id: repo-run
-    with:
-      input: ${{ steps.torun.outputs.runs }}
-      filter: >-
-        .
-        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-mobile
-            && '| with_entries(if .key | test("^mobile-") then .value = false else . end)'
-            || '' }}
-        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-windows
-            && '| with_entries(if .key | test("^build-windows") then .value = false else . end)'
-            || '' }}
-        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-macos
-            && '| with_entries(if .key | test("^build-macos") then .value = false else . end)'
-            || '' }}
   # This allows you to set eg ENVOY_CI_RUN_MOBILE_COVERAGE and force `mobile-coverage` to `true`
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
     id: run-filter
@@ -279,6 +264,23 @@ runs:
                                 | ascii_downcase) + "\"] = true"
              else empty end)
        | join(" | ")
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
+    name: Generate env json
+    id: repo-run
+    with:
+      input: ${{ steps.torun.outputs.runs }}
+      filter: >-
+        .
+        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-mobile
+            && '| with_entries(if .key | test("^mobile-") then .value = false else . end)'
+            || '' }}
+        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-windows
+            && '| with_entries(if .key | test("^build-windows") then .value = false else . end)'
+            || '' }}
+        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-macos
+            && '| with_entries(if .key | test("^build-macos") then .value = false else . end)'
+            || '' }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.73
     name: Enable custom CI
     id: run
