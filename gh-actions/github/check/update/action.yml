@@ -19,8 +19,8 @@ inputs:
     type: string
     default: |
       # Update check (\($name))
-      CHECKS=\($checks)
-      RESPONSE=\"$(echo $CHECKS | gh api -XPATCH --input - repos/\($repo)/check-runs/\($id))\"
+      CHECK=\($check)
+      RESPONSE=\"$(echo $CHECK | gh api -XPATCH --input - repos/\($repo)/check-runs/\($id))\"
       echo \"output=$RESPONSE\" >> $GITHUB_OUTPUT
   token:
     type: string
@@ -37,7 +37,7 @@ runs:
   # If the original check is already completed, we have been retested and we need to find the real one
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.71
     name: Find check
-    if: ${{ fromJSON(inputs.data).status == 'completed' && github.run_attempt }}
+    if: ${{ fromJSON(inputs.data).status == 'completed' && github.run_attempt > 1 }}
     id: current-checks
     with:
       input: ${{ inputs.data }}
@@ -66,7 +66,7 @@ runs:
           end
         | .id as $id
         | tojson
-        | @sh as $checks
+        | @sh as $check
         | "${{ inputs.template-script-update }}"
     env:
       GH_TOKEN: ${{ inputs.token }}
