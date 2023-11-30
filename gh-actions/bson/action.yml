@@ -7,10 +7,16 @@ inputs:
   filter:
     type: string
     default: .
+  catch-errors:
+    type: boolean
+    default: false
+  title:
+    type: string
+    default:
 
 outputs:
   exit-code:
-    value: ${{ steps.command.outputs.actual }}
+    value: ${{ steps.output.outputs.exit-code }}
   command:
     value: ${{ steps.command.outputs.value }}
   output:
@@ -20,6 +26,13 @@ outputs:
 runs:
   using: composite
   steps:
+  - id: script
+    run: |
+      # Create temporary script file
+      TMPFILE=$(mktemp)
+      chmod +x $TMPFILE
+      echo "path=$TMPFILE" >> $GITHUB_OUTPUT
+    shell: bash
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.74
     id: command
     with:
@@ -28,7 +41,21 @@ runs:
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       options: -r
       filter: ${{ inputs.filter }}
+      output-path: ${{ steps.script.outputs.path }}
   - id: output
     run: |
-      ${{ steps.command.outputs.value }}
+      # ${{ inputs.title || 'Run generated script' }}
+      EXIT_CODE=0
+      ${{ steps.script.outputs.path }} || {
+          EXIT_CODE=$?
+      }
+      echo "exit-code=$EXIT_CODE" >> $GITHUB_OUTPUT
+      rm -rf $TMPFILE
+      if [[ "$CATCH_ERRORS" == "true" ]]; then
+          exit  0
+      fi
+      exit $EXIT_CODE
+    env:
+      CATCH_ERRORS: ${{ inputs.catch-errors }}
+      TMPFILE: ${{ steps.script.outputs.path }}
     shell: bash
