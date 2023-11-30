@@ -1,0 +1,33 @@
+inputs:
+  text:
+    type: string
+    required: true
+  matching:
+    type: string
+    default: >-
+      ^/
+
+outputs:
+  command:
+    value: ${{ fromJSON(steps.command.outputs.value).name }}
+  args:
+    value: ${{ fromJSON(steps.command.outputs.value).args }}
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.71
+    name: Parse command from text
+    id: command
+    with:
+      input: ${{ inputs.text }}
+      options: -sR
+      filter: |
+        split("\n")
+        | map(select(
+            test("${{ inputs.matching }}"))
+            | split(" ")
+            | {name: (.[0] | ltrimstr("/")),
+               args: (.[1:] | join(" ") | gsub("\r"; ""))})
+        | first // {}
