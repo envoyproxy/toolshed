@@ -1,3 +1,20 @@
+#
+# Rough schema for generated data:
+#
+# config: {ci, data-tables, envoy}
+# run: {run: boolean}
+# request: {...request-vars, version, version-current, build-image, build-image-current}
+# checks: {check: {name, advice, id, action}}
+#
+#
+# CI is only enabled if its the Envoy repo or specifically enabled by vars.ENVOY_CI
+#
+# Checks/runs are enabled/disabled by .github/config.yml
+#
+# Check/runs can be overridden with vars, eg ENVOY_CI_RUN_MOBILE_COVERAGE=1 will force `mobile-coverage` to `true`
+#
+# Any *required* checks that are not scheduled to be run are explicitly skipped
+
 inputs:
   branch-name:
     type: string
@@ -190,7 +207,8 @@ runs:
             .ref = "${{ inputs.branch-name }}"
             | .sha = $github.sha
           end
-        | . * {"message": $message,
+        | . * {"actor": "@\($github.actor)",
+               "message": $message,
                "started": ${{ inputs.started }},
                "target-branch": "${{ inputs.branch-name }}",
                "trusted": ${{ fromJSON(steps.trusted.outputs.value).trusted }},
@@ -213,16 +231,12 @@ runs:
       config: ${{ steps.run-config.outputs.value }}
       paths: ${{ startswith(github.event_name, 'pull_request') && steps.changed.outputs.value || '[]' }}
 
-  # CI is only enabled if its the Envoy repo or specifically enabled in config
-  # This allows you to set eg ENVOY_CI_RUN_MOBILE_COVERAGE and force `mobile-coverage` to `true`
-  # Any checks that are required but are not scheduled to be run
-  # are explicitly skipped
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     name: Create data
     id: data
     with:
       input: ${{ inputs.vars }}
-      filter: >-
+      filter: |
         ${{ steps.torun.outputs.runs }} as $runs
         | ${{ github.repository == 'envoyproxy/envoy' }} as $isEnvoyRepo
         | . as $vars
@@ -264,10 +278,13 @@ runs:
               end)
         | to_entries
         | sort_by(.value.action, .key)
-        | from_entries
-        | {"checks": .,
-           "ci": {"agent-ubuntu": $config["agent-ubuntu"]},
-           "config": $config,
-           "request": ${{ steps.request.outputs.value }},
-           "run": $run}
+        | from_entries as $checks
+        | ${{ steps.request.outputs.value }} as $request
+        | ($config
+           | del(.checks, .config, .run, .["build-image"], .["agent-ubuntu"])
+           | .envoy = $config.config.envoy
+           | .ci = {
+               "agent-ubuntu": $config["agent-ubuntu"],
+               "build-image": $config["build-image"]}) as $config
+        | {$config, $checks, $request, $run}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
