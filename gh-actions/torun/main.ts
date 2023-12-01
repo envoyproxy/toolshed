@@ -38,7 +38,7 @@ const run = async (): Promise<void> => {
       }
       checks[check] = globMatchPaths(paths, checkConfig.paths)
     })
-    core.setOutput('runs', JSON.stringify(checks, null, 2))
+    core.setOutput('runs', JSON.stringify(checks, null, 0))
   } catch (error) {
     const e = error as Record<'stderr', string>
     if (e.stderr) {
