@@ -1,7 +1,13 @@
 inputs:
+  branch-name:
+    type: string
+    required: true
   config-file:
     type: string
     default: ./.github/config.yml
+  merge-commit:
+    type: string
+    default:
   started:
     type: number
     required: true
@@ -35,6 +41,12 @@ outputs:
 runs:
   using: composite
   steps:
+  ## WARNING: INCOMING USER DATA IS A REQUEST ATTACK VECTOR AND SHOULD BE HANDLED ACCORDINGLY
+
+  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.75
+    name: Github context
+    if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+
   # Pull request/targets are _never_ trusted.
   #
   # Only specified bots are trusted.
@@ -55,29 +67,15 @@ runs:
           end) as $trusted
         | {trusted: ($trusted and ${{ ! startswith(github.event_name, 'pull_request') }})}
 
-  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.75
-    name: Github context
-    if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-
-  - id: ref-name
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    with:
-      input: "${{ github.ref_name }}"
-      input-format: text
-      options: -rR
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      filter: |
-        sub("^refs/pull/"; "")
-        | sub("^refs/heads/"; "")
+  # Check current/requested config (currently only build-images can be overridden)
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.75
     id: config-current-text
     with:
-      title: fetch ${{ steps.ref-name.outputs.value }}:${{ inputs.config-file }}
+      title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
       filter: |
         "${{ inputs.config-file }}" as $filename
-        | "origin/${{ steps.ref-name.outputs.value }}" as $ref
+        | "origin/${{ inputs.branch-name }}" as $ref
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
-
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
     name: Current config
     id: config
@@ -85,38 +83,39 @@ runs:
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       input-format: yaml
       input: ${{ steps.config-current-text.outputs.output }}
-  - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@actions-v0.1.75
-    id: merge-commit
-    if: ${{ startswith(github.event_name, 'pull_request') }}
-    with:
-      repository: ${{ github.repository }}
-      pr: ${{ github.event.number }}
-      token: ${{ inputs.token }}
-  ## WARNING: THIS IS A REQUEST ATTACK VECTOR
-  - id: commit-message
-    name: Get commit message from the github context
+  - id: build-images
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
     with:
-      input: |
-        ${{ toJSON(github.event) }}
+      input: ${{ steps.config.outputs.value }}
       filter: |
-        .head_commit.message // .pull_request.title + "\n" + .pull_request.body
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    name: Validate given version string
-    id: version-string
+        .["build-image"].repo as $repo
+        | .["build-image"].tag as $tag
+        | .["build-image"].sha as $sha
+        | .["build-image"]["mobile-sha"] as $mobileSha
+        | {default: "\($repo):\($tag)@sha256:\($sha)",
+           mobile: "\($repo)::mobile-\($tag)@sha256:\($mobileSha)"}
+  - id: requested-build-images
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
     with:
-      input-format: string-path
-      options: -Rr
-      input: VERSION.txt
+      input-format: yaml-path
+      input: ${{ inputs.config-file }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
-        validate::version
+        .["build-image"].repo as $repo
+        | (.["build-image"].tag | validate::sha(40)) as $tag
+        | (.["build-image"].sha | validate::sha(64)) as $sha
+        | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
+        | {"build-image": "\($repo):\($tag)@sha256:\($sha)",
+           "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
+
+  # Check requested changes
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.75
     id: diff
     with:
-      title: git diff changes from ${{ steps.merge-commit.outputs.sha || 'HEAD^1' }}
+      title: git diff changes from ${{ inputs.merge-commit || 'HEAD^1' }}
       filter: |
-        "${{ steps.merge-commit.outputs.sha || 'HEAD^1' }}" as $ref
-        | "origin/${{ steps.ref-name.outputs.value }}" as $remote
+        "${{ inputs.merge-commit || 'HEAD^1' }}" as $ref
+        | "origin/${{ inputs.branch-name }}" as $remote
         | ("${{ inputs.template-script-diff }}" | bash::output)
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
     id: changed
@@ -126,6 +125,17 @@ runs:
       filter: |
         rtrimstr("\n")
         | split("\n")
+
+  # Check current/request versions
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+    name: Validate given version string
+    id: version-string
+    with:
+      input-format: string-path
+      options: -Rr
+      input: VERSION.txt
+      filter: |
+        validate::version
   - id: version
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
     with:
@@ -143,10 +153,10 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.75
     id: version-current-string
     with:
-      title: fetch ${{ steps.ref-name.outputs.value }}:${{ inputs.version-file }}
+      title: fetch ${{ inputs.branch-name }}:${{ inputs.version-file }}
       filter: |
         "${{ inputs.version-file }}" as $filename
-        | "origin/${{ steps.ref-name.outputs.value }}" as $ref
+        | "origin/${{ inputs.branch-name }}" as $ref
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
   - id: version-current
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
@@ -161,68 +171,33 @@ runs:
            patch: (.[2] | rtrimstr("-dev") | fromjson),
            "dev": $isdev}
 
-  - id: build-images
+  - id: request
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
     with:
-      input: ${{ steps.config.outputs.value }}
+      input: ${{ toJSON(github) }}
       filter: |
-        .["build-image"].repo as $repo
-        | .["build-image"].tag as $tag
-        | .["build-image"].sha as $sha
-        | .["build-image"]["mobile-sha"] as $mobileSha
-        | {default: "\($repo):\($tag)@sha256:\($sha)",
-           mobile: "\($repo)::mobile-\($tag)@sha256:\($mobileSha)"}
-
-  - id: requested-build-images
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    with:
-      input-format: yaml-path
-      input: ${{ inputs.config-file }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      filter: |
-        .["build-image"].repo as $repo
-        | (.["build-image"].tag | validate::sha(40)) as $tag
-        | (.["build-image"].sha | validate::sha(64)) as $sha
-        | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
-        | {"build-image": "\($repo):\($tag)@sha256:\($sha)",
-           "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
-
-  - id: base-request
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    with:
-      input-format: yaml
-      input: |
-        message: ${{ steps.commit-message.outputs.value }}
-        started: ${{ inputs.started }}
-        target-branch: ${{ steps.ref-name.outputs.value }}
-        trusted: ${{ fromJSON(steps.trusted.outputs.value).trusted }}
-        version: ${{ steps.version.outputs.value }}
-        version-current: ${{ steps.version-current.outputs.value }}
-        build-image: ${{ steps.requested-build-images.outputs.value }}
-        build-image-current: ${{ steps.build-images.outputs.value }}
-  - id: pr-request
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    if: ${{ startswith(github.event_name, 'pull_request') }}
-    with:
-      input-format: yaml
-      input: |
-        base-sha: ${{ github.sha }}
-        pr: ${{ github.event.number }}
-        ref: ${{ steps.merge-commit.outputs.sha }}
-        sha: ${{ github.event.pull_request.head.sha || github.sha }}
-      filter: |
-        . * ${{ steps.base-request.outputs.value }}
-  - id: push-request
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    if: ${{ ! startswith(github.event_name, 'pull_request') }}
-    with:
-      input-format: yaml
-      input: |
-        ref: ${{ steps.context.outputs.repo_ref || '' }}
-        sha: ${{ github.sha }}
-        started: ${{ inputs.started }}
-      filter: |
-        . * ${{ steps.base-request.outputs.value }}
+        . as $github
+        | $github.event as $event
+        | ($event.head_commit.message
+           // "\($event.pull_request.title)\n\($event.pull_request.body)") as $message
+        | {}
+        | if ($github.event_name | startswith("pull_request")) then
+            .ref = "${{ inputs.merge-commit }}"
+            | .sha = $event.pull_request.head.sha
+            | .pr = $github.event.number
+            | .["base-sha"] = $github.sha
+          else
+            .ref = "${{ inputs.branch-name }}"
+            | .sha = $github.sha
+          end
+        | . * {"message": $message,
+               "started": ${{ inputs.started }},
+               "target-branch": "${{ inputs.branch-name }}",
+               "trusted": ${{ fromJSON(steps.trusted.outputs.value).trusted }},
+               "version": ${{ steps.version.outputs.value }},
+               "version-current": ${{ steps.version-current.outputs.value }},
+               "build-image": ${{ steps.requested-build-images.outputs.value }},
+               "build-image-current": ${{ steps.build-images.outputs.value }}}
 
   - name: Run config
     id: run-config
@@ -233,77 +208,46 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.1.75
     id: torun
     with:
-      branch: ${{ steps.ref-name.outputs.value }}
+      branch: ${{ inputs.branch-name }}
       event: ${{ github.event_name }}
       config: ${{ steps.run-config.outputs.value }}
       paths: ${{ startswith(github.event_name, 'pull_request') && steps.changed.outputs.value || '[]' }}
 
   # CI is only enabled if its the Envoy repo or specifically enabled in config
-  - name: Check CI vars
-    id: ci-vars
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    with:
-      input-format: yaml
-      input: |
-        ci: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_CI }}
-        ci-mobile: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_MOBILE_CI }}
-        ci-windows: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_WINDOWS_CI }}
-        ci-macos: ${{ github.repository == 'envoyproxy/envoy' || fromJSON(inputs.vars).ENVOY_MACOS_CI }}
   # This allows you to set eg ENVOY_CI_RUN_MOBILE_COVERAGE and force `mobile-coverage` to `true`
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    id: run-filter
-    with:
-     input: ${{ inputs.vars }}
-     options: -r
-     filter: >-
-       to_entries
-       | map(select(.key
-           | startswith("ENVOY_CI_RUN")))
-       | map(.key as $k
-           | .value == "1"
-           | if . then ".[\""
-                          + ($k | sub("ENVOY_CI_RUN_"; "")
-                                | gsub("_"; "-")
-                                | ascii_downcase) + "\"] = true"
-             else empty end)
-       | join(" | ")
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    name: Generate env json
-    id: repo-run
-    with:
-      input: ${{ steps.torun.outputs.runs }}
-      filter: >-
-        .
-        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-mobile
-            && '| with_entries(if .key | test("^mobile-") then .value = false else . end)'
-            || '' }}
-        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-windows
-            && '| with_entries(if .key | test("^build-windows") then .value = false else . end)'
-            || '' }}
-        ${{ !fromJSON(steps.ci-vars.outputs.value).ci-macos
-            && '| with_entries(if .key | test("^build-macos") then .value = false else . end)'
-            || '' }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    name: Enable custom CI
-    id: run
-    with:
-      input: ${{ steps.repo-run.outputs.value }}
-      filter: >-
-        ${{ steps.run-filter.outputs.value || '.' }}
-        | walk(if . == "" then false else . end)
-
   # Any checks that are required but are not scheduled to be run
   # are explicitly skipped
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    name: Checks config
-    id: checks-config
+    name: Create data
+    id: data
     with:
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      input: ${{ steps.config.outputs.value }}
+      input: ${{ inputs.vars }}
       filter: >-
-        .checks as $checks
-        | ${{ steps.run.outputs.value }} as $run
+        ${{ steps.torun.outputs.runs }} as $runs
+        | ${{ github.repository == 'envoyproxy/envoy' }} as $isEnvoyRepo
+        | . as $vars
+        | ($isEnvoyRepo or $vars.ENVOY_CI) as $ci
+        | ($isEnvoyRepo or $vars.ENVOY_MOBILE_CI) as $ciMobile
+        | ($isEnvoyRepo or $vars.ENVOY_WINDOWS_CI) as $ciWindows
+        | ($isEnvoyRepo or $vars.ENVOY_MACOS_CI) as $ciMacos
+        | $runs
+        | with_entries(
+            ((.key | test("^mobile-") and ($ciMobile | not))
+            or ((.key | test("^build-windows-")) and ($ciWindows | not))
+            or ((.key | test("^build-macos-")) and ($ciMacos | not))) as $disable
+            | (.key | gsub("-"; "_") | ascii_upcase) as $keyVar
+            | "ENVOY_CI_RUN_\($keyVar)" as $envVar
+            | ($vars | has($envVar)) as $enable
+            | if $enable then
+                .value = true
+              elif $disable then
+                .value = false
+              elif .value == "" then
+                .value = false
+              else . end)
+        | . as $run
+        | ${{ steps.config.outputs.value }} as $config
+        | $config.checks as $checks
         | $checks
         | with_entries(
             .key as $k
@@ -319,18 +263,11 @@ runs:
                 (.value.action = "SKIP")
               end)
         | to_entries
-        | sort_by(.key)
-        | sort_by(.value.action)
+        | sort_by(.value.action, .key)
         | from_entries
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
-    name: Create data
-    id: data
-    with:
-      input: |
-        {"request": ${{ steps.pr-request.outputs.value || steps.push-request.outputs.value }},
-         "run": ${{ steps.run.outputs.value }},
-         "ci": {"agent-ubuntu": "${{ fromJSON(steps.config.outputs.value).agent-ubuntu }}"},
-         "checks": ${{ steps.checks-config.outputs.value }},
-         "config": ${{ steps.config.outputs.value }}}
+        | {"checks": .,
+           "ci": {"agent-ubuntu": $config["agent-ubuntu"]},
+           "config": $config,
+           "request": ${{ steps.request.outputs.value }},
+           "run": $run}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
