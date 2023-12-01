@@ -9,11 +9,14 @@ inputs:
   check-name:
     type: string
     default:
+  filter:
+    type: string
+    default: .
 
 
 outputs:
   data:
-    value: ${{ steps.data.outputs.data }}
+    value: ${{ steps.data.outputs.value }}
   output:
     value: ${{ steps.toenv.outputs.value }}
 
@@ -23,7 +26,7 @@ runs:
   steps:
   - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.76
     name: Github context
-    if: ${{ fromJSON(env.CI_DEBUG || false) || fromJSON(env.RUNNER_DEBUG || false) }}
+    if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
   - name: Download environment data
     id: download
     uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.1.76
@@ -31,20 +34,14 @@ runs:
       name: ${{ inputs.name }}
       path: ${{ runner.temp }}
       run-id: ${{ inputs.run-id }}
-  - name: Load data
-    id: data
-    run: |
-      DATA=$(cat ${{ runner.temp }}/${{ inputs.name }}.json)
-      printf 'data=%s' "${DATA}" >> $GITHUB_OUTPUT
-    shell: bash
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
-    name: Print env data
-    if: ${{ fromJSON(env.CI_DEBUG || false) || fromJSON(env.RUNNER_DEBUG || false) }}
+    name: Load env data
+    id: data
     with:
-      input: ${{ steps.data.outputs.value }}
-      options: -C
-      print-result: true
-
+      input-format: json-path
+      input: ${{ runner.temp }}/${{ inputs.name }}.json
+      filter: ${{ inputs.filter }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
   - uses: envoyproxy/toolshed/gh-actions/github/env/save@actions-v0.1.76
     name: Save env
     if: ${{ inputs.check-name }}
