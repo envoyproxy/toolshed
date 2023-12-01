@@ -45,7 +45,7 @@ runs:
     id: steps-subs
     with:
       input: ${{ steps.steps-json.outputs.value }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || false) || fromJSON(env.RUNNER_DEBUG || false) }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
         . as $steps
         | ${{ steps.context.outputs.value }}
