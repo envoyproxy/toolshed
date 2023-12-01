@@ -12,18 +12,18 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.78
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.79
     id: yaml
     with:
       input: ${{ inputs.images }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.78
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.79
     id: json_actions
     with:
       input: ${{ steps.yaml.outputs.json }}
       filter: |
         {runs: {using: "composite", steps: [to_entries[] | {
-          uses: "envoyproxy/toolshed/gh-actions/docker/sha@actions-v0.1.78",
+          uses: "envoyproxy/toolshed/gh-actions/docker/sha@actions-v0.1.79",
           id: .key,
           with: {
             image: .value,
