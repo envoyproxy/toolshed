@@ -43,7 +43,7 @@ runs:
   steps:
   ## WARNING: INCOMING USER DATA IS A REQUEST ATTACK VECTOR AND SHOULD BE HANDLED ACCORDINGLY
 
-  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.76
     name: Github context
     if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
 
@@ -51,7 +51,7 @@ runs:
   #
   # Only specified bots are trusted.
   - id: trusted
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     with:
       input: |
         ${{ inputs.trusted-bots || 'NOBOTS' }}
@@ -68,7 +68,7 @@ runs:
         | {trusted: ($trusted and ${{ ! startswith(github.event_name, 'pull_request') }})}
 
   # Check current/requested config (currently only build-images can be overridden)
-  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.76
     id: config-current-text
     with:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
@@ -76,7 +76,7 @@ runs:
         "${{ inputs.config-file }}" as $filename
         | "origin/${{ inputs.branch-name }}" as $ref
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     name: Current config
     id: config
     with:
@@ -84,7 +84,7 @@ runs:
       input-format: yaml
       input: ${{ steps.config-current-text.outputs.output }}
   - id: build-images
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     with:
       input: ${{ steps.config.outputs.value }}
       filter: |
@@ -95,7 +95,7 @@ runs:
         | {default: "\($repo):\($tag)@sha256:\($sha)",
            mobile: "\($repo)::mobile-\($tag)@sha256:\($mobileSha)"}
   - id: requested-build-images
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     with:
       input-format: yaml-path
       input: ${{ inputs.config-file }}
@@ -109,7 +109,7 @@ runs:
            "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
 
   # Check requested changes
-  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.76
     id: diff
     with:
       title: git diff changes from ${{ inputs.merge-commit || 'HEAD^1' }}
@@ -117,7 +117,7 @@ runs:
         "${{ inputs.merge-commit || 'HEAD^1' }}" as $ref
         | "origin/${{ inputs.branch-name }}" as $remote
         | ("${{ inputs.template-script-diff }}" | bash::output)
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     id: changed
     with:
       input: ${{ steps.diff.outputs.output }}
@@ -127,7 +127,7 @@ runs:
         | split("\n")
 
   # Check current/request versions
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     name: Validate given version string
     id: version-string
     with:
@@ -137,7 +137,7 @@ runs:
       filter: |
         validate::version
   - id: version
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     with:
       input: ${{ steps.changed.outputs.value || '[]' }}
       filter: |
@@ -150,7 +150,7 @@ runs:
            patch: (.[2] | rtrimstr("-dev") | fromjson),
            "dev": $isdev,
            "changed": $changed}
-  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.76
     id: version-current-string
     with:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.version-file }}
@@ -159,7 +159,7 @@ runs:
         | "origin/${{ inputs.branch-name }}" as $ref
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
   - id: version-current
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     with:
       options: -Rsc
       filter: |
@@ -172,7 +172,7 @@ runs:
            "dev": $isdev}
 
   - id: request
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     with:
       input: ${{ toJSON(github) }}
       filter: |
@@ -201,11 +201,11 @@ runs:
 
   - name: Run config
     id: run-config
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     with:
       input-format: yaml
       input: ${{ toJSON(fromJSON(steps.config.outputs.value).run) }}
-  - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.1.76
     id: torun
     with:
       branch: ${{ inputs.branch-name }}
@@ -217,7 +217,7 @@ runs:
   # This allows you to set eg ENVOY_CI_RUN_MOBILE_COVERAGE and force `mobile-coverage` to `true`
   # Any checks that are required but are not scheduled to be run
   # are explicitly skipped
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.75
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
     name: Create data
     id: data
     with:
