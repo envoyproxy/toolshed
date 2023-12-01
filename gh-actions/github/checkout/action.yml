@@ -34,8 +34,10 @@ inputs:
     default:
 
 outputs:
-  branch_name:
+  branch-name:
     value: ${{ steps.branch.outputs.value }}
+  merge-commit:
+    value: ${{ steps.merge-commit.outputs.sha }}
 
 
 runs:
