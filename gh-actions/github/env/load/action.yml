@@ -24,17 +24,17 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.76
+  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.1.78
     name: Github context
     if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
   - name: Download environment data
     id: download
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.1.76
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.1.78
     with:
       name: ${{ inputs.name }}
       path: ${{ runner.temp }}
       run-id: ${{ inputs.run-id }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.76
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.78
     name: Load env data
     id: data
     with:
@@ -42,7 +42,7 @@ runs:
       input: ${{ runner.temp }}/${{ inputs.name }}.json
       filter: ${{ inputs.filter }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-  - uses: envoyproxy/toolshed/gh-actions/github/env/save@actions-v0.1.76
+  - uses: envoyproxy/toolshed/gh-actions/github/env/save@actions-v0.1.78
     name: Save env
     if: ${{ inputs.check-name }}
     with:
