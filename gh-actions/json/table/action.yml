@@ -39,21 +39,23 @@ inputs:
     # with the quotes lopped off, this ensures strings
     # are properly escaped for markdown and cant be used for
     # jq injection attacks
+    # making values bold prevents markdown issues with markup
     default: |
-      if type == "null" then
-        ""
-      else
-        .
-      end
-      | if (type == "boolean" or type == "number") then
+      .cell as $cell
+      | .row as $row
+      | $cell
+      | if type == "null" then
+          ""
+        elif (type == "boolean" or type == "number") then
           "`\(.)`"
-        else
-          tojson
-          | gsub("\\\\\\("; "\\\\\\(")
-          | .[1:-1]
-        end
-      | if test("\n") then
+        elif (type == "string" and test("\n")) then
           (split("\n")[0] + "..." )
+        else . end
+      | tojson
+      | gsub("\\\\\\("; "\\\\\\(")
+      | .[1:-1]
+      | if ($row | index($cell) != 0) then
+          "<b>\(.)</b>"
         else . end
   mutate-cells:
     default: .cell
