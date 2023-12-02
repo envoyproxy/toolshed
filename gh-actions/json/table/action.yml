@@ -35,7 +35,11 @@ inputs:
   filter:
     default:
   sanitize-filter:
-    default: >-
+    # Turn everything to string and strings to escaped json
+    # with the quotes lopped off, this ensures strings
+    # are properly escaped for markdown and cant be used for
+    # jq injection attacks
+    default: |
       if type == "null" then
         ""
       else
@@ -44,18 +48,13 @@ inputs:
       | if (type == "boolean" or type == "number") then
           "`\(.)`"
         else
-          .
+          gsub("\\\\\\("; "\\\\(")
+          | tojson
+          | .[1:-1]
         end
-      | if (type == "object") then
-          tojson
-        else
-          .
-        end
-      | if (type == "string" and test("\n")) then
+      | if test("\n") then
           (split("\n")[0] + "..." )
-        else
-          .
-        end
+        else . end
   mutate-cells:
     default: .cell
   output-path:
