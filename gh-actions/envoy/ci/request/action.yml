@@ -207,7 +207,7 @@ runs:
             .ref = "${{ inputs.branch-name }}"
             | .sha = $github.sha
           end
-        | . * {"actor": "@\($github.actor)",
+        | . * {"actor": {name: $github.actor, icon: $github.event.sender.avatar_url},
                "message": $message,
                "started": ${{ inputs.started }},
                "target-branch": "${{ inputs.branch-name }}",
