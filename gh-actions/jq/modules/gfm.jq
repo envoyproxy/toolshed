@@ -50,7 +50,7 @@ def table_headers:
 ;
 
 
-def table(filter; ifempty; cells; sanitize):
+def table(filter; ifempty; mutate; sanitize):
   . as $table
   | ($table.headers | table_headers) as $headers
   | $table.data
@@ -64,7 +64,8 @@ def table(filter; ifempty; cells; sanitize):
   | map([.key, .value] as $row
          | map(. as $cell
                 | {table: $table, row: $row, cell: $cell}
-                | cells
+                | mutate as $cell
+                | {table: $table, row: $row, cell: $cell}
                 | sanitize))
   | map(join("|"))
   | join("\n") as $rows
