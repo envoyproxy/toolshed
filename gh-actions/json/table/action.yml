@@ -48,8 +48,8 @@ inputs:
       | if (type == "boolean" or type == "number") then
           "`\(.)`"
         else
-          gsub("\\\\\\("; "\\\\(")
-          | tojson
+          tojson
+          | gsub("\\\\\\("; "\\\\\\(")
           | .[1:-1]
         end
       | if test("\n") then
