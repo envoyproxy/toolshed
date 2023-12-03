@@ -53,12 +53,11 @@ inputs:
         else . end
       | tojson
       | gsub("\\\\\\("; "\\\\\\(")
+      | gsub("\\$"; "<span>$</span>")
       | .[1:-1]
-      | if ($row | index($cell) != 0) then
-          "<b>\(.)</b>"
-        else . end
   mutate-cells:
-    default: .cell
+    default: |
+      .cell
   output-path:
     type: string
 
