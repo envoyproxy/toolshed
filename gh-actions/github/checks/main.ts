@@ -49,9 +49,10 @@ const run = async (): Promise<void> => {
       const name = checkConfig.name
       const id = check
       const checkRequestConfig: CheckConfig = checkConfig.action === 'SKIP' ? {...config.skipped} : {...config.run}
-      checkRequestConfig.output.text =
-        textExtra === '' ? checkRequestConfig.output.text : `${checkRequestConfig.output.text}\n${textExtra}`
-      requests.push(createCheckRun(octokit, {...checkRequestConfig, id, name, owner, repo}))
+      const output = {...checkRequestConfig.output}
+      output.text =
+        textExtra === '' ? output.text : `${checkRequestConfig.output.text}\n${textExtra}`
+      requests.push(createCheckRun(octokit, {...checkRequestConfig, id, name, owner, repo, output}))
     })
     const checkRunIds: [string, number][] = await Promise.all(requests)
     core.setOutput('checks', JSON.stringify(Object.fromEntries(checkRunIds), null, 0))
