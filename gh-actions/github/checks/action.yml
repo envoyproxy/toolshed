@@ -1,0 +1,28 @@
+name: 'Checks'
+description: Start Github checks
+author: 'phlax'
+inputs:
+  config:
+    description: >
+      JSON configuration for checks
+    type: string
+    required: true
+  checks:
+    description: >
+      Checks to start
+    type: string
+    required: true
+  token:
+    description: >
+      Github token
+    type: string
+    default: ${{ github.token }}
+  text-extra:
+    description: >
+      Additional text to append to every check text
+    type: string
+    default:
+
+runs:
+  using: node20
+  main: 'dist/index.js'
