@@ -26,12 +26,12 @@ runs:
   steps:
   - name: Download environment data
     id: download
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.1.79
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.1.80
     with:
       name: ${{ inputs.name }}
       path: ${{ runner.temp }}
       run-id: ${{ inputs.run-id }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.79
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.80
     name: Load env data
     id: data
     with:
@@ -39,7 +39,7 @@ runs:
       input: ${{ runner.temp }}/${{ inputs.name }}.json
       filter: ${{ inputs.filter }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-  - uses: envoyproxy/toolshed/gh-actions/github/env/save@actions-v0.1.79
+  - uses: envoyproxy/toolshed/gh-actions/github/env/save@actions-v0.1.80
     name: Save env
     if: ${{ inputs.check-name }}
     with:
