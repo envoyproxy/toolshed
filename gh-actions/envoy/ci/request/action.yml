@@ -38,11 +38,13 @@ inputs:
   template-script-ref-file:
     type: string
     default: |
-      OUTPUT=\"$(git show \($ref):\($filename))\"
+      git fetch \($remote) \($ref)
+      OUTPUT=\"$(git show \($remote)/\($ref):\($filename))\"
   template-script-diff:
     type: string
     default: |
-      OUTPUT=\"$(git diff --name-only \($ref) \($remote))\"
+      git fetch \($remote) \($ref)
+      OUTPUT=\"$(git diff --name-only \($diff) \($remote)/\($ref))\"
   vars:
     type: string
     required: true
@@ -91,7 +93,8 @@ runs:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
       filter: |
         "${{ inputs.config-file }}" as $filename
-        | "origin/${{ inputs.branch-name }}" as $ref
+        | "origin" as $remote
+        | "${{ inputs.branch-name }}" as $ref
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.81
     name: Current config
@@ -131,8 +134,9 @@ runs:
     with:
       title: git diff changes from ${{ inputs.merge-commit || 'HEAD^1' }}
       filter: |
-        "${{ inputs.merge-commit || 'HEAD^1' }}" as $ref
-        | "origin/${{ inputs.branch-name }}" as $remote
+        "${{ inputs.merge-commit || 'HEAD^1' }}" as $diff
+        | "origin" as $remote
+        | "${{ inputs.branch-name }}" as $ref
         | ("${{ inputs.template-script-diff }}" | bash::output)
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.81
     id: changed
@@ -173,7 +177,8 @@ runs:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.version-file }}
       filter: |
         "${{ inputs.version-file }}" as $filename
-        | "origin/${{ inputs.branch-name }}" as $ref
+        | "${{ inputs.branch-name }}" as $ref
+        | "origin" as $remote
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
   - id: version-current
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.81
