@@ -46,7 +46,7 @@ runs:
     run: |
       # ${{ inputs.title || 'Run generated script' }}
       EXIT_CODE=0
-      ${{ steps.script.outputs.path }} || {
+      bash --noprofile --norc -e -o pipefail "$TMPFILE" || {
           EXIT_CODE=$?
       }
       echo "exit-code=$EXIT_CODE" >> $GITHUB_OUTPUT
