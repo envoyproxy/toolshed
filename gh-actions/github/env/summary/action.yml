@@ -1,4 +1,7 @@
 inputs:
+  actor:
+    type: string
+    required: true
   append:
     type: boolean
     default: true
@@ -127,8 +130,7 @@ runs:
         | ${{ steps.table-output.outputs.value }}
         | join("\n") as $tables
         | "${{ inputs.link && format('[{0}]({1})', steps.title.outputs.value, inputs.link) || steps.title.outputs.value }}" as $link
-        | "${{ github.event.sender.avatar_url }}" as $avatarIcon
-        | "${{ github.actor }}" as $actor
+        | ${{ inputs.actor }} as $actor
         | "[`\($sha[:7])`](https://github.com/${{ github.repository }}/commit/\($sha))" as $commitLink
         | $inputs.message as $message
         | ($message | split("\n")[0]) as $title
@@ -139,7 +141,7 @@ runs:
         | "
         ## \($icon) Request (\($link))
 
-        <img src=\"\($avatarIcon)\" alt=\"\($actor)\" width=\"18\" height=\"18\"> @\($actor) \($commitLink) \($pr)
+        <img src=\"\($actor.icon)\" alt=\"\($actor.name)\" width=\"18\" height=\"18\"> @\($actor.name) \($commitLink) \($pr)
 
         \($change)
 
