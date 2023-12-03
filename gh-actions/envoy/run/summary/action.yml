@@ -10,7 +10,7 @@ inputs:
   template:
     type: string
     default: |
-      ## \($context.config.envoy.icon) \($context.config.check.name): \($context.target)
+      ## \($context.config.envoy.icon) \($context.check.name): \($context.target)
 
       \($runSummary)
 
@@ -83,7 +83,7 @@ inputs:
   template-title-advice:
     type: string
     default: >-
-      Envoy/prechecks (\($context.target)) advice
+      \($context.check.name) (\($context.target)) advice
   template-title-failure:
     type: string
     default: >-
@@ -165,7 +165,7 @@ runs:
           else
             .conclusion = ("${{ inputs.title-success }}" | gfm::action("success"))
           end
-        | .advice = ($context.config.check.advice[$context.target] // "")
+        | .advice = ($context.check.advice[$context.target] // "")
         | if .advice != "" then
             .advice |= ({content: ., title: (. | "${{ inputs.template-title-advice }}")} | gfm::collapse)
           else
