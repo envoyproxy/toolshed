@@ -50,8 +50,7 @@ const run = async (): Promise<void> => {
       const id = check
       const checkRequestConfig: CheckConfig = checkConfig.action === 'SKIP' ? {...config.skipped} : {...config.run}
       const output = {...checkRequestConfig.output}
-      output.text =
-        textExtra === '' ? output.text : `${checkRequestConfig.output.text}\n${textExtra}`
+      output.text = textExtra === '' ? output.text : `${checkRequestConfig.output.text}\n${textExtra}`
       requests.push(createCheckRun(octokit, {...checkRequestConfig, id, name, owner, repo, output}))
     })
     const checkRunIds: [string, number][] = await Promise.all(requests)
