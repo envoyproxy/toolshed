@@ -45,6 +45,8 @@ inputs:
     required: false
 
 outputs:
+  linked-title:
+    value: ${{ steps.linked-title.outputs.value }}
   summary:
     value: ${{ toJSON(steps.output.outputs.value) }}
   title:
@@ -62,59 +64,55 @@ runs:
       filter: |
         .repository = "${{ github.repository }}"
         | gfm::event_title
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.82
+    id: linked-title
+    with:
+      input: ${{ toJSON(inputs) }}
+      options: -r
+      filter: |
+        .repository = "${{ github.repository }}"
+        | del(.link)
+        | gfm::event_title
+
+  # This generates a filter from configuration
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.82
+    name: Table filter
+    id: table-filter
+    with:
+      input: ${{ inputs.tables }}
+      input-format: yaml
+      options: -r
+      print-output: true
+      filter: |
+        with_entries({key: .key, value: .value.filter})
+        | utils::filters
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.82
     name: Tables
     id: tables
     with:
-      input: ${{ inputs.tables }}
-      input-format: yaml
-
-  - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.1.82
-    id: data-tables
-    with:
-      context: ${{ inputs.data }}
-      context-filter: |
-        {request}
-      items: ${{ steps.tables.outputs.value }}
-      steps: |
-        - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.82
-          id: context-$KEY
-          with:
-            input: >-
-              %{{ inputs.context }}
-            filter: |
-              .items["$KEY"]
-            print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-        - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.82
-          id: table-$KEY
-          with:
-            json: |
-              %{{ inputs.context }}
-            filter: >-
-              %{{ fromJSON(steps.context-$KEY.outputs.value).filter }}
-            title: >-
-              %{{ fromJSON(steps.context-$KEY.outputs.value).title }}
-            summary: >-
-              %{{ fromJSON(steps.context-$KEY.outputs.value).table-title }}
-            collapse: >-
-              %{{ fromJSON(steps.context-$KEY.outputs.value).collapse }}
-
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.82
-    id: table-output
-    with:
-      input: ${{ toJSON(fromJSON(fromJSON(steps.data-tables.outputs.out)).*.outputs.summary) }}
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      input: ${{ inputs.data }}
+      print-result: true
+      options: -r
+      filter: |
+        . as $data
+        | ${{ steps.table-filter.outputs.value }}
+        | map(select(length > 0)) as $tableData
+        | with_entries(select(.value | length > 0)) as $tableData
+        | $data.config.tables
+        | with_entries(
+              del(.value.filter)
+              | .value.data = $tableData[.key]
+              | select(.value.data | type != "null"))
+        | gfm::tables
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.82
     id: output
     with:
       input: ${{ toJSON(inputs) }}
       options: -r
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      output-path: ${{ inputs.output-path }}
       filter: |
         . as $inputs
-        | .icon as $icon
         | .sha as $sha
         | if $inputs.pr != "" then
             .["base-sha"] as $baseSha
@@ -127,9 +125,7 @@ runs:
             ""
           end
         | . as $pr
-        | ${{ steps.table-output.outputs.value }}
-        | join("\n") as $tables
-        | "${{ inputs.link && format('[{0}]({1})', steps.title.outputs.value, inputs.link) || steps.title.outputs.value }}" as $link
+        | "${{ steps.tables.outputs.value }}" as $tables
         | ${{ inputs.actor }} as $actor
         | "[`\($sha[:7])`](https://github.com/${{ github.repository }}/commit/\($sha))" as $commitLink
         | $inputs.message as $message
@@ -139,8 +135,6 @@ runs:
         | gfm::collapse as $change
         | {"title": $title, "body": .}
         | "
-        ## \($icon) Request (\($link))
-
         <img src=\"\($actor.icon)\" alt=\"\($actor.name)\" width=\"18\" height=\"18\"> @\($actor.name) \($commitLink) \($pr)
 
         \($change)
@@ -148,3 +142,20 @@ runs:
         \($tables)
         "
         | str::indent($inputs.indent // "0" | fromjson)
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.82
+    if: ${{ inputs.output-path }}
+    with:
+      input: ${{ steps.output.outputs.value }}
+      options: -sRr
+      output-path: ${{ inputs.output-path }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      filter: |
+        . as $summary
+        | "${{ inputs.icon }}" as $icon
+        | "${{ inputs.link && format('[{0}]({1})', steps.title.outputs.value, inputs.link) || steps.title.outputs.value }}" as $link
+        | "
+        ## \($icon) Request (\($link))
+
+        \($summary)
+        "
