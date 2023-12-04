@@ -133,8 +133,8 @@ runs:
          "job-started": .context["job-started"],
          started: .run.started,
          completed: .run.completed,
-         "run-time": "\(.run.completed - .run.started)s",
-         "job-time": "\(.run.completed - .context["job-started"])s"}
+         "run-time": "\(.run.completed - .run.started | . * 100 | round / 100)s",
+         "job-time": "\(.run.completed - .context["job-started"] | . * 100 | round / 100)s"}
   - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.1.83
     name: Run information summary
     id: run-summary
