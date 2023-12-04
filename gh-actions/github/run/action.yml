@@ -104,7 +104,7 @@ runs:
     name: Free diskspace
     uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.1.83
     with:
-      to_remove: ${{ inputs.diskskpack-hack-paths }}
+      to_remove: ${{ inputs.diskspace-hack-paths }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.83
     name: Generate download config
     if: ${{ inputs.downloads }}
