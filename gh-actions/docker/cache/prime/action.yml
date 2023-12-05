@@ -1,17 +1,14 @@
 
 inputs:
-  image_tag:
+  image-tag:
     type: string
     required: true
   lock-repository:
     type: string
+    default: ${{ github.repository }}
   lock-id:
     type: string
   lock-token:
-    type: string
-  lock-app-id:
-    type: string
-  lock-app-key:
     type: string
 
 outputs:
@@ -22,28 +19,29 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/appauth@actions-v0.1.84
-    if: ${{ inputs.lock-app-id && inputs.lock-app-key }}
-    name: Fetch app auth
-    id: appauth
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.84
+    if: ${{ ! inputs.lock-id }}
+    id: lock-id
     with:
-      app_id: ${{ inputs.lock-app-id }}
-      key: ${{ inputs.lock-app-key }}
+      input: ${{ inputs.image-tag }}
+      options: -Rr
+      filter: |
+        @base64
   - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.1.84
-    if: ${{ steps.appauth.outputs.token || inputs.lock-token }}
+    if: ${{ inputs.lock-token }}
     with:
-      key: ${{ inputs.lock-id || inputs.image_tag }}
+      key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
       repository: ${{ inputs.lock-repository }}
-      token: ${{ steps.appauth.outputs.token || inputs.lock-token }}
+      token: ${{ inputs.lock-token }}
   - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.1.84
     id: prime
     with:
-      key: "${{ inputs.image_tag }}"
+      key: ${{ inputs.image-tag }}
       command: |
         systemctl stop docker docker.socket
         mv /var/lib/docker /var/lib/docker.orig
         mkdir /var/lib/docker
         systemctl start docker
-        docker pull ${{ inputs.image_tag }}
+        docker pull ${{ inputs.image-tag }}
         systemctl stop docker
         tar cf - -C /var/lib/docker . | zstd - -T0 -o docker.tar.zst
