@@ -39,16 +39,6 @@ runs:
       input: ${{ runner.temp }}/${{ inputs.name }}.json
       filter: ${{ inputs.filter }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-  - uses: envoyproxy/toolshed/gh-actions/github/env/save@actions-v0.1.83
-    name: Save env
-    if: ${{ inputs.check-name }}
-    with:
-      name: env-proxy
-      env-format: yaml
-      env: |
-        workflow-env: ${{ inputs.run-id }}
-        check-name: ${{ inputs.check-name }}
-        startup-conclusion: ${{ github.event.workflow_run.conclusion }}
   - run: |
       # Cleanup temporary env file
       rm -rf ${{ runner.temp }}/${{ inputs.name }}.json
