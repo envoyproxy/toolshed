@@ -14,7 +14,18 @@ inputs:
     default:
   template-check-text:
     type: string
-    default:
+    default: |
+      ## \($icon) Check is running
+
+      ## The check run can be viewed here:
+
+      # \($icon) [\($data.check.name) (\($summary.title))](\($runLink))
+
+      ### Check started by
+
+      ## \($summary["linked-title"])
+
+      \($summary.summary)
   template-script-current:
     type: string
     default: |
