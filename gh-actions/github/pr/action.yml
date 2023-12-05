@@ -1,4 +1,3 @@
-
 inputs:
   base:
     type: string
@@ -47,26 +46,67 @@ inputs:
 runs:
   using: composite
   steps:
-  - run: |
-      git checkout -b "$BRANCH_NAME"
-    name: Checkout branch (${{ inputs.branch }})
-    working-directory: ${{ inputs.working-directory }}
-    shell: bash
+  - name: Checkout branch (${{ inputs.branch }})
+    uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.84
     env:
-      BRANCH_NAME: ${{ inputs.branch }}
-  - run: |
-      echo "COMMIT: ${{ inputs.commit }}"
-      git config --global user.name "$COMMITTER_NAME"
-      git config --global user.email "$COMMITTER_EMAIL"
-      git commit . -m "$COMMIT_MESSAGE"
-    if: ${{ inputs.commit && inputs.commit != 'false' }}
-    env:
-      COMMITTER_NAME: ${{ inputs.committer-name }}
-      COMMITTER_EMAIL: ${{ inputs.committer-email }}
-      COMMIT_MESSAGE: ${{ inputs.commit-message || inputs.title }}
-    name: Commit changes
-    working-directory: ${{ inputs.working-directory }}
-    shell: bash
+      GH_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+      CI_DEBUG: true
+    with:
+      input: |
+        base: ${{ inputs.base }}
+        branch: ${{ inputs.branch }}
+        body: |
+          ${{ inputs.body }}
+        commit: ${{ inputs.commit }}
+        committer-name: ${{ inputs.committer-name }}
+        committer-email: ${{ inputs.committer-email }}
+        commit-message: |
+          ${{ inputs.commit-message }}
+        diff-show: ${{ inputs.diff-show }}
+        diff-upload: ${{ inputs.diff-upload }}
+        title: >-
+          ${{ inputs.title }}
+        working-directory: ${{ inputs.working-directory }}
+      input-format: yaml
+      filter: |
+        . as $input
+        | .["working-directory"] as $workingDirectory
+        | .base as $base
+        | (.body | @sh) as $body
+        | .branch as $branch
+        | (.title | @sh) as $title
+        | "git -C \($workingDirectory)" as $git
+        | .["committer-name"] as $committerName
+        | .["committer-email"] as $committerEmail
+        | (($input["commit-message"] // $input.title) | @sh) as $commitMessage
+        | "
+        \($git) config --global user.name \($committerName)
+        \($git) config --global user.email \($committerEmail)
+        \($git) commit . -m \($commitMessage)
+        " as $gitCommit
+        | if $input.commit then
+            $gitCommit
+          else "" end
+        | . as $gitCommit
+        | if $input["diff-show"] and ($input["diff-upload"] | not) then
+            "\($git) diff HEAD^1"
+          else "" end
+        | . as $gitDiff
+        | "
+        \($git) checkout -b \($branch)
+          \($gitCommit)
+        \($gitDiff)
+        \($git) push --no-verify --set-upstream origin \($branch)
+        BODY=\"$(\($git) log -1 --pretty=%B | tail -n +2)\"
+        BODY+=\($body)
+        cd \($workingDirectory)
+        gh pr create \\
+          -B \($base) \\
+          -H \($branch) \\
+          --title \($title) \\
+          --body \"$BODY\"
+        "
+
   - name: Upload diff
     uses: envoyproxy/toolshed/gh-actions/upload/diff@actions-v0.1.84
     if: ${{ inputs.diff-upload }}
@@ -74,39 +114,3 @@ runs:
       diff: HEAD^1
       name: ${{ inputs.diff-upload }}
       show: ${{ inputs.diff-show }}
-  - run: |
-      git diff HEAD^1
-    if: ${{ ! inputs.diff-upload && inputs.diff-show }}
-    shell: bash
-  - run: |
-      LAST_COMMIT=$(git log -1 --pretty=%B | tail -n +2)
-      echo "text<<nEOFn" >> $GITHUB_OUTPUT
-      echo "${LAST_COMMIT}" >> $GITHUB_OUTPUT
-      echo "nEOFn" >> $GITHUB_OUTPUT
-    id: body
-    if: ${{ inputs.append-commit-message }} != 'false'
-    env:
-      PR_BODY: ${{ inputs.body }}
-    shell: bash
-  - run: |
-      git push --no-verify --set-upstream origin "$BRANCH_NAME"
-      gh pr create \
-          -B "$BASE_BRANCH" \
-          -H "$BRANCH_NAME" \
-          --title "$PR_TITLE" \
-          --body "$PR_BODY"
-      if [[ "${{ inputs.wip }}" == "true" ]]; then
-          gh pr ready "$BRANCH_NAME" --undo
-      fi
-    if: ${{ ! inputs.dry-run || inputs.dry-run == 'false' }}
-    env:
-      GH_TOKEN: ${{ inputs.GITHUB_TOKEN }}
-      PR_TITLE: ${{ inputs.title }}
-      PR_BODY: |
-        ${{ inputs.body }}
-        ${{ steps.body.outputs.text }}
-      BRANCH_NAME: ${{ inputs.branch }}
-      BASE_BRANCH: ${{ inputs.base }}
-    name: Create a PR
-    working-directory: ${{ inputs.working-directory }}
-    shell: bash
