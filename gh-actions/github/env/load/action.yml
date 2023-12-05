@@ -1,18 +1,24 @@
 
 inputs:
+  head-sha:
+    type: string
+    default:
   name:
     type: string
     default: env
   run-id:
     type: string
-    required: true
+    default:
   check-name:
     type: string
     default:
-  filter:
+  template-check-text:
     type: string
-    default: .
-
+    default:
+  template-script-current:
+    type: string
+    default: |
+      OUTPUT=\"$(gh api --jq '.workflow_runs[0].id' repos/\($repo)/actions/workflows/request.yml/runs?head_sha=\($head_sha))\"
 
 outputs:
   data:
@@ -24,20 +30,67 @@ outputs:
 runs:
   using: composite
   steps:
+  # For dispatch events we have to find the request via the Request workflow
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.83
+    name: Find request
+    id: find-request
+    if: ${{ inputs.head-sha }}
+    with:
+      filter: |
+        "${{ github.repository }}" as $repo
+        | "${{ inputs.head-sha }}" as $head_sha
+        | ("${{ inputs.template-script-current }}" | bash::output)
   - name: Download environment data
     id: download
     uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.1.83
     with:
       name: ${{ inputs.name }}
       path: ${{ runner.temp }}
-      run-id: ${{ inputs.run-id }}
+      run-id: ${{ steps.find-request.outputs.output || inputs.run-id }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.83
     name: Load env data
     id: data
     with:
       input-format: json-path
       input: ${{ runner.temp }}/${{ inputs.name }}.json
-      filter: ${{ inputs.filter }}
+      # This is hardcoded to allow use of input templates
+      filter: |
+        "${{ inputs.check-name }}" as $checkName
+        | .check = .checks["\($checkName)"]
+        | del(.checks)
+        | . as $data
+        | $data.summary as $summary
+        | "${{ github.event.workflow_run.conclusion }}" as $conclusion
+        | "${{ github.run_id }}" as $runId
+        | "${{ github.repository }}" as $repo
+        | if $conclusion != "" and $conclusion != "success"
+            then "completed"
+          else "in_progress" end
+        | . as $status
+        | $data.config.envoy.icon as $icon
+        | "https://github.com/\($repo)/actions/runs/\($runId)" as $runLink
+        | "${{ inputs.template-check-text }}" as $text
+        | {name: $data.check.name,
+           head_sha: $data.request.sha,
+           status: $status,
+           external_id: "\($runId)",
+           output: {
+             summary: "Check is running",
+             title: "\($data.check.name) (\($status))",
+             text: $text}}
+        | if $data.check.id and $data.check.id != "" and $status == "completed" then
+             .conclusion = "cancelled"
+          else . end
+        | . as $check
+        | $data.run
+        | if $data.check["check-id"] and $status == "completed" then
+            with_entries(.value = false)
+          else . end
+        | . as $run
+        | $data
+        | .run = $run
+        | {$check, data: .}
+
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
   - run: |
       # Cleanup temporary env file
