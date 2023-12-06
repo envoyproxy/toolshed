@@ -19,7 +19,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.84
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.0
     if: ${{ ! inputs.lock-id }}
     id: lock-id
     with:
@@ -27,13 +27,13 @@ runs:
       options: -Rr
       filter: |
         @base64
-  - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.1.84
+  - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.2.0
     if: ${{ inputs.lock-token }}
     with:
       key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
       repository: ${{ inputs.lock-repository }}
       token: ${{ inputs.lock-token }}
-  - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.1.84
+  - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.2.0
     id: prime
     with:
       key: ${{ inputs.image-tag }}
