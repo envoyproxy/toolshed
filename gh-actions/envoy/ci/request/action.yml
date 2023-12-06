@@ -247,10 +247,9 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.2.1
     id: torun
     with:
-      branch: ${{ inputs.branch-name }}
       event: ${{ github.event_name }}
       config: ${{ steps.run-config.outputs.value }}
-      paths: ${{ startswith(github.event_name, 'pull_request') && steps.changed.outputs.value || '[]' }}
+      paths: ${{ steps.changed.outputs.value || '[]' }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.1
     name: Create data
@@ -268,8 +267,8 @@ runs:
         | $runs
         | with_entries(
             ((.key | test("^mobile-") and ($ciMobile | not))
-            or ((.key | test("^build-windows-")) and ($ciWindows | not))
-            or ((.key | test("^build-macos-")) and ($ciMacos | not))) as $disable
+            or ((.key | test("^build-windows")) and ($ciWindows | not))
+            or ((.key | test("^build-macos")) and ($ciMacos | not))) as $disable
             | (.key | gsub("-"; "_") | ascii_upcase) as $keyVar
             | "ENVOY_CI_RUN_\($keyVar)" as $envVar
             | ($vars | has($envVar)) as $enable
