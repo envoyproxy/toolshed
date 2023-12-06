@@ -28,8 +28,10 @@ const run = async (): Promise<void> => {
     const trimResult = core.getBooleanInput('trim-result')
     const filter = core.getInput('filter')
     const inputFormat = core.getInput('input-format')
-    const outputPath = core.getInput('output-path')
-
+    let outputPath = core.getInput('output-path')
+    if (outputPath && outputPath.startsWith('/tmp') && process.platform === 'win32') {
+      outputPath = path.join(os.tmpdir(), path.basename(outputPath))
+    }
     let mangledFilter = filter
     let mangledInput = input
     if (inputFormat.endsWith('-path')) {
