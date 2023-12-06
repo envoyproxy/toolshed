@@ -6,7 +6,6 @@ interface BooleanMap {
 }
 
 interface CheckConfig {
-  branches: string[]
   paths: string[]
   push: string
 }
@@ -16,6 +15,7 @@ interface CheckConfigList {
 }
 
 function globMatchPaths(paths: string[], globs: string[]): boolean {
+  console.log(`MATCHING \n\n ${paths} \n\n ${globs}`)
   return paths.some(path => globs.some(glob => minimatch(path, glob)))
 }
 
@@ -23,20 +23,28 @@ const run = async (): Promise<void> => {
   try {
     const config: CheckConfigList = JSON.parse(core.getInput('config'))
     const paths = JSON.parse(core.getInput('paths'))
-    const branch = core.getInput('branch')
     const event = core.getInput('event')
     const checks: BooleanMap = {}
 
     Object.entries(config).forEach(([check, checkConfig]) => {
       checks[check] = false
-      if (checkConfig.branches && !checkConfig.branches.includes(branch)) {
+      if (!checkConfig) {
+        checks[check] = true
         return
       }
       if (!checkConfig.paths || (event === 'push' && checkConfig.push === 'always')) {
         checks[check] = true
         return
       }
-      checks[check] = globMatchPaths(paths, checkConfig.paths)
+      if (event === 'push' && checkConfig.push === 'never') {
+        checks[check] = false
+        return
+      }
+      if (checkConfig.paths) {
+        checks[check] = globMatchPaths(paths, checkConfig.paths)
+        return
+      }
+      checks[check] = true
     })
     core.setOutput('runs', JSON.stringify(checks, null, 0))
   } catch (error) {
