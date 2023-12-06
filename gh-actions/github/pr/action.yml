@@ -94,7 +94,7 @@ runs:
         | . as $gitDiff
         | "
         \($git) checkout -b \($branch)
-          \($gitCommit)
+        \($gitCommit)
         \($gitDiff)
         \($git) push --no-verify --set-upstream origin \($branch)
         BODY=\"$(\($git) log -1 --pretty=%B | tail -n +2)\"
