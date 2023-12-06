@@ -3,11 +3,11 @@ inputs:
   image-tag:
     type: string
     required: true
+  lock-id:
+    type: string
   lock-repository:
     type: string
     default: ${{ github.repository }}
-  lock-id:
-    type: string
   lock-token:
     type: string
 
@@ -19,29 +19,18 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.0
-    if: ${{ ! inputs.lock-id }}
-    id: lock-id
-    with:
-      input: ${{ inputs.image-tag }}
-      options: -Rr
-      filter: |
-        @base64
-  - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.2.0
-    if: ${{ inputs.lock-token }}
-    with:
-      key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
-      repository: ${{ inputs.lock-repository }}
-      token: ${{ inputs.lock-token }}
   - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.2.0
     id: prime
     with:
       key: ${{ inputs.image-tag }}
+      lock-id: ${{ inputs.lock-id }}
+      lock-token: ${{ inputs.lock-token }}
+      lock-repository: ${{ inputs.lock-repository }}
       command: |
         systemctl stop docker docker.socket
         mv /var/lib/docker /var/lib/docker.orig
         mkdir /var/lib/docker
         systemctl start docker
         docker pull ${{ inputs.image-tag }}
-        systemctl stop docker
+        systemctl stop docker docker.socket
         tar cf - -C /var/lib/docker . | zstd - -T0 -o docker.tar.zst
