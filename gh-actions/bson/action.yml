@@ -40,7 +40,7 @@ runs:
     id: command
     with:
       input: ${{ inputs.input }}
-      input-format: ${{ inputs.format }}
+      input-format: ${{ inputs.input-format }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       options: -r
       filter: ${{ inputs.filter }}
