@@ -15,7 +15,6 @@ interface CheckConfigList {
 }
 
 function globMatchPaths(paths: string[], globs: string[]): boolean {
-  console.log(`MATCHING \n\n ${paths} \n\n ${globs}`)
   return paths.some(path => globs.some(glob => minimatch(path, glob)))
 }
 
