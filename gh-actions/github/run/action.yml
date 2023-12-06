@@ -153,6 +153,7 @@ runs:
       options: -Rsr
       output-path: ${{ steps.paths.outputs.entrypoint }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.2
     id: source
     with:
@@ -309,8 +310,8 @@ runs:
           "completed": (.completed.outputs.value | fromjson),
           "entrypoint": (.entrypoint.outputs.value | if str::isempty then "" else . end),
           "source": (.source.outputs.value | if str::isempty then "" else . end),
-          "steps-pre": (.["context-steps-pre"].outputs.value | fromjson | if str::isempty then "" else . end),
-          "steps-post": (.["context-steps-post"].outputs.value | fromjson | if str::isempty then "" else . end),
+          "steps-pre": (.["context-steps-pre"].outputs.value // "\"\"" | fromjson | if str::isempty then "" else . end),
+          "steps-post": (.["context-steps-post"].outputs.value // "\"\"" | fromjson | if str::isempty then "" else . end),
           "exit-code": (.run.outputs["exit-code"] // "0" | fromjson)}
         | {"run": .,
            "context": ${{ inputs.context }}}
