@@ -125,8 +125,8 @@ runs:
         | (.["build-image"].tag | validate::sha(40)) as $tag
         | (.["build-image"].sha | validate::sha(64)) as $sha
         | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
-        | {"build-image": "\($repo):\($tag)@sha256:\($sha)",
-           "build-image-mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
+        | {"default": "\($repo):\($tag)@sha256:\($sha)",
+           "mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
 
   # Check requested changes
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.1.84
@@ -196,31 +196,47 @@ runs:
   - id: request
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.1.84
     with:
-      input: ${{ toJSON(github) }}
+      input: |
+        actor: ${{ toJSON(github.actor) }}
+        event: ${{ toJSON(github.event) }}
+        event_name: ${{ github.event_name }}
+        sha: ${{ github.sha }}
+      input-format: yaml
       filter: |
-        . as $github
-        | $github.event as $event
+        .
+        | .actor as $actor
+        | .event as $event
+        | .event_name as $event_name
+        | .sha as $sha
         | ($event.head_commit.message
            // "\($event.pull_request.title)\n\($event.pull_request.body)") as $message
+        | ${{ steps.build-images.outputs.value }} as $buildImageCurrent
+        | ${{ steps.requested-build-images.outputs.value }} as $buildImage
+        | ($buildImage.default != $buildImageCurrent.default) as $buildImageChanged
+        | $buildImage
+        | if $buildImageChanged then
+            .changed = true
+          else . end
+        | . as $buildImage
         | {}
-        | if ($github.event_name | startswith("pull_request")) then
+        | if ($event_name | startswith("pull_request")) then
             .ref = "${{ inputs.merge-commit }}"
             | .sha = $event.pull_request.head.sha
-            | .pr = $github.event.number
-            | .["base-sha"] = $github.sha
+            | .pr = $event.number
+            | .["base-sha"] = $sha
           else
             .ref = "${{ inputs.branch-name }}"
-            | .sha = $github.sha
+            | .sha = $sha
           end
-        | . * {"actor": {name: $github.actor, icon: $github.event.sender.avatar_url},
+        | . * {"actor": {name: $actor, icon: $event.sender.avatar_url},
                "message": $message,
                "started": ${{ inputs.started }},
                "target-branch": "${{ inputs.branch-name }}",
                "trusted": ${{ fromJSON(steps.trusted.outputs.value).trusted }},
                "version": ${{ steps.version.outputs.value }},
                "version-current": ${{ steps.version-current.outputs.value }},
-               "build-image": ${{ steps.requested-build-images.outputs.value }},
-               "build-image-current": ${{ steps.build-images.outputs.value }}}
+               "build-image": $buildImage,
+               "build-image-current": $buildImageCurrent}
 
   - name: Run config
     id: run-config
