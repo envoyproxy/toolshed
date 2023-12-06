@@ -12,11 +12,6 @@ inputs:
       Changed paths
     type: string
     required: true
-  branch:
-    description: >
-      Branch of change
-    type: string
-    required: true
   event:
     description: >
       Change event
