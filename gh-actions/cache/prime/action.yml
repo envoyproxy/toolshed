@@ -6,7 +6,13 @@ inputs:
   key:
     type: string
     required: true
-
+  lock-id:
+    type: string
+  lock-repository:
+    type: string
+    default: ${{ github.repository }}
+  lock-token:
+    type: string
   owner:
     type: string
     default: runner:docker
@@ -31,19 +37,43 @@ runs:
   using: "composite"
   steps:
   - run: |
+      # Create cache path (it non-existent)
       sudo mkdir -p ${{ inputs.path_tmp }}
     shell: bash
-
   - name: Check cache
-    id: cache-restore
+    id: cache-restore-initial
     uses: actions/cache/restore@v3
     with:
       lookup-only: true
       path: ${{ inputs.path_tmp }}
       key: ${{ inputs.key }}
-
-  - if: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.0
+    if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
+    id: lock-id
+    with:
+      input: ${{ inputs.key }}
+      options: -Rr
+      filter: |
+        @base64
+  - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.2.0
+    if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
+    with:
+      key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
+      repository: ${{ inputs.lock-repository }}
+      token: ${{ inputs.lock-token }}
+  - name: Check cache
+    id: cache-restore
+    if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
+    uses: actions/cache/restore@v3
+    with:
+      lookup-only: true
+      path: ${{ inputs.path_tmp }}
+      key: ${{ inputs.key }}
+  - if: ${{ steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.cache-restore.outputs.cache-hit != 'true' }}
+    name: Restore cache
+    id: restore
     run: |
+      # Restore cache
       if [[ "${{ inputs.mount_tmpfs }}" == 'true' ]]; then
           sudo mount -t tmpfs none ${{ inputs.path_tmp }}
       fi
@@ -57,18 +87,20 @@ runs:
           "${{ inputs.path_script }}"
       fi
       sudo chown -R  "${{ inputs.owner }}" "${{ inputs.path_tmp }}"
+      echo "save=true" >> $GITHUB_OUTPUT
       cd - || exit 1
     shell: bash
 
-  - name: Save cache
-    if: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
+  - if: ${{ steps.restore.outputs.save == 'true' }}
+    name: Save cache
     uses: actions/cache/save@v3
     with:
       path: ${{ inputs.path_tmp }}
       key: ${{ inputs.key }}
 
-  - if: ${{ steps.cache-restore.outputs.cache-hit != 'true' }}
+  - if: ${{ steps.restore.outputs.save == 'true' }}
     run: |
+      # Remove temporary files
       if [[ "${{ inputs.mount_tmpfs }}" == 'true' ]]; then
           sudo umount ${{ inputs.path_tmp }}
       fi
