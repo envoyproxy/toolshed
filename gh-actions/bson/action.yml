@@ -13,17 +13,26 @@ inputs:
   catch-errors:
     type: boolean
     default: false
+  result-filter:
+    type: string
+    default:
+  result-filter-options:
+    type: string
+    default: -sR
+  result-format:
+    type: string
+    default: json
   title:
     type: string
     default:
 
 outputs:
   exit-code:
-    value: ${{ steps.output.outputs.exit-code }}
+    value: ${{ steps.run.outputs.exit-code }}
   command:
     value: ${{ steps.command.outputs.value }}
   output:
-    value: ${{ steps.output.outputs.output }}
+    value: ${{ inputs.result-filter && steps.output.outputs.value || steps.run.outputs.output }}
 
 
 runs:
@@ -45,7 +54,8 @@ runs:
       options: -r
       filter: ${{ inputs.filter }}
       output-path: ${{ steps.script.outputs.path }}
-  - id: output
+
+  - id: run
     run: |
       # ${{ inputs.title || 'Run generated script' }}
       EXIT_CODE=0
@@ -62,3 +72,11 @@ runs:
       CATCH_ERRORS: ${{ inputs.catch-errors }}
       TMPFILE: ${{ steps.script.outputs.path }}
     shell: bash
+  - id: output
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
+    if: ${{ inputs.result-filter }}
+    with:
+      input: ${{ steps.run.outputs.output }}
+      input-format: ${{ inputs.result-format }}
+      filter: ${{ inputs.result-filter }}
+      options: ${{ inputs.result-filter-options }}
