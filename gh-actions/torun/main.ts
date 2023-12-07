@@ -27,23 +27,14 @@ const run = async (): Promise<void> => {
 
     Object.entries(config).forEach(([check, checkConfig]) => {
       checks[check] = false
-      if (!checkConfig) {
-        checks[check] = true
+      if (event === 'push' && checkConfig && checkConfig.push === 'never') {
         return
       }
-      if (!checkConfig.paths || (event === 'push' && checkConfig.push === 'always')) {
-        checks[check] = true
-        return
-      }
-      if (event === 'push' && checkConfig.push === 'never') {
-        checks[check] = false
-        return
-      }
-      if (checkConfig.paths) {
-        checks[check] = globMatchPaths(paths, checkConfig.paths)
-        return
-      }
-      checks[check] = true
+      const noPathCheck =
+        !checkConfig ||
+        !checkConfig.paths ||
+        (event === 'push' && (checkConfig.push === '' || checkConfig.push === 'always'))
+      checks[check] = noPathCheck || globMatchPaths(paths, checkConfig.paths)
     })
     core.setOutput('runs', JSON.stringify(checks, null, 0))
   } catch (error) {
