@@ -62,10 +62,6 @@ runs:
   steps:
   ## WARNING: INCOMING USER DATA IS A REQUEST ATTACK VECTOR AND SHOULD BE HANDLED ACCORDINGLY
 
-  - uses: envoyproxy/toolshed/gh-actions/github/context@actions-v0.2.4
-    name: Github context
-    if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-
   # Pull request/targets are _never_ trusted.
   #
   # Only specified bots are trusted.
@@ -73,48 +69,58 @@ runs:
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
     with:
       input: |
-        ${{ inputs.trusted-bots || 'NOBOTS' }}
-      options: -sRc
-      input-format: text
+        trusted_bots: |
+          ${{ inputs.trusted-bots || 'NOBOTS' }}
+        bot: ${{ contains(github.actor, '[bot]') && github.actor || '' }}
+        event_name: ${{ github.event_name }}
+      input-format: yaml
       filter: |
-        "${{ contains(github.actor, '[bot]') && github.actor || '' }}" as $bot
-        | (if $bot == "" then
-             true
-          else
-            (split("\n")
-            | index($bot) != null)
-          end) as $trusted
-        | {trusted: ($trusted and ${{ ! startswith(github.event_name, 'pull_request') }})}
+        . as $input
+        | if ($input.bot | str::isempty | not) then
+            .trusted_bots
+            | split("\n")
+            | index($input.bot) != null
+          else true end
+        | (. and ($input.event_name | startswith("pull_request") | not))
+
+  # Check requested changes
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.4
+    id: changed
+    with:
+      title: git diff changes from ${{ inputs.merge-commit || 'HEAD^1' }}
+      input: |
+        diff: ${{ inputs.merge-commit || 'HEAD^1' }}
+        remote: origin
+        ref: ${{ inputs.branch-name }}
+      input-format: yaml
+      filter: |
+        .diff as $diff
+        | .remote as $remote
+        | .ref as $ref
+        | ("${{ inputs.template-script-diff }}" | bash::output)
+      result-filter: |
+        rtrimstr("\n")
+        | split("\n")
 
   # Check current/requested config (currently only build-images can be overridden)
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.4
-    id: config-current-text
-    with:
-      title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
-      filter: |
-        "${{ inputs.config-file }}" as $filename
-        | "origin" as $remote
-        | "${{ inputs.branch-name }}" as $ref
-        | ("${{ inputs.template-script-ref-file }}" | bash::output)
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
-    name: Current config
     id: config
     with:
-      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      input-format: yaml
-      input: ${{ steps.config-current-text.outputs.output }}
-  - id: build-images
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
-    with:
-      input: ${{ steps.config.outputs.value }}
+      title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
+      input: |
+        filename: ${{ inputs.config-file }}
+        branch: ${{ inputs.branch-name }}
+        remote: origin
       filter: |
-        .["build-image"].repo as $repo
-        | .["build-image"].tag as $tag
-        | .["build-image"].sha as $sha
-        | .["build-image"]["mobile-sha"] as $mobileSha
-        | {default: "\($repo):\($tag)@sha256:\($sha)",
-           mobile: "\($repo)::mobile-\($tag)@sha256:\($mobileSha)"}
-  - id: requested-build-images
+        .filename as $filename
+        | .remote as $remote
+        | .branch as $ref
+        | ("${{ inputs.template-script-ref-file }}" | bash::output)
+      result-format: yaml
+      result-filter-options:
+      result-filter: .
+
+  - id: build-images
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
     with:
       input-format: yaml-path
@@ -127,25 +133,15 @@ runs:
         | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
         | {"default": "\($repo):\($tag)@sha256:\($sha)",
            "mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
-
-  # Check requested changes
-  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.4
-    id: diff
-    with:
-      title: git diff changes from ${{ inputs.merge-commit || 'HEAD^1' }}
-      filter: |
-        "${{ inputs.merge-commit || 'HEAD^1' }}" as $diff
-        | "origin" as $remote
-        | "${{ inputs.branch-name }}" as $ref
-        | ("${{ inputs.template-script-diff }}" | bash::output)
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
-    id: changed
-    with:
-      input: ${{ steps.diff.outputs.output }}
-      options: -sR
-      filter: |
-        rtrimstr("\n")
-        | split("\n")
+        | . as $requested
+        | ${{ steps.config.outputs.output }}
+        | .["build-image"].repo as $repo
+        | .["build-image"].tag as $tag
+        | .["build-image"].sha as $sha
+        | .["build-image"]["mobile-sha"] as $mobileSha
+        | {default: "\($repo):\($tag)@sha256:\($sha)",
+           mobile: "\($repo)::mobile-\($tag)@sha256:\($mobileSha)"}
+        | {$requested, current: .}
 
   # Check current/request versions
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
@@ -157,12 +153,26 @@ runs:
       input: VERSION.txt
       filter: |
         validate::version
-  - id: version
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.4
+    id: version
     with:
-      input: ${{ steps.changed.outputs.value || '[]' }}
+      title: fetch ${{ inputs.branch-name }}:${{ inputs.version-file }}
       filter: |
-        (index("VERSION.txt") != null) as $changed
+        "${{ inputs.version-file }}" as $filename
+        | "${{ inputs.branch-name }}" as $ref
+        | "origin" as $remote
+        | ("${{ inputs.template-script-ref-file }}" | bash::output)
+      result-filter: |
+        .
+        | endswith("-dev") as $isdev
+        | split(".")
+        | {major: (.[0] | fromjson),
+           minor: (.[1] | fromjson),
+           patch: (.[2] | rtrimstr("-dev") | fromjson),
+           "dev": $isdev}
+        | . as $current
+        | ${{ steps.changed.outputs.output || '[]' }}
+        | (index("VERSION.txt") != null) as $changed
         | "${{ steps.version-string.outputs.value }}"
         | endswith("-dev") as $isdev
         | split(".")
@@ -171,27 +181,7 @@ runs:
            patch: (.[2] | rtrimstr("-dev") | fromjson),
            "dev": $isdev,
            "changed": $changed}
-  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.4
-    id: version-current-string
-    with:
-      title: fetch ${{ inputs.branch-name }}:${{ inputs.version-file }}
-      filter: |
-        "${{ inputs.version-file }}" as $filename
-        | "${{ inputs.branch-name }}" as $ref
-        | "origin" as $remote
-        | ("${{ inputs.template-script-ref-file }}" | bash::output)
-  - id: version-current
-    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
-    with:
-      options: -Rsc
-      filter: |
-        "${{ steps.version-current-string.outputs.output }}"
-        | endswith("-dev") as $isdev
-        | split(".")
-        | {major: (.[0] | fromjson),
-           minor: (.[1] | fromjson),
-           patch: (.[2] | rtrimstr("-dev") | fromjson),
-           "dev": $isdev}
+        | {requested: ., current: $current}
 
   - id: request
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
@@ -201,6 +191,7 @@ runs:
         event: ${{ toJSON(github.event) }}
         event_name: ${{ github.event_name }}
         sha: ${{ github.sha }}
+        build_images: ${{ steps.build-images.outputs.value }}
       input-format: yaml
       filter: |
         .
@@ -208,16 +199,15 @@ runs:
         | .event as $event
         | .event_name as $event_name
         | .sha as $sha
+        | .build_images as $build_images
         | ($event.head_commit.message
            // "\($event.pull_request.title)\n\($event.pull_request.body)") as $message
-        | ${{ steps.build-images.outputs.value }} as $buildImageCurrent
-        | ${{ steps.requested-build-images.outputs.value }} as $buildImage
-        | ($buildImage.default != $buildImageCurrent.default) as $buildImageChanged
-        | $buildImage
-        | if $buildImageChanged then
+        | ($build_images.current.default != $build_images.requested.default) as $build_image_changed
+        | $build_images.requested
+        | if $build_image_changed then
             .changed = true
           else . end
-        | . as $buildImage
+        | . as $build_image
         | {}
         | if ($event_name | startswith("pull_request")) then
             .ref = "${{ inputs.merge-commit }}"
@@ -228,28 +218,30 @@ runs:
             .ref = "${{ inputs.branch-name }}"
             | .sha = $sha
           end
-        | . * {"actor": {name: $actor, icon: $event.sender.avatar_url},
+        | . * {"actor": {
+                 name: $actor,
+                 icon: $event.sender.avatar_url},
                "message": $message,
                "started": ${{ inputs.started }},
                "target-branch": "${{ inputs.branch-name }}",
-               "trusted": ${{ fromJSON(steps.trusted.outputs.value).trusted }},
-               "version": ${{ steps.version.outputs.value }},
-               "version-current": ${{ steps.version-current.outputs.value }},
-               "build-image": $buildImage,
-               "build-image-current": $buildImageCurrent}
+               "trusted": ${{ steps.trusted.outputs.value }},
+               "version": ${{ toJSON(fromJSON(steps.version.outputs.output).requested) }},
+               "version-current": ${{ toJSON(fromJSON(steps.version.outputs.output).current) }},
+               "build-image": $build_image,
+               "build-image-current": $build_images.current}
 
   - name: Run config
     id: run-config
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
     with:
       input-format: yaml
-      input: ${{ toJSON(fromJSON(steps.config.outputs.value).run) }}
+      input: ${{ toJSON(fromJSON(steps.config.outputs.output).run) }}
   - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.2.4
     id: torun
     with:
       event: ${{ github.event_name }}
       config: ${{ steps.run-config.outputs.value }}
-      paths: ${{ steps.changed.outputs.value || '[]' }}
+      paths: ${{ steps.changed.outputs.output || '[]' }}
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.4
     name: Create data
@@ -280,7 +272,7 @@ runs:
                 .value = false
               else . end)
         | . as $run
-        | ${{ steps.config.outputs.value }} as $config
+        | ${{ steps.config.outputs.output }} as $config
         | $config.checks as $checks
         | $checks
         | with_entries(
