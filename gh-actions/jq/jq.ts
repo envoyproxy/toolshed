@@ -50,7 +50,7 @@ const run = async (): Promise<void> => {
     let filterFunArg = ''
 
     const modPath = path.join(__dirname, '../modules')
-    mangledFilter = `import "bash" as bash; import "gfm" as gfm; import "str" as str; import "utils" as utils; import "validate" as validate; ${mangledFilter}`
+    mangledFilter = `import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${mangledFilter}`
     filterFunArg = `-L ${modPath}`
 
     if (filterFun) {

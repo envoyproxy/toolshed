@@ -16,3 +16,13 @@ printf \"%s\\n\" \"${COMMANDS[@]}\" | xargs -P4 -I{} bash -c \"{}\" &
 wait
 "
 ;
+
+def xfor:
+  @sh
+  | "
+COMMANDS=(\(.))
+for command in \"${COMMANDS[@]}\"; do
+    $command
+done
+"
+;

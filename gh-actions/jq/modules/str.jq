@@ -1,3 +1,7 @@
+def cleaned:
+  gsub("\u001b\\[[0-9;]*[a-zA-Z]"; "")
+;
+
 def indent(width):
   split("\n")
   | map(" " * width + .)
@@ -9,14 +13,15 @@ def isempty:
 ;
 
 def matches(matching; excluding):
-  split("\n")
+  split("\n") as $lines
+  | $lines
   | map(. as $line
          | matching
          | with_entries(
                .key as $k
                | .value as $tests
-               | if any($tests[]; . as $test | $line | test($test)) then
-                   if ((excluding // {})[$k] // []) | any(.[]; . as $ntest | $line | test($ntest)) then
+               | if any($tests[]; . as $test | $line | cleaned | test($test)) then
+                   if ((excluding // {})[$k] // []) | any(.[]; . as $ntest | $line | cleaned | test($ntest)) then
                      {key: $k, value: null}
                    else {key: $k, value: $line} end
                  else {key: $k, value: null} end)
