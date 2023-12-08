@@ -136,8 +136,12 @@ runs:
           echo "TMP_ENTRYPOINT=${ENTRYPOINT}" >> $GITHUB_ENV
           echo "entrypoint=${ENTRYPOINT}" >> $GITHUB_OUTPUT
       fi
-      echo "TMP_STDERR=$(mktemp)" >> $GITHUB_ENV
-      echo "TMP_STDOUT=$(mktemp)" >> $GITHUB_ENV
+      TMP_STDERR=$(mktemp)
+      echo "TMP_STDERR=$TMP_STDERR" >> $GITHUB_ENV
+      echo "stderr=${TMP_STDERR}" >> $GITHUB_OUTPUT
+      TMP_STDOUT=$(mktemp)
+      echo "TMP_STDOUT=$TMP_STDOUT" >> $GITHUB_ENV
+      echo "stdout=${TMP_STDOUT}" >> $GITHUB_OUTPUT
     id: paths
     env:
       ENTRYPOINT_DATA: ${{ inputs.entrypoint }}
@@ -257,43 +261,23 @@ runs:
     with:
       options: -r
       filter: now
-  - run: |
-      STDERR="$(cat "$TMP_STDERR")"
-      bubble_messages () {
-          local message_type="$1" \
-                matcher="$2" \
-                matches=()
-          matcher=${matcher%"${matcher##*[![:space:]]}"}
-          while IFS=$'\n' read -r line; do
-              matches+=("$line")
-          done <<< "$matcher"
-          declare -a issued_warnings
-          for match in "${matches[@]}"; do
-              matched="$(echo "${STDERR}" | grep "$match" || :)"
-              if [[ -z "$matched" ]]; then
-                  continue
-              fi
-              while read -r message; do
-                  found=0
-                  for issued in "${issued_warnings[@]}"; do
-                      if [[ "$issued" == "$message" ]]; then
-                          found=1
-                          break
-                      fi
-                  done
-                  if [[ $found -ne 0 ]]; then
-                      continue
-                  fi
-                  issued_warnings+=("$message")
-                  echo "::${message_type}::${message}"
-              done < <(echo "$matched" | grep -o ".*" || :)
-          done
-      }
-      bubble_messages error "${{ inputs.error-match }}"
-      bubble_messages warning "${{ inputs.warning-match }}"
-      bubble_messages notice "${{ inputs.notice-match }}"
-    shell: bash
+
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.5
     if: ${{ ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false')) }}
+    with:
+      input-format: string-path
+      input: ${{ steps.paths.outputs.stderr }}
+      options: -sRr
+      filter: |
+        . as $lines
+        | ("${{ inputs.error-match }}" | split("\n") | map(select(test("^\\s*$") | not))) as $error_match
+        | ("${{ inputs.warning-match }}" | split("\n") | map(select(test("^\\s*$") | not))) as $warning_match
+        | ("${{ inputs.notice-match }}" | split("\n") | map(select(test("^\\s*$") | not))) as $notice_match
+        | $lines
+        | github::log_bubble(
+            {warning: $warning_match,
+             notice: $notice_match,
+             error: $error_match})
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.5
     name: Generate run context
