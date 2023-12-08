@@ -13,6 +13,9 @@ inputs:
   catch-errors:
     type: boolean
     default: false
+  options:
+    type: string
+    default: -r
   result-filter:
     type: string
     default:
@@ -51,7 +54,7 @@ runs:
       input: ${{ inputs.input }}
       input-format: ${{ inputs.input-format }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-      options: -r
+      options: ${{ inputs.options }}
       filter: ${{ inputs.filter }}
       output-path: ${{ steps.script.outputs.path }}
 
