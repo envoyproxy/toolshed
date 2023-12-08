@@ -4,19 +4,19 @@ import "str" as str;
 def log_bubble(matching; excluding):
   str::matches(matching; excluding)
   | . as $bubble
-  | $bubble.notice
+  | $bubble.notice // []
   | unique
   | if length > 10 then
       .[:9] + ["... and \(.|length - 9) more notices"]
     else . end
   | map("echo ::notice::\(.)") as $notices
-  | $bubble.error
+  | $bubble.error // []
   | unique
   | if length > 10 then
       .[:9] + ["... and \(.|length - 9) more errors"]
     else . end
   | map("echo ::error::\(.)") as $errors
-  | $bubble.warning
+  | $bubble.warning // []
   | unique
   | if length > 10 then
       .[:9] + ["... and \(.|length - 9) more warnings"]
