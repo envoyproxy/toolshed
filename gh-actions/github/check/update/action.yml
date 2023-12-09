@@ -1,8 +1,5 @@
 
 inputs:
-  id:
-    type: string
-    required: true
   data:
     type: string
     required: true
@@ -13,15 +10,13 @@ inputs:
     type: string
     default: |
       # Find current check (\($name)) for run attempt (\($attempt))
-      RESPONSE=\"$(gh api repos/\($repo)/commits/\($head_sha)/check-runs?status=in_progress&status=queued&check_name=\($name)&filter=latest)\"
-      echo \"output=$RESPONSE\" >> $GITHUB_OUTPUT
+      OUTPUT=\"$(gh api repos/\($repo)/commits/\($head_sha)/check-runs?check_name=\($name)&filter=latest)\"
   template-script-update:
     type: string
     default: |
       # Update check (\($name))
       CHECK=\($check)
-      RESPONSE=\"$(echo $CHECK | gh api -XPATCH --input - repos/\($repo)/check-runs/\($id))\"
-      echo \"output=$RESPONSE\" >> $GITHUB_OUTPUT
+      OUTPUT=\"$(echo $CHECK | gh api -XPATCH --input - repos/\($repo)/check-runs/\($id))\"
   token:
     type: string
     default: ${{ github.token }}
@@ -34,11 +29,10 @@ outputs:
 runs:
   using: composite
   steps:
-  # If the original check is already completed, we have been retested and we need to find the real one
+  # Find the current check and reuse its text
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.11
     name: Find check
-    if: ${{ fromJSON(inputs.data).status == 'completed' && github.run_attempt > 1 }}
-    id: current-checks
+    id: current-check
     with:
       input: ${{ inputs.data }}
       filter: |
@@ -46,28 +40,34 @@ runs:
         | "${{ inputs.repository }}" as $repo
         | .name as $name
         | .head_sha as $head_sha
-        | "${{ inputs.template-script-current }}"
+        | ("${{ inputs.template-script-current }}" | bash::output)
     env:
       GH_TOKEN: ${{ inputs.token }}
+
   - name: Progress status check
     uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.11
     with:
-      input: ${{ inputs.data }}
+      input: |
+        data: ${{ inputs.data }}
+        current: ${{ steps.current-check.outputs.output }}
       filter: |
-        .
-        | ${{ inputs.id }} as $id
+        .data as $data
+        | .current as $current
+        | $current.check_runs[0].output.text
+        | split("### Check started by")[1]
+        | "
+        \($data.output.text)
+
+        ### Check started by\(.)" as $text
+        | $data
         | .name as $name
         | "${{ inputs.repository }}" as $repo
-        | ${{ steps.current-checks.outputs.output || 'null' }} as $current
-        | if $current != null then
-            .id = $current.check_runs[0].id
-          else
-            .id = $id
-          end
+        | .id = $current.check_runs[0].id
         | .id as $id
+        | .output.text = $text
         | tojson
         | @sh as $check
-        | "${{ inputs.template-script-update }}"
+        | ("${{ inputs.template-script-update }}" | bash::output)
     env:
       GH_TOKEN: ${{ inputs.token }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.11
