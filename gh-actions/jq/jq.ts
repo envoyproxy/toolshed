@@ -35,7 +35,10 @@ const run = async (): Promise<void> => {
     let mangledFilter = filter
     let mangledInput = input
     if (inputFormat.endsWith('-path')) {
-      mangledInput = fs.readFileSync(input, 'utf-8')
+      if (input.startsWith('/tmp') && process.platform === 'win32') {
+        mangledInput = path.join(os.tmpdir(), path.basename(outputPath))
+      }
+      mangledInput = fs.readFileSync(mangledInput, 'utf-8')
     } else if (decode) {
       mangledInput = decodeURIComponent(escape(atob(input)))
     }
