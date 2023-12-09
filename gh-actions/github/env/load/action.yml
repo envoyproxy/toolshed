@@ -21,11 +21,6 @@ inputs:
 
       # \($icon) [\($data.check.name) (\($summary.title))](\($runLink))
 
-      ### Check started by
-
-      ## \($summary["linked-title"])
-
-      \($summary.summary)
   template-script-current:
     type: string
     default: |
