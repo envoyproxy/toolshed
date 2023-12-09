@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "esnext",
-    "lib": ["es2015", "es2017"],
+    "lib": ["es2015", "es2017", "es2020"],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

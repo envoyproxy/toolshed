@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build main.ts -o dist -m",
+    "build": "tsc --noEmit && ncc build main.ts -o dist -d -m",
     "test": "tsc --noEmit && jest",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix"
@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@actions/core": "^1.10.0",
-    "@actions/github": "",
+    "@actions/github": "^4.0.0",
     "js-yaml": "^4.1.0"
   }
 }
