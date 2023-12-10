@@ -31,9 +31,7 @@ const run = async (): Promise<void> => {
         return
       }
       const noPathCheck =
-        !checkConfig ||
-        !checkConfig.paths ||
-        (event === 'push' && (checkConfig.push === '' || checkConfig.push === 'always'))
+        !checkConfig || !checkConfig.paths || (event === 'push' && (!checkConfig.push || checkConfig.push === 'always'))
       checks[check] = noPathCheck || globMatchPaths(paths, checkConfig.paths)
     })
     core.setOutput('runs', JSON.stringify(checks, null, 0))
