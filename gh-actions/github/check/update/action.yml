@@ -30,7 +30,7 @@ runs:
   using: composite
   steps:
   # Find the current check and reuse its id/text
-  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.12
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.13
     name: Check data
     id: data
     with:
@@ -44,7 +44,7 @@ runs:
     env:
       GH_TOKEN: ${{ inputs.token }}
   - name: Progress status check
-    uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.12
+    uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.13
     with:
       input: |
         check: ${{ steps.data.outputs.output }}
