@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {RestEndpointMethodTypes} from '@octokit/rest'
 import {Endpoints, OctokitResponse} from '@octokit/types'
-import axios, {AxiosResponse} from 'axios'
+import axios from 'axios'
 import {GitHub} from '@actions/github/lib/utils'
 
 type GithubReactionType = 'rocket' | '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'eyes'
@@ -27,14 +27,17 @@ function cachedProperty(_: unknown, key: string, descriptor: PropertyDescriptor)
   return descriptor
 }
 
-type ListChecksType = RestEndpointMethodTypes['checks']['listForRef']
-
 type Retest = {
   name: string
   octokit: boolean
   url: string
   method?: string
   config?: any
+}
+
+type RetestResult = {
+  retested: number
+  errors: number
 }
 
 type PR = {
@@ -49,11 +52,14 @@ type Env = {
   octokit: OctokitType
   token: string
   comment: number
+  debug: boolean
   pr: string
   nwo: string
   owner: string
   repo: string
+  appOwnerSlug: string
   azpOrg: string | undefined
+  azpOwnerSlug: string
   azpToken: string | undefined
 }
 
@@ -79,68 +85,81 @@ class RetestCommand {
     }
   }
 
-  retest = async (): Promise<number> => {
+  retest = async (): Promise<RetestResult> => {
     if (!this.env) {
-      console.log(`Failed parsing env`)
-      return 0
+      core.warning(`Failed parsing env`)
+      return {errors: 0, retested: 0}
     }
     const pr = await this.getPR()
     if (!pr) {
-      return 0
+      return {errors: 0, retested: 0}
+    }
+    if (this.env.debug) {
+      console.log(`Running (${this.name}) /retest command for PR #${pr.number}`)
+      console.log(`PR branch: ${pr.branch}`)
+      console.log(`Latest PR commit: ${pr.commit}`)
     }
     const retestables = await this.getRetestables(pr)
     if (Object.keys(retestables).length === 0) {
-      return 0
+      return {errors: 0, retested: 0}
     }
-    await this.retestRuns(pr, retestables)
-    return Object.keys(retestables).length
+    return await this.retestRuns(pr, retestables)
   }
 
-  retestExternal = async (check: Retest): Promise<any | void> => {
-    let response: AxiosResponse
+  retestExternal = async (check: Retest): Promise<number> => {
     if (check.method == 'patch') {
       try {
-        response = await axios.patch(check.url, {}, check.config)
+        await axios.patch(check.url, {}, check.config)
         /* eslint-disable  prettier/prettier */
       } catch (error: any) {
         if (!axios.isAxiosError(error) || !error.response) {
-          console.log('No response received')
-          return
+          core.error('No response received')
+          return 1
         }
-        console.error(`External API call failed: ${check.url}`)
-        console.error(error.response.status)
-        console.error(error.response.data)
-        return
+        core.error(`External API call failed: ${check.url}`)
+        core.error(error.response.data.message)
+        return 1
       }
-    } else {
-      return
     }
-    return response.data
+    return 0
   }
 
-  retestOctokit = async (check: Retest): Promise<void> => {
+  retestOctokit = async (pr: PR, check: Retest): Promise<number> => {
     const method = check.method || 'POST'
     const rerunURL = `${method} ${check.url}`
+    if (rerunURL.endsWith('rerun-failed-jobs')) {
+      console.log(`Retesting failed job (pr #${pr.number}): ${check.name}`)
+    } else {
+      console.log(`Restarting check (pr #${pr.number}): ${check.name}`)
+    }
     const rerunResponse = await this.env.octokit.request(rerunURL, check.config || {})
     if ([200, 201].includes(rerunResponse.status)) {
-      console.log(`Retry success: (${check.name})`)
+      if (rerunURL.endsWith('rerun-failed-jobs')) {
+        process.stdout.write(`::notice::Retry success: (${check.name})\n`)
+      } else {
+        process.stdout.write(`::notice::Check restarted: (${check.name})\n  ${rerunResponse.data.html_url}\n`)
+      }
+      return 0
     } else {
-      console.log(`Retry failed: (${check.name}) ... ${rerunResponse.status}`)
+      if (rerunURL.endsWith('rerun-failed-jobs')) {
+        core.error(`Retry failed: (${check.name}) ... ${rerunResponse.status}`)
+      } else {
+        core.error(`Failed restarting check: ${rerunResponse.status}`)
+      }
+      return 1
     }
   }
 
-  retestRuns = async (pr: PR, retestables: Array<Retest>): Promise<void> => {
-    console.log(`Running /retest command for PR #${pr.number}`)
-    console.log(`PR branch: ${pr.branch}`)
-    console.log(`Latest PR commit: ${pr.commit}`)
+  retestRuns = async (pr: PR, retestables: Array<Retest>): Promise<RetestResult> => {
+    let errors = 0
     for (const check of retestables) {
-      console.log(`Retesting failed job: ${check.name}`)
       if (!check.octokit) {
-        await this.retestExternal(check)
+        errors += await this.retestExternal(check)
       } else {
-        await this.retestOctokit(check)
+        errors += await this.retestOctokit(pr, check)
       }
     }
+    return {retested: Object.keys(retestables).length, errors: errors}
   }
 
   getRetestables = async (pr: PR): Promise<Array<Retest>> => {
@@ -148,16 +167,26 @@ class RetestCommand {
     return []
   }
 
-  listCheckRunsForPR = async (pr: PR): Promise<CheckRunsType['data']['check_runs']> => {
+  listCheckRunsForPR = async (pr: PR, owner: string): Promise<CheckRunsType['data']['check_runs']> => {
+    if (this.env.debug) {
+      console.log(`Searching for checks (${owner})`)
+    }
     const response: CheckRunsType = await this.env.octokit.checks.listForRef({
       owner: this.env.owner,
       repo: this.env.repo,
       ref: pr.commit,
       filter: 'latest',
     })
-    const checks = response.data
+    const checks = response.data.check_runs.filter((checkRun) => {
+      return (checkRun.app && checkRun.app.slug == owner)
+    })
     if (!checks) return []
-    return checks.check_runs
+    if (this.env.debug) {
+      checks.forEach((checkRun) => {
+        console.log(`Found check (${checkRun.id}/${checkRun.conclusion || 'not completed'}): ${checkRun.name}`);
+      });
+    }
+    return checks
   }
 }
 
@@ -169,41 +198,47 @@ class GithubRetestCommand extends RetestCommand {
   }
 
   getRetestables = async (pr: PR): Promise<Array<Retest>> => {
-    const checks = await this.listCheckRunsForPR(pr)
+    const checks = await this.listCheckRunsForPR(pr, this.env.appOwnerSlug)
     const failedChecks: any[] = []
     checks.forEach(async (check: any) => {
-      if (check.conclusion === 'failure' || check.conclusion === 'cancelled') {
-        failedChecks.push({
-          name: check.name || 'unknown',
-          url: `/repos/${this.env.owner}/${this.env.repo}/actions/runs/${check.external_id}/rerun-failed-jobs`,
-          octokit: true,
-        })
-        // TODO: Update the old check to mention restart
-        // Create a new check from the old
-        const toDelete = ['pull_requests', 'app', 'check_suite', 'conclusion', 'node_id', 'started_at', 'completed_at', 'id']
-        Object.keys(check).forEach((key) => {
-          if (key.startsWith("url") || key.endsWith("url") || toDelete.includes(key)) {
-            delete check[key]
-          }
-        })
-        Object.keys(check.output).forEach((key) => {
-          if (key.startsWith("annotation")) {
-            delete check.output[key]
-          }
-        })
-        check.output.title = check.output.title.replace('failure', 'restarted')
-        const lines = check.output.text.split('\n')
-        const line0 = lines[0].replace('Check run finished (failure :x:)', 'Check run restarted')
-        check.output.text = `${line0}\n${lines.slice(1).join('\n')}`
-        check.output.summary = 'Check is running again'
-        check.status = 'in_progress'
-        failedChecks.push({
-          name: check.name || 'unknown',
-          url: `/repos/${this.env.owner}/${this.env.repo}/check-runs`,
-          octokit: true,
-          config: {data: check},
-        })
+      if (check.conclusion !== 'failure' && check.conclusion !== 'cancelled') {
+        return
       }
+      if (this.env.debug) {
+        console.log(
+          `Check ${check.conclusion}: ${check.name}\n\n  ${check.html_url}\n\n`
+          + `  https://github.com/${this.env.owner}/${this.env.repo}/actions/runs/${check.external_id}\n`)
+      }
+      failedChecks.push({
+        name: check.name || 'unknown',
+        url: `/repos/${this.env.owner}/${this.env.repo}/actions/runs/${check.external_id}/rerun-failed-jobs`,
+        octokit: true,
+      })
+      // TODO: Update the old check to mention restart
+      // Create a new check from the old
+      const toDelete = ['pull_requests', 'app', 'check_suite', 'conclusion', 'node_id', 'started_at', 'completed_at', 'id']
+      Object.keys(check).forEach((key) => {
+        if (key.startsWith("url") || key.endsWith("url") || toDelete.includes(key)) {
+          delete check[key]
+        }
+      })
+      Object.keys(check.output).forEach((key) => {
+        if (key.startsWith("annotation")) {
+          delete check.output[key]
+        }
+      })
+      check.output.title = check.output.title.replace('failure', 'restarted')
+      const lines = check.output.text.split('\n')
+      const line0 = lines[0].replace('Check run finished (failure :x:)', 'Check run restarted')
+      check.output.text = `${line0}\n${lines.slice(1).join('\n')}`
+      check.output.summary = 'Check is running again'
+      check.status = 'in_progress'
+      failedChecks.push({
+        name: check.name || 'unknown',
+        url: `/repos/${this.env.owner}/${this.env.repo}/check-runs`,
+        octokit: true,
+        config: {data: check},
+      })
     })
     return failedChecks
   }
@@ -217,16 +252,9 @@ class AZPRetestCommand extends RetestCommand {
   }
 
   getRetestables = async (pr: PR): Promise<Array<Retest>> => {
-    const response: ListChecksType['response'] = await this.env.octokit.checks.listForRef({
-      owner: this.env.owner,
-      repo: this.env.repo,
-      ref: pr.commit,
-    })
+    const azpRuns = await this.listCheckRunsForPR(pr, this.env.azpOwnerSlug)
     // add err handling
     const retestables: Array<Retest> = []
-    const azpRuns: ListChecksType['response']['data']['check_runs'] = response.data.check_runs.filter((run: any) => {
-      return run.app.slug === 'azure-pipelines'
-    })
     const checks: Array<any> = []
     const checkIds: Set<string> = new Set()
     for (const check of azpRuns) {
@@ -238,7 +266,6 @@ class AZPRetestCommand extends RetestCommand {
         checks.push(check)
       }
     }
-
     for (const checkId of checkIds) {
       const subchecks = checks.filter((c: any) => {
         return c.external_id === checkId
@@ -259,6 +286,11 @@ class AZPRetestCommand extends RetestCommand {
         if (check.conclusion && check.conclusion !== 'success') {
           const [_, buildId, project] = checkId.split('|')
           const url = `https://dev.azure.com/${this.env.azpOrg}/${project}/_apis/build/builds/${buildId}?retry=true&api-version=6.0`
+          if (this.env.debug) {
+            console.log(
+              `Check ${check.conclusion}: ${check.name}\n\n  ${check.html_url}\n\n`
+                + `  https://dev.azure.com/cncf/envoy/_build/results?buildId=${buildId}&view=results\n`)
+          }
           retestables.push({
             url,
             name,
@@ -296,9 +328,13 @@ class RetestCommands {
       azpOrg = core.getInput('azp_org')
       azpToken = core.getInput('azp_token')
     } else {
-      console.log('No creds for AZP')
+      core.warning('No creds for AZP')
     }
+    const azpOwnerSlug = core.getInput('azp-owner')
+    const appOwnerSlug = core.getInput('app-owner')
+    const debug = Boolean(process.env.CI_DEBUG && process.env.CI_DEBUG != 'false')
     return {
+      debug,
       token,
       octokit,
       nwo,
@@ -306,7 +342,9 @@ class RetestCommands {
       repo,
       comment,
       pr,
+      appOwnerSlug,
       azpOrg,
+      azpOwnerSlug,
       azpToken,
     }
   }
@@ -335,20 +373,26 @@ class RetestCommands {
     if ([200, 201].includes(addReactionResponse.status)) {
       console.log(`Reacted to comment ${reaction}`)
     } else {
-      console.log(`Failed reacting to comment ${reaction}`)
+      core.error(`Failed reacting to comment ${reaction}`)
     }
   }
 
   retest = async (): Promise<void> => {
-    let retested = 0
+    const result: RetestResult = {errors: 0, retested: 0}
     for (const retester of this.retesters) {
-      retested += await retester.retest()
+      const retested = await retester.retest()
+      result.errors += retested.errors
+      result.retested += retested.retested
     }
-    if (retested === 0) {
+    if (result.errors !== 0) {
+      await this.addReaction('-1')
+    }
+    if (result.retested === 0) {
       await this.addReaction('confused')
     } else {
       await this.addReaction()
     }
+
   }
 }
 
