@@ -18,6 +18,13 @@ inputs:
     description: >
       AZP token used for retest AZP pipelines
     default:
+  app-owner:
+    description: >-
+      Retest checks with this app owner
+  azp-owner:
+    description: >-
+      Retest azp checks with this app owner
+    default: azure-pipelines
   comment-id:
     description: >-
       ID of comment for response
