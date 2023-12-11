@@ -1,12 +1,19 @@
 name: 'Checks'
-description: Start Github checks
+description: Start/update Github checks
 author: 'phlax'
 inputs:
+  action:
+    description: >
+      Action to take
+    type: choice
+    default: start
+    options:
+    - start
+    - update
   config:
     description: >
       JSON configuration for checks
     type: string
-    required: true
   checks:
     description: >
       Checks to start
