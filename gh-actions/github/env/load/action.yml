@@ -95,7 +95,9 @@ runs:
         | . as $run
         | $data
         | .run = $run
-        | {$check, data: .}
+        | {$check,
+           data: .,
+           checks: {($checkName): $check}}
 
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
   - run: |
