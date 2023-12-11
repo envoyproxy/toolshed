@@ -83,7 +83,6 @@ async function updateCheckRun(octokit: OctokitType, checkConfig: Check, textExtr
     check_run_id: checkConfig.id,
     ...checkConfig,
   })
-  console.log(JSON.stringify(response))
   return [checkConfig.name, response.data.id]
 }
 
