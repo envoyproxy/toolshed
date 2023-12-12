@@ -6,15 +6,17 @@ inputs:
   args:
     type: string
     default: >-
-      --config=ios
-      --config=mobile-remote-ci-macos
+      --config=mobile-remote-ci-macos-ios
+  expected:
+    type: string
+    required: true
   simulator-command:
     type: string
     default: >-
       ./mobile/ci/start_ios_simulator.sh
-  status:
-    type: number
-    required: false
+  timeout:
+    type: string
+    default: 5m
 
 
 runs:
@@ -37,11 +39,27 @@ runs:
       ARGS: ${{ inputs.args }}
       APP: ${{ inputs.app }}
   - run: |
-      sed "/received headers with status ${STATUS}/q" <(touch /tmp/envoy.log && tail -F /tmp/envoy.log)
+      checklogs () {
+          echo "CHECKING FOR ${EXPECTED} in /tmp/envoy.log"
+          sed "/${EXPECTED}/q" <(touch /tmp/envoy.log && tail -F /tmp/envoy.log)
+      }
+      export -f checklogs
+      timeout ${TIMEOUT} bash -c checklogs || {
+          retcode=$?
+          if [[ "$retcode" == 124 ]]; then
+              echo "ERROR: Timed out searching for '${EXPECTED}'" >&2
+          else
+              echo "ERROR: Command to check logs failed" >&2
+          fi
+          ACTUAL="$(grep "$EXPECTED" /tmp/envoy.log)"
+          ls -alh /tmp/envoy.log
+          echo "FTR ${ACTUAL} in /tmp/envoy.log"
+          exit $retcode
+      }
     shell:  bash
     env:
-      STATUS: ${{ inputs.status }}
-    if: ${{ inputs.status }}
+      EXPECTED: ${{ inputs.expected }}
+      TIMEOUT: ${{ inputs.timeout }}
     name: Check connectivity
   - run: cat /tmp/envoy.log
     if: ${{ failure() || cancelled() }}
