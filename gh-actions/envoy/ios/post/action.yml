@@ -37,7 +37,7 @@ runs:
       ARGS: ${{ inputs.args }}
       APP: ${{ inputs.app }}
   - run: |
-      sed '/received headers with status ${STATUS}/q' <(touch /tmp/envoy.log && tail -F /tmp/envoy.log)
+      sed "/received headers with status ${STATUS}/q" <(touch /tmp/envoy.log && tail -F /tmp/envoy.log)
     shell:  bash
     env:
       STATUS: ${{ inputs.status }}
