@@ -55,17 +55,14 @@ runs:
       input: |
         base: ${{ inputs.base }}
         branch: ${{ inputs.branch }}
-        body: |
-          ${{ inputs.body }}
+        body: ${{ toJSON(inputs.body) }}
         commit: ${{ inputs.commit }}
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
-        commit-message: |
-          ${{ inputs.commit-message }}
+        commit-message: ${{ toJSON(inputs.commit-message) }}
         diff-show: ${{ inputs.diff-show }}
         diff-upload: ${{ inputs.diff-upload }}
-        title: >-
-          ${{ inputs.title }}
+        title: ${{ toJSON(inputs.title) }}
         working-directory: ${{ inputs.working-directory }}
       input-format: yaml
       filter: |
@@ -97,8 +94,9 @@ runs:
         \($gitCommit)
         \($gitDiff)
         \($git) push --no-verify --set-upstream origin \($branch)
-        BODY=\"$(\($git) log -1 --pretty=%B | tail -n +2)\"
-        BODY+=\($body)
+        BODY=\"\($body)\"
+        SIGNOFF=\"$(\($git) log -1 --pretty=%B | tail -n +2)\"
+        BODY=\"${BODY}\n\n${SIGNOFF}\"
         cd \($workingDirectory)
         gh pr create \\
           -B \($base) \\
