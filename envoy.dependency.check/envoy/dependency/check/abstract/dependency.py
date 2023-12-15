@@ -1,9 +1,12 @@
 """Abstract dependency."""
 
 import asyncio
+import logging
 from concurrent import futures
 from functools import cached_property
 from typing import List, Optional, Set, Type
+
+import gidgethub
 
 from packaging import version
 
@@ -12,8 +15,11 @@ import abstracts
 from aio.api import github
 from aio.core import event
 from aio.core.functional import async_property
+from aio.core.tasks import ConcurrentError
 
 from envoy.dependency.check import abstract, exceptions, typing
+
+logger = logging.getLogger(__name__)
 
 
 @abstracts.implementer(event.IReactive)
@@ -114,7 +120,12 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
     async def has_recent_commits(self) -> bool:
         """Flag indicating whether there are more recent commits than the
         current pinned commit."""
-        return await self.recent_commits > 1
+        try:
+            return await self.recent_commits > 1
+        except (ConcurrentError, gidgethub.GitHubException) as e:
+            logger.debug(
+                f"Fetching recent commits failed ({self}): {type(e)} {e}")
+            raise e
 
     @async_property(cache=True)
     async def newer_release(
@@ -123,8 +134,13 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         release, or where pin is to tag or commit."""
         # TODO: consider adding `newer_tags` for deps that only create
         #   tags and not releases (eg tclap)
-        newer_release = await self.repo.highest_release(
-            since=await self.release.timestamp)
+        try:
+            newer_release = await self.repo.highest_release(
+                since=await self.release.timestamp)
+        except (ConcurrentError, gidgethub.GitHubException) as e:
+            logger.debug(
+                f"Fetching newer release failed ({self}): {type(e)} {e}")
+            raise e
         return (
             self.release_class(
                 self.repo,
