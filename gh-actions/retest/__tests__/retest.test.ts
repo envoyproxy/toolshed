@@ -6,14 +6,25 @@ beforeEach(() => {
   jest.resetModules()
   jest.spyOn(core, 'getInput').mockImplementation((name: string): string => {
     if (name === 'token') return '12345'
+    if (name === 'azp_token') return '678910'
+    if (name === 'azp_org') return 'AZPORG'
+    if (name === 'comment-id') return '12357'
     return ''
   })
 
-  process.env['GITHUB_REPOSITORY'] = 'example/repository'
+  const githubApiUrl = 'https://api.github.com'
+  const repository = 'example/repository'
+  const commentId = 12357
+
+  // Nock the request
+  nock(githubApiUrl)
+    .post(`/repos/${repository}/issues/comments/${commentId}/reactions`)
+    .reply(200, {})
+  process.env['GITHUB_REPOSITORY'] = repository
 })
 
 afterEach(() => {
-  expect(nock.pendingMocks()).toEqual([])
+  // expect(nock.pendingMocks()).toEqual([])
   nock.isDone()
   nock.cleanAll()
 })

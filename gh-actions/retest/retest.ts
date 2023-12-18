@@ -64,25 +64,15 @@ type Env = {
 }
 
 class RetestCommand {
+  public checks: CheckRunsType['data']['check_runs']
   public env: Env
   public name = ''
+  public pr: PR
 
-  constructor(env: Env) {
+  constructor(env: Env, pr: PR, checks: CheckRunsType['data']['check_runs']) {
     this.env = env
-  }
-
-  getPR = async (): Promise<PR | void> => {
-    if (!this.env.pr || !this.env.pr) {
-      return
-    }
-    const response: OctokitResponse<any> = await this.env.octokit.request(this.env.pr)
-    const data = response.data
-    if (!data) return
-    return {
-      number: data.number,
-      branch: data.head.ref,
-      commit: data.head.sha,
-    }
+    this.checks = checks
+    this.pr = pr
   }
 
   retest = async (): Promise<RetestResult> => {
@@ -90,20 +80,11 @@ class RetestCommand {
       core.warning(`Failed parsing env`)
       return {errors: 0, retested: 0}
     }
-    const pr = await this.getPR()
-    if (!pr) {
-      return {errors: 0, retested: 0}
-    }
-    if (this.env.debug) {
-      console.log(`Running (${this.name}) /retest command for PR #${pr.number}`)
-      console.log(`PR branch: ${pr.branch}`)
-      console.log(`Latest PR commit: ${pr.commit}`)
-    }
-    const retestables = await this.getRetestables(pr)
+    const retestables = await this.getRetestables()
     if (Object.keys(retestables).length === 0) {
       return {errors: 0, retested: 0}
     }
-    return await this.retestRuns(pr, retestables)
+    return await this.retestRuns(retestables)
   }
 
   retestExternal = async (check: Retest): Promise<number> => {
@@ -150,56 +131,35 @@ class RetestCommand {
     }
   }
 
-  retestRuns = async (pr: PR, retestables: Array<Retest>): Promise<RetestResult> => {
+  retestRuns = async (retestables: Array<Retest>): Promise<RetestResult> => {
     let errors = 0
     for (const check of retestables) {
       if (!check.octokit) {
         errors += await this.retestExternal(check)
       } else {
-        errors += await this.retestOctokit(pr, check)
+        errors += await this.retestOctokit(this.pr, check)
       }
     }
     return {retested: Object.keys(retestables).length, errors: errors}
   }
 
-  getRetestables = async (pr: PR): Promise<Array<Retest>> => {
-    core.debug(JSON.stringify(pr))
+  getRetestables = async (): Promise<Array<Retest>> => {
     return []
-  }
-
-  listCheckRunsForPR = async (pr: PR, owner: string): Promise<CheckRunsType['data']['check_runs']> => {
-    if (this.env.debug) {
-      console.log(`Searching for checks (${owner})`)
-    }
-    const response: CheckRunsType = await this.env.octokit.checks.listForRef({
-      owner: this.env.owner,
-      repo: this.env.repo,
-      ref: pr.commit,
-      filter: 'latest',
-    })
-    const checks = response.data.check_runs.filter((checkRun) => {
-      return (checkRun.app && checkRun.app.slug == owner)
-    })
-    if (!checks) return []
-    if (this.env.debug) {
-      checks.forEach((checkRun) => {
-        console.log(`Found check (${checkRun.id}/${checkRun.conclusion || 'not completed'}): ${checkRun.name}`);
-      });
-    }
-    return checks
   }
 }
 
 class GithubRetestCommand extends RetestCommand {
   name = 'Github'
 
-  constructor(env: Env) {
-    super(env)
+  constructor(env: Env, pr: PR, checks: CheckRunsType['data']['check_runs']) {
+    super(env, pr, checks)
   }
 
-  getRetestables = async (pr: PR): Promise<Array<Retest>> => {
-    const checks = await this.listCheckRunsForPR(pr, this.env.appOwnerSlug)
+  getRetestables = async (): Promise<Array<Retest>> => {
     const failedChecks: any[] = []
+    const checks = this.checks.filter((checkRun) => {
+      return (checkRun.app?.slug == this.env.appOwnerSlug)
+    })
     checks.forEach(async (check: any) => {
       if (check.conclusion !== 'failure' && check.conclusion !== 'cancelled') {
         return
@@ -247,17 +207,16 @@ class GithubRetestCommand extends RetestCommand {
 class AZPRetestCommand extends RetestCommand {
   name = 'AZP'
 
-  constructor(env: Env) {
-    super(env)
+  constructor(env: Env, pr: PR, checks: CheckRunsType['data']['check_runs']) {
+    super(env, pr, checks)
   }
 
-  getRetestables = async (pr: PR): Promise<Array<Retest>> => {
-    const azpRuns = await this.listCheckRunsForPR(pr, this.env.azpOwnerSlug)
+  getRetestables = async (): Promise<Array<Retest>> => {
     // add err handling
     const retestables: Array<Retest> = []
     const checks: Array<any> = []
     const checkIds: Set<string> = new Set()
-    for (const check of azpRuns) {
+    for (const check of this.checks) {
       if (!check.external_id) {
         continue
       }
@@ -312,14 +271,13 @@ class AZPRetestCommand extends RetestCommand {
 
 class RetestCommands {
   @cachedProperty
-  get env(): Env | void | undefined {
+  get env(): Env {
     let azpOrg, azpToken
     const token = core.getInput('token') || process.env['GITHUB_TOKEN']
-    if (!token || token === '') return
+    if (!token || token === '') throw new TypeError('`token` must be set')
+
     const pr = core.getInput('pr-url')
-    if (!pr || pr === '') return
     const comment = parseInt(core.getInput('comment-id'))
-    if (!comment) return
     const octokit = github.getOctokit(token)
     // Create the octokit client
     const nwo = process.env['GITHUB_REPOSITORY'] || '/'
@@ -349,21 +307,59 @@ class RetestCommands {
     }
   }
 
-  get retesters(): Array<RetestCommand> {
+  checks = async (pr: PR): Promise<CheckRunsType['data']['check_runs']> => {
+    const response: CheckRunsType = await this.env.octokit.checks.listForRef({
+      owner: this.env.owner,
+      repo: this.env.repo,
+      ref: pr.commit,
+      filter: 'latest',
+    })
+    const checks = response.data.check_runs
+    if (!checks) return []
+    if (this.env.debug) {
+      checks.forEach((checkRun) => {
+        console.log(`Found check (${checkRun.id}/${checkRun.app?.slug}/${checkRun.conclusion || 'incomplete'}): ${checkRun.name}`);
+      });
+    }
+    return checks
+  }
+
+  getPR = async (): Promise<PR | void> => {
+    if (!this.env.pr || !this.env.pr) {
+      return
+    }
+    const response: OctokitResponse<any> = await this.env.octokit.request(this.env.pr)
+    const data = response.data
+    if (!data) return
+    if (this.env.debug) {
+      console.log(`Running /retest command for PR #${data.number}`)
+      console.log(`PR branch: ${data.head.ref}`)
+      console.log(`Latest PR commit: ${data.head.sha}`)
+    }
+    return {
+      number: data.number,
+      branch: data.head.ref,
+      commit: data.head.sha,
+    }
+  }
+
+  retesters = async (): Promise<Array<RetestCommand>> => {
     if (!this.env) {
       return []
     }
-    const retesters: Array<RetestCommand> = [new GithubRetestCommand(this.env)]
+    const pr = await this.getPR()
+    if (!pr) {
+      return []
+    }
+    const checks = await this.checks(pr)
+    const retesters: Array<RetestCommand> = [new GithubRetestCommand(this.env, pr, checks)]
     if (this.env.azpOrg) {
-      retesters.push(new AZPRetestCommand(this.env))
+      retesters.push(new AZPRetestCommand(this.env, pr, checks))
     }
     return retesters
   }
 
   addReaction = async (reaction: GithubReactionType = 'rocket'): Promise<void> => {
-    if (!this.env) {
-      return
-    }
     const addReactionResponse: CreateReactionType['response'] = await this.env.octokit.reactions.createForIssueComment({
       owner: this.env.owner,
       repo: this.env.repo,
@@ -379,7 +375,7 @@ class RetestCommands {
 
   retest = async (): Promise<void> => {
     const result: RetestResult = {errors: 0, retested: 0}
-    for (const retester of this.retesters) {
+    for (const retester of await this.retesters()) {
       const retested = await retester.retest()
       result.errors += retested.errors
       result.retested += retested.retested
@@ -392,7 +388,6 @@ class RetestCommands {
     } else {
       await this.addReaction()
     }
-
   }
 }
 
