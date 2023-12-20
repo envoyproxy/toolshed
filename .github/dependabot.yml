@@ -1,7 +1,43 @@
 version: 2
 updates:
 
-- package-ecosystem: "github-actions"
-  directory: "/"
+- package-ecosystem: github-actions
+  directory: /
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: gh-actions/appauth
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: gh-actions/dispatch
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: gh-actions/jq
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: gh-actions/hashfiles
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: gh-actions/retest
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: gh-actions/torun
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: gh-actions/github/checks
+  schedule:
+    interval: daily
+- package-ecosystem: npm
+  directory: gh-actions/github/mutex
+  schedule:
+    interval: daily
+- package-ecosystem: pip
+  directory: bazel/website
   schedule:
     interval: daily
