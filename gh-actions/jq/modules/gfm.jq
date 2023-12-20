@@ -37,6 +37,7 @@ def collapse:
 
 def event_title:
   .
+  | .event as $event
   | .link as $link
   | .sha as $sha
   | .repo as $repo
@@ -47,14 +48,18 @@ def event_title:
   | if $title != "" then
       .link = $title
     elif $link != "" then
-      if $pr != "" then
-          .link = "pr/\($pr)"
-        else
-          .link = "postsubmit"
-        end
+      if $event != "" then
+        .link = $event
+      elif $pr != "" then
+        .link = "pr/\($pr)"
+      else
+        .link = "postsubmit"
+      end
       | .link |= "\(.)/\($targetBranch)@\($sha[:7])"
     else
-      if $pr != "" then
+      if $event != "" then
+        .link = $event
+      elif $pr != "" then
         .link = "pr/[\($pr)](https://github.com/\($repo)/pull/\($pr))"
       else
         .link = "postsubmit"
