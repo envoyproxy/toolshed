@@ -13,6 +13,12 @@ inputs:
   data:
     type: string
     required: true
+  event-name:
+    type: string
+    default: Request
+  event-type:
+    type: string
+    default:
   icon:
     type: string
     required: true
@@ -24,7 +30,6 @@ inputs:
     required: false
   message:
     type: string
-    required: true
   pr:
     type: number
   output-path:
@@ -59,21 +64,32 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.18
     id: linked-title
     with:
-      input: ${{ toJSON(inputs) }}
+      input: |
+        event: "${{ inputs.event-type }}"
+        link: ""
+        repo: ${{ github.repository }}
+        pr: "${{ inputs.pr }}"
+        sha: ${{ inputs.sha }}
+        target-branch: ${{ inputs.target-branch }}
+        title: "${{ inputs.title }}"
+      input-format: yaml
       options: -r
-      filter: |
-        .repository = "${{ github.repository }}"
-        | .link = ""
-        | gfm::event_title
+      filter: gfm::event_title
 
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.18
     id: title
     with:
-      input: ${{ toJSON(inputs) }}
+      input: |
+        event: "${{ inputs.event-type }}"
+        link: ${{ inputs.link }}
+        repo: ${{ github.repository }}
+        pr: "${{ inputs.pr }}"
+        sha: ${{ inputs.sha }}
+        target-branch: ${{ inputs.target-branch }}
+        title: "${{ inputs.title }}"
       options: -r
-      filter: |
-        .repository = "${{ github.repository }}"
-        | gfm::event_title
+      input-format: yaml
+      filter: gfm::event_title
 
   # This generates a filter from configuration
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.18
@@ -128,11 +144,13 @@ runs:
         | ${{ inputs.actor }} as $actor
         | "[`\($sha[:7])`](https://github.com/${{ github.repository }}/commit/\($sha))" as $commitLink
         | $inputs.message as $message
-        | ($message | split("\n")[0]) as $title
-        | ($message | "> " + (split("\n")[1:] | join("\n> "))) as $body
-        | {title: $title, content: $body}
-        | gfm::collapse as $change
-        | {"title": $title, "body": .}
+        | if $message != "" then
+            ($message | split("\n")[0]) as $title
+            | ($message | "> " + (split("\n")[1:] | join("\n> "))) as $body
+            | {title: $title, content: $body}
+            | gfm::collapse
+          else "" end
+        | . as $change
         | "
         <img src=\"\($actor.icon)\" alt=\"\($actor.name)\" width=\"18\" height=\"18\"> @\($actor.name) \($commitLink) \($pr)
 
@@ -153,8 +171,9 @@ runs:
         . as $summary
         | "${{ inputs.icon }}" as $icon
         | "${{ steps.linked-title.outputs.value }}" as $link
+        | "${{ inputs.event-name }}" as $event_name
         | "
-        ## \($icon) Request (\($link))
+        ## \($icon) \($event_name) (\($link))
 
         \($summary)
         "
