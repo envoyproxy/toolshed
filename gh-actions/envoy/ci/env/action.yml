@@ -1,0 +1,164 @@
+#
+# Rough schema for generated data:
+#
+# config: {ci, tables, envoy}
+# run: {run: boolean}
+# request: {...request-vars, version, version-current, build-image, build-image-current}
+# checks: {check: {name, advice, id, action}}
+#
+#
+# CI is only enabled if its the Envoy repo or specifically enabled by vars.ENVOY_CI
+
+inputs:
+  branch-name:
+    type: string
+    required: true
+  config-file:
+    type: string
+    default: ./.github/config.yml
+  started:
+    type: number
+    required: true
+  token:
+    type: string
+    required: true
+  trusted:
+    type: boolean
+    default: false
+  template-script-ref-file:
+    type: string
+    default: |
+      git fetch \($remote) \($ref)
+      OUTPUT=\"$(git show \($remote)/\($ref):\($filename))\"
+  template-script-diff:
+    type: string
+    default: |
+      git fetch \($remote) \($ref)
+      OUTPUT=\"$(git diff --name-only \($diff) \($remote)/\($ref))\"
+  vars:
+    type: string
+    required: true
+  version-file:
+    type: string
+    default: VERSION.txt
+
+outputs:
+  data:
+    value: ${{ steps.data.outputs.value }}
+
+
+runs:
+  using: composite
+  steps:
+
+  # Check current/requested config (currently only build-images can be overridden)
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.18
+    id: config
+    with:
+      title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
+      input: |
+        filename: ${{ inputs.config-file }}
+        branch: ${{ inputs.branch-name }}
+        remote: origin
+      filter: |
+        .filename as $filename
+        | .remote as $remote
+        | .branch as $ref
+        | ("${{ inputs.template-script-ref-file }}" | bash::output)
+      result-format: yaml
+      result-filter-options:
+      result-filter: .
+
+  - id: build-images
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.18
+    with:
+      input-format: yaml-path
+      input: ${{ inputs.config-file }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      filter: |
+        .["build-image"].repo as $repo
+        | (.["build-image"].tag | validate::sha(40)) as $tag
+        | (.["build-image"].sha | validate::sha(64)) as $sha
+        | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
+        | {"default": "\($repo):\($tag)@sha256:\($sha)",
+           "mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
+        | . as $requested
+        | {$requested}
+
+  # Check request version
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.18
+    name: Validate given version string
+    id: version
+    with:
+      input-format: string-path
+      options: -Rr
+      input: ${{ inputs.version-file }}
+      filter: |
+        .
+        | validate::version
+        | endswith("-dev") as $isdev
+        | split(".")
+        | {major: (.[0] | fromjson),
+           minor: (.[1] | fromjson),
+           patch: (.[2] | rtrimstr("-dev") | fromjson),
+           "dev": $isdev}
+        | {requested: .}
+
+  - id: request
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.18
+    with:
+      input: |
+        actor: ${{ toJSON(github.actor) }}
+        event: ${{ toJSON(github.event) }}
+        event_name: ${{ github.event_name }}
+        sha: ${{ github.sha }}
+        build_images: ${{ steps.build-images.outputs.value }}
+      input-format: yaml
+      filter: |
+        .
+        | .actor as $actor
+        | .event as $event
+        | .event_name as $event_name
+        | .sha as $sha
+        | .build_images as $build_images
+        | $build_images.requested as $build_image
+        | {}
+        | .ref = "${{ inputs.branch-name }}"
+        | .sha = $sha
+        | . * {"actor": {
+                 name: $actor,
+                 icon: $event.sender.avatar_url},
+               "started": ${{ inputs.started }},
+               "target-branch": "${{ inputs.branch-name }}",
+               "trusted": ${{ inputs.trusted }},
+               "version": ${{ toJSON(fromJSON(steps.version.outputs.value).requested) }},
+               "version-current": ${{ toJSON(fromJSON(steps.version.outputs.value).current) }},
+               "build-image": $build_image,
+               "build-image-current": $build_images.current}
+
+  - name: Run config
+    id: run-config
+    uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.18
+    with:
+      input-format: yaml
+      input: ${{ toJSON(fromJSON(steps.config.outputs.output).run) }}
+
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.18
+    name: Create data
+    id: data
+    with:
+      input: ${{ inputs.vars }}
+      filter: |
+        .
+        | ${{ github.repository == 'envoyproxy/envoy' }} as $isEnvoyRepo
+        | . as $vars
+        | ${{ steps.config.outputs.output }} as $config
+        | ${{ steps.request.outputs.value }} as $request
+        | ($config
+           | del(.checks, .config, .run, .["build-image"], .["agent-ubuntu"])
+           | .envoy = $config.config.envoy
+           | .ci = {
+               "agent-ubuntu": $config["agent-ubuntu"],
+               "build-image": $config["build-image"]}) as $config
+        | {$config, $request}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
