@@ -9,34 +9,74 @@ updates:
   directory: gh-actions/appauth
   schedule:
     interval: daily
+  groups:
+    eslint:
+      patterns:
+        - "@typescript-eslint/*
+        - "eslint*"
 - package-ecosystem: npm
   directory: gh-actions/dispatch
   schedule:
     interval: daily
+  groups:
+    eslint:
+      patterns:
+        - "@typescript-eslint/*
+        - "eslint*"
 - package-ecosystem: npm
   directory: gh-actions/jq
   schedule:
     interval: daily
+  groups:
+    eslint:
+      patterns:
+        - "@typescript-eslint/*
+        - "eslint*"
 - package-ecosystem: npm
   directory: gh-actions/hashfiles
   schedule:
     interval: daily
+  groups:
+    eslint:
+      patterns:
+        - "@typescript-eslint/*
+        - "eslint*"
 - package-ecosystem: npm
   directory: gh-actions/retest
   schedule:
     interval: daily
+  groups:
+    eslint:
+      patterns:
+        - "@typescript-eslint/*
+        - "eslint*"
 - package-ecosystem: npm
   directory: gh-actions/torun
   schedule:
     interval: daily
+  groups:
+    eslint:
+      patterns:
+        - "@typescript-eslint/*
+        - "eslint*"
 - package-ecosystem: npm
   directory: gh-actions/github/checks
   schedule:
     interval: daily
+  groups:
+    eslint:
+      patterns:
+        - "@typescript-eslint/*
+        - "eslint*"
 - package-ecosystem: npm
   directory: gh-actions/github/mutex
   schedule:
     interval: daily
+  groups:
+    eslint:
+      patterns:
+        - "@typescript-eslint/*
+        - "eslint*"
 - package-ecosystem: pip
   directory: bazel/website
   schedule:
