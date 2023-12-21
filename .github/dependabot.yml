@@ -16,7 +16,9 @@ updates:
         - "eslint*"
     prettier:
       patterns:
-        - "*prettier"
+        - "prettier"
+        - "eslint-config-prettier"
+        - "eslint-plugin-prettier"
 - package-ecosystem: npm
   directory: gh-actions/dispatch
   schedule:
@@ -28,7 +30,9 @@ updates:
         - "eslint*"
     prettier:
       patterns:
-        - "*prettier"
+        - "prettier"
+        - "eslint-config-prettier"
+        - "eslint-plugin-prettier"
 - package-ecosystem: npm
   directory: gh-actions/jq
   schedule:
@@ -40,7 +44,9 @@ updates:
         - "eslint*"
     prettier:
       patterns:
-        - "*prettier"
+        - "prettier"
+        - "eslint-config-prettier"
+        - "eslint-plugin-prettier"
 - package-ecosystem: npm
   directory: gh-actions/hashfiles
   schedule:
@@ -52,7 +58,9 @@ updates:
         - "eslint*"
     prettier:
       patterns:
-        - "*prettier"
+        - "prettier"
+        - "eslint-config-prettier"
+        - "eslint-plugin-prettier"
 - package-ecosystem: npm
   directory: gh-actions/retest
   schedule:
@@ -64,7 +72,9 @@ updates:
         - "eslint*"
     prettier:
       patterns:
-        - "*prettier"
+        - "prettier"
+        - "eslint-config-prettier"
+        - "eslint-plugin-prettier"
 - package-ecosystem: npm
   directory: gh-actions/torun
   schedule:
@@ -76,7 +86,9 @@ updates:
         - "eslint*"
     prettier:
       patterns:
-        - "*prettier"
+        - "prettier"
+        - "eslint-config-prettier"
+        - "eslint-plugin-prettier"
 - package-ecosystem: npm
   directory: gh-actions/github/checks
   schedule:
@@ -88,7 +100,9 @@ updates:
         - "eslint*"
     prettier:
       patterns:
-        - "*prettier"
+        - "prettier"
+        - "eslint-config-prettier"
+        - "eslint-plugin-prettier"
 - package-ecosystem: npm
   directory: gh-actions/github/mutex
   schedule:
@@ -100,7 +114,9 @@ updates:
         - "eslint*"
     prettier:
       patterns:
-        - "*prettier"
+        - "prettier"
+        - "eslint-config-prettier"
+        - "eslint-plugin-prettier"
 - package-ecosystem: pip
   directory: bazel
   schedule:
