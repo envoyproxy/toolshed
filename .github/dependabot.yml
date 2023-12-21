@@ -10,113 +10,81 @@ updates:
   schedule:
     interval: daily
   groups:
-    prettier:
-      patterns:
-        - "prettier"
-        - "eslint-config-prettier"
-        - "eslint-plugin-prettier"
     eslint:
       patterns:
         - "@typescript-eslint/*"
         - "eslint*"
+        - "prettier"
 - package-ecosystem: npm
   directory: gh-actions/dispatch
   schedule:
     interval: daily
   groups:
-    prettier:
-      patterns:
-        - "prettier"
-        - "eslint-config-prettier"
-        - "eslint-plugin-prettier"
     eslint:
       patterns:
         - "@typescript-eslint/*"
         - "eslint*"
+        - "prettier"
 - package-ecosystem: npm
   directory: gh-actions/jq
   schedule:
     interval: daily
   groups:
-    prettier:
-      patterns:
-        - "prettier"
-        - "eslint-config-prettier"
-        - "eslint-plugin-prettier"
     eslint:
       patterns:
         - "@typescript-eslint/*"
         - "eslint*"
+        - "prettier"
 - package-ecosystem: npm
   directory: gh-actions/hashfiles
   schedule:
     interval: daily
   groups:
-    prettier:
-      patterns:
-        - "prettier"
-        - "eslint-config-prettier"
-        - "eslint-plugin-prettier"
     eslint:
       patterns:
         - "@typescript-eslint/*"
         - "eslint*"
+        - "prettier"
 - package-ecosystem: npm
   directory: gh-actions/retest
   schedule:
     interval: daily
   groups:
-    prettier:
-      patterns:
-        - "prettier"
-        - "eslint-config-prettier"
-        - "eslint-plugin-prettier"
     eslint:
       patterns:
         - "@typescript-eslint/*"
         - "eslint*"
+        - "prettier"
 - package-ecosystem: npm
   directory: gh-actions/torun
   schedule:
     interval: daily
   groups:
-    prettier:
-      patterns:
-        - "prettier"
-        - "eslint-config-prettier"
-        - "eslint-plugin-prettier"
     eslint:
       patterns:
         - "@typescript-eslint/*"
         - "eslint*"
+        - "prettier"
 - package-ecosystem: npm
   directory: gh-actions/github/checks
   schedule:
     interval: daily
   groups:
-    prettier:
-      patterns:
-        - "prettier"
-        - "eslint-config-prettier"
-        - "eslint-plugin-prettier"
     eslint:
       patterns:
         - "@typescript-eslint/*"
         - "eslint*"
+        - "prettier"
 - package-ecosystem: npm
   directory: gh-actions/github/mutex
   schedule:
     interval: daily
   groups:
-    prettier:
-      patterns:
-        - "prettier"
-        - "eslint-config-prettier"
-        - "eslint-plugin-prettier"
     eslint:
       patterns:
         - "@typescript-eslint/*"
         - "eslint*"
+        - "prettier"
 - package-ecosystem: pip
   directory: bazel
   schedule:
