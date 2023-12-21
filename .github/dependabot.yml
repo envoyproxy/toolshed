@@ -78,6 +78,10 @@ updates:
         - "@typescript-eslint/*"
         - "eslint*"
 - package-ecosystem: pip
+  directory: bazel
+  schedule:
+    interval: daily
+- package-ecosystem: pip
   directory: bazel/website
   schedule:
     interval: daily
