@@ -5,8 +5,8 @@
   "scripts": {
     "build": "tsc --noEmit && ncc build src/index.ts -o dist/main -m && ncc build src/cleanup.ts -o dist/cleanup -m",
     "test": "tsc --noEmit && jest",
-    "lint": "prettier --check **/*.ts",
-    "lint-fix": "prettier --write **/*.ts"
+    "lint": "eslint . --ext .ts",
+    "lint-fix": "eslint . --ext .ts --fix"
   },
   "repository": {
     "type": "git",
@@ -26,15 +26,15 @@
   "devDependencies": {
     "@types/node": "^20.10.5",
     "@types/jest": "^28.1.8",
-    "@typescript-eslint/eslint-plugin": "^2.34.0",
-    "@typescript-eslint/parser": "^2.34.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
     "@vercel/ncc": "^0.38.1",
-    "eslint": "^6.8.0",
-    "eslint-config-prettier": "^6.15.0",
-    "eslint-plugin-prettier": "^3.4.1",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.0",
     "jest": "^28.1.3",
     "nock": "^13.3.1",
-    "prettier": "^1.19.1",
+    "prettier": "^3.1.1",
     "ts-jest": "^28.0.8",
     "typescript": "^5.3.3",
     "jest-circus": "^29.7.0"
