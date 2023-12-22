@@ -26,8 +26,11 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version || '20.x' }}
-    - run: cd gh-actions/${{ matrix.name }} && npm install
-    - run: cd gh-actions/${{ matrix.name }} && npm run lint
+    - run: npm install
+      working-directory: gh-actions/${{ matrix.name }}
+    - run: npm run lint
+      working-directory: gh-actions/${{ matrix.name }}
       if: ${{ matrix.name != 'status' }}
-    - run: cd gh-actions/${{ matrix.name }} && npm test
+    - run: npm test
+      working-directory: gh-actions/${{ matrix.name }}
       if: ${{ matrix.name != 'status' }}
