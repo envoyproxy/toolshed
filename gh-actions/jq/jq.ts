@@ -4,8 +4,8 @@ import os from 'os'
 import * as path from 'path'
 import tmp from 'tmp'
 import {exec} from 'child_process'
-// eslint-disable-next-line @typescript-eslint/ban-ts-ignore
-// @ts-ignore
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error no typing for js-yaml
 import * as yaml from 'js-yaml'
 
 declare const atob: (encodedString: string) => string
@@ -125,7 +125,7 @@ const run = async (): Promise<void> => {
         process.stderr.write(`stderr: ${stderr}`)
       }
     })
-    proc.on('exit', code => {
+    proc.on('exit', (code) => {
       if (code !== 0) {
         core.setFailed(`Child process exited with code ${code}`)
       }
