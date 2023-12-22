@@ -83,7 +83,7 @@ DO NOT TOUCH this branch manually.
     const state = {
       owner: this.owner,
       origin: this.origin,
-      branch: this.branch
+      branch: this.branch,
     }
     await fs.writeFile(path.join(this.local, 'state.json'), JSON.stringify(state))
 
@@ -117,14 +117,14 @@ DO NOT TOUCH this branch manually.
 
   async tryLock(): Promise<boolean> {
     let stderr: string = ''
-    let code = await exec.exec('git', ['push', 'origin', `HEAD:${this.branch}`], {
+    const code = await exec.exec('git', ['push', 'origin', `HEAD:${this.branch}`], {
       cwd: this.local,
       ignoreReturnCode: true,
       listeners: {
         stderr: data => {
           stderr += data.toString()
-        }
-      }
+        },
+      },
     })
     if (code == 0) {
       return true

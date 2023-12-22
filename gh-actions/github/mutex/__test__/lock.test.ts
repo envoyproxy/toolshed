@@ -21,7 +21,7 @@ describe('locking', () => {
     await lock.lock({
       repository: remote,
       key: 'lock',
-      prefix: 'actions-mutex-lock/'
+      prefix: 'actions-mutex-lock/',
     })
 
     let output: string = ''
@@ -29,8 +29,8 @@ describe('locking', () => {
       listeners: {
         stdout: (data: Buffer) => {
           output += data.toString()
-        }
-      }
+        },
+      },
     })
 
     expect(output.trim()).toBe('actions-mutex-lock/lock')
@@ -42,7 +42,7 @@ describe('locking', () => {
       // prepare dummy lock
       const local = await utils.mkdtemp()
       const execOption = {
-        cwd: local
+        cwd: local,
       }
       await exec.exec('git', ['init', local], execOption)
       await exec.exec('git', ['config', '--local', 'core.autocrlf', 'false'], execOption)
@@ -58,7 +58,7 @@ describe('locking', () => {
       const lockPromise = lock.lock({
         repository: remote,
         key: 'lock',
-        prefix: 'actions-mutex-lock/'
+        prefix: 'actions-mutex-lock/',
       })
       lockPromise.then(() => {
         locked = true
@@ -75,19 +75,19 @@ describe('locking', () => {
       await lockPromise
       expect(locked).toBe(true)
     },
-    10 * 1000
+    10 * 1000,
   )
 
   it('unlocks', async () => {
     // prepare dummy lock
     const local = await utils.mkdtemp()
     const execOption = {
-      cwd: local
+      cwd: local,
     }
     const state = {
       owner: 'identity-of-the-owner',
       origin: remote,
-      branch: 'actions-mutex-lock/lock'
+      branch: 'actions-mutex-lock/lock',
     }
     await exec.exec('git', ['init', local], execOption)
     await exec.exec('git', ['config', '--local', 'core.autocrlf', 'false'], execOption)
@@ -103,13 +103,13 @@ describe('locking', () => {
       {
         repository: remote,
         key: 'lock',
-        prefix: 'actions-mutex-lock/'
+        prefix: 'actions-mutex-lock/',
       },
       {
         owner: 'identity-of-the-owner',
         origin: remote,
-        branch: 'actions-mutex-lock/lock'
-      }
+        branch: 'actions-mutex-lock/lock',
+      },
     )
 
     let output: string = ''
@@ -117,8 +117,8 @@ describe('locking', () => {
       listeners: {
         stdout: (data: Buffer) => {
           output += data.toString()
-        }
-      }
+        },
+      },
     })
 
     expect(output.trim()).toBe('')
@@ -128,12 +128,12 @@ describe('locking', () => {
     // prepare dummy lock
     const local = await utils.mkdtemp()
     const execOption = {
-      cwd: local
+      cwd: local,
     }
     const state = {
       owner: 'identity-of-another-owner',
       origin: remote,
-      branch: 'actions-mutex-lock/lock'
+      branch: 'actions-mutex-lock/lock',
     }
     await exec.exec('git', ['init', local], execOption)
     await exec.exec('git', ['config', '--local', 'core.autocrlf', 'false'], execOption)
@@ -149,13 +149,13 @@ describe('locking', () => {
       {
         repository: remote,
         key: 'lock',
-        prefix: 'actions-mutex-lock/'
+        prefix: 'actions-mutex-lock/',
       },
       {
         owner: 'identity-of-the-owner',
         origin: remote,
-        branch: 'actions-mutex-lock/lock'
-      }
+        branch: 'actions-mutex-lock/lock',
+      },
     )
 
     let output: string = ''
@@ -163,8 +163,8 @@ describe('locking', () => {
       listeners: {
         stdout: (data: Buffer) => {
           output += data.toString()
-        }
-      }
+        },
+      },
     })
 
     expect(output.trim()).toBe('actions-mutex-lock/lock')
