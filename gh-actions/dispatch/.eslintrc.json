@@ -4,7 +4,6 @@
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
-    "prettier/@typescript-eslint",
     "plugin:prettier/recommended"
   ],
   "rules": {
@@ -20,8 +19,7 @@
       }
     ],
     // octokit/rest requires parameters that are not in camelcase
-    "camelcase": "off",
-    "@typescript-eslint/camelcase": ["error", { "properties": "never" }]
+    "camelcase": "off"
   },
   "env": {
     "node": true,
