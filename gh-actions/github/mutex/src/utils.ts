@@ -11,7 +11,7 @@ export async function mkdtemp(): Promise<string> {
 
 // return random string
 export async function random(): Promise<string> {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     crypto.randomBytes(16, (err, buf) => {
       if (err) {
         reject(err)
@@ -22,7 +22,7 @@ export async function random(): Promise<string> {
 }
 
 export async function sleep(waitSec: number): Promise<void> {
-  return new Promise<void>(function(resolve) {
+  return new Promise<void>(function (resolve) {
     setTimeout(() => resolve(), waitSec * 1000)
   })
 }

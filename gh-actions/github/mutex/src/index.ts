@@ -4,7 +4,7 @@ import * as lock from './lock'
 async function run() {
   try {
     const required = {
-      required: true
+      required: true,
     }
     const token = core.getInput('token', required)
     const key = core.getInput('key', required)
@@ -15,7 +15,7 @@ async function run() {
       token,
       key,
       repository,
-      prefix
+      prefix,
     })
     core.saveState('STATE', JSON.stringify(state))
   } catch (e) {
