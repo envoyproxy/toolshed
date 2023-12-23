@@ -1,5 +1,5 @@
 {
-  "name": "@envoy_toolshed/checks",
+  "name": "@envoy/toolshed/actions/github/checks",
   "version": "1.0.0",
   "description": "Start github checks.",
   "repository": {

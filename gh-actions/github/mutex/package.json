@@ -1,5 +1,5 @@
 {
-  "name": "@envoy_toolshed/github/mutex",
+  "name": "@envoy/toolshed/actions/github/mutex",
   "version": "0.0.0",
   "description": "A GitHub Action for exclusive control",
   "scripts": {

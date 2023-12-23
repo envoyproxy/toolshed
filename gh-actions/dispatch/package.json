@@ -1,5 +1,5 @@
 {
-  "name": "@envoy/toolshed/action/dispatch",
+  "name": "@envoy/toolshed/actions/dispatch",
   "version": "1.0.0",
   "description": "An action to hash files that is more flexible than the Github function.",
   "repository": {
