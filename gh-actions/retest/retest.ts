@@ -18,7 +18,7 @@ function cachedProperty(_: unknown, key: string, descriptor: PropertyDescriptor)
   // Use a Symbol for storing the cached value on the instance
   const cachedValueKey = Symbol(`__cached_${key}`)
   /* eslint-disable  @typescript-eslint/no-explicit-any */
-  descriptor.get = function(this: any): any {
+  descriptor.get = function (this: any): any {
     if (!this[cachedValueKey]) {
       this[cachedValueKey] = originalGetter.call(this)
     }

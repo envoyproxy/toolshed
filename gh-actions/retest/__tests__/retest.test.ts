@@ -17,9 +17,7 @@ beforeEach(() => {
   const commentId = 12357
 
   // Nock the request
-  nock(githubApiUrl)
-    .post(`/repos/${repository}/issues/comments/${commentId}/reactions`)
-    .reply(200, {})
+  nock(githubApiUrl).post(`/repos/${repository}/issues/comments/${commentId}/reactions`).reply(200, {})
   process.env['GITHUB_REPOSITORY'] = repository
 })
 
