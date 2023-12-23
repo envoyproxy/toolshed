@@ -44,12 +44,12 @@ const run = async (): Promise<void> => {
       installationId,
     })
 
-    // @ts-expect-error
+    // @ts-expect-error no typing for resp
     if (!resp || !resp.token) {
       throw new Error('Unable to authenticate')
     }
 
-    // @ts-expect-error
+    // @ts-expect-error no typing for resp
     const token = resp.token
     core.setOutput('token', token)
     core.setSecret('token')
