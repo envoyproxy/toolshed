@@ -88,7 +88,7 @@ async function updateCheckRun(octokit: OctokitType, checkConfig: Check, textExtr
 
 async function updateChecks(octokit: OctokitType, checks: CheckMap, textExtra: string): Promise<void> {
   const requests: Promise<[string, number]>[] = []
-  Object.values(checks).forEach(checkConfig => {
+  Object.values(checks).forEach((checkConfig) => {
     requests.push(updateCheckRun(octokit, checkConfig, textExtra))
   })
   const checkRunIds: [string, number][] = await Promise.all(requests)
