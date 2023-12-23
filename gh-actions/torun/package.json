@@ -1,5 +1,5 @@
 {
-  "name": "@envoy_toolshed/torun",
+  "name": "@envoy/toolshed/actions/torun",
   "version": "1.0.0",
   "description": "Decide what to run.",
   "repository": {

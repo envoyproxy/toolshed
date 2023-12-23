@@ -1,5 +1,5 @@
 {
-  "name": "retest-action",
+  "name": "@envoy/toolshed/actions/retest",
   "version": "1.0.0",
   "description": "A GitHub action to re-run failed GitHub Workflow runs on PRs by commenting '/retest'.",
   "repository": {

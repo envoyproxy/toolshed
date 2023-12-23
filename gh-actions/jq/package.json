@@ -1,5 +1,5 @@
 {
-  "name": "@envoy_toolshed/jq",
+  "name": "@envoy/toolshed/actions/jq",
   "version": "1.0.0",
   "description": "Run jq against strings in Github actions.",
   "repository": {
