@@ -350,7 +350,7 @@ runs:
     with:
       steps: ${{ inputs.report-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: actions/upload-artifact@v3
+  - uses: actions/upload-artifact@v4
     name: Upload artefacts
     if: ${{ inputs.upload-name && inputs.upload-path && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
