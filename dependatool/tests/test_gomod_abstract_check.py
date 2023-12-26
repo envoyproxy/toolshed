@@ -162,7 +162,9 @@ def test_gomod_abstract_check_errors(patches):
 
 @pytest.mark.parametrize("name_matches", [True, False])
 @pytest.mark.parametrize("dir_ignored", [True, False])
-def test_gomod_abstract_check_dir_matches(patches, name_matches, dir_ignored):
+@pytest.mark.parametrize("size", [0, 1, 2, 3])
+def test_gomod_abstract_check_dir_matches(
+        patches, name_matches, dir_ignored, size):
     checker = MagicMock()
     check = DummyDependatoolGomodCheck(checker)
     patched = patches(
@@ -175,13 +177,16 @@ def test_gomod_abstract_check_dir_matches(patches, name_matches, dir_ignored):
 
     with patched as (m_bool, m_os, m_filename):
         m_bool.return_value = name_matches
+        m_os.stat.return_value.st_size = size
         checker.ignored_dirs.match.return_value = (
             True
             if dir_ignored
             else False)
         assert (
             check.dir_matches(path)
-            == (name_matches and not dir_ignored))
+            == (name_matches
+                and size > 1
+                and not dir_ignored))
 
     assert m_os.path.basename.call_args == [(path, ), {}]
     assert (
@@ -192,7 +197,14 @@ def test_gomod_abstract_check_dir_matches(patches, name_matches, dir_ignored):
         == [(m_os.path.basename.return_value, ), {}])
     if not name_matches:
         assert not checker.ignored_dirs.match.called
-        assert not checker.path.parent.relative_to.called
+        assert not m_os.path.dirname.called
+        assert not m_os.stat.called
+        return
+    assert (
+        m_os.stat.call_args
+        == [(path, ), {}])
+    if size < 2:
+        assert not checker.ignored_dirs.match.called
         assert not m_os.path.dirname.called
         return
     assert (
