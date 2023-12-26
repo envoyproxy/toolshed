@@ -1,91 +1,198 @@
 version: 2
 updates:
-
-- package-ecosystem: github-actions
-  directory: /
-  schedule:
-    interval: daily
-- package-ecosystem: npm
-  directory: gh-actions/appauth
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-        - "@typescript-eslint/*"
-        - "eslint*"
-        - "prettier"
-- package-ecosystem: npm
-  directory: gh-actions/dispatch
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-        - "@typescript-eslint/*"
-        - "eslint*"
-        - "prettier"
-- package-ecosystem: npm
-  directory: gh-actions/jq
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-        - "@typescript-eslint/*"
-        - "eslint*"
-        - "prettier"
-- package-ecosystem: npm
-  directory: gh-actions/hashfiles
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-        - "@typescript-eslint/*"
-        - "eslint*"
-        - "prettier"
-- package-ecosystem: npm
-  directory: gh-actions/retest
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-        - "@typescript-eslint/*"
-        - "eslint*"
-        - "prettier"
-- package-ecosystem: npm
-  directory: gh-actions/torun
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-        - "@typescript-eslint/*"
-        - "eslint*"
-        - "prettier"
-- package-ecosystem: npm
-  directory: gh-actions/github/checks
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-        - "@typescript-eslint/*"
-        - "eslint*"
-        - "prettier"
-- package-ecosystem: npm
-  directory: gh-actions/github/mutex
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-        - "@typescript-eslint/*"
-        - "eslint*"
-        - "prettier"
-- package-ecosystem: pip
-  directory: bazel
-  schedule:
-    interval: daily
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/bson
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/cache/prime
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/cache/restore
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/docker/cache/prime
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/docker/cache/restore
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/docker/fetch
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/docker/shas
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/envoy/android/pre
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/envoy/ci/env
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/envoy/ci/request
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/envoy/ios/post
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/envoy/run/summary
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/foreach
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/artifact/download
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/checkout
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/command
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/env/load
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/env/save
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/env/summary
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/merge-commit
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/pr
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/github/run
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/json/table
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/upload/diff
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/using/recurse
+    schedule:
+      interval: daily
+  - package-ecosystem: github-actions
+    directory: /gh-actions/using/steps
+    schedule:
+      interval: daily
+  - package-ecosystem: npm
+    directory: /gh-actions/appauth
+    schedule:
+      interval: daily
+    groups:
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "prettier"
+  - package-ecosystem: npm
+    directory: /gh-actions/dispatch
+    schedule:
+      interval: daily
+    groups:
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "prettier"
+  - package-ecosystem: npm
+    directory: /gh-actions/github/checks
+    schedule:
+      interval: daily
+    groups:
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "prettier"
+  - package-ecosystem: npm
+    directory: /gh-actions/github/mutex
+    schedule:
+      interval: daily
+    groups:
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "prettier"
+  - package-ecosystem: npm
+    directory: /gh-actions/hashfiles
+    schedule:
+      interval: daily
+    groups:
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "prettier"
+  - package-ecosystem: npm
+    directory: /gh-actions/jq
+    schedule:
+      interval: daily
+    groups:
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "prettier"
+  - package-ecosystem: npm
+    directory: /gh-actions/retest
+    schedule:
+      interval: daily
+    groups:
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "prettier"
+  - package-ecosystem: npm
+    directory: /gh-actions/torun
+    schedule:
+      interval: daily
+    groups:
+      eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "eslint*"
+          - "prettier"
+  - package-ecosystem: pip
+    directory: /bazel/website
+    schedule:
+      interval: daily
+  - package-ecosystem: pip
+    directory: /deps
+    schedule:
+      interval: daily
