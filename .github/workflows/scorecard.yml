@@ -14,7 +14,7 @@ permissions:
 jobs:
   analysis:
     name: Scorecard analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     permissions:
       admin: read
       security-events: write

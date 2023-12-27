@@ -37,7 +37,7 @@ jobs:
         path: dist/coverage/python/htmlcov/
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
     - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
@@ -63,7 +63,7 @@ jobs:
         envoy.code.check . -c glint shellcheck yamllint  -x ".*/dist/.*"
 
   typecheck:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
     - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
@@ -77,7 +77,7 @@ jobs:
     - name: Run pants (type) check
       run: "./pants --colors check ::"
   docs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
     - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
@@ -92,7 +92,7 @@ jobs:
       run: "./pants --colors readme --check=README.md ::"
 
   package:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
     - test
     - lint
@@ -117,7 +117,7 @@ jobs:
         path: dist
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs:
     - package
     steps:
