@@ -4,17 +4,19 @@ on:
   schedule:
   - cron: '33 13 * * 5'
   push:
-    branches: 
+    branches:
     - "main"
 
-permissions: 
+permissions:
   contents: read
+
 
 jobs:
   analysis:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
+      admin: read
       security-events: write
       id-token: write
 
