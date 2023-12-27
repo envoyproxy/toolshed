@@ -15,21 +15,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: appauth
-          - name: dispatch
-          - name: github/checks
-          - name: github/mutex
-          - name: hashfiles
-          - name: jq
-          - name: retest
-          - name: torun
+        node-version:
+          - '20.x'
+        name:
+          - 'appauth'
+          - 'dispatch'
+          - 'github/checks'
+          - 'github/mutex'
+          - 'hashfiles'
+          - 'jq'
+          - 'retest'
+          - 'torun'
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-    - name: Use Node.js ${{ matrix.node-version || '20.x' }}
+    - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
       with:
-        node-version: ${{ matrix.node-version || '20.x' }}
+        node-version: ${{ matrix.node-version }}
     - run: npm install
       working-directory: gh-actions/${{ matrix.name }}
     - run: npm run lint
