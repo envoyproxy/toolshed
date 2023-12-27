@@ -11,4 +11,4 @@ else
         | sed 's/\([^\\]\)%{{ /\1${{ /g')
 fi
 export __STEPS__
-cat "$1" | envsubst > .tmp.action/action.yml
+envsubst < "$1" > .tmp.action/action.yml

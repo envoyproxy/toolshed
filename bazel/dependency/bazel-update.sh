@@ -140,6 +140,7 @@ update_dependency () {
 update_dependency
 
 if [[ -n "$VERSION_UPDATE_POST_SCRIPT" ]]; then
+    # shellcheck disable=SC1090
     . "$VERSION_UPDATE_POST_SCRIPT"
     post_version_update
 fi
