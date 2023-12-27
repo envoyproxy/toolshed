@@ -2,13 +2,17 @@ name: "CodeQL"
 
 on:
   push:
-    branches: 
+    branches:
     - "main"
   pull_request:
-    branches: 
+    branches:
     - "main"
   schedule:
   - cron: '16 11 * * 5'
+
+permissions:
+  contents: read
+
 
 jobs:
   analyze:
@@ -23,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: 
+        language:
         - javascript-typescript
         - python
 
