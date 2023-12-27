@@ -16,7 +16,6 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-22.04
     permissions:
-      admin: read
       security-events: write
       id-token: write
 
