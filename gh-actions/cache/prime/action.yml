@@ -42,12 +42,12 @@ runs:
     shell: bash
   - name: Check cache
     id: cache-restore-initial
-    uses: actions/cache/restore@v3
+    uses: actions/cache/restore@704facf57e6136b1bc63b828d79edcd491f0ee84  # v3.3.2
     with:
       lookup-only: true
       path: ${{ inputs.path_tmp }}
       key: ${{ inputs.key }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.20
+  - uses: envoyproxy/toolshed/gh-actions/jq@6b3ddd1e42c252d68fb98973760c0ee1943c9c21  # actions-v0.2.20
     if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
     id: lock-id
     with:
@@ -55,7 +55,7 @@ runs:
       options: -Rr
       filter: |
         @base64
-  - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.2.20
+  - uses: envoyproxy/toolshed/gh-actions/github/mutex@6b3ddd1e42c252d68fb98973760c0ee1943c9c21  # actions-v0.2.20
     if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
     with:
       key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
@@ -64,7 +64,7 @@ runs:
   - name: Check cache
     id: cache-restore
     if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
-    uses: actions/cache/restore@v3
+    uses: actions/cache/restore@704facf57e6136b1bc63b828d79edcd491f0ee84  # v3.3.2
     with:
       lookup-only: true
       path: ${{ inputs.path_tmp }}
@@ -93,7 +93,7 @@ runs:
 
   - if: ${{ steps.restore.outputs.save == 'true' }}
     name: Save cache
-    uses: actions/cache/save@v3
+    uses: actions/cache/save@704facf57e6136b1bc63b828d79edcd491f0ee84  # v3.3.2
     with:
       path: ${{ inputs.path_tmp }}
       key: ${{ inputs.key }}
