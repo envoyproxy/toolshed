@@ -44,6 +44,6 @@
     "@actions/core": "^1.9.1",
     "@actions/github": "^4.0.0",
     "@octokit/rest": "^20.0.1",
-    "axios": "^1.6.3"
+    "axios": "^1.6.4"
   }
 }
