@@ -65,7 +65,8 @@ class ADependatoolChecker(
     def directory_kwargs(self) -> Mapping:
         return dict(
             pool=self.pool,
-            loop=self.loop)
+            loop=self.loop,
+            text_only=False)
 
     @property  # type:ignore
     @abstracts.interfacemethod

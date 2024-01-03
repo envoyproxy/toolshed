@@ -97,7 +97,10 @@ def test_abstract_checker_dependatool_directory_kwargs(patches):
 
     assert (
         m_dict.call_args
-        == [(), dict(loop=m_loop.return_value, pool=m_pool.return_value)])
+        == [(),
+            dict(loop=m_loop.return_value,
+                 pool=m_pool.return_value,
+                 text_only=False)])
     assert "directory_kwargs" not in checker.__dict__
 
 
