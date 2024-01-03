@@ -679,7 +679,8 @@ async def test_abstract_git_directory_files(
 
 def test_abstract_git_directory_finder_kwargs(patches):
     untracked = MagicMock()
-    direct = DummyGitDirectory("PATH", untracked=untracked)
+    binaries = MagicMock()
+    direct = DummyGitDirectory("PATH", untracked=untracked, binaries=binaries)
     patched = patches(
         "dict",
         ("ADirectory.finder_kwargs",
@@ -695,7 +696,10 @@ def test_abstract_git_directory_finder_kwargs(patches):
 
     assert (
         m_dict.call_args
-        == [(), dict(**super_kwargs, match_all_files=untracked)])
+        == [(),
+            dict(**super_kwargs,
+                 match_binaries=binaries,
+                 match_all_files=untracked)])
     assert "finder_kwargs" not in direct.__dict__
 
 
@@ -1110,8 +1114,9 @@ def test_git_finder_parse_response(patches, all_files):
 
 
 @pytest.mark.parametrize("eol", [None, 0, [], (), "", "EOL", "-text", "none"])
-def test_git_finder__get_file(patches, eol):
-    finder = DummyGitDirectoryFileFinder("PATH")
+@pytest.mark.parametrize("match_binaries", [True, False])
+def test_git_finder__get_file(patches, eol, match_binaries):
+    finder = DummyGitDirectoryFileFinder("PATH", match_binaries=match_binaries)
     patched = patches(
         "AGitDirectoryFileFinder._parse_line",
         prefix="aio.core.directory.abstract.directory")
@@ -1124,7 +1129,9 @@ def test_git_finder__get_file(patches, eol):
             finder._get_file(line)
             == (name
                 if (eol
-                    and eol not in ["-text", "none"])
+                    and (
+                        match_binaries
+                        or eol not in ["-text", "none"]))
                 else None))
 
 
