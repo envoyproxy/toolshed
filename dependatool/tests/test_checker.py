@@ -21,19 +21,22 @@ def test_abstract_dependatool_check_tools(patches):
     patched = patches(
         "DependatoolDockerCheck",
         "DependatoolGomodCheck",
+        "DependatoolNPMCheck",
         "DependatoolPipCheck",
         prefix="dependatool.checker")
 
-    with patched as (m_docker, m_gomod, m_pip):
+    with patched as (m_docker, m_gomod, m_npm, m_pip):
         assert (
             checker.check_tools
             == dict(
                 docker=m_docker.return_value,
                 gomod=m_gomod.return_value,
+                npm=m_npm.return_value,
                 pip=m_pip.return_value))
 
     assert m_docker.call_args == [(checker, ), {}]
     assert m_gomod.call_args == [(checker, ), {}]
+    assert m_npm.call_args == [(checker, ), {}]
     assert m_pip.call_args == [(checker, ), {}]
     assert "check_tools" in checker.__dict__
 

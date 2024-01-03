@@ -11,6 +11,7 @@ from aio.core import directory
 from .abstract import ADependatoolChecker
 from .docker import DependatoolDockerCheck
 from .gomod import DependatoolGomodCheck
+from .npm import DependatoolNPMCheck
 from .pip import DependatoolPipCheck
 
 
@@ -26,6 +27,7 @@ class DependatoolChecker:
         return dict(
             docker=DependatoolDockerCheck(self),
             gomod=DependatoolGomodCheck(self),
+            npm=DependatoolNPMCheck(self),
             pip=DependatoolPipCheck(self))
 
     @property
