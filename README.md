@@ -31,7 +31,7 @@ pypi: https://pypi.org/project/aio.api.bazel
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.9
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
 
 ---
@@ -46,7 +46,7 @@ pypi: https://pypi.org/project/aio.api.github
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [gidgethub](https://pypi.org/project/gidgethub)
 - [multidict](https://pypi.org/project/multidict) >=6.0.2
@@ -65,7 +65,7 @@ pypi: https://pypi.org/project/aio.api.nist
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [multidict](https://pypi.org/project/multidict) >=6.0.2
 - [packaging](https://pypi.org/project/packaging)
@@ -76,7 +76,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.10.1
+version: 0.10.2.dev0
 
 pypi: https://pypi.org/project/aio.core
 
@@ -113,7 +113,7 @@ pypi: https://pypi.org/project/aio.run.runner
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.8.6
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [coloredlogs](https://pypi.org/project/coloredlogs)
 - [frozendict](https://pypi.org/project/frozendict)
 - [uvloop](https://pypi.org/project/uvloop)
@@ -131,7 +131,7 @@ pypi: https://pypi.org/project/dependatool
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.10.0
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
 
 ---
@@ -147,7 +147,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.api.github](https://pypi.org/project/aio.api.github) >=0.2.5
-- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [frozendict](https://pypi.org/project/frozendict)
@@ -174,7 +174,7 @@ pypi: https://pypi.org/project/envoy.code.check
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.10.0
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.4.2
 - [flake8](https://pypi.org/project/flake8) >=6
@@ -197,7 +197,7 @@ pypi: https://pypi.org/project/envoy.dependency.check
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
 - [aio.api.github](https://pypi.org/project/aio.api.github) >=0.1.6
 - [aio.api.nist](https://pypi.org/project/aio.api.nist) >=0.0.4
-- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aio.run.checker](https://pypi.org/project/aio.run.checker) >=0.5.7
 - [aiohttp](https://pypi.org/project/aiohttp) >=3.8.1
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.10
@@ -250,7 +250,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
 - [envoy.base.utils](https://pypi.org/project/envoy.base.utils) >=0.3.9
 - [envoy.github.abstract](https://pypi.org/project/envoy.github.abstract) >=0.0.22
@@ -327,7 +327,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.4.0
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.2.1
 - [aiohttp](https://pypi.org/project/aiohttp)
 - [gidgethub](https://pypi.org/project/gidgethub)
@@ -345,7 +345,7 @@ pypi: https://pypi.org/project/envoy.github.release
 ##### requirements:
 
 - [abstracts](https://pypi.org/project/abstracts) >=0.0.12
-- [aio.core](https://pypi.org/project/aio.core) >=0.9.1
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
 - [aiofiles](https://pypi.org/project/aiofiles)
 - [aiohttp](https://pypi.org/project/aiohttp)
@@ -366,7 +366,7 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 
 ##### requirements:
 
-- [aio.core](https://pypi.org/project/aio.core) >=0.10.0
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.1
 - [python-gnupg](https://pypi.org/project/python-gnupg)
 
 ---
