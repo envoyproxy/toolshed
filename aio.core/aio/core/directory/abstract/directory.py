@@ -70,6 +70,8 @@ class ADirectoryFileFinder(
         return response.stdout.split("\n")
 
 
+# TODO: rename `match_all_files` -> `match_untracked`
+
 class AGitDirectoryFileFinder(
         ADirectoryFileFinder,
         metaclass=abstracts.Abstraction):
@@ -79,7 +81,9 @@ class AGitDirectoryFileFinder(
             path: str,
             path_matcher: Optional[Pattern[str]] = None,
             exclude_matcher:  Optional[Pattern[str]] = None,
+            match_binaries: bool = False,
             match_all_files: bool = False) -> None:
+        self.match_binaries = match_binaries
         self.match_all_files = match_all_files
         super().__init__(
             path,
@@ -103,7 +107,7 @@ class AGitDirectoryFileFinder(
 
     def _get_file(self, line: str) -> Optional[str]:
         eol, name = self._parse_line(line)
-        if eol and eol not in ["-text", "none"]:
+        if eol and (self.match_binaries or eol not in ["-text", "none"]):
             return name
 
     def _parse_line(self, line: str) -> Tuple[Optional[str], Optional[str]]:
@@ -332,6 +336,7 @@ class AGitDirectory(ADirectory):
     def __init__(self, *args, **kwargs) -> None:
         self.changed = kwargs.pop("changed", None)
         self.untracked = kwargs.pop("untracked", None)
+        self.binaries = kwargs.pop("binaries", None)
         super().__init__(*args, **kwargs)
 
     @async_property(cache=True)
@@ -377,6 +382,7 @@ class AGitDirectory(ADirectory):
     def finder_kwargs(self) -> Mapping:
         return dict(
             **super().finder_kwargs,
+            match_binaries=self.binaries,
             match_all_files=self.untracked)
 
     @property
