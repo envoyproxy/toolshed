@@ -14,7 +14,7 @@ blinker==1.7.0 \
     # via pelican
 cssmin==0.2.0 \
     --hash=sha256:e012f0cc8401efcf2620332339011564738ae32be8c84b2e43ce8beaec1067b6
-    # via -r website/requirements.in
+    # via -r requirements.in
 docutils==0.20.1 \
     --hash=sha256:96f387a2c5562db4476f09f13bbab2192e764cac08ebbf3a34a95d9b1e4a59d6 \
     --hash=sha256:f08a4e276c3a1583a86dce3e34aba3fe04d02bba2dd51ed16106244e8a923e3b
@@ -31,13 +31,14 @@ jinja2==3.1.2 \
     --hash=sha256:31351a702a408a9e7595a8fc6150fc3f43bb6bf7e319770cbc0db9df9437e852 \
     --hash=sha256:6088930bfe239f0e6710546ab9c19c9ef35e29792895fed6e6e31a023a182a61
     # via pelican
-libsass==0.22.0 \
-    --hash=sha256:081e256ab3c5f3f09c7b8dea3bf3bf5e64a97c6995fd9eea880639b3f93a9f9a \
-    --hash=sha256:3ab5ad18e47db560f4f0c09e3d28cf3bb1a44711257488ac2adad69f4f7f8425 \
-    --hash=sha256:65455a2728b696b62100eb5932604aa13a29f4ac9a305d95773c14aaa7200aaf \
-    --hash=sha256:89c5ce497fcf3aba1dd1b19aae93b99f68257e5f2026b731b00a872f13324c7f \
-    --hash=sha256:f1efc1b612299c88aec9e39d6ca0c266d360daa5b19d9430bdeaffffa86993f9
-    # via -r website/requirements.in
+libsass==0.23.0 \
+    --hash=sha256:31e86d92a5c7a551df844b72d83fc2b5e50abc6fbbb31e296f7bebd6489ed1b4 \
+    --hash=sha256:34cae047cbbfc4ffa832a61cbb110f3c95f5471c6170c842d3fed161e40814dc \
+    --hash=sha256:4a218406d605f325d234e4678bd57126a66a88841cb95bee2caeafdc6f138306 \
+    --hash=sha256:6f209955ede26684e76912caf329f4ccb57e4a043fd77fe0e7348dd9574f1880 \
+    --hash=sha256:a2ec85d819f353cbe807432d7275d653710d12b08ec7ef61c124a580a8352f3c \
+    --hash=sha256:ea97d1b45cdc2fc3590cb9d7b60f1d8915d3ce17a98c1f2d4dd47ee0d9c68ce6
+    # via -r requirements.in
 markdown==3.4.4 \
     --hash=sha256:225c6123522495d4119a90b3a3ba31a1e87a70369e03f14799ea9c0d7183a3d6 \
     --hash=sha256:a4c1b65c0957b4bd9e7d86ddc7b3c9868fb9670660f6f99f6d1bca8954d5a941
@@ -109,17 +110,17 @@ ordered-set==4.1.0 \
 packaging==23.2 \
     --hash=sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5 \
     --hash=sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7
-    # via -r website/requirements.in
+    # via -r requirements.in
 pelican[Markdown,markdown]==4.9.1 \
     --hash=sha256:713ea66c6a73bde405acd333d5ee746273850a5350a3c0045f2be991d79bd708 \
     --hash=sha256:c08434f0df2a6b649cfe485cbf0d8fdb727ff89ba6ecb1c867f88ceb2f37f179
     # via
-    #   -r website/requirements.in
+    #   -r requirements.in
     #   pelican-webassets
 pelican-webassets==2.0.0 \
     --hash=sha256:b2a123481177784945e0113e5a79c88f1fc832fb9a2bad6fcc08f6f34ac77a76 \
     --hash=sha256:d1ef6818534ab742204fc1e35e2d005553c582cb23b170580fb2e2d24deb50f2
-    # via -r website/requirements.in
+    # via -r requirements.in
 pygments==2.16.1 \
     --hash=sha256:13fc09fa63bc8d8671a6d247e1eb303c4b343eaee81d861f3404db2935653692 \
     --hash=sha256:1daff0494820c69bc8941e407aa20f577374ee88364ee10a98fdbe0aece96e29
@@ -185,7 +186,7 @@ pyyaml==6.0.1 \
     --hash=sha256:fca0e3a251908a499833aa292323f32437106001d436eca0e6e7833256674585 \
     --hash=sha256:fd1592b3fdf65fff2ad0004b5e363300ef59ced41c2e6b3a99d4089fa8c5435d \
     --hash=sha256:fd66fc5d0da6d9815ba2cebeb4205f95818ff4b79c3ebe268e75d961704af52f
-    # via -r website/requirements.in
+    # via -r requirements.in
 rich==13.7.0 \
     --hash=sha256:5cb5123b5cf9ee70584244246816e9114227e0b98ad9176eede6ad54bf5403fa \
     --hash=sha256:6da14c108c4866ee9520bbffa71f6fe3962e193b7da68720583850cd4548e235
