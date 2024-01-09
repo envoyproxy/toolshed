@@ -47,7 +47,7 @@ runs:
   using: composite
   steps:
   - name: Checkout branch (${{ inputs.branch }})
-    uses: envoyproxy/toolshed/gh-actions/bson@6b3ddd1e42c252d68fb98973760c0ee1943c9c21  # actions-v0.2.20
+    uses: envoyproxy/toolshed/gh-actions/bson@4ba35d5b97ff5e9acb947cefdcf0c214db17b020  # actions-v0.2.21
     env:
       GH_TOKEN: ${{ inputs.GITHUB_TOKEN }}
       CI_DEBUG: true
@@ -106,7 +106,7 @@ runs:
         "
 
   - name: Upload diff
-    uses: envoyproxy/toolshed/gh-actions/upload/diff@6b3ddd1e42c252d68fb98973760c0ee1943c9c21  # actions-v0.2.20
+    uses: envoyproxy/toolshed/gh-actions/upload/diff@4ba35d5b97ff5e9acb947cefdcf0c214db17b020  # actions-v0.2.21
     if: ${{ inputs.diff-upload }}
     with:
       diff: HEAD^1

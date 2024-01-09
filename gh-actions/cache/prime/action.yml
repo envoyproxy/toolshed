@@ -47,7 +47,7 @@ runs:
       lookup-only: true
       path: ${{ inputs.path_tmp }}
       key: ${{ inputs.key }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@6b3ddd1e42c252d68fb98973760c0ee1943c9c21  # actions-v0.2.20
+  - uses: envoyproxy/toolshed/gh-actions/jq@4ba35d5b97ff5e9acb947cefdcf0c214db17b020  # actions-v0.2.21
     if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
     id: lock-id
     with:
@@ -55,7 +55,7 @@ runs:
       options: -Rr
       filter: |
         @base64
-  - uses: envoyproxy/toolshed/gh-actions/github/mutex@6b3ddd1e42c252d68fb98973760c0ee1943c9c21  # actions-v0.2.20
+  - uses: envoyproxy/toolshed/gh-actions/github/mutex@4ba35d5b97ff5e9acb947cefdcf0c214db17b020  # actions-v0.2.21
     if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
     with:
       key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
