@@ -308,7 +308,7 @@ runs:
           "steps-post": (.["context-steps-post"].outputs.value // "\"\"" | fromjson | if str::isempty then "" else . end),
           "exit-code": (.run.outputs["exit-code"] // "0" | fromjson)}
         | {"run": .,
-           "context": ${{ inputs.context }}}
+           "context": ${{ inputs.context || '{}' }}}
 
   - uses: envoyproxy/toolshed/gh-actions/bson@232cbb018912ff564a01cdc4920d10fb19b2bd16  # actions-v0.2.22
     if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
