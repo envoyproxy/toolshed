@@ -124,7 +124,7 @@ pypi: https://pypi.org/project/aio.run.runner
 
 #### [dependatool](dependatool)
 
-version: 0.2.3
+version: 0.2.4.dev0
 
 pypi: https://pypi.org/project/dependatool
 
@@ -289,7 +289,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 
 #### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
 
-version: 0.2.10.dev0
+version: 0.2.11
 
 pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 
@@ -305,14 +305,14 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 - [pyyaml](https://pypi.org/project/pyyaml)
 - [sphinx-copybutton](https://pypi.org/project/sphinx-copybutton)
 - [sphinx-rtd-theme](https://pypi.org/project/sphinx-rtd-theme) >=2.0.0rc2
-- [sphinx](https://pypi.org/project/sphinx) ==7.2.2
-- [sphinxcontrib-applehelp](https://pypi.org/project/sphinxcontrib-applehelp) ==1.0.4
-- [sphinxcontrib-devhelp](https://pypi.org/project/sphinxcontrib-devhelp) ==1.0.2
-- [sphinxcontrib-htmlhelp](https://pypi.org/project/sphinxcontrib-htmlhelp) ==2.0.1
+- [sphinx](https://pypi.org/project/sphinx) >=7.2.2
+- [sphinxcontrib-applehelp](https://pypi.org/project/sphinxcontrib-applehelp)
+- [sphinxcontrib-devhelp](https://pypi.org/project/sphinxcontrib-devhelp)
+- [sphinxcontrib-htmlhelp](https://pypi.org/project/sphinxcontrib-htmlhelp)
 - [sphinxcontrib-httpdomain](https://pypi.org/project/sphinxcontrib-httpdomain)
 - [sphinxcontrib-jquery](https://pypi.org/project/sphinxcontrib-jquery) >=3.0.0
-- [sphinxcontrib-qthelp](https://pypi.org/project/sphinxcontrib-qthelp) ==1.0.3
-- [sphinxcontrib-serializinghtml](https://pypi.org/project/sphinxcontrib-serializinghtml) ==1.1.5
+- [sphinxcontrib-qthelp](https://pypi.org/project/sphinxcontrib-qthelp)
+- [sphinxcontrib-serializinghtml](https://pypi.org/project/sphinxcontrib-serializinghtml)
 - [sphinxext-rediraffe](https://pypi.org/project/sphinxext-rediraffe)
 
 ---
