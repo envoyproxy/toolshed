@@ -43,16 +43,13 @@ setuptools
 sphinx>=6.2.0
 sphinx-copybutton>=0.5.1
 sphinx-rtd-theme>=2.0.0rc2
-# These are pinned upstream mostly for continued legacy python version support
-# TODO(phlax): use upstream when available
-# sphinx-tabs @ https://github.com/phlax/sphinx-tabs/archive/338fda565dbf917650503b3cf0d35760f7fe07df.zip
-sphinxcontrib-applehelp==1.0.4
+sphinxcontrib-applehelp
 sphinxcontrib-jquery>=3.0.0
 sphinxcontrib-httpdomain
-sphinxcontrib-devhelp==1.0.2
-sphinxcontrib-htmlhelp==2.0.1
-sphinxcontrib-qthelp==1.0.3
-sphinxcontrib-serializinghtml==1.1.5
+sphinxcontrib-devhelp
+sphinxcontrib-htmlhelp
+sphinxcontrib-qthelp
+sphinxcontrib-serializinghtml
 sphinxext-rediraffe
 trycast>=0.7.3
 types-orjson
