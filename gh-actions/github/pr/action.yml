@@ -69,7 +69,7 @@ runs:
         . as $input
         | .["working-directory"] as $workingDirectory
         | .base as $base
-        | (.body | @sh) as $body
+        | .body as $body
         | .branch as $branch
         | (.title | @sh) as $title
         | "git -C \($workingDirectory)" as $git
