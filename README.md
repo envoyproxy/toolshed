@@ -6,7 +6,7 @@
 
 Python libraries, runners and checkers for Envoy proxy's CI
 
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/envoyproxy/toolshed/badge)](https://api.securityscorecards.dev/projects/github.com/envoyproxy/toolshed)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/envoyproxy/toolshed/badge)](https://securityscorecards.dev/viewer/?uri=github.com/envoyproxy/toolshed)
 
 <br clear="both" />
 
