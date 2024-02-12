@@ -310,6 +310,7 @@ class RetestCommands {
   checks = async (pr: PR): Promise<CheckRunsType['data']['check_runs']> => {
     const response: CheckRunsType = await this.env.octokit.checks.listForRef({
       owner: this.env.owner,
+      per_page: 100,
       repo: this.env.repo,
       ref: pr.commit,
       filter: 'latest',
