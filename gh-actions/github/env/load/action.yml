@@ -37,7 +37,7 @@ runs:
   using: composite
   steps:
   # For dispatch events we have to find the request via the Request workflow
-  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.23
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.24
     name: Find request
     id: find-request
     if: ${{ inputs.head-sha }}
@@ -48,12 +48,12 @@ runs:
         | ("${{ inputs.template-script-current }}" | bash::output)
   - name: Download environment data
     id: download
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.2.23
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/download@actions-v0.2.24
     with:
       name: ${{ inputs.name }}
       path: ${{ runner.temp }}
       run-id: ${{ steps.find-request.outputs.output || inputs.run-id }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.23
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.24
     name: Load env data
     id: data
     with:
