@@ -43,6 +43,6 @@
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@octokit/rest": "^20.0.2",
-    "@octokit/auth-app": "^6.0.3"
+    "@octokit/auth-app": "^6.0.4"
   }
 }
