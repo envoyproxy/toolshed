@@ -19,7 +19,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/cache/prime@804e4df436694f6421d991c896a580e55b34f664  # actions-v0.2.24
+  - uses: envoyproxy/toolshed/gh-actions/cache/prime@c7af0b12be438cbcd9a015388829205199e66d4c  # actions-v0.2.25
     id: prime
     with:
       key: ${{ inputs.image-tag }}
