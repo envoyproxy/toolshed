@@ -1,0 +1,48 @@
+
+inputs:
+  azp-org:
+    type: string
+    required: true
+  azp-token:
+    type: string
+    required: true
+  pool-id:
+    type: string
+    required: true
+
+outputs:
+  path:
+    value: ${{ steps.fetch.outputs.path }}
+
+runs:
+  using: "composite"
+  steps:
+  - name: Checkout repository
+    uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+
+  - id: fetch
+    name: Fetch AZP agents list
+    uses: envoyproxy/toolshed/gh-actions/fetch@295f2bb8b27761995bb02139d6e2aaf3fbb2bbed
+    with:
+      url: https://dev.azure.com/${{ inputs.azp-org }}/_apis/distributedtask/pools/${{ inputs.pool-id }}/agents?api-version=7.1-preview.1
+      args: -u ":${{ inputs.azp-token }}"
+
+  - name: Get dead AZP agent ids
+    uses: envoyproxy/toolshed/gh-actions/jq@680d414be3f56cbb161dfdebebece85d81c3f686  # actions-v0.2.24
+    with:
+      input-format: json-path
+      input: ${{ steps.fetch.outputs.path }}
+      output-path: /tmp/agents
+      print-result: true
+      filter: |
+        .value[]
+        | select(.status="offline")
+        | .id
+
+  - run: |
+      for agent in $(cat /tmp/agents); do
+          echo "Deleting agent: ${agent}"
+          curl -s -X DELETE -u ":${{ inputs.azp-token }}" \
+            "https://dev.azure.com/${{ inputs.azp-org }}/_apis/distributedtask/pools/${{ inputs.pool-id }}/agents/$agent?api-version=7.1-preview.1"
+      done
+    shell: bash
