@@ -3,6 +3,10 @@ inputs:
   url:
     type: string
     required: true
+  args:
+    type: string
+  filename:
+    type: string
   path:
     type: string
 
@@ -21,8 +25,14 @@ runs:
       fi
       mkdir -p "$path"
       cd "$path"
-      curl -sLO "${{ inputs.url }}"
-      filepath="$(realpath "$(basename "${{ inputs.url }}")")"
+      if [[ -n "${{ inputs.filename }}" ]]; then
+          curl -sL ${{ inputs.args }} ${{ inputs.url }} > "${{ inputs.filename }}"
+          FILENAME=${{ inputs.filename }}
+      else
+          curl -sLO ${{ inputs.args }} ${{ inputs.url }}
+          FILENAME="$(basename "${{ inputs.url }}")"
+      fi
+      filepath="$(realpath "$FILENAME")"
       echo "path=${filepath}" >> $GITHUB_OUTPUT
       cd -
     shell: bash
