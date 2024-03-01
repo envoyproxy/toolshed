@@ -1,5 +1,6 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
+import {Buffer} from 'buffer'
 import {RestEndpointMethodTypes} from '@octokit/rest'
 import {Endpoints, OctokitResponse} from '@octokit/types'
 import axios from 'axios'
@@ -241,9 +242,19 @@ class AZPRetestCommand extends RetestCommand {
           'content-type': 'application/json;odata=verbose',
         },
       }
+      const seen = new Set()
       for (const check of subchecks) {
         if (check.conclusion && check.conclusion !== 'success') {
+          if (seen.has(checkId)) {
+            continue
+          }
+          seen.add(checkId)
           const [_, buildId, project] = checkId.split('|')
+          // TODO(phlax): figure out why this is necessary
+          if (!buildId || !project) {
+            continue
+          }
+          console.log(`retrying ${checkId}`)
           const url = `https://dev.azure.com/${this.env.azpOrg}/${project}/_apis/build/builds/${buildId}?retry=true&api-version=6.0`
           if (this.env.debug) {
             console.log(
@@ -284,7 +295,7 @@ class RetestCommands {
     const [owner, repo] = nwo.split('/')
     if (core.getInput('azp_org') && core.getInput('azp_token')) {
       azpOrg = core.getInput('azp_org')
-      azpToken = core.getInput('azp_token')
+      azpToken = Buffer.from(`:${core.getInput('azp_token')}`, 'binary').toString('base64')
     } else {
       core.warning('No creds for AZP')
     }
