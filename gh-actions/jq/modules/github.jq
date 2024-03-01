@@ -22,7 +22,13 @@ def log_bubble(matching; excluding):
       .[:9] + ["... and \(.|length - 9) more warnings"]
     else . end
   | map("echo ::warning::\(.)") as $warnings
-  | ($notices + $errors + $warnings)
+  | $bubble.fail // []
+  | if length > 0 then
+      join("\n  ")
+      | ["echo ::error::Failure: \n  \(.)", "exit 1"]
+    else . end
+  | . as $exit
+  | ($notices + $errors + $warnings + $exit)
   | bash::xfor
 ;
 
