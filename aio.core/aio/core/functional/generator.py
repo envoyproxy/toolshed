@@ -46,12 +46,12 @@ class AwaitableGenerator:
     def __init__(
             self,
             generator: AsyncIterable,
-            collector: Callable[
+            collector: Optional[Callable[
                 ...,
                 Coroutine[
                     AsyncIterable,
                     None,
-                    Iterable]] = None,
+                    Iterable]]] = None,
             iterator: Any = None,
             predicate: Optional[
                 Union[

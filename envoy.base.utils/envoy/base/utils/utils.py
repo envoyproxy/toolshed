@@ -48,7 +48,9 @@ def coverage_with_data_file(data_file: str) -> Iterator[str]:
         yield tmprc
 
 
-def from_json(path: Union[pathlib.Path, str], type: Type = None) -> Any:
+def from_json(
+        path: Union[pathlib.Path, str],
+        type: Optional[Type] = None) -> Any:
     """Returns the loaded python object from a JSON file given by `path`"""
     data = json.loads(pathlib.Path(path).read_text())
     return (
@@ -57,7 +59,9 @@ def from_json(path: Union[pathlib.Path, str], type: Type = None) -> Any:
         else typed(type, data))
 
 
-def from_yaml(path: Union[pathlib.Path, str], type: Type = None) -> Any:
+def from_yaml(
+        path: Union[pathlib.Path, str],
+        type: Optional[Type] = None) -> Any:
     """Returns the loaded python object from a yaml file given by `path`"""
     data = yaml.safe_load(pathlib.Path(path).read_text())
     return (

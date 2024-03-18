@@ -6,7 +6,7 @@ import pathlib
 import shutil
 import subprocess
 from functools import partial
-from typing import Union
+from typing import Optional, Union
 
 import abstracts
 
@@ -18,7 +18,7 @@ class ABazel(metaclass=abstracts.Abstraction):
     def __init__(
             self,
             path: Union[pathlib.Path, str],
-            bazel_path: Union[pathlib.Path, str] = None) -> None:
+            bazel_path: Optional[Union[pathlib.Path, str]] = None) -> None:
         self._path = path
         self._bazel_path = bazel_path
 

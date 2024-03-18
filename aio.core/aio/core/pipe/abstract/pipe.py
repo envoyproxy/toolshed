@@ -3,7 +3,7 @@ import argparse
 import asyncio
 import sys
 from functools import cached_property
-from typing import Any, Awaitable, Callable, TextIO, Tuple
+from typing import Any, Awaitable, Callable, Optional, TextIO, Tuple
 
 import abstracts
 
@@ -43,7 +43,7 @@ class AStdinStdoutProcessor(metaclass=abstracts.Abstraction):
                 Awaitable[interface.IProcessProtocol]],
             stdin: TextIO = sys.stdin,
             stdout: TextIO = sys.stdout,
-            log: Callable[[str], None] = None) -> None:
+            log: Optional[Callable[[str], None]] = None) -> None:
         self._protocol = protocol
         self.stdin = stdin
         self.stdout = stdout

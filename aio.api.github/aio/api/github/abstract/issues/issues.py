@@ -1,7 +1,7 @@
 
 import urllib
 from functools import cached_property, partial
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 import gidgethub
 
@@ -59,7 +59,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
     def __init__(
             self,
             github: interface.IGithubAPI,
-            repo: interface.IGithubRepo = None,
+            repo: Optional[interface.IGithubRepo] = None,
             filter: str = "") -> None:
         self._github = github
         self.repo = repo
@@ -95,7 +95,9 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
                 f"Recieved: {e}")
         return self.github.issue_class(repo, data)
 
-    def inflater(self, repo: interface.IGithubRepo = None) -> Callable:
+    def inflater(
+            self,
+            repo: Optional[interface.IGithubRepo] = None) -> Callable:
         """Return default or custom callable to inflate a `GithubIssue`."""
         if not (repo := repo or self.repo):
             return self._inflate
@@ -104,7 +106,8 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
     def search(
             self,
             query: str,
-            repo: interface.IGithubRepo = None) -> interface.IGithubIterator:
+            repo: Optional[
+                interface.IGithubRepo] = None) -> interface.IGithubIterator:
         return self.github.getiter(
             self.search_query(query),
             inflate=self.inflater(repo))
