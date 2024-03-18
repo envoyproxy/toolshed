@@ -77,7 +77,7 @@ class AExecutive(metaclass=abstracts.Abstraction):
             if self.pool.__class__.__name__ == "ProcessPoolExecutor"
             else "\N{nonforking}")
         pool_info = f"{pool_name}:{hex(id(self.pool))}"
-        if type(executable) == partial:
+        if type(executable) is partial:
             executable = executable.func
         name = getattr(
             executable, "__qualname__",
