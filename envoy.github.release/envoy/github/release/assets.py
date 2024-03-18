@@ -5,8 +5,6 @@ from typing import Dict, Iterator, Union
 
 import aiohttp
 
-import abstracts
-
 from envoy.base import utils
 
 from envoy.github.abstract import (
@@ -15,8 +13,7 @@ from envoy.github.abstract import (
 from envoy.github.release import stream
 
 
-@abstracts.implementer(AGithubReleaseAssetsFetcher)
-class GithubReleaseAssetsFetcher:
+class GithubReleaseAssetsFetcher(AGithubReleaseAssetsFetcher):
 
     def __exit__(self, *args) -> None:
         # TODO(phlax): make this non-blocking
@@ -74,8 +71,7 @@ class GithubReleaseAssetsFetcher:
         return result
 
 
-@abstracts.implementer(AGithubReleaseAssetsPusher)
-class GithubReleaseAssetsPusher:
+class GithubReleaseAssetsPusher(AGithubReleaseAssetsPusher):
     _artefacts_glob = "**/*{version}*"
     file_exts = {"deb", "changes", "rpm"}
 

@@ -42,7 +42,7 @@ class YapfCheck(abstract.AYapfCheck):
 
 
 @abstracts.implementer(abstract.AYamllintCheck)
-class YamllintCheck:
+class YamllintCheck(abstract.AYamllintCheck):
     pass
 
 

@@ -7,8 +7,6 @@ from typing import (
     Awaitable, Callable, Dict, Iterable, List, Optional, Sequence,
     Set, Tuple, Type)
 
-import abstracts
-
 from aio.run import runner
 from aio.run.checker import abstract
 
@@ -629,8 +627,7 @@ class CheckerSummary(object):
             else self.checker.log.error)
 
 
-@abstracts.implementer(abstract.AProblems)
-class Problems:
+class Problems(abstract.AProblems):
 
     def __init__(
             self,

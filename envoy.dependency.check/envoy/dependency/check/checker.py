@@ -9,13 +9,11 @@ from aio.api import github, nist
 from envoy.dependency import check
 
 
-@abstracts.implementer(check.ADependencyCVE)
-class DependencyCVE:
+class DependencyCVE(check.ADependencyCVE):
     pass
 
 
-@abstracts.implementer(check.ADependencyCVEs)
-class DependencyCVEs:
+class DependencyCVEs(check.ADependencyCVEs):
 
     @property
     def cpe_class(self) -> Type[nist.ACPE]:
@@ -34,21 +32,18 @@ class DependencyCVEs:
         return nist.NISTDownloader
 
 
-@abstracts.implementer(check.ADependency)
-class Dependency:
+class Dependency(check.ADependency):
 
     @property
     def release_class(self) -> Type[check.ADependencyGithubRelease]:
         return DependencyGithubRelease
 
 
-@abstracts.implementer(check.ADependencyGithubRelease)
-class DependencyGithubRelease:
+class DependencyGithubRelease(check.ADependencyGithubRelease):
     pass
 
 
-@abstracts.implementer(check.AGithubDependencyReleaseIssue)
-class GithubDependencyReleaseIssue:
+class GithubDependencyReleaseIssue(check.AGithubDependencyReleaseIssue):
     pass
 
 
@@ -69,8 +64,7 @@ class GithubDependencyIssuesTracker(github.AGithubIssuesTracker):
             releases=GithubDependencyReleaseIssues(self.github))
 
 
-@abstracts.implementer(check.ADependencyChecker)
-class DependencyChecker:
+class DependencyChecker(check.ADependencyChecker):
 
     @property
     def access_token(self) -> Optional[str]:

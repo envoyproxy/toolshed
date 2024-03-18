@@ -21,66 +21,66 @@ from .abstract import (
 from . import interface
 
 
-@abstracts.implementer(AGithubActions)
-class GithubActions:
+@abstracts.implementer(interface.IGithubActions)
+class GithubActions(AGithubActions):
     pass
 
 
-@abstracts.implementer(AGithubWorkflows)
-class GithubWorkflows:
+@abstracts.implementer(interface.IGithubWorkflows)
+class GithubWorkflows(AGithubWorkflows):
     pass
 
 
-@abstracts.implementer(AGithubCommit)
-class GithubCommit:
+@abstracts.implementer(interface.IGithubCommit)
+class GithubCommit(AGithubCommit):
     pass
 
 
-@abstracts.implementer(AGithubIssue)
-class GithubIssue:
+@abstracts.implementer(interface.IGithubIssue)
+class GithubIssue(AGithubIssue):
     pass
 
 
-@abstracts.implementer(AGithubIssues)
-class GithubIssues:
+@abstracts.implementer(interface.IGithubIssues)
+class GithubIssues(AGithubIssues):
     pass
 
 
-@abstracts.implementer(AGithubIterator)
-class GithubIterator:
+@abstracts.implementer(interface.IGithubIterator)
+class GithubIterator(AGithubIterator):
     pass
 
 
-@abstracts.implementer(AGithubLabel)
-class GithubLabel:
+@abstracts.implementer(interface.IGithubLabel)
+class GithubLabel(AGithubLabel):
     pass
 
 
-@abstracts.implementer(AGithubRelease)
-class GithubRelease:
+@abstracts.implementer(interface.IGithubRelease)
+class GithubRelease(AGithubRelease):
 
     @property
     def assets_class(self) -> Type["interface.IGithubReleaseAssets"]:
         return GithubReleaseAssets
 
 
-@abstracts.implementer(AGithubReleaseAssets)
-class GithubReleaseAssets:
+@abstracts.implementer(interface.IGithubReleaseAssets)
+class GithubReleaseAssets(AGithubReleaseAssets):
     pass
 
 
-@abstracts.implementer(AGithubRepo)
-class GithubRepo:
+@abstracts.implementer(interface.IGithubRepo)
+class GithubRepo(AGithubRepo):
     pass
 
 
-@abstracts.implementer(AGithubTag)
-class GithubTag:
+@abstracts.implementer(interface.IGithubTag)
+class GithubTag(AGithubTag):
     pass
 
 
-@abstracts.implementer(AGithubAPI)
-class GithubAPI:
+@abstracts.implementer(interface.IGithubAPI)
+class GithubAPI(AGithubAPI):
 
     def __init__(self, session, *args, **kwargs) -> None:
         AGithubAPI.__init__(self, session, *args, **kwargs)

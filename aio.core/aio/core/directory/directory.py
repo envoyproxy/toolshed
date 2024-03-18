@@ -1,31 +1,25 @@
 
 from typing import Type
 
-import abstracts
-
 from aio.core import directory
 
 
-@abstracts.implementer(directory.ADirectory)
-class Directory:
+class Directory(directory.ADirectory):
 
     @property
     def finder_class(self) -> Type[directory.ADirectoryFileFinder]:
         return DirectoryFileFinder
 
 
-@abstracts.implementer(directory.ADirectoryFileFinder)
-class DirectoryFileFinder:
+class DirectoryFileFinder(directory.ADirectoryFileFinder):
     pass
 
 
-@abstracts.implementer(directory.AGitDirectoryFileFinder)
-class GitDirectoryFileFinder:
+class GitDirectoryFileFinder(directory.AGitDirectoryFileFinder):
     pass
 
 
-@abstracts.implementer(directory.AGitDirectory)
-class GitDirectory:
+class GitDirectory(directory.AGitDirectory):
 
     @property
     def finder_class(self) -> Type[directory.AGitDirectoryFileFinder]:
