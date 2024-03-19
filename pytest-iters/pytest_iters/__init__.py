@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, Iterable, List, Set, Tuple, Type, Union
+from typing import (
+    Any, Callable, Dict, Iterable, List,
+    Optional, Set, Tuple, Type, Union)
 
 import pytest  # type:ignore
 
@@ -11,7 +13,7 @@ def _iters_mapping(
         sequence: Type[Dict],
         count: int,
         start: int,
-        cb: Callable[[int], Any] = None) -> Iterable:
+        cb: Optional[Callable[[int], Any]] = None) -> Iterable:
     return sequence(
         (cb or _dict_item)(x)
         for x
@@ -26,7 +28,7 @@ def _iters(
         sequence: Type[Union[Dict, List, Tuple, Set]] = list,
         count: int = 5,
         start: int = 0,
-        cb: Callable[[int], Any] = None) -> Iterable:
+        cb: Optional[Callable[[int], Any]] = None) -> Iterable:
     if issubclass(sequence, Dict):
         return _iters_mapping(sequence, count, start, cb)
     return sequence(

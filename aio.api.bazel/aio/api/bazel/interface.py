@@ -1,6 +1,6 @@
 
 import sys
-from typing import Any, Awaitable, Callable, TextIO, Type
+from typing import Any, Awaitable, Callable, Optional, TextIO, Type
 
 import abstracts
 
@@ -44,7 +44,7 @@ class IBazelWorkerProcessor(
                 Awaitable[IBazelProcessProtocol]],
             stdin: TextIO = sys.stdin,
             stdout: TextIO = sys.stdout,
-            log: Callable[[str], None] = None) -> None:
+            log: Optional[Callable[[str], None]] = None) -> None:
         raise NotImplementedError
 
     # TODO: copy this to aio.core.pipe.interface and fix type

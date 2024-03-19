@@ -59,7 +59,9 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             self,
             await self.getitem(f"commits/{name}"))
 
-    def commits(self, since: datetime = None) -> "interface.IGithubIterator":
+    def commits(
+            self,
+            since: Optional[datetime] = None) -> "interface.IGithubIterator":
         query = "commits"
         if since is not None:
             query = f"{query}?since={utils.dt_to_js_isoformat(since)}"
@@ -153,7 +155,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
     async def release(
             self,
             name: str,
-            data: dict = None,
+            data: Optional[dict] = None,
             dry_run: bool = False) -> "interface.IGithubRelease":
         if data:
             return await self.github.release_class.create(self, data, dry_run)

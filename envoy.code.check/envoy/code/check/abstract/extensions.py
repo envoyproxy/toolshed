@@ -457,7 +457,8 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     def _owners_extension_match_line(
             self,
             line: str,
-            matcher: Pattern[str] = None) -> dict[str, dict[str, set]]:
+            matcher: Optional[
+                Pattern[str]] = None) -> dict[str, dict[str, set]]:
         if line.startswith('#'):
             return {}
         m = (matcher or self.codeowners_extensions_re).search(line)

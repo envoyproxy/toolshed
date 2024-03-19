@@ -17,6 +17,7 @@ class preload:
         self._when = when
         self._blocks = blocks
         self._catches = catches
+        self._fun: Optional[Callable] = None
         self._name = name
         self._unless = unless
 

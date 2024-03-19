@@ -202,7 +202,7 @@ class IGithubRepo(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def commits(self, since: datetime = None) -> IGithubIterator:
+    def commits(self, since: Optional[datetime] = None) -> IGithubIterator:
         """Iterate commits for this repo."""
         raise NotImplementedError
 
@@ -328,7 +328,7 @@ class IGithubIssues(metaclass=abstracts.Interface):
     def search(
             self,
             query: str,
-            repo: IGithubRepo = None) -> IGithubIterator:
+            repo: Optional[IGithubRepo] = None) -> IGithubIterator:
         """Search for issues."""
         raise NotImplementedError
 
