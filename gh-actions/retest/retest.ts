@@ -289,6 +289,7 @@ class RetestCommands {
 
     const pr = core.getInput('pr-url')
     const comment = parseInt(core.getInput('comment-id'))
+    console.log(token)
     const octokit = github.getOctokit(token)
     // Create the octokit client
     const nwo = process.env['GITHUB_REPOSITORY'] || '/'
@@ -319,7 +320,7 @@ class RetestCommands {
   }
 
   checks = async (pr: PR): Promise<CheckRunsType['data']['check_runs']> => {
-    const response: CheckRunsType = await this.env.octokit.checks.listForRef({
+    const response: CheckRunsType = await this.env.octokit.rest.checks.listForRef({
       owner: this.env.owner,
       per_page: 100,
       repo: this.env.repo,
@@ -372,7 +373,7 @@ class RetestCommands {
   }
 
   addReaction = async (reaction: GithubReactionType = 'rocket'): Promise<void> => {
-    const addReactionResponse: CreateReactionType['response'] = await this.env.octokit.reactions.createForIssueComment({
+    const addReactionResponse: CreateReactionType['response'] = await this.env.octokit.rest.reactions.createForIssueComment({
       owner: this.env.owner,
       repo: this.env.repo,
       comment_id: this.env.comment,
