@@ -108,22 +108,6 @@ updates:
   directory: /gh-actions/using/steps
   schedule:
     interval: daily
-- package-ecosystem: npm
-  directory: /gh-actions
-  schedule:
-    interval: daily
-  groups:
-    eslint:
-      patterns:
-      - "@typescript-eslint/*"
-      - "eslint*"
-      - "prettier"
-    types:
-      patterns:
-      - "@types/*"
-    typescript:
-      patterns:
-      - "typescript"
 - package-ecosystem: pip
   directory: /bazel/website
   schedule:
