@@ -6,8 +6,6 @@ from typing import Optional, Type
 import gidgethub
 import gidgethub.abc
 
-import abstracts
-
 from aio.run import runner
 
 from envoy.github.abstract import (
@@ -15,8 +13,7 @@ from envoy.github.abstract import (
 from envoy.github.release import manager
 
 
-@abstracts.implementer(AGithubReleaseRunner)
-class ReleaseRunner:
+class ReleaseRunner(AGithubReleaseRunner):
     """This runner interacts with the Github release API to create, push, and
     fetch releases and release assets."""
 

@@ -1,36 +1,29 @@
 
 from typing import Type
 
-import abstracts
-
 from aio.api import nist
 
 
-@abstracts.implementer(nist.ACPE)
-class CPE:
+class CPE(nist.ACPE):
     pass
 
 
-@abstracts.implementer(nist.ACVE)
-class CVE:
+class CVE(nist.ACVE):
     pass
 
 
-@abstracts.implementer(nist.ACVEMatcher)
-class CVEMatcher:
+class CVEMatcher(nist.ACVEMatcher):
     pass
 
 
-@abstracts.implementer(nist.ANISTDownloader)
-class NISTDownloader:
+class NISTDownloader(nist.ANISTDownloader):
 
     @property
     def parser_class(self) -> Type[nist.ANISTParser]:
         return NISTParser
 
 
-@abstracts.implementer(nist.ANISTParser)
-class NISTParser:
+class NISTParser(nist.ANISTParser):
 
     @property
     def cpe_class(self) -> Type[nist.ACPE]:

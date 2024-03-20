@@ -5,8 +5,6 @@ import pathlib
 import tarfile
 from typing import Optional, Tuple
 
-import abstracts
-
 from aio.run import runner
 
 from envoy.base import utils
@@ -15,8 +13,7 @@ from .abstract import ARepoBuildingRunner
 from .exceptions import RepoError
 
 
-@abstracts.implementer(ARepoBuildingRunner)
-class RepoBuildingRunner:
+class RepoBuildingRunner(ARepoBuildingRunner):
 
     @property
     def archive(self) -> Optional[pathlib.Path]:

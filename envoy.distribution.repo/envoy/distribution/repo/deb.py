@@ -89,8 +89,7 @@ class AAptly(metaclass=abstracts.Abstraction):
         return result.stdout
 
 
-@abstracts.implementer((ARepoManager, AAptly))
-class DebRepoManager:
+class DebRepoManager(ARepoManager, AAptly):
     file_types = r".*(\.deb|\.changes)$"
 
     @classmethod

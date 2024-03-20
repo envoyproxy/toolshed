@@ -6,13 +6,10 @@ from typing import Dict, List, Optional, Pattern
 
 from aio.core.functional import async_property
 
-import abstracts
-
 from envoy.github.abstract import AGithubRelease, AGithubReleaseCommand
 
 
-@abstracts.implementer(AGithubReleaseCommand)
-class AssetsCommand:
+class AssetsCommand(AGithubReleaseCommand):
 
     async def run(self) -> Optional[int]:
         assets = await self.release.assets
@@ -23,8 +20,7 @@ class AssetsCommand:
             self.runner.stdout.info(asset["name"])
 
 
-@abstracts.implementer(AGithubReleaseCommand)
-class CreateCommand:
+class CreateCommand(AGithubReleaseCommand):
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
@@ -40,31 +36,27 @@ class CreateCommand:
             **await self.release.create(assets=self.artefacts))
 
 
-@abstracts.implementer(AGithubReleaseCommand)
-class DeleteCommand:
+class DeleteCommand(AGithubReleaseCommand):
 
     async def run(self) -> Optional[int]:
         await self.release.delete()
         return 0
 
 
-@abstracts.implementer(AGithubReleaseCommand)
-class InfoCommand:
+class InfoCommand(AGithubReleaseCommand):
 
     async def run(self) -> Optional[int]:
         return self.format_response(await self.release.release)
 
 
-@abstracts.implementer(AGithubReleaseCommand)
-class ListCommand:
+class ListCommand(AGithubReleaseCommand):
 
     async def run(self) -> Optional[int]:
         for release in await self.runner.release_manager.releases:
             self.runner.stdout.info(release["tag_name"])
 
 
-@abstracts.implementer(AGithubReleaseCommand)
-class FetchCommand:
+class FetchCommand(AGithubReleaseCommand):
 
     @property
     def asset_types(self) -> Dict[str, Pattern]:
@@ -117,8 +109,7 @@ class FetchCommand:
             await release.fetch(self.path, self.asset_types, append=(i != 0))
 
 
-@abstracts.implementer(AGithubReleaseCommand)
-class PushCommand:
+class PushCommand(AGithubReleaseCommand):
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)

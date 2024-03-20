@@ -4,7 +4,7 @@ import logging as _logging
 import os
 import time
 from functools import cached_property, partial
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Iterator, Optional
 
 
 logger = _logging.getLogger(__name__)
@@ -12,14 +12,18 @@ logger = _logging.getLogger(__name__)
 
 class ADebugLogging:
 
-    def __init__(self, fun: Optional[Callable] = None, *args, **kwargs):
+    def __init__(
+            self,
+            fun: Optional[Callable] = None,
+            *args,
+            **kwargs) -> None:
         self.__wrapped__ = fun
         self.__doc__ = getattr(fun, '__doc__')
         self._log = kwargs.pop("log", None)
         self._format_result = kwargs.pop("format_result", None)
         self._show_cpu = kwargs.pop("show_cpu", None)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Optional[Any]:
         if self.__wrapped__:
             if inspect.isasyncgenfunction(self.__wrapped__):
                 return self.fun_async_gen(*args, **kwargs)
@@ -53,7 +57,7 @@ class ADebugLogging:
                 self.__wrapped__, "__name__", None)
             or self.__class__.__name__)
 
-    def log(self, instance):
+    def log(self, instance) -> _logging.Logger:
         if self._log:
             if isinstance(self._log, str):
                 if self._log.startswith("self."):
@@ -62,20 +66,24 @@ class ADebugLogging:
             return self._log
         return logger
 
-    def format_result(self, instance):
+    def format_result(self, instance) -> Optional[Callable]:
         if not self._format_result:
-            return
+            return None
         if isinstance(self._format_result, str):
             if self._format_result.startswith("self."):
                 return getattr(instance, self._format_result[5:])
         return self._format_result
 
-    def fun(self, *args, **kwargs):
+    def fun(self, *args, **kwargs) -> Optional[Any]:
+        if not callable(self.__wrapped__):
+            return None
         return self.log_debug_complete(
             self.log_debug_start(*args, **kwargs),
             self.__wrapped__(*args, **kwargs))
 
-    def fun_gen(self, *args, **kwargs):
+    def fun_gen(self, *args, **kwargs) -> Iterator:
+        if not callable(self.__wrapped__):
+            return None
         start = self.log_debug_start(*args, **kwargs)
         count = 0
         for item in self.__wrapped__(*args, **kwargs):
@@ -102,7 +110,7 @@ class ADebugLogging:
             f"(args: {len(args)}, kwargs: {len(kwargs)})")
         return (instance, args, kwargs), time.perf_counter()
 
-    def log_debug_complete(self, start, result):
+    def log_debug_complete(self, start, result: Any) -> Any:
         (instance, args, kwargs), start_time = start
         time_taken = time.perf_counter() - start_time
         try:
@@ -120,7 +128,7 @@ class ADebugLogging:
             f"{self.name} returns {result_info}")
         return result
 
-    def log_debug_complete_iter(self, start, count):
+    def log_debug_complete_iter(self, start, count) -> None:
         (instance, args, kwargs), start_time = start
         time_taken = time.perf_counter() - start_time
         result_info = (
