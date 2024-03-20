@@ -1,13 +1,15 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {GitHub} from '@actions/github/lib/utils'
-import {RequestParameters} from '@octokit/types'
+import {RestEndpointMethodTypes} from '@octokit/rest'
+
+type ChecksCreateParams = RestEndpointMethodTypes['checks']['create']['parameters']
 
 interface Check {
   action?: string
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  head_sha?: string
-  id: string
+  head_sha: string
+  id: number
   name: string
   output?: CheckOutput
 }
@@ -18,12 +20,14 @@ interface CheckMap {
 
 interface CheckOutput {
   text: string
+  title: string
+  summary: string
 }
 
 interface CheckConfig {
   name: string
   output: CheckOutput
-  id: string
+  id: number
 }
 
 interface CheckConfigs {
@@ -33,8 +37,8 @@ interface CheckConfigs {
 
 type OctokitType = InstanceType<typeof GitHub>
 
-async function createCheckRun(octokit: OctokitType, checkRun: RequestParameters): Promise<[string, number]> {
-  const response = await octokit.checks.create(checkRun)
+async function createCheckRun(octokit: OctokitType, checkRun: ChecksCreateParams): Promise<[string, number]> {
+  const response = await octokit.rest.checks.create(checkRun)
   return [checkRun.id as string, response.data.id]
 }
 
@@ -53,7 +57,8 @@ async function startChecks(
     const checkRequestConfig: CheckConfig = checkConfig.action === 'SKIP' ? {...config.skipped} : {...config.run}
     const output = {...checkRequestConfig.output}
     output.text = textExtra === '' ? output.text : `${checkRequestConfig.output.text}\n${textExtra}`
-    requests.push(createCheckRun(octokit, {...checkRequestConfig, id, name, owner, repo, output}))
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    requests.push(createCheckRun(octokit, {head_sha: '', ...checkRequestConfig, id, name, owner, repo, output}))
   })
   const checkRunIds: [string, number][] = await Promise.all(requests)
   core.setOutput('checks', JSON.stringify(Object.fromEntries(checkRunIds), null, 0))
@@ -62,17 +67,17 @@ async function startChecks(
 async function updateCheckRun(octokit: OctokitType, checkConfig: Check, textExtra: string): Promise<[string, number]> {
   const nwo = process.env['GITHUB_REPOSITORY'] || '/'
   const [owner, repo] = nwo.split('/')
-  const output = checkConfig.output || {text: ''}
+  const output = checkConfig.output || {text: '', summary: '', title: ''}
   output.text = textExtra === '' ? output.text : `${output.text}\n${textExtra}`
   const checkResponse = await octokit.rest.checks.listForRef({
     owner,
     repo,
-    ref: checkConfig.head_sha,
+    ref: checkConfig.head_sha || '',
     // eslint-disable-next-line @typescript-eslint/naming-convention
     check_name: checkConfig.name,
     filter: 'latest',
   })
-  const text = checkResponse.data.check_runs[0].output.text
+  const text = checkResponse.data.check_runs[0].output.text || ''
   checkConfig.id = checkResponse.data.check_runs[0].id
   output.text = `${output.text}\n### Check started by\n${text.split('### Check started by')[1]}`
   checkConfig.output = output
