@@ -1,5 +1,7 @@
+import fetchMock from 'fetch-mock'
 import * as core from '@actions/core'
-import nock from 'nock'
+import * as github from '@actions/github'
+
 import run from '../retest'
 
 beforeEach(() => {
@@ -12,19 +14,27 @@ beforeEach(() => {
     return ''
   })
 
-  const githubApiUrl = 'https://api.github.com'
   const repository = 'example/repository'
+  const githubApiUrl = 'https://api.github.com'
   const commentId = 12357
+  const apiPath = `/repos/${repository}/issues/comments/${commentId}/reactions`
+  const githubMock = fetchMock.sandbox().post(
+    `${githubApiUrl}${apiPath}`,
+    {ok: true},
+    {
+      headers: {
+        accept: 'application/vnd.github.v3+json',
+      },
+    },
+  )
 
-  // Nock the request
-  nock(githubApiUrl).post(`/repos/${repository}/issues/comments/${commentId}/reactions`).reply(200, {})
+  const testokit = github.getOctokit('12345', {request: {fetch: githubMock}})
+
+  jest.spyOn(github, 'getOctokit').mockImplementation(() => {
+    return testokit
+  })
+
   process.env['GITHUB_REPOSITORY'] = repository
-})
-
-afterEach(() => {
-  // expect(nock.pendingMocks()).toEqual([])
-  nock.isDone()
-  nock.cleanAll()
 })
 
 describe('retest action', () => {
