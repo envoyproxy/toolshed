@@ -15,7 +15,7 @@ interface CheckConfigList {
 }
 
 function globMatchPaths(paths: string[], globs: string[]): boolean {
-  return paths.some((path) => globs.some((glob) => minimatch(path, glob)))
+  return paths.some((path) => globs.some((glob) => minimatch(path, glob, {dot: true})))
 }
 
 const run = async (): Promise<void> => {
