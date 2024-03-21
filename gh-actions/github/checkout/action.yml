@@ -8,7 +8,7 @@ inputs:
     required: true
   branch:
     type: string
-    required: false
+    default: ${{ github.ref }}
   committer-name:
     type: string
     default:
@@ -79,9 +79,13 @@ runs:
           else . end
         | if "${{ inputs.branch }}" != "" then
             .branch = "${{ inputs.branch }}"
-          elif (.branch | type == "null") or (.branch == "") then
+          elif (.branch  != "") and (.branch | type != null) then
+            .branch = .branch
+          elif ("${{ inputs.branch }}" == "") then
+            .branch = "${{ github.ref }}"
+          else
             .branch = "main"
-          else . end
+          end
         | if ${{ ! inputs.pr }} then
             if .ref then
               .["requested-ref"] = .ref
@@ -157,3 +161,6 @@ runs:
       filter: |
         sub("^refs/pull/"; "")
         | sub("^refs/heads/"; "")
+        | if "${{ inputs.strip-prefix }}" then
+            sub("${{ inputs.strip-prefix }}"; "")
+          else . end
