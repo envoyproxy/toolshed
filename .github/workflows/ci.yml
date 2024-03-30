@@ -23,13 +23,14 @@ jobs:
     - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
       with:
         python-version: "3.9"
-    - name: Cache pants
-      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        gha-cache-key: ${{ runner.os }}
+        named-caches-hash: ${{ hashFiles('pants*toml') }}
+        named-caches-location: ~/.cache/pants/setup
     - name: Run pants test
-      run: "./pants --colors test ::"
+      run: "pants --colors test ::"
     - name: Archive code coverage results
       uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3  # v4.3.1
       with:
@@ -43,13 +44,14 @@ jobs:
     - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
       with:
         python-version: "3.9"
-    - name: Cache pants
-      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        gha-cache-key: ${{ runner.os }}
+        named-caches-hash: ${{ hashFiles('pants*toml') }}
+        named-caches-location: ~/.cache/pants/setup
     - name: Run pants lint
-      run: "./pants --colors lint ::"
+      run: "pants --colors lint ::"
 
   lint-envoy:
     runs-on: ubuntu-22.04
@@ -68,14 +70,15 @@ jobs:
     - uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633  # v4.1.2
     - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
       with:
-        python-version: "3.9"
-    - name: Cache pants
-      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+        python-version: "3.9"    
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        gha-cache-key: ${{ runner.os }}
+        named-caches-hash: ${{ hashFiles('pants*toml') }}
+        named-caches-location: ~/.cache/pants/setup
     - name: Run pants (type) check
-      run: "./pants --colors check ::"
+      run: "pants --colors check ::"
   docs:
     runs-on: ubuntu-22.04
     steps:
@@ -83,13 +86,14 @@ jobs:
     - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
       with:
         python-version: "3.9"
-    - name: Cache pants
-      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        gha-cache-key: ${{ runner.os }}
+        named-caches-hash: ${{ hashFiles('pants*toml') }}
+        named-caches-location: ~/.cache/pants/setup
     - name: Run pants README
-      run: "./pants --colors readme --check=README.md ::"
+      run: "pants --colors readme --check=README.md ::"
 
   package:
     runs-on: ubuntu-22.04
@@ -103,13 +107,14 @@ jobs:
     - uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c  # v5.0.0
       with:
         python-version: "3.9"
-    - name: Cache pants
-      uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
+        gha-cache-key: ${{ runner.os }}
+        named-caches-hash: ${{ hashFiles('pants*toml') }}
+        named-caches-location: ~/.cache/pants/setup
     - name: Run pants package
-      run: "./pants --colors package ::"
+      run: "pants --colors package ::"
     - name: Archive created packages
       uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3  # v4.3.1
       with:
