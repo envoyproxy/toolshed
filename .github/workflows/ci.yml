@@ -28,6 +28,8 @@ jobs:
       with:
         gha-cache-key: v0
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
+        named-caches-location: "~/.cache/pants/setup"
+        pants-ci-config: ""
     - name: Run pants test
       run: "pants --colors test ::"
     - name: Archive code coverage results
