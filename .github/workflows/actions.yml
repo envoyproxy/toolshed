@@ -36,7 +36,12 @@ jobs:
       working-directory: gh-actions/${{ matrix.name }}
     - run: npm run lint
       working-directory: gh-actions/${{ matrix.name }}
-      if: ${{ matrix.name != 'status' }}
     - run: npm test
       working-directory: gh-actions/${{ matrix.name }}
-      if: ${{ matrix.name != 'status' }}
+    - run: |
+        npm run build
+        if [[ $(git status --porcelain) ]]; then
+            echo 'Built javascript does not match, did you run `npm run build`?' >&2
+            exit 1
+        fi
+      working-directory: gh-actions/${{ matrix.name }}
