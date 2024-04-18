@@ -19,7 +19,8 @@ INVENTORY_PATH_GLOB = "docs/inventories/v*.*/objects.inv"
 INVENTORY_PATH_FMT = "docs/inventories/v{minor_version}/objects.inv"
 INVENTORY_VERSIONS_PATH = "docs/versions.yaml"
 INVENTORY_URL_FMT = (
-    "https://www.envoyproxy.io/docs/envoy/v{version}/objects.inv")
+    "https://github.com/envoyproxy/archive/raw/main/"
+    "docs/envoy/v{version}/objects.inv")
 
 
 @abstracts.implementer(interface.IInventories)
