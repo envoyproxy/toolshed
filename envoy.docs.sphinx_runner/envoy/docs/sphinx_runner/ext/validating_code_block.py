@@ -26,7 +26,7 @@ class ValidatingCodeBlock(CodeBlock):
     required_arguments = CodeBlock.required_arguments
     optional_arguments = CodeBlock.optional_arguments
     final_argument_whitespace = CodeBlock.final_argument_whitespace
-    option_spec = {"type-name": directives.unchanged}
+    option_spec = {"type-name": directives.unchanged}  # type:ignore
     option_spec.update(CodeBlock.option_spec)
 
     @cached_property
