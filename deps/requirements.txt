@@ -10,7 +10,7 @@ aiofiles
 aiohttp>=3.8.1
 colorama
 coloredlogs
-docutils~=0.20.1
+docutils~=0.21.2
 envoy.base.utils>=0.4.7
 envoy.distribution.distrotest>=0.0.10
 envoy.distribution.release>=0.0.8
