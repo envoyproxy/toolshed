@@ -635,13 +635,16 @@ async def test_aio_concurrent_output(
         patches, result_count, error, should_error):
     concurrent = aio.core.tasks.Concurrent(["CORO"])
     patched = patches(
-        "Concurrent.should_error",
+        "Concurrent.raisable",
         ("Concurrent.cancel", dict(new_callable=AsyncMock)),
         ("Concurrent.close", dict(new_callable=AsyncMock)),
         ("Concurrent.out", dict(new_callable=PropertyMock)),
         prefix="aio.core.tasks.tasks")
 
-    exception = Exception()
+    class DummyException(Exception):
+        pass
+
+    exception = DummyException()
 
     class DummyQueue:
         _running_queue = 0
@@ -656,20 +659,23 @@ async def test_aio_concurrent_output(
                 return f"RESULT {self._running_queue}"
             return aio.core.tasks.tasks._sentinel
 
-        def should_error(self, result):
-            return (
+        def raisable(self, result):
+            _should_error = (
                 error
                 and should_error
                 and (result_count == self._running_queue))
+            if not _should_error:
+                return None
+            return exception
 
     q = DummyQueue()
     results = []
 
     with patched as (m_error, m_cancel, m_close, m_out):
         m_out.return_value.get.side_effect = q.get
-        m_error.side_effect = q.should_error
+        m_error.side_effect = q.raisable
         if result_count and error and should_error:
-            with pytest.raises(Exception):
+            with pytest.raises(DummyException):
                 async for result in concurrent.output():
                     results.append(result)
         else:
@@ -793,18 +799,30 @@ def test_aio_concurrent_remember_task():
      aio.core.tasks.ConcurrentExecutionError,
      aio.core.tasks.ConcurrentIteratorError])
 @pytest.mark.parametrize("yield_exceptions", [True, False])
-def test_aio_concurrent_should_error(result, yield_exceptions):
+@pytest.mark.parametrize("cause", [None, "FAILURE"])
+def test_aio_concurrent_raisable(result, yield_exceptions, cause):
     concurrent = aio.core.tasks.Concurrent(["CORO"])
     concurrent.yield_exceptions = yield_exceptions
+    arg1 = MagicMock()
+    arg2 = MagicMock()
 
     if isinstance(result, type) and issubclass(result, BaseException):
-        result = result()
+        wrapped = BaseException(cause, arg1, arg2)
+        result = result(wrapped)
 
-    assert (
-        concurrent.should_error(result)
-        == ((isinstance(result, aio.core.tasks.ConcurrentIteratorError)
-             or isinstance(result, aio.core.tasks.ConcurrentError)
+    should_error = (
+        (isinstance(result, aio.core.tasks.ConcurrentIteratorError)
+         or (isinstance(result, aio.core.tasks.ConcurrentError)
              and not yield_exceptions)))
+    returned = concurrent.raisable(result)
+    if not should_error:
+        assert returned is None
+        return
+    assert type(returned) is type(result)
+    assert type(returned.args[0]) is BaseException
+    assert returned.args[0].args[0] == (str(cause) if cause else None)
+    assert returned.args[0].args[1] == arg1
+    assert returned.args[0].args[2] == arg2
 
 
 @pytest.mark.parametrize("coros", range(0, 7))

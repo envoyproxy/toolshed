@@ -76,7 +76,7 @@ pypi: https://pypi.org/project/aio.api.nist
 
 #### [aio.core](aio.core)
 
-version: 0.10.2.dev0
+version: 0.10.2
 
 pypi: https://pypi.org/project/aio.core
 
