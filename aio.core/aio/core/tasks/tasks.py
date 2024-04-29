@@ -347,11 +347,29 @@ class Concurrent:
                 # All done!
                 await self.close()
                 break
-            elif self.should_error(result):
+            elif error := self.raisable(result):
                 # Raise an error and bail!
                 await self.cancel()
-                raise result
+                raise error
             yield result
+
+    def raisable(self, result: Any) -> Optional[Exception]:
+        """Check a result type and whether it should raise and return mangled
+        error to ensure traceback from wrapped error."""
+        should_error = (
+            isinstance(result, ConcurrentIteratorError)
+            or (isinstance(result, ConcurrentError)
+                and not self.yield_exceptions))
+        if not should_error:
+            return None
+        return (
+            type(result)(
+                type(result.args[0])(
+                    str(result.args[0].__cause__),
+                    *result.args[0].args[1:]))
+            if (hasattr(result.args[0], "__cause__")
+                and result.args[0].__cause__)
+            else result)
 
     async def ready(self) -> bool:
         """Wait for the sem.lock and indicate availability in the submission
@@ -372,13 +390,6 @@ class Concurrent:
         cancelled."""
         self.running_tasks.append(task)
         task.add_done_callback(self.forget_task)
-
-    def should_error(self, result: Any) -> bool:
-        """Check a result type and whether it should raise an error."""
-        return (
-            isinstance(result, ConcurrentIteratorError)
-            or (isinstance(result, ConcurrentError)
-                and not self.yield_exceptions))
 
     async def submit(self) -> None:
         """Process the iterator of coroutines as a submission queue."""
