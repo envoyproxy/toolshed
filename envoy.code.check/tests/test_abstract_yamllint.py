@@ -4,6 +4,8 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
+import yaml
+
 from aio.core import directory
 
 from envoy.code import check
@@ -89,7 +91,9 @@ def test_yamllint_yamllintfilescheck_handle_result(patches, has_problems):
         == [[("error", ), {}], [("warning", ), {}]])
 
 
-def test_yamllint_yamllintfilescheck_run_check(patches):
+@pytest.mark.parametrize(
+    "raises", [None, BaseException, TypeError, yaml.error.YAMLError])
+def test_yamllint_yamllintfilescheck_run_check(patches, raises):
     config = MagicMock()
     yamllint_check = check.abstract.yamllint.YamllintFilesCheck(
         "PATH", config)
@@ -99,11 +103,17 @@ def test_yamllint_yamllintfilescheck_run_check(patches):
         "YamllintFilesCheck.handle_result",
         prefix="envoy.code.check.abstract.yamllint")
     path = MagicMock()
+    error = raises("FAIL") if raises else None
 
     with patched as (m_io, m_linter, m_handle):
-        assert (
-            yamllint_check.run_check(path)
-            == m_handle.return_value)
+        if raises:
+            m_handle.side_effect = error
+            with pytest.raises(raises) as e:
+                yamllint_check.run_check(path)
+        else:
+            assert (
+                yamllint_check.run_check(path)
+                == m_handle.return_value)
 
     assert (
         m_io.open.call_args
@@ -118,6 +128,14 @@ def test_yamllint_yamllintfilescheck_run_check(patches):
         m_linter.run.call_args
         == [(m_io.open.return_value.__enter__.return_value,
              config, path), {}])
+
+    if not raises:
+        return
+    if raises == BaseException:
+        assert e.value == error
+        return
+    assert type(e.value) is raises
+    assert e.value.args[0] == f"{path}: FAIL"
 
 
 def test_yamllint_yamllintfilescheck_run_checks(patches):

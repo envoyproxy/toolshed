@@ -6,6 +6,7 @@ from typing import (
     AsyncIterator, Dict, Generator, Iterator, List, Optional,
     Set, Tuple)
 
+import yaml
 from yamllint import linter  # type:ignore
 from yamllint.config import YamlLintConfig  # type:ignore
 
@@ -61,9 +62,12 @@ class YamllintFilesCheck(directory.ADirectoryContext):
             path: str) -> Optional[
                 "typing.YamllintProblemTuple"]:
         with io.open(path, newline='') as f:
-            return self.handle_result(
-                path,
-                linter.run(f, self.config, path))
+            try:
+                return self.handle_result(
+                    path,
+                    linter.run(f, self.config, path))
+            except (TypeError, yaml.error.YAMLError) as e:
+                raise type(e)(f"{path}: {e.args[0]}", *e.args[1:])
 
     @debug.logging(
         log=__name__,

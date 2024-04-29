@@ -23,3 +23,6 @@ yaml-files:
 - .clang-format
 - "*.yml"
 - "*.yaml"
+
+ignore:
+- "**/node_modules/*"
