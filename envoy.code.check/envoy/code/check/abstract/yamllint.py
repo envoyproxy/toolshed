@@ -96,7 +96,11 @@ class AYamllintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def checker_files(self) -> Set[str]:
-        return await self.directory.files
+        return set(
+            path for path
+            in await self.directory.files
+            if (self.config.is_yaml_file(path)
+                and not self.config.is_file_ignored(path)))
 
     @cached_property
     def config(self) -> YamlLintConfig:

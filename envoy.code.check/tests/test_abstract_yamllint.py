@@ -194,13 +194,40 @@ def test_yamllint_constructor():
     assert yamllint.directory == "DIRECTORY"
 
 
-async def test_yamllint_checker_files():
+async def test_yamllint_checker_files(patches):
     directory = MagicMock()
     yamllint = check.AYamllintCheck(directory)
-    mock_files = range(0, 20)
-    files = AsyncMock(return_value=mock_files)
+    patched = patches(
+        "set",
+        ("AYamllintCheck.config",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.yamllint")
+    files = AsyncMock(return_value=range(0, 20))
     directory.files = files()
-    assert await yamllint.checker_files == mock_files
+
+    with patched as (m_set, m_config):
+        m_config.return_value.is_file_ignored.side_effect = lambda x: x % 3
+        m_config.return_value.is_yaml_file.side_effect = lambda x: x % 2
+        assert (
+            await yamllint.checker_files
+            == m_set.return_value)
+        iterator = m_set.call_args[0][0]
+        called = list(iterator)
+
+    assert (
+        called
+        == [x for x in range(0, 20)
+            if not x % 3
+            and x % 2])
+    assert (
+        m_config.return_value.is_yaml_file.call_args_list
+        == [[(x, ), {}] for x in range(0, 20)])
+    assert (
+        m_config.return_value.is_file_ignored.call_args_list
+        == [[(x, ), {}]
+            for x
+            in range(0, 20)
+            if x % 2])
     assert not (
         hasattr(
             yamllint,
