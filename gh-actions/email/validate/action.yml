@@ -1,4 +1,3 @@
-
 inputs:
   email:
     type: string

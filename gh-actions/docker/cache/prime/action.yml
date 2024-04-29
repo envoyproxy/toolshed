@@ -1,4 +1,3 @@
-
 inputs:
   image-tag:
     type: string

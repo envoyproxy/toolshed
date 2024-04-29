@@ -1,4 +1,3 @@
-
 inputs:
   azp-org:
     type: string
@@ -40,9 +39,10 @@ runs:
         | .id
 
   - run: |
+      AZP_URL="https://dev.azure.com/${{ inputs.azp-org }}/_apis/distributedtask/pools/${{ inputs.pool-id }}"
       for agent in $(cat /tmp/agents); do
           echo "Deleting agent: ${agent}"
           curl -s -X DELETE -u ":${{ inputs.azp-token }}" \
-            "https://dev.azure.com/${{ inputs.azp-org }}/_apis/distributedtask/pools/${{ inputs.pool-id }}/agents/$agent?api-version=7.1-preview.1"
+            "${AZP_URL}/agents/$agent?api-version=7.1-preview.1"
       done
     shell: bash

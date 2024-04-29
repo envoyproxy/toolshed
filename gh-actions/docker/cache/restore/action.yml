@@ -1,4 +1,3 @@
-
 inputs:
   image_tag:
     type: string
