@@ -194,83 +194,17 @@ def test_yamllint_constructor():
     assert yamllint.directory == "DIRECTORY"
 
 
-@pytest.mark.parametrize("files", [True, False])
-async def test_yamllint_checker_files(patches, files):
+async def test_yamllint_checker_files():
     directory = MagicMock()
     yamllint = check.AYamllintCheck(directory)
-    patched = patches(
-        "set",
-        ("AYamllintCheck.path_match_exclude_re",
-         dict(new_callable=PropertyMock)),
-        ("AYamllintCheck.path_match_re",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.code.check.abstract.yamllint")
-    files = AsyncMock(return_value=range(0, 20))
+    mock_files = range(0, 20)
+    files = AsyncMock(return_value=mock_files)
     directory.files = files()
-
-    with patched as (m_set, m_exc_re, m_re):
-        m_exc_re.return_value.match.side_effect = lambda x: x % 3
-        m_re.return_value.match.side_effect = lambda x: x % 2
-        assert (
-            await yamllint.checker_files
-            == m_set.return_value)
-        iterator = m_set.call_args[0][0]
-        called = list(iterator)
-
-    assert (
-        called
-        == [x for x in range(0, 20)
-            if not x % 3
-            and x % 2])
-    assert (
-        m_re.return_value.match.call_args_list
-        == [[(x, ), {}] for x in range(0, 20)])
-    assert (
-        m_exc_re.return_value.match.call_args_list
-        == [[(x, ), {}]
-            for x
-            in range(0, 20)
-            if x % 2])
+    assert await yamllint.checker_files == mock_files
     assert not (
         hasattr(
             yamllint,
             check.AYamllintCheck.checker_files.cache_name))
-
-
-def test_yamllint_checker_path_match_exclude_re(patches):
-    yamllint = check.AYamllintCheck("DIRECTORY")
-    patched = patches(
-        "re",
-        prefix="envoy.code.check.abstract.yamllint")
-
-    with patched as (m_re, ):
-        assert (
-            yamllint.path_match_exclude_re
-            == m_re.compile.return_value)
-
-    assert (
-        m_re.compile.call_args
-        == [("|".join(check.abstract.yamllint.YAMLLINT_NOMATCH_RE), ),
-            {}])
-    assert "path_match_exclude_re" in yamllint.__dict__
-
-
-def test_yamllint_checker_path_match_re(patches):
-    yamllint = check.AYamllintCheck("DIRECTORY")
-    patched = patches(
-        "re",
-        prefix="envoy.code.check.abstract.yamllint")
-
-    with patched as (m_re, ):
-        assert (
-            yamllint.path_match_re
-            == m_re.compile.return_value)
-
-    assert (
-        m_re.compile.call_args
-        == [("|".join(check.abstract.yamllint.YAMLLINT_MATCH_RE), ),
-            {}])
-    assert "path_match_re" in yamllint.__dict__
 
 
 def test_yamllint_config(patches):
