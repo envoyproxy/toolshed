@@ -1,4 +1,3 @@
-
 inputs:
   context:
     type: string

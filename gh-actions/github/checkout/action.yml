@@ -1,4 +1,3 @@
-
 inputs:
   ancestor-fetch-depth:
     type: number

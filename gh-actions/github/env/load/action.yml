@@ -1,4 +1,3 @@
-
 inputs:
   head-sha:
     type: string

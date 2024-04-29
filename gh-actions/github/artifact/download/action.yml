@@ -1,4 +1,3 @@
-
 inputs:
   name:
     type: string

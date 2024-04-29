@@ -1,4 +1,3 @@
-
 inputs:
   app:
     type: string
@@ -56,7 +55,7 @@ runs:
           echo "FTR ${ACTUAL} in /tmp/envoy.log"
           exit $retcode
       }
-    shell:  bash
+    shell: bash
     env:
       EXPECTED: ${{ inputs.expected }}
       TIMEOUT: ${{ inputs.timeout }}
@@ -64,4 +63,4 @@ runs:
   - run: cat /tmp/envoy.log
     if: ${{ failure() || cancelled() }}
     name: Log app run
-    shell:  bash
+    shell: bash
