@@ -1,11 +1,10 @@
 
 import io
 import pathlib
-import re
 from functools import cached_property, partial
 from typing import (
     AsyncIterator, Dict, Generator, Iterator, List, Optional,
-    Pattern, Set, Tuple)
+    Set, Tuple)
 
 from yamllint import linter  # type:ignore
 from yamllint.config import YamlLintConfig  # type:ignore
@@ -23,12 +22,6 @@ from envoy.code.check import abstract, typing
 
 
 YAMLLINT_CONFIG = '.yamllint'
-YAMLLINT_MATCH_RE = (
-    r"[\w/\.]*\.yml$",
-    r"[\w/\.]*\.yaml$", )
-YAMLLINT_NOMATCH_RE = (
-    r"[\w/\.]*\.template\.yaml$",
-    r"[\w/\.]*/server_xds\.cds\.with_unknown_field\.*\.yaml$")
 
 
 @abstracts.implementer(directory.IDirectoryContext)
@@ -103,13 +96,7 @@ class AYamllintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     async def checker_files(self) -> Set[str]:
-        """Files with a `.yaml` suffix, but that are not excluded."""
-        return set(
-            path
-            for path
-            in await self.directory.files
-            if (self.path_match_re.match(path)
-                and not self.path_match_exclude_re.match(path)))
+        return await self.directory.files
 
     @cached_property
     def config(self) -> YamlLintConfig:
@@ -118,16 +105,6 @@ class AYamllintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     @property
     def config_path(self) -> pathlib.Path:
         return self.directory.path.joinpath(YAMLLINT_CONFIG)
-
-    @cached_property
-    def path_match_re(self) -> Pattern[str]:
-        """Regex to match files to check."""
-        return re.compile("|".join(YAMLLINT_MATCH_RE))
-
-    @cached_property
-    def path_match_exclude_re(self) -> Pattern[str]:
-        """Regex to match files not to check."""
-        return re.compile("|".join(YAMLLINT_NOMATCH_RE))
 
     @async_property(cache=True)
     async def problem_files(self) -> "typing.ProblemDict":
