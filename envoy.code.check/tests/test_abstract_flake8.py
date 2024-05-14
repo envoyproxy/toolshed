@@ -121,7 +121,10 @@ def test_flake8_flake8_args(patches):
     with patched as (m_config, ):
         assert (
             flake8.flake8_args
-            == ("--config", str(m_config.return_value), str(directory.path)))
+            == ("--color=never",
+                "--config",
+                str(m_config.return_value),
+                str(directory.path)))
 
     assert "flake8_args" not in flake8.__dict__
 
@@ -389,6 +392,9 @@ def test_flake8app_run_checks(patches):
     assert m_app.return_value.options.filenames == paths
     assert (
         m_app.return_value.file_checker_manager.start.call_args
+        == [(), {}])
+    assert (
+        m_app.return_value.run_checks.call_args
         == [(), {}])
     assert (
         m_app.return_value.report.call_args

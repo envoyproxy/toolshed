@@ -99,6 +99,7 @@ class Flake8App:
         with directory_context(self.path):
             self.app.options.filenames = paths
             self.app.file_checker_manager.start()
+            self.app.run_checks()
             self.app.report()
         return self.app._results
 
@@ -182,6 +183,7 @@ class AFlake8Check(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     def flake8_args(self) -> Tuple[str, ...]:
         """Flake configuration args."""
         return (
+            "--color=never",
             "--config",
             str(self.flake8_config_path),
             str(self.directory.path))
