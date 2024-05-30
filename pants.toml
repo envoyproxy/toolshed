@@ -1,6 +1,6 @@
 [GLOBAL]
 pythonpath = ["%(buildroot)s/pants-toolshed"]
-pants_version = "2.14.1"
+pants_version = "2.15.0"
 backend_packages = [
     "pants.backend.python",
     "pants.backend.python.lint.docformatter",
