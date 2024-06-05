@@ -1,1 +1,1 @@
-common --noenable_bzlmod
+common --enable_bzlmod=0
