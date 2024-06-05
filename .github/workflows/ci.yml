@@ -19,7 +19,7 @@ jobs:
     runs-on: envoy-x64-small
     if: github.repository_owner == 'envoyproxy'
     steps:
-    - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b  # v4.1.5
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29  # v4.1.6
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d  # v5.1.0
       with:
         python-version: "3.9"
@@ -39,7 +39,7 @@ jobs:
   lint:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b  # v4.1.5
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29  # v4.1.6
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d  # v5.1.0
       with:
         python-version: "3.9"
@@ -54,7 +54,7 @@ jobs:
   lint-envoy:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b  # v4.1.5
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29  # v4.1.6
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d  # v5.1.0
       with:
         python-version: "3.11"
@@ -65,7 +65,7 @@ jobs:
   typecheck:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b  # v4.1.5
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29  # v4.1.6
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d  # v5.1.0
       with:
         python-version: "3.9"
@@ -79,7 +79,7 @@ jobs:
   docs:
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b  # v4.1.5
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29  # v4.1.6
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d  # v5.1.0
       with:
         python-version: "3.9"
@@ -99,7 +99,7 @@ jobs:
     - typecheck
     - docs
     steps:
-    - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b  # v4.1.5
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29  # v4.1.6
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d  # v5.1.0
       with:
         python-version: "3.9"
@@ -121,7 +121,7 @@ jobs:
     needs:
     - package
     steps:
-    - uses: actions/checkout@44c2b7a8a4ea60a981eaca3cf939b5f4305c123b  # v4.1.5
+    - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29  # v4.1.6
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e  # v4.1.7
     - uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d  # v5.1.0
