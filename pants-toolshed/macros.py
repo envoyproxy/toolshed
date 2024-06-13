@@ -40,21 +40,21 @@ def toolshed_package(
         skip_mypy=True,
         dependencies=dependencies,
         **library_kwargs or {})
-    toolshed_distribution(
-        name="package",
-        dependencies=dependencies,
-        provides=setup_py(
-            name=namespace,
-            **setup_kwargs or {}),
-        wheel=True,
-        sdist=True,
-        **kwargs)
-    readme_snippet(
-        name="package_snippet",
-        artefacts=[
-            f"{namespace}:build_artefacts",
-            "//templates:README.package.md.tmpl"],
-        text=["//tools/readme:summarize"])
+    # pytooling_distribution(
+    #    name="package",
+    #    dependencies=dependencies,
+    #    provides=setup_py(
+    #        name=namespace,
+    #        **setup_kwargs or {}),
+    #    wheel=True,
+    #    sdist=True,
+    #    **kwargs)
+    # readme_snippet(
+    #     name="package_snippet",
+    #     artefacts=[
+    #         f"{namespace}:build_artefacts",
+    #         "//templates:README.package.md.tmpl"],
+    #     text=["//tools/readme:summarize"])
 
 
 def toolshed_tests(
