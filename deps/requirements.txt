@@ -24,7 +24,7 @@ envoy.gpg.sign>=0.1.0
 flake8>=6
 frozendict
 gidgethub
-jinja2
+jinja2>=3.1.4
 multidict>=6.0.2
 mypy==1.9.0
 mypy-abstracts
