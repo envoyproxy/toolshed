@@ -2,6 +2,9 @@ inputs:
   image-tag:
     type: string
     required: true
+  key-suffix:
+    type: string
+    default:
   lock-id:
     type: string
   lock-repository:
@@ -21,7 +24,7 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.2.31
     id: prime
     with:
-      key: ${{ inputs.image-tag }}
+      key: ${{ inputs.image-tag }}${{ inputs.key-suffix }}
       lock-id: ${{ inputs.lock-id }}
       lock-token: ${{ inputs.lock-token }}
       lock-repository: ${{ inputs.lock-repository }}
