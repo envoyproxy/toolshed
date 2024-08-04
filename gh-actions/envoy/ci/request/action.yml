@@ -131,20 +131,16 @@ runs:
         | (.["build-image"].tag | validate::sha(40)) as $tag
         | (.["build-image"].sha | validate::sha(64)) as $sha
         | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
-        | (.["build-image"]["arm64-sha"] | validate::sha(64)) as $arm64Sha
         | {"default": "\($repo):\($tag)@sha256:\($sha)",
-           "mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)",
-           "arm64": "\($repo):arm64-\($tag)@sha256:\($arm64Sha)"}
+           "mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
         | . as $requested
         | ${{ steps.config.outputs.output }}
         | .["build-image"].repo as $repo
         | .["build-image"].tag as $tag
         | .["build-image"].sha as $sha
         | .["build-image"]["mobile-sha"] as $mobileSha
-        | .["build-image"]["arm64-sha"] as $arm64Sha
         | {default: "\($repo):\($tag)@sha256:\($sha)",
-           mobile: "\($repo)::mobile-\($tag)@sha256:\($mobileSha)",
-           arm64: "\($repo)::arm64-\($tag)@sha256:\($arm64Sha)"}
+           mobile: "\($repo)::mobile-\($tag)@sha256:\($mobileSha)"}
         | {$requested, current: .}
 
   # Check current/request versions
