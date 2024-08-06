@@ -30,8 +30,6 @@ const run = async (): Promise<void> => {
       await script(process.env.INPUT_POST)
     } else {
       if (process.env.GITHUB_STATE && process.env.INPUT_RUN) {
-        console.log(`RUN: ${process.env.INPUT_RUN}`)
-        console.log(`STATE: ${key}`)
         fs.appendFileSync(process.env.GITHUB_STATE, `${key}=true${EOL}`)
         await script(process.env.INPUT_RUN)
       }
