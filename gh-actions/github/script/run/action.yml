@@ -1,0 +1,16 @@
+inputs:
+  run:
+    description: 'Main command/script.'
+    required: true
+  post:
+    description: 'Post command/script.'
+    required: true
+  key:
+    description: 'Name of the state variable used to detect the post step.'
+    required: false
+    default: POST
+
+runs:
+  using: node20
+  main: 'dist/index.js'
+  post: 'dist/index.js'
