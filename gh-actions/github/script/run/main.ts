@@ -4,7 +4,6 @@ import * as fs from 'fs'
 import {EOL} from 'os'
 
 const script = async (cmd: string): Promise<void> => {
-  console.log(`CMD: ${cmd}`)
   try {
     const subprocess = spawn(cmd, {stdio: 'inherit', shell: true})
     subprocess.on('exit', (exitCode: number) => {
