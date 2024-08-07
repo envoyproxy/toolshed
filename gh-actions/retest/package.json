@@ -43,7 +43,7 @@
   "dependencies": {
     "@actions/core": "^1.9.1",
     "@actions/github": "^6.0.0",
-    "@octokit/rest": "^20.0.1",
+    "@octokit/rest": "^21.0.0",
     "axios": "^1.6.8",
     "fetch-mock": "^11.0.0",
     "node-fetch": "^2.7.0"
