@@ -122,10 +122,12 @@ runs:
       filter: |
         with_entries(
           .value
-          |= if startswith("/") then
+          |= if type != "string" then
+               "${{ runner.temp }}/"
+             elif startswith("/") then
                .
              else
-               "${{ runner.temp }}/" + .
+               "${{ runner.temp }}/\(.)"
              end)
   - uses: envoyproxy/toolshed/gh-actions/foreach@actions-v0.2.34
     if: ${{ steps.download-config.outputs.value }}
