@@ -142,6 +142,68 @@ def test_abstract_release_tag_name():
     assert "tag_name" not in release.__dict__
 
 
+@pytest.mark.parametrize("startswith", [True, False])
+@pytest.mark.parametrize("underscored", [True, False])
+def test_abstract_release_tag_version(patches, startswith, underscored):
+    release = DummyGithubRelease("REPO", "DATA")
+    patched = patches(
+        "len",
+        ("AGithubRelease.repo",
+         dict(new_callable=PropertyMock)),
+        ("AGithubRelease.tag_name",
+         dict(new_callable=PropertyMock)),
+        prefix="aio.api.github.abstract.release")
+
+    with patched as (m_len, m_repo, m_tag):
+        m_len.return_value = 22
+        m_tag.return_value.startswith.return_value = startswith
+        m_tag.return_value.__contains__.return_value = underscored
+        (m_tag.return_value
+              .__getitem__.return_value
+              .__contains__.return_value) = underscored
+        result = release.tag_version
+
+    if not startswith:
+        assert not m_len.called
+        assert not m_tag.return_value.__getitem__.called
+        assert (
+            m_tag.return_value.__contains__.call_args
+            == [("_", ), {}])
+        if underscored:
+            assert (
+                m_tag.return_value.replace.call_args
+                == [("_", "."), {}])
+            assert (
+                result
+                == m_tag.return_value.replace.return_value)
+        else:
+            assert not m_tag.return_value.replace.called
+            assert (
+                result
+                == m_tag.return_value)
+    else:
+        assert not m_tag.return_value.__contains__.called
+        assert not m_tag.return_value.replace.called
+        assert (
+            m_tag.return_value.__getitem__.call_args
+            == [(slice(23, None, None), ), {}])
+        if underscored:
+            assert (
+                m_tag.return_value.__getitem__.return_value.replace.call_args
+                == [("_", "."), {}])
+            assert (
+                result
+                == (m_tag.return_value.__getitem__
+                         .return_value.replace.return_value))
+        else:
+            assert not (
+                m_tag.return_value.__getitem__.return_value.replace.called)
+            assert (
+                result
+                == m_tag.return_value.__getitem__.return_value)
+    assert "tag_version" not in release.__dict__
+
+
 def test_abstract_release_upload_url():
     release = DummyGithubRelease("REPO", "DATA")
     release.data = MagicMock()
@@ -157,7 +219,7 @@ def test_abstract_release_version(patches, raises):
     release = DummyGithubRelease("REPO", "DATA")
     patched = patches(
         "version.parse",
-        ("AGithubRelease.tag_name",
+        ("AGithubRelease.tag_version",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.github.abstract.release")
 
