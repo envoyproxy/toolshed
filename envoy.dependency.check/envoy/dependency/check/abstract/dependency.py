@@ -144,10 +144,10 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         return (
             self.release_class(
                 self.repo,
-                newer_release.tag_name,
+                newer_release.tag_version,
                 release=newer_release)  # type:ignore
             if (newer_release
-                and (version.parse(newer_release.tag_name)
+                and (version.parse(newer_release.tag_version)
                      != self.release.version))
             else None)
 

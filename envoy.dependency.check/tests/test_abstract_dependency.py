@@ -368,7 +368,7 @@ async def test_dependency_newer_release(patches, newest):
 
     if newest:
         newer_release = MagicMock()
-        newer_release.tag_name = newest
+        newer_release.tag_version = newest
     else:
         newer_release = None
 
