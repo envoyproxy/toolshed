@@ -60,13 +60,25 @@ class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
         return self.data["tag_name"]
 
     @property
+    def tag_version(self) -> str:
+        tag_prefix = self.repo.name.split("/")[1]
+        tag_version = (
+            self.tag_name[len(tag_prefix) + 1:]
+            if self.tag_name.startswith(f"{tag_prefix}-")
+            else self.tag_name)
+        return (
+            tag_version.replace("_", ".")
+            if "_" in tag_version
+            else tag_version)
+
+    @property
     def upload_url(self) -> str:
         return self.data["upload_url"]
 
     @cached_property
     def version(self) -> Optional[version.Version]:
         try:
-            return version.parse(self.tag_name)
+            return version.parse(self.tag_version)
         except version.InvalidVersion:
             return None
 
