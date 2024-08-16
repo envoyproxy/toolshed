@@ -27,6 +27,8 @@ from .utils import (
     tuple_pair,
     TuplePairError)
 from . import interface, typing
+from .fetch_cmd import fetch_cmd
+from .fetch_runner import FetchRunner
 from .parallel_cmd import parallel_cmd
 from .parallel_runner import ParallelRunner
 from .project import Changelog, ChangelogEntry, Changelogs, Project
@@ -53,6 +55,8 @@ __all__ = (
     "ellipsize",
     "extract",
     "ExtractError",
+    "fetch_cmd",
+    "FetchRunner",
     "from_json",
     "from_yaml",
     "increment_version",
