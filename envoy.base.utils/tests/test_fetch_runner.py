@@ -110,6 +110,23 @@ def test_fetchrunner_excludes(patches, excludes):
     assert "excludes" in runner.__dict__
 
 
+def test_fetchrunner_gpg(patches):
+    runner = utils.FetchRunner()
+    patched = patches(
+        "gnupg",
+        prefix="envoy.base.utils.fetch_runner")
+
+    with patched as (m_gpg, ):
+        assert (
+            runner.gpg
+            == m_gpg.GPG.return_value)
+
+    assert (
+        m_gpg.GPG.call_args
+        == [(), {}])
+    assert "gpg" in runner.__dict__
+
+
 @pytest.mark.parametrize("token", ["", "TOKEN"])
 def test_fetchrunner_headers(patches, token):
     runner = utils.FetchRunner()
@@ -137,6 +154,23 @@ def test_fetchrunner_headers(patches, token):
             dict(Authorization="token TOKEN",
                  Accept="application/octet-stream")])
     assert "headers" not in runner.__dict__
+
+
+def test_fetchrunner_session(patches):
+    runner = utils.FetchRunner()
+    patched = patches(
+        "aiohttp",
+        prefix="envoy.base.utils.fetch_runner")
+
+    with patched as (m_aiohttp, ):
+        assert (
+            runner.session
+            == m_aiohttp.ClientSession.return_value)
+
+    assert (
+        m_aiohttp.ClientSession.call_args
+        == [(), {}])
+    assert "session" in runner.__dict__
 
 
 def test_fetchrunner_time_elapsed(patches):
@@ -230,23 +264,6 @@ def test_fetchrunner_token(patches, token, token_path):
     assert "token" not in runner.__dict__
 
 
-def test_fetchrunner_session(patches):
-    runner = utils.FetchRunner()
-    patched = patches(
-        "aiohttp",
-        prefix="envoy.base.utils.fetch_runner")
-
-    with patched as (m_aiohttp, ):
-        assert (
-            runner.session
-            == m_aiohttp.ClientSession.return_value)
-
-    assert (
-        m_aiohttp.ClientSession.call_args
-        == [(), {}])
-    assert "session" in runner.__dict__
-
-
 def test_fetchrunner_add_arguments(patches):
     runner = utils.FetchRunner()
     parser = MagicMock()
@@ -292,7 +309,8 @@ def test_fetchrunner_add_arguments(patches):
 
 
 @pytest.mark.parametrize("path", [True, False])
-def test_fetchrunner_download_path(patches, path):
+@pytest.mark.parametrize("create", [True, False])
+def test_fetchrunner_download_path(patches, path, create):
     runner = utils.FetchRunner()
     url = MagicMock()
     patched = patches(
@@ -307,7 +325,7 @@ def test_fetchrunner_download_path(patches, path):
         (m_downloads.return_value.__getitem__.return_value
                                  .__contains__.return_value) = path
         assert (
-            runner.download_path(url)
+            runner.download_path(url, create=create)
             == (None
                 if not path
                 else m_path.return_value.joinpath.return_value))
@@ -318,8 +336,9 @@ def test_fetchrunner_download_path(patches, path):
         assert not (
             m_downloads.return_value.__getitem__.return_value
                                     .__getitem__.called)
+        assert (
+            not m_path.return_value.joinpath.return_value.parent.mkdir.called)
         return
-
     assert (
         m_path.return_value.joinpath.call_args
         == [(m_downloads.return_value.__getitem__.return_value
@@ -334,6 +353,13 @@ def test_fetchrunner_download_path(patches, path):
     assert (
         m_downloads.return_value.__getitem__.return_value.__getitem__.call_args
         == [("path", ), {}])
+    if create:
+        assert (
+            m_path.return_value.joinpath.return_value.parent.mkdir.call_args
+            == [(), dict(parents=True, exist_ok=True)])
+    else:
+        assert not (
+            m_path.return_value.joinpath.return_value.parent.mkdir.called)
 
 
 @pytest.mark.parametrize("path", [True, False])
@@ -379,27 +405,41 @@ def test_fetchrunner_excluded(patches, path, contains):
 
 
 @pytest.mark.parametrize("path", [True, False])
-async def test_fetchrunner_fetch(patches, path):
+@pytest.mark.parametrize("extract", [True, False])
+async def test_fetchrunner_fetch(patches, path, extract):
     runner = utils.FetchRunner()
     url = MagicMock()
-    _path = (
-        MagicMock()
-        if path
-        else None)
     patched = patches(
+        "asyncio",
+        "io",
+        "utils",
         "FetchRunner.download_path",
         "FetchRunner.fetch_bytes",
+        "FetchRunner.validate",
+        ("FetchRunner.args",
+         dict(new_callable=PropertyMock)),
         ("FetchRunner.log",
          dict(new_callable=PropertyMock)),
         ("FetchRunner.time_elapsed",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.fetch_runner")
 
-    with patched as (m_path, m_fetch, m_log, m_elapsed):
-        m_path.return_value = _path
+    with patched as patchy:
+        (m_asyncio, m_io, m_utils, m_path, m_fetch,
+         m_valid, m_args, m_log, m_elapsed) = patchy
+        if not path:
+            m_path.return_value = None
+        m_args.return_value.extract_downloads = extract
+        _to_thread = AsyncMock()
+        m_asyncio.to_thread = _to_thread
+        fd = (m_io.BytesIO.return_value.__enter__
+                          .return_value)
         assert (
             await runner.fetch(url)
-            == m_fetch.return_value)
+            == (url,
+                (fd.read.return_value
+                 if not path
+                 else b"")))
 
     assert (
         m_log.return_value.debug.call_args
@@ -410,31 +450,49 @@ async def test_fetchrunner_fetch(patches, path):
         == [(url, ), {}])
     if path:
         assert (
-            _path.parent.mkdir.call_args
-            == [(), dict(parents=True, exist_ok=True)])
+            m_path.return_value.open.call_args
+            == [("wb+", ), {}])
+        assert not m_io.BytesIO.called
+        fd = m_path.return_value.open.return_value
+        assert not fd.__enter__.return_value.read.called
+    else:
+        assert (
+            m_io.BytesIO.call_args
+            == [(), {}])
+        fd = m_io.BytesIO.return_value
+        assert (
+            fd.__enter__.return_value.read.call_args
+            == [(), {}])
+
     assert (
         m_fetch.call_args
-        == [(url, ), dict(path=_path)])
+        == [(url, fd.__enter__.return_value), {}])
+    assert (
+        m_valid.call_args
+        == [(url, fd.__enter__.return_value), {}])
+    if path and extract:
+        assert (
+            m_asyncio.to_thread.call_args
+            == [(m_utils.extract,
+                 m_path.return_value.parent,
+                 m_path.return_value), {}])
+        assert (
+            m_path.return_value.unlink.call_args
+            == [(), {}])
+    else:
+        assert not m_asyncio.to_thread.called
 
 
-@pytest.mark.parametrize("path", [True, False])
+@pytest.mark.parametrize("named", [True, False])
 @pytest.mark.parametrize("checksum", [True, False])
 @pytest.mark.parametrize("extract", [True, False])
-async def test_fetchrunner_fetch_bytes(patches, path, checksum, extract):
+async def test_fetchrunner_fetch_bytes(patches, named, checksum, extract):
     runner = utils.FetchRunner()
     url = MagicMock()
-    _path = (
-        MagicMock()
-        if path
-        else None)
+    fd = MagicMock()
     patched = patches(
-        "asyncio",
-        "utils",
-        "FetchRunner.download_path",
-        "FetchRunner.validate_checksum",
+        "hasattr",
         ("FetchRunner.args",
-         dict(new_callable=PropertyMock)),
-        ("FetchRunner.downloads",
          dict(new_callable=PropertyMock)),
         ("FetchRunner.log",
          dict(new_callable=PropertyMock)),
@@ -447,8 +505,8 @@ async def test_fetchrunner_fetch_bytes(patches, path, checksum, extract):
         prefix="envoy.base.utils.fetch_runner")
 
     with patched as patchy:
-        (m_asyncio, m_utils, m_download_path, m_validate,
-         m_args, m_downloads, m_log, m_headers,
+        (m_attr,
+         m_args, m_log, m_headers,
          m_session, m_elapsed) = patchy
 
         async def _chunked(size):
@@ -456,22 +514,13 @@ async def test_fetchrunner_fetch_bytes(patches, path, checksum, extract):
             for x in range(0, 3):
                 yield f"CHUNK{x}"
 
-        _to_thread = AsyncMock()
-        m_asyncio.to_thread = _to_thread
+        m_attr.return_value = named
         _get = AsyncMock()
         m_session.return_value.get.return_value = _get
         response = _get.__aenter__.return_value
         response.content.iter_chunked = _chunked
         response.raise_for_status = MagicMock()
-        (m_downloads.return_value.__getitem__.return_value
-                                 .__contains__.return_value) = checksum
-        m_args.return_value.extract_downloads = extract
-        assert (
-            await runner.fetch_bytes(url, _path)
-            == (url,
-                (response.read.return_value
-                 if not path
-                 else None)))
+        assert not await runner.fetch_bytes(url, fd)
 
     assert (
         m_session.return_value.get.call_args
@@ -479,50 +528,20 @@ async def test_fetchrunner_fetch_bytes(patches, path, checksum, extract):
     assert (
         response.raise_for_status.call_args
         == [(), {}])
-    if not path:
-        assert (
-            response.read.call_args
-            == [(), {}])
-        assert not m_log.return_value.debug.called
-        assert not response.content.iter_chunk.called
-        assert not m_downloads.return_value.__getitem__.called
-        assert not m_asyncio.to_thread.called
-        assert not m_validate.called
-        return
-
-    assert not response.read.called
+    dest = (
+        f" -> {fd.name}"
+        if named
+        else "")
     assert (
         m_log.return_value.debug.call_args
         == [((f"{m_elapsed.return_value} "
               f"Writing chunks({m_args.return_value.chunk_size}):\n"
               f" {url}\n"
-              f" -> {_path}"), ), {}])
+              f"{dest}"), ), {}])
     assert (
-        _path.open.call_args
-        == [("wb", ), {}])
-    assert (
-        _path.open.return_value.__enter__.return_value.write.call_args_list
+        fd.write.call_args_list
         == [[(f"CHUNK{x}", ), {}]
             for x in range(0, 3)])
-    assert (
-        m_downloads.return_value.__getitem__.call_args
-        == [(url, ), {}])
-    if checksum:
-        assert (
-            m_validate.call_args
-            == [(url, ), {}])
-    else:
-        assert not m_validate.called
-    if not extract:
-        assert not m_asyncio.to_thread.called
-        assert not _path.unlink.called
-        return
-    assert (
-        m_asyncio.to_thread.call_args
-        == [(m_utils.extract, _path.parent, _path), {}])
-    assert (
-        _path.unlink.call_args
-        == [(), {}])
 
 
 def test_fetchrunner_filename(patches):
@@ -551,14 +570,13 @@ def test_fetchrunner_filename(patches):
 
 def test_fetchrunner_hashed(patches):
     runner = utils.FetchRunner()
-    content = MagicMock()
+    fd = MagicMock()
     patched = patches(
         "hashlib",
         prefix="envoy.base.utils.fetch_runner")
-
     with patched as (m_hash, ):
         assert (
-            runner.hashed(content)
+            runner.hashed(fd)
             == m_hash.sha256.return_value.hexdigest.return_value)
 
     assert (
@@ -566,7 +584,10 @@ def test_fetchrunner_hashed(patches):
         == [(), {}])
     assert (
         m_hash.sha256.return_value.update.call_args
-        == [(content, ), {}])
+        == [(fd.read.return_value, ), {}])
+    assert (
+        fd.read.call_args
+        == [(), {}])
     assert (
         m_hash.sha256.return_value.hexdigest.call_args
         == [(), {}])
@@ -681,18 +702,62 @@ async def test_fetchrunner_run(patches, iters, output, path, empty):
              m_args.return_value.output_path), {}])
 
 
-@pytest.mark.parametrize("path", [True, False])
-@pytest.mark.parametrize("matches", [True, False])
-async def test_fetchrunner_validate_checksum(patches, path, matches):
+@pytest.mark.parametrize("signature", [True, False])
+@pytest.mark.parametrize("checksum", [True, False])
+async def test_fetchrunner_validate(patches, signature, checksum):
     runner = utils.FetchRunner()
     url = MagicMock()
-    _path = (
-        MagicMock()
-        if path
-        else None)
+    fd = MagicMock()
+    patched = patches(
+        "FetchRunner.validate_checksum",
+        "FetchRunner.validate_signature",
+        ("FetchRunner.downloads",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.fetch_runner")
+
+    def _contains(x):
+        if x == "checksum":
+            return checksum
+        if x == "signature":
+            return signature
+
+    with patched as (m_checksum, m_signature, m_downloads):
+        (m_downloads.return_value.__getitem__
+                    .return_value.__contains__.side_effect) = _contains
+        assert not await runner.validate(url, fd)
+
+    assert (
+        (m_downloads.return_value.__getitem__
+                    .return_value.__contains__.call_args_list)
+        == [[("signature", ), {}],
+            [("checksum", ), {}]])
+    seeks = [[(0, ), {}]]
+    if checksum:
+        seeks.append([(0, ), {}])
+        assert (
+            m_checksum.call_args
+            == [(url, fd), {}])
+    else:
+        assert not m_checksum.called
+    if signature:
+        seeks.append([(0, ), {}])
+        assert (
+            m_signature.call_args
+            == [(url, fd), {}])
+    else:
+        assert not m_signature.called
+    assert (
+        fd.seek.call_args_list
+        == seeks)
+
+
+@pytest.mark.parametrize("matches", [True, False])
+async def test_fetchrunner_validate_checksum(patches, matches):
+    runner = utils.FetchRunner()
+    url = MagicMock()
+    fd = MagicMock()
     patched = patches(
         "asyncio",
-        "FetchRunner.download_path",
         ("FetchRunner.downloads",
          dict(new_callable=PropertyMock)),
         ("FetchRunner.log",
@@ -701,38 +766,26 @@ async def test_fetchrunner_validate_checksum(patches, path, matches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.fetch_runner")
 
-    with patched as (m_asyncio, m_path, m_downloads, m_log, m_elapsed):
-        m_path.return_value = _path
+    with patched as (m_asyncio, m_downloads, m_log, m_elapsed):
         _to_thread = AsyncMock()
         m_asyncio.to_thread = _to_thread
         _to_thread.return_value.__ne__.return_value = not matches
-        if path and not matches:
+        if not matches:
             with pytest.raises(utils.exceptions.ChecksumError) as e:
-                await runner.validate_checksum(url)
+                await runner.validate_checksum(url, fd)
         else:
-            assert not await runner.validate_checksum(url)
+            assert not await runner.validate_checksum(url, fd)
 
     assert (
-        m_path.call_args
-        == [(url, ), {}])
-    if not path:
-        assert not _to_thread.called
-        assert not m_log.return_value.debug.called
-        assert not m_downloads.called
-        return
-    assert (
         _to_thread.call_args
-        == [(runner.hashed, _path.read_bytes.return_value), {}])
-    assert (
-        _path.read_bytes.call_args
-        == [(), {}])
+        == [(runner.hashed, fd), {}])
     configured_checksum = (
         m_downloads.return_value.__getitem__.return_value
                                 .__getitem__.return_value)
     assert (
         m_log.return_value.debug.call_args
         == [((f"{m_elapsed.return_value} "
-              f"Validating:\n"
+              f"Validating checksum:\n"
               f" {url}\n"
               f" {configured_checksum}\n"), ), {}])
     assert (
@@ -751,3 +804,75 @@ async def test_fetchrunner_validate_checksum(patches, path, matches):
             == (f"Checksums do not match({url}):\n"
                 f" expected: {configured_checksum}\n"
                 f" received: {_to_thread.return_value}"))
+
+
+@pytest.mark.parametrize("valid", [True, False])
+@pytest.mark.parametrize("matches", [True, False])
+async def test_fetchrunner_validate_signature(patches, iters, valid, matches):
+    runner = utils.FetchRunner()
+    url = MagicMock()
+    fd = MagicMock()
+    patched = patches(
+        ("FetchRunner.downloads",
+         dict(new_callable=PropertyMock)),
+        ("FetchRunner.gpg",
+         dict(new_callable=PropertyMock)),
+        ("FetchRunner.log",
+         dict(new_callable=PropertyMock)),
+        ("FetchRunner.time_elapsed",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.fetch_runner")
+
+    with patched as (m_downloads, m_gpg, m_log, m_elapsed):
+        m_gpg.return_value.verify_file.return_value.valid = valid
+        (m_gpg.return_value.verify_file
+              .return_value.username.__eq__.return_value) = matches
+        m_gpg.return_value.verify_file.return_value.problems = iters()
+        if not valid or not matches:
+            with pytest.raises(utils.exceptions.SignatureError) as e:
+                await runner.validate_signature(url, fd)
+        else:
+            assert not await runner.validate_signature(url, fd)
+
+    signature = (
+        m_downloads.return_value.__getitem__
+                   .return_value.__getitem__.return_value)
+    assert (
+        m_log.return_value.debug.call_args
+        == [((f"{m_elapsed.return_value} "
+              f"Validating signature:\n"
+              f" {url}\n"
+              f" {signature}\n"), ), {}])
+    assert (
+        m_gpg.return_value.verify_file.call_args
+        == [(fd, ), {}])
+    assert (
+        m_downloads.return_value.__getitem__.call_args
+        == [(url, ), {}])
+    assert (
+        m_downloads.return_value.__getitem__.return_value.__getitem__.call_args
+        == [("signature", ), {}])
+    if not valid:
+        assert (
+            e.value.args[0]
+            == "Signature not valid:\n I0\n I1\n I2\n I3\n I4")
+        assert not (
+            m_gpg.return_value.verify_file
+                 .return_value.username.__eq__.called)
+        return
+    assert (
+        m_gpg.return_value.verify_file.return_value.username.__eq__.call_args
+        == [((m_downloads.return_value.__getitem__
+                         .return_value.__getitem__.return_value), ),
+            {}])
+    if not matches:
+        signature = (
+            m_downloads.return_value.__getitem__
+                       .return_value.__getitem__.return_value)
+        received = (
+            m_gpg.return_value.verify_file.return_value.username)
+        assert (
+            e.value.args[0]
+            == ("Signature not correct:\n"
+                f" expected: {signature}\n"
+                f" received: {received}"))

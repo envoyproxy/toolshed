@@ -35,3 +35,7 @@ class PublishError(Exception):
 
 class ChecksumError(Exception):
     pass
+
+
+class SignatureError(Exception):
+    pass

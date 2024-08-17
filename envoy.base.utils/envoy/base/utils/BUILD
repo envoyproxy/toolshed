@@ -13,6 +13,7 @@ toolshed_library(
         "//deps:reqs#packaging",
         "//deps:reqs#pytz",
         "//deps:reqs#protobuf",
+        "//deps:reqs#python-gnupg",
         "//deps:reqs#pyyaml",
         "//deps:reqs#trycast",
         "//deps:reqs#zstandard",
