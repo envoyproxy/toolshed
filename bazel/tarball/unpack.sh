@@ -4,6 +4,7 @@ set -o pipefail
 
 ZSTD="${ZSTD:-}"
 TARGET="${TARGET:-}"
+OVERWRITE="${OVERWRITE:-}"
 EXTRACT_PATH="$1"
 
 if [[ -z "$TARGET" ]]; then
@@ -20,7 +21,7 @@ if [[ ! -e "$EXTRACT_PATH" ]]; then
     mkdir -p "$EXTRACT_PATH"
 fi
 
-if [[ -n "$(ls -A "$EXTRACT_PATH" 2>/dev/null)" ]]; then
+if [[ -z "$OVERWRITE" && -n "$(ls -A "$EXTRACT_PATH" 2>/dev/null)" ]]; then
     echo "The extract path is not empty, exiting." >&2
     exit 1
 fi

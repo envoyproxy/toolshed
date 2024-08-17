@@ -5,16 +5,31 @@ def unpacker(
         zstd = None,
         visibility = ["//visibility:public"],
 ):
-
-    native.label_flag(
-        name = "target",
-        build_setting_default = ":target_default",
-        visibility = ["//visibility:public"],
+    native.filegroup(
+        name = "true",
+        srcs = [],
     )
 
     native.filegroup(
-        name = "target_default",
+        name = "false",
         srcs = [],
+    )
+
+    native.label_flag(
+        name = "target",
+        build_setting_default = ":false",
+        visibility = ["//visibility:public"],
+    )
+
+    native.label_flag(
+        name = "overwrite",
+        build_setting_default = ":false",
+        visibility = ["//visibility:public"],
+    )
+
+    native.config_setting(
+        name = "overwrite_enabled",
+        flag_values = {":overwrite": ":true"},
     )
 
     env = {"TARGET": "$(location :target)"}
@@ -28,5 +43,7 @@ def unpacker(
         srcs = [script],
         visibility = visibility,
         data = data,
-        env = env,
+        env = env | select({
+            ":overwrite_enabled": {"OVERWRITE": "1"},
+            "//conditions:default": {}}),
     )
