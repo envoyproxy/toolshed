@@ -574,9 +574,11 @@ def test_fetchrunner_hashed(patches):
 
 @pytest.mark.parametrize("output", ["json", "NOTJSON"])
 @pytest.mark.parametrize("path", ["", "PATH"])
-async def test_fetchrunner_run(patches, iters, output, path):
+@pytest.mark.parametrize("empty", [True, False])
+async def test_fetchrunner_run(patches, iters, output, path, empty):
     runner = utils.FetchRunner()
     patched = patches(
+        "any",
         "asyncio",
         "concurrent",
         "json",
@@ -603,9 +605,10 @@ async def test_fetchrunner_run(patches, iters, output, path):
             yield item, items[item]
 
     with patched as patchy:
-        (m_asyncio, m_concurrent, m_json, m_print,
+        (m_any, m_asyncio, m_concurrent, m_json, m_print,
          m_utils, m_excluded, m_fetch, m_args,
          m_downloads, m_path, m_log, m_elapsed) = patchy
+        m_any.return_value = not empty
         m_args.return_value.output = output
         m_args.return_value.output_path = path
         _to_thread = AsyncMock()
@@ -650,6 +653,18 @@ async def test_fetchrunner_run(patches, iters, output, path):
         assert result == 0
         assert len(m_log.return_value.debug.call_args_list) == 5
         assert not m_asyncio.to_thread.called
+        assert not m_any.called
+        return
+    if empty:
+        assert result == 0
+        assert len(m_log.return_value.debug.call_args_list) == 5
+        assert not m_asyncio.to_thread.called
+        assert (
+            m_any.call_args
+            == [(m_path.return_value.iterdir.return_value, ), {}])
+        assert (
+            m_path.return_value.iterdir.call_args
+            == [(), {}])
         return
     assert (
         m_log.return_value.debug.call_args_list[5]

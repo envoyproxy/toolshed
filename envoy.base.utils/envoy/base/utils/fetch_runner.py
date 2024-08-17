@@ -186,6 +186,8 @@ class FetchRunner(runner.Runner):
 
         if not self.args.output_path:
             return 0
+        if not any(self.downloads_path.iterdir()):
+            return 0
         self.log.debug(
             f"{self.time_elapsed} "
             f"Packing:\n"
