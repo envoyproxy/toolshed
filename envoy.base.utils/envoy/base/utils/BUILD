@@ -28,6 +28,8 @@ toolshed_library(
         "data_env.py",
         "data_env_cmd.py",
         "exceptions.py",
+        "fetch_cmd.py",
+        "fetch_runner.py",
         "interface.py",
         "jinja_env.py",
         "jinja_env_cmd.py",

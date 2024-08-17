@@ -31,3 +31,7 @@ class CommitError(Exception):
 
 class PublishError(Exception):
     pass
+
+
+class ChecksumError(Exception):
+    pass
