@@ -139,7 +139,7 @@ pypi: https://pypi.org/project/dependatool
 
 #### [envoy.base.utils](envoy.base.utils)
 
-version: 0.5.3.dev0
+version: 0.5.3
 
 pypi: https://pypi.org/project/envoy.base.utils
 
@@ -156,6 +156,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 - [orjson](https://pypi.org/project/orjson)
 - [packaging](https://pypi.org/project/packaging) >=23.0
 - [protobuf](https://pypi.org/project/protobuf)
+- [python-gnupg](https://pypi.org/project/python-gnupg)
 - [pytz](https://pypi.org/project/pytz)
 - [pyyaml](https://pypi.org/project/pyyaml)
 - [trycast](https://pypi.org/project/trycast) >=0.7.3

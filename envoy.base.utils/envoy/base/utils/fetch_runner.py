@@ -2,18 +2,20 @@
 import asyncio
 import json
 import hashlib
+import io
 import os
 import pathlib
 import time
 from functools import cached_property
-from typing import Optional
+from typing import IO, Optional
 from urllib.parse import urlsplit
 
 import aiohttp
 
-from aio.core.tasks import concurrent
-from aio.run import runner
+import gnupg  # type:ignore
 
+from aio.core.tasks import concurrent, ConcurrentExecutionError
+from aio.run import runner
 from envoy.base import utils
 
 
@@ -38,6 +40,10 @@ class FetchRunner(runner.Runner):
             if self.args.excludes
             else [])
 
+    @cached_property
+    def gpg(self) -> gnupg.GPG:
+        return gnupg.GPG()
+
     @property
     def headers(self) -> dict:
         return (
@@ -46,6 +52,11 @@ class FetchRunner(runner.Runner):
             else dict(
                 Authorization=f"token {self.token}",
                 Accept="application/octet-stream"))
+
+    @cached_property
+    def session(self) -> aiohttp.ClientSession:
+        """HTTP client session."""
+        return aiohttp.ClientSession()
 
     @property
     def time_elapsed(self) -> float:
@@ -63,11 +74,6 @@ class FetchRunner(runner.Runner):
             return pathlib.Path(self.args.token_path).read_text().strip()
         elif self.args.token:
             return os.getenv(self.args.token)
-
-    @cached_property
-    def session(self) -> aiohttp.ClientSession:
-        """HTTP client session."""
-        return aiohttp.ClientSession()
 
     def add_arguments(self, parser) -> None:
         super().add_arguments(parser)
@@ -103,66 +109,83 @@ class FetchRunner(runner.Runner):
             "--token-path",
             help="Path to auth token")
 
-    def download_path(self, url: str) -> Optional[pathlib.Path]:
+    async def cleanup(self):
+        await super().cleanup()
+        await self.session.close()
+
+    def download_path(
+            self, url: str,
+            create: bool = True) -> Optional[pathlib.Path]:
         if "path" not in self.downloads[url]:
             return None
-        return self.downloads_path.joinpath(
+        _download_path = self.downloads_path.joinpath(
             self.downloads[url]["path"],
             self.filename(url))
+        if create:
+            _download_path.parent.mkdir(parents=True, exist_ok=True)
+        return _download_path
 
     def excluded(self, url: str) -> bool:
         path = self.downloads[url].get("path")
         return bool(path and path in self.excludes)
 
-    async def fetch(self, url: str) -> tuple[str, Optional[bytes]]:
+    async def fetch(self, url: str) -> tuple[str, bytes]:
         self.log.debug(
             f"{self.time_elapsed} Fetching:\n"
             f" {url}\n")
         download_path = self.download_path(url)
-        if download_path:
-            download_path.parent.mkdir(parents=True, exist_ok=True)
-        return await self.fetch_bytes(url, path=download_path)
+        buffer: IO[bytes] = (
+            download_path.open("wb+")
+            if download_path
+            else io.BytesIO())
+        with buffer as fd:
+            await self.fetch_bytes(url, fd)
+            await self.validate(url, fd)
+            content: bytes = (
+                fd.read()
+                if not download_path
+                else b'')
+        if download_path and self.args.extract_downloads:
+            await asyncio.to_thread(
+                utils.extract,
+                download_path.parent,
+                download_path)
+            download_path.unlink()
+        return url, content
 
     async def fetch_bytes(
             self,
             url: str,
-            path: Optional[pathlib.Path] = None) -> (
-                tuple[str, Optional[bytes]]):
+            fd: IO[bytes]) -> None:
+        dest = (
+            f" -> {fd.name}"
+            if hasattr(fd, "name")
+            else "")
         async with self.session.get(url, headers=self.headers) as response:
             response.raise_for_status()
-            if not path:
-                return url, await response.read()
-
             self.log.debug(
                 f"{self.time_elapsed} "
                 f"Writing chunks({self.args.chunk_size}):\n"
                 f" {url}\n"
-                f" -> {path}")
-            with path.open("wb") as f:
-                chunks = response.content.iter_chunked(self.args.chunk_size)
-                async for chunk in chunks:
-                    f.write(chunk)
-
-            if "checksum" in self.downloads[url]:
-                await self.validate_checksum(url)
-
-            if self.args.extract_downloads:
-                await asyncio.to_thread(utils.extract, path.parent, path)
-                path.unlink()
-
-            return url, None
+                f"{dest}")
+            chunks = response.content.iter_chunked(self.args.chunk_size)
+            async for chunk in chunks:
+                fd.write(chunk)
 
     def filename(self, url: str) -> str:
         parsed_url = urlsplit(url)
         path_parts = parsed_url.path.split("/")
         return path_parts[-1]
 
-    def hashed(self, content: bytes) -> str:
+    def hashed(self, fd: IO[bytes]) -> str:
         hash_object = hashlib.sha256()
-        hash_object.update(content)
+        hash_object.update(fd.read())
         return hash_object.hexdigest()
 
     @runner.cleansup
+    @runner.catches(
+        (utils.exceptions.SignatureError,
+         ConcurrentExecutionError))
     async def run(self) -> Optional[int]:
         result = {}
         downloads = concurrent(
@@ -172,18 +195,17 @@ class FetchRunner(runner.Runner):
              if not self.excluded(url)),
             limit=self.args.concurrency)
 
-        async for (url, response) in downloads:
+        async for (url, content) in downloads:
             self.log.debug(
                 f"{self.time_elapsed} "
                 f"Received:\n"
                 f" {url}\n")
             if self.args.output == "json":
-                result[url] = response.decode()
+                result[url] = content.decode()
 
         if self.args.output == "json":
             print(json.dumps(result))
             return 0
-
         if not self.args.output_path:
             return 0
         if not any(self.downloads_path.iterdir()):
@@ -198,21 +220,31 @@ class FetchRunner(runner.Runner):
             self.downloads_path,
             self.args.output_path)
 
-    async def cleanup(self):
-        await super().cleanup()
-        await self.session.close()
+    async def validate(
+            self,
+            url: str,
+            fd: IO[bytes]) -> None:
+        # These cant be run in parallel without passing
+        # the data rather than a buffer/file descriptor.
+        if "signature" in self.downloads[url]:
+            fd.seek(0)
+            await self.validate_signature(url, fd)
+        if "checksum" in self.downloads[url]:
+            fd.seek(0)
+            await self.validate_checksum(url, fd)
+        fd.seek(0)
 
-    async def validate_checksum(self, url: str) -> None:
-        path = self.download_path(url)
-        if not path:
-            return
+    async def validate_checksum(
+            self,
+            url: str,
+            fd: IO[bytes]) -> None:
+        checksum = self.downloads[url]["checksum"]
         hashed = await asyncio.to_thread(
             self.hashed,
-            path.read_bytes())
-        checksum = self.downloads[url]["checksum"]
+            fd)
         self.log.debug(
             f"{self.time_elapsed} "
-            f"Validating:\n"
+            f"Validating checksum:\n"
             f" {url}\n"
             f" {checksum}\n")
         if hashed != checksum:
@@ -220,3 +252,25 @@ class FetchRunner(runner.Runner):
                 f"Checksums do not match({url}):\n"
                 f" expected: {checksum}\n"
                 f" received: {hashed}")
+
+    async def validate_signature(
+            self,
+            url: str,
+            fd: IO[bytes]) -> None:
+        digest = self.gpg.verify_file(fd)
+        signature = self.downloads[url]["signature"]
+        self.log.debug(
+            f"{self.time_elapsed} "
+            f"Validating signature:\n"
+            f" {url}\n"
+            f" {signature}\n")
+        if not digest.valid:
+            problems = "\n ".join(digest.problems)
+            raise utils.exceptions.SignatureError(
+                f"Signature not valid:\n"
+                f" {problems}")
+        if not digest.username == signature:
+            raise utils.exceptions.SignatureError(
+                f"Signature not correct:\n"
+                f" expected: {signature}\n"
+                f" received: {digest.username}")
