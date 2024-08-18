@@ -265,9 +265,10 @@ class FetchRunner(runner.Runner):
             f" {url}\n"
             f" {signature}\n")
         if not digest.valid:
-            problems = "\n ".join(digest.problems)
+            problems = "\n ".join(str(p) for p in digest.problems)
             raise utils.exceptions.SignatureError(
                 f"Signature not valid:\n"
+                f" {url}\n"
                 f" {problems}")
         if not digest.username == signature:
             raise utils.exceptions.SignatureError(

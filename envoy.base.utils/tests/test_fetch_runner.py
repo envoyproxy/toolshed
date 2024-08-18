@@ -813,6 +813,7 @@ async def test_fetchrunner_validate_signature(patches, iters, valid, matches):
     url = MagicMock()
     fd = MagicMock()
     patched = patches(
+        "str",
         ("FetchRunner.downloads",
          dict(new_callable=PropertyMock)),
         ("FetchRunner.gpg",
@@ -823,11 +824,12 @@ async def test_fetchrunner_validate_signature(patches, iters, valid, matches):
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.fetch_runner")
 
-    with patched as (m_downloads, m_gpg, m_log, m_elapsed):
+    with patched as (m_str, m_downloads, m_gpg, m_log, m_elapsed):
         m_gpg.return_value.verify_file.return_value.valid = valid
         (m_gpg.return_value.verify_file
               .return_value.username.__eq__.return_value) = matches
         m_gpg.return_value.verify_file.return_value.problems = iters()
+        m_str.side_effect = lambda x: f"X{x}"
         if not valid or not matches:
             with pytest.raises(utils.exceptions.SignatureError) as e:
                 await runner.validate_signature(url, fd)
@@ -855,7 +857,7 @@ async def test_fetchrunner_validate_signature(patches, iters, valid, matches):
     if not valid:
         assert (
             e.value.args[0]
-            == "Signature not valid:\n I0\n I1\n I2\n I3\n I4")
+            == f"Signature not valid:\n {url}\n XI0\n XI1\n XI2\n XI3\n XI4")
         assert not (
             m_gpg.return_value.verify_file
                  .return_value.username.__eq__.called)
