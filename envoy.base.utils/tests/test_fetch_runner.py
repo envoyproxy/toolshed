@@ -595,8 +595,9 @@ def test_fetchrunner_hashed(patches):
 
 @pytest.mark.parametrize("output", ["json", "NOTJSON"])
 @pytest.mark.parametrize("path", ["", "PATH"])
+@pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize("empty", [True, False])
-async def test_fetchrunner_run(patches, iters, output, path, empty):
+async def test_fetchrunner_run(patches, iters, output, path, exists, empty):
     runner = utils.FetchRunner()
     patched = patches(
         "any",
@@ -637,6 +638,7 @@ async def test_fetchrunner_run(patches, iters, output, path, empty):
         m_concurrent.return_value = _concurrent()
         m_excluded.side_effect = lambda x: x == "I3"
         m_downloads.return_value = iters()
+        m_path.return_value.exists.return_value = exists
         result = await runner.run()
         assert not result
         download_iter = m_concurrent.call_args[0][0]
@@ -675,6 +677,18 @@ async def test_fetchrunner_run(patches, iters, output, path, empty):
         assert len(m_log.return_value.debug.call_args_list) == 5
         assert not m_asyncio.to_thread.called
         assert not m_any.called
+        assert not m_path.return_value.exists.called
+        assert not m_path.return_value.iterdir.called
+        return
+    assert (
+        m_path.return_value.exists.call_args
+        == [(), {}])
+    if not exists:
+        assert result == 0
+        assert len(m_log.return_value.debug.call_args_list) == 5
+        assert not m_asyncio.to_thread.called
+        assert not m_any.called
+        assert not m_path.return_value.iterdir.called
         return
     if empty:
         assert result == 0
