@@ -206,9 +206,11 @@ class FetchRunner(runner.Runner):
         if self.args.output == "json":
             print(json.dumps(result))
             return 0
-        if not self.args.output_path:
-            return 0
-        if not any(self.downloads_path.iterdir()):
+        exit_now = (
+            not self.args.output_path
+            or not self.downloads_path.exists()
+            or not any(self.downloads_path.iterdir()))
+        if exit_now:
             return 0
         self.log.debug(
             f"{self.time_elapsed} "
