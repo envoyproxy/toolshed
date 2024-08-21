@@ -83,6 +83,7 @@ def static_website(
     native.alias(
         name = name,
         actual = name_html,
+        visibility = visibility,
     )
 
 def website_theme(
