@@ -25,7 +25,7 @@
     {% block css %}
     {% assets filters="libsass,cssmin", output="css/main.min.css", "css/main.scss" %}
     <link rel="stylesheet"
-          href="{{ SITEURL }}/{{ ASSET_URL }}">
+          href="{{ ASSET_URL }}">
     {% endassets %}
     {% endblock css %}
     {% block favicon %}
