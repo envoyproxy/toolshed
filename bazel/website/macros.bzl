@@ -56,8 +56,9 @@ def static_website(
         srcs = sources,
     )
 
-    tools = [
-        generator,
+    tools = [generator]
+
+    srcs = [
         name_sources,
     ] + sources
 
@@ -94,7 +95,8 @@ def static_website(
         tar cfh $@ $$EXCLUDES -C "$$OUTPUT" .
         """ % (name_sources, decompressor_args, generator, content_path, output_path, mapping_commands, exclude_args),
         outs = [name_website_tarball],
-        tools = tools
+        srcs = srcs,
+        tools = tools,
     )
 
     pkg_tar(
