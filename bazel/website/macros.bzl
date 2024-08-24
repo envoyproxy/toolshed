@@ -11,9 +11,25 @@ def static_website(
         deps = None,
         compressor = None,
         compressor_args = None,
-        decompressor_args = None,
+        exclude = [
+            "archives.html",
+            "authors.html",
+            "categories.html",
+            "external",
+            "tags.html",
+            "pages",
+            "theme/.webassets-cache",
+            "theme/css/_sass",
+            "theme/css/main.scss"
+        ],
         generator = "@envoy_toolshed//website/tools/pelican",
         extension = "tar.gz",
+        mappings = {
+            "theme/css": "theme/static/css",
+            "theme/js": "theme/static/js",
+            "theme/images": "theme/static/images",
+            "theme/templates/extra": "theme/templates",
+        },
         output_path = "output",
         srcs = None,
         visibility = ["//visibility:public"],
@@ -46,26 +62,36 @@ def static_website(
     ] + sources
 
     if compressor:
-        expand = "$(location %s) %s $(location %s) | tar x" % (
-            compressor,
-            decompressor_args or "",
-            name_sources)
+        decompressor_args = "--use-compress-program=$(location %s)" % compressor
         tools += [compressor]
-    else:
-        expand = "tar xf $(location %s)" % name_sources
+
+    exclude_args = " ".join(["--exclude=%s" % item for item in exclude])
+    mapping_commands = "\n".join([
+        "mkdir -p %s \ncp -a %s/* %s" % (dest, src, dest)
+        for src, dest in mappings.items()
+    ])
 
     native.genrule(
         name = name_website,
         cmd = """
-        %s \
-        && mkdir -p theme/static/css theme/static/images theme/static/js \
-        && if [ -e theme/css ]; then cp -a theme/css/* theme/static/css; fi \
-        && if [ -e theme/js ]; then cp -a theme/js/* theme/static/js; fi \
-        && if [ -e theme/images ]; then cp -a theme/images/* theme/static/images; fi \
-        && if [ -e theme/templates/extra ]; then cp -a theme/templates/extra/* theme/templates; fi \
-        && $(location %s) %s \
-        && tar cfh $@ --exclude=external -C %s .
-        """ % (expand, generator, content_path, output_path),
+        SOURCE="$(location %s)"
+        DECOMPRESS_ARGS="%s"
+        GENERATOR="$(location %s)"
+        CONTENT="%s"
+        OUTPUT="%s"
+        MAPPING="%s"
+        EXCLUDES="%s"
+
+        tar "$${DECOMPRESS_ARGS}" -xf $$SOURCE
+
+        while IFS= read -r CMD; do
+            $$CMD
+        done <<< "$$MAPPING"
+
+        $$GENERATOR "$$CONTENT"
+
+        tar cfh $@ $$EXCLUDES -C "$$OUTPUT" .
+        """ % (name_sources, decompressor_args, generator, content_path, output_path, mapping_commands, exclude_args),
         outs = [name_website_tarball],
         tools = tools
     )
