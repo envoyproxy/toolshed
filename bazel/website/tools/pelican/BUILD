@@ -8,6 +8,7 @@ entry_point(
     deps = [
         requirement("cssmin"),
         requirement("libsass"),
+        requirement("markdown"),
         requirement("pelican-webassets"),
         requirement("packaging"),
         requirement("pyyaml"),

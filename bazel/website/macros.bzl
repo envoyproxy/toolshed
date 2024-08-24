@@ -32,6 +32,7 @@ def static_website(
         },
         output_path = "output",
         srcs = None,
+        url = "",
         visibility = ["//visibility:public"],
 ):
     name_html = "%s_html" % name
@@ -58,9 +59,13 @@ def static_website(
 
     tools = [generator]
 
-    srcs = [
+    extra_srcs = [
         name_sources,
     ] + sources
+
+    if url:
+        extra_srcs.append(url)
+        url = "export SITEURL=$$(cat $(location %s))" % url
 
     decompressor_args = ""
     if compressor:
@@ -83,6 +88,7 @@ def static_website(
         OUTPUT="%s"
         MAPPING="%s"
         EXCLUDES="%s"
+        %s
 
         tar "$${DECOMPRESS_ARGS}" -xf $$SOURCE
 
@@ -93,9 +99,9 @@ def static_website(
         $$GENERATOR "$$CONTENT"
 
         tar cfh $@ $$EXCLUDES -C "$$OUTPUT" .
-        """ % (name_sources, decompressor_args, generator, content_path, output_path, mapping_commands, exclude_args),
+        """ % (name_sources, decompressor_args, generator, content_path, output_path, mapping_commands, exclude_args, url),
         outs = [name_website_tarball],
-        srcs = srcs,
+        srcs = extra_srcs,
         tools = tools,
     )
 
