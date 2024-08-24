@@ -61,6 +61,7 @@ def static_website(
         name_sources,
     ] + sources
 
+    decompressor_args = ""
     if compressor:
         decompressor_args = "--use-compress-program=$(location %s)" % compressor
         tools += [compressor]
