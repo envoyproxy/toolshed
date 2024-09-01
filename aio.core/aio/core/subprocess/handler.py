@@ -3,7 +3,7 @@ import abc
 import logging
 import subprocess
 from functools import cached_property
-from typing import Any, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Sequence
 
 import abstracts
 
@@ -66,7 +66,7 @@ class ISubprocessHandler(
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def subprocess_args(self, *args: str) -> Tuple[Sequence[str], ...]:
+    def subprocess_args(self, *args: str) -> tuple[Sequence[str], ...]:
         """Derive the subprocess args, from init args and supplied args."""
         raise NotImplementedError
 
@@ -163,8 +163,8 @@ class ASubprocessHandler(
         """Run the subprocess and handle the results."""
         return self.handle_response(
             self.run_subprocess(
-                *self.subprocess_args(*args),
-                **self.subprocess_kwargs(**kwargs)))
+                *self.subprocess_args(*args, **kwargs),
+                **self.subprocess_kwargs(*args, **kwargs)))
 
     def run_subprocess(
             self,
@@ -172,8 +172,8 @@ class ASubprocessHandler(
             **kwargs) -> subprocess.CompletedProcess:
         return subprocess.run(*args, **kwargs)
 
-    def subprocess_args(self, *args) -> Tuple[Sequence[str], ...]:
+    def subprocess_args(self, *args, **kwargs) -> tuple[Sequence[str], ...]:
         return ((*self.args, *args), )
 
-    def subprocess_kwargs(self, **kwargs) -> Mapping:
+    def subprocess_kwargs(self, *args, **kwargs) -> Mapping:
         return {**self.kwargs, **kwargs}
