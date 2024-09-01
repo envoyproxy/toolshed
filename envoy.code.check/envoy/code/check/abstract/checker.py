@@ -263,6 +263,11 @@ class ACodeChecker(
         parser.add_argument("-x", "--excluding", action="append")
         parser.add_argument("-b", "--binary", action="append")
         parser.add_argument("-s", "--since")
+        parser.add_argument(
+            "--config",
+            default="./tools/code/config.yaml",
+            help=("specify the config path. "
+                  "Default './tools/code/config.yaml'."))
         parser.add_argument("--codeowners")
         parser.add_argument("--owners")
         parser.add_argument("--extensions_build_config")

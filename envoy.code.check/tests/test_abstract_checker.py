@@ -676,6 +676,37 @@ def test_abstract_checker_runtime_guards(iters, patches):
     assert "runtime_guards" in checker.__dict__
 
 
+def test_checker_add_arguments(patches):
+    checker = DummyCodeChecker()
+    patched = patches(
+        "checker.Checker.add_arguments",
+        prefix="envoy.code.check.abstract.checker")
+    parser = MagicMock()
+
+    with patched as (m_super, ):
+        assert not checker.add_arguments(parser)
+
+    assert (
+        m_super.call_args
+        == [(parser, ), {}])
+    assert (
+        parser.add_argument.call_args_list
+        == [[("-a", "--all_files"), dict(action="store_true")],
+            [("-m", "--matching"), dict(action="append")],
+            [("-x", "--excluding"), dict(action="append")],
+            [("-b", "--binary"), dict(action="append")],
+            [("-s", "--since", ), {}],
+            [("--config", ),
+             dict(
+                 default="./tools/code/config.yaml",
+                 help=("specify the config path. "
+                       "Default './tools/code/config.yaml'."))],
+            [("--codeowners", ), {}],
+            [("--owners", ), {}],
+            [("--extensions_build_config", ), {}],
+            [("--extensions_fuzzed_count", ), {}]])
+
+
 async def test_abstract_checker_check_changelogs(patches):
     checker = DummyCodeChecker()
     patched = patches(
