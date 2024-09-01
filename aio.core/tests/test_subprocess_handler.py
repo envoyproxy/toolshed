@@ -281,8 +281,8 @@ def test_subprocess_handler_run(iters, patches):
     kwargs = iters(dict)
 
     with patched as (m_handle, m_run, m_args, m_kwargs):
-        m_args.side_effect = lambda *la: la
-        m_kwargs.side_effect = lambda **kwa: kwa
+        m_args.side_effect = lambda *la, **kwa: la
+        m_kwargs.side_effect = lambda *la, **kwa: kwa
         assert (
             handler.run(*args, **kwargs)
             == m_handle.return_value)
@@ -295,10 +295,10 @@ def test_subprocess_handler_run(iters, patches):
         == [tuple(args), kwargs])
     assert (
         m_args.call_args
-        == [tuple(args), {}])
+        == [tuple(args), kwargs])
     assert (
         m_kwargs.call_args
-        == [(), kwargs])
+        == [tuple(args), kwargs])
 
 
 def test_subprocess_handler_run_subprocess(iters, patches):
