@@ -1,7 +1,11 @@
 
 import asyncio
+import pathlib
 from concurrent import futures
+from functools import cached_property
 from typing import Dict, List, Optional, Set
+
+import yaml
 
 import abstracts
 
@@ -21,6 +25,7 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
             directory: ADirectory,
             fix: bool = False,
             binaries: Optional[Dict[str, str]] = None,
+            config: Optional[pathlib.Path] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None,
             pool: Optional[futures.Executor] = None) -> None:
         self.directory = directory
@@ -28,10 +33,18 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
         self._loop = loop
         self._pool = pool
         self._binaries = binaries
+        self._config = config
 
     @property
     def binaries(self):
         return self._binaries
+
+    @cached_property
+    def config(self):
+        return (
+            yaml.safe_load(self._config.read_text())
+            if self._config
+            else {})
 
 
 @abstracts.implementer(interface.IFileCodeCheck)
