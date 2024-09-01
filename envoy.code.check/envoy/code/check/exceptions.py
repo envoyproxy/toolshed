@@ -4,5 +4,9 @@ class RunError(Exception):
     pass
 
 
-class ExtensionsConfigurationError(Exception):
+class ConfigurationError(Exception):
+    pass
+
+
+class ExtensionsConfigurationError(ConfigurationError):
     pass

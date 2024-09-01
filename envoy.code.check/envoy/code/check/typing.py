@@ -52,3 +52,4 @@ class ExtensionsSchemaDict(TypedDict):
 
 
 ConfiguredExtensionsDict = Dict[str, str]
+YAMLConfigDict = Dict[str, str | list | dict[str, 'YAMLConfigDict']]

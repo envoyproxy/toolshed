@@ -49,42 +49,13 @@ async def test_code_check_constructor(fix, binaries, pool, loop, config):
     assert code_check._binaries == binaries
     assert code_check.binaries == binaries
     assert "binaries" not in code_check.__dict__
-    assert code_check._config == config
+    assert code_check.config == config
     assert code_check._loop == loop
     assert code_check._pool == pool
 
     for iface_prop in ["checker_files", "problem_files"]:
         with pytest.raises(NotImplementedError):
             await getattr(code_check, iface_prop)
-
-
-@pytest.mark.parametrize("config", [None, "CONFIG"])
-def test_code_check_config(patches, config):
-    kwargs = {}
-    if config is not None:
-        kwargs["config"] = MagicMock()
-    code_check = DummyCodeCheck("DIRECTORY", **kwargs)
-    patched = patches(
-        "yaml",
-        prefix="envoy.code.check.abstract.base")
-
-    with patched as (m_yaml, ):
-        assert (
-            code_check.config
-            == ({}
-                if not config
-                else m_yaml.safe_load.return_value))
-
-    assert "config" in code_check.__dict__
-    if not config:
-        assert not m_yaml.safe_load.called
-        return
-    assert (
-        m_yaml.safe_load.call_args
-        == [(kwargs["config"].read_text.return_value, ), {}])
-    assert (
-        kwargs["config"].read_text.call_args
-        == [(), {}])
 
 
 @pytest.mark.parametrize(
