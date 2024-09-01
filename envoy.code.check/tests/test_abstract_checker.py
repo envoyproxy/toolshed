@@ -519,6 +519,82 @@ def test_abstract_checker_check_kwargs(patches):
     assert "check_kwargs" in checker.__dict__
 
 
+@pytest.mark.parametrize("config", [True, False])
+def test_code_check_config(patches, config):
+    checker = DummyCodeChecker()
+    patched = patches(
+        "yaml",
+        ("ACodeChecker.config_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+    config_path = MagicMock()
+
+    with patched as (m_yaml, m_path):
+        m_path.return_value = (
+            config_path
+            if config
+            else None)
+        assert (
+            checker.config
+            == ({}
+                if not config
+                else m_yaml.safe_load.return_value))
+
+    assert "config" in checker.__dict__
+    if not config:
+        assert not m_yaml.safe_load.called
+        return
+    assert (
+        m_yaml.safe_load.call_args
+        == [(config_path.read_text.return_value, ), {}])
+    assert (
+        config_path.read_text.call_args
+        == [(), {}])
+
+
+@pytest.mark.parametrize("config", [True, False])
+@pytest.mark.parametrize("exists", [True, False])
+def test_code_check_config_path(patches, config, exists):
+    checker = DummyCodeChecker()
+    patched = patches(
+        "pathlib",
+        ("ACodeChecker.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.checker")
+    _config = MagicMock()
+
+    with patched as (m_plib, m_args):
+        m_args.return_value.config = (
+            _config
+            if config
+            else None)
+        m_plib.Path.return_value.exists.return_value = exists
+        if config and not exists:
+            with pytest.raises(check.exceptions.ConfigurationError) as e:
+                checker.config_path
+        else:
+            assert (
+                checker.config_path
+                == (m_plib.Path.return_value
+                    if config
+                    else None))
+
+    assert "config_path" not in checker.__dict__
+    if not config:
+        assert not m_plib.Path.called
+        return
+    assert (
+        m_plib.Path.call_args
+        == [(m_args.return_value.config, ), {}])
+    assert (
+        m_plib.Path.return_value.exists.call_args
+        == [(), {}])
+    if not exists:
+        assert (
+            e.value.args[0]
+            == f"Config specified but not found: {m_plib.Path.return_value}")
+
+
 def test_abstract_checker_directory(patches):
     checker = DummyCodeChecker()
     patched = patches(

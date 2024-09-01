@@ -22,6 +22,7 @@ class ICodeCheck(metaclass=abstracts.Interface):
             directory: _directory.ADirectory,
             fix: bool = False,
             binaries: Optional[Dict[str, str]] = None,
+            config: Optional[typing.YAMLConfigDict] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None,
             pool: Optional[futures.Executor] = None) -> None:
         raise NotImplementedError

@@ -217,7 +217,7 @@ async def test_yamllint_checker_files(patches):
     yamllint = check.AYamllintCheck(directory)
     patched = patches(
         "set",
-        ("AYamllintCheck.config",
+        ("AYamllintCheck.yamllint_config",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.yamllint")
     files = AsyncMock(return_value=range(0, 20))
@@ -252,7 +252,7 @@ async def test_yamllint_checker_files(patches):
             check.AYamllintCheck.checker_files.cache_name))
 
 
-def test_yamllint_config(patches):
+def test_yamllint_yamllint_config(patches):
     yamllint = check.AYamllintCheck("DIRECTORY")
     patched = patches(
         "YamlLintConfig",
@@ -261,13 +261,13 @@ def test_yamllint_config(patches):
         prefix="envoy.code.check.abstract.yamllint")
 
     with patched as (m_config, m_config_path):
-        assert yamllint.config == m_config.return_value
+        assert yamllint.yamllint_config == m_config.return_value
 
     assert (
         m_config.call_args
         == [(), dict(file=m_config_path.return_value)])
 
-    assert "config" in yamllint.__dict__
+    assert "yamllint_config" in yamllint.__dict__
 
 
 def test_yamllint_config_path():
@@ -319,7 +319,7 @@ async def test_yamllint__problem_files(patches, files):
         "partial",
         "str",
         "AYamllintCheck.yamllint",
-        ("AYamllintCheck.config",
+        ("AYamllintCheck.yamllint_config",
          dict(new_callable=PropertyMock)),
         ("AYamllintCheck.files",
          dict(new_callable=PropertyMock)),

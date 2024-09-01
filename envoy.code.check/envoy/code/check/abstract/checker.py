@@ -7,6 +7,8 @@ import re
 from functools import cached_property
 from typing import Dict, Mapping, Optional, Pattern, Set, Type
 
+import yaml
+
 from yamllint.config import YamlLintConfigError  # type:ignore
 
 import abstracts
@@ -113,6 +115,23 @@ class ACodeChecker(
             binaries=self.binaries,
             loop=self.loop,
             pool=self.pool)
+
+    @cached_property
+    def config(self) -> typing.YAMLConfigDict:
+        return (
+            yaml.safe_load(self.config_path.read_text())
+            if self.config_path
+            else {})
+
+    @property
+    def config_path(self) -> Optional[pathlib.Path]:
+        if not self.args.config:
+            return None
+        path = pathlib.Path(self.args.config)
+        if not path.exists():
+            raise exceptions.ConfigurationError(
+                f"Config specified but not found: {path}")
+        return path
 
     @cached_property
     def directory(self) -> "_directory.ADirectory":

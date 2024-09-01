@@ -1,11 +1,7 @@
 
 import asyncio
-import pathlib
 from concurrent import futures
-from functools import cached_property
 from typing import Dict, List, Optional, Set
-
-import yaml
 
 import abstracts
 
@@ -14,7 +10,7 @@ from aio.core.directory import ADirectory
 from aio.core.functional import async_property
 
 from envoy.base import utils
-from envoy.code.check import interface
+from envoy.code.check import interface, typing
 
 
 @abstracts.implementer(event.IExecutive)
@@ -25,26 +21,19 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
             directory: ADirectory,
             fix: bool = False,
             binaries: Optional[Dict[str, str]] = None,
-            config: Optional[pathlib.Path] = None,
+            config: Optional[typing.YAMLConfigDict] = None,
             loop: Optional[asyncio.AbstractEventLoop] = None,
             pool: Optional[futures.Executor] = None) -> None:
         self.directory = directory
+        self.config = config
         self._fix = fix
         self._loop = loop
         self._pool = pool
         self._binaries = binaries
-        self._config = config
 
     @property
     def binaries(self):
         return self._binaries
-
-    @cached_property
-    def config(self):
-        return (
-            yaml.safe_load(self._config.read_text())
-            if self._config
-            else {})
 
 
 @abstracts.implementer(interface.IFileCodeCheck)

@@ -103,11 +103,11 @@ class AYamllintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
         return set(
             path for path
             in await self.directory.files
-            if (self.config.is_yaml_file(path)
-                and not self.config.is_file_ignored(path)))
+            if (self.yamllint_config.is_yaml_file(path)
+                and not self.yamllint_config.is_file_ignored(path)))
 
     @cached_property
-    def config(self) -> YamlLintConfig:
+    def yamllint_config(self) -> YamlLintConfig:
         return YamlLintConfig(file=self.config_path)
 
     @property
@@ -128,7 +128,7 @@ class AYamllintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
             partial(
                 self.yamllint,
                 str(self.directory.path),
-                self.config),
+                self.yamllint_config),
             *await self.files)
 
         async for batch in batches:
