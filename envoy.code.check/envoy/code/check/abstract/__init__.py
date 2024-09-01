@@ -1,5 +1,6 @@
 
 from .base import ACodeCheck, AFileCodeCheck, AProjectCodeCheck
+from .bazel import ABazelCheck
 from .changelog import (
     AChangelogCheck,
     AChangelogChangesChecker,
@@ -19,6 +20,7 @@ from .yamllint import AYamllintCheck
 from .yapf import AYapfCheck
 from . import (
     base,
+    bazel,
     checker,
     extensions,
     flake8,
@@ -32,6 +34,7 @@ from . import (
 
 __all__ = (
     "ABackticksCheck",
+    "ABazelCheck",
     "AChangelogChangesChecker",
     "AChangelogCheck",
     "AChangelogStatus",
@@ -50,6 +53,7 @@ __all__ = (
     "AYamllintCheck",
     "AYapfCheck",
     "base",
+    "bazel",
     "checker",
     "extensions",
     "flake8",

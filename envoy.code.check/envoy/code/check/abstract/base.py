@@ -1,11 +1,13 @@
 
 import asyncio
+import pathlib
+import shutil
 from concurrent import futures
 from typing import Dict, List, Optional, Set
 
 import abstracts
 
-from aio.core import event
+from aio.core import event, subprocess
 from aio.core.directory import ADirectory
 from aio.core.functional import async_property
 
@@ -34,6 +36,14 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
     @property
     def binaries(self):
         return self._binaries
+
+    def command_path(self, command_name: str) -> pathlib.Path:
+        if command_name in self.binaries:
+            return pathlib.Path(self.binaries[command_name]).absolute()
+        if command := shutil.which(command_name):
+            return pathlib.Path(command)
+        raise subprocess.exceptions.OSCommandError(
+            f"Unable to find {command_name} command")
 
 
 @abstracts.implementer(interface.IFileCodeCheck)

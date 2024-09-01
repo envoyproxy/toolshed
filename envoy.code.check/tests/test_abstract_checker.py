@@ -57,6 +57,10 @@ class DummyCodeChecker:
         return super().changelog_class
 
     @property
+    def bazel_class(self):
+        return super().bazel_class
+
+    @property
     def extensions_class(self):
         return super().extensions_class
 
@@ -116,10 +120,10 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         "checker.Checker.__init__",
         prefix="envoy.code.check.abstract.checker")
     iface_props = [
-        "extensions_class", "fs_directory_class", "flake8_class",
-        "git_directory_class", "glint_class", "gofmt_class", "project_class",
-        "runtime_guards_class", "shellcheck_class", "yapf_class",
-        "changelog_class", "yamllint_class"]
+        "bazel_class", "extensions_class", "fs_directory_class",
+        "flake8_class", "git_directory_class", "glint_class", "gofmt_class",
+        "project_class", "runtime_guards_class", "shellcheck_class",
+        "yapf_class", "changelog_class", "yamllint_class"]
 
     with patched as (m_super, ):
         m_super.return_value = None
@@ -137,7 +141,7 @@ def test_abstract_checker_constructor(patches, args, kwargs):
         == [tuple(args), kwargs])
     assert (
         checker.checks
-        == ("changelog",
+        == ("bazel", "changelog",
             "extensions_fuzzed", "extensions_metadata",
             "extensions_owners",
             "extensions_registered",

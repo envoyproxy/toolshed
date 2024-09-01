@@ -15,6 +15,7 @@ toolshed_library(
         "__init__.py",
         "abstract/__init__.py",
         "abstract/base.py",
+        "abstract/bazel.py",
         "abstract/changelog.py",
         "abstract/checker.py",
         "abstract/extensions.py",
@@ -30,6 +31,7 @@ toolshed_library(
         "cmd.py",
         "exceptions.py",
         "interface.py",
+        "shared.py",
         "typing.py",
     ],
 )
