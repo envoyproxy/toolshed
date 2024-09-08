@@ -60,6 +60,13 @@ def ci_profile(
             filter = """
             [.traceEvents[]
               | select(.cat? == "worker_time") as $jobs
+              | (if (.args["target_id"] | endswith("fuzz_test_lib")) then
+                   .args["target_id"][:-4]
+                 elif (.args["target_id"] | endswith("test_fuzz_lib")) then
+                   .args["target_id"][:-4]
+                 else
+                   .args["target_id"]
+                 end) as $targetID
               | (.args["process_wrapper.execution_statistics.resource_usage.maxrss"] // 0 | tonumber) as $maxMemory
               | ((.args["process_wrapper.execution_statistics.resource_usage.utime_sec"] // 0 | tonumber)
                   + (.args["process_wrapper.execution_statistics.resource_usage.utime_usec"] // 0 | tonumber) / 1e6) as $userCPUTime
@@ -69,7 +76,7 @@ def ci_profile(
               | ((.dur // 0) / 1e6) as $duration
               | ($totalCPUTime > $duration) as $multiCore
               | $jobs
-              | {target_id: .args["target_id"],
+              | {target_id: $targetID,
                  max_memory_kb: $maxMemory,
                  user_cpu_time_sec: $userCPUTime,
                  system_cpu_time_sec: $systemCPUTime,
@@ -305,7 +312,7 @@ def ci_changes(
                       ($pool): (
                           $idealValues - ($sotw[$pool] // [])
                           | to_entries
-                          | map(.value)
+                          | map(.value | select(startswith("//")))
                           | unique)
                     }
                   )
@@ -316,7 +323,7 @@ def ci_changes(
                      | .value as $sotwValues
                      | {
                        ($pool): (
-                           $sotwValues - (.ideal[$pool] // [])
+                           $sotwValues - ($ideal[$pool] // [])
                            | to_entries
                            | map(.value)
                            | unique)
