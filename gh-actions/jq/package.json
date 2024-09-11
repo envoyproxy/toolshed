@@ -22,8 +22,8 @@
   "scripts": {
     "build": "tsc --noEmit && ncc build jq.ts -o dist -m",
     "test": "tsc --noEmit && jest",
-    "lint": "eslint . --ext .ts",
-    "lint-fix": "eslint . --ext .ts --fix"
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
+    "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
   },
   "devDependencies": {
     "@types/jest": "^29.0.0",
