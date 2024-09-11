@@ -77,6 +77,8 @@ def ci_profile(
               | ($totalCPUTime > $duration) as $multiCore
               | $jobs
               | {target_id: $targetID,
+                 pool: .args["action_pool"],
+                 action_id: .args["action_id"],
                  max_memory_kb: $maxMemory,
                  user_cpu_time_sec: $userCPUTime,
                  system_cpu_time_sec: $systemCPUTime,
@@ -149,7 +151,6 @@ def ci_profile(
         | to_entries
         | sort_by(.value.duration_sec)
         | reverse
-        | .[0:10]
         | from_entries
         """,
     )
@@ -179,7 +180,6 @@ def ci_profile(
         | to_entries
         | sort_by(.value.max_memory_kb)
         | reverse
-        | .[0:10]
         | from_entries
         """,
     )
@@ -209,7 +209,6 @@ def ci_profile(
         | to_entries
         | sort_by(.value.total_cpu_time_sec)
         | reverse
-        | .[0:10]
         | from_entries
         """,
     )
