@@ -2,6 +2,7 @@
 from . import abstract, exceptions, typing
 from .abstract import (
     ABackticksCheck,
+    ABazelCheck,
     AChangelogChangesChecker,
     AChangelogCheck,
     AChangelogStatus,
@@ -20,6 +21,7 @@ from .abstract import (
     AYamllintCheck,
     AYapfCheck)
 from .checker import (
+    BazelCheck,
     ChangelogChangesChecker,
     ChangelogCheck,
     ChangelogStatus,
@@ -33,12 +35,13 @@ from .checker import (
     YamllintCheck,
     YapfCheck)
 from .cmd import run, main
-from . import checker, interface
+from . import checker, interface, shared
 
 
 __all__ = (
     "abstract",
     "ABackticksCheck",
+    "ABazelCheck",
     "AChangelogChangesChecker",
     "AChangelogCheck",
     "AChangelogStatus",
@@ -56,6 +59,7 @@ __all__ = (
     "AShellcheckCheck",
     "AYamllintCheck",
     "AYapfCheck",
+    "BazelCheck",
     "ChangelogChangesChecker",
     "ChangelogCheck",
     "ChangelogStatus",
@@ -69,9 +73,8 @@ __all__ = (
     "interface",
     "main",
     "run",
-    "main",
-    "run",
     "RuntimeGuardsCheck",
+    "shared",
     "ShellcheckCheck",
     "typing",
     "YamllintCheck",

@@ -51,6 +51,10 @@ class IProjectCodeCheck(ICodeCheck, metaclass=abstracts.Interface):
         raise NotImplementedError
 
 
+class IBazelCheck(IFileCodeCheck, metaclass=abstracts.Interface):
+    pass
+
+
 class IExtensionsCheck(metaclass=abstracts.Interface):
 
     def __init__(self, directory: _directory.ADirectory, **kwargs) -> None:

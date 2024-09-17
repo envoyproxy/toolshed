@@ -21,6 +21,11 @@ class Flake8Check(abstract.AFlake8Check):
     pass
 
 
+@abstracts.implementer(interface.IBazelCheck)
+class BazelCheck(abstract.ABazelCheck):
+    pass
+
+
 @abstracts.implementer(interface.IGlintCheck)
 class GlintCheck(abstract.AGlintCheck):
     pass
@@ -97,6 +102,10 @@ class ChangelogCheck(abstract.AChangelogCheck):
 
 @abstracts.implementer(interface.ICodeChecker)
 class CodeChecker(abstract.ACodeChecker):
+
+    @property
+    def bazel_class(self):
+        return BazelCheck
 
     @property
     def extensions_class(self):

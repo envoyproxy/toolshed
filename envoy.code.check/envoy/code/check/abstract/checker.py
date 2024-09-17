@@ -57,6 +57,7 @@ class ACodeChecker(
     """Code checker."""
 
     checks = (
+        "bazel",
         "changelog",
         "extensions_fuzzed",
         "extensions_metadata",
@@ -73,6 +74,19 @@ class ACodeChecker(
     @property
     def all_files(self) -> bool:
         return self.args.all_files
+
+    @cached_property
+    def bazel(self) -> "interface.IBazelCheck":
+        """Bazel checker."""
+        return self.bazel_class(
+            self.directory,
+            config=self.config,
+            **self.check_kwargs)
+
+    @property  # type:ignore
+    @abstracts.interfacemethod
+    def bazel_class(self) -> Type["interface.IBazelCheck"]:
+        raise NotImplementedError
 
     @cached_property
     def binaries(self) -> Dict[str, str]:
@@ -292,6 +306,10 @@ class ACodeChecker(
         parser.add_argument("--extensions_build_config")
         parser.add_argument("--extensions_fuzzed_count")
 
+    async def check_bazel(self) -> None:
+        """Check for bazel issues."""
+        await self._code_check(self.bazel)
+
     async def check_changelog(self):
         for changelog in self.changelog:
             if errors := await changelog.errors:
@@ -379,6 +397,13 @@ class ACodeChecker(
     async def check_yamllint(self) -> None:
         """Check for yamllint issues."""
         await self._code_check(self.yamllint)
+
+    @checker.preload(
+        when=["bazel"],
+        catches=[exceptions.ConfigurationError])
+    async def preload_bazel(self) -> None:
+        await self.bazel.problem_files
+        self.log.debug("Preloaded bazel")
 
     @checker.preload(
         when=["changelog"],
