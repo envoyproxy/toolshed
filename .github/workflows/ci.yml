@@ -30,6 +30,7 @@ jobs:
         path: ~/.cache/pants/setup
     - name: Run pants test
       run: |
+        ./pants version || :
         ls -alh .cache/pants/setup/
         ./pants --colors test ::
     - name: Archive code coverage results
