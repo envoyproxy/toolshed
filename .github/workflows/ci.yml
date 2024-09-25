@@ -31,7 +31,7 @@ jobs:
     - name: Run pants test
       run: |
         ./pants version || :
-        ls -alh ~/.cache/pants/setup/bootstrap-Linux-x86_64/2.14.1_py39/
+        ls -alh ~/.cache/pants/setup/bootstrap-Linux-x86_64/2.14.1_py39/bin/
         ./pants --colors test ::
     - name: Archive code coverage results
       uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874  # v4.4.0
