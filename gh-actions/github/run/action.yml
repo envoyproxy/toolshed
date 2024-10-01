@@ -42,19 +42,22 @@ inputs:
   output-path:
     type: string
     default:
+  report-name:
+    type: string
+    default: ci-report.json
   report-pre:
     type: string
     default: |
       - run: |
           echo "disk space at beginning of build:"
-          df -h
+          df -h > %{{ steps.paths.outputs.report }}/df-pre
         shell: bash
   report-post:
     type: string
     default: |
       - run: |
-          echo "disk space at end of build:"
-          df -h
+          # disk space at end of build
+          df -h > %{{ steps.paths.outputs.report }}/df-post
         shell: bash
   source:
     type: string
@@ -156,6 +159,9 @@ runs:
       if [[ "${#OUTPUT_DATA}" -ne 0 ]]; then
           mkdir "$OUTPUT_DATA"
       fi
+      TMP_REPORT=$(mktemp -d)
+      echo "TMP_REPORT=$TMP_REPORT" >> $GITHUB_ENV
+      echo "report=${TMP_REPORT}" >> $GITHUB_OUTPUT
       TMP_STDERR=$(mktemp)
       echo "TMP_STDERR=$TMP_STDERR" >> $GITHUB_ENV
       echo "stderr=${TMP_STDERR}" >> $GITHUB_OUTPUT
@@ -390,9 +396,32 @@ runs:
     with:
       steps: ${{ inputs.summary-post }}
       context: ${{ steps.upload-failed.outputs.value || steps.post-failed.outputs.value || steps.context.outputs.value }}
+
+  - run: |
+      json="{}"
+      while IFS= read -r file; do
+          filename=$(basename "$file")
+          json=$(jq --arg key "$filename" --rawfile value "$file" '. + {($key): $value}' <<< "$json")
+      done < <(find "$TMP_REPORT" -type f)
+      if [[ "$json" != "{}" ]]; then
+          REPORT_OUTPUT="${TMP_REPORT}/report.json"
+          echo "$json" > $REPORT_OUTPUT
+          echo "path=${REPORT_OUTPUT}" >> $GITHUB_OUTPUT
+      fi
+    id: report
+    shell: bash
+    if: ${{ always() }}
+  - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874  # v4.4.0
+    name: Upload report
+    if: ${{ always() && steps.report.outputs.path }}
+    with:
+      name: ${{ inputs.report-name }}
+      path: ${{ steps.report.outputs.path }}
+
   - run: |
       rm -rf "$TMP_STDOUT"
       rm -rf "$TMP_STDERR"
+      rm -rf "$TMP_REPORT"
       if [[ -n "$TMP_ENTRYPOINT" && -e "$TMP_ENTRYPOINT" ]]; then
           rm -rf "$TMP_ENTRYPOINT"
       fi
