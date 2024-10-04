@@ -41,7 +41,7 @@ runs:
     shell: bash
   - name: Check cache
     id: cache-restore-initial
-    uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+    uses: actions/cache/restore@2cdf405574d6ef1f33a1d12acccd3ae82f47b3f2  # v4.1.0
     with:
       lookup-only: true
       path: ${{ inputs.path_tmp }}
@@ -63,7 +63,7 @@ runs:
   - name: Check cache
     id: cache-restore
     if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
-    uses: actions/cache/restore@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+    uses: actions/cache/restore@2cdf405574d6ef1f33a1d12acccd3ae82f47b3f2  # v4.1.0
     with:
       lookup-only: true
       path: ${{ inputs.path_tmp }}
@@ -92,7 +92,7 @@ runs:
 
   - if: ${{ steps.restore.outputs.save == 'true' }}
     name: Save cache
-    uses: actions/cache/save@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9  # v4.0.2
+    uses: actions/cache/save@2cdf405574d6ef1f33a1d12acccd3ae82f47b3f2  # v4.1.0
     with:
       path: ${{ inputs.path_tmp }}
       key: ${{ inputs.key }}
