@@ -370,7 +370,7 @@ runs:
     with:
       steps: ${{ inputs.report-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874  # v4.4.0
+  - uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097  # v4.4.2
     name: Upload artefacts
     if: ${{ inputs.upload-name && inputs.upload-path && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
@@ -411,7 +411,7 @@ runs:
     id: report
     shell: bash
     if: ${{ always() }}
-  - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874  # v4.4.0
+  - uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097  # v4.4.2
     name: Upload report
     if: ${{ always() && steps.report.outputs.path }}
     with:
