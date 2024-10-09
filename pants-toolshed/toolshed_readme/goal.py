@@ -46,6 +46,7 @@ class ReadmeSubsystem(GoalSubsystem):
 
 class Readme(Goal):
     subsystem_cls = ReadmeSubsystem
+    environment_behavior = Goal.EnvironmentBehavior.LOCAL_ONLY
 
 
 class ReadmeGoal:
@@ -122,7 +123,7 @@ class ReadmeGoal:
         """Get a list ReadmeSnippetRequests for these targets."""
         return [
             targets[i].readme_request_type(
-                targets[i].readmeee_fieldset_type.create(targets[i]))
+                targets[i].readme_fieldset_type.create(targets[i]))
             for i, readme_target in enumerate(targets_set)]
 
     def handle(
@@ -176,7 +177,6 @@ async def readme(
         union_membership: UnionMembership) -> Readme:
     readme_rule = ReadmeGoal(targets, readme_subsystem, union_membership)
     readme_data: ReadmeDataDict = {}
-
     for template_tag, rule_targets in readme_rule.targets.items():
         readme_ruleset = await MultiGet(
             Get(Targets,

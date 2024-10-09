@@ -32,6 +32,7 @@ orjson
 packaging>=23.0
 protobuf
 pygments>=2.11.1
+pytest>=7.2
 pytest-abstracts>=0.0.4
 pytest-iters>=0.0.3
 pytest-patches
@@ -61,3 +62,13 @@ yamllint
 yapf
 yarl>=1.7.2
 zstandard
+
+mypy-abstracts
+types-aiofiles
+types-docutils==0.20.0.20240309
+types-frozendict
+types-orjson
+types-protobuf
+types-pygments
+types-pytz
+types-pyyaml

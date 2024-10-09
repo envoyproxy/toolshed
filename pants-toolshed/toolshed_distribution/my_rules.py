@@ -4,8 +4,8 @@ import pathlib
 from functools import cached_property
 from typing import Dict
 
-from pants.backend.python.goals.setup_py import SetupKwargs
-from pants.backend.python.goals.setup_py import SetupKwargsRequest
+from pants.backend.python.util_rules.package_dists import (
+    SetupKwargs, SetupKwargsRequest)
 from pants.engine.rules import rule
 
 from pants.engine.rules import collect_rules

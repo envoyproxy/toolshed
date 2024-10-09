@@ -10,6 +10,7 @@ toolshed_library(
         "//deps:reqs#packaging",
         "//deps:reqs#yamllint",
         "//deps:reqs#yapf",
+        "//deps:reqs#types-pyyaml",
     ],
     sources=[
         "__init__.py",

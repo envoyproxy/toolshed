@@ -8,6 +8,7 @@ toolshed_library(
         "//deps:reqs#aiofiles",
         "//deps:reqs#envoy.github.abstract",
         "//deps:reqs#envoy.base.utils",
+        "//deps:reqs#types-aiofiles",
     ],
     tags=["abstract-types"],
     sources=[
