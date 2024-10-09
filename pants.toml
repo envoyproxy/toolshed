@@ -6,10 +6,8 @@ backend_packages = [
     "pants.backend.python.lint.docformatter",
     "pants.backend.python.lint.flake8",
     "pants.backend.python.typecheck.mypy",
-    "toolshed_readme",
-    "toolshed_distribution"]
-#    "toolshed_readme"]
-#   "toolshed_readme.package"]
+    "toolshed_distribution",
+    "toolshed_readme"]
 pants_ignore = ["not", "/bazel/"]
 build_file_prelude_globs = [
   "pants-toolshed/macros.py",
@@ -26,7 +24,6 @@ deps = "deps/deps.lock"
 flake8 = "deps/flake8/flake8.lock"
 pytest = "deps/pytest/pytest.lock"
 mypy = "deps/mypy/mypy.lock"
-jinja2 = "jinja2.lock"
 
 [test]
 use_coverage = true
