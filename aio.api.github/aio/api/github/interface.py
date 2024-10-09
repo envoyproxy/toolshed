@@ -215,6 +215,17 @@ class IGithubRepo(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
+    def getitem(self, *args, **kwargs) -> Any:
+        """Call the `gidgethub.getitem` api for a repo."""
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
+    def getiter(self, *args, **kwargs) -> IGithubIterator:
+        """Return a `GithubIterator` wrapping `gidgethub.getiter` for a
+        repo."""
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
     async def highest_release(
             self,
             since: Optional[datetime] = None) -> Optional["IGithubRelease"]:
