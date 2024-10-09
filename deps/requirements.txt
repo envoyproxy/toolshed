@@ -1,6 +1,6 @@
 abstracts>=0.0.12
 aio.api.bazel>=0.0.2
-aio.api.github>=0.2.6
+aio.api.github>=0.2.7
 aio.api.nist>=0.0.4
 aio.core>=0.10.3
 aio.run.checker>=0.5.7
