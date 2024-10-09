@@ -63,7 +63,6 @@ yapf
 yarl>=1.7.2
 zstandard
 
-mypy-abstracts
 types-aiofiles
 types-docutils==0.20.0.20240309
 types-frozendict
