@@ -16,6 +16,7 @@ toolshed_library(
         "//deps:reqs#sphinxcontrib-httpdomain",
         "//deps:reqs#sphinxcontrib-serializinghtml",
         "//deps:reqs#sphinxext-rediraffe",
+        "//deps:reqs#types-pygments",
         "./sphinx_tabs",
     ],
     sources=[

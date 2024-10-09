@@ -16,6 +16,8 @@ toolshed_library(
         "//deps:reqs#python-gnupg",
         "//deps:reqs#pyyaml",
         "//deps:reqs#trycast",
+        "//deps:reqs#types-protobuf",
+        "//deps:reqs#types-pytz",
         "//deps:reqs#zstandard",
     ],
     sources=[

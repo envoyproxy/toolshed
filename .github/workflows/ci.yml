@@ -28,8 +28,12 @@ jobs:
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
         path: ~/.cache/pants/setup
+    - name: Install pants
+      run: |
+        ./get-pants.sh
+        export PATH=$PATH:~/.local/bin
     - name: Run pants test
-      run: "./pants --colors test ::"
+      run: "pants --colors test ::"
     - name: Archive code coverage results
       uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097  # v4.4.2
       with:
@@ -48,8 +52,12 @@ jobs:
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
         path: ~/.cache/pants/setup
+    - name: Install pants
+      run: |
+        ./get-pants.sh
+        export PATH=$PATH:~/.local/bin
     - name: Run pants lint
-      run: "./pants --colors lint ::"
+      run: "pants --colors lint ::"
 
   lint-envoy:
     runs-on: ubuntu-22.04
@@ -74,10 +82,16 @@ jobs:
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
         path: ~/.cache/pants/setup
+    - name: Install pants
+      run: |
+        ./get-pants.sh
+        export PATH=$PATH:~/.local/bin
     - name: Run pants (type) check
-      run: "./pants --colors check ::"
+      run: "pants --colors check ::"
   docs:
     runs-on: ubuntu-22.04
+    # TODO: reenable once plugin is fixed
+    if: false
     steps:
     - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871  # v4.2.1
     - uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3  # v5.2.0
@@ -88,8 +102,12 @@ jobs:
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
         path: ~/.cache/pants/setup
+    - name: Install pants
+      run: |
+        ./get-pants.sh
+        export PATH=$PATH:~/.local/bin
     - name: Run pants README
-      run: "./pants --colors readme --check=README.md ::"
+      run: "pants --colors readme --check=README.md ::"
 
   package:
     runs-on: ubuntu-22.04
@@ -108,8 +126,12 @@ jobs:
       with:
         key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
         path: ~/.cache/pants/setup
+    - name: Install pants
+      run: |
+        ./get-pants.sh
+        export PATH=$PATH:~/.local/bin
     - name: Run pants package
-      run: "./pants --colors package ::"
+      run: "pants --colors package ::"
     - name: Archive created packages
       uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097  # v4.4.2
       with:

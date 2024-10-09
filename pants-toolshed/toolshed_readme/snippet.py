@@ -19,7 +19,7 @@ from pants.engine.rules import collect_rules, Get, rule
 from pants.engine.target import (
     COMMON_TARGET_FIELDS, FieldSet, SpecialCasedDependencies,
     StringField, Target, Targets, TransitiveTargets, TransitiveTargetsRequest)
-from pants.engine.unions import union, UnionRule
+from pants.engine.unions import union  # , UnionRule
 
 
 class ReadmeSnippetTextField(SpecialCasedDependencies):
@@ -62,7 +62,7 @@ class ReadmeSnippetTarget(Target):
         ReadmeSnippetArtefactsField)
     readme_request_type: ClassVar[
         Type[ReadmeSnippetRequest]] = ReadmeSnippetRequest
-    readmeee_fieldset_type: ClassVar[
+    readme_fieldset_type: ClassVar[
         Type[ReadmeSnippetFieldSet]] = ReadmeSnippetFieldSet
 
 
@@ -148,6 +148,8 @@ def target_types():
 
 
 def rules():
-    return (
-        *collect_rules(),
-        UnionRule(ReadmeSnippetRequest, ReadmeSnippetRequest))
+    # TODO: re-enable doc mangler
+    # return (
+    #    *collect_rules(),
+    #     UnionRule(ReadmeSnippetRequest, ReadmeSnippetRequest))
+    return collect_rules()

@@ -1,6 +1,6 @@
 """toolshed_distribution plugin."""
 
-from pants.backend.python.goals.setup_py import SetupKwargsRequest
+from pants.backend.python.util_rules.package_dists import SetupKwargsRequest
 from pants.backend.python.target_types import PythonDistribution
 from pants.engine.target import Target
 
