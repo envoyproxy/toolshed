@@ -308,9 +308,12 @@ async def test_runs_workflows_url(iters, filters):
 
 
 @pytest.mark.parametrize("include_workflow", [True, False])
-async def test_runs_fetch_check(patches, include_workflow):
+@pytest.mark.parametrize("has_external_id", [True, False])
+async def test_runs_fetch_check(patches, include_workflow, has_external_id):
     repo = MagicMock()
     repo.getitem = AsyncMock()
+    repo.getitem.return_value.get = MagicMock(
+        return_value=has_external_id)
     runs = report.abstract.ACIRuns(repo)
     patched = patches(
         "int",
@@ -328,15 +331,24 @@ async def test_runs_fetch_check(patches, include_workflow):
         assert (
             await runs.fetch_check(commit, event, info)
             == ((commit, event, info)
-                if include_workflow
+                if (has_external_id and include_workflow)
                 else None))
 
     assert (
         repo.getitem.call_args
         == [(f"check-runs/{info.__getitem__.return_value}", ), {}])
     assert (
+        repo.getitem.return_value.get.call_args
+        == [("external_id", ), {}])
+    assert (
         info.__getitem__.call_args
         == [("check-id", ), {}])
+    if not has_external_id:
+        assert not m_int.called
+        assert not repo.getitem.return_value.__getitem__.called
+        assert not info.pop.called
+        assert not info.__setitem__.called
+        return
     assert (
         m_int.call_args
         == [(repo.getitem.return_value.__getitem__.return_value, ), {}])
