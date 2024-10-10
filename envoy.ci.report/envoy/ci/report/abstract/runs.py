@@ -132,7 +132,10 @@ class ACIRuns(metaclass=abstracts.Abstraction):
             event: str,
             info: dict) -> tuple[str, str, dict] | None:
         check_run = await self.repo.getitem(f"check-runs/{info['check-id']}")
-        if int(check_run["external_id"]) not in await self.workflows:
+        not_found = (
+            not check_run.get("external_id")
+            or int(check_run["external_id"]) not in await self.workflows)
+        if not_found:
             return None
         del info["action"]
         info.pop("advice", None)
