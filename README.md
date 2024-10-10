@@ -166,6 +166,22 @@ pypi: https://pypi.org/project/envoy.base.utils
 ---
 
 
+#### [envoy.ci.report](envoy.ci.report)
+
+version: 0.0.1.dev0
+
+pypi: https://pypi.org/project/envoy.ci.report
+
+##### requirements:
+
+- [abstracts](https://pypi.org/project/abstracts) >=0.0.12
+- [aio.api.github](https://pypi.org/project/aio.api.github) >=0.2.7
+- [aio.core](https://pypi.org/project/aio.core) >=0.10.3
+- [aio.run.runner](https://pypi.org/project/aio.run.runner) >=0.3.3
+
+---
+
+
 #### [envoy.code.check](envoy.code.check)
 
 version: 0.5.14.dev0
