@@ -3,7 +3,7 @@ import logging
 import pathlib
 from datetime import datetime
 from functools import cached_property, partial
-from typing import Any, Dict, Optional, Type
+from typing import Any, Type
 
 import gidgethub
 
@@ -61,7 +61,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
 
     def commits(
             self,
-            since: Optional[datetime] = None) -> "interface.IGithubIterator":
+            since: datetime | None = None) -> "interface.IGithubIterator":
         query = "commits"
         if since is not None:
             query = f"{query}?since={utils.dt_to_js_isoformat(since)}"
@@ -74,14 +74,14 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             commitish: str,
             tag_name: str,
             dry_run: bool = False,
-            body: Optional[str] = None,
-            latest: Optional[bool] = False,
-            generate_release_notes: Optional[bool] = False) -> (
+            body: str | None = None,
+            latest: bool | None = False,
+            generate_release_notes: bool | None = False) -> (
                 "interface.IGithubRelease"):
         if await self.tag_exists(tag_name) and not dry_run:
             raise exceptions.TagExistsError(
                 f"Cannot create tag, already exists: {tag_name}")
-        url_vars: Dict[str, bool | str] = dict(
+        url_vars: dict[str, bool | str] = dict(
             tag_name=tag_name,
             name=tag_name,
             target_commitish=commitish,
@@ -113,8 +113,8 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
 
     async def highest_release(
             self,
-            since: Optional[datetime] = None) -> Optional[
-                "interface.IGithubRelease"]:
+            since: datetime | None = None) -> (
+                interface.IGithubRelease | None):
         highest_release = None
 
         async for release in self.releases():
@@ -140,13 +140,13 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             inflate=partial(entity, self),
             **kwargs)
 
-    async def patch(self, query: str, data: Optional[Dict] = None) -> Any:
+    async def patch(self, query: str, data: dict | None = None) -> Any:
         return await self.github.patch(self.github_endpoint(query), data=data)
 
     async def post(
             self,
             query: str,
-            data: Optional[Dict] = None, **kwargs) -> Any:
+            data: dict | None = None, **kwargs) -> Any:
         return await self.github.post(
             self.github_endpoint(query),
             data=data,
@@ -155,7 +155,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
     async def release(
             self,
             name: str,
-            data: Optional[dict] = None,
+            data: dict | None = None,
             dry_run: bool = False) -> "interface.IGithubRelease":
         if data:
             return await self.github.release_class.create(self, data, dry_run)

@@ -3,8 +3,8 @@ import abc
 import re
 from functools import cached_property
 from typing import (
-    Any, AsyncGenerator, Dict,
-    Optional, Pattern, Tuple, Type)
+    Any, AsyncGenerator,
+    Pattern, Type)
 
 import abstracts
 
@@ -37,7 +37,7 @@ class AGithubTrackedIssue(metaclass=abstracts.Abstraction):
         return self.issues.closing_tpl
 
     @property
-    def key(self) -> Optional[str]:
+    def key(self) -> str | None:
         return self.parsed.get("key")
 
     @property
@@ -45,11 +45,11 @@ class AGithubTrackedIssue(metaclass=abstracts.Abstraction):
         return self.issue.number
 
     @property
-    def parse_vars(self) -> Tuple[str, ...]:
+    def parse_vars(self) -> tuple[str, ...]:
         return ("key", )
 
     @cached_property
-    def parsed(self) -> Dict[str, str]:
+    def parsed(self) -> dict[str, str]:
         parsed = self.title_re.search(self.title)
         return (
             {k: parsed.group(i + 1)
@@ -89,8 +89,8 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
     def __init__(
             self,
             github: interface.IGithubAPI,
-            issue_author: Optional[str] = None,
-            repo_name: Optional[str] = None) -> None:
+            issue_author: str | None = None,
+            repo_name: str | None = None) -> None:
         self._github = github
         self._issue_author = issue_author
         self._repo_name = repo_name
@@ -133,8 +133,8 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
         raise NotImplementedError
 
     @async_property(cache=True)
-    async def issues(self) -> Dict[str, interface.IGithubTrackedIssue]:
-        issues: Dict[str, interface.IGithubTrackedIssue] = {}
+    async def issues(self) -> dict[str, interface.IGithubTrackedIssue]:
+        issues: dict[str, interface.IGithubTrackedIssue] = {}
         for issue in await self.open_issues:
             if self.track_issue(issues, issue):
                 issues[issue.key] = issue
@@ -147,11 +147,11 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def labels(self) -> Tuple[str, ...]:
+    def labels(self) -> tuple[str, ...]:
         raise NotImplementedError
 
     @async_property(cache=True)
-    async def missing_labels(self) -> Tuple[str, ...]:
+    async def missing_labels(self) -> tuple[str, ...]:
         found = []
         async for label in self.repo.labels:
             if label.name in self.labels:
@@ -165,7 +165,7 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
             if label not in found)
 
     @async_property(cache=True)
-    async def open_issues(self) -> Tuple[interface.IGithubTrackedIssue, ...]:
+    async def open_issues(self) -> tuple[interface.IGithubTrackedIssue, ...]:
         issues = []
         async for issue in self:
             issues.append(issue)
@@ -202,7 +202,7 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
         raise NotImplementedError
 
     @async_property(cache=True)
-    async def titles(self) -> Tuple[str, ...]:
+    async def titles(self) -> tuple[str, ...]:
         return tuple(issue.title for issue in await self.open_issues)
 
     async def create(
@@ -230,7 +230,7 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
 
     def track_issue(
             self,
-            issues: Dict[str, interface.IGithubTrackedIssue],
+            issues: dict[str, interface.IGithubTrackedIssue],
             issue: interface.IGithubTrackedIssue) -> bool:
         return issue.key not in issues
 
@@ -247,5 +247,5 @@ class AGithubIssuesTracker(metaclass=abstracts.Abstraction):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def tracked_issues(self) -> Dict[str, interface.IGithubTrackedIssues]:
+    def tracked_issues(self) -> dict[str, interface.IGithubTrackedIssues]:
         raise NotImplementedError

@@ -1,5 +1,5 @@
 
-from typing import Any, AsyncGenerator, Dict, Mapping, Tuple
+from typing import Any, AsyncGenerator, AsyncIterable, Mapping, TypeVar
 
 import gidgethub.abc
 import gidgethub.sansio
@@ -10,9 +10,11 @@ from aio.core.functional import async_property
 
 from aio.api.github import interface
 
+T = TypeVar('T')
+
 
 @abstracts.implementer(interface.IGithubIterator)
-class AGithubIterator(metaclass=abstracts.Abstraction):
+class AGithubIterator(AsyncIterable[T], metaclass=abstracts.Abstraction):
     """Async iterator to wrap gidgethub API and provide `total_count`."""
 
     def __init__(
@@ -27,14 +29,14 @@ class AGithubIterator(metaclass=abstracts.Abstraction):
         self.kwargs = kwargs
         self._inflate = kwargs.pop("inflate", None)
 
-    async def __aiter__(self) -> AsyncGenerator[Any, None]:
+    async def __aiter__(self) -> AsyncGenerator[T, None]:
         aiter = self.api.getiter(
             self.query, *self.args, **self.kwargs)
         async for item in aiter:
             yield self.inflate(item)
 
     @property
-    def count_request_headers(self) -> Dict[str, str]:
+    def count_request_headers(self) -> dict[str, str]:
         """Request headers for API call to get `total_count`."""
         request_headers = gidgethub.sansio.create_headers(
             self.api.requester,
@@ -60,7 +62,7 @@ class AGithubIterator(metaclass=abstracts.Abstraction):
             await self.api._request(
                 "GET", self.count_url, self.count_request_headers, b''))
 
-    def count_from_data(self, data: Dict) -> int:
+    def count_from_data(self, data: dict) -> int:
         """Get `total_count` from the data."""
         return (
             int(data["total_count"])
@@ -79,7 +81,7 @@ class AGithubIterator(metaclass=abstracts.Abstraction):
 
     def count_from_response(
             self,
-            response: Tuple[int, Mapping[str, str], bytes]) -> int:
+            response: tuple[int, Mapping[str, str], bytes]) -> int:
         """Get total count from the headers or data."""
 
         (data,
