@@ -1,5 +1,5 @@
 
-from unittest.mock import MagicMock, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
@@ -125,7 +125,7 @@ async def test_cleansup(iters, raises):
 
     assert run.run.__wrapped__.__cleansup__ is True
 
-    run.cleanup = MagicMock()
+    run.cleanup = AsyncMock()
     if raises:
         with pytest.raises(Exception):
             await run.run(*args, **kwargs)
