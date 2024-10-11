@@ -7,7 +7,7 @@ import os
 import textwrap
 from typing import (
     Any, Awaitable, Callable,
-    Iterable, Iterator, List, Optional, Sized, Type, Union)
+    Iterable, Iterator, Sized, Type)
 
 from trycast import isassignable  # type:ignore
 
@@ -42,7 +42,7 @@ def maybe_awaitable(result: Any) -> Awaitable:
         else asyncio.sleep(0, result=result))
 
 
-def maybe_coro(fun: Union[Callable, Awaitable]) -> Callable[..., Awaitable]:
+def maybe_coro(fun: Callable | Awaitable) -> Callable[..., Awaitable]:
     """Make any callable into a coroutine function.
 
     ```python
@@ -98,7 +98,7 @@ def typed(tocast: Type, value: Any) -> Any:
 
 
 # TODO: add async versions of the `batch` utils
-def batches(items: Iterable, batch_size: int) -> Iterator[List]:
+def batches(items: Iterable, batch_size: int) -> Iterator[list]:
     """Yield batches of items according to batch size."""
     batch = []
     for item in items:
@@ -112,8 +112,8 @@ def batches(items: Iterable, batch_size: int) -> Iterator[List]:
 
 def batch_jobs(
         jobs: Sized,
-        max_batch_size: Optional[int] = None,
-        min_batch_size: Optional[int] = None) -> Iterator[List]:
+        max_batch_size: int | None = None,
+        min_batch_size: int | None = None) -> Iterator[list]:
     """Batch jobs between processors, optionally setting a max batch size."""
     bad_jobs_type = (
         not isinstance(jobs, Iterable)

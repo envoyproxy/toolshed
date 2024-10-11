@@ -2,7 +2,6 @@
 import os
 import pathlib
 from functools import cached_property
-from typing import Optional, Union
 
 import abstracts
 
@@ -26,11 +25,11 @@ class IDirectoryContext(metaclass=abstracts.Interface):
 
 @abstracts.implementer(IDirectoryContext)
 class ADirectoryContext(metaclass=abstracts.Abstraction):
-    _path: Optional[Union[str, os.PathLike]] = None
+    _path: str | os.PathLike | None = None
 
     def __init__(
             self,
-            path: Union[str, os.PathLike]) -> None:
+            path: str | os.PathLike) -> None:
         self._path = path
 
     @cached_property

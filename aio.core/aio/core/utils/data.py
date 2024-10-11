@@ -2,7 +2,7 @@
 import json
 import pathlib
 import tarfile
-from typing import Any, Optional, Type, Union
+from typing import Any, Type
 
 import yaml
 
@@ -25,8 +25,8 @@ def ellipsize(text: str, max_len: int) -> str:
 
 
 def extract(
-        path: Union[pathlib.Path, str],
-        *tarballs: Union[pathlib.Path, str]) -> pathlib.Path:
+        path: pathlib.Path | str,
+        *tarballs: pathlib.Path | str) -> pathlib.Path:
     if not tarballs:
         raise utils.ExtractError(
             f"No tarballs specified for extraction to {path}")
@@ -40,8 +40,8 @@ def extract(
 
 
 def from_json(
-        path: Union[pathlib.Path, str],
-        type: Optional[Type] = None) -> Any:
+        path: pathlib.Path | str,
+        type: Type | None = None) -> Any:
     """Returns the loaded python object from a JSON file given by `path`"""
     data = json.loads(pathlib.Path(path).read_text())
     return (
@@ -51,8 +51,8 @@ def from_json(
 
 
 def from_yaml(
-        path: Union[pathlib.Path, str],
-        type: Optional[Type] = None) -> Any:
+        path: pathlib.Path | str,
+        type: Type | None = None) -> Any:
     """Returns the loaded python object from a yaml file given by `path`"""
     data = yaml.safe_load(pathlib.Path(path).read_text())
     return (
@@ -71,7 +71,7 @@ def is_sha(text: str) -> bool:
     return True
 
 
-def is_tarlike(path: Union[pathlib.Path, str]) -> bool:
+def is_tarlike(path: pathlib.Path | str) -> bool:
     """Returns a bool based on whether a file looks like a tar file depending
     on its file extension.
 
@@ -82,8 +82,8 @@ def is_tarlike(path: Union[pathlib.Path, str]) -> bool:
 
 
 def to_yaml(
-        data: Union[dict, list, str, int],
-        path: Union[pathlib.Path, str]) -> pathlib.Path:
+        data: dict | list | str | int,
+        path: pathlib.Path | str) -> pathlib.Path:
     """For given `data` dumps as yaml to provided `path`.
 
     Returns `path`

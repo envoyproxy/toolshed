@@ -7,8 +7,8 @@ import subprocess as subprocess
 from concurrent import futures
 from functools import cached_property, partial
 from typing import (
-    AsyncIterator, Dict, Iterable, List, Mapping, Optional,
-    Pattern, Set, Tuple, Type, Union)
+    AsyncIterator, Iterable, Mapping,
+    Pattern, Type)
 
 import abstracts
 
@@ -42,13 +42,13 @@ class ADirectoryFileFinder(
     def __init__(
             self,
             path: str,
-            path_matcher: Optional[Pattern[str]] = None,
-            exclude_matcher:  Optional[Pattern[str]] = None) -> None:
+            path_matcher: Pattern[str] | None = None,
+            exclude_matcher:  Pattern[str] | None = None) -> None:
         _subprocess.ASubprocessHandler.__init__(self, path)
         self.path_matcher = path_matcher
         self.exclude_matcher = exclude_matcher
 
-    def handle(self, response: subprocess.CompletedProcess) -> Set[str]:
+    def handle(self, response: subprocess.CompletedProcess) -> set[str]:
         return set(
             path
             for path
@@ -60,7 +60,7 @@ class ADirectoryFileFinder(
 
     def handle_error(
             self,
-            response: subprocess.CompletedProcess) -> Dict[str, List[str]]:
+            response: subprocess.CompletedProcess) -> dict[str, list[str]]:
         # TODO: Handle errors in directory classes
         return super().handle_error(response)
 
@@ -79,8 +79,8 @@ class AGitDirectoryFileFinder(
     def __init__(
             self,
             path: str,
-            path_matcher: Optional[Pattern[str]] = None,
-            exclude_matcher:  Optional[Pattern[str]] = None,
+            path_matcher: Pattern[str] | None = None,
+            exclude_matcher:  Pattern[str] | None = None,
             match_binaries: bool = False,
             match_all_files: bool = False) -> None:
         self.match_binaries = match_binaries
@@ -105,12 +105,12 @@ class AGitDirectoryFileFinder(
                 files.append(filename)
         return files
 
-    def _get_file(self, line: str) -> Optional[str]:
+    def _get_file(self, line: str) -> str | None:
         eol, name = self._parse_line(line)
         if eol and (self.match_binaries or eol not in ["-text", "none"]):
             return name
 
-    def _parse_line(self, line: str) -> Tuple[Optional[str], Optional[str]]:
+    def _parse_line(self, line: str) -> tuple[str | None, str | None]:
         matched = self.matcher.match(line)
         return (
             matched.groups()
@@ -138,14 +138,14 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
-            path: Union[str, pathlib.Path],
-            exclude: Optional[Iterable[str]] = None,
-            exclude_dirs: Optional[Iterable[str]] = None,
-            path_matcher: Optional[Pattern[str]] = None,
-            exclude_matcher: Optional[Pattern[str]] = None,
-            text_only: Optional[bool] = True,
-            loop: Optional[asyncio.AbstractEventLoop] = None,
-            pool: Optional[futures.Executor] = None) -> None:
+            path: str | pathlib.Path,
+            exclude: Iterable[str] | None = None,
+            exclude_dirs: Iterable[str] | None = None,
+            path_matcher: Pattern[str] | None = None,
+            exclude_matcher: Pattern[str] | None = None,
+            text_only: bool | None = True,
+            loop: asyncio.AbstractEventLoop | None = None,
+            pool: futures.Executor | None = None) -> None:
         self._path = path
         self.path_matcher = path_matcher
         self.exclude_matcher = exclude_matcher
@@ -160,8 +160,8 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         return str(self.path.resolve())
 
     @async_property(cache=True)
-    async def files(self) -> Set[str]:
-        """Set of relative file paths associated with this directory."""
+    async def files(self) -> set[str]:
+        """set of relative file paths associated with this directory."""
         return await self.get_files()
 
     @cached_property
@@ -182,7 +182,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         raise NotImplementedError
 
     @cached_property
-    def grep_args(self) -> Tuple[str, ...]:
+    def grep_args(self) -> tuple[str, ...]:
         """Default args to pass when calling `grep`."""
         return (
             *self.grep_command_args,
@@ -192,7 +192,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
             *self.grep_exclusion_args)
 
     @property
-    def grep_command_args(self) -> Tuple[str, ...]:
+    def grep_command_args(self) -> tuple[str, ...]:
         """Path args for the `grep` command."""
         if grep_command := shutil.which("grep"):
             return grep_command, "-r"
@@ -200,7 +200,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
             "Unable to find `grep` command")
 
     @property
-    def grep_exclusion_args(self) -> Tuple[str, ...]:
+    def grep_exclusion_args(self) -> tuple[str, ...]:
         """Grep flags to exclude paths and directories."""
         return (
             tuple(
@@ -240,13 +240,13 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
         init_kwargs.update(kwargs)
         return self.__class__(**init_kwargs)
 
-    async def get_files(self) -> Set[str]:
+    async def get_files(self) -> set[str]:
         return await self.grep(["-l"], "")
 
     def grep(
             self,
             args: Iterable,
-            target: Union[str, Iterable[str]]) -> AwaitableGenerator:
+            target: str | Iterable[str]) -> AwaitableGenerator:
         return AwaitableGenerator(
             self._grep(args, target),
             collector=async_set)
@@ -254,9 +254,9 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     def parse_grep_args(
             self,
             args: Iterable[str],
-            target: Union[
-                str,
-                Iterable[str]]) -> Tuple[Tuple[str, ...], Iterable[str]]:
+            target: (
+                str
+                | Iterable[str])) -> tuple[tuple[str, ...], Iterable[str]]:
         """Parse `grep` args with the defaults to pass to the `grep`
         command."""
         return (
@@ -268,7 +268,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
 
     def _batched_grep(
             self,
-            grep_args: Tuple[str, ...],
+            grep_args: tuple[str, ...],
             paths: Iterable[str]) -> AwaitableGenerator:
         return self.execute_in_batches(
             partial(self.finder, *grep_args),
@@ -279,7 +279,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     async def _grep(
             self,
             args: Iterable[str],
-            target: Union[str, Iterable[str]]) -> AsyncIterator[str]:
+            target: str | Iterable[str]) -> AsyncIterator[str]:
         """Run `grep` in the directory."""
         if not isinstance(target, str) and not target:
             return
@@ -301,7 +301,7 @@ class AGitDirectory(ADirectory):
     def find_git_deleted_files(
             cls,
             finder: AGitDirectoryFileFinder,
-            git_command: str) -> Set[str]:
+            git_command: str) -> set[str]:
         return finder(
             git_command,
             "ls-files",
@@ -312,7 +312,7 @@ class AGitDirectory(ADirectory):
             cls,
             finder: AGitDirectoryFileFinder,
             git_command: str,
-            since: str) -> Set[str]:
+            since: str) -> set[str]:
         return finder(
             git_command,
             "diff",
@@ -325,7 +325,7 @@ class AGitDirectory(ADirectory):
     def find_git_untracked_files(
             cls,
             finder: AGitDirectoryFileFinder,
-            git_command: str) -> Set[str]:
+            git_command: str) -> set[str]:
         return finder(
             git_command,
             "ls-files",
@@ -340,7 +340,7 @@ class AGitDirectory(ADirectory):
         super().__init__(*args, **kwargs)
 
     @async_property(cache=True)
-    async def changed_files(self) -> Set[str]:
+    async def changed_files(self) -> set[str]:
         """Files that have changed since `self.changed`, which can be the name
         of a git object (branch etc) or a commit hash."""
         return await self.execute(
@@ -350,7 +350,7 @@ class AGitDirectory(ADirectory):
             self.changed)
 
     @async_property(cache=True)
-    async def deleted_files(self) -> Set[str]:
+    async def deleted_files(self) -> set[str]:
         """Files that have changed since `self.changed`, which can be the name
         of a git object (branch etc) or a commit hash."""
         return await self.execute(
@@ -359,7 +359,7 @@ class AGitDirectory(ADirectory):
             self.git_command)
 
     @async_property(cache=True)
-    async def files(self) -> Set[str]:
+    async def files(self) -> set[str]:
         """Files that have changed."""
         if not self.changed:
             return await self.get_files()
@@ -394,7 +394,7 @@ class AGitDirectory(ADirectory):
             "Unable to find the `git` command")
 
     @property
-    def grep_command_args(self) -> Tuple[str, ...]:
+    def grep_command_args(self) -> tuple[str, ...]:
         return self.git_command, "grep", "--cached"
 
     @property
@@ -408,7 +408,7 @@ class AGitDirectory(ADirectory):
             self.finder,
             self.git_command)
 
-    async def get_files(self) -> Set[str]:
+    async def get_files(self) -> set[str]:
         return (
             await super().get_files() - await self.deleted_files
             if not self.untracked

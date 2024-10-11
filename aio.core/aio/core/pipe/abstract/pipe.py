@@ -3,7 +3,7 @@ import argparse
 import asyncio
 import sys
 from functools import cached_property
-from typing import Any, Awaitable, Callable, Optional, TextIO, Tuple
+from typing import Any, Awaitable, Callable, TextIO
 
 import abstracts
 
@@ -43,7 +43,7 @@ class AStdinStdoutProcessor(metaclass=abstracts.Abstraction):
                 Awaitable[interface.IProcessProtocol]],
             stdin: TextIO = sys.stdin,
             stdout: TextIO = sys.stdout,
-            log: Optional[Callable[[str], None]] = None) -> None:
+            log: Callable[[str], None] | None = None) -> None:
         self._protocol = protocol
         self.stdin = stdin
         self.stdout = stdout
@@ -58,7 +58,7 @@ class AStdinStdoutProcessor(metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def connection(
-            self) -> Tuple[
+            self) -> tuple[
                 asyncio.StreamReader,
                 asyncio.StreamWriter]:
         await self.loop.connect_read_pipe(
@@ -138,7 +138,7 @@ class AStdinStdoutProcessor(metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def stream_transport(
-            self) -> Tuple[
+            self) -> tuple[
                 asyncio.WriteTransport,
                 asyncio.streams.FlowControlMixin]:
         return await self.loop.connect_write_pipe(
