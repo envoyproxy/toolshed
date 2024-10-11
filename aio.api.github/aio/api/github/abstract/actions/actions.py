@@ -1,6 +1,5 @@
 
 from functools import cached_property
-from typing import Optional
 
 import abstracts
 
@@ -58,7 +57,7 @@ class AGithubWorkflows(metaclass=abstracts.Abstraction):
             app_id: str,
             installation_id: str,
             key: str,
-            data: Optional[dict] = None) -> None:
+            data: dict | None = None) -> None:
         access_token_response = await get_installation_access_token(
             self.github.api,
             installation_id=installation_id,

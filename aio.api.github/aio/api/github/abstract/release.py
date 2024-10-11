@@ -3,7 +3,7 @@ import logging
 import pathlib
 from datetime import datetime
 from functools import cached_property
-from typing import AsyncIterator, Callable, Dict, Optional, Type
+from typing import AsyncIterator, Callable, Type
 
 from packaging import version
 
@@ -38,7 +38,7 @@ class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
         return cls(repo, data)
 
     @cached_property
-    def __data__(self) -> Dict[str, Callable]:
+    def __data__(self) -> dict[str, Callable]:
         return dict(
             created_at=utils.dt_from_js_isoformat,
             published_at=utils.dt_from_js_isoformat)
@@ -76,7 +76,7 @@ class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
         return self.data["upload_url"]
 
     @cached_property
-    def version(self) -> Optional[version.Version]:
+    def version(self) -> version.Version | None:
         try:
             return version.parse(self.tag_version)
         except version.InvalidVersion:

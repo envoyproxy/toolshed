@@ -1,10 +1,12 @@
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import (
-    Any, AsyncGenerator, Dict,
-    Optional, Pattern, Tuple, Type)
+    Any, AsyncGenerator,
+    Pattern, Type)
 
-from packaging import version
+import packaging
 
 import gidgethub.abc
 
@@ -40,7 +42,7 @@ class IGithubRelease(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def version(self) -> Optional[version.Version]:
+    def version(self) -> packaging.version.Version | None:
         raise NotImplementedError
 
 
@@ -202,7 +204,7 @@ class IGithubRepo(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def commits(self, since: Optional[datetime] = None) -> IGithubIterator:
+    def commits(self, since: datetime | None = None) -> IGithubIterator:
         """Iterate commits for this repo."""
         raise NotImplementedError
 
@@ -210,7 +212,7 @@ class IGithubRepo(metaclass=abstracts.Interface):
     async def create_release(
             self,
             commitish: str,
-            name: str) -> Dict[str, str | Dict]:
+            name: str) -> dict[str, str | dict]:
         """Create a release for this repo."""
         raise NotImplementedError
 
@@ -228,7 +230,7 @@ class IGithubRepo(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     async def highest_release(
             self,
-            since: Optional[datetime] = None) -> Optional["IGithubRelease"]:
+            since: datetime | None = None) -> IGithubRelease | None:
         """Release with the highest semantic version, optionally `since` a
         previous release date.
 
@@ -237,12 +239,12 @@ class IGithubRepo(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def patch(self, query: str, data: Optional[Dict] = None) -> Any:
+    async def patch(self, query: str, data: dict | None = None) -> Any:
         """Call the `gidgethub.patch` api for this repo."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def post(self, query: str, data: Optional[Dict] = None) -> Any:
+    async def post(self, query: str, data: dict | None = None) -> Any:
         """Call the `gidgethub.post` api for this repo."""
         raise NotImplementedError
 
@@ -339,7 +341,7 @@ class IGithubIssues(metaclass=abstracts.Interface):
     def search(
             self,
             query: str,
-            repo: Optional[IGithubRepo] = None) -> IGithubIterator:
+            repo: IGithubRepo | None = None) -> IGithubIterator:
         """Search for issues."""
         raise NotImplementedError
 
@@ -367,7 +369,7 @@ class IGithubTrackedIssue(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def key(self) -> Optional[str]:
+    def key(self) -> str | None:
         """Issue key."""
         raise NotImplementedError
 
@@ -379,7 +381,7 @@ class IGithubTrackedIssue(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def parsed(self) -> Dict[str, str]:
+    def parsed(self) -> dict[str, str]:
         """Parsed vars from issue title."""
         raise NotImplementedError
 
@@ -420,8 +422,8 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
     def __init__(
             self,
             github: IGithubAPI,
-            issue_author: Optional[str] = None,
-            repo_name: Optional[str] = None) -> None:
+            issue_author: str | None = None,
+            repo_name: str | None = None) -> None:
         raise NotImplementedError
 
     @abstracts.interfacemethod
@@ -469,7 +471,7 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    async def issues(self) -> Dict[str, IGithubTrackedIssue]:
+    async def issues(self) -> dict[str, IGithubTrackedIssue]:
         """Dictionary of current tracked issues."""
         raise NotImplementedError
 
@@ -481,19 +483,19 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def labels(self) -> Tuple[str, ...]:
+    def labels(self) -> tuple[str, ...]:
         """Labels to mark issues with."""
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    async def missing_labels(self) -> Tuple[str, ...]:
+    async def missing_labels(self) -> tuple[str, ...]:
         """Missing Github issue labels."""
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    async def open_issues(self) -> Tuple[IGithubTrackedIssue, ...]:
+    async def open_issues(self) -> tuple[IGithubTrackedIssue, ...]:
         """All current open, matching issues."""
         raise NotImplementedError
 
@@ -523,8 +525,8 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    async def titles(self) -> Tuple[str, ...]:
-        """Tuple of current matching issue titles."""
+    async def titles(self) -> tuple[str, ...]:
+        """tuple of current matching issue titles."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
@@ -550,7 +552,7 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     async def track_issue(
             self,
-            issues: Dict[str, IGithubTrackedIssue],
+            issues: dict[str, IGithubTrackedIssue],
             issue: IGithubTrackedIssue) -> bool:
         """Determine whether to add a matched issue to the tracked issues."""
         raise NotImplementedError
@@ -566,7 +568,7 @@ class IGithubIssuesTracker(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def tracked_issues(self) -> Dict[str, IGithubTrackedIssues]:
+    def tracked_issues(self) -> dict[str, IGithubTrackedIssues]:
         raise NotImplementedError
 
     @abstracts.interfacemethod

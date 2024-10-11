@@ -1,7 +1,7 @@
 
 import urllib
 from functools import cached_property, partial
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable
 
 import gidgethub
 
@@ -59,7 +59,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
     def __init__(
             self,
             github: interface.IGithubAPI,
-            repo: Optional[interface.IGithubRepo] = None,
+            repo: interface.IGithubRepo | None = None,
             filter: str = "") -> None:
         self._github = github
         self.repo = repo
@@ -97,7 +97,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
 
     def inflater(
             self,
-            repo: Optional[interface.IGithubRepo] = None) -> Callable:
+            repo: interface.IGithubRepo | None = None) -> Callable:
         """Return default or custom callable to inflate a `GithubIssue`."""
         if not (repo := repo or self.repo):
             return self._inflate
@@ -106,8 +106,9 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
     def search(
             self,
             query: str,
-            repo: Optional[
-                interface.IGithubRepo] = None) -> interface.IGithubIterator:
+            repo: (
+                interface.IGithubRepo
+                | None) = None) -> interface.IGithubIterator:
         return self.github.getiter(
             self.search_query(query),
             inflate=self.inflater(repo))
@@ -117,7 +118,7 @@ class AGithubIssues(metaclass=abstracts.Abstraction):
         q = urllib.parse.quote(f"{self.filter}{query}")
         return f"/search/issues?q={q}"
 
-    def _inflate(self, result: Dict) -> interface.IGithubIssue:
+    def _inflate(self, result: dict) -> interface.IGithubIssue:
         """Inflate an issue, finding the repo from the issue url."""
         return self.github.issue_class(
             self.github.repo_from_url(result["repository_url"]),

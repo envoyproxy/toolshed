@@ -1,8 +1,8 @@
 
-from typing import Optional, TypedDict
+from typing import TypedDict
 
 
 class AssetUploadResultDict(TypedDict, total=False):
     name: str
     url: str
-    error: Optional[str]
+    error: str | None
