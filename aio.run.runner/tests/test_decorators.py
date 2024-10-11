@@ -1,5 +1,5 @@
 
-from unittest.mock import AsyncMock, MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
@@ -33,14 +33,7 @@ def _failing_runner(errors):
             self.raises = raises
 
         @runner.catches(errors)
-        def run(self, *args, **kwargs):
-            result = self._runner(*args, **kwargs)
-            if self.raises:
-                raise self.raises("AN ERROR OCCURRED")
-            return result
-
-        @runner.catches(errors)
-        async def run_async(self, *args, **kwargs):
+        async def run(self, *args, **kwargs):
             result = self._runner(*args, **kwargs)
             if self.raises:
                 raise self.raises("AN ERROR OCCURRED")
@@ -49,7 +42,6 @@ def _failing_runner(errors):
     return DummyFailingRunner
 
 
-@pytest.mark.parametrize("async_fun", [True, False])
 @pytest.mark.parametrize(
     "errors",
     [Error1, (Error1, Error2)])
@@ -62,7 +54,7 @@ def _failing_runner(errors):
 @pytest.mark.parametrize(
     "kwargs",
     [{}, dict(key1="VAL1", key2="VAL2")])
-async def test_catches(errors, async_fun, raises, args, kwargs):
+async def test_catches(errors, raises, args, kwargs):
     run = _failing_runner(errors)(raises)
     should_fail = (
         raises
@@ -72,19 +64,14 @@ async def test_catches(errors, async_fun, raises, args, kwargs):
                 and raises in errors)))
 
     assert run.run.__wrapped__.__catches__ == errors
-    assert run.run_async.__wrapped__.__catches__ == errors
 
     if should_fail:
         result = 1
         with pytest.raises(raises):
-            (run.run(*args, **kwargs)
-             if not async_fun
-             else await run.run_async(*args, **kwargs))
+            await run.run(*args, **kwargs)
     else:
         result = (
-            run.run(*args, **kwargs)
-            if not async_fun
-            else await run.run_async(*args, **kwargs))
+            await run.run(*args, **kwargs))
 
     assert (
         run._runner.call_args
@@ -109,7 +96,7 @@ async def test_catches(errors, async_fun, raises, args, kwargs):
         assert result == run._runner.return_value
 
 
-def _cleanup_runner(async_fun, raises):
+def _cleanup_runner(raises):
 
     class DummyCleanupRunner:
         # this dummy runner calls the _runner mock
@@ -121,14 +108,7 @@ def _cleanup_runner(async_fun, raises):
         _runner = MagicMock()
 
         @runner.cleansup
-        def run(self, *args, **kwargs):
-            result = self._runner(*args, **kwargs)
-            if raises:
-                raise Exception("AN ERROR OCCURRED")
-            return result
-
-        @runner.cleansup
-        async def run_async(self, *args, **kwargs):
+        async def run(self, *args, **kwargs):
             result = self._runner(*args, **kwargs)
             if raises:
                 raise Exception("AN ERROR OCCURRED")
@@ -137,34 +117,22 @@ def _cleanup_runner(async_fun, raises):
     return DummyCleanupRunner()
 
 
-@pytest.mark.parametrize("async_fun", [True, False])
 @pytest.mark.parametrize("raises", [True, False])
-async def test_cleansup(iters, async_fun, raises):
-    run = _cleanup_runner(async_fun, raises)
+async def test_cleansup(iters, raises):
+    run = _cleanup_runner(raises)
     args = iters(count=3)
     kwargs = iters(dict, count=3)
 
     assert run.run.__wrapped__.__cleansup__ is True
-    assert run.run_async.__wrapped__.__cleansup__ is True
 
-    if async_fun:
-        run.cleanup = AsyncMock()
-        if raises:
-            with pytest.raises(Exception):
-                await run.run_async(*args, **kwargs)
-        else:
-            assert (
-                await run.run_async(*args, **kwargs)
-                == run._runner.return_value)
+    run.cleanup = MagicMock()
+    if raises:
+        with pytest.raises(Exception):
+            await run.run(*args, **kwargs)
     else:
-        run.cleanup = MagicMock()
-        if raises:
-            with pytest.raises(Exception):
-                run.run(*args, **kwargs)
-        else:
-            assert (
-                run.run(*args, **kwargs)
-                == run._runner.return_value)
+        assert (
+            await run.run(*args, **kwargs)
+            == run._runner.return_value)
 
     assert (
         run._runner.call_args
