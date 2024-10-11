@@ -50,11 +50,11 @@ def cleansup(fun) -> Callable:
     """
 
     @wraps(fun)
-    def wrapped(self, *args, **kwargs) -> int | None:
+    async def wrapped(self, *args, **kwargs) -> int | None:
         try:
-            return fun(self, *args, **kwargs)
+            return await fun(self, *args, **kwargs)
         finally:
-            self.cleanup()
+            await self.cleanup()
 
     # mypy doesnt trust `@wraps` to give back a `__wrapped__` object so we
     # need to code defensively here
