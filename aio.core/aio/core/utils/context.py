@@ -1,11 +1,11 @@
 
 import contextlib
 import warnings as _warnings
-from typing import Any, Iterable, Iterator, Optional
+from typing import Any, Iterable, Iterator
 
 
 class Captured:
-    result: Optional[Any] = None
+    result: Any = None
     warnings: Iterable[_warnings.WarningMessage] = ()
 
     def __str__(self) -> str:

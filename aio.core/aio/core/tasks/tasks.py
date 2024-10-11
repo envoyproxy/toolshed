@@ -5,8 +5,7 @@ import types
 from functools import cached_property
 from typing import (
     Any, AsyncIterable, AsyncIterator, Awaitable, Callable,
-    Iterable, Iterator, List,
-    Optional, Union)
+    Iterable, Iterator)
 
 from aio.core.functional import async_property, AwaitableGenerator
 
@@ -88,18 +87,18 @@ class Concurrent:
 
     def __init__(
             self,
-            coros: Union[
-                types.AsyncGeneratorType,
-                AsyncIterable[Awaitable],
-                AsyncIterator[Awaitable],
-                types.GeneratorType,
-                Iterator[Awaitable],
-                Iterable[Awaitable]],
-            yield_exceptions: Optional[bool] = False,
-            limit: Optional[int] = None):
+            coros: (
+                types.AsyncGeneratorType
+                | AsyncIterable[Awaitable]
+                | AsyncIterator[Awaitable]
+                | types.GeneratorType
+                | Iterator[Awaitable]
+                | Iterable[Awaitable]),
+            yield_exceptions: bool | None = False,
+            limit: int | None = None):
         self._coros = coros
         self._limit = limit
-        self._running: List[asyncio.Task] = []
+        self._running: list[asyncio.Task] = []
         self.yield_exceptions = yield_exceptions
 
     def __aiter__(self) -> AsyncIterator:
@@ -141,7 +140,7 @@ class Concurrent:
 
     @async_property
     async def coros(self) -> AsyncIterator[
-            Union[ConcurrentIteratorError, Awaitable]]:
+            ConcurrentIteratorError | Awaitable]:
         """An async iterator of the provided coroutines."""
         coros = self.iter_coros()
         try:
@@ -201,7 +200,7 @@ class Concurrent:
         return asyncio.Queue()
 
     @cached_property
-    def running_tasks(self) -> List[asyncio.Task]:
+    def running_tasks(self) -> list[asyncio.Task]:
         """Currently running asyncio tasks."""
         return self._running
 
@@ -299,7 +298,7 @@ class Concurrent:
         self.running_tasks.remove(task)
 
     async def iter_coros(self) -> AsyncIterator[
-            Union[ConcurrentIteratorError, Awaitable]]:
+            ConcurrentIteratorError | Awaitable]:
         """Iterate provided coros either synchronously or asynchronously,
         yielding the awaitables asynchoronously."""
         try:
@@ -318,7 +317,7 @@ class Concurrent:
     async def on_task_complete(
             self,
             result: Any,
-            decrement: Optional[bool] = True) -> None:
+            decrement: bool | None = True) -> None:
         """Output the result, release the sem lock, decrement the running
         count, and notify output queue if complete."""
         if self.closed:
@@ -353,7 +352,7 @@ class Concurrent:
                 raise error
             yield result
 
-    def raisable(self, result: Any) -> Optional[Exception]:
+    def raisable(self, result: Any) -> Exception | None:
         """Check a result type and whether it should raise and return mangled
         error to ensure traceback from wrapped error."""
         should_error = (
@@ -465,8 +464,8 @@ def concurrent(*args, **kwargs) -> AwaitableGenerator:
 async def inflate(
         iterable: Iterable,
         cb: Callable[[Any], Iterable[Awaitable]],
-        yield_exceptions: Optional[bool] = None,
-        limit: Optional[int] = None) -> AsyncIterable[Any]:
+        yield_exceptions: bool | None = None,
+        limit: int | None = None) -> AsyncIterable[Any]:
     """Inflate async data for an iterable of objects.
 
     The provided callback function should return an iterable of awaitables.

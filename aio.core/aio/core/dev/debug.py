@@ -4,7 +4,7 @@ import logging as _logging
 import os
 import time
 from functools import cached_property, partial
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Iterator
 
 
 logger = _logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class ADebugLogging:
 
     def __init__(
             self,
-            fun: Optional[Callable] = None,
+            fun: Callable | None = None,
             *args,
             **kwargs) -> None:
         self.__wrapped__ = fun
@@ -23,7 +23,7 @@ class ADebugLogging:
         self._format_result = kwargs.pop("format_result", None)
         self._show_cpu = kwargs.pop("show_cpu", None)
 
-    def __call__(self, *args, **kwargs) -> Optional[Any]:
+    def __call__(self, *args, **kwargs) -> Any:
         if self.__wrapped__:
             if inspect.isasyncgenfunction(self.__wrapped__):
                 return self.fun_async_gen(*args, **kwargs)
@@ -32,7 +32,7 @@ class ADebugLogging:
             elif inspect.isgeneratorfunction(self.__wrapped__):
                 return self.fun_gen(*args, **kwargs)
             return self.fun(*args, **kwargs)
-        fun: Optional[Callable] = args[0] if args else None
+        fun: Callable | None = args[0] if args else None
         self.__wrapped__ = fun
         self.__doc__ = getattr(fun, '__doc__')
         return self
@@ -66,7 +66,7 @@ class ADebugLogging:
             return self._log
         return logger
 
-    def format_result(self, instance) -> Optional[Callable]:
+    def format_result(self, instance) -> Callable | None:
         if not self._format_result:
             return None
         if isinstance(self._format_result, str):
@@ -74,7 +74,7 @@ class ADebugLogging:
                 return getattr(instance, self._format_result[5:])
         return self._format_result
 
-    def fun(self, *args, **kwargs) -> Optional[Any]:
+    def fun(self, *args, **kwargs) -> Any:
         if not callable(self.__wrapped__):
             return None
         return self.log_debug_complete(

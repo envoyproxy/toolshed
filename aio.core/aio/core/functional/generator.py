@@ -1,12 +1,16 @@
 
 from typing import (
     Any, AsyncIterable, AsyncIterator, Awaitable,
-    Callable, Coroutine, Dict, Generator, Iterable, Optional, Union)
+    Callable, cast, Generator, TypeVar)
 
 from aio.core import functional
 
 
-class AwaitableGenerator:
+T = TypeVar('T')
+C = TypeVar('C', bound=Awaitable)
+
+
+class AwaitableGenerator(Awaitable[C], AsyncIterable[T]):
     """Wrap an asynchronous generator as optionally awaitable.
 
     For example, you may have a low level async function that generates
@@ -45,43 +49,35 @@ class AwaitableGenerator:
 
     def __init__(
             self,
-            generator: AsyncIterable,
-            collector: Optional[Callable[
-                ...,
-                Coroutine[
-                    AsyncIterable,
-                    None,
-                    Iterable]]] = None,
+            generator: AsyncIterable[T],
+            collector: Callable[..., Awaitable[C]] | None = None,
             iterator: Any = None,
-            predicate: Optional[
-                Union[
-                    Callable[[Any], bool],
-                    Awaitable[bool]]] = None,
-            result: Optional[
-                Callable[[Any], Any]] = None) -> None:
+            predicate: Callable[[T], bool] | Awaitable[bool] | None = None,
+            result: Callable[[T], Any] | None = None) -> None:
         self.generator = generator
         self.collector = collector or functional.async_list
         self.iterator = iterator or functional.async_iterator
         self.predicate = predicate
         self.result = result
 
-    async def __aiter__(self) -> AsyncIterator:
+    async def __aiter__(self) -> AsyncIterator[T]:
         async for item in self.iterable:
             yield item
 
-    def __await__(self) -> Generator:
+    def __await__(self) -> Generator[Any, None, C]:
         return self.awaitable.__await__()
 
     @property
-    def awaitable(self) -> Awaitable:
-        return self.collector(self.generator, **self.iter_kwargs)
+    def awaitable(self) -> Awaitable[C]:
+        result = self.collector(self.generator, **self.iter_kwargs)
+        return cast(Awaitable[C], result)
 
     @property
-    def iterable(self) -> AsyncIterator:
+    def iterable(self) -> AsyncIterator[T]:
         return self.iterator(self.generator, **self.iter_kwargs)
 
     @property
-    def iter_kwargs(self) -> Dict:
+    def iter_kwargs(self) -> dict:
         return dict(
             predicate=self.predicate,
             result=self.result)

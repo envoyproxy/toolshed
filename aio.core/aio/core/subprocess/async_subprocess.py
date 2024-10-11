@@ -3,7 +3,7 @@ import subprocess
 from concurrent.futures import (
     Executor, ProcessPoolExecutor, ThreadPoolExecutor)
 from functools import partial
-from typing import AsyncGenerator, Iterable, Optional
+from typing import AsyncGenerator, Iterable
 
 
 from aio.core import functional
@@ -64,8 +64,8 @@ class AsyncSubprocess:
     async def run(
             cls,
             *args,
-            loop: Optional[asyncio.AbstractEventLoop] = None,
-            executor: Optional[Executor] = None,
+            loop: asyncio.AbstractEventLoop | None = None,
+            executor: Executor | None = None,
             **kwargs) -> subprocess.CompletedProcess:
         """This is an asyncio wrapper for `subprocess.run`
 

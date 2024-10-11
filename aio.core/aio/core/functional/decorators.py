@@ -5,7 +5,7 @@
 import inspect
 import logging
 from functools import cached_property
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable
 
 from aio.core import event
 from aio.core.dev import debug
@@ -30,7 +30,7 @@ class async_property:  # noqa: N801
 
     # If the decorator is called with `kwargs` then `fun` is `None`
     # and instead `__call__` is triggered with `fun`
-    def __init__(self, fun: Optional[Callable] = None, cache: bool = False):
+    def __init__(self, fun: Callable | None = None, cache: bool = False):
         self.cache = cache
         self._fun = fun
         self.name = getattr(fun, "__name__", None)
@@ -60,7 +60,7 @@ class async_property:  # noqa: N801
         return self.async_result(instance)
 
     @cached_property
-    def loaders(self) -> Dict[str, event.Loader]:
+    def loaders(self) -> dict[str, event.Loader]:
         return {}
 
     def fun(self, *args, **kwargs):
@@ -103,7 +103,7 @@ class async_property:  # noqa: N801
             raise NoCache
         return self.get_prop_cache(instance)[self.name]
 
-    def get_loader(self, instance: Any) -> Optional[event.Loader]:
+    def get_loader(self, instance: Any) -> event.Loader | None:
         try:
             hash(instance)
         except TypeError:

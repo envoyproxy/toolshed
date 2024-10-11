@@ -6,6 +6,9 @@ toolshed_library(
         "//deps:reqs#pytz",
         "//deps:reqs#pyyaml",
         "//deps:reqs#trycast",
+        "//deps:reqs#types-orjson",
+        "//deps:reqs#types-pytz",
+        "//deps:reqs#types-pyyaml",
     ],
     sources=[
         "__init__.py",

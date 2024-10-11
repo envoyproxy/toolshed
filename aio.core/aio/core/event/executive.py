@@ -1,6 +1,6 @@
 
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import abstracts
 
@@ -26,9 +26,9 @@ class IExecutive(event.IReactive, metaclass=abstracts.Interface):
             self,
             executable: Callable,
             *args,
-            concurrency: Optional[int] = None,
-            min_batch_size: Optional[int] = None,
-            max_batch_size: Optional[int] = None,
+            concurrency: int | None = None,
+            min_batch_size: int | None = None,
+            max_batch_size: int | None = None,
             **kwargs) -> functional.AwaitableGenerator:
         """Execute a command in a process pool."""
         raise NotImplementedError
@@ -54,9 +54,9 @@ class AExecutive(metaclass=abstracts.Abstraction):
             self,
             executable: Callable,
             *args,
-            concurrency: Optional[int] = None,
-            min_batch_size: Optional[int] = None,
-            max_batch_size: Optional[int] = None,
+            concurrency: int | None = None,
+            min_batch_size: int | None = None,
+            max_batch_size: int | None = None,
             **kwargs) -> functional.AwaitableGenerator:
         return tasks.concurrent(
             (self.execute(

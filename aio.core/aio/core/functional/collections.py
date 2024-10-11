@@ -1,7 +1,7 @@
 
 from typing import (
     Any, AsyncGenerator, AsyncIterable, Awaitable, Callable,
-    Dict, Iterator, List, Mapping, Optional, Set, Tuple, Type, Union)
+    Iterator, Mapping, Type)
 
 from aio.core.functional import exceptions
 from .utils import maybe_coro, typed
@@ -9,11 +9,11 @@ from .utils import maybe_coro, typed
 
 async def async_iterator(
         iterable: AsyncGenerator | AsyncIterable,
-        predicate: Optional[
-            Union[
-                Callable[[Any], bool],
-                Awaitable[bool]]] = None,
-        result: Optional[Callable[[Any], Any]] = None) -> AsyncGenerator:
+        predicate: (
+            Callable[[Any], bool]
+            | Awaitable[bool]
+            | None) = None,
+        result: Callable[[Any], Any] | None = None) -> AsyncGenerator:
     """Iterate results of an async generator, yielding mutated results based on
     predicate."""
     result = maybe_coro(
@@ -30,12 +30,12 @@ async def async_iterator(
 
 async def async_list(
         gen: AsyncGenerator | AsyncIterable,
-        filter: Optional[Callable] = None,
-        predicate: Optional[
-            Union[
-                Callable[[Any], bool],
-                Awaitable[bool]]] = None,
-        result: Optional[Callable[[Any], Any]] = None) -> List:
+        filter: Callable | None = None,
+        predicate: (
+            Callable[[Any], bool]
+            | Awaitable[bool]
+            | None) = None,
+        result: Callable[[Any], Any] | None = None) -> list:
     """Turn an async generator into a here and now list, with optional
     filter."""
     results = list()
@@ -47,11 +47,11 @@ async def async_list(
 
 async def async_set(
         iterable: AsyncIterable,
-        predicate: Optional[
-            Union[
-                Callable[[Any], bool],
-                Awaitable[bool]]] = None,
-        result: Optional[Callable[[Any], Any]] = None) -> Set:
+        predicate: (
+            Callable[[Any], bool]
+            | Awaitable[bool]
+            | None) = None,
+        result: Callable[[Any], Any] | None = None) -> set:
     """Create a set from the results of an async generator."""
     results = set()
     iterator = async_iterator(iterable, predicate=predicate, result=result)
@@ -61,9 +61,9 @@ async def async_set(
 
 
 # TODO: use Mapping rather than Dict
-SearchKey = Union[str, int]
-CollectionQueryDict = Dict[SearchKey, str]
-CollectionResultDict = Dict[str, Any]
+SearchKey = str | int
+CollectionQueryDict = dict[SearchKey, str]
+CollectionResultDict = dict[str, Any]
 SearchableCollection = Mapping[SearchKey, Any]
 Indexable = Mapping[int, Any]
 
@@ -93,12 +93,12 @@ class CollectionQuery:
             query: CollectionQueryDict) -> CollectionResultDict:
         return dict(self.iter_queries(query))
 
-    def __getitem__(self, query: Union[str, int]) -> Any:
+    def __getitem__(self, query: str | int) -> Any:
         return self.query(query)
 
     def iter_queries(
             self,
-            queries: CollectionQueryDict) -> Iterator[Tuple[str, Any]]:
+            queries: CollectionQueryDict) -> Iterator[tuple[str, Any]]:
         for k, v in queries.items():
             yield str(k), self.query(v)
 
@@ -121,7 +121,7 @@ class CollectionQuery:
             raise exceptions.CollectionQueryError(
                 f"Unable to traverse index {path} in {query}: {e}")
 
-    def spliterator(self, query: SearchKey) -> Iterator[Union[int, str]]:
+    def spliterator(self, query: SearchKey) -> Iterator[int | str]:
         if isinstance(query, int):
             yield query
             return
@@ -135,7 +135,7 @@ class CollectionQuery:
     # necessary. Makes mypy happy.
     def traverse_mapping(
             self,
-            data: Dict[SearchKey, Any],
+            data: dict[SearchKey, Any],
             key: SearchKey) -> Any:
         return data[key]
 
