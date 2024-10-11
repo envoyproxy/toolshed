@@ -16,6 +16,7 @@ from . import base
 logger = logging.getLogger(__name__)
 
 
+@abstracts.implementer(interface.IGithubRepo)
 class AGithubRepo(metaclass=abstracts.Abstraction):
     """A Github repo."""
 
