@@ -749,15 +749,15 @@ async def test_runs__sorted(patches, iters, ascending):
     _runs.items.return_value = runsdict.items()
     item_values = iters(cb=lambda i: MagicMock())
     item = MagicMock()
-    item.__getitem__.return_value = item_values
+    (item.__getitem__.return_value
+         .__getitem__.return_value
+         .values.return_value) = item_values
 
     with patched as (m_dict, m_max, m_min, m_sorted, m_ascending):
         m_ascending.return_value = ascending
         assert (
             runs._sorted(_runs)
             == m_dict.return_value)
-        sortiter = m_sorted.call_args[0][0]
-        sortlist = list(sortiter)
         sortlambda = m_sorted.call_args_list[0][1]["key"]
         assert (
             sortlambda(item)
@@ -773,19 +773,14 @@ async def test_runs__sorted(patches, iters, ascending):
         boundaryiter = m_sorter.call_args[0][0]
         boundarylist = list(boundaryiter)
 
-    assert isinstance(sortiter, types.GeneratorType)
     assert isinstance(boundaryiter, types.GeneratorType)
     assert (
         m_dict.call_args
         == [(m_sorted.return_value, ), {}])
     assert (
-        m_sorted.call_args_list[0]
-        == [(sortiter, ),
+        m_sorted.call_args
+        == [(_runs.items.return_value, ),
             dict(key=sortlambda, reverse=not ascending)])
-    assert (
-        sortlist
-        == [(k, m_sorted.return_value)
-            for k in runsdict.keys()])
     assert (
         m_sorter.call_args
         == [(boundaryiter, ), {}])
@@ -793,77 +788,119 @@ async def test_runs__sorted(patches, iters, ascending):
         item.__getitem__.call_args
         == [(1, ), {}])
     assert (
+        item.__getitem__.return_value.__getitem__.call_args
+        == [("requests", ), {}])
+    assert (
         boundarylist
-        == [item.__getitem__.return_value.__getitem__.return_value
+        == [item.__getitem__.return_value
             for item in item_values])
     for _item in item_values:
         assert (
             _item.__getitem__.call_args
-            == [("request", ), {}])
-        assert (
-            _item.__getitem__.return_value.__getitem__.call_args
-            == [("started", ), {}])
-    subsortlambdas = [
-        sorter[1]["key"]
-        for sorter
-        in m_sorted.call_args_list[1:]]
-    assert (
-        m_sorted.call_args_list[1:]
-        == [[(v, ),
-             dict(key=subsortlambdas[i],
-                  reverse=not ascending)]
-            for i, v
-            in enumerate(runsdict.values())])
-    for sortfun in subsortlambdas:
-        event = MagicMock()
-        assert (
-            sortfun(event)
-            == event.__getitem__.return_value.__getitem__.return_value)
-        assert (
-            event.__getitem__.call_args
-            == [("request", ), {}])
-        assert (
-            event.__getitem__.return_value.__getitem__.call_args
             == [("started", ), {}])
 
 
 async def test_runs__to_dict(patches, iters):
     runs = report.abstract.ACIRuns("REPO")
     patched = patches(
+        "dict",
         ("ACIRuns.workflow_requests",
          dict(new_callable=PropertyMock)),
         "ACIRuns._to_list_request",
         prefix="envoy.ci.report.abstract.runs")
     workflows = iters(dict)
-    wf_requests = {}
+    expected = {}
 
-    async def _list_request(commit, request):
-        if int(commit[1]) % 2:
-            requests = iters(cb=lambda x: f"{commit}V{x}")
-            wf_requests[commit] = requests
-            return requests
-        return []
-
-    with patched as (m_workflows, m_list):
+    with patched as (m_dict, m_workflows, m_list):
         m_workflows.side_effect = AsyncMock(return_value=workflows)
+        _requests = []
+
+        async def _list_request(commit, request):
+            if int(commit[1]) % 2:
+                requests = iters(cb=lambda x: MagicMock())
+                expected[commit] = {
+                    "head": m_dict.return_value,
+                    "requests": {
+                        req.__getitem__.return_value: m_dict.return_value
+                        for req in requests}}
+                _requests.extend(requests)
+                return requests
+            return []
+
         m_list.side_effect = _list_request
         assert (
             await runs._to_dict()
-            == wf_requests)
+            == expected)
 
     assert (
         m_list.call_args_list
         == [[(k, v), {}]
             for k, v in workflows.items()])
+    i = 0
+    for commit, wf in expected.items():
+        first_request = list(wf["requests"].keys())[0]
+        assert (
+            m_dict.call_args_list[i]
+            == [(),
+                dict(message=first_request.__getitem__.return_value,
+                     target_branch=first_request.__getitem__.return_value)])
+        assert (
+            first_request.__getitem__.call_args_list
+            == [[(k, ), {}]
+                for k in ["message", "target-branch", "started"]])
+
+        # assert _requests[i].__getitem__.return_value == first_request
+        i += 1
+        for request, v in wf["requests"].items():
+            if request != first_request:
+                assert (
+                    request.__getitem__.call_args_list
+                    == [[("started", ), {}]])
+            assert (
+                m_dict.call_args_list[i]
+                == [(),
+                    dict(event=request,
+                         started=request.__getitem__.return_value,
+                         workflows={})])
+            i += 1
+    common_calls = [
+        "request_id", "event", "request", "request_id",
+        "workflow", "request_id", "workflow_id"]
+    for i, request in enumerate(_requests):
+        if not i % 5:
+            assert (
+                request.__getitem__.call_args_list
+                == [[(k, ), {}]
+                    for k
+                    in ["request", "request"] + common_calls])
+        else:
+            assert (
+                request.__getitem__.call_args_list
+                == [[(k, ), {}]
+                    for k
+                    in common_calls])
+
+    assert (
+        m_dict.return_value.__getitem__.call_args_list
+        == [[("workflows", ), {}]] * 10)
+    assert (
+        m_dict.return_value.__getitem__.return_value.__setitem__.call_args_list
+        == [[(req.__getitem__.return_value,
+              req.__getitem__.return_value), {}]
+            for req in _requests])
 
 
-async def test_runs__to_list_request(patches, iters):
+@pytest.mark.parametrize("ascending", [True, False])
+async def test_runs__to_list_request(patches, iters, ascending):
     runs = report.abstract.ACIRuns("REPO")
     patched = patches(
         "int",
+        "sorted",
         ("ACIRuns.check_runs",
          dict(new_callable=PropertyMock)),
         ("ACIRuns.envs",
+         dict(new_callable=PropertyMock)),
+        ("ACIRuns.sort_ascending",
          dict(new_callable=PropertyMock)),
         ("ACIRuns.workflows",
          dict(new_callable=PropertyMock)),
@@ -879,6 +916,7 @@ async def test_runs__to_list_request(patches, iters):
     check_runs.get.return_value.get.return_value = iters(
         cb=lambda x: MagicMock())
     envs = MagicMock()
+    item = MagicMock()
 
     expected = []
     for _event, _requests in request.items.return_value:
@@ -896,14 +934,31 @@ async def test_runs__to_list_request(patches, iters):
                      "workflow_id": _check_run.__getitem__.return_value,
                      "workflow": workflows.__getitem__.return_value})
 
-    with patched as (m_int, m_checks, m_envs, m_workflows):
+    with patched as patchy:
+        (m_int, m_sorted, m_checks, m_envs,
+         m_ascending, m_workflows) = patchy
+        m_ascending.return_value = ascending
         m_checks.side_effect = AsyncMock(return_value=check_runs)
         m_workflows.side_effect = AsyncMock(return_value=workflows)
         m_envs.side_effect = AsyncMock(return_value=envs)
         assert (
             await runs._to_list_request(commit, request)
-            == expected)
+            == m_sorted.return_value)
+        sortlambda = m_sorted.call_args[1]["key"]
+        assert (
+            sortlambda(item)
+            == item.__getitem__.return_value.__getitem__.return_value)
 
+    assert (
+        m_sorted.call_args
+        == [(expected, ),
+            dict(key=sortlambda, reverse=not ascending)])
+    assert (
+        item.__getitem__.call_args
+        == [("request", ), {}])
+    assert (
+        item.__getitem__.return_value.__getitem__.call_args
+        == [("started", ), {}])
     assert (
         envs.__getitem__.call_args_list
         == ([[(commit, ), {}]] * 125))

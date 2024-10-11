@@ -4,7 +4,7 @@ import argparse
 import os
 import pathlib
 from functools import cached_property
-from typing import Callable, Type
+from typing import Callable
 
 import aiohttp
 
@@ -94,7 +94,7 @@ class AReportRunner(
 
     @property
     @abstracts.interfacemethod
-    def runs_class(self) -> Type[interface.ICIRuns]:
+    def runs_class(self) -> type[interface.ICIRuns]:
         raise NotImplementedError
 
     @cached_property
