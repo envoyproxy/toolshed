@@ -7,17 +7,14 @@ from aio.api.github import interface
 UNSET = object()
 
 
+# TODO: clean this up - use an abstraction
+
 class GithubEntity:
     """Base Github entity class."""
 
-    def __init__(self, github: interface.IGithubAPI, data: dict) -> None:
+    def __init__(self, repo: interface.IGithubRepo, data: dict) -> None:
         self.data = data
-        self._github = github
-
-    @property
-    def github(self) -> "interface.IGithubAPI":
-        """Github API."""
-        return self._github
+        self._repo = repo
 
     @property
     def __data__(self) -> dict[str, Callable]:
@@ -34,14 +31,6 @@ class GithubEntity:
             return self.__getattribute__(k)
         return self.__data__.get(k, lambda x: x)(v)
 
-
-class GithubRepoEntity(GithubEntity):
-    """Base Github repo entity class."""
-
-    def __init__(self, repo: interface.IGithubRepo, data: dict) -> None:
-        self.data = data
-        self._repo = repo
-
     @property
     def github(self) -> interface.IGithubAPI:
         """Github API."""
@@ -49,4 +38,13 @@ class GithubRepoEntity(GithubEntity):
 
     @property
     def repo(self) -> interface.IGithubRepo:
+        """Github API."""
         return self._repo
+
+
+class GithubRepoEntity(GithubEntity):
+    """Base Github repo entity class."""
+
+    def __init__(self, repo: interface.IGithubRepo, data: dict) -> None:
+        self.data = data
+        self._repo = repo

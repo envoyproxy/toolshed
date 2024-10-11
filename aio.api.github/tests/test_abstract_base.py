@@ -7,12 +7,9 @@ from aio.api.github.abstract import base
 
 
 def test_abstract_base_githubentity_constructor():
-    entity = base.GithubEntity("GITHUB", "DATA")
-    assert entity._github == "GITHUB"
+    entity = base.GithubEntity("REPO", "DATA")
+    assert entity._repo == "REPO"
     assert entity.data == "DATA"
-
-    assert entity.github == "GITHUB"
-    assert "github" not in entity.__dict__
     assert entity.__data__ == {}
     assert "__data__" not in entity.__dict__
 
