@@ -293,7 +293,6 @@ async def test_abstract_project_json_data(patches, iters):
     patched = patches(
         "json",
         "tuple",
-        "AwaitableGenerator",
         ("AProject.repo",
          dict(new_callable=PropertyMock)),
         ("AProject.version",
@@ -305,18 +304,20 @@ async def test_abstract_project_json_data(patches, iters):
     stables = iters(cb=lambda i: MagicMock())
     releases = iters(cb=lambda i: MagicMock())
 
+    async def _releases():
+        for release in releases:
+            yield release
+
     with patched as patchy:
-        (m_json, m_tuple, m_await,
+        (m_json, m_tuple,
          m_repo, m_version, m_stables, m_vstring) = patchy
         m_stables.return_value = stables
-        m_await.side_effect = AsyncMock(return_value=releases)
+        m_repo.return_value.releases.side_effect = _releases
         assert (
             await project.json_data
             == m_json.dumps.return_value)
         stablegen = m_tuple.call_args_list[0][0][0]
         stablelist = list(stablegen)
-        releasegen = m_tuple.call_args_list[1][0][0]
-        releaselist = list(releasegen)
 
     expected = dict(
         version=str(m_version.return_value),
@@ -328,18 +329,17 @@ async def test_abstract_project_json_data(patches, iters):
         == [(expected, ), {}])
     assert isinstance(stablegen, types.GeneratorType)
     assert stablelist == [str(t) for t in stables]
-    assert isinstance(releasegen, types.GeneratorType)
-    assert releaselist == [
+    releaselist = [
         release.data.__getitem__.return_value
         for release
         in releases]
+    assert (
+        m_tuple.call_args_list[1]
+        == [(releaselist, ), {}])
     for release in releases:
         assert (
             release.data.__getitem__.call_args
             == [("tag_name", ), {}])
-    assert (
-        m_await.call_args
-        == [(m_repo.return_value.releases.return_value, ), {}])
     assert (
         m_repo.return_value.releases.call_args
         == [(), {}])

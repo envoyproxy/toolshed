@@ -15,7 +15,7 @@ import abstracts
 
 from aio.api import github as _github
 from aio.core import directory as _directory, event
-from aio.core.functional import async_property, AwaitableGenerator
+from aio.core.functional import async_property
 
 from envoy.base import utils
 from envoy.base.utils import exceptions, interface, typing
@@ -131,10 +131,9 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
                     for v
                     in self.stable_versions),
                 releases=tuple(
-                    release.data["tag_name"]
-                    for release
-                    in await AwaitableGenerator(
-                        self.repo.releases()))))
+                    [release.data["tag_name"]
+                     async for release
+                     in self.repo.releases()])))
 
     @property
     def main_branch(self) -> str:
