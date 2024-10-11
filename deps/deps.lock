@@ -13,7 +13,7 @@
 //     "aio.api.bazel>=0.0.2",
 //     "aio.api.github>=0.2.8",
 //     "aio.api.nist>=0.0.4",
-//     "aio.core>=0.10.4",
+//     "aio.core>=0.10.5",
 //     "aio.run.checker>=0.5.7",
 //     "aio.run.runner>=0.3.3",
 //     "aiodocker",
@@ -190,13 +190,13 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "4984cfbcabe3deac7a6cad428bd8a17e6e13df10d947ccae43b497718623196b",
-              "url": "https://files.pythonhosted.org/packages/cf/fa/042dadbc14da0b370c000264eaec6f88b366a9831476b6b3a6f148ba734a/aio.core-0.10.4-py3-none-any.whl"
+              "hash": "d8486a0115ade8e0362783b8e7cd988368766d0d911c62cb73b716bfe1f50a92",
+              "url": "https://files.pythonhosted.org/packages/47/a7/29a9c0a0c7a18e1a50299677eb51b60052bfd2bd78d1f0ff2183af959151/aio.core-0.10.5-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "046f79ab63e0978b1c10b9f0b61a614fe543935ed51e975e15c1e06748dde569",
-              "url": "https://files.pythonhosted.org/packages/88/03/47f70960bbb86333c3d5441f27ffbeb52ff675b4d410231f0bdf35872a2c/aio.core-0.10.4.tar.gz"
+              "hash": "ba512132df47514a15930b89835ba1ef13522b7e31ec83a3b0622b7431f3f42e",
+              "url": "https://files.pythonhosted.org/packages/3e/8b/d6b265e01fd667c879bea21f94d170591ccb67d5db76bac2a3d2f440e60e/aio.core-0.10.5.tar.gz"
             }
           ],
           "project_name": "aio-core",
@@ -210,7 +210,7 @@
             "types-pyyaml"
           ],
           "requires_python": ">=3.10.0",
-          "version": "0.10.4"
+          "version": "0.10.5"
         },
         {
           "artifacts": [
@@ -5494,7 +5494,7 @@
     "aio.api.bazel>=0.0.2",
     "aio.api.github>=0.2.8",
     "aio.api.nist>=0.0.4",
-    "aio.core>=0.10.4",
+    "aio.core>=0.10.5",
     "aio.run.checker>=0.5.7",
     "aio.run.runner>=0.3.3",
     "aiodocker",
