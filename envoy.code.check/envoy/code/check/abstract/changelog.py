@@ -2,7 +2,7 @@
 import itertools
 from datetime import datetime
 from functools import cached_property
-from typing import Iterator, Optional, Tuple, Type
+from typing import Iterator
 
 from packaging import version as _version
 
@@ -30,7 +30,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def change_checkers(self) -> Tuple[interface.IRSTCheck, ...]:
+    def change_checkers(self) -> tuple[interface.IRSTCheck, ...]:
         raise NotImplementedError
 
     @cached_property
@@ -41,7 +41,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
             self,
             version: _version.Version,
             section: str,
-            entry: utils.typing.ChangeDict) -> Tuple[str, ...]:
+            entry: utils.typing.ChangeDict) -> tuple[str, ...]:
         change = entry["change"].strip()
         errors = [
             checker(change)
@@ -61,7 +61,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
             self,
             version: _version.Version,
             section: str,
-            data: Optional[utils.typing.ChangeList]) -> Tuple[str, ...]:
+            data: utils.typing.ChangeList | None) -> tuple[str, ...]:
         name_error = self.check_section_name(version, section)
         return (
             *((name_error, )
@@ -76,7 +76,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
             self,
             version: _version.Version,
             sections: utils.typing.ChangelogChangeSectionsDict) -> (
-                Tuple[str, ...]):
+                tuple[str, ...]):
         return tuple(
             itertools.chain.from_iterable(
                 self.check_section(version, section, data)  # type:ignore
@@ -86,7 +86,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
     def check_section_name(
             self,
             version: _version.Version,
-            section: str) -> Optional[str]:
+            section: str) -> str | None:
         invalid_changes = (
             section == "changes"
             and version > self.max_version_for_changes_section)
@@ -137,7 +137,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
                 self.version).exists())
 
     @async_property(cache=True)
-    async def errors(self) -> Tuple[str, ...]:
+    async def errors(self) -> tuple[str, ...]:
         try:
             return (
                 *self.check_version(),
@@ -147,7 +147,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             return (f"{self.version}: {e}", )
 
     @async_property
-    async def invalid_date(self) -> Optional[str]:
+    async def invalid_date(self) -> str | None:
         if await self.is_pending:
             return None
         date = await self.date
@@ -194,7 +194,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             self.version
             > _version.Version(self.project.version.base_version))
 
-    async def check_date(self) -> Tuple[str, ...]:
+    async def check_date(self) -> tuple[str, ...]:
         errors = []
         if invalid_date := await self.invalid_date:
             errors.append(f"Format not recognized \"{invalid_date}\"")
@@ -207,7 +207,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             for e
             in errors)
 
-    async def check_sections(self) -> Tuple[str, ...]:
+    async def check_sections(self) -> tuple[str, ...]:
         # Runs checker in executor, uncomment following line for debugging
         # return self.checker.check_sections(self.version, await self.sections)
         return await self.project.execute(
@@ -215,7 +215,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             self.version,
             await self.sections)
 
-    def check_version(self) -> Tuple[str, ...]:
+    def check_version(self) -> tuple[str, ...]:
         errors = []
         if self.duplicate_current:
             errors.append(
@@ -245,7 +245,7 @@ class AChangelogCheck(
     @property  # type:ignore
     @abstracts.interfacemethod
     def changes_checker_class(
-            self) -> Type[interface.IChangelogChangesChecker]:
+            self) -> type[interface.IChangelogChangesChecker]:
         raise NotImplementedError
 
     @cached_property
@@ -255,11 +255,11 @@ class AChangelogCheck(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def changelog_status_class(self) -> Type[interface.IChangelogStatus]:
+    def changelog_status_class(self) -> type[interface.IChangelogStatus]:
         raise NotImplementedError
 
     @cached_property
-    def changelogs(self) -> Tuple[interface.IChangelogStatus, ...]:
+    def changelogs(self) -> tuple[interface.IChangelogStatus, ...]:
         return tuple(
             self.changelog_status_class(self, changelog)
             for changelog

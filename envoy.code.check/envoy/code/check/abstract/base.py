@@ -1,7 +1,6 @@
 
 import asyncio
 from concurrent import futures
-from typing import Dict, List, Optional, Set
 
 import abstracts
 
@@ -20,10 +19,10 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
             self,
             directory: ADirectory,
             fix: bool = False,
-            binaries: Optional[Dict[str, str]] = None,
-            config: Optional[typing.YAMLConfigDict] = None,
-            loop: Optional[asyncio.AbstractEventLoop] = None,
-            pool: Optional[futures.Executor] = None) -> None:
+            binaries: dict[str, str] | None = None,
+            config: typing.YAMLConfigDict | None = None,
+            loop: asyncio.AbstractEventLoop | None = None,
+            pool: futures.Executor | None = None) -> None:
         self.directory = directory
         self.config = config
         self._fix = fix
@@ -41,11 +40,11 @@ class AFileCodeCheck(ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     @abstracts.interfacemethod
-    async def checker_files(self) -> Set[str]:
+    async def checker_files(self) -> set[str]:
         raise NotImplementedError
 
     @async_property(cache=True)
-    async def files(self) -> Set[str]:
+    async def files(self) -> set[str]:
         files = await self.directory.files
         return (
             files & await self.checker_files
@@ -58,7 +57,7 @@ class AFileCodeCheck(ACodeCheck, metaclass=abstracts.Abstraction):
 
     @async_property
     @abstracts.interfacemethod
-    async def problem_files(self) -> Dict[str, List[str]]:
+    async def problem_files(self) -> dict[str, list[str]]:
         """Discovered files with flake8 errors."""
         raise NotImplementedError
 

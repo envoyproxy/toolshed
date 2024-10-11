@@ -1,10 +1,11 @@
 
+import os
 import pathlib
 import re
 import shutil
 import subprocess
 from functools import cached_property, partial
-from typing import Iterator, List, Optional, Pattern, Set, Tuple, TypedDict
+from typing import Iterator, Pattern, TypedDict
 
 import abstracts
 
@@ -30,8 +31,8 @@ SHELLCHECK_NOMATCH_RE = (
 
 
 class ShellcheckErrorDict(TypedDict):
-    lines: List[str]
-    line_numbers: List[int]
+    lines: list[str]
+    line_numbers: list[int]
 
 
 @abstracts.implementer(_subprocess.ISubprocessHandler)
@@ -57,7 +58,7 @@ class Shellcheck(_subprocess.ASubprocessHandler):
         into an `typing.ProblemDict`."""
         return self._render_errors(self._shellcheck_errors(response))
 
-    def parse_error_line(self, line: str) -> Tuple[str, Optional[int]]:
+    def parse_error_line(self, line: str) -> tuple[str, int | None]:
         """Parse `filename`, `line_number` from a shellcheck error line."""
         matched = self.error_line_re.search(line)
         return (
@@ -69,7 +70,7 @@ class Shellcheck(_subprocess.ASubprocessHandler):
     def _render_errors(
             self,
             errors: Iterator[
-                Tuple[
+                tuple[
                     str,
                     ShellcheckErrorDict]]) -> typing.ProblemDict:
         return {
@@ -80,7 +81,7 @@ class Shellcheck(_subprocess.ASubprocessHandler):
     def _render_file_errors(
             self,
             path: str,
-            errors: ShellcheckErrorDict) -> List[str]:
+            errors: ShellcheckErrorDict) -> list[str]:
         # This does v basic en pluralization
         line_numbers = ", ".join(str(n) for n in errors["line_numbers"])
         lines = (
@@ -94,8 +95,8 @@ class Shellcheck(_subprocess.ASubprocessHandler):
 
     def _shellcheck_error_info(
             self,
-            filename: Optional[str] = None) -> Tuple[
-                Optional[str], ShellcheckErrorDict]:
+            filename: str | None = None) -> tuple[
+                str | None, ShellcheckErrorDict]:
         return (
             filename,
             dict(line_numbers=[], lines=[]))
@@ -103,7 +104,7 @@ class Shellcheck(_subprocess.ASubprocessHandler):
     def _shellcheck_errors(
             self,
             response: subprocess.CompletedProcess) -> Iterator[
-                Tuple[str, ShellcheckErrorDict]]:
+                tuple[str, ShellcheckErrorDict]]:
         filename, info = self._shellcheck_error_info()
         for line in response.stdout.split("\n"):
             _filename, line_number = self.parse_error_line(line)
@@ -130,12 +131,15 @@ class AShellcheckCheck(
         abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
 
     @classmethod
-    def run_shellcheck(self, path: str, *args) -> typing.ProblemDict:
+    def run_shellcheck(
+            self,
+            path: str | os.PathLike,
+            *args) -> typing.ProblemDict:
         """Run shellcheck on files."""
         return Shellcheck(path)(*args)
 
     @async_property
-    async def checker_files(self) -> Set[str]:
+    async def checker_files(self) -> set[str]:
         return (
             await self.sh_files
             | await self.shebang_files)
@@ -164,7 +168,7 @@ class AShellcheckCheck(
         return errors
 
     @async_property
-    async def sh_files(self) -> Set[str]:
+    async def sh_files(self) -> set[str]:
         """Files with a `.sh` suffix, but that are not excluded."""
         return set(
             path
@@ -174,7 +178,7 @@ class AShellcheckCheck(
                 and not self.path_match_exclude_re.match(path)))
 
     @async_property
-    async def shebang_files(self) -> Set[str]:
+    async def shebang_files(self) -> set[str]:
         """Files that contain shebang lines, excluding actual .sh files and
         others, eg md/rst, that may have such lines for other reasons."""
         return await self.directory.grep(
@@ -206,7 +210,7 @@ class AShellcheckCheck(
             "-x")
 
     @async_property
-    async def _possible_shebang_files(self) -> Set[str]:
+    async def _possible_shebang_files(self) -> set[str]:
         return set(
             path
             for path

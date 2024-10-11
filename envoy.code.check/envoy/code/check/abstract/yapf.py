@@ -2,7 +2,7 @@
 import os
 import pathlib
 from functools import partial
-from typing import AsyncIterator, Iterable, Iterator, Optional, Set, Tuple
+from typing import AsyncIterator, Iterable, Iterator
 
 import yapf  # type:ignore
 
@@ -58,8 +58,8 @@ class YapfFormatCheck(directory.ADirectoryContext):
     def handle_result(
             self,
             path: str,
-            yapf_result: "typing.YapfResultTuple") -> Optional[
-                "typing.YapfProblemTuple"]:
+            yapf_result: "typing.YapfResultTuple") -> (
+                typing.YapfProblemTuple | None):
         """Handle a Yapf check result converting to a path and error list."""
         reformatted, encoding, changed = yapf_result
         if not (changed or reformatted):
@@ -74,7 +74,7 @@ class YapfFormatCheck(directory.ADirectoryContext):
     @debug.logging(
         log=__name__,
         show_cpu=True)
-    def run_checks(self) -> Tuple["typing.YapfProblemTuple", ...]:
+    def run_checks(self) -> tuple["typing.YapfProblemTuple", ...]:
         """Run Yapf checks."""
         return tuple(self.check_results)
 
@@ -85,7 +85,7 @@ class YapfFiles(directory.ADirectoryContext):
     @debug.logging(
         log=__name__,
         show_cpu=True)
-    def filter_files(self, py_files: Iterable[str]) -> Set[str]:
+    def filter_files(self, py_files: Iterable[str]) -> set[str]:
         with self.in_directory:
             return set(
                 yapf.file_resources.GetCommandLineFiles(
@@ -102,7 +102,7 @@ class AYapfCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     def yapf_files(
             cls,
             directory_path: str,
-            *py_files: str) -> Set[str]:
+            *py_files: str) -> set[str]:
         """Yapf file discovery for a given file list."""
         return YapfFiles(directory_path).filter_files(py_files)
 
@@ -117,7 +117,7 @@ class AYapfCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
         return YapfFormatCheck(root_path, config_path, fix, *args).run_checks()
 
     @async_property
-    async def checker_files(self) -> Set[str]:
+    async def checker_files(self) -> set[str]:
         # todo: add grep for py shebang files
         if not (py_files := await self.py_files):
             return set()
@@ -141,7 +141,7 @@ class AYapfCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
         return dict(await AwaitableGenerator(self._problem_files))
 
     @async_property(cache=True)
-    async def py_files(self) -> Set[str]:
+    async def py_files(self) -> set[str]:
         """Files with a `.py` suffix."""
         return set(
             path

@@ -6,9 +6,7 @@ import logging
 import pathlib
 import re
 from functools import cached_property
-from typing import (
-    Any, cast, Dict, List,
-    Optional, Pattern, Set, Tuple, Type, Union)
+from typing import Any, cast, Pattern
 
 import yaml as _yaml
 
@@ -60,7 +58,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         super().__init__(*args, **kwargs)
 
     @cached_property
-    def all_extensions(self) -> Set[str]:
+    def all_extensions(self) -> set[str]:
         return (
             set(self.configured_extensions)
             | set(self.builtin_extensions))
@@ -143,7 +141,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         return self.directory.path.joinpath(FUZZ_TEST_PATH)
 
     @property
-    def fuzzed_count(self) -> Optional[int]:
+    def fuzzed_count(self) -> int | None:
         # TODO: shift this to the arg parse
         return (
             int(self._fuzzed_count)
@@ -186,27 +184,27 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         return self.directory.path.joinpath(METADATA_PATH)
 
     @async_property
-    async def metadata_errors(self) -> Dict[str, Tuple[str, ...]]:
+    async def metadata_errors(self) -> dict[str, tuple[str, ...]]:
         return {
             extension: await self.check_metadata(extension)
             for extension
             in await self.metadata}
 
     @async_property
-    async def metadata_missing(self) -> Set[str]:
+    async def metadata_missing(self) -> set[str]:
         return (
             self.all_extensions
             - set(await self.metadata))
 
     @async_property
-    async def metadata_only(self) -> Set[str]:
+    async def metadata_only(self) -> set[str]:
         return (
             set(await self.metadata)
             - self.metadata_only_extensions
             - self.all_extensions)
 
     @property
-    def metadata_only_extensions(self) -> Set[str]:
+    def metadata_only_extensions(self) -> set[str]:
         return set(METADATA_ONLY_EXTENSIONS)
 
     @cached_property
@@ -223,7 +221,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         return owned
 
     @async_property(cache=True)
-    async def owners_errors(self) -> Dict[str, Tuple[str, ...]]:
+    async def owners_errors(self) -> dict[str, tuple[str, ...]]:
         return (
             await self._owners_tracked
             | await self._owners_found)
@@ -243,7 +241,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             "contrib/language/": dict(owners=1)}
 
     @async_property
-    async def registration_errors(self) -> List[str]:
+    async def registration_errors(self) -> list[str]:
         return [
             *[f"Metadata for unused extension found: {extension}"
               for extension
@@ -281,7 +279,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     def tracked_ownership_re(self) -> Pattern[str]:
         return re.compile(TRACKED_OWNERSHIP_RE)
 
-    async def check_metadata(self, extension: str) -> Tuple[str, ...]:
+    async def check_metadata(self, extension: str) -> tuple[str, ...]:
         return tuple(
             itertools.chain.from_iterable(
                 await asyncio.gather(
@@ -317,7 +315,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             for extension, data in extensions.items()}
 
     async def _check_metadata_categories(
-            self, extension: str) -> Tuple[str, ...]:
+            self, extension: str) -> tuple[str, ...]:
         categories = (await self.metadata)[extension].get("categories", ())
         if not categories:
             return (
@@ -332,7 +330,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
             if cat not in self.extension_categories)
 
     async def _check_metadata_security_posture(
-            self, extension: str) -> Tuple[str, ...]:
+            self, extension: str) -> tuple[str, ...]:
         security_posture = (await self.metadata)[extension]["security_posture"]
         if not security_posture:
             return (
@@ -346,14 +344,14 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
         return ()
 
     async def _check_metadata_status(
-            self, extension: str) -> Tuple[str, ...]:
+            self, extension: str) -> tuple[str, ...]:
         status = (await self.metadata)[extension]["status"]
         if status not in self.extension_status_values:
             return (f"Unknown status for {extension}: {status}", )
         return ()
 
     async def _check_metadata_status_upstream(
-            self, extension: str) -> Tuple[str, ...]:
+            self, extension: str) -> tuple[str, ...]:
         metadata = (await self.metadata)[extension]
         status = metadata.get("status_upstream")
         categories = metadata.get("categories", ())
@@ -371,8 +369,8 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     def _from_json(
             self,
-            path: Union[str, pathlib.Path],
-            type: Type,
+            path: str | pathlib.Path,
+            type: type,
             err_message: str,
             warn_message: str) -> Any:
         # Parse JSON, handling errors
@@ -387,8 +385,8 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
 
     def _from_yaml(
             self,
-            path: Union[str, pathlib.Path],
-            type: Type,
+            path: str | pathlib.Path,
+            type: type,
             err_message: str,
             warn_message: str) -> Any:
         # Parse YAML, handling errors
@@ -457,8 +455,8 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     def _owners_extension_match_line(
             self,
             line: str,
-            matcher: Optional[
-                Pattern[str]] = None) -> dict[str, dict[str, set]]:
+            matcher: (
+                Pattern[str] | None) = None) -> dict[str, dict[str, set]]:
         if line.startswith('#'):
             return {}
         m = (matcher or self.codeowners_extensions_re).search(line)
