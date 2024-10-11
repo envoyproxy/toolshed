@@ -1,6 +1,7 @@
 
 import abc
 import logging
+import os
 import subprocess
 from functools import cached_property
 from typing import Any, Mapping, Sequence
@@ -87,7 +88,7 @@ class ASubprocessHandler(
 
     def __init__(
             self,
-            path: str,
+            path: str | os.PathLike,
             *args: str,
             encoding: str = "utf-8",
             **kwargs) -> None:
