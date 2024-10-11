@@ -11,7 +11,7 @@
 //   "generated_with_requirements": [
 //     "abstracts>=0.0.12",
 //     "aio.api.bazel>=0.0.2",
-//     "aio.api.github>=0.2.7",
+//     "aio.api.github>=0.2.8",
 //     "aio.api.nist>=0.0.4",
 //     "aio.core>=0.10.4",
 //     "aio.run.checker>=0.5.7",
@@ -143,25 +143,25 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "14eeb3f59fbac472d6f2c1a9cd9542ace5f43dbca6808c456e999486173e74d0",
-              "url": "https://files.pythonhosted.org/packages/21/9e/109db62c76907681011a5ade29067784278818d495797c6c33b7968f1ec5/aio.api.github-0.2.7-py3-none-any.whl"
+              "hash": "c54cf809599ae53a264d3bea1b2f9c32177d24db1ab32f30631bb572ccc84eb7",
+              "url": "https://files.pythonhosted.org/packages/85/fa/a23fa1a18e95bb440f7d10240178ea9aa4049dfa7d1f65cef8e020b06bd5/aio.api.github-0.2.8-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "c71e3569ac77365dbeb7b3b798c49ea305f83a4a8ebc67c38f189ab6b6b5d13c",
-              "url": "https://files.pythonhosted.org/packages/b5/a0/86f1d1929a0be9db80202eff83d98756c7d8030b4da01ce2a6e99653913e/aio.api.github-0.2.7.tar.gz"
+              "hash": "6de35564babac3d4b2a72f51f708cb6b936160a3917d9e50fac8bc45708b6137",
+              "url": "https://files.pythonhosted.org/packages/f2/7e/b4750f44b4df5c179df51352e599112ec6c6fd804ff1377e8501d569ba6b/aio.api.github-0.2.8.tar.gz"
             }
           ],
           "project_name": "aio-api-github",
           "requires_dists": [
             "abstracts>=0.0.12",
-            "aio.core>=0.10.3",
+            "aio.core>=0.10.4",
             "aiohttp>=3.8.1",
             "gidgethub",
             "packaging>=23.0"
           ],
           "requires_python": ">=3.10.0",
-          "version": "0.2.7"
+          "version": "0.2.8"
         },
         {
           "artifacts": [
@@ -5492,7 +5492,7 @@
   "requirements": [
     "abstracts>=0.0.12",
     "aio.api.bazel>=0.0.2",
-    "aio.api.github>=0.2.7",
+    "aio.api.github>=0.2.8",
     "aio.api.nist>=0.0.4",
     "aio.core>=0.10.4",
     "aio.run.checker>=0.5.7",
