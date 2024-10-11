@@ -4,7 +4,7 @@ aio.api.github>=0.2.8
 aio.api.nist>=0.0.4
 aio.core>=0.10.5
 aio.run.checker>=0.5.7
-aio.run.runner>=0.3.3
+aio.run.runner>=0.3.4
 aiodocker
 aiofiles
 aiohttp>=3.8.1
