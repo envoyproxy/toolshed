@@ -1,7 +1,7 @@
 
 import abc
 import argparse
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Type
 
 import abstracts
 
@@ -11,7 +11,7 @@ from .runner import Runner
 class ICommand(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         raise NotImplementedError
 
 
@@ -26,7 +26,7 @@ class ACommand(ICommand, metaclass=abstracts.Abstraction):
         return self.parser.parse_known_args(self.context.extra_args)[0]
 
     @property
-    def extra_args(self) -> List[str]:
+    def extra_args(self) -> list[str]:
         return self.parser.parse_known_args(self.context.extra_args)[1]
 
     @property
@@ -43,11 +43,11 @@ class ACommand(ICommand, metaclass=abstracts.Abstraction):
         raise NotImplementedError
 
 
-CommandDict = Dict[str, Type[ACommand]]
+CommandDict = dict[str, Type[ACommand]]
 
 
 class ARunnerWithCommands(Runner, metaclass=abstracts.Abstraction):
-    _commands: Tuple[Tuple[str, Type[ACommand]], ...] = ()
+    _commands: tuple[tuple[str, Type[ACommand]], ...] = ()
 
     @classmethod
     def register_command(cls, name: str, command: Type[ACommand]) -> None:
@@ -65,5 +65,5 @@ class ARunnerWithCommands(Runner, metaclass=abstracts.Abstraction):
         return {k: v for k, v in self._commands}
 
     @abc.abstractmethod
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         return await self.command.run()

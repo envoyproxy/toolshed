@@ -1,6 +1,5 @@
 #
 # Generic runner class for use by cli implementations
-#
 
 import argparse
 import asyncio
@@ -9,7 +8,7 @@ import pathlib
 import sys
 import tempfile
 from functools import cached_property
-from typing import cast, Dict, Optional
+from typing import cast
 
 from frozendict import frozendict
 
@@ -82,7 +81,7 @@ class RootLogFilter(BaseLogFilter):
 
 @abstracts.implementer(event.IReactive)
 class Runner(event.AReactive):
-    _use_uvloop: Optional[bool] = None
+    _use_uvloop: bool | None = None
 
     def __init__(self, *args):
         self._args = args
@@ -239,7 +238,7 @@ class Runner(event.AReactive):
     async def cleanup(self) -> None:
         self._cleanup_tempdir()
 
-    def exit(self) -> Optional[int]:
+    def exit(self) -> int | None:
         self.root_logger.handlers[0].setLevel(logging.FATAL)
         self.stdout.handlers[0].setLevel(logging.FATAL)
 
@@ -251,7 +250,7 @@ class Runner(event.AReactive):
     def on_async_error(
             self,
             loop: asyncio.AbstractEventLoop,
-            context: Dict) -> None:
+            context: dict) -> None:
         """Handle unhandled async exceptions by stopping the loop and printing
         the traceback."""
         loop.default_exception_handler(context)
@@ -269,7 +268,7 @@ class Runner(event.AReactive):
         self.start_reactor()
 
     @cleansup
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         raise NotImplementedError
 
     def setup_logging(self):
