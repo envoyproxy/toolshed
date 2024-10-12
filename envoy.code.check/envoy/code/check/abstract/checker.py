@@ -5,7 +5,7 @@ import argparse
 import pathlib
 import re
 from functools import cached_property
-from typing import Dict, Mapping, Optional, Pattern, Set, Type
+from typing import Mapping, Pattern
 
 import yaml
 
@@ -75,7 +75,7 @@ class ACodeChecker(
         return self.args.all_files
 
     @cached_property
-    def binaries(self) -> Dict[str, str]:
+    def binaries(self) -> dict[str, str]:
         return dict(
             binary.split(":")
             for binary
@@ -93,7 +93,7 @@ class ACodeChecker(
         return disabled
 
     @property
-    def changed_since(self) -> Optional[str]:
+    def changed_since(self) -> str | None:
         return self.args.since
 
     @cached_property
@@ -105,7 +105,7 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def changelog_class(self) -> Type["interface.IChangelogCheck"]:
+    def changelog_class(self) -> type["interface.IChangelogCheck"]:
         raise NotImplementedError
 
     @cached_property
@@ -124,7 +124,7 @@ class ACodeChecker(
             else {})
 
     @property
-    def config_path(self) -> Optional[pathlib.Path]:
+    def config_path(self) -> pathlib.Path | None:
         if not self.args.config:
             return None
         path = pathlib.Path(self.args.config)
@@ -141,8 +141,8 @@ class ACodeChecker(
         return self.project.directory.filtered(**self.directory_kwargs)
 
     @property
-    def directory_kwargs(self) -> Dict:
-        kwargs: Dict = dict(
+    def directory_kwargs(self) -> dict:
+        kwargs: dict = dict(
             exclude_matcher=self.grep_excluding_re,
             path_matcher=self.grep_matching_re,
             untracked=self.all_files)
@@ -163,7 +163,7 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def extensions_class(self) -> Type["interface.IExtensionsCheck"]:
+    def extensions_class(self) -> type["interface.IExtensionsCheck"]:
         raise NotImplementedError
 
     @cached_property
@@ -173,17 +173,17 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def flake8_class(self) -> Type["interface.IFlake8Check"]:
+    def flake8_class(self) -> type["interface.IFlake8Check"]:
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def fs_directory_class(self) -> Type["_directory.ADirectory"]:
+    def fs_directory_class(self) -> type["_directory.ADirectory"]:
         raise NotImplementedError
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def git_directory_class(self) -> Type["_directory.AGitDirectory"]:
+    def git_directory_class(self) -> type["_directory.AGitDirectory"]:
         raise NotImplementedError
 
     @cached_property
@@ -193,7 +193,7 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def glint_class(self) -> Type["interface.IGlintCheck"]:
+    def glint_class(self) -> type["interface.IGlintCheck"]:
         raise NotImplementedError
 
     @cached_property
@@ -203,15 +203,15 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def gofmt_class(self) -> Type["interface.IGofmtCheck"]:
+    def gofmt_class(self) -> type["interface.IGofmtCheck"]:
         raise NotImplementedError
 
     @property
-    def grep_excluding_re(self) -> Optional[Pattern[str]]:
+    def grep_excluding_re(self) -> Pattern[str] | None:
         return self._grep_re(self.args.excluding)
 
     @property
-    def grep_matching_re(self) -> Optional[Pattern[str]]:
+    def grep_matching_re(self) -> Pattern[str] | None:
         return self._grep_re(self.args.matching)
 
     @property
@@ -225,7 +225,7 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def project_class(self) -> Type[IProject]:
+    def project_class(self) -> type[IProject]:
         raise NotImplementedError
 
     @cached_property
@@ -237,7 +237,7 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def runtime_guards_class(self) -> Type["interface.IRuntimeGuardsCheck"]:
+    def runtime_guards_class(self) -> type["interface.IRuntimeGuardsCheck"]:
         raise NotImplementedError
 
     @cached_property
@@ -247,11 +247,11 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def shellcheck_class(self) -> Type["interface.IShellcheckCheck"]:
+    def shellcheck_class(self) -> type["interface.IShellcheckCheck"]:
         raise NotImplementedError
 
     @property
-    def summary_class(self) -> Type[CodeCheckerSummary]:
+    def summary_class(self) -> type[CodeCheckerSummary]:
         """CodeChecker's summary class."""
         return CodeCheckerSummary
 
@@ -262,7 +262,7 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def yamllint_class(self) -> Type[interface.IYamllintCheck]:
+    def yamllint_class(self) -> type[interface.IYamllintCheck]:
         raise NotImplementedError
 
     @cached_property
@@ -272,7 +272,7 @@ class ACodeChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def yapf_class(self) -> Type[interface.IYapfCheck]:
+    def yapf_class(self) -> type[interface.IYapfCheck]:
         raise NotImplementedError
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -451,7 +451,7 @@ class ACodeChecker(
 
     def _check_output(
             self,
-            check_files: Set[str],
+            check_files: set[str],
             problem_files: typing.ProblemDict) -> None:
         # This can be slow/blocking for large result sets, run
         # in a separate thread
@@ -477,7 +477,7 @@ class ACodeChecker(
             await check.files,
             await check.problem_files)
 
-    def _grep_re(self, arg: Optional[str]) -> Optional[Pattern[str]]:
+    def _grep_re(self, arg: str | None) -> Pattern[str] | None:
         # When using system `grep` we want to filter out at least some
         # of the files that .gitignore would.
         # TODO: use globs on cli and covert to re here

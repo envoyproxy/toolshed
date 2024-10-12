@@ -1,7 +1,7 @@
 
 import re
 from functools import cached_property
-from typing import List, Optional, Pattern
+from typing import Pattern
 
 import abstracts
 
@@ -23,7 +23,7 @@ LINK_TICKS_RE = r"[^`]`[^`]+`_"
 class ABackticksCheck(metaclass=abstracts.Abstraction):
     error_message = "Single backticks found {single_ticks}"
 
-    def __call__(self, text: str) -> Optional[str]:
+    def __call__(self, text: str) -> str | None:
         single_ticks = self._find_single_ticks(text)
         return (
             self.error_message.format(single_ticks=', '.join(single_ticks))
@@ -44,7 +44,7 @@ class ABackticksCheck(metaclass=abstracts.Abstraction):
 
     def _find_single_ticks(
             self,
-            text: str) -> List[str]:
+            text: str) -> list[str]:
         return [
             bad_ticks[1:-1]
             for bad_ticks
@@ -63,7 +63,7 @@ class ABackticksCheck(metaclass=abstracts.Abstraction):
 class AReflinksCheck(metaclass=abstracts.Abstraction):
     error_message = "Invalid ref link `ref:` should be `:ref:`"
 
-    def __call__(self, text: str) -> Optional[str]:
+    def __call__(self, text: str) -> str | None:
         return (
             self.error_message
             if self.invalid_reflink_re.findall(text)
@@ -78,7 +78,7 @@ class AReflinksCheck(metaclass=abstracts.Abstraction):
 class APunctuationCheck(metaclass=abstracts.Abstraction):
     error_message = "Missing punctuation \"...{snippet}\""
 
-    def __call__(self, text: str) -> Optional[str]:
+    def __call__(self, text: str) -> str | None:
         return (
             self.error_message.format(snippet=text[-30:])
             if not self._check_punctuation(text)

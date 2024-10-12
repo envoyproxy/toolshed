@@ -2,8 +2,7 @@
 import asyncio
 import pathlib
 from concurrent import futures
-from typing import (
-    AsyncIterator, Dict, Iterator, List, Optional, Set, Tuple, Type)
+from typing import AsyncIterator, Iterator
 
 from packaging import version as _version
 
@@ -21,23 +20,23 @@ class ICodeCheck(metaclass=abstracts.Interface):
             self,
             directory: _directory.ADirectory,
             fix: bool = False,
-            binaries: Optional[Dict[str, str]] = None,
-            config: Optional[typing.YAMLConfigDict] = None,
-            loop: Optional[asyncio.AbstractEventLoop] = None,
-            pool: Optional[futures.Executor] = None) -> None:
+            binaries: dict[str, str] | None = None,
+            config: typing.YAMLConfigDict | None = None,
+            loop: asyncio.AbstractEventLoop | None = None,
+            pool: futures.Executor | None = None) -> None:
         raise NotImplementedError
 
 
 class IFileCodeCheck(ICodeCheck, metaclass=abstracts.Interface):
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    async def files(self) -> Set[str]:
+    async def files(self) -> set[str]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    async def problem_files(self) -> Dict[str, List[str]]:
+    async def problem_files(self) -> dict[str, list[str]]:
         raise NotImplementedError
 
 
@@ -56,39 +55,39 @@ class IExtensionsCheck(metaclass=abstracts.Interface):
     def __init__(self, directory: _directory.ADirectory, **kwargs) -> None:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def all_fuzzed(self) -> bool:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def extensions_schema(self) -> "typing.ExtensionsSchemaDict":
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def fuzz_test_path(self) -> pathlib.Path:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def metadata(self) -> "typing.ExtensionsMetadataDict":
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    async def metadata_errors(self) -> Dict[str, Tuple[str, ...]]:
+    async def metadata_errors(self) -> dict[str, tuple[str, ...]]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    async def owners_errors(self) -> Dict[str, Tuple[str, ...]]:
+    async def owners_errors(self) -> dict[str, tuple[str, ...]]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    async def registration_errors(self) -> List[str]:
+    async def registration_errors(self) -> list[str]:
         raise NotImplementedError
 
 
@@ -118,14 +117,14 @@ class IYapfCheck(IFileCodeCheck, metaclass=abstracts.Interface):
 
 class IRuntimeGuardsCheck(IProjectCodeCheck, metaclass=abstracts.Interface):
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    async def missing(self) -> Set[str]:
+    async def missing(self) -> set[str]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    async def status(self) -> AsyncIterator[Tuple[str, Optional[bool]]]:
+    async def status(self) -> AsyncIterator[tuple[str, bool | None]]:
         raise NotImplementedError
 
 
@@ -136,7 +135,7 @@ class IChangelogChangesChecker(metaclass=abstracts.Interface):
             self,
             version: _version.Version,
             sections: utils.typing.ChangelogChangeSectionsDict) -> (
-                Tuple[str, ...]):
+                tuple[str, ...]):
         raise NotImplementedError
 
 
@@ -154,13 +153,13 @@ class IChangelogCheck(IProjectCodeCheck, metaclass=abstracts.Interface):
         while False:
             yield NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def changes_checker_class(
-            self) -> Type[IChangelogChangesChecker]:
+            self) -> type[IChangelogChangesChecker]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def changes_checker(self) -> IChangelogChangesChecker:
         raise NotImplementedError
@@ -169,7 +168,7 @@ class IChangelogCheck(IProjectCodeCheck, metaclass=abstracts.Interface):
 class IRSTCheck(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
-    def __call__(self, text: str) -> Optional[str]:
+    def __call__(self, text: str) -> str | None:
         raise NotImplementedError
 
 

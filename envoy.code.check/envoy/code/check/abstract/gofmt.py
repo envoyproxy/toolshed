@@ -1,11 +1,11 @@
 
 import pathlib
+import os
 import re
 import shutil
 import subprocess
 from functools import cached_property, partial
-from typing import (
-    Optional, Pattern)
+from typing import Pattern
 
 import abstracts
 
@@ -105,7 +105,7 @@ class AGofmtCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     def filter_files(
             cls,
             files: set[str],
-            exclude: Optional[Pattern[str]]) -> set[str]:
+            exclude: Pattern[str] | None) -> set[str]:
         """Filter files for `gofmt` checking."""
         return set(
             path
@@ -115,7 +115,7 @@ class AGofmtCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
                 or not exclude.match(path)))
 
     @classmethod
-    def gofmt(self, path: str, *args) -> typing.ProblemDict:
+    def gofmt(self, path: str | os.PathLike, *args) -> typing.ProblemDict:
         """Run gofmt on files."""
         return Gofmt(path)(*args)
 
@@ -162,7 +162,7 @@ class AGofmtCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
             if path.endswith(".go"))
 
     @cached_property
-    def gofmt_command(self) -> str | pathlib.Path:
+    def gofmt_command(self) -> str | os.PathLike:
         """Gofmt command, should be available in the running system."""
         if "gofmt" in self.binaries:
             return pathlib.Path(self.binaries["gofmt"]).absolute()
@@ -187,7 +187,7 @@ class AGofmtCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
         return self._gofmt("-l")
 
     @cached_property
-    def nogofmt_re(self) -> Optional[Pattern[str]]:
+    def nogofmt_re(self) -> Pattern[str] | None:
         """Regex for matching files that should not be checked."""
         # TODO(phlax): merge e.c.c config
         if not NOGOFMT_RE:

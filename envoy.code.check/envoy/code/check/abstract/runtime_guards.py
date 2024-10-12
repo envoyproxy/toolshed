@@ -1,8 +1,8 @@
-
+#
 import re
 from functools import cached_property
 from typing import (
-    AsyncIterator, Awaitable, Iterable, Optional, Pattern, Set, Tuple)
+    AsyncIterator, Awaitable, Iterable, Pattern)
 
 import abstracts
 
@@ -31,25 +31,25 @@ class ARuntimeGuardsCheck(
     """Runtime guards check."""
 
     @async_property(cache=True)
-    async def configured(self) -> Set[str]:
+    async def configured(self) -> set[str]:
         return set(
             line.split(":")[1][14:-2]
             for line
             in await self._grepped)
 
     @cached_property
-    def expected_missing(self) -> Set[str]:
+    def expected_missing(self) -> set[str]:
         return set(EXPECTED_MISSING_GUARDS)
 
     @async_property
-    async def mentioned(self) -> Set[str]:
+    async def mentioned(self) -> set[str]:
         mentioned = set()
         async for change in self._changes:
             mentioned |= self._find_mention(change)
         return mentioned
 
     @async_property(cache=True)
-    async def missing(self) -> Set[str]:
+    async def missing(self) -> set[str]:
         return set(
             await self.configured
             - await self.mentioned
@@ -60,7 +60,7 @@ class ARuntimeGuardsCheck(
         return re.compile(RELOADABLE_MATCH_RE)
 
     @async_property
-    async def status(self) -> AsyncIterator[Tuple[str, Optional[bool]]]:
+    async def status(self) -> AsyncIterator[tuple[str, bool | None]]:
         for guard in sorted(await self.configured):
             if guard in await self.missing:
                 yield guard, False
@@ -84,7 +84,7 @@ class ARuntimeGuardsCheck(
             ["-E", RELOADABLE_GUARD_GREP_RE],
             RUNTIME_GUARDS_CONFIG_PATH)
 
-    def _find_mention(self, change: str) -> Set[str]:
+    def _find_mention(self, change: str) -> set[str]:
         return set(
             m.strip("`").replace(".", "_")
             for m

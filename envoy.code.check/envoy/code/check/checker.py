@@ -1,7 +1,6 @@
 
 import pathlib
 from functools import cached_property
-from typing import Tuple, Type
 
 import abstracts
 
@@ -70,7 +69,7 @@ class RuntimeGuardsCheck(abstract.ARuntimeGuardsCheck):
 class ChangelogChangesChecker(abstract.AChangelogChangesChecker):
 
     @cached_property
-    def change_checkers(self) -> Tuple[interface.IRSTCheck, ...]:
+    def change_checkers(self) -> tuple[interface.IRSTCheck, ...]:
         return (
             BackticksCheck(),
             PunctuationCheck(),
@@ -87,11 +86,11 @@ class ChangelogCheck(abstract.AChangelogCheck):
 
     @property
     def changes_checker_class(
-            self) -> Type[interface.IChangelogChangesChecker]:
+            self) -> type[interface.IChangelogChangesChecker]:
         return ChangelogChangesChecker
 
     @property
-    def changelog_status_class(self) -> Type[interface.IChangelogStatus]:
+    def changelog_status_class(self) -> type[interface.IChangelogStatus]:
         return ChangelogStatus
 
 
@@ -127,7 +126,7 @@ class CodeChecker(abstract.ACodeChecker):
         return super().path
 
     @property
-    def project_class(self) -> Type[IProject]:
+    def project_class(self) -> type[IProject]:
         return Project
 
     @property

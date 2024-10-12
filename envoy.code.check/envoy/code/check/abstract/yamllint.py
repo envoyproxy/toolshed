@@ -3,8 +3,7 @@ import io
 import pathlib
 from functools import cached_property, partial
 from typing import (
-    AsyncIterator, Dict, Generator, Iterator, List, Optional,
-    Set, Tuple)
+    AsyncIterator, Generator, Iterator)
 
 import yaml
 from yamllint import linter  # type:ignore
@@ -48,8 +47,7 @@ class YamllintFilesCheck(directory.ADirectoryContext):
     def handle_result(
             self,
             path: str,
-            result: Generator) -> Optional[
-                "typing.YamllintProblemTuple"]:
+            result: Generator) -> typing.YamllintProblemTuple | None:
         if problems := self._parse_problems(path, result):
             return (
                 (path,
@@ -59,8 +57,7 @@ class YamllintFilesCheck(directory.ADirectoryContext):
 
     def run_check(
             self,
-            path: str) -> Optional[
-                "typing.YamllintProblemTuple"]:
+            path: str) -> typing.YamllintProblemTuple | None:
         with io.open(path, newline='') as f:
             try:
                 return self.handle_result(
@@ -72,15 +69,15 @@ class YamllintFilesCheck(directory.ADirectoryContext):
     @debug.logging(
         log=__name__,
         show_cpu=True)
-    def run_checks(self) -> Tuple["typing.YamllintProblemTuple", ...]:
+    def run_checks(self) -> tuple["typing.YamllintProblemTuple", ...]:
         """Run Yamllint checks."""
         return tuple(self.check_results)
 
     def _parse_problems(
             self,
             path: str,
-            problems: Generator) -> Dict[str, List[str]]:
-        problem_dict: Dict[str, List[str]] = {}
+            problems: Generator) -> dict[str, list[str]]:
+        problem_dict: dict[str, list[str]] = {}
         for p in problems:
             problem_dict[p.level] = problem_dict.get(p.level, [])
             problem_dict[p.level].append(
@@ -95,11 +92,11 @@ class AYamllintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
             cls,
             root_path: str,
             config: YamlLintConfig,
-            *args) -> Tuple["typing.YamllintProblemTuple", ...]:
+            *args) -> tuple["typing.YamllintProblemTuple", ...]:
         return YamllintFilesCheck(root_path, config, *args).run_checks()
 
     @async_property
-    async def checker_files(self) -> Set[str]:
+    async def checker_files(self) -> set[str]:
         return set(
             path for path
             in await self.directory.files

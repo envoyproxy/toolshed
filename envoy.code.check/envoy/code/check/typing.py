@@ -1,37 +1,37 @@
 
-from typing import Dict, List, Optional, Tuple, TypedDict
+from typing import TypedDict
 
 from aio.run import checker
 
 
-ProblemDict = Dict[str, checker.interface.IProblems]
+ProblemDict = dict[str, checker.interface.IProblems]
 
-YamllintProblemTuple = Tuple[str, checker.interface.IProblems]
+YamllintProblemTuple = tuple[str, checker.interface.IProblems]
 
-YapfProblemTuple = Tuple[str, checker.interface.IProblems]
-YapfResultTuple = Tuple[str, str, bool]
-YapfCheckResultTuple = Tuple[str, YapfResultTuple]
+YapfProblemTuple = tuple[str, checker.interface.IProblems]
+YapfResultTuple = tuple[str, str, bool]
+YapfCheckResultTuple = tuple[str, YapfResultTuple]
 
-GofmtProblemTuple = Tuple[str, checker.interface.IProblems]
+GofmtProblemTuple = tuple[str, checker.interface.IProblems]
 
 
 class BaseExtensionMetadataDict(TypedDict):
-    categories: List[str]
+    categories: list[str]
     security_posture: str
     status: str
 
 
 class ExtensionMetadataDict(BaseExtensionMetadataDict, total=False):
     undocumented: bool
-    type_urls: List[str]
+    type_urls: list[str]
     status_upstream: str
 
 
-ExtensionsMetadataDict = Dict[str, ExtensionMetadataDict]
-ExtensionsSchemaCategoriesList = List[str]
-ExtensionsSchemaBuiltinList = List[str]
-ExtensionsSchemaSecurityPosturesList = List[str]
-ExtensionsSchemaStatusValuesList = List[str]
+ExtensionsMetadataDict = dict[str, ExtensionMetadataDict]
+ExtensionsSchemaCategoriesList = list[str]
+ExtensionsSchemaBuiltinList = list[str]
+ExtensionsSchemaSecurityPosturesList = list[str]
+ExtensionsSchemaStatusValuesList = list[str]
 
 
 class ExtensionSecurityPostureMetadataDict(TypedDict):
@@ -41,15 +41,15 @@ class ExtensionSecurityPostureMetadataDict(TypedDict):
 
 class ExtensionStatusMetadataDict(TypedDict):
     name: str
-    description: Optional[str]
+    description: str | None
 
 
 class ExtensionsSchemaDict(TypedDict):
     builtin: ExtensionsSchemaBuiltinList
-    security_postures: List[ExtensionSecurityPostureMetadataDict]
+    security_postures: list[ExtensionSecurityPostureMetadataDict]
     categories: ExtensionsSchemaCategoriesList
-    status_values: List[ExtensionStatusMetadataDict]
+    status_values: list[ExtensionStatusMetadataDict]
 
 
-ConfiguredExtensionsDict = Dict[str, str]
-YAMLConfigDict = Dict[str, str | list | dict[str, 'YAMLConfigDict']]
+ConfiguredExtensionsDict = dict[str, str]
+YAMLConfigDict = dict[str, str | list | dict[str, 'YAMLConfigDict']]
