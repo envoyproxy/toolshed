@@ -3,7 +3,7 @@ aio.api.bazel>=0.0.2
 aio.api.github>=0.2.10
 aio.api.nist>=0.0.4
 aio.core>=0.10.5
-aio.run.checker>=0.5.7
+aio.run.checker>=0.5.8
 aio.run.runner>=0.3.4
 aiodocker
 aiofiles
