@@ -1,6 +1,4 @@
 
-from typing import List, Optional
-
 import abstracts
 
 from aio.run.checker import interface
@@ -11,15 +9,15 @@ class AProblems(metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
-            errors: Optional[List[str]] = None,
-            warnings: Optional[List[str]] = None) -> None:
+            errors: list[str] | None = None,
+            warnings: list[str] | None = None) -> None:
         self._errors = errors
         self._warnings = warnings
 
     @property
-    def errors(self) -> List[str]:
+    def errors(self) -> list[str]:
         return self._errors or []
 
     @property
-    def warnings(self) -> List[str]:
+    def warnings(self) -> list[str]:
         return self._warnings or []

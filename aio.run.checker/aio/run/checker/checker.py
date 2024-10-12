@@ -4,8 +4,7 @@ import pathlib
 import time
 from functools import cached_property
 from typing import (
-    Awaitable, Callable, Dict, Iterable, List, Optional, Sequence,
-    Set, Tuple, Type)
+    Awaitable, Callable, Iterable, Sequence, Type)
 
 from aio.run import runner
 from aio.run.checker import abstract
@@ -21,14 +20,14 @@ class Checker(runner.Runner):
     `self.succeed` depending upon the outcome of the checks.
     """
     _active_check = ""
-    checks: Tuple[str, ...] = ()
-    _preloader: Optional[asyncio.Task] = None
+    checks: tuple[str, ...] = ()
+    _preloader: asyncio.Task | None = None
 
     def __init__(self, *args) -> None:
         super().__init__(*args)
-        self.success: Dict = {}
-        self.errors: Dict = {}
-        self.warnings: Dict = {}
+        self.success: dict = {}
+        self.errors: dict = {}
+        self.warnings: dict = {}
 
     @property
     def active_check(self) -> str:
@@ -47,7 +46,7 @@ class Checker(runner.Runner):
         return self.args.diff
 
     @cached_property
-    def disabled_checks(self) -> Dict[str, str]:
+    def disabled_checks(self) -> dict[str, str]:
         """Checks which have been disabled due to missing CLI args."""
         return {}
 
@@ -102,7 +101,7 @@ class Checker(runner.Runner):
 
     @property
     def paths(self) -> list:
-        """List of paths to apply checks to."""
+        """list of paths to apply checks to."""
         return self.args.paths or [self.path]
 
     @property
@@ -219,7 +218,7 @@ class Checker(runner.Runner):
     def error(
             self,
             name: str,
-            errors: Optional[Iterable[str]],
+            errors: Iterable[str] | None,
             log: bool = True,
             log_type: str = "error") -> int:
         """Record (and log) errors for a check type."""
@@ -291,7 +290,7 @@ class Checker(runner.Runner):
 
     async def on_checks_begin(self) -> None:
         """Callback hook called before all checks."""
-        # Set up preload tasks
+        # set up preload tasks
         self._preloader = asyncio.create_task(self.preload())
         self._notify_checks()
         self._notify_preload()
@@ -330,14 +329,14 @@ class Checker(runner.Runner):
         return asyncio.Queue()
 
     @cached_property
-    def completed_checks(self) -> Set[str]:
+    def completed_checks(self) -> set[str]:
         """Checks that have succesfully completed."""
         return set()
 
     @cached_property
-    def preload_checks(self) -> Dict[str, List[str]]:
+    def preload_checks(self) -> dict[str, list[str]]:
         """Mapping of checks to blocking preload tasks."""
-        checks: Dict[str, List[str]] = {}
+        checks: dict[str, list[str]] = {}
         for name, task in self.preload_checks_data.items():
             for check in task.get("blocks", []):
                 checks[check] = checks.get(check, [])
@@ -345,17 +344,17 @@ class Checker(runner.Runner):
         return checks
 
     @cached_property
-    def preload_checks_data(self) -> Dict[str, Dict]:
+    def preload_checks_data(self) -> dict[str, dict]:
         return dict(getattr(self, "_preload_checks_data", ()))
 
     @cached_property
-    def preload_pending_tasks(self) -> Set[str]:
+    def preload_pending_tasks(self) -> set[str]:
         """Currently pending preload tasks."""
         return set()
 
     @cached_property
-    def preload_tasks(self) -> Tuple[Awaitable, ...]:
-        """Tuple of awaitables for preloading check data."""
+    def preload_tasks(self) -> tuple[Awaitable, ...]:
+        """tuple of awaitables for preloading check data."""
         tasks = [
             self.preload_data(name)
             for name
@@ -363,12 +362,12 @@ class Checker(runner.Runner):
         return tuple(t for t in tasks if t)
 
     @cached_property
-    def preloaded_checks(self) -> Set[str]:
+    def preloaded_checks(self) -> set[str]:
         """Checks for wich all preload tasks are complete."""
         return set()
 
     @property
-    def remaining_checks(self) -> Tuple[str, ...]:
+    def remaining_checks(self) -> tuple[str, ...]:
         return tuple(
             check
             for check
@@ -377,7 +376,7 @@ class Checker(runner.Runner):
                 and check not in self.completed_checks))
 
     @cached_property
-    def removed_checks(self) -> Set[str]:
+    def removed_checks(self) -> set[str]:
         """Checks removed due to failed preload tasks."""
         return set()
 
@@ -441,7 +440,7 @@ class Checker(runner.Runner):
 
     def preload_data(
             self,
-            task: str) -> Optional[Awaitable]:
+            task: str) -> Awaitable | None:
         """Return an awaitable preload task if required."""
         if self._task_should_preload(task):
             self.preload_pending_tasks.add(task)
@@ -468,7 +467,7 @@ class Checker(runner.Runner):
             if proceed:
                 await self.on_preload(task)
 
-    def preloader_catches(self, task: str) -> Tuple[Type[BaseException], ...]:
+    def preloader_catches(self, task: str) -> tuple[Type[BaseException], ...]:
         return tuple(self.preload_checks_data[task].get("catches", ()))
 
     @runner.cleansup
@@ -573,7 +572,7 @@ class CheckerSummary(object):
             self,
             problem_type: str,
             check: str,
-            problems: List[str]) -> None:
+            problems: list[str]) -> None:
         """Summary for a failed check of a given problem type."""
         self.writer_for(problem_type)(
             self.problem_section(problem_type, check, problems))
@@ -597,7 +596,7 @@ class CheckerSummary(object):
             self,
             problem_type: str,
             check: str,
-            problems: List[str]) -> str:
+            problems: list[str]) -> str:
         """Print a summary section."""
         max_display = self.max_problems_of(problem_type, len(problems))
         title = self.problem_title(problem_type, len(problems), max_display)
@@ -631,6 +630,6 @@ class Problems(abstract.AProblems):
 
     def __init__(
             self,
-            errors: Optional[List[str]] = None,
-            warnings: Optional[List[str]] = None) -> None:
+            errors: list[str] | None = None,
+            warnings: list[str] | None = None) -> None:
         abstract.AProblems.__init__(self, errors=errors, warnings=warnings)
