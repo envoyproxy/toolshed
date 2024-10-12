@@ -14,7 +14,7 @@
 //     "aio.api.github>=0.2.10",
 //     "aio.api.nist>=0.0.4",
 //     "aio.core>=0.10.5",
-//     "aio.run.checker>=0.5.7",
+//     "aio.run.checker>=0.5.8",
 //     "aio.run.runner>=0.3.4",
 //     "aiodocker",
 //     "aiofiles",
@@ -216,21 +216,21 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "19ce85bc48800c5e0049430346a92d5b2ae98dda95b12ae5332ba1b28e7450e8",
-              "url": "https://files.pythonhosted.org/packages/43/9c/6aa6dde1e4d0094984f4656a472566f69faa538fa91b17e126537114b383/aio.run.checker-0.5.7-py3-none-any.whl"
+              "hash": "9bf5e20773f83113b2eee39277f0ec3e014aeecfd33deb44103b0ed2482d3ff5",
+              "url": "https://files.pythonhosted.org/packages/70/ee/09043c64078cb79a5abcf8ceacf094568f00ac8db161314ff0ee9c1a7986/aio.run.checker-0.5.8-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "5b9c5296c824206aebb10ade175eb07e89497761da6749b6ba09507ce03f64af",
-              "url": "https://files.pythonhosted.org/packages/bc/08/2c6499993dee5790c0ed27dda21e669bcf34d4b7bbc99ce41471a8fbcde5/aio.run.checker-0.5.7.tar.gz"
+              "hash": "b5fcb91651da986b13eefd340a45b402100a2967e1eb1a1b941ccfbc36fe0eda",
+              "url": "https://files.pythonhosted.org/packages/61/10/2362da825f4bf18827b1744aa32050e3da10ce130a99bc15b9de0babdc7d/aio.run.checker-0.5.8.tar.gz"
             }
           ],
           "project_name": "aio-run-checker",
           "requires_dists": [
-            "aio.run.runner>=0.3.3"
+            "aio.run.runner>=0.3.4"
           ],
-          "requires_python": null,
-          "version": "0.5.7"
+          "requires_python": ">=3.10.0",
+          "version": "0.5.8"
         },
         {
           "artifacts": [
@@ -5515,7 +5515,7 @@
     "aio.api.github>=0.2.10",
     "aio.api.nist>=0.0.4",
     "aio.core>=0.10.5",
-    "aio.run.checker>=0.5.7",
+    "aio.run.checker>=0.5.8",
     "aio.run.runner>=0.3.4",
     "aiodocker",
     "aiofiles",
