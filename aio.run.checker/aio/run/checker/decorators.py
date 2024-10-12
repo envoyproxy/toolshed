@@ -1,8 +1,7 @@
 
 from functools import partial
 from typing import (
-    Any, Callable, Dict, Optional, Sequence,
-    Tuple, Type)
+    Any, Callable, Sequence, Type)
 
 
 class preload:
@@ -10,14 +9,14 @@ class preload:
     def __init__(
             self,
             when: Sequence[str],
-            blocks: Optional[Sequence[str]] = None,
-            catches: Optional[Sequence[Type[BaseException]]] = None,
-            name: Optional[str] = None,
-            unless: Optional[Sequence[str]] = None) -> None:
+            blocks: Sequence[str] | None = None,
+            catches: Sequence[Type[BaseException]] | None = None,
+            name: str | None = None,
+            unless: Sequence[str] | None = None) -> None:
         self._when = when
         self._blocks = blocks
         self._catches = catches
-        self._fun: Optional[Callable] = None
+        self._fun: Callable | None = None
         self._name = name
         self._unless = unless
 
@@ -29,17 +28,17 @@ class preload:
         self.name = name
         cls._preload_checks_data = self.get_preload_checks_data(cls)
 
-    def __get__(self, instance: Any, cls: Optional[Type] = None) -> Any:
+    def __get__(self, instance: Any, cls: Type | None = None) -> Any:
         if instance is None:
             return self
         return partial(self.fun, instance)
 
     @property
-    def blocks(self) -> Tuple[str, ...]:
+    def blocks(self) -> tuple[str, ...]:
         return self.when + tuple(self._blocks or ())
 
     @property
-    def catches(self) -> Tuple[Type[BaseException], ...]:
+    def catches(self) -> tuple[Type[BaseException], ...]:
         return tuple(self._catches or ())
 
     @property
@@ -47,11 +46,11 @@ class preload:
         return self._name or self.name
 
     @property
-    def when(self) -> Tuple[str, ...]:
+    def when(self) -> tuple[str, ...]:
         return tuple(self._when)
 
     @property
-    def unless(self) -> Tuple[str, ...]:
+    def unless(self) -> tuple[str, ...]:
         return tuple(self._unless or ())
 
     def fun(self, instance, *args, **kwargs) -> Any:
@@ -60,7 +59,7 @@ class preload:
 
     def get_preload_checks_data(
             self,
-            cls: Type) -> Tuple[Tuple[str, Dict], ...]:
+            cls: Type) -> tuple[tuple[str, dict], ...]:
         preload_checks_data = dict(getattr(cls, "_preload_checks_data", ()))
         preload_checks_data[self.tag_name] = dict(
             name=self.tag_name,
