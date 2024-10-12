@@ -1,6 +1,5 @@
 
 from functools import cached_property
-from typing import Type
 
 import abstracts
 
@@ -29,7 +28,7 @@ class ReportRunner(abstract.AReportRunner):
     about Envoy's CI."""
 
     @property
-    def runs_class(self) -> Type[interface.ICIRuns]:
+    def runs_class(self) -> type[interface.ICIRuns]:
         return ci.CIRuns
 
     @cached_property

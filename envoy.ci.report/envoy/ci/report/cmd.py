@@ -1,11 +1,10 @@
 
 import sys
-from typing import Optional
 
 from .runner import ReportRunner
 
 
-def main(*args: str) -> Optional[int]:
+def main(*args: str) -> int | None:
     return ReportRunner(*args)()
 
 

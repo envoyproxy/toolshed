@@ -1,5 +1,5 @@
 
-from . import abstract, exceptions, interface
+from . import abstract, exceptions, interface, typing
 from .ci import CIRuns
 from .runner import (
     CreationTimeFilter, JSONFormat, MarkdownFormat,
@@ -18,4 +18,5 @@ __all__ = (
     "main",
     "MarkdownFormat",
     "ReportRunner",
-    "StatusFilter")
+    "StatusFilter",
+    "typing")

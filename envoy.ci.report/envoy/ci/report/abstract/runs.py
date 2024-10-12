@@ -13,7 +13,7 @@ from aio.api import github
 from aio.core.functional import async_property
 from aio.core.tasks import concurrent
 
-from envoy.ci.report import exceptions
+from envoy.ci.report import exceptions, typing
 
 URL_GH_REPO_ACTION_ENV_ARTIFACT = "actions/runs/{wfid}/artifacts?name=env"
 URL_GH_REPO_ACTIONS = "actions/runs?per_page=100"
@@ -41,7 +41,7 @@ class ACIRuns(metaclass=abstracts.Abstraction):
             else sort_ascending)
 
     @async_property
-    async def as_dict(self) -> dict:
+    async def as_dict(self) -> typing.CIRunsDict:
         return self._sorted(await self._to_dict())
 
     @async_property(cache=True)
@@ -57,7 +57,7 @@ class ACIRuns(metaclass=abstracts.Abstraction):
         return result
 
     @async_property(cache=True)
-    async def envs(self) -> dict:
+    async def envs(self) -> typing.CIRequestEnvsDict:
         artifacts: dict = {}
         async for result in concurrent(self._env_fetches):
             if not result:
@@ -214,40 +214,57 @@ class ACIRuns(metaclass=abstracts.Abstraction):
         except IndexError:
             log.warning(f"Unable to find request artifact: {wfid}")
 
-    def _sorted(self, runs: dict) -> dict:
+    def _sorted(self, runs: typing.CIRunsDict) -> typing.CIRunsDict:
         max_or_min = (
             min
             if self.sort_ascending
             else max)
         return dict(
             sorted(
-                ((k,
-                  sorted(
-                      v,
-                      key=lambda event: event["request"]["started"],
-                      reverse=not self.sort_ascending))
-                 for k, v in runs.items()),
+                runs.items(),
                 key=lambda item: max_or_min(
-                    x["request"]["started"]
-                    for x in item[1]),
+                    request["started"]
+                    for request
+                    in item[1]["requests"].values()),
                 reverse=not self.sort_ascending))
 
-    async def _to_dict(self) -> dict:
-        return {
-            commit: requests
-            for commit, request in (await self.workflow_requests).items()
-            if (requests := await self._to_list_request(commit, request))}
+    async def _to_dict(self) -> typing.CIRunsDict:
+        wf_requests = await self.workflow_requests
+        result: dict = {}
+        for commit, _requests in wf_requests.items():
+            requests = await self._to_list_request(commit, _requests)
+            if not requests:
+                continue
+            result[commit] = {}
+            result[commit]["head"] = dict(
+                message=requests[0]["request"]["message"],
+                target_branch=requests[0]["request"]["target-branch"])
+            result[commit]["requests"] = {}
+            for request in requests:
+                result[commit]["requests"][request["request_id"]] = result[
+                    commit]["requests"].get(
+                        request["request_id"],
+                        dict(event=request["event"],
+                             started=request["request"]["started"],
+                             workflows={}))
+                result[commit]["requests"][
+                    request["request_id"]]["workflows"][
+                        request["workflow_id"]] = request["workflow"]
+        return result
 
     async def _to_list_request(self, commit: str, request: dict) -> list[dict]:
-        return [
-            {"event": event,
-             "request": (await self.envs)[commit][event][req]["request"],
-             "request_id": req,
-             "check_name": check_run["name"],
-             "workflow_id": check_run["external_id"],
-             "workflow": (await self.workflows)[int(check_run["external_id"])]}
-            for event, requests in request.items()
-            for check_run in (
-                    await self.check_runs).get(
-                        commit, {}).get(event, [])
-            for req in requests]
+        return sorted(
+            [{"event": event,
+              "request": (await self.envs)[commit][event][req]["request"],
+              "request_id": req,
+              "check_name": check_run["name"],
+              "workflow_id": check_run["external_id"],
+              "workflow": (await self.workflows)[
+                  int(check_run["external_id"])]}
+             for event, requests in request.items()
+             for check_run in (
+                     await self.check_runs).get(
+                         commit, {}).get(event, [])
+             for req in requests],
+            key=lambda item: item["request"]["started"],
+            reverse=not self.sort_ascending)

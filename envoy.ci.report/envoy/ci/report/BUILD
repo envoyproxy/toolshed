@@ -14,6 +14,7 @@ toolshed_library(
         "exceptions.py",
         "interface.py",
         "runner.py",
+        "typing.py",
         "abstract/__init__.py",
         "abstract/filters.py",
         "abstract/format.py",

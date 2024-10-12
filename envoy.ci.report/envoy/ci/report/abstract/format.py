@@ -1,5 +1,6 @@
 
 import json
+import textwrap
 from datetime import datetime
 
 import abstracts
@@ -28,36 +29,49 @@ class AJSONFormat(AFormat):
 class AMarkdownFormat(AFormat):
 
     def out(self, data: dict) -> None:
-        for commit, events in data.items():
-            self._handle_commit(commit, events)
+        for commit, info in data.items():
+            self._handle_commit(commit, info)
 
-    def _handle_commit(self, commit: str, events: list[dict]) -> None:
-        outcome = (
-            "failed"
-            if any(event["workflow"]["conclusion"] == "failure"
-                   for event
-                   in events)
-            else "succeeded")
-        target_branch = events[0]["request"]["target-branch"]
+    def _handle_commit(self, commit: str, info: dict) -> None:
+        target_branch = info["head"]["target_branch"]
         commit_url = f"https://github.com/envoyproxy/envoy/commit/{commit}"
-        print(f"[{target_branch}@{commit[:7]}]({commit_url}): {outcome}")
-        for event in events:
-            self._handle_event(event)
+        print(f"### [{target_branch}@{commit[:7]}]({commit_url})")
+        self._handle_commit_message(info['head']['message'])
+        for request_id, request in info["requests"].items():
+            self._handle_event(request_id, request)
 
-    def _handle_event(self, event: dict) -> None:
-        event_type = event["event"]
+    def _handle_commit_message(self, message):
+        lines = message.splitlines()
+        if len(lines) == 1:
+            print(message)
+            return
+        summary = lines[0]
+        details = textwrap.indent(
+            "\n".join(lines[1:]),
+            "  ",
+            lambda line: True)
+        print("<details>")
+        print(f"  <summary>{summary}</summary>")
+        print("  <blockquote>")
+        print(details)
+        print("  </blockquote>")
+        print("</details>")
+        print()
+
+    def _handle_event(self, request_id, request) -> None:
+        event_type = request["event"]
         request_started = datetime.utcfromtimestamp(
-            int(event["request"]["started"])).isoformat()
-        workflow_name = event["workflow"]["name"]
-        conclusion = event["workflow"]["conclusion"]
-        workflow_id = event["workflow_id"]
-        request_id = event["request_id"]
-        workflow_url = (
-            "https://github.com/envoyproxy/envoy/"
-            f"actions/runs/{workflow_id}")
+            int(request["started"])).isoformat()
         request_url = (
             "https://github.com/envoyproxy/envoy/"
             f"actions/runs/{request_id}")
-        print(
-            f" -> [[{event_type}@{request_started}]({request_url})]: "
-            f"[{workflow_name} ({conclusion})]({workflow_url})")
+        print(f"#### [{event_type}@{request_started}]({request_url}):")
+        for workflow_id, workflow in request["workflows"].items():
+            workflow_url = (
+                "https://github.com/envoyproxy/envoy/"
+                f"actions/runs/{workflow_id}")
+            print(
+                f"- [{workflow['name']} "
+                f"({workflow['conclusion']})]({workflow_url})")
+        print()
+        print("----")
