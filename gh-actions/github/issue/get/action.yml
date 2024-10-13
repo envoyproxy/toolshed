@@ -1,0 +1,86 @@
+inputs:
+  author:
+    type: string
+    default:
+  body:
+    type: string
+    default:
+  create:
+    type: boolean
+    default: false
+  label:
+    type: string
+    default:
+  repo:
+    type: string
+    default: ${{ github.repository }}
+  title:
+    type: string
+    required: true
+  GITHUB_TOKEN:
+    type: string
+    required: true
+
+outputs:
+  id:
+    value: ${{ steps.issue-id.outputs.value || steps.issue-created.outputs.id }}
+
+
+runs:
+  using: composite
+  steps:
+  - run: |
+      ISSUE_SEARCH=(
+          "is:issue"
+          "is:open"
+          "repo:${{ inputs.repo }}"
+          "in:title:\\\"${{ inputs.title }}\\\"")
+      if [[ -n "${{ inputs.label }}" ]]; then
+          ISSUE_SEARCH+=("label:${{ inputs.label }}")
+      fi
+      if [[ -n "${{ inputs.author }}" ]]; then
+          ISSUE_SEARCH+=("author:${{ inputs.author }}")
+      fi
+      RESULT="$(gh api graphql -f query="
+      {
+        search(query: \"${ISSUE_SEARCH[*]}\", type: ISSUE, first: 1) {
+          edges {
+            node {
+              ... on Issue {
+                title
+                url
+                number
+              }
+            }
+          }
+        }
+      }")"
+      echo "result=${RESULT}" >> $GITHUB_OUTPUT
+    id: issue-query
+    shell: bash
+    env:
+      GH_TOKEN: "${{ inputs.GITHUB_TOKEN }}"
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.36
+    id: issue-id
+    with:
+      input: ${{ steps.issue-query.outputs.result }}
+      options: -r
+      filter: |
+        .data.search.edges[0].node.number // ""
+
+  - run: |
+      ISSUE_ARGS=(
+          "--title" "${{ inputs.title }}"
+          "--body" "${{ inputs.body }}")
+      if [[ -n "${{ inputs.label }}" ]]; then
+          ISSUE_ARGS+=("--label" "${{ inputs.label }}")
+      fi
+      ISSUE=$(
+          gh issue create "${ISSUE_ARGS[@]}"\
+          | grep -oP '(?<=issues/)\d+')
+      echo "id=${ISSUE}" >> $GITHUB_OUTPUT
+    if: ${{ inputs.create && ! steps.issue-id.outputs.value }}
+    id: issue-created
+    shell: bash
+    env:
+      GH_TOKEN: "${{ inputs.GITHUB_TOKEN }}"
