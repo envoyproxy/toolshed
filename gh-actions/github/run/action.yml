@@ -49,15 +49,15 @@ inputs:
     type: string
     default: |
       - run: |
-          echo "disk space at beginning of build:"
-          df -h > %{{ steps.paths.outputs.report }}/df-pre
+          # disk space at beginning of build
+          df -h > "${TMP_REPORT}/df-pre"
         shell: bash
   report-post:
     type: string
     default: |
       - run: |
           # disk space at end of build
-          df -h > %{{ steps.paths.outputs.report }}/df-post
+          df -h > "${TMP_REPORT}/df-post"
         shell: bash
   source:
     type: string
