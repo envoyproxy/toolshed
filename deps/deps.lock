@@ -22,7 +22,7 @@
 //     "colorama",
 //     "coloredlogs",
 //     "docutils~=0.20.1",
-//     "envoy.base.utils>=0.4.7",
+//     "envoy.base.utils>=0.5.6",
 //     "envoy.distribution.distrotest>=0.0.10",
 //     "envoy.distribution.release>=0.0.8",
 //     "envoy.distribution.repo>=0.0.7",
@@ -65,7 +65,7 @@
 //     "sphinxext-rediraffe",
 //     "trycast>=0.7.3",
 //     "types-aiofiles",
-//     "types-docutils==0.20.0.20240309",
+//     "types-docutils==0.21.0.20241005",
 //     "types-frozendict",
 //     "types-orjson",
 //     "types-protobuf",
@@ -1243,21 +1243,21 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "2341b7618c92969e3ac5fc43dd16fcc39d132981ffff3f0ddbabf08a336a6fa1",
-              "url": "https://files.pythonhosted.org/packages/93/b7/65396b45357a808d98dccfade10615f453c76a158d3cbe4c0bdf49838c8d/envoy.base.utils-0.5.5-py3-none-any.whl"
+              "hash": "52ec3d91909a31703512ad54b74d6c1601d1c47626ad2ec97eb6cf15e2d55826",
+              "url": "https://files.pythonhosted.org/packages/16/bb/534c50dfe6e4358d2e5ce66465d50e3bce5ea0bdaf1da0a834eb14c72b1a/envoy.base.utils-0.5.6-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "a72af1df5680d4fcdeb91f06d19b7495d740f8b9a8a1549c012272e10fdd59ea",
-              "url": "https://files.pythonhosted.org/packages/6b/42/328d72dbadfab65d5aee8d73393aacbd3dd28d434236cf8d7d73d93508a4/envoy.base.utils-0.5.5.tar.gz"
+              "hash": "ffe42c2f41e225b4caa3a8c11b001b1c2a62a96045449fca2aca749b1648bcce",
+              "url": "https://files.pythonhosted.org/packages/63/73/7c45f31231aca0b79908d0541faea68d74f63b06c9cd2657137faa08095c/envoy.base.utils-0.5.6.tar.gz"
             }
           ],
           "project_name": "envoy-base-utils",
           "requires_dists": [
             "abstracts>=0.0.12",
-            "aio.api.github>=0.2.6",
-            "aio.core>=0.10.1",
-            "aio.run.runner>=0.3.3",
+            "aio.api.github>=0.2.10",
+            "aio.core>=0.10.5",
+            "aio.run.runner>=0.3.4",
             "aiohttp>=3.8.1",
             "frozendict",
             "jinja2>=3.1.4",
@@ -1268,10 +1268,12 @@
             "pytz",
             "pyyaml",
             "trycast>=0.7.3",
+            "types-protobuf",
+            "types-pytz",
             "zstandard"
           ],
-          "requires_python": ">=3.10.0",
-          "version": "0.5.5"
+          "requires_python": ">=3.11.0",
+          "version": "0.5.6"
         },
         {
           "artifacts": [
@@ -3841,19 +3843,19 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "55880e92e837383851168f63ac4225234faaca847cc42757a60a9e611d2829c7",
-              "url": "https://files.pythonhosted.org/packages/b8/25/0eefb3bf6c0d5214b29f153701645de83fec71f40245ad957e96e9db8dc8/types_docutils-0.20.0.20240309-py3-none-any.whl"
+              "hash": "4d9021422f2f3fca8b0726fb8949395f66a06c0d951479eb3b1387d75b134430",
+              "url": "https://files.pythonhosted.org/packages/20/73/8ccc09357cfe9f4b8a5b31af3276dd270924bf4915a13cf816b585221b59/types_docutils-0.21.0.20241005-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "cd514702813ba413c90134fedad9416b2cb8eaf880168b769a707d6fcd159f05",
-              "url": "https://files.pythonhosted.org/packages/b1/8d/1553495a0577ba23cd8f13725bfa592c8445e1c1ed781d80d683a45e5838/types-docutils-0.20.0.20240309.tar.gz"
+              "hash": "48f804a2b50da3a1b1681c4ca1b6184416a6e4129e302d15c44e9d97c59b3365",
+              "url": "https://files.pythonhosted.org/packages/23/31/6f51a6b05ad750fd7875ffd45e7a88063258782f35e5dff1f291061e394e/types-docutils-0.21.0.20241005.tar.gz"
             }
           ],
           "project_name": "types-docutils",
           "requires_dists": [],
           "requires_python": ">=3.8",
-          "version": "0.20.0.20240309"
+          "version": "0.21.0.20241005"
         },
         {
           "artifacts": [
@@ -4788,7 +4790,7 @@
     "colorama",
     "coloredlogs",
     "docutils~=0.20.1",
-    "envoy.base.utils>=0.4.7",
+    "envoy.base.utils>=0.5.6",
     "envoy.distribution.distrotest>=0.0.10",
     "envoy.distribution.release>=0.0.8",
     "envoy.distribution.repo>=0.0.7",
@@ -4831,7 +4833,7 @@
     "sphinxext-rediraffe",
     "trycast>=0.7.3",
     "types-aiofiles",
-    "types-docutils==0.20.0.20240309",
+    "types-docutils==0.21.0.20241005",
     "types-frozendict",
     "types-orjson",
     "types-protobuf",
