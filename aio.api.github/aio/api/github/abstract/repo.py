@@ -3,7 +3,7 @@ import logging
 import pathlib
 from datetime import datetime
 from functools import cached_property, partial
-from typing import Any, Type
+from typing import Any
 
 import gidgethub
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class AGithubRepo(metaclass=abstracts.Abstraction):
     """A Github repo."""
 
-    def __init__(self, github: "interface.IGithubAPI", name: str) -> None:
+    def __init__(self, github: interface.IGithubAPI, name: str) -> None:
         self._github = github
         self._name = name
 
@@ -28,7 +28,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
         return f"<{self.__class__.__name__} {self.name}>"
 
     @cached_property
-    def actions(self) -> "interface.IGithubActions":
+    def actions(self) -> interface.IGithubActions:
         return self.github.actions_class(repo=self)
 
     @cached_property
@@ -41,13 +41,13 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
         return self._github
 
     @cached_property
-    def issues(self) -> "interface.IGithubIssues":
+    def issues(self) -> interface.IGithubIssues:
         return self.github.issues_class(
             self.github,
             repo=self)
 
     @property
-    def labels(self) -> "interface.IGithubIterator":
+    def labels(self) -> interface.IGithubIterator:
         return self.iter_entities(
             self.github.label_class, "labels")
 
@@ -55,14 +55,14 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
     def name(self) -> str:
         return self._name
 
-    async def commit(self, name: str) -> "interface.IGithubCommit":
+    async def commit(self, name: str) -> interface.IGithubCommit:
         return self.github.commit_class(
             self,
             await self.getitem(f"commits/{name}"))
 
     def commits(
             self,
-            since: datetime | None = None) -> "interface.IGithubIterator":
+            since: datetime | None = None) -> interface.IGithubIterator:
         query = "commits"
         if since is not None:
             query = f"{query}?since={utils.dt_to_js_isoformat(since)}"
@@ -100,7 +100,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
         """Call the `gidgethub.getitem` api for this repo."""
         return await self.github.getitem(self.github_endpoint(query))
 
-    def getiter(self, query: str, **kwargs) -> "interface.IGithubIterator":
+    def getiter(self, query: str, **kwargs) -> interface.IGithubIterator:
         """Return a `GithubIterator` wrapping `gidgethub.getiter` for this
         repo."""
         return self.github.getiter(self.github_endpoint(query), **kwargs)
@@ -132,9 +132,9 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
 
     def iter_entities(
             self,
-            entity: Type[base.GithubEntity],
+            entity: type[base.GithubEntity],
             path: str,
-            **kwargs) -> "interface.IGithubIterator":
+            **kwargs) -> interface.IGithubIterator:
         """Iterate and inflate entities for provided type."""
         return self.getiter(
             path,
@@ -157,21 +157,21 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             self,
             name: str,
             data: dict | None = None,
-            dry_run: bool = False) -> "interface.IGithubRelease":
+            dry_run: bool = False) -> interface.IGithubRelease:
         if data:
             return await self.github.release_class.create(self, data, dry_run)
         return self.github.release_class(
             self,
             await self.getitem(f"releases/tags/{name}"))
 
-    def releases(self) -> "interface.IGithubIterator":
+    def releases(self) -> interface.IGithubIterator:
         """Iterate releases for this repo."""
         # TODO: make per_page configurable
         return self.iter_entities(
             self.github.release_class,
             "releases?per_page=100")
 
-    async def tag(self, name: str) -> "interface.IGithubTag":
+    async def tag(self, name: str) -> interface.IGithubTag:
         ref_tag = await self.getitem(f"git/ref/tags/{name}")
         if ref_tag["object"]["type"] != "tag":
             raise exceptions.TagNotFound(name)
@@ -186,7 +186,7 @@ class AGithubRepo(metaclass=abstracts.Abstraction):
             pass
         return False
 
-    def tags(self) -> "interface.IGithubIterator":
+    def tags(self) -> interface.IGithubIterator:
         """Iterate tags for this repo."""
         return self.iter_entities(
             self.github.tag_class,

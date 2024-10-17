@@ -2,9 +2,7 @@
 import abc
 import re
 from functools import cached_property
-from typing import (
-    Any, AsyncGenerator,
-    Pattern, Type)
+from typing import Any, AsyncGenerator, Pattern
 
 import abstracts
 
@@ -103,7 +101,7 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
             if (issue := self.issue_class(self, issue)).key:
                 yield issue
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def closing_tpl(self) -> str:
         raise NotImplementedError
@@ -127,9 +125,9 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
     def issue_author(self) -> str:
         return self._issue_author or ISSUE_AUTHOR
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def issue_class(self) -> Type[interface.IGithubTrackedIssue]:
+    def issue_class(self) -> type[interface.IGithubTrackedIssue]:
         raise NotImplementedError
 
     @async_property(cache=True)
@@ -140,12 +138,12 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
                 issues[issue.key] = issue
         return issues
 
-    @property  # type:ignore
+    @property
     @abc.abstractmethod
     def issues_search_tpl(self):
         return ISSUES_SEARCH_TPL
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def labels(self) -> tuple[str, ...]:
         raise NotImplementedError
@@ -175,7 +173,7 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
     def repo(self) -> interface.IGithubRepo:
         return self.github[self.repo_name]
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def repo_name(self) -> str:
         raise NotImplementedError
@@ -186,17 +184,17 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
             self.title_re_tpl.format(
                 title_prefix=self.title_prefix))
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def title_prefix(self) -> str:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def title_re_tpl(self):
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def title_tpl(self):
         raise NotImplementedError
@@ -224,7 +222,7 @@ class AGithubTrackedIssues(metaclass=abstracts.Abstraction):
     async def issue_title(self, **kwargs) -> str:
         raise NotImplementedError
 
-    def iter_issues(self) -> "interface.IGithubIterator":
+    def iter_issues(self) -> interface.IGithubIterator:
         return self.repo.issues.search(
             self.issues_search_tpl.format(self=self))
 
@@ -245,7 +243,7 @@ class AGithubIssuesTracker(metaclass=abstracts.Abstraction):
     def __getitem__(self, k) -> interface.IGithubTrackedIssues:
         return self.tracked_issues[k]
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def tracked_issues(self) -> dict[str, interface.IGithubTrackedIssues]:
         raise NotImplementedError

@@ -1,6 +1,4 @@
 
-from typing import Type
-
 import gidgethub.aiohttp
 
 import abstracts
@@ -60,7 +58,7 @@ class GithubLabel(AGithubLabel):
 class GithubRelease(AGithubRelease):
 
     @property
-    def assets_class(self) -> Type["interface.IGithubReleaseAssets"]:
+    def assets_class(self) -> type[interface.IGithubReleaseAssets]:
         return GithubReleaseAssets
 
 
@@ -86,45 +84,45 @@ class GithubAPI(AGithubAPI):
         AGithubAPI.__init__(self, session, *args, **kwargs)
 
     @property
-    def actions_class(self) -> Type[AGithubActions]:
+    def actions_class(self) -> type[AGithubActions]:
         return GithubActions
 
     @property
-    def api_class(self) -> Type[gidgethub.aiohttp.GitHubAPI]:
+    def api_class(self) -> type[gidgethub.aiohttp.GitHubAPI]:
         return super().api_class
 
     @property
-    def commit_class(self) -> Type[AGithubCommit]:
+    def commit_class(self) -> type[AGithubCommit]:
         return GithubCommit
 
     @property
-    def issue_class(self) -> Type[AGithubIssue]:
+    def issue_class(self) -> type[AGithubIssue]:
         return GithubIssue
 
     @property
-    def issues_class(self) -> Type[AGithubIssues]:
+    def issues_class(self) -> type[AGithubIssues]:
         return GithubIssues
 
     @property
-    def iterator_class(self) -> Type[AGithubIterator]:
+    def iterator_class(self) -> type[AGithubIterator]:
         return GithubIterator
 
     @property
-    def label_class(self) -> Type[AGithubLabel]:
+    def label_class(self) -> type[AGithubLabel]:
         return GithubLabel
 
     @property
-    def release_class(self) -> Type[AGithubRelease]:
+    def release_class(self) -> type[AGithubRelease]:
         return GithubRelease
 
     @property
-    def repo_class(self) -> Type[AGithubRepo]:
+    def repo_class(self) -> type[AGithubRepo]:
         return GithubRepo
 
     @property
-    def tag_class(self) -> Type[AGithubTag]:
+    def tag_class(self) -> type[AGithubTag]:
         return GithubTag
 
     @property
-    def workflows_class(self) -> Type[AGithubWorkflows]:
+    def workflows_class(self) -> type[AGithubWorkflows]:
         return GithubWorkflows

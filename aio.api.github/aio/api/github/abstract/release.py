@@ -3,7 +3,7 @@ import logging
 import pathlib
 from datetime import datetime
 from functools import cached_property
-from typing import AsyncIterator, Callable, Type
+from typing import AsyncIterator, Callable
 
 from packaging import version
 
@@ -50,9 +50,9 @@ class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
     def assets(self) -> interface.IGithubReleaseAssets:
         return self.assets_class(self)
 
-    @property  # type: ignore
+    @property
     @abstracts.interfacemethod
-    def assets_class(self) -> Type[interface.IGithubReleaseAssets]:
+    def assets_class(self) -> type[interface.IGithubReleaseAssets]:
         raise NotImplementedError
 
     @property
@@ -90,11 +90,11 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
-            release: "interface.IGithubRelease") -> None:
+            release: interface.IGithubRelease) -> None:
         self._release = release
 
     @property
-    def release(self) -> "interface.IGithubRelease":
+    def release(self) -> interface.IGithubRelease:
         return self._release
 
     @property
