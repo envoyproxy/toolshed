@@ -10,7 +10,7 @@ import tempfile
 from configparser import ConfigParser
 from typing import (
     Any, AsyncGenerator, Callable, Generator,
-    Iterator)
+    Iterator, TypeVar)
 
 from packaging import version as _version
 
@@ -27,6 +27,9 @@ try:
     import orjson as json
 except ImportError:
     import json  # type:ignore
+
+
+T = TypeVar('T')
 
 
 # this is testing specific - consider moving to tools.testing.utils
@@ -61,13 +64,13 @@ def from_json(
 
 def from_yaml(
         path: pathlib.Path | str,
-        type: type | None = None) -> Any:
+        tocast: type[T] | None = None) -> Any:
     """Returns the loaded python object from a yaml file given by `path`"""
     data = yaml.safe_load(pathlib.Path(path).read_text())
     return (
         data
-        if type is None
-        else typed(type, data))
+        if tocast is None
+        else typed(tocast, data))
 
 
 def to_yaml(
@@ -90,11 +93,13 @@ def ellipsize(text: str, max_len: int) -> str:
     return f"{text[:max_len - 3]}..."
 
 
-def typed(tocast: type, value: Any) -> Any:
+def typed(tocast: type[T] | None, value: Any) -> T:
     """Attempts to cast a value to a given type, TypeVar, or TypeDict.
 
     raises TypeError if cast value is `None`
     """
+    if not tocast:
+        return value
     if isassignable(value, tocast):
         return value
     raise TypeCastingError(

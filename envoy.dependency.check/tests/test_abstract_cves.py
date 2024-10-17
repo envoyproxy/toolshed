@@ -90,7 +90,8 @@ def test_cves_config(patches, config_path):
 
     assert (
         m_utils.typed.call_args
-        == [(dict, m_utils.from_yaml.return_value), {}])
+        == [(check.typing.CVEConfigDict,
+             m_utils.from_yaml.return_value), {}])
     assert (
         m_utils.from_yaml.call_args
         == [(m_config.return_value, ), {}])
