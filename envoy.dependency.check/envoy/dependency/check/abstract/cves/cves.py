@@ -52,7 +52,9 @@ class ADependencyCVEs(event.AReactive, metaclass=abstracts.Abstraction):
         in provided config file
         """
         return (
-            utils.typed(dict, utils.from_yaml(self.config_path))
+            utils.typed(
+                typing.CVEConfigDict,
+                utils.from_yaml(self.config_path))
             if self.config_path
             else {})
 
