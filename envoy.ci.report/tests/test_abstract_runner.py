@@ -193,20 +193,29 @@ def test_runner_format(patches, format):
 
     with patched as (m_args, m_formats):
         m_formats.return_value.get.return_value = format
-        assert (
-            runner.format
-            == (format.return_value
-                if format
-                else None))
+        if not format:
+            with pytest.raises(report.exceptions.CommandError) as e:
+                runner.format
+        else:
+            assert (
+                runner.format
+                == format.return_value)
 
-    assert "format" in runner.__dict__
     assert (
         m_formats.return_value.get.call_args
         == [(m_args.return_value.format, ), {}])
-    if format:
+    if not format:
+        assert "format" not in runner.__dict__
         assert (
-            format.call_args
-            == [(), {}])
+            e.value.args[0]
+            == ("No registered format: "
+                f"'{m_args.return_value.format}'"))
+        return
+
+    assert "format" in runner.__dict__
+    assert (
+        format.call_args
+        == [(), {}])
 
 
 def test_runner_repo(patches):

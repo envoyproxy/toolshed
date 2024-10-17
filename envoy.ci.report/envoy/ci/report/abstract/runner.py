@@ -15,7 +15,7 @@ import gidgethub.aiohttp
 from aio.api import github as _github
 from aio.run import runner
 
-from envoy.ci.report import interface
+from envoy.ci.report import exceptions, interface
 
 
 ENV_GITHUB_TOKEN = "GITHUB_TOKEN"
@@ -59,10 +59,10 @@ class AReportRunner(
 
     @cached_property
     def format(self) -> Callable:
-        return (
-            _format()
-            if (_format := self.registered_formats.get(self.args.format))
-            else None)
+        if _format := self.registered_formats.get(self.args.format):
+            return _format()
+        raise exceptions.CommandError(
+            f"No registered format: '{self.args.format}'")
 
     @property
     @abstracts.interfacemethod
