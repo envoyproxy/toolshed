@@ -1,7 +1,7 @@
 
 import abc
 from functools import cached_property
-from typing import Any, Type
+from typing import Any
 
 import aiohttp
 
@@ -36,9 +36,9 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
         #  and validate `k`
         return self.repo_class(self, k)
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def actions_class(self) -> Type[interface.IGithubActions]:
+    def actions_class(self) -> type[interface.IGithubActions]:
         raise NotImplementedError
 
     @cached_property
@@ -51,47 +51,47 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
 
     @property
     @abc.abstractmethod
-    def api_class(self) -> Type[gidgethub.aiohttp.GitHubAPI]:
+    def api_class(self) -> type[gidgethub.aiohttp.GitHubAPI]:
         """API class."""
         return gidgethub.aiohttp.GitHubAPI
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def commit_class(self) -> Type[interface.IGithubCommit]:
+    def commit_class(self) -> type[interface.IGithubCommit]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def issue_class(self) -> Type[interface.IGithubIssue]:
+    def issue_class(self) -> type[interface.IGithubIssue]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def issues_class(self) -> Type[interface.IGithubIssues]:
+    def issues_class(self) -> type[interface.IGithubIssues]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def iterator_class(self) -> Type[interface.IGithubIterator]:
+    def iterator_class(self) -> type[interface.IGithubIterator]:
         """Github iterator class.
 
         Provides both an async iterator and a `total_count` async prop.
         """
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def label_class(self) -> Type[interface.IGithubLabel]:
+    def label_class(self) -> type[interface.IGithubLabel]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def release_class(self) -> Type[interface.IGithubRelease]:
+    def release_class(self) -> type[interface.IGithubRelease]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def repo_class(self) -> Type[interface.IGithubRepo]:
+    def repo_class(self) -> type[interface.IGithubRepo]:
         """Github repo class."""
         raise NotImplementedError
 
@@ -99,14 +99,14 @@ class AGithubAPI(metaclass=abstracts.Abstraction):
     def session(self) -> aiohttp.ClientSession:
         return self._session
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def tag_class(self) -> Type[interface.IGithubTag]:
+    def tag_class(self) -> type[interface.IGithubTag]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def workflows_class(self) -> Type[interface.IGithubWorkflows]:
+    def workflows_class(self) -> type[interface.IGithubWorkflows]:
         raise NotImplementedError
 
     async def getitem(self, *args, **kwargs) -> Any:

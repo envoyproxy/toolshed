@@ -26,7 +26,7 @@ class AGithubActions(metaclass=abstracts.Abstraction):
         return self._repo
 
     @cached_property
-    def workflows(self) -> "interface.IGithubWorkflows":
+    def workflows(self) -> interface.IGithubWorkflows:
         return self.github.workflows_class(actions=self)
 
 

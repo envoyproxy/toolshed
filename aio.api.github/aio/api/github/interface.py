@@ -1,10 +1,10 @@
 
-from datetime import datetime
-from typing import (
-    Any, AsyncGenerator,
-    Pattern, Type)
+from __future__ import annotations
 
-from packaging import version
+from datetime import datetime
+from typing import Any, AsyncGenerator, Pattern
+
+from packaging import version as _version
 
 import gidgethub.abc
 
@@ -23,31 +23,31 @@ class IGithubLabel(metaclass=abstracts.Interface):
 
 class IGithubRelease(metaclass=abstracts.Interface):
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def repo(self) -> str:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def tag_name(self) -> str:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def upload_url(self) -> str:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def version(self) -> version.Version | None:
+    def version(self) -> _version.Version | None:
         raise NotImplementedError
 
 
 class IGithubReleaseAssets(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
-    def __init__(self, release: "IGithubRelease", name: str) -> None:
+    def __init__(self, release: IGithubRelease, name: str) -> None:
         raise NotImplementedError
 
 
@@ -64,7 +64,7 @@ class IGithubIterator(metaclass=abstracts.Interface):
             yield
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def total_count(self) -> int:
         """Get `total_count` without iterating all items."""
@@ -74,60 +74,60 @@ class IGithubIterator(metaclass=abstracts.Interface):
 class IGithubAPI(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
-    def __getitem__(self, k: str) -> "IGithubRepo":
+    def __getitem__(self, k: str) -> IGithubRepo:
         """Return a `GithubRepository` for `k`"""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def api(self) -> Type[gidgethub.abc.GitHubAPI]:
+    def api(self) -> type[gidgethub.abc.GitHubAPI]:
         """Github API."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def actions_class(self) -> Type["IGithubActions"]:
+    def actions_class(self) -> type[IGithubActions]:
         """Github actions class."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def commit_class(self) -> Type["IGithubCommit"]:
+    def commit_class(self) -> type[IGithubCommit]:
         """Github commit class."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def issue_class(self) -> Type["IGithubIssue"]:
+    def issue_class(self) -> type[IGithubIssue]:
         """Github issue class."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def issues_class(self) -> Type["IGithubIssues"]:
+    def issues_class(self) -> type[IGithubIssues]:
         """Github issues class."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def label_class(self) -> Type["IGithubLabel"]:
+    def label_class(self) -> type[IGithubLabel]:
         """Github label class."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def release_class(self) -> Type["IGithubRelease"]:
+    def release_class(self) -> type[IGithubRelease]:
         """Github release class."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def session(self) -> aiohttp.ClientSession:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def tag_class(self) -> Type["IGithubTag"]:
+    def tag_class(self) -> type[IGithubTag]:
         """Github tag class."""
         raise NotImplementedError
 
@@ -142,7 +142,7 @@ class IGithubAPI(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def repo_from_url(self, url: str) -> "IGithubRepo":
+    def repo_from_url(self, url: str) -> IGithubRepo:
         """Return the corresponding `GithubRepo` for an api url."""
         raise NotImplementedError
 
@@ -156,9 +156,9 @@ class IGithubAPI(metaclass=abstracts.Interface):
         """Call the `gidgethub.post` api."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def workflows_class(self) -> Type["IGithubWorkflows"]:
+    def workflows_class(self) -> type[IGithubWorkflows]:
         """Github workflows class."""
         raise NotImplementedError
 
@@ -166,38 +166,38 @@ class IGithubAPI(metaclass=abstracts.Interface):
 class IGithubRepo(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
-    def __init__(self, github: "IGithubAPI", name: str) -> None:
+    def __init__(self, github: IGithubAPI, name: str) -> None:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def actions(self) -> "IGithubActions":
+    def actions(self) -> IGithubActions:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def github(self) -> IGithubAPI:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def issues(self) -> "IGithubIssues":
+    def issues(self) -> IGithubIssues:
         """Github issues for this repo."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def labels(self) -> IGithubIterator:
         """Github labels for this repo."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def name(self) -> str:
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def commit(self, name: str) -> "IGithubCommit":
+    async def commit(self, name: str) -> IGithubCommit:
         """Fetch a commit for this repo."""
         raise NotImplementedError
 
@@ -247,17 +247,17 @@ class IGithubRepo(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def release(self, name: str) -> "IGithubRelease":
+    async def release(self, name: str) -> IGithubRelease:
         """Fetch a release for this repo."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def releases(self, name: str) -> "IGithubIterator":
+    async def releases(self, name: str) -> IGithubIterator:
         """Fetch releases for this repo."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def tag(self, name: str) -> "IGithubTag":
+    async def tag(self, name: str) -> IGithubTag:
         """Fetch a tag for this repo."""
         raise NotImplementedError
 
@@ -269,26 +269,26 @@ class IGithubRepo(metaclass=abstracts.Interface):
 
 class IGithubIssue(metaclass=abstracts.Interface):
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def body(self) -> str:
         """Issue body."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def number(self) -> str:
         """Issue number."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def title(self) -> str:
         """Issue title."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def close(self) -> "IGithubIssue":
+    async def close(self) -> IGithubIssue:
         """Close this issue."""
         raise NotImplementedError
 
@@ -300,13 +300,13 @@ class IGithubIssue(metaclass=abstracts.Interface):
 
 class IGithubActions(metaclass=abstracts.Interface):
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def github(self) -> IGithubAPI:
         """Github API."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def repo(self) -> IGithubRepo:
         """Github repo."""
@@ -315,13 +315,13 @@ class IGithubActions(metaclass=abstracts.Interface):
 
 class IGithubWorkflows(metaclass=abstracts.Interface):
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def github(self) -> IGithubAPI:
         """Github API."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def repo(self) -> IGithubRepo:
         """Github repo."""
@@ -349,47 +349,47 @@ class IGithubTrackedIssue(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     def __init__(
             self,
-            issues: "IGithubTrackedIssues",
-            issue: "IGithubIssue") -> None:
+            issues: IGithubTrackedIssues,
+            issue: IGithubIssue) -> None:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def body(self) -> str:
         """Github issue body."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def closing_tpl(self) -> str:
         """String template for closing comment."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def key(self) -> str | None:
         """Issue key."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def number(self) -> int:
         """Github issue number."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def parsed(self) -> dict[str, str]:
         """Parsed vars from issue title."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def repo_name(self) -> str:
         """Github repo name."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def title(self) -> str:
         """Github issue title."""
@@ -403,7 +403,7 @@ class IGithubTrackedIssue(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     async def close_duplicate(
             self,
-            old_issue: "IGithubTrackedIssue") -> None:
+            old_issue: IGithubTrackedIssue) -> None:
         """Close a duplicate issue of this one."""
         raise NotImplementedError
 
@@ -434,13 +434,13 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
             yield
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def closing_tpl(self) -> str:
         """String template for closing comment."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def duplicate_issues(
             self) -> AsyncGenerator[
@@ -449,79 +449,79 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
         """Iterate duplicate issues."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def github(self) -> IGithubAPI:
         """Github API."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def issue_author(self) -> str:
         """Issue author to search on for tracked issues."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def issue_class(self) -> Type[IGithubIssue]:
+    def issue_class(self) -> type[IGithubIssue]:
         """Issue class."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def issues(self) -> dict[str, IGithubTrackedIssue]:
         """Dictionary of current tracked issues."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def issues_search_tpl(self):
         """String template for search query string."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def labels(self) -> tuple[str, ...]:
         """Labels to mark issues with."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def missing_labels(self) -> tuple[str, ...]:
         """Missing Github issue labels."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def open_issues(self) -> tuple[IGithubTrackedIssue, ...]:
         """All current open, matching issues."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def repo(self) -> IGithubRepo:
         """Github repo."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def repo_name(self) -> str:
         """Name of the repo to manage issues on."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def title_re(self) -> Pattern[str]:
         """Regex for matching/parsing issue titles."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def title_prefix(self) -> str:
         """Issue title prefix."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def titles(self) -> tuple[str, ...]:
         """tuple of current matching issue titles."""
@@ -561,10 +561,10 @@ class IGithubIssuesTracker(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     def __init__(
             self,
-            github: "IGithubAPI") -> None:
+            github: IGithubAPI) -> None:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def tracked_issues(self) -> dict[str, IGithubTrackedIssues]:
         raise NotImplementedError
