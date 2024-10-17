@@ -1,12 +1,10 @@
 
-from __future__ import annotations
-
 from datetime import datetime
 from typing import (
     Any, AsyncGenerator,
     Pattern, Type)
 
-import packaging
+from packaging import version
 
 import gidgethub.abc
 
@@ -42,7 +40,7 @@ class IGithubRelease(metaclass=abstracts.Interface):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def version(self) -> packaging.version.Version | None:
+    def version(self) -> version.Version | None:
         raise NotImplementedError
 
 
