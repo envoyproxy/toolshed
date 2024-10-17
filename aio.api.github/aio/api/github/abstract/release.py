@@ -140,7 +140,7 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
                  if not errored
                  else url))
         if errored:
-            result["error"] = response
+            result["error"] = str(response)
         else:
             logger.debug(
                 f"Upload {'(dry run) ' if dry_run else ''}release "
