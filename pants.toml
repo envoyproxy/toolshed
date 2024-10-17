@@ -15,7 +15,7 @@ build_file_prelude_globs = [
 plugins = ["jinja2"]
 
 [python]
-interpreter_constraints = [">=3.10.0"]
+interpreter_constraints = [">=3.11.0"]
 enable_resolves = true
 default_resolve = "deps"
 
