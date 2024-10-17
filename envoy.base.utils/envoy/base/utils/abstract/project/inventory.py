@@ -2,7 +2,7 @@
 import pathlib
 import types
 from functools import cached_property
-from typing import Iterator, Optional, Set
+from typing import Iterator
 
 from packaging import version as _version
 import yaml as _yaml
@@ -81,8 +81,8 @@ class AInventories(metaclass=abstracts.Abstraction):
         _yaml.add_representer(_version.Version, self.yaml_version_presenter)
         return _yaml
 
-    def changes_for_commit(self, change: typing.ProjectChangeDict) -> Set[str]:
-        changed: Set[str] = set()
+    def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
+        changed: set[str] = set()
         if "sync" not in change:
             return changed
         inventory = change["sync"].get("inventory", {})
@@ -93,7 +93,7 @@ class AInventories(metaclass=abstracts.Abstraction):
             changed.add(INVENTORY_VERSIONS_PATH)
         return changed
 
-    async def fetch(self, version: _version.Version) -> Optional[bytes]:
+    async def fetch(self, version: _version.Version) -> bytes | None:
         response = await self.project.session.get(self.inventory_url(version))
         return (
             await response.read()

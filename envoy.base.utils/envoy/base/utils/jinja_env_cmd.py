@@ -1,11 +1,10 @@
 
 import sys
-from typing import Optional
 
 from .jinja_env import JinjaEnvironment
 
 
-def main(*args: str) -> Optional[int]:
+def main(*args: str) -> int | None:
     return JinjaEnvironment.create(*args)
 
 

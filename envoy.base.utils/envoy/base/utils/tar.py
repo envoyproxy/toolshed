@@ -15,8 +15,7 @@ import pathlib
 import shutil
 import tarfile
 import tempfile
-from typing import (
-    ContextManager, Iterator, Optional, Pattern, Set)
+from typing import ContextManager, Iterator, Pattern
 
 import zstandard
 
@@ -27,8 +26,8 @@ logger = logging.getLogger(__name__)
 #   https://en.wikipedia.org/wiki/Tar_(computing)#Suffixes_for_compressed_files
 # not all are listed here, and some extensions may require additional software
 # to handle. This list can be updated as required
-TAR_EXTS: Set[str] = {"tar", "tar.gz", "tar.xz", "tar.bz2", "tar.zst"}
-COMPRESSION_EXTS: Set[str] = {"gz", "bz2", "xz"}
+TAR_EXTS: set[str] = {"tar", "tar.gz", "tar.xz", "tar.bz2", "tar.zst"}
+COMPRESSION_EXTS: set[str] = {"gz", "bz2", "xz"}
 
 
 class ExtractError(Exception):
@@ -57,8 +56,8 @@ def tar_mode(path: pathlib.Path | str, mode="r") -> str:
 def extract(
         path: pathlib.Path | str,
         *tarballs: pathlib.Path | str,
-        matching: Optional[Pattern[str]] = None,
-        mappings: Optional[dict[str, str]] = None,
+        matching: Pattern[str] | None = None,
+        mappings: dict[str, str] | None = None,
         inmem: bool = True) -> pathlib.Path:
     if not tarballs:
         raise ExtractError(f"No tarballs specified for extraction to {path}")
@@ -74,8 +73,8 @@ def extract(
 @contextlib.contextmanager
 def untar(
         *tarballs: pathlib.Path | str,
-        matching: Optional[Pattern[str]] = None,
-        mappings: Optional[dict[str, str]] = None,
+        matching: Pattern[str] | None = None,
+        mappings: dict[str, str] | None = None,
         inmem: bool = True) -> Iterator[pathlib.Path]:
     """Untar a tarball into a temporary directory.
 
@@ -107,8 +106,8 @@ def _extract(
         path: pathlib.Path,
         prefix: str,
         tar: tarfile.TarFile,
-        matching: Optional[Pattern[str]],
-        mappings: Optional[dict[str, str]]) -> None:
+        matching: Pattern[str] | None,
+        mappings: dict[str, str] | None) -> None:
     if not matching:
         tar.extractall(path=path.joinpath(prefix))
         return
@@ -122,7 +121,7 @@ def _extract(
                 path=member_path)
 
 
-def _mv_paths(path: pathlib.Path, mappings: Optional[dict[str, str]]) -> None:
+def _mv_paths(path: pathlib.Path, mappings: dict[str, str] | None) -> None:
     for src, dest in (mappings or {}).items():
         logger.debug(f"Moving: {src} -> {dest}")
         src_path = path.joinpath(src)
@@ -179,7 +178,7 @@ def _opener(
             t.__dict__["fileobj"].close()
 
 
-def _rm_paths(path: pathlib.Path, matching: Optional[Pattern[str]]):
+def _rm_paths(path: pathlib.Path, matching: Pattern[str] | None):
     if not matching:
         return
     for sub in path.glob("*"):
@@ -189,8 +188,8 @@ def _rm_paths(path: pathlib.Path, matching: Optional[Pattern[str]]):
 
 def _should_extract(
         member: tarfile.TarInfo,
-        matching: Optional[Pattern[str]] = None,
-        mappings: Optional[dict[str, str]] = None) -> bool:
+        matching: Pattern[str] | None = None,
+        mappings: dict[str, str] | None = None) -> bool:
     return bool(
         (matching and matching.match(member.name))
         or (member.name in (mappings or {})))
@@ -201,7 +200,7 @@ def _should_extract(
 def pack(
         path: str | pathlib.Path,
         out: str | pathlib.Path,
-        include: Optional[Pattern[str]] = None) -> None:
+        include: Pattern[str] | None = None) -> None:
     (_pack_zst(path, out, include=include)
      if str(out).endswith(".zst")
      else _pack(path, out, include=include))
@@ -210,7 +209,7 @@ def pack(
 def _pack(
         path: str | pathlib.Path,
         out: str | pathlib.Path,
-        include: Optional[Pattern[str]] = None) -> None:
+        include: Pattern[str] | None = None) -> None:
     with tarfile.open(out, mode=tar_mode(out, mode="w")) as tar:
         tar.add(_prune(path, include), arcname=".")
 
@@ -218,7 +217,7 @@ def _pack(
 def _pack_zst(
         path: str | pathlib.Path,
         out: str | pathlib.Path,
-        include: Optional[Pattern[str]] = None) -> None:
+        include: Pattern[str] | None = None) -> None:
     tarout = io.BytesIO()
     cctx = zstandard.ZstdCompressor(threads=-1)
     with tarfile.open(fileobj=tarout, mode="w") as tar:
@@ -230,7 +229,7 @@ def _pack_zst(
 
 def _prune(
         path: str | pathlib.Path,
-        include: Optional[Pattern[str]] = None) -> pathlib.Path:
+        include: Pattern[str] | None = None) -> pathlib.Path:
     path = pathlib.Path(path)
     if not include:
         return path
@@ -248,9 +247,9 @@ def _prune(
 def repack(
         out: str | pathlib.Path,
         *paths: str | pathlib.Path,
-        matching: Optional[Pattern[str]] = None,
-        mappings: Optional[dict[str, str]] = None,
-        include: Optional[Pattern[str]] = None,
+        matching: Pattern[str] | None = None,
+        mappings: dict[str, str] | None = None,
+        include: Pattern[str] | None = None,
         inmem: bool = True) -> Iterator[pathlib.Path]:
     extracted = untar(
         *paths, matching=matching, mappings=mappings, inmem=inmem)

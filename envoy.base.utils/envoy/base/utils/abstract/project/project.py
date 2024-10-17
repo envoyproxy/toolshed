@@ -4,9 +4,7 @@ import json
 import pathlib
 from concurrent import futures
 from functools import cached_property
-from typing import (
-    AsyncGenerator, AsyncIterator, List, Mapping, Optional,
-    Tuple, Type, Union)
+from typing import AsyncGenerator, AsyncIterator, Mapping
 
 import aiohttp
 from packaging import version as _version
@@ -31,14 +29,14 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
-            path: Union[pathlib.Path, str] = ".",
-            version: Optional[_version.Version] = None,
-            github: Optional[_github.IGithubAPI] = None,
-            repo: Optional[str | _github.IGithubRepo] = None,
-            github_token: Optional[str] = None,
-            session: Optional[aiohttp.ClientSession] = None,
-            loop: Optional[asyncio.AbstractEventLoop] = None,
-            pool: Optional[futures.Executor] = None) -> None:
+            path: pathlib.Path | str = ".",
+            version: _version.Version | None = None,
+            github: _github.IGithubAPI | None = None,
+            repo: str | _github.IGithubRepo | None = None,
+            github_token: str | None = None,
+            session: aiohttp.ClientSession | None = None,
+            loop: asyncio.AbstractEventLoop | None = None,
+            pool: futures.Executor | None = None) -> None:
         self._version = version
         self._path = path
         self._github = github
@@ -49,7 +47,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         self._pool = pool
 
     @cached_property
-    def archived_versions(self) -> Tuple[_version.Version, ...]:
+    def archived_versions(self) -> tuple[_version.Version, ...]:
         # This assumes that the previous changelogs are present and correct
         # eg. if you remove some of the recent changelogs its assumption
         # will break, and it will detect the wrong versions as stable/archived
@@ -62,13 +60,13 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
     def changelogs(self) -> interface.IChangelogs:
         return self.changelogs_class(self)
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def changelogs_class(self) -> Type[interface.IChangelogs]:
+    def changelogs_class(self) -> type[interface.IChangelogs]:
         raise NotImplementedError
 
     @cached_property
-    def dev_version(self) -> Optional[_version.Version]:
+    def dev_version(self) -> _version.Version | None:
         return self.changelogs.current if self.is_dev else None
 
     @cached_property
@@ -78,9 +76,9 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         """
         return self.directory_class(self.path, **self.directory_kwargs)
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def directory_class(self) -> Type[_directory.ADirectory]:
+    def directory_class(self) -> type[_directory.ADirectory]:
         raise NotImplementedError
 
     @property
@@ -100,9 +98,9 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
     def inventories(self) -> interface.IInventories:
         return self.inventories_class(self)
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def inventories_class(self) -> Type[interface.IInventories]:
+    def inventories_class(self) -> type[interface.IInventories]:
         raise NotImplementedError
 
     @property
@@ -178,7 +176,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         return self._session or aiohttp.ClientSession()
 
     @cached_property
-    def stable_versions(self) -> Tuple[_version.Version, ...]:
+    def stable_versions(self) -> tuple[_version.Version, ...]:
         exclude = set(self.archived_versions)
         if self.is_main_dev:
             exclude.add(self.minor_version)
@@ -199,7 +197,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
 
     def changes_for_commit(
             self,
-            change: typing.ProjectChangeDict) -> Tuple[str, ...]:
+            change: typing.ProjectChangeDict) -> tuple[str, ...]:
         changed = set()
         if any(k in change for k in ["dev", "release"]):
             changed.add(VERSION_PATH)
@@ -213,7 +211,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             self,
             change: typing.ProjectChangeDict,
             msg: str,
-            author: Optional[str] = None) -> AsyncGenerator:
+            author: str | None = None) -> AsyncGenerator:
         changed = self.changes_for_commit(change)
         for path in changed:
             yield path
@@ -244,17 +242,17 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
     async def publish(
             self,
             dry_run: bool = False,
-            assets: Optional[pathlib.Path] = None,
-            commitish: Optional[str] = None,
-            publish_commit_message: Optional[bool] = None,
-            dev: Optional[bool] = None,
-            latest: Optional[bool] = None) -> AsyncIterator[
+            assets: pathlib.Path | None = None,
+            commitish: str | None = None,
+            publish_commit_message: bool | None = None,
+            dev: bool | None = None,
+            latest: bool | None = None) -> AsyncIterator[
                 typing.ProjectPublishResultDict
                 | _github.typing.AssetUploadResultDict]:
         if not dev and self.is_dev and not dry_run:
             raise _github.exceptions.TagError(
                 f"Cannot tag a dev version: {self.version}")
-        commit_message: Optional[str] = None
+        commit_message: str | None = None
         if publish_commit_message:
             commit = await self.repo.commit(commitish)
             commit_message = (
@@ -343,9 +341,9 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
 
     async def _git_commit(
             self,
-            changed: Tuple[str, ...],
+            changed: tuple[str, ...],
             msg: str,
-            author: Optional[str] = None) -> None:
+            author: str | None = None) -> None:
         author_args = (
             ["--author", f"'{author}'"]
             if author
@@ -359,7 +357,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
 
     def _patch_versions(
             self,
-            versions: List[_version.Version]) -> Tuple[_version.Version, ...]:
+            versions: list[_version.Version]) -> tuple[_version.Version, ...]:
         return tuple(
             reversed(
                 sorted(

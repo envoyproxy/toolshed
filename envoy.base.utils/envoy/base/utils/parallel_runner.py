@@ -4,7 +4,7 @@ import argparse
 import math
 import os
 from functools import cached_property
-from typing import Iterable, Iterator, List, Tuple
+from typing import Iterable, Iterator
 
 from aio.run import runner
 
@@ -29,7 +29,7 @@ class ParallelRunner(runner.Runner):
         return os.cpu_count() or 1
 
     @property
-    def items(self) -> List[str]:
+    def items(self) -> list[str]:
         return self.args.items
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -53,7 +53,7 @@ class ParallelRunner(runner.Runner):
         for cmd, lines in results:
             self.handle_result(cmd, lines)
 
-    async def _run(self, cmd: str) -> Tuple[str, List[str]]:
+    async def _run(self, cmd: str) -> tuple[str, list[str]]:
         proc = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
