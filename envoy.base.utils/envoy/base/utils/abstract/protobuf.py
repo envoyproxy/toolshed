@@ -3,7 +3,7 @@ import importlib
 import json
 import pathlib
 from functools import cached_property, lru_cache
-from typing import Callable, Type
+from typing import Callable
 
 from google.protobuf import descriptor, descriptor_pb2
 from google.protobuf import descriptor_pool as _descriptor_pool
@@ -72,9 +72,9 @@ class AProtobufValidator(metaclass=abstracts.Abstraction):
     def protobuf_set(self) -> interface.IProtobufSet:
         return self.protobuf_set_class(self.descriptor_path)
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def protobuf_set_class(self) -> Type[interface.IProtobufSet]:
+    def protobuf_set_class(self) -> type[interface.IProtobufSet]:
         raise NotImplementedError
 
     @cached_property

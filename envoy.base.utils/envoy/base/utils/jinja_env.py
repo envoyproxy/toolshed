@@ -2,7 +2,7 @@
 import argparse
 import importlib
 import pathlib
-from typing import Callable, Dict, Iterable, Optional
+from typing import Callable, Iterable
 
 import jinja2
 
@@ -52,7 +52,7 @@ class JinjaEnvironment:
     def _env(
             cls,
             loader: jinja2.BaseLoader,
-            filters: Optional[Iterable[str]],
+            filters: Iterable[str] | None,
             **kwargs) -> jinja2.Environment:
         env = jinja2.Environment(loader=loader, **kwargs)
         env.filters.update(cls._filters(filters))
@@ -66,7 +66,7 @@ class JinjaEnvironment:
             parts[-1])
 
     @classmethod
-    def _filters(cls, filters: Optional[Iterable[str]]) -> Dict[str, Callable]:
+    def _filters(cls, filters: Iterable[str] | None) -> dict[str, Callable]:
         return {
             (parts := f.split(":"))[0]: cls._filter(parts[1])
             for f

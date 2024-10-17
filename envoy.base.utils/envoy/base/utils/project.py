@@ -1,6 +1,4 @@
 
-from typing import Type
-
 import abstracts
 
 from aio.core import directory
@@ -17,7 +15,7 @@ class ChangelogEntry(abstract.AChangelogEntry):
 class Changelog(abstract.AChangelog):
 
     @property
-    def entry_class(self) -> Type[interface.IChangelogEntry]:
+    def entry_class(self) -> type[interface.IChangelogEntry]:
         return ChangelogEntry
 
 
@@ -25,7 +23,7 @@ class Changelog(abstract.AChangelog):
 class Changelogs(abstract.AChangelogs):
 
     @property
-    def changelog_class(self) -> Type[interface.IChangelog]:
+    def changelog_class(self) -> type[interface.IChangelog]:
         return Changelog
 
 
@@ -38,13 +36,13 @@ class Inventories(abstract.AInventories):
 class Project(abstract.AProject):
 
     @property
-    def changelogs_class(self) -> Type[interface.IChangelogs]:
+    def changelogs_class(self) -> type[interface.IChangelogs]:
         return Changelogs
 
     @property
-    def directory_class(self) -> Type[directory.ADirectory]:
+    def directory_class(self) -> type[directory.ADirectory]:
         return directory.GitDirectory
 
     @property
-    def inventories_class(self) -> Type[interface.IInventories]:
+    def inventories_class(self) -> type[interface.IInventories]:
         return Inventories

@@ -1,6 +1,4 @@
 
-from typing import Type
-
 import abstracts
 
 from envoy.base.utils import abstract, interface
@@ -15,5 +13,5 @@ class ProtobufSet(abstract.AProtobufSet):
 class ProtobufValidator(abstract.AProtobufValidator):
 
     @property
-    def protobuf_set_class(self) -> Type[interface.IProtobufSet]:
+    def protobuf_set_class(self) -> type[interface.IProtobufSet]:
         return ProtobufSet

@@ -1,11 +1,10 @@
 
 import sys
-from typing import Optional
 
 from .data_env import DataEnvironment
 
 
-def main(*args: str) -> Optional[int]:
+def main(*args: str) -> int | None:
     return DataEnvironment.create(*args)
 
 

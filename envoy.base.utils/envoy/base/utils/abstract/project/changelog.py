@@ -6,8 +6,8 @@ import types
 from datetime import datetime
 from functools import cached_property
 from typing import (
-    cast, Dict, ItemsView, Iterator, KeysView,
-    List, Pattern, Set, Tuple, Type, ValuesView)
+    cast, ItemsView, Iterator, KeysView,
+    Pattern, ValuesView)
 
 from frozendict import frozendict
 import jinja2
@@ -63,8 +63,8 @@ class LegacyChangelog:
         self.content = content
 
     @property
-    def changelog(self) -> Dict[str, typing.ChangeList]:
-        changelog: Dict[str, typing.ChangeList] = {}
+    def changelog(self) -> dict[str, typing.ChangeList]:
+        changelog: dict[str, typing.ChangeList] = {}
         current_section = None
         for line in self.lines[1:]:
             if line in OLD_CHANGELOG_SECTIONS:
@@ -90,7 +90,7 @@ class LegacyChangelog:
         return self.lines[0].split("(")[1].strip(")")
 
     @cached_property
-    def lines(self) -> List[str]:
+    def lines(self) -> list[str]:
         return self.content.split("\n")
 
     def _parse_line(self, line: str) -> typing.ChangeDict:
@@ -167,9 +167,9 @@ class AChangelog(metaclass=abstracts.Abstraction):
         # return self.get_data(self.path)
         return await self.project.execute(self.get_data, self.path)
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def entry_class(self) -> Type[interface.IChangelogEntry]:
+    def entry_class(self) -> type[interface.IChangelogEntry]:
         raise NotImplementedError
 
     @property
@@ -184,7 +184,7 @@ class AChangelog(metaclass=abstracts.Abstraction):
     def version(self) -> _version.Version:
         return self._version
 
-    async def entries(self, section: str) -> List[interface.IChangelogEntry]:
+    async def entries(self, section: str) -> list[interface.IChangelogEntry]:
         return sorted(
             self.entry_class(section, entry)
             for entry
@@ -207,9 +207,9 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         for k in self.changelogs:
             yield k
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def changelog_class(self) -> Type[interface.IChangelog]:
+    def changelog_class(self) -> type[interface.IChangelog]:
         raise NotImplementedError
 
     @cached_property
@@ -254,7 +254,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             == "Pending")
 
     @property
-    def paths(self) -> Tuple[pathlib.Path, ...]:
+    def paths(self) -> tuple[pathlib.Path, ...]:
         return (
             *self.project.path.glob(CHANGELOG_PATH_GLOB),
             self.current_path)
@@ -301,7 +301,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             if self._is_rst_changelog(version)
             else CHANGELOG_URL_TPL).format(version=version.base_version)
 
-    def changes_for_commit(self, change: typing.ProjectChangeDict) -> Set[str]:
+    def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         changed = set()
         if any(k in change for k in ["release", "dev"]):
             changed.add(CHANGELOG_CURRENT_PATH)

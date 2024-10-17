@@ -7,7 +7,7 @@ import os
 import pathlib
 import time
 from functools import cached_property
-from typing import IO, Optional
+from typing import IO
 from urllib.parse import urlsplit
 
 import aiohttp
@@ -68,7 +68,7 @@ class FetchRunner(runner.Runner):
         return time.time()
 
     @property
-    def token(self) -> Optional[str]:
+    def token(self) -> str | None:
         """Github access token."""
         if self.args.token_path:
             return pathlib.Path(self.args.token_path).read_text().strip()
@@ -115,7 +115,7 @@ class FetchRunner(runner.Runner):
 
     def download_path(
             self, url: str,
-            create: bool = True) -> Optional[pathlib.Path]:
+            create: bool = True) -> pathlib.Path | None:
         if "path" not in self.downloads[url]:
             return None
         _download_path = self.downloads_path.joinpath(
@@ -186,7 +186,7 @@ class FetchRunner(runner.Runner):
     @runner.catches(
         (utils.exceptions.SignatureError,
          ConcurrentExecutionError))
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         result = {}
         downloads = concurrent(
             (self.fetch(url)

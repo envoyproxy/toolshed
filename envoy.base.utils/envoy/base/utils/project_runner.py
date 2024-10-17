@@ -3,7 +3,6 @@ import json
 import os
 import pathlib
 from functools import cached_property
-from typing import Optional
 
 from packaging import version as _version
 
@@ -56,7 +55,7 @@ repo: Release {version_string}
 class BaseProjectRunner(runner.Runner):
 
     @property
-    def github_token(self) -> Optional[str]:
+    def github_token(self) -> str | None:
         """Github access token."""
         if self.args.github_token:
             return pathlib.Path(self.args.github_token).read_text().strip()
@@ -75,7 +74,7 @@ class BaseProjectRunner(runner.Runner):
             github_token=self.github_token)
 
     @property
-    def repo_name(self) -> Optional[str]:
+    def repo_name(self) -> str | None:
         return self.args.repo
 
     @cached_property

@@ -10,7 +10,7 @@ import tempfile
 from configparser import ConfigParser
 from typing import (
     Any, AsyncGenerator, Callable, Generator,
-    Iterator, List, Optional, Type, Union)
+    Iterator)
 
 from packaging import version as _version
 
@@ -49,8 +49,8 @@ def coverage_with_data_file(data_file: str) -> Iterator[str]:
 
 
 def from_json(
-        path: Union[pathlib.Path, str],
-        type: Optional[Type] = None) -> Any:
+        path: pathlib.Path | str,
+        type: type | None = None) -> Any:
     """Returns the loaded python object from a JSON file given by `path`"""
     data = json.loads(pathlib.Path(path).read_text())
     return (
@@ -60,8 +60,8 @@ def from_json(
 
 
 def from_yaml(
-        path: Union[pathlib.Path, str],
-        type: Optional[Type] = None) -> Any:
+        path: pathlib.Path | str,
+        type: type | None = None) -> Any:
     """Returns the loaded python object from a yaml file given by `path`"""
     data = yaml.safe_load(pathlib.Path(path).read_text())
     return (
@@ -71,8 +71,8 @@ def from_yaml(
 
 
 def to_yaml(
-        data: Union[dict, list, str, int],
-        path: Union[pathlib.Path, str]) -> pathlib.Path:
+        data: dict | list | str | int,
+        path: pathlib.Path | str) -> pathlib.Path:
     """For given `data` dumps as yaml to provided `path`.
 
     Returns `path`
@@ -90,7 +90,7 @@ def ellipsize(text: str, max_len: int) -> str:
     return f"{text[:max_len - 3]}..."
 
 
-def typed(tocast: Type, value: Any) -> Any:
+def typed(tocast: type, value: Any) -> Any:
     """Attempts to cast a value to a given type, TypeVar, or TypeDict.
 
     raises TypeError if cast value is `None`
@@ -105,7 +105,7 @@ def typed(tocast: Type, value: Any) -> Any:
 
 async def async_list(
         gen: AsyncGenerator,
-        filter: Optional[Callable] = None) -> List:
+        filter: Callable | None = None) -> list:
     """Turn an async generator into a here and now list, with optional
     filter."""
     results = []
@@ -118,7 +118,7 @@ async def async_list(
 
 @contextlib.contextmanager
 def cd_and_return(
-        path: Union[pathlib.Path, str]) -> Generator[None, None, None]:
+        path: pathlib.Path | str) -> Generator[None, None, None]:
     """Changes working directory to given path and returns to previous working
     directory on exit."""
     prev_cwd = pathlib.Path.cwd()
@@ -129,7 +129,7 @@ def cd_and_return(
         os.chdir(prev_cwd)
 
 
-def to_bytes(data: Union[str, bytes]) -> bytes:
+def to_bytes(data: str | bytes) -> bytes:
     return (
         bytes(data, encoding="utf-8")
         if not isinstance(data, bytes)
@@ -152,7 +152,7 @@ def dt_to_utc_isoformat(dt: datetime.datetime) -> str:
     return date.date().isoformat()
 
 
-def last_n_bytes_of(target: Union[str, pathlib.Path], n: int = 1) -> bytes:
+def last_n_bytes_of(target: str | pathlib.Path, n: int = 1) -> bytes:
     """Return the last `n` bytes from a file, defaults to 1 byte."""
     with open(target, "rb") as f:
         f.seek(0, os.SEEK_END)

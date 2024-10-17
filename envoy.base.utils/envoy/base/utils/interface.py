@@ -1,11 +1,13 @@
 
+from __future__ import annotations
+
 import pathlib
 from typing import (
-    AsyncGenerator, ItemsView, Iterator, KeysView, List,
-    Optional, Set, Tuple, Type, Union, ValuesView)
+    AsyncGenerator, ItemsView, Iterator, KeysView,
+    ValuesView)
 
 import aiohttp
-from google.protobuf import descriptor_pool
+from google.protobuf import descriptor_pool as _descriptor_pool
 from packaging import version as _version
 
 import abstracts
@@ -22,9 +24,9 @@ class IProtobufSet(metaclass=abstracts.Interface):
     def __init__(self, descriptor_path: str | pathlib.Path) -> None:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def descriptor_pool(self) -> descriptor_pool.DescriptorPool:
+    def descriptor_pool(self) -> _descriptor_pool.DescriptorPool:
         raise NotImplementedError
 
 
@@ -35,7 +37,7 @@ class IProtobufValidator(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def protobuf_set_class(self) -> Type[IProtobufSet]:
+    def protobuf_set_class(self) -> type[IProtobufSet]:
         raise NotImplementedError
 
     @abstracts.interfacemethod
@@ -51,7 +53,7 @@ class IInventories(metaclass=abstracts.Interface):
     """Manage Sphinx project documentation inventories."""
 
     @abstracts.interfacemethod
-    def __init__(self, project: "IProject") -> None:
+    def __init__(self, project: IProject) -> None:
         raise NotImplementedError
 
     @abstracts.interfacemethod
@@ -64,32 +66,32 @@ class IInventories(metaclass=abstracts.Interface):
     def __getitem__(self, k: _version.Version) -> pathlib.Path:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def inventories(self) -> typing.InventoryDict:
         """Mapping of `version` -> `path` for inventory files."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def paths(self) -> Iterator[pathlib.Path]:
         """Inventory file paths."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def versions(self) -> typing.VersionDict:
         """Mapping of `minor_version` -> `version` for inventories."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def versions_path(self) -> pathlib.Path:
         """Path to the inventory versions file."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def changes_for_commit(self, change: typing.ProjectChangeDict) -> Set[str]:
+    def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         """Changes to add/commit for a given change dictionary."""
         raise NotImplementedError
 
@@ -107,20 +109,20 @@ class IChangelogEntry(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def __gt__(self, other: "IChangelogEntry") -> bool:
+    def __gt__(self, other: IChangelogEntry) -> bool:
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def __lt__(self, other: "IChangelogEntry") -> bool:
+    def __lt__(self, other: IChangelogEntry) -> bool:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def area(self) -> str:
         """Tag/area for this entry."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def change(self) -> str:
         """Description of the change for this entry."""
@@ -137,37 +139,37 @@ class IChangelog(metaclass=abstracts.Interface):
             path: pathlib.Path) -> None:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def data(self) -> typing.ChangelogDict:
         """Changes grouped by change type."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def entry_class(self) -> Type[IChangelogEntry]:
+    def entry_class(self) -> type[IChangelogEntry]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def path(self) -> pathlib.Path:
         """Path to this changelog."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def release_date(self) -> str:
         """Datestamp of this changelog."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def version(self) -> str:
         """Version of this changelog."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    async def entries(self, section: str) -> List[IChangelogEntry]:
+    async def entries(self, section: str) -> list[IChangelogEntry]:
         """Changelog entries."""
         raise NotImplementedError
 
@@ -176,7 +178,7 @@ class IChangelogs(metaclass=abstracts.Interface):
     """Manage project changelogs."""
 
     @abstracts.interfacemethod
-    def __init__(self, project: "IProject") -> None:
+    def __init__(self, project: IProject) -> None:
         raise NotImplementedError
 
     @abstracts.interfacemethod
@@ -189,56 +191,56 @@ class IChangelogs(metaclass=abstracts.Interface):
     def __getitem__(self, k: _version.Version) -> IChangelog:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def changelog_class(self) -> Type[IChangelog]:
+    def changelog_class(self) -> type[IChangelog]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def changelog_paths(self) -> typing.ChangelogPathsDict:
         """Mapping of changelog versions to changelog file paths."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def changelogs(self) -> typing.ChangelogsDict:
         """Ordered mapping of changelog versions to changelog objects."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def current(self) -> _version.Version:
         """The current (most recent or active) changelog."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def date_format(self) -> str:
         """Changelog date format."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def datestamp(self) -> str:
         """Formatted current UTC date."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def is_pending(self) -> bool:
         """Flag indicating whether the current changelog is set to
         `Pending`."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def sections(self) -> typing.ChangelogSectionsDict:
         """Changelog groupings/sections."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
-    def changes_for_commit(self, change: typing.ProjectChangeDict) -> Set[str]:
+    def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         """Changes to add/commit for a given change dictionary."""
         raise NotImplementedError
 
@@ -282,122 +284,122 @@ class IProject(event.IExecutive, metaclass=abstracts.Interface):
 
     def __init__(
             self,
-            path: Union[pathlib.Path, str] = ".",
-            version: Optional[_version.Version] = None,
-            github: Optional[_github.IGithubAPI] = None,
-            repo: Optional[_github.IGithubRepo] = None,
-            github_token: Optional[str] = None,
-            session: Optional[aiohttp.ClientSession] = None) -> None:
+            path: pathlib.Path | str = ".",
+            version: _version.Version | None = None,
+            github: _github.IGithubAPI | None = None,
+            repo: _github.IGithubRepo | None = None,
+            github_token: str | None = None,
+            session: aiohttp.ClientSession | None = None) -> None:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def archived_versions(self) -> Tuple[_version.Version, ...]:
+    def archived_versions(self) -> tuple[_version.Version, ...]:
         """Non/archived version logic."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def changelogs(self) -> IChangelogs:
         """Project changelogs."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def changelogs_class(self) -> Type[IChangelogs]:
+    def changelogs_class(self) -> type[IChangelogs]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def dev_version(self) -> Optional[_version.Version]:
+    def dev_version(self) -> _version.Version | None:
         """Returns the current version iff its a dev version."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def directory(self) -> _directory.ADirectory:
         """The project directory."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def directory_class(self) -> Type[_directory.ADirectory]:
+    def directory_class(self) -> type[_directory.ADirectory]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def inventories(self) -> IInventories:
         """Project inventories."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def inventories_class(self) -> Type[IInventories]:
+    def inventories_class(self) -> type[IInventories]:
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def is_dev(self) -> bool:
         """Flag indicating whether the project is in "dev" mode."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def is_main_dev(self) -> bool:
         """If the patch version is `0` and its a dev branch then we are on
         `main`"""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     async def json_data(self) -> str:
         """Changes grouped by change type."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def minor_version(self) -> _version.Version:
         """Minor version for the current version."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def minor_versions(self) -> typing.MinorVersionsDict:
         """Ordered mapping `minor_version` -> `patch_versions` for the
         project."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def path(self) -> pathlib.Path:
         """Path to the project root."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def rel_version_path(self) -> pathlib.Path:
         """Path to the project version file."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def repo(self) -> _github.IGithubRepo:
         """Project github repo."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def session(self) -> aiohttp.ClientSession:
         """HTTP client session used for retrieving project data."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
-    def stable_versions(self) -> Tuple[_version.Version, ...]:
+    def stable_versions(self) -> tuple[_version.Version, ...]:
         """Currently supported stable versions."""
         raise NotImplementedError
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def version(self) -> _version.Version:
         """Current project version."""
