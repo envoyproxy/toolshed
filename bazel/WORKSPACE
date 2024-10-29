@@ -3,6 +3,9 @@ workspace(name = "envoy_toolshed")
 load(":archives.bzl", "load_archives")
 load_archives()
 
+load("@rules_python//python:repositories.bzl", "py_repositories")
+py_repositories()
+
 load(":toolchains.bzl", "load_toolchains")
 load_toolchains()
 
