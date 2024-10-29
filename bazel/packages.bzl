@@ -5,7 +5,7 @@ load("//:versions.bzl", "VERSIONS")
 def load_packages():
     # This is empty - it should be overridden in your repo
     pip_parse(
-        name = "pip3",
+        name = "toolshed_pip3",
         requirements_lock = "@envoy_toolshed//:requirements.txt",
         python_interpreter_target = interpreter,
     )

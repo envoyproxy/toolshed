@@ -1,10 +1,10 @@
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
-load("@envoy_toolshed//py:macros.bzl", "entry_point")
-load("@website_pip3//:requirements.bzl", "requirement", pip_entry_point = "entry_point")
+load("@rules_python//python/entry_points:py_console_script_binary.bzl", "py_console_script_binary")
 
-entry_point(
+py_console_script_binary(
     name = "pelican",
-    pkg = "pelican",
+    pkg = "@website_pip3//pelican",
+    script = "pelican",
     deps = [
         requirement("cssmin"),
         requirement("libsass"),
@@ -27,8 +27,8 @@ alias(
 
 alias(
     name = "pelican-themes",
-    actual = pip_entry_point(
-        pkg = "pelican",
+    actual = py_console_script_binary(
+        pkg = "@website_pip3//pelican",
         script = "pelican-themes",
     ),
 )
