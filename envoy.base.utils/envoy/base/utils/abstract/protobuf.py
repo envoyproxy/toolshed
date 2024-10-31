@@ -9,8 +9,8 @@ from google.protobuf import descriptor, descriptor_pb2
 from google.protobuf import descriptor_pool as _descriptor_pool
 from google.protobuf import json_format
 from google.protobuf import (
-    message as _message,
-    message_factory as _message_factory)
+    message_factory,
+    message as _message)
 
 import abstracts
 
@@ -65,10 +65,6 @@ class AProtobufValidator(metaclass=abstracts.Abstraction):
         return self.protobuf_set.descriptor_pool
 
     @cached_property
-    def message_factory(self) -> _message_factory.MessageFactory:
-        return _message_factory.MessageFactory(pool=self.descriptor_pool)
-
-    @cached_property
     def protobuf_set(self) -> interface.IProtobufSet:
         return self.protobuf_set_class(self.descriptor_path)
 
@@ -91,7 +87,7 @@ class AProtobufValidator(metaclass=abstracts.Abstraction):
     def message_prototype(
             self,
             type_name: str) -> Callable[[], _message.Message]:
-        return self.message_factory.GetPrototype(self.find_message(type_name))
+        return message_factory.GetMessageClass(self.find_message(type_name))
 
     def validate_fragment(
             self,
