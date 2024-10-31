@@ -131,25 +131,6 @@ def test_protobufvalidator_descriptor_pool(patches):
     assert "descriptor_pool" not in proto_validator.__dict__
 
 
-def test_protobufvalidator_message_factory(patches):
-    proto_validator = DummyProtobufValidator("DESCRIPTOR_PATH")
-    patched = patches(
-        "_message_factory",
-        ("AProtobufValidator.descriptor_pool",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.base.utils.abstract.protobuf")
-
-    with patched as (m_factory, m_pool):
-        assert (
-            proto_validator.message_factory
-            == m_factory.MessageFactory.return_value)
-
-    assert (
-        m_factory.MessageFactory.call_args
-        == [(), dict(pool=m_pool.return_value)])
-    assert "message_factory" in proto_validator.__dict__
-
-
 def test_protobufvalidator_protobuf_set(patches):
     proto_validator = DummyProtobufValidator("DESCRIPTOR_PATH")
     patched = patches(
@@ -226,8 +207,7 @@ def test_protobufvalidator_message(patches):
 def test_protobufvalidator_message_prototype(patches):
     proto_validator = DummyProtobufValidator("DESCRIPTOR_PATH")
     patched = patches(
-        ("AProtobufValidator.message_factory",
-         dict(new_callable=PropertyMock)),
+        "message_factory",
         "AProtobufValidator.find_message",
         prefix="envoy.base.utils.abstract.protobuf")
     type_name = MagicMock()
@@ -235,10 +215,10 @@ def test_protobufvalidator_message_prototype(patches):
     with patched as (m_factory, m_find):
         assert (
             proto_validator.message_prototype(type_name)
-            == m_factory.return_value.GetPrototype.return_value)
+            == m_factory.GetMessageClass.return_value)
 
     assert (
-        m_factory.return_value.GetPrototype.call_args
+        m_factory.GetMessageClass.call_args
         == [(m_find.return_value, ), {}])
     assert (
         m_find.call_args
