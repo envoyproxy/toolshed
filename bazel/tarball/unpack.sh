@@ -7,7 +7,7 @@ TARGET="${TARGET:-}"
 OVERWRITE="${OVERWRITE:-}"
 EXTRACT_PATH="$1"
 
-if [[ -z "$TARGET" ]]; then
+if [[ -z "$TARGET" || "$TARGET" == "PLACEHOLDER.TXT" ]]; then
     echo "TARGET must be provided using a bazel flag." >&2
     exit 1
 fi

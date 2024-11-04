@@ -5,6 +5,15 @@ def unpacker(
         zstd = None,
         visibility = ["//visibility:public"],
 ):
+
+    native.genrule(
+        name = "placeholder",
+        outs = ["PLACEHOLDER.TXT"],
+        cmd = """
+        touch $@
+        """,
+    )
+
     native.filegroup(
         name = "true",
         srcs = [],
@@ -15,9 +24,14 @@ def unpacker(
         srcs = [],
     )
 
+    native.filegroup(
+        name = "empty",
+        srcs = [":placeholder"],
+    )
+
     native.label_flag(
         name = "target",
-        build_setting_default = ":false",
+        build_setting_default = ":empty",
         visibility = ["//visibility:public"],
     )
 
