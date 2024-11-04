@@ -1,1 +1,4 @@
-exports_files(["unpack.sh"])
+exports_files([
+    "PLACEHOLDER.TXT",
+    "unpack.sh",
+])
