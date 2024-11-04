@@ -21,7 +21,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/cache/prime@actions-v0.2.37
+  - uses: envoyproxy/toolshed/gh-actions/cache/prime@55512ba86db3454f83ef36fa0b7ca20b797fc2ed
     id: prime
     with:
       key: ${{ inputs.image-tag }}${{ inputs.key-suffix }}
@@ -36,3 +36,4 @@ runs:
         docker pull ${{ inputs.image-tag }}
         systemctl stop docker docker.socket
         tar cf - -C /var/lib/docker . | zstd - -T0 -o docker.tar.zst
+      owner: runner:docker
