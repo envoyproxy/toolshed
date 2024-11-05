@@ -38,19 +38,22 @@ inputs:
   template-script-ref-file:
     type: string
     default: |
-      git fetch \($remote) \($ref)
-      OUTPUT=\"$(git show \($remote)/\($ref):\($filename))\"
+      git -C \($working_directory) fetch \($remote) \($ref)
+      OUTPUT=\"$(git -C \($working_directory) show \($remote)/\($ref):\($filename))\"
   template-script-diff:
     type: string
     default: |
-      git fetch \($remote) \($ref)
-      OUTPUT=\"$(git diff --name-only \($diff) \($remote)/\($ref))\"
+      git -C \($working_directory)  fetch \($remote) \($ref)
+      OUTPUT=\"$(git -C \($working_directory) diff --name-only \($diff) \($remote)/\($ref))\"
   vars:
     type: string
     required: true
   version-file:
     type: string
     default: VERSION.txt
+  working-directory:
+    type: string
+    default: .
 
 outputs:
   data:
@@ -92,11 +95,13 @@ runs:
         diff: ${{ inputs.merge-commit || 'HEAD^1' }}
         remote: origin
         ref: ${{ inputs.branch-name }}
+        working_directory: ${{ inputs.working-directory }}
       input-format: yaml
       filter: |
         .diff as $diff
         | .remote as $remote
         | .ref as $ref
+        | .working_directory as $working_directory
         | ("${{ inputs.template-script-diff }}" | bash::output)
       result-filter: |
         rtrimstr("\n")
@@ -111,10 +116,12 @@ runs:
         filename: ${{ inputs.config-file }}
         branch: ${{ inputs.branch-name }}
         remote: origin
+        working_directory: ${{ inputs.working-directory }}
       filter: |
         .filename as $filename
         | .remote as $remote
         | .branch as $ref
+        | .working_directory as $working_directory
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
       result-format: yaml
       result-filter-options:
@@ -124,7 +131,7 @@ runs:
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.37
     with:
       input-format: yaml-path
-      input: ${{ inputs.config-file }}
+      input: ${{ inputs.working-directory }}/${{ inputs.config-file }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
         .["build-image"].repo as $repo
@@ -150,7 +157,7 @@ runs:
     with:
       input-format: string-path
       options: -Rr
-      input: VERSION.txt
+      input: ${{ inputs.working-directory }}/VERSION.txt
       filter: |
         validate::version
   - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.2.37
@@ -161,6 +168,7 @@ runs:
         "${{ inputs.version-file }}" as $filename
         | "${{ inputs.branch-name }}" as $ref
         | "origin" as $remote
+        | "${{ inputs.working-directory }}" as $working_directory
         | ("${{ inputs.template-script-ref-file }}" | bash::output)
       result-filter: |
         .
