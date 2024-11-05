@@ -22,6 +22,10 @@ inputs:
     description: >
       Hash verbosely.
     default: false
+  working-directory:
+    description: >
+      Run action in directory.
+    default:
 runs:
   using: node20
   main: 'dist/index.js'

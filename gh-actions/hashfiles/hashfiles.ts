@@ -1,8 +1,14 @@
 import * as core from '@actions/core'
 import {hashFiles} from '@actions/glob'
+import path from 'path'
 
 const run = async (): Promise<void> => {
   try {
+    const workingDirectory = core.getInput('working-directory')
+    if (workingDirectory && workingDirectory.trim() !== '') {
+      const fullPath = path.resolve(workingDirectory)
+      process.chdir(fullPath)
+    }
     const files = core.getInput('files')
     if (!files || files === '') return
     const failEmpty = core.getInput('failEmpty')
