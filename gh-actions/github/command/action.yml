@@ -17,7 +17,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.37
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.38
     name: Parse command from text
     id: command
     with:
