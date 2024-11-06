@@ -17,6 +17,7 @@ inputs:
     type: string
   owner:
     type: string
+    default: runner:docker
   path:
     type: string
     default:
