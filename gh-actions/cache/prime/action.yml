@@ -41,7 +41,7 @@ runs:
   using: "composite"
   steps:
   - run: |
-      # Create cache path (it non-existent)
+      # Create cache path (if non-existent)
       if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
           sudo mkdir -p ${{ inputs.path || inputs.path_tmp }}
       else
