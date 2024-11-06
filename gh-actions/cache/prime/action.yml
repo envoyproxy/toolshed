@@ -1,4 +1,7 @@
 inputs:
+  change-directory:
+    type: boolean
+    default: true
   command:
     type: string
     required: true
@@ -14,17 +17,19 @@ inputs:
     type: string
   owner:
     type: string
-    default: runner:docker
+  path:
+    type: string
+    default:
   path_tmp:
     type: string
     default: /tmp/cache
   path_script:
     type: string
     default: /tmp/cachescript
-  run_as_sudo:
+  mount-tmpfs:
     type: boolean
     default: true
-  mount_tmpfs:
+  run-as-sudo:
     type: boolean
     default: true
 
@@ -37,14 +42,18 @@ runs:
   steps:
   - run: |
       # Create cache path (it non-existent)
-      sudo mkdir -p ${{ inputs.path_tmp }}
+      if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
+          sudo mkdir -p ${{ inputs.path || inputs.path_tmp }}
+      else
+          mkdir -p ${{ inputs.path || inputs.path_tmp }}
+      fi
     shell: bash
   - name: Check cache
     id: cache-restore-initial
     uses: actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
       lookup-only: true
-      path: ${{ inputs.path_tmp }}
+      path: ${{ inputs.path || inputs.path_tmp }}
       key: ${{ inputs.key }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.2.37
     if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
@@ -66,41 +75,50 @@ runs:
     uses: actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
       lookup-only: true
-      path: ${{ inputs.path_tmp }}
+      path: ${{ inputs.path || inputs.path_tmp }}
       key: ${{ inputs.key }}
   - if: ${{ steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.cache-restore.outputs.cache-hit != 'true' }}
-    name: Restore cache
+    name: Create cache
     id: restore
     run: |
-      # Restore cache
-      if [[ "${{ inputs.mount_tmpfs }}" == 'true' ]]; then
-          sudo mount -t tmpfs none ${{ inputs.path_tmp }}
+      # Create cache
+      if [[ "${{ inputs.mount-tmpfs }}" == 'true' ]]; then
+          sudo mount -t tmpfs none ${{ inputs.path || inputs.path_tmp }}
+      fi
+      if [[ "${{ inputs.change-directory }}" == 'true' ]]; then
+          cd ${{ inputs.path || inputs.path_tmp }} || exit 1
       fi
       echo "#!/bin/bash -e" > "${{ inputs.path_script }}"
       chmod +x "${{ inputs.path_script }}"
       echo "${{ inputs.command }}" >> "${{ inputs.path_script }}"
-      cd ${{ inputs.path_tmp }} || exit 1
-      if [[ "${{ inputs.run_as_sudo }}" == 'true' ]]; then
+
+      if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
           sudo "${{ inputs.path_script }}"
+          if [[ -n "${{ inputs.owner }}" ]]; then
+              sudo chown -R  "${{ inputs.owner }}" "${{ inputs.path || inputs.path_tmp }}"
+          fi
       else
           "${{ inputs.path_script }}"
       fi
-      sudo chown -R  "${{ inputs.owner }}" "${{ inputs.path_tmp }}"
       echo "save=true" >> $GITHUB_OUTPUT
-      cd - || exit 1
+      if [[ "${{ inputs.change-directory }}" == 'true' ]]; then
+          cd - || exit 1
+      fi
     shell: bash
+    env:
+      CACHE_PATH: ${{ inputs.path || inputs.path_tmp }}
 
   - if: ${{ steps.restore.outputs.save == 'true' }}
     name: Save cache
     uses: actions/cache/save@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
-      path: ${{ inputs.path_tmp }}
+      path: ${{ inputs.path || inputs.path_tmp }}
       key: ${{ inputs.key }}
 
-  - if: ${{ steps.restore.outputs.save == 'true' }}
+  - if: ${{ steps.restore.outputs.save == 'true' && ! inputs.path }}
     run: |
       # Remove temporary files
-      if [[ "${{ inputs.mount_tmpfs }}" == 'true' ]]; then
+      if [[ "${{ inputs.mount-tmpfs }}" == 'true' ]]; then
           sudo umount ${{ inputs.path_tmp }}
       fi
       sudo rm -rf ${{ inputs.path_tmp }}
