@@ -1,5 +1,5 @@
 inputs:
-  image_tag:
+  image-tag:
     type: string
     required: true
   key-suffix:
@@ -14,7 +14,7 @@ runs:
   steps:
   - uses: envoyproxy/toolshed/gh-actions/cache/restore@actions-v0.3.0
     with:
-      key: ${{ inputs.image_tag }}${{ inputs.key-suffix }}
+      key: ${{ inputs.image-tag }}${{ inputs.key-suffix }}
       command: |
         systemctl stop docker docker.socket
         mv /var/lib/docker /var/lib/docker.orig
