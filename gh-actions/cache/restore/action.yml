@@ -57,6 +57,7 @@ runs:
       ${{ inputs.command }}
       EOF
       chmod +x "${{ inputs.path-script }}"
+    shell: bash
     if: ${{ inputs.command }}
   - run: |
       cd ${{ inputs.path || inputs.path-tmp }} || exit 1
