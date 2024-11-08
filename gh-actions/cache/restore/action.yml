@@ -31,14 +31,14 @@ runs:
   - run: |
       if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
           sudo mkdir -p ${{ inputs.path || inputs.path-tmp }}
-          if [[ -n "${{ inputs.owner }}" ]]; then
-              sudo chown -R ${{ inputs.owner }} ${{ inputs.path || inputs.path-tmp }}
-          fi
       else
           mkdir -p ${{ inputs.path || inputs.path-tmp }}
       fi
       if [[ "${{ inputs.mount-tmpfs }}" == 'true' ]]; then
           sudo mount -t tmpfs none ${{ inputs.path || inputs.path-tmp }}
+      fi
+      if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
+          sudo chown -R ${{ inputs.owner }} ${{ inputs.path || inputs.path-tmp }}
       fi
     shell: bash
   - name: Restore cache
