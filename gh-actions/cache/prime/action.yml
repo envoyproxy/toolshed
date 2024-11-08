@@ -15,21 +15,21 @@ inputs:
     default: ${{ github.repository }}
   lock-token:
     type: string
+  mount-tmpfs:
+    type: boolean
+    default: true
   owner:
     type: string
     default: runner:docker
   path:
     type: string
     default:
-  path_tmp:
+  path-tmp:
     type: string
     default: /tmp/cache
-  path_script:
+  path-script:
     type: string
     default: /tmp/cachescript
-  mount-tmpfs:
-    type: boolean
-    default: true
   run-as-sudo:
     type: boolean
     default: true
@@ -44,9 +44,9 @@ runs:
   - run: |
       # Create cache path (if non-existent)
       if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
-          sudo mkdir -p ${{ inputs.path || inputs.path_tmp }}
+          sudo mkdir -p ${{ inputs.path || inputs.path-tmp }}
       else
-          mkdir -p ${{ inputs.path || inputs.path_tmp }}
+          mkdir -p ${{ inputs.path || inputs.path-tmp }}
       fi
     shell: bash
   - name: Check cache
@@ -54,7 +54,7 @@ runs:
     uses: actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
       lookup-only: true
-      path: ${{ inputs.path || inputs.path_tmp }}
+      path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.1
     if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
@@ -76,30 +76,41 @@ runs:
     uses: actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
       lookup-only: true
-      path: ${{ inputs.path || inputs.path_tmp }}
+      path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
+
+  - if: ${{ steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.cache-restore.outputs.cache-hit != 'true' }}
+    run: |
+      # Create cache script
+      cat <<'EOF' >> "${{ inputs.path-script }}"
+      #!/bin/bash -e
+
+      set -o pipefail
+
+      ${{ inputs.command }}
+      EOF
+      chmod +x "${{ inputs.path-script }}"
+    shell: bash
+
   - if: ${{ steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.cache-restore.outputs.cache-hit != 'true' }}
     name: Create cache
     id: restore
     run: |
       # Create cache
       if [[ "${{ inputs.mount-tmpfs }}" == 'true' ]]; then
-          sudo mount -t tmpfs none ${{ inputs.path || inputs.path_tmp }}
+          sudo mount -t tmpfs none ${{ inputs.path || inputs.path-tmp }}
       fi
       if [[ "${{ inputs.change-directory }}" == 'true' ]]; then
-          cd ${{ inputs.path || inputs.path_tmp }} || exit 1
+          cd ${{ inputs.path || inputs.path-tmp }} || exit 1
       fi
-      echo "#!/bin/bash -e" > "${{ inputs.path_script }}"
-      chmod +x "${{ inputs.path_script }}"
-      echo "${{ inputs.command }}" >> "${{ inputs.path_script }}"
 
       if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
-          sudo "${{ inputs.path_script }}"
+          sudo "${{ inputs.path-script }}"
           if [[ -n "${{ inputs.owner }}" ]]; then
-              sudo chown -R  "${{ inputs.owner }}" "${{ inputs.path || inputs.path_tmp }}"
+              sudo chown -R  "${{ inputs.owner }}" "${{ inputs.path || inputs.path-tmp }}"
           fi
       else
-          "${{ inputs.path_script }}"
+          "${{ inputs.path-script }}"
       fi
       echo "save=true" >> $GITHUB_OUTPUT
       if [[ "${{ inputs.change-directory }}" == 'true' ]]; then
@@ -107,21 +118,21 @@ runs:
       fi
     shell: bash
     env:
-      CACHE_PATH: ${{ inputs.path || inputs.path_tmp }}
+      CACHE_PATH: ${{ inputs.path || inputs.path-tmp }}
 
   - if: ${{ steps.restore.outputs.save == 'true' }}
     name: Save cache
     uses: actions/cache/save@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
-      path: ${{ inputs.path || inputs.path_tmp }}
+      path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && ! inputs.path }}
     run: |
       # Remove temporary files
       if [[ "${{ inputs.mount-tmpfs }}" == 'true' ]]; then
-          sudo umount ${{ inputs.path_tmp }}
+          sudo umount ${{ inputs.path-tmp }}
       fi
-      sudo rm -rf ${{ inputs.path_tmp }}
-      sudo rm -rf ${{ inputs.path_script }}
+      sudo rm -rf ${{ inputs.path-tmp }}
+      sudo rm -rf ${{ inputs.path-script }}
     shell: bash
