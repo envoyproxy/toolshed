@@ -48,9 +48,17 @@ runs:
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
   - run: |
-      echo "#!/bin/bash -e" > "${{ inputs.path-script }}"
+      # Create cache script
+      cat <<'EOF' >> "${{ inputs.path-script }}"
+      #!/bin/bash -e
+
+      set -o pipefail
+
+      ${{ inputs.command }}
+      EOF
       chmod +x "${{ inputs.path-script }}"
-      echo "${{ inputs.command }}" >> "${{ inputs.path-script }}"
+    if: ${{ inputs.command }}
+  - run: |
       cd ${{ inputs.path || inputs.path-tmp }} || exit 1
       if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
           sudo "${{ inputs.path-script }}"
