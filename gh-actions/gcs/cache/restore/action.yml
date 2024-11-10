@@ -1,0 +1,31 @@
+inputs:
+  bucket:
+    type: string
+    required: true
+  key:
+    type: string
+    required: true
+  path:
+    type: string
+    required: true
+
+  ext:
+    type: string
+    default: zstd
+
+
+runs:
+  using: "composite"
+  steps:
+  - name: Restore GCS cache
+    run: |
+      gsutil cp gs://${BUCKET}/${BLOB} - \
+          | tar --warning=no-timestamp \
+                --keep-directory-symlink \
+                -xI unzstd \
+                -f - \
+                -C ${{ inputs.path }}
+    shell: bash
+    env:
+      BUCKET: ${{ inputs.bucket }}
+      BLOB: ${{ inputs.key }}.${{ inputs.ext }}
