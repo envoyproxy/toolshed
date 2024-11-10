@@ -17,6 +17,8 @@ inputs:
 runs:
   using: "composite"
   steps:
+  - run: |
+      mkdir -p ${{ inputs.path }}
   - name: Restore GCS cache
     run: |
       gsutil cp gs://${BUCKET}/${BLOB} - \
