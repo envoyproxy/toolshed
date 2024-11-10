@@ -3,9 +3,9 @@ import {spawn} from 'child_process'
 import * as fs from 'fs'
 import {EOL} from 'os'
 
-const script = async (cmd: string): Promise<void> => {
+const script = async (shell: string, cmd: string): Promise<void> => {
   try {
-    const subprocess = spawn(cmd, {stdio: 'inherit', shell: true})
+    const subprocess = spawn(cmd, {stdio: 'inherit', shell})
     subprocess.on('exit', (exitCode: number) => {
       process.exitCode = exitCode
     })
@@ -22,15 +22,16 @@ const script = async (cmd: string): Promise<void> => {
 }
 
 const run = async (): Promise<void> => {
+  const shell = core.getInput('shell')
   if (process.env.INPUT_KEY) {
     const key = process.env.INPUT_KEY.toUpperCase()
 
     if (process.env[`STATE_${key}`] !== undefined && process.env.INPUT_POST) {
-      await script(process.env.INPUT_POST)
+      await script(shell, process.env.INPUT_POST)
     } else {
       if (process.env.GITHUB_STATE && process.env.INPUT_RUN) {
         fs.appendFileSync(process.env.GITHUB_STATE, `${key}=true${EOL}`)
-        await script(process.env.INPUT_RUN)
+        await script(shell, process.env.INPUT_RUN)
       }
     }
   }
