@@ -9,6 +9,9 @@ inputs:
     description: 'Name of the state variable used to detect the post step.'
     required: false
     default: POST
+  shell:
+    description: 'Shell to run.'
+    default: /bin/bash
 
 runs:
   using: node20
