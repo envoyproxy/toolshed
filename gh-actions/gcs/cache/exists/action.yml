@@ -1,0 +1,35 @@
+inputs:
+  bucket:
+    type: string
+    required: true
+  key:
+    type: string
+    required: true
+
+  ext:
+    type: string
+    default: zstd
+
+outputs:
+  exists:
+    value: ${{ steps.gcs-object.outputs.cache-hit }}
+
+
+runs:
+  using: "composite"
+  steps:
+  - name: Check GCS bucket cache
+    id: gcs-object
+    run: |
+      if ! output=$(gsutil ls "gs://${BUCKET}/${BLOB}" 2>&1); then
+          if [[ $output != *"CommandException: One or more URLs matched no objects"* ]]; then
+              echo "$output"
+              exit 1
+          fi
+      else
+          echo "cache-hit=true" >> $GITHUB_OUTPUT
+      fi
+    env:
+      BUCKET: ${{ inputs.bucket }}
+      BLOB: ${{ inputs.key }}.${{ inputs.ext }}
+    shell: bash
