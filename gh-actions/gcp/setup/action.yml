@@ -1,0 +1,54 @@
+inputs:
+  key:
+    type: string
+    required: true
+
+  boto:
+    type: boolean
+    default: true
+
+outputs:
+  key-path:
+    value: ${{ steps.key.outputs.path }}
+
+
+runs:
+  using: "composite"
+  steps:
+  - run: |
+      if ! which gsutil >& /dev/null; then
+          echo "installed=false" >> $GITHUB_OUTPUT
+      else
+          echo "installed=true" >> $GITHUB_OUTPUT
+      fi
+    id: gsutil
+    shell: bash
+
+  - uses: actions/setup-python@v5
+    if: ${{ steps.gsutil.outputs.installed != 'true' }}
+    with:
+      python-version: "3.12"
+  - if: ${{ steps.gsutil.outputs.installed != 'true' }}
+    run: |
+      pip install gsutil
+      UTIL_PATH="$(dirname $(which gsutil))"
+      echo "PATH=$PATH:$UTIL_PATH" >> $GITHUB_ENV
+    shell: bash
+  - run: |
+      gsutil --version
+    shell: bash
+
+  # setup cache key
+  - run: |
+      GCP_KEY_PATH=$(mktemp -t gcp_account.XXXXXX.json)
+      echo "${{ inputs.key }}" | base64 --decode > "${GCP_KEY_PATH}"
+      echo "path=${GCP_KEY_PATH}" >> $GITHUB_OUTPUT
+      if [[ ${{ inputs.boto }} != "true" ]]; then
+          exit 0
+      fi
+      {
+          echo "[Credentials]"
+          echo "gs_service_key_file=${GCP_KEY_PATH}"
+      } > ~/.boto
+    id: key
+    shell: bash
