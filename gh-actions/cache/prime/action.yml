@@ -8,6 +8,10 @@ inputs:
   key:
     type: string
     required: true
+
+  gcs-bucket:
+    type: string
+    default:
   lock-id:
     type: string
   lock-repository:
@@ -49,15 +53,25 @@ runs:
           mkdir -p ${{ inputs.path || inputs.path-tmp }}
       fi
     shell: bash
+
+  - name: Check GCS bucket cache
+    id: gcs-object
+    if: ${{ inputs.gcs-bucket }}
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/exists@2dcda207c4c4de7947acabde9dc8cb3c1309203f
+    with:
+      bucket: ${{ inputs.gcs-bucket }}
+      key: ${{ inputs.key }}
+
   - name: Check cache
     id: cache-restore-initial
+    if: ${{ ! inputs.gcs-bucket }}
     uses: actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
       lookup-only: true
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.2
-    if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
+    if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.gcs-object.outputs.exists != 'true' }}
     id: lock-id
     with:
       input: ${{ inputs.key }}
@@ -65,21 +79,32 @@ runs:
       filter: |
         @base64
   - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.3.2
-    if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
+    if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.gcs-object.outputs.exists != 'true' }}
     with:
       key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
       repository: ${{ inputs.lock-repository }}
       token: ${{ inputs.lock-token }}
   - name: Check cache
     id: cache-restore
-    if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' }}
+    if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' && ! inputs.gcs-bucket }}
     uses: actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
       lookup-only: true
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
 
-  - if: ${{ steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.cache-restore.outputs.cache-hit != 'true' }}
+  - name: Check GCS bucket cache
+    id: gcs-object-recheck
+    if: ${{ inputs.gcs-bucket && steps.gcs-object.outputs.exists != 'true' }}
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/exists@2dcda207c4c4de7947acabde9dc8cb3c1309203f
+    with:
+      bucket: ${{ inputs.gcs-bucket }}
+      key: ${{ inputs.key }}
+
+  - if: >-
+      ${{ steps.cache-restore-initial.outputs.cache-hit != 'true'
+          && steps.cache-restore.outputs.cache-hit != 'true'
+          && steps.gcs-object-recheck.outputs.exists != 'true' }}
     run: |
       # Create cache script
       cat <<'EOF' >> "${{ inputs.path-script }}"
@@ -92,7 +117,10 @@ runs:
       chmod +x "${{ inputs.path-script }}"
     shell: bash
 
-  - if: ${{ steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.cache-restore.outputs.cache-hit != 'true' }}
+  - if: >-
+      ${{ steps.cache-restore-initial.outputs.cache-hit != 'true'
+      && steps.cache-restore.outputs.cache-hit != 'true'
+      && steps.gcs-object-recheck.outputs.exists != 'true' }}
     name: Create cache
     id: restore
     run: |
@@ -120,12 +148,19 @@ runs:
     env:
       CACHE_PATH: ${{ inputs.path || inputs.path-tmp }}
 
-  - if: ${{ steps.restore.outputs.save == 'true' }}
+  - if: ${{ steps.restore.outputs.save == 'true' && ! inputs.gcs-bucket }}
     name: Save cache
     uses: actions/cache/save@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
+
+  - if: ${{ steps.restore.outputs.save == 'true' && inputs.gcs-bucket }}
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@4c4a912c7d3d0240b5517bc529e1c700a320bf15
+    with:
+      bucket: ${{ inputs.gcs-bucket }}
+      key: ${{ inputs.key }}
+      path: ${{ inputs.path || inputs.path-tmp }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && ! inputs.path }}
     run: |
