@@ -1,0 +1,30 @@
+inputs:
+  bucket:
+    type: string
+    required: true
+  key:
+    type: string
+    required: true
+  path:
+    type: string
+    required: true
+
+  compressor:
+    type: string
+    default: zstd -7 -T0
+  ext:
+    type: string
+    default: zstd
+
+
+runs:
+  using: "composite"
+  steps:
+  - name: Save GCS cache
+    run: |
+      tar cf - -I "${{ inputs.compressor }}" -C ${{ inputs.path }} .  \
+          | gsutil cp - "gs://${BUCKET}/${BLOB}"
+    shell: bash
+    env:
+      BUCKET: ${{ inputs.bucket }}
+      BLOB: ${{ inputs.key }}.${{ inputs.ext }}
