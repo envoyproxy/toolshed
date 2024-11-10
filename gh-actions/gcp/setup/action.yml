@@ -38,17 +38,23 @@ runs:
       gsutil --version
     shell: bash
 
-  # setup cache key
-  - run: |
-      GCP_KEY_PATH=$(mktemp -t gcp_account.XXXXXX.json)
-      echo "${{ inputs.key }}" | base64 --decode > "${GCP_KEY_PATH}"
-      echo "path=${GCP_KEY_PATH}" >> $GITHUB_OUTPUT
-      if [[ ${{ inputs.boto }} != "true" ]]; then
-          exit 0
-      fi
-      {
-          echo "[Credentials]"
-          echo "gs_service_key_file=${GCP_KEY_PATH}"
-      } > ~/.boto
+  - uses: envoyproxy/toolshed/gh-actions/github/script/run@826fca37548d7e2b2e39a1c01824bcd6351f8c9e
     id: key
-    shell: bash
+    with:
+      run: |
+        GCP_KEY_PATH=$(mktemp -t gcp_account.XXXXXX.json)
+        echo "${{ inputs.key }}" | base64 --decode > "${GCP_KEY_PATH}"
+        echo "path=${GCP_KEY_PATH}" >> $GITHUB_OUTPUT
+        echo "GCP_KEY_PATH=${GCP_KEY_PATH}" >> $GITHUB_ENV
+        if [[ ${{ inputs.boto }} != "true" ]]; then
+            exit 0
+        fi
+        {
+            echo "[Credentials]"
+            echo "gs_service_key_file=${GCP_KEY_PATH}"
+        } > ~/.boto
+      post: |
+        echo "Remove key ${GCP_KEY_PATH}"
+        rm -rf "${GCP_KEY_PATH}"
+        echo "Remove boto config ~/.boto"
+        rm ~/.boto
