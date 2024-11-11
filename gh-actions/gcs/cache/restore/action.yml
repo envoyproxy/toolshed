@@ -19,6 +19,7 @@ runs:
   steps:
   - run: |
       mkdir -p ${{ inputs.path }}
+    shell: bash
   - name: Restore GCS cache
     run: |
       gsutil cp gs://${BUCKET}/${BLOB} - \
