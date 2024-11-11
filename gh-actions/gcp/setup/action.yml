@@ -6,6 +6,9 @@ inputs:
   boto:
     type: boolean
     default: true
+  boto-rm:
+    type: boolean
+    default: false
 
 outputs:
   key-path:
@@ -16,19 +19,28 @@ runs:
   using: "composite"
   steps:
   - run: |
+      if [[ -e "~/.boto" ]]; then
+          echo "Remove existing boto config ~/.boto"
+          rm ~/.boto
+      fi
+    if: ${{ inputs.key && inputs.boto-rm }}
+    shell: bash
+
+  # Install gsutil if necessary
+  - run: |
       if ! which gsutil >& /dev/null; then
           echo "installed=false" >> $GITHUB_OUTPUT
       else
           echo "installed=true" >> $GITHUB_OUTPUT
       fi
     id: gsutil
+    if: ${{ inputs.key }}
     shell: bash
-
   - uses: actions/setup-python@v5
-    if: ${{ steps.gsutil.outputs.installed != 'true' }}
+    if: ${{ inputs.key && steps.gsutil.outputs.installed != 'true' }}
     with:
       python-version: "3.12"
-  - if: ${{ steps.gsutil.outputs.installed != 'true' }}
+  - if: ${{ inputs.key && steps.gsutil.outputs.installed != 'true' }}
     run: |
       pip install gsutil
       UTIL_PATH="$(dirname $(which gsutil))"
@@ -36,10 +48,12 @@ runs:
     shell: bash
   - run: |
       gsutil --version
+    if: ${{ inputs.key }}
     shell: bash
 
   - uses: envoyproxy/toolshed/gh-actions/github/script/run@826fca37548d7e2b2e39a1c01824bcd6351f8c9e
     id: key
+    if: ${{ inputs.key }}
     with:
       run: |
         GCP_KEY_PATH=$(mktemp -t gcp_account.XXXXXX.json)
