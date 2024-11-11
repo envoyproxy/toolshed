@@ -38,9 +38,13 @@ class ABazelQuery(ABazelCommand, metaclass=abstracts.Abstraction):
                 f"\n{response.stdout.strip()}{response.stderr.strip()}")
         return response.stdout.strip().split("\n")
 
-    def query_command(self, expression: str) -> Tuple[str, str, str]:
+    def query_command(self, expression: str) -> Tuple[str, ...]:
         """The Bazel query command."""
-        return str(self.bazel_path), "query", expression
+        return (
+            str(self.bazel_path),
+            *self.bazel_startup_options,
+            "query",
+            expression)
 
     def query_failed(self, response: subprocess.CompletedProcess) -> bool:
         """Check if the query response implies failure."""

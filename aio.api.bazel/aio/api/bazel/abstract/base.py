@@ -18,9 +18,11 @@ class ABazel(metaclass=abstracts.Abstraction):
     def __init__(
             self,
             path: Union[pathlib.Path, str],
-            bazel_path: Optional[Union[pathlib.Path, str]] = None) -> None:
+            bazel_path: Optional[Union[pathlib.Path, str]] = None,
+            startup_options: list[str] | None = None) -> None:
         self._path = path
         self._bazel_path = bazel_path
+        self.bazel_startup_options = startup_options or []
 
     @property
     @abc.abstractmethod
