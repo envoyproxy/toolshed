@@ -6,6 +6,9 @@ inputs:
   command:
     type: string
     default:
+  gcs-bucket:
+    type: string
+    default:
   owner:
     type: string
     default: runner:docker
@@ -42,9 +45,18 @@ runs:
       fi
     shell: bash
   - name: Restore cache
+    if: ${{ ! inputs.gcs-bucket }}
     id: cache-restore
     uses: actions/cache/restore@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
     with:
+      path: ${{ inputs.path || inputs.path-tmp }}
+      key: ${{ inputs.key }}
+  - name: Restore GCS cache
+    if: ${{ inputs.gcs-bucket }}
+    id: cache-restore-gcs
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@d8e47b8bd43d567f99c94b7fdf8e6f95b4890768
+    with:
+      bucket: ${{ inputs.gcs-bucket }}
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
   - run: |
