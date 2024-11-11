@@ -68,7 +68,11 @@ runs:
             echo "gs_service_key_file=${GCP_KEY_PATH}"
         } > ~/.boto
       post: |
-        echo "Remove key ${GCP_KEY_PATH}"
-        rm -rf "${GCP_KEY_PATH}"
-        echo "Remove boto config ~/.boto"
-        rm ~/.boto
+        if [[ -e "${GCP_KEY_PATH}" ]]; then
+            echo "Remove key ${GCP_KEY_PATH}"
+            rm -rf "${GCP_KEY_PATH}"
+        fi
+        if [[ -e "~/.boto" ]]; then
+            echo "Remove boto config ~/.boto"
+            rm ~/.boto
+        fi
