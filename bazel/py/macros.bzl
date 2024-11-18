@@ -1,11 +1,10 @@
 load("@rules_python//python:defs.bzl", "py_binary", "py_library")
-load("@pip3//:requirements.bzl", "requirement", base_entry_point = "entry_point")
 
 def entry_point(
         name,
         pkg,
         entry_point_script = "@envoy_toolshed//py:entry_point.py",
-        entry_point_alias = base_entry_point,
+        entry_point_alias = None,
         script = None,
         data = None,
         deps = None,
@@ -27,6 +26,9 @@ def entry_point(
     A `py_binary` is dynamically created to wrap the `entry_point` with provided
     `args` and `data`.
     """
+    if not entry_point_alias:
+        fail("entry_point_alias must be defined")
+
     actual_entry_point = entry_point_alias(
         pkg = pkg,
         script = script or pkg,
