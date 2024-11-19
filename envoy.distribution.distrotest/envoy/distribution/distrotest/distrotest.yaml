@@ -3,6 +3,7 @@ deb:
     env: DEBIAN_FRONTEND=noninteractive
     command: |
       chmod +x /tmp/distrotest.sh
+      echo 'Acquire::Retries "20";' | sudo tee /etc/apt/apt.conf.d/80-retries
       apt-get update
       apt-get install -y -qq -o=Dpkg::Use-Pty=0 --no-install-recommends curl devscripts gnupg2 procps sudo
       mkdir /usr/share/debsign
