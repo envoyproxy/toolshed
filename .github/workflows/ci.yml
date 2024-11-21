@@ -23,15 +23,11 @@ jobs:
     - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
       with:
         python-version: "3.11"
-    - name: Cache pants
-      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
-    - name: Install pants
-      run: |
-        ./get-pants.sh
-        export PATH=$PATH:~/.local/bin
+        gha-cache-key: "v0-${{ runner.os }}"
+        named-caches-hash: "${{ hashFiles('pants*toml') }}"
     - name: Run pants test
       run: "pants --colors test ::"
     - name: Archive code coverage results
@@ -47,15 +43,11 @@ jobs:
     - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
       with:
         python-version: "3.11"
-    - name: Cache pants
-      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
-    - name: Install pants
-      run: |
-        ./get-pants.sh
-        export PATH=$PATH:~/.local/bin
+        gha-cache-key: "v0-${{ runner.os }}"
+        named-caches-hash: "${{ hashFiles('pants*toml') }}"
     - name: Run pants lint
       run: "pants --colors lint ::"
 
@@ -77,15 +69,11 @@ jobs:
     - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
       with:
         python-version: "3.11"
-    - name: Cache pants
-      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
-    - name: Install pants
-      run: |
-        ./get-pants.sh
-        export PATH=$PATH:~/.local/bin
+        gha-cache-key: "v0-${{ runner.os }}"
+        named-caches-hash: "${{ hashFiles('pants*toml') }}"
     - name: Run pants (type) check
       run: "pants --colors check ::"
   docs:
@@ -97,15 +85,11 @@ jobs:
     - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
       with:
         python-version: "3.11"
-    - name: Cache pants
-      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
-    - name: Install pants
-      run: |
-        ./get-pants.sh
-        export PATH=$PATH:~/.local/bin
+        gha-cache-key: "v0-${{ runner.os }}"
+        named-caches-hash: "${{ hashFiles('pants*toml') }}"
     - name: Run pants README
       run: "pants --colors readme --check=README.md ::"
 
@@ -121,15 +105,11 @@ jobs:
     - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b  # v5.3.0
       with:
         python-version: "3.11"
-    - name: Cache pants
-      uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a  # v4.1.2
+    - name: Initialize Pants
+      uses: pantsbuild/actions/init-pants@d64f38147540d5607bfb8d812f95d5285a8cff3d  # v8
       with:
-        key: ${{ runner.os }}-${{ hashFiles('pants*toml') }}
-        path: ~/.cache/pants/setup
-    - name: Install pants
-      run: |
-        ./get-pants.sh
-        export PATH=$PATH:~/.local/bin
+        gha-cache-key: "v0-${{ runner.os }}"
+        named-caches-hash: "${{ hashFiles('pants*toml') }}"
     - name: Run pants package
       run: "pants --colors package ::"
     - name: Archive created packages
