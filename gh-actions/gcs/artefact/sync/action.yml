@@ -1,0 +1,69 @@
+inputs:
+  bucket:
+    type: string
+    required: true
+  direction:
+    type: string
+    default: up
+  path:
+    type: string
+    required: true
+  path-upload:
+    type: string
+    required: true
+  redirect:
+    type: string
+    default:
+  sha:
+    type: string
+    required: true
+  working-directory:
+    type: string
+    default: .
+
+runs:
+  using: "composite"
+  steps:
+  - name: Configure GCS paths
+    id: paths
+    run: |
+      BUCKET_PATH="${{ inputs.bucket }}/${SHA:0:7}/${{ inputs.path-upload }}"
+      echo "upload=${UPLOAD_DIRECTORY}" >> $GITHUB_OUTPUT
+      echo "bucket=${BUCKET_PATH}" >> $GITHUB_OUTPUT
+      if [[ ${{ inputs.direction }} != "up" || -z ${{ inputs.redirect }} ]]; then
+          exit 0
+      fi
+      TMP_REDIRECT=$(mktemp -d)
+      TMP_REDIRECT="${TMP_REDIRECT}/${REDIRECT_PATH}"
+      mkdir -p "$TMP_REDIRECT"
+      echo "redirect=${BUCKET_PATH}/${REDIRECT_PATH}" >> $GITHUB_OUTPUT
+      echo "redirect-tmp=${TMP_REDIRECT}" >> $GITHUB_OUTPUT
+    shell: bash
+    env:
+      UPLOAD_DIRECTORY: ${{ inputs.working-directory }}/${{ inputs.path }}
+      REDIRECT_PATH: ${{ inputs.redirect }}/${{ inputs.path-upload }}
+      SHA: ${{ inputs.sha }}
+
+  - name: Upload (sync) to GCS bucket
+    if: ${{ inputs.direction == 'up' }}
+    run: |
+      echo "Uploading to gs://${{ steps.paths.outputs.bucket }} ..."
+      gsutil \
+          -mq rsync \
+          -dr "${{ steps.paths.outputs.upload }}" \
+          "gs://${{ steps.paths.outputs.bucket }}"
+      echo "Artifacts uploaded to: https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}" >&2
+    shell: bash
+
+  - name: Add redirect
+    if: ${{ steps.paths.outputs.redirect }}
+    run: |
+      echo "<meta http-equiv=\"refresh\" content=\"0; URL='https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}/index.html'\" />" \
+           >  "${{ steps.paths.outputs.redirect-tmp }}/index.html"
+      echo "Uploading redirect to gs://${{ steps.paths.outputs.redirect }} ..."  >&2
+      gsutil \
+          -h "Cache-Control:no-cache,max-age=0" \
+          -mq rsync \
+          -dr "${{ steps.paths.outputs.redirect-tmp }}" \
+          "gs://${{ steps.paths.outputs.redirect }}"
+    shell: bash
