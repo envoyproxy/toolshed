@@ -9,10 +9,15 @@ inputs:
   boto-rm:
     type: boolean
     default: false
+  key-copy:
+    type: string
+    default:
 
 outputs:
   key-path:
     value: ${{ steps.key.outputs.path }}
+  key-copy-path:
+    value: ${{ steps.key.outputs.copy-path }}
 
 
 runs:
@@ -60,6 +65,11 @@ runs:
         echo "${{ inputs.key }}" | base64 --decode > "${GCP_KEY_PATH}"
         echo "path=${GCP_KEY_PATH}" >> $GITHUB_OUTPUT
         echo "GCP_KEY_PATH=${GCP_KEY_PATH}" >> $GITHUB_ENV
+        if [[ ${{ inputs.key-copy }} == "true" ]]; then
+            cp -a "$GCP_KEY_PATH" "${{ inputs.key-copy }}"
+            echo "GCP_KEY_COPY_PATH=${GCP_KEY_COPY_PATH}" >> $GITHUB_ENV
+            echo "copy-path=${GCP_KEY_COPY_PATH}" >> $GITHUB_OUTPUT
+        fi
         if [[ ${{ inputs.boto }} != "true" ]]; then
             exit 0
         fi
@@ -71,6 +81,10 @@ runs:
         if [[ -e "${GCP_KEY_PATH}" ]]; then
             echo "Remove key ${GCP_KEY_PATH}"
             rm -rf "${GCP_KEY_PATH}"
+        fi
+        if [[ -n "${GCP_KEY_COPY_PATH}" && -e "${GCP_KEY_COPY_PATH}" ]]; then
+            echo "Remove key ${GCP_KEY_COPY_PATH}"
+            rm -rf "${GCP_KEY_COPY_PATH}"
         fi
         if [[ -e "~/.boto" ]]; then
             echo "Remove boto config ~/.boto"
