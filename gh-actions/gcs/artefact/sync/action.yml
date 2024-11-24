@@ -59,7 +59,7 @@ runs:
     if: ${{ steps.paths.outputs.redirect }}
     run: |
       {
-          echo "<meta http-equiv=\"refresh\"
+          echo "<meta http-equiv=\"refresh\""
           echo "  content=\"0; URL='https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}/index.html'\" />"
       } >  "${{ steps.paths.outputs.redirect-tmp }}/index.html"
       echo "Uploading redirect to gs://${{ steps.paths.outputs.redirect }} ..."  >&2
