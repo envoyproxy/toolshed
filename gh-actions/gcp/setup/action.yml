@@ -12,6 +12,8 @@ inputs:
   key-copy:
     type: string
     default:
+    description: |
+      Path to copy key to. Must exist and be a directory.
 
 outputs:
   key-path:
@@ -66,7 +68,13 @@ runs:
         echo "path=${GCP_KEY_PATH}" >> $GITHUB_OUTPUT
         echo "GCP_KEY_PATH=${GCP_KEY_PATH}" >> $GITHUB_ENV
         if [[ -n "${{ inputs.key-copy }}" ]]; then
+            if [[ ! -e "${{ inputs.key-copy }}" || ! -d "${{ inputs.key-copy }}" ]]; then
+                echo "If set key-copy must exist and be a directory" >&2
+                exit 1
+            fi
             cp -a "$GCP_KEY_PATH" "${{ inputs.key-copy }}"
+            GCP_KEY_FILENAME=$(basename $GCP_KEY_PATH)
+            GCP_KEY_COPY_PATH="${{ inputs.key-copy }}/${GCP_KEY_FILENAME}"
             echo "GCP_KEY_COPY_PATH=${GCP_KEY_COPY_PATH}" >> $GITHUB_ENV
             echo "copy-path=${GCP_KEY_COPY_PATH}" >> $GITHUB_OUTPUT
         fi
