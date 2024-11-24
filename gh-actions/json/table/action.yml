@@ -84,7 +84,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.10
     name: Generate table
     id: table
     with:
@@ -102,7 +102,7 @@ runs:
                      ${{ inputs.mutate-cells || '.cell' }};
                      ${{ inputs.sanitize-filter || '.' }})
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.9
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.10
     id: summary
     if: ${{ steps.table.outputs.value }}
     with:
