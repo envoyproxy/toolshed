@@ -8,6 +8,9 @@ inputs:
   mount-tmpfs:
     type: string
     default: true
+  overwrite:
+    type: boolean
+    default: true
 
 runs:
   using: "composite"
@@ -23,3 +26,7 @@ runs:
         systemctl start docker
       mount-tmpfs: ${{ inputs.mount-tmpfs }}
       run-as-sudo: true
+  - if: ${{ fromJSON(inputs.overwrite) }}
+    run: |
+      sudo rm -rf /var/lib/docker.orig &
+    shell: bash
