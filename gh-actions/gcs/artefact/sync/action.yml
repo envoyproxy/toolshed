@@ -5,6 +5,9 @@ inputs:
   direction:
     type: string
     default: up
+  index-file:
+    type: string
+    default: index.html
   path:
     type: string
     required: true
@@ -36,7 +39,7 @@ runs:
       TMP_REDIRECT=$(mktemp -d)
       TMP_REDIRECT="${TMP_REDIRECT}/${REDIRECT_PATH}"
       mkdir -p "$TMP_REDIRECT"
-      echo "redirect=${BUCKET_PATH}/${REDIRECT_PATH}" >> $GITHUB_OUTPUT
+      echo "redirect=${{ inputs.bucket }}/${REDIRECT_PATH}" >> $GITHUB_OUTPUT
       echo "redirect-tmp=${TMP_REDIRECT}" >> $GITHUB_OUTPUT
     shell: bash
     env:
@@ -52,7 +55,7 @@ runs:
           -mq rsync \
           -dr "${{ steps.paths.outputs.upload }}" \
           "gs://${{ steps.paths.outputs.bucket }}"
-      echo "Artifacts uploaded to: https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}" >&2
+      echo "Artifacts uploaded to: https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}/${{ inputs.index-file }}" >&2
     shell: bash
 
   - name: Add redirect
@@ -60,12 +63,13 @@ runs:
     run: |
       {
           echo "<meta http-equiv=\"refresh\""
-          echo "  content=\"0; URL='https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}/index.html'\" />"
-      } >  "${{ steps.paths.outputs.redirect-tmp }}/index.html"
+          echo "  content=\"0; URL='https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}/${{ inputs.index-file }}'\" />"
+      } >  "${{ steps.paths.outputs.redirect-tmp }}/${{ inputs.index-file }}"
       echo "Uploading redirect to gs://${{ steps.paths.outputs.redirect }} ..."  >&2
       gsutil \
           -h "Cache-Control:no-cache,max-age=0" \
           -mq rsync \
           -dr "${{ steps.paths.outputs.redirect-tmp }}" \
           "gs://${{ steps.paths.outputs.redirect }}"
+      echo "Redirect uploaded to: https://storage.googleapis.com/${{ steps.paths.outputs.redirect }}/${{ inputs.index-file }}" >&2
     shell: bash
