@@ -123,9 +123,9 @@ packaging==24.1 \
     --hash=sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002 \
     --hash=sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124
     # via -r requirements.in
-pelican[markdown]==4.10.1 \
-    --hash=sha256:5fb59933fd9eaff83a5e4e093a9a6249ec59ae0d8e5da63710d965acd6f5d3f7 \
-    --hash=sha256:dfcd468ddb823c70df52545ca413b44505ff2d33132284d2f5a31d217cde6cb8
+pelican[markdown]==4.10.2 \
+    --hash=sha256:04932e82dc7542bae7f1830710978836ca00608aa4ece7206dc13185a08c4562 \
+    --hash=sha256:534b3c279b9630a006b5687ea6e8e6113ca17c64ac45f4328cf66bf0be367bdf
     # via
     #   -r requirements.in
     #   pelican-webassets
