@@ -21,4 +21,6 @@ truncate -s 0 "$OUTPUT"
 # place it in the current directory
 test -e .clang-tidy || ln -s -f "$CONFIG" .clang-tidy
 
+# echo "RUN: ${CLANG_TIDY_BIN} ${*}"
+
 "${CLANG_TIDY_BIN}" "$@" |& grep -v "warnings generated" || :
