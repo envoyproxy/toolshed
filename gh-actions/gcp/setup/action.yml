@@ -49,7 +49,7 @@ runs:
       python-version: "3.12"
   - if: ${{ inputs.key && steps.gsutil.outputs.installed != 'true' }}
     run: |
-      pip install gsutil
+      pip install -r "${{ github.action_path }}/requirements.txt"
       UTIL_PATH="$(dirname $(which gsutil))"
       echo "PATH=$PATH:$UTIL_PATH" >> $GITHUB_ENV
     shell: bash
