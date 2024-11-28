@@ -113,12 +113,12 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.11
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.12
     if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
     with:
       input: ${{ inputs.context }}
       print-result: true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.11
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.12
     name: Runtime information
     id: run-info
     with:
@@ -135,13 +135,13 @@ runs:
          completed: .run.completed,
          "run-time": "\(.run.completed - .run.started | . * 100 | round / 100)s",
          "job-time": "\(.run.completed - .context["job-started"] | . * 100 | round / 100)s"}
-  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.11
+  - uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.12
     name: Run information summary
     id: run-summary
     with:
       json: ${{ steps.run-info.outputs.value }}
       title: Runtime information
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.11
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.12
     with:
       input: ${{ inputs.context }}
       options: -r
