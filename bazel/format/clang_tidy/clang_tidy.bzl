@@ -1,6 +1,10 @@
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 
+TARGET_EXTENSIONS = [
+    "c", "cc", "cpp", "cxx", "c++", "C", "h", "hh", "hpp", "hxx", "inc", "inl", "H",
+]
+
 def _run_tidy(
         ctx,
         wrapper,
@@ -60,25 +64,11 @@ def _run_tidy(
     )
     return outfile
 
-
-def _check_valid_file_type(src):
-    """
-    Returns True if the file type matches one of the permitted srcs file types for C and C++ header/source files.
-    """
-    permitted_file_types = [
-        ".c", ".cc", ".cpp", ".cxx", ".c++", ".C", ".h", ".hh", ".hpp", ".hxx", ".inc", ".inl", ".H",
-    ]
-    for file_type in permitted_file_types:
-        if src.basename.endswith(file_type):
-            return True
-    return False
-
-
 def _rule_sources(ctx):
     srcs = []
     if hasattr(ctx.rule.attr, "srcs"):
         for src in ctx.rule.attr.srcs:
-            srcs += [_src for _src in src.files.to_list() if _src.is_source and _check_valid_file_type(_src)]
+            srcs += [_src for _src in src.files.to_list() if _src.is_source and _src.extension in TARGET_EXTENSIONS]
     return srcs
 
 def _toolchain_flags(ctx, action_name = ACTION_NAMES.cpp_compile):
