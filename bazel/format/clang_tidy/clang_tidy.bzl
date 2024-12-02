@@ -1,6 +1,10 @@
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 
+TARGET_EXTENSIONS = [
+    "c", "cc", "cpp", "cxx", "c++", "C", "h", "hh", "hpp", "hxx", "inc", "inl", "H",
+]
+
 def _run_tidy(
         ctx,
         wrapper,
@@ -11,12 +15,13 @@ def _run_tidy(
         compilation_context,
         infile,
         discriminator):
+    direct_deps = [infile, config]
+    if exe.files_to_run.executable:
+        direct_deps.append(exe.files_to_run.executable)
+    if additional_deps.files:
+        direct_deps.append(additional_deps.files)
     inputs = depset(
-        direct = (
-            [infile, config] +
-            additional_deps.files.to_list() +
-            ([exe.files_to_run.executable] if exe.files_to_run.executable else [])
-        ),
+        direct = direct_deps,
         transitive = [compilation_context.headers],
     )
 
@@ -24,49 +29,29 @@ def _run_tidy(
 
     # specify the output file - twice
     outfile = ctx.actions.declare_file(
-        "bazel_clang_tidy_" + infile.path + "." + discriminator + ".clang-tidy.yaml",
+        "bazel_clang_tidy_%s.%s.clang-tidy.yaml" % (infile.path, discriminator)
     )
 
-    # this is consumed by the wrapper script
-    if len(exe.files.to_list()) == 0:
-        args.add("clang-tidy")
-    else:
-        args.add(exe.files_to_run.executable)
-
-    args.add(outfile.path)  # this is consumed by the wrapper script
-
+    args.add(exe.files_to_run.executable if exe.files else "clang-tidy")
+    args.add(outfile.path)
     args.add(config.path)
-
     args.add("--export-fixes", outfile.path)
-
     args.add("--quiet")
-
     # add source to check
     args.add(infile.path)
 
     # start args passed to the compiler
     args.add("--")
-
     # add args specified by the toolchain, on the command line and rule copts
     args.add_all(flags)
-
     # add defines
-    for define in compilation_context.defines.to_list():
-        args.add("-D" + define)
-
-    for define in compilation_context.local_defines.to_list():
-        args.add("-D" + define)
-
+    args.add_all(compilation_context.defines, before_each = "-D")
+    args.add_all(compilation_context.local_defines, before_each = "-D")
     # add includes
-    for i in compilation_context.framework_includes.to_list():
-        args.add("-F" + i)
-
-    for i in compilation_context.includes.to_list():
-        args.add("-I" + i)
-
-    args.add_all(compilation_context.quote_includes.to_list(), before_each = "-iquote")
-
-    args.add_all(compilation_context.system_includes.to_list(), before_each = "-isystem")
+    args.add_all(compilation_context.framework_includes, before_each = "-F")
+    args.add_all(compilation_context.includes, before_each = "-I")
+    args.add_all(compilation_context.quote_includes, before_each = "-iquote")
+    args.add_all(compilation_context.system_includes, before_each = "-isystem")
 
     ctx.actions.run(
         inputs = inputs,
@@ -80,22 +65,10 @@ def _run_tidy(
     return outfile
 
 def _rule_sources(ctx):
-    def check_valid_file_type(src):
-        """
-        Returns True if the file type matches one of the permitted srcs file types for C and C++ header/source files.
-        """
-        permitted_file_types = [
-            ".c", ".cc", ".cpp", ".cxx", ".c++", ".C", ".h", ".hh", ".hpp", ".hxx", ".inc", ".inl", ".H",
-        ]
-        for file_type in permitted_file_types:
-            if src.basename.endswith(file_type):
-                return True
-        return False
-
     srcs = []
     if hasattr(ctx.rule.attr, "srcs"):
         for src in ctx.rule.attr.srcs:
-            srcs += [src for src in src.files.to_list() if src.is_source and check_valid_file_type(src)]
+            srcs += [_src for _src in src.files.to_list() if _src.is_source and _src.extension in TARGET_EXTENSIONS]
     return srcs
 
 def _toolchain_flags(ctx, action_name = ACTION_NAMES.cpp_compile):
@@ -124,7 +97,6 @@ def _safe_flags(flags):
         "-fno-canonical-system-headers",
         "-fstack-usage",
     ]
-
     return [flag for flag in flags if flag not in unsupported_flags and not flag.startswith("--sysroot")]
 
 def _clang_tidy_aspect_impl(target, ctx):
@@ -143,9 +115,6 @@ def _clang_tidy_aspect_impl(target, ctx):
         ACTION_NAMES.cpp_compile: _safe_flags(_toolchain_flags(ctx, ACTION_NAMES.cpp_compile) + rule_flags),
         ACTION_NAMES.c_compile: _safe_flags(_toolchain_flags(ctx, ACTION_NAMES.c_compile) + rule_flags),
     }
-
-    srcs = _rule_sources(ctx)
-
     outputs = [
         _run_tidy(
             ctx,
@@ -158,11 +127,11 @@ def _clang_tidy_aspect_impl(target, ctx):
             src,
             target.label.name,
         )
-        for src in srcs
+        for src in _rule_sources(ctx)
     ]
 
     return [
-        OutputGroupInfo(report = depset(direct = outputs)),
+        OutputGroupInfo(report = depset(direct = outputs))
     ]
 
 clang_tidy_aspect = aspect(
