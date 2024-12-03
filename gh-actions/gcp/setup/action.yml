@@ -64,7 +64,7 @@ runs:
     if: ${{ inputs.key }}
     shell: bash
 
-  - uses: envoyproxy/toolshed/gh-actions/github/script/run@actions-v0.3.12
+  - uses: envoyproxy/toolshed/gh-actions/github/script/run@actions-v0.3.13
     id: key
     if: ${{ inputs.key }}
     with:
