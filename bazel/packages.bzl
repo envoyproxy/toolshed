@@ -1,4 +1,3 @@
-load("@python3_12//:defs.bzl", "interpreter")
 load("@rules_python//python:pip.bzl", "pip_parse")
 load("//:versions.bzl", "VERSIONS")
 
@@ -7,7 +6,7 @@ def load_packages():
     pip_parse(
         name = "toolshed_pip3",
         requirements_lock = "@envoy_toolshed//:requirements.txt",
-        python_interpreter_target = interpreter,
+        python_interpreter_target = "@python3_12_host//:python",
     )
 
 def load_website_packages():
@@ -15,5 +14,5 @@ def load_website_packages():
     pip_parse(
         name = "website_pip3",
         requirements_lock = "@envoy_toolshed//website:requirements.txt",
-        python_interpreter_target = interpreter,
+        python_interpreter_target = "@python3_12_host//:python",
     )
