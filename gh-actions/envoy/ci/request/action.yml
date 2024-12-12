@@ -228,7 +228,7 @@ runs:
           end
         | . * {"actor": {
                  name: $actor,
-                 icon: $event.sender.avatar_url},
+                 icon: $event.sender.avatar_url | gsub("\\?.*$"; "") | gsub("^https://private-"; "https://")},
                "message": $message,
                "started": ${{ inputs.started }},
                "target-branch": "${{ inputs.branch-name }}",
