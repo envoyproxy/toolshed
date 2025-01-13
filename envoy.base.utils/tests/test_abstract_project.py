@@ -1073,12 +1073,18 @@ async def test_abstract_project__git_commit(iters, patches):
         == [[(" ".join(["git", "add", *changed]), ),
              {}],
             [(" ".join([
-                "git", "commit", *changed,
-                "-m", f"'{msg.replace.return_value}'"]), ),
+                "git",
+                "commit",
+                *changed,
+                "-m",
+                f"\"{msg.replace.return_value.replace.return_value}\""]), ),
              {}]])
     assert (
         msg.replace.call_args
-        == [("'", r"\'"), {}])
+        == [("`", r"\`"), {}])
+    assert (
+        msg.replace.return_value.replace.call_args
+        == [('"', r"\""), {}])
 
 
 @pytest.mark.parametrize("returns", [None, 0, 23, "cabbage"])
