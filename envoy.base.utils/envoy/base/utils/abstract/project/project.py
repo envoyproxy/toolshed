@@ -350,11 +350,11 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             else [])
         await self._exec(
             " ".join(("git", "add", *changed)))
-        msg = msg.replace("'", r"\'")
+        msg = msg.replace("`", r"\`").replace('"', r"\"")
         await self._exec(
             " ".join((
                 "git", "commit", *author_args, *changed,
-                "-m", f"'{msg}'")))
+                "-m", f"\"{msg}\"")))
 
     def _patch_versions(
             self,
