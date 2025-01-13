@@ -52,27 +52,38 @@ def test_fetchrunner_downloads(patches):
     assert "downloads" in runner.__dict__
 
 
-def test_fetchrunner_downloads_path(patches):
+@pytest.mark.parametrize("output_dir", [True, False])
+def test_fetchrunner_downloads_path(patches, output_dir):
     runner = utils.FetchRunner()
     patched = patches(
         "pathlib",
+        ("FetchRunner.args",
+         dict(new_callable=PropertyMock)),
         ("FetchRunner.tempdir",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.fetch_runner")
 
-    with patched as (m_plib, m_temp):
+    with patched as (m_plib, m_args, m_temp):
+        if output_dir:
+            m_args.return_value.output = "dir"
         assert (
             runner.downloads_path
-            == m_plib.Path.return_value.joinpath.return_value)
-
-    assert (
-        m_plib.Path.call_args
-        == [(m_temp.return_value.name, ), {}])
-    assert (
-        m_plib.Path.return_value.joinpath.call_args
-        == [("downloads", ), {}])
+            == (m_plib.Path.return_value.joinpath.return_value
+                if not output_dir
+                else m_plib.Path.return_value))
 
     assert "downloads_path" in runner.__dict__
+    assert (
+        m_plib.Path.call_args
+        == [((m_temp.return_value.name
+              if not output_dir
+              else m_args.return_value.output_path), ), {}])
+    if not output_dir:
+        assert (
+            m_plib.Path.return_value.joinpath.call_args
+            == [("downloads", ), {}])
+    else:
+        assert not m_plib.Path.return_value.joinpath.called
 
 
 @pytest.mark.parametrize("excludes", ["", "EXCLUDE_PATH"])
@@ -593,7 +604,7 @@ def test_fetchrunner_hashed(patches):
         == [(), {}])
 
 
-@pytest.mark.parametrize("output", ["json", "NOTJSON"])
+@pytest.mark.parametrize("output", ["json", "dir", "OTHER"])
 @pytest.mark.parametrize("path", ["", "PATH"])
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize("empty", [True, False])
@@ -660,17 +671,20 @@ async def test_fetchrunner_run(patches, iters, output, path, exists, empty):
         m_log.return_value.debug.call_args_list[:5]
         == [[(f"{m_elapsed.return_value} Received:\n {x}\n", ), {}]
             for x in items])
-
-    if output == "json":
+    if output in ("json", "dir"):
         assert result == 0
-        assert (
-            m_print.call_args
-            == [(m_json.dumps.return_value, ), {}])
         assert len(m_log.return_value.debug.call_args_list) == 5
-        assert (
-            m_json.dumps.call_args
-            == [({k: v.decode() for k, v in items.items()},), {}])
         assert not m_asyncio.to_thread.called
+        if output == "json":
+            assert (
+                m_print.call_args
+                == [(m_json.dumps.return_value, ), {}])
+            assert (
+                m_json.dumps.call_args
+                == [({k: v.decode() for k, v in items.items()},), {}])
+        else:
+            assert not m_print.called
+            assert not m_json.dumps.called
         return
     if not path:
         assert result == 0
