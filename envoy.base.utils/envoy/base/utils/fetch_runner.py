@@ -31,6 +31,8 @@ class FetchRunner(runner.Runner):
 
     @cached_property
     def downloads_path(self) -> pathlib.Path:
+        if self.args.output == "dir":
+            return pathlib.Path(self.args.output_path)
         return pathlib.Path(self.tempdir.name).joinpath("downloads")
 
     @cached_property
@@ -207,7 +209,8 @@ class FetchRunner(runner.Runner):
             print(json.dumps(result))
             return 0
         exit_now = (
-            not self.args.output_path
+            self.args.output == "dir"
+            or not self.args.output_path
             or not self.downloads_path.exists()
             or not any(self.downloads_path.iterdir()))
         if exit_now:
