@@ -56,7 +56,7 @@ _create_test_command () {
 #!/usr/bin/env bash
 
 $DATE "+%s.%N" >> /tmp/output
-sleep .5
+sleep .3
 
 EOF
     chmod +x "${TEST_TEMPDIR}/command.sh"
@@ -152,7 +152,7 @@ _do_multi () {
     echo "BOOM BOOM BOOM BOOM" > "${TEST_TEMPDIR}/watched/baz/newfile"
     sleep 1
     mv "${TEST_TEMPDIR}/watched/baz/newfile" "${TEST_TEMPDIR}/watched/baz/oldfile"
-    sleep .1
+    sleep .2
     rm -rf "${TEST_TEMPDIR}/watched/baz"
 }
 

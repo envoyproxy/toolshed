@@ -13,16 +13,16 @@ IGNORE=${IGNORE:-'(\.#|~$|/#)'}
 export WATCH_LOCK
 
 WATCH_COMMAND=${WATCH_COMMAND:-}
-WATCH_LOCK_COMMAND=${WATCH_LOCK_COMMAND:-}
 WATCH_FS_COMMAND=${WATCH_FS_COMMAND:-}
 
+DEBOUNCE_SLEEP="${DEBOUNCE_SLEEP:-0.1}"
+FSWATCH_LATENCY="${FSWATCH_LATENCY:-0.05}"
 
-if [[ "$WATCH_COMMAND" == "INOTIFY" ]]; then
+
+if [[ "$WATCH_COMMAND" == "inotify" ]]; then
     WATCH_FS_COMMAND=on_fs_change_inotify
-    WATCH_LOCK_COMMAND=on_command_triggered_inotify
-elif [[ "$WATCH_COMMAND" == "FSWATCH" ]]; then
+elif [[ "$WATCH_COMMAND" == "fswatch" ]]; then
     WATCH_FS_COMMAND=on_fs_change_fswatch
-    WATCH_LOCK_COMMAND=on_command_triggered_fswatch
 fi
 
 if [[ -z "$WATCH_FS_COMMAND" ]]; then
@@ -30,17 +30,6 @@ if [[ -z "$WATCH_FS_COMMAND" ]]; then
         WATCH_FS_COMMAND=on_fs_change_inotify
     elif command -v fswatch &> /dev/null; then
         WATCH_FS_COMMAND=on_fs_change_fswatch
-    else
-        echo "No FS notifier found!" >&2
-        exit 1
-    fi
-fi
-
-if [[ -z "$WATCH_LOCK_COMMAND" ]]; then
-    if command -v inotifywait &> /dev/null; then
-        WATCH_LOCK_COMMAND=on_command_triggered_inotify
-    elif command -v fswatch &> /dev/null; then
-        WATCH_LOCK_COMMAND=on_command_triggered_fswatch
     else
         echo "No FS notifier found!" >&2
         exit 1
@@ -57,12 +46,13 @@ if [[ -z "$COMMAND" ]]; then
     exit 1
 fi
 
-FSWATCH_ARGS=(--latency=0.1)
+FSWATCH_ARGS=(--latency="$FSWATCH_LATENCY")
 if [[ "$(uname -s)" == "Linux" ]]; then
     FSWATCH_ARGS+=(-m inotify_monitor)
 elif [[ "$(uname -s)" == "Darwin" ]]; then
     FSWATCH_ARGS+=(-m fsevents_monitor)
 fi
+
 
 _kill () {
     local pid=$1
@@ -84,39 +74,19 @@ cleanup () {
     rm -rf "$WATCH_LOCK_DIR"
 }
 
+
 trap cleanup EXIT
 
 
-debug () {
+_debug () {
     if [[ -n "$DEBUG" ]]; then
         echo "${@}" >&2
     fi
 }
 
 
-on_command_triggered_inotify () {
-    debug "WATCH FS LOCK (inotify): ${1}"
-    inotifywait \
-        -m -r -q \
-        -e create \
-        "${1}" \
-        --format "%w%f"
-}
-
-
-on_command_triggered_fswatch () {
-    debug "WATCH FS LOCK (fswatch): ${1}"
-    fswatch \
-        -r \
-        --event-flags \
-        "${FSWATCH_ARGS[@]}" \
-        --event=Created \
-        "${1}"
-}
-
-
 on_fs_change_inotify () {
-    debug "WATCH FS (inotify): ${1}"
+    _debug "WATCH FS (inotify): ${1}"
     inotifywait \
         -m -r -q \
         -e modify,create,delete,move \
@@ -127,7 +97,7 @@ on_fs_change_inotify () {
 
 
 on_fs_change_fswatch () {
-    debug "WATCH FS (fswatch): ${1}"
+    _debug "WATCH FS (fswatch): ${1}"
     fswatch \
         -r -e "${2}" \
         --event-flags \
@@ -141,26 +111,11 @@ on_fs_change_fswatch () {
 }
 
 
-command_loop() {
-    "$WATCH_LOCK_COMMAND" "$WATCH_LOCK_DIR" | while read -r FILE; do
-        if [[ ! -e "$WATCH_LOCK_DIR" ]]; then
-            exit 0
-        fi
-        event=$(echo "$FILE" | cut -d' ' -f2)
-        filename=$(echo "$FILE" | cut -d' ' -f1)
-        if [[ -d "$filename" ]]; then
-            continue
-        fi
-        if [[ ! -e "$WATCH_LOCK" ]]; then
-            continue
-        fi
-        debug "RUN (${event}): ${filename}"
-        sleep .1
-        if [[ ! -e "$WATCH_LOCK_DIR" ]]; then
-            exit 0
-        fi
-        rm -f "$WATCH_LOCK"
-        $COMMAND &> /dev/null || echo "command failed!"
+debounce() {
+    sleep "$DEBOUNCE_SLEEP"
+    while read -t 0 -r FILE; do
+        read -r FILE
+        _debug "SAW CHANGE: ${FILE}"
     done
 }
 
@@ -170,17 +125,17 @@ watch_loop() {
         if [[ ! -e "$WATCH_LOCK_DIR" ]]; then
             exit 0
         fi
-        event=$(echo "$FILE" | cut -d' ' -f2)
-        filename=$(echo "$FILE" | cut -d' ' -f1)
-        debug "NOTIFIED (${event}): ${filename}"
-        touch "$WATCH_LOCK"
+        _debug "SAW CHANGE: ${FILE}"
+        debounce
+        _debug "RUN (${COMMAND})"
+        $COMMAND || echo "command failed!"
     done
 }
 
 
 watch () {
-    command_loop &
     watch_loop
 }
+
 
 watch
