@@ -1,0 +1,35 @@
+name: Ba/sh tests
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+
+
+jobs:
+  shebang:
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        - ubuntu-24.04
+        - macos-14
+        test:
+        - ./sh/tests/test_watch.sh ./sh/watch.sh
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+    - run: |
+        sudo apt-get update
+        sudo apt-get  -qq install -y inotify-tools
+      if: ${{ matrix.platform == 'ubuntu-24.04' }}
+    - run: |
+        brew install coreutils fswatch gnu-tar
+      if: ${{ matrix.platform == 'macos-14' }}
+    - run: ${{ matrix.test }}
+      env:
+        DEBUG: 1
