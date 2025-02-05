@@ -38,8 +38,9 @@ _run_log () {
 
 # shellcheck disable=SC2317
 cleanup () {
+    exitcode=$?
     _kill_watcher
-    if [[ "$FAILED" -eq 0 ]]; then
+    if [[ "$FAILED" -eq 0 && "$exitcode" -eq 0 ]]; then
         echo "Test complete!"
     else
         echo "Test failed!"
@@ -54,8 +55,8 @@ _create_test_command () {
     cat <<EOF > "${TEST_TEMPDIR}/command.sh"
 #!/usr/bin/env bash
 
-sleep .2
 $DATE "+%s.%N" >> /tmp/output
+sleep .5
 
 EOF
     chmod +x "${TEST_TEMPDIR}/command.sh"
@@ -91,6 +92,7 @@ _start_watcher () {
 
 _test () {
     local line_count
+    sleep 1
     line_count=$(wc -l < /tmp/output)
     test "$line_count" -eq "${1}" || {
         _fail "Wrong number of lines: expected ${1}, got ${line_count}"
@@ -106,8 +108,6 @@ test_watcher_modify () {
     _start_watcher
     echo "othertext" > "${TEST_TEMPDIR}/watched/foo/somefile"
     touch "${TEST_TEMPDIR}/watched/foo/somefile"
-
-    sleep 1.5
     _test 1
     _kill_watcher
 }
@@ -117,8 +117,6 @@ test_watcher_create () {
     _run_log create
     _start_watcher
     touch "${TEST_TEMPDIR}/watched/otherfile"
-
-    sleep 1.5
     _test 1
     _kill_watcher
 }
@@ -128,8 +126,6 @@ test_watcher_rm () {
     _run_log rm
     _start_watcher
     rm "${TEST_TEMPDIR}/watched/bar/somefile"
-
-    sleep 1.5
     _test 1
     _kill_watcher
 }
@@ -139,7 +135,6 @@ test_watcher_mv () {
     _run_log mv
     _start_watcher
     mv "${TEST_TEMPDIR}/watched/baz/somefile" "${TEST_TEMPDIR}/watched/baz/differentfile"
-    sleep 1.5
     _test 1
     _kill_watcher
 }
@@ -165,11 +160,7 @@ _do_multi () {
 test_watcher_multi () {
     _run_log multi
     _start_watcher
-
     _do_multi
-
-    sleep 2
-
     _test 5
     _kill_watcher
 }

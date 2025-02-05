@@ -57,7 +57,7 @@ if [[ -z "$COMMAND" ]]; then
     exit 1
 fi
 
-FSWATCH_ARGS=(--latency=0.2)
+FSWATCH_ARGS=(--latency=0.1)
 if [[ "$(uname -s)" == "Linux" ]]; then
     FSWATCH_ARGS+=(-m inotify_monitor)
 elif [[ "$(uname -s)" == "Darwin" ]]; then

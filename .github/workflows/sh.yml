@@ -32,4 +32,4 @@ jobs:
       if: ${{ matrix.platform == 'macos-14' }}
     - run: ${{ matrix.test }}
       env:
-        DEBUG: 1
+        DEBUG:
