@@ -28,7 +28,7 @@ jobs:
         sudo apt-get  -qq install -y inotify-tools
       if: ${{ matrix.platform == 'ubuntu-24.04' }}
     - run: |
-        brew install coreutils fswatch gnu-tar
+        brew install bash coreutils fswatch gnu-tar
       if: ${{ matrix.platform == 'macos-14' }}
     - run: ${{ matrix.test }}
       env:
