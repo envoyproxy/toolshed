@@ -5,19 +5,24 @@ set -e -o pipefail
 WATCH_DIR="${1}"
 COMMAND="${2}"
 
-WATCH_LOCK_DIR="$(mktemp -d)"
-WATCH_LOCK="${WATCH_LOCK_DIR}/lock"
 DEBUG=${DEBUG:-}
-IGNORE=${IGNORE:-'(\.#|~$|/#)'}
+DEFAULT_IGNORE=${DEFAULT_IGNORE:-'(\.#|~$|/#|\.git)'}
+IGNORE=${IGNORE:-}
 
-export WATCH_LOCK
 
 WATCH_COMMAND=${WATCH_COMMAND:-}
 WATCH_FS_COMMAND=${WATCH_FS_COMMAND:-}
 
 DEBOUNCE_SLEEP="${DEBOUNCE_SLEEP:-0.1}"
 FSWATCH_LATENCY="${FSWATCH_LATENCY:-0.05}"
+RUN_ON_START="${RUN_ON_START:-}"
 
+
+if [[ -n "$IGNORE" ]]; then
+    IGNORE="(${DEFAULT_IGNORE}|${IGNORE})"
+else
+    IGNORE=$DEFAULT_IGNORE
+fi
 
 if [[ "$WATCH_COMMAND" == "inotify" ]]; then
     WATCH_FS_COMMAND=on_fs_change_inotify
@@ -27,11 +32,13 @@ fi
 
 if [[ -z "$WATCH_FS_COMMAND" ]]; then
     if command -v inotifywait &> /dev/null; then
+        WATCH_COMMAND=inotify
         WATCH_FS_COMMAND=on_fs_change_inotify
     elif command -v fswatch &> /dev/null; then
+        WATCH_COMMAND=fswatch
         WATCH_FS_COMMAND=on_fs_change_fswatch
     else
-        echo "No FS notifier found!" >&2
+        echo 'No FS notifier found! Install either inotify-tools or fswatch' >&2
         exit 1
     fi
 fi
@@ -71,7 +78,6 @@ _kill () {
 
 cleanup () {
     _kill "$$"
-    rm -rf "$WATCH_LOCK_DIR"
 }
 
 
@@ -85,8 +91,14 @@ _debug () {
 }
 
 
+_log () {
+    if [[ -z "$QUIET" ]]; then
+        echo "${@}" >&2
+    fi
+}
+
+
 on_fs_change_inotify () {
-    _debug "WATCH FS (inotify): ${1}"
     inotifywait \
         -m -r -q \
         -e modify,create,delete,move \
@@ -97,11 +109,8 @@ on_fs_change_inotify () {
 
 
 on_fs_change_fswatch () {
-    _debug "WATCH FS (fswatch): ${1}"
     fswatch \
         -r -e "${2}" \
-        --event-flags \
-        --event-flag-separator=/ \
         "${FSWATCH_ARGS[@]}" \
         --event=Created \
         --event=Updated \
@@ -115,20 +124,34 @@ debounce() {
     sleep "$DEBOUNCE_SLEEP"
     while read -t 0 -r FILE; do
         read -r FILE
-        _debug "SAW CHANGE: ${FILE}"
     done
 }
 
 
+run_command () {
+    $COMMAND \
+        && echo "command succeeded" \
+            || echo "command failed!"
+}
+
+
+watch_fs () {
+    if [[ -n "$RUN_ON_START" ]]; then
+        echo "Start"
+    fi
+    "$WATCH_FS_COMMAND" "${@}"
+}
+
+
 watch_loop() {
-    "$WATCH_FS_COMMAND" "$WATCH_DIR" "$IGNORE" | while read -r FILE; do
-        if [[ ! -e "$WATCH_LOCK_DIR" ]]; then
-            exit 0
-        fi
-        _debug "SAW CHANGE: ${FILE}"
+   _log "Watching filesystem (${WATCH_COMMAND}):"
+    _log "   path: ${WATCH_DIR}"
+    _log "   ignore: ${IGNORE}"
+    watch_fs "$WATCH_DIR" "$IGNORE" | while read -r FILE; do
+        _debug "CHANGE: ${FILE}"
         debounce
-        _debug "RUN (${COMMAND})"
-        $COMMAND || echo "command failed!"
+        _debug "RUN: ${COMMAND}"
+        run_command
     done
 }
 
