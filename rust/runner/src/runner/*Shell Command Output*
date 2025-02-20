@@ -1,0 +1,16 @@
+use as_any::{AsAny, Downcast};
+
+struct Test;
+
+trait Custom: AsAny {
+    // whatever you like to put inside of your trait
+}
+
+impl Custom for Test {}
+
+fn lol() {
+    let x = Test;
+    let y: &dyn Custom = &x;
+    // With (extension) trait `Downcast` in scope.
+    y.downcast_ref::<Test>().unwrap();
+}
