@@ -1,0 +1,8 @@
+[test_config]
+skip-clean = true
+target-dir = "target/tarpaulin"
+workspace = true
+color = "Always"
+
+[report]
+out = ["Html"]
