@@ -1,4 +1,4 @@
-use crate::request::Request;
+use crate::command::Command;
 use crate::{config, log, EmptyResult};
 use ::log::LevelFilter;
 use as_any::AsAny;
@@ -20,25 +20,25 @@ pub type CommandsFn<'a> = HashMap<&'a str, CommandFn>;
 pub trait Factory<T, R>: Send + Sync
 where
     T: Runner + Sized,
-    R: Request + Sized,
+    R: Command + Sized,
 {
-    fn new(request: R) -> Self;
+    fn new(command: R) -> Self;
 }
 
 #[macro_export]
 macro_rules! runner {
-    ($request:ident, { $( $cmd_name:literal => $cmd_fn:expr ),* $(,)? }) => {
+    ($command:ident, { $( $cmd_name:literal => $cmd_fn:expr ),* $(,)? }) => {
         // Requires:
         //
         // use as_any::Downcast;
         //
         // in the calling module
 
-        fn get_request(&self) -> &dyn toolshed_runner::request::Request {
-            &self.$request
+        fn get_command(&self) -> &dyn toolshed_runner::command::Command {
+            &self.$command
         }
 
-        fn get_commands(&self) -> toolshed_runner::runner::CommandsFn {
+        fn commands(&self) -> toolshed_runner::runner::CommandsFn {
             let mut commands: toolshed_runner::runner::CommandsFn = std::collections::HashMap::new();
             $(
                 commands.insert($cmd_name, std::sync::Arc::new(|s: &Box<dyn toolshed_runner::runner::Runner>| {
@@ -71,17 +71,17 @@ impl Error for CommandError {}
 
 #[async_trait]
 pub trait Runner: Any + AsAny + Send + Sync {
-    fn get_commands(&self) -> CommandsFn;
-    fn get_request(&self) -> &dyn Request;
+    fn commands(&self) -> CommandsFn;
+    fn get_command(&self) -> &dyn Command;
     async fn handle(&self) -> EmptyResult;
 
     fn config(&self, key: &str) -> Option<config::Primitive> {
-        self.get_request().get_config().get(key)
+        self.get_command().get_config().get(key)
     }
 
-    fn get_command(&self) -> Result<CommandFn, CommandError> {
-        let name = self.get_request().get_name();
-        let commands = self.get_commands();
+    fn resolve_command(&self) -> Result<CommandFn, CommandError> {
+        let name = self.get_command().get_name();
+        let commands = self.commands();
         match commands.get(name) {
             Some(command) => Ok(command.clone()),
             None => Err(CommandError {
@@ -108,7 +108,7 @@ pub trait Runner: Any + AsAny + Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{Dummy, DummyConfig, DummyRequest, DummyRunner, Patched, Spy};
+    use crate::test_helpers::{Dummy, DummyCommand, DummyConfig, DummyRunner, Patched, Spy};
     use config::Provider;
     use scopeguard::defer;
     use serial_test::serial;
@@ -120,19 +120,19 @@ mod tests {
     fn test_runner_config() {
         let testid = "runner_config";
         let expected = vec![
-            "Runner::get_request(true)",
-            "Request::get_config(true)",
+            "Runner::get_command(true)",
+            "Command::get_config(true)",
             "Config::get(true): \"SOME.KEY.PATH\"",
         ];
         let config = Dummy::config().unwrap();
-        let request = Dummy::request(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(request).unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
         let guards = [
-            guerrilla::patch1(DummyRunner::get_request, |_self| {
-                Patched::runner_request(&SPY, "runner_config", true, _self)
+            guerrilla::patch1(DummyRunner::get_command, |_self| {
+                Patched::runner_command(&SPY, "runner_config", true, _self)
             }),
-            guerrilla::patch1(DummyRequest::get_config, |_self| {
-                Patched::request_config(&SPY, "runner_config", true, _self)
+            guerrilla::patch1(DummyCommand::get_config, |_self| {
+                Patched::command_config(&SPY, "runner_config", true, _self)
             }),
             guerrilla::patch2(DummyConfig::get, |_self, key| {
                 Patched::config_get(&SPY, "runner_config", true, _self, key)
@@ -156,26 +156,26 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(my_global_lock)]
-    async fn test_runner_get_command() {
-        let testid = "runner_get_command";
+    async fn test_runner_resolve_command() {
+        let testid = "runner_resolve_command";
         let expected = vec![
-            "Runner::get_request(true)",
-            "Request::get_name(true)",
-            "Runner::get_commands(true)",
+            "Runner::get_command(true)",
+            "Command::get_name(true)",
+            "Runner::commands(true)",
             "Runner::configured_command(true)",
         ];
         let config = Dummy::config().unwrap();
-        let request = Dummy::request(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(request).unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
         let guards = [
-            guerrilla::patch1(DummyRunner::get_request, |_self| {
-                Patched::runner_request(&SPY, "runner_get_command", true, _self)
+            guerrilla::patch1(DummyRunner::get_command, |_self| {
+                Patched::runner_command(&SPY, "runner_resolve_command", true, _self)
             }),
-            guerrilla::patch1(DummyRequest::get_name, |_self| {
-                Patched::request_get_name(&SPY, "runner_get_command", true, _self)
+            guerrilla::patch1(DummyCommand::get_name, |_self| {
+                Patched::command_get_name(&SPY, "runner_resolve_command", true, _self)
             }),
-            guerrilla::patch1(DummyRunner::get_commands, |_self| {
-                Patched::runner_get_commands(&SPY, "runner_get_command", true, _self)
+            guerrilla::patch1(DummyRunner::commands, |_self| {
+                Patched::runner_commands(&SPY, "runner_resolve_command", true, _self)
             }),
         ];
         defer! {
@@ -184,17 +184,17 @@ mod tests {
             SPY.clear(testid);
             assert_eq!(*calls, expected);
         }
-        let command = runner.get_command().unwrap();
+        let command = runner.resolve_command().unwrap();
         let _ = command(&(Box::new(runner.clone()) as Box<dyn Runner>)).await;
     }
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(my_global_lock)]
-    async fn test_runner_get_commands() {
+    async fn test_runner_commands() {
         let config = Dummy::config().unwrap();
-        let request = Dummy::request(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(request.clone()).unwrap();
-        let commands = runner.get_commands();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command.clone()).unwrap();
+        let commands = runner.commands();
         match commands.get("default") {
             Some(command) => command(&(Box::new(runner.clone()) as Box<dyn Runner>))
                 .await
@@ -211,25 +211,25 @@ mod tests {
 
     #[test]
     #[serial(my_global_lock)]
-    fn test_runner_get_command_bad_name() {
-        let testid = "runner_get_command_bad_name";
+    fn test_runner_resolve_command_bad_name() {
+        let testid = "runner_resolve_command_bad_name";
         let expected = vec![
-            "Runner::get_request(true)",
-            "Request::get_name(true)",
-            "Runner::get_commands(true)",
+            "Runner::get_command(true)",
+            "Command::get_name(true)",
+            "Runner::commands(true)",
         ];
         let config = Dummy::config().unwrap();
-        let request = Dummy::request(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(request).unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
         let guards = [
-            guerrilla::patch1(DummyRunner::get_request, |_self| {
-                Patched::runner_request(&SPY, "runner_get_command_bad_name", true, _self)
+            guerrilla::patch1(DummyRunner::get_command, |_self| {
+                Patched::runner_command(&SPY, "runner_resolve_command_bad_name", true, _self)
             }),
-            guerrilla::patch1(DummyRequest::get_name, |_self| {
-                Patched::request_get_name_bad(&SPY, "runner_get_command_bad_name", true, _self)
+            guerrilla::patch1(DummyCommand::get_name, |_self| {
+                Patched::command_get_name_bad(&SPY, "runner_resolve_command_bad_name", true, _self)
             }),
-            guerrilla::patch1(DummyRunner::get_commands, |_self| {
-                Patched::runner_get_commands(&SPY, "runner_get_command_bad_name", true, _self)
+            guerrilla::patch1(DummyRunner::commands, |_self| {
+                Patched::runner_commands(&SPY, "runner_resolve_command_bad_name", true, _self)
             }),
         ];
         defer! {
@@ -238,7 +238,7 @@ mod tests {
             SPY.clear(testid);
             assert_eq!(*calls, expected);
         }
-        let result = runner.get_command();
+        let result = runner.resolve_command();
         assert!(result.is_err());
         match result {
             Ok(_) => {
@@ -257,11 +257,11 @@ mod tests {
     }
 
     #[test]
-    fn test_runner_get_request() {
+    fn test_runner_get_command() {
         let config = Dummy::config().unwrap();
-        let request = Dummy::request(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(request.clone()).unwrap();
-        assert_eq!(runner.get_request().get_name(), request.get_name());
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command.clone()).unwrap();
+        assert_eq!(runner.get_command().get_name(), command.get_name());
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -269,14 +269,14 @@ mod tests {
     async fn test_runner_handle() {
         let testid = "runner_handle";
         let expected = vec![
-            "Runner::get_command(true)",
+            "Runner::resolve_command(true)",
             "Runner::configured_command(true)",
         ];
         let config = Dummy::config().unwrap();
-        let request = Dummy::request(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(request).unwrap();
-        let guards = vec![guerrilla::patch1(DummyRunner::get_command, |_self| {
-            Patched::runner_get_command(&SPY, "runner_handle", true, _self)
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
+        let guards = vec![guerrilla::patch1(DummyRunner::resolve_command, |_self| {
+            Patched::runner_resolve_command(&SPY, "runner_handle", true, _self)
         })];
         defer! {
             let calls = SPY.get(testid);
@@ -293,8 +293,8 @@ mod tests {
         let testid = "runner_run";
         let expected = vec!["Runner::start_log(true)", "Runner::handle(true)"];
         let config = Dummy::config().unwrap();
-        let request = Dummy::request(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(request).unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
         let guards = vec![
             guerrilla::patch1(DummyRunner::start_log, |_self| {
                 Patched::runner_start_log(&SPY, "runner_run", true, _self)
@@ -323,8 +323,8 @@ mod tests {
             "env_logger::Builder::init(true)",
         ];
         let config = Dummy::config().unwrap();
-        let request = Dummy::request(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(request).unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
         let guards = vec![
             guerrilla::patch2(DummyRunner::config, |_self, key| {
                 Patched::runner_config(&SPY, "runner_startlog", true, _self, key)

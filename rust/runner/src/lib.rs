@@ -1,7 +1,7 @@
 pub mod args;
+pub mod command;
 pub mod config;
 pub mod log;
-pub mod request;
 pub mod runner;
 
 #[cfg(test)]

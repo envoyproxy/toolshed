@@ -1,5 +1,5 @@
 use crate as toolshed_runner;
-use crate::{config, log, request, runner, EmptyResult};
+use crate::{command, config, log, runner, EmptyResult};
 use ::log::LevelFilter;
 use async_trait::async_trait;
 use env_logger::Builder;
@@ -94,12 +94,12 @@ impl config::Provider for DummyConfig {
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct DummyRequest {
+pub struct DummyCommand {
     pub config: DummyConfig,
     pub name: String,
 }
 
-impl request::Request for DummyRequest {
+impl command::Command for DummyCommand {
     fn get_name(&self) -> &str {
         &self.name
     }
@@ -111,7 +111,7 @@ impl request::Request for DummyRequest {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DummyRunner {
-    pub request: DummyRequest,
+    pub command: DummyCommand,
 }
 
 impl DummyRunner {
@@ -133,26 +133,26 @@ impl Dummy {
         Ok(DummyConfig { log })
     }
 
-    pub fn request(config: DummyConfig, name: String) -> Result<DummyRequest, Box<dyn Error>> {
-        Ok(DummyRequest { config, name })
+    pub fn command(config: DummyConfig, name: String) -> Result<DummyCommand, Box<dyn Error>> {
+        Ok(DummyCommand { config, name })
     }
 
-    pub fn runner(request: DummyRequest) -> Result<DummyRunner, Box<dyn Error>> {
-        Ok(DummyRunner { request })
+    pub fn runner(command: DummyCommand) -> Result<DummyRunner, Box<dyn Error>> {
+        Ok(DummyRunner { command })
     }
 }
 
 #[async_trait]
 impl runner::Runner for DummyRunner {
     runner!(
-    request,
+    command,
     {
         "other" => Self::cmd_other,
         "default" => Self::cmd_default,
     });
 
     async fn handle(&self) -> EmptyResult {
-        self.get_command().unwrap()(&(Box::new(self.clone()) as Box<dyn runner::Runner>)).await
+        self.resolve_command().unwrap()(&(Box::new(self.clone()) as Box<dyn runner::Runner>)).await
     }
 }
 
@@ -431,33 +431,33 @@ impl Patched {
         Ok(Box::new(config))
     }
 
-    pub fn request_config<'a>(
+    pub fn command_config<'a>(
         spy: &once_cell::sync::Lazy<Spy>,
         testid: &str,
         success: bool,
-        _self: &'a DummyRequest,
+        _self: &'a DummyCommand,
     ) -> Box<&'a dyn config::Provider> {
-        spy.push(testid, &format!("Request::get_config({:?})", success));
+        spy.push(testid, &format!("Command::get_config({:?})", success));
         Box::new(&_self.config)
     }
 
-    pub fn request_get_name<'a>(
+    pub fn command_get_name<'a>(
         spy: &once_cell::sync::Lazy<Spy>,
         testid: &str,
         success: bool,
-        _self: &'a DummyRequest,
+        _self: &'a DummyCommand,
     ) -> &'a str {
-        spy.push(testid, &format!("Request::get_name({:?})", success));
-        "REQUEST_NAME"
+        spy.push(testid, &format!("Command::get_name({:?})", success));
+        "COMMAND_NAME"
     }
 
-    pub fn request_get_name_bad<'a>(
+    pub fn command_get_name_bad<'a>(
         spy: &once_cell::sync::Lazy<Spy>,
         testid: &str,
         success: bool,
-        _self: &'a DummyRequest,
+        _self: &'a DummyCommand,
     ) -> &'a str {
-        spy.push(testid, &format!("Request::get_name({:?})", success));
+        spy.push(testid, &format!("Command::get_name({:?})", success));
         "DOES_NOT_EXIST"
     }
 
@@ -472,13 +472,13 @@ impl Patched {
         Some(config::Primitive::String("warning".to_string()))
     }
 
-    pub fn runner_get_command(
+    pub fn runner_resolve_command(
         spy: &'static once_cell::sync::Lazy<Spy>,
         testid: &'static str,
         success: bool,
         _self: &DummyRunner,
     ) -> Result<runner::CommandFn, runner::CommandError> {
-        spy.push(testid, &format!("Runner::get_command({:?})", success));
+        spy.push(testid, &format!("Runner::resolve_command({:?})", success));
         Ok(Arc::new(
             move |_runner: &Box<dyn runner::Runner>| -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> {
                 let spy = spy;
@@ -491,13 +491,13 @@ impl Patched {
         ))
     }
 
-    pub fn runner_get_commands<'a>(
+    pub fn runner_commands<'a>(
         spy: &'static once_cell::sync::Lazy<Spy>,
         testid: &'static str,
         success: bool,
         _self: &DummyRunner,
     ) -> runner::CommandsFn<'a> {
-        spy.push(testid, &format!("Runner::get_commands({:?})", success));
+        spy.push(testid, &format!("Runner::commands({:?})", success));
 
         let command: runner::CommandFn = Arc::new(move |_runner: &Box<dyn runner::Runner>| {
             // let spy = spy.clone(); // Clone to avoid ownership issues
@@ -512,7 +512,7 @@ impl Patched {
         });
 
         let mut commands: runner::CommandsFn = HashMap::new();
-        commands.insert("REQUEST_NAME", command.clone());
+        commands.insert("COMMAND_NAME", command.clone());
         commands
     }
 
@@ -526,14 +526,14 @@ impl Patched {
         Ok(())
     }
 
-    pub fn runner_request<'a>(
+    pub fn runner_command<'a>(
         spy: &once_cell::sync::Lazy<Spy>,
         testid: &str,
         success: bool,
         _self: &'a DummyRunner,
-    ) -> &'a dyn request::Request {
-        spy.push(testid, &format!("Runner::get_request({:?})", success));
-        &_self.request
+    ) -> &'a dyn command::Command {
+        spy.push(testid, &format!("Runner::get_command({:?})", success));
+        &_self.command
     }
 
     pub fn runner_start_log<'a>(
