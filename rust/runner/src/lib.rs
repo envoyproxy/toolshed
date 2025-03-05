@@ -4,8 +4,8 @@ pub mod config;
 pub mod log;
 pub mod runner;
 
-#[cfg(test)]
-mod test_helpers;
+#[cfg(feature = "test")]
+pub mod test;
 // #[cfg(test)]
 // mod test_macros;
 

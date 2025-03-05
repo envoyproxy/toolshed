@@ -1,164 +1,21 @@
-use crate as toolshed_runner;
-use crate::{command, config, log, runner, EmptyResult};
+use crate::{
+    command, config, log, runner,
+    test::{
+        data::TEST_YAML0,
+        dummy::{DummyCommand, DummyConfig, DummyRunner, Loggable},
+        spy::Spy,
+    },
+    EmptyResult,
+};
 use ::log::LevelFilter;
-use async_trait::async_trait;
 use env_logger::Builder;
-use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
-use std::collections::HashMap;
-use std::error::Error;
-use std::future::Future;
-use std::path::Path;
-use std::pin::Pin;
-use std::sync::{Arc, Mutex};
+use std::{collections::HashMap, future::Future, path::Path, pin::Pin, sync::Arc};
 use tempfile::NamedTempFile;
 
-pub struct Spy {
-    pub calls: Arc<Mutex<HashMap<String, Vec<String>>>>,
-}
+pub struct Patch {}
 
-impl Spy {
-    pub fn new() -> Self {
-        Self {
-            calls: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-
-    pub fn get(&self, key: &str) -> Vec<String> {
-        let mut calls = self.calls.lock().unwrap();
-        calls
-            .entry(key.to_string())
-            .or_insert_with(Vec::new)
-            .to_vec()
-    }
-
-    pub fn clear(&self, key: &str) {
-        let mut calls = self.calls.lock().unwrap();
-        calls.insert(key.to_string(), Vec::new());
-    }
-
-    pub fn push(&self, key: &str, value: &str) {
-        let mut calls = self.calls.lock().unwrap();
-        calls
-            .entry(key.to_string())
-            .or_insert_with(Vec::new)
-            .to_vec();
-        let vec = calls.get_mut(key).unwrap();
-        vec.push(value.to_string());
-    }
-}
-
-pub const TEST_YAML0: &str = "
-log:
-  level: trace
-";
-
-pub const TEST_YAML1: &str = "
-dict0:
-  subdict0:
-    key0: value0
-  list0:
-  - item0
-  - dictitem0:
-      key1: value1
-";
-
-pub trait Loggable {
-    fn log(&self) -> config::LogConfig;
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct DummyConfig {
-    pub log: config::LogConfig,
-}
-
-impl Loggable for DummyConfig {
-    fn log(&self) -> config::LogConfig {
-        self.log.clone()
-    }
-}
-
-#[async_trait]
-impl config::Provider for DummyConfig {
-    fn get(&self, _key: &str) -> Option<config::Primitive> {
-        None
-    }
-
-    fn resolve(&self, current: &Value, _keys: &[&str]) -> Option<Value> {
-        Some(current.clone())
-    }
-
-    fn serialized(&self) -> Option<Value> {
-        serde_yaml::to_value(self).ok()
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct DummyCommand {
-    pub config: DummyConfig,
-    pub name: String,
-}
-
-impl command::Command for DummyCommand {
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    fn get_config(&self) -> Box<&dyn config::Provider> {
-        Box::new(&self.config)
-    }
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct DummyRunner {
-    pub command: DummyCommand,
-}
-
-impl DummyRunner {
-    async fn cmd_default(&self) -> EmptyResult {
-        Ok(())
-    }
-
-    async fn cmd_other(&self) -> EmptyResult {
-        Ok(())
-    }
-}
-
-pub struct Dummy {}
-
-impl Dummy {
-    pub fn config() -> Result<DummyConfig, Box<dyn Error>> {
-        let level = log::Level::Trace;
-        let log = config::LogConfig { level };
-        Ok(DummyConfig { log })
-    }
-
-    pub fn command(config: DummyConfig, name: String) -> Result<DummyCommand, Box<dyn Error>> {
-        Ok(DummyCommand { config, name })
-    }
-
-    pub fn runner(command: DummyCommand) -> Result<DummyRunner, Box<dyn Error>> {
-        Ok(DummyRunner { command })
-    }
-}
-
-#[async_trait]
-impl runner::Runner for DummyRunner {
-    runner!(
-    command,
-    {
-        "other" => Self::cmd_other,
-        "default" => Self::cmd_default,
-    });
-
-    async fn handle(&self) -> EmptyResult {
-        self.resolve_command().unwrap()(&(Box::new(self.clone()) as Box<dyn runner::Runner>)).await
-    }
-}
-
-pub struct Patched {}
-
-impl Patched {
+impl Patch {
     pub fn config_get(
         spy: &once_cell::sync::Lazy<Spy>,
         testid: &str,
@@ -616,16 +473,3 @@ impl Patched {
         Ok(())
     }
 }
-
-// DATA
-
-pub static LOG_LEVELS: once_cell::sync::Lazy<HashMap<&'static str, (log::Level, LevelFilter)>> =
-    once_cell::sync::Lazy::new(|| {
-        let mut map = HashMap::new();
-        map.insert("debug", (log::Level::Debug, LevelFilter::Debug));
-        map.insert("error", (log::Level::Error, LevelFilter::Error));
-        map.insert("info", (log::Level::Info, LevelFilter::Info));
-        map.insert("trace", (log::Level::Trace, LevelFilter::Trace));
-        map.insert("warning", (log::Level::Warning, LevelFilter::Warn));
-        map
-    });

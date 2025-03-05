@@ -1,4 +1,4 @@
-use crate::{args, log};
+use crate::{args, log, EmptyResult};
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -106,10 +106,15 @@ where
         }
     }
 
-    async fn override_config(args: ArcSafeArgs, mut config: Box<T>) -> Result<Box<T>, SafeError> {
-        if let Some(level) = Self::log_level_override(args)? {
+    fn override_config_log(args: ArcSafeArgs, config: &mut Box<T>) -> EmptyResult {
+        if let Some(level) = Self::log_level_override(args.clone())? {
             config.set_log(level)?;
         }
+        Ok(())
+    }
+
+    async fn override_config(args: ArcSafeArgs, mut config: Box<T>) -> Result<Box<T>, SafeError> {
+        Self::override_config_log(args, &mut config)?;
         Ok(config)
     }
 
@@ -178,7 +183,12 @@ impl fmt::Display for BaseConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{DummyConfig, Patched, Spy, TEST_YAML0, TEST_YAML1};
+    use crate::test::{
+        data::{TEST_YAML0, TEST_YAML1},
+        dummy::DummyConfig,
+        patch::Patch,
+        spy::Spy,
+    };
     use mockall::mock;
     use scopeguard::defer;
     use serde_yaml::Mapping;
@@ -295,7 +305,7 @@ log:
         let config = serde_yaml::from_str::<BaseConfig>("").expect("Unable to parse yaml");
         let guards = [guerrilla::patch1(
             serde_yaml::to_value::<BaseConfig>,
-            |thing| Patched::serde_to_value(&SPY, "baseconfig_serialized", true, Box::new(thing)),
+            |thing| Patch::serde_to_value(&SPY, "baseconfig_serialized", true, Box::new(thing)),
         )];
         defer! {
             let calls = SPY.get(testid);
@@ -324,10 +334,10 @@ log:
         let args_boxed: SafeArgs = Box::new(mock_args);
         let guards = [
             guerrilla::patch1(DummyFactory::read_yaml, |args| {
-                Box::pin(Patched::read_yaml(&SPY, "from_yaml", args))
+                Box::pin(Patch::read_yaml(&SPY, "from_yaml", args))
             }),
             guerrilla::patch2(DummyFactory::override_config, |args, config| {
-                Box::pin(Patched::override_config(&SPY, "from_yaml", args, config))
+                Box::pin(Patch::override_config(&SPY, "from_yaml", args, config))
             }),
         ];
         defer! {
@@ -348,10 +358,10 @@ log:
         let expected = vec!["serde_yaml::from_str(true): \"debug\""];
         let guards = [
             guerrilla::patch1(std::env::var, |name| {
-                Patched::env_var(&SPY, "factory_log_level_override_arg", true, name)
+                Patch::env_var(&SPY, "factory_log_level_override_arg", true, name)
             }),
             guerrilla::patch1(serde_yaml::from_str::<log::Level>, |string| {
-                Patched::serde_from_str::<DummyConfig>(
+                Patch::serde_from_str::<DummyConfig>(
                     &SPY,
                     "factory_log_level_override_arg",
                     true,
@@ -386,10 +396,10 @@ log:
         ];
         let guards = [
             guerrilla::patch1(std::env::var, |name| {
-                Patched::env_var(&SPY, "factory_log_level_override_env", true, name)
+                Patch::env_var(&SPY, "factory_log_level_override_env", true, name)
             }),
             guerrilla::patch1(serde_yaml::from_str::<log::Level>, |string| {
-                Patched::serde_from_str::<DummyConfig>(
+                Patch::serde_from_str::<DummyConfig>(
                     &SPY,
                     "factory_log_level_override_env",
                     true,
@@ -419,10 +429,10 @@ log:
         let expected = vec!["std::env::var(false): \"LOG_LEVEL\""];
         let guards = [
             guerrilla::patch1(std::env::var, |name| {
-                Patched::env_var(&SPY, "factory_log_level_override_none", false, name)
+                Patch::env_var(&SPY, "factory_log_level_override_none", false, name)
             }),
             guerrilla::patch1(serde_yaml::from_str::<log::Level>, |string| {
-                Patched::serde_from_str::<DummyConfig>(
+                Patch::serde_from_str::<DummyConfig>(
                     &SPY,
                     "factory_log_level_override_none",
                     true,
@@ -455,10 +465,10 @@ log:
         ];
         let guards = [
             guerrilla::patch1(std::env::var, |name| {
-                Patched::env_var(&SPY, "factory_log_level_override_err", true, name)
+                Patch::env_var(&SPY, "factory_log_level_override_err", true, name)
             }),
             guerrilla::patch1(serde_yaml::from_str::<log::Level>, |string| {
-                Patched::serde_from_str::<DummyConfig>(
+                Patch::serde_from_str::<DummyConfig>(
                     &SPY,
                     "factory_log_level_override_err",
                     false,
@@ -496,7 +506,7 @@ log:
         ];
         let guards = [
             guerrilla::patch1(DummyFactory::log_level_override, |args| {
-                Ok(Patched::log_level_override(
+                Ok(Patch::log_level_override(
                     &SPY,
                     "factory_override_config",
                     true,
@@ -505,7 +515,7 @@ log:
                 )?)
             }),
             guerrilla::patch2(DummyConfig::set_log, |_self, level| {
-                Patched::set_log(&SPY, "factory_override_config", true, _self, level)
+                Patch::set_log(&SPY, "factory_override_config", true, _self, level)
             }),
         ];
         defer! {
@@ -532,7 +542,7 @@ log:
         let expected = vec!["Factory::log_level_override(true/false): MockArgsProvider"];
         let guards = [
             guerrilla::patch1(DummyFactory::log_level_override, |args| {
-                Ok(Patched::log_level_override(
+                Ok(Patch::log_level_override(
                     &SPY,
                     "factory_override_config_nolog",
                     true,
@@ -541,7 +551,7 @@ log:
                 )?)
             }),
             guerrilla::patch2(DummyConfig::set_log, |_self, level| {
-                Patched::set_log(&SPY, "factory_override_config_nolog", true, _self, level)
+                Patch::set_log(&SPY, "factory_override_config_nolog", true, _self, level)
             }),
         ];
         defer! {
@@ -568,7 +578,7 @@ log:
         let expected = vec!["Factory::log_level_override(false/true): MockArgsProvider"];
         let guards = [
             guerrilla::patch1(DummyFactory::log_level_override, |args| {
-                Ok(Patched::log_level_override(
+                Ok(Patch::log_level_override(
                     &SPY,
                     "factory_override_config_get_err",
                     false,
@@ -577,7 +587,7 @@ log:
                 )?)
             }),
             guerrilla::patch2(DummyConfig::set_log, |_self, level| {
-                Patched::set_log(&SPY, "factory_override_config_get_err", true, _self, level)
+                Patch::set_log(&SPY, "factory_override_config_get_err", true, _self, level)
             }),
         ];
         defer! {
@@ -610,16 +620,10 @@ log:
         ];
         let guards = [
             guerrilla::patch1(DummyFactory::log_level_override, |args| {
-                Patched::log_level_override(
-                    &SPY,
-                    "factory_override_config_set_err",
-                    true,
-                    true,
-                    args,
-                )
+                Patch::log_level_override(&SPY, "factory_override_config_set_err", true, true, args)
             }),
             guerrilla::patch2(DummyConfig::set_log, |_self, level| {
-                Patched::set_log(&SPY, "factory_override_config_set_err", false, _self, level)
+                Patch::set_log(&SPY, "factory_override_config_set_err", false, _self, level)
             }),
         ];
         defer! {
@@ -653,14 +657,14 @@ log:
         ];
         let guards = [
             guerrilla::patch1(Path::exists, |_self| {
-                Patched::path_exists(&SPY, "read_yaml", true, _self)
+                Patch::path_exists(&SPY, "read_yaml", true, _self)
             }),
             guerrilla::patch1(std::fs::File::open, |path| {
-                Patched::file_open(&SPY, "read_yaml", true, path)
+                Patch::file_open(&SPY, "read_yaml", true, path)
             }),
             guerrilla::patch1(
                 serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                |file| Patched::serde_from_reader(&SPY, "read_yaml", true, &file),
+                |file| Patch::serde_from_reader(&SPY, "read_yaml", true, &file),
             ),
         ];
         defer! {
@@ -681,14 +685,14 @@ log:
         let expected = vec!["Path.exists(false): \"tests/config.yaml\""];
         let guards = [
             guerrilla::patch1(Path::exists, |_self| {
-                Patched::path_exists(&SPY, "read_yaml_no_exist", false, _self)
+                Patch::path_exists(&SPY, "read_yaml_no_exist", false, _self)
             }),
             guerrilla::patch1(std::fs::File::open, |path| {
-                Patched::file_open(&SPY, "read_yaml_no_exist", true, path)
+                Patch::file_open(&SPY, "read_yaml_no_exist", true, path)
             }),
             guerrilla::patch1(
                 serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                |file| Patched::serde_from_reader(&SPY, "read_yaml_no_exist", true, &file),
+                |file| Patch::serde_from_reader(&SPY, "read_yaml_no_exist", true, &file),
             ),
         ];
         defer! {
@@ -718,14 +722,14 @@ log:
         ];
         let guards = [
             guerrilla::patch1(Path::exists, |_self| {
-                Patched::path_exists(&SPY, "read_yaml_fail_open", true, _self)
+                Patch::path_exists(&SPY, "read_yaml_fail_open", true, _self)
             }),
             guerrilla::patch1(std::fs::File::open, |path| {
-                Patched::file_open(&SPY, "read_yaml_fail_open", false, path)
+                Patch::file_open(&SPY, "read_yaml_fail_open", false, path)
             }),
             guerrilla::patch1(
                 serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                |file| Patched::serde_from_reader(&SPY, "read_yaml_fail_open", true, &file),
+                |file| Patch::serde_from_reader(&SPY, "read_yaml_fail_open", true, &file),
             ),
         ];
         defer! {
@@ -761,14 +765,14 @@ log:
         ];
         let guards = [
             guerrilla::patch1(Path::exists, |_self| {
-                Patched::path_exists(&SPY, "read_yaml_bad_parse", true, _self)
+                Patch::path_exists(&SPY, "read_yaml_bad_parse", true, _self)
             }),
             guerrilla::patch1(std::fs::File::open, |path| {
-                Patched::file_open(&SPY, "read_yaml_bad_parse", true, path)
+                Patch::file_open(&SPY, "read_yaml_bad_parse", true, path)
             }),
             guerrilla::patch1(
                 serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                |file| Patched::serde_from_reader(&SPY, "read_yaml_bad_parse", false, &file),
+                |file| Patch::serde_from_reader(&SPY, "read_yaml_bad_parse", false, &file),
             ),
         ];
         defer! {
@@ -803,10 +807,10 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve(&SPY, "read_provider_get", true, _self, current, keys)
+                Patch::config_resolve(&SPY, "read_provider_get", true, _self, current, keys)
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get", true, _self)
             }),
         ];
         defer! {
@@ -839,17 +843,10 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve_f64(
-                    &SPY,
-                    "read_provider_get_f64",
-                    true,
-                    _self,
-                    current,
-                    keys,
-                )
+                Patch::config_resolve_f64(&SPY, "read_provider_get_f64", true, _self, current, keys)
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get_f64", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get_f64", true, _self)
             }),
         ];
         defer! {
@@ -882,17 +879,10 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve_i32(
-                    &SPY,
-                    "read_provider_get_i32",
-                    true,
-                    _self,
-                    current,
-                    keys,
-                )
+                Patch::config_resolve_i32(&SPY, "read_provider_get_i32", true, _self, current, keys)
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get_i32", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get_i32", true, _self)
             }),
         ];
         defer! {
@@ -929,17 +919,10 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve_i64(
-                    &SPY,
-                    "read_provider_get_i64",
-                    true,
-                    _self,
-                    current,
-                    keys,
-                )
+                Patch::config_resolve_i64(&SPY, "read_provider_get_i64", true, _self, current, keys)
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get_i64", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get_i64", true, _self)
             }),
         ];
         defer! {
@@ -976,17 +959,10 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve_u32(
-                    &SPY,
-                    "read_provider_get_u32",
-                    true,
-                    _self,
-                    current,
-                    keys,
-                )
+                Patch::config_resolve_u32(&SPY, "read_provider_get_u32", true, _self, current, keys)
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get_u32", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get_u32", true, _self)
             }),
         ];
         defer! {
@@ -1023,17 +999,10 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve_u64(
-                    &SPY,
-                    "read_provider_get_u64",
-                    true,
-                    _self,
-                    current,
-                    keys,
-                )
+                Patch::config_resolve_u64(&SPY, "read_provider_get_u64", true, _self, current, keys)
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get_u64", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get_u64", true, _self)
             }),
         ];
         defer! {
@@ -1070,7 +1039,7 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve_bool(
+                Patch::config_resolve_bool(
                     &SPY,
                     "read_provider_get_bool",
                     true,
@@ -1080,7 +1049,7 @@ log:
                 )
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get_bool", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get_bool", true, _self)
             }),
         ];
         defer! {
@@ -1117,17 +1086,10 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve_bad(
-                    &SPY,
-                    "read_provider_get_bad",
-                    true,
-                    _self,
-                    current,
-                    keys,
-                )
+                Patch::config_resolve_bad(&SPY, "read_provider_get_bad", true, _self, current, keys)
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get_bad", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get_bad", true, _self)
             }),
         ];
         defer! {
@@ -1157,7 +1119,7 @@ log:
         ];
         let guards = [
             guerrilla::patch3(DummyConfig2::resolve, |_self, current, keys| {
-                Patched::config_resolve_bad_type(
+                Patch::config_resolve_bad_type(
                     &SPY,
                     "read_provider_get_bad_size",
                     true,
@@ -1167,7 +1129,7 @@ log:
                 )
             }),
             guerrilla::patch1(DummyConfig2::serialized, |_self| {
-                Patched::config_serialized(&SPY, "read_provider_get_bad_size", true, _self)
+                Patch::config_serialized(&SPY, "read_provider_get_bad_size", true, _self)
             }),
         ];
         defer! {
