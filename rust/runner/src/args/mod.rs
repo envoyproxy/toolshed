@@ -1,8 +1,10 @@
 use crate::DEFAULT_CONFIG_PATH;
+use as_any::AsAny;
 use clap::Parser;
+use std::any::Any;
 use std::fmt::Debug;
 
-pub trait Provider: Debug + Sync + Send {
+pub trait Provider: Any + AsAny + Debug + Sync + Send {
     fn config(&self) -> String;
     fn log_level(&self) -> Option<String>;
 }
