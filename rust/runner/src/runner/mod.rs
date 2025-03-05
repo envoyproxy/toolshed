@@ -39,9 +39,9 @@ macro_rules! runner {
         }
 
         fn get_commands(&self) -> toolshed_runner::runner::CommandsFn {
-            let mut commands: toolshed_runner::runner::CommandsFn = HashMap::new();
+            let mut commands: toolshed_runner::runner::CommandsFn = std::collections::HashMap::new();
             $(
-                commands.insert($cmd_name, Arc::new(|s: &Box<dyn toolshed_runner::runner::Runner>| {
+                commands.insert($cmd_name, std::sync::Arc::new(|s: &Box<dyn toolshed_runner::runner::Runner>| {
                     let s = s.as_any().downcast_ref::<Self>().expect("Some err").clone();
                     Box::pin(async move {$cmd_fn(&s).await})
                 }));
