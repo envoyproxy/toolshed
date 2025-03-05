@@ -3,6 +3,7 @@ skip-clean = true
 target-dir = "target/tarpaulin"
 workspace = true
 color = "Always"
+features = "test"
 
 [report]
 out = ["Html"]

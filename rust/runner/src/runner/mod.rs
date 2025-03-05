@@ -108,7 +108,7 @@ pub trait Runner: Any + AsAny + Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{Dummy, DummyCommand, DummyConfig, DummyRunner, Patched, Spy};
+    use crate::test::helper::{Dummy, DummyCommand, DummyConfig, DummyRunner, Patched, Spy};
     use config::Provider;
     use scopeguard::defer;
     use serial_test::serial;
