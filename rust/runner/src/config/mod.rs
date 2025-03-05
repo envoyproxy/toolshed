@@ -1,4 +1,4 @@
-use crate::{args, log};
+use crate::{args, log, EmptyResult};
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -106,10 +106,15 @@ where
         }
     }
 
-    async fn override_config(args: ArcSafeArgs, mut config: Box<T>) -> Result<Box<T>, SafeError> {
-        if let Some(level) = Self::log_level_override(args)? {
+    fn override_config_log(args: ArcSafeArgs, config: &mut Box<T>) -> EmptyResult {
+        if let Some(level) = Self::log_level_override(args.clone())? {
             config.set_log(level)?;
         }
+        Ok(())
+    }
+
+    async fn override_config(args: ArcSafeArgs, mut config: Box<T>) -> Result<Box<T>, SafeError> {
+        Self::override_config_log(args, &mut config)?;
         Ok(config)
     }
 
@@ -178,7 +183,7 @@ impl fmt::Display for BaseConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{DummyConfig, Patched, Spy, TEST_YAML0, TEST_YAML1};
+    use crate::test::helper::{DummyConfig, Patched, Spy, TEST_YAML0, TEST_YAML1};
     use mockall::mock;
     use scopeguard::defer;
     use serde_yaml::Mapping;

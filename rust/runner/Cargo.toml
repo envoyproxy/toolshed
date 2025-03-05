@@ -3,6 +3,9 @@ name = "toolshed_runner"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+test = ["tempfile", "once_cell"]
+
 [dependencies]
 as-any = "0.3.2"
 async-trait = "0.1"
@@ -14,6 +17,8 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 tokio = { version = "1", features = ["full"] }
+tempfile = { version = "3.3", optional = true }
+once_cell = { version = "1.20", optional = true }
 
 [dev-dependencies]
 assert_matches = "1.0"
@@ -21,10 +26,8 @@ guerrilla = "0.1"
 tokio-test = "0.4"
 mockall = { version = "0.11" }
 mockall_double = "0.3"
-once_cell = "1.20"
 scopeguard = "1.2"
 serial_test = "2.0"
-tempfile = "3.3"
 
 [lib]
 name = "toolshed_runner"
