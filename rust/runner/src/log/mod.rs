@@ -66,7 +66,7 @@ impl fmt::Display for LevelParseError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::LOG_LEVELS;
+    use crate::test::data::LOG_LEVELS;
     use assert_matches::assert_matches;
 
     #[test]

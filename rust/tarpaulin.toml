@@ -3,6 +3,8 @@ skip-clean = true
 target-dir = "target/tarpaulin"
 workspace = true
 color = "Always"
+features = "test"
+exclude-files = ["runner/src/test/*"]
 
 [report]
 out = ["Html"]

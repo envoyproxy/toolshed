@@ -108,7 +108,11 @@ pub trait Runner: Any + AsAny + Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_helpers::{Dummy, DummyCommand, DummyConfig, DummyRunner, Patched, Spy};
+    use crate::test::{
+        dummy::{Dummy, DummyCommand, DummyConfig, DummyRunner},
+        patch::Patch,
+        spy::Spy,
+    };
     use config::Provider;
     use scopeguard::defer;
     use serial_test::serial;
@@ -129,13 +133,13 @@ mod tests {
         let runner = Dummy::runner(command).unwrap();
         let guards = [
             guerrilla::patch1(DummyRunner::get_command, |_self| {
-                Patched::runner_command(&SPY, "runner_config", true, _self)
+                Patch::runner_command(&SPY, "runner_config", true, _self)
             }),
             guerrilla::patch1(DummyCommand::get_config, |_self| {
-                Patched::command_config(&SPY, "runner_config", true, _self)
+                Patch::command_config(&SPY, "runner_config", true, _self)
             }),
             guerrilla::patch2(DummyConfig::get, |_self, key| {
-                Patched::config_get(&SPY, "runner_config", true, _self, key)
+                Patch::config_get(&SPY, "runner_config", true, _self, key)
             }),
         ];
         defer! {
@@ -169,13 +173,13 @@ mod tests {
         let runner = Dummy::runner(command).unwrap();
         let guards = [
             guerrilla::patch1(DummyRunner::get_command, |_self| {
-                Patched::runner_command(&SPY, "runner_resolve_command", true, _self)
+                Patch::runner_command(&SPY, "runner_resolve_command", true, _self)
             }),
             guerrilla::patch1(DummyCommand::get_name, |_self| {
-                Patched::command_get_name(&SPY, "runner_resolve_command", true, _self)
+                Patch::command_get_name(&SPY, "runner_resolve_command", true, _self)
             }),
             guerrilla::patch1(DummyRunner::commands, |_self| {
-                Patched::runner_commands(&SPY, "runner_resolve_command", true, _self)
+                Patch::runner_commands(&SPY, "runner_resolve_command", true, _self)
             }),
         ];
         defer! {
@@ -223,13 +227,13 @@ mod tests {
         let runner = Dummy::runner(command).unwrap();
         let guards = [
             guerrilla::patch1(DummyRunner::get_command, |_self| {
-                Patched::runner_command(&SPY, "runner_resolve_command_bad_name", true, _self)
+                Patch::runner_command(&SPY, "runner_resolve_command_bad_name", true, _self)
             }),
             guerrilla::patch1(DummyCommand::get_name, |_self| {
-                Patched::command_get_name_bad(&SPY, "runner_resolve_command_bad_name", true, _self)
+                Patch::command_get_name_bad(&SPY, "runner_resolve_command_bad_name", true, _self)
             }),
             guerrilla::patch1(DummyRunner::commands, |_self| {
-                Patched::runner_commands(&SPY, "runner_resolve_command_bad_name", true, _self)
+                Patch::runner_commands(&SPY, "runner_resolve_command_bad_name", true, _self)
             }),
         ];
         defer! {
@@ -276,7 +280,7 @@ mod tests {
         let command = Dummy::command(config, "stars".to_string()).unwrap();
         let runner = Dummy::runner(command).unwrap();
         let guards = vec![guerrilla::patch1(DummyRunner::resolve_command, |_self| {
-            Patched::runner_resolve_command(&SPY, "runner_handle", true, _self)
+            Patch::runner_resolve_command(&SPY, "runner_handle", true, _self)
         })];
         defer! {
             let calls = SPY.get(testid);
@@ -297,10 +301,10 @@ mod tests {
         let runner = Dummy::runner(command).unwrap();
         let guards = vec![
             guerrilla::patch1(DummyRunner::start_log, |_self| {
-                Patched::runner_start_log(&SPY, "runner_run", true, _self)
+                Patch::runner_start_log(&SPY, "runner_run", true, _self)
             }),
             guerrilla::patch1(DummyRunner::handle, |_self| {
-                Box::pin(Patched::runner_handle(&SPY, "runner_run", true, _self))
+                Box::pin(Patch::runner_handle(&SPY, "runner_run", true, _self))
             }),
         ];
         defer! {
@@ -327,16 +331,16 @@ mod tests {
         let runner = Dummy::runner(command).unwrap();
         let guards = vec![
             guerrilla::patch2(DummyRunner::config, |_self, key| {
-                Patched::runner_config(&SPY, "runner_startlog", true, _self, key)
+                Patch::runner_config(&SPY, "runner_startlog", true, _self, key)
             }),
             guerrilla::patch0(Builder::new, || {
-                Patched::log_new(&SPY, "runner_startlog", true)
+                Patch::log_new(&SPY, "runner_startlog", true)
             }),
             guerrilla::patch3(Builder::filter, |_self, other, level| {
-                Patched::log_filter(&SPY, "runner_startlog", true, _self, other, level)
+                Patch::log_filter(&SPY, "runner_startlog", true, _self, other, level)
             }),
             guerrilla::patch1(Builder::init, |_self| {
-                Patched::log_init(&SPY, "runner_startlog", true, _self)
+                Patch::log_init(&SPY, "runner_startlog", true, _self)
             }),
         ];
         defer! {
