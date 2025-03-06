@@ -2,12 +2,19 @@ use crate as toolshed_runner;
 use crate::{command, config, log, runner, EmptyResult};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
+use serde_yaml::Mapping;
 use serde_yaml::Value;
 use std::error::Error;
 
 pub trait Loggable {
     fn log(&self) -> config::LogConfig;
 }
+
+#[async_trait]
+impl config::Factory<config::LogConfig> for config::LogConfig {}
+
+#[async_trait]
+impl config::Factory<config::BaseConfig> for config::BaseConfig {}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DummyConfig {
@@ -30,6 +37,30 @@ impl config::Provider for DummyConfig {
         Some(current.clone())
     }
 
+    fn serialized(&self) -> Option<Value> {
+        serde_yaml::to_value(self).ok()
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DummyConfig2 {
+    #[allow(dead_code)]
+    pub log: config::LogConfig,
+}
+
+#[async_trait]
+impl config::Provider for DummyConfig2 {
+    fn serialized(&self) -> Option<Value> {
+        let mut map = Mapping::new();
+        map.insert(
+            Value::String("key".to_string()),
+            Value::String("serialized_value".to_string()),
+        );
+        Some(Value::Mapping(map))
+    }
+}
+
+impl config::Provider for config::LogConfig {
     fn serialized(&self) -> Option<Value> {
         serde_yaml::to_value(self).ok()
     }

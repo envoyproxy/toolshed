@@ -268,6 +268,23 @@ impl Patch {
         Ok(config)
     }
 
+    pub fn override_config_log<T: config::Provider + serde::Deserialize<'static>>(
+        spy: &once_cell::sync::Lazy<Spy>,
+        testid: &str,
+        success: bool,
+        args: config::ArcSafeArgs,
+        config: &mut Box<T>,
+    ) -> EmptyResult {
+        spy.push(
+            testid,
+            &format!(
+                "Config::override_config_log({:?}): {:?}, {:?}",
+                success, args, config
+            ),
+        );
+        Ok(())
+    }
+
     pub fn path_exists(
         spy: &once_cell::sync::Lazy<Spy>,
         testid: &str,

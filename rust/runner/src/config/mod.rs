@@ -10,7 +10,7 @@ use std::fmt::Debug;
 use std::path::Path;
 use std::sync::Arc;
 
-type SafeArgs = Box<dyn args::Provider + Send + Sync>;
+pub type SafeArgs = Box<dyn args::Provider + Send + Sync>;
 pub type ArcSafeArgs = Arc<SafeArgs>;
 pub type SafeError = Box<dyn Error + Send + Sync>;
 
@@ -185,28 +185,15 @@ mod tests {
     use super::*;
     use crate::test::{
         data::{TEST_YAML0, TEST_YAML1},
-        dummy::DummyConfig,
+        dummy::{DummyConfig, DummyConfig2},
         patch::Patch,
         spy::Spy,
     };
     use mockall::mock;
     use scopeguard::defer;
-    use serde_yaml::Mapping;
     use serial_test::serial;
 
     static SPY: once_cell::sync::Lazy<Spy> = once_cell::sync::Lazy::new(Spy::new);
-
-    impl Provider for LogConfig {
-        fn serialized(&self) -> Option<Value> {
-            serde_yaml::to_value(self).ok()
-        }
-    }
-
-    #[async_trait]
-    impl Factory<LogConfig> for LogConfig {}
-
-    #[async_trait]
-    impl Factory<BaseConfig> for BaseConfig {}
 
     mock! {
         #[derive(Debug)]
@@ -215,24 +202,6 @@ mod tests {
         impl args::Provider for ArgsProvider {
             fn config(&self) -> String;
             fn log_level(&self) -> Option<String>;
-        }
-    }
-
-    #[derive(Debug, Deserialize)]
-    pub struct DummyConfig2 {
-        #[allow(dead_code)]
-        pub log: LogConfig,
-    }
-
-    #[async_trait]
-    impl Provider for DummyConfig2 {
-        fn serialized(&self) -> Option<Value> {
-            let mut map = Mapping::new();
-            map.insert(
-                Value::String("key".to_string()),
-                Value::String("serialized_value".to_string()),
-            );
-            Some(Value::Mapping(map))
         }
     }
 
