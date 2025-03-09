@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-test = ["tempfile", "once_cell"]
+test = ["tempfile", "once_cell", "guerrilla"]
 
 [dependencies]
 as-any = "0.3.2"
@@ -19,15 +19,17 @@ serde_yaml = "0.9"
 tokio = { version = "1", features = ["full"] }
 tempfile = { version = "3.3", optional = true }
 once_cell = { version = "1.20", optional = true }
+# guerrilla = { path = "../../../guerrilla", optional = true }
+guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "139556b728d2b2087a815e5d85bd90c011d898a6", optional = true }
 
 [dev-dependencies]
 assert_matches = "1.0"
-guerrilla = "0.1"
-tokio-test = "0.4"
+libc = "0.2.170"
 mockall = { version = "0.11" }
 mockall_double = "0.3"
 scopeguard = "1.2"
 serial_test = "2.0"
+tokio-test = "0.4"
 
 [lib]
 name = "toolshed_runner"
