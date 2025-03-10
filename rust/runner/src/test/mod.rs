@@ -3,11 +3,14 @@ pub mod dummy;
 pub mod patch;
 pub mod spy;
 
+use guerrilla::PatchGuard;
 use once_cell::sync::Lazy;
 use patch::Patches;
 use spy::Spy;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 pub struct Tests<'a> {
     pub calls: Mutex<HashMap<String, Arc<Mutex<Test<'a>>>>>,
@@ -89,8 +92,8 @@ impl<'a> TestRef<'a> {
         self
     }
 
-    pub fn with_patches(self, patches: Vec<guerrilla::PatchGuard>) -> Self {
-        let converted_patches: Vec<Arc<Mutex<guerrilla::PatchGuard>>> = patches
+    pub fn with_patches(self, patches: Vec<PatchGuard>) -> Self {
+        let converted_patches: Vec<Arc<Mutex<PatchGuard>>> = patches
             .into_iter()
             .map(|patch| Arc::new(Mutex::new(patch)))
             .collect();
@@ -108,6 +111,7 @@ impl<'a> TestRef<'a> {
 
 impl Drop for Test<'_> {
     fn drop(&mut self) {
+        ::log::trace!("Test complete: {:?}", &self.name);
         let calls = self.spy().get(&self.name);
         self.patches().clear(&self.name);
         self.spy().clear(&self.name);
