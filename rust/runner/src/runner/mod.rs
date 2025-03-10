@@ -25,6 +25,12 @@ where
     fn new(command: R) -> Self;
 }
 
+pub fn ctrl_c() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'static>> {
+    Box::pin(async move {
+        let _ = tokio::signal::ctrl_c().await;
+    })
+}
+
 #[macro_export]
 macro_rules! runner {
     ($command:ident, { $( $cmd_name:literal => $cmd_fn:expr ),* $(,)? }) => {
@@ -110,86 +116,44 @@ mod tests {
     use super::*;
     use crate::test::{
         dummy::{Dummy, DummyCommand, DummyConfig, DummyRunner},
-        patch::Patch,
+        patch::{Patch, Patches},
         spy::Spy,
+        {Test, Tests},
     };
     use config::Provider;
+    use guerrilla::{patch0, patch1, patch2, patch3};
+    use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
 
-    static SPY: once_cell::sync::Lazy<Spy> = once_cell::sync::Lazy::new(Spy::new);
-
-    #[test]
-    #[serial(my_global_lock)]
-    fn test_runner_config() {
-        let testid = "runner_config";
-        let expected = vec![
-            "Runner::get_command(true)",
-            "Command::get_config(true)",
-            "Config::get(true): \"SOME.KEY.PATH\"",
-        ];
-        let config = Dummy::config().unwrap();
-        let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
-        let guards = [
-            guerrilla::patch1(DummyRunner::get_command, |_self| {
-                Patch::runner_command(&SPY, "runner_config", true, _self)
-            }),
-            guerrilla::patch1(DummyCommand::get_config, |_self| {
-                Patch::command_config(&SPY, "runner_config", true, _self)
-            }),
-            guerrilla::patch2(DummyConfig::get, |_self, key| {
-                Patch::config_get(&SPY, "runner_config", true, _self, key)
-            }),
-        ];
-        defer! {
-            let calls = SPY.get(testid);
-            drop(guards);
-            SPY.clear(testid);
-            assert_eq!(*calls, expected);
-        }
-        let mut failure = "";
-
-        if let Some(config::Primitive::String(result)) = runner.config("SOME.KEY.PATH") {
-            assert_eq!(result, "BOOM");
-        } else {
-            failure = "Expected a Primitive::String, but got something else.";
-        }
-        assert_eq!(failure, "");
-    }
+    static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
+    static SPY: Lazy<Spy> = Lazy::new(Spy::new);
+    static TESTS: Lazy<Tests> = Lazy::new(|| Tests::new(&SPY, &PATCHES));
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
-    async fn test_runner_resolve_command() {
-        let testid = "runner_resolve_command";
-        let expected = vec![
-            "Runner::get_command(true)",
-            "Command::get_name(true)",
-            "Runner::commands(true)",
-            "Runner::configured_command(true)",
-        ];
-        let config = Dummy::config().unwrap();
-        let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
-        let guards = [
-            guerrilla::patch1(DummyRunner::get_command, |_self| {
-                Patch::runner_command(&SPY, "runner_resolve_command", true, _self)
-            }),
-            guerrilla::patch1(DummyCommand::get_name, |_self| {
-                Patch::command_get_name(&SPY, "runner_resolve_command", true, _self)
-            }),
-            guerrilla::patch1(DummyRunner::commands, |_self| {
-                Patch::runner_commands(&SPY, "runner_resolve_command", true, _self)
-            }),
-        ];
-        defer! {
-            let calls = SPY.get(testid);
-            drop(guards);
-            SPY.clear(testid);
-            assert_eq!(*calls, expected);
+    #[serial(toolshed_lock)]
+    async fn test_ctrl_c() {
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let ctrl_c_handle = tokio::spawn(async move {
+            ctrl_c().await;
+            let _ = tx.send(true);
+        });
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+
+        unsafe {
+            libc::raise(libc::SIGINT);
         }
-        let command = runner.resolve_command().unwrap();
-        let _ = command(&(Box::new(runner.clone()) as Box<dyn Runner>)).await;
+
+        match tokio::time::timeout(std::time::Duration::from_secs(1), rx).await {
+            Ok(channel_result) => match channel_result {
+                Ok(value) => {
+                    assert!(value, "Signal wasn't properly caught");
+                }
+                Err(_) => panic!("Channel was closed without sending a value"),
+            },
+            Err(_) => panic!("Timed out waiting for ctrl_c to complete"),
+        }
+        let _ = ctrl_c_handle.await;
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -215,33 +179,134 @@ mod tests {
 
     #[test]
     #[serial(my_global_lock)]
-    fn test_runner_resolve_command_bad_name() {
-        let testid = "runner_resolve_command_bad_name";
-        let expected = vec![
-            "Runner::get_command(true)",
-            "Command::get_name(true)",
-            "Runner::commands(true)",
-        ];
+    fn test_runner_config() {
+        let test = Test::new(&TESTS, "runner_config")
+            .expecting(vec![
+                "Runner::get_command(true)",
+                "Command::get_config(true)",
+                "Config::get(true): \"SOME.KEY.PATH\"",
+            ])
+            .with_patches(vec![
+                patch1(DummyRunner::get_command, |_self| {
+                    Patch::runner_command(&TESTS, "runner_config", true, _self)
+                }),
+                patch1(DummyCommand::get_config, |_self| {
+                    Patch::command_config(&TESTS, "runner_config", true, _self)
+                }),
+                patch2(DummyConfig::get, |_self, key| {
+                    Patch::config_get(&TESTS, "runner_config", true, _self, key)
+                }),
+            ]);
+        defer! {
+            test.drop()
+        }
+
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
         let runner = Dummy::runner(command).unwrap();
-        let guards = [
-            guerrilla::patch1(DummyRunner::get_command, |_self| {
-                Patch::runner_command(&SPY, "runner_resolve_command_bad_name", true, _self)
-            }),
-            guerrilla::patch1(DummyCommand::get_name, |_self| {
-                Patch::command_get_name_bad(&SPY, "runner_resolve_command_bad_name", true, _self)
-            }),
-            guerrilla::patch1(DummyRunner::commands, |_self| {
-                Patch::runner_commands(&SPY, "runner_resolve_command_bad_name", true, _self)
-            }),
-        ];
-        defer! {
-            let calls = SPY.get(testid);
-            drop(guards);
-            SPY.clear(testid);
-            assert_eq!(*calls, expected);
+        let mut failure = "";
+
+        if let Some(config::Primitive::String(result)) = runner.config("SOME.KEY.PATH") {
+            assert_eq!(result, "BOOM");
+        } else {
+            failure = "Expected a Primitive::String, but got something else.";
         }
+        assert_eq!(failure, "");
+    }
+
+    #[test]
+    fn test_runner_get_command() {
+        let config = Dummy::config().unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command.clone()).unwrap();
+        assert_eq!(runner.get_command().get_name(), command.get_name());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[serial(my_global_lock)]
+    async fn test_runner_handle() {
+        let test = Test::new(&TESTS, "runner_handle")
+            .expecting(vec![
+                "Runner::resolve_command(true)",
+                "Runner::configured_command(true)",
+            ])
+            .with_patches(vec![patch1(DummyRunner::resolve_command, |_self| {
+                Patch::runner_resolve_command(&TESTS, "runner_handle", true, _self)
+            })]);
+        defer! {
+            test.drop()
+        }
+
+        let config = Dummy::config().unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
+        assert!(runner.handle().await.is_ok());
+    }
+
+    #[tokio::test(flavor = "multi_thread")]
+    #[serial(my_global_lock)]
+    async fn test_runner_resolve_command() {
+        let test = Test::new(&TESTS, "runner_resolve_command")
+            .expecting(vec![
+                "Runner::get_command(true)",
+                "Command::get_name(true)",
+                "Runner::commands(true)",
+                "Runner::configured_command(true)",
+            ])
+            .with_patches(vec![
+                patch1(DummyRunner::get_command, |_self| {
+                    Patch::runner_command(&TESTS, "runner_resolve_command", true, _self)
+                }),
+                patch1(DummyCommand::get_name, |_self| {
+                    Patch::command_get_name(&TESTS, "runner_resolve_command", true, _self)
+                }),
+                patch1(DummyRunner::commands, |_self| {
+                    Patch::runner_commands(&TESTS, "runner_resolve_command", true, _self)
+                }),
+            ]);
+        defer! {
+            test.drop()
+        }
+
+        let config = Dummy::config().unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
+        let command = runner.resolve_command().unwrap();
+        let _ = command(&(Box::new(runner.clone()) as Box<dyn Runner>)).await;
+    }
+
+    #[test]
+    #[serial(my_global_lock)]
+    fn test_runner_resolve_command_bad_name() {
+        let test = Test::new(&TESTS, "runner_resolve_command_bad_name")
+            .expecting(vec![
+                "Runner::get_command(true)",
+                "Command::get_name(true)",
+                "Runner::commands(true)",
+            ])
+            .with_patches(vec![
+                patch1(DummyRunner::get_command, |_self| {
+                    Patch::runner_command(&TESTS, "runner_resolve_command_bad_name", true, _self)
+                }),
+                patch1(DummyCommand::get_name, |_self| {
+                    Patch::command_get_name_bad(
+                        &TESTS,
+                        "runner_resolve_command_bad_name",
+                        true,
+                        _self,
+                    )
+                }),
+                patch1(DummyRunner::commands, |_self| {
+                    Patch::runner_commands(&TESTS, "runner_resolve_command_bad_name", true, _self)
+                }),
+            ]);
+        defer! {
+            test.drop()
+        }
+
+        let config = Dummy::config().unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let runner = Dummy::runner(command).unwrap();
         let result = runner.resolve_command();
         assert!(result.is_err());
         match result {
@@ -260,95 +325,67 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_runner_get_command() {
-        let config = Dummy::config().unwrap();
-        let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command.clone()).unwrap();
-        assert_eq!(runner.get_command().get_name(), command.get_name());
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
-    async fn test_runner_handle() {
-        let testid = "runner_handle";
-        let expected = vec![
-            "Runner::resolve_command(true)",
-            "Runner::configured_command(true)",
-        ];
-        let config = Dummy::config().unwrap();
-        let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
-        let guards = vec![guerrilla::patch1(DummyRunner::resolve_command, |_self| {
-            Patch::runner_resolve_command(&SPY, "runner_handle", true, _self)
-        })];
-        defer! {
-            let calls = SPY.get(testid);
-            drop(guards);
-            SPY.clear(testid);
-            assert_eq!(*calls, expected);
-        }
-        assert!(runner.handle().await.is_ok());
-    }
-
     #[tokio::test(flavor = "multi_thread")]
     #[serial(my_global_lock)]
     async fn test_runner_run() {
-        let testid = "runner_run";
-        let expected = vec!["Runner::start_log(true)", "Runner::handle(true)"];
+        let test = Test::new(&TESTS, "runner_run")
+            .expecting(vec!["Runner::start_log(true)", "Runner::handle(true)"])
+            .with_patches(vec![
+                patch1(DummyRunner::start_log, |_self| {
+                    Patch::runner_start_log(&TESTS, "runner_run", true, _self)
+                }),
+                patch1(DummyRunner::handle, |_self| {
+                    Box::pin(Patch::runner_handle(&TESTS, "runner_run", true, _self))
+                }),
+            ]);
+        defer! {
+            test.drop()
+        }
+
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
         let runner = Dummy::runner(command).unwrap();
-        let guards = vec![
-            guerrilla::patch1(DummyRunner::start_log, |_self| {
-                Patch::runner_start_log(&SPY, "runner_run", true, _self)
-            }),
-            guerrilla::patch1(DummyRunner::handle, |_self| {
-                Box::pin(Patch::runner_handle(&SPY, "runner_run", true, _self))
-            }),
-        ];
-        defer! {
-            let calls = SPY.get(testid);
-            drop(guards);
-            SPY.clear(testid);
-            assert_eq!(*calls, expected);
-        }
         assert!(runner.run().await.is_ok());
     }
 
     #[test]
     #[serial(my_global_lock)]
     fn test_runner_startlog() {
-        let testid = "runner_startlog";
-        let expected = vec![
-            "Runner::config(true): \"log.level\"",
-            "env_logger::Builder::new(true)",
-            "env_logger::Builder::filter(true): Warn",
-            "env_logger::Builder::init(true)",
-        ];
+        let test = Test::new(&TESTS, "runner_startlog")
+            .expecting(vec![
+                "Runner::config(true): \"log.level\"",
+                "env_logger::Builder::new(true)",
+                "env_logger::Builder::filter(true): Warn",
+                "env_logger::Builder::init(true)",
+            ])
+            .with_patches(vec![
+                patch2(DummyRunner::config, |_self, key| {
+                    Patch::runner_config(
+                        &TESTS,
+                        "runner_startlog",
+                        true,
+                        Some(config::Primitive::String("warning".to_string())),
+                        _self,
+                        key,
+                    )
+                }),
+                patch0(Builder::new, || {
+                    Patch::log_new(&TESTS, "runner_startlog", true)
+                }),
+                patch3(Builder::filter, |_self, other, level| {
+                    Patch::log_filter(&TESTS, "runner_startlog", true, _self, other, level)
+                }),
+                patch1(Builder::init, |_self| {
+                    Patch::log_init(&TESTS, "runner_startlog", true, _self)
+                }),
+            ]);
+        defer! {
+            test.drop()
+        }
+
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
         let runner = Dummy::runner(command).unwrap();
-        let guards = vec![
-            guerrilla::patch2(DummyRunner::config, |_self, key| {
-                Patch::runner_config(&SPY, "runner_startlog", true, _self, key)
-            }),
-            guerrilla::patch0(Builder::new, || {
-                Patch::log_new(&SPY, "runner_startlog", true)
-            }),
-            guerrilla::patch3(Builder::filter, |_self, other, level| {
-                Patch::log_filter(&SPY, "runner_startlog", true, _self, other, level)
-            }),
-            guerrilla::patch1(Builder::init, |_self| {
-                Patch::log_init(&SPY, "runner_startlog", true, _self)
-            }),
-        ];
-        defer! {
-            let calls = SPY.get(testid);
-            drop(guards);
-            SPY.clear(testid);
-            assert_eq!(*calls, expected);
-        }
         assert!(runner.start_log().is_ok());
     }
 }
