@@ -1,7 +1,7 @@
 [package]
 name = "toolshed_runner"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [features]
 test = ["tempfile", "once_cell", "guerrilla"]
@@ -20,7 +20,7 @@ tokio = { version = "1", features = ["full"] }
 tempfile = { version = "3.3", optional = true }
 once_cell = { version = "1.20", optional = true }
 # guerrilla = { path = "../../../guerrilla", optional = true }
-guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "139556b728d2b2087a815e5d85bd90c011d898a6", optional = true }
+guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "24adf537b87b1c481e02e0c4a7d68771ebf6cc7a", optional = true }
 
 [dev-dependencies]
 assert_matches = "1.0"

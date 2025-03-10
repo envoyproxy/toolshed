@@ -5,6 +5,7 @@ workspace = true
 color = "Always"
 features = "test"
 exclude-files = ["runner/src/test/*"]
+rustflags = "-C opt-level=0"
 
 [report]
 out = ["Html"]

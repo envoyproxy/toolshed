@@ -157,7 +157,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_runner_commands() {
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
@@ -178,7 +178,7 @@ mod tests {
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_runner_config() {
         let test = Test::new(&TESTS, "runner_config")
             .expecting(vec![
@@ -223,7 +223,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_runner_handle() {
         let test = Test::new(&TESTS, "runner_handle")
             .expecting(vec![
@@ -244,7 +244,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_runner_resolve_command() {
         let test = Test::new(&TESTS, "runner_resolve_command")
             .expecting(vec![
@@ -276,7 +276,7 @@ mod tests {
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_runner_resolve_command_bad_name() {
         let test = Test::new(&TESTS, "runner_resolve_command_bad_name")
             .expecting(vec![
@@ -326,7 +326,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_runner_run() {
         let test = Test::new(&TESTS, "runner_run")
             .expecting(vec!["Runner::start_log(true)", "Runner::handle(true)"])
@@ -349,7 +349,7 @@ mod tests {
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_runner_startlog() {
         let test = Test::new(&TESTS, "runner_startlog")
             .expecting(vec![

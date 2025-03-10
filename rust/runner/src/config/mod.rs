@@ -271,7 +271,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_baseconfig_serialized() {
         let test = Test::new(&TESTS, "baseconfig_serialized")
             .expecting(vec![
@@ -290,7 +290,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_from_yaml() {
         let test = Test::new(&TESTS, "from_yaml")
             .expecting(vec![
@@ -319,7 +319,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_factory_log_level_override_arg() {
         let test = Test::new(&TESTS, "factory_log_level_override_arg")
             .expecting(vec!["serde_yaml::from_str(true): \"debug\""])
@@ -351,7 +351,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_factory_log_level_override_env() {
         let test = Test::new(&TESTS, "factory_log_level_override_env")
             .expecting(vec![
@@ -384,7 +384,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_factory_log_level_override_none() {
         let test = Test::new(&TESTS, "factory_log_level_override_none")
             .expecting(vec!["std::env::var(false): \"LOG_LEVEL\""])
@@ -414,7 +414,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_factory_log_level_override_err() {
         let test = Test::new(&TESTS, "factory_log_level_override_err")
             .expecting(vec![
@@ -452,7 +452,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_override_config() {
         let test = Test::new(&TESTS, "factory_override_config")
             .expecting(vec![
@@ -488,7 +488,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_override_config_nolog() {
         let test = Test::new(&TESTS, "factory_override_config_nolog")
             .expecting(vec![
@@ -523,7 +523,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_override_config_get_err() {
         let test = Test::new(&TESTS, "factory_override_config_get_err")
             .expecting(vec![
@@ -567,7 +567,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_override_config_set_err() {
         let test = Test::new(&TESTS, "factory_override_config_set_err")
             .expecting(vec![
@@ -612,7 +612,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_read_yaml() {
         let test = Test::new(&TESTS, "read_yaml")
             .expecting(vec![
@@ -641,7 +641,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_read_yaml_no_exist() {
         let test = Test::new(&TESTS, "read_yaml_no_exist")
             .expecting(vec!["Path.exists(false): \"tests/config.yaml\""])
@@ -672,7 +672,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_read_yaml_fail_open() {
         let test = Test::new(&TESTS, "read_yaml_fail_open")
             .expecting(vec![
@@ -711,7 +711,7 @@ log:
     }
 
     #[tokio::test(flavor = "multi_thread")]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     async fn test_factory_read_yaml_bad_parse() {
         let test = Test::new(&TESTS, "read_yaml_bad_parse")
             .expecting(vec![
@@ -751,7 +751,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get() {
         let test = Test::new(&TESTS, "read_provider_get")
             .expecting(vec![
@@ -784,7 +784,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get_f64() {
         let test = Test::new(&TESTS, "read_provider_get_f64")
             .expecting(vec![
@@ -824,7 +824,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get_i32() {
         let test = Test::new(&TESTS, "read_provider_get_i32")
             .expecting(vec![
@@ -868,7 +868,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get_i64() {
         let test = Test::new(&TESTS, "read_provider_get_i64")
             .expecting(vec![
@@ -912,7 +912,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get_u32() {
         let test = Test::new(&TESTS, "read_provider_get_u32")
             .expecting(vec![
@@ -956,7 +956,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get_u64() {
         let test = Test::new(&TESTS, "read_provider_get_u64")
             .expecting(vec![
@@ -1000,7 +1000,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get_bool() {
         let test = Test::new(&TESTS, "read_provider_get_bool")
             .expecting(vec![
@@ -1044,7 +1044,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get_bad() {
         let test = Test::new(&TESTS, "read_provider_get_bad")
             .expecting(vec![
@@ -1081,7 +1081,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_get_bad_type() {
         let test = Test::new(&TESTS, "read_provider_get_bad_type")
             .expecting(vec![
@@ -1118,7 +1118,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_resolve() {
         let provider = DummyConfig2 {
             log: LogConfig {
@@ -1173,7 +1173,7 @@ log:
     }
 
     #[test]
-    #[serial(my_global_lock)]
+    #[serial(toolshed_lock)]
     fn test_provider_set_log() {
         let mut provider = DummyConfig2 {
             log: LogConfig {

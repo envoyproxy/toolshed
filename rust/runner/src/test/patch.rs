@@ -3,7 +3,6 @@ use crate::{
     test::{
         data::TEST_YAML0,
         dummy::{DummyCommand, DummyConfig, DummyRunner, Loggable},
-        spy::Spy,
         Tests,
     },
     EmptyResult,
@@ -314,13 +313,13 @@ impl Patch {
     }
 
     pub fn override_config_log<T: config::Provider + serde::Deserialize<'static>>(
-        spy: &Lazy<Spy>,
+        tests: &Lazy<Tests>,
         testid: &str,
         success: bool,
         args: config::ArcSafeArgs,
         config: &mut Box<T>,
     ) -> EmptyResult {
-        spy.push(
+        tests.spy.push(
             testid,
             &format!(
                 "Config::override_config_log({:?}): {:?}, {:?}",
