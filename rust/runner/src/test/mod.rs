@@ -41,6 +41,33 @@ impl<'a> Tests<'a> {
         let mut calls = self.calls.lock().unwrap();
         calls.remove(key).unwrap();
     }
+
+    pub fn get_patch<'b>(&self, key: &'b str) -> (&'b str, Arc<Mutex<PatchGuard>>) {
+        let (testid, index) = key.split_once('/').map_or_else(
+            move || {
+                panic!(
+                    "Invalid testid format, expected 'testid/index' but got: {}",
+                    key
+                )
+            },
+            |(testid_part, index_part)| {
+                let index = index_part
+                    .parse::<usize>()
+                    .unwrap_or_else(|_| panic!("Invalid index format: {}", index_part));
+                (testid_part, index)
+            },
+        );
+
+        if let Some(patch_guard) = self
+            .patches
+            .get(testid)
+            .and_then(|guards| guards.get(index).cloned())
+        {
+            (testid, patch_guard)
+        } else {
+            panic!("No PatchGuard found")
+        }
+    }
 }
 
 pub struct Test<'a> {
