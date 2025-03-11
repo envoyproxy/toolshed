@@ -1,4 +1,5 @@
-use crate::{args, log, EmptyResult};
+use crate::{EmptyResult, args, log};
+use as_any::AsAny;
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -25,7 +26,7 @@ pub enum Primitive {
     String(String),
 }
 
-pub trait Provider: Any + Debug + Send + Sync {
+pub trait Provider: Any + AsAny + Debug + Send + Sync {
     fn get(&self, key: &str) -> Option<Primitive> {
         let keys: Vec<&str> = key.split('.').collect();
         let serialized = self.serialized()?;
