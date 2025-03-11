@@ -4,8 +4,9 @@ target-dir = "target/tarpaulin"
 workspace = true
 color = "Always"
 features = "test"
-exclude-files = ["runner/src/test/*"]
-rustflags = "-C opt-level=0"
+exclude-files = ["runner/src/test/*", "echo/src/test/*"]
+rustflags = "-C opt-level=0 -Zallow-features=coverage,coverage_attribute,proc_macro_span"
+unstable_features = true
 
 [report]
 out = ["Html"]
