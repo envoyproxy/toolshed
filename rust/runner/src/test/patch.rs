@@ -1,11 +1,10 @@
 use crate::{
-    command, config, log, runner,
+    EmptyResult, command, config, log, runner,
     test::{
+        Tests,
         data::TEST_YAML0,
         dummy::{DummyCommand, DummyConfig, DummyRunner, Loggable},
-        Tests,
     },
-    EmptyResult,
 };
 use ::log::LevelFilter;
 use env_logger::Builder;
