@@ -45,7 +45,7 @@ mod tests {
     use serial_test::serial;
     use toolshed_runner::{
         command::Command as _,
-        test::{Test, Tests, patch::Patches, spy::Spy},
+        test::{patch::Patches, spy::Spy, Test, Tests},
     };
 
     static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
