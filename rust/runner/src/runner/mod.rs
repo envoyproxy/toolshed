@@ -118,7 +118,7 @@ mod tests {
         dummy::{Dummy, DummyCommand, DummyConfig, DummyRunner},
         patch::{Patch, Patches},
         spy::Spy,
-        {Test, Tests},
+        Tests,
     };
     use config::Provider;
     use guerrilla::{patch0, patch1, patch2, patch3};
@@ -180,7 +180,8 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_config() {
-        let test = Test::new(&TESTS, "runner_config")
+        let test = TESTS
+            .test("runner_config")
             .expecting(vec![
                 "Runner::get_command(true)",
                 "Command::get_config(true)",
@@ -188,13 +189,13 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
-                    Patch::runner_command(&TESTS, "runner_config", true, _self)
+                    Patch::runner_command(TESTS.get("runner_config").unwrap(), _self)
                 }),
                 patch1(DummyCommand::get_config, |_self| {
-                    Patch::command_config(&TESTS, "runner_config", true, _self)
+                    Patch::command_config(TESTS.get("runner_config").unwrap(), _self)
                 }),
                 patch2(DummyConfig::get, |_self, key| {
-                    Patch::config_get(&TESTS, "runner_config", true, _self, key)
+                    Patch::config_get(TESTS.get("runner_config").unwrap(), _self, key)
                 }),
             ]);
         defer! {
@@ -225,13 +226,14 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_handle() {
-        let test = Test::new(&TESTS, "runner_handle")
+        let test = TESTS
+            .test("runner_handle")
             .expecting(vec![
                 "Runner::resolve_command(true)",
                 "Runner::configured_command(true)",
             ])
             .with_patches(vec![patch1(DummyRunner::resolve_command, |_self| {
-                Patch::runner_resolve_command(&TESTS, "runner_handle", true, _self)
+                Patch::runner_resolve_command(TESTS.get("runner_handle").unwrap(), _self)
             })]);
         defer! {
             test.drop()
@@ -246,7 +248,8 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_resolve_command() {
-        let test = Test::new(&TESTS, "runner_resolve_command")
+        let test = TESTS
+            .test("runner_resolve_command")
             .expecting(vec![
                 "Runner::get_command(true)",
                 "Command::get_name(true)",
@@ -255,13 +258,13 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
-                    Patch::runner_command(&TESTS, "runner_resolve_command", true, _self)
+                    Patch::runner_command(TESTS.get("runner_resolve_command").unwrap(), _self)
                 }),
                 patch1(DummyCommand::get_name, |_self| {
-                    Patch::command_get_name(&TESTS, "runner_resolve_command", true, _self)
+                    Patch::command_get_name(TESTS.get("runner_resolve_command").unwrap(), _self)
                 }),
                 patch1(DummyRunner::commands, |_self| {
-                    Patch::runner_commands(&TESTS, "runner_resolve_command", true, _self)
+                    Patch::runner_commands(TESTS.get("runner_resolve_command").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -278,7 +281,8 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_resolve_command_bad_name() {
-        let test = Test::new(&TESTS, "runner_resolve_command_bad_name")
+        let test = TESTS
+            .test("runner_resolve_command_bad_name")
             .expecting(vec![
                 "Runner::get_command(true)",
                 "Command::get_name(true)",
@@ -286,18 +290,22 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
-                    Patch::runner_command(&TESTS, "runner_resolve_command_bad_name", true, _self)
+                    Patch::runner_command(
+                        TESTS.get("runner_resolve_command_bad_name").unwrap(),
+                        _self,
+                    )
                 }),
                 patch1(DummyCommand::get_name, |_self| {
                     Patch::command_get_name_bad(
-                        &TESTS,
-                        "runner_resolve_command_bad_name",
-                        true,
+                        TESTS.get("runner_resolve_command_bad_name").unwrap(),
                         _self,
                     )
                 }),
                 patch1(DummyRunner::commands, |_self| {
-                    Patch::runner_commands(&TESTS, "runner_resolve_command_bad_name", true, _self)
+                    Patch::runner_commands(
+                        TESTS.get("runner_resolve_command_bad_name").unwrap(),
+                        _self,
+                    )
                 }),
             ]);
         defer! {
@@ -328,14 +336,18 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_run() {
-        let test = Test::new(&TESTS, "runner_run")
+        let test = TESTS
+            .test("runner_run")
             .expecting(vec!["Runner::start_log(true)", "Runner::handle(true)"])
             .with_patches(vec![
                 patch1(DummyRunner::start_log, |_self| {
-                    Patch::runner_start_log(&TESTS, "runner_run", true, _self)
+                    Patch::runner_start_log(TESTS.get("runner_run").unwrap(), _self)
                 }),
                 patch1(DummyRunner::handle, |_self| {
-                    Box::pin(Patch::runner_handle(&TESTS, "runner_run", true, _self))
+                    Box::pin(Patch::runner_handle(
+                        TESTS.get("runner_run").unwrap(),
+                        _self,
+                    ))
                 }),
             ]);
         defer! {
@@ -351,7 +363,8 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_startlog() {
-        let test = Test::new(&TESTS, "runner_startlog")
+        let test = TESTS
+            .test("runner_startlog")
             .expecting(vec![
                 "Runner::config(true): \"log.level\"",
                 "env_logger::Builder::new(true)",
@@ -361,22 +374,20 @@ mod tests {
             .with_patches(vec![
                 patch2(DummyRunner::config, |_self, key| {
                     Patch::runner_config(
-                        &TESTS,
-                        "runner_startlog",
-                        true,
+                        TESTS.get("runner_startlog").unwrap(),
                         Some(config::Primitive::String("warning".to_string())),
                         _self,
                         key,
                     )
                 }),
                 patch0(Builder::new, || {
-                    Patch::log_new(&TESTS, "runner_startlog", true)
+                    Patch::log_new(TESTS.get("runner_startlog").unwrap())
                 }),
                 patch3(Builder::filter, |_self, other, level| {
-                    Patch::log_filter(&TESTS, "runner_startlog", true, _self, other, level)
+                    Patch::log_filter(TESTS.get("runner_startlog").unwrap(), _self, other, level)
                 }),
                 patch1(Builder::init, |_self| {
-                    Patch::log_init(&TESTS, "runner_startlog", true, _self)
+                    Patch::log_init(TESTS.get("runner_startlog").unwrap(), _self)
                 }),
             ]);
         defer! {

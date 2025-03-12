@@ -1,15 +1,16 @@
 use crate::{
-    EmptyResult, command, config, log, runner,
+    command, config, log, runner,
     test::{
-        Tests,
         data::TEST_YAML0,
         dummy::{DummyCommand, DummyConfig, DummyRunner, Loggable},
+        spy::Spy,
+        Test,
     },
+    EmptyResult,
 };
 use ::log::LevelFilter;
 use env_logger::Builder;
 use guerrilla::PatchGuard;
-use once_cell::sync::Lazy;
 use serde_yaml::Value;
 use std::{
     collections::HashMap,
@@ -52,219 +53,229 @@ impl Patches {
 pub struct Patch {}
 
 impl Patch {
+    pub fn command_config<'a>(
+        test: Arc<Mutex<Test<'a>>>,
+        _self: &'a DummyCommand,
+    ) -> Box<&'a dyn config::Provider> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Command::get_config({:?})", !test.fails),
+        );
+        Box::new(&_self.config)
+    }
+
+    pub fn command_get_name<'a>(test: Arc<Mutex<Test>>, _self: &'a DummyCommand) -> &'a str {
+        let test = test.lock().unwrap();
+        test.spy()
+            .push(&test.name, &format!("Command::get_name({:?})", !test.fails));
+        "COMMAND_NAME"
+    }
+
+    pub fn command_get_name_bad<'a>(test: Arc<Mutex<Test>>, _self: &'a DummyCommand) -> &'a str {
+        let test = test.lock().unwrap();
+        test.spy()
+            .push(&test.name, &format!("Command::get_name({:?})", !test.fails));
+        "DOES_NOT_EXIST"
+    }
+
     pub fn config_get(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &DummyConfig,
         key: &str,
     ) -> Option<config::Primitive> {
-        tests
-            .spy
-            .push(testid, &format!("Config::get({:?}): {:?}", success, key));
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Config::get({:?}): {:?}", !test.fails, key),
+        );
         Some(config::Primitive::String("BOOM".to_string()))
     }
 
     pub fn config_resolve<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         serde_yaml::from_str("RESOLVED").expect("To unwrap")
     }
 
     pub fn config_resolve_bad<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         Some(Value::from(vec!["FOO"]))
     }
 
     pub fn config_resolve_bad_type<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         Some(Value::Number(serde_yaml::Number::from(f64::NAN)))
     }
 
     pub fn config_resolve_f64<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         Some(Value::Number(serde_yaml::Number::from(23.23)))
     }
 
     pub fn config_resolve_i32<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         Some(Value::Number(serde_yaml::Number::from(-23)))
     }
 
     pub fn config_resolve_i64<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         Some(Value::Number(serde_yaml::Number::from(-2323232323_i64)))
     }
 
     pub fn config_resolve_bool<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         Some(Value::Bool(true))
     }
 
-    pub fn config_serialized<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
-        _self: &T,
-    ) -> Option<Value> {
-        tests
-            .spy
-            .push(testid, &format!("Provider::serialized({:?})", success));
-        serde_yaml::from_str("SERIALIZED").expect("To unwrap")
-    }
-
     pub fn config_resolve_u32<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         Some(Value::Number(serde_yaml::Number::from(23)))
     }
 
     pub fn config_resolve_u64<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
     ) -> Option<Value> {
-        tests.spy.push(
-            testid,
-            &format!("Provider::resolve({:?}): {:?} {:?}", success, keys, current),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Provider::resolve({:?}): {:?} {:?}",
+                !test.fails, keys, current
+            ),
         );
         Some(Value::Number(serde_yaml::Number::from(232323232323_u64)))
     }
 
-    pub fn env_var(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
-        name: &str,
-    ) -> Result<String, std::env::VarError> {
-        tests
-            .spy
-            .push(testid, &format!("std::env::var({:?}): {:?}", success, name));
-        if !success {
+    pub fn config_serialized<T: config::Provider + serde::Deserialize<'static>>(
+        test: Arc<Mutex<Test>>,
+        _self: &T,
+    ) -> Option<Value> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Provider::serialized({:?})", !test.fails),
+        );
+        serde_yaml::from_str("SERIALIZED").expect("To unwrap")
+    }
+
+    pub fn env_var(test: Arc<Mutex<Test>>, name: &str) -> Result<String, std::env::VarError> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("std::env::var({:?}): {:?}", !test.fails, name),
+        );
+        if test.fails {
             return Err(std::env::VarError::NotUnicode("Not unicode".into()));
         }
         Ok("info".to_string())
     }
 
-    pub fn log_filter<'a>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
-        _self: &'a mut Builder,
-        _other: Option<&str>,
-        level: LevelFilter,
-    ) -> &'a mut Builder {
-        tests.spy.push(
-            testid,
-            &format!("env_logger::Builder::filter({:?}): {:?}", success, level),
+    pub fn file_open(test: Arc<Mutex<Test>>, path: &Path) -> Result<std::fs::File, std::io::Error> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("File::open({:?}): {:?}", !test.fails, path),
         );
-        _self
-    }
-
-    pub fn log_init(tests: &Lazy<Tests>, testid: &str, success: bool, _self: &Builder) {
-        tests
-            .spy
-            .push(testid, &format!("env_logger::Builder::init({:?})", success));
-    }
-
-    pub fn log_new(tests: &Lazy<Tests>, testid: &str, success: bool) -> Builder {
-        tests
-            .spy
-            .push(testid, &format!("env_logger::Builder::new({:?})", success));
-        Builder::default()
-    }
-
-    pub fn file_open(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
-        path: &Path,
-    ) -> Result<std::fs::File, std::io::Error> {
-        tests
-            .spy
-            .push(testid, &format!("File::open({:?}): {:?}", success, path));
-        if !success {
+        if test.fails {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::IsADirectory,
                 "Some error message",
@@ -275,21 +286,54 @@ impl Patch {
         Ok(file)
     }
 
+    pub fn log_filter<'a>(
+        test: Arc<Mutex<Test>>,
+        _self: &'a mut Builder,
+        _other: Option<&str>,
+        level: LevelFilter,
+    ) -> &'a mut Builder {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "env_logger::Builder::filter({:?}): {:?}",
+                !test.fails, level
+            ),
+        );
+        _self
+    }
+
+    pub fn log_init(test: Arc<Mutex<Test>>, _self: &Builder) {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("env_logger::Builder::init({:?})", !test.fails),
+        );
+    }
+
+    pub fn log_new(test: Arc<Mutex<Test>>) -> Builder {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("env_logger::Builder::new({:?})", !test.fails),
+        );
+        Builder::default()
+    }
+
     pub fn log_level_override(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         result: bool,
         args: config::ArcSafeArgs,
     ) -> Result<Option<log::Level>, config::SafeError> {
-        tests.spy.push(
-            testid,
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
             &format!(
                 "Factory::log_level_override({:?}/{:?}): {:?}",
-                success, result, args
+                !test.fails, result, args
             ),
         );
-        if !success {
+        if test.fails {
             return Err("Failed getting log level override".into());
         }
         if result {
@@ -299,151 +343,94 @@ impl Patch {
     }
 
     pub async fn override_config<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests<'_>>,
-        testid: &str,
+        test: Arc<Mutex<Test<'_>>>,
         args: config::ArcSafeArgs,
         config: Box<T>,
     ) -> Result<Box<T>, config::SafeError> {
-        tests.spy.push(
-            testid,
-            &format!("Config::override_config: {:?}, {:?}", args, config),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Config::override_config({:?}): {:?}, {:?}",
+                !test.fails, args, config
+            ),
         );
         Ok(config)
     }
 
     pub fn override_config_log<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test<'_>>>,
         args: config::ArcSafeArgs,
         config: &mut Box<T>,
     ) -> EmptyResult {
-        tests.spy.push(
-            testid,
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
             &format!(
                 "Config::override_config_log({:?}): {:?}, {:?}",
-                success, args, config
+                !test.fails, args, config
             ),
         );
         Ok(())
     }
 
-    pub fn path_exists(tests: &Lazy<Tests>, testid: &str, result: bool, _self: &Path) -> bool {
-        tests
-            .spy
-            .push(testid, &format!("Path.exists({:?}): {:?}", result, _self));
-        result
+    pub fn path_exists(test: Arc<Mutex<Test<'_>>>, _self: &Path) -> bool {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Path.exists({:?}): {:?}", !test.fails, _self),
+        );
+        !test.fails
     }
 
     pub async fn read_yaml<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests<'_>>,
-        testid: &str,
+        test: Arc<Mutex<Test<'_>>>,
         args: config::ArcSafeArgs,
     ) -> Result<Box<T>, config::SafeError> {
-        tests
-            .spy
-            .push(testid, &format!("Config::read_yaml: {:?}", args));
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Config::read_yaml({:?}): {:?}", !test.fails, args),
+        );
         let config: T = serde_yaml::from_str(TEST_YAML0).expect("Unable to parse yaml");
         Ok(Box::new(config))
     }
 
-    pub fn command_config<'a>(
-        tests: &Lazy<Tests<'a>>,
-        testid: &str,
-        success: bool,
-        _self: &'a DummyCommand,
-    ) -> Box<&'a dyn config::Provider> {
-        tests
-            .spy
-            .push(testid, &format!("Command::get_config({:?})", success));
-        Box::new(&_self.config)
-    }
-
-    pub fn command_get_name<'a>(
-        tests: &Lazy<Tests<'a>>,
-        testid: &str,
-        success: bool,
-        _self: &'a DummyCommand,
-    ) -> &'a str {
-        tests
-            .spy
-            .push(testid, &format!("Command::get_name({:?})", success));
-        "COMMAND_NAME"
-    }
-
-    pub fn command_get_name_bad<'a>(
-        tests: &Lazy<Tests<'a>>,
-        testid: &str,
-        success: bool,
-        _self: &'a DummyCommand,
-    ) -> &'a str {
-        tests
-            .spy
-            .push(testid, &format!("Command::get_name({:?})", success));
-        "DOES_NOT_EXIST"
-    }
-
-    pub fn runner_config(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
-        returns: Option<config::Primitive>,
-        _self: &dyn runner::Runner,
-        key: &str,
-    ) -> Option<config::Primitive> {
-        tests
-            .spy
-            .push(testid, &format!("Runner::config({:?}): {:?}", success, key));
-        returns
-    }
-
-    pub fn runner_resolve_command(
-        tests: &'static Lazy<Tests>,
-        testid: &'static str,
-        success: bool,
-        _self: &dyn runner::Runner,
-    ) -> Result<runner::CommandFn, runner::CommandError> {
-        let spy = tests.spy;
-        spy.push(testid, &format!("Runner::resolve_command({:?})", success));
-        Ok(Arc::new(
-            move |_runner: &Box<dyn runner::Runner>| -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> {
-                let spy = spy;
-                let testid: &'static str = testid;
-                Box::pin(async move {
-                    spy.push(testid, &format!("Runner::configured_command({:?})", success));
-                    Ok(())
-                })
-            },
-        ))
-    }
-
     pub fn runner_command<'a>(
-        tests: &Lazy<Tests<'a>>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test<'a>>>,
         _self: &'a DummyRunner,
     ) -> &'a dyn command::Command {
-        tests
-            .spy
-            .push(testid, &format!("Runner::get_command({:?})", success));
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Runner::get_command({:?})", !test.fails),
+        );
         &_self.command
     }
 
     pub fn runner_commands<'a>(
-        tests: &'static Lazy<Tests>,
-        testid: &'static str,
-        success: bool,
-        _self: &DummyRunner,
+        test: Arc<Mutex<Test<'a>>>,
+        _self: &'a DummyRunner,
     ) -> runner::CommandsFn<'a> {
-        let spy = tests.spy;
-        spy.push(testid, &format!("Runner::commands({:?})", success));
+        let testid: String;
+        let fails: bool;
+        let spy_arc: Arc<Spy>;
+        {
+            let test = test.lock().unwrap();
+            testid = test.name.clone();
+            fails = test.fails;
+            spy_arc = Arc::new((**test.spy()).clone());
+            test.spy()
+                .push(&testid, &format!("Runner::commands({:?})", !test.fails));
+        }
 
-        let command: runner::CommandFn = Arc::new(move |_runner: &Box<dyn runner::Runner>| {
-            let testid: &'static str = testid;
+        let command: runner::CommandFn = Arc::new(move |_runner| {
+            let testid: String = testid.clone();
+            let spy = spy_arc.clone();
             Box::pin(async move {
                 spy.push(
-                    testid,
-                    &format!("Runner::configured_command({:?})", success),
+                    &testid,
+                    &format!("Runner::configured_command({:?})", !fails),
                 );
                 Ok(())
             })
@@ -454,45 +441,86 @@ impl Patch {
         commands
     }
 
+    pub fn runner_config(
+        test: Arc<Mutex<Test>>,
+        returns: Option<config::Primitive>,
+        _self: &dyn runner::Runner,
+        key: &str,
+    ) -> Option<config::Primitive> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Runner::config({:?}): {:?}", !test.fails, key),
+        );
+        returns
+    }
+
     pub async fn runner_handle<'a>(
-        tests: &Lazy<Tests<'a>>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test<'a>>>,
         _self: &'a dyn runner::Runner,
     ) -> EmptyResult {
-        tests
-            .spy
-            .push(testid, &format!("Runner::handle({:?})", success));
+        let test = test.lock().unwrap();
+        test.spy()
+            .push(&test.name, &format!("Runner::handle({:?})", !test.fails));
         Ok(())
     }
 
+    pub fn runner_resolve_command(
+        test: Arc<Mutex<Test>>,
+        _self: &dyn runner::Runner,
+    ) -> Result<runner::CommandFn, runner::CommandError> {
+        let testid: String;
+        let fails: bool;
+        let spy_arc: Arc<Spy>;
+        {
+            let test = test.lock().unwrap();
+            testid = test.name.clone();
+            fails = test.fails;
+            spy_arc = Arc::new((**test.spy()).clone());
+            test.spy().push(
+                &test.name,
+                &format!("Runner::resolve_command({:?})", !test.fails),
+            );
+        }
+
+        Ok(Arc::new(
+            move |_runner| -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> {
+                let testid: String = testid.clone();
+                let spy = spy_arc.clone();
+                Box::pin(async move {
+                    let spy = spy;
+                    let testid: &str = testid.as_str();
+                    spy.push(testid, &format!("Runner::configured_command({:?})", !fails));
+                    Ok(())
+                })
+            },
+        ))
+    }
+
     pub fn runner_start_log<'a>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test<'a>>>,
         _self: &'a dyn runner::Runner,
     ) -> EmptyResult {
-        tests
-            .spy
-            .push(testid, &format!("Runner::start_log({:?})", success));
+        let test = test.lock().unwrap();
+        test.spy()
+            .push(&test.name, &format!("Runner::start_log({:?})", !test.fails));
         Ok(())
     }
 
     pub fn serde_from_reader<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         file: &std::fs::File,
     ) -> Result<T, serde_yaml::Error> {
-        tests.spy.push(
-            testid,
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
             &format!(
                 "serde_yaml::from_reader({:?}): {:?}",
-                success,
+                !test.fails,
                 file.metadata().expect("Error parsing metadata").is_file()
             ),
         );
-        if !success {
+        if test.fails {
             let err: serde_yaml::Error = serde_yaml::from_str::<i32>("invalid").unwrap_err();
             return Err(err);
         }
@@ -501,16 +529,15 @@ impl Patch {
     }
 
     pub fn serde_from_str<T: config::Provider + Loggable + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         string: &str,
     ) -> Result<log::Level, serde_yaml::Error> {
-        tests.spy.push(
-            testid,
-            &format!("serde_yaml::from_str({:?}): {:?}", success, string),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("serde_yaml::from_str({:?}): {:?}", !test.fails, string),
         );
-        if !success {
+        if test.fails {
             let err: serde_yaml::Error = serde_yaml::from_str::<i32>("invalid").unwrap_err();
             return Err(err);
         }
@@ -519,30 +546,28 @@ impl Patch {
     }
 
     pub fn serde_to_value(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         thing: Box<dyn config::Provider>,
     ) -> Result<Value, serde_yaml::Error> {
-        tests.spy.push(
-            testid,
-            &format!("serde_yaml::to_value({:?}): {:?}", success, thing),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("serde_yaml::to_value({:?}): {:?}", !test.fails, thing),
         );
         serde_yaml::from_str("SERIALIZED")
     }
 
     pub fn set_log<T: config::Provider + serde::Deserialize<'static>>(
-        tests: &Lazy<Tests>,
-        testid: &str,
-        success: bool,
+        test: Arc<Mutex<Test>>,
         _self: &mut T,
         level: log::Level,
     ) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
-        tests.spy.push(
-            testid,
-            &format!("Config::set_log({:?}): {:?}", success, level),
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Config::set_log({:?}): {:?}", !test.fails, level),
         );
-        if !success {
+        if test.fails {
             return Err("Error setting log".into());
         }
         Ok(())
