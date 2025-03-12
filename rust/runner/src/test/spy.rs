@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[derive(Clone)]
 pub struct Spy {
     pub calls: Arc<Mutex<HashMap<String, Vec<String>>>>,
 }

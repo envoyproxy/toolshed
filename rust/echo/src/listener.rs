@@ -60,7 +60,7 @@ mod tests {
     use scopeguard::defer;
     use serial_test::serial;
     use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4};
-    use toolshed_runner::test::{Test, Tests, patch::Patches, spy::Spy};
+    use toolshed_runner::test::{patch::Patches, spy::Spy, Tests};
 
     static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
     static SPY: Lazy<Spy> = Lazy::new(Spy::new);
@@ -69,10 +69,11 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_endpoint_socket_address() {
-        let test = Test::new(&TESTS, "endpoint_socket_address")
+        let test = TESTS
+            .test("endpoint_socket_address")
             .expecting(vec!["SocketAddr::new(true): 8.8.8.8 7373"])
             .with_patches(vec![patch2(SocketAddr::new, |host, port| {
-                Patch::socket_addr_new(&TESTS, "endpoint_socket_address", true, host, port)
+                Patch::socket_addr_new(TESTS.get("endpoint_socket_address").unwrap(), host, port)
             })]);
         defer! {
             test.drop();
@@ -91,17 +92,18 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_config_default_listener() {
-        let test = Test::new(&TESTS, "config_default_listener")
+        let test = TESTS
+            .test("config_default_listener")
             .expecting(vec![
                 "Config::default_host(true)",
                 "Config::default_port(true)",
             ])
             .with_patches(vec![
                 patch0(Config::default_host, || {
-                    Patch::config_default_host(&TESTS, "config_default_listener", true)
+                    Patch::config_default_host(TESTS.get("config_default_listener").unwrap())
                 }),
                 patch0(Config::default_port, || {
-                    Patch::config_default_port(&TESTS, "config_default_listener", true)
+                    Patch::config_default_port(TESTS.get("config_default_listener").unwrap())
                 }),
             ]);
         defer! {
@@ -135,10 +137,11 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_endpoint_bind() {
-        let test = Test::new(&TESTS, "endpoint_bind")
+        let test = TESTS
+            .test("endpoint_bind")
             .expecting(vec!["SocketAddr::new(true): 0.0.0.0 7373"])
             .with_patches(vec![patch2(SocketAddr::new, |host, port| {
-                Patch::socket_addr_new(&TESTS, "endpoint_bind", true, host, port)
+                Patch::socket_addr_new(TESTS.get("endpoint_bind").unwrap(), host, port)
             })]);
         defer! {
             test.drop();

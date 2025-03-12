@@ -1,4 +1,4 @@
-use crate::{EmptyResult, args, log};
+use crate::{args, log, EmptyResult};
 use as_any::AsAny;
 use async_trait::async_trait;
 use serde::de::DeserializeOwned;
@@ -189,7 +189,7 @@ mod tests {
         dummy::{DummyConfig, DummyConfig2},
         patch::{Patch, Patches},
         spy::Spy,
-        {Test, Tests},
+        Tests,
     };
     use guerrilla::{patch1, patch2, patch3};
     use mockall::mock;
@@ -274,12 +274,13 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_baseconfig_serialized() {
-        let test = Test::new(&TESTS, "baseconfig_serialized")
+        let test = TESTS
+            .test("baseconfig_serialized")
             .expecting(vec![
                 "serde_yaml::to_value(true): BaseConfig { log: Some(LogConfig { level: Info }) }",
             ])
             .with_patches(vec![patch1(serde_yaml::to_value::<BaseConfig>, |thing| {
-                Patch::serde_to_value(&TESTS, "baseconfig_serialized", true, Box::new(thing))
+                Patch::serde_to_value(TESTS.get("baseconfig_serialized").unwrap(), Box::new(thing))
             })]);
         defer! {
             test.drop()
@@ -293,16 +294,16 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_from_yaml() {
-        let test = Test::new(&TESTS, "from_yaml")
+        let test = TESTS.test("from_yaml")
             .expecting(vec![
-                "Config::read_yaml: MockArgsProvider",
-                "Config::override_config: MockArgsProvider, DummyConfig { log: LogConfig { level: Trace } }"])
+                "Config::read_yaml(true): MockArgsProvider",
+                "Config::override_config(true): MockArgsProvider, DummyConfig { log: LogConfig { level: Trace } }"])
             .with_patches(vec![
                 patch1(DummyFactory::read_yaml, |args| {
-                    Box::pin(Patch::read_yaml(&TESTS, "from_yaml", args))
+                    Box::pin(Patch::read_yaml(TESTS.get("from_yaml").unwrap(), args))
                 }),
                 patch2(DummyFactory::override_config, |args, config| {
-                    Box::pin(Patch::override_config(&TESTS, "from_yaml", args, config))
+                    Box::pin(Patch::override_config(TESTS.get("from_yaml").unwrap(), args, config))
                 }),
             ]);
         defer! {
@@ -322,17 +323,16 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_factory_log_level_override_arg() {
-        let test = Test::new(&TESTS, "factory_log_level_override_arg")
+        let test = TESTS
+            .test("factory_log_level_override_arg")
             .expecting(vec!["serde_yaml::from_str(true): \"debug\""])
             .with_patches(vec![
                 patch1(std::env::var, |name| {
-                    Patch::env_var(&TESTS, "factory_log_level_override_arg", true, name)
+                    Patch::env_var(TESTS.get("factory_log_level_override_arg").unwrap(), name)
                 }),
                 patch1(serde_yaml::from_str::<log::Level>, |string| {
                     Patch::serde_from_str::<DummyConfig>(
-                        &TESTS,
-                        "factory_log_level_override_arg",
-                        true,
+                        TESTS.get("factory_log_level_override_arg").unwrap(),
                         string,
                     )
                 }),
@@ -354,20 +354,19 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_factory_log_level_override_env() {
-        let test = Test::new(&TESTS, "factory_log_level_override_env")
+        let test = TESTS
+            .test("factory_log_level_override_env")
             .expecting(vec![
                 "std::env::var(true): \"LOG_LEVEL\"",
                 "serde_yaml::from_str(true): \"info\"",
             ])
             .with_patches(vec![
                 patch1(std::env::var, |name| {
-                    Patch::env_var(&TESTS, "factory_log_level_override_env", true, name)
+                    Patch::env_var(TESTS.get("factory_log_level_override_env").unwrap(), name)
                 }),
                 patch1(serde_yaml::from_str::<log::Level>, |string| {
                     Patch::serde_from_str::<DummyConfig>(
-                        &TESTS,
-                        "factory_log_level_override_env",
-                        true,
+                        TESTS.get("factory_log_level_override_env").unwrap(),
                         string,
                     )
                 }),
@@ -387,17 +386,18 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_factory_log_level_override_none() {
-        let test = Test::new(&TESTS, "factory_log_level_override_none")
+        let test = TESTS
+            .test("factory_log_level_override_none")
             .expecting(vec!["std::env::var(false): \"LOG_LEVEL\""])
             .with_patches(vec![
                 patch1(std::env::var, |name| {
-                    Patch::env_var(&TESTS, "factory_log_level_override_none", false, name)
+                    let test = TESTS.get("factory_log_level_override_none").unwrap();
+                    test.lock().unwrap().fail();
+                    Patch::env_var(test, name)
                 }),
                 patch1(serde_yaml::from_str::<log::Level>, |string| {
                     Patch::serde_from_str::<DummyConfig>(
-                        &TESTS,
-                        "factory_log_level_override_none",
-                        true,
+                        TESTS.get("factory_log_level_override_none").unwrap(),
                         string,
                     )
                 }),
@@ -417,22 +417,20 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_factory_log_level_override_err() {
-        let test = Test::new(&TESTS, "factory_log_level_override_err")
+        let test = TESTS
+            .test("factory_log_level_override_err")
             .expecting(vec![
                 "std::env::var(true): \"LOG_LEVEL\"",
                 "serde_yaml::from_str(false): \"info\"",
             ])
             .with_patches(vec![
                 patch1(std::env::var, |name| {
-                    Patch::env_var(&TESTS, "factory_log_level_override_err", true, name)
+                    Patch::env_var(TESTS.get("factory_log_level_override_err").unwrap(), name)
                 }),
                 patch1(serde_yaml::from_str::<log::Level>, |string| {
-                    Patch::serde_from_str::<DummyConfig>(
-                        &TESTS,
-                        "factory_log_level_override_err",
-                        false,
-                        string,
-                    )
+                    let test = TESTS.get("factory_log_level_override_err").unwrap();
+                    test.lock().unwrap().fail();
+                    Patch::serde_from_str::<DummyConfig>(test, string)
                 }),
             ]);
         defer! {
@@ -455,7 +453,8 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_override_config() {
-        let test = Test::new(&TESTS, "factory_override_config")
+        let test = TESTS
+            .test("factory_override_config")
             .expecting(vec![
                 "Factory::log_level_override(true/true): MockArgsProvider",
                 "Config::set_log(true): Trace",
@@ -463,15 +462,13 @@ log:
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
                     Ok(Patch::log_level_override(
-                        &TESTS,
-                        "factory_override_config",
-                        true,
+                        TESTS.get("factory_override_config").unwrap(),
                         true,
                         args,
                     )?)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    Patch::set_log(&TESTS, "factory_override_config", true, _self, level)
+                    Patch::set_log(TESTS.get("factory_override_config").unwrap(), _self, level)
                 }),
             ]);
         defer! {
@@ -491,22 +488,25 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_override_config_nolog() {
-        let test = Test::new(&TESTS, "factory_override_config_nolog")
+        let test = TESTS
+            .test("factory_override_config_nolog")
             .expecting(vec![
                 "Factory::log_level_override(true/false): MockArgsProvider",
             ])
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
                     Ok(Patch::log_level_override(
-                        &TESTS,
-                        "factory_override_config_nolog",
-                        true,
+                        TESTS.get("factory_override_config_nolog").unwrap(),
                         false,
                         args,
                     )?)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    Patch::set_log(&TESTS, "factory_override_config_nolog", true, _self, level)
+                    Patch::set_log(
+                        TESTS.get("factory_override_config_nolog").unwrap(),
+                        _self,
+                        level,
+                    )
                 }),
             ]);
         defer! {
@@ -526,25 +526,20 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_override_config_get_err() {
-        let test = Test::new(&TESTS, "factory_override_config_get_err")
+        let test = TESTS
+            .test("factory_override_config_get_err")
             .expecting(vec![
                 "Factory::log_level_override(false/true): MockArgsProvider",
             ])
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
-                    Ok(Patch::log_level_override(
-                        &TESTS,
-                        "factory_override_config_get_err",
-                        false,
-                        true,
-                        args,
-                    )?)
+                    let test = TESTS.get("factory_override_config_get_err").unwrap();
+                    test.lock().unwrap().fail();
+                    Patch::log_level_override(test, true, args)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
                     Patch::set_log(
-                        &TESTS,
-                        "factory_override_config_get_err",
-                        true,
+                        TESTS.get("factory_override_config_get_err").unwrap(),
                         _self,
                         level,
                     )
@@ -570,7 +565,8 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_override_config_set_err() {
-        let test = Test::new(&TESTS, "factory_override_config_set_err")
+        let test = TESTS
+            .test("factory_override_config_set_err")
             .expecting(vec![
                 "Factory::log_level_override(true/true): MockArgsProvider",
                 "Config::set_log(false): Trace",
@@ -578,21 +574,15 @@ log:
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
                     Patch::log_level_override(
-                        &TESTS,
-                        "factory_override_config_set_err",
-                        true,
+                        TESTS.get("factory_override_config_set_err").unwrap(),
                         true,
                         args,
                     )
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    Patch::set_log(
-                        &TESTS,
-                        "factory_override_config_set_err",
-                        false,
-                        _self,
-                        level,
-                    )
+                    let test = TESTS.get("factory_override_config_set_err").unwrap();
+                    test.lock().unwrap().fail();
+                    Patch::set_log(test, _self, level)
                 }),
             ]);
         defer! {
@@ -615,7 +605,8 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_read_yaml() {
-        let test = Test::new(&TESTS, "read_yaml")
+        let test = TESTS
+            .test("read_yaml")
             .expecting(vec![
                 "Path.exists(true): \"tests/config.yaml\"",
                 "File::open(true): \"tests/config.yaml\"",
@@ -623,14 +614,14 @@ log:
             ])
             .with_patches(vec![
                 patch1(Path::exists, |_self| {
-                    Patch::path_exists(&TESTS, "read_yaml", true, _self)
+                    Patch::path_exists(TESTS.get("read_yaml").unwrap(), _self)
                 }),
                 patch1(std::fs::File::open, |path| {
-                    Patch::file_open(&TESTS, "read_yaml", true, path)
+                    Patch::file_open(TESTS.get("read_yaml").unwrap(), path)
                 }),
                 patch1(
                     serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                    |file| Patch::serde_from_reader(&TESTS, "read_yaml", true, &file),
+                    |file| Patch::serde_from_reader(TESTS.get("read_yaml").unwrap(), &file),
                 ),
             ]);
         defer! {
@@ -644,18 +635,23 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_read_yaml_no_exist() {
-        let test = Test::new(&TESTS, "read_yaml_no_exist")
+        let test = TESTS
+            .test("read_yaml_no_exist")
             .expecting(vec!["Path.exists(false): \"tests/config.yaml\""])
             .with_patches(vec![
                 patch1(Path::exists, |_self| {
-                    Patch::path_exists(&TESTS, "read_yaml_no_exist", false, _self)
+                    let test = TESTS.get("read_yaml_no_exist").unwrap();
+                    test.lock().unwrap().fail();
+                    Patch::path_exists(test, _self)
                 }),
                 patch1(std::fs::File::open, |path| {
-                    Patch::file_open(&TESTS, "read_yaml_no_exist", true, path)
+                    Patch::file_open(TESTS.get("read_yaml_no_exist").unwrap(), path)
                 }),
                 patch1(
                     serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                    |file| Patch::serde_from_reader(&TESTS, "read_yaml_no_exist", true, &file),
+                    |file| {
+                        Patch::serde_from_reader(TESTS.get("read_yaml_no_exist").unwrap(), &file)
+                    },
                 ),
             ]);
         defer! {
@@ -675,21 +671,26 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_read_yaml_fail_open() {
-        let test = Test::new(&TESTS, "read_yaml_fail_open")
+        let test = TESTS
+            .test("read_yaml_fail_open")
             .expecting(vec![
                 "Path.exists(true): \"tests/config.yaml\"",
                 "File::open(false): \"tests/config.yaml\"",
             ])
             .with_patches(vec![
                 patch1(Path::exists, |_self| {
-                    Patch::path_exists(&TESTS, "read_yaml_fail_open", true, _self)
+                    Patch::path_exists(TESTS.get("read_yaml_fail_open").unwrap(), _self)
                 }),
                 patch1(std::fs::File::open, |path| {
-                    Patch::file_open(&TESTS, "read_yaml_fail_open", false, path)
+                    let test = TESTS.get("read_yaml_fail_open").unwrap();
+                    test.lock().unwrap().fail();
+                    Patch::file_open(test, path)
                 }),
                 patch1(
                     serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                    |file| Patch::serde_from_reader(&TESTS, "read_yaml_fail_open", true, &file),
+                    |file| {
+                        Patch::serde_from_reader(TESTS.get("read_yaml_fail_open").unwrap(), &file)
+                    },
                 ),
             ]);
         defer! {
@@ -714,7 +715,8 @@ log:
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_factory_read_yaml_bad_parse() {
-        let test = Test::new(&TESTS, "read_yaml_bad_parse")
+        let test = TESTS
+            .test("read_yaml_bad_parse")
             .expecting(vec![
                 "Path.exists(true): \"tests/config.yaml\"",
                 "File::open(true): \"tests/config.yaml\"",
@@ -722,14 +724,18 @@ log:
             ])
             .with_patches(vec![
                 patch1(Path::exists, |_self| {
-                    Patch::path_exists(&TESTS, "read_yaml_bad_parse", true, _self)
+                    Patch::path_exists(TESTS.get("read_yaml_bad_parse").unwrap(), _self)
                 }),
                 patch1(std::fs::File::open, |path| {
-                    Patch::file_open(&TESTS, "read_yaml_bad_parse", true, path)
+                    Patch::file_open(TESTS.get("read_yaml_bad_parse").unwrap(), path)
                 }),
                 patch1(
                     serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                    |file| Patch::serde_from_reader(&TESTS, "read_yaml_bad_parse", false, &file),
+                    |file| {
+                        let test = TESTS.get("read_yaml_bad_parse").unwrap();
+                        test.lock().unwrap().fail();
+                        Patch::serde_from_reader(test, &file)
+                    },
                 ),
             ]);
         defer! {
@@ -754,17 +760,23 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get() {
-        let test = Test::new(&TESTS, "read_provider_get")
+        let test = TESTS
+            .test("read_provider_get")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
             ])
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
-                    Patch::config_resolve(&TESTS, "read_provider_get", true, _self, current, keys)
+                    Patch::config_resolve(
+                        TESTS.get("read_provider_get").unwrap(),
+                        _self,
+                        current,
+                        keys,
+                    )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get", true, _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -787,7 +799,8 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get_f64() {
-        let test = Test::new(&TESTS, "read_provider_get_f64")
+        let test = TESTS
+            .test("read_provider_get_f64")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
@@ -795,16 +808,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_f64(
-                        &TESTS,
-                        "read_provider_get_f64",
-                        true,
+                        TESTS.get("read_provider_get_f64").unwrap(),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get_f64", true, _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_f64").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -827,7 +838,8 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get_i32() {
-        let test = Test::new(&TESTS, "read_provider_get_i32")
+        let test = TESTS
+            .test("read_provider_get_i32")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
@@ -835,16 +847,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_i32(
-                        &TESTS,
-                        "read_provider_get_i32",
-                        true,
+                        TESTS.get("read_provider_get_i32").unwrap(),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get_i32", true, _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_i32").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -871,7 +881,8 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get_i64() {
-        let test = Test::new(&TESTS, "read_provider_get_i64")
+        let test = TESTS
+            .test("read_provider_get_i64")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
@@ -879,16 +890,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_i64(
-                        &TESTS,
-                        "read_provider_get_i64",
-                        true,
+                        TESTS.get("read_provider_get_i64").unwrap(),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get_i64", true, _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_i64").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -915,7 +924,8 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get_u32() {
-        let test = Test::new(&TESTS, "read_provider_get_u32")
+        let test = TESTS
+            .test("read_provider_get_u32")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
@@ -923,16 +933,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_u32(
-                        &TESTS,
-                        "read_provider_get_u32",
-                        true,
+                        TESTS.get("read_provider_get_u32").unwrap(),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get_u32", true, _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_u32").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -959,7 +967,8 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get_u64() {
-        let test = Test::new(&TESTS, "read_provider_get_u64")
+        let test = TESTS
+            .test("read_provider_get_u64")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
@@ -967,16 +976,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_u64(
-                        &TESTS,
-                        "read_provider_get_u64",
-                        true,
+                        TESTS.get("read_provider_get_u64").unwrap(),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get_u64", true, _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_u64").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -1003,7 +1010,8 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get_bool() {
-        let test = Test::new(&TESTS, "read_provider_get_bool")
+        let test = TESTS
+            .test("read_provider_get_bool")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
@@ -1011,16 +1019,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_bool(
-                        &TESTS,
-                        "read_provider_get_bool",
-                        true,
+                        TESTS.get("read_provider_get_bool").unwrap(),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get_bool", true, _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_bool").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -1047,7 +1053,8 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get_bad() {
-        let test = Test::new(&TESTS, "read_provider_get_bad")
+        let test = TESTS
+            .test("read_provider_get_bad")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
@@ -1055,16 +1062,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_bad(
-                        &TESTS,
-                        "read_provider_get_bad",
-                        true,
+                        TESTS.get("read_provider_get_bad").unwrap(),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get_bad", true, _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_bad").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -1084,7 +1089,8 @@ log:
     #[test]
     #[serial(toolshed_lock)]
     fn test_provider_get_bad_type() {
-        let test = Test::new(&TESTS, "read_provider_get_bad_type")
+        let test = TESTS
+            .test("read_provider_get_bad_type")
             .expecting(vec![
                 "Provider::serialized(true)",
                 "Provider::resolve(true): [\"SOME\", \"KEY\", \"PATH\"] String(\"SERIALIZED\")",
@@ -1092,16 +1098,17 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_bad_type(
-                        &TESTS,
-                        "read_provider_get_bad_type",
-                        true,
+                        TESTS.get("read_provider_get_bad_type").unwrap(),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(&TESTS, "read_provider_get_bad_type", true, _self)
+                    Patch::config_serialized(
+                        TESTS.get("read_provider_get_bad_type").unwrap(),
+                        _self,
+                    )
                 }),
             ]);
         defer! {

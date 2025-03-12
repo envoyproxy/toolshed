@@ -45,7 +45,7 @@ mod tests {
     use serial_test::serial;
     use toolshed_runner::{
         command::Command as _,
-        test::{patch::Patches, spy::Spy, Test, Tests},
+        test::{patch::Patches, spy::Spy, Tests},
     };
 
     static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
@@ -65,10 +65,11 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_command_new_default() {
-        let test = Test::new(&TESTS, "command_default_name")
+        let test = TESTS
+            .test("command_default_name")
             .expecting(vec!["Command::default_name(true)"])
             .with_patches(vec![patch0(Command::default_name, || {
-                Patch::command_default_name(&TESTS, "command_default_name", true)
+                Patch::command_default_name(TESTS.get("command_default_name").unwrap())
             })]);
         defer! {
             test.drop();

@@ -74,7 +74,7 @@ mod tests {
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
-    use toolshed_runner::test::{Test, Tests, patch::Patches, spy::Spy};
+    use toolshed_runner::test::{patch::Patches, spy::Spy, Tests};
 
     static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
     static SPY: Lazy<Spy> = Lazy::new(Spy::new);
@@ -83,10 +83,11 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_response_new() {
-        let test = Test::new(&TESTS, "response_new")
+        let test = TESTS
+            .test("response_new")
             .expecting(vec!["String::from_utf8_lossy(true): b\"BOODY\""])
             .with_patches(vec![patch1(String::from_utf8_lossy, |body| {
-                Patch::string_from_utf8_lossy(&TESTS, "response_new", true, Bytes::from(body))
+                Patch::string_from_utf8_lossy(TESTS.get("response_new").unwrap(), Bytes::from(body))
             })]);
         defer! {
             test.drop();
@@ -121,7 +122,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_response_to_json() {
-        let test = Test::new(&TESTS, "response_to_json")
+        let test = TESTS.test("response_to_json")
             .expecting(vec![
                 "Response::builder(true)",
                 concat!(
@@ -133,13 +134,17 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(response::Response::builder, || {
-                    Patch::response_builder(&TESTS, "response_to_json/0", true)
+                    let test = TESTS.get("response_to_json").unwrap();
+                    test.lock().unwrap().patch_index(0);
+                    Patch::response_builder(test)
                 }),
                 patch2(fmt::Display::fmt, |_self, f| {
-                    Patch::response_fmt(&TESTS, "response_to_json", true, _self, f)
+                    Patch::response_fmt(TESTS.get("response_to_json").unwrap(), _self, f)
                 }),
                 patch1(Body::from, |string| {
-                    Patch::http_response_body(&TESTS, "response_to_json/2", true, string)
+                    let test = TESTS.get("response_to_json").unwrap();
+                    test.lock().unwrap().patch_index(2);
+                    Patch::http_response_body(test, string)
                 }),
             ]);
         defer! {
@@ -186,11 +191,14 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_response_debug() {
-        let test = Test::new(&TESTS, "response_debug")
+        let test = TESTS
+            .test("response_debug")
             .expecting(vec!["serde_json::to_string_pretty(true)"])
             .with_patches(vec![patch1(
                 serde_json::to_string_pretty::<&Response>,
-                |thing| Patch::serde_json_to_string_pretty(&TESTS, "response_debug", true, thing),
+                |thing| {
+                    Patch::serde_json_to_string_pretty(TESTS.get("response_debug").unwrap(), thing)
+                },
             )]);
         defer! {
             test.drop();
@@ -218,11 +226,17 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_response_display() {
-        let test = Test::new(&TESTS, "response_display")
+        let test = TESTS
+            .test("response_display")
             .expecting(vec!["serde_json::to_string_pretty(true)"])
             .with_patches(vec![patch1(
                 serde_json::to_string_pretty::<&Response>,
-                |thing| Patch::serde_json_to_string_pretty(&TESTS, "response_display", true, thing),
+                |thing| {
+                    Patch::serde_json_to_string_pretty(
+                        TESTS.get("response_display").unwrap(),
+                        thing,
+                    )
+                },
             )]);
         defer! {
             test.drop();

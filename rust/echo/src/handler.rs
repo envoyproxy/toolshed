@@ -76,7 +76,7 @@ mod tests {
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
-    use toolshed_runner::test::{Test, Tests, patch::Patches, spy::Spy};
+    use toolshed_runner::test::{patch::Patches, spy::Spy, Tests};
 
     static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
     static SPY: Lazy<Spy> = Lazy::new(Spy::new);
@@ -85,7 +85,7 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_handle() {
-        let test = Test::new(&TESTS, "handle")
+        let test = TESTS.test("handle")
             .expecting(vec![
                 "EchoHandler::handle(true): TRACE {\"x-foo\": \"baz\", \"x-bar\": \"baz\"} OrderedMap({\"bar\": \"foo\"}) \"HOME\" b\"\"", "EchoHandler::handle(true)"])
             .with_patches(vec![
@@ -93,9 +93,7 @@ mod tests {
                     Response::new,
                     |method, headers, params, path, body| {
                         Patch::response_new(
-                            &TESTS,
-                            "handle",
-                            true,
+                            TESTS.get("handle").unwrap(),
                             method,
                             headers,
                             params,
@@ -108,9 +106,7 @@ mod tests {
                     Response::to_json,
                     |_self| {
                         Patch::response_to_json(
-                            &TESTS,
-                            "handle",
-                            true,
+                            TESTS.get("handle").unwrap(),
                             _self
                         )
                     },
@@ -138,16 +134,14 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_handle_root() {
-        let test = Test::new(&TESTS, "handle_root")
+        let test = TESTS.test("handle_root")
             .expecting(vec![
                 "EchoHandler::handle(true): PATCH {\"x-foo\": \"foo\", \"x-bar\": \"bar\"} OrderedMap({\"bar\": \"foo\"}) \"\" b\"DIFF\""])
             .with_patches(vec![patch5(
                 EchoHandler::handle,
                 |method, headers, params, path, body| {
                     Box::pin(Patch::handler_handle(
-                        &TESTS,
-                        "handle_root",
-                        true,
+                        TESTS.get("handle_root").unwrap(),
                         method,
                         headers,
                         params,
@@ -178,16 +172,14 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_handle_path() {
-        let test = Test::new(&TESTS, "handle_path")
+        let test = TESTS.test("handle_path")
             .expecting(vec![
                 "EchoHandler::handle(true): POST {\"x-foo\": \"bar\", \"x-bar\": \"foo\"} OrderedMap({\"bar\": \"foo\"}) \"NOWHERE\" b\"DIFF\""])
             .with_patches(vec![patch5(
                 EchoHandler::handle,
                 |method, headers, params, path, body| {
                     Box::pin(Patch::handler_handle(
-                        &TESTS,
-                        "handle_path",
-                        true,
+                        TESTS.get("handle_path").unwrap(),
                         method,
                         headers,
                         params,

@@ -6,11 +6,11 @@ use crate::{
     listener::{Endpoint, Listener},
 };
 use async_trait::async_trait;
-use axum::{Router, routing::any};
+use axum::{routing::any, Router};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
-use toolshed_runner::{EmptyResult, command, config, config::Factory, runner, runner::Runner as _};
+use toolshed_runner::{command, config, config::Factory, runner, runner::Runner as _, EmptyResult};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Runner {
@@ -125,9 +125,9 @@ mod tests {
     use serial_test::serial;
     use std::net::{IpAddr, SocketAddr};
     use toolshed_runner::test::{
-        Test, Tests,
         patch::{Patch as RunnerPatch, Patches},
         spy::Spy,
+        Tests,
     };
     use tower::ServiceExt as _;
 
@@ -164,7 +164,8 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_main() {
-        let test = Test::new(&TESTS, "echo_main")
+        let test = TESTS
+            .test("echo_main")
             .expecting(vec![
                 "Args::parse(true)",
                 "Config::from_yaml(true)",
@@ -173,17 +174,19 @@ mod tests {
                 "Runner::run(true)",
             ])
             .with_patches(vec![
-                patch0(Args::parse, || Patch::args_parse(&TESTS, "echo_main", true)),
+                patch0(Args::parse, || {
+                    Patch::args_parse(TESTS.get("echo_main").unwrap())
+                }),
                 patch1(Config::from_yaml, |args| {
-                    Box::pin(Patch::config_from_yaml(&TESTS, "echo_main/1", true, args))
+                    let test = TESTS.get("echo_main").unwrap();
+                    test.lock().unwrap().patch_index(1);
+                    Box::pin(Patch::config_from_yaml(test, args))
                 }),
                 patch2(
                     <Command as command::Factory<Command, Config>>::new,
                     |config, command| {
                         Patch::runner_command_from_config(
-                            &TESTS,
-                            "echo_main",
-                            true,
+                            TESTS.get("echo_main").unwrap(),
                             config,
                             command,
                         )
@@ -191,10 +194,10 @@ mod tests {
                 ),
                 patch1(
                     <Runner as runner::Factory<Runner, Command>>::new,
-                    |command| Patch::runner_factory(&TESTS, "echo_main", true, command),
+                    |command| Patch::runner_factory(TESTS.get("echo_main").unwrap(), command),
                 ),
                 patch1(Runner::run, |_self| {
-                    Box::pin(Patch::runner_run(&TESTS, "echo_main", true, _self))
+                    Box::pin(Patch::runner_run(TESTS.get("echo_main").unwrap(), _self))
                 }),
             ]);
         defer! {
@@ -206,27 +209,23 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_main_badconfig() {
-        let test = Test::new(&TESTS, "echo_main_badconfig")
+        let test = TESTS
+            .test("echo_main_badconfig")
             .expecting(vec!["Args::parse(true)", "Config::from_yaml(false)"])
             .with_patches(vec![
                 patch0(Args::parse, || {
-                    Patch::args_parse(&TESTS, "echo_main_badconfig", true)
+                    Patch::args_parse(TESTS.get("echo_main_badconfig").unwrap())
                 }),
                 patch1(Config::from_yaml, |args| {
-                    Box::pin(Patch::config_from_yaml(
-                        &TESTS,
-                        "echo_main_badconfig/1",
-                        false,
-                        args,
-                    ))
+                    let test = TESTS.get("echo_main_badconfig").unwrap();
+                    test.lock().unwrap().fail().patch_index(1);
+                    Box::pin(Patch::config_from_yaml(test, args))
                 }),
                 patch2(
                     <Command as command::Factory<Command, Config>>::new,
                     |config, command| {
                         Patch::runner_command_from_config(
-                            &TESTS,
-                            "echo_main_badconfig",
-                            true,
+                            TESTS.get("echo_main_badconfig").unwrap(),
                             config,
                             command,
                         )
@@ -234,13 +233,13 @@ mod tests {
                 ),
                 patch1(
                     <Runner as runner::Factory<Runner, Command>>::new,
-                    |command| Patch::runner_factory(&TESTS, "echo_main_badconfig", true, command),
+                    |command| {
+                        Patch::runner_factory(TESTS.get("echo_main_badconfig").unwrap(), command)
+                    },
                 ),
                 patch1(Runner::run, |_self| {
                     Box::pin(Patch::runner_run(
-                        &TESTS,
-                        "echo_main_badconfig",
-                        true,
+                        TESTS.get("echo_main_badconfig").unwrap(),
                         _self,
                     ))
                 }),
@@ -264,7 +263,8 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_cmd_start() {
-        let test = Test::new(&TESTS, "runner_cmd_start")
+        let test = TESTS
+            .test("runner_cmd_start")
             .expecting(vec![
                 "Runner::endpoint(true)",
                 "Runner::start(true): Endpoint { host: 0.0.0.0, port: 1717 }",
@@ -272,15 +272,13 @@ mod tests {
             .with_patches(vec![
                 patch2(Runner::start, |_self, endpoint| {
                     Box::pin(Patch::runner_start(
-                        &TESTS,
-                        "runner_cmd_start",
-                        true,
+                        TESTS.get("runner_cmd_start").unwrap(),
                         _self,
                         endpoint,
                     ))
                 }),
                 patch1(Runner::endpoint, |_self| {
-                    Patch::runner_endpoint(&TESTS, "runner_cmd_start", true, _self)
+                    Patch::runner_endpoint(TESTS.get("runner_cmd_start").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -301,17 +299,18 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_endpoint() {
-        let test = Test::new(&TESTS, "runner_endpoint")
+        let test = TESTS
+            .test("runner_endpoint")
             .expecting(vec![
                 "Runner::listener_host(true)",
                 "Runner::listener_port(true)",
             ])
             .with_patches(vec![
                 patch1(Runner::listener_host, |_self| {
-                    Patch::runner_listener_host(&TESTS, "runner_endpoint", true, _self)
+                    Patch::runner_listener_host(TESTS.get("runner_endpoint").unwrap(), _self)
                 }),
                 patch1(Runner::listener_port, |_self| {
-                    Patch::runner_listener_port(&TESTS, "runner_endpoint", true, _self)
+                    Patch::runner_listener_port(TESTS.get("runner_endpoint").unwrap(), _self)
                 }),
             ]);
         defer! {
@@ -330,13 +329,12 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_listener_host() {
-        let test = Test::new(&TESTS, "runner_listener_host")
+        let test = TESTS
+            .test("runner_listener_host")
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config(
-                    &TESTS,
-                    "runner_listener_host",
-                    true,
+                    TESTS.get("runner_listener_host").unwrap(),
                     Some(config::Primitive::String("::".to_string())),
                     _self,
                     key,
@@ -359,13 +357,12 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_listener_host_noconfig() {
-        let test = Test::new(&TESTS, "runner_listener_host_noconfig")
+        let test = TESTS
+            .test("runner_listener_host_noconfig")
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config(
-                    &TESTS,
-                    "runner_listener_host_noconfig",
-                    true,
+                    TESTS.get("runner_listener_host_noconfig").unwrap(),
                     None,
                     _self,
                     key,
@@ -392,13 +389,12 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_listener_host_badconfig() {
-        let test = Test::new(&TESTS, "runner_listener_host_badconfig")
+        let test = TESTS
+            .test("runner_listener_host_badconfig")
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config(
-                    &TESTS,
-                    "runner_listener_host_badconfig",
-                    true,
+                    TESTS.get("runner_listener_host_badconfig").unwrap(),
                     Some(config::Primitive::String("NOT AN IP ADDRESS".to_string())),
                     _self,
                     key,
@@ -425,13 +421,12 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_listener_host_badconfig_type() {
-        let test = Test::new(&TESTS, "runner_listener_host_badconfig_type")
+        let test = TESTS
+            .test("runner_listener_host_badconfig_type")
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config(
-                    &TESTS,
-                    "runner_listener_host_badconfig_type",
-                    true,
+                    TESTS.get("runner_listener_host_badconfig_type").unwrap(),
                     Some(config::Primitive::U32(1717)),
                     _self,
                     key,
@@ -458,13 +453,12 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_listener_port() {
-        let test = Test::new(&TESTS, "runner_listener_port")
+        let test = TESTS
+            .test("runner_listener_port")
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config(
-                    &TESTS,
-                    "runner_listener_port",
-                    true,
+                    TESTS.get("runner_listener_port").unwrap(),
                     Some(config::Primitive::U32(2323)),
                     _self,
                     key,
@@ -487,13 +481,12 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_listener_port_noconfig() {
-        let test = Test::new(&TESTS, "runner_listener_port_noconfig")
+        let test = TESTS
+            .test("runner_listener_port_noconfig")
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config(
-                    &TESTS,
-                    "runner_listener_port_noconfig",
-                    true,
+                    TESTS.get("runner_listener_port_noconfig").unwrap(),
                     None,
                     _self,
                     key,
@@ -520,13 +513,12 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_runner_listener_port_badconfig() {
-        let test = Test::new(&TESTS, "runner_listener_port_badconfig")
+        let test = TESTS
+            .test("runner_listener_port_badconfig")
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config(
-                    &TESTS,
-                    "runner_listener_port_badconfig",
-                    true,
+                    TESTS.get("runner_listener_port_badconfig").unwrap(),
                     Some(config::Primitive::String("NOT A PORT".to_string())),
                     _self,
                     key,
@@ -553,21 +545,22 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_router() {
-        let test = Test::new(&TESTS, "runner_router")
+        let test = TESTS
+            .test("runner_router")
             .expecting(vec![
                 "Router::new(true)",
                 "Handler::handle_root(true)",
-                "Handler::handle_path(true): \"some/path\"",
+                "Handler::handle_path(true): some/path",
             ])
             .with_patches(vec![
                 patch0(Router::new, || {
-                    Patch::router_new(&TESTS, "runner_router/0", true)
+                    let test = TESTS.get("runner_router").unwrap();
+                    test.lock().unwrap().patch_index(0);
+                    Patch::router_new(test)
                 }),
                 patch4(EchoHandler::handle_root, |method, headers, params, body| {
                     Box::pin(Patch::runner_handle_root(
-                        &TESTS,
-                        "runner_router",
-                        true,
+                        TESTS.get("runner_router").unwrap(),
                         method,
                         headers,
                         params,
@@ -578,9 +571,7 @@ mod tests {
                     EchoHandler::handle_path,
                     |method, headers, params, path, body| {
                         Box::pin(Patch::runner_handle_path(
-                            &TESTS,
-                            "runner_router",
-                            true,
+                            TESTS.get("runner_router").unwrap(),
                             method,
                             headers,
                             params,
@@ -608,7 +599,8 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_start() {
-        let test = Test::new(&TESTS, "runner_start")
+        let test = TESTS
+            .test("runner_start")
             .expecting(vec![
                 "Runner::router(true)",
                 "axum::serve(true)",
@@ -617,22 +609,20 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(Runner::router, |_self| {
-                    Patch::runner_router(&TESTS, "runner_start", true, _self)
+                    Patch::runner_router(TESTS.get("runner_start").unwrap(), _self)
                 }),
                 patch0(runner::ctrl_c, || {
-                    Box::pin(Patch::ctrl_c(&TESTS, "runner_start", true))
+                    Box::pin(Patch::ctrl_c(TESTS.get("runner_start").unwrap()))
                 }),
                 patch2(axum::serve, |listener, router| {
-                    Patch::axum_serve(&TESTS, "runner_start/2", true, listener, router)
+                    let test = TESTS.get("runner_start").unwrap();
+                    test.lock().unwrap().patch_index(2);
+                    Patch::axum_serve(test, listener, router)
                 }),
                 patch2(axum::serve::Serve::with_graceful_shutdown, |_self, fun| {
-                    Patch::axum_serve_with_graceful_shutdown(
-                        &TESTS,
-                        "runner_start/3",
-                        true,
-                        _self,
-                        Box::pin(fun),
-                    )
+                    let test = TESTS.get("runner_start").unwrap();
+                    test.lock().unwrap().patch_index(3);
+                    Patch::axum_serve_with_graceful_shutdown(test, _self, Box::pin(fun))
                 }),
             ]);
         defer! {
@@ -652,17 +642,16 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_run() {
-        let test = Test::new(&TESTS, "runner_run")
+        let test = TESTS
+            .test("runner_run")
             .expecting(vec!["Runner::start_log(true)", "Runner::handle(true)"])
             .with_patches(vec![
                 patch1(Runner::start_log, |_self| {
-                    RunnerPatch::runner_start_log(&TESTS, "runner_run", true, _self)
+                    RunnerPatch::runner_start_log(TESTS.get("runner_run").unwrap(), _self)
                 }),
                 patch1(Runner::handle, |_self| {
                     Box::pin(RunnerPatch::runner_handle(
-                        &TESTS,
-                        "runner_run",
-                        true,
+                        TESTS.get("runner_run").unwrap(),
                         _self,
                     ))
                 }),
@@ -681,13 +670,14 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_handle() {
-        let test = Test::new(&TESTS, "runner_handle")
+        let test = TESTS
+            .test("runner_handle")
             .expecting(vec![
                 "Runner::resolve_command(true)",
                 "Runner::configured_command(true)",
             ])
             .with_patches(vec![patch1(Runner::resolve_command, |_self| {
-                RunnerPatch::runner_resolve_command(&TESTS, "runner_handle", true, _self)
+                RunnerPatch::runner_resolve_command(TESTS.get("runner_handle").unwrap(), _self)
             })]);
         defer! {
             test.drop();
@@ -703,13 +693,12 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_runner_commands() {
-        let test = Test::new(&TESTS, "runner_commands")
+        let test = TESTS
+            .test("runner_commands")
             .expecting(vec!["Runner::cmd_start(true)"])
             .with_patches(vec![patch1(Runner::cmd_start, |_self| {
                 Box::pin(Patch::runner_cmd_start(
-                    &TESTS,
-                    "runner_commands",
-                    true,
+                    TESTS.get("runner_commands").unwrap(),
                     _self,
                 ))
             })]);

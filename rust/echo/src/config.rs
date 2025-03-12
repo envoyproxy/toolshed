@@ -2,7 +2,7 @@ use crate::{args::Args, listener};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
-use toolshed_runner::{EmptyResult, config, log};
+use toolshed_runner::{config, log, EmptyResult};
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Config {
@@ -66,9 +66,9 @@ mod tests {
         args,
         config::{Factory as _, Provider as _},
         test::{
-            Test, Tests,
             patch::{Patch as RunnerPatch, Patches},
             spy::Spy,
+            Tests,
         },
     };
 
@@ -89,10 +89,11 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_config_default() {
-        let test = Test::new(&TESTS, "config_default")
+        let test = TESTS
+            .test("config_default")
             .expecting(vec!["listener::Config::default_listener(true)"])
             .with_patches(vec![patch0(listener::Config::default_listener, || {
-                Patch::default_listener(&TESTS, "config_default", true)
+                Patch::default_listener(TESTS.get("config_default").unwrap())
             })]);
         defer! {
             test.drop();
@@ -105,20 +106,21 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_config_override() {
-        let test = Test::new(&TESTS, "config_override")
+        let test = TESTS.test("config_override")
             .expecting(vec![
                 "listener::Config::default_listener(true)",
                 "Config::override_config_log(true): MockArgsProvider, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listener: Config { host: 7.7.7.7, port: 2323 } }",
                 "Config::override_config_listener(true): MockArgsProvider, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listener: Config { host: 7.7.7.7, port: 2323 } }"])
             .with_patches(vec![
             patch0(listener::Config::default_listener, || {
-                Patch::default_listener(&TESTS, "config_override", true)
+                Patch::default_listener(TESTS.get("config_override").unwrap())
             }),
             patch2(Config::override_config_log, |args, config| {
-                RunnerPatch::override_config_log(&TESTS, "config_override", true, args, config)
+                RunnerPatch::override_config_log(TESTS.get("config_override").unwrap(), args, config)
+
             }),
             patch2(Config::override_config_listener, |args, config| {
-                Patch::override_config_listener(&TESTS, "config_override", true, args, config)
+                Patch::override_config_listener(TESTS.get("config_override").unwrap(), args, config)
             }),
 
             ]);
@@ -137,11 +139,11 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_config_serialized() {
-        let test = Test::new(&TESTS, "config_serialized")
+        let test = TESTS.test("config_serialized")
             .expecting(vec![
                 "serde_yaml::to_value(true): Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listener: Config { host: 127.0.0.1, port: 8787 } }"])
             .with_patches(vec![patch1(serde_yaml::to_value::<Config>, |thing| {
-                RunnerPatch::serde_to_value(&TESTS, "config_serialized", true, Box::new(thing))
+                RunnerPatch::serde_to_value(TESTS.get("config_serialized").unwrap(), Box::new(thing))
             })]);
         defer! {
             test.drop();
@@ -157,10 +159,11 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_config_set_log() {
-        let test = Test::new(&TESTS, "config_set_log")
+        let test = TESTS
+            .test("config_set_log")
             .expecting(vec!["listener::Config::default_listener(true)"])
             .with_patches(vec![patch0(listener::Config::default_listener, || {
-                Patch::default_listener(&TESTS, "config_set_log", true)
+                Patch::default_listener(TESTS.get("config_set_log").unwrap())
             })]);
         defer! {
             test.drop();
@@ -175,7 +178,8 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_config_override_config_listener() {
-        let test = Test::new(&TESTS, "config_override_config_listener")
+        let test = TESTS
+            .test("config_override_config_listener")
             .expecting(vec![
                 "listener::Config::default_listener(true)",
                 "Args::as_any(true)",
@@ -183,13 +187,16 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(listener::Config::default_listener, || {
-                    Patch::default_listener(&TESTS, "config_override_config_listener", true)
+                    Patch::default_listener(TESTS.get("config_override_config_listener").unwrap())
                 }),
                 patch1(Args::as_any, |s| {
-                    Patch::args_as_any(&TESTS, "config_override_config_listener", true, s)
+                    Patch::args_as_any(TESTS.get("config_override_config_listener").unwrap(), s)
                 }),
                 patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(&TESTS, "config_override_config_listener", true, s)
+                    Patch::args_downcast_ref(
+                        TESTS.get("config_override_config_listener").unwrap(),
+                        s,
+                    )
                 }),
             ]);
         defer! {
