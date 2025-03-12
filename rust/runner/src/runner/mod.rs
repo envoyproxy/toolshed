@@ -1,5 +1,4 @@
-use crate::command::Command;
-use crate::{config, log, EmptyResult};
+use crate::{command::Command, config, handler::Handler, log, EmptyResult};
 use ::log::LevelFilter;
 use as_any::AsAny;
 use async_trait::async_trait;
@@ -12,17 +11,12 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-pub type CommandFn = Arc<
-    dyn Fn(&Box<dyn Runner>) -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> + Send + Sync,
->;
-pub type CommandsFn<'a> = HashMap<&'a str, CommandFn>;
-
 pub trait Factory<T, R>: Send + Sync
 where
-    T: Runner + Sized,
-    R: Command + Sized,
+    T: Runner<R> + Sized,
+    R: Handler + Sized,
 {
-    fn new(command: R) -> Self;
+    fn new(handler: R) -> Self;
 }
 
 pub fn ctrl_c() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send + 'static>> {
@@ -33,28 +27,24 @@ pub fn ctrl_c() -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send
 
 #[macro_export]
 macro_rules! runner {
-    ($command:ident, { $( $cmd_name:literal => $cmd_fn:expr ),* $(,)? }) => {
+    ($handler_type:ty, { $( $cmd_name:literal => $cmd_fn:expr ),* $(,)? }) => {
         // Requires:
         //
         // use as_any::Downcast;
         //
         // in the calling module
 
-        fn get_command(&self) -> &dyn toolshed_runner::command::Command {
-            &self.$command
-        }
-
-        fn commands(&self) -> toolshed_runner::runner::CommandsFn {
-            let mut commands: toolshed_runner::runner::CommandsFn = std::collections::HashMap::new();
+        fn commands(&self) -> toolshed_runner::runner::CommandsFn<$handler_type> {
+            let mut commands: toolshed_runner::runner::CommandsFn<$handler_type> = std::collections::HashMap::new();
             $(
-                commands.insert($cmd_name, std::sync::Arc::new(|s: &Box<dyn toolshed_runner::runner::Runner>| {
-                    let s = s.as_any().downcast_ref::<Self>().expect("Some err").clone();
-                    Box::pin(async move {$cmd_fn(&s).await})
+                commands.insert($cmd_name, std::sync::Arc::new(|s: &Box<dyn toolshed_runner::runner::Runner<$handler_type>>| {
+                    let s = s.as_any().downcast_ref::<Self>().expect("Downcast failed").clone();
+                    Box::pin(async move { $cmd_fn(&s).await })
                 }));
             )*
             commands
         }
-    };
+    }
 }
 
 pub struct CommandError {
@@ -75,17 +65,29 @@ impl fmt::Debug for CommandError {
 
 impl Error for CommandError {}
 
+pub type CommandFn<T> = Arc<
+    dyn Fn(&Box<dyn Runner<T>>) -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> + Send + Sync,
+>;
+pub type CommandsFn<'a, T> = HashMap<&'a str, CommandFn<T>>;
+
 #[async_trait]
-pub trait Runner: Any + AsAny + Send + Sync {
-    fn commands(&self) -> CommandsFn;
-    fn get_command(&self) -> &dyn Command;
+pub trait Runner<T: Handler>: Any + AsAny + Send + Sync {
+    fn commands(&self) -> CommandsFn<T>;
+    fn get_handler(&self) -> &T;
     async fn handle(&self) -> EmptyResult;
+
+    fn get_command<'a>(&'a self) -> Box<&'a dyn Command>
+    where
+        T: 'a,
+    {
+        self.get_handler().get_command()
+    }
 
     fn config(&self, key: &str) -> Option<config::Primitive> {
         self.get_command().get_config().get(key)
     }
 
-    fn resolve_command(&self) -> Result<CommandFn, CommandError> {
+    fn resolve_command(&self) -> Result<CommandFn<T>, CommandError> {
         let name = self.get_command().get_name();
         let commands = self.commands();
         match commands.get(name) {
@@ -115,7 +117,7 @@ pub trait Runner: Any + AsAny + Send + Sync {
 mod tests {
     use super::*;
     use crate::test::{
-        dummy::{Dummy, DummyCommand, DummyConfig, DummyRunner},
+        dummy::{Dummy, DummyCommand, DummyConfig, DummyHandler, DummyRunner},
         patch::{Patch, Patches},
         spy::Spy,
         Tests,
@@ -161,16 +163,17 @@ mod tests {
     async fn test_runner_commands() {
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command.clone()).unwrap();
+        let handler = Dummy::handler(command).unwrap();
+        let runner = Dummy::runner(handler).unwrap();
         let commands = runner.commands();
         match commands.get("default") {
-            Some(command) => command(&(Box::new(runner.clone()) as Box<dyn Runner>))
+            Some(command) => command(&(Box::new(runner.clone()) as Box<dyn Runner<DummyHandler>>))
                 .await
                 .unwrap(),
             None => panic!("expected default command"),
         }
         match commands.get("other") {
-            Some(command) => command(&(Box::new(runner.clone()) as Box<dyn Runner>))
+            Some(command) => command(&(Box::new(runner.clone()) as Box<dyn Runner<DummyHandler>>))
                 .await
                 .unwrap(),
             None => panic!("expected other command"),
@@ -189,7 +192,10 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
-                    Patch::runner_command(TESTS.get("runner_config").unwrap(), _self)
+                    Box::new(Patch::runner_command(
+                        TESTS.get("runner_config").unwrap(),
+                        _self,
+                    ))
                 }),
                 patch1(DummyCommand::get_config, |_self| {
                     Patch::command_config(TESTS.get("runner_config").unwrap(), _self)
@@ -204,7 +210,8 @@ mod tests {
 
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
+        let handler = Dummy::handler(command.clone()).unwrap();
+        let runner = Dummy::runner(handler).unwrap();
         let mut failure = "";
 
         if let Some(config::Primitive::String(result)) = runner.config("SOME.KEY.PATH") {
@@ -216,11 +223,23 @@ mod tests {
     }
 
     #[test]
+    #[serial(toolshed_lock)]
     fn test_runner_get_command() {
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command.clone()).unwrap();
+        let handler = Dummy::handler(command.clone()).unwrap();
+        let runner = Dummy::runner(handler).unwrap();
         assert_eq!(runner.get_command().get_name(), command.get_name());
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_runner_get_handler() {
+        let config = Dummy::config().unwrap();
+        let command = Dummy::command(config, "stars".to_string()).unwrap();
+        let handler = Dummy::handler(command.clone()).unwrap();
+        let runner = Dummy::runner(handler.clone()).unwrap();
+        assert_eq!(runner.get_handler(), &handler);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -233,7 +252,10 @@ mod tests {
                 "Runner::configured_command(true)",
             ])
             .with_patches(vec![patch1(DummyRunner::resolve_command, |_self| {
-                Patch::runner_resolve_command(TESTS.get("runner_handle").unwrap(), _self)
+                Patch::runner_resolve_command::<DummyHandler>(
+                    TESTS.get("runner_handle").unwrap(),
+                    _self,
+                )
             })]);
         defer! {
             test.drop()
@@ -241,7 +263,8 @@ mod tests {
 
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
+        let handler = Dummy::handler(command).unwrap();
+        let runner = Dummy::runner(handler).unwrap();
         assert!(runner.handle().await.is_ok());
     }
 
@@ -258,7 +281,10 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
-                    Patch::runner_command(TESTS.get("runner_resolve_command").unwrap(), _self)
+                    Box::new(Patch::runner_command(
+                        TESTS.get("runner_resolve_command").unwrap(),
+                        _self,
+                    ))
                 }),
                 patch1(DummyCommand::get_name, |_self| {
                     Patch::command_get_name(TESTS.get("runner_resolve_command").unwrap(), _self)
@@ -273,9 +299,10 @@ mod tests {
 
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
+        let handler = Dummy::handler(command).unwrap();
+        let runner = Dummy::runner(handler).unwrap();
         let command = runner.resolve_command().unwrap();
-        let _ = command(&(Box::new(runner.clone()) as Box<dyn Runner>)).await;
+        let _ = command(&(Box::new(runner.clone()) as Box<dyn Runner<DummyHandler>>)).await;
     }
 
     #[test]
@@ -290,10 +317,10 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
-                    Patch::runner_command(
+                    Box::new(Patch::runner_command(
                         TESTS.get("runner_resolve_command_bad_name").unwrap(),
                         _self,
-                    )
+                    ))
                 }),
                 patch1(DummyCommand::get_name, |_self| {
                     Patch::command_get_name_bad(
@@ -314,7 +341,8 @@ mod tests {
 
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
+        let handler = Dummy::handler(command).unwrap();
+        let runner = Dummy::runner(handler).unwrap();
         let result = runner.resolve_command();
         assert!(result.is_err());
         match result {
@@ -341,10 +369,10 @@ mod tests {
             .expecting(vec!["Runner::start_log(true)", "Runner::handle(true)"])
             .with_patches(vec![
                 patch1(DummyRunner::start_log, |_self| {
-                    Patch::runner_start_log(TESTS.get("runner_run").unwrap(), _self)
+                    Patch::runner_start_log::<DummyHandler>(TESTS.get("runner_run").unwrap(), _self)
                 }),
                 patch1(DummyRunner::handle, |_self| {
-                    Box::pin(Patch::runner_handle(
+                    Box::pin(Patch::runner_handle::<DummyHandler>(
                         TESTS.get("runner_run").unwrap(),
                         _self,
                     ))
@@ -356,7 +384,8 @@ mod tests {
 
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
+        let handler = Dummy::handler(command).unwrap();
+        let runner = Dummy::runner(handler).unwrap();
         assert!(runner.run().await.is_ok());
     }
 
@@ -373,7 +402,7 @@ mod tests {
             ])
             .with_patches(vec![
                 patch2(DummyRunner::config, |_self, key| {
-                    Patch::runner_config(
+                    Patch::runner_config::<DummyHandler>(
                         TESTS.get("runner_startlog").unwrap(),
                         Some(config::Primitive::String("warning".to_string())),
                         _self,
@@ -396,7 +425,8 @@ mod tests {
 
         let config = Dummy::config().unwrap();
         let command = Dummy::command(config, "stars".to_string()).unwrap();
-        let runner = Dummy::runner(command).unwrap();
+        let handler = Dummy::handler(command).unwrap();
+        let runner = Dummy::runner(handler).unwrap();
         assert!(runner.start_log().is_ok());
     }
 }

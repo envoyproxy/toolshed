@@ -1,4 +1,4 @@
-use crate::{mapping, response::Response};
+use crate::{command::Command, mapping, response::Response};
 use async_trait::async_trait;
 use axum::{
     body::Bytes,
@@ -6,10 +6,13 @@ use axum::{
     http::{HeaderMap, Method},
     response,
 };
+use serde::{Deserialize, Serialize};
+use toolshed_runner::{command, handler};
 
 #[async_trait]
-pub trait Handler {
+pub trait Provider: handler::Handler {
     async fn handle(
+        &self,
         method: Method,
         headers: HeaderMap,
         params: mapping::OrderedMap,
@@ -18,6 +21,7 @@ pub trait Handler {
     ) -> impl response::IntoResponse;
 
     async fn handle_path(
+        &self,
         method: Method,
         headers: HeaderMap,
         Query(params): Query<mapping::OrderedMap>,
@@ -26,6 +30,7 @@ pub trait Handler {
     ) -> impl response::IntoResponse;
 
     async fn handle_root(
+        &self,
         method: Method,
         headers: HeaderMap,
         Query(params): Query<mapping::OrderedMap>,
@@ -33,11 +38,29 @@ pub trait Handler {
     ) -> impl response::IntoResponse;
 }
 
-pub struct EchoHandler {}
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct EchoHandler {
+    pub command: Command,
+}
+
+impl EchoHandler {}
+
+impl handler::Factory<Command> for EchoHandler {
+    fn new(command: Command) -> Self {
+        EchoHandler { command }
+    }
+}
+
+impl handler::Handler for EchoHandler {
+    fn get_command(&self) -> Box<&dyn command::Command> {
+        Box::new(&self.command)
+    }
+}
 
 #[async_trait]
-impl Handler for EchoHandler {
+impl Provider for EchoHandler {
     async fn handle(
+        &self,
         method: Method,
         headers: HeaderMap,
         params: mapping::OrderedMap,
@@ -48,31 +71,34 @@ impl Handler for EchoHandler {
     }
 
     async fn handle_path(
+        &self,
         method: Method,
         headers: HeaderMap,
         Query(params): Query<mapping::OrderedMap>,
         Path(path): Path<String>,
         body: Bytes,
     ) -> response::Response {
-        Self::handle(method, headers, params, path, body).await
+        self.handle(method, headers, params, path, body).await
     }
 
     async fn handle_root(
+        &self,
         method: Method,
         headers: HeaderMap,
         Query(params): Query<mapping::OrderedMap>,
         body: Bytes,
     ) -> response::Response {
-        Self::handle(method, headers, params, "".to_string(), body).await
+        self.handle(method, headers, params, "".to_string(), body)
+            .await
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test::patch::Patch;
+    use crate::{config, test::patch::Patch};
     use bytes::Bytes;
-    use guerrilla::{patch1, patch5};
+    use guerrilla::{patch1, patch5, patch6};
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
@@ -122,10 +148,15 @@ mod tests {
         headers.insert("X-BAR", "baz".parse().unwrap());
         let params: mapping::OrderedMap = [("bar".to_string(), "foo".to_string())].as_ref().into();
         let body = Bytes::from("".to_string());
+        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
+        let name = "somecommand".to_string();
+        let command = Command { config, name };
+        let handler = EchoHandler { command };
+
         assert_eq!(
             format!(
                 "{:?}",
-                EchoHandler::handle(method, headers, params, "HOME".to_string(), body).await
+                handler.handle(method, headers, params, "HOME".to_string(), body).await
             ),
             "Response { status: 200, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }"
         )
@@ -137,11 +168,12 @@ mod tests {
         let test = TESTS.test("handle_root")
             .expecting(vec![
                 "EchoHandler::handle(true): PATCH {\"x-foo\": \"foo\", \"x-bar\": \"bar\"} OrderedMap({\"bar\": \"foo\"}) \"\" b\"DIFF\""])
-            .with_patches(vec![patch5(
+            .with_patches(vec![patch6(
                 EchoHandler::handle,
-                |method, headers, params, path, body| {
+                |_self, method, headers, params, path, body| {
                     Box::pin(Patch::handler_handle(
                         TESTS.get("handle_root").unwrap(),
+                        _self,
                         method,
                         headers,
                         params,
@@ -160,10 +192,16 @@ mod tests {
         headers.insert("X-BAR", "bar".parse().unwrap());
         let params: mapping::OrderedMap = [("bar".to_string(), "foo".to_string())].as_ref().into();
         let body = Bytes::from("DIFF".to_string());
+
+        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
+        let name = "somecommand".to_string();
+        let command = Command { config, name };
+        let handler = EchoHandler { command };
+
         assert_eq!(
             format!(
                 "{:?}",
-                EchoHandler::handle_root(method, headers, Query(params), body).await
+                handler.handle_root(method, headers, Query(params), body).await
             ),
             "Response { status: 200, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }"
         )
@@ -175,11 +213,12 @@ mod tests {
         let test = TESTS.test("handle_path")
             .expecting(vec![
                 "EchoHandler::handle(true): POST {\"x-foo\": \"bar\", \"x-bar\": \"foo\"} OrderedMap({\"bar\": \"foo\"}) \"NOWHERE\" b\"DIFF\""])
-            .with_patches(vec![patch5(
+            .with_patches(vec![patch6(
                 EchoHandler::handle,
-                |method, headers, params, path, body| {
+                |_self, method, headers, params, path, body| {
                     Box::pin(Patch::handler_handle(
                         TESTS.get("handle_path").unwrap(),
+                        _self,
                         method,
                         headers,
                         params,
@@ -198,10 +237,16 @@ mod tests {
         headers.insert("X-BAR", "foo".parse().unwrap());
         let params: mapping::OrderedMap = [("bar".to_string(), "foo".to_string())].as_ref().into();
         let body = Bytes::from("DIFF".to_string());
+
+        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
+        let name = "somecommand".to_string();
+        let command = Command { config, name };
+        let handler = EchoHandler { command };
+
         assert_eq!(
             format!(
                 "{:?}",
-                EchoHandler::handle_path(
+                handler.handle_path(
                     method,
                     headers,
                     Query(params),

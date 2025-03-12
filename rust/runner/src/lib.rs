@@ -1,6 +1,7 @@
 pub mod args;
 pub mod command;
 pub mod config;
+pub mod handler;
 pub mod log;
 pub mod runner;
 

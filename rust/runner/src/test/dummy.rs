@@ -84,7 +84,7 @@ impl command::Command for DummyCommand {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct DummyRunner {
-    pub command: DummyCommand,
+    pub handler: DummyHandler,
 }
 
 impl DummyRunner {
@@ -110,21 +110,41 @@ impl Dummy {
         Ok(DummyCommand { config, name })
     }
 
-    pub fn runner(command: DummyCommand) -> Result<DummyRunner, Box<dyn Error>> {
-        Ok(DummyRunner { command })
+    pub fn handler(command: DummyCommand) -> Result<DummyHandler, Box<dyn Error>> {
+        Ok(DummyHandler { command })
+    }
+
+    pub fn runner(handler: DummyHandler) -> Result<DummyRunner, Box<dyn Error>> {
+        Ok(DummyRunner { handler })
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct DummyHandler {
+    command: DummyCommand,
+}
+
+impl toolshed_runner::handler::Handler for DummyHandler {
+    fn get_command(&self) -> Box<&dyn command::Command> {
+        Box::new(&self.command)
     }
 }
 
 #[async_trait]
-impl runner::Runner for DummyRunner {
+impl runner::Runner<DummyHandler> for DummyRunner {
     runner!(
-    command,
+    DummyHandler,
     {
         "other" => Self::cmd_other,
         "default" => Self::cmd_default,
     });
 
+    fn get_handler(&self) -> &DummyHandler {
+        &self.handler
+    }
+
     async fn handle(&self) -> EmptyResult {
-        self.resolve_command().unwrap()(&(Box::new(self.clone()) as Box<dyn runner::Runner>)).await
+        let command = self.resolve_command().unwrap();
+        command(&(Box::new(self.clone()) as Box<dyn runner::Runner<DummyHandler>>)).await
     }
 }
