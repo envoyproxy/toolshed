@@ -289,6 +289,18 @@ impl Patch {
         Ok(file)
     }
 
+    pub fn handler_command<'a>(
+        test: Arc<Mutex<Test<'a>>>,
+        _self: &'a DummyHandler,
+    ) -> Box<&'a dyn command::Command> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Handler::get_command({:?})", !test.fails),
+        );
+        Box::new(&_self.command)
+    }
+
     pub fn log_filter<'a>(
         test: Arc<Mutex<Test>>,
         _self: &'a mut Builder,
