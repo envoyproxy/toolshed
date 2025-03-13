@@ -6,7 +6,6 @@ use crate::{mapping, response::Response, runner::Runner};
 use axum::body::Body;
 use axum::{
     body::Bytes,
-    extract::{Path, Query},
     http::{HeaderMap, Method},
     response,
 };
@@ -157,6 +156,42 @@ impl Patch {
         }
     }
 
+    pub fn handler_route_path<'a>(
+        test: Arc<Mutex<Test<'a>>>,
+        _self: &EchoHandler,
+    ) -> axum::routing::MethodRouter {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Handler::route_path({:?})", !test.fails),
+        );
+        any(|| async { "The future path" })
+    }
+
+    pub fn handler_route_root<'a>(
+        test: Arc<Mutex<Test<'a>>>,
+        _self: &EchoHandler,
+    ) -> axum::routing::MethodRouter {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Handler::route_root({:?})", !test.fails),
+        );
+        any(|| async { "The future root" })
+    }
+
+    pub fn handler_router(
+        test: Arc<Mutex<Test>>,
+        _self: &EchoHandler,
+    ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("EchoHandler::router({:?})", !test.fails),
+        );
+        Ok(Router::new().route("/nowhere", any(|| async { "The future" })))
+    }
+
     pub fn http_response_body(test: Arc<Mutex<Test>>, string: String) -> Body {
         let test = test.lock().unwrap();
         test.spy().push(
@@ -241,7 +276,7 @@ impl Patch {
         test.spy().push(
             &test.name,
             &format!(
-                "EchoHandler::handle({:?}): {:?} {:?} {:?} {:?} {:?}",
+                "Response::new({:?}): {:?} {:?} {:?} {:?} {:?}",
                 !test.fails, method, headers, params, path, body
             ),
         );
@@ -262,7 +297,7 @@ impl Patch {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
-            &format!("EchoHandler::handle({:?})", !test.fails,),
+            &format!("Response::to_json({:?})", !test.fails,),
         );
         let body = "{\"foo\": \"bar\"}";
         response::Response::builder()
@@ -314,50 +349,23 @@ impl Patch {
         })
     }
 
+    pub fn runner_get_handler<'a>(
+        test: Arc<Mutex<Test<'a>>>,
+        _self: &'a Runner,
+    ) -> &'a EchoHandler {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Runner::get_handler({:?})", !test.fails),
+        );
+        &_self.handler
+    }
+
     pub fn runner_factory(test: Arc<Mutex<Test>>, handler: EchoHandler) -> Runner {
         let test = test.lock().unwrap();
         test.spy()
             .push(&test.name, &format!("Runner::new({:?})", !test.fails));
         Runner { handler }
-    }
-
-    pub async fn runner_handle_path<'a>(
-        test: Arc<Mutex<Test<'a>>>,
-        _self: &EchoHandler,
-        _method: Method,
-        _headers: HeaderMap,
-        Query(_params): Query<mapping::OrderedMap>,
-        Path(path): Path<String>,
-        _body: Bytes,
-    ) -> response::Response {
-        let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Handler::handle_path({:?}): {}", !test.fails, path),
-        );
-        response::Response::builder()
-            .header("Content-Type", "application/json")
-            .body(Body::from("PATH HANDLED"))
-            .unwrap()
-    }
-
-    pub async fn runner_handle_root<'a>(
-        test: Arc<Mutex<Test<'a>>>,
-        _self: &EchoHandler,
-        _method: Method,
-        _headers: HeaderMap,
-        Query(_params): Query<mapping::OrderedMap>,
-        _body: Bytes,
-    ) -> response::Response {
-        let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Handler::handle_root({:?})", !test.fails),
-        );
-        response::Response::builder()
-            .header("Content-Type", "application/json")
-            .body(Body::from("ROOT HANDLED"))
-            .unwrap()
     }
 
     pub fn runner_listener_host(
@@ -382,16 +390,6 @@ impl Patch {
             &format!("Runner::listener_port({:?})", !test.fails),
         );
         Ok(7777)
-    }
-
-    pub fn runner_router(
-        test: Arc<Mutex<Test>>,
-        _self: &Runner,
-    ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
-        let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Runner::router({:?})", !test.fails));
-        Ok(Router::new().route("/nowhere", any(|| async { "The future" })))
     }
 
     pub async fn runner_run<'a>(test: Arc<Mutex<Test<'a>>>, _self: &Runner) -> EmptyResult {
