@@ -9,6 +9,7 @@ use std::fmt;
 
 #[derive(Serialize, Deserialize)]
 pub struct Response {
+    pub hostname: String,
     pub method: String,
     pub headers: mapping::OrderedMap,
     pub query_params: mapping::OrderedMap,
@@ -18,6 +19,7 @@ pub struct Response {
 
 impl Response {
     pub fn new(
+        hostname: String,
         method: Method,
         headers: HeaderMap,
         params: mapping::OrderedMap,
@@ -29,6 +31,7 @@ impl Response {
             .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("").to_string()))
             .collect();
         Response {
+            hostname,
             method: method.to_string(),
             headers,
             query_params: params,
@@ -100,6 +103,7 @@ mod tests {
         let params: mapping::OrderedMap = [("bar".to_string(), "foo".to_string())].as_ref().into();
         let body = Bytes::from("BOODY".to_string());
         let response = Response::new(
+            "HOSTNAME23".to_string(),
             method,
             headers.clone(),
             params.clone(),
@@ -127,7 +131,7 @@ mod tests {
                 "Response::builder(true)",
                 concat!(
                     "fmt::Display(true): Response: ",
-                    "{\n  \"method\": \"TRACE\",\n  \"headers\": {\n    \"x-up\": \"baz\",\n    \"x-down\": \"baz\",\n    \"x-forward\": \"baz\",\n    \"x-back\": \"baz\"\n  },\n  ",
+                    "{\n  \"hostname\": \"HOSTNAME23\",\n  \"method\": \"TRACE\",\n  \"headers\": {\n    \"x-up\": \"baz\",\n    \"x-down\": \"baz\",\n    \"x-forward\": \"baz\",\n    \"x-back\": \"baz\"\n  },\n  ",
                     "\"query_params\": {\n    \"a0\": \"a\",\n    \"b0\": \"b\",\n    \"c0\": \"c\",\n    \"a1\": \"a\",\n    \"b1\": \"b\",\n    \"c1\": \"c\"\n  },\n  ",
                     "\"body\": \"BOODY\",\n  \"path\": \"BACKWARDS\"\n}"),
                 "Body::from(true): SELF BODY\n"
@@ -168,7 +172,9 @@ mod tests {
         .as_ref()
         .into();
         let body = Bytes::from("BOODY".to_string());
+        let hostname = "HOSTNAME23".to_string();
         let response = Response::new(
+            hostname,
             method,
             headers.clone(),
             params.clone(),
@@ -210,7 +216,9 @@ mod tests {
         headers.insert("X-DOWN", "baz".parse().unwrap());
         let params: mapping::OrderedMap = [("bar".to_string(), "foo".to_string())].as_ref().into();
         let body = Bytes::from("BOODY".to_string());
+        let hostname = "HOSTNAME23".to_string();
         let response = Response::new(
+            hostname,
             method,
             headers.clone(),
             params.clone(),
@@ -248,7 +256,9 @@ mod tests {
         headers.insert("X-DOWN", "baz".parse().unwrap());
         let params: mapping::OrderedMap = [("bar".to_string(), "foo".to_string())].as_ref().into();
         let body = Bytes::from("BOODY".to_string());
+        let hostname = "HOSTNAME23".to_string();
         let response = Response::new(
+            hostname,
             method,
             headers.clone(),
             params.clone(),

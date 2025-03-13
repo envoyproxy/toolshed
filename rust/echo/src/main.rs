@@ -15,6 +15,7 @@ pub mod test;
 use std::process;
 
 const DEFAULT_ADDRESS: &str = "127.0.0.1";
+const DEFAULT_HOSTNAME: &str = "echo";
 const DEFAULT_PORT: u16 = 8787;
 
 #[allow(dead_code)]

@@ -144,6 +144,15 @@ impl Patch {
             .push(&test.name, &format!("ctrl_c({:?})", !test.fails));
     }
 
+    pub fn default_hostname(test: Arc<Mutex<Test>>) -> String {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Config::default_hostname({:?})", !test.fails),
+        );
+        "DEFAULT HOSTNAME".to_string()
+    }
+
     pub fn default_listener(test: Arc<Mutex<Test>>) -> listener::Config {
         let test = test.lock().unwrap();
         test.spy().push(
@@ -154,6 +163,18 @@ impl Patch {
             host: "7.7.7.7".to_string().parse().unwrap(),
             port: 2323,
         }
+    }
+
+    pub fn env_var(test: Arc<Mutex<Test>>, name: &str) -> Result<String, std::env::VarError> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("std::env::var({:?}): {:?}", !test.fails, name),
+        );
+        if test.fails {
+            return Err(std::env::VarError::NotUnicode("Not unicode".into()));
+        }
+        Ok("SOMEVAR".to_string())
     }
 
     pub fn handler_route_path<'a>(
@@ -214,6 +235,20 @@ impl Patch {
         write!(f, "SELF BODY")
     }
 
+    pub fn handler_config(
+        test: Arc<Mutex<Test>>,
+        returns: Option<config::Primitive>,
+        _self: &EchoHandler,
+        key: &str,
+    ) -> Option<config::Primitive> {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!("Handler::config({:?}): {:?}", !test.fails, key),
+        );
+        returns
+    }
+
     pub async fn handler_handle<'a>(
         test: Arc<Mutex<Test<'a>>>,
         _self: &EchoHandler,
@@ -254,6 +289,22 @@ impl Patch {
         Ok(())
     }
 
+    pub fn override_config_hostname<T: config::Provider + serde::Deserialize<'static>>(
+        test: Arc<Mutex<Test>>,
+        args: config::ArcSafeArgs,
+        config: &mut Box<T>,
+    ) -> EmptyResult {
+        let test = test.lock().unwrap();
+        test.spy().push(
+            &test.name,
+            &format!(
+                "Config::override_config_hostname({:?}): {:?}, {:?}",
+                !test.fails, args, config
+            ),
+        );
+        Ok(())
+    }
+
     pub fn response_builder(test: Arc<Mutex<Test>>) -> axum::http::response::Builder {
         let test = test.lock().unwrap();
         test.spy()
@@ -266,6 +317,7 @@ impl Patch {
 
     pub fn response_new<'a>(
         test: Arc<Mutex<Test>>,
+        hostname: String,
         method: Method,
         headers: HeaderMap,
         params: mapping::OrderedMap,
@@ -276,12 +328,13 @@ impl Patch {
         test.spy().push(
             &test.name,
             &format!(
-                "Response::new({:?}): {:?} {:?} {:?} {:?} {:?}",
-                !test.fails, method, headers, params, path, body
+                "Response::new({:?}): {:?} {:?} {:?} {:?} {:?} {:?}",
+                !test.fails, hostname, method, headers, params, path, body
             ),
         );
         let body_str = String::from_utf8_lossy(&body);
         Response {
+            hostname,
             method: method.to_string(),
             headers: headers
                 .iter()
