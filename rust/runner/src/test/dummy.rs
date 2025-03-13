@@ -121,7 +121,7 @@ impl Dummy {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct DummyHandler {
-    command: DummyCommand,
+    pub command: DummyCommand,
 }
 
 impl toolshed_runner::handler::Handler for DummyHandler {
