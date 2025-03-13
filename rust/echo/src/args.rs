@@ -8,6 +8,8 @@ pub struct Args {
     pub base: args::BaseArgs,
     #[arg(long)]
     pub host: Option<String>,
+    #[arg(long)]
+    pub hostname: Option<String>,
     #[arg(short, long)]
     pub port: Option<u16>,
 }
@@ -35,5 +37,8 @@ mod tests {
         assert!(args.config() == *DEFAULT_CONFIG_PATH.to_string());
         assert!(args.base.log_level.is_none());
         assert!(args.log_level().is_none());
+        assert!(args.host.is_none());
+        assert!(args.hostname.is_none());
+        assert!(args.port.is_none());
     }
 }

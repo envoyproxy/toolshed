@@ -8,6 +8,7 @@ pub mod response;
 pub mod runner;
 
 const DEFAULT_ADDRESS: &str = "127.0.0.1";
+const DEFAULT_HOSTNAME: &str = "echo";
 const DEFAULT_PORT: u16 = 8787;
 
 #[cfg(feature = "test")]
