@@ -14,7 +14,7 @@ use std::sync::Arc;
 pub trait Factory<T, R>: Send + Sync
 where
     T: Runner<R> + Sized,
-    R: Handler + Sized,
+    R: Handler + Sized + 'static,
 {
     fn new(handler: R) -> Self;
 }
@@ -34,10 +34,14 @@ macro_rules! runner {
         //
         // in the calling module
 
+        fn as_arc(&self) -> std::sync::Arc<dyn toolshed_runner::runner::Runner<$handler_type>> {
+            std::sync::Arc::new(self.clone())
+        }
+
         fn commands(&self) -> toolshed_runner::runner::CommandsFn<$handler_type> {
             let mut commands: toolshed_runner::runner::CommandsFn<$handler_type> = std::collections::HashMap::new();
             $(
-                commands.insert($cmd_name, std::sync::Arc::new(|s: &Box<dyn toolshed_runner::runner::Runner<$handler_type>>| {
+                commands.insert($cmd_name, std::sync::Arc::new(|s: &std::sync::Arc<dyn toolshed_runner::runner::Runner<$handler_type>>| {
                     let s = s.as_any().downcast_ref::<Self>().expect("Downcast failed").clone();
                     Box::pin(async move { $cmd_fn(&s).await })
                 }));
@@ -66,20 +70,18 @@ impl fmt::Debug for CommandError {
 impl Error for CommandError {}
 
 pub type CommandFn<T> = Arc<
-    dyn Fn(&Box<dyn Runner<T>>) -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> + Send + Sync,
+    dyn Fn(&Arc<dyn Runner<T>>) -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> + Send + Sync,
 >;
+
 pub type CommandsFn<'a, T> = HashMap<&'a str, CommandFn<T>>;
 
 #[async_trait]
-pub trait Runner<T: Handler>: Any + AsAny + Send + Sync {
+pub trait Runner<T: Handler + 'static>: Any + AsAny + Send + Sync {
+    fn as_arc(&self) -> Arc<dyn Runner<T>>;
     fn commands(&self) -> CommandsFn<T>;
     fn get_handler(&self) -> &T;
-    async fn handle(&self) -> EmptyResult;
 
-    fn get_command<'a>(&'a self) -> Box<&'a dyn Command>
-    where
-        T: 'a,
-    {
+    fn get_command(&self) -> Box<&dyn Command> {
         self.get_handler().get_command()
     }
 
@@ -87,10 +89,13 @@ pub trait Runner<T: Handler>: Any + AsAny + Send + Sync {
         self.get_command().get_config().get(key)
     }
 
+    async fn handle(&self) -> EmptyResult {
+        let command = self.resolve_command()?;
+        command(&self.as_arc()).await
+    }
+
     fn resolve_command(&self) -> Result<CommandFn<T>, CommandError> {
-        let name = self.get_command().get_name();
-        let commands = self.commands();
-        match commands.get(name) {
+        match self.commands().get(self.get_command().get_name()) {
             Some(command) => Ok(command.clone()),
             None => Err(CommandError {
                 message: "No such command".to_string(),
@@ -167,13 +172,13 @@ mod tests {
         let runner = Dummy::runner(handler).unwrap();
         let commands = runner.commands();
         match commands.get("default") {
-            Some(command) => command(&(Box::new(runner.clone()) as Box<dyn Runner<DummyHandler>>))
+            Some(command) => command(&(Arc::new(runner.clone()) as Arc<dyn Runner<DummyHandler>>))
                 .await
                 .unwrap(),
             None => panic!("expected default command"),
         }
         match commands.get("other") {
-            Some(command) => command(&(Box::new(runner.clone()) as Box<dyn Runner<DummyHandler>>))
+            Some(command) => command(&(Arc::new(runner.clone()) as Arc<dyn Runner<DummyHandler>>))
                 .await
                 .unwrap(),
             None => panic!("expected other command"),
@@ -274,9 +279,9 @@ mod tests {
         let test = TESTS
             .test("runner_resolve_command")
             .expecting(vec![
+                "Runner::commands(true)",
                 "Runner::get_command(true)",
                 "Command::get_name(true)",
-                "Runner::commands(true)",
                 "Runner::configured_command(true)",
             ])
             .with_patches(vec![
@@ -302,7 +307,7 @@ mod tests {
         let handler = Dummy::handler(command).unwrap();
         let runner = Dummy::runner(handler).unwrap();
         let command = runner.resolve_command().unwrap();
-        let _ = command(&(Box::new(runner.clone()) as Box<dyn Runner<DummyHandler>>)).await;
+        let _ = command(&(Arc::new(runner.clone()) as Arc<dyn Runner<DummyHandler>>)).await;
     }
 
     #[test]
@@ -311,9 +316,9 @@ mod tests {
         let test = TESTS
             .test("runner_resolve_command_bad_name")
             .expecting(vec![
+                "Runner::commands(true)",
                 "Runner::get_command(true)",
                 "Command::get_name(true)",
-                "Runner::commands(true)",
             ])
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {

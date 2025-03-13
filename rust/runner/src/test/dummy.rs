@@ -142,9 +142,4 @@ impl runner::Runner<DummyHandler> for DummyRunner {
     fn get_handler(&self) -> &DummyHandler {
         &self.handler
     }
-
-    async fn handle(&self) -> EmptyResult {
-        let command = self.resolve_command().unwrap();
-        command(&(Box::new(self.clone()) as Box<dyn runner::Runner<DummyHandler>>)).await
-    }
 }

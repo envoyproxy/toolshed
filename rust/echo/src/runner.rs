@@ -6,10 +6,9 @@ use crate::{
     listener::{Endpoint, Listener},
 };
 use async_trait::async_trait;
-use axum::{routing::any, Router};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
-use std::{net::IpAddr, sync::Arc};
+use std::net::IpAddr;
 use toolshed_runner::{
     command, config, config::Factory, handler as runner_handler, runner, runner::Runner as _,
     EmptyResult,
@@ -22,32 +21,6 @@ pub struct Runner {
 
 #[async_trait]
 trait EchoRunner: toolshed_runner::runner::Runner<handler::EchoHandler> {
-    fn router(&self) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
-        let handler = Arc::new(self.get_handler().clone());
-
-        Ok(Router::new()
-            .route(
-                "/",
-                any({
-                    let handler = handler.clone();
-                    move |method, headers, params, body| async move {
-                        handler.handle_root(method, headers, params, body).await
-                    }
-                }),
-            )
-            .route(
-                "/{*path}",
-                any({
-                    let handler = handler.clone();
-                    move |method, headers, params, path, body| async move {
-                        handler
-                            .handle_path(method, headers, params, path, body)
-                            .await
-                    }
-                }),
-            ))
-    }
-
     async fn cmd_start(&self) -> EmptyResult {
         self.start(self.endpoint()?).await?;
         Ok(())
@@ -57,9 +30,11 @@ trait EchoRunner: toolshed_runner::runner::Runner<handler::EchoHandler> {
         &self,
         endpoint: Endpoint,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        Ok(axum::serve(endpoint.bind().await, self.router()?)
-            .with_graceful_shutdown(runner::ctrl_c())
-            .await?)
+        Ok(
+            axum::serve(endpoint.bind().await, self.get_handler().router()?)
+                .with_graceful_shutdown(runner::ctrl_c())
+                .await?,
+        )
     }
 
     fn endpoint(&self) -> Result<Endpoint, Box<dyn std::error::Error + Send + Sync>>;
@@ -114,11 +89,6 @@ impl runner::Runner<handler::EchoHandler> for Runner {
     fn get_handler(&self) -> &handler::EchoHandler {
         &self.handler
     }
-
-    async fn handle(&self) -> EmptyResult {
-        let command = self.resolve_command().unwrap();
-        command(&(Box::new(self.clone()) as Box<dyn runner::Runner<handler::EchoHandler>>)).await
-    }
 }
 
 pub async fn main() {
@@ -145,22 +115,20 @@ mod tests {
     use super::*;
     use crate::listener;
     use crate::test::patch::Patch;
-    use axum::Router;
-    use bytes::Bytes;
-    use guerrilla::{patch0, patch1, patch2, patch5, patch6};
-    use http_body_util::Empty;
-    use hyper::Request;
+    use guerrilla::{patch0, patch1, patch2};
     use mockall::mock;
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
-    use std::net::{IpAddr, SocketAddr};
+    use std::{
+        net::{IpAddr, SocketAddr},
+        sync::Arc,
+    };
     use toolshed_runner::test::{
         patch::{Patch as RunnerPatch, Patches},
         spy::Spy,
         Tests,
     };
-    use tower::ServiceExt as _;
 
     static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
     static SPY: Lazy<Spy> = Lazy::new(Spy::new);
@@ -174,22 +142,6 @@ mod tests {
             async fn bind(&self) -> tokio::net::TcpListener;
             fn socket_address(&self) -> SocketAddr;
         }
-    }
-
-    async fn _test_request(
-        service: axum::routing::RouterIntoService<http_body_util::Empty<bytes::Bytes>>,
-        path: &str,
-        expected: &str,
-    ) {
-        let request = Request::builder()
-            .uri(path)
-            .body(Empty::<Bytes>::new())
-            .unwrap();
-        let response = service.oneshot(request).await.unwrap();
-        let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
-            .await
-            .unwrap();
-        assert_eq!(String::from_utf8_lossy(&body_bytes), expected.to_string());
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -360,6 +312,19 @@ mod tests {
         let endpoint = runner.endpoint().unwrap();
         assert_eq!(endpoint.host.to_string(), "7.7.7.7");
         assert_eq!(endpoint.port, 7777);
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_runner_get_handler() {
+        let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
+        let name = "somecommand".to_string();
+        let command = Command { config, name };
+        let handler = handler::EchoHandler { command };
+        let runner = Runner {
+            handler: handler.clone(),
+        };
+        assert_eq!(runner.get_handler(), &handler);
     }
 
     #[test]
@@ -587,90 +552,34 @@ mod tests {
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
-    async fn test_runner_router() {
-        let test = TESTS
-            .test("runner_router")
-            .expecting(vec![
-                "Router::new(true)",
-                "Handler::handle_root(true)",
-                "Handler::handle_path(true): some/path",
-            ])
-            .with_patches(vec![
-                patch0(Router::new, || {
-                    let test = TESTS.get("runner_router").unwrap();
-                    test.lock().unwrap().patch_index(0);
-                    Patch::router_new(test)
-                }),
-                patch5(
-                    handler::EchoHandler::handle_root,
-                    |_self, method, headers, params, body| {
-                        Box::pin(Patch::runner_handle_root(
-                            TESTS.get("runner_router").unwrap(),
-                            _self,
-                            method,
-                            headers,
-                            params,
-                            body,
-                        ))
-                    },
-                ),
-                patch6(
-                    handler::EchoHandler::handle_path,
-                    |_self, method, headers, params, path, body| {
-                        Box::pin(Patch::runner_handle_path(
-                            TESTS.get("runner_router").unwrap(),
-                            _self,
-                            method,
-                            headers,
-                            params,
-                            path,
-                            body,
-                        ))
-                    },
-                ),
-            ]);
-        defer! {
-            test.drop();
-        }
-
-        let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
-        let name = "somecommand".to_string();
-        let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
-        let runner = Runner { handler };
-        let router = runner.router().unwrap();
-        let service = router.into_service();
-        _test_request(service.clone(), "/nowhere", "The future").await;
-        _test_request(service.clone(), "/", "ROOT HANDLED").await;
-        _test_request(service, "/some/path", "PATH HANDLED").await;
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    #[serial(toolshed_lock)]
     async fn test_runner_start() {
         let test = TESTS
             .test("runner_start")
             .expecting(vec![
-                "Runner::router(true)",
+                "Runner::get_handler(true)",
+                "EchoHandler::router(true)",
                 "axum::serve(true)",
                 "axum::serve::Serve::with_graceful_shutdown(true)",
                 "ctrl_c(true)",
             ])
             .with_patches(vec![
-                patch1(Runner::router, |_self| {
-                    Patch::runner_router(TESTS.get("runner_start").unwrap(), _self)
+                patch1(Runner::get_handler, |_self| {
+                    Patch::runner_get_handler(TESTS.get("runner_start").unwrap(), _self)
+                }),
+                patch1(handler::EchoHandler::router, |_self| {
+                    Patch::handler_router(TESTS.get("runner_start").unwrap(), _self)
                 }),
                 patch0(runner::ctrl_c, || {
                     Box::pin(Patch::ctrl_c(TESTS.get("runner_start").unwrap()))
                 }),
                 patch2(axum::serve, |listener, router| {
                     let test = TESTS.get("runner_start").unwrap();
-                    test.lock().unwrap().patch_index(2);
+                    test.lock().unwrap().patch_index(3);
                     Patch::axum_serve(test, listener, router)
                 }),
                 patch2(axum::serve::Serve::with_graceful_shutdown, |_self, fun| {
                     let test = TESTS.get("runner_start").unwrap();
-                    test.lock().unwrap().patch_index(3);
+                    test.lock().unwrap().patch_index(4);
                     Patch::axum_serve_with_graceful_shutdown(test, _self, Box::pin(fun))
                 }),
             ]);
@@ -766,7 +675,7 @@ mod tests {
         let commands = runner.commands();
         match commands.get("start") {
             Some(command) => command(
-                &(Box::new(runner.clone()) as Box<dyn runner::Runner<handler::EchoHandler>>),
+                &(Arc::new(runner.clone()) as Arc<dyn runner::Runner<handler::EchoHandler>>),
             )
             .await
             .unwrap(),
