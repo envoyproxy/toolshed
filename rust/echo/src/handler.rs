@@ -28,33 +28,32 @@ where
 
     fn route_path(&self) -> axum::routing::MethodRouter {
         let handler = self.clone();
-        any(
-            move |method: Method,
-                  headers: HeaderMap,
-                  Query(params): Query<mapping::OrderedMap>,
-                  Path(path): Path<String>,
-                  body: Bytes| {
-                let handler = handler.clone();
-                async move { handler.handle(method, headers, params, path, body).await }
-            },
-        )
+        let closure = move |method: Method,
+                            headers: HeaderMap,
+                            Query(params): Query<mapping::OrderedMap>,
+                            Path(path): Path<String>,
+                            body: Bytes| {
+            let handler = handler.clone();
+            async move { handler.handle(method, headers, params, path, body).await }
+        };
+        any(closure)
     }
 
+    #[inline(never)]
     fn route_root(&self) -> axum::routing::MethodRouter {
         let handler = self.clone();
-        any(
-            move |method: Method,
-                  headers: HeaderMap,
-                  Query(params): Query<mapping::OrderedMap>,
-                  body: Bytes| {
-                let handler = handler.clone();
-                async move {
-                    handler
-                        .handle(method, headers, params, "".to_string(), body)
-                        .await
-                }
-            },
-        )
+        let closure = move |method: Method,
+                            headers: HeaderMap,
+                            Query(params): Query<mapping::OrderedMap>,
+                            body: Bytes| {
+            let handler = handler.clone();
+            async move {
+                handler
+                    .handle(method, headers, params, "".to_string(), body)
+                    .await
+            }
+        };
+        any(closure)
     }
 }
 
