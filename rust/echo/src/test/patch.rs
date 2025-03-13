@@ -1,4 +1,7 @@
-use crate::{args::Args, command::Command, config::Config, listener, listener::Endpoint};
+use crate::{
+    args::Args, command::Command, config::Config, handler::EchoHandler, listener,
+    listener::Endpoint,
+};
 use crate::{mapping, response::Response, runner::Runner};
 use axum::body::Body;
 use axum::{
@@ -178,6 +181,7 @@ impl Patch {
 
     pub async fn handler_handle<'a>(
         test: Arc<Mutex<Test<'a>>>,
+        _self: &EchoHandler,
         method: Method,
         headers: HeaderMap,
         params: mapping::OrderedMap,
@@ -310,15 +314,16 @@ impl Patch {
         })
     }
 
-    pub fn runner_factory(test: Arc<Mutex<Test>>, command: Command) -> Runner {
+    pub fn runner_factory(test: Arc<Mutex<Test>>, handler: EchoHandler) -> Runner {
         let test = test.lock().unwrap();
         test.spy()
             .push(&test.name, &format!("Runner::new({:?})", !test.fails));
-        Runner { command }
+        Runner { handler }
     }
 
     pub async fn runner_handle_path<'a>(
         test: Arc<Mutex<Test<'a>>>,
+        _self: &EchoHandler,
         _method: Method,
         _headers: HeaderMap,
         Query(_params): Query<mapping::OrderedMap>,
@@ -338,6 +343,7 @@ impl Patch {
 
     pub async fn runner_handle_root<'a>(
         test: Arc<Mutex<Test<'a>>>,
+        _self: &EchoHandler,
         _method: Method,
         _headers: HeaderMap,
         Query(_params): Query<mapping::OrderedMap>,

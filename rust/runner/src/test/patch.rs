@@ -1,8 +1,11 @@
 use crate::{
-    command, config, log, runner,
+    command, config,
+    handler::Handler,
+    log,
+    runner::{self, Runner},
     test::{
         data::TEST_YAML0,
-        dummy::{DummyCommand, DummyConfig, DummyRunner, Loggable},
+        dummy::{DummyCommand, DummyConfig, DummyHandler, DummyRunner, Loggable},
         spy::Spy,
         Test,
     },
@@ -405,13 +408,13 @@ impl Patch {
             &test.name,
             &format!("Runner::get_command({:?})", !test.fails),
         );
-        &_self.command
+        *_self.get_handler().get_command()
     }
 
     pub fn runner_commands<'a>(
         test: Arc<Mutex<Test<'a>>>,
         _self: &'a DummyRunner,
-    ) -> runner::CommandsFn<'a> {
+    ) -> runner::CommandsFn<'a, DummyHandler> {
         let testid: String;
         let fails: bool;
         let spy_arc: Arc<Spy>;
@@ -424,7 +427,7 @@ impl Patch {
                 .push(&testid, &format!("Runner::commands({:?})", !test.fails));
         }
 
-        let command: runner::CommandFn = Arc::new(move |_runner| {
+        let command: runner::CommandFn<DummyHandler> = Arc::new(move |_runner| {
             let testid: String = testid.clone();
             let spy = spy_arc.clone();
             Box::pin(async move {
@@ -436,15 +439,15 @@ impl Patch {
             })
         });
 
-        let mut commands: runner::CommandsFn = HashMap::new();
+        let mut commands: runner::CommandsFn<DummyHandler> = HashMap::new();
         commands.insert("COMMAND_NAME", command.clone());
         commands
     }
 
-    pub fn runner_config(
+    pub fn runner_config<T: Handler>(
         test: Arc<Mutex<Test>>,
         returns: Option<config::Primitive>,
-        _self: &dyn runner::Runner,
+        _self: &dyn runner::Runner<T>,
         key: &str,
     ) -> Option<config::Primitive> {
         let test = test.lock().unwrap();
@@ -455,9 +458,9 @@ impl Patch {
         returns
     }
 
-    pub async fn runner_handle<'a>(
+    pub async fn runner_handle<'a, T: Handler>(
         test: Arc<Mutex<Test<'a>>>,
-        _self: &'a dyn runner::Runner,
+        _self: &'a dyn runner::Runner<T>,
     ) -> EmptyResult {
         let test = test.lock().unwrap();
         test.spy()
@@ -465,10 +468,10 @@ impl Patch {
         Ok(())
     }
 
-    pub fn runner_resolve_command(
+    pub fn runner_resolve_command<T: Handler>(
         test: Arc<Mutex<Test>>,
-        _self: &dyn runner::Runner,
-    ) -> Result<runner::CommandFn, runner::CommandError> {
+        _self: &dyn runner::Runner<T>,
+    ) -> Result<runner::CommandFn<T>, runner::CommandError> {
         let testid: String;
         let fails: bool;
         let spy_arc: Arc<Spy>;
@@ -497,9 +500,9 @@ impl Patch {
         ))
     }
 
-    pub fn runner_start_log<'a>(
+    pub fn runner_start_log<'a, T: Handler>(
         test: Arc<Mutex<Test<'a>>>,
-        _self: &'a dyn runner::Runner,
+        _self: &'a dyn runner::Runner<T>,
     ) -> EmptyResult {
         let test = test.lock().unwrap();
         test.spy()
