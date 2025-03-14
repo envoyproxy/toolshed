@@ -1,11 +1,11 @@
 use clap::Parser;
-use toolshed_runner::args;
+use toolshed_runner as runner;
 
 #[derive(Clone, Debug, Parser, PartialEq)]
 #[command(version = "1.0", about = "HTTP echo")]
 pub struct Args {
     #[command(flatten)]
-    pub base: args::BaseArgs,
+    pub base: runner::args::BaseArgs,
     #[arg(long)]
     pub host: Option<String>,
     #[arg(long)]
@@ -14,7 +14,7 @@ pub struct Args {
     pub port: Option<u16>,
 }
 
-impl args::Provider for Args {
+impl runner::args::Provider for Args {
     fn config(&self) -> String {
         self.base.config.clone()
     }

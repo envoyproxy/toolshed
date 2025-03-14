@@ -2,12 +2,12 @@ use crate::{args::Args, listener, DEFAULT_HOSTNAME};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
-use toolshed_runner::{config, log, EmptyResult};
+use toolshed_runner as runner;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Config {
     #[serde(flatten)]
-    pub base: config::BaseConfig,
+    pub base: runner::config::BaseConfig,
     #[serde(default = "listener::Config::default_listener")]
     pub listener: listener::Config,
     #[serde(default = "Config::default_hostname")]
@@ -15,11 +15,11 @@ pub struct Config {
 }
 
 #[async_trait]
-impl config::Factory<Config> for Config {
+impl runner::config::Factory<Config> for Config {
     async fn override_config(
-        args: config::ArcSafeArgs,
+        args: runner::config::ArcSafeArgs,
         mut config: Box<Config>,
-    ) -> Result<Box<Config>, config::SafeError> {
+    ) -> Result<Box<Config>, runner::config::SafeError> {
         Self::override_config_log(args.clone(), &mut config)?;
         Self::override_config_listener(args.clone(), &mut config)?;
         Self::override_config_hostname(args, &mut config)?;
@@ -27,12 +27,12 @@ impl config::Factory<Config> for Config {
     }
 }
 
-impl config::Provider for Config {
+impl runner::config::Provider for Config {
     fn serialized(&self) -> Option<Value> {
         serde_yaml::to_value(self.clone()).ok()
     }
 
-    fn set_log(&mut self, level: log::Level) -> EmptyResult {
+    fn set_log(&mut self, level: runner::log::Level) -> runner::EmptyResult {
         if let Some(log) = self.base.log.as_mut() {
             log.level = level;
         }
@@ -45,7 +45,10 @@ impl Config {
         DEFAULT_HOSTNAME.to_string()
     }
 
-    fn override_config_hostname(args: config::ArcSafeArgs, config: &mut Box<Self>) -> EmptyResult {
+    fn override_config_hostname(
+        args: runner::config::ArcSafeArgs,
+        config: &mut Box<Self>,
+    ) -> runner::EmptyResult {
         if let Some(args) = args.as_any().downcast_ref::<Args>() {
             if let Some(hostname) = args
                 .hostname
@@ -58,7 +61,10 @@ impl Config {
         Ok(())
     }
 
-    fn override_config_listener(args: config::ArcSafeArgs, config: &mut Box<Self>) -> EmptyResult {
+    fn override_config_listener(
+        args: runner::config::ArcSafeArgs,
+        config: &mut Box<Self>,
+    ) -> runner::EmptyResult {
         if let Some(args) = args.as_any().downcast_ref::<Args>() {
             if let Some(host) = args.host.clone() {
                 config.listener.host = host.parse()?;
@@ -83,7 +89,6 @@ mod tests {
     use serial_test::serial;
     use std::{any::Any, net::IpAddr, sync::Arc};
     use toolshed_runner::{
-        args,
         config::Provider as _,
         test::{
             patch::{Patch as RunnerPatch, Patches},
@@ -100,7 +105,7 @@ mod tests {
         #[derive(Clone, Debug, Parser, PartialEq)]
         pub ArgsProvider {}
         #[async_trait]
-        impl args::Provider for ArgsProvider {
+        impl runner::args::Provider for ArgsProvider {
             fn config(&self) -> String;
             fn log_level(&self) -> Option<String>;
         }
@@ -120,7 +125,10 @@ mod tests {
         }
 
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
-        assert_eq!(config.base.log.as_ref().unwrap().level, log::Level::Info);
+        assert_eq!(
+            config.base.log.as_ref().unwrap().level,
+            runner::log::Level::Info
+        );
     }
 
     #[test]
@@ -158,9 +166,12 @@ mod tests {
         }
 
         let config = &mut serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
-        let result = config.set_log(log::Level::Trace);
+        let result = config.set_log(runner::log::Level::Trace);
         assert!(result.is_ok());
-        assert_eq!(config.base.log.as_ref().unwrap().level, log::Level::Trace);
+        assert_eq!(
+            config.base.log.as_ref().unwrap().level,
+            runner::log::Level::Trace
+        );
     }
 
     #[test]
@@ -170,7 +181,7 @@ mod tests {
         let mut config_boxed = Box::new(config);
 
         let mock_args = Args {
-            base: args::BaseArgs {
+            base: runner::args::BaseArgs {
                 config: "/foo.yaml".to_string(),
                 log_level: Some("trace".to_string()),
             },
@@ -178,7 +189,7 @@ mod tests {
             hostname: Some("HOSTNAME SET BY ARGS".to_string()),
             port: Some(7373),
         };
-        let args_boxed: config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
 
         let test = TESTS
             .test("config_override_config_hostname")
@@ -217,7 +228,7 @@ mod tests {
     fn test_config_override_config_hostname_env() {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let mock_args = Args {
-            base: args::BaseArgs {
+            base: runner::args::BaseArgs {
                 config: "/foo.yaml".to_string(),
                 log_level: Some("trace".to_string()),
             },
@@ -225,7 +236,7 @@ mod tests {
             hostname: None,
             port: Some(7373),
         };
-        let args_boxed: config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
         let mut config_boxed = Box::new(config);
 
         let test = TESTS
@@ -271,7 +282,7 @@ mod tests {
     fn test_config_override_config_hostname_none() {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let mock_args = Args {
-            base: args::BaseArgs {
+            base: runner::args::BaseArgs {
                 config: "/foo.yaml".to_string(),
                 log_level: Some("trace".to_string()),
             },
@@ -279,7 +290,7 @@ mod tests {
             hostname: None,
             port: Some(7373),
         };
-        let args_boxed: config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
         let mut config_boxed = Box::new(config);
 
         let test = TESTS
@@ -351,7 +362,7 @@ mod tests {
 
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let mock_args = Args {
-            base: args::BaseArgs {
+            base: runner::args::BaseArgs {
                 config: "/foo.yaml".to_string(),
                 log_level: Some("trace".to_string()),
             },
@@ -359,7 +370,7 @@ mod tests {
             hostname: Some("HOSTNAME".to_string()),
             port: Some(7373),
         };
-        let args_boxed: config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
         let mut config_boxed = Box::new(config);
         let result = Config::override_config_listener(Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());

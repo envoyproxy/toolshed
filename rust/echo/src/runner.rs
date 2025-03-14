@@ -2,26 +2,23 @@ use crate::{
     args::Args,
     command::Command,
     config::Config,
-    handler::{self, Provider},
+    handler::{EchoHandler, Provider},
     listener::{Endpoint, Listener},
 };
 use async_trait::async_trait;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
-use toolshed_runner::{
-    command, config, config::Factory, handler as runner_handler, runner, runner::Runner as _,
-    EmptyResult,
-};
+use toolshed_runner::{self as runner, config::Factory as _, runner::Runner as _};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Runner {
-    pub handler: handler::EchoHandler,
+    pub handler: EchoHandler,
 }
 
 #[async_trait]
-trait EchoRunner: toolshed_runner::runner::Runner<handler::EchoHandler> {
-    async fn cmd_start(&self) -> EmptyResult {
+trait EchoRunner: runner::runner::Runner<EchoHandler> {
+    async fn cmd_start(&self) -> runner::EmptyResult {
         self.start(self.endpoint()?).await?;
         Ok(())
     }
@@ -32,7 +29,7 @@ trait EchoRunner: toolshed_runner::runner::Runner<handler::EchoHandler> {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         Ok(
             axum::serve(endpoint.bind().await, self.get_handler().router()?)
-                .with_graceful_shutdown(runner::ctrl_c())
+                .with_graceful_shutdown(runner::runner::ctrl_c())
                 .await?,
         )
     }
@@ -41,7 +38,7 @@ trait EchoRunner: toolshed_runner::runner::Runner<handler::EchoHandler> {
 
     fn listener_host(&self) -> Result<IpAddr, Box<dyn std::error::Error + Send + Sync>> {
         match self.config("listener.host") {
-            Some(config::Primitive::String(addr)) => match addr.parse::<IpAddr>() {
+            Some(runner::config::Primitive::String(addr)) => match addr.parse::<IpAddr>() {
                 Ok(ip) => Ok(ip),
                 Err(e) => Err(format!("Invalid host '{}': {}", addr, e).into()),
             },
@@ -52,7 +49,7 @@ trait EchoRunner: toolshed_runner::runner::Runner<handler::EchoHandler> {
 
     fn listener_port(&self) -> Result<u16, Box<dyn std::error::Error + Send + Sync>> {
         match self.config("listener.port") {
-            Some(config::Primitive::U32(port)) => Ok(port as u16),
+            Some(runner::config::Primitive::U32(port)) => Ok(port as u16),
             Some(other) => Err(format!("Unexpected type for 'listener.port': {:?}", other).into()),
             None => Err("Missing 'listener.port' config".into()),
         }
@@ -71,22 +68,22 @@ impl EchoRunner for Runner {
     }
 }
 
-impl runner::Factory<Runner, handler::EchoHandler> for Runner {
-    fn new(handler: handler::EchoHandler) -> Self {
+impl runner::runner::Factory<Runner, EchoHandler> for Runner {
+    fn new(handler: EchoHandler) -> Self {
         Self { handler }
     }
 }
 
 #[async_trait]
-impl runner::Runner<handler::EchoHandler> for Runner {
-    runner!(
-        handler::EchoHandler,
+impl runner::runner::Runner<EchoHandler> for Runner {
+    runner::runner!(
+        EchoHandler,
         {
             "start" => Self::cmd_start,
         }
     );
 
-    fn get_handler(&self) -> &handler::EchoHandler {
+    fn get_handler(&self) -> &EchoHandler {
         &self.handler
     }
 }
@@ -95,13 +92,12 @@ pub async fn main() {
     let args = Args::parse();
     match Config::from_yaml(Box::new(args)).await {
         Ok(config) => {
-            let command = <Command as command::Factory<Command, Config>>::new(
+            let command = <Command as runner::command::Factory<Command, Config>>::new(
                 *config,
                 Some("start".to_string()),
             );
-            let handler =
-                <handler::EchoHandler as runner_handler::Factory<Command>>::new(command.clone());
-            let runner = <Runner as runner::Factory<Runner, handler::EchoHandler>>::new(handler);
+            let handler = <EchoHandler as runner::handler::Factory<Command>>::new(command.clone());
+            let runner = <Runner as runner::runner::Factory<Runner, EchoHandler>>::new(handler);
             runner.run().await.unwrap();
         }
         Err(e) => {
@@ -113,8 +109,7 @@ pub async fn main() {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::listener;
-    use crate::test::patch::Patch;
+    use crate::{listener, test::patch::Patch};
     use guerrilla::{patch0, patch1, patch2};
     use mockall::mock;
     use once_cell::sync::Lazy;
@@ -166,7 +161,7 @@ mod tests {
                     Box::pin(Patch::config_from_yaml(test, args))
                 }),
                 patch2(
-                    <Command as command::Factory<Command, Config>>::new,
+                    <Command as runner::command::Factory<Command, Config>>::new,
                     |config, command| {
                         Patch::runner_command_from_config(
                             TESTS.get("echo_main").unwrap(),
@@ -176,7 +171,7 @@ mod tests {
                     },
                 ),
                 patch1(
-                    <Runner as runner::Factory<Runner, handler::EchoHandler>>::new,
+                    <Runner as runner::runner::Factory<Runner, EchoHandler>>::new,
                     |handler| Patch::runner_factory(TESTS.get("echo_main").unwrap(), handler),
                 ),
                 patch1(Runner::run, |_self| {
@@ -205,7 +200,7 @@ mod tests {
                     Box::pin(Patch::config_from_yaml(test, args))
                 }),
                 patch2(
-                    <Command as command::Factory<Command, Config>>::new,
+                    <Command as runner::command::Factory<Command, Config>>::new,
                     |config, command| {
                         Patch::runner_command_from_config(
                             TESTS.get("echo_main_badconfig").unwrap(),
@@ -215,7 +210,7 @@ mod tests {
                     },
                 ),
                 patch1(
-                    <Runner as runner::Factory<Runner, handler::EchoHandler>>::new,
+                    <Runner as runner::runner::Factory<Runner, EchoHandler>>::new,
                     |command| {
                         Patch::runner_factory(TESTS.get("echo_main_badconfig").unwrap(), command)
                     },
@@ -239,10 +234,8 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler =
-            <handler::EchoHandler as runner_handler::Factory<Command>>::new(command.clone());
-        let runner =
-            <Runner as runner::Factory<Runner, handler::EchoHandler>>::new(handler.clone());
+        let handler = <EchoHandler as runner::handler::Factory<Command>>::new(command.clone());
+        let runner = <Runner as runner::runner::Factory<Runner, EchoHandler>>::new(handler.clone());
         assert_eq!(runner.handler, handler);
     }
 
@@ -274,7 +267,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let result = runner
             .cmd_start()
@@ -307,7 +300,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let endpoint = runner.endpoint().unwrap();
         assert_eq!(endpoint.host.to_string(), "7.7.7.7");
@@ -320,7 +313,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner {
             handler: handler.clone(),
         };
@@ -334,9 +327,9 @@ mod tests {
             .test("runner_listener_host")
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
-                RunnerPatch::runner_config::<handler::EchoHandler>(
+                RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_host").unwrap(),
-                    Some(config::Primitive::String("::".to_string())),
+                    Some(runner::config::Primitive::String("::".to_string())),
                     _self,
                     key,
                 )
@@ -348,7 +341,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         assert_eq!(
             "::".parse::<IpAddr>().unwrap(),
@@ -363,7 +356,7 @@ mod tests {
             .test("runner_listener_host_noconfig")
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
-                RunnerPatch::runner_config::<handler::EchoHandler>(
+                RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_host_noconfig").unwrap(),
                     None,
                     _self,
@@ -377,7 +370,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let host = runner.listener_host();
         assert!(host.is_err());
@@ -396,9 +389,11 @@ mod tests {
             .test("runner_listener_host_badconfig")
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
-                RunnerPatch::runner_config::<handler::EchoHandler>(
+                RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_host_badconfig").unwrap(),
-                    Some(config::Primitive::String("NOT AN IP ADDRESS".to_string())),
+                    Some(runner::config::Primitive::String(
+                        "NOT AN IP ADDRESS".to_string(),
+                    )),
                     _self,
                     key,
                 )
@@ -410,7 +405,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let host = runner.listener_host();
         assert!(host.is_err());
@@ -429,9 +424,9 @@ mod tests {
             .test("runner_listener_host_badconfig_type")
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
-                RunnerPatch::runner_config::<handler::EchoHandler>(
+                RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_host_badconfig_type").unwrap(),
-                    Some(config::Primitive::U32(1717)),
+                    Some(runner::config::Primitive::U32(1717)),
                     _self,
                     key,
                 )
@@ -443,7 +438,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let host = runner.listener_host();
         assert!(host.is_err());
@@ -462,9 +457,9 @@ mod tests {
             .test("runner_listener_port")
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
-                RunnerPatch::runner_config::<handler::EchoHandler>(
+                RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_port").unwrap(),
-                    Some(config::Primitive::U32(2323)),
+                    Some(runner::config::Primitive::U32(2323)),
                     _self,
                     key,
                 )
@@ -476,7 +471,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         assert_eq!(
             2323,
@@ -491,7 +486,7 @@ mod tests {
             .test("runner_listener_port_noconfig")
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
-                RunnerPatch::runner_config::<handler::EchoHandler>(
+                RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_port_noconfig").unwrap(),
                     None,
                     _self,
@@ -505,7 +500,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let port = runner.listener_port();
         assert!(port.is_err());
@@ -524,9 +519,9 @@ mod tests {
             .test("runner_listener_port_badconfig")
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
-                RunnerPatch::runner_config::<handler::EchoHandler>(
+                RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_port_badconfig").unwrap(),
-                    Some(config::Primitive::String("NOT A PORT".to_string())),
+                    Some(runner::config::Primitive::String("NOT A PORT".to_string())),
                     _self,
                     key,
                 )
@@ -538,7 +533,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let port = runner.listener_port();
         assert!(port.is_err());
@@ -566,10 +561,10 @@ mod tests {
                 patch1(Runner::get_handler, |_self| {
                     Patch::runner_get_handler(TESTS.get("runner_start").unwrap(), _self)
                 }),
-                patch1(handler::EchoHandler::router, |_self| {
+                patch1(EchoHandler::router, |_self| {
                     Patch::handler_router(TESTS.get("runner_start").unwrap(), _self)
                 }),
-                patch0(runner::ctrl_c, || {
+                patch0(runner::runner::ctrl_c, || {
                     Box::pin(Patch::ctrl_c(TESTS.get("runner_start").unwrap()))
                 }),
                 patch2(axum::serve, |listener, router| {
@@ -590,7 +585,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let host: IpAddr = "127.0.0.1".parse().unwrap();
         let port = 1717;
@@ -622,7 +617,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         assert!(runner.run().await.is_ok());
     }
@@ -646,7 +641,7 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         assert!(runner.handle().await.is_ok());
     }
@@ -670,15 +665,15 @@ mod tests {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = handler::EchoHandler { command };
+        let handler = EchoHandler { command };
         let runner = Runner { handler };
         let commands = runner.commands();
         match commands.get("start") {
-            Some(command) => command(
-                &(Arc::new(runner.clone()) as Arc<dyn runner::Runner<handler::EchoHandler>>),
-            )
-            .await
-            .unwrap(),
+            Some(command) => {
+                command(&(Arc::new(runner.clone()) as Arc<dyn runner::runner::Runner<EchoHandler>>))
+                    .await
+                    .unwrap()
+            }
             None => panic!("expected default command"),
         }
     }

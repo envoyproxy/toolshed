@@ -1,6 +1,9 @@
 use crate::{
-    args::Args, command::Command, config::Config, handler::EchoHandler, listener,
-    listener::Endpoint,
+    args::Args,
+    command::Command,
+    config::Config,
+    handler::EchoHandler,
+    listener::{self, Endpoint},
 };
 use crate::{mapping, response::Response, runner::Runner};
 use axum::body::Body;
@@ -19,7 +22,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 use tokio::net::TcpListener;
-use toolshed_runner::{config, config::Factory as _, test::Test, EmptyResult};
+use toolshed_runner::{self as runner, config::Factory as _, test::Test};
 
 pub struct Patch {}
 
@@ -122,8 +125,8 @@ impl Patch {
 
     pub async fn config_from_yaml<'a>(
         test: Arc<Mutex<Test<'a>>>,
-        args: config::SafeArgs,
-    ) -> Result<Box<Config>, config::SafeError> {
+        args: runner::config::SafeArgs,
+    ) -> Result<Box<Config>, runner::config::SafeError> {
         {
             let test = test.lock().unwrap();
             test.spy()
@@ -237,10 +240,10 @@ impl Patch {
 
     pub fn handler_config(
         test: Arc<Mutex<Test>>,
-        returns: Option<config::Primitive>,
+        returns: Option<runner::config::Primitive>,
         _self: &EchoHandler,
         key: &str,
-    ) -> Option<config::Primitive> {
+    ) -> Option<runner::config::Primitive> {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
@@ -273,11 +276,11 @@ impl Patch {
             .unwrap()
     }
 
-    pub fn override_config_listener<T: config::Provider + serde::Deserialize<'static>>(
+    pub fn override_config_listener<T: runner::config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<Test>>,
-        args: config::ArcSafeArgs,
+        args: runner::config::ArcSafeArgs,
         config: &mut Box<T>,
-    ) -> EmptyResult {
+    ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
@@ -289,11 +292,11 @@ impl Patch {
         Ok(())
     }
 
-    pub fn override_config_hostname<T: config::Provider + serde::Deserialize<'static>>(
+    pub fn override_config_hostname<T: runner::config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<Test>>,
-        args: config::ArcSafeArgs,
+        args: runner::config::ArcSafeArgs,
         config: &mut Box<T>,
-    ) -> EmptyResult {
+    ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
@@ -368,7 +371,10 @@ impl Patch {
         })
     }
 
-    pub async fn runner_cmd_start<'a>(test: Arc<Mutex<Test<'a>>>, _self: &Runner) -> EmptyResult {
+    pub async fn runner_cmd_start<'a>(
+        test: Arc<Mutex<Test<'a>>>,
+        _self: &Runner,
+    ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
         test.spy()
             .push(&test.name, &format!("Runner::cmd_start({:?})", !test.fails));
@@ -445,7 +451,7 @@ impl Patch {
         Ok(7777)
     }
 
-    pub async fn runner_run<'a>(test: Arc<Mutex<Test<'a>>>, _self: &Runner) -> EmptyResult {
+    pub async fn runner_run<'a>(test: Arc<Mutex<Test<'a>>>, _self: &Runner) -> runner::EmptyResult {
         let test = test.lock().unwrap();
         test.spy()
             .push(&test.name, &format!("Runner::run({:?})", !test.fails));
@@ -456,7 +462,7 @@ impl Patch {
         test: Arc<Mutex<Test<'a>>>,
         _self: &Runner,
         endpoint: Endpoint,
-    ) -> EmptyResult {
+    ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,

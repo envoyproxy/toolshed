@@ -1,7 +1,6 @@
 use ::log::LevelFilter;
 use serde::{Deserialize, Serialize};
-use std::fmt;
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 #[derive(Debug, Eq, Deserialize, Clone, Copy, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
