@@ -60,11 +60,11 @@ mod tests {
     use scopeguard::defer;
     use serial_test::serial;
     use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4};
-    use toolshed_runner::test::{patch::Patches, spy::Spy, Tests};
+    use toolshed_test as ttest;
 
-    static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
-    static SPY: Lazy<Spy> = Lazy::new(Spy::new);
-    static TESTS: Lazy<Tests> = Lazy::new(|| Tests::new(&SPY, &PATCHES));
+    static PATCHES: Lazy<ttest::Patches> = Lazy::new(ttest::Patches::new);
+    static SPY: Lazy<ttest::Spy> = Lazy::new(ttest::Spy::new);
+    static TESTS: Lazy<ttest::Tests> = Lazy::new(|| ttest::Tests::new(&SPY, &PATCHES));
 
     #[test]
     #[serial(toolshed_lock)]

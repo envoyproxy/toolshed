@@ -88,18 +88,12 @@ mod tests {
     use scopeguard::defer;
     use serial_test::serial;
     use std::{any::Any, net::IpAddr, sync::Arc};
-    use toolshed_runner::{
-        config::Provider as _,
-        test::{
-            patch::{Patch as RunnerPatch, Patches},
-            spy::Spy,
-            Tests,
-        },
-    };
+    use toolshed_runner::{config::Provider as _, test::patch::Patch as RunnerPatch};
+    use toolshed_test as ttest;
 
-    static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
-    static SPY: Lazy<Spy> = Lazy::new(Spy::new);
-    static TESTS: Lazy<Tests> = Lazy::new(|| Tests::new(&SPY, &PATCHES));
+    static PATCHES: Lazy<ttest::Patches> = Lazy::new(ttest::Patches::new);
+    static SPY: Lazy<ttest::Spy> = Lazy::new(ttest::Spy::new);
+    static TESTS: Lazy<ttest::Tests> = Lazy::new(|| ttest::Tests::new(&SPY, &PATCHES));
 
     mock! {
         #[derive(Clone, Debug, Parser, PartialEq)]

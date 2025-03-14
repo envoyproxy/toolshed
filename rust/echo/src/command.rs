@@ -43,14 +43,12 @@ mod tests {
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
-    use toolshed_runner::{
-        command::Command as _,
-        test::{patch::Patches, spy::Spy, Tests},
-    };
+    use toolshed_runner::command::Command as _;
+    use toolshed_test as ttest;
 
-    static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
-    static SPY: Lazy<Spy> = Lazy::new(Spy::new);
-    static TESTS: Lazy<Tests> = Lazy::new(|| Tests::new(&SPY, &PATCHES));
+    static PATCHES: Lazy<ttest::Patches> = Lazy::new(ttest::Patches::new);
+    static SPY: Lazy<ttest::Spy> = Lazy::new(ttest::Spy::new);
+    static TESTS: Lazy<ttest::Tests> = Lazy::new(|| ttest::Tests::new(&SPY, &PATCHES));
 
     #[test]
     #[serial(toolshed_lock)]
