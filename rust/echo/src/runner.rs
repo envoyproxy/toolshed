@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::net::IpAddr;
+use toolshed_core as core;
 use toolshed_runner::{self as runner, config::Factory as _, runner::Runner as _};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -38,7 +39,7 @@ trait EchoRunner: runner::runner::Runner<EchoHandler> {
 
     fn listener_host(&self) -> Result<IpAddr, Box<dyn std::error::Error + Send + Sync>> {
         match self.config("listener.host") {
-            Some(runner::config::Primitive::String(addr)) => match addr.parse::<IpAddr>() {
+            Some(core::Primitive::String(addr)) => match addr.parse::<IpAddr>() {
                 Ok(ip) => Ok(ip),
                 Err(e) => Err(format!("Invalid host '{}': {}", addr, e).into()),
             },
@@ -49,7 +50,7 @@ trait EchoRunner: runner::runner::Runner<EchoHandler> {
 
     fn listener_port(&self) -> Result<u16, Box<dyn std::error::Error + Send + Sync>> {
         match self.config("listener.port") {
-            Some(runner::config::Primitive::U32(port)) => Ok(port as u16),
+            Some(core::Primitive::U32(port)) => Ok(port as u16),
             Some(other) => Err(format!("Unexpected type for 'listener.port': {:?}", other).into()),
             None => Err("Missing 'listener.port' config".into()),
         }
@@ -329,7 +330,7 @@ mod tests {
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_host").unwrap(),
-                    Some(runner::config::Primitive::String("::".to_string())),
+                    Some(core::Primitive::String("::".to_string())),
                     _self,
                     key,
                 )
@@ -391,9 +392,7 @@ mod tests {
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_host_badconfig").unwrap(),
-                    Some(runner::config::Primitive::String(
-                        "NOT AN IP ADDRESS".to_string(),
-                    )),
+                    Some(core::Primitive::String("NOT AN IP ADDRESS".to_string())),
                     _self,
                     key,
                 )
@@ -426,7 +425,7 @@ mod tests {
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_host_badconfig_type").unwrap(),
-                    Some(runner::config::Primitive::U32(1717)),
+                    Some(core::Primitive::U32(1717)),
                     _self,
                     key,
                 )
@@ -459,7 +458,7 @@ mod tests {
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_port").unwrap(),
-                    Some(runner::config::Primitive::U32(2323)),
+                    Some(core::Primitive::U32(2323)),
                     _self,
                     key,
                 )
@@ -521,7 +520,7 @@ mod tests {
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
                     TESTS.get("runner_listener_port_badconfig").unwrap(),
-                    Some(runner::config::Primitive::String("NOT A PORT".to_string())),
+                    Some(core::Primitive::String("NOT A PORT".to_string())),
                     _self,
                     key,
                 )

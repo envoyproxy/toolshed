@@ -23,6 +23,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 use tempfile::NamedTempFile;
+use toolshed_core as core;
 
 pub struct Patches {
     pub calls: Mutex<HashMap<String, Vec<Arc<Mutex<PatchGuard>>>>>,
@@ -86,13 +87,13 @@ impl Patch {
         test: Arc<Mutex<Test>>,
         _self: &DummyConfig,
         key: &str,
-    ) -> Option<config::Primitive> {
+    ) -> Option<core::Primitive> {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
             &format!("Config::get({:?}): {:?}", !test.fails, key),
         );
-        Some(config::Primitive::String("BOOM".to_string()))
+        Some(core::Primitive::String("BOOM".to_string()))
     }
 
     pub fn config_resolve<T: config::Provider + serde::Deserialize<'static>>(
@@ -458,10 +459,10 @@ impl Patch {
 
     pub fn runner_config<T: Handler>(
         test: Arc<Mutex<Test>>,
-        returns: Option<config::Primitive>,
+        returns: Option<core::Primitive>,
         _self: &dyn runner::Runner<T>,
         key: &str,
-    ) -> Option<config::Primitive> {
+    ) -> Option<core::Primitive> {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,

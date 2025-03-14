@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_yaml::{Mapping, Value};
 use std::error::Error;
+use toolshed_core as core;
 
 pub trait Loggable {
     fn log(&self) -> config::LogConfig;
@@ -28,7 +29,7 @@ impl Loggable for DummyConfig {
 
 #[async_trait]
 impl config::Provider for DummyConfig {
-    fn get(&self, _key: &str) -> Option<config::Primitive> {
+    fn get(&self, _key: &str) -> Option<core::Primitive> {
         None
     }
 

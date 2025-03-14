@@ -4,53 +4,43 @@ use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_yaml::Value;
 use std::{any::Any, error::Error, fmt, fmt::Debug, path::Path, sync::Arc};
+use toolshed_core as core;
 
 pub type SafeArgs = Box<dyn args::Provider + Send + Sync>;
 pub type ArcSafeArgs = Arc<SafeArgs>;
 pub type SafeError = Box<dyn Error + Send + Sync>;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Primitive {
-    Bool(bool),
-    F64(f64),
-    I32(i32),
-    I64(i64),
-    U32(u32),
-    U64(u64),
-    String(String),
-}
-
 pub trait Provider: Any + AsAny + Debug + Send + Sync {
-    fn get(&self, key: &str) -> Option<Primitive> {
+    fn get(&self, key: &str) -> Option<core::Primitive> {
         let keys: Vec<&str> = key.split('.').collect();
         let serialized = self.serialized()?;
         let result = self.resolve(&serialized, &keys).unwrap();
         match result {
-            Value::Bool(b) => Some(Primitive::Bool(b)),
+            Value::Bool(b) => Some(core::Primitive::Bool(b)),
             Value::Number(num) => match num {
                 n if n.is_f64() && !n.as_f64().unwrap().is_nan() => {
                     let f = n.as_f64().unwrap();
-                    Some(Primitive::F64(f))
+                    Some(core::Primitive::F64(f))
                 }
                 n if n.is_u64() => {
                     let u = n.as_u64().unwrap();
                     if u <= u32::MAX as u64 {
-                        Some(Primitive::U32(u as u32))
+                        Some(core::Primitive::U32(u as u32))
                     } else {
-                        Some(Primitive::U64(u))
+                        Some(core::Primitive::U64(u))
                     }
                 }
                 n if n.is_i64() => {
                     let i = n.as_i64().unwrap();
                     if i >= i32::MAX as i64 || i <= i32::MIN as i64 {
-                        Some(Primitive::I64(i))
+                        Some(core::Primitive::I64(i))
                     } else {
-                        Some(Primitive::I32(i as i32))
+                        Some(core::Primitive::I32(i as i32))
                     }
                 }
                 _ => None,
             },
-            Value::String(string) => Some(Primitive::String(string)),
+            Value::String(string) => Some(core::Primitive::String(string)),
             _ => None,
         }
     }
@@ -783,7 +773,7 @@ log:
             },
         };
 
-        if let Some(Primitive::String(result)) = provider.get("SOME.KEY.PATH") {
+        if let Some(core::Primitive::String(result)) = provider.get("SOME.KEY.PATH") {
             assert_eq!(result, "RESOLVED");
         } else {
             panic!("Expected a Primitive::String, but got something else.");
@@ -822,7 +812,7 @@ log:
             },
         };
 
-        if let Some(Primitive::F64(result)) = provider.get("SOME.KEY.PATH") {
+        if let Some(core::Primitive::F64(result)) = provider.get("SOME.KEY.PATH") {
             assert_eq!(result, 23.23);
         } else {
             panic!("Expected a Primitive::F64, but got something else.");
@@ -862,7 +852,7 @@ log:
         };
 
         let result = provider.get("SOME.KEY.PATH");
-        if let Some(Primitive::I32(result)) = result {
+        if let Some(core::Primitive::I32(result)) = result {
             assert_eq!(result, -23);
         } else {
             panic!(
@@ -905,7 +895,7 @@ log:
         };
 
         let result = provider.get("SOME.KEY.PATH");
-        if let Some(Primitive::I64(result)) = result {
+        if let Some(core::Primitive::I64(result)) = result {
             assert_eq!(result, -2323232323);
         } else {
             panic!(
@@ -948,7 +938,7 @@ log:
         };
 
         let result = provider.get("SOME.KEY.PATH");
-        if let Some(Primitive::U32(result)) = result {
+        if let Some(core::Primitive::U32(result)) = result {
             assert_eq!(result, 23);
         } else {
             panic!(
@@ -991,7 +981,7 @@ log:
         };
 
         let result = provider.get("SOME.KEY.PATH");
-        if let Some(Primitive::U64(result)) = result {
+        if let Some(core::Primitive::U64(result)) = result {
             assert_eq!(result, 232323232323);
         } else {
             panic!(
@@ -1034,7 +1024,7 @@ log:
         };
 
         let result = provider.get("SOME.KEY.PATH");
-        if let Some(Primitive::Bool(result)) = result {
+        if let Some(core::Primitive::Bool(result)) = result {
             assert!(result);
         } else {
             panic!(
