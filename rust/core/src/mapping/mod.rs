@@ -204,7 +204,7 @@ mod tests {
             ("b1".to_string(), "b".to_string()),
             ("c1".to_string(), "c".to_string()),
         ];
-        let mapping = iterator.clone().into_iter().collect::<OrderedMap>();
+        let mapping = iterator.clone().into_iter().collect::<CustomOrderedMap>();
         for (i, (key, value)) in iterator.iter().enumerate() {
             assert_eq!(mapping.get(key), Some(value));
             assert_eq!(mapping.keys().nth(i), Some(key));
@@ -220,13 +220,13 @@ mod tests {
         ["X-BAR", "baz"]
     ]
     "#;
-        let deserialized: OrderedMap =
+        let deserialized: CustomOrderedMap =
             serde_json::from_str(json_data).expect("Failed to deserialize");
         let expected = vec![
             ("X-FOO".to_string(), "baz".to_string()),
             ("X-BAR".to_string(), "baz".to_string()),
         ];
-        let expected_map = OrderedMap(IndexMap::from_iter(expected));
+        let expected_map = CustomOrderedMap(OrderedMap::from_iter(expected));
         assert_eq!(deserialized, expected_map);
     }
 }
