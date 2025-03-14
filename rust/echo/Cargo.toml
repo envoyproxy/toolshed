@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-test = ["guerrilla", "once_cell"]
+test = ["guerrilla", "once_cell", "toolshed-test"]
 
 [dependencies]
 as-any = "0.3.2"
@@ -30,6 +30,7 @@ tower-service = "0.3.3"
 # guerrilla = { path = "../../../guerrilla" }
 guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "24adf537b87b1c481e02e0c4a7d68771ebf6cc7a", optional = true }
 once_cell = { version = "1.20.3", optional = true }
+toolshed-test = { path = "../test", optional = true }
 
 [dev-dependencies]
 libc = "0.2.170"

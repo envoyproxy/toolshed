@@ -120,19 +120,18 @@ mod tests {
         config::Provider as _,
         test::{
             dummy::{Dummy, DummyCommand, DummyConfig, DummyHandler, DummyRunner},
-            patch::{Patch, Patches},
-            spy::Spy,
-            Tests,
+            patch::Patch,
         },
     };
     use guerrilla::{patch0, patch1, patch2, patch3};
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
+    use toolshed_test as ttest;
 
-    static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
-    static SPY: Lazy<Spy> = Lazy::new(Spy::new);
-    static TESTS: Lazy<Tests> = Lazy::new(|| Tests::new(&SPY, &PATCHES));
+    static PATCHES: Lazy<ttest::Patches> = Lazy::new(ttest::Patches::new);
+    static SPY: Lazy<ttest::Spy> = Lazy::new(ttest::Spy::new);
+    static TESTS: Lazy<ttest::Tests> = Lazy::new(|| ttest::Tests::new(&SPY, &PATCHES));
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]

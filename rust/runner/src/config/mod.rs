@@ -171,19 +171,18 @@ mod tests {
     use crate::test::{
         data::{TEST_YAML0, TEST_YAML1},
         dummy::{DummyConfig, DummyConfig2},
-        patch::{Patch, Patches},
-        spy::Spy,
-        Tests,
+        patch::Patch,
     };
     use guerrilla::{patch1, patch2, patch3};
     use mockall::mock;
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
+    use toolshed_test as ttest;
 
-    static PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
-    static SPY: Lazy<Spy> = Lazy::new(Spy::new);
-    static TESTS: Lazy<Tests> = Lazy::new(|| Tests::new(&SPY, &PATCHES));
+    static PATCHES: Lazy<ttest::Patches> = Lazy::new(ttest::Patches::new);
+    static SPY: Lazy<ttest::Spy> = Lazy::new(ttest::Spy::new);
+    static TESTS: Lazy<ttest::Tests> = Lazy::new(|| ttest::Tests::new(&SPY, &PATCHES));
 
     mock! {
         #[derive(Debug)]

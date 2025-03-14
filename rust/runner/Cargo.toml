@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-test = ["tempfile", "once_cell", "guerrilla"]
+test = ["tempfile", "once_cell", "guerrilla", "toolshed-test"]
 
 [dependencies]
 as-any = "0.3.2"
@@ -20,6 +20,7 @@ once_cell = { version = "1.20", optional = true }
 toolshed-core = { path = "../core" }
 # guerrilla = { path = "../../../guerrilla", optional = true }
 guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "24adf537b87b1c481e02e0c4a7d68771ebf6cc7a", optional = true }
+toolshed-test = { path = "../test", optional = true }
 
 [dev-dependencies]
 assert_matches = "1.0"

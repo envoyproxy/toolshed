@@ -6,14 +6,11 @@ use crate::{
     test::{
         data::TEST_YAML0,
         dummy::{DummyCommand, DummyConfig, DummyHandler, DummyRunner, Loggable},
-        spy::Spy,
-        Test,
     },
     EmptyResult,
 };
 use ::log::LevelFilter;
 use env_logger::Builder;
-use guerrilla::PatchGuard;
 use serde_yaml::Value;
 use std::{
     collections::HashMap,
@@ -24,41 +21,13 @@ use std::{
 };
 use tempfile::NamedTempFile;
 use toolshed_core as core;
-
-pub struct Patches {
-    pub calls: Mutex<HashMap<String, Vec<Arc<Mutex<PatchGuard>>>>>,
-}
-
-impl Patches {
-    // Constructor to create a new Patches instance
-    pub fn new() -> Self {
-        Self {
-            calls: Mutex::new(HashMap::new()),
-        }
-    }
-
-    pub fn push(&self, key: &str, guards: Vec<Arc<Mutex<PatchGuard>>>) {
-        let mut calls = self.calls.lock().unwrap();
-        calls.insert(key.to_string(), guards);
-    }
-
-    // Retrieve a Vec<PatchGuard> for a specific key
-    pub fn get(&self, key: &str) -> Option<Vec<Arc<Mutex<PatchGuard>>>> {
-        let calls = self.calls.lock().unwrap();
-        calls.get(key).cloned()
-    }
-
-    pub fn clear(&self, key: &str) {
-        let mut calls = self.calls.lock().unwrap();
-        calls.remove(key).unwrap();
-    }
-}
+use toolshed_test as ttest;
 
 pub struct Patch {}
 
 impl Patch {
     pub fn command_config<'a>(
-        test: Arc<Mutex<Test<'a>>>,
+        test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &'a DummyCommand,
     ) -> Box<&'a dyn config::Provider> {
         let test = test.lock().unwrap();
@@ -69,14 +38,17 @@ impl Patch {
         Box::new(&_self.config)
     }
 
-    pub fn command_get_name<'a>(test: Arc<Mutex<Test>>, _self: &'a DummyCommand) -> &'a str {
+    pub fn command_get_name<'a>(test: Arc<Mutex<ttest::Test>>, _self: &'a DummyCommand) -> &'a str {
         let test = test.lock().unwrap();
         test.spy()
             .push(&test.name, &format!("Command::get_name({:?})", !test.fails));
         "COMMAND_NAME"
     }
 
-    pub fn command_get_name_bad<'a>(test: Arc<Mutex<Test>>, _self: &'a DummyCommand) -> &'a str {
+    pub fn command_get_name_bad<'a>(
+        test: Arc<Mutex<ttest::Test>>,
+        _self: &'a DummyCommand,
+    ) -> &'a str {
         let test = test.lock().unwrap();
         test.spy()
             .push(&test.name, &format!("Command::get_name({:?})", !test.fails));
@@ -84,7 +56,7 @@ impl Patch {
     }
 
     pub fn config_get(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &DummyConfig,
         key: &str,
     ) -> Option<core::Primitive> {
@@ -97,7 +69,7 @@ impl Patch {
     }
 
     pub fn config_resolve<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -114,7 +86,7 @@ impl Patch {
     }
 
     pub fn config_resolve_bad<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -131,7 +103,7 @@ impl Patch {
     }
 
     pub fn config_resolve_bad_type<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -148,7 +120,7 @@ impl Patch {
     }
 
     pub fn config_resolve_f64<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -165,7 +137,7 @@ impl Patch {
     }
 
     pub fn config_resolve_i32<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -182,7 +154,7 @@ impl Patch {
     }
 
     pub fn config_resolve_i64<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -199,7 +171,7 @@ impl Patch {
     }
 
     pub fn config_resolve_bool<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -216,7 +188,7 @@ impl Patch {
     }
 
     pub fn config_resolve_u32<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -233,7 +205,7 @@ impl Patch {
     }
 
     pub fn config_resolve_u64<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
         current: &Value,
         keys: &[&str],
@@ -250,7 +222,7 @@ impl Patch {
     }
 
     pub fn config_serialized<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &T,
     ) -> Option<Value> {
         let test = test.lock().unwrap();
@@ -261,7 +233,10 @@ impl Patch {
         serde_yaml::from_str("SERIALIZED").expect("To unwrap")
     }
 
-    pub fn env_var(test: Arc<Mutex<Test>>, name: &str) -> Result<String, std::env::VarError> {
+    pub fn env_var(
+        test: Arc<Mutex<ttest::Test>>,
+        name: &str,
+    ) -> Result<String, std::env::VarError> {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
@@ -273,7 +248,10 @@ impl Patch {
         Ok("info".to_string())
     }
 
-    pub fn file_open(test: Arc<Mutex<Test>>, path: &Path) -> Result<std::fs::File, std::io::Error> {
+    pub fn file_open(
+        test: Arc<Mutex<ttest::Test>>,
+        path: &Path,
+    ) -> Result<std::fs::File, std::io::Error> {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
@@ -291,7 +269,7 @@ impl Patch {
     }
 
     pub fn handler_command<'a>(
-        test: Arc<Mutex<Test<'a>>>,
+        test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &'a DummyHandler,
     ) -> Box<&'a dyn command::Command> {
         let test = test.lock().unwrap();
@@ -303,7 +281,7 @@ impl Patch {
     }
 
     pub fn log_filter<'a>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &'a mut Builder,
         _other: Option<&str>,
         level: LevelFilter,
@@ -319,7 +297,7 @@ impl Patch {
         _self
     }
 
-    pub fn log_init(test: Arc<Mutex<Test>>, _self: &Builder) {
+    pub fn log_init(test: Arc<Mutex<ttest::Test>>, _self: &Builder) {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
@@ -327,7 +305,7 @@ impl Patch {
         );
     }
 
-    pub fn log_new(test: Arc<Mutex<Test>>) -> Builder {
+    pub fn log_new(test: Arc<Mutex<ttest::Test>>) -> Builder {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
@@ -337,7 +315,7 @@ impl Patch {
     }
 
     pub fn log_level_override(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         result: bool,
         args: config::ArcSafeArgs,
     ) -> Result<Option<log::Level>, config::SafeError> {
@@ -359,7 +337,7 @@ impl Patch {
     }
 
     pub async fn override_config<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test<'_>>>,
+        test: Arc<Mutex<ttest::Test<'_>>>,
         args: config::ArcSafeArgs,
         config: Box<T>,
     ) -> Result<Box<T>, config::SafeError> {
@@ -375,7 +353,7 @@ impl Patch {
     }
 
     pub fn override_config_log<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test<'_>>>,
+        test: Arc<Mutex<ttest::Test<'_>>>,
         args: config::ArcSafeArgs,
         config: &mut Box<T>,
     ) -> EmptyResult {
@@ -390,7 +368,7 @@ impl Patch {
         Ok(())
     }
 
-    pub fn path_exists(test: Arc<Mutex<Test<'_>>>, _self: &Path) -> bool {
+    pub fn path_exists(test: Arc<Mutex<ttest::Test<'_>>>, _self: &Path) -> bool {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,
@@ -400,7 +378,7 @@ impl Patch {
     }
 
     pub async fn read_yaml<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test<'_>>>,
+        test: Arc<Mutex<ttest::Test<'_>>>,
         args: config::ArcSafeArgs,
     ) -> Result<Box<T>, config::SafeError> {
         let test = test.lock().unwrap();
@@ -413,7 +391,7 @@ impl Patch {
     }
 
     pub fn runner_command<'a>(
-        test: Arc<Mutex<Test<'a>>>,
+        test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &'a DummyRunner,
     ) -> &'a dyn command::Command {
         let test = test.lock().unwrap();
@@ -425,12 +403,12 @@ impl Patch {
     }
 
     pub fn runner_commands<'a>(
-        test: Arc<Mutex<Test<'a>>>,
+        test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &'a DummyRunner,
     ) -> runner::CommandsFn<'a, DummyHandler> {
         let testid: String;
         let fails: bool;
-        let spy_arc: Arc<Spy>;
+        let spy_arc: Arc<ttest::Spy>;
         {
             let test = test.lock().unwrap();
             testid = test.name.clone();
@@ -458,7 +436,7 @@ impl Patch {
     }
 
     pub fn runner_config<T: Handler>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         returns: Option<core::Primitive>,
         _self: &dyn runner::Runner<T>,
         key: &str,
@@ -472,7 +450,7 @@ impl Patch {
     }
 
     pub async fn runner_handle<'a, T: Handler>(
-        test: Arc<Mutex<Test<'a>>>,
+        test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &'a dyn runner::Runner<T>,
     ) -> EmptyResult {
         let test = test.lock().unwrap();
@@ -482,12 +460,12 @@ impl Patch {
     }
 
     pub fn runner_resolve_command<T: Handler>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &dyn runner::Runner<T>,
     ) -> Result<runner::CommandFn<T>, runner::CommandError> {
         let testid: String;
         let fails: bool;
-        let spy_arc: Arc<Spy>;
+        let spy_arc: Arc<ttest::Spy>;
         {
             let test = test.lock().unwrap();
             testid = test.name.clone();
@@ -514,7 +492,7 @@ impl Patch {
     }
 
     pub fn runner_start_log<'a, T: Handler>(
-        test: Arc<Mutex<Test<'a>>>,
+        test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &'a dyn runner::Runner<T>,
     ) -> EmptyResult {
         let test = test.lock().unwrap();
@@ -524,7 +502,7 @@ impl Patch {
     }
 
     pub fn serde_from_reader<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         file: &std::fs::File,
     ) -> Result<T, serde_yaml::Error> {
         let test = test.lock().unwrap();
@@ -545,7 +523,7 @@ impl Patch {
     }
 
     pub fn serde_from_str<T: config::Provider + Loggable + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         string: &str,
     ) -> Result<log::Level, serde_yaml::Error> {
         let test = test.lock().unwrap();
@@ -562,7 +540,7 @@ impl Patch {
     }
 
     pub fn serde_to_value(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         thing: Box<dyn config::Provider>,
     ) -> Result<Value, serde_yaml::Error> {
         let test = test.lock().unwrap();
@@ -574,7 +552,7 @@ impl Patch {
     }
 
     pub fn set_log<T: config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<Test>>,
+        test: Arc<Mutex<ttest::Test>>,
         _self: &mut T,
         level: log::Level,
     ) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {

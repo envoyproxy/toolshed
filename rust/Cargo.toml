@@ -3,5 +3,6 @@ members = [
   "core",
   "echo",
   "runner",
+  "test",
 ]
 resolver = "2"
