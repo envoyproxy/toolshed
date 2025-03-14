@@ -68,7 +68,7 @@ mod tests {
             .test("command_default_name")
             .expecting(vec!["Command::default_name(true)"])
             .with_patches(vec![patch0(Command::default_name, || {
-                Patch::command_default_name(TESTS.get("command_default_name").unwrap())
+                Patch::command_default_name(TESTS.get("command_default_name"))
             })]);
         defer! {
             test.drop();

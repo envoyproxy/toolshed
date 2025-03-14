@@ -150,30 +150,24 @@ mod tests {
                 "Runner::run(true)",
             ])
             .with_patches(vec![
-                patch0(Args::parse, || {
-                    Patch::args_parse(TESTS.get("echo_main").unwrap())
-                }),
+                patch0(Args::parse, || Patch::args_parse(TESTS.get("echo_main"))),
                 patch1(Config::from_yaml, |args| {
-                    let test = TESTS.get("echo_main").unwrap();
+                    let test = TESTS.get("echo_main");
                     test.lock().unwrap().patch_index(1);
                     Box::pin(Patch::config_from_yaml(test, args))
                 }),
                 patch2(
                     <Command as runner::command::Factory<Command, Config>>::new,
                     |config, command| {
-                        Patch::runner_command_from_config(
-                            TESTS.get("echo_main").unwrap(),
-                            config,
-                            command,
-                        )
+                        Patch::runner_command_from_config(TESTS.get("echo_main"), config, command)
                     },
                 ),
                 patch1(
                     <Runner as runner::runner::Factory<Runner, EchoHandler>>::new,
-                    |handler| Patch::runner_factory(TESTS.get("echo_main").unwrap(), handler),
+                    |handler| Patch::runner_factory(TESTS.get("echo_main"), handler),
                 ),
                 patch1(Runner::run, |_self| {
-                    Box::pin(Patch::runner_run(TESTS.get("echo_main").unwrap(), _self))
+                    Box::pin(Patch::runner_run(TESTS.get("echo_main"), _self))
                 }),
             ]);
         defer! {
@@ -190,10 +184,10 @@ mod tests {
             .expecting(vec!["Args::parse(true)", "Config::from_yaml(false)"])
             .with_patches(vec![
                 patch0(Args::parse, || {
-                    Patch::args_parse(TESTS.get("echo_main_badconfig").unwrap())
+                    Patch::args_parse(TESTS.get("echo_main_badconfig"))
                 }),
                 patch1(Config::from_yaml, |args| {
-                    let test = TESTS.get("echo_main_badconfig").unwrap();
+                    let test = TESTS.get("echo_main_badconfig");
                     test.lock().unwrap().fail().patch_index(1);
                     Box::pin(Patch::config_from_yaml(test, args))
                 }),
@@ -201,7 +195,7 @@ mod tests {
                     <Command as runner::command::Factory<Command, Config>>::new,
                     |config, command| {
                         Patch::runner_command_from_config(
-                            TESTS.get("echo_main_badconfig").unwrap(),
+                            TESTS.get("echo_main_badconfig"),
                             config,
                             command,
                         )
@@ -209,15 +203,10 @@ mod tests {
                 ),
                 patch1(
                     <Runner as runner::runner::Factory<Runner, EchoHandler>>::new,
-                    |command| {
-                        Patch::runner_factory(TESTS.get("echo_main_badconfig").unwrap(), command)
-                    },
+                    |command| Patch::runner_factory(TESTS.get("echo_main_badconfig"), command),
                 ),
                 patch1(Runner::run, |_self| {
-                    Box::pin(Patch::runner_run(
-                        TESTS.get("echo_main_badconfig").unwrap(),
-                        _self,
-                    ))
+                    Box::pin(Patch::runner_run(TESTS.get("echo_main_badconfig"), _self))
                 }),
             ]);
         defer! {
@@ -249,13 +238,13 @@ mod tests {
             .with_patches(vec![
                 patch2(Runner::start, |_self, endpoint| {
                     Box::pin(Patch::runner_start(
-                        TESTS.get("runner_cmd_start").unwrap(),
+                        TESTS.get("runner_cmd_start"),
                         _self,
                         endpoint,
                     ))
                 }),
                 patch1(Runner::endpoint, |_self| {
-                    Patch::runner_endpoint(TESTS.get("runner_cmd_start").unwrap(), _self)
+                    Patch::runner_endpoint(TESTS.get("runner_cmd_start"), _self)
                 }),
             ]);
         defer! {
@@ -285,10 +274,10 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(Runner::listener_host, |_self| {
-                    Patch::runner_listener_host(TESTS.get("runner_endpoint").unwrap(), _self)
+                    Patch::runner_listener_host(TESTS.get("runner_endpoint"), _self)
                 }),
                 patch1(Runner::listener_port, |_self| {
-                    Patch::runner_listener_port(TESTS.get("runner_endpoint").unwrap(), _self)
+                    Patch::runner_listener_port(TESTS.get("runner_endpoint"), _self)
                 }),
             ]);
         defer! {
@@ -326,7 +315,7 @@ mod tests {
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_host").unwrap(),
+                    TESTS.get("runner_listener_host"),
                     Some(core::Primitive::String("::".to_string())),
                     _self,
                     key,
@@ -355,7 +344,7 @@ mod tests {
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_host_noconfig").unwrap(),
+                    TESTS.get("runner_listener_host_noconfig"),
                     None,
                     _self,
                     key,
@@ -388,7 +377,7 @@ mod tests {
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_host_badconfig").unwrap(),
+                    TESTS.get("runner_listener_host_badconfig"),
                     Some(core::Primitive::String("NOT AN IP ADDRESS".to_string())),
                     _self,
                     key,
@@ -421,7 +410,7 @@ mod tests {
             .expecting(vec!["Runner::config(true): \"listener.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_host_badconfig_type").unwrap(),
+                    TESTS.get("runner_listener_host_badconfig_type"),
                     Some(core::Primitive::U32(1717)),
                     _self,
                     key,
@@ -454,7 +443,7 @@ mod tests {
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_port").unwrap(),
+                    TESTS.get("runner_listener_port"),
                     Some(core::Primitive::U32(2323)),
                     _self,
                     key,
@@ -483,7 +472,7 @@ mod tests {
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_port_noconfig").unwrap(),
+                    TESTS.get("runner_listener_port_noconfig"),
                     None,
                     _self,
                     key,
@@ -516,7 +505,7 @@ mod tests {
             .expecting(vec!["Runner::config(true): \"listener.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_port_badconfig").unwrap(),
+                    TESTS.get("runner_listener_port_badconfig"),
                     Some(core::Primitive::String("NOT A PORT".to_string())),
                     _self,
                     key,
@@ -555,21 +544,21 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(Runner::get_handler, |_self| {
-                    Patch::runner_get_handler(TESTS.get("runner_start").unwrap(), _self)
+                    Patch::runner_get_handler(TESTS.get("runner_start"), _self)
                 }),
                 patch1(EchoHandler::router, |_self| {
-                    Patch::handler_router(TESTS.get("runner_start").unwrap(), _self)
+                    Patch::handler_router(TESTS.get("runner_start"), _self)
                 }),
                 patch0(runner::runner::ctrl_c, || {
-                    Box::pin(Patch::ctrl_c(TESTS.get("runner_start").unwrap()))
+                    Box::pin(Patch::ctrl_c(TESTS.get("runner_start")))
                 }),
                 patch2(axum::serve, |listener, router| {
-                    let test = TESTS.get("runner_start").unwrap();
+                    let test = TESTS.get("runner_start");
                     test.lock().unwrap().patch_index(3);
                     Patch::axum_serve(test, listener, router)
                 }),
                 patch2(axum::serve::Serve::with_graceful_shutdown, |_self, fun| {
-                    let test = TESTS.get("runner_start").unwrap();
+                    let test = TESTS.get("runner_start");
                     test.lock().unwrap().patch_index(4);
                     Patch::axum_serve_with_graceful_shutdown(test, _self, Box::pin(fun))
                 }),
@@ -597,13 +586,10 @@ mod tests {
             .expecting(vec!["Runner::start_log(true)", "Runner::handle(true)"])
             .with_patches(vec![
                 patch1(Runner::start_log, |_self| {
-                    RunnerPatch::runner_start_log(TESTS.get("runner_run").unwrap(), _self)
+                    RunnerPatch::runner_start_log(TESTS.get("runner_run"), _self)
                 }),
                 patch1(Runner::handle, |_self| {
-                    Box::pin(RunnerPatch::runner_handle(
-                        TESTS.get("runner_run").unwrap(),
-                        _self,
-                    ))
+                    Box::pin(RunnerPatch::runner_handle(TESTS.get("runner_run"), _self))
                 }),
             ]);
         defer! {
@@ -628,7 +614,7 @@ mod tests {
                 "Runner::configured_command(true)",
             ])
             .with_patches(vec![patch1(Runner::resolve_command, |_self| {
-                RunnerPatch::runner_resolve_command(TESTS.get("runner_handle").unwrap(), _self)
+                RunnerPatch::runner_resolve_command(TESTS.get("runner_handle"), _self)
             })]);
         defer! {
             test.drop();
@@ -649,10 +635,7 @@ mod tests {
             .test("runner_commands")
             .expecting(vec!["Runner::cmd_start(true)"])
             .with_patches(vec![patch1(Runner::cmd_start, |_self| {
-                Box::pin(Patch::runner_cmd_start(
-                    TESTS.get("runner_commands").unwrap(),
-                    _self,
-                ))
+                Box::pin(Patch::runner_cmd_start(TESTS.get("runner_commands"), _self))
             })]);
         defer! {
             test.drop();

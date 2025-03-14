@@ -263,7 +263,7 @@ log:
                 "serde_yaml::to_value(true): BaseConfig { log: Some(LogConfig { level: Info }) }",
             ])
             .with_patches(vec![patch1(serde_yaml::to_value::<BaseConfig>, |thing| {
-                Patch::serde_to_value(TESTS.get("baseconfig_serialized").unwrap(), Box::new(thing))
+                Patch::serde_to_value(TESTS.get("baseconfig_serialized"), Box::new(thing))
             })]);
         defer! {
             test.drop()
@@ -283,10 +283,10 @@ log:
                 "Config::override_config(true): MockArgsProvider, DummyConfig { log: LogConfig { level: Trace } }"])
             .with_patches(vec![
                 patch1(DummyFactory::read_yaml, |args| {
-                    Box::pin(Patch::read_yaml(TESTS.get("from_yaml").unwrap(), args))
+                    Box::pin(Patch::read_yaml(TESTS.get("from_yaml"), args))
                 }),
                 patch2(DummyFactory::override_config, |args, config| {
-                    Box::pin(Patch::override_config(TESTS.get("from_yaml").unwrap(), args, config))
+                    Box::pin(Patch::override_config(TESTS.get("from_yaml"), args, config))
                 }),
             ]);
         defer! {
@@ -311,11 +311,11 @@ log:
             .expecting(vec!["serde_yaml::from_str(true): \"debug\""])
             .with_patches(vec![
                 patch1(std::env::var, |name| {
-                    Patch::env_var(TESTS.get("factory_log_level_override_arg").unwrap(), name)
+                    Patch::env_var(TESTS.get("factory_log_level_override_arg"), name)
                 }),
                 patch1(serde_yaml::from_str::<log::Level>, |string| {
                     Patch::serde_from_str::<DummyConfig>(
-                        TESTS.get("factory_log_level_override_arg").unwrap(),
+                        TESTS.get("factory_log_level_override_arg"),
                         string,
                     )
                 }),
@@ -345,11 +345,11 @@ log:
             ])
             .with_patches(vec![
                 patch1(std::env::var, |name| {
-                    Patch::env_var(TESTS.get("factory_log_level_override_env").unwrap(), name)
+                    Patch::env_var(TESTS.get("factory_log_level_override_env"), name)
                 }),
                 patch1(serde_yaml::from_str::<log::Level>, |string| {
                     Patch::serde_from_str::<DummyConfig>(
-                        TESTS.get("factory_log_level_override_env").unwrap(),
+                        TESTS.get("factory_log_level_override_env"),
                         string,
                     )
                 }),
@@ -374,13 +374,13 @@ log:
             .expecting(vec!["std::env::var(false): \"LOG_LEVEL\""])
             .with_patches(vec![
                 patch1(std::env::var, |name| {
-                    let test = TESTS.get("factory_log_level_override_none").unwrap();
+                    let test = TESTS.get("factory_log_level_override_none");
                     test.lock().unwrap().fail();
                     Patch::env_var(test, name)
                 }),
                 patch1(serde_yaml::from_str::<log::Level>, |string| {
                     Patch::serde_from_str::<DummyConfig>(
-                        TESTS.get("factory_log_level_override_none").unwrap(),
+                        TESTS.get("factory_log_level_override_none"),
                         string,
                     )
                 }),
@@ -408,10 +408,10 @@ log:
             ])
             .with_patches(vec![
                 patch1(std::env::var, |name| {
-                    Patch::env_var(TESTS.get("factory_log_level_override_err").unwrap(), name)
+                    Patch::env_var(TESTS.get("factory_log_level_override_err"), name)
                 }),
                 patch1(serde_yaml::from_str::<log::Level>, |string| {
-                    let test = TESTS.get("factory_log_level_override_err").unwrap();
+                    let test = TESTS.get("factory_log_level_override_err");
                     test.lock().unwrap().fail();
                     Patch::serde_from_str::<DummyConfig>(test, string)
                 }),
@@ -445,13 +445,13 @@ log:
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
                     Ok(Patch::log_level_override(
-                        TESTS.get("factory_override_config").unwrap(),
+                        TESTS.get("factory_override_config"),
                         true,
                         args,
                     )?)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    Patch::set_log(TESTS.get("factory_override_config").unwrap(), _self, level)
+                    Patch::set_log(TESTS.get("factory_override_config"), _self, level)
                 }),
             ]);
         defer! {
@@ -479,17 +479,13 @@ log:
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
                     Ok(Patch::log_level_override(
-                        TESTS.get("factory_override_config_nolog").unwrap(),
+                        TESTS.get("factory_override_config_nolog"),
                         false,
                         args,
                     )?)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    Patch::set_log(
-                        TESTS.get("factory_override_config_nolog").unwrap(),
-                        _self,
-                        level,
-                    )
+                    Patch::set_log(TESTS.get("factory_override_config_nolog"), _self, level)
                 }),
             ]);
         defer! {
@@ -516,16 +512,12 @@ log:
             ])
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
-                    let test = TESTS.get("factory_override_config_get_err").unwrap();
+                    let test = TESTS.get("factory_override_config_get_err");
                     test.lock().unwrap().fail();
                     Patch::log_level_override(test, true, args)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    Patch::set_log(
-                        TESTS.get("factory_override_config_get_err").unwrap(),
-                        _self,
-                        level,
-                    )
+                    Patch::set_log(TESTS.get("factory_override_config_get_err"), _self, level)
                 }),
             ]);
         defer! {
@@ -557,13 +549,13 @@ log:
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
                     Patch::log_level_override(
-                        TESTS.get("factory_override_config_set_err").unwrap(),
+                        TESTS.get("factory_override_config_set_err"),
                         true,
                         args,
                     )
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    let test = TESTS.get("factory_override_config_set_err").unwrap();
+                    let test = TESTS.get("factory_override_config_set_err");
                     test.lock().unwrap().fail();
                     Patch::set_log(test, _self, level)
                 }),
@@ -597,14 +589,14 @@ log:
             ])
             .with_patches(vec![
                 patch1(Path::exists, |_self| {
-                    Patch::path_exists(TESTS.get("read_yaml").unwrap(), _self)
+                    Patch::path_exists(TESTS.get("read_yaml"), _self)
                 }),
                 patch1(std::fs::File::open, |path| {
-                    Patch::file_open(TESTS.get("read_yaml").unwrap(), path)
+                    Patch::file_open(TESTS.get("read_yaml"), path)
                 }),
                 patch1(
                     serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                    |file| Patch::serde_from_reader(TESTS.get("read_yaml").unwrap(), &file),
+                    |file| Patch::serde_from_reader(TESTS.get("read_yaml"), &file),
                 ),
             ]);
         defer! {
@@ -623,18 +615,16 @@ log:
             .expecting(vec!["Path.exists(false): \"tests/config.yaml\""])
             .with_patches(vec![
                 patch1(Path::exists, |_self| {
-                    let test = TESTS.get("read_yaml_no_exist").unwrap();
+                    let test = TESTS.get("read_yaml_no_exist");
                     test.lock().unwrap().fail();
                     Patch::path_exists(test, _self)
                 }),
                 patch1(std::fs::File::open, |path| {
-                    Patch::file_open(TESTS.get("read_yaml_no_exist").unwrap(), path)
+                    Patch::file_open(TESTS.get("read_yaml_no_exist"), path)
                 }),
                 patch1(
                     serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                    |file| {
-                        Patch::serde_from_reader(TESTS.get("read_yaml_no_exist").unwrap(), &file)
-                    },
+                    |file| Patch::serde_from_reader(TESTS.get("read_yaml_no_exist"), &file),
                 ),
             ]);
         defer! {
@@ -662,18 +652,16 @@ log:
             ])
             .with_patches(vec![
                 patch1(Path::exists, |_self| {
-                    Patch::path_exists(TESTS.get("read_yaml_fail_open").unwrap(), _self)
+                    Patch::path_exists(TESTS.get("read_yaml_fail_open"), _self)
                 }),
                 patch1(std::fs::File::open, |path| {
-                    let test = TESTS.get("read_yaml_fail_open").unwrap();
+                    let test = TESTS.get("read_yaml_fail_open");
                     test.lock().unwrap().fail();
                     Patch::file_open(test, path)
                 }),
                 patch1(
                     serde_yaml::from_reader::<std::fs::File, DummyConfig>,
-                    |file| {
-                        Patch::serde_from_reader(TESTS.get("read_yaml_fail_open").unwrap(), &file)
-                    },
+                    |file| Patch::serde_from_reader(TESTS.get("read_yaml_fail_open"), &file),
                 ),
             ]);
         defer! {
@@ -707,15 +695,15 @@ log:
             ])
             .with_patches(vec![
                 patch1(Path::exists, |_self| {
-                    Patch::path_exists(TESTS.get("read_yaml_bad_parse").unwrap(), _self)
+                    Patch::path_exists(TESTS.get("read_yaml_bad_parse"), _self)
                 }),
                 patch1(std::fs::File::open, |path| {
-                    Patch::file_open(TESTS.get("read_yaml_bad_parse").unwrap(), path)
+                    Patch::file_open(TESTS.get("read_yaml_bad_parse"), path)
                 }),
                 patch1(
                     serde_yaml::from_reader::<std::fs::File, DummyConfig>,
                     |file| {
-                        let test = TESTS.get("read_yaml_bad_parse").unwrap();
+                        let test = TESTS.get("read_yaml_bad_parse");
                         test.lock().unwrap().fail();
                         Patch::serde_from_reader(test, &file)
                     },
@@ -751,15 +739,10 @@ log:
             ])
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
-                    Patch::config_resolve(
-                        TESTS.get("read_provider_get").unwrap(),
-                        _self,
-                        current,
-                        keys,
-                    )
+                    Patch::config_resolve(TESTS.get("read_provider_get"), _self, current, keys)
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(TESTS.get("read_provider_get").unwrap(), _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get"), _self)
                 }),
             ]);
         defer! {
@@ -791,14 +774,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_f64(
-                        TESTS.get("read_provider_get_f64").unwrap(),
+                        TESTS.get("read_provider_get_f64"),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(TESTS.get("read_provider_get_f64").unwrap(), _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_f64"), _self)
                 }),
             ]);
         defer! {
@@ -830,14 +813,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_i32(
-                        TESTS.get("read_provider_get_i32").unwrap(),
+                        TESTS.get("read_provider_get_i32"),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(TESTS.get("read_provider_get_i32").unwrap(), _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_i32"), _self)
                 }),
             ]);
         defer! {
@@ -873,14 +856,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_i64(
-                        TESTS.get("read_provider_get_i64").unwrap(),
+                        TESTS.get("read_provider_get_i64"),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(TESTS.get("read_provider_get_i64").unwrap(), _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_i64"), _self)
                 }),
             ]);
         defer! {
@@ -916,14 +899,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_u32(
-                        TESTS.get("read_provider_get_u32").unwrap(),
+                        TESTS.get("read_provider_get_u32"),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(TESTS.get("read_provider_get_u32").unwrap(), _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_u32"), _self)
                 }),
             ]);
         defer! {
@@ -959,14 +942,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_u64(
-                        TESTS.get("read_provider_get_u64").unwrap(),
+                        TESTS.get("read_provider_get_u64"),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(TESTS.get("read_provider_get_u64").unwrap(), _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_u64"), _self)
                 }),
             ]);
         defer! {
@@ -1002,14 +985,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_bool(
-                        TESTS.get("read_provider_get_bool").unwrap(),
+                        TESTS.get("read_provider_get_bool"),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(TESTS.get("read_provider_get_bool").unwrap(), _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_bool"), _self)
                 }),
             ]);
         defer! {
@@ -1045,14 +1028,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_bad(
-                        TESTS.get("read_provider_get_bad").unwrap(),
+                        TESTS.get("read_provider_get_bad"),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(TESTS.get("read_provider_get_bad").unwrap(), _self)
+                    Patch::config_serialized(TESTS.get("read_provider_get_bad"), _self)
                 }),
             ]);
         defer! {
@@ -1081,17 +1064,14 @@ log:
             .with_patches(vec![
                 patch3(DummyConfig2::resolve, |_self, current, keys| {
                     Patch::config_resolve_bad_type(
-                        TESTS.get("read_provider_get_bad_type").unwrap(),
+                        TESTS.get("read_provider_get_bad_type"),
                         _self,
                         current,
                         keys,
                     )
                 }),
                 patch1(DummyConfig2::serialized, |_self| {
-                    Patch::config_serialized(
-                        TESTS.get("read_provider_get_bad_type").unwrap(),
-                        _self,
-                    )
+                    Patch::config_serialized(TESTS.get("read_provider_get_bad_type"), _self)
                 }),
             ]);
         defer! {

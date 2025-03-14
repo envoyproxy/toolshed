@@ -73,7 +73,7 @@ mod tests {
             .test("endpoint_socket_address")
             .expecting(vec!["SocketAddr::new(true): 8.8.8.8 7373"])
             .with_patches(vec![patch2(SocketAddr::new, |host, port| {
-                Patch::socket_addr_new(TESTS.get("endpoint_socket_address").unwrap(), host, port)
+                Patch::socket_addr_new(TESTS.get("endpoint_socket_address"), host, port)
             })]);
         defer! {
             test.drop();
@@ -100,10 +100,10 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(Config::default_host, || {
-                    Patch::config_default_host(TESTS.get("config_default_listener").unwrap())
+                    Patch::config_default_host(TESTS.get("config_default_listener"))
                 }),
                 patch0(Config::default_port, || {
-                    Patch::config_default_port(TESTS.get("config_default_listener").unwrap())
+                    Patch::config_default_port(TESTS.get("config_default_listener"))
                 }),
             ]);
         defer! {
@@ -141,7 +141,7 @@ mod tests {
             .test("endpoint_bind")
             .expecting(vec!["SocketAddr::new(true): 0.0.0.0 7373"])
             .with_patches(vec![patch2(SocketAddr::new, |host, port| {
-                Patch::socket_addr_new(TESTS.get("endpoint_bind").unwrap(), host, port)
+                Patch::socket_addr_new(TESTS.get("endpoint_bind"), host, port)
             })]);
         defer! {
             test.drop();
