@@ -9,6 +9,7 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
+use toolshed_core as core;
 use toolshed_runner::{self as runner, handler::Handler as _};
 
 #[async_trait]
@@ -87,7 +88,7 @@ impl Provider for EchoHandler {
         body: Bytes,
     ) -> response::Response {
         let hostname = match self.config("hostname") {
-            Some(toolshed_runner::config::Primitive::String(s)) => s,
+            Some(core::Primitive::String(s)) => s,
             _ => config::Config::default_hostname(),
         };
         Response::new(hostname, method, headers, params, path, body).to_json()
@@ -250,7 +251,7 @@ mod tests {
                     |_self, key| {
                         Patch::handler_config(
                             TESTS.get("handler_handle").unwrap(),
-                            Some(toolshed_runner::config::Primitive::String("HOSTNAME FROM CONFIG".to_string())),
+                            Some(core::Primitive::String("HOSTNAME FROM CONFIG".to_string())),
                             _self,
                             key
                         )

@@ -1,5 +1,6 @@
-use crate::{command::Command, config};
+use crate::command::Command;
 use std::fmt;
+use toolshed_core as core;
 
 pub trait Factory<T>: Send + Sync
 where
@@ -11,7 +12,7 @@ where
 pub trait Handler: fmt::Debug + Send + Sync {
     fn get_command(&self) -> Box<&dyn Command>;
 
-    fn config(&self, key: &str) -> Option<config::Primitive> {
+    fn config(&self, key: &str) -> Option<core::Primitive> {
         self.get_command().get_config().get(key)
     }
 }
@@ -67,7 +68,7 @@ mod tests {
         let handler = Dummy::handler(command.clone()).unwrap();
         let mut failure = "";
 
-        if let Some(config::Primitive::String(result)) = handler.config("SOME.KEY.PATH") {
+        if let Some(core::Primitive::String(result)) = handler.config("SOME.KEY.PATH") {
             assert_eq!(result, "BOOM");
         } else {
             failure = "Expected a Primitive::String, but got something else.";

@@ -17,6 +17,7 @@ serde_yaml = "0.9"
 tokio = { version = "1", features = ["full"] }
 tempfile = { version = "3.3", optional = true }
 once_cell = { version = "1.20", optional = true }
+toolshed-core = { path = "../core" }
 # guerrilla = { path = "../../../guerrilla", optional = true }
 guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "24adf537b87b1c481e02e0c4a7d68771ebf6cc7a", optional = true }
 

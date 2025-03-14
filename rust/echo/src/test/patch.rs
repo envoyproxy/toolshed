@@ -22,6 +22,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 use tokio::net::TcpListener;
+use toolshed_core as core;
 use toolshed_runner::{self as runner, config::Factory as _, test::Test};
 
 pub struct Patch {}
@@ -240,10 +241,10 @@ impl Patch {
 
     pub fn handler_config(
         test: Arc<Mutex<Test>>,
-        returns: Option<runner::config::Primitive>,
+        returns: Option<core::Primitive>,
         _self: &EchoHandler,
         key: &str,
-    ) -> Option<runner::config::Primitive> {
+    ) -> Option<core::Primitive> {
         let test = test.lock().unwrap();
         test.spy().push(
             &test.name,

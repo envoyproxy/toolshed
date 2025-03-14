@@ -1,9 +1,10 @@
-use crate::{command::Command, config, handler::Handler, log, EmptyResult};
+use crate::{command::Command, handler::Handler, log, EmptyResult};
 use ::log::LevelFilter;
 use as_any::AsAny;
 use async_trait::async_trait;
 use env_logger::Builder;
 use std::{any::Any, collections::HashMap, error::Error, fmt, future::Future, pin::Pin, sync::Arc};
+use toolshed_core as core;
 
 pub trait Factory<T, R>: Send + Sync
 where
@@ -79,7 +80,7 @@ pub trait Runner<T: Handler + 'static>: Any + AsAny + Send + Sync {
         self.get_handler().get_command()
     }
 
-    fn config(&self, key: &str) -> Option<config::Primitive> {
+    fn config(&self, key: &str) -> Option<core::Primitive> {
         self.get_command().get_config().get(key)
     }
 
@@ -103,7 +104,7 @@ pub trait Runner<T: Handler + 'static>: Any + AsAny + Send + Sync {
     }
 
     fn start_log(&self) -> EmptyResult {
-        if let Some(config::Primitive::String(level_str)) = self.config("log.level") {
+        if let Some(core::Primitive::String(level_str)) = self.config("log.level") {
             if let Ok(level) = level_str.parse::<log::Level>() {
                 Builder::new().filter(None, LevelFilter::from(level)).init();
             }
@@ -215,7 +216,7 @@ mod tests {
         let runner = Dummy::runner(handler).unwrap();
         let mut failure = "";
 
-        if let Some(config::Primitive::String(result)) = runner.config("SOME.KEY.PATH") {
+        if let Some(core::Primitive::String(result)) = runner.config("SOME.KEY.PATH") {
             assert_eq!(result, "BOOM");
         } else {
             failure = "Expected a Primitive::String, but got something else.";
@@ -405,7 +406,7 @@ mod tests {
                 patch2(DummyRunner::config, |_self, key| {
                     Patch::runner_config::<DummyHandler>(
                         TESTS.get("runner_startlog").unwrap(),
-                        Some(config::Primitive::String("warning".to_string())),
+                        Some(core::Primitive::String("warning".to_string())),
                         _self,
                         key,
                     )
