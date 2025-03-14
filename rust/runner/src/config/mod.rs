@@ -1,15 +1,9 @@
 use crate::{args, log, EmptyResult};
 use as_any::AsAny;
 use async_trait::async_trait;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_yaml::Value;
-use std::any::Any;
-use std::error::Error;
-use std::fmt;
-use std::fmt::Debug;
-use std::path::Path;
-use std::sync::Arc;
+use std::{any::Any, error::Error, fmt, fmt::Debug, path::Path, sync::Arc};
 
 pub type SafeArgs = Box<dyn args::Provider + Send + Sync>;
 pub type ArcSafeArgs = Arc<SafeArgs>;

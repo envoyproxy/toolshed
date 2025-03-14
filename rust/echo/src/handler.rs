@@ -9,10 +9,10 @@ use axum::{
     Router,
 };
 use serde::{Deserialize, Serialize};
-use toolshed_runner::{command, handler, handler::Handler as _};
+use toolshed_runner::{self as runner, handler::Handler as _};
 
 #[async_trait]
-pub trait Provider: handler::Handler + Clone
+pub trait Provider: runner::handler::Handler + Clone
 where
     Self: 'static,
 {
@@ -64,14 +64,14 @@ pub struct EchoHandler {
 
 impl EchoHandler {}
 
-impl handler::Factory<Command> for EchoHandler {
+impl runner::handler::Factory<Command> for EchoHandler {
     fn new(command: Command) -> Self {
         EchoHandler { command }
     }
 }
 
-impl handler::Handler for EchoHandler {
-    fn get_command(&self) -> Box<&dyn command::Command> {
+impl runner::handler::Handler for EchoHandler {
+    fn get_command(&self) -> Box<&dyn runner::command::Command> {
         Box::new(&self.command)
     }
 }

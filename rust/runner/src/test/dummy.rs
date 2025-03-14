@@ -1,9 +1,8 @@
 use crate as toolshed_runner;
-use crate::{command, config, log, runner, EmptyResult};
+use crate::{command, config, handler, log, runner, EmptyResult};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use serde_yaml::Mapping;
-use serde_yaml::Value;
+use serde_yaml::{Mapping, Value};
 use std::error::Error;
 
 pub trait Loggable {
@@ -124,7 +123,7 @@ pub struct DummyHandler {
     pub command: DummyCommand,
 }
 
-impl toolshed_runner::handler::Handler for DummyHandler {
+impl handler::Handler for DummyHandler {
     fn get_command(&self) -> Box<&dyn command::Command> {
         Box::new(&self.command)
     }

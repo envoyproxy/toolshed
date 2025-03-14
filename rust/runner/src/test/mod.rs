@@ -3,10 +3,9 @@ pub mod dummy;
 pub mod patch;
 pub mod spy;
 
+use crate::test::{patch::Patches, spy::Spy};
 use guerrilla::PatchGuard;
 use once_cell::sync::Lazy;
-use patch::Patches;
-use spy::Spy;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},

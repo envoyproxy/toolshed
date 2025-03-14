@@ -19,13 +19,15 @@ pub trait Handler: fmt::Debug + Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test::{
-        dummy::{Dummy, DummyCommand, DummyConfig, DummyHandler},
-        patch::{Patch, Patches},
-        spy::Spy,
-        Tests,
+    use crate::{
+        config::Provider as _,
+        test::{
+            dummy::{Dummy, DummyCommand, DummyConfig, DummyHandler},
+            patch::{Patch, Patches},
+            spy::Spy,
+            Tests,
+        },
     };
-    use config::Provider;
     use guerrilla::{patch1, patch2};
     use once_cell::sync::Lazy;
     use scopeguard::defer;

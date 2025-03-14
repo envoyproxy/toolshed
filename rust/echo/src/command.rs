@@ -1,6 +1,6 @@
 use crate::config::Config;
 use serde::{Deserialize, Serialize};
-use toolshed_runner::{command, config};
+use toolshed_runner as runner;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Command {
@@ -15,7 +15,7 @@ impl Command {
     }
 }
 
-impl command::Factory<Command, Config> for Command {
+impl runner::command::Factory<Command, Config> for Command {
     fn new(config: Config, name: Option<String>) -> Self {
         let name = match name {
             Some(name) => name,
@@ -25,12 +25,12 @@ impl command::Factory<Command, Config> for Command {
     }
 }
 
-impl command::Command for Command {
+impl runner::command::Command for Command {
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn get_config(&self) -> Box<&dyn config::Provider> {
+    fn get_config(&self) -> Box<&dyn runner::config::Provider> {
         Box::new(&self.config)
     }
 }
@@ -57,7 +57,8 @@ mod tests {
     fn test_command_new() {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
-        let command: Command = command::Factory::<Command, Config>::new(config.clone(), Some(name));
+        let command: Command =
+            runner::command::Factory::<Command, Config>::new(config.clone(), Some(name));
         assert_eq!(command.name, "somecommand");
         assert_eq!(command.config, config);
     }
@@ -76,7 +77,8 @@ mod tests {
         }
 
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
-        let command: Command = command::Factory::<Command, Config>::new(config.clone(), None);
+        let command: Command =
+            runner::command::Factory::<Command, Config>::new(config.clone(), None);
         assert_eq!(command.name, "DEFAULT_NAME");
         assert_eq!(command.config, config);
     }

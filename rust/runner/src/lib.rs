@@ -7,8 +7,6 @@ pub mod runner;
 
 #[cfg(feature = "test")]
 pub mod test;
-// #[cfg(test)]
-// mod test_macros;
 
 use std::error::Error;
 

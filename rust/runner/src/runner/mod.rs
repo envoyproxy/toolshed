@@ -3,13 +3,7 @@ use ::log::LevelFilter;
 use as_any::AsAny;
 use async_trait::async_trait;
 use env_logger::Builder;
-use std::any::Any;
-use std::collections::HashMap;
-use std::error::Error;
-use std::fmt;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
+use std::{any::Any, collections::HashMap, error::Error, fmt, future::Future, pin::Pin, sync::Arc};
 
 pub trait Factory<T, R>: Send + Sync
 where
@@ -121,13 +115,15 @@ pub trait Runner<T: Handler + 'static>: Any + AsAny + Send + Sync {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test::{
-        dummy::{Dummy, DummyCommand, DummyConfig, DummyHandler, DummyRunner},
-        patch::{Patch, Patches},
-        spy::Spy,
-        Tests,
+    use crate::{
+        config::Provider as _,
+        test::{
+            dummy::{Dummy, DummyCommand, DummyConfig, DummyHandler, DummyRunner},
+            patch::{Patch, Patches},
+            spy::Spy,
+            Tests,
+        },
     };
-    use config::Provider;
     use guerrilla::{patch0, patch1, patch2, patch3};
     use once_cell::sync::Lazy;
     use scopeguard::defer;
