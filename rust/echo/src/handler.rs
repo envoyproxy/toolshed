@@ -174,7 +174,7 @@ mod tests {
                     EchoHandler::config,
                     |_self, key| {
                         Patch::handler_config(
-                            TESTS.get("handler_handle").unwrap(),
+                            TESTS.get("handler_handle"),
                             None,
                             _self,
                             key
@@ -185,14 +185,14 @@ mod tests {
                     config::Config::default_hostname,
                     || {
                         Patch::default_hostname(
-                            TESTS.get("handler_handle").unwrap())
+                            TESTS.get("handler_handle"))
                     },
                 ),
                 patch6(
                     Response::new,
                     |hostname, method, headers, params, path, body| {
                         Patch::response_new(
-                            TESTS.get("handler_handle").unwrap(),
+                            TESTS.get("handler_handle"),
                             hostname,
                             method,
                             headers,
@@ -206,7 +206,7 @@ mod tests {
                     Response::to_json,
                     |_self| {
                         Patch::response_to_json(
-                            TESTS.get("handler_handle").unwrap(),
+                            TESTS.get("handler_handle"),
                             _self
                         )
                     },
@@ -250,7 +250,7 @@ mod tests {
                     EchoHandler::config,
                     |_self, key| {
                         Patch::handler_config(
-                            TESTS.get("handler_handle").unwrap(),
+                            TESTS.get("handler_handle"),
                             Some(core::Primitive::String("HOSTNAME FROM CONFIG".to_string())),
                             _self,
                             key
@@ -261,14 +261,14 @@ mod tests {
                     config::Config::default_hostname,
                     || {
                         Patch::default_hostname(
-                            TESTS.get("handler_handle").unwrap())
+                            TESTS.get("handler_handle"))
                     },
                 ),
                 patch6(
                     Response::new,
                     |hostname, method, headers, params, path, body| {
                         Patch::response_new(
-                            TESTS.get("handler_handle").unwrap(),
+                            TESTS.get("handler_handle"),
                             hostname,
                             method,
                             headers,
@@ -282,7 +282,7 @@ mod tests {
                     Response::to_json,
                     |_self| {
                         Patch::response_to_json(
-                            TESTS.get("handler_handle").unwrap(),
+                            TESTS.get("handler_handle"),
                             _self
                         )
                     },
@@ -313,7 +313,7 @@ mod tests {
                 EchoHandler::handle,
                 |_self, method, headers, params, path, body| {
                     Box::pin(Patch::handler_handle(
-                        TESTS.get("handler_route_path").unwrap(),
+                        TESTS.get("handler_route_path"),
                         _self,
                         method,
                         headers,
@@ -348,7 +348,7 @@ mod tests {
                 EchoHandler::handle,
                 |_self, method, headers, params, path, body| {
                     Box::pin(Patch::handler_handle(
-                        TESTS.get("handler_route_root").unwrap(),
+                        TESTS.get("handler_route_root"),
                         _self,
                         method,
                         headers,
@@ -383,15 +383,15 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(Router::new, || {
-                    let test = TESTS.get("runner_router").unwrap();
+                    let test = TESTS.get("runner_router");
                     test.lock().unwrap().patch_index(0);
                     Patch::router_new(test)
                 }),
                 patch1(EchoHandler::route_path, |_self| {
-                    Patch::handler_route_path(TESTS.get("runner_router").unwrap(), _self)
+                    Patch::handler_route_path(TESTS.get("runner_router"), _self)
                 }),
                 patch1(EchoHandler::route_root, |_self| {
-                    Patch::handler_route_root(TESTS.get("runner_router").unwrap(), _self)
+                    Patch::handler_route_root(TESTS.get("runner_router"), _self)
                 }),
             ]);
         defer! {

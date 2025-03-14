@@ -90,7 +90,7 @@ mod tests {
             .test("response_new")
             .expecting(vec!["String::from_utf8_lossy(true): b\"BOODY\""])
             .with_patches(vec![patch1(String::from_utf8_lossy, |body| {
-                Patch::string_from_utf8_lossy(TESTS.get("response_new").unwrap(), Bytes::from(body))
+                Patch::string_from_utf8_lossy(TESTS.get("response_new"), Bytes::from(body))
             })]);
         defer! {
             test.drop();
@@ -138,15 +138,15 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(response::Response::builder, || {
-                    let test = TESTS.get("response_to_json").unwrap();
+                    let test = TESTS.get("response_to_json");
                     test.lock().unwrap().patch_index(0);
                     Patch::response_builder(test)
                 }),
                 patch2(fmt::Display::fmt, |_self, f| {
-                    Patch::response_fmt(TESTS.get("response_to_json").unwrap(), _self, f)
+                    Patch::response_fmt(TESTS.get("response_to_json"), _self, f)
                 }),
                 patch1(Body::from, |string| {
-                    let test = TESTS.get("response_to_json").unwrap();
+                    let test = TESTS.get("response_to_json");
                     test.lock().unwrap().patch_index(2);
                     Patch::http_response_body(test, string)
                 }),
@@ -202,9 +202,7 @@ mod tests {
             .expecting(vec!["serde_json::to_string_pretty(true)"])
             .with_patches(vec![patch1(
                 serde_json::to_string_pretty::<&Response>,
-                |thing| {
-                    Patch::serde_json_to_string_pretty(TESTS.get("response_debug").unwrap(), thing)
-                },
+                |thing| Patch::serde_json_to_string_pretty(TESTS.get("response_debug"), thing),
             )]);
         defer! {
             test.drop();
@@ -239,12 +237,7 @@ mod tests {
             .expecting(vec!["serde_json::to_string_pretty(true)"])
             .with_patches(vec![patch1(
                 serde_json::to_string_pretty::<&Response>,
-                |thing| {
-                    Patch::serde_json_to_string_pretty(
-                        TESTS.get("response_display").unwrap(),
-                        thing,
-                    )
-                },
+                |thing| Patch::serde_json_to_string_pretty(TESTS.get("response_display"), thing),
             )]);
         defer! {
             test.drop();

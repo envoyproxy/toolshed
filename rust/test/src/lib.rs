@@ -29,9 +29,11 @@ impl<'a> Tests<'a> {
         calls.insert(key.to_string(), test);
     }
 
-    pub fn get(&self, key: &str) -> Option<Arc<Mutex<Test<'a>>>> {
-        self.calls.lock().unwrap().get(key).cloned()
-        // .map(|v| v)
+    pub fn get(&self, key: &str) -> Arc<Mutex<Test<'a>>> {
+        match self.calls.lock().unwrap().get(key).cloned() {
+            Some(test) => test,
+            _ => panic!("Couldn't find test ({:?}), did you register it?", key),
+        }
     }
 
     pub fn clear(&self, key: &str) {

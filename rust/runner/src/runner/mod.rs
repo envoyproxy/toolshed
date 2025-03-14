@@ -193,16 +193,13 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
-                    Box::new(Patch::runner_command(
-                        TESTS.get("runner_config").unwrap(),
-                        _self,
-                    ))
+                    Box::new(Patch::runner_command(TESTS.get("runner_config"), _self))
                 }),
                 patch1(DummyCommand::get_config, |_self| {
-                    Patch::command_config(TESTS.get("runner_config").unwrap(), _self)
+                    Patch::command_config(TESTS.get("runner_config"), _self)
                 }),
                 patch2(DummyConfig::get, |_self, key| {
-                    Patch::config_get(TESTS.get("runner_config").unwrap(), _self, key)
+                    Patch::config_get(TESTS.get("runner_config"), _self, key)
                 }),
             ]);
         defer! {
@@ -253,10 +250,7 @@ mod tests {
                 "Runner::configured_command(true)",
             ])
             .with_patches(vec![patch1(DummyRunner::resolve_command, |_self| {
-                Patch::runner_resolve_command::<DummyHandler>(
-                    TESTS.get("runner_handle").unwrap(),
-                    _self,
-                )
+                Patch::runner_resolve_command::<DummyHandler>(TESTS.get("runner_handle"), _self)
             })]);
         defer! {
             test.drop()
@@ -283,15 +277,15 @@ mod tests {
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
                     Box::new(Patch::runner_command(
-                        TESTS.get("runner_resolve_command").unwrap(),
+                        TESTS.get("runner_resolve_command"),
                         _self,
                     ))
                 }),
                 patch1(DummyCommand::get_name, |_self| {
-                    Patch::command_get_name(TESTS.get("runner_resolve_command").unwrap(), _self)
+                    Patch::command_get_name(TESTS.get("runner_resolve_command"), _self)
                 }),
                 patch1(DummyRunner::commands, |_self| {
-                    Patch::runner_commands(TESTS.get("runner_resolve_command").unwrap(), _self)
+                    Patch::runner_commands(TESTS.get("runner_resolve_command"), _self)
                 }),
             ]);
         defer! {
@@ -319,21 +313,15 @@ mod tests {
             .with_patches(vec![
                 patch1(DummyRunner::get_command, |_self| {
                     Box::new(Patch::runner_command(
-                        TESTS.get("runner_resolve_command_bad_name").unwrap(),
+                        TESTS.get("runner_resolve_command_bad_name"),
                         _self,
                     ))
                 }),
                 patch1(DummyCommand::get_name, |_self| {
-                    Patch::command_get_name_bad(
-                        TESTS.get("runner_resolve_command_bad_name").unwrap(),
-                        _self,
-                    )
+                    Patch::command_get_name_bad(TESTS.get("runner_resolve_command_bad_name"), _self)
                 }),
                 patch1(DummyRunner::commands, |_self| {
-                    Patch::runner_commands(
-                        TESTS.get("runner_resolve_command_bad_name").unwrap(),
-                        _self,
-                    )
+                    Patch::runner_commands(TESTS.get("runner_resolve_command_bad_name"), _self)
                 }),
             ]);
         defer! {
@@ -370,11 +358,11 @@ mod tests {
             .expecting(vec!["Runner::start_log(true)", "Runner::handle(true)"])
             .with_patches(vec![
                 patch1(DummyRunner::start_log, |_self| {
-                    Patch::runner_start_log::<DummyHandler>(TESTS.get("runner_run").unwrap(), _self)
+                    Patch::runner_start_log::<DummyHandler>(TESTS.get("runner_run"), _self)
                 }),
                 patch1(DummyRunner::handle, |_self| {
                     Box::pin(Patch::runner_handle::<DummyHandler>(
-                        TESTS.get("runner_run").unwrap(),
+                        TESTS.get("runner_run"),
                         _self,
                     ))
                 }),
@@ -404,20 +392,20 @@ mod tests {
             .with_patches(vec![
                 patch2(DummyRunner::config, |_self, key| {
                     Patch::runner_config::<DummyHandler>(
-                        TESTS.get("runner_startlog").unwrap(),
+                        TESTS.get("runner_startlog"),
                         Some(core::Primitive::String("warning".to_string())),
                         _self,
                         key,
                     )
                 }),
                 patch0(Builder::new, || {
-                    Patch::log_new(TESTS.get("runner_startlog").unwrap())
+                    Patch::log_new(TESTS.get("runner_startlog"))
                 }),
                 patch3(Builder::filter, |_self, other, level| {
-                    Patch::log_filter(TESTS.get("runner_startlog").unwrap(), _self, other, level)
+                    Patch::log_filter(TESTS.get("runner_startlog"), _self, other, level)
                 }),
                 patch1(Builder::init, |_self| {
-                    Patch::log_init(TESTS.get("runner_startlog").unwrap(), _self)
+                    Patch::log_init(TESTS.get("runner_startlog"), _self)
                 }),
             ]);
         defer! {

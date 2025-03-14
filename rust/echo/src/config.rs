@@ -112,7 +112,7 @@ mod tests {
             .test("config_default")
             .expecting(vec!["listener::Config::default_listener(true)"])
             .with_patches(vec![patch0(listener::Config::default_listener, || {
-                Patch::default_listener(TESTS.get("config_default").unwrap())
+                Patch::default_listener(TESTS.get("config_default"))
             })]);
         defer! {
             test.drop();
@@ -133,7 +133,7 @@ mod tests {
                 "serde_yaml::to_value(true): Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listener: Config { host: 127.0.0.1, port: 8787 }, hostname: \"echo\" }"
             ])
             .with_patches(vec![patch1(serde_yaml::to_value::<Config>, |thing| {
-                RunnerPatch::serde_to_value(TESTS.get("config_serialized").unwrap(), Box::new(thing))
+                RunnerPatch::serde_to_value(TESTS.get("config_serialized"), Box::new(thing))
             })]);
         defer! {
             test.drop();
@@ -153,7 +153,7 @@ mod tests {
             .test("config_set_log")
             .expecting(vec!["listener::Config::default_listener(true)"])
             .with_patches(vec![patch0(listener::Config::default_listener, || {
-                Patch::default_listener(TESTS.get("config_set_log").unwrap())
+                Patch::default_listener(TESTS.get("config_set_log"))
             })]);
         defer! {
             test.drop();
@@ -193,19 +193,16 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(Config::default_hostname, || {
-                    Patch::default_hostname(TESTS.get("config_override_config_hostname").unwrap())
+                    Patch::default_hostname(TESTS.get("config_override_config_hostname"))
                 }),
                 patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_hostname").unwrap(), s)
+                    Patch::args_as_any(TESTS.get("config_override_config_hostname"), s)
                 }),
                 patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(
-                        TESTS.get("config_override_config_hostname").unwrap(),
-                        s,
-                    )
+                    Patch::args_downcast_ref(TESTS.get("config_override_config_hostname"), s)
                 }),
                 patch1(std::env::var, |name| {
-                    Patch::env_var(TESTS.get("config_override_config_hostname").unwrap(), name)
+                    Patch::env_var(TESTS.get("config_override_config_hostname"), name)
                 }),
             ]);
         defer! {
@@ -242,24 +239,16 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(Config::default_hostname, || {
-                    Patch::default_hostname(
-                        TESTS.get("config_override_config_hostname_env").unwrap(),
-                    )
+                    Patch::default_hostname(TESTS.get("config_override_config_hostname_env"))
                 }),
                 patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_hostname_env").unwrap(), s)
+                    Patch::args_as_any(TESTS.get("config_override_config_hostname_env"), s)
                 }),
                 patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(
-                        TESTS.get("config_override_config_hostname_env").unwrap(),
-                        s,
-                    )
+                    Patch::args_downcast_ref(TESTS.get("config_override_config_hostname_env"), s)
                 }),
                 patch1(std::env::var, |name| {
-                    Patch::env_var(
-                        TESTS.get("config_override_config_hostname_env").unwrap(),
-                        name,
-                    )
+                    Patch::env_var(TESTS.get("config_override_config_hostname_env"), name)
                 }),
             ]);
         defer! {
@@ -296,24 +285,16 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(Config::default_hostname, || {
-                    Patch::default_hostname(
-                        TESTS.get("config_override_config_hostname_env").unwrap(),
-                    )
+                    Patch::default_hostname(TESTS.get("config_override_config_hostname_env"))
                 }),
                 patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_hostname_env").unwrap(), s)
+                    Patch::args_as_any(TESTS.get("config_override_config_hostname_env"), s)
                 }),
                 patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(
-                        TESTS.get("config_override_config_hostname_env").unwrap(),
-                        s,
-                    )
+                    Patch::args_downcast_ref(TESTS.get("config_override_config_hostname_env"), s)
                 }),
                 patch1(std::env::var, |name| {
-                    let _ = Patch::env_var(
-                        TESTS.get("config_override_config_hostname_env").unwrap(),
-                        name,
-                    );
+                    let _ = Patch::env_var(TESTS.get("config_override_config_hostname_env"), name);
                     Err(std::env::VarError::NotPresent)
                 }),
             ]);
@@ -338,16 +319,13 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(listener::Config::default_listener, || {
-                    Patch::default_listener(TESTS.get("config_override_config_listener").unwrap())
+                    Patch::default_listener(TESTS.get("config_override_config_listener"))
                 }),
                 patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_listener").unwrap(), s)
+                    Patch::args_as_any(TESTS.get("config_override_config_listener"), s)
                 }),
                 patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(
-                        TESTS.get("config_override_config_listener").unwrap(),
-                        s,
-                    )
+                    Patch::args_downcast_ref(TESTS.get("config_override_config_listener"), s)
                 }),
             ]);
         defer! {

@@ -49,13 +49,13 @@ mod tests {
             ])
             .with_patches(vec![
                 patch1(DummyHandler::get_command, |_self| {
-                    Patch::handler_command(TESTS.get("runner_config").unwrap(), _self)
+                    Patch::handler_command(TESTS.get("runner_config"), _self)
                 }),
                 patch1(DummyCommand::get_config, |_self| {
-                    Patch::command_config(TESTS.get("runner_config").unwrap(), _self)
+                    Patch::command_config(TESTS.get("runner_config"), _self)
                 }),
                 patch2(DummyConfig::get, |_self, key| {
-                    Patch::config_get(TESTS.get("runner_config").unwrap(), _self, key)
+                    Patch::config_get(TESTS.get("runner_config"), _self, key)
                 }),
             ]);
         defer! {
