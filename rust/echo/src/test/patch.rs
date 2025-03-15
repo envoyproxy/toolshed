@@ -31,8 +31,7 @@ pub struct Patch {}
 impl Patch {
     pub fn args_as_any<'a>(test: Arc<Mutex<ttest::Test>>, _self: &'a Args) -> &'a dyn Any {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Args::as_any({:?})", true));
+        test.notify(&format!("Args::as_any({:?})", !test.fails));
         _self
     }
 
@@ -41,10 +40,7 @@ impl Patch {
         _self: &'a dyn Any,
     ) -> Option<&'a Args> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Any::downcast_ref::<Args>({:?})", !test.fails),
-        );
+        test.notify(&format!("Any::downcast_ref::<Args>({:?})", !test.fails));
         if _self.type_id() == TypeId::of::<Args>() {
             unsafe {
                 let args_ptr = _self as *const dyn Any as *const Args;
@@ -57,8 +53,7 @@ impl Patch {
 
     pub fn args_parse(test: Arc<Mutex<ttest::Test>>) -> Args {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Args::parse({:?})", true));
+        test.notify(&format!("Args::parse({:?})", !test.fails));
         let args = vec!["somecommand"];
         Args::parse_from(args.clone())
     }
@@ -69,8 +64,7 @@ impl Patch {
         router: Router,
     ) -> axum::serve::Serve<TcpListener, axum::routing::Router, axum::routing::Router> {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("axum::serve({:?})", !test.fails));
+        test.notify(&format!("axum::serve({:?})", !test.fails));
         disable_patch!(
             test.get_patch().lock().unwrap(),
             axum::serve(listener, router)
@@ -88,13 +82,10 @@ impl Patch {
         std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>,
     > {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "axum::serve::Serve::with_graceful_shutdown({:?})",
-                !test.fails
-            ),
-        );
+        test.notify(&format!(
+            "axum::serve::Serve::with_graceful_shutdown({:?})",
+            !test.fails
+        ));
         disable_patch!(
             test.get_patch().lock().unwrap(),
             _self.with_graceful_shutdown(fun)
@@ -103,28 +94,19 @@ impl Patch {
 
     pub fn command_default_name(test: Arc<Mutex<ttest::Test>>) -> String {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Command::default_name({:?})", !test.fails),
-        );
+        test.notify(&format!("Command::default_name({:?})", !test.fails));
         "DEFAULT_NAME".to_string()
     }
 
     pub fn config_default_host(test: Arc<Mutex<ttest::Test>>) -> IpAddr {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Config::default_host({:?})", !test.fails),
-        );
+        test.notify(&format!("Config::default_host({:?})", !test.fails));
         "8.8.8.8".to_string().parse().unwrap()
     }
 
     pub fn config_default_port(test: Arc<Mutex<ttest::Test>>) -> u16 {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Config::default_port({:?})", !test.fails),
-        );
+        test.notify(&format!("Config::default_port({:?})", !test.fails));
         7373
     }
 
@@ -134,8 +116,7 @@ impl Patch {
     ) -> Result<Box<Config>, runner::config::SafeError> {
         {
             let test = test.lock().unwrap();
-            test.spy()
-                .push(&test.name, &format!("Config::from_yaml({:?})", !test.fails));
+            test.notify(&format!("Config::from_yaml({:?})", !test.fails));
             if test.fails {
                 return Err("Failed getting config from yaml".into());
             }
@@ -148,25 +129,21 @@ impl Patch {
 
     pub async fn ctrl_c<'a>(test: Arc<Mutex<ttest::Test<'a>>>) {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("ctrl_c({:?})", !test.fails));
+        test.notify(&format!("ctrl_c({:?})", !test.fails));
     }
 
     pub fn default_hostname(test: Arc<Mutex<ttest::Test>>) -> String {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Config::default_hostname({:?})", !test.fails),
-        );
+        test.notify(&format!("Config::default_hostname({:?})", !test.fails));
         "DEFAULT HOSTNAME".to_string()
     }
 
     pub fn default_listener(test: Arc<Mutex<ttest::Test>>) -> listener::Config {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("listener::Config::default_listener({:?})", !test.fails),
-        );
+        test.notify(&format!(
+            "listener::Config::default_listener({:?})",
+            !test.fails
+        ));
         listener::Config {
             host: "7.7.7.7".to_string().parse().unwrap(),
             port: 2323,
@@ -178,10 +155,7 @@ impl Patch {
         name: &str,
     ) -> Result<String, std::env::VarError> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("std::env::var({:?}): {:?}", !test.fails, name),
-        );
+        test.notify(&format!("std::env::var({:?}): {:?}", !test.fails, name));
         if test.fails {
             return Err(std::env::VarError::NotUnicode("Not unicode".into()));
         }
@@ -193,10 +167,7 @@ impl Patch {
         _self: &EchoHandler,
     ) -> axum::routing::MethodRouter {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Handler::route_path({:?})", !test.fails),
-        );
+        test.notify(&format!("Handler::route_path({:?})", !test.fails));
         any(|| async { "The future path" })
     }
 
@@ -205,10 +176,7 @@ impl Patch {
         _self: &EchoHandler,
     ) -> axum::routing::MethodRouter {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Handler::route_root({:?})", !test.fails),
-        );
+        test.notify(&format!("Handler::route_root({:?})", !test.fails));
         any(|| async { "The future root" })
     }
 
@@ -217,19 +185,13 @@ impl Patch {
         _self: &EchoHandler,
     ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("EchoHandler::router({:?})", !test.fails),
-        );
+        test.notify(&format!("EchoHandler::router({:?})", !test.fails));
         Ok(Router::new().route("/nowhere", any(|| async { "The future" })))
     }
 
     pub fn http_response_body(test: Arc<Mutex<ttest::Test>>, string: String) -> Body {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Body::from({:?}): {}", !test.fails, string),
-        );
+        test.notify(&format!("Body::from({:?}): {}", !test.fails, string));
         disable_patch!(test.get_patch().lock().unwrap(), Body::from("NEW BODY"))
     }
 
@@ -239,10 +201,7 @@ impl Patch {
         f: &mut fmt::Formatter,
     ) -> Result<(), std::fmt::Error> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("fmt::Display({:?}): {:?}", !test.fails, _self),
-        );
+        test.notify(&format!("fmt::Display({:?}): {:?}", !test.fails, _self));
         write!(f, "SELF BODY")
     }
 
@@ -253,10 +212,7 @@ impl Patch {
         key: &str,
     ) -> Option<core::Primitive> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Handler::config({:?}): {:?}", !test.fails, key),
-        );
+        test.notify(&format!("Handler::config({:?}): {:?}", !test.fails, key));
         returns
     }
 
@@ -270,13 +226,10 @@ impl Patch {
         body: Bytes,
     ) -> response::Response {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "EchoHandler::handle({:?}): {:?} {:?} {:?} {:?} {:?}",
-                !test.fails, method, headers, params, path, body
-            ),
-        );
+        test.notify(&format!(
+            "EchoHandler::handle({:?}): {:?} {:?} {:?} {:?} {:?}",
+            !test.fails, method, headers, params, path, body
+        ));
         let body = "BOOM";
         response::Response::builder()
             .header("Content-Type", "application/json")
@@ -290,13 +243,10 @@ impl Patch {
         config: &mut Box<T>,
     ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Config::override_config_listener({:?}): {:?}, {:?}",
-                !test.fails, args, config
-            ),
-        );
+        test.notify(&format!(
+            "Config::override_config_listener({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
         Ok(())
     }
 
@@ -306,20 +256,16 @@ impl Patch {
         config: &mut Box<T>,
     ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Config::override_config_hostname({:?}): {:?}, {:?}",
-                !test.fails, args, config
-            ),
-        );
+        test.notify(&format!(
+            "Config::override_config_hostname({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
         Ok(())
     }
 
     pub fn response_builder(test: Arc<Mutex<ttest::Test>>) -> axum::http::response::Builder {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Response::builder({:?})", !test.fails));
+        test.notify(&format!("Response::builder({:?})", !test.fails));
         disable_patch!(
             test.get_patch().lock().unwrap(),
             response::Response::builder()
@@ -336,13 +282,10 @@ impl Patch {
         body: Bytes,
     ) -> Response {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Response::new({:?}): {:?} {:?} {:?} {:?} {:?} {:?}",
-                !test.fails, hostname, method, headers, params, path, body
-            ),
-        );
+        test.notify(&format!(
+            "Response::new({:?}): {:?} {:?} {:?} {:?} {:?} {:?}",
+            !test.fails, hostname, method, headers, params, path, body
+        ));
         let body_str = String::from_utf8_lossy(&body);
         Response {
             hostname,
@@ -362,10 +305,7 @@ impl Patch {
         _self: &Response,
     ) -> response::Response {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Response::to_json({:?})", !test.fails,),
-        );
+        test.notify(&format!("Response::to_json({:?})", !test.fails,));
         let body = "{\"foo\": \"bar\"}";
         response::Response::builder()
             .header("Content-Type", "application/json")
@@ -375,8 +315,7 @@ impl Patch {
 
     pub fn router_new(test: Arc<Mutex<ttest::Test>>) -> Router {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Router::new({:?})", !test.fails));
+        test.notify(&format!("Router::new({:?})", !test.fails));
         disable_patch!(test.get_patch().lock().unwrap(), {
             Router::new().route("/nowhere", any(|| async { "The future" }))
         })
@@ -387,8 +326,7 @@ impl Patch {
         _self: &Runner,
     ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Runner::cmd_start({:?})", !test.fails));
+        test.notify(&format!("Runner::cmd_start({:?})", !test.fails));
         Ok(())
     }
 
@@ -398,8 +336,7 @@ impl Patch {
         name: Option<String>,
     ) -> Command {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Command::new({:?})", true));
+        test.notify(&format!("Command::new({:?})", !test.fails));
         Command {
             config,
             name: name.expect("Command should be set"),
@@ -411,8 +348,7 @@ impl Patch {
         _self: &Runner,
     ) -> Result<Endpoint, Box<dyn std::error::Error + Send + Sync>> {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Runner::endpoint({:?})", !test.fails));
+        test.notify(&format!("Runner::endpoint({:?})", !test.fails));
         Ok(Endpoint {
             host: "0.0.0.0".parse().unwrap(),
             port: 1717,
@@ -424,17 +360,13 @@ impl Patch {
         _self: &'a Runner,
     ) -> &'a EchoHandler {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Runner::get_handler({:?})", !test.fails),
-        );
+        test.notify(&format!("Runner::get_handler({:?})", !test.fails));
         &_self.handler
     }
 
     pub fn runner_factory(test: Arc<Mutex<ttest::Test>>, handler: EchoHandler) -> Runner {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Runner::new({:?})", !test.fails));
+        test.notify(&format!("Runner::new({:?})", !test.fails));
         Runner { handler }
     }
 
@@ -443,10 +375,7 @@ impl Patch {
         _self: &Runner,
     ) -> Result<IpAddr, Box<dyn std::error::Error + Send + Sync>> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Runner::listener_host({:?})", !test.fails),
-        );
+        test.notify(&format!("Runner::listener_host({:?})", !test.fails));
         Ok("7.7.7.7".to_string().parse().unwrap())
     }
 
@@ -455,10 +384,7 @@ impl Patch {
         _self: &Runner,
     ) -> Result<u16, Box<dyn std::error::Error + Send + Sync>> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Runner::listener_port({:?})", !test.fails),
-        );
+        test.notify(&format!("Runner::listener_port({:?})", !test.fails));
         Ok(7777)
     }
 
@@ -467,8 +393,7 @@ impl Patch {
         _self: &Runner,
     ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Runner::run({:?})", !test.fails));
+        test.notify(&format!("Runner::run({:?})", !test.fails));
         Ok(())
     }
 
@@ -478,10 +403,7 @@ impl Patch {
         endpoint: Endpoint,
     ) -> runner::EmptyResult {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Runner::start({:?}): {:?}", !test.fails, endpoint),
-        );
+        test.notify(&format!("Runner::start({:?}): {:?}", !test.fails, endpoint));
         Ok(())
     }
 
@@ -490,10 +412,7 @@ impl Patch {
         _thing: &Response,
     ) -> Result<String, serde_json::Error> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("serde_json::to_string_pretty({:?})", !test.fails),
-        );
+        test.notify(&format!("serde_json::to_string_pretty({:?})", !test.fails));
         Ok("{\"pretty\": \"thing\"}".to_string())
     }
 
@@ -502,19 +421,19 @@ impl Patch {
         bytes: Bytes,
     ) -> std::borrow::Cow<'a, str> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("String::from_utf8_lossy({:?}): {:?}", !test.fails, bytes),
-        );
+        test.notify(&format!(
+            "String::from_utf8_lossy({:?}): {:?}",
+            !test.fails, bytes
+        ));
         std::borrow::Cow::Borrowed("BODY COW")
     }
 
     pub fn socket_addr_new(test: Arc<Mutex<ttest::Test>>, host: IpAddr, port: u16) -> SocketAddr {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("SocketAddr::new({:?}): {:?} {:?}", !test.fails, host, port),
-        );
+        test.notify(&format!(
+            "SocketAddr::new({:?}): {:?} {:?}",
+            !test.fails, host, port
+        ));
         match host {
             IpAddr::V4(ipv4) => SocketAddr::V4(SocketAddrV4::new(ipv4, port)),
             IpAddr::V6(ipv6) => SocketAddr::V6(SocketAddrV6::new(ipv6, port, 0, 0)),

@@ -31,17 +31,13 @@ impl Patch {
         _self: &'a DummyCommand,
     ) -> Box<&'a dyn config::Provider> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Command::get_config({:?})", !test.fails),
-        );
+        test.notify(&format!("Command::get_config({:?})", !test.fails));
         Box::new(&_self.config)
     }
 
     pub fn command_get_name<'a>(test: Arc<Mutex<ttest::Test>>, _self: &'a DummyCommand) -> &'a str {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Command::get_name({:?})", !test.fails));
+        test.notify(&format!("Command::get_name({:?})", !test.fails));
         "COMMAND_NAME"
     }
 
@@ -50,8 +46,7 @@ impl Patch {
         _self: &'a DummyCommand,
     ) -> &'a str {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Command::get_name({:?})", !test.fails));
+        test.notify(&format!("Command::get_name({:?})", !test.fails));
         "DOES_NOT_EXIST"
     }
 
@@ -61,10 +56,7 @@ impl Patch {
         key: &str,
     ) -> Option<core::Primitive> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Config::get({:?}): {:?}", !test.fails, key),
-        );
+        test.notify(&format!("Config::get({:?}): {:?}", !test.fails, key));
         Some(core::Primitive::String("BOOM".to_string()))
     }
 
@@ -75,13 +67,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         serde_yaml::from_str("RESOLVED").expect("To unwrap")
     }
 
@@ -92,13 +81,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         Some(Value::from(vec!["FOO"]))
     }
 
@@ -109,13 +95,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         Some(Value::Number(serde_yaml::Number::from(f64::NAN)))
     }
 
@@ -126,13 +109,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         Some(Value::Number(serde_yaml::Number::from(23.23)))
     }
 
@@ -143,13 +123,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         Some(Value::Number(serde_yaml::Number::from(-23)))
     }
 
@@ -160,13 +137,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         Some(Value::Number(serde_yaml::Number::from(-2323232323_i64)))
     }
 
@@ -177,13 +151,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         Some(Value::Bool(true))
     }
 
@@ -194,13 +165,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         Some(Value::Number(serde_yaml::Number::from(23)))
     }
 
@@ -211,13 +179,10 @@ impl Patch {
         keys: &[&str],
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Provider::resolve({:?}): {:?} {:?}",
-                !test.fails, keys, current
-            ),
-        );
+        test.notify(&format!(
+            "Provider::resolve({:?}): {:?} {:?}",
+            !test.fails, keys, current
+        ));
         Some(Value::Number(serde_yaml::Number::from(232323232323_u64)))
     }
 
@@ -226,10 +191,7 @@ impl Patch {
         _self: &T,
     ) -> Option<Value> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Provider::serialized({:?})", !test.fails),
-        );
+        test.notify(&format!("Provider::serialized({:?})", !test.fails));
         serde_yaml::from_str("SERIALIZED").expect("To unwrap")
     }
 
@@ -238,10 +200,7 @@ impl Patch {
         name: &str,
     ) -> Result<String, std::env::VarError> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("std::env::var({:?}): {:?}", !test.fails, name),
-        );
+        test.notify(&format!("std::env::var({:?}): {:?}", !test.fails, name));
         if test.fails {
             return Err(std::env::VarError::NotUnicode("Not unicode".into()));
         }
@@ -253,10 +212,7 @@ impl Patch {
         path: &Path,
     ) -> Result<std::fs::File, std::io::Error> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("File::open({:?}): {:?}", !test.fails, path),
-        );
+        test.notify(&format!("File::open({:?}): {:?}", !test.fails, path));
         if test.fails {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::IsADirectory,
@@ -273,10 +229,7 @@ impl Patch {
         _self: &'a DummyHandler,
     ) -> Box<&'a dyn command::Command> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Handler::get_command({:?})", !test.fails),
-        );
+        test.notify(&format!("Handler::get_command({:?})", !test.fails));
         Box::new(&_self.command)
     }
 
@@ -287,30 +240,21 @@ impl Patch {
         level: LevelFilter,
     ) -> &'a mut Builder {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "env_logger::Builder::filter({:?}): {:?}",
-                !test.fails, level
-            ),
-        );
+        test.notify(&format!(
+            "env_logger::Builder::filter({:?}): {:?}",
+            !test.fails, level
+        ));
         _self
     }
 
     pub fn log_init(test: Arc<Mutex<ttest::Test>>, _self: &Builder) {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("env_logger::Builder::init({:?})", !test.fails),
-        );
+        test.notify(&format!("env_logger::Builder::init({:?})", !test.fails));
     }
 
     pub fn log_new(test: Arc<Mutex<ttest::Test>>) -> Builder {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("env_logger::Builder::new({:?})", !test.fails),
-        );
+        test.notify(&format!("env_logger::Builder::new({:?})", !test.fails));
         Builder::default()
     }
 
@@ -320,13 +264,10 @@ impl Patch {
         args: config::ArcSafeArgs,
     ) -> Result<Option<log::Level>, config::SafeError> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Factory::log_level_override({:?}/{:?}): {:?}",
-                !test.fails, result, args
-            ),
-        );
+        test.notify(&format!(
+            "Factory::log_level_override({:?}/{:?}): {:?}",
+            !test.fails, result, args
+        ));
         if test.fails {
             return Err("Failed getting log level override".into());
         }
@@ -342,13 +283,10 @@ impl Patch {
         config: Box<T>,
     ) -> Result<Box<T>, config::SafeError> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Config::override_config({:?}): {:?}, {:?}",
-                !test.fails, args, config
-            ),
-        );
+        test.notify(&format!(
+            "Config::override_config({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
         Ok(config)
     }
 
@@ -358,22 +296,16 @@ impl Patch {
         config: &mut Box<T>,
     ) -> EmptyResult {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "Config::override_config_log({:?}): {:?}, {:?}",
-                !test.fails, args, config
-            ),
-        );
+        test.notify(&format!(
+            "Config::override_config_log({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
         Ok(())
     }
 
     pub fn path_exists(test: Arc<Mutex<ttest::Test<'_>>>, _self: &Path) -> bool {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Path.exists({:?}): {:?}", !test.fails, _self),
-        );
+        test.notify(&format!("Path.exists({:?}): {:?}", !test.fails, _self));
         !test.fails
     }
 
@@ -382,10 +314,7 @@ impl Patch {
         args: config::ArcSafeArgs,
     ) -> Result<Box<T>, config::SafeError> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Config::read_yaml({:?}): {:?}", !test.fails, args),
-        );
+        test.notify(&format!("Config::read_yaml({:?}): {:?}", !test.fails, args));
         let config: T = serde_yaml::from_str(TEST_YAML0).expect("Unable to parse yaml");
         Ok(Box::new(config))
     }
@@ -395,10 +324,7 @@ impl Patch {
         _self: &'a DummyRunner,
     ) -> &'a dyn command::Command {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Runner::get_command({:?})", !test.fails),
-        );
+        test.notify(&format!("Runner::get_command({:?})", !test.fails));
         *_self.get_handler().get_command()
     }
 
@@ -414,8 +340,7 @@ impl Patch {
             testid = test.name.clone();
             fails = test.fails;
             spy_arc = Arc::new((**test.spy()).clone());
-            test.spy()
-                .push(&testid, &format!("Runner::commands({:?})", !test.fails));
+            test.notify(&format!("Runner::commands({:?})", !test.fails));
         }
 
         let command: runner::CommandFn<DummyHandler> = Arc::new(move |_runner| {
@@ -442,10 +367,7 @@ impl Patch {
         key: &str,
     ) -> Option<core::Primitive> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Runner::config({:?}): {:?}", !test.fails, key),
-        );
+        test.notify(&format!("Runner::config({:?}): {:?}", !test.fails, key));
         returns
     }
 
@@ -454,8 +376,7 @@ impl Patch {
         _self: &'a dyn runner::Runner<T>,
     ) -> EmptyResult {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Runner::handle({:?})", !test.fails));
+        test.notify(&format!("Runner::handle({:?})", !test.fails));
         Ok(())
     }
 
@@ -471,10 +392,7 @@ impl Patch {
             testid = test.name.clone();
             fails = test.fails;
             spy_arc = Arc::new((**test.spy()).clone());
-            test.spy().push(
-                &test.name,
-                &format!("Runner::resolve_command({:?})", !test.fails),
-            );
+            test.notify(&format!("Runner::resolve_command({:?})", !test.fails));
         }
 
         Ok(Arc::new(
@@ -496,8 +414,7 @@ impl Patch {
         _self: &'a dyn runner::Runner<T>,
     ) -> EmptyResult {
         let test = test.lock().unwrap();
-        test.spy()
-            .push(&test.name, &format!("Runner::start_log({:?})", !test.fails));
+        test.notify(&format!("Runner::start_log({:?})", !test.fails));
         Ok(())
     }
 
@@ -506,14 +423,11 @@ impl Patch {
         file: &std::fs::File,
     ) -> Result<T, serde_yaml::Error> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!(
-                "serde_yaml::from_reader({:?}): {:?}",
-                !test.fails,
-                file.metadata().expect("Error parsing metadata").is_file()
-            ),
-        );
+        test.notify(&format!(
+            "serde_yaml::from_reader({:?}): {:?}",
+            !test.fails,
+            file.metadata().expect("Error parsing metadata").is_file()
+        ));
         if test.fails {
             let err: serde_yaml::Error = serde_yaml::from_str::<i32>("invalid").unwrap_err();
             return Err(err);
@@ -527,10 +441,10 @@ impl Patch {
         string: &str,
     ) -> Result<log::Level, serde_yaml::Error> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("serde_yaml::from_str({:?}): {:?}", !test.fails, string),
-        );
+        test.notify(&format!(
+            "serde_yaml::from_str({:?}): {:?}",
+            !test.fails, string
+        ));
         if test.fails {
             let err: serde_yaml::Error = serde_yaml::from_str::<i32>("invalid").unwrap_err();
             return Err(err);
@@ -544,10 +458,10 @@ impl Patch {
         thing: Box<dyn config::Provider>,
     ) -> Result<Value, serde_yaml::Error> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("serde_yaml::to_value({:?}): {:?}", !test.fails, thing),
-        );
+        test.notify(&format!(
+            "serde_yaml::to_value({:?}): {:?}",
+            !test.fails, thing
+        ));
         serde_yaml::from_str("SERIALIZED")
     }
 
@@ -557,10 +471,7 @@ impl Patch {
         level: log::Level,
     ) -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
         let test = test.lock().unwrap();
-        test.spy().push(
-            &test.name,
-            &format!("Config::set_log({:?}): {:?}", !test.fails, level),
-        );
+        test.notify(&format!("Config::set_log({:?}): {:?}", !test.fails, level));
         if test.fails {
             return Err("Error setting log".into());
         }
