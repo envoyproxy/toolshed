@@ -41,34 +41,7 @@ impl<'a> Tests<'a> {
         calls.remove(key).unwrap();
     }
 
-    pub fn get_patch<'b>(&self, key: &'b str) -> (&'b str, Arc<Mutex<PatchGuard>>) {
-        let (testid, index) = key.split_once('/').map_or_else(
-            move || {
-                panic!(
-                    "Invalid testid format, expected 'testid/index' but got: {}",
-                    key
-                )
-            },
-            |(testid_part, index_part)| {
-                let index = index_part
-                    .parse::<usize>()
-                    .unwrap_or_else(|_| panic!("Invalid index format: {}", index_part));
-                (testid_part, index)
-            },
-        );
-
-        if let Some(patch_guard) = self
-            .patches
-            .get(testid)
-            .and_then(|guards| guards.get(index).cloned())
-        {
-            (testid, patch_guard)
-        } else {
-            panic!("No PatchGuard found")
-        }
-    }
-
-    pub fn get_patch2<'b>(&self, key: &'b str, index: usize) -> Arc<Mutex<PatchGuard>> {
+    pub fn get_patch<'b>(&self, key: &'b str, index: usize) -> Arc<Mutex<PatchGuard>> {
         if let Some(patch_guard) = self
             .patches
             .get(key)
@@ -115,7 +88,11 @@ impl<'a> Test<'a> {
         let idx = self
             .patch_index
             .expect("You must call patch_index on the test before calling get_patch");
-        self.tests.get_patch2(&self.name, idx)
+        self.tests.get_patch(&self.name, idx)
+    }
+
+    pub fn notify(&self, msg: &str) {
+        self.tests.spy.push(&self.name, msg);
     }
 
     pub fn patch_index(&mut self, idx: usize) -> &mut Self {
