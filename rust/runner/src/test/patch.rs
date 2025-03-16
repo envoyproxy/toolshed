@@ -7,7 +7,6 @@ use crate::{
         data::TEST_YAML0,
         dummy::{DummyCommand, DummyConfig, DummyHandler, DummyRunner, Loggable},
     },
-    EmptyResult,
 };
 use ::log::LevelFilter;
 use env_logger::Builder;
@@ -294,7 +293,7 @@ impl Patch {
         test: Arc<Mutex<ttest::Test<'_>>>,
         args: config::ArcSafeArgs,
         config: &mut Box<T>,
-    ) -> EmptyResult {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!(
             "Config::override_config_log({:?}): {:?}, {:?}",
@@ -374,7 +373,7 @@ impl Patch {
     pub async fn runner_handle<'a, T: Handler>(
         test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &'a dyn runner::Runner<T>,
-    ) -> EmptyResult {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::handle({:?})", !test.fails));
         Ok(())
@@ -396,7 +395,7 @@ impl Patch {
         }
 
         Ok(Arc::new(
-            move |_runner| -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> {
+            move |_runner| -> Pin<Box<dyn Future<Output = core::EmptyResult> + Send>> {
                 let testid: String = testid.clone();
                 let spy = spy_arc.clone();
                 Box::pin(async move {
@@ -412,7 +411,7 @@ impl Patch {
     pub fn runner_start_log<'a, T: Handler>(
         test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &'a dyn runner::Runner<T>,
-    ) -> EmptyResult {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::start_log({:?})", !test.fails));
         Ok(())

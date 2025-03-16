@@ -1,4 +1,4 @@
-use crate::{args, log, EmptyResult};
+use crate::{args, log};
 use as_any::AsAny;
 use async_trait::async_trait;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
@@ -91,7 +91,7 @@ where
         }
     }
 
-    fn override_config_log(args: ArcSafeArgs, config: &mut Box<T>) -> EmptyResult {
+    fn override_config_log(args: ArcSafeArgs, config: &mut Box<T>) -> core::EmptyResult {
         if let Some(level) = Self::log_level_override(args.clone())? {
             config.set_log(level)?;
         }

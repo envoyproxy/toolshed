@@ -241,7 +241,7 @@ impl Patch {
         test: Arc<Mutex<ttest::Test>>,
         args: runner::config::ArcSafeArgs,
         config: &mut Box<T>,
-    ) -> runner::EmptyResult {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!(
             "Config::override_config_listener({:?}): {:?}, {:?}",
@@ -254,7 +254,7 @@ impl Patch {
         test: Arc<Mutex<ttest::Test>>,
         args: runner::config::ArcSafeArgs,
         config: &mut Box<T>,
-    ) -> runner::EmptyResult {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!(
             "Config::override_config_hostname({:?}): {:?}, {:?}",
@@ -324,7 +324,7 @@ impl Patch {
     pub async fn runner_cmd_start<'a>(
         test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &Runner,
-    ) -> runner::EmptyResult {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::cmd_start({:?})", !test.fails));
         Ok(())
@@ -391,7 +391,7 @@ impl Patch {
     pub async fn runner_run<'a>(
         test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &Runner,
-    ) -> runner::EmptyResult {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::run({:?})", !test.fails));
         Ok(())
@@ -401,7 +401,7 @@ impl Patch {
         test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &Runner,
         endpoint: Endpoint,
-    ) -> runner::EmptyResult {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::start({:?}): {:?}", !test.fails, endpoint));
         Ok(())

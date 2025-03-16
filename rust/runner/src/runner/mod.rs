@@ -1,4 +1,4 @@
-use crate::{command::Command, handler::Handler, log, EmptyResult};
+use crate::{command::Command, handler::Handler, log};
 use ::log::LevelFilter;
 use as_any::AsAny;
 use async_trait::async_trait;
@@ -65,7 +65,9 @@ impl fmt::Debug for CommandError {
 impl Error for CommandError {}
 
 pub type CommandFn<T> = Arc<
-    dyn Fn(&Arc<dyn Runner<T>>) -> Pin<Box<dyn Future<Output = EmptyResult> + Send>> + Send + Sync,
+    dyn Fn(&Arc<dyn Runner<T>>) -> Pin<Box<dyn Future<Output = core::EmptyResult> + Send>>
+        + Send
+        + Sync,
 >;
 
 pub type CommandsFn<'a, T> = HashMap<&'a str, CommandFn<T>>;
@@ -84,7 +86,7 @@ pub trait Runner<T: Handler + 'static>: Any + AsAny + Send + Sync {
         self.get_command().get_config().get(key)
     }
 
-    async fn handle(&self) -> EmptyResult {
+    async fn handle(&self) -> core::EmptyResult {
         let command = self.resolve_command()?;
         command(&self.as_arc()).await
     }
@@ -98,12 +100,12 @@ pub trait Runner<T: Handler + 'static>: Any + AsAny + Send + Sync {
         }
     }
 
-    async fn run(&self) -> EmptyResult {
+    async fn run(&self) -> core::EmptyResult {
         self.start_log().unwrap();
         self.handle().await
     }
 
-    fn start_log(&self) -> EmptyResult {
+    fn start_log(&self) -> core::EmptyResult {
         if let Some(core::Primitive::String(level_str)) = self.config("log.level") {
             if let Ok(level) = level_str.parse::<log::Level>() {
                 Builder::new().filter(None, LevelFilter::from(level)).init();

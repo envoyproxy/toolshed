@@ -1,5 +1,5 @@
 use crate as toolshed_runner;
-use crate::{command, config, handler, log, runner, EmptyResult};
+use crate::{command, config, handler, log, runner};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_yaml::{Mapping, Value};
@@ -88,11 +88,11 @@ pub struct DummyRunner {
 }
 
 impl DummyRunner {
-    async fn cmd_default(&self) -> EmptyResult {
+    async fn cmd_default(&self) -> core::EmptyResult {
         Ok(())
     }
 
-    async fn cmd_other(&self) -> EmptyResult {
+    async fn cmd_other(&self) -> core::EmptyResult {
         Ok(())
     }
 }

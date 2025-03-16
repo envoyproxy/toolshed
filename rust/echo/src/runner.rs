@@ -19,15 +19,12 @@ pub struct Runner {
 
 #[async_trait]
 trait EchoRunner: runner::runner::Runner<EchoHandler> {
-    async fn cmd_start(&self) -> runner::EmptyResult {
+    async fn cmd_start(&self) -> core::EmptyResult {
         self.start(self.endpoint()?).await?;
         Ok(())
     }
 
-    async fn start(
-        &self,
-        endpoint: Endpoint,
-    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn start(&self, endpoint: Endpoint) -> core::EmptyResult {
         Ok(
             axum::serve(endpoint.bind().await, self.get_handler().router()?)
                 .with_graceful_shutdown(runner::runner::ctrl_c())
