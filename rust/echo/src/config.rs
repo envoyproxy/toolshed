@@ -2,6 +2,7 @@ use crate::{args::Args, listener, DEFAULT_HOSTNAME};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
+use toolshed_core as core;
 use toolshed_runner as runner;
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -32,7 +33,7 @@ impl runner::config::Provider for Config {
         serde_yaml::to_value(self.clone()).ok()
     }
 
-    fn set_log(&mut self, level: runner::log::Level) -> runner::EmptyResult {
+    fn set_log(&mut self, level: runner::log::Level) -> core::EmptyResult {
         if let Some(log) = self.base.log.as_mut() {
             log.level = level;
         }
@@ -48,7 +49,7 @@ impl Config {
     fn override_config_hostname(
         args: runner::config::ArcSafeArgs,
         config: &mut Box<Self>,
-    ) -> runner::EmptyResult {
+    ) -> core::EmptyResult {
         if let Some(args) = args.as_any().downcast_ref::<Args>() {
             if let Some(hostname) = args
                 .hostname
@@ -64,7 +65,7 @@ impl Config {
     fn override_config_listener(
         args: runner::config::ArcSafeArgs,
         config: &mut Box<Self>,
-    ) -> runner::EmptyResult {
+    ) -> core::EmptyResult {
         if let Some(args) = args.as_any().downcast_ref::<Args>() {
             if let Some(host) = args.host.clone() {
                 config.listener.host = host.parse()?;

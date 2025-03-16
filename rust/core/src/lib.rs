@@ -1,4 +1,5 @@
 pub mod mapping;
+mod result;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Primitive {
@@ -10,3 +11,5 @@ pub enum Primitive {
     U64(u64),
     String(String),
 }
+
+pub use result::EmptyResult;
