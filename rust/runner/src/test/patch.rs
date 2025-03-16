@@ -291,7 +291,7 @@ impl Patch {
 
     pub fn override_config_log<T: config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<ttest::Test<'_>>>,
-        args: config::ArcSafeArgs,
+        args: &config::ArcSafeArgs,
         config: &mut Box<T>,
     ) -> core::EmptyResult {
         let test = test.lock().unwrap();

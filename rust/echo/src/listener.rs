@@ -1,11 +1,63 @@
+use crate::handler::{EchoHandler, Provider as _};
 use ::log::info;
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use std::net::{IpAddr, SocketAddr};
-use tokio::net::TcpListener;
+use std::{
+    collections::HashMap,
+    net::{IpAddr, SocketAddr},
+};
+use tokio::{net::TcpListener, task};
+use toolshed_core as core;
+use toolshed_runner as runner;
+
+#[async_trait]
+pub trait ListenersProvider {
+    async fn bind(&self, handler: &EchoHandler) -> core::EmptyResult;
+    fn insert(&mut self, key: &str, endpoint: Endpoint);
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+pub struct Listeners {
+    pub endpoints: HashMap<String, Endpoint>,
+}
+
+impl Listeners {
+    pub fn new() -> Self {
+        Self {
+            endpoints: HashMap::new(),
+        }
+    }
+}
+
+#[async_trait]
+impl ListenersProvider for Listeners {
+    async fn bind(&self, handler: &EchoHandler) -> core::EmptyResult {
+        let endpoints: Vec<_> = self.endpoints.values().cloned().collect();
+        let mut tasks = Vec::new();
+        for endpoint in endpoints {
+            let handler = handler.router()?;
+            let task = task::spawn(async move {
+                if let Err(e) = axum::serve(endpoint.bind().await, handler)
+                    .with_graceful_shutdown(runner::runner::ctrl_c())
+                    .await
+                {
+                    eprintln!("Error serving endpoint: {:?}", e);
+                }
+            });
+            tasks.push(task);
+        }
+        futures::future::join_all(tasks).await;
+        Ok(())
+    }
+
+    fn insert(&mut self, key: &str, endpoint: Endpoint) {
+        self.endpoints.insert(key.to_string(), endpoint);
+    }
+}
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Endpoint {
+    pub name: String,
     pub host: IpAddr,
     pub port: u16,
 }
@@ -13,14 +65,23 @@ pub struct Endpoint {
 #[async_trait]
 pub trait Listener {
     async fn bind(&self) -> TcpListener {
-        info!("Binding listener: {}", self.socket_address());
+        info!(
+            "Binding listener({}): {}",
+            self.name(),
+            self.socket_address()
+        );
         TcpListener::bind(self.socket_address()).await.unwrap()
     }
+    fn name(&self) -> &str;
     fn socket_address(&self) -> SocketAddr;
 }
 
 #[async_trait]
 impl Listener for Endpoint {
+    fn name(&self) -> &str {
+        &self.name
+    }
+
     fn socket_address(&self) -> SocketAddr {
         SocketAddr::new(self.host, self.port)
     }
@@ -28,34 +89,17 @@ impl Listener for Endpoint {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Config {
-    #[serde(default = "Config::default_host")]
     pub host: IpAddr,
-    #[serde(default = "Config::default_port")]
     pub port: u16,
 }
 
-impl Config {
-    pub fn default_listener() -> Config {
-        Config {
-            host: Self::default_host(),
-            port: Self::default_port(),
-        }
-    }
-
-    fn default_host() -> IpAddr {
-        crate::DEFAULT_ADDRESS.to_string().parse().unwrap()
-    }
-
-    fn default_port() -> u16 {
-        crate::DEFAULT_PORT
-    }
-}
+impl Config {}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::test::patch::Patch;
-    use guerrilla::{patch0, patch2};
+    use guerrilla::patch2;
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
@@ -65,6 +109,21 @@ mod tests {
     static PATCHES: Lazy<ttest::Patches> = Lazy::new(ttest::Patches::new);
     static SPY: Lazy<ttest::Spy> = Lazy::new(ttest::Spy::new);
     static TESTS: Lazy<ttest::Tests> = Lazy::new(|| ttest::Tests::new(&SPY, &PATCHES));
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_endpoint_name() {
+        let host: IpAddr = "8.8.8.8".to_string().parse().unwrap();
+        let port = 7373;
+        let name = "http".to_string();
+        let endpoint = Endpoint {
+            name: name.clone(),
+            host,
+            port,
+        };
+        assert_eq!(endpoint.name, name);
+        assert_eq!(endpoint.name(), name);
+    }
 
     #[test]
     #[serial(toolshed_lock)]
@@ -82,56 +141,17 @@ mod tests {
         let host: IpAddr = "8.8.8.8".to_string().parse().unwrap();
         let host4: Ipv4Addr = "8.8.8.8".to_string().parse().unwrap();
         let port = 7373;
-        let endpoint = Endpoint { host, port };
+        let name = "http".to_string();
+        let endpoint = Endpoint {
+            name: name.clone(),
+            host,
+            port,
+        };
+        assert_eq!(endpoint.name, name);
         assert_eq!(
             endpoint.socket_address(),
             SocketAddr::from(SocketAddrV4::new(host4, port))
         );
-    }
-
-    #[test]
-    #[serial(toolshed_lock)]
-    fn test_config_default_listener() {
-        let test = TESTS
-            .test("config_default_listener")
-            .expecting(vec![
-                "Config::default_host(true)",
-                "Config::default_port(true)",
-            ])
-            .with_patches(vec![
-                patch0(Config::default_host, || {
-                    Patch::config_default_host(TESTS.get("config_default_listener"))
-                }),
-                patch0(Config::default_port, || {
-                    Patch::config_default_port(TESTS.get("config_default_listener"))
-                }),
-            ]);
-        defer! {
-            test.drop();
-        }
-
-        let host = "8.8.8.8".to_string().parse().unwrap();
-        let port = 7373;
-        let config = Config { host, port };
-        assert_eq!(Config::default_listener(), config);
-    }
-
-    #[test]
-    #[serial(toolshed_lock)]
-    fn test_config_default_host() {
-        assert_eq!(
-            Config::default_host(),
-            crate::DEFAULT_ADDRESS
-                .to_string()
-                .parse::<IpAddr>()
-                .unwrap()
-        );
-    }
-
-    #[test]
-    #[serial(toolshed_lock)]
-    fn test_config_default_port() {
-        assert_eq!(Config::default_port(), crate::DEFAULT_PORT);
     }
 
     #[tokio::test(flavor = "multi_thread")]
@@ -149,7 +169,8 @@ mod tests {
 
         let host: IpAddr = "0.0.0.0".to_string().parse().unwrap();
         let port = 7373;
-        let endpoint = Endpoint { host, port };
+        let name = "http".to_string();
+        let endpoint = Endpoint { name, host, port };
         let unwanted_listener = endpoint.bind().await;
         let addr = unwanted_listener
             .local_addr()

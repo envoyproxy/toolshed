@@ -3,7 +3,7 @@ use crate::{
     command::Command,
     config::Config,
     handler::EchoHandler,
-    listener::{self, Endpoint},
+    listener::{self, Endpoint, Listeners, ListenersProvider as _},
 };
 use crate::{mapping, response::Response, runner::Runner};
 use axum::body::Body;
@@ -17,6 +17,7 @@ use clap::Parser;
 use guerrilla::disable_patch;
 use std::{
     any::{Any, TypeId},
+    collections::HashMap,
     fmt,
     net::{IpAddr, SocketAddr, SocketAddrV4, SocketAddrV6},
     sync::{Arc, Mutex},
@@ -127,6 +128,64 @@ impl Patch {
         )
     }
 
+    pub async fn config_override_config(
+        test: Arc<Mutex<ttest::Test<'_>>>,
+        args: &runner::config::ArcSafeArgs,
+        config: Box<Config>,
+    ) -> Result<Box<Config>, runner::config::SafeError> {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Config::override_config({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
+        Ok(config)
+    }
+
+    pub fn config_override_config_hostname<
+        T: runner::config::Provider + serde::Deserialize<'static>,
+    >(
+        test: Arc<Mutex<ttest::Test>>,
+        args: &runner::config::ArcSafeArgs,
+        config: &mut Box<T>,
+    ) -> core::EmptyResult {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Config::override_config_hostname({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
+        Ok(())
+    }
+
+    pub fn config_override_config_http_host<
+        T: runner::config::Provider + serde::Deserialize<'static>,
+    >(
+        test: Arc<Mutex<ttest::Test>>,
+        args: &runner::config::ArcSafeArgs,
+        config: &mut Box<T>,
+    ) -> core::EmptyResult {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Config::override_config_http_host({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
+        Ok(())
+    }
+
+    pub fn config_override_config_http_port<
+        T: runner::config::Provider + serde::Deserialize<'static>,
+    >(
+        test: Arc<Mutex<ttest::Test>>,
+        args: &runner::config::ArcSafeArgs,
+        config: &mut Box<T>,
+    ) -> core::EmptyResult {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Config::override_config_http_port({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
+        Ok(())
+    }
+
     pub async fn ctrl_c<'a>(test: Arc<Mutex<ttest::Test<'a>>>) {
         let test = test.lock().unwrap();
         test.notify(&format!("ctrl_c({:?})", !test.fails));
@@ -138,16 +197,18 @@ impl Patch {
         "DEFAULT HOSTNAME".to_string()
     }
 
-    pub fn default_listener(test: Arc<Mutex<ttest::Test>>) -> listener::Config {
+    pub fn default_listeners(test: Arc<Mutex<ttest::Test>>) -> HashMap<String, listener::Config> {
         let test = test.lock().unwrap();
-        test.notify(&format!(
-            "listener::Config::default_listener({:?})",
-            !test.fails
-        ));
-        listener::Config {
-            host: "7.7.7.7".to_string().parse().unwrap(),
-            port: 2323,
-        }
+        test.notify(&format!("Config::default_listeners({:?})", !test.fails));
+        let mut map = HashMap::new();
+        map.insert(
+            "http".to_string(),
+            listener::Config {
+                host: "7.7.7.7".to_string().parse().unwrap(),
+                port: 2323,
+            },
+        );
+        map
     }
 
     pub fn env_var(
@@ -237,29 +298,13 @@ impl Patch {
             .unwrap()
     }
 
-    pub fn override_config_listener<T: runner::config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<ttest::Test>>,
-        args: runner::config::ArcSafeArgs,
-        config: &mut Box<T>,
+    pub async fn listeners_bind<'a>(
+        test: Arc<Mutex<ttest::Test<'a>>>,
+        _self: &Listeners,
+        handler: &EchoHandler,
     ) -> core::EmptyResult {
         let test = test.lock().unwrap();
-        test.notify(&format!(
-            "Config::override_config_listener({:?}): {:?}, {:?}",
-            !test.fails, args, config
-        ));
-        Ok(())
-    }
-
-    pub fn override_config_hostname<T: runner::config::Provider + serde::Deserialize<'static>>(
-        test: Arc<Mutex<ttest::Test>>,
-        args: runner::config::ArcSafeArgs,
-        config: &mut Box<T>,
-    ) -> core::EmptyResult {
-        let test = test.lock().unwrap();
-        test.notify(&format!(
-            "Config::override_config_hostname({:?}): {:?}, {:?}",
-            !test.fails, args, config
-        ));
+        test.notify(&format!("Runner::start({:?}): {:?}", !test.fails, handler));
         Ok(())
     }
 
@@ -343,16 +388,22 @@ impl Patch {
         }
     }
 
-    pub fn runner_endpoint(
+    pub fn runner_listeners(
         test: Arc<Mutex<ttest::Test>>,
         _self: &Runner,
-    ) -> Result<Endpoint, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<Listeners, Box<dyn std::error::Error + Send + Sync>> {
         let test = test.lock().unwrap();
-        test.notify(&format!("Runner::endpoint({:?})", !test.fails));
-        Ok(Endpoint {
-            host: "0.0.0.0".parse().unwrap(),
-            port: 1717,
-        })
+        test.notify(&format!("Runner::listeners({:?})", !test.fails));
+        let mut listeners = Listeners::new();
+        listeners.insert(
+            "http",
+            Endpoint {
+                name: "http".to_string(),
+                host: "0.0.0.0".parse().unwrap(),
+                port: 1717,
+            },
+        );
+        Ok(listeners)
     }
 
     pub fn runner_get_handler<'a>(
@@ -370,21 +421,21 @@ impl Patch {
         Runner { handler }
     }
 
-    pub fn runner_listener_host(
+    pub fn runner_http_host(
         test: Arc<Mutex<ttest::Test>>,
         _self: &Runner,
     ) -> Result<IpAddr, Box<dyn std::error::Error + Send + Sync>> {
         let test = test.lock().unwrap();
-        test.notify(&format!("Runner::listener_host({:?})", !test.fails));
+        test.notify(&format!("Runner::http_host({:?})", !test.fails));
         Ok("7.7.7.7".to_string().parse().unwrap())
     }
 
-    pub fn runner_listener_port(
+    pub fn runner_http_port(
         test: Arc<Mutex<ttest::Test>>,
         _self: &Runner,
     ) -> Result<u16, Box<dyn std::error::Error + Send + Sync>> {
         let test = test.lock().unwrap();
-        test.notify(&format!("Runner::listener_port({:?})", !test.fails));
+        test.notify(&format!("Runner::http_port({:?})", !test.fails));
         Ok(7777)
     }
 
@@ -394,16 +445,6 @@ impl Patch {
     ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::run({:?})", !test.fails));
-        Ok(())
-    }
-
-    pub async fn runner_start<'a>(
-        test: Arc<Mutex<ttest::Test<'a>>>,
-        _self: &Runner,
-        endpoint: Endpoint,
-    ) -> core::EmptyResult {
-        let test = test.lock().unwrap();
-        test.notify(&format!("Runner::start({:?}): {:?}", !test.fails, endpoint));
         Ok(())
     }
 

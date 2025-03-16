@@ -31,6 +31,7 @@ tower-service = "0.3.3"
 guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "794c0d092a951786205bb68f8d45396e05a967f3", optional = true }
 once_cell = { version = "1.20.3", optional = true }
 toolshed-test = { path = "../test", optional = true }
+futures = "0.3.31"
 
 [dev-dependencies]
 libc = "0.2.170"
