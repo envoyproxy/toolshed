@@ -18,11 +18,11 @@ pub struct Config {
 #[async_trait]
 impl runner::config::Factory<Config> for Config {
     async fn override_config(
-        args: runner::config::ArcSafeArgs,
+        args: &runner::config::ArcSafeArgs,
         mut config: Box<Config>,
     ) -> Result<Box<Config>, runner::config::SafeError> {
-        Self::override_config_log(args.clone(), &mut config)?;
-        Self::override_config_listener(args.clone(), &mut config)?;
+        Self::override_config_log(args, &mut config)?;
+        Self::override_config_listener(args, &mut config)?;
         Self::override_config_hostname(args, &mut config)?;
         Ok(config)
     }
@@ -47,7 +47,7 @@ impl Config {
     }
 
     fn override_config_hostname(
-        args: runner::config::ArcSafeArgs,
+        args: &runner::config::ArcSafeArgs,
         config: &mut Box<Self>,
     ) -> core::EmptyResult {
         if let Some(args) = args.as_any().downcast_ref::<Args>() {
@@ -63,7 +63,7 @@ impl Config {
     }
 
     fn override_config_listener(
-        args: runner::config::ArcSafeArgs,
+        args: &runner::config::ArcSafeArgs,
         config: &mut Box<Self>,
     ) -> core::EmptyResult {
         if let Some(args) = args.as_any().downcast_ref::<Args>() {
@@ -210,7 +210,7 @@ mod tests {
             test.drop();
         }
 
-        let result = Config::override_config_hostname(Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_config_hostname(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(config_boxed.hostname, "HOSTNAME SET BY ARGS");
     }
@@ -256,7 +256,7 @@ mod tests {
             test.drop();
         }
 
-        let result = Config::override_config_hostname(Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_config_hostname(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(config_boxed.hostname, "SOMEVAR");
     }
@@ -303,7 +303,7 @@ mod tests {
             test.drop();
         }
 
-        let result = Config::override_config_hostname(Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_config_hostname(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(config_boxed.hostname, DEFAULT_HOSTNAME);
     }
@@ -345,7 +345,7 @@ mod tests {
         };
         let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
         let mut config_boxed = Box::new(config);
-        let result = Config::override_config_listener(Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_config_listener(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(
             config_boxed.listener.host,

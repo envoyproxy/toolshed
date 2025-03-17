@@ -260,7 +260,7 @@ impl Patch {
     pub fn log_level_override(
         test: Arc<Mutex<ttest::Test>>,
         result: bool,
-        args: config::ArcSafeArgs,
+        args: &config::ArcSafeArgs,
     ) -> Result<Option<log::Level>, config::SafeError> {
         let test = test.lock().unwrap();
         test.notify(&format!(
@@ -278,7 +278,7 @@ impl Patch {
 
     pub async fn override_config<T: config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<ttest::Test<'_>>>,
-        args: config::ArcSafeArgs,
+        args: &config::ArcSafeArgs,
         config: Box<T>,
     ) -> Result<Box<T>, config::SafeError> {
         let test = test.lock().unwrap();
