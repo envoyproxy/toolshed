@@ -63,7 +63,7 @@ impl Patch {
         test: Arc<Mutex<ttest::Test>>,
         listener: TcpListener,
         router: Router,
-    ) -> axum::serve::Serve<TcpListener, axum::routing::Router, axum::routing::Router> {
+    ) -> axum::serve::Serve<TcpListener, Router, Router> {
         let test = test.lock().unwrap();
         test.notify(&format!("axum::serve({:?})", !test.fails));
         disable_patch!(
@@ -209,6 +209,15 @@ impl Patch {
             },
         );
         map
+    }
+
+    pub async fn endpoint_bind<'a>(
+        test: Arc<Mutex<ttest::Test<'a>>>,
+        _self: Arc<Endpoint>,
+        _router: axum::Router,
+    ) {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Endpoint::bind({:?})", !test.fails));
     }
 
     pub fn env_var(
@@ -395,14 +404,11 @@ impl Patch {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::listeners({:?})", !test.fails));
         let mut listeners = Listeners::new();
-        listeners.insert(
-            "http",
-            Endpoint {
-                name: "http".to_string(),
-                host: "0.0.0.0".parse().unwrap(),
-                port: 1717,
-            },
-        );
+        listeners.insert(Endpoint {
+            name: "http".to_string(),
+            host: "0.0.0.0".parse().unwrap(),
+            port: 1717,
+        });
         Ok(listeners)
     }
 

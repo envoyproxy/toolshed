@@ -56,14 +56,11 @@ impl Runner {}
 impl EchoRunner for Runner {
     fn listeners(&self) -> Result<Listeners, Box<dyn std::error::Error + Send + Sync>> {
         let mut listeners = Listeners::new();
-        listeners.insert(
-            "http",
-            Endpoint {
-                name: "http".to_string(),
-                host: self.http_host()?,
-                port: self.http_port()?,
-            },
-        );
+        listeners.insert(Endpoint {
+            name: "http".to_string(),
+            host: self.http_host()?,
+            port: self.http_port()?,
+        });
         Ok(listeners)
     }
 }
@@ -131,7 +128,8 @@ mod tests {
 
         #[async_trait]
         impl listener::Listener for Endpoint {
-            async fn bind(&self) -> tokio::net::TcpListener;
+            async fn bind(self: Arc<Self>, router: axum::Router);
+            async fn listen(&self) -> tokio::net::TcpListener;
             fn name(&self) -> &str;
             fn socket_address(&self) -> SocketAddr;
         }
