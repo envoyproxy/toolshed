@@ -2,8 +2,8 @@ use crate::{
     args::Args,
     command::Command,
     config::Config,
-    handler::{EchoHandler, Provider},
-    listener::{Endpoint, Listener},
+    handler::EchoHandler,
+    listener::{Endpoint, Listeners, ListenersProvider as _},
 };
 use async_trait::async_trait;
 use clap::Parser;
@@ -20,36 +20,32 @@ pub struct Runner {
 #[async_trait]
 trait EchoRunner: runner::runner::Runner<EchoHandler> {
     async fn cmd_start(&self) -> core::EmptyResult {
-        self.start(self.endpoint()?).await?;
+        self.listeners()?.bind(self.get_handler()).await?;
         Ok(())
     }
 
-    async fn start(&self, endpoint: Endpoint) -> core::EmptyResult {
-        Ok(
-            axum::serve(endpoint.bind().await, self.get_handler().router()?)
-                .with_graceful_shutdown(runner::runner::ctrl_c())
-                .await?,
-        )
-    }
+    fn listeners(&self) -> Result<Listeners, Box<dyn std::error::Error + Send + Sync>>;
 
-    fn endpoint(&self) -> Result<Endpoint, Box<dyn std::error::Error + Send + Sync>>;
-
-    fn listener_host(&self) -> Result<IpAddr, Box<dyn std::error::Error + Send + Sync>> {
-        match self.config("listener.host") {
+    fn http_host(&self) -> Result<IpAddr, Box<dyn std::error::Error + Send + Sync>> {
+        match self.config("listeners.http.host") {
             Some(core::Primitive::String(addr)) => match addr.parse::<IpAddr>() {
                 Ok(ip) => Ok(ip),
                 Err(e) => Err(format!("Invalid host '{}': {}", addr, e).into()),
             },
-            Some(other) => Err(format!("Unexpected type for 'listener.host': {:?}", other).into()),
-            None => Err("Missing 'listener.host' config".into()),
+            Some(other) => {
+                Err(format!("Unexpected type for 'listeners.http.host': {:?}", other).into())
+            }
+            None => Err("Missing 'listeners.http.host' config".into()),
         }
     }
 
-    fn listener_port(&self) -> Result<u16, Box<dyn std::error::Error + Send + Sync>> {
-        match self.config("listener.port") {
+    fn http_port(&self) -> Result<u16, Box<dyn std::error::Error + Send + Sync>> {
+        match self.config("listeners.http.port") {
             Some(core::Primitive::U32(port)) => Ok(port as u16),
-            Some(other) => Err(format!("Unexpected type for 'listener.port': {:?}", other).into()),
-            None => Err("Missing 'listener.port' config".into()),
+            Some(other) => {
+                Err(format!("Unexpected type for 'listeners.http.port': {:?}", other).into())
+            }
+            None => Err("Missing 'listeners.http.port' config".into()),
         }
     }
 }
@@ -58,11 +54,17 @@ impl Runner {}
 
 #[async_trait]
 impl EchoRunner for Runner {
-    fn endpoint(&self) -> Result<Endpoint, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(Endpoint {
-            host: self.listener_host()?,
-            port: self.listener_port()?,
-        })
+    fn listeners(&self) -> Result<Listeners, Box<dyn std::error::Error + Send + Sync>> {
+        let mut listeners = Listeners::new();
+        listeners.insert(
+            "http",
+            Endpoint {
+                name: "http".to_string(),
+                host: self.http_host()?,
+                port: self.http_port()?,
+            },
+        );
+        Ok(listeners)
     }
 }
 
@@ -130,6 +132,7 @@ mod tests {
         #[async_trait]
         impl listener::Listener for Endpoint {
             async fn bind(&self) -> tokio::net::TcpListener;
+            fn name(&self) -> &str;
             fn socket_address(&self) -> SocketAddr;
         }
     }
@@ -229,19 +232,23 @@ mod tests {
         let test = TESTS
             .test("runner_cmd_start")
             .expecting(vec![
-                "Runner::endpoint(true)",
-                "Runner::start(true): Endpoint { host: 0.0.0.0, port: 1717 }",
+                "Runner::listeners(true)",
+                "Runner::get_handler(true)",
+                "Runner::start(true): EchoHandler { command: Command { config: Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }, name: \"somecommand\" } }"
             ])
             .with_patches(vec![
-                patch2(Runner::start, |_self, endpoint| {
-                    Box::pin(Patch::runner_start(
+                patch1(Runner::get_handler, |_self| {
+                    Patch::runner_get_handler(TESTS.get("runner_cmd_start"), _self)
+                }),
+                patch1(Runner::listeners, |_self| {
+                    Patch::runner_listeners(TESTS.get("runner_cmd_start"), _self)
+                }),
+                patch2(Listeners::bind, |_self, handler| {
+                    Box::pin(Patch::listeners_bind(
                         TESTS.get("runner_cmd_start"),
                         _self,
-                        endpoint,
+                        handler,
                     ))
-                }),
-                patch1(Runner::endpoint, |_self| {
-                    Patch::runner_endpoint(TESTS.get("runner_cmd_start"), _self)
                 }),
             ]);
         defer! {
@@ -262,37 +269,6 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_runner_endpoint() {
-        let test = TESTS
-            .test("runner_endpoint")
-            .expecting(vec![
-                "Runner::listener_host(true)",
-                "Runner::listener_port(true)",
-            ])
-            .with_patches(vec![
-                patch1(Runner::listener_host, |_self| {
-                    Patch::runner_listener_host(TESTS.get("runner_endpoint"), _self)
-                }),
-                patch1(Runner::listener_port, |_self| {
-                    Patch::runner_listener_port(TESTS.get("runner_endpoint"), _self)
-                }),
-            ]);
-        defer! {
-            test.drop();
-        }
-
-        let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
-        let name = "somecommand".to_string();
-        let command = Command { config, name };
-        let handler = EchoHandler { command };
-        let runner = Runner { handler };
-        let endpoint = runner.endpoint().unwrap();
-        assert_eq!(endpoint.host.to_string(), "7.7.7.7");
-        assert_eq!(endpoint.port, 7777);
-    }
-
-    #[test]
-    #[serial(toolshed_lock)]
     fn test_runner_get_handler() {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
@@ -306,13 +282,13 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_runner_listener_host() {
+    fn test_runner_http_host() {
         let test = TESTS
-            .test("runner_listener_host")
-            .expecting(vec!["Runner::config(true): \"listener.host\""])
+            .test("runner_http_host")
+            .expecting(vec!["Runner::config(true): \"listeners.http.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_host"),
+                    TESTS.get("runner_http_host"),
                     Some(core::Primitive::String("::".to_string())),
                     _self,
                     key,
@@ -329,19 +305,19 @@ mod tests {
         let runner = Runner { handler };
         assert_eq!(
             "::".parse::<IpAddr>().unwrap(),
-            runner.listener_host().expect("Failed to get listener port")
+            runner.http_host().expect("Failed to get HTTP host")
         );
     }
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_runner_listener_host_noconfig() {
+    fn test_runner_http_host_noconfig() {
         let test = TESTS
-            .test("runner_listener_host_noconfig")
-            .expecting(vec!["Runner::config(true): \"listener.host\""])
+            .test("runner_http_host_noconfig")
+            .expecting(vec!["Runner::config(true): \"listeners.http.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_host_noconfig"),
+                    TESTS.get("runner_http_host_noconfig"),
                     None,
                     _self,
                     key,
@@ -356,11 +332,11 @@ mod tests {
         let command = Command { config, name };
         let handler = EchoHandler { command };
         let runner = Runner { handler };
-        let host = runner.listener_host();
+        let host = runner.http_host();
         assert!(host.is_err());
         let err_msg = host.unwrap_err().to_string();
         assert!(
-            err_msg.contains("Missing 'listener.host' config"),
+            err_msg.contains("Missing 'listeners.http.host' config"),
             "Unexpected error: {}",
             err_msg
         );
@@ -368,13 +344,13 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_runner_listener_host_badconfig() {
+    fn test_runner_http_host_badconfig() {
         let test = TESTS
-            .test("runner_listener_host_badconfig")
-            .expecting(vec!["Runner::config(true): \"listener.host\""])
+            .test("runner_http_host_badconfig")
+            .expecting(vec!["Runner::config(true): \"listeners.http.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_host_badconfig"),
+                    TESTS.get("runner_http_host_badconfig"),
                     Some(core::Primitive::String("NOT AN IP ADDRESS".to_string())),
                     _self,
                     key,
@@ -389,7 +365,7 @@ mod tests {
         let command = Command { config, name };
         let handler = EchoHandler { command };
         let runner = Runner { handler };
-        let host = runner.listener_host();
+        let host = runner.http_host();
         assert!(host.is_err());
         let err_msg = host.unwrap_err().to_string();
         assert!(
@@ -401,13 +377,13 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_runner_listener_host_badconfig_type() {
+    fn test_runner_http_host_badconfig_type() {
         let test = TESTS
-            .test("runner_listener_host_badconfig_type")
-            .expecting(vec!["Runner::config(true): \"listener.host\""])
+            .test("runner_http_host_badconfig_type")
+            .expecting(vec!["Runner::config(true): \"listeners.http.host\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_host_badconfig_type"),
+                    TESTS.get("runner_http_host_badconfig_type"),
                     Some(core::Primitive::U32(1717)),
                     _self,
                     key,
@@ -422,11 +398,11 @@ mod tests {
         let command = Command { config, name };
         let handler = EchoHandler { command };
         let runner = Runner { handler };
-        let host = runner.listener_host();
+        let host = runner.http_host();
         assert!(host.is_err());
         let err_msg = host.unwrap_err().to_string();
         assert!(
-            err_msg.contains("Unexpected type for 'listener.host': U32(1717)"),
+            err_msg.contains("Unexpected type for 'listeners.http.host': U32(1717)"),
             "Unexpected error: {}",
             err_msg
         );
@@ -434,13 +410,13 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_runner_listener_port() {
+    fn test_runner_http_port() {
         let test = TESTS
-            .test("runner_listener_port")
-            .expecting(vec!["Runner::config(true): \"listener.port\""])
+            .test("runner_http_port")
+            .expecting(vec!["Runner::config(true): \"listeners.http.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_port"),
+                    TESTS.get("runner_http_port"),
                     Some(core::Primitive::U32(2323)),
                     _self,
                     key,
@@ -457,19 +433,21 @@ mod tests {
         let runner = Runner { handler };
         assert_eq!(
             2323,
-            runner.listener_port().expect("Failed to get listener port")
+            runner
+                .http_port()
+                .expect("Failed to get HTTP listener port")
         );
     }
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_runner_listener_port_noconfig() {
+    fn test_runner_http_port_noconfig() {
         let test = TESTS
-            .test("runner_listener_port_noconfig")
-            .expecting(vec!["Runner::config(true): \"listener.port\""])
+            .test("runner_http_port_noconfig")
+            .expecting(vec!["Runner::config(true): \"listeners.http.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_port_noconfig"),
+                    TESTS.get("runner_http_port_noconfig"),
                     None,
                     _self,
                     key,
@@ -484,11 +462,11 @@ mod tests {
         let command = Command { config, name };
         let handler = EchoHandler { command };
         let runner = Runner { handler };
-        let port = runner.listener_port();
+        let port = runner.http_port();
         assert!(port.is_err());
         let err_msg = port.unwrap_err().to_string();
         assert!(
-            err_msg.contains("Missing 'listener.port' config"),
+            err_msg.contains("Missing 'listeners.http.port' config"),
             "Unexpected error: {}",
             err_msg
         );
@@ -496,13 +474,13 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_runner_listener_port_badconfig() {
+    fn test_runner_http_port_badconfig() {
         let test = TESTS
-            .test("runner_listener_port_badconfig")
-            .expecting(vec!["Runner::config(true): \"listener.port\""])
+            .test("runner_http_port_badconfig")
+            .expecting(vec!["Runner::config(true): \"listeners.http.port\""])
             .with_patches(vec![patch2(Runner::config, |_self, key| {
                 RunnerPatch::runner_config::<EchoHandler>(
-                    TESTS.get("runner_listener_port_badconfig"),
+                    TESTS.get("runner_http_port_badconfig"),
                     Some(core::Primitive::String("NOT A PORT".to_string())),
                     _self,
                     key,
@@ -517,47 +495,28 @@ mod tests {
         let command = Command { config, name };
         let handler = EchoHandler { command };
         let runner = Runner { handler };
-        let port = runner.listener_port();
+        let port = runner.http_port();
         assert!(port.is_err());
         let err_msg = port.unwrap_err().to_string();
         assert!(
-            err_msg.contains("Unexpected type for 'listener.port': String(\"NOT A PORT\")"),
+            err_msg.contains("Unexpected type for 'listeners.http.port': String(\"NOT A PORT\")"),
             "Unexpected error: {}",
             err_msg
         );
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[serial(toolshed_lock)]
-    async fn test_runner_start() {
+    fn test_runner_listeners() {
         let test = TESTS
-            .test("runner_start")
-            .expecting(vec![
-                "Runner::get_handler(true)",
-                "EchoHandler::router(true)",
-                "axum::serve(true)",
-                "axum::serve::Serve::with_graceful_shutdown(true)",
-                "ctrl_c(true)",
-            ])
+            .test("runner_endpoint")
+            .expecting(vec!["Runner::http_host(true)", "Runner::http_port(true)"])
             .with_patches(vec![
-                patch1(Runner::get_handler, |_self| {
-                    Patch::runner_get_handler(TESTS.get("runner_start"), _self)
+                patch1(Runner::http_host, |_self| {
+                    Patch::runner_http_host(TESTS.get("runner_endpoint"), _self)
                 }),
-                patch1(EchoHandler::router, |_self| {
-                    Patch::handler_router(TESTS.get("runner_start"), _self)
-                }),
-                patch0(runner::runner::ctrl_c, || {
-                    Box::pin(Patch::ctrl_c(TESTS.get("runner_start")))
-                }),
-                patch2(axum::serve, |listener, router| {
-                    let test = TESTS.get("runner_start");
-                    test.lock().unwrap().patch_index(3);
-                    Patch::axum_serve(test, listener, router)
-                }),
-                patch2(axum::serve::Serve::with_graceful_shutdown, |_self, fun| {
-                    let test = TESTS.get("runner_start");
-                    test.lock().unwrap().patch_index(4);
-                    Patch::axum_serve_with_graceful_shutdown(test, _self, Box::pin(fun))
+                patch1(Runner::http_port, |_self| {
+                    Patch::runner_http_port(TESTS.get("runner_endpoint"), _self)
                 }),
             ]);
         defer! {
@@ -569,10 +528,11 @@ mod tests {
         let command = Command { config, name };
         let handler = EchoHandler { command };
         let runner = Runner { handler };
-        let host: IpAddr = "127.0.0.1".parse().unwrap();
-        let port = 1717;
-        let endpoint = listener::Endpoint { host, port };
-        assert!(runner.start(endpoint).await.is_ok());
+        let listeners = runner.listeners().unwrap();
+        let http_endpoint = listeners.endpoints.get("http").unwrap();
+        assert_eq!(http_endpoint.name, "http");
+        assert_eq!(http_endpoint.host.to_string(), "7.7.7.7");
+        assert_eq!(http_endpoint.port, 7777);
     }
 
     #[tokio::test(flavor = "multi_thread")]

@@ -7,11 +7,11 @@ pub struct Args {
     #[command(flatten)]
     pub base: runner::args::BaseArgs,
     #[arg(long)]
-    pub host: Option<String>,
+    pub http_host: Option<String>,
     #[arg(long)]
     pub hostname: Option<String>,
-    #[arg(short, long)]
-    pub port: Option<u16>,
+    #[arg(long)]
+    pub http_port: Option<u16>,
 }
 
 impl runner::args::Provider for Args {
@@ -37,8 +37,8 @@ mod tests {
         assert!(args.config() == *DEFAULT_CONFIG_PATH.to_string());
         assert!(args.base.log_level.is_none());
         assert!(args.log_level().is_none());
-        assert!(args.host.is_none());
+        assert!(args.http_host.is_none());
         assert!(args.hostname.is_none());
-        assert!(args.port.is_none());
+        assert!(args.http_port.is_none());
     }
 }
