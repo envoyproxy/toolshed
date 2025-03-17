@@ -41,46 +41,44 @@ impl Config {
         crate::DEFAULT_HTTP_PORT
     }
 
-    fn override_config_hostname(
-        args: &runner::config::ArcSafeArgs,
+    fn override_hostname(
+        args: &runner::args::ArcSafeArgs,
         config: &mut Box<Self>,
     ) -> core::EmptyResult {
-        if let Some(args) = args.as_any().downcast_ref::<Args>() {
-            if let Some(hostname) = args
-                .hostname
-                .clone()
-                .or_else(|| std::env::var("ECHO_HOSTNAME").ok())
-            {
-                config.hostname = hostname;
-            }
+        if let Some(hostname) =
+            runner::config_override!(core::downcast::<Args>(&***args)?, hostname, "ECHO_HOSTNAME")
+        {
+            config.hostname = hostname;
         }
         Ok(())
     }
 
-    fn override_config_http_host(
-        args: &runner::config::ArcSafeArgs,
+    fn override_http_host(
+        args: &runner::args::ArcSafeArgs,
         config: &mut Box<Self>,
     ) -> core::EmptyResult {
-        if let Some(args) = args.as_any().downcast_ref::<Args>() {
-            if let Some(host) = args.http_host.clone() {
-                if let Some(listener) = config.listeners.get_mut("http") {
-                    listener.host = host.parse()?;
-                }
-            }
+        let host = runner::config_override!(
+            core::downcast::<Args>(&***args)?,
+            http_host,
+            "ECHO_HTTP_HOST"
+        );
+        if let (Some(host), Some(listener)) = (host, config.listeners.get_mut("http")) {
+            listener.host = host.parse()?;
         }
         Ok(())
     }
 
-    fn override_config_http_port(
-        args: &runner::config::ArcSafeArgs,
+    fn override_http_port(
+        args: &runner::args::ArcSafeArgs,
         config: &mut Box<Self>,
     ) -> core::EmptyResult {
-        if let Some(args) = args.as_any().downcast_ref::<Args>() {
-            if let Some(port) = args.http_port {
-                if let Some(listener) = config.listeners.get_mut("http") {
-                    listener.port = port;
-                }
-            }
+        let port = runner::config_override!(
+            core::downcast::<Args>(&***args)?,
+            http_port,
+            "ECHO_HTTP_PORT"
+        );
+        if let (Some(port), Some(listener)) = (port, config.listeners.get_mut("http")) {
+            listener.port = port;
         }
         Ok(())
     }
@@ -89,13 +87,13 @@ impl Config {
 #[async_trait]
 impl runner::config::Factory<Config> for Config {
     async fn override_config(
-        args: &runner::config::ArcSafeArgs,
+        args: &runner::args::ArcSafeArgs,
         mut config: Box<Config>,
     ) -> Result<Box<Config>, runner::config::SafeError> {
-        Self::override_config_log(args, &mut config)?;
-        Self::override_config_hostname(args, &mut config)?;
-        Self::override_config_http_host(args, &mut config)?;
-        Self::override_config_http_port(args, &mut config)?;
+        Self::override_log(args, &mut config)?;
+        Self::override_hostname(args, &mut config)?;
+        Self::override_http_host(args, &mut config)?;
+        Self::override_http_port(args, &mut config)?;
         Ok(config)
     }
 }
@@ -117,13 +115,12 @@ impl runner::config::Provider for Config {
 mod tests {
     use super::*;
     use crate::test::patch::Patch;
-    use as_any::AsAny;
     use guerrilla::{patch0, patch1, patch2};
     use mockall::mock;
     use once_cell::sync::Lazy;
     use scopeguard::defer;
     use serial_test::serial;
-    use std::{any::Any, net::IpAddr, sync::Arc};
+    use std::{net::IpAddr, sync::Arc};
     use toolshed_runner::{
         config::Factory as _, config::Provider as _, test::patch::Patch as RunnerPatch,
     };
@@ -178,35 +175,35 @@ mod tests {
         let test = TESTS
             .test("config_override_config")
             .expecting(vec![
-                "Config::override_config_log(true): Args { base: BaseArgs { config: \"/foo.yaml\", log_level: Some(\"trace\") }, http_host: Some(\"8.8.8.8\"), hostname: None, http_port: Some(7373) }, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }",
-                "Config::override_config_hostname(true): Args { base: BaseArgs { config: \"/foo.yaml\", log_level: Some(\"trace\") }, http_host: Some(\"8.8.8.8\"), hostname: None, http_port: Some(7373) }, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }",
-                "Config::override_config_http_host(true): Args { base: BaseArgs { config: \"/foo.yaml\", log_level: Some(\"trace\") }, http_host: Some(\"8.8.8.8\"), hostname: None, http_port: Some(7373) }, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }",
-                "Config::override_config_http_port(true): Args { base: BaseArgs { config: \"/foo.yaml\", log_level: Some(\"trace\") }, http_host: Some(\"8.8.8.8\"), hostname: None, http_port: Some(7373) }, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }"
+                "Config::override_log(true): Args { base: BaseArgs { config: \"/foo.yaml\", log_level: Some(\"trace\") }, hostname: None, http_host: Some(\"8.8.8.8\"), http_port: Some(7373) }, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }",
+                "Config::override_hostname(true): Args { base: BaseArgs { config: \"/foo.yaml\", log_level: Some(\"trace\") }, hostname: None, http_host: Some(\"8.8.8.8\"), http_port: Some(7373) }, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }",
+                "Config::override_http_host(true): Args { base: BaseArgs { config: \"/foo.yaml\", log_level: Some(\"trace\") }, hostname: None, http_host: Some(\"8.8.8.8\"), http_port: Some(7373) }, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }",
+                "Config::override_http_port(true): Args { base: BaseArgs { config: \"/foo.yaml\", log_level: Some(\"trace\") }, hostname: None, http_host: Some(\"8.8.8.8\"), http_port: Some(7373) }, Config { base: BaseConfig { log: Some(LogConfig { level: Info }) }, listeners: {\"http\": Config { host: 127.0.0.1, port: 8787 }}, hostname: \"echo\" }"
             ])
             .with_patches(vec![
-                patch2(Config::override_config_log, |args, config| {
-                    RunnerPatch::override_config_log(
+                patch2(Config::override_log, |args, config| {
+                    RunnerPatch::override_log(
                         TESTS.get("config_override_config"),
                         args,
                         config,
                     )
                 }),
-                patch2(Config::override_config_hostname, |args, config| {
-                    Patch::config_override_config_hostname(
+                patch2(Config::override_hostname, |args, config| {
+                    Patch::config_override_hostname(
                         TESTS.get("config_override_config"),
                         args,
                         config,
                     )
                 }),
-                patch2(Config::override_config_http_host, |args, config| {
-                    Patch::config_override_config_http_host(
+                patch2(Config::override_http_host, |args, config| {
+                    Patch::config_override_http_host(
                         TESTS.get("config_override_config"),
                         args,
                         config,
                     )
                 }),
-                patch2(Config::override_config_http_port, |args, config| {
-                    Patch::config_override_config_http_port(
+                patch2(Config::override_http_port, |args, config| {
+                    Patch::config_override_http_port(
                         TESTS.get("config_override_config"),
                         args,
                         config,
@@ -227,7 +224,7 @@ mod tests {
             hostname: None,
             http_port: Some(7373),
         };
-        let args: Arc<runner::config::SafeArgs> = Arc::new(Box::new(mock_args));
+        let args: Arc<runner::args::SafeArgs> = Arc::new(Box::new(mock_args));
         assert!(Config::override_config(&args, Box::new(config))
             .await
             .is_ok());
@@ -277,7 +274,7 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_config_override_config_hostname() {
+    fn test_config_override_hostname() {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let mut config_boxed = Box::new(config);
 
@@ -290,40 +287,31 @@ mod tests {
             hostname: Some("HOSTNAME SET BY ARGS".to_string()),
             http_port: Some(7373),
         };
-        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::args::SafeArgs = Box::new(mock_args);
 
         let test = TESTS
-            .test("config_override_config_hostname")
-            .expecting(vec![
-                "Args::as_any(true)",
-                "Any::downcast_ref::<Args>(true)",
-            ])
+            .test("config_override_hostname")
+            .expecting(vec!["downcast::<Args>(true)"])
             .with_patches(vec![
-                patch0(Config::default_hostname, || {
-                    Patch::default_hostname(TESTS.get("config_override_config_hostname"))
-                }),
-                patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_hostname"), s)
-                }),
-                patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(TESTS.get("config_override_config_hostname"), s)
+                patch1(core::downcast::<Args>, |s| {
+                    Patch::downcast(TESTS.get("config_override_hostname"), s)
                 }),
                 patch1(std::env::var, |name| {
-                    Patch::env_var(TESTS.get("config_override_config_hostname"), name)
+                    Patch::env_var(TESTS.get("config_override_hostname"), name)
                 }),
             ]);
         defer! {
             test.drop();
         }
 
-        let result = Config::override_config_hostname(&Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_hostname(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(config_boxed.hostname, "HOSTNAME SET BY ARGS");
     }
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_config_override_config_hostname_env() {
+    fn test_config_override_hostname_env() {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let mock_args = Args {
             base: runner::args::BaseArgs {
@@ -334,42 +322,38 @@ mod tests {
             hostname: None,
             http_port: Some(7373),
         };
-        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::args::SafeArgs = Box::new(mock_args);
         let mut config_boxed = Box::new(config);
 
         let test = TESTS
-            .test("config_override_config_hostname_env")
+            .test("config_override_hostname_env")
             .expecting(vec![
-                "Args::as_any(true)",
-                "Any::downcast_ref::<Args>(true)",
+                "downcast::<Args>(true)",
                 "std::env::var(true): \"ECHO_HOSTNAME\"",
             ])
             .with_patches(vec![
                 patch0(Config::default_hostname, || {
-                    Patch::default_hostname(TESTS.get("config_override_config_hostname_env"))
+                    Patch::default_hostname(TESTS.get("config_override_hostname_env"))
                 }),
-                patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_hostname_env"), s)
-                }),
-                patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(TESTS.get("config_override_config_hostname_env"), s)
+                patch1(core::downcast::<Args>, |s| {
+                    Patch::downcast(TESTS.get("config_override_hostname_env"), s)
                 }),
                 patch1(std::env::var, |name| {
-                    Patch::env_var(TESTS.get("config_override_config_hostname_env"), name)
+                    Patch::env_var(TESTS.get("config_override_hostname_env"), name)
                 }),
             ]);
         defer! {
             test.drop();
         }
 
-        let result = Config::override_config_hostname(&Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_hostname(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(config_boxed.hostname, "SOMEVAR");
     }
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_config_override_config_hostname_none() {
+    fn test_config_override_hostname_none() {
         let config = serde_yaml::from_str::<Config>("").expect("Unable to parse yaml");
         let mock_args = Args {
             base: runner::args::BaseArgs {
@@ -380,28 +364,24 @@ mod tests {
             hostname: None,
             http_port: Some(7373),
         };
-        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::args::SafeArgs = Box::new(mock_args);
         let mut config_boxed = Box::new(config);
 
         let test = TESTS
-            .test("config_override_config_hostname_env")
+            .test("config_override_hostname_none")
             .expecting(vec![
-                "Args::as_any(true)",
-                "Any::downcast_ref::<Args>(true)",
+                "downcast::<Args>(true)",
                 "std::env::var(true): \"ECHO_HOSTNAME\"",
             ])
             .with_patches(vec![
                 patch0(Config::default_hostname, || {
-                    Patch::default_hostname(TESTS.get("config_override_config_hostname_env"))
+                    Patch::default_hostname(TESTS.get("config_override_hostname_none"))
                 }),
-                patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_hostname_env"), s)
-                }),
-                patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(TESTS.get("config_override_config_hostname_env"), s)
+                patch1(core::downcast::<Args>, |s| {
+                    Patch::downcast(TESTS.get("config_override_hostname_none"), s)
                 }),
                 patch1(std::env::var, |name| {
-                    let _ = Patch::env_var(TESTS.get("config_override_config_hostname_env"), name);
+                    let _ = Patch::env_var(TESTS.get("config_override_hostname_none"), name);
                     Err(std::env::VarError::NotPresent)
                 }),
             ]);
@@ -409,30 +389,26 @@ mod tests {
             test.drop();
         }
 
-        let result = Config::override_config_hostname(&Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_hostname(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(config_boxed.hostname, DEFAULT_HOSTNAME);
     }
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_config_override_config_http_host() {
+    fn test_config_override_http_host() {
         let test = TESTS
-            .test("config_override_config_http_host")
+            .test("config_override_http_host")
             .expecting(vec![
                 "Config::default_listeners(true)",
-                "Args::as_any(true)",
-                "Any::downcast_ref::<Args>(true)",
+                "downcast::<Args>(true)",
             ])
             .with_patches(vec![
                 patch0(Config::default_listeners, || {
-                    Patch::default_listeners(TESTS.get("config_override_config_http_host"))
+                    Patch::default_listeners(TESTS.get("config_override_http_host"))
                 }),
-                patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_http_host"), s)
-                }),
-                patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(TESTS.get("config_override_config_http_host"), s)
+                patch1(core::downcast::<Args>, |s| {
+                    Patch::downcast(TESTS.get("config_override_http_host"), s)
                 }),
             ]);
         defer! {
@@ -449,9 +425,9 @@ mod tests {
             hostname: Some("HOSTNAME".to_string()),
             http_port: Some(7373),
         };
-        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::args::SafeArgs = Box::new(mock_args);
         let mut config_boxed = Box::new(config);
-        let result = Config::override_config_http_host(&Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_http_host(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(
             config_boxed.listeners.get("http").unwrap().host,
@@ -461,23 +437,19 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_config_override_config_http_port() {
+    fn test_config_override_http_port() {
         let test = TESTS
-            .test("config_override_config_http_port")
+            .test("config_override_http_port")
             .expecting(vec![
                 "Config::default_listeners(true)",
-                "Args::as_any(true)",
-                "Any::downcast_ref::<Args>(true)",
+                "downcast::<Args>(true)",
             ])
             .with_patches(vec![
                 patch0(Config::default_listeners, || {
-                    Patch::default_listeners(TESTS.get("config_override_config_http_port"))
+                    Patch::default_listeners(TESTS.get("config_override_http_port"))
                 }),
-                patch1(Args::as_any, |s| {
-                    Patch::args_as_any(TESTS.get("config_override_config_http_port"), s)
-                }),
-                patch1(<dyn Any>::downcast_ref, |s| {
-                    Patch::args_downcast_ref(TESTS.get("config_override_config_http_port"), s)
+                patch1(core::downcast::<Args>, |s| {
+                    Patch::downcast(TESTS.get("config_override_http_port"), s)
                 }),
             ]);
         defer! {
@@ -494,9 +466,9 @@ mod tests {
             hostname: Some("HOSTNAME".to_string()),
             http_port: Some(7373),
         };
-        let args_boxed: runner::config::SafeArgs = Box::new(mock_args);
+        let args_boxed: runner::args::SafeArgs = Box::new(mock_args);
         let mut config_boxed = Box::new(config);
-        let result = Config::override_config_http_port(&Arc::new(args_boxed), &mut config_boxed);
+        let result = Config::override_http_port(&Arc::new(args_boxed), &mut config_boxed);
         assert!(result.is_ok());
         assert_eq!(config_boxed.listeners.get("http").unwrap().port, 7373);
     }

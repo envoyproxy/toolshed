@@ -6,15 +6,23 @@ use serde_yaml::Value;
 use std::{any::Any, error::Error, fmt, fmt::Debug, path::Path, sync::Arc};
 use toolshed_core as core;
 
-pub type SafeArgs = Box<dyn args::Provider + Send + Sync>;
-pub type ArcSafeArgs = Arc<SafeArgs>;
 pub type SafeError = Box<dyn Error + Send + Sync>;
+
+#[macro_export]
+macro_rules! config_override {
+    ($args:expr, $field:ident, $env_var:expr) => {
+        $args
+            .$field
+            .clone()
+            .or_else(|| std::env::var($env_var).ok().and_then(|p| p.parse().ok()))
+    };
+}
 
 pub trait Provider: Any + AsAny + Debug + Send + Sync {
     fn get(&self, key: &str) -> Option<core::Primitive> {
         let keys: Vec<&str> = key.split('.').collect();
         let serialized = self.serialized()?;
-        let result = self.resolve(&serialized, &keys).unwrap();
+        let result = self.resolve(&serialized, &keys)?;
         match result {
             Value::Bool(b) => Some(core::Primitive::Bool(b)),
             Value::Number(num) => match num {
@@ -74,14 +82,14 @@ pub trait Factory<T>
 where
     T: Provider + DeserializeOwned + 'static + Send + Sync,
 {
-    async fn from_yaml(args: SafeArgs) -> Result<Box<T>, SafeError> {
+    async fn from_yaml(args: args::SafeArgs) -> Result<Box<T>, SafeError> {
         let args = Arc::new(args);
         let yaml_result = Self::read_yaml(Arc::clone(&args)).await?;
         let config = Self::override_config(&args, yaml_result).await?;
         Ok(config)
     }
 
-    fn log_level_override(args: &ArcSafeArgs) -> Result<Option<log::Level>, SafeError> {
+    fn log_level_override(args: &args::ArcSafeArgs) -> Result<Option<log::Level>, SafeError> {
         match args.log_level().or_else(|| std::env::var("LOG_LEVEL").ok()) {
             Some(lvl) => match serde_yaml::from_str::<log::Level>(&lvl) {
                 Ok(level) => Ok(Some(level)),
@@ -91,19 +99,22 @@ where
         }
     }
 
-    fn override_config_log(args: &ArcSafeArgs, config: &mut Box<T>) -> core::EmptyResult {
+    fn override_log(args: &args::ArcSafeArgs, config: &mut Box<T>) -> core::EmptyResult {
         if let Some(level) = Self::log_level_override(args)? {
             config.set_log(level)?;
         }
         Ok(())
     }
 
-    async fn override_config(args: &ArcSafeArgs, mut config: Box<T>) -> Result<Box<T>, SafeError> {
-        Self::override_config_log(args, &mut config)?;
+    async fn override_config(
+        args: &args::ArcSafeArgs,
+        mut config: Box<T>,
+    ) -> Result<Box<T>, SafeError> {
+        Self::override_log(args, &mut config)?;
         Ok(config)
     }
 
-    async fn read_yaml(args: ArcSafeArgs) -> Result<Box<T>, SafeError> {
+    async fn read_yaml(args: args::ArcSafeArgs) -> Result<Box<T>, SafeError> {
         let config_str = args.config();
         let path = Path::new(&config_str);
         if !path.exists() {
@@ -205,7 +216,7 @@ mod tests {
             .expect_config()
             .returning(|| "tests/config.yaml".to_string());
         mock_args.expect_log_level().returning(|| None);
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         DummyFactory::read_yaml(Arc::new(args_boxed)).await
     }
 
@@ -298,7 +309,7 @@ log:
             .expect_config()
             .returning(|| "tests/config.yaml".to_string());
         mock_args.expect_log_level().returning(|| None);
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let result: Result<Box<DummyConfig>, SafeError> = DummyFactory::from_yaml(args_boxed).await;
         assert!(result.is_ok());
     }
@@ -328,7 +339,7 @@ log:
         mock_args
             .expect_log_level()
             .returning(|| Some("debug".to_string()));
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let result = DummyFactory::log_level_override(&Arc::new(args_boxed));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Some(log::Level::Trace));
@@ -360,7 +371,7 @@ log:
 
         let mut mock_args = MockArgsProvider::new();
         mock_args.expect_log_level().returning(|| None);
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let result = DummyFactory::log_level_override(&Arc::new(args_boxed));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), Some(log::Level::Trace));
@@ -391,7 +402,7 @@ log:
 
         let mut mock_args = MockArgsProvider::new();
         mock_args.expect_log_level().returning(|| None);
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let result = DummyFactory::log_level_override(&Arc::new(args_boxed));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), None);
@@ -422,7 +433,7 @@ log:
 
         let mut mock_args = MockArgsProvider::new();
         mock_args.expect_log_level().returning(|| None);
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let result = DummyFactory::log_level_override(&Arc::new(args_boxed));
         assert!(result.is_err());
         let err_msg = result.unwrap_err().to_string();
@@ -459,7 +470,7 @@ log:
         }
 
         let mock_args = MockArgsProvider::new();
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let config: DummyConfig = serde_yaml::from_str(TEST_YAML0).expect("Unable to parse yaml");
         assert!(
             DummyFactory::override_config(&Arc::new(args_boxed), Box::new(config))
@@ -470,22 +481,22 @@ log:
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
-    async fn test_factory_override_config_nolog() {
+    async fn test_factory_override_nolog() {
         let test = TESTS
-            .test("factory_override_config_nolog")
+            .test("factory_override_nolog")
             .expecting(vec![
                 "Factory::log_level_override(true/false): MockArgsProvider",
             ])
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
                     Ok(Patch::log_level_override(
-                        TESTS.get("factory_override_config_nolog"),
+                        TESTS.get("factory_override_nolog"),
                         false,
                         args,
                     )?)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    Patch::set_log(TESTS.get("factory_override_config_nolog"), _self, level)
+                    Patch::set_log(TESTS.get("factory_override_nolog"), _self, level)
                 }),
             ]);
         defer! {
@@ -493,7 +504,7 @@ log:
         }
 
         let mock_args = MockArgsProvider::new();
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let config: DummyConfig = serde_yaml::from_str(TEST_YAML0).expect("Unable to parse yaml");
         assert!(
             DummyFactory::override_config(&Arc::new(args_boxed), Box::new(config))
@@ -504,20 +515,20 @@ log:
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
-    async fn test_factory_override_config_get_err() {
+    async fn test_factory_override_get_err() {
         let test = TESTS
-            .test("factory_override_config_get_err")
+            .test("factory_override_get_err")
             .expecting(vec![
                 "Factory::log_level_override(false/true): MockArgsProvider",
             ])
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
-                    let test = TESTS.get("factory_override_config_get_err");
+                    let test = TESTS.get("factory_override_get_err");
                     test.lock().unwrap().fail();
                     Patch::log_level_override(test, true, args)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    Patch::set_log(TESTS.get("factory_override_config_get_err"), _self, level)
+                    Patch::set_log(TESTS.get("factory_override_get_err"), _self, level)
                 }),
             ]);
         defer! {
@@ -525,7 +536,7 @@ log:
         }
 
         let mock_args = MockArgsProvider::new();
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let config: DummyConfig = serde_yaml::from_str(TEST_YAML0).expect("Unable to parse yaml");
         let result = DummyFactory::override_config(&Arc::new(args_boxed), Box::new(config)).await;
         assert!(result.is_err());
@@ -539,23 +550,19 @@ log:
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
-    async fn test_factory_override_config_set_err() {
+    async fn test_factory_override_set_err() {
         let test = TESTS
-            .test("factory_override_config_set_err")
+            .test("factory_override_set_err")
             .expecting(vec![
                 "Factory::log_level_override(true/true): MockArgsProvider",
                 "Config::set_log(false): Trace",
             ])
             .with_patches(vec![
                 patch1(DummyFactory::log_level_override, |args| {
-                    Patch::log_level_override(
-                        TESTS.get("factory_override_config_set_err"),
-                        true,
-                        args,
-                    )
+                    Patch::log_level_override(TESTS.get("factory_override_set_err"), true, args)
                 }),
                 patch2(DummyConfig::set_log, |_self, level| {
-                    let test = TESTS.get("factory_override_config_set_err");
+                    let test = TESTS.get("factory_override_set_err");
                     test.lock().unwrap().fail();
                     Patch::set_log(test, _self, level)
                 }),
@@ -565,7 +572,7 @@ log:
         }
 
         let mock_args = MockArgsProvider::new();
-        let args_boxed: SafeArgs = Box::new(mock_args);
+        let args_boxed: args::SafeArgs = Box::new(mock_args);
         let config: DummyConfig = serde_yaml::from_str(TEST_YAML0).expect("Unable to parse yaml");
         let result = DummyFactory::override_config(&Arc::new(args_boxed), Box::new(config)).await;
         assert!(result.is_err());

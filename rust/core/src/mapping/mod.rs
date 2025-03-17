@@ -229,4 +229,21 @@ mod tests {
         let expected_map = CustomOrderedMap(OrderedMap::from_iter(expected));
         assert_eq!(deserialized, expected_map);
     }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_custommap_debug() {
+        let json_data = r#"
+    [
+        ["X-FOO", "baz"],
+        ["X-BAR", "baz"]
+    ]
+    "#;
+        let custommap: CustomOrderedMap =
+            serde_json::from_str(json_data).expect("Failed to deserialize");
+        assert_eq!(
+            &format!("{:?}", custommap),
+            "OrderedMap({\"X-FOO\": \"baz\", \"X-BAR\": \"baz\"})"
+        );
+    }
 }

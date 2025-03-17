@@ -12,13 +12,13 @@ use axum::{
     http::{HeaderMap, Method},
     response,
 };
-use axum::{routing::any, Router};
+use axum::{routing::any as any_route, Router};
 use clap::Parser;
 use guerrilla::disable_patch;
 use std::{
-    any::{Any, TypeId},
+    any::{self, Any, TypeId},
     collections::HashMap,
-    fmt,
+    fmt, io,
     net::{IpAddr, SocketAddr, SocketAddrV4, SocketAddrV6},
     sync::{Arc, Mutex},
 };
@@ -30,25 +30,22 @@ use toolshed_test as ttest;
 pub struct Patch {}
 
 impl Patch {
-    pub fn args_as_any<'a>(test: Arc<Mutex<ttest::Test>>, _self: &'a Args) -> &'a dyn Any {
-        let test = test.lock().unwrap();
-        test.notify(&format!("Args::as_any({:?})", !test.fails));
-        _self
-    }
-
-    pub fn args_downcast_ref<'a>(
+    pub fn downcast<'a, T>(
         test: Arc<Mutex<ttest::Test>>,
         _self: &'a dyn Any,
-    ) -> Option<&'a Args> {
+    ) -> Result<&'a T, io::Error> {
         let test = test.lock().unwrap();
-        test.notify(&format!("Any::downcast_ref::<Args>({:?})", !test.fails));
+        test.notify(&format!("downcast::<Args>({:?})", !test.fails));
         if _self.type_id() == TypeId::of::<Args>() {
             unsafe {
-                let args_ptr = _self as *const dyn Any as *const Args;
-                Some(&*args_ptr)
+                let args_ptr = _self as *const dyn Any as *const T;
+                Ok(&*args_ptr)
             }
         } else {
-            None
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("Failed to downcast to {}", any::type_name::<T>()),
+            ))
         }
     }
 
@@ -113,7 +110,7 @@ impl Patch {
 
     pub async fn config_from_yaml<'a>(
         test: Arc<Mutex<ttest::Test<'a>>>,
-        args: runner::config::SafeArgs,
+        args: runner::args::SafeArgs,
     ) -> Result<Box<Config>, runner::config::SafeError> {
         {
             let test = test.lock().unwrap();
@@ -130,7 +127,7 @@ impl Patch {
 
     pub async fn config_override_config(
         test: Arc<Mutex<ttest::Test<'_>>>,
-        args: &runner::config::ArcSafeArgs,
+        args: &runner::args::ArcSafeArgs,
         config: Box<Config>,
     ) -> Result<Box<Config>, runner::config::SafeError> {
         let test = test.lock().unwrap();
@@ -141,46 +138,40 @@ impl Patch {
         Ok(config)
     }
 
-    pub fn config_override_config_hostname<
-        T: runner::config::Provider + serde::Deserialize<'static>,
-    >(
+    pub fn config_override_hostname<T: runner::config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<ttest::Test>>,
-        args: &runner::config::ArcSafeArgs,
+        args: &runner::args::ArcSafeArgs,
         config: &mut Box<T>,
     ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!(
-            "Config::override_config_hostname({:?}): {:?}, {:?}",
+            "Config::override_hostname({:?}): {:?}, {:?}",
             !test.fails, args, config
         ));
         Ok(())
     }
 
-    pub fn config_override_config_http_host<
-        T: runner::config::Provider + serde::Deserialize<'static>,
-    >(
+    pub fn config_override_http_host<T: runner::config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<ttest::Test>>,
-        args: &runner::config::ArcSafeArgs,
+        args: &runner::args::ArcSafeArgs,
         config: &mut Box<T>,
     ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!(
-            "Config::override_config_http_host({:?}): {:?}, {:?}",
+            "Config::override_http_host({:?}): {:?}, {:?}",
             !test.fails, args, config
         ));
         Ok(())
     }
 
-    pub fn config_override_config_http_port<
-        T: runner::config::Provider + serde::Deserialize<'static>,
-    >(
+    pub fn config_override_http_port<T: runner::config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<ttest::Test>>,
-        args: &runner::config::ArcSafeArgs,
+        args: &runner::args::ArcSafeArgs,
         config: &mut Box<T>,
     ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!(
-            "Config::override_config_http_port({:?}): {:?}, {:?}",
+            "Config::override_http_port({:?}): {:?}, {:?}",
             !test.fails, args, config
         ));
         Ok(())
@@ -238,7 +229,7 @@ impl Patch {
     ) -> axum::routing::MethodRouter {
         let test = test.lock().unwrap();
         test.notify(&format!("Handler::route_path({:?})", !test.fails));
-        any(|| async { "The future path" })
+        any_route(|| async { "The future path" })
     }
 
     pub fn handler_route_root<'a>(
@@ -247,7 +238,7 @@ impl Patch {
     ) -> axum::routing::MethodRouter {
         let test = test.lock().unwrap();
         test.notify(&format!("Handler::route_root({:?})", !test.fails));
-        any(|| async { "The future root" })
+        any_route(|| async { "The future root" })
     }
 
     pub fn handler_router(
@@ -256,7 +247,7 @@ impl Patch {
     ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
         let test = test.lock().unwrap();
         test.notify(&format!("EchoHandler::router({:?})", !test.fails));
-        Ok(Router::new().route("/nowhere", any(|| async { "The future" })))
+        Ok(Router::new().route("/nowhere", any_route(|| async { "The future" })))
     }
 
     pub fn http_response_body(test: Arc<Mutex<ttest::Test>>, string: String) -> Body {
@@ -371,7 +362,7 @@ impl Patch {
         let test = test.lock().unwrap();
         test.notify(&format!("Router::new({:?})", !test.fails));
         disable_patch!(test.get_patch().lock().unwrap(), {
-            Router::new().route("/nowhere", any(|| async { "The future" }))
+            Router::new().route("/nowhere", any_route(|| async { "The future" }))
         })
     }
 

@@ -59,8 +59,6 @@ impl Patch {
                 patch.lock().unwrap(),
                 spy.push(testid, &format!("Spy::push: {:?} {:?}", key, value))
             );
-        } else {
-            spy.push(key, value);
         }
     }
 

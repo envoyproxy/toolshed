@@ -1,5 +1,5 @@
 use crate::{
-    command, config,
+    args, command, config,
     handler::Handler,
     log,
     runner::{self, Runner},
@@ -260,7 +260,7 @@ impl Patch {
     pub fn log_level_override(
         test: Arc<Mutex<ttest::Test>>,
         result: bool,
-        args: &config::ArcSafeArgs,
+        args: &args::ArcSafeArgs,
     ) -> Result<Option<log::Level>, config::SafeError> {
         let test = test.lock().unwrap();
         test.notify(&format!(
@@ -278,7 +278,7 @@ impl Patch {
 
     pub async fn override_config<T: config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<ttest::Test<'_>>>,
-        args: &config::ArcSafeArgs,
+        args: &args::ArcSafeArgs,
         config: Box<T>,
     ) -> Result<Box<T>, config::SafeError> {
         let test = test.lock().unwrap();
@@ -289,14 +289,14 @@ impl Patch {
         Ok(config)
     }
 
-    pub fn override_config_log<T: config::Provider + serde::Deserialize<'static>>(
+    pub fn override_log<T: config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<ttest::Test<'_>>>,
-        args: &config::ArcSafeArgs,
+        args: &args::ArcSafeArgs,
         config: &mut Box<T>,
     ) -> core::EmptyResult {
         let test = test.lock().unwrap();
         test.notify(&format!(
-            "Config::override_config_log({:?}): {:?}, {:?}",
+            "Config::override_log({:?}): {:?}, {:?}",
             !test.fails, args, config
         ));
         Ok(())
@@ -310,7 +310,7 @@ impl Patch {
 
     pub async fn read_yaml<T: config::Provider + serde::Deserialize<'static>>(
         test: Arc<Mutex<ttest::Test<'_>>>,
-        args: config::ArcSafeArgs,
+        args: args::ArcSafeArgs,
     ) -> Result<Box<T>, config::SafeError> {
         let test = test.lock().unwrap();
         test.notify(&format!("Config::read_yaml({:?}): {:?}", !test.fails, args));
