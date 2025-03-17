@@ -1,12 +1,9 @@
 use std::time::Duration;
 use tokio::signal;
+use toolshed_runner as runner;
 
 pub async fn shutdown_signal(handle: axum_server::Handle) {
-    let ctrl_c = async {
-        signal::ctrl_c()
-            .await
-            .expect("failed to install Ctrl+C handler");
-    };
+    let ctrl_c = async { runner::runner::ctrl_c().await };
 
     #[cfg(unix)]
     let terminate = async {
@@ -30,9 +27,11 @@ pub async fn shutdown_signal(handle: axum_server::Handle) {
 mod tests {
     use super::*;
     use axum_server::Handle;
+    use serial_test::serial;
     use tokio::time;
 
     #[tokio::test]
+    #[serial(toolshed_lock)]
     async fn test_shutdown_signal() {
         let handle = Handle::new();
         let handle_clone = handle.clone();

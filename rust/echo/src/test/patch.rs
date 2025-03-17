@@ -13,6 +13,10 @@ use axum::{
     response,
 };
 use axum::{routing::any as any_route, Router};
+use axum_server::{
+    tls_rustls::{RustlsAcceptor, RustlsConfig},
+    Server,
+};
 use clap::Parser;
 use guerrilla::disable_patch;
 use hyper::header::{HeaderValue, InvalidHeaderValue};
@@ -21,6 +25,7 @@ use std::{
     collections::HashMap,
     fmt, io,
     net::{IpAddr, SocketAddr, SocketAddrV4, SocketAddrV6},
+    path::PathBuf,
     sync::{Arc, Mutex},
 };
 use tokio::net::TcpListener;
@@ -81,6 +86,25 @@ impl Patch {
             test.get_patch().lock().unwrap(),
             axum::serve(listener, router)
         )
+    }
+
+    pub fn axum_server_rustls(
+        test: Arc<Mutex<ttest::Test>>,
+        address: SocketAddr,
+        router: RustlsConfig,
+    ) -> Server<RustlsAcceptor> {
+        let test = test.lock().unwrap();
+        test.notify(&format!("axum_server::bind_rustls({:?})", !test.fails));
+        disable_patch!(
+            test.get_patch().lock().unwrap(),
+            axum_server::bind_rustls(address, router)
+        )
+    }
+
+    pub fn axum_server_handle_new(test: Arc<Mutex<ttest::Test>>) -> axum_server::Handle {
+        let test = test.lock().unwrap();
+        test.notify(&format!("axum_server::Handle::new({:?})", !test.fails));
+        axum_server::Handle::default()
     }
 
     pub fn axum_serve_with_graceful_shutdown(
@@ -191,6 +215,32 @@ impl Patch {
         Ok(())
     }
 
+    pub fn config_override_https<T: runner::config::Provider + serde::Deserialize<'static>>(
+        test: Arc<Mutex<ttest::Test>>,
+        args: &runner::args::ArcSafeArgs,
+        config: &mut Box<T>,
+    ) -> core::EmptyResult {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Config::override_https({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
+        Ok(())
+    }
+
+    pub fn config_override_tls<T: runner::config::Provider + serde::Deserialize<'static>>(
+        test: Arc<Mutex<ttest::Test>>,
+        args: &runner::args::ArcSafeArgs,
+        config: &mut Box<T>,
+    ) -> core::EmptyResult {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Config::override_tls({:?}): {:?}, {:?}",
+            !test.fails, args, config
+        ));
+        Ok(())
+    }
+
     pub async fn ctrl_c<'a>(test: Arc<Mutex<ttest::Test<'a>>>) {
         let test = test.lock().unwrap();
         test.notify(&format!("ctrl_c({:?})", !test.fails));
@@ -216,13 +266,14 @@ impl Patch {
         map
     }
 
-    pub async fn host_bind<'a>(
+    pub async fn host_listen<'a>(
         test: Arc<Mutex<ttest::Test<'a>>>,
         _self: Arc<Host>,
         _router: axum::Router,
-    ) {
+    ) -> core::EmptyResult {
         let test = test.lock().unwrap();
-        test.notify(&format!("Host::bind({:?})", !test.fails));
+        test.notify(&format!("Host::listen({:?})", !test.fails));
+        Ok(())
     }
 
     pub fn env_var(
@@ -357,14 +408,25 @@ impl Patch {
         Ok(HeaderValue::from_static("SOMEHEADERVALUE"))
     }
 
-    pub async fn listeners_bind<'a>(
+    pub async fn listeners_listen<'a>(
         test: Arc<Mutex<ttest::Test<'a>>>,
         _self: &Listeners,
         handler: &EchoHandler,
     ) -> core::EmptyResult {
         let test = test.lock().unwrap();
-        test.notify(&format!("Runner::start({:?}): {:?}", !test.fails, handler));
+        test.notify(&format!(
+            "Listeners::listen({:?}): {:?}",
+            !test.fails, handler
+        ));
         Ok(())
+    }
+
+    pub fn pathbuf_from(test: Arc<Mutex<ttest::Test>>, thing: String) -> PathBuf {
+        let test = test.lock().unwrap();
+        test.notify(&format!("PathBuf::from({:?})", !test.fails));
+        let mut path = PathBuf::new();
+        path.push(thing);
+        path
     }
 
     pub fn response_builder(test: Arc<Mutex<ttest::Test>>) -> axum::http::response::Builder {
@@ -458,6 +520,8 @@ impl Patch {
             name: "http".to_string(),
             host: "0.0.0.0".parse().unwrap(),
             port: 1717,
+            tls_cert: None,
+            tls_key: None,
         });
         Ok(listeners)
     }
@@ -493,6 +557,58 @@ impl Patch {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::http_port({:?})", !test.fails));
         Ok(7777)
+    }
+
+    pub fn runner_https_host(
+        test: Arc<Mutex<ttest::Test>>,
+        result: bool,
+        _self: &Runner,
+    ) -> Result<Option<IpAddr>, Box<dyn std::error::Error + Send + Sync>> {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Runner::https_host({:?})", !test.fails));
+        if !result {
+            return Ok(None);
+        }
+        Ok(Some("2.3.2.3".to_string().parse().unwrap()))
+    }
+
+    pub fn runner_https_port(
+        test: Arc<Mutex<ttest::Test>>,
+        result: bool,
+        _self: &Runner,
+    ) -> Result<Option<u16>, Box<dyn std::error::Error + Send + Sync>> {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Runner::https_port({:?})", !test.fails));
+        if !result {
+            return Ok(None);
+        }
+        Ok(Some(2323))
+    }
+
+    pub fn runner_tls_cert(
+        test: Arc<Mutex<ttest::Test>>,
+        result: bool,
+        _self: &Runner,
+    ) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Runner::tls_cert({:?})", !test.fails));
+        if !result {
+            return Ok(None);
+        }
+        Ok(Some("TLS_CERT".to_string()))
+    }
+
+    pub fn runner_tls_key(
+        test: Arc<Mutex<ttest::Test>>,
+        result: bool,
+        _self: &Runner,
+    ) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Runner::tls_key({:?})", !test.fails));
+        if !result {
+            return Ok(None);
+        }
+        Ok(Some("TLS_KEY".to_string()))
     }
 
     pub async fn runner_run<'a>(
@@ -544,5 +660,80 @@ impl Patch {
             !test.fails, hostname
         ));
         EchoHandlerConfig { hostname }
+    }
+
+    pub async fn host_tls_config(
+        test: Arc<Mutex<ttest::Test<'_>>>,
+        _self: &Host,
+    ) -> io::Result<RustlsConfig> {
+        {
+            let test = test.lock().unwrap();
+            test.notify(&format!("Host::tls_config({:?})", !test.fails));
+        }
+        RustlsConfig::from_pem_file(
+            PathBuf::from("./snakeoil/tls.cert"),
+            PathBuf::from("./snakeoil/tls.key"),
+        )
+        .await
+    }
+
+    pub fn host_tls_cert(
+        test: Arc<Mutex<ttest::Test>>,
+        returns: bool,
+        _self: &Host,
+    ) -> Option<PathBuf> {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Host::tls_cert({:?})", !test.fails));
+        if !returns {
+            return None;
+        }
+        Some(PathBuf::from("TLS_CERT"))
+    }
+
+    pub fn host_tls_key(
+        test: Arc<Mutex<ttest::Test>>,
+        returns: bool,
+        _self: &Host,
+    ) -> Option<PathBuf> {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Host::tls_key({:?})", !test.fails));
+        if !returns {
+            return None;
+        }
+        Some(PathBuf::from("TLS_KEY"))
+    }
+
+    pub async fn rustls_from_pem(test: Arc<Mutex<ttest::Test<'_>>>, cert: PathBuf, key: PathBuf) {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Host::rustls_from_pem({:?}): {:?} {:?}",
+            !test.fails, cert, key
+        ));
+    }
+
+    pub fn listener_is_tls(test: Arc<Mutex<ttest::Test>>, succeeds: bool, _self: &Host) -> bool {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Host::is_tls({:?})", succeeds));
+        succeeds
+    }
+
+    pub async fn listener_serve(
+        test: Arc<Mutex<ttest::Test<'_>>>,
+        succeeds: bool,
+        _self: &Host,
+        _router: axum::Router,
+    ) {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Host::serve({:?})", succeeds));
+    }
+
+    pub async fn listener_serve_tls(
+        test: Arc<Mutex<ttest::Test<'_>>>,
+        succeeds: bool,
+        _self: &Host,
+        _router: axum::Router,
+    ) {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Host::serve_tls({:?})", succeeds));
     }
 }
