@@ -73,7 +73,7 @@ macro_rules! _impl_orderedmap_fromiter {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize)]
 pub struct OrderedMap(IndexMap<String, String>);
 
 impl OrderedMap {
