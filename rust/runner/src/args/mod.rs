@@ -1,7 +1,10 @@
 use crate::DEFAULT_CONFIG_PATH;
 use as_any::AsAny;
 use clap::Parser;
-use std::{any::Any, fmt::Debug};
+use std::{any::Any, fmt::Debug, sync::Arc};
+
+pub type SafeArgs = Box<dyn Provider + Send + Sync>;
+pub type ArcSafeArgs = Arc<SafeArgs>;
 
 pub trait Provider: Any + AsAny + Debug + Sync + Send {
     fn config(&self) -> String;

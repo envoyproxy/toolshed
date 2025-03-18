@@ -1,3 +1,4 @@
+mod cast;
 pub mod mapping;
 mod result;
 
@@ -12,4 +13,5 @@ pub enum Primitive {
     String(String),
 }
 
+pub use cast::downcast;
 pub use result::EmptyResult;
