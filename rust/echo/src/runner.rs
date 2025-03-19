@@ -3,7 +3,7 @@ use crate::{
     command::Command,
     config::Config,
     handler::EchoHandler,
-    listener::{Endpoint, Listeners, ListenersProvider as _},
+    listener::{Host, Listeners, ListenersProvider as _},
 };
 use async_trait::async_trait;
 use clap::Parser;
@@ -56,7 +56,7 @@ impl Runner {}
 impl EchoRunner for Runner {
     fn listeners(&self) -> Result<Listeners, Box<dyn std::error::Error + Send + Sync>> {
         let mut listeners = Listeners::new();
-        listeners.insert(Endpoint {
+        listeners.insert(Host {
             name: "http".to_string(),
             host: self.http_host()?,
             port: self.http_port()?,
@@ -124,10 +124,10 @@ mod tests {
     static TESTS: Lazy<ttest::Tests> = Lazy::new(|| ttest::Tests::new(&SPY, &PATCHES));
 
     mock! {
-        Endpoint {}
+        Host {}
 
         #[async_trait]
-        impl listener::Listener for Endpoint {
+        impl listener::Listener for Host {
             async fn bind(self: Arc<Self>, router: axum::Router);
             async fn listen(&self) -> tokio::net::TcpListener;
             fn name(&self) -> &str;
@@ -507,14 +507,14 @@ mod tests {
     #[serial(toolshed_lock)]
     fn test_runner_listeners() {
         let test = TESTS
-            .test("runner_endpoint")
+            .test("runner_host")
             .expecting(vec!["Runner::http_host(true)", "Runner::http_port(true)"])
             .with_patches(vec![
                 patch1(Runner::http_host, |_self| {
-                    Patch::runner_http_host(TESTS.get("runner_endpoint"), _self)
+                    Patch::runner_http_host(TESTS.get("runner_host"), _self)
                 }),
                 patch1(Runner::http_port, |_self| {
-                    Patch::runner_http_port(TESTS.get("runner_endpoint"), _self)
+                    Patch::runner_http_port(TESTS.get("runner_host"), _self)
                 }),
             ]);
         defer! {
@@ -527,10 +527,10 @@ mod tests {
         let handler = EchoHandler { command };
         let runner = Runner { handler };
         let listeners = runner.listeners().unwrap();
-        let http_endpoint = listeners.endpoints.get("http").unwrap();
-        assert_eq!(http_endpoint.name, "http");
-        assert_eq!(http_endpoint.host.to_string(), "7.7.7.7");
-        assert_eq!(http_endpoint.port, 7777);
+        let http_host = listeners.hosts.get("http").unwrap();
+        assert_eq!(http_host.name, "http");
+        assert_eq!(http_host.host.to_string(), "7.7.7.7");
+        assert_eq!(http_host.port, 7777);
     }
 
     #[tokio::test(flavor = "multi_thread")]

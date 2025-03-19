@@ -3,7 +3,7 @@ use crate::{
     command::Command,
     config::Config,
     handler::{EchoHandler, EchoHandlerConfig, EchoState},
-    listener::{self, Endpoint, Listeners, ListenersProvider as _},
+    listener::{self, Host, Listeners, ListenersProvider as _},
 };
 use crate::{mapping, response::Response, runner::Runner};
 use axum::{
@@ -216,13 +216,13 @@ impl Patch {
         map
     }
 
-    pub async fn endpoint_bind<'a>(
+    pub async fn host_bind<'a>(
         test: Arc<Mutex<ttest::Test<'a>>>,
-        _self: Arc<Endpoint>,
+        _self: Arc<Host>,
         _router: axum::Router,
     ) {
         let test = test.lock().unwrap();
-        test.notify(&format!("Endpoint::bind({:?})", !test.fails));
+        test.notify(&format!("Host::bind({:?})", !test.fails));
     }
 
     pub fn env_var(
@@ -454,7 +454,7 @@ impl Patch {
         let test = test.lock().unwrap();
         test.notify(&format!("Runner::listeners({:?})", !test.fails));
         let mut listeners = Listeners::new();
-        listeners.insert(Endpoint {
+        listeners.insert(Host {
             name: "http".to_string(),
             host: "0.0.0.0".parse().unwrap(),
             port: 1717,
