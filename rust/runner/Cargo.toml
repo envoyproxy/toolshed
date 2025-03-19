@@ -7,29 +7,29 @@ edition = "2021"
 test = ["tempfile", "once_cell", "guerrilla", "toolshed-test"]
 
 [dependencies]
-as-any = "0.3.2"
-async-trait = "0.1"
-clap = { version = "4", features = ["derive"] }
-env_logger = "0.9"
-log = "0.4"
-serde = { version = "1", features = ["derive"] }
-serde_yaml = "0.9"
-tokio = { version = "1", features = ["full"] }
-tempfile = { version = "3.3", optional = true }
-once_cell = { version = "1.20", optional = true }
+as-any = "^0.3.2"
+async-trait = "^0.1"
+clap = { version = "^4", features = ["derive"] }
+env_logger = "^0.11"
+log = "^0.4"
+serde = { version = "^1", features = ["derive"] }
+serde_yaml = "^0.9"
+tokio = { version = "^1", features = ["full"] }
+tempfile = { version = "^3.19", optional = true }
+once_cell = { version = "^1.21", optional = true }
 toolshed-core = { path = "../core" }
 # guerrilla = { path = "../../../guerrilla", optional = true }
 guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "794c0d092a951786205bb68f8d45396e05a967f3", optional = true }
 toolshed-test = { path = "../test", optional = true }
 
 [dev-dependencies]
-assert_matches = "1.0"
-libc = "0.2.170"
-mockall = { version = "0.11" }
-mockall_double = "0.3"
-scopeguard = "1.2"
-serial_test = "2.0"
-tokio-test = "0.4"
+assert_matches = "^1.5"
+libc = "^0.2.171"
+mockall = { version = "^0.13.1" }
+mockall_double = "^0.3"
+scopeguard = "^1.2"
+serial_test = "^3.2.0"
+tokio-test = "^0.4"
 
 [lib]
 name = "toolshed_runner"
