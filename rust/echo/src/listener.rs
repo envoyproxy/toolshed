@@ -14,18 +14,18 @@ use toolshed_runner as runner;
 #[async_trait]
 pub trait ListenersProvider {
     async fn bind(&self, handler: &EchoHandler) -> core::EmptyResult;
-    fn insert(&mut self, endpoint: Endpoint);
+    fn insert(&mut self, host: Host);
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Listeners {
-    pub endpoints: HashMap<String, Endpoint>,
+    pub hosts: HashMap<String, Host>,
 }
 
 impl Listeners {
     pub fn new() -> Self {
         Self {
-            endpoints: HashMap::new(),
+            hosts: HashMap::new(),
         }
     }
 }
@@ -39,28 +39,28 @@ impl Default for Listeners {
 #[async_trait]
 impl ListenersProvider for Listeners {
     async fn bind(&self, handler: &EchoHandler) -> core::EmptyResult {
-        let endpoints: Vec<Arc<dyn Listener>> = self
-            .endpoints
+        let hosts: Vec<Arc<dyn Listener>> = self
+            .hosts
             .values()
             .cloned()
             .map(|ep| Arc::new(ep) as Arc<dyn Listener>)
             .collect();
         let mut tasks = Vec::new();
-        for endpoint in endpoints {
+        for host in hosts {
             let handler = handler.router()?;
-            tasks.push(tokio::task::spawn(endpoint.bind(handler)));
+            tasks.push(tokio::task::spawn(host.bind(handler)));
         }
         futures::future::join_all(tasks).await;
         Ok(())
     }
 
-    fn insert(&mut self, endpoint: Endpoint) {
-        self.endpoints.insert(endpoint.name.clone(), endpoint);
+    fn insert(&mut self, host: Host) {
+        self.hosts.insert(host.name.clone(), host);
     }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
-pub struct Endpoint {
+pub struct Host {
     pub name: String,
     pub host: IpAddr,
     pub port: u16,
@@ -88,7 +88,7 @@ pub trait Listener: Send + Sync {
 }
 
 #[async_trait]
-impl Listener for Endpoint {
+impl Listener for Host {
     fn name(&self) -> &str {
         &self.name
     }
@@ -125,7 +125,7 @@ mod tests {
     #[serial(toolshed_lock)]
     fn test_listeners_constructor() {
         let listeners = Listeners::new();
-        assert!(listeners.endpoints.is_empty());
+        assert!(listeners.hosts.is_empty());
     }
 
     #[tokio::test]
@@ -136,15 +136,15 @@ mod tests {
             .expecting(vec![
                 "EchoHandler::router(true)",
                 "EchoHandler::router(true)",
-                "Endpoint::bind(true)",
-                "Endpoint::bind(true)",
+                "Host::bind(true)",
+                "Host::bind(true)",
             ])
             .with_patches(vec![
                 patch1(handler::EchoHandler::router, |_self| {
                     Patch::handler_router(TESTS.get("listeners_bind"), _self)
                 }),
-                patch2(Endpoint::bind, |_self, handler| {
-                    Box::pin(Patch::endpoint_bind(
+                patch2(Host::bind, |_self, handler| {
+                    Box::pin(Patch::host_bind(
                         TESTS.get("listeners_bind"),
                         _self,
                         handler,
@@ -158,22 +158,22 @@ mod tests {
         let mut listeners = Listeners::new();
         let host: IpAddr = "8.8.8.8".to_string().parse().unwrap();
         let port = 7373;
-        let name = "SOMEENDPOINT".to_string();
-        let endpoint = Endpoint {
+        let name = "SOMEHOST".to_string();
+        let host = Host {
             name: name.clone(),
             host,
             port,
         };
         let host1: IpAddr = "3.3.3.3".to_string().parse().unwrap();
         let port1 = 2323;
-        listeners.endpoints.insert(name, endpoint.clone());
-        let name1 = "OTHERENDPOINT".to_string();
-        let endpoint1 = Endpoint {
+        listeners.hosts.insert(name, host.clone());
+        let name1 = "OTHERHOST".to_string();
+        let host1 = Host {
             name: name1.clone(),
             host: host1,
             port: port1,
         };
-        listeners.endpoints.insert(name1, endpoint1.clone());
+        listeners.hosts.insert(name1, host1.clone());
         let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = command::Command { config, name };
@@ -189,21 +189,21 @@ mod tests {
         let mut listeners = Listeners::new();
         let host: IpAddr = "8.8.8.8".to_string().parse().unwrap();
         let port = 7373;
-        let name = "SOMEENDPOINT".to_string();
-        let endpoint = Endpoint {
+        let name = "SOMEHOST".to_string();
+        let host = Host {
             name: name.clone(),
             host,
             port,
         };
-        listeners.insert(endpoint.clone());
-        assert_eq!(listeners.endpoints.get(&name).unwrap(), &endpoint);
+        listeners.insert(host.clone());
+        assert_eq!(listeners.hosts.get(&name).unwrap(), &host);
     }
 
     #[tokio::test]
     #[serial(toolshed_lock)]
-    async fn test_endpoint_bind() {
+    async fn test_host_bind() {
         let test = TESTS
-            .test("endpoint_bind")
+            .test("host_bind")
             .expecting(vec![
                 "axum::serve(true)",
                 "axum::serve::Serve::with_graceful_shutdown(true)",
@@ -211,15 +211,15 @@ mod tests {
             ])
             .with_patches(vec![
                 patch0(runner::runner::ctrl_c, || {
-                    Box::pin(Patch::ctrl_c(TESTS.get("endpoint_bind")))
+                    Box::pin(Patch::ctrl_c(TESTS.get("host_bind")))
                 }),
                 patch2(axum::serve, |listener, router| {
-                    let test = TESTS.get("endpoint_bind");
+                    let test = TESTS.get("host_bind");
                     test.lock().unwrap().patch_index(1);
                     Patch::axum_serve(test, listener, router)
                 }),
                 patch2(axum::serve::Serve::with_graceful_shutdown, |_self, fun| {
-                    let test = TESTS.get("endpoint_bind");
+                    let test = TESTS.get("host_bind");
                     test.lock().unwrap().patch_index(2);
                     Patch::axum_serve_with_graceful_shutdown(test, _self, Box::pin(fun))
                 }),
@@ -232,33 +232,33 @@ mod tests {
         let host: IpAddr = "127.0.0.1".parse().unwrap();
         let port = 1717;
         let name = "http".to_string();
-        let endpoint = Endpoint { name, host, port };
-        Arc::new(endpoint).bind(router).await;
+        let host = Host { name, host, port };
+        Arc::new(host).bind(router).await;
     }
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_endpoint_name() {
+    fn test_host_name() {
         let host: IpAddr = "8.8.8.8".to_string().parse().unwrap();
         let port = 7373;
         let name = "http".to_string();
-        let endpoint = Endpoint {
+        let host = Host {
             name: name.clone(),
             host,
             port,
         };
-        assert_eq!(endpoint.name, name);
-        assert_eq!(endpoint.name(), name);
+        assert_eq!(host.name, name);
+        assert_eq!(host.name(), name);
     }
 
     #[test]
     #[serial(toolshed_lock)]
-    fn test_endpoint_socket_address() {
+    fn test_host_socket_address() {
         let test = TESTS
-            .test("endpoint_socket_address")
+            .test("host_socket_address")
             .expecting(vec!["SocketAddr::new(true): 8.8.8.8 7373"])
             .with_patches(vec![patch2(SocketAddr::new, |host, port| {
-                Patch::socket_addr_new(TESTS.get("endpoint_socket_address"), host, port)
+                Patch::socket_addr_new(TESTS.get("host_socket_address"), host, port)
             })]);
         defer! {
             test.drop();
@@ -268,26 +268,26 @@ mod tests {
         let host4: Ipv4Addr = "8.8.8.8".to_string().parse().unwrap();
         let port = 7373;
         let name = "http".to_string();
-        let endpoint = Endpoint {
+        let host = Host {
             name: name.clone(),
             host,
             port,
         };
-        assert_eq!(endpoint.name, name);
+        assert_eq!(host.name, name);
         assert_eq!(
-            endpoint.socket_address(),
+            host.socket_address(),
             SocketAddr::from(SocketAddrV4::new(host4, port))
         );
     }
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
-    async fn test_endpoint_listen() {
+    async fn test_host_listen() {
         let test = TESTS
-            .test("endpoint_listen")
+            .test("host_listen")
             .expecting(vec!["SocketAddr::new(true): 0.0.0.0 7373"])
             .with_patches(vec![patch2(SocketAddr::new, |host, port| {
-                Patch::socket_addr_new(TESTS.get("endpoint_listen"), host, port)
+                Patch::socket_addr_new(TESTS.get("host_listen"), host, port)
             })]);
         defer! {
             test.drop();
@@ -296,8 +296,8 @@ mod tests {
         let host: IpAddr = "0.0.0.0".to_string().parse().unwrap();
         let port = 7373;
         let name = "http".to_string();
-        let endpoint = Endpoint { name, host, port };
-        let unwanted_listener = endpoint.listen().await;
+        let host = Host { name, host, port };
+        let unwanted_listener = host.listen().await;
         let addr = unwanted_listener
             .local_addr()
             .expect("Failed to get address");
