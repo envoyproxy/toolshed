@@ -30,6 +30,12 @@ impl Listeners {
     }
 }
 
+impl Default for Listeners {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[async_trait]
 impl ListenersProvider for Listeners {
     async fn bind(&self, handler: &EchoHandler) -> core::EmptyResult {

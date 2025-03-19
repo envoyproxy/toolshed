@@ -31,16 +31,18 @@ impl Patches {
     }
 }
 
+impl Default for Patches {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test::patches::Patch;
     use guerrilla::patch0;
     use serial_test::serial;
-
-    fn _noop() {
-        println!("NOOP");
-        println!("NOOP");
-    }
 
     #[test]
     #[serial(toolshed_lock)]
@@ -52,14 +54,22 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
+    fn test_patches_default() {
+        let patches = Patches::default();
+        let _patches = patches.patches.lock().unwrap();
+        assert!(_patches.is_empty());
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
     fn test_patches_clear() {
         let patches = Patches {
             patches: Mutex::new(HashMap::new()),
         };
         let patch_guards = vec![
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
         ];
         {
             let mut _patches = patches.patches.lock().unwrap();
@@ -77,9 +87,9 @@ mod tests {
             patches: Mutex::new(HashMap::new()),
         };
         let patch_guards = vec![
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
         ];
         let ptrs: Vec<_> = patch_guards
             .iter()
@@ -116,9 +126,9 @@ mod tests {
             patches: Mutex::new(HashMap::new()),
         };
         let patch_guards = vec![
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
-            Arc::new(Mutex::new(patch0(_noop, _noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
+            Arc::new(Mutex::new(patch0(Patch::noop, Patch::noop))),
         ];
         let ptrs: Vec<_> = patch_guards
             .iter()
