@@ -2,19 +2,20 @@ use crate::{
     args::Args,
     command::Command,
     config::Config,
-    handler::EchoHandler,
+    handler::{EchoHandler, EchoHandlerConfig, EchoState},
     listener::{self, Endpoint, Listeners, ListenersProvider as _},
 };
 use crate::{mapping, response::Response, runner::Runner};
-use axum::body::Body;
 use axum::{
-    body::Bytes,
+    body::{Body, Bytes},
+    extract::{Request, State},
     http::{HeaderMap, Method},
     response,
 };
 use axum::{routing::any as any_route, Router};
 use clap::Parser;
 use guerrilla::disable_patch;
+use hyper::header::{HeaderValue, InvalidHeaderValue};
 use std::{
     any::{self, Any, TypeId},
     collections::HashMap,
@@ -54,6 +55,19 @@ impl Patch {
         test.notify(&format!("Args::parse({:?})", !test.fails));
         let args = vec!["somecommand"];
         Args::parse_from(args.clone())
+    }
+
+    pub async fn axum_body_to_bytes(
+        test: Arc<Mutex<ttest::Test<'_>>>,
+        body: Body,
+        size: usize,
+    ) -> Bytes {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "axum::body_to_bytes({:?}): {:?} {:?}",
+            !test.fails, body, size
+        ));
+        Bytes::from("BOODY")
     }
 
     pub fn axum_serve(
@@ -223,33 +237,6 @@ impl Patch {
         Ok("SOMEVAR".to_string())
     }
 
-    pub fn handler_route_path<'a>(
-        test: Arc<Mutex<ttest::Test<'a>>>,
-        _self: &EchoHandler,
-    ) -> axum::routing::MethodRouter {
-        let test = test.lock().unwrap();
-        test.notify(&format!("Handler::route_path({:?})", !test.fails));
-        any_route(|| async { "The future path" })
-    }
-
-    pub fn handler_route_root<'a>(
-        test: Arc<Mutex<ttest::Test<'a>>>,
-        _self: &EchoHandler,
-    ) -> axum::routing::MethodRouter {
-        let test = test.lock().unwrap();
-        test.notify(&format!("Handler::route_root({:?})", !test.fails));
-        any_route(|| async { "The future root" })
-    }
-
-    pub fn handler_router(
-        test: Arc<Mutex<ttest::Test>>,
-        _self: &EchoHandler,
-    ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
-        let test = test.lock().unwrap();
-        test.notify(&format!("EchoHandler::router({:?})", !test.fails));
-        Ok(Router::new().route("/nowhere", any_route(|| async { "The future" })))
-    }
-
     pub fn http_response_body(test: Arc<Mutex<ttest::Test>>, string: String) -> Body {
         let test = test.lock().unwrap();
         test.notify(&format!("Body::from({:?}): {}", !test.fails, string));
@@ -266,6 +253,12 @@ impl Patch {
         write!(f, "SELF BODY")
     }
 
+    pub fn echostate_new(test: Arc<Mutex<ttest::Test>>, config: EchoHandlerConfig) -> EchoState {
+        let test = test.lock().unwrap();
+        test.notify(&format!("EchoState::new({:?}): {:?}", !test.fails, config));
+        EchoState { config }
+    }
+
     pub fn handler_config(
         test: Arc<Mutex<ttest::Test>>,
         returns: Option<core::Primitive>,
@@ -277,25 +270,91 @@ impl Patch {
         returns
     }
 
+    pub fn handler_handler_config(
+        test: Arc<Mutex<ttest::Test>>,
+        _self: &EchoHandler,
+    ) -> EchoHandlerConfig {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Handler::handler_config({:?})", !test.fails));
+        EchoHandlerConfig {
+            hostname: "HANDLERHOSTNAME".to_string(),
+        }
+    }
+
     pub async fn handler_handle<'a>(
         test: Arc<Mutex<ttest::Test<'a>>>,
-        _self: &EchoHandler,
-        method: Method,
-        headers: HeaderMap,
-        params: mapping::OrderedMap,
-        path: String,
-        body: Bytes,
+        state: State<EchoState>,
+        request: Request,
     ) -> response::Response {
         let test = test.lock().unwrap();
         test.notify(&format!(
-            "EchoHandler::handle({:?}): {:?} {:?} {:?} {:?} {:?}",
-            !test.fails, method, headers, params, path, body
+            "EchoHandler::handle({:?}): {:?} {:?}",
+            !test.fails, state, request
         ));
         let body = "BOOM";
         response::Response::builder()
             .header("Content-Type", "application/json")
             .body(Body::from(format!("{}\n", body)))
             .unwrap()
+    }
+
+    pub fn handler_headers(test: Arc<Mutex<ttest::Test>>, request: &Request) -> HeaderMap {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Handler::headers({:?}): {:?}",
+            !test.fails, request
+        ));
+        let mut hmap = HeaderMap::new();
+        hmap.insert("X-Foo", HeaderValue::from_str("bar").unwrap());
+        hmap
+    }
+
+    pub fn handler_host(test: Arc<Mutex<ttest::Test>>, request: &Request) -> String {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Handler::host({:?}): {:?}", !test.fails, request));
+        "SOMEHOST".to_string()
+    }
+
+    pub fn handler_params(test: Arc<Mutex<ttest::Test>>, request: &Request) -> mapping::OrderedMap {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Handler::params({:?}): {:?}",
+            !test.fails, request
+        ));
+        mapping::OrderedMap::from(
+            [
+                ("a0".to_string(), "A".to_string()),
+                ("b0".to_string(), "B".to_string()),
+            ]
+            .as_ref(),
+        )
+    }
+
+    pub fn handler_path(test: Arc<Mutex<ttest::Test>>, request: &Request) -> String {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Handler::path({:?}): {:?}", !test.fails, request));
+        "SOMEPATH".to_string()
+    }
+
+    pub fn handler_router(
+        test: Arc<Mutex<ttest::Test>>,
+        _self: &EchoHandler,
+    ) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
+        let test = test.lock().unwrap();
+        test.notify(&format!("EchoHandler::router({:?})", !test.fails));
+        Ok(Router::new().route("/nowhere", any_route(|| async { "The future" })))
+    }
+
+    pub fn headervalue_from_str(
+        test: Arc<Mutex<ttest::Test>>,
+        value: &str,
+    ) -> Result<HeaderValue, InvalidHeaderValue> {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "HeaderValue::from_str({:?}): {:?}",
+            !test.fails, value
+        ));
+        Ok(HeaderValue::from_static("SOMEHEADERVALUE"))
     }
 
     pub async fn listeners_bind<'a>(
@@ -476,5 +535,14 @@ impl Patch {
             IpAddr::V4(ipv4) => SocketAddr::V4(SocketAddrV4::new(ipv4, port)),
             IpAddr::V6(ipv6) => SocketAddr::V6(SocketAddrV6::new(ipv6, port, 0, 0)),
         }
+    }
+
+    pub fn handlerconfig_new(test: Arc<Mutex<ttest::Test>>, hostname: String) -> EchoHandlerConfig {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "EchoHandlerConfig::new({:?}): {}",
+            !test.fails, hostname
+        ));
+        EchoHandlerConfig { hostname }
     }
 }

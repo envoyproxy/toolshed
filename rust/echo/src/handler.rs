@@ -1,61 +1,36 @@
 use crate::{command::Command, config, mapping, response::Response};
 use async_trait::async_trait;
 use axum::{
-    body::Bytes,
-    extract::{Path, Query},
-    http::{HeaderMap, Method},
+    body::{to_bytes, Bytes},
+    extract::{Request, State},
+    http::HeaderMap,
     response,
     routing::any,
     Router,
 };
+use hyper::header::HeaderValue;
 use serde::{Deserialize, Serialize};
 use toolshed_core as core;
 use toolshed_runner::{self as runner, handler::Handler as _};
+
+macro_rules! route {
+    ($method:ident, $handler:expr, $($extractor:ident $type:ty),*) => {
+        $method(async move |$($extractor: $type),*| $handler($($extractor),*).await)
+    };
+}
 
 #[async_trait]
 pub trait Provider: runner::handler::Handler + Clone
 where
     Self: 'static,
 {
-    async fn handle(
-        &self,
-        method: Method,
-        headers: HeaderMap,
-        params: mapping::OrderedMap,
-        path: String,
-        body: Bytes,
-    ) -> response::Response;
+    async fn handle(State(state): State<EchoState>, request: Request) -> response::Response;
+    fn headers(request: &Request) -> HeaderMap;
+    fn host(request: &Request) -> String;
+    fn params(request: &Request) -> mapping::OrderedMap;
+    fn path(request: &Request) -> String;
+    fn handler_config(&self) -> EchoHandlerConfig;
     fn router(&self) -> Result<Router, Box<dyn std::error::Error + Send + Sync>>;
-
-    fn route_path(&self) -> axum::routing::MethodRouter {
-        let handler = self.clone();
-        let closure = move |method: Method,
-                            headers: HeaderMap,
-                            Query(params): Query<mapping::OrderedMap>,
-                            Path(path): Path<String>,
-                            body: Bytes| {
-            let handler = handler.clone();
-            async move { handler.handle(method, headers, params, path, body).await }
-        };
-        any(closure)
-    }
-
-    #[inline(never)]
-    fn route_root(&self) -> axum::routing::MethodRouter {
-        let handler = self.clone();
-        let closure = move |method: Method,
-                            headers: HeaderMap,
-                            Query(params): Query<mapping::OrderedMap>,
-                            body: Bytes| {
-            let handler = handler.clone();
-            async move {
-                handler
-                    .handle(method, headers, params, "".to_string(), body)
-                    .await
-            }
-        };
-        any(closure)
-    }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -79,25 +54,103 @@ impl runner::handler::Handler for EchoHandler {
 
 #[async_trait]
 impl Provider for EchoHandler {
-    async fn handle(
-        &self,
-        method: Method,
-        headers: HeaderMap,
-        params: mapping::OrderedMap,
-        path: String,
-        body: Bytes,
-    ) -> response::Response {
+    async fn handle(State(state): State<EchoState>, request: Request) -> response::Response {
+        Response::new(
+            state.config.hostname.to_string(),
+            request.method().clone(),
+            Self::headers(&request),
+            Self::params(&request),
+            Self::path(&request),
+            to_bytes(request.into_body(), 1024 * 1024)
+                .await
+                .unwrap_or_else(|_| Bytes::new()),
+        )
+        .to_json()
+    }
+
+    fn headers(request: &Request) -> HeaderMap {
+        let mut headers = request.headers().clone();
+        match headers.get("host") {
+            Some(_) => headers,
+            None => {
+                if let Ok(host) = HeaderValue::from_str(&Self::host(request)) {
+                    headers.insert("host", host);
+                }
+                headers
+            }
+        }
+    }
+
+    fn host(request: &Request) -> String {
+        request
+            .headers()
+            .get("host")
+            .and_then(|h| h.to_str().ok())
+            .or_else(|| request.uri().authority().map(|a| a.as_str()))
+            .map(|host| host.to_string())
+            .unwrap_or_else(|| "unknown".to_string())
+    }
+
+    fn params(request: &Request) -> mapping::OrderedMap {
+        request
+            .uri()
+            .query()
+            .filter(|q| !q.is_empty())
+            .and_then(|q| serde_urlencoded::from_str::<mapping::OrderedMap>(q).ok())
+            .unwrap_or_default()
+    }
+
+    fn path(request: &Request) -> String {
+        let path = request.uri().path();
+        (!path.is_empty())
+            .then(|| path.into())
+            .unwrap_or_else(|| "/".into())
+    }
+
+    // Selfish fun
+    fn handler_config(&self) -> EchoHandlerConfig {
         let hostname = match self.config("hostname") {
             Some(core::Primitive::String(s)) => s,
             _ => config::Config::default_hostname(),
         };
-        Response::new(hostname, method, headers, params, path, body).to_json()
+        EchoHandlerConfig::new(hostname)
     }
 
     fn router(&self) -> Result<Router, Box<dyn std::error::Error + Send + Sync>> {
+        let config = self.handler_config();
+        let state = EchoState::new(config);
         Ok(Router::new()
-            .route("/", self.route_root())
-            .route("/{*path}", self.route_path()))
+            .route(
+                "/",
+                route!(any, Self::handle, state State<EchoState>, request Request),
+            )
+            .route(
+                "/{*path}",
+                route!(any, Self::handle, state State<EchoState>,  request Request),
+            )
+            .with_state(state))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct EchoHandlerConfig {
+    pub hostname: String,
+}
+
+impl EchoHandlerConfig {
+    fn new(hostname: String) -> Self {
+        EchoHandlerConfig { hostname }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct EchoState {
+    pub config: EchoHandlerConfig,
+}
+
+impl EchoState {
+    fn new(config: EchoHandlerConfig) -> Self {
+        EchoState { config }
     }
 }
 
@@ -105,8 +158,10 @@ impl Provider for EchoHandler {
 mod tests {
     use super::*;
     use crate::{config, test::patch::Patch};
-    use axum::Router;
-    use bytes::Bytes;
+    use axum::{
+        body::Body,
+        http::{Method, Request as HttpRequest, Uri},
+    };
     use guerrilla::{patch0, patch1, patch2, patch6};
     use http_body_util::Empty;
     use hyper::Request;
@@ -148,265 +203,381 @@ mod tests {
         assert_eq!((*handler.get_command()).get_name(), command.name)
     }
 
-    #[tokio::test(flavor = "multi_thread")]
+    #[test]
     #[serial(toolshed_lock)]
-    async fn test_handler_handle() {
-        let method = Method::TRACE;
-        let mut headers = HeaderMap::new();
-        headers.insert("X-FOO", "baz".parse().unwrap());
-        headers.insert("X-BAR", "baz".parse().unwrap());
-        let params: mapping::OrderedMap = [("bar".to_string(), "foo".to_string())].as_ref().into();
-        let body = Bytes::from("".to_string());
+    fn test_handler_handler_config() {
         let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
+        let test = TESTS
+            .test("handler_handler_config")
+            .expecting(vec![
+                "Handler::config(true): \"hostname\"",
+                "EchoHandlerConfig::new(true): SOMEHOSTNAME",
+            ])
+            .with_patches(vec![
+                patch2(EchoHandler::config, |_self, key| {
+                    Patch::handler_config(
+                        TESTS.get("handler_handler_config"),
+                        Some(core::Primitive::String("SOMEHOSTNAME".to_string())),
+                        _self,
+                        key,
+                    )
+                }),
+                patch0(config::Config::default_hostname, || {
+                    Patch::default_hostname(TESTS.get("handler_handler_config"))
+                }),
+                patch1(EchoHandlerConfig::new, |hostname| {
+                    Patch::handlerconfig_new(TESTS.get("handler_handler_config"), hostname)
+                }),
+            ]);
+        defer! {
+            test.drop();
+        }
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = EchoHandler { command };
+        let handler = EchoHandler {
+            command: command.clone(),
+        };
+        let handler_config = handler.handler_config();
+        assert_eq!(handler_config.hostname, "SOMEHOSTNAME");
+    }
 
-        let test = TESTS.test("handler_handle")
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_handler_config_default() {
+        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
+        let test = TESTS
+            .test("handler_handler_config")
             .expecting(vec![
                 "Handler::config(true): \"hostname\"",
                 "Config::default_hostname(true)",
-                "Response::new(true): \"DEFAULT HOSTNAME\" TRACE {\"x-foo\": \"baz\", \"x-bar\": \"baz\"} OrderedMap({\"bar\": \"foo\"}) \"HOME\" b\"\"",
-                "Response::to_json(true)",
+                "EchoHandlerConfig::new(true): DEFAULT HOSTNAME",
             ])
             .with_patches(vec![
-                patch2(
-                    EchoHandler::config,
-                    |_self, key| {
-                        Patch::handler_config(
-                            TESTS.get("handler_handle"),
-                            None,
-                            _self,
-                            key
-                        )
-                    },
-                ),
-                patch0(
-                    config::Config::default_hostname,
-                    || {
-                        Patch::default_hostname(
-                            TESTS.get("handler_handle"))
-                    },
-                ),
-                patch6(
-                    Response::new,
-                    |hostname, method, headers, params, path, body| {
-                        Patch::response_new(
-                            TESTS.get("handler_handle"),
-                            hostname,
-                            method,
-                            headers,
-                            params,
-                            path,
-                            body,
-                        )
-                    },
-                ),
-                patch1(
-                    Response::to_json,
-                    |_self| {
-                        Patch::response_to_json(
-                            TESTS.get("handler_handle"),
-                            _self
-                        )
-                    },
-                )
+                patch2(EchoHandler::config, |_self, key| {
+                    Patch::handler_config(TESTS.get("handler_handler_config"), None, _self, key)
+                }),
+                patch0(config::Config::default_hostname, || {
+                    Patch::default_hostname(TESTS.get("handler_handler_config"))
+                }),
+                patch1(EchoHandlerConfig::new, |hostname| {
+                    Patch::handlerconfig_new(TESTS.get("handler_handler_config"), hostname)
+                }),
             ]);
         defer! {
             test.drop();
         }
-
-        assert_eq!(
-            format!(
-                "{:?}",
-                handler.handle(method, headers, params, "HOME".to_string(), body).await
-            ),
-            "Response { status: 200, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }"
-        )
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    #[serial(toolshed_lock)]
-    async fn test_handler_handle_hostname() {
-        let method = Method::TRACE;
-        let mut headers = HeaderMap::new();
-        headers.insert("X-FOO", "baz".parse().unwrap());
-        headers.insert("X-BAR", "baz".parse().unwrap());
-        let params: mapping::OrderedMap = [("bar".to_string(), "foo".to_string())].as_ref().into();
-        let body = Bytes::from("".to_string());
-        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
-        let handler = EchoHandler { command };
-
-        let test = TESTS.test("handler_handle")
-            .expecting(vec![
-                "Handler::config(true): \"hostname\"",
-                "Response::new(true): \"HOSTNAME FROM CONFIG\" TRACE {\"x-foo\": \"baz\", \"x-bar\": \"baz\"} OrderedMap({\"bar\": \"foo\"}) \"HOME\" b\"\"",
-                "Response::to_json(true)"
-            ])
-            .with_patches(vec![
-                patch2(
-                    EchoHandler::config,
-                    |_self, key| {
-                        Patch::handler_config(
-                            TESTS.get("handler_handle"),
-                            Some(core::Primitive::String("HOSTNAME FROM CONFIG".to_string())),
-                            _self,
-                            key
-                        )
-                    },
-                ),
-                patch0(
-                    config::Config::default_hostname,
-                    || {
-                        Patch::default_hostname(
-                            TESTS.get("handler_handle"))
-                    },
-                ),
-                patch6(
-                    Response::new,
-                    |hostname, method, headers, params, path, body| {
-                        Patch::response_new(
-                            TESTS.get("handler_handle"),
-                            hostname,
-                            method,
-                            headers,
-                            params,
-                            path,
-                            body,
-                        )
-                    },
-                ),
-                patch1(
-                    Response::to_json,
-                    |_self| {
-                        Patch::response_to_json(
-                            TESTS.get("handler_handle"),
-                            _self
-                        )
-                    },
-                )
-            ]);
-        defer! {
-            test.drop();
-        }
-
-        assert_eq!(
-            format!(
-                "{:?}",
-                handler.handle(method, headers, params, "HOME".to_string(), body).await
-            ),
-            "Response { status: 200, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }"
-        )
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    #[serial(toolshed_lock)]
-    async fn test_handler_route_path() {
-        let test = TESTS
-            .test("handler_route_path")
-            .expecting(vec![
-                "EchoHandler::handle(true): GET {} OrderedMap({}) \"SOMEPATH\" b\"\"",
-            ])
-            .with_patches(vec![patch6(
-                EchoHandler::handle,
-                |_self, method, headers, params, path, body| {
-                    Box::pin(Patch::handler_handle(
-                        TESTS.get("handler_route_path"),
-                        _self,
-                        method,
-                        headers,
-                        params,
-                        path,
-                        body,
-                    ))
-                },
-            )]);
-        defer! {
-            test.drop();
-        }
-
-        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
-        let name = "somecommand".to_string();
-        let command = Command { config, name };
-        let handler = EchoHandler { command };
-        let router = Router::new().route("/{*path}", handler.route_path());
-        let service = router.into_service();
-        _test_request(service.clone(), "/SOMEPATH", "BOOM\n").await;
-    }
-
-    #[tokio::test(flavor = "multi_thread")]
-    #[serial(toolshed_lock)]
-    async fn test_handler_route_root() {
-        let test = TESTS
-            .test("handler_route_root")
-            .expecting(vec![
-                "EchoHandler::handle(true): GET {} OrderedMap({}) \"\" b\"\"",
-            ])
-            .with_patches(vec![patch6(
-                EchoHandler::handle,
-                |_self, method, headers, params, path, body| {
-                    Box::pin(Patch::handler_handle(
-                        TESTS.get("handler_route_root"),
-                        _self,
-                        method,
-                        headers,
-                        params,
-                        path,
-                        body,
-                    ))
-                },
-            )]);
-        defer! {
-            test.drop();
-        }
-
-        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
-        let name = "somecommand".to_string();
-        let command = Command { config, name };
-        let handler = EchoHandler { command };
-        let router = Router::new().route("/", handler.route_root());
-        let service = router.into_service();
-        _test_request(service.clone(), "/", "BOOM\n").await;
+        let handler = EchoHandler {
+            command: command.clone(),
+        };
+        let handler_config = handler.handler_config();
+        assert_eq!(handler_config.hostname, "DEFAULT HOSTNAME");
     }
 
     #[tokio::test(flavor = "multi_thread")]
     #[serial(toolshed_lock)]
     async fn test_handler_router() {
+        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
         let test = TESTS
-            .test("runner_router")
+            .test("handler_router")
             .expecting(vec![
-                "Router::new(true)",
-                "Handler::route_root(true)",
-                "Handler::route_path(true)",
+                "Handler::handler_config(true)",
+                "EchoState::new(true): EchoHandlerConfig { hostname: \"HANDLERHOSTNAME\" }",
+                "EchoHandler::handle(true): State(EchoState { config: EchoHandlerConfig { hostname: \"HANDLERHOSTNAME\" } }) Request { method: GET, uri: /nowhere, version: HTTP/1.1, headers: {}, body: Body(UnsyncBoxBody) }",
+                "EchoHandler::handle(true): State(EchoState { config: EchoHandlerConfig { hostname: \"HANDLERHOSTNAME\" } }) Request { method: GET, uri: /, version: HTTP/1.1, headers: {}, body: Body(UnsyncBoxBody) }",
+                "EchoHandler::handle(true): State(EchoState { config: EchoHandlerConfig { hostname: \"HANDLERHOSTNAME\" } }) Request { method: GET, uri: /some/path, version: HTTP/1.1, headers: {}, body: Body(UnsyncBoxBody) }"
+
             ])
             .with_patches(vec![
                 patch0(Router::new, || {
-                    let test = TESTS.get("runner_router");
+                    let test = TESTS.get("handler_router");
                     test.lock().unwrap().patch_index(0);
                     Patch::router_new(test)
                 }),
-                patch1(EchoHandler::route_path, |_self| {
-                    Patch::handler_route_path(TESTS.get("runner_router"), _self)
+                patch1(EchoHandler::handler_config, |_self| {
+                    Patch::handler_handler_config(
+                        TESTS.get("handler_router"),
+                        _self,
+                    )
                 }),
-                patch1(EchoHandler::route_root, |_self| {
-                    Patch::handler_route_root(TESTS.get("runner_router"), _self)
+                patch1(EchoState::new, |config| {
+                    Patch::echostate_new(
+                        TESTS.get("handler_router"),
+                        config,
+                    )
+                }),
+                patch2(EchoHandler::handle, |state, request| {
+                    Box::pin(Patch::handler_handle(
+                        TESTS.get("handler_router"),
+                        state,
+                        request,
+                    ))
                 }),
             ]);
         defer! {
             test.drop();
         }
-
-        let config = serde_yaml::from_str::<config::Config>("").expect("Unable to parse yaml");
         let name = "somecommand".to_string();
         let command = Command { config, name };
         let handler = EchoHandler { command };
         let router = handler.router().unwrap();
         let service = router.into_service();
 
-        _test_request(service.clone(), "/nowhere", "The future").await;
-        _test_request(service.clone(), "/", "The future root").await;
-        _test_request(service, "/some/path", "The future path").await;
+        // TODO: test with_state
+        _test_request(service.clone(), "/nowhere", "BOOM\n").await;
+        _test_request(service.clone(), "/", "BOOM\n").await;
+        _test_request(service, "/some/path", "BOOM\n").await;
+    }
+
+    #[tokio::test]
+    #[serial(toolshed_lock)]
+    async fn test_handler_handle() {
+        let test = TESTS
+            .test("handler_handle")
+            .expecting(vec![
+                "Handler::headers(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
+                "Handler::params(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
+                "Handler::path(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
+                "Response::new(true): \"OTHERHOSTNAME\" PATCH {\"x-foo\": \"bar\"} OrderedMap({\"a0\": \"A\", \"b0\": \"B\"}) \"SOMEPATH\" b\"REQUESTBODY\"",
+                "Response::to_json(true)"
+            ])
+            .with_patches(vec![
+                patch6(
+                    Response::new,
+                    |hostname, method, headers, params, path, body| {
+                        Patch::response_new(
+                            TESTS.get("handler_handle"),
+                            hostname,
+                            method,
+                            headers,
+                            params,
+                            path,
+                            body,
+                        )
+                    },
+                ),
+                patch1(Response::to_json, |_self| {
+                    Patch::response_to_json(TESTS.get("handler_handle"), _self)
+                }),
+                patch1(EchoHandler::headers, |request| {
+                    Patch::handler_headers(TESTS.get("handler_handle"), request)
+                }),
+                patch1(EchoHandler::params, |request| {
+                    Patch::handler_params(TESTS.get("handler_handle"), request)
+                }),
+                patch1(EchoHandler::path, |request| {
+                    Patch::handler_path(TESTS.get("handler_handle"), request)
+                }),
+            ]);
+        defer! {
+            test.drop();
+        }
+
+        let hostname = "OTHERHOSTNAME".to_string();
+        let handler_config = EchoHandlerConfig { hostname };
+        let echo_state = EchoState {
+            config: handler_config,
+        };
+        let state = State(echo_state);
+        let http_request = HttpRequest::builder()
+            .method(Method::PATCH)
+            .uri(Uri::from_static("REQUESTPATH"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request = Request::from(http_request);
+        let response = EchoHandler::handle(state, request).await;
+        let bytes = to_bytes(response.into_body(), 1024 * 1024).await.unwrap();
+        assert_eq!(
+            "{\"foo\": \"bar\"}\n".to_string(),
+            String::from_utf8(bytes.to_vec()).unwrap()
+        );
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_headers() {
+        let test = TESTS
+            .test("handler_headers")
+            .expecting(vec![
+                "Handler::host(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
+                "HeaderValue::from_str(true): \"SOMEHOST\""
+            ])
+            .with_patches(vec![
+                patch1(EchoHandler::host, |request| {
+                    Patch::handler_host(TESTS.get("handler_headers"), request)
+                }),
+                patch1(HeaderValue::from_str, |string| {
+                    Patch::headervalue_from_str(TESTS.get("handler_headers"), string)
+                }),
+            ]);
+        defer! {
+            test.drop();
+        }
+
+        let http_request = HttpRequest::builder()
+            .method(Method::PATCH)
+            .uri(Uri::from_static("REQUESTPATH"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request = Request::from(http_request);
+        let headers = EchoHandler::headers(&request);
+        assert_eq!(headers.get("host").unwrap(), "SOMEHEADERVALUE");
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_headers_host_exists() {
+        let test = TESTS
+            .test("handler_headers_host_exists")
+            .expecting(vec![])
+            .with_patches(vec![
+                patch1(EchoHandler::host, |request| {
+                    Patch::handler_host(TESTS.get("handler_headers_host_exists"), request)
+                }),
+                patch1(HeaderValue::from_str, |string| {
+                    Patch::headervalue_from_str(TESTS.get("handler_headers_host_exists"), string)
+                }),
+            ]);
+        defer! {
+            test.drop();
+        }
+
+        let http_request = HttpRequest::builder()
+            .method(Method::PATCH)
+            .uri(Uri::from_static("REQUESTPATH"))
+            .header("Content-Type", "application/json")
+            .header("Host", "foo.com")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request = Request::from(http_request);
+        let headers = EchoHandler::headers(&request);
+        assert_eq!(headers.get("host").unwrap(), "foo.com");
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_host() {
+        let http_request = HttpRequest::builder()
+            .method(Method::PATCH)
+            .uri(Uri::from_static("REQUESTPATH"))
+            .header("Content-Type", "application/json")
+            .header("Host", "foo.com")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request = Request::from(http_request);
+        let host = EchoHandler::host(&request);
+        assert_eq!(host, "foo.com");
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_host_authority() {
+        let http_request = HttpRequest::builder()
+            .method(Method::PATCH)
+            .uri(Uri::from_static("REQUESTPATH"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request = Request::from(http_request);
+        let host = EchoHandler::host(&request);
+        assert_eq!(host, "REQUESTPATH");
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_host_unknown() {
+        let http_request = HttpRequest::builder()
+            .method(Method::PATCH)
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request = Request::from(http_request);
+        let host = EchoHandler::host(&request);
+        assert_eq!(host, "unknown");
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_params() {
+        let http_request = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("https://example.com/path?foo=bar&baz=qux"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request = Request::from(http_request);
+        let params = EchoHandler::params(&request);
+        let iterator = vec![
+            ("foo".to_string(), "bar".to_string()),
+            ("baz".to_string(), "qux".to_string()),
+        ];
+        let expected = iterator
+            .clone()
+            .into_iter()
+            .collect::<mapping::OrderedMap>();
+        assert_eq!(params, expected);
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_default() {
+        let http_request = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("https://example.com/path"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request = Request::from(http_request);
+        let params = EchoHandler::params(&request);
+        assert_eq!(params, mapping::OrderedMap::default());
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_path() {
+        let http_request = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("https://example.com/foo/bar"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+
+        let request = Request::from(http_request);
+        let path = EchoHandler::path(&request);
+        assert_eq!(path, "/foo/bar");
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handler_path_empty() {
+        let http_request = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("https://example.com"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+
+        let request = Request::from(http_request);
+        let path = EchoHandler::path(&request);
+
+        assert_eq!(path, "/");
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handlerconfig_new() {
+        let config = EchoHandlerConfig::new("SOMEHOSTNAME".to_string());
+        assert_eq!(config.hostname, "SOMEHOSTNAME".to_string());
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_handlerstate_new() {
+        let config = EchoHandlerConfig::new("SOMEHOSTNAME".to_string());
+        let state = EchoState::new(config);
+        assert_eq!(state.config.hostname, "SOMEHOSTNAME".to_string());
     }
 }

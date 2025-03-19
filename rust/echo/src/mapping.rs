@@ -3,7 +3,7 @@ use indexmap::IndexMap;
 use serde::Serialize;
 use toolshed_core as core;
 
-#[derive(Clone, PartialEq, Serialize)]
+#[derive(Clone, Default, PartialEq, Serialize)]
 pub struct OrderedMap(core::mapping::OrderedMap);
 
 core::impl_orderedmap!(OrderedMap);
