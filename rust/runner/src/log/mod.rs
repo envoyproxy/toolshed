@@ -44,15 +44,16 @@ impl From<Level> for LevelFilter {
     }
 }
 
-impl ToString for Level {
-    fn to_string(&self) -> String {
-        match self {
-            Level::Error => "error".to_string(),
-            Level::Warning => "warning".to_string(),
-            Level::Info => "info".to_string(),
-            Level::Debug => "debug".to_string(),
-            Level::Trace => "trace".to_string(),
-        }
+impl fmt::Display for Level {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let level_str = match self {
+            Level::Error => "error",
+            Level::Warning => "warning",
+            Level::Info => "info",
+            Level::Debug => "debug",
+            Level::Trace => "trace",
+        };
+        write!(f, "{}", level_str)
     }
 }
 

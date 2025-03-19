@@ -1,6 +1,5 @@
 use crate::{test::TestRef, Patches, Spy, Test, Tests};
-use guerrilla::{disable_patch, patch0, PatchGuard};
-use once_cell::sync::Lazy;
+use guerrilla::{patch0, PatchGuard};
 use std::sync::{Arc, Mutex};
 
 pub struct Patch {}
@@ -10,13 +9,13 @@ impl Patch {
         spy.push(testid, "Test::drop");
     }
 
-    pub fn new_test<'a>(
+    pub fn test_testref<'a>(
         testid: &'a str,
         spy: &Spy,
         _self: &'a Tests<'a>,
         key: &'a str,
     ) -> TestRef<'a> {
-        spy.push(testid, "Test::new");
+        spy.push(testid, "Test::testref");
         let test = Test {
             name: key.to_string(),
             expectations: vec![],
@@ -43,23 +42,6 @@ impl Patch {
 
     pub fn spy_clear(testid: &str, spy: &Spy, _self: &Spy, key: &str) {
         spy.push(testid, &format!("Spy::clear: {:?}", key));
-    }
-
-    pub fn spy_push(
-        testid: &str,
-        spy: &Spy,
-        spy_patch: &Lazy<Mutex<Option<Arc<Mutex<PatchGuard>>>>>,
-        _self: &Spy,
-        key: &str,
-        value: &str,
-    ) {
-        let patch = spy_patch.lock().unwrap();
-        if let Some(patch) = &*patch {
-            disable_patch!(
-                patch.lock().unwrap(),
-                spy.push(testid, &format!("Spy::push: {:?} {:?}", key, value))
-            );
-        }
     }
 
     pub fn test_get_patch(

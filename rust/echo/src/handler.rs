@@ -102,9 +102,11 @@ impl Provider for EchoHandler {
 
     fn path(request: &Request) -> String {
         let path = request.uri().path();
-        (!path.is_empty())
-            .then(|| path.into())
-            .unwrap_or_else(|| "/".into())
+        if !path.is_empty() {
+            path.into()
+        } else {
+            "/".into()
+        }
     }
 
     // Selfish fun

@@ -37,7 +37,7 @@ impl<'a> Tests<'a> {
             .unwrap_or_else(|| panic!("Couldn't find test ({:?}), did you register it?", key))
     }
 
-    pub fn get_patch<'b>(&self, key: &'b str, index: usize) -> Arc<Mutex<PatchGuard>> {
+    pub fn get_patch(&self, key: &str, index: usize) -> Arc<Mutex<PatchGuard>> {
         self.patches
             .get(key)
             .and_then(|guards| guards.get(index).cloned())
@@ -50,7 +50,7 @@ impl<'a> Tests<'a> {
     }
 
     pub fn test(&'a self, key: &str) -> TestRef<'a> {
-        Test::new(self, key)
+        Test::testref(self, key)
     }
 }
 
@@ -67,14 +67,18 @@ unsafe impl<'a> Send for Test<'a> {}
 unsafe impl<'a> Sync for Test<'a> {}
 
 impl<'a> Test<'a> {
-    pub fn new(tests: &'a Tests<'a>, testid: &str) -> TestRef<'a> {
-        let test = Self {
+    pub fn new(tests: &'a Tests<'a>, testid: &str) -> Self {
+        Self {
             name: testid.to_string(),
             expectations: vec![],
             tests,
             fails: false,
             patch_index: None,
-        };
+        }
+    }
+
+    pub fn testref(tests: &'a Tests<'a>, testid: &str) -> TestRef<'a> {
+        let test = Self::new(tests, testid);
         let test_arc = Arc::new(Mutex::new(test));
         tests.push(testid, test_arc.clone());
         TestRef { test_arc, tests }
@@ -166,7 +170,6 @@ mod tests {
     static SPY: Lazy<Spy> = Lazy::new(Spy::new);
     static TEST_SPY: Lazy<Spy> = Lazy::new(Spy::new);
     static TEST_PATCHES: Lazy<Patches> = Lazy::new(Patches::new);
-    static SPY_PATCH: Lazy<Mutex<Option<Arc<Mutex<PatchGuard>>>>> = Lazy::new(|| Mutex::new(None));
 
     #[test]
     #[serial(toolshed_lock)]
@@ -420,13 +423,13 @@ mod tests {
             patch1(drop_ptr, |_self| {
                 Patch::drop_test("tests_test", &SPY, _self)
             }),
-            patch2(Test::new, |_self, key| {
-                Patch::new_test("tests_test", &SPY, _self, key)
+            patch2(Test::testref, |_self, key| {
+                Patch::test_testref("tests_test", &SPY, _self, key)
             }),
         ];
         defer! {
             let calls = SPY.get("tests_test");
-            assert_eq!(calls, ["Test::new", "Test::drop"]);
+            assert_eq!(calls, ["Test::testref", "Test::drop"]);
             drop(guards);
         };
 
@@ -439,7 +442,7 @@ mod tests {
     #[serial(toolshed_lock)]
     fn test_test_constructor() {
         let tests = Box::leak(Box::new(Tests::new(&TEST_SPY, &TEST_PATCHES)));
-        let test_ref = Test::new(tests, "NEW TEST");
+        let test_ref = Test::testref(tests, "NEW TEST");
         {
             let test = test_ref.test_arc.lock().unwrap();
             assert_eq!(test.name, "NEW TEST");
@@ -559,7 +562,7 @@ mod tests {
     #[serial(toolshed_lock)]
     fn test_test_notify() {
         let tests = Box::leak(Box::new(Tests::new(&TEST_SPY, &TEST_PATCHES)));
-        let name = "SOMETEST".to_string();
+        let name = "NOTIFYTEST".to_string();
         let test = Test {
             name,
             tests,
@@ -579,23 +582,12 @@ mod tests {
             Patch::drop_test("test_notify", &SPY, _self)
         }))));
 
-        {
-            let spy_patch = Arc::new(Mutex::new(patch3(Spy::push, |_self, key, value| {
-                Patch::spy_push("test_notify", &SPY, &SPY_PATCH, _self, key, value)
-            })));
-            guards.push(Arc::clone(&spy_patch));
-
-            let mut spy_patch_guard = SPY_PATCH.lock().unwrap();
-            *spy_patch_guard = Some(Arc::clone(&spy_patch));
-        }
-
         defer! {
             drop(guards);
-            let mut spy_patch_guard = SPY_PATCH.lock().unwrap();
-            *spy_patch_guard = None;
-
+            let test_calls = TEST_SPY.get("NOTIFYTEST");
+            assert_eq!(test_calls, ["BOOM"]);
             let calls = SPY.get("test_notify");
-            assert_eq!(calls, ["Spy::push: \"SOMETEST\" \"BOOM\"", "Spy::push: \"test_notify\" \"Test::drop\""]);
+            assert_eq!(calls, ["Test::drop"]);
         };
 
         test.notify("BOOM");

@@ -22,20 +22,20 @@ impl Spy {
 
     pub fn get(&self, key: &str) -> Vec<String> {
         let mut calls = self.calls.lock().unwrap();
-        calls
-            .entry(key.to_string())
-            .or_insert_with(Vec::new)
-            .to_vec()
+        calls.entry(key.to_string()).or_default().to_vec()
     }
 
     pub fn push(&self, key: &str, value: &str) {
         let mut calls = self.calls.lock().unwrap();
-        calls
-            .entry(key.to_string())
-            .or_insert_with(Vec::new)
-            .to_vec();
+        calls.entry(key.to_string()).or_default().to_vec();
         let vec = calls.get_mut(key).unwrap();
         vec.push(value.to_string());
+    }
+}
+
+impl Default for Spy {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -48,6 +48,14 @@ mod tests {
     #[serial(toolshed_lock)]
     fn test_spy_constructor() {
         let spy = Spy::new();
+        let calls = spy.calls.lock().unwrap();
+        assert!(calls.is_empty());
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
+    fn test_spy_something() {
+        let spy = Spy::default();
         let calls = spy.calls.lock().unwrap();
         assert!(calls.is_empty());
     }
