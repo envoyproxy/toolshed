@@ -8,12 +8,12 @@ test = []
 
 [dependencies]
 guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "794c0d092a951786205bb68f8d45396e05a967f3" }
-log = "0.4"
-once_cell = { version = "1.20" }
+log = "^0.4"
+once_cell = { version = "^1.21" }
 
 [dev-dependencies]
-serial_test = "3.2.0"
-scopeguard = "1.2"
+serial_test = "^3.2.0"
+scopeguard = "^1.2"
 
 [lib]
 name = "toolshed_test"
