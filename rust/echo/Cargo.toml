@@ -11,8 +11,10 @@ as-any = "^0.3.2"
 async-trait = "^0.1.88"
 axum = "^0.8.1"
 axum-core = "^0.5.0"
+axum-server = "^0.7.2"
 bytes = "^1.10.1"
 clap = "^4.5.32"
+futures = "^0.3.31"
 futures-util = "^0.3.31"
 http-body-util = "^0.1.3"
 hyper = "^1.6.0"
@@ -32,7 +34,6 @@ tower-service = "^0.3.3"
 guerrilla = { git = "https://github.com/phlax/guerrilla", rev = "794c0d092a951786205bb68f8d45396e05a967f3", optional = true }
 once_cell = { version = "^1.21.1", optional = true }
 toolshed-test = { path = "../test", optional = true }
-futures = "^0.3.31"
 
 [dev-dependencies]
 libc = "^0.2.171"
