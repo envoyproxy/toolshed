@@ -8,6 +8,13 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+#[macro_export]
+macro_rules! patch_forward {
+    ($test:expr, $original_call:expr) => {{
+        disable_patch!($test.get_patch().lock().unwrap(), { $original_call })
+    }};
+}
+
 pub struct Tests<'a> {
     pub tests: Mutex<HashMap<String, Arc<Mutex<Test<'a>>>>>,
     pub spy: &'a Lazy<Spy>,
