@@ -12,6 +12,14 @@ pub struct Args {
     pub http_host: Option<String>,
     #[arg(long)]
     pub http_port: Option<u16>,
+    #[arg(long)]
+    pub https_host: Option<String>,
+    #[arg(long)]
+    pub https_port: Option<u16>,
+    #[arg(long)]
+    pub tls_cert: Option<String>,
+    #[arg(long)]
+    pub tls_key: Option<String>,
 }
 
 impl runner::args::Provider for Args {
@@ -40,5 +48,9 @@ mod tests {
         assert!(args.hostname.is_none());
         assert!(args.http_host.is_none());
         assert!(args.http_port.is_none());
+        assert!(args.https_host.is_none());
+        assert!(args.https_port.is_none());
+        assert!(args.tls_cert.is_none());
+        assert!(args.tls_key.is_none());
     }
 }

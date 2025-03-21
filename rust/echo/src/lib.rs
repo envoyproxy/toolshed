@@ -7,6 +7,7 @@ pub mod mapping;
 pub mod proc;
 pub mod response;
 pub mod runner;
+pub mod tls;
 
 const DEFAULT_HOSTNAME: &str = "echo";
 const DEFAULT_HTTP_HOST: &str = "127.0.0.1";
