@@ -25,10 +25,13 @@ where
     Self: 'static,
 {
     async fn handle(State(state): State<EchoState>, request: Request) -> response::Response;
+    async fn body(request: Request) -> Bytes;
     fn headers(request: &Request) -> HeaderMap;
     fn host(request: &Request) -> String;
     fn params(request: &Request) -> mapping::OrderedMap;
     fn path(request: &Request) -> String;
+    fn scheme(request: &Request) -> String;
+
     fn handler_config(&self) -> EchoHandlerConfig;
     fn router(&self) -> Result<Router, Box<dyn std::error::Error + Send + Sync>>;
 }
@@ -58,14 +61,19 @@ impl Provider for EchoHandler {
         Response::new(
             state.config.hostname.to_string(),
             request.method().clone(),
+            Self::scheme(&request),
             Self::headers(&request),
             Self::params(&request),
             Self::path(&request),
-            to_bytes(request.into_body(), 1024 * 1024)
-                .await
-                .unwrap_or_else(|_| Bytes::new()),
+            Self::body(request).await,
         )
         .to_json()
+    }
+
+    async fn body(request: Request) -> Bytes {
+        to_bytes(request.into_body(), 1024 * 1024)
+            .await
+            .unwrap_or_else(|_| Bytes::new())
     }
 
     fn headers(request: &Request) -> HeaderMap {
@@ -107,6 +115,10 @@ impl Provider for EchoHandler {
         } else {
             "/".into()
         }
+    }
+
+    fn scheme(request: &Request) -> String {
+        request.uri().scheme_str().unwrap_or("http").to_string()
     }
 
     // Selfish fun
@@ -164,7 +176,7 @@ mod tests {
         body::Body,
         http::{Method, Request as HttpRequest, Uri},
     };
-    use guerrilla::{patch0, patch1, patch2, patch6};
+    use guerrilla::{disable_patch, patch0, patch1, patch2, patch7};
     use http_body_util::Empty;
     use hyper::Request;
     use once_cell::sync::Lazy;
@@ -338,20 +350,24 @@ mod tests {
         let test = TESTS
             .test("handler_handle")
             .expecting(vec![
+                "Handler::scheme(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
                 "Handler::headers(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
                 "Handler::params(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
                 "Handler::path(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
-                "Response::new(true): \"OTHERHOSTNAME\" PATCH {\"x-foo\": \"bar\"} OrderedMap({\"a0\": \"A\", \"b0\": \"B\"}) \"SOMEPATH\" b\"REQUESTBODY\"",
+                "Handler::host(true): Request { method: PATCH, uri: REQUESTPATH, version: HTTP/1.1, headers: {\"content-type\": \"application/json\"}, body: Body(UnsyncBoxBody) }",
+                "Response::new(true): \"OTHERHOSTNAME\" PATCH {\"x-foo\": \"bar\"} OrderedMap({\"a0\": \"A\", \"b0\": \"B\"}) \"SOMEPATH\" b\"SOMEBOODY\"",
+
                 "Response::to_json(true)"
             ])
             .with_patches(vec![
-                patch6(
+                patch7(
                     Response::new,
-                    |hostname, method, headers, params, path, body| {
+                    |hostname, method, scheme, headers, params, path, body| {
                         Patch::response_new(
                             TESTS.get("handler_handle"),
                             hostname,
                             method,
+                            scheme,
                             headers,
                             params,
                             path,
@@ -362,6 +378,9 @@ mod tests {
                 patch1(Response::to_json, |_self| {
                     Patch::response_to_json(TESTS.get("handler_handle"), _self)
                 }),
+                patch1(EchoHandler::body, |request| {
+                    Box::pin(Patch::handler_body(TESTS.get("handler_handle"), request))
+                }),
                 patch1(EchoHandler::headers, |request| {
                     Patch::handler_headers(TESTS.get("handler_handle"), request)
                 }),
@@ -370,6 +389,9 @@ mod tests {
                 }),
                 patch1(EchoHandler::path, |request| {
                     Patch::handler_path(TESTS.get("handler_handle"), request)
+                }),
+                patch1(EchoHandler::scheme, |request| {
+                    Patch::handler_scheme(TESTS.get("handler_handle"), request)
                 }),
             ]);
         defer! {
@@ -570,6 +592,40 @@ mod tests {
 
     #[test]
     #[serial(toolshed_lock)]
+    fn test_handler_scheme() {
+        let http_request_https = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("https://example.com/foo/bar"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request_https = Request::from(http_request_https);
+        let scheme_https = EchoHandler::scheme(&request_https);
+        assert_eq!(scheme_https, "https");
+
+        let http_request_http = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("http://example.com/foo/bar"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request_http = Request::from(http_request_http);
+        let scheme_http = EchoHandler::scheme(&request_http);
+        assert_eq!(scheme_http, "http");
+
+        let http_request_no_scheme = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("//example.com/foo/bar"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+        let request_no_scheme = Request::from(http_request_no_scheme);
+        let scheme_no_scheme = EchoHandler::scheme(&request_no_scheme);
+        assert_eq!(scheme_no_scheme, "http");
+    }
+
+    #[test]
+    #[serial(toolshed_lock)]
     fn test_handlerconfig_new() {
         let config = EchoHandlerConfig::new("SOMEHOSTNAME".to_string());
         assert_eq!(config.hostname, "SOMEHOSTNAME".to_string());
@@ -581,5 +637,62 @@ mod tests {
         let config = EchoHandlerConfig::new("SOMEHOSTNAME".to_string());
         let state = EchoState::new(config);
         assert_eq!(state.config.hostname, "SOMEHOSTNAME".to_string());
+    }
+
+    #[tokio::test]
+    #[serial(toolshed_lock)]
+    async fn test_handler_body_success() {
+        let test = TESTS
+            .test("handler_body_success")
+            .expecting(vec!["to_bytes(true): Body(UnsyncBoxBody) 1048576"])
+            .with_patches(vec![patch2(to_bytes, |body, limit| {
+                let test = TESTS.get("handler_body_success");
+                let mut test = test.lock().unwrap();
+                test.notify(&format!("to_bytes({:?}): {:?} {:?}", true, body, limit));
+                ttest::patch_forward!(test.patch_index(0), to_bytes(body, limit))
+            })]);
+        defer! {
+            test.drop();
+        }
+
+        let http_request = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("https://example.com/foo/bar"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+
+        let request = Request::from(http_request);
+        let body_bytes = EchoHandler::body(request).await;
+        assert_eq!(body_bytes, Bytes::from("REQUESTBODY"));
+    }
+
+    #[tokio::test]
+    #[serial(toolshed_lock)]
+    async fn test_handler_body_error() {
+        let test = TESTS
+            .test("handler_body_error")
+            .expecting(vec!["to_bytes(true): Body(UnsyncBoxBody) 1048576"])
+            .with_patches(vec![patch2(to_bytes, |body, limit| {
+                let test = TESTS.get("handler_body_error");
+                let mut test = test.lock().unwrap();
+                test.notify(&format!("to_bytes({:?}): {:?} {:?}", true, body, limit));
+                ttest::patch_forward!(test.patch_index(0), to_bytes(body, 2))
+            })]);
+
+        defer! {
+            test.drop();
+        }
+
+        let http_request = HttpRequest::builder()
+            .method(Method::GET)
+            .uri(Uri::from_static("https://example.com/foo/bar"))
+            .header("Content-Type", "application/json")
+            .body(Body::from("REQUESTBODY".to_string()))
+            .unwrap();
+
+        let request = Request::from(http_request);
+        let body_bytes = EchoHandler::body(request).await;
+        assert_eq!(body_bytes, Bytes::new());
     }
 }
