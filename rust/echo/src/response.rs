@@ -11,6 +11,7 @@ use std::fmt;
 pub struct Response {
     pub hostname: String,
     pub method: String,
+    pub scheme: String,
     pub headers: mapping::OrderedMap,
     pub query_params: mapping::OrderedMap,
     pub body: String,
@@ -21,6 +22,7 @@ impl Response {
     pub fn new(
         hostname: String,
         method: Method,
+        scheme: String,
         headers: HeaderMap,
         params: mapping::OrderedMap,
         path: String,
@@ -33,6 +35,7 @@ impl Response {
         Response {
             hostname,
             method: method.to_string(),
+            scheme,
             headers,
             query_params: params,
             body: String::from_utf8_lossy(&body).to_string(),
@@ -105,6 +108,7 @@ mod tests {
         let response = Response::new(
             "HOSTNAME23".to_string(),
             method,
+            "http".to_string(),
             headers.clone(),
             params.clone(),
             "BACKWARDS".to_string(),
@@ -131,7 +135,7 @@ mod tests {
                 "Response::builder(true)",
                 concat!(
                     "fmt::Display(true): Response: ",
-                    "{\n  \"hostname\": \"HOSTNAME23\",\n  \"method\": \"TRACE\",\n  \"headers\": {\n    \"x-up\": \"baz\",\n    \"x-down\": \"baz\",\n    \"x-forward\": \"baz\",\n    \"x-back\": \"baz\"\n  },\n  ",
+                    "{\n  \"hostname\": \"HOSTNAME23\",\n  \"method\": \"TRACE\",\n  \"scheme\": \"http\",\n  \"headers\": {\n    \"x-up\": \"baz\",\n    \"x-down\": \"baz\",\n    \"x-forward\": \"baz\",\n    \"x-back\": \"baz\"\n  },\n  ",
                     "\"query_params\": {\n    \"a0\": \"a\",\n    \"b0\": \"b\",\n    \"c0\": \"c\",\n    \"a1\": \"a\",\n    \"b1\": \"b\",\n    \"c1\": \"c\"\n  },\n  ",
                     "\"body\": \"BOODY\",\n  \"path\": \"BACKWARDS\"\n}"),
                 "Body::from(true): SELF BODY\n"
@@ -176,6 +180,7 @@ mod tests {
         let response = Response::new(
             hostname,
             method,
+            "http".to_string(),
             headers.clone(),
             params.clone(),
             "BACKWARDS".to_string(),
@@ -218,6 +223,7 @@ mod tests {
         let response = Response::new(
             hostname,
             method,
+            "http".to_string(),
             headers.clone(),
             params.clone(),
             "BACKWARDS".to_string(),
@@ -253,6 +259,7 @@ mod tests {
         let response = Response::new(
             hostname,
             method,
+            "http".to_string(),
             headers.clone(),
             params.clone(),
             "BACKWARDS".to_string(),

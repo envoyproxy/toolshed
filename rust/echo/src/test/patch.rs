@@ -310,6 +310,12 @@ impl Patch {
         EchoState { config }
     }
 
+    pub async fn handler_body(test: Arc<Mutex<ttest::Test<'_>>>, request: Request) -> Bytes {
+        let test = test.lock().unwrap();
+        test.notify(&format!("Handler::host({:?}): {:?}", !test.fails, request));
+        Bytes::from("SOMEBOODY".to_string())
+    }
+
     pub fn handler_config(
         test: Arc<Mutex<ttest::Test>>,
         returns: Option<core::Primitive>,
@@ -387,6 +393,15 @@ impl Patch {
         "SOMEPATH".to_string()
     }
 
+    pub fn handler_scheme(test: Arc<Mutex<ttest::Test>>, request: &Request) -> String {
+        let test = test.lock().unwrap();
+        test.notify(&format!(
+            "Handler::scheme({:?}): {:?}",
+            !test.fails, request
+        ));
+        "SOMESCHEME".to_string()
+    }
+
     pub fn handler_router(
         test: Arc<Mutex<ttest::Test>>,
         _self: &EchoHandler,
@@ -442,6 +457,7 @@ impl Patch {
         test: Arc<Mutex<ttest::Test>>,
         hostname: String,
         method: Method,
+        scheme: String,
         headers: HeaderMap,
         params: mapping::OrderedMap,
         path: String,
@@ -456,6 +472,7 @@ impl Patch {
         Response {
             hostname,
             method: method.to_string(),
+            scheme: scheme,
             headers: headers
                 .iter()
                 .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("").to_string()))
