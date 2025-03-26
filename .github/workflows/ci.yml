@@ -24,7 +24,7 @@ jobs:
       with:
         python-version: "3.11"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@d767b356a10c6c50fc0db0ddc215611b300b226b  # v9
+      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
@@ -44,7 +44,7 @@ jobs:
       with:
         python-version: "3.11"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@d767b356a10c6c50fc0db0ddc215611b300b226b  # v9
+      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
@@ -70,7 +70,7 @@ jobs:
       with:
         python-version: "3.11"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@d767b356a10c6c50fc0db0ddc215611b300b226b  # v9
+      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
@@ -86,7 +86,7 @@ jobs:
       with:
         python-version: "3.11"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@d767b356a10c6c50fc0db0ddc215611b300b226b  # v9
+      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
@@ -106,7 +106,7 @@ jobs:
       with:
         python-version: "3.11"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@d767b356a10c6c50fc0db0ddc215611b300b226b  # v9
+      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
