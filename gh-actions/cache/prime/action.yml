@@ -57,7 +57,7 @@ runs:
   - name: Check GCS bucket cache
     id: gcs-object
     if: ${{ inputs.gcs-bucket }}
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/exists@actions-v0.3.15
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/exists@actions-v0.3.16
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
@@ -70,7 +70,7 @@ runs:
       lookup-only: true
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.15
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.16
     if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.gcs-object.outputs.exists != 'true' }}
     id: lock-id
     with:
@@ -78,7 +78,7 @@ runs:
       options: -Rr
       filter: |
         @base64
-  - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.3.15
+  - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.3.16
     if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.gcs-object.outputs.exists != 'true' }}
     with:
       key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
@@ -96,7 +96,7 @@ runs:
   - name: Check GCS bucket cache
     id: gcs-object-recheck
     if: ${{ inputs.gcs-bucket && steps.gcs-object.outputs.exists != 'true' }}
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/exists@actions-v0.3.15
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/exists@actions-v0.3.16
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
@@ -156,7 +156,7 @@ runs:
       key: ${{ inputs.key }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && inputs.gcs-bucket }}
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@actions-v0.3.15
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@actions-v0.3.16
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
