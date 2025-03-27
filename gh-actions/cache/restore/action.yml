@@ -54,7 +54,7 @@ runs:
   - name: Restore GCS cache
     if: ${{ inputs.gcs-bucket }}
     id: cache-restore-gcs
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@actions-v0.3.15
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@actions-v0.3.16
     with:
       bucket: ${{ inputs.gcs-bucket }}
       path: ${{ inputs.path || inputs.path-tmp }}
