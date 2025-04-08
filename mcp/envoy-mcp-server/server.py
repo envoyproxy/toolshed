@@ -337,7 +337,7 @@ class ProcessManager:
         stdout_file = open(stdout_log_path, 'wb')
         stderr_file = open(stderr_log_path, 'wb')
         process = await asyncio.create_subprocess_exec(
-            "envoy", "-c", str(config_path),
+            "envoy", "-c", str(config_path), "--disable-hot-restart",
             stdout=stdout_file,
             stderr=stderr_file,
             preexec_fn=os.setsid
@@ -370,21 +370,21 @@ class ProcessManager:
         with open(self._get_pid_file(proc_id), 'w') as f:
             json.dump(pid_data, f)
 
-        async def is_running(self, proc_id):
-            pid_file = self._get_pid_file(proc_id)
-            if not pid_file.exists():
-                return False
+    async def is_running(self, proc_id):
+        pid_file = self._get_pid_file(proc_id)
+        if not pid_file.exists():
+            return False
+        try:
+            with open(pid_file, 'r') as f:
+                pid_data = json.load(f)
+            pid = pid_data["pid"]
             try:
-                with open(pid_file, 'r') as f:
-                    pid_data = json.load(f)
-                pid = pid_data["pid"]
-                try:
-                    os.kill(pid, 0)
-                    return True
-                except OSError:
-                    return False
-            except (json.JSONDecodeError, KeyError, FileNotFoundError):
+                os.kill(pid, 0)
+                return True
+            except OSError:
                 return False
+        except (json.JSONDecodeError, KeyError, FileNotFoundError):
+            return False
 
     async def kill_process(self, proc_id):
         pid_file = self._get_pid_file(proc_id)
@@ -424,11 +424,9 @@ class ProcessManager:
         for pid_file in self.registry_dir.glob("*.pid"):
             try:
                 proc_id = pid_file.stem
-                with open(pid_file, 'r') as f:
-                    pid_data = json.load(f)
+                pid_data = json.loads(pid_file.read_text())
                 is_active = await self.is_running(proc_id)
                 pid_data["active"] = is_active
-                print(f"PID: {proc_id} {is_active} {pid_data}", file=sys.stderr)
                 result.append(pid_data)
             except Exception as e:
                 continue
