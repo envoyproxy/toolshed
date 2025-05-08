@@ -137,15 +137,6 @@ class AChangelogEntry(metaclass=abstracts.Abstraction):
     def prs(self) -> list[str] | None:
         return self.entry.get("prs")
 
-    @property
-    def pr(self) -> str | None:
-        """Legacy accessor for the first PR reference.
-
-        Use prs property for the full list.
-        """
-        prs = self.prs
-        return prs[0] if prs else None
-
 
 @abstracts.implementer(interface.IChangelog)
 class AChangelog(metaclass=abstracts.Abstraction):
