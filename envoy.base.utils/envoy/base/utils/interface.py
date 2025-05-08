@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import pathlib
@@ -126,6 +125,18 @@ class IChangelogEntry(metaclass=abstracts.Interface):
     @abstracts.interfacemethod
     def change(self) -> str:
         """Description of the change for this entry."""
+        raise NotImplementedError
+
+    @property
+    @abstracts.interfacemethod
+    def prs(self) -> list[str] | None:
+        """PR reference numbers for this entry."""
+        raise NotImplementedError
+
+    @property
+    @abstracts.interfacemethod
+    def pr(self) -> str | None:
+        """Legacy accessor for the first PR reference."""
         raise NotImplementedError
 
 
