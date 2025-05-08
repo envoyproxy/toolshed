@@ -133,12 +133,6 @@ class IChangelogEntry(metaclass=abstracts.Interface):
         """PR reference numbers for this entry."""
         raise NotImplementedError
 
-    @property
-    @abstracts.interfacemethod
-    def pr(self) -> str | None:
-        """Legacy accessor for the first PR reference."""
-        raise NotImplementedError
-
 
 class IChangelog(metaclass=abstracts.Interface):
     """A changelog."""

@@ -1,5 +1,5 @@
 import pathlib
-from typing import TypedDict, NotRequired, List
+from typing import TypedDict, NotRequired
 
 from packaging import version as _version
 
@@ -15,13 +15,13 @@ class Change(str):
 class SourceChangeDict(TypedDict):
     area: str
     change: str
-    prs: NotRequired[List[str]]  # Optional PR references
+    prs: NotRequired[list[str]]  # Optional PR references
 
 
 class ChangeDict(TypedDict):
     area: str
     change: Change
-    prs: NotRequired[List[str]]  # Optional PR references
+    prs: NotRequired[list[str]]  # Optional PR references
 
 
 ChangeList = list[ChangeDict]
