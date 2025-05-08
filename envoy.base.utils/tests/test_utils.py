@@ -206,7 +206,8 @@ def test_cd_and_return(path):
 
     with utils.cd_and_return(path):
         assert pathlib.Path.cwd() != cwd
-        assert pathlib.Path.cwd() == pathlib.Path("/tmp")
+        # On macOS, /tmp is a symlink to /private/tmp
+        assert pathlib.Path.cwd().resolve() == pathlib.Path("/tmp").resolve()
 
     assert pathlib.Path.cwd() == cwd
 
