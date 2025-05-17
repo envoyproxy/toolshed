@@ -1,0 +1,165 @@
+name: Overlay Filesystem Mount
+description: Create and mount an overlay filesystem to combine directories and allow writes to a read-only base
+author: Ryan Northey <ryan@synca.io>
+
+inputs:
+  upper-dir:
+    type: string
+    required: true
+    description: |
+      Path to the directory that will contain the upper layer (write layer)
+  lower-dir:
+    type: string
+    required: true
+    description: |
+      Path to the base directory (read-only layer) - can be a colon-separated list for multiple lower layers
+  mount-point:
+    type: string
+    required: true
+    description: |
+      Directory path where the overlay filesystem will be mounted
+  work-dir:
+    type: string
+    description: |
+      Path to the directory used for overlay work files (created automatically if not specified)
+  create-dirs:
+    type: boolean
+    default: true
+    description: |
+      Automatically create the upper, work, and mount directories if they don't exist
+  options:
+    type: string
+    description: |
+      Additional mount options for the overlay filesystem
+  read-only:
+    type: boolean
+    default: false
+    description: |
+      Mount the overlay as read-only
+  verify-mount:
+    type: boolean
+    default: true
+    description: |
+      Verify that the mount was successful
+  debug:
+    type: boolean
+    default: false
+    description: |
+      Enable debug logging
+
+outputs:
+  mount-path:
+    description: 'The full path where the overlay filesystem was mounted'
+    value: ${{ steps.mount.outputs.mount-path }}
+
+  unmount-cmd:
+    description: 'Command to unmount the overlay filesystem (for use in post cleanup)'
+    value: ${{ steps.mount.outputs.unmount-cmd }}
+
+runs:
+  using: "composite"
+  steps:
+  - name: Check for overlay module
+    shell: bash
+    run: |
+      if ! grep -q overlay /proc/filesystems; then
+        echo "Overlay filesystem is not supported on this system!" >&2
+        exit 1
+      fi
+      if [[ "${{ inputs.debug }}" == "true" ]]; then
+        echo "Overlay filesystem is supported"
+      fi
+
+  - name: Create required directories
+    if: ${{ inputs.create-dirs == 'true' }}
+    shell: bash
+    run: |
+      mkdir -p "${{ inputs.upper-dir }}"
+      mkdir -p "${{ inputs.mount-point }}"
+
+      if [[ -n "${{ inputs.work-dir }}" ]]; then
+        WORK_DIR="${{ inputs.work-dir }}"
+      else
+        WORK_DIR="${{ inputs.upper-dir }}-work"
+      fi
+      mkdir -p "$WORK_DIR"
+      echo "OVERLAY_WORK_DIR=$WORK_DIR" >> $GITHUB_ENV
+      if [[ "${{ inputs.debug }}" == "true" ]]; then
+        echo "Created directories:"
+        echo "  Upper dir: ${{ inputs.upper-dir }}"
+        echo "  Mount point: ${{ inputs.mount-point }}"
+        echo "  Work dir: $WORK_DIR"
+      fi
+
+  - uses: envoyproxy/toolshed/gh-actions/github/script/run@actions-v0.3.16
+    name: Mount overlay filesystem
+    id: mount
+    with:
+      run: |
+        MOUNT_POINT="${{ inputs.mount-point }}"
+        UPPER_DIR="${{ inputs.upper-dir }}"
+        LOWER_DIR="${{ inputs.lower-dir }}"
+        WORK_DIR="${OVERLAY_WORK_DIR}"
+        MOUNT_OPTS="lowerdir=${LOWER_DIR},upperdir=${UPPER_DIR},workdir=${WORK_DIR}"
+        if [[ -n "${{ inputs.options }}" ]]; then
+          MOUNT_OPTS="${MOUNT_OPTS},${{ inputs.options }}"
+        fi
+        if [[ "${{ inputs.read-only }}" == "true" ]]; then
+          MOUNT_OPTS="${MOUNT_OPTS},ro"
+        fi
+        if [[ "${{ inputs.debug }}" == "true" ]]; then
+          echo "Mount options: $MOUNT_OPTS"
+        fi
+
+        sudo ls -alh ${MOUNT_POINT}
+        sudo ls -alh ${WORK_DIR}
+        sudo ls -alh ${LOWER_DIR}
+        sudo ls -alh ${UPPER_DIR}
+
+        ls -alh ${MOUNT_POINT}
+        ls -alh ${WORK_DIR}
+        ls -alh ${LOWER_DIR}
+        ls -alh ${UPPER_DIR}
+
+        CMD="sudo mount -t overlay -o ${MOUNT_OPTS} overlay ${MOUNT_POINT}"
+        echo "Mounting with: $CMD"
+        sudo mount -t overlay -o ${MOUNT_OPTS} overlay ${MOUNT_POINT}
+        RESULT=$?
+        if [[ $RESULT -ne 0 ]]; then
+          echo "Failed to mount overlay filesystem" >&2
+          exit 1
+        fi
+        sudo mount
+        sudo chown runner:runner ${MOUNT_POINT}
+        sudo ls -alh ${MOUNT_POINT} || echo "root cant see"
+        ls -alh ${MOUNT_POINT} || echo "runner cant see"
+        echo "mount-path=${MOUNT_POINT}" >> $GITHUB_OUTPUT
+        echo "unmount-cmd=umount ${MOUNT_POINT}" >> $GITHUB_OUTPUT
+      post: |
+        sudo umount ${{ inputs.mount-point }} || true
+
+  - name: Verify mount
+    if: ${{ inputs.verify-mount == 'true' }}
+    shell: bash
+    run: |
+      if ! mount | grep -q "${{ inputs.mount-point }} type overlay"; then
+        echo "Overlay mount verification failed!" >&2
+        exit 1
+      fi
+
+      if [[ "${{ inputs.debug }}" == "true" ]]; then
+        echo "Mount details:"
+        mount | grep overlay
+        echo "Filesystem contents:"
+        ls -la "${{ inputs.mount-point }}"
+      fi
+
+  - name: Mount information
+    shell: bash
+    run: |
+      echo "Overlay filesystem mounted successfully"
+      echo "  Mount point: ${{ inputs.mount-point }}"
+      echo "  Upper dir: ${{ inputs.upper-dir }}"
+      echo "  Lower dir: ${{ inputs.lower-dir }}"
+      echo "  Work dir: ${{ env.OVERLAY_WORK_DIR }}"
+      echo "  Read-only: ${{ inputs.read-only }}"
