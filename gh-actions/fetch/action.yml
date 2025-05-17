@@ -8,6 +8,11 @@ inputs:
     type: string
   path:
     type: string
+  sha256:
+    type: string
+    required: false
+    description: |
+      Expected SHA256 hash of the downloaded file. If provided, the download will be verified against this hash.
 
 outputs:
   path:
@@ -32,6 +37,21 @@ runs:
           FILENAME="$(basename "${{ inputs.url }}")"
       fi
       filepath="$(realpath "$FILENAME")"
+      if [[ -n "${{ inputs.sha256 }}" ]]; then
+          echo "Verifying SHA256 hash..."
+          ACTUAL_SHA256=$(sha256sum "$FILENAME" | cut -d ' ' -f 1)
+          EXPECTED_SHA256="${{ inputs.sha256 }}"
+          echo "Expected SHA256: $EXPECTED_SHA256"
+          echo "Actual SHA256:   $ACTUAL_SHA256"
+          if [[ "$ACTUAL_SHA256" != "$EXPECTED_SHA256" ]]; then
+              echo "ERROR: SHA256 hash verification failed!" >&2
+              echo "  Expected: $EXPECTED_SHA256" >&2
+              echo "  Actual:   $ACTUAL_SHA256" >&2
+              rm -f "$FILENAME"
+              exit 1
+          fi
+          echo "SHA256 hash verification succeeded"
+      fi
       echo "path=${filepath}" >> $GITHUB_OUTPUT
       cd -
     shell: bash
