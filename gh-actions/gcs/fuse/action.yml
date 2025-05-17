@@ -1,0 +1,246 @@
+name: GCS FUSE Mount
+description: Mount a Google Cloud Storage bucket as a FUSE filesystem
+
+inputs:
+  bucket:
+    type: string
+    required: true
+    description: |
+      GCS bucket name to mount
+  cache-dir:
+    type: string
+    description: |
+      Enable gcsfuse file cache to given path
+  debug:
+    type: boolean
+    default: false
+    description: |
+      Enable gcsfuse debug logging
+  debug-fuse:
+    type: boolean
+    default: false
+    description: |
+      Enable fuse debug logging
+  dir-mode:
+    type: string
+    default: "0755"
+    description: |
+      Directory mode bits for new directories (octal)
+  extra-args:
+    type: string
+    description: |
+      Additional gcsfuse arguments passed directly to the command
+  file-mode:
+    type: string
+    default: "0644"
+    description: |
+      File mode bits for new files (octal)
+  gcsfuse-download-root:
+    type: string
+    default: >-
+      https://github.com/GoogleCloudPlatform/gcsfuse/releases/download
+  gcsfuse-sha256:
+    type: string
+    default: 948a5e3ab535b93552773935d571d839b4961d9c3ef22ee032d1e3da195a0689
+    description: |
+      SHA256 hash of the gcsfuse binary. The action will verify the download against this hash.
+  gcsfuse-version:
+    type: string
+    default: v2.12.0
+    description: |
+      Version of gcsfuse to use
+  gid:
+    type: string
+    description: |
+      GID to assign to files (default: process GID)
+  key:
+    type: string
+    required: false
+    description: |
+      GCP service account key (base64 encoded). Not required for public buckets with anonymous-access enabled.
+  key-path:
+    type: string
+    description: |
+      Path to save the GCP service account key (defaults to a temporary file)
+  mount-as-root:
+    type: boolean
+    default: false
+    description: |
+      Mount as root. This is required if you wish to add an overlay fs on top of the directory.
+  mount-point:
+    type: string
+    required: true
+    description: |
+      Local directory path where the bucket will be mounted
+  negative-ttl-secs:
+    type: string
+    default: "5"
+    description: |
+      TTL for negative metadata cache entries in seconds
+  stat-cache-max-size-mb:
+    type: string
+    default: "32"
+    description: |
+      Maximum size for the stat cache in MB
+  temp-dir:
+    type: string
+    description: |
+      Directory used for temporary files (defaults to system temp directory)
+  ttl-secs:
+    type: string
+    default: "60"
+    description: |
+      TTL for metadata cache entries in seconds (replaces deprecated stat-cache-ttl and type-cache-ttl)
+  uid:
+    type: string
+    description: |
+      UID to assign to files (default: process UID)
+
+runs:
+  using: "composite"
+  steps:
+  - name: Check gcsfuse installation
+    id: status
+    shell: bash
+    run: |
+      mkdir -p $HOME/bin
+      echo "$HOME/bin" >> $GITHUB_PATH
+      echo "Checking if gcsfuse is already installed..."
+      if command -v gcsfuse &> /dev/null; then
+          echo "gcsfuse is already installed"
+          echo "installed=true" >> $GITHUB_OUTPUT
+          exit 0
+      fi
+      echo "installed=false" >> $GITHUB_OUTPUT
+  - name: Get gcsfuse download address
+    id: url
+    if: ${{ steps.status.outputs.installed != 'true' }}
+    shell: bash
+    env:
+      GCSFUSE_VERSION: ${{ startsWith(inputs.gcsfuse-version, 'v') && inputs.gcsfuse-version || format('v{0}', inputs.gcsfuse-version) }}
+      GCSFUSE_DOWNLOAD_ROOT: ${{ inputs.gcsfuse-download-root }}
+    run: |
+      if [[ -z ${{ inputs.gcsfuse-sha256 }} ]]; then
+          echo "gcsfuse binary not available and no sha provided" >&2
+          exit 1
+      fi
+      ARCH=$(uname -m)
+      if [[ "$ARCH" == "x86_64" ]]; then
+          ARCH="amd64"
+      elif [[ "$ARCH" == "aarch64" ]]; then
+          ARCH="arm64"
+      fi
+      echo "address=${GCSFUSE_DOWNLOAD_ROOT}/${GCSFUSE_VERSION}/gcsfuse_${GCSFUSE_VERSION#v}_${ARCH}.deb" >> $GITHUB_OUTPUT
+  - uses: envoyproxy/toolshed/gh-actions/fetch@0d46d8d5d4332ebba89cd7f9ebdbd91b307e0769
+    name: Fetch gcsfuse
+    if: ${{ steps.status.outputs.installed != 'true' }}
+    with:
+      url: ${{ steps.url.outputs.address }}
+      filename: gcsfuse.deb
+      path: ${{ runner.temp }}
+      sha256: ${{ inputs.gcsfuse-sha256 }}
+  - name: Install gcsfuse
+    id: install
+    if: ${{ steps.status.outputs.installed != 'true' }}
+    shell: bash
+    run: |
+      ar p ${{ runner.temp }}/gcsfuse.deb data.tar.xz | tar xJ -C ${{ runner.temp }} ./usr/bin/gcsfuse
+      mv ${{ runner.temp }}/usr/bin/gcsfuse $HOME/bin/
+      chmod +x $HOME/bin/gcsfuse
+      rm -rf ${{ runner.temp }}/gcsfuse.deb ${{ runner.temp }}/usr
+  - name: Verify gcsfuse
+    shell: bash
+    run: |
+      gcsfuse --version
+  - name: Create mount point if needed
+    shell: bash
+    run: |
+      mkdir -p "${{ inputs.mount-point }}"
+  - name: Configure service account
+    id: sa
+    if: ${{ inputs.key != '' }}
+    run: |
+      if [[ -z "${{ inputs.key-path }}" ]]; then
+          KEY_PATH=$(mktemp -t gcp_service_account.XXXXXX.json)
+          echo "Created temporary key file: $KEY_PATH"
+      else
+          KEY_PATH="${{ inputs.key-path }}"
+          echo "Using specified key file: $KEY_PATH"
+      fi
+      echo "${{ inputs.key }}" | base64 --decode > "${KEY_PATH}"
+      echo "key-path=${KEY_PATH}" >> $GITHUB_OUTPUT
+      echo "GOOGLE_APPLICATION_CREDENTIALS=${KEY_PATH}" >> $GITHUB_ENV
+    shell: bash
+  - uses: envoyproxy/toolshed/gh-actions/github/script/run@actions-v0.3.16
+    name: Mount GCS bucket
+    id: mount
+    env:
+      AS_ROOT: ${{ inputs.mount-as-root && 'sudo' || '' }}
+      FLAG_ANON: ${{ inputs.key == '' && '--anonymous-access' || '' }}
+      FLAG_CACHE_DIR: ${{ inputs.cache-dir && format('--cache-dir={0}', inputs.cache-dir) || '' }}
+      FLAG_DEBUG: ${{ inputs.debug == 'true' && '--debug_gcs' || '' }}
+      FLAG_DEBUG_FUSE: ${{ inputs.debug-fuse == 'true' && '--debug_fuse' || '' }}
+      FLAG_FILE_MODE: ${{ inputs.file-mode && format('--file-mode={0}', inputs.file-mode) || '' }}
+      FLAG_DIR_MODE: ${{ inputs.dir-mode && format('--dir-mode={0}', inputs.dir-mode) || '' }}
+      FLAG_UID: ${{ inputs.uid && format('--uid={0}', inputs.uid) || '' }}
+      FLAG_GID: ${{ inputs.gid && format('--gid={0}', inputs.gid) || '' }}
+      FLAG_NEGATIVE_TTL: ${{ inputs.negative-ttl && format('--negative-ttl={0}', inputs.negative-ttl) || '' }}
+      FLAG_TTL_SECS: ${{ inputs.ttl-secs && format('--ttl-secs={0}', inputs.ttl-secs) || '' }}
+      FLAG_STAT_CACHE_SIZE: >-
+        ${{
+          inputs.stat-cache-max-size-mb
+          && format('--stat-cache-max-size-mb={0}', inputs.stat-cache-max-size-mb)
+          || '' }}
+      FLAG_TEMP_DIR: ${{ inputs.temp-dir && format('--temp-dir={0}', inputs.temp-dir) || '' }}
+      FLAG_EXTRA: ${{ inputs.extra-args || '' }}
+    with:
+      run: |
+        MOUNT_POINT="${{ inputs.mount-point }}"
+        BUCKET="${{ inputs.bucket }}"
+        GCSFUSE=$(command -v gcsfuse)
+        CMD=(
+            "$AS_ROOT"
+            "$GCSFUSE"
+            "--implicit-dirs"
+            "$FLAG_ANON"
+            "$FLAG_DEBUG"
+            "$FLAG_DEBUG_FUSE"
+            "$FLAG_FILE_MODE"
+            "$FLAG_DIR_MODE"
+            "$FLAG_UID"
+            "$FLAG_GID"
+            "$FLAG_NEGATIVE_TTL"
+            "$FLAG_TTL_SECS"
+            "$FLAG_STAT_CACHE_SIZE"
+            "$FLAG_TEMP_DIR"
+            "$FLAG_EXTRA"
+            "$BUCKET"
+            "$MOUNT_POINT")
+        CMD=(${CMD[@]})
+        echo "Mounting with: ${CMD[*]}"
+        tempfile=$(mktemp)
+        echo "output-path=${tempfile}" >> $GITHUB_OUTPUT
+        "${CMD[@]}" > $tempfile
+        if [[ $? -ne 0 ]]; then
+            echo "Failed to mount GCS bucket" >&2
+            exit 1
+        fi
+        if ! mount | grep -q "${{ inputs.mount-point }}"; then
+            echo "Mount verification failed!" >&2
+            exit 1
+        fi
+      post: |
+        rm -rf ${{ steps.sa.outputs.key-path }}
+        ${AS_ROOT} fusermount -u "${{ inputs.mount-point }}" || true
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.16
+    name: Parse mount
+    with:
+      input: ${{ steps.mount.outputs.output-path }}
+      input-format: json-path
+      print-result: true
+      filter: |
+        {
+            when: "\(.timestamp.seconds | tostring).\(.timestamp.nanos | tostring | .[0:3])",
+            type: .severity,
+            message: .message
+        }
