@@ -18,13 +18,14 @@ on:
 jobs:
   test-overlay-public:
     name: Test overlay with public GCS bucket
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
     - uses: actions/checkout@v4
     - name: Mount public GCS bucket
       uses: ./gh-actions/gcs/fuse
       with:
         bucket: gcp-public-data-sentinel-2
+        cache-dir: ${{ runner.temp }}/cache-fuse
         mount-as-root: true
         mount-point: ${{ runner.temp }}/gcs-public
     - name: Create overlay directories
@@ -40,9 +41,9 @@ jobs:
         mount-point: "${{ runner.temp }}/overlay-mount"
     - name: Verify GCS data visibility
       run: |
-        ls -la "${{ runner.temp }}/overlay-mount"
-        ls -la "${{ runner.temp }}/overlay-mount" | grep -q csv
-        ls -la "${{ runner.temp }}/overlay-mount" | grep -q upper-test-file.txt
+        ls -lan "${{ runner.temp }}/overlay-mount"
+        ls -lah "${{ runner.temp }}/overlay-mount" | grep -q csv
+        ls -lah "${{ runner.temp }}/overlay-mount" | grep -q upper-test-file.txt
     - name: Test write operations
       run: |
         echo "This is a new file created in the overlay" > "${{ runner.temp }}/overlay-mount/new-file.txt"
