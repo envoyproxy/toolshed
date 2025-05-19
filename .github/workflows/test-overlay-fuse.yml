@@ -41,8 +41,12 @@ jobs:
         mount-point: "${{ runner.temp }}/overlay-mount"
     - name: Verify GCS data visibility
       run: |
+        echo "DIRECTORY"
         ls -lah "${{ runner.temp }}/overlay-mount"
+        echo "L2"
         ls -lah "${{ runner.temp }}/overlay-mount/L2"
+        echo "TILES"
+        ls -lah "${{ runner.temp }}/overlay-mount/tiles"
         ls -lah "${{ runner.temp }}/overlay-mount" | grep -q csv
         ls -lah "${{ runner.temp }}/overlay-mount" | grep -q upper-test-file.txt
     - name: Test write operations
