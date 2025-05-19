@@ -160,7 +160,7 @@ runs:
       key: ${{ inputs.key }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && inputs.gcs-bucket }}
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@0e7d678aa5a8e039f67b596aefcf7b16ce9111ba
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@2650c360b2c96f8eb332418461874d7169658c9b
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
