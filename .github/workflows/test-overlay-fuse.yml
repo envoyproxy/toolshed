@@ -44,6 +44,8 @@ jobs:
         ls -alh "${{ runner.temp }}/cache-fuse"
         ls -lah "${{ runner.temp }}/overlay-mount" | grep -q csv
         ls -lah "${{ runner.temp }}/overlay-mount" | grep -q upper-test-file.txt
+        du -ch "${{ runner.temp }}/overlay-mount/tiles/01/C/CV/S2A_MSIL1C_20151221T205519_N0201_R028_T01CCV_20160329T181515.SAFE"
+        # find "${{ runner.temp }}/overlay-mount/tiles/01/C/CV/S2A_MSIL1C_20151221T205519_N0201_R028_T01CCV_20160329T181515.SAFE" | xargs ls -lah
     - name: Test write operations
       run: |
         echo "Overwrite existing"
