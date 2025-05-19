@@ -36,7 +36,7 @@ runs:
   - name: Sync GCS cache
     if: ${{ inputs.sync }}
     run: |
-      gsutil -m rsync -r ${{ inputs.path }} "gs://${BUCKET}/${BLOB}"
+      gsutil -q -m rsync -r ${{ inputs.path }} "gs://${BUCKET}/${BLOB}"
     shell: bash
     env:
       BUCKET: ${{ inputs.bucket }}
