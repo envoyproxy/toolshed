@@ -175,7 +175,7 @@ runs:
     name: Mount GCS bucket
     id: mount
     env:
-      AS_ROOT: ${{ inputs.mount-as-root && 'sudo' || '' }}
+      AS_ROOT: ${{ inputs.mount-as-root != 'false' && 'sudo' || '' }}
       FLAG_ANON: ${{ inputs.key == '' && '--anonymous-access' || '' }}
       FLAG_CACHE_DIR: ${{ inputs.cache-dir && format('--cache-dir={0}', inputs.cache-dir) || '' }}
       FLAG_DEBUG: ${{ inputs.debug == 'true' && '--debug_gcs' || '' }}
