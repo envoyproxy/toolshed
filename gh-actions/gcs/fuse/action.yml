@@ -62,6 +62,16 @@ inputs:
     type: string
     description: |
       Path to save the GCP service account key (defaults to a temporary file)
+  metadata-cache-negative-ttl-secs:
+    type: string
+    default: "5"
+    description: |
+      TTL for negative metadata cache entries in seconds
+  metadata-cache-ttl-secs:
+    type: string
+    default: "60"
+    description: |
+      TTL for metadata cache entries in seconds (replaces deprecated stat-cache-ttl and type-cache-ttl)
   mount-as-root:
     type: boolean
     default: false
@@ -72,11 +82,6 @@ inputs:
     required: true
     description: |
       Local directory path where the bucket will be mounted
-  negative-ttl-secs:
-    type: string
-    default: "5"
-    description: |
-      TTL for negative metadata cache entries in seconds
   stat-cache-max-size-mb:
     type: string
     default: "32"
@@ -86,11 +91,6 @@ inputs:
     type: string
     description: |
       Directory used for temporary files (defaults to system temp directory)
-  ttl-secs:
-    type: string
-    default: "60"
-    description: |
-      TTL for metadata cache entries in seconds (replaces deprecated stat-cache-ttl and type-cache-ttl)
   uid:
     type: string
     description: |
@@ -184,8 +184,14 @@ runs:
       FLAG_DIR_MODE: ${{ inputs.dir-mode && format('--dir-mode={0}', inputs.dir-mode) || '' }}
       FLAG_UID: ${{ inputs.uid && format('--uid={0}', inputs.uid) || '' }}
       FLAG_GID: ${{ inputs.gid && format('--gid={0}', inputs.gid) || '' }}
-      FLAG_NEGATIVE_TTL: ${{ inputs.negative-ttl && format('--negative-ttl={0}', inputs.negative-ttl) || '' }}
-      FLAG_TTL_SECS: ${{ inputs.ttl-secs && format('--ttl-secs={0}', inputs.ttl-secs) || '' }}
+      FLAG_NEGATIVE_TTL: >-
+        ${{ inputs.metadata-cache-negative-ttl
+            && format('--metadata-cache-negative-ttl={0}', inputs.metadata-cache-negative-ttl)
+            || '' }}
+      FLAG_TTL_SECS: >-
+        ${{ inputs.metadata-cache-ttl-secs
+            && format('--metadata-cache-ttl-secs={0}', inputs.metadata-cache-ttl-secs)
+            || '' }}
       FLAG_STAT_CACHE_SIZE: >-
         ${{
           inputs.stat-cache-max-size-mb
