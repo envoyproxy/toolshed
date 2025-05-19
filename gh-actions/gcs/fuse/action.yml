@@ -152,10 +152,16 @@ runs:
     shell: bash
     run: |
       gcsfuse --version
-  - name: Create mount point if needed
+  - name: Setup GCS
+    id: setup
     shell: bash
     run: |
       mkdir -p "${{ inputs.mount-point }}"
+      if [[ "${{ inputs.mount-as-root }}" == "true" ]]; then
+          export GID=$(id -g)
+          echo "uid=${{ inputs.uid || env.UID }}" >> $GITHUB_OUTPUT
+          echo "gid=${{ inputs.gid || env.GID }}" >> $GITHUB_OUTPUT
+      fi
   - name: Configure service account
     id: sa
     if: ${{ inputs.key != '' }}
@@ -175,15 +181,15 @@ runs:
     name: Mount GCS bucket
     id: mount
     env:
-      AS_ROOT: ${{ inputs.mount-as-root != 'false' && 'sudo' || '' }}
+      AS_ROOT: ${{ inputs.mount-as-root == 'true' && 'sudo' || '' }}
       FLAG_ANON: ${{ inputs.key == '' && '--anonymous-access' || '' }}
       FLAG_CACHE_DIR: ${{ inputs.cache-dir && format('--cache-dir={0}', inputs.cache-dir) || '' }}
       FLAG_DEBUG: ${{ inputs.debug == 'true' && '--debug_gcs' || '' }}
       FLAG_DEBUG_FUSE: ${{ inputs.debug-fuse == 'true' && '--debug_fuse' || '' }}
       FLAG_FILE_MODE: ${{ inputs.file-mode && format('--file-mode={0}', inputs.file-mode) || '' }}
       FLAG_DIR_MODE: ${{ inputs.dir-mode && format('--dir-mode={0}', inputs.dir-mode) || '' }}
-      FLAG_UID: ${{ inputs.uid && format('--uid={0}', inputs.uid) || '' }}
-      FLAG_GID: ${{ inputs.gid && format('--gid={0}', inputs.gid) || '' }}
+      FLAG_UID: ${{ steps.setup.outputs.uid && format('--uid={0}', steps.setup.outputs.uid) || '' }}
+      FLAG_GID: ${{ steps.setup.outputs.gid && format('--gid={0}', steps.setup.outputs.gid) || '' }}
       FLAG_NEGATIVE_TTL: >-
         ${{ inputs.metadata-cache-negative-ttl
             && format('--metadata-cache-negative-ttl={0}', inputs.metadata-cache-negative-ttl)
