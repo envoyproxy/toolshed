@@ -40,4 +40,4 @@ runs:
     shell: bash
     env:
       BUCKET: ${{ inputs.bucket }}
-      BLOB: ${{ inputs.key }}.${{ inputs.ext }}
+      BLOB: ${{ inputs.key }}
