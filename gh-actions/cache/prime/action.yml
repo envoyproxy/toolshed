@@ -12,6 +12,9 @@ inputs:
   gcs-bucket:
     type: string
     default:
+  gcs-sync:
+    type: boolean
+    default: false
   lock-id:
     type: string
   lock-repository:
@@ -100,6 +103,7 @@ runs:
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
+      sync: ${{ inputs.gcs-sync }}
 
   - if: >-
       ${{ steps.cache-restore-initial.outputs.cache-hit != 'true'
@@ -156,11 +160,12 @@ runs:
       key: ${{ inputs.key }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && inputs.gcs-bucket }}
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@actions-v0.3.16
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@0e7d678aa5a8e039f67b596aefcf7b16ce9111ba
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
       path: ${{ inputs.path || inputs.path-tmp }}
+      sync: ${{ inputs.gcs-sync }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && ! inputs.path }}
     run: |
