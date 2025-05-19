@@ -110,17 +110,6 @@ runs:
         if [[ "${{ inputs.debug }}" == "true" ]]; then
           echo "Mount options: $MOUNT_OPTS"
         fi
-
-        sudo ls -alh ${MOUNT_POINT}
-        sudo ls -alh ${WORK_DIR}
-        sudo ls -alh ${LOWER_DIR}
-        sudo ls -alh ${UPPER_DIR}
-
-        ls -alh ${MOUNT_POINT}
-        ls -alh ${WORK_DIR}
-        ls -alh ${LOWER_DIR}
-        ls -alh ${UPPER_DIR}
-
         CMD="sudo mount -t overlay -o ${MOUNT_OPTS} overlay ${MOUNT_POINT}"
         echo "Mounting with: $CMD"
         sudo mount -t overlay -o ${MOUNT_OPTS} overlay ${MOUNT_POINT}
