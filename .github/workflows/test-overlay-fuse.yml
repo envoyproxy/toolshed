@@ -41,10 +41,11 @@ jobs:
         mount-point: "${{ runner.temp }}/overlay-mount"
     - name: Verify GCS data visibility
       run: |
-        sudo du -ch "${{ runner.temp }}/cache-fuse"
+        sudo du -ch "${{ runner.temp }}/cache-fuse" > /dev/null
         ls -lah "${{ runner.temp }}/overlay-mount" | grep -q csv
         ls -lah "${{ runner.temp }}/overlay-mount" | grep -q upper-test-file.txt
         du -ch "${{ runner.temp }}/overlay-mount/tiles/01/C/CV/S2A_MSIL1C_20151221T205519_N0201_R028_T01CCV_20160329T181515.SAFE" > /dev/null
+        cp -a /home/runner/work/_temp/overlay-mount/tiles/01/C/CV/S2A_MSIL1C_20151221T205519_N0201_R028_T01CCV_20160329T181515.SAFE/GRANULE/S2A_OPER_MSI_L1C_TL_EPA__20160325T184811_A002599_T01CCV_N02.01/QI_DATA /dev/null
     - name: Test write operations
       run: |
         echo "Overwrite existing"
