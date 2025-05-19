@@ -158,6 +158,7 @@ runs:
     run: |
       mkdir -p "${{ inputs.mount-point }}"
       if [[ "${{ inputs.mount-as-root }}" == "true" ]]; then
+          echo "GID: ${{ env.GID }}"
           export GID=$(id -g)
           echo "GID: ${{ env.GID }}"
           echo "uid=${{ inputs.uid != '' && inputs.uid || env.UID }}" >> $GITHUB_OUTPUT
