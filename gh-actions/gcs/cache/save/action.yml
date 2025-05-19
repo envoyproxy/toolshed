@@ -15,15 +15,28 @@ inputs:
   ext:
     type: string
     default: zstd
+  sync:
+    type: boolean
+    default: false
 
 
 runs:
   using: "composite"
   steps:
   - name: Save GCS cache
+    if: ${{ ! inputs.sync }}
     run: |
       tar cf - -I "${{ inputs.compressor }}" -C ${{ inputs.path }} .  \
           | gsutil cp - "gs://${BUCKET}/${BLOB}"
+    shell: bash
+    env:
+      BUCKET: ${{ inputs.bucket }}
+      BLOB: ${{ inputs.key }}.${{ inputs.ext }}
+
+  - name: Sync GCS cache
+    if: ${{ inputs.sync }}
+    run: |
+      gsutil rsync ${{ inputs.path }} "gs://${BUCKET}/${BLOB}"
     shell: bash
     env:
       BUCKET: ${{ inputs.bucket }}
