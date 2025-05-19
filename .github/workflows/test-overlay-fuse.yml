@@ -1,0 +1,67 @@
+name: Test Overlay with GCS FUSE Mount
+
+on:
+  push:
+    branches:
+    - main
+    - 'actions-v*'
+    paths:
+    - 'gh-actions/fs/overlay/**'
+    - 'gh-actions/gcs/fuse/**'
+    - '.github/workflows/test-overlay-fuse.yml'
+  pull_request:
+    paths:
+    - 'gh-actions/fs/overlay/**'
+    - 'gh-actions/gcs/fuse/**'
+    - '.github/workflows/test-overlay-fuse.yml'
+
+jobs:
+  test-overlay-public:
+    name: Test overlay with public GCS bucket
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Mount public GCS bucket
+      uses: ./gh-actions/gcs/fuse
+      with:
+        bucket: gcp-public-data-sentinel-2
+        mount-as-root: true
+        mount-point: ${{ runner.temp }}/gcs-public
+    - name: Create overlay directories
+      run: |
+        mkdir -p ${{ runner.temp }}/overlay-upper
+        mkdir -p ${{ runner.temp }}/overlay-mount
+        echo "Initial content in upper dir" > ${{ runner.temp }}/overlay-upper/upper-test-file.txt
+    - name: Mount overlay filesystem
+      uses: ./gh-actions/fs/overlay
+      with:
+        lower-dir: "${{ runner.temp }}/gcs-public"
+        upper-dir: "${{ runner.temp }}/overlay-upper"
+        mount-point: "${{ runner.temp }}/overlay-mount"
+    - name: Verify GCS data visibility
+      run: |
+        ls -la "${{ runner.temp }}/overlay-mount"
+        ls -la "${{ runner.temp }}/overlay-mount" | grep -q csv
+        ls -la "${{ runner.temp }}/overlay-mount" | grep -q upper-test-file.txt
+    - name: Test write operations
+      run: |
+        echo "This is a new file created in the overlay" > "${{ runner.temp }}/overlay-mount/new-file.txt"
+        if [ -f "${{ runner.temp }}/overlay-mount/hello.txt" ]; then
+          echo "APPENDED CONTENT" >> "${{ runner.temp }}/overlay-mount/hello.txt
+          echo "✅ Successfully modified a GCS file through the overlay"
+          cat "${{ runner.temp }}/overlay-mount/hello.txt
+        fi
+        if [ -f "${{ runner.temp }}/overlay-mount/new-file.txt" ] && [ ! -f "${{ runner.temp }}/gcs-public/new-file.txt" ]; then
+          echo "✅ Write operations are working correctly"
+          echo "✅ Original GCS mount remains unchanged"
+        else
+          echo "❌ Overlay write test failed"
+          exit 1
+        fi
+        if [ -f "${{ runner.temp }}/overlay-upper/new-file.txt" ]; then
+          echo "✅ Changes correctly stored in upper layer"
+          cat ${{ runner.temp }}/overlay-upper/new-file.txt
+        else
+          echo "❌ Changes not properly stored in upper layer"
+          exit 1
+        fi

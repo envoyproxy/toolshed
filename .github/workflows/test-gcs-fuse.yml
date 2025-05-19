@@ -1,0 +1,29 @@
+name: Test GCS FUSE Mount Action
+
+on:
+  push:
+    branches:
+    - main
+    - 'actions-v*'
+    paths:
+    - 'gh-actions/gcs/fuse/**'
+    - '.github/workflows/test-gcs-fuse.yml'
+  pull_request:
+    paths:
+    - 'gh-actions/gcs/fuse/**'
+    - '.github/workflows/test-gcs-fuse.yml'
+
+jobs:
+  test-external:
+    name: Test anonymous access (fork PRs)
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: ./gh-actions/gcs/fuse
+      with:
+        bucket: gcp-public-data-sentinel-2
+        mount-point: /tmp/gcs-public-test
+    - run: |
+        ls -la /tmp/gcs-public-test
+        ls -la /tmp/gcs-public-test | grep -q index.csv
