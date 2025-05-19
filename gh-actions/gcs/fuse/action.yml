@@ -159,8 +159,9 @@ runs:
       mkdir -p "${{ inputs.mount-point }}"
       if [[ "${{ inputs.mount-as-root }}" == "true" ]]; then
           export GID=$(id -g)
-          echo "uid=${{ inputs.uid || env.UID }}" >> $GITHUB_OUTPUT
-          echo "gid=${{ inputs.gid || env.GID }}" >> $GITHUB_OUTPUT
+          echo "GID: ${{ env.GID }}"
+          echo "uid=${{ inputs.uid != '' && inputs.uid || env.UID }}" >> $GITHUB_OUTPUT
+          echo "gid=${{ inputs.gid != '' && inputs.gid || env.GID }}" >> $GITHUB_OUTPUT
       fi
   - name: Configure service account
     id: sa
