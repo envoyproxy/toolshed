@@ -41,16 +41,16 @@ jobs:
         mount-point: "${{ runner.temp }}/overlay-mount"
     - name: Verify GCS data visibility
       run: |
-        echo "DIRECTORY"
-        ls -lah "${{ runner.temp }}/overlay-mount"
-        echo "L2"
-        ls -lah "${{ runner.temp }}/overlay-mount/L2"
         echo "TILES"
-        ls -lah "${{ runner.temp }}/overlay-mount/tiles/01"
+        find "${{ runner.temp }}/overlay-mount/tiles/01" | xargs ls -lah
         ls -lah "${{ runner.temp }}/overlay-mount" | grep -q csv
         ls -lah "${{ runner.temp }}/overlay-mount" | grep -q upper-test-file.txt
     - name: Test write operations
       run: |
+        echo "Overwrite existing"
+        echo BOOM > "${{ runner.temp }}/overlay-mount/index.csv.gz-backup"
+        ls -alh "${{ runner.temp }}/overlay-mount/index.csv.gz-backup"
+
         echo "This is a new file created in the overlay" > "${{ runner.temp }}/overlay-mount/new-file.txt"
         if [ -f "${{ runner.temp }}/overlay-mount/hello.txt" ]; then
           echo "APPENDED CONTENT" >> "${{ runner.temp }}/overlay-mount/hello.txt
