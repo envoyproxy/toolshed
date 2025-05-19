@@ -103,7 +103,6 @@ runs:
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
-      sync: ${{ inputs.gcs-sync }}
 
   - if: >-
       ${{ steps.cache-restore-initial.outputs.cache-hit != 'true'
