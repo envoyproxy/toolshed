@@ -79,6 +79,7 @@ runs:
                 exit 1
             fi
             cp -a "$GCP_KEY_PATH" "${{ inputs.key-copy }}"
+            gcloud auth activate-service-account --key-file="${GCP_KEY_PATH}"
             GCP_KEY_FILENAME=$(basename $GCP_KEY_PATH)
             GCP_KEY_COPY_PATH="${{ inputs.key-copy }}/${GCP_KEY_FILENAME}"
             echo "GCP_KEY_COPY_PATH=${GCP_KEY_COPY_PATH}" >> $GITHUB_ENV
