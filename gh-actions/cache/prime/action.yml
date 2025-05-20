@@ -104,6 +104,39 @@ runs:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
 
+  # RE/MOVE THIS!
+  - name: Populate bucket
+    if: >-
+      ${{ inputs.gcs-bucket
+          && steps.cache-restore-initial.outputs.cache-hit != 'true'
+          && steps.cache-restore.outputs.cache-hit != 'true'
+          && steps.gcs-object-recheck.outputs.exists != 'true' }}
+    shell: bash
+    env:
+      BUCKET: ${{ inputs.gcs-bucket }}
+    run: |
+      echo "Syncing ${BUCKET} -> ${BUCKET}-new"
+      gsutil -m cp -r gs://${BUCKET}/* gs://${BUCKET}-new/
+
+      echo "COPIED BUCKET"
+      exit 1
+  - name: Sync remote bucket
+    if: >-
+      ${{ inputs.gcs-bucket
+          && steps.cache-restore-initial.outputs.cache-hit != 'true'
+          && steps.cache-restore.outputs.cache-hit != 'true'
+          && steps.gcs-object-recheck.outputs.exists != 'true' }}
+    shell: bash
+    env:
+      BUCKET: ${{ inputs.gcs-bucket }}
+      CACHE_KEY: ${{ inputs.key }}
+    run: |
+      ARCH="${CACHE_KEY#*-}"
+      CURRENT_CACHE="$(gsutil "gs://${BUCKET}/current.txt" -)"
+      CURRENT_CACHE="${CURRENT_CACHE}-${ARCH}"
+      echo "Syncing ${CURRENT_CACHE} -> ${CACHE_KEY}"
+      gsutil -m cp -r gs://${BUCKET}/${CURRENT_CACHE}/* gs://${BUCKET}/${CACHE_KEY}/
+
   - if: >-
       ${{ steps.cache-restore-initial.outputs.cache-hit != 'true'
           && steps.cache-restore.outputs.cache-hit != 'true'
@@ -159,7 +192,7 @@ runs:
       key: ${{ inputs.key }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && inputs.gcs-bucket }}
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@523fb4b74db01fc3e8fb9ed0d73c3e68ecbfd242
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@5831eb8972102b40f9f4b2f815b3ac5dcb2f38fe
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
