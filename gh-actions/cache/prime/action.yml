@@ -116,9 +116,10 @@ runs:
       BUCKET: ${{ inputs.gcs-bucket }}
     run: |
       echo "Syncing ${BUCKET} -> ${BUCKET}-new"
-      gsutil -m cp -r gs://${BUCKET}/* gs://${BUCKET}-new/
+      gsutil mv gs://${BUCKET}/91f032419402bae13580ed2563c0183c05ec6328793125fbece1f40f3a0565d8-arm64 gs://${BUCKET}/genesis-arm64
+      gsutil mv gs://${BUCKET}/91f032419402bae13580ed2563c0183c05ec6328793125fbece1f40f3a0565d8-x64 gs://${BUCKET}/genesis-x64
 
-      echo "COPIED BUCKET"
+      echo "MOVED BUCKETS"
       exit 1
   - name: Sync remote bucket
     if: >-
@@ -192,7 +193,7 @@ runs:
       key: ${{ inputs.key }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && inputs.gcs-bucket }}
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@5831eb8972102b40f9f4b2f815b3ac5dcb2f38fe
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@80d124b5f6317c6222ebe21ff49d4c5aa169c13e
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
