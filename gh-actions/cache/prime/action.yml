@@ -12,6 +12,9 @@ inputs:
   gcs-bucket:
     type: string
     default:
+  gcs-sync:
+    type: boolean
+    default: false
   lock-id:
     type: string
   lock-repository:
@@ -101,6 +104,40 @@ runs:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
 
+  # RE/MOVE THIS!
+  - name: Populate bucket
+    if: >-
+      ${{ inputs.gcs-bucket
+          && steps.cache-restore-initial.outputs.cache-hit != 'true'
+          && steps.cache-restore.outputs.cache-hit != 'true'
+          && steps.gcs-object-recheck.outputs.exists != 'true' }}
+    shell: bash
+    env:
+      BUCKET: ${{ inputs.gcs-bucket }}
+    run: |
+      echo "Syncing ${BUCKET} -> ${BUCKET}-new"
+      # gsutil mv gs://${BUCKET}/91f032419402bae13580ed2563c0183c05ec6328793125fbece1f40f3a0565d8-arm64 gs://${BUCKET}/genesis-arm64
+      gcloud storage mv gs://${BUCKET}/91f032419402bae13580ed2563c0183c05ec6328793125fbece1f40f3a0565d8-x64 gs://${BUCKET}/genesis-x64 --quiet
+
+      echo "MOVED BUCKETS"
+      exit 1
+  - name: Sync remote bucket
+    if: >-
+      ${{ inputs.gcs-bucket
+          && steps.cache-restore-initial.outputs.cache-hit != 'true'
+          && steps.cache-restore.outputs.cache-hit != 'true'
+          && steps.gcs-object-recheck.outputs.exists != 'true' }}
+    shell: bash
+    env:
+      BUCKET: ${{ inputs.gcs-bucket }}
+      CACHE_KEY: ${{ inputs.key }}
+    run: |
+      ARCH="${CACHE_KEY#*-}"
+      CURRENT_CACHE="$(gsutil "gs://${BUCKET}/current.txt" -)"
+      CURRENT_CACHE="${CURRENT_CACHE}-${ARCH}"
+      echo "Syncing ${CURRENT_CACHE} -> ${CACHE_KEY}"
+      gsutil -m cp -r gs://${BUCKET}/${CURRENT_CACHE}/* gs://${BUCKET}/${CACHE_KEY}/
+
   - if: >-
       ${{ steps.cache-restore-initial.outputs.cache-hit != 'true'
           && steps.cache-restore.outputs.cache-hit != 'true'
@@ -156,11 +193,12 @@ runs:
       key: ${{ inputs.key }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && inputs.gcs-bucket }}
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@actions-v0.3.16
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@80d124b5f6317c6222ebe21ff49d4c5aa169c13e
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
       path: ${{ inputs.path || inputs.path-tmp }}
+      sync: ${{ inputs.gcs-sync }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && ! inputs.path }}
     run: |

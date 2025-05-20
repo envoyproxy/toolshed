@@ -1,0 +1,77 @@
+name: Test Overlay with GCS FUSE Mount
+
+on:
+  push:
+    branches:
+    - main
+    - 'actions-v*'
+    paths:
+    - 'gh-actions/fs/overlay/**'
+    - 'gh-actions/gcs/fuse/**'
+    - '.github/workflows/test-overlay-fuse.yml'
+  pull_request:
+    paths:
+    - 'gh-actions/fs/overlay/**'
+    - 'gh-actions/gcs/fuse/**'
+    - '.github/workflows/test-overlay-fuse.yml'
+
+jobs:
+  test-overlay-public:
+    name: Test overlay with public GCS bucket
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Mount public GCS bucket
+      uses: ./gh-actions/gcs/fuse
+      with:
+        bucket: gcp-public-data-sentinel-2
+        cache-dir: ${{ runner.temp }}/cache-fuse
+        mount-as-root: true
+        mount-point: ${{ runner.temp }}/gcs-public
+    - name: Create overlay directories
+      run: |
+        mkdir -p ${{ runner.temp }}/overlay-upper
+        mkdir -p ${{ runner.temp }}/overlay-mount
+        echo "Initial content in upper dir" > ${{ runner.temp }}/overlay-upper/upper-test-file.txt
+    - name: Mount overlay filesystem
+      uses: ./gh-actions/fs/overlay
+      with:
+        lower-dir: "${{ runner.temp }}/gcs-public"
+        upper-dir: "${{ runner.temp }}/overlay-upper"
+        mount-point: "${{ runner.temp }}/overlay-mount"
+    - name: Verify GCS data visibility
+      run: |
+        sudo du -ch "${{ runner.temp }}/cache-fuse" > /dev/null
+        ls -lah "${{ runner.temp }}/overlay-mount" | grep -q csv
+        ls -lah "${{ runner.temp }}/overlay-mount" | grep -q upper-test-file.txt
+        du -ch "${{ runner.temp }}/overlay-mount/tiles/01/C/CV/S2A_MSIL1C_20151221T205519_N0201_R028_T01CCV_20160329T181515.SAFE" > /dev/null
+        cat /home/runner/work/_temp/overlay-mount/tiles/01/C/CV/S2A_MSIL1C_20151221T205519_N0201_R028_T01CCV_20160329T181515.SAFE/GRANULE/S2A_OPER_MSI_L1C_TL_EPA__20160325T184811_A002599_T01CCV_N02.01/QI_DATA/S2A_OPER_PVI_L1C_TL_EPA__20160325T184811_A002599_T01CCV.jp2 > /dev/null
+    - name: Test write operations
+      run: |
+        echo "Overwrite existing"
+        echo BOOM > "${{ runner.temp }}/overlay-mount/index.csv.gz-backup"
+        ls -alh "${{ runner.temp }}/overlay-mount/index.csv.gz-backup"
+
+        echo "This is a new file created in the overlay" > "${{ runner.temp }}/overlay-mount/new-file.txt"
+        if [ -f "${{ runner.temp }}/overlay-mount/hello.txt" ]; then
+          echo "APPENDED CONTENT" >> "${{ runner.temp }}/overlay-mount/hello.txt
+          echo "✅ Successfully modified a GCS file through the overlay"
+          cat "${{ runner.temp }}/overlay-mount/hello.txt
+        fi
+        if [ -f "${{ runner.temp }}/overlay-mount/new-file.txt" ] && [ ! -f "${{ runner.temp }}/gcs-public/new-file.txt" ]; then
+          echo "✅ Write operations are working correctly"
+          echo "✅ Original GCS mount remains unchanged"
+        else
+          echo "❌ Overlay write test failed"
+          exit 1
+        fi
+        if [ -f "${{ runner.temp }}/overlay-upper/new-file.txt" ]; then
+          echo "✅ Changes correctly stored in upper layer"
+          cat ${{ runner.temp }}/overlay-upper/new-file.txt
+        else
+          echo "❌ Changes not properly stored in upper layer"
+          exit 1
+        fi
+    - name: Test cache dir
+      run: |
+        sudo du -ch "${{ runner.temp }}/cache-fuse"
