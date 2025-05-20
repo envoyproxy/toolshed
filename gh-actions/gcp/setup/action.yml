@@ -79,11 +79,16 @@ runs:
                 exit 1
             fi
             cp -a "$GCP_KEY_PATH" "${{ inputs.key-copy }}"
+
+            export CLOUDSDK_CONFIG="$GITHUB_WORKSPACE/.gcloud"
+            mkdir -p "$CLOUDSDK_CONFIG"
+
             gcloud auth activate-service-account --key-file="${GCP_KEY_PATH}"
             GCP_KEY_FILENAME=$(basename $GCP_KEY_PATH)
             GCP_KEY_COPY_PATH="${{ inputs.key-copy }}/${GCP_KEY_FILENAME}"
             echo "GCP_KEY_COPY_PATH=${GCP_KEY_COPY_PATH}" >> $GITHUB_ENV
             echo "copy-path=${GCP_KEY_COPY_PATH}" >> $GITHUB_OUTPUT
+            echo "CLOUDSDK_CONFIG=$CLOUDSDK_CONFIG" >> $GITHUB_ENV
         fi
         if [[ ${{ inputs.boto }} != "true" ]]; then
             exit 0
