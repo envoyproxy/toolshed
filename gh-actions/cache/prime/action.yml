@@ -116,8 +116,8 @@ runs:
       BUCKET: ${{ inputs.gcs-bucket }}
     run: |
       echo "Syncing ${BUCKET} -> ${BUCKET}-new"
-      gsutil mv gs://${BUCKET}/91f032419402bae13580ed2563c0183c05ec6328793125fbece1f40f3a0565d8-arm64 gs://${BUCKET}/genesis-arm64
-      gsutil mv gs://${BUCKET}/91f032419402bae13580ed2563c0183c05ec6328793125fbece1f40f3a0565d8-x64 gs://${BUCKET}/genesis-x64
+      # gsutil mv gs://${BUCKET}/91f032419402bae13580ed2563c0183c05ec6328793125fbece1f40f3a0565d8-arm64 gs://${BUCKET}/genesis-arm64
+      gsutil -o "GSUtil:prefer_api=xml" -m gs://${BUCKET}/91f032419402bae13580ed2563c0183c05ec6328793125fbece1f40f3a0565d8-x64 gs://${BUCKET}/genesis-x64
 
       echo "MOVED BUCKETS"
       exit 1
