@@ -7,11 +7,16 @@ def load_github_archives():
         if type(v) == type("") or v.get("type") != "github_archive":
             continue
         kwargs = dict(name = k, **v)
-        http_archive(
-            **{k: v.format(**kwargs)
-               for k, v
-               in kwargs.items()
-               if k not in ["repo", "type", "version"]})
+        # Format string values, but not lists
+        formatted_kwargs = {}
+        for arg_k, arg_v in kwargs.items():
+            if arg_k in ["repo", "type", "version"]:
+                continue
+            if type(arg_v) == type(""):
+                formatted_kwargs[arg_k] = arg_v.format(**kwargs)
+            else:
+                formatted_kwargs[arg_k] = arg_v
+        http_archive(**formatted_kwargs)
 
 def load_archives():
     load_github_archives()
