@@ -1,0 +1,84 @@
+name: Build Sanitizer Libraries
+
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - 'bazel/compile/**'
+    - 'bazel/deps.bzl'
+    - 'bazel/archives.bzl'
+    - 'bazel/versions.bzl'
+    - '.github/workflows/sanitizer-libs.yml'
+  pull_request:
+    paths:
+    - 'bazel/compile/**'
+    - 'bazel/deps.bzl'
+    - 'bazel/archives.bzl'
+    - 'bazel/versions.bzl'
+    - '.github/workflows/sanitizer-libs.yml'
+  release:
+    types:
+      released
+
+permissions:
+  contents: read
+
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        sanitizer: [msan, tsan]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@v3
+
+    - name: Install libtinfo
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y libtinfo5
+
+    - name: Build ${{ matrix.sanitizer }} libraries
+      run: |
+        cd bazel
+        bazel build //compile:cxx_${{ matrix.sanitizer }}
+
+    - name: Upload ${{ matrix.sanitizer }} libraries
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.sanitizer }}-libs-x86_64
+        path: bazel/bazel-bin/compile/${{ matrix.sanitizer }}-libs-x86_64.tar.gz
+        retention-days: 30
+
+  publish:
+    if: github.event_name == 'release' && startsWith(github.event.release.name, 'bazel-bins')
+    runs-on: ubuntu-24.04
+    needs:
+    - build
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16  # v4.1.8
+      with:
+        path: artifacts
+
+    - name: Upload release assets
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for artifact in artifacts/*; do
+            [[ ! -d "$artifact" ]] && continue
+            name=$(basename "$artifact")
+            file=$(ls "$artifact"/*.tar.gz)
+            echo "Uploading $file as $name.tar.gz"
+            gh release upload "${{ github.event.release.tag_name }}" \
+                "$file#$name.tar.gz" \
+                --clobber
+        done
