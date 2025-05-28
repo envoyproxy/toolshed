@@ -5,6 +5,10 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
 
+    "bins_release": "0.0.2",
+    "msan_libs_sha256": "4fd49839e35106a354fcca86c4d2f701ab5f8effe2178d13c5753cc48922a5a7",
+    "tsan_libs_sha256": "cb7df2a5a241ae585a5763664c210b0fd0604822cb14f3efef4ef4eb94820de9",
+
     "bazel_skylib": {
         "type": "github_archive",
         "repo": "bazelbuild/bazel-skylib",
