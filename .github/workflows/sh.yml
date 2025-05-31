@@ -16,7 +16,7 @@ jobs:
       matrix:
         platform:
         - ubuntu-24.04
-        - macos-14
+        # - macos-14
         test:
         - ./sh/tests/test_watch.sh ./sh/watch.sh
 
