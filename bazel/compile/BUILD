@@ -1,16 +1,13 @@
-# Sanitizer library compilation targets
-
 load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+load("//:versions.bzl", "VERSIONS")
 
 package(default_visibility = ["//visibility:public"])
 
-# Common environment variables for all sanitizer builds
 SANITIZER_ENV = {
     "CXXFLAGS": "-nostdinc++ -nostdlib++",
     "LDFLAGS": "-nostdlib++",
 }
 
-# Common CMake cache entries for sanitizer builds
 BASE_CMAKE_CACHE = {
     "CMAKE_BUILD_TYPE": "RelWithDebInfo",
     "CMAKE_INSTALL_PREFIX": ".",
@@ -62,7 +59,7 @@ cmake(
 genrule(
     name = "cxx_msan",
     srcs = [":libcxx_msan"],
-    outs = ["msan-libs-x86_64.tar.xz"],
+    outs = ["msan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"]],
     cmd = """
         mkdir -p msan-libs-x86_64/lib
         for f in $(locations :libcxx_msan); do
@@ -78,7 +75,7 @@ genrule(
 genrule(
     name = "cxx_tsan",
     srcs = [":libcxx_tsan"],
-    outs = ["tsan-libs-x86_64.tar.xz"],
+    outs = ["tsan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"]],
     cmd = """
         mkdir -p tsan-libs-x86_64/lib
         for f in $(locations :libcxx_tsan); do

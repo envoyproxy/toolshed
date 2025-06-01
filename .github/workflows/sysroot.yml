@@ -83,7 +83,7 @@ jobs:
     - name: Upload ${{ matrix.arch }} sysroot
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
       with:
-        name: sysroot-${{ matrix.arch }}
+        name: sysroot-glibc${{ steps.versions.outputs.glibc }}-libstdc++${{ steps.versions.outputs.stdcc }}-${{ matrix.arch }}
         path: sysroot-glibc${{ steps.versions.outputs.glibc }}-libstdc++${{ steps.versions.outputs.stdcc }}-${{ matrix.arch }}.tar.xz
         retention-days: 30
 
