@@ -62,7 +62,7 @@ cmake(
 genrule(
     name = "cxx_msan",
     srcs = [":libcxx_msan"],
-    outs = ["msan-libs-x86_64.tar.gz"],
+    outs = ["msan-libs-x86_64.tar.xz"],
     cmd = """
         mkdir -p msan-libs-x86_64/lib
         for f in $(locations :libcxx_msan); do
@@ -70,7 +70,7 @@ genrule(
                 cp $$f msan-libs-x86_64/lib/
             fi
         done
-        tar czf $@ msan-libs-x86_64
+        tar cJf $@ msan-libs-x86_64
     """,
     tags = ["manual"],
 )
@@ -78,7 +78,7 @@ genrule(
 genrule(
     name = "cxx_tsan",
     srcs = [":libcxx_tsan"],
-    outs = ["tsan-libs-x86_64.tar.gz"],
+    outs = ["tsan-libs-x86_64.tar.xz"],
     cmd = """
         mkdir -p tsan-libs-x86_64/lib
         for f in $(locations :libcxx_tsan); do
@@ -86,7 +86,7 @@ genrule(
                 cp $$f tsan-libs-x86_64/lib/
             fi
         done
-        tar czf $@ tsan-libs-x86_64
+        tar cJf $@ tsan-libs-x86_64
     """,
     tags = ["manual"],
 )

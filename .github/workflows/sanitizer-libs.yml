@@ -51,7 +51,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.sanitizer }}-libs-x86_64
-        path: bazel/bazel-bin/compile/${{ matrix.sanitizer }}-libs-x86_64.tar.gz
+        path: bazel/bazel-bin/compile/${{ matrix.sanitizer }}-libs-x86_64.tar.xz
         retention-days: 30
 
   publish:
@@ -76,9 +76,9 @@ jobs:
         for artifact in artifacts/*; do
             [[ ! -d "$artifact" ]] && continue
             name=$(basename "$artifact")
-            file=$(ls "$artifact"/*.tar.gz)
-            echo "Uploading $file as $name.tar.gz"
+            file=$(ls "$artifact"/*.tar.xz)
+            echo "Uploading $file as $name.tar.xz"
             gh release upload "${{ github.event.release.tag_name }}" \
-                "$file#$name.tar.gz" \
+                "$file#$name.tar.xz" \
                 --clobber
         done
