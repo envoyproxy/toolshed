@@ -30,19 +30,27 @@ jobs:
           runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
-    - name: Install debootstrap
+    - name: Install debootstrap/
       run: |
         sudo apt-get -qq update
         sudo apt-get -qq install -y debootstrap
+
     - name: Build ${{ matrix.arch }} sysroot
       run: |
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
           --variant=minbase \
-          --include=libc6-dev,libstdc++-10-dev,linux-libc-dev,libtinfo5,libnuma-dev \
+          --include=libc6,libc6-dev,linux-libc-dev,libtinfo5,libnuma-dev \
           bullseye \
           sysroot-${{ matrix.arch }} \
           http://deb.debian.org/debian/
+        echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu focal main" \
+          | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/toolchain.list
+        sudo apt-key --keyring sysroot-${{ matrix.arch }}/etc/apt/trusted.gpg adv \
+          --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
+        sudo chroot sysroot-${{ matrix.arch }} apt-get update
+        sudo chroot sysroot-${{ matrix.arch }} apt-get install -y libstdc++-13-dev
+
     - name: Package sysroot
       run: |
         sudo tar -czf sysroot-${{ matrix.arch }}.tar.gz -C sysroot-${{ matrix.arch }} .
