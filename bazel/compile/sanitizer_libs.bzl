@@ -102,13 +102,13 @@ def setup_sanitizer_libs(
         tsan_sha256 = None):
     """Setup function for WORKSPACE."""
     msan_libs(
-        name = "toolshed_msan_libs",
+        name = "msan_libs",
         version = msan_version or VERSIONS["bins_release"],
         sha256 = msan_sha256 or VERSIONS["msan_libs_sha256"],
     )
 
     tsan_libs(
-        name = "toolshed_tsan_libs",
+        name = "tsan_libs",
         version = tsan_version or VERSIONS["bins_release"],
         sha256 = tsan_sha256 or VERSIONS["tsan_libs_sha256"],
     )

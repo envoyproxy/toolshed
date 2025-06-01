@@ -30,6 +30,19 @@ jobs:
           runs-on: ubuntu-24.04-arm
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
+    - name: Set versions
+      id: versions
+      run: |
+        echo "ppa-toolchain=${PPA_TOOLCHAIN_VERSION}" >> $GITHUB_OUTPUT
+        echo "debian=${DEBIAN_VERSION}" >> $GITHUB_OUTPUT
+        echo "stdcc=${STDCC_VERSION}" >> $GITHUB_OUTPUT
+        echo "glibc=${GLIBC_VERSION}" >> $GITHUB_OUTPUT
+      env:
+        PPA_TOOLCHAIN_VERSION: focal
+        DEBIAN_VERSION: bullseye
+        STDCC_VERSION: 13
+        GLIBC_VERSION: 2.31
+
     - name: Install debootstrap/
       run: |
         sudo apt-get -qq update
@@ -39,16 +52,18 @@ jobs:
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
           --variant=minbase \
-          --include=libc6,libc6-dev,linux-libc-dev,libnuma-dev \
-          bullseye \
+          --include=${PACKAGES} \
+          ${{ steps.versions.outputs.debian }} \
           sysroot-${{ matrix.arch }} \
           http://deb.debian.org/debian/
-        echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu focal main" \
+        echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${{ steps.versions.outputs.ppa-toolchain }} main" \
           | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/toolchain.list
         sudo apt-key --keyring sysroot-${{ matrix.arch }}/etc/apt/trusted.gpg adv \
           --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
         sudo chroot sysroot-${{ matrix.arch }} apt-get update
-        sudo chroot sysroot-${{ matrix.arch }} apt-get install -y libstdc++-13-dev
+        sudo chroot sysroot-${{ matrix.arch }} apt-get install -y libstdc++-${{ steps.versions.outputs.stdcc }}-dev
+      env:
+        PACKAGES: libc6,libc6-dev,linux-libc-dev,libnuma-dev
     - name: Cleanup sysroot
       run: |
         sudo chroot sysroot-${{ matrix.arch }} apt-get clean
@@ -61,12 +76,15 @@ jobs:
         sudo rm -rf sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/*
     - name: Package sysroot
       run: |
-        sudo tar -cJf sysroot-${{ matrix.arch }}.tar.xz -C sysroot-${{ matrix.arch }} .
+        sudo tar -cJf \
+            sysroot-glibc${{ steps.versions.outputs.glibc }}-libstdc++${{ steps.versions.outputs.stdcc }}-${{ matrix.arch }}.tar.xz \
+            -C sysroot-${{ matrix.arch }} \
+            .
     - name: Upload ${{ matrix.arch }} sysroot
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
       with:
         name: sysroot-${{ matrix.arch }}
-        path: sysroot-${{ matrix.arch }}.tar.xz
+        path: sysroot-glibc${{ steps.versions.outputs.glibc }}-libstdc++${{ steps.versions.outputs.stdcc }}-${{ matrix.arch }}.tar.xz
         retention-days: 30
 
   publish:
