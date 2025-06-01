@@ -39,6 +39,7 @@ jobs:
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
           --variant=minbase \
+          --include=libc6-dev,libstdc++-10-dev,linux-libc-dev,libtinfo5,libnuma-dev \
           bullseye \
           sysroot-${{ matrix.arch }} \
           http://deb.debian.org/debian/
