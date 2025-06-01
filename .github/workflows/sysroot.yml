@@ -39,7 +39,6 @@ jobs:
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
           --variant=minbase \
-          --include=build-essential \
           bullseye \
           sysroot-${{ matrix.arch }} \
           http://deb.debian.org/debian/
