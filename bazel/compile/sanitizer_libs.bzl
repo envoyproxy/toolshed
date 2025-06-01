@@ -8,10 +8,11 @@ def _sanitizer_libs_impl(ctx, sanitizer):
     if arch == "x86_64":
         # Download from releases
         ctx.download_and_extract(
-            url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/{sanitizer}-libs-{arch}.tar.gz".format(
+            url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/{sanitizer}-llvm{llvm_version}-{arch}.tar.xz".format(
                 arch = arch,
                 version = ctx.attr.version,
                 sanitizer = sanitizer,
+                llvm_version = VERSIONS["llvm"],
             ),
             sha256 = ctx.attr.sha256,
             stripPrefix = "{}-libs-{}".format(sanitizer, arch),

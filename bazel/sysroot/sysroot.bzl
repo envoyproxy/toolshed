@@ -16,9 +16,11 @@ def _sysroot_impl(ctx):
     """Implementation for sysroot repository rule."""
     arch = ctx.attr.arch or _get_platform_arch(ctx)
     ctx.download_and_extract(
-        url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-{arch}.tar.gz".format(
+        url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
             version = ctx.attr.version,
             arch = arch,
+            glibc_version = "2.31",
+            stdcc_version = "13",
         ),
         sha256 = ctx.attr.sha256,
         stripPrefix = "",
