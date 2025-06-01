@@ -5,11 +5,11 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
 
-    "bins_release": "0.1.1",
-    "msan_libs_sha256": "62669e5a8f2649b6bec5b1345cdb6aff4f4f6a5867a7ccce6e009486aacf1d91",
-    "tsan_libs_sha256": "ccd866a2acf4e5c988ef2ea44633e2f9e46fed1d9fffbc62b2cbd60f3dd71bb5",
-    "sysroot_amd64_sha256": "c4c7331d96cd67bb0c85f349eb9bff3f8a2cbbebdbeccf770a88179a143c0490",
-    "sysroot_arm64_sha256": "ceace25eba20cb195f25e0a56dd809a7f6dd858a0b87d04f72199a33b0933c32",
+    "bins_release": "0.1.2",
+    "msan_libs_sha256": "865afe37274e793bcee92c01ddcac7404ba3b3602d0db8dc49c44e7f495b64f7",
+    "tsan_libs_sha256": "6b47450274cd77481988638674d1e8425aad43a70ed81c22ae87bda50014df7e",
+    "sysroot_amd64_sha256": "aefccddef21efd9a71fdcad7ff26b65ee77d21df6914036b3763d65c077cc28d",
+    "sysroot_arm64_sha256": "25050313bd46ce3fb95df415a4e28248a557abffa81b5cb1edd2778a9e3148dd",
 
     "bazel_skylib": {
         "type": "github_archive",
