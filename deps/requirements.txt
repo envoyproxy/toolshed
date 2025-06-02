@@ -25,6 +25,7 @@ flake8>=6
 frozendict
 gidgethub
 jinja2>=3.1.4
+mcp
 multidict>=6.0.2
 mypy==1.13.0
 mypy-abstracts
