@@ -63,7 +63,7 @@ jobs:
         sudo chroot sysroot-${{ matrix.arch }} apt-get update
         sudo chroot sysroot-${{ matrix.arch }} apt-get install -y libstdc++-${{ steps.versions.outputs.stdcc }}-dev
       env:
-        PACKAGES: libc6,libc6-dev,linux-libc-dev,libnuma-dev,libudev-dev,pkg-config
+        PACKAGES: libc6,libc6-dev,linux-libc-dev,libnuma-dev,libudev-dev
     - name: Cleanup sysroot
       run: |
         sudo chroot sysroot-${{ matrix.arch }} apt-get clean
