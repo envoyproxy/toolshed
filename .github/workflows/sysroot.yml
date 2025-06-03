@@ -52,18 +52,24 @@ jobs:
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
           --variant=minbase \
-          --include=${PACKAGES} \
           ${{ steps.versions.outputs.debian }} \
           sysroot-${{ matrix.arch }} \
           http://deb.debian.org/debian/
+        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
+        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y ${PACKAGES}
         echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${{ steps.versions.outputs.ppa-toolchain }} main" \
           | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/toolchain.list
         sudo apt-key --keyring sysroot-${{ matrix.arch }}/etc/apt/trusted.gpg adv \
           --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
-        sudo chroot sysroot-${{ matrix.arch }} apt-get update
-        sudo chroot sysroot-${{ matrix.arch }} apt-get install -y libstdc++-${{ steps.versions.outputs.stdcc }}-dev
+        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
+        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install -y libstdc++-${{ steps.versions.outputs.stdcc }}-dev
       env:
-        PACKAGES: libc6,libc6-dev,linux-libc-dev,libnuma-dev,libtool
+        PACKAGES: >-
+          libc6
+          libc6-dev
+          linux-libc-dev
+          libnuma-dev
+          libtool
     - name: Cleanup sysroot
       run: |
         sudo chroot sysroot-${{ matrix.arch }} apt-get clean
