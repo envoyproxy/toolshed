@@ -26,8 +26,16 @@ jobs:
         include:
         - arch: amd64
           runs-on: ubuntu-24.04
+          variant: base
         - arch: arm64
           runs-on: ubuntu-24.04-arm
+          variant: base
+        - arch: amd64
+          runs-on: ubuntu-24.04
+          variant: libstdcxx
+        - arch: arm64
+          runs-on: ubuntu-24.04-arm
+          variant: libstdcxx
     steps:
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # v4.2.2
     - name: Set versions
@@ -47,7 +55,7 @@ jobs:
       run: |
         sudo apt-get -qq update
         sudo apt-get -qq install -y debootstrap
-    - name: Build ${{ matrix.arch }} sysroot
+    - name: Build ${{ matrix.arch }} ${{ matrix.variant }} sysroot
       run: |
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
@@ -57,12 +65,14 @@ jobs:
           http://deb.debian.org/debian/
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y ${PACKAGES}
-        echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${{ steps.versions.outputs.ppa-toolchain }} main" \
-          | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/toolchain.list
-        sudo apt-key --keyring sysroot-${{ matrix.arch }}/etc/apt/trusted.gpg adv \
-          --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
-        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
-        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install -y libstdc++-${{ steps.versions.outputs.stdcc }}-dev
+        if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
+            echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${{ steps.versions.outputs.ppa-toolchain }} main" \
+              | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/toolchain.list
+            sudo apt-key --keyring sysroot-${{ matrix.arch }}/etc/apt/trusted.gpg adv \
+              --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
+            sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
+            sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install -y libstdc++-${{ steps.versions.outputs.stdcc }}-dev
+        fi
       env:
         PACKAGES: >-
           libc6
@@ -79,18 +89,27 @@ jobs:
         sudo rm -rf sysroot-${{ matrix.arch }}/usr/share/man/*
         sudo rm -rf sysroot-${{ matrix.arch }}/usr/share/info/*
         sudo rm -rf sysroot-${{ matrix.arch }}/usr/share/lintian/*
-        sudo rm -rf sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/*
+        if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
+            sudo rm -rf sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/*
+        fi
     - name: Package sysroot
       run: |
-        sudo tar -cJf \
-            sysroot-glibc${{ steps.versions.outputs.glibc }}-libstdc++${{ steps.versions.outputs.stdcc }}-${{ matrix.arch }}.tar.xz \
-            -C sysroot-${{ matrix.arch }} \
-            .
-    - name: Upload ${{ matrix.arch }} sysroot
+        if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
+            sudo tar -cJf \
+                sysroot-glibc${{ steps.versions.outputs.glibc }}-libstdc++${{ steps.versions.outputs.stdcc }}-${{ matrix.arch }}.tar.xz \
+                -C sysroot-${{ matrix.arch }} \
+                .
+        else
+            sudo tar -cJf \
+                sysroot-glibc${{ steps.versions.outputs.glibc }}-${{ matrix.arch }}.tar.xz \
+                -C sysroot-${{ matrix.arch }} \
+                .
+        fi
+    - name: Upload ${{ matrix.arch }} ${{ matrix.variant }} sysroot
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
       with:
-        name: sysroot-glibc${{ steps.versions.outputs.glibc }}-libstdc++${{ steps.versions.outputs.stdcc }}-${{ matrix.arch }}
-        path: sysroot-glibc${{ steps.versions.outputs.glibc }}-libstdc++${{ steps.versions.outputs.stdcc }}-${{ matrix.arch }}.tar.xz
+        name: sysroot-glibc${{ steps.versions.outputs.glibc }}${{ matrix.variant == 'libstdcxx' && format('-libstdc++{0}', steps.versions.outputs.stdcc) || '' }}-${{ matrix.arch }}
+        path: sysroot-glibc${{ steps.versions.outputs.glibc }}${{ matrix.variant == 'libstdcxx' && format('-libstdc++{0}', steps.versions.outputs.stdcc) || '' }}-${{ matrix.arch }}.tar.xz
         retention-days: 30
 
   publish:
