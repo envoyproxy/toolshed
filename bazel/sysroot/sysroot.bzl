@@ -12,6 +12,77 @@ def _get_platform_arch(ctx):
     else:
         fail("Unsupported architecture: {}".format(arch))
 
+def _minimal_sysroot_impl(ctx):
+    """Implementation for minimal sysroot repository rule."""
+    arch = ctx.attr.arch or _get_platform_arch(ctx)
+    ctx.download_and_extract(
+        url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
+            version = ctx.attr.version,
+            arch = arch,
+            glibc_version = "2.31",
+        ),
+        sha256 = ctx.attr.sha256,
+        stripPrefix = "",
+    )
+    ctx.file("BUILD.bazel", """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "sysroot",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "**/*:*",
+            "**/*.pl",
+        ],
+    ),
+)
+
+filegroup(
+    name = "headers",
+    srcs = glob(
+        ["usr/include/**"],
+        exclude = ["**/*:*"],
+    ),
+)
+
+filegroup(
+    name = "libs",
+    srcs = glob(
+        [
+            "usr/lib/**/*.a",
+            "usr/lib/**/*.so*",
+            "lib/**/*.a",
+            "lib/**/*.so*",
+        ],
+        exclude = ["**/*:*"],
+    ),
+)
+
+filegroup(
+    name = "toolchain_sysroot",
+    srcs = [":sysroot"],
+)
+""")
+
+minimal_sysroot = repository_rule(
+    implementation = _minimal_sysroot_impl,
+    attrs = {
+        "version": attr.string(
+            mandatory = True,
+            doc = "Release version to download (e.g., '1.0.0')",
+        ),
+        "sha256": attr.string(
+            mandatory = True,
+            doc = "SHA256 hash of the minimal sysroot archive",
+        ),
+        "arch": attr.string(
+            doc = "Architecture to download (amd64 or arm64). If not specified, uses host architecture",
+        ),
+    },
+    doc = "Downloads minimal sysroot (no libstdc++) for the specified or host architecture",
+)
+
 def _sysroot_impl(ctx):
     """Implementation for sysroot repository rule."""
     arch = ctx.attr.arch or _get_platform_arch(ctx)
@@ -87,25 +158,42 @@ sysroot = repository_rule(
 def setup_sysroots(
         version = None,
         amd64_sha256 = None,
-        arm64_sha256 = None):
-    """Setup function for WORKSPACE to configure sysroots.
+        arm64_sha256 = None,
+        amd64_libstdcxx_sha256 = None,
+        arm64_libstdcxx_sha256 = None):
+    """Setup function for WORKSPACE to configure all sysroots.
 
     Args:
         version: Version of sysroot release to use
-        amd64_sha256: SHA256 hash for amd64 sysroot
-        arm64_sha256: SHA256 hash for arm64 sysroot
+        amd64_sha256: SHA256 hash for amd64 base sysroot
+        arm64_sha256: SHA256 hash for arm64 base sysroot
+        amd64_libstdcxx_sha256: SHA256 hash for amd64 sysroot with libstdc++
+        arm64_libstdcxx_sha256: SHA256 hash for arm64 sysroot with libstdc++
     """
-    # AMD64 sysroot
-    sysroot(
+    # Base sysroots - clean names
+    minimal_sysroot(
         name = "sysroot_linux_amd64",
         version = version or VERSIONS["bins_release"],
         sha256 = amd64_sha256 or VERSIONS["sysroot_amd64_sha256"],
         arch = "amd64",
     )
-    # ARM64 sysroot
-    sysroot(
+    minimal_sysroot(
         name = "sysroot_linux_arm64",
         version = version or VERSIONS["bins_release"],
         sha256 = arm64_sha256 or VERSIONS["sysroot_arm64_sha256"],
+        arch = "arm64",
+    )
+
+    # Extended sysroots with libstdc++
+    sysroot(
+        name = "sysroot_linux_amd64_libstdcxx",
+        version = version or VERSIONS["bins_release"],
+        sha256 = amd64_libstdcxx_sha256 or VERSIONS["sysroot_amd64_libstdcxx_sha256"],
+        arch = "amd64",
+    )
+    sysroot(
+        name = "sysroot_linux_arm64_libstdcxx",
+        version = version or VERSIONS["bins_release"],
+        sha256 = arm64_libstdcxx_sha256 or VERSIONS["sysroot_arm64_libstdcxx_sha256"],
         arch = "arm64",
     )
