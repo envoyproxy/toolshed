@@ -16,17 +16,17 @@ def _libtool_impl(ctx):
     """Implementation for libtool repository rule."""
     arch = ctx.attr.arch or _get_platform_arch(ctx)
     version = ctx.attr.version or VERSIONS["libtool"]
-
+    sha256 = ctx.attr.sha256 or VERSIONS["libtool_%s_sha256" % arch]
+    bins_version = ctx.attr.bins_version or VERSIONS["bins_release"]
     ctx.download_and_extract(
         url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{bins_version}/libtool-{version}-{arch}.tar.xz".format(
-            bins_version = ctx.attr.bins_version or VERSIONS["bins_release"],
+            bins_version = bins_verison,
             version = version,
             arch = arch,
         ),
-        sha256 = ctx.attr.sha256,
+        sha256 = sha256,
         stripPrefix = "libtool-{}".format(arch),
     )
-
     ctx.file("BUILD.bazel", """
 package(default_visibility = ["//visibility:public"])
 
@@ -66,7 +66,6 @@ libtool = repository_rule(
             doc = "Version of toolshed bins release to download from",
         ),
         "sha256": attr.string(
-            mandatory = True,
             doc = "SHA256 hash of the libtool archive",
         ),
         "arch": attr.string(
@@ -75,3 +74,11 @@ libtool = repository_rule(
     },
     doc = "Downloads prebuilt libtool for the specified or host architecture",
 )
+
+def setup_libtool(version = None, bins_version = None, sha256 = None, arch = None):
+    libtool(
+        version = version or VERSIONS["libtool"],
+        bins_version = bins_version or VERSIONS["bins_version"],
+        sha256 = sha256 or VERSIONS["sha256"],
+        arch = arch,
+    )
