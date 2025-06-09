@@ -94,6 +94,10 @@ configure_make(
         "--disable-dependency-tracking",
         "--disable-ltdl-install",
     ],
+    env = {
+        "M4": "$$EXT_BUILD_DEPS/m4_build/bin/m4",
+    },
+    deps = [":m4_build"],
     lib_source = "@libtool_source//:all",
     out_binaries = [
         "libtool",
@@ -111,18 +115,79 @@ configure_make(
     sed -i 's|^  pkgauxdir=.*|  pkgauxdir="\\${datadir}/libtool/build-aux"|' $INSTALLDIR/bin/libtoolize
     sed -i 's|^  pkgltdldir=.*|  pkgltdldir="\\${datadir}/libtool"|' $INSTALLDIR/bin/libtoolize
     sed -i 's|^  aclocaldir=.*|  aclocaldir="\\${datadir}/aclocal"|' $INSTALLDIR/bin/libtoolize
-    echo "# BOOM" >>  $INSTALLDIR/bin/libtoolize
     """,
     tags = ["manual"],
 )
 
-# Filegroup to use as toolchain data
-filegroup(
-    name = "libtool_files",
-    srcs = [":libtool_build"],
+configure_make(
+    name = "m4_build",
+    lib_source = "@m4_source//:all",
+    out_binaries = ["m4"],
     tags = ["manual"],
+    configure_in_place = True,
+    configure_options = [
+        "--disable-dependency-tracking",
+        "--disable-nls",
+        "--without-libsigsegv",
+        "--with-included-regex=yes",
+    ],
+    # Skip doc directory during build
+    env = {
+        "SUBDIRS": "lib src",
+    },
 )
 
+configure_make(
+    name = "autoconf_build",
+    configure_options = [
+        "--disable-dependency-tracking",
+    ],
+    env = {
+        "M4": "$$EXT_BUILD_DEPS/m4_build/bin/m4",
+    },
+    lib_source = "@autoconf_source//:all",
+    out_binaries = [
+        "autoconf",
+        "autoheader",
+        "autom4te",
+        "autoreconf",
+        "autoscan",
+        "autoupdate",
+        "ifnames",
+    ],
+    out_data_dirs = ["share/autoconf"],
+    tags = ["manual"],
+    deps = [":m4_build"],
+)
+
+configure_make(
+    name = "automake_build",
+    configure_options = [
+        "--disable-dependency-tracking",
+    ],
+    env = {
+        "AUTOCONF": "$$EXT_BUILD_DEPS/autoconf_build/bin/autoconf",
+        "AUTOM4TE": "$$EXT_BUILD_DEPS/autoconf_build/bin/autom4te",
+        "M4": "$$EXT_BUILD_DEPS/m4_build/bin/m4",
+        "PATH": "$$EXT_BUILD_DEPS/autoconf_build/bin:$$EXT_BUILD_DEPS/m4_build/bin:$$PATH",
+    },
+    lib_source = "@automake_source//:all",
+    out_binaries = [
+        "automake",
+        "aclocal",
+    ],
+    out_data_dirs = [
+        "share/aclocal-1.17",
+        "share/automake-1.17",
+    ],
+    tags = ["manual"],
+    deps = [
+        ":autoconf_build",
+        ":m4_build",
+    ],
+)
+
+# Package autotools components
 genrule(
     name = "libtool",
     srcs = [":libtool_build"],
@@ -139,6 +204,92 @@ genrule(
         fi
     done
     tar cJf $@ libtool-$$ARCH
+    """,
+    tags = ["manual"],
+)
+
+genrule(
+    name = "m4",
+    srcs = [":m4_build"],
+    outs = ["m4-%s.tar.xz" % VERSIONS["m4"]],
+    cmd = """
+    ARCH=$$(uname -m)
+    mkdir -p m4-$$ARCH/bin
+    for f in $(locations :m4_build); do
+        if [[ $$f == */bin/m4 ]]; then
+            cp $$f m4-$$ARCH/bin/
+        fi
+    done
+    tar cJf $@ m4-$$ARCH
+    """,
+    tags = ["manual"],
+)
+
+genrule(
+    name = "autoconf",
+    srcs = [":autoconf_build"],
+    outs = ["autoconf-%s.tar.xz" % VERSIONS["autoconf"]],
+    cmd = """
+    ARCH=$$(uname -m)
+    mkdir -p autoconf-$$ARCH/bin autoconf-$$ARCH/share
+    for f in $(locations :autoconf_build); do
+        if [[ $$f == */bin/* ]]; then
+            cp $$f autoconf-$$ARCH/bin/
+        elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
+            dirname=$$(basename $$f)
+            cp -rL $$f autoconf-$$ARCH/share/$$dirname
+        fi
+    done
+    tar cJf $@ autoconf-$$ARCH
+    """,
+    tags = ["manual"],
+)
+
+genrule(
+    name = "automake",
+    srcs = [":automake_build"],
+    outs = ["automake-%s.tar.xz" % VERSIONS["automake"]],
+    cmd = """
+    ARCH=$$(uname -m)
+    mkdir -p automake-$$ARCH/bin automake-$$ARCH/share
+    for f in $(locations :automake_build); do
+        if [[ $$f == */bin/* ]]; then
+            cp $$f automake-$$ARCH/bin/
+        elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
+            dirname=$$(basename $$f)
+            cp -rL $$f automake-$$ARCH/share/$$dirname
+        fi
+    done
+    tar cJf $@ automake-$$ARCH
+    """,
+    tags = ["manual"],
+)
+
+# Combined autotools package
+genrule(
+    name = "autotools",
+    srcs = [
+        ":m4_build",
+        ":autoconf_build",
+        ":automake_build",
+        ":libtool_build",
+    ],
+    outs = ["autotools-%s-%s-%s-%s.tar.xz" % (VERSIONS["m4"], VERSIONS["autoconf"], VERSIONS["automake"], VERSIONS["libtool"])],
+    cmd = """
+    ARCH=$$(uname -m)
+    mkdir -p autotools-$$ARCH/bin autotools-$$ARCH/share
+
+    # Copy all binaries
+    for f in $(locations :m4_build) $(locations :autoconf_build) $(locations :automake_build) $(locations :libtool_build); do
+        if [[ $$f == */bin/* ]] && [[ -f $$f ]]; then
+            cp $$f autotools-$$ARCH/bin/
+        elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
+            dirname=$$(basename $$f)
+            cp -rL $$f autotools-$$ARCH/share/$$dirname
+        fi
+    done
+
+    tar cJf $@ autotools-$$ARCH
     """,
     tags = ["manual"],
 )
