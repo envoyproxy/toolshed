@@ -8,13 +8,51 @@ VERSIONS = {
     "python": "3.12",
     "libtool": VERSION_LIBTOOL,
 
-    "bins_release": "0.1.6",
-    "msan_libs_sha256": "a093b090552afaea86577c69ef202df7230778f878557caa0292fffa69bf94d4",
-    "tsan_libs_sha256": "2bb532df43bb816784fbbb911e68f40a731d78ad53eacc100b6595899e11b9ff",
-    "sysroot_amd64_sha256": "b16027eaf1820faa8f31d3aad9918f17bb3a469e9c91ab2bae44ba41dbd42956",
-    "sysroot_arm64_sha256": "4492a91f7daa0c8400aaf33d9ed392dd5662a55e7df45fd6c45f4f34f3254fff",
-    "libtool_aarch64_sha256": "96eeafc3ee27fbb88a71e5949cd7c6903eadf050a5b7878ac695ff1aa7ece0d9",
-    "libtool_x86_64_sha256": "39c6dd9c25569fee5ae82df78aa88c3876e3b2e793899164a2cdfec7fca5d161",
+    "bins_release": "0.1.9",
+    "msan_libs_sha256": "b33ace12693a6ac79acb974d6f9aaa2547c27d1ef2489842bb1caeabf3438f00",
+    "tsan_libs_sha256": "2d472297f41b1af72798434bb3ca22e9bb6941210f41a096cb5b107044ccdd42",
+    "sysroot_amd64_sha256": "d4d1e5bc89d4037d2a8b90fc18cb7a1b3ed5757291fcf06b65196debad38e5a3",
+    "sysroot_arm64_sha256": "9ef60bd18bc01800449cd40ae242f5aa85a4905cf9adfb5333bde5bc3be0dab4",
+    "libtool_aarch64_sha256": "36afaefc991f06d7e817bf93c4d87a2367f2ba3b335ebf6b9ae6dab0ee4f8af0",
+    "libtool_x86_64_sha256": "bdbbbc231c2ab0ea09f4771a11135b00dea4361ea1adcfb8f1f9a517c93e8e74",
+
+    # Autotools versions
+    "m4": "1.4.19",
+    "autoconf": "2.72",
+    "automake": "1.17",
+
+    # Autotools combined package SHA256 hashes
+    "autotools_x86_64_sha256": "PLACEHOLDER_BUILD_AND_GET_SHA256",
+    "autotools_aarch64_sha256": "PLACEHOLDER_BUILD_AND_GET_SHA256",
+
+    "m4_source": {
+        "type": "http_archive",
+        "sha256": "63aede5c6d33b6d9b13511cd0be2cac046f2e70fd0a07aa9573a04a82783af96",
+        "version": "1.4.19",
+        "url": "https://mirrors.kernel.org/gnu/m4/m4-{version}.tar.xz",
+        "strip_prefix": "m4-{version}",
+        "patches": ["//compile:m4-sysroot.patch"],
+        "patch_args": ["-p1"],
+        "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
+    },
+
+    "autoconf_source": {
+        "type": "http_archive",
+        "sha256": "ba885c1319578d6c94d46e9b0dceb4014caafe2490e437a0dbca3f270a223f5a",
+        "version": "2.72",
+        "url": "https://mirrors.kernel.org/gnu/autoconf/autoconf-{version}.tar.xz",
+        "strip_prefix": "autoconf-{version}",
+        "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
+    },
+
+    "automake_source": {
+        "type": "http_archive",
+        "sha256": "8920c1fc411e13b90bf704ef9db6f29d540e76d232cb3b2c9f4dc4cc599bd990",
+        "version": "1.17",
+        "url": "https://mirrors.kernel.org/gnu/automake/automake-{version}.tar.xz",
+        "strip_prefix": "automake-{version}",
+        "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
+    },
 
     "aspect_bazel_lib": {
         "type": "github_archive",
@@ -95,7 +133,7 @@ VERSIONS = {
         "type": "http_archive",
         "sha256": "f81f5860666b0bc7d84baddefa60d1cb9fa6fceb2398cc3baca6afaa60266675",
         "version": VERSION_LIBTOOL,
-        "url": "https://ftp.wayne.edu/gnu/libtool/libtool-{version}.tar.xz",
+        "url": "https://mirrors.kernel.org/gnu/libtool/libtool-{version}.tar.xz",
         "strip_prefix": "libtool-{version}",
         "build_file_content": """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
     },
