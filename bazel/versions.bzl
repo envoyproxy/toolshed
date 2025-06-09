@@ -8,11 +8,13 @@ VERSIONS = {
     "python": "3.12",
     "libtool": VERSION_LIBTOOL,
 
-    "bins_release": "0.1.3",
-    "msan_libs_sha256": "70d7054d85c27401d84ba9d82e99a2a589e6646a7b49e474866bce3737e51579",
-    "tsan_libs_sha256": "30692f7bbd5a084a55caa392bbfeda758b5bdb3e3b9711c6d6ced54ea5f37756",
-    "sysroot_amd64_sha256": "090bb9d8852ebfff88d3c4ecda6e9fc134e22dfc1595cf32d2bc6201b8168927",
-    "sysroot_arm64_sha256": "c1668c679b3a6946e62d9e93da479fe4646b9c82f3fdc578526370c8e1fe710e",
+    "bins_release": "0.1.6",
+    "msan_libs_sha256": "a093b090552afaea86577c69ef202df7230778f878557caa0292fffa69bf94d4",
+    "tsan_libs_sha256": "2bb532df43bb816784fbbb911e68f40a731d78ad53eacc100b6595899e11b9ff",
+    "sysroot_amd64_sha256": "b16027eaf1820faa8f31d3aad9918f17bb3a469e9c91ab2bae44ba41dbd42956",
+    "sysroot_arm64_sha256": "4492a91f7daa0c8400aaf33d9ed392dd5662a55e7df45fd6c45f4f34f3254fff",
+    "libtool_aarch64_sha256": "96eeafc3ee27fbb88a71e5949cd7c6903eadf050a5b7878ac695ff1aa7ece0d9",
+    "libtool_x86_64_sha256": "39c6dd9c25569fee5ae82df78aa88c3876e3b2e793899164a2cdfec7fca5d161",
 
     "aspect_bazel_lib": {
         "type": "github_archive",
