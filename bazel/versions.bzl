@@ -1,15 +1,27 @@
 
+VERSION_LIBTOOL = "2.5.4"
+
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": "18.1.8",
     "ninja": "1.12.0",
     "python": "3.12",
+    "libtool": VERSION_LIBTOOL,
 
     "bins_release": "0.1.3",
     "msan_libs_sha256": "70d7054d85c27401d84ba9d82e99a2a589e6646a7b49e474866bce3737e51579",
     "tsan_libs_sha256": "30692f7bbd5a084a55caa392bbfeda758b5bdb3e3b9711c6d6ced54ea5f37756",
     "sysroot_amd64_sha256": "090bb9d8852ebfff88d3c4ecda6e9fc134e22dfc1595cf32d2bc6201b8168927",
     "sysroot_arm64_sha256": "c1668c679b3a6946e62d9e93da479fe4646b9c82f3fdc578526370c8e1fe710e",
+
+    "aspect_bazel_lib": {
+        "type": "github_archive",
+        "repo": "aspect-build/bazel-lib",
+        "version": "2.16.0",
+        "sha256": "092f841dd9ea8e736ea834f304877a25190a762d0f0a6c8edac9f94aac8bbf16",
+        "strip_prefix": "bazel-lib-{version}",
+        "url": "https://github.com/{repo}/archive/v{version}.tar.gz",
+    },
 
     "bazel_skylib": {
         "type": "github_archive",
@@ -66,5 +78,14 @@ VERSIONS = {
         "sha256": "fded02569617d24551a0ad09c0750dc53a3097237157b828a245681f0ae739f8",
         "url": "https://github.com/{repo}/releases/download/v{version}/{name}-v{version}.tar.gz",
         "strip_prefix": "{name}-v{version}",
+    },
+
+    "libtool_source": {
+        "type": "http_archive",
+        "sha256": "f81f5860666b0bc7d84baddefa60d1cb9fa6fceb2398cc3baca6afaa60266675",
+        "version": VERSION_LIBTOOL,
+        "url": "https://ftp.wayne.edu/gnu/libtool/libtool-{version}.tar.xz",
+        "strip_prefix": "libtool-{version}",
+        "build_file_content": """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
     },
 }

@@ -1,0 +1,110 @@
+name: Build libtool
+
+on:
+  push:
+    branches:
+    - main
+    paths:
+    - 'bazel/compile/**'
+    - 'bazel/deps.bzl'
+    - 'bazel/archives.bzl'
+    - 'bazel/versions.bzl'
+    - '.github/workflows/libtool.yml'
+  pull_request:
+    paths:
+    - 'bazel/compile/**'
+    - 'bazel/deps.bzl'
+    - 'bazel/archives.bzl'
+    - 'bazel/versions.bzl'
+    - '.github/workflows/libtool.yml'
+  release:
+    types:
+      released
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - arch: x86_64
+          runs-on: ubuntu-22.04
+        - arch: aarch64
+          runs-on: ubuntu-22.04-arm
+    steps:
+    - uses: actions/checkout@v4
+    - name: Fetch versions
+      id: deps
+      run: |
+        cd bazel
+        bazel build //:deps.json
+        VERSIONS=$(cat bazel-bin/deps.json)
+        echo "versions=${VERSIONS}" >> $GITHUB_OUTPUT
+    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.16
+      id: version
+      name: Libtool version
+      with:
+        input: ${{ steps.deps.outputs.versions }}
+        options: -r
+        filter: .libtool
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@v3
+    - name: Install libtinfo
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y libtinfo5
+
+    - name: Build libtool for ${{ matrix.arch }}
+      run: |
+        echo "VERSION: ${{ steps.version.outputs.value }}"
+        cd bazel
+        bazel build //compile:libtool || {
+            config_log=$(find ${HOME}/.cache/bazel -name "config.log" -path "*/make.build_tmpdir/*" 2>/dev/null | head -1)
+            if [[ -n "$config_log" ]]; then
+                echo "=== CONFIG.LOG ==="
+                cat "$config_log"
+                echo "=================="
+            else
+                echo "NO CONFIG.LOG FOUND!!!"
+            fi
+            exit 1
+        }
+        cp bazel-bin/compile/libtool-${{ steps.version.outputs.value }}.tar.xz \
+           bazel-bin/compile/libtool-${{ steps.version.outputs.value }}-${{ matrix.arch }}.tar.xz
+    - name: Upload libtool ${{ matrix.arch }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: libtool-${{ steps.version.outputs.value }}-${{ matrix.arch }}
+        path: bazel/bazel-bin/compile/libtool-2.5.4-${{ matrix.arch }}.tar.xz
+        retention-days: 30
+
+  publish:
+    if: github.event_name == 'release' && startsWith(github.event.release.name, 'bazel-bins')
+    runs-on: ubuntu-24.04
+    needs:
+    - build
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v4
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+    - name: Upload release assets
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for artifact in artifacts/*; do
+            [[ ! -d "$artifact" ]] && continue
+            name=$(basename "$artifact")
+            file=$(ls "$artifact"/*.tar.xz)
+            echo "Uploading $file as $name.tar.xz"
+            gh release upload "${{ github.event.release.tag_name }}" \
+                "$file#$name.tar.xz" \
+                --clobber
+        done

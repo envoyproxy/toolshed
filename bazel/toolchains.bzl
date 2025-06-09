@@ -8,3 +8,7 @@ def load_toolchains():
         name = "python%s" % VERSIONS["python"].replace(".", "_"),
         python_version = VERSIONS["python"].replace("-", "_"),
     )
+    native.register_toolchains(
+        "@envoy_toolshed//toolchains/libtool:hermetic_libtool_toolchain",
+        "@envoy_toolshed//toolchains/libtool:preinstalled_libtool_toolchain",
+    )
