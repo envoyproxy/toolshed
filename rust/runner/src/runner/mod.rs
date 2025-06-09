@@ -33,7 +33,7 @@ macro_rules! runner {
             std::sync::Arc::new(self.clone())
         }
 
-        fn commands(&self) -> toolshed_runner::runner::CommandsFn<$handler_type> {
+        fn commands(&self) -> toolshed_runner::runner::CommandsFn<'_, $handler_type> {
             let mut commands: toolshed_runner::runner::CommandsFn<$handler_type> = std::collections::HashMap::new();
             $(
                 commands.insert($cmd_name, std::sync::Arc::new(|s: &std::sync::Arc<dyn toolshed_runner::runner::Runner<$handler_type>>| {
