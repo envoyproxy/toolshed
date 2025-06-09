@@ -1,4 +1,4 @@
-load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake", "configure_make")
 load("//:versions.bzl", "VERSIONS")
 
 package(default_visibility = ["//visibility:public"])
@@ -84,6 +84,50 @@ genrule(
             fi
         done
         tar cJf $@ tsan-libs-x86_64
+    """,
+    tags = ["manual"],
+)
+
+configure_make(
+    name = "libtool_build",
+    configure_options = [
+        "--disable-dependency-tracking",
+        "--disable-ltdl-install",
+    ],
+    lib_source = "@libtool_source//:all",
+    out_binaries = [
+        "libtool",
+        "libtoolize",
+    ],
+    out_data_dirs = [
+        "share/aclocal",
+        "share/libtool",
+    ],
+    tags = ["manual"],
+)
+
+# Filegroup to use as toolchain data
+filegroup(
+    name = "libtool_files",
+    srcs = [":libtool_build"],
+    tags = ["manual"],
+)
+
+genrule(
+    name = "libtool",
+    srcs = [":libtool_build"],
+    outs = ["libtool-%s.tar.xz" % VERSIONS["libtool"]],
+    cmd = """
+        ARCH=$$(uname -m)
+        mkdir -p libtool-$$ARCH/bin libtool-$$ARCH/share
+        for f in $(locations :libtool_build); do
+            if [[ $$f == */bin/libtool* ]]; then
+                cp $$f libtool-$$ARCH/bin/
+            elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
+                cp -r $$f libtool-$$ARCH/share/
+            fi
+        done
+        tar cJf $@ libtool-$$ARCH
     """,
     tags = ["manual"],
 )
