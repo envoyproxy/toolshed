@@ -124,7 +124,8 @@ genrule(
             if [[ $$f == */bin/libtool* ]]; then
                 cp $$f libtool-$$ARCH/bin/
             elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
-                cp -r $$f libtool-$$ARCH/share/
+                # Use cp -rL to dereference symlinks
+                cp -rL $$f libtool-$$ARCH/share/
             fi
         done
         tar cJf $@ libtool-$$ARCH
