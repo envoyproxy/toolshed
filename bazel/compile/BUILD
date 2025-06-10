@@ -118,17 +118,18 @@ genrule(
     srcs = [":libtool_build"],
     outs = ["libtool-%s.tar.xz" % VERSIONS["libtool"]],
     cmd = """
-        ARCH=$$(uname -m)
-        mkdir -p libtool-$$ARCH/bin libtool-$$ARCH/share
-        for f in $(locations :libtool_build); do
-            if [[ $$f == */bin/libtool* ]]; then
-                cp $$f libtool-$$ARCH/bin/
-            elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
-                # Use cp -rL to dereference symlinks
-                cp -rL $$f libtool-$$ARCH/share/
-            fi
-        done
-        tar cJf $@ libtool-$$ARCH
+    ARCH=$$(uname -m)
+    mkdir -p libtool-$$ARCH/bin libtool-$$ARCH/share
+    for f in $(locations :libtool_build); do
+        if [[ $$f == */bin/libtool* ]]; then
+            cp $$f libtool-$$ARCH/bin/
+        elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
+            dirname=$$(basename $$f)
+            cp -rL $$f libtool-$$ARCH/share/$$dirname
+        fi
+    done
+    find libtool-$$ARCH
+    tar cJf $@ libtool-$$ARCH
     """,
     tags = ["manual"],
 )
