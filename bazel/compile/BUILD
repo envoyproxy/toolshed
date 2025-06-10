@@ -103,6 +103,16 @@ configure_make(
         "share/aclocal",
         "share/libtool",
     ],
+    postfix_script = """
+    # Patch libtoolize to be relocatable
+    # The script determines its location and finds data relative to it
+    sed -i 's|^  prefix=.*|  prefix="\\$(cd "\\$(dirname "\\$0")/.." \\&\\& pwd)"|' $INSTALLDIR/bin/libtoolize
+    sed -i 's|^  datadir=.*|  datadir="\\${prefix}/share"|' $INSTALLDIR/bin/libtoolize
+    sed -i 's|^  pkgauxdir=.*|  pkgauxdir="\\${datadir}/libtool/build-aux"|' $INSTALLDIR/bin/libtoolize
+    sed -i 's|^  pkgltdldir=.*|  pkgltdldir="\\${datadir}/libtool"|' $INSTALLDIR/bin/libtoolize
+    sed -i 's|^  aclocaldir=.*|  aclocaldir="\\${datadir}/aclocal"|' $INSTALLDIR/bin/libtoolize
+    echo "# BOOM" >>  $INSTALLDIR/bin/libtoolize
+    """,
     tags = ["manual"],
 )
 
@@ -128,7 +138,6 @@ genrule(
             cp -rL $$f libtool-$$ARCH/share/$$dirname
         fi
     done
-    find libtool-$$ARCH
     tar cJf $@ libtool-$$ARCH
     """,
     tags = ["manual"],
