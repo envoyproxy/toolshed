@@ -1,0 +1,165 @@
+name: Update Bazel Versions
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag to update from (e.g., bazel-bins/v0.1.7)
+        required: false
+        type: string
+  push:
+    branches:
+    - main
+    paths:
+    - bazel/versions.bzl
+    - .github/workflows/update-versions.yml
+  pull_request:
+    paths:
+    - bazel/versions.bzl
+    - .github/workflows/update-versions.yml
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-versions:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    - name: Determine release tag
+      id: release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.release_tag }}" ]]; then
+            TAG="${{ github.event.inputs.release_tag }}"
+        else
+            TAG=$(gh release list --limit 100 | grep "bazel-bins-v" | head -1 | awk '{print $3}' || true)
+            if [[ -z "$TAG" ]]; then
+                echo "No bazel-bins release found - skipping version check"
+                echo "skip=true" >> $GITHUB_OUTPUT
+                exit 0
+            fi
+        fi
+        echo "skip=false" >> $GITHUB_OUTPUT
+        echo "tag=${TAG}" >> $GITHUB_OUTPUT
+        VERSION=$(echo "${TAG}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+    - name: Download release assets
+      if: steps.release.outputs.skip != 'true'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        mkdir -p artifacts
+        gh release view "${{ steps.release.outputs.tag }}" --json assets -q '.assets[].name' | while read -r asset; do
+            echo "Downloading ${asset}..."
+            gh release download "${{ steps.release.outputs.tag }}" --pattern "${asset}" --dir artifacts
+        done
+        echo "Downloaded artifacts:"
+        ls -la artifacts/
+    - name: Calculate SHA256 hashes
+      if: steps.release.outputs.skip != 'true'
+      id: hashes
+      run: |
+        cd artifacts
+        declare -A HASHES
+        declare -A FILE_PATTERNS=(
+            ["msan_libs_sha256"]="msan-libs.*\.tar\.xz"
+            ["tsan_libs_sha256"]="tsan-libs.*\.tar\.xz"
+            ["sysroot_amd64_sha256"]="sysroot.*amd64.*\.tar\.xz"
+            ["sysroot_arm64_sha256"]="sysroot.*arm64.*\.tar\.xz"
+            ["libtool_aarch64_sha256"]="libtool.*aarch64.*\.tar\.xz"
+            ["libtool_x86_64_sha256"]="libtool.*x86_64.*\.tar\.xz"
+        )
+        for file in *.tar.xz; do
+            [[ -e "$file" ]] || continue
+            hash=$(sha256sum "$file" | cut -d' ' -f1)
+
+            for key in "${!FILE_PATTERNS[@]}"; do
+                if [[ "$file" =~ ${FILE_PATTERNS[$key]} ]]; then
+                    HASHES["$key"]="$hash"
+                    break
+                fi
+            done
+            echo "${file}: ${hash}"
+        done
+        for key in "${!HASHES[@]}"; do
+            echo "${key}=${HASHES[$key]}" >> $GITHUB_OUTPUT
+        done
+    - name: Update versions.bzl
+      if: steps.release.outputs.skip != 'true'
+      run: |
+        VERSION="${{ steps.release.outputs.version }}"
+        FILE="bazel/versions.bzl"
+        sed -i "s/\"bins_release\": \"[^\"]*\"/\"bins_release\": \"${VERSION}\"/" "$FILE"
+        declare -A HASH_UPDATES=(
+            ["msan_libs_sha256"]="${{ steps.hashes.outputs.msan_libs_sha256 }}"
+            ["tsan_libs_sha256"]="${{ steps.hashes.outputs.tsan_libs_sha256 }}"
+            ["sysroot_amd64_sha256"]="${{ steps.hashes.outputs.sysroot_amd64_sha256 }}"
+            ["sysroot_arm64_sha256"]="${{ steps.hashes.outputs.sysroot_arm64_sha256 }}"
+            ["libtool_aarch64_sha256"]="${{ steps.hashes.outputs.libtool_aarch64_sha256 }}"
+            ["libtool_x86_64_sha256"]="${{ steps.hashes.outputs.libtool_x86_64_sha256 }}"
+        )
+        for key in "${!HASH_UPDATES[@]}"; do
+            if [[ -n "${HASH_UPDATES[$key]}" ]]; then
+                sed -i "s/\"${key}\": \"[a-f0-9]*\"/\"${key}\": \"${HASH_UPDATES[$key]}\"/" "$FILE"
+            fi
+        done
+        echo "Updated versions.bzl:"
+        git diff bazel/versions.bzl
+    - name: Check for changes
+      if: steps.release.outputs.skip != 'true'
+      id: changes
+      run: |
+        if git diff --quiet bazel/versions.bzl; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "No changes to versions.bzl"
+        else
+            echo "changed=true" >> $GITHUB_OUTPUT
+        fi
+    - name: Create Pull Request
+      if: github.event_name == 'workflow_dispatch' && steps.changes.outputs.changed == 'true' && steps.release.outputs.skip != 'true'
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ github.token }}
+        commit-message: "Update bazel-bins to ${{ steps.release.outputs.version }}"
+        branch: "update-bazel-bins-${{ steps.release.outputs.version }}"
+        delete-branch: true
+        title: "Update bazel-bins to ${{ steps.release.outputs.version }}"
+        body: |
+          This PR updates the bazel-bins version and SHA256 hashes for release `${{ steps.release.outputs.tag }}`.
+
+          ## Changes
+          - Updated `bins_release` version to `${{ steps.release.outputs.version }}`
+          - Updated SHA256 hashes for all binary artifacts
+
+          ## Release Assets
+          The following artifacts were processed:
+          ```
+          ${{ steps.hashes.outputs.msan_libs_sha256 && format('msan_libs_sha256: {0}', steps.hashes.outputs.msan_libs_sha256) || '' }}
+          ${{ steps.hashes.outputs.tsan_libs_sha256 && format('tsan_libs_sha256: {0}', steps.hashes.outputs.tsan_libs_sha256) || '' }}
+          ${{ steps.hashes.outputs.sysroot_amd64_sha256 && format('sysroot_amd64_sha256: {0}', steps.hashes.outputs.sysroot_amd64_sha256) || '' }}
+          ${{ steps.hashes.outputs.sysroot_arm64_sha256 && format('sysroot_arm64_sha256: {0}', steps.hashes.outputs.sysroot_arm64_sha256) || '' }}
+          ${{ steps.hashes.outputs.libtool_aarch64_sha256 && format('libtool_aarch64_sha256: {0}', steps.hashes.outputs.libtool_aarch64_sha256) || '' }}
+          ${{ steps.hashes.outputs.libtool_x86_64_sha256 && format('libtool_x86_64_sha256: {0}', steps.hashes.outputs.libtool_x86_64_sha256) || '' }}
+          ```
+
+          This PR was automatically generated by the Update Bazel Versions workflow.
+        labels: |
+          automation
+          dependencies
+    - name: Summary
+      if: github.event_name != 'workflow_dispatch' && steps.changes.outputs.changed == 'true' && steps.release.outputs.skip != 'true'
+      run: |
+        echo "## Versions Check Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Latest bazel-bins release: ${{ steps.release.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "Version: ${{ steps.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Changes detected:" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY
+        git diff bazel/versions.bzl >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
