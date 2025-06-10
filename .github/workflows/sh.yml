@@ -5,7 +5,15 @@ permissions:
 
 on:
   pull_request:
+    paths:
+    - sh/**
+    - .github/workflows/sh.yml
+    - get-pants.sh
   push:
+    paths:
+    - sh/**
+    - .github/workflows/sh.yml
+    - get-pants.sh
 
 
 jobs:

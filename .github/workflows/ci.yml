@@ -4,9 +4,75 @@ on:
   push:
     branches:
     - main
+    paths:
+    - **/*.py
+    - **/*.pyi
+    - **/BUILD
+    - **/BUILD.pyi
+    - **/BUILD.tools
+    - .github/workflows/ci.yml
+    - pants.toml
+    - pants.ci.toml
+    - .coveragerc
+    - .flake8
+    - .flake8.lock
+    - mypy.ini
+    - pytest.ini
+    - requirements*.txt
+    - abstracts/**
+    - aio.*/**
+    - envoy.*/**
+    - dependatool/**
+    - deps/**
+    - mypy-abstracts/**
+    - pants-toolshed/**
+    - patches/**
+    - pytest-*/**
+    - tools/**
+    paths-ignore:
+    - **/*.md
+    - **/*.rst
+    - gh-actions/**
+    - rust/**
+    - sh/**
+    - bazel/compile/**
+    - sysroot/**
   pull_request:
     branches:
     - main
+    paths:
+    - **/*.py
+    - **/*.pyi
+    - **/BUILD
+    - **/BUILD.pyi
+    - **/BUILD.tools
+    - .github/workflows/ci.yml
+    - pants.toml
+    - pants.ci.toml
+    - .coveragerc
+    - .flake8
+    - .flake8.lock
+    - mypy.ini
+    - pytest.ini
+    - requirements*.txt
+    - abstracts/**
+    - aio.*/**
+    - envoy.*/**
+    - dependatool/**
+    - deps/**
+    - mypy-abstracts/**
+    - pants-toolshed/**
+    - patches/**
+    - pytest-*/**
+    - tools/**
+    paths-ignore:
+    - **/*.md
+    - **/*.rst
+    - gh-actions/**
+    - rust/**
+    - sh/**
+    - bazel/compile/**
+    - sysroot/**
   release:
     types:
       released
