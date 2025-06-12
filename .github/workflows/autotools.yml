@@ -95,8 +95,12 @@ jobs:
             else
                 echo "NO CONFIG.LOG FOUND!!!"
             fi
-            cat /tmp/debug
+            if [[ -e "/tmp/debug" ]]; then
+                cat /tmp/debug
 
+            else
+                echo "NO DEBUG FOUND!!!"
+            fi
             exit 1
         }
         FULL_VERSION="${{ steps.m4_version.outputs.value }}-${{ steps.autoconf_version.outputs.value }}-${{ steps.automake_version.outputs.value }}-${{ steps.libtool_version.outputs.value }}"
