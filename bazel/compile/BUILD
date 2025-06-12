@@ -90,6 +90,7 @@ genrule(
 
 configure_make(
     name = "libtool_build",
+    toolchains = [],
     configure_options = [
         "--disable-dependency-tracking",
         "--disable-ltdl-install",
@@ -124,6 +125,7 @@ configure_make(
     lib_source = "@m4_source//:all",
     out_binaries = ["m4"],
     tags = ["manual"],
+    toolchains = [],
     configure_in_place = True,
     configure_options = [
         "--disable-dependency-tracking",
@@ -139,6 +141,7 @@ configure_make(
 
 configure_make(
     name = "autoconf_build",
+    toolchains = [],
     configure_options = [
         "--disable-dependency-tracking",
     ],
@@ -162,6 +165,8 @@ configure_make(
 
 configure_make(
     name = "automake_build",
+    toolchains = [],
+    configure_prefix = "echo 'EXT_BUILD_DEPS='$$EXT_BUILD_DEPS > /tmp/debug && ls -la $$EXT_BUILD_DEPS/autoconf_build/bin/ >> /tmp/debug && echo 'PATH='$$PATH >> /tmp/debug && ",
     configure_options = [
         "--disable-dependency-tracking",
     ],
