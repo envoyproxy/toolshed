@@ -52,7 +52,7 @@ class ValidatingCodeBlock(CodeBlock):
             raise ExtensionError(
                 f"Expected type name in: {source} line: {line}")
 
-        if not self.skip_validation:
+        if (source and line) and not self.skip_validation:
             self._validate(source, line)
         self.options.pop('type-name', None)
         return list(super().run())
