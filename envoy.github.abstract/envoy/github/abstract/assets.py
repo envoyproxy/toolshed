@@ -5,7 +5,7 @@ from abc import abstractmethod
 from functools import cached_property
 from typing import (
     Any, AsyncGenerator, Awaitable, Coroutine, Dict, Iterator,
-    Optional, Pattern, Set, Union)
+    Literal, Optional, Pattern, Set, Union)
 
 import aiohttp
 
@@ -20,6 +20,7 @@ from envoy.github import abstract
 
 from .exceptions import GithubReleaseError
 
+TarWriteMode = Literal["w", "a"]
 
 AssetsResultDict = Dict[str, Union[str, pathlib.Path]]
 AssetsAwaitableGenerator = AsyncGenerator[
@@ -164,7 +165,7 @@ class AGithubReleaseAssetsFetcher(
             yield self.download(asset)
 
     @property
-    def write_mode(self) -> str:
+    def write_mode(self) -> TarWriteMode:
         return "a" if self.append else "w"
 
     def asset_type(self, asset: Dict) -> Optional[str]:
