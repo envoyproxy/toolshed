@@ -18,7 +18,8 @@ on:
     - ".flake8.lock"
     - "mypy.ini"
     - "pytest.ini"
-    - "requirements*.txt"
+    - "deps/requirements.txt"
+    - "deps/mypy/requirements.txt"
     - "abstracts/**"
     - "aio.*/**"
     - "envoy.*/**"
@@ -29,14 +30,6 @@ on:
     - "patches/**"
     - "pytest-*/**"
     - "tools/**"
-    paths-ignore:
-    - "**/*.md"
-    - "**/*.rst"
-    - "gh-actions/**"
-    - "rust/**"
-    - "sh/**"
-    - "bazel/compile/**"
-    - "sysroot/**"
   pull_request:
     branches:
     - "main"
@@ -54,7 +47,8 @@ on:
     - ".flake8.lock"
     - "mypy.ini"
     - "pytest.ini"
-    - "requirements*.txt"
+    - "deps/requirements.txt"
+    - "deps/mypy/requirements.txt"
     - "abstracts/**"
     - "aio.*/**"
     - "envoy.*/**"
@@ -65,14 +59,6 @@ on:
     - "patches/**"
     - "pytest-*/**"
     - "tools/**"
-    paths-ignore:
-    - "**/*.md"
-    - "**/*.rst"
-    - "gh-actions/**"
-    - "rust/**"
-    - "sh/**"
-    - "bazel/compile/**"
-    - "sysroot/**"
   release:
     types:
       released
