@@ -15,7 +15,7 @@ import pathlib
 import shutil
 import tarfile
 import tempfile
-from typing import ContextManager, Iterator, Pattern
+from typing import cast, ContextManager, Literal, Iterator, Pattern
 
 import zstandard
 
@@ -28,6 +28,13 @@ logger = logging.getLogger(__name__)
 # to handle. This list can be updated as required
 TAR_EXTS: set[str] = {"tar", "tar.gz", "tar.xz", "tar.bz2", "tar.zst"}
 COMPRESSION_EXTS: set[str] = {"gz", "bz2", "xz"}
+
+TarWriteMode = Literal[
+    "w", "w:", "w:gz", "w:bz2", "w:xz",
+    "a", "a:",
+    "x", "x:", "x:gz", "x:bz2", "x:xz"]
+TarReadMode = Literal["r", "r:", "r:gz", "r:bz2", "r:xz"]
+TarMode = TarWriteMode | TarReadMode
 
 
 class ExtractError(Exception):
@@ -44,11 +51,12 @@ def is_tarlike(path: pathlib.Path | str) -> bool:
     return any(str(path).endswith(ext) for ext in TAR_EXTS)
 
 
-def tar_mode(path: pathlib.Path | str, mode="r") -> str:
+def tar_mode(path: pathlib.Path | str, mode="r") -> TarMode:
     for suffix in COMPRESSION_EXTS:
         if str(path).endswith(f".{suffix}"):
-            return f"{mode}:{suffix}"
-    return mode
+            mode = f"{mode}:{suffix}"
+            break
+    return cast(TarMode, mode)
 
 
 # Extraction
