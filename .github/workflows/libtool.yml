@@ -44,7 +44,7 @@ jobs:
         bazel build //:deps.json
         VERSIONS=$(cat bazel-bin/deps.json)
         echo "versions=${VERSIONS}" >> $GITHUB_OUTPUT
-    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.16
+    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.17
       id: version
       name: Libtool version
       with:
