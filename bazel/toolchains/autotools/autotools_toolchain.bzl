@@ -20,6 +20,7 @@ AutotoolsInfo = provider(
         "libtool": "Path to libtool binary",
         "libtool_file": "File reference to libtool binary",
         "env": "Environment variables to set",
+        "make_vars": "Make variables for foreign_cc",
         "data": "Additional data dependencies",
     },
 )
@@ -54,15 +55,38 @@ def _autotools_toolchain_impl(ctx):
     for tool_name, label_name, path_name in tools:
         process_tool(tool_name, label_name, path_name)
 
-    # Collect all data files
-    data_files = ctx.files.data
+    # Collect all data files including perl
+    data_files = ctx.files.data + ctx.files.perl_runtime
     for name, file_ref in files.items():
         if file_ref:
             data_files = data_files + [file_ref]
 
+    # Build make variables for foreign_cc
+    make_vars = {
+        "M4": "$EXT_BUILD_DEPS$/bin/m4",
+        "AUTOCONF": "$EXT_BUILD_DEPS$/bin/autoconf",
+        "AUTOHEADER": "$EXT_BUILD_DEPS$/bin/autoheader",
+        "AUTORECONF": "$EXT_BUILD_DEPS$/bin/autoreconf",
+        "AUTOMAKE": "$EXT_BUILD_DEPS$/bin/automake",
+        "ACLOCAL": "$EXT_BUILD_DEPS$/bin/aclocal",
+        "LIBTOOLIZE": "$EXT_BUILD_DEPS$/bin/libtoolize",
+        "LIBTOOL": "$EXT_BUILD_DEPS$/bin/libtool",
+        "AUTOM4TE": "$EXT_BUILD_DEPS$/bin/autom4te",
+        "PERL": "$EXT_BUILD_DEPS$/bin/perl",
+        "ACLOCAL_PATH": "$EXT_BUILD_DEPS$/share/aclocal:$EXT_BUILD_DEPS$/share/aclocal-1.17",
+        "autom4te_perllibdir": "$EXT_BUILD_DEPS$/share/autoconf",
+        "pkgauxdir": "$EXT_BUILD_DEPS$/share/libtool/build-aux",
+        "pkgdatadir": "$EXT_BUILD_DEPS$/share/libtool",
+    }
+
+    # Merge with user env
+    all_env = dict(make_vars)
+    all_env.update(ctx.attr.env)
+
     # Build the info provider
     info_fields = {
-        "env": ctx.attr.env,
+        "env": all_env,
+        "make_vars": make_vars,
         "data": data_files,
     }
     info_fields.update(paths)
@@ -159,6 +183,11 @@ autotools_toolchain = rule(
         ),
         "data": attr.label_list(
             doc = "Additional files needed by autotools",
+            allow_files = True,
+            cfg = "exec",
+        ),
+        "perl_runtime": attr.label_list(
+            doc = "Perl runtime for autotools scripts",
             allow_files = True,
             cfg = "exec",
         ),

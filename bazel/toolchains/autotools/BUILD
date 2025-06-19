@@ -62,6 +62,10 @@ autotools_toolchain(
         "@platforms//cpu:x86_64": ["@autotools_x86_64//:all"],
         "@platforms//cpu:aarch64": ["@autotools_aarch64//:all"],
     }),
+    perl_runtime = select({
+        "@platforms//cpu:x86_64": ["@perl_linux_amd64//:runtime"],
+        "@platforms//cpu:aarch64": ["@perl_linux_arm64//:runtime"],
+    }),
 )
 
 toolchain(

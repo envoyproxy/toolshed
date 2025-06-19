@@ -1,5 +1,8 @@
 
+VERSION_AUTOCONF = "2.72"
+VERSION_AUTOMAKE = "1.17"
 VERSION_LIBTOOL = "2.5.4"
+VERSION_M4 = "1.4.19"
 
 VERSIONS = {
     "cmake": "3.23.2",
@@ -7,24 +10,22 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
     "libtool": VERSION_LIBTOOL,
+    "m4": VERSION_M4,
+    "autoconf": VERSION_AUTOCONF,
+    "automake": VERSION_AUTOMAKE,
 
-    "bins_release": "0.1.9",
-    "msan_libs_sha256": "b33ace12693a6ac79acb974d6f9aaa2547c27d1ef2489842bb1caeabf3438f00",
-    "tsan_libs_sha256": "2d472297f41b1af72798434bb3ca22e9bb6941210f41a096cb5b107044ccdd42",
-    "sysroot_amd64_sha256": "d4d1e5bc89d4037d2a8b90fc18cb7a1b3ed5757291fcf06b65196debad38e5a3",
-    "sysroot_arm64_sha256": "9ef60bd18bc01800449cd40ae242f5aa85a4905cf9adfb5333bde5bc3be0dab4",
-    "autotools_x86_64_sha256": "1e5b5d9a54309159eee74b3514ed2459a628b674682c9a56871ed0740f09560e",
-    "autotools_aarch64_sha256": "fe48917388de9f15a00e83824abaa553be10cda0d5bb8384ef2dfee76e1dcf4e",
-
-    # Autotools versions
-    "m4": "1.4.19",
-    "autoconf": "2.72",
-    "automake": "1.17",
+    "bins_release": "0.1.11",
+    "msan_libs_sha256": "38a90e3e015f3e762f51e66d6b3306e91916e03e69295f37b408ebaf80e12d05",
+    "tsan_libs_sha256": "3c281d4c823634c74bcb83b6db4a75b5c3b4cbb9dee2346d313826d43392bfe7",
+    "sysroot_amd64_sha256": "d9e5879125be147d91f6801176c10a98e2355685ced9ad5a047919dcdbfa93e9",
+    "sysroot_arm64_sha256": "05d4d1d61182dec169e4eee0fb3713de4dbd229dfbaac0b9a303edc2155ea5b7",
+    "autotools_x86_64_sha256": "30ecac0a2d8d6cae12bfd92b81227628045fc501877e63194c0cd25687a13041",
+    "autotools_aarch64_sha256": "f0605601b1ca77832d783259808a18c99c063cf40ec77f705dd551c54e90ec01",
 
     "m4_source": {
         "type": "http_archive",
         "sha256": "63aede5c6d33b6d9b13511cd0be2cac046f2e70fd0a07aa9573a04a82783af96",
-        "version": "1.4.19",
+        "version": VERSION_M4,
         "url": "https://mirrors.kernel.org/gnu/m4/m4-{version}.tar.xz",
         "strip_prefix": "m4-{version}",
         "patches": ["//compile:m4-sysroot.patch"],
@@ -35,7 +36,7 @@ VERSIONS = {
     "autoconf_source": {
         "type": "http_archive",
         "sha256": "ba885c1319578d6c94d46e9b0dceb4014caafe2490e437a0dbca3f270a223f5a",
-        "version": "2.72",
+        "version": VERSION_AUTOCONF,
         "url": "https://mirrors.kernel.org/gnu/autoconf/autoconf-{version}.tar.xz",
         "strip_prefix": "autoconf-{version}",
         "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
@@ -44,7 +45,7 @@ VERSIONS = {
     "automake_source": {
         "type": "http_archive",
         "sha256": "8920c1fc411e13b90bf704ef9db6f29d540e76d232cb3b2c9f4dc4cc599bd990",
-        "version": "1.17",
+        "version": VERSION_AUTOMAKE,
         "url": "https://mirrors.kernel.org/gnu/automake/automake-{version}.tar.xz",
         "strip_prefix": "automake-{version}",
         "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
