@@ -13,17 +13,13 @@ VERSIONS = {
     "tsan_libs_sha256": "2d472297f41b1af72798434bb3ca22e9bb6941210f41a096cb5b107044ccdd42",
     "sysroot_amd64_sha256": "d4d1e5bc89d4037d2a8b90fc18cb7a1b3ed5757291fcf06b65196debad38e5a3",
     "sysroot_arm64_sha256": "9ef60bd18bc01800449cd40ae242f5aa85a4905cf9adfb5333bde5bc3be0dab4",
-    "libtool_aarch64_sha256": "36afaefc991f06d7e817bf93c4d87a2367f2ba3b335ebf6b9ae6dab0ee4f8af0",
-    "libtool_x86_64_sha256": "bdbbbc231c2ab0ea09f4771a11135b00dea4361ea1adcfb8f1f9a517c93e8e74",
+    "autotools_x86_64_sha256": "1e5b5d9a54309159eee74b3514ed2459a628b674682c9a56871ed0740f09560e",
+    "autotools_aarch64_sha256": "fe48917388de9f15a00e83824abaa553be10cda0d5bb8384ef2dfee76e1dcf4e",
 
     # Autotools versions
     "m4": "1.4.19",
     "autoconf": "2.72",
     "automake": "1.17",
-
-    # Autotools combined package SHA256 hashes
-    "autotools_x86_64_sha256": "PLACEHOLDER_BUILD_AND_GET_SHA256",
-    "autotools_aarch64_sha256": "PLACEHOLDER_BUILD_AND_GET_SHA256",
 
     "m4_source": {
         "type": "http_archive",
