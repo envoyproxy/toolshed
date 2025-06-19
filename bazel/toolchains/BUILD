@@ -2,7 +2,7 @@
 exports_files(["BUILD"])
 
 alias(
-    name = "libtool_toolchain_type",
-    actual = "//toolchains/libtool:libtool_toolchain_type",
+    name = "autotools_toolchain_type",
+    actual = "//toolchains/autotools:autotools_toolchain_type",
     visibility = ["//visibility:public"],
 )
