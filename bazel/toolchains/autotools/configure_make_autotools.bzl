@@ -21,10 +21,10 @@ def configure_make_with_autotools(
         **kwargs: All other arguments passed to configure_make
     """
 
-    # Select autotools based on platform
+    # Select autotools and perl based on platform
     autotools_deps = select({
-        "@platforms//cpu:x86_64": ["@autotools_x86_64//:all"],
-        "@platforms//cpu:aarch64": ["@autotools_aarch64//:all"],
+        "@platforms//cpu:x86_64": ["@autotools_x86_64//:all", "@perl_linux_amd64//:runtime"],
+        "@platforms//cpu:aarch64": ["@autotools_aarch64//:all", "@perl_linux_arm64//:runtime"],
     })
 
     # Merge build_data
@@ -35,25 +35,29 @@ def configure_make_with_autotools(
 
     # Set up environment variables
     autotools_env = {
-        "M4": "$EXT_BUILD_DEPS$/bin/m4",
-        "AUTOCONF": "$EXT_BUILD_DEPS$/bin/autoconf",
-        "AUTOHEADER": "$EXT_BUILD_DEPS$/bin/autoheader",
-        "AUTORECONF": "$EXT_BUILD_DEPS$/bin/autoreconf",
-        "AUTOMAKE": "$EXT_BUILD_DEPS$/bin/automake",
-        "ACLOCAL": "$EXT_BUILD_DEPS$/bin/aclocal",
-        "LIBTOOLIZE": "$EXT_BUILD_DEPS$/bin/libtoolize",
-        "LIBTOOL": "$EXT_BUILD_DEPS$/bin/libtool",
-        "ACLOCAL_PATH": "$EXT_BUILD_DEPS$/share/aclocal:$EXT_BUILD_DEPS$/share/aclocal-1.17",
-        "AUTOM4TE": "$EXT_BUILD_DEPS$/bin/autom4te",
-        "pkgauxdir": "$EXT_BUILD_DEPS$/share/libtool/build-aux",
-        "pkgdatadir": "$EXT_BUILD_DEPS$/share/libtool",
+        "M4": "$EXT_BUILD_DEPS/bin/m4",
+        "AUTOCONF": "$EXT_BUILD_DEPS/bin/autoconf",
+        "AUTOHEADER": "$EXT_BUILD_DEPS/bin/autoheader",
+        "AUTORECONF": "$EXT_BUILD_DEPS/bin/autoreconf",
+        "AUTOMAKE": "$EXT_BUILD_DEPS/bin/automake",
+        "ACLOCAL": "$EXT_BUILD_DEPS/bin/aclocal",
+        "LIBTOOLIZE": "$EXT_BUILD_DEPS/bin/libtoolize",
+        "LIBTOOL": "$EXT_BUILD_DEPS/bin/libtool",
+        "ACLOCAL_PATH": "$EXT_BUILD_DEPS/share/aclocal:$EXT_BUILD_DEPS/share/aclocal-1.17",
+        "AUTOM4TE": "$EXT_BUILD_DEPS/bin/autom4te",
+        "PERL": "$EXT_BUILD_DEPS/bin/perl",
+        "autom4te_perllibdir": "$EXT_BUILD_DEPS/share/autoconf",
+        "AC_MACRODIR": "$EXT_BUILD_DEPS/share/autoconf",
+        "AUTOM4TE_CFG": "$EXT_BUILD_DEPS/share/autoconf/autom4te.cfg",
+        "pkgauxdir": "$EXT_BUILD_DEPS/share/libtool/build-aux",
+        "pkgdatadir": "$EXT_BUILD_DEPS/share/libtool",
     }
 
     if env:
         autotools_env.update(env)
 
     # Set up configure prefix with PATH
-    autotools_prefix = "export PATH=$EXT_BUILD_DEPS$/bin:$PATH && "
+    autotools_prefix = "export PATH=$EXT_BUILD_DEPS/bin:$PATH && "
     if configure_prefix:
         autotools_prefix = autotools_prefix + configure_prefix
 
