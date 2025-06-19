@@ -1,2 +1,2 @@
 gsutil
-pyopenssl==24.2.1
+pyopenssl==25.1.0
