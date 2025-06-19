@@ -67,8 +67,8 @@ VERSIONS = {
     "rules_foreign_cc": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_foreign_cc",
-        "version": "0.11.1",
-        "sha256": "4b33d62cf109bcccf286b30ed7121129cc34cf4f4ed9d8a11f38d9108f40ba74",
+        "version": "0.14.0",
+        "sha256": "e0f0ebb1a2223c99a904a565e62aa285bf1d1a8aeda22d10ea2127591624866c",
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
         "strip_prefix": "{name}-{version}",
     },
