@@ -37,7 +37,7 @@ jobs:
         if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.release_tag }}" ]]; then
             TAG="${{ github.event.inputs.release_tag }}"
         else
-            TAG=$(gh release list --limit 100 | grep "bazel-bins-v" | head -1 | awk '{print $2}' || true)
+            TAG=$(gh release list --limit 100 | grep "bazel-bins-v" | head -1 | awk '{print $1}' || true)
             echo "TAG: $TAG"
             if [[ -z "$TAG" ]]; then
                 echo "No bazel-bins release found - skipping version check"
@@ -72,8 +72,8 @@ jobs:
             ["tsan_libs_sha256"]="tsan-libs.*\.tar\.xz"
             ["sysroot_amd64_sha256"]="sysroot.*amd64.*\.tar\.xz"
             ["sysroot_arm64_sha256"]="sysroot.*arm64.*\.tar\.xz"
-            ["libtool_aarch64_sha256"]="libtool.*aarch64.*\.tar\.xz"
-            ["libtool_x86_64_sha256"]="libtool.*x86_64.*\.tar\.xz"
+            ["autotools_aarch64_sha256"]="autotools.*aarch64.*\.tar\.xz"
+            ["autotools_x86_64_sha256"]="autotools.*x86_64.*\.tar\.xz"
         )
         for file in *.tar.xz; do
             [[ -e "$file" ]] || continue
@@ -101,8 +101,8 @@ jobs:
             ["tsan_libs_sha256"]="${{ steps.hashes.outputs.tsan_libs_sha256 }}"
             ["sysroot_amd64_sha256"]="${{ steps.hashes.outputs.sysroot_amd64_sha256 }}"
             ["sysroot_arm64_sha256"]="${{ steps.hashes.outputs.sysroot_arm64_sha256 }}"
-            ["libtool_aarch64_sha256"]="${{ steps.hashes.outputs.libtool_aarch64_sha256 }}"
-            ["libtool_x86_64_sha256"]="${{ steps.hashes.outputs.libtool_x86_64_sha256 }}"
+            ["autotools_aarch64_sha256"]="${{ steps.hashes.outputs.autotools_aarch64_sha256 }}"
+            ["autotools_x86_64_sha256"]="${{ steps.hashes.outputs.autotools_x86_64_sha256 }}"
         )
         for key in "${!HASH_UPDATES[@]}"; do
             if [[ -n "${HASH_UPDATES[$key]}" ]]; then
@@ -126,12 +126,12 @@ jobs:
       uses: peter-evans/create-pull-request@v7
       env:
         LIBTO0L_ARM64_SHA: >-
-          ${{ steps.hashes.outputs.libtool_aarch64_sha256
-              && format('libtool_aarch64_sha256: {0}', steps.hashes.outputs.libtool_aarch64_sha256)
+          ${{ steps.hashes.outputs.autotools_aarch64_sha256
+              && format('autotools_aarch64_sha256: {0}', steps.hashes.outputs.autotools_aarch64_sha256)
               || '' }}
         LIBTO0L_X64_SHA: >-
-          ${{ steps.hashes.outputs.libtool_x86_64_sha256
-              && format('libtool_x86_64_sha256: {0}', steps.hashes.outputs.libtool_x86_64_sha256)
+          ${{ steps.hashes.outputs.autotools_x86_64_sha256
+              && format('autotools_x86_64_sha256: {0}', steps.hashes.outputs.autotools_x86_64_sha256)
               || '' }}
         MSAN_SHA: >-
           ${{ steps.hashes.outputs.msan_libs_sha256
@@ -167,8 +167,8 @@ jobs:
           ```
           $MSAN_SHA
           $TSAN_SHA
-          $LIBTOOL_ARM64_SHA
-          $LIBTOOL_X64_SHA
+          $AUTOTOOLS_ARM64_SHA
+          $AUTOTOOLS_X64_SHA
           $SYSROOT_ARM64_SHA
           $SYSROOT_X64_SHA
           ```
