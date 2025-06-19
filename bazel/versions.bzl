@@ -58,8 +58,8 @@ VERSIONS = {
     "rules_python": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_python",
-        "version": "1.0.0",
-        "sha256": "4f7e2aa1eb9aa722d96498f5ef514f426c1f55161c3c9ae628c857a7128ceb07",
+        "version": "1.4.1",
+        "sha256": "9f9f3b300a9264e4c77999312ce663be5dee9a56e361a1f6fe7ec60e1beef9a3",
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
         "strip_prefix": "{name}-{version}",
     },
