@@ -56,6 +56,10 @@ updates:
   directory: /gh-actions/foreach
   schedule:
     interval: daily
+- package-ecosystem: pip
+  directory: /gh-actions/gcp/setup
+  schedule:
+    interval: daily
 - package-ecosystem: github-actions
   directory: /gh-actions/github/artifact/download
   schedule:
