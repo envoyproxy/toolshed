@@ -1,3 +1,4 @@
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
 load("@rules_python//python:pip.bzl", "pip_parse")
 load("//:versions.bzl", "VERSIONS")
 
@@ -8,6 +9,7 @@ def load_packages():
         requirements_lock = "@envoy_toolshed//:requirements.txt",
         python_interpreter_target = "@python3_12_host//:python",
     )
+    bazel_features_deps()
 
 def load_website_packages():
     # Only call this if you wish to use the website functionality
