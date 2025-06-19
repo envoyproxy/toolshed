@@ -73,6 +73,15 @@ VERSIONS = {
         "strip_prefix": "{name}-{version}",
     },
 
+    "rules_perl": {
+        "type": "github_archive",
+        "repo": "bazel-contrib/rules_perl",
+        "version": "0.4.1",
+        "sha256": "e09ba7ab6a52059a5bec71cf9a8a5b4e512c8592eb8d15af94ed59e048a2ec6d",
+        "url": "https://github.com/{repo}/archive/refs/tags/{version}.tar.gz",
+        "strip_prefix": "{name}-{version}",
+    },
+
     "toolchains_llvm": {
         "type": "github_archive",
         "repo": "bazel-contrib/toolchains_llvm",
