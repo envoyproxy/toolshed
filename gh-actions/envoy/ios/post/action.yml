@@ -27,39 +27,81 @@ runs:
       timeout_minutes: 5
       max_attempts: 3
       command: ${{ inputs.simulator-command }}
-  # Run the app in the background and redirect logs.
+  - name: Start mock server
+    run: |
+      if [[ ! -f ./ci/start_ios_mock_server.py ]]; then
+          echo "WARNING: Mock server script not found, tests may fail!"
+          exit 0
+      fi
+      echo "Starting mock server..."
+      OUTPUT=$(./ci/start_ios_mock_server.py)
+      echo "$OUTPUT"
+      MOCK_SERVER_PID=$(echo "$OUTPUT" | tail -1)
+      echo "MOCK_SERVER_PID=$MOCK_SERVER_PID" >> $GITHUB_ENV
+      echo "MOCK_SERVER_PORT=${MOCK_SERVER_PORT:-10000}" >> $GITHUB_ENV
+    shell: bash
+    working-directory: mobile
   - name: Run app
     run: |
-      cd mobile
       ./bazelw run $ARGS $APP &> /tmp/envoy.log &
+      APP_PID=$!
+      sleep 3
+      if ! ps -p $APP_PID > /dev/null; then
+          echo "WARNING: App process exited early. Initial log:"
+          head -50 /tmp/envoy.log 2>/dev/null || echo "No log file"
+      fi
     shell: bash
+    working-directory: mobile
     env:
       # TODO: handle these correctly with `read -ra`
       ARGS: ${{ inputs.args }}
       APP: ${{ inputs.app }}
-  - run: |
+  - name: Check connectivity
+    shell: bash
+    env:
+      EXPECTED: ${{ inputs.expected }}
+      TIMEOUT: ${{ inputs.timeout }}
+    run: |
       checklogs () {
           echo "CHECKING FOR ${EXPECTED} in /tmp/envoy.log"
-          sed "/${EXPECTED}/q" <(touch /tmp/envoy.log && tail -F /tmp/envoy.log)
+          if [[ -f /tmp/envoy.log ]] && grep -q "${EXPECTED}" /tmp/envoy.log 2>/dev/null; then
+              echo "Found expected output in existing log"
+              return 0
+          fi
+          tail -F -n 0 /tmp/envoy.log 2>/dev/null | sed "/${EXPECTED}/q"
       }
       export -f checklogs
       timeout ${TIMEOUT} bash -c checklogs || {
           retcode=$?
           if [[ "$retcode" == 124 ]]; then
               echo "ERROR: Timed out searching for '${EXPECTED}'" >&2
+              echo "Log file size: $(stat -f%z /tmp/envoy.log 2>/dev/null || echo 'N/A')" >&2
+              echo "Last 20 lines of log:" >&2
+              tail -20 /tmp/envoy.log 2>/dev/null || echo "No log content" >&2
+              if [[ -n "${MOCK_SERVER_PID:-}" ]]; then
+                  if ps -p $MOCK_SERVER_PID > /dev/null; then
+                      echo "Mock server is still running (PID: $MOCK_SERVER_PID)" >&2
+                  else
+                      echo "ERROR: Mock server died (PID: $MOCK_SERVER_PID)" >&2
+                  fi
+              fi
+              echo "Testing mock server connectivity:" >&2
+              curl -v http://127.0.0.1:${MOCK_SERVER_PORT:-10000}/ping 2>&1 | tail -10 || echo "Mock server not responding" >&2
           else
               echo "ERROR: Command to check logs failed" >&2
           fi
-          ACTUAL="$(grep "$EXPECTED" /tmp/envoy.log)"
-          ls -alh /tmp/envoy.log
-          echo "FTR ${ACTUAL} in /tmp/envoy.log"
+          echo "=== Checking for partial matches ===" >&2
+          grep -i "status\|headers\|received" /tmp/envoy.log | tail -10 2>/dev/null || echo "No related messages found" >&2
           exit $retcode
       }
+  - name: Cleanup mock server
+    if: ${{ always() }}
+    run: |
+      if [[ -n "${MOCK_SERVER_PID:-}" ]]; then
+          echo "Stopping mock server (PID: $MOCK_SERVER_PID)"
+          kill $MOCK_SERVER_PID 2>/dev/null || :
+      fi
     shell: bash
-    env:
-      EXPECTED: ${{ inputs.expected }}
-      TIMEOUT: ${{ inputs.timeout }}
-    name: Check connectivity
   - run: cat /tmp/envoy.log
     if: ${{ failure() || cancelled() }}
     name: Log app run
