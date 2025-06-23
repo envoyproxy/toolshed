@@ -13,6 +13,12 @@ inputs:
     type: string
     default: >-
       ./mobile/ci/start_ios_simulator.sh
+  simulator-device:
+    type: string
+    default: iPhone 16 Pro Max
+  simulator-version:
+    type: string
+    default: 18.1
   timeout:
     type: string
     default: 5m
@@ -21,19 +27,12 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08
-    name: Start simulator
-    with:
-      timeout_minutes: 5
-      max_attempts: 3
-      command: ${{ inputs.simulator-command }}
   - name: Start mock server
     run: |
       if [[ ! -f ./ci/start_ios_mock_server.py ]]; then
-          echo "WARNING: Mock server script not found, tests may fail!"
+          echo "WARNING: Mock server script not found, tests may fail!" >&2
           exit 0
       fi
-      echo "Starting mock server..."
       OUTPUT=$(./ci/start_ios_mock_server.py)
       echo "$OUTPUT"
       MOCK_SERVER_PID=$(echo "$OUTPUT" | tail -1)
@@ -43,17 +42,20 @@ runs:
     working-directory: mobile
   - name: Run app
     run: |
-      ./bazelw run $ARGS $APP &> /tmp/envoy.log &
+      echo "Starting app with temporary simulator..."
+      ./bazelw run $ARGS $APP \
+          --ios_simulator_device="${{ inputs.simulator-device }}" \
+          --ios_simulator_version="${{ inputs.simulator-version }}" \
+          > /tmp/envoy.log 2>&1 &
       APP_PID=$!
       sleep 3
       if ! ps -p $APP_PID > /dev/null; then
-          echo "WARNING: App process exited early. Initial log:"
-          head -50 /tmp/envoy.log 2>/dev/null || echo "No log file"
+          echo "WARNING: App process exited early. Initial log:" >&2
+          head -50 /tmp/envoy.log 2>/dev/null || echo "No log file" >&2
       fi
     shell: bash
     working-directory: mobile
     env:
-      # TODO: handle these correctly with `read -ra`
       ARGS: ${{ inputs.args }}
       APP: ${{ inputs.app }}
   - name: Check connectivity
@@ -64,11 +66,7 @@ runs:
     run: |
       checklogs () {
           echo "CHECKING FOR ${EXPECTED} in /tmp/envoy.log"
-          if [[ -f /tmp/envoy.log ]] && grep -q "${EXPECTED}" /tmp/envoy.log 2>/dev/null; then
-              echo "Found expected output in existing log"
-              return 0
-          fi
-          tail -F -n 0 /tmp/envoy.log 2>/dev/null | sed "/${EXPECTED}/q"
+          sed "/${EXPECTED}/q" <(touch /tmp/envoy.log && tail -F /tmp/envoy.log)
       }
       export -f checklogs
       timeout ${TIMEOUT} bash -c checklogs || {
