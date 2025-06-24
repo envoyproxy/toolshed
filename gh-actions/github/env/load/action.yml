@@ -53,7 +53,6 @@ runs:
       path: ${{ runner.temp }}
       run-id: ${{ steps.find-request.outputs.output || inputs.run-id }}
 
-  # Validate the source of the environment artifact
   - name: Validate environment source
     if: ${{ github.event_name == 'workflow_run' }}
     uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.19
@@ -64,16 +63,22 @@ runs:
         current_repo: ${{ toJSON(github.repository) }}
         allowed_events: ["pull_request_target", "push", "schedule"]
       input-format: yaml
+      print-output: true
+      options: -r
       filter: |
+        .workflow_event as $event
+        | .workflow_repo as $repo
+        | .current_repo as $current
+        | .allowed_events as $allowed
         # Check that the workflow run came from the same repository
-        if .workflow_repo != .current_repo then
-          error("Environment artifact must come from the same repository. Expected: \(.current_repo), Got: \(.workflow_repo)")
-        # Check that the workflow run was triggered by an allowed event
-        elif (.allowed_events | index(.workflow_event) | not) then
-          error("Environment artifact must come from an allowed event type. Allowed: \(.allowed_events), Got: \(.workflow_event)")
-        else
-          "✓ Environment source validation passed"
-        end
+        | if $repo != $current then
+            error("Environment artifact must come from the same repository. Expected: \($current), Got: \($repo)")
+          # Check that the workflow run was triggered by an allowed event
+          elif ($allowed | index($event)) == null then
+            error("Environment artifact must come from an allowed event type. Allowed: \($allowed), Got: \($event)")
+          else
+            "✓ Environment source validation passed"
+          end
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.19
     name: Load env data
     id: data
