@@ -90,9 +90,9 @@ aiosignal==1.3.1 \
     --hash=sha256:54cd96e15e1649b75d6c87526a6ff0b6c1b0dd3459f43d9ca11d48c339b68cfc \
     --hash=sha256:f8376fb07dd1e86a584e4fcdec80b36b7f81aac666ebc724e2c090300dd83b17
     # via aiohttp
-argcomplete==3.5.1 \
-    --hash=sha256:1a1d148bdaa3e3b93454900163403df41448a248af01b6e849edc5ac08e6c363 \
-    --hash=sha256:eb1ee355aa2557bd3d0145de7b06b2a45b0ce461e1e7813f5d066039ab4177b4
+argcomplete==3.6.2 \
+    --hash=sha256:65b3133a29ad53fb42c48cf5114752c7ab66c1c38544fdf6460f450c09b42591 \
+    --hash=sha256:d0519b1bc867f5f4f4713c41ad0aba73a4a5f007449716b16f385f2166dc6adf
     # via gsutil
 attrs==24.2.0 \
     --hash=sha256:5cfb1b9148b5b086569baec03f20d7b6bf3bcacc9a42bebf87ffaaca362f6346 \
@@ -420,16 +420,16 @@ frozenlist==1.5.0 \
     # via
     #   aiohttp
     #   aiosignal
-gcs-oauth2-boto-plugin==3.2 \
-    --hash=sha256:a46817f3abed2bc4f6b4b12b0de7c8bf5ff5f1822dc03c45fa1ae6ed7a455843
+gcs-oauth2-boto-plugin==3.3 \
+    --hash=sha256:748e8f73161c884bc1251748b4920115201829ed9a258e7112e8bf8ce45eae18
     # via gsutil
 google-apitools==0.5.32 \
     --hash=sha256:b78f74116558e0476e19501b5b4b2ac7c93261a69c5449c861ea95cbc853c688 \
     --hash=sha256:c3763e52289f61e21c41d5531e20fbda9cc8484a088b8686fd460770db8bad13
     # via gsutil
-google-auth[aiohttp]==2.17.0 \
-    --hash=sha256:45ba9b4b3e49406de3c5451697820694b2f6ce8a6b75bb187852fdae231dab94 \
-    --hash=sha256:f51d26ebb3e5d723b9a7dbd310b6c88654ef1ad1fc35750d1fdba48ca4d82f52
+google-auth[aiohttp]==2.39.0 \
+    --hash=sha256:0150b6711e97fb9f52fe599f55648950cc4540015565d8fbb31be2ad6e1548a2 \
+    --hash=sha256:73222d43cdc35a3aeacbfdcaf73142a97839f10de930550d89ebfe1d0a00cde7
     # via
     #   gcs-oauth2-boto-plugin
     #   google-auth-httplib2
@@ -446,8 +446,8 @@ google-reauth==0.1.1 \
     # via
     #   gcs-oauth2-boto-plugin
     #   gsutil
-gsutil==5.34 \
-    --hash=sha256:15e0f46e7a9f7ae779b56a075fb24ec96f81d71e020b99ac34bbd9b0b15cf4aa
+gsutil==5.35 \
+    --hash=sha256:b6970ea6c0950c854ce2e33c591e177a6f4a657f2824a1b54eaefa2dff2576bb
     # via -r requirements.in
 httplib2==0.20.4 \
     --hash=sha256:58a98e45b4b1a48273073f905d2961666ecf0fbac4250ea5b47aef259eb5c585 \
@@ -719,13 +719,12 @@ rsa==4.7.2 \
     #   gcs-oauth2-boto-plugin
     #   google-auth
     #   oauth2client
-six==1.16.0 \
-    --hash=sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926 \
-    --hash=sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254
+six==1.17.0 \
+    --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274 \
+    --hash=sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81
     # via
     #   gcs-oauth2-boto-plugin
     #   google-apitools
-    #   google-auth
     #   gsutil
     #   oauth2client
     #   pyu2f
