@@ -1,4 +1,3 @@
-
 import json
 import pathlib
 import types
@@ -1175,16 +1174,23 @@ def test_abstract_changelogentry_constructor():
     assert changelogentry.entry == "ENTRY"
 
 
-@pytest.mark.parametrize("prop", ["area", "change"])
+@pytest.mark.parametrize("prop", ["area", "change", "prs"])
 def test_abstract_changelogentry_props(prop):
     entry = MagicMock()
     changelogentry = DummyChangelogEntry("SECTION", entry)
     assert (
         getattr(changelogentry, prop)
-        == entry.__getitem__.return_value)
-    assert (
-        entry.__getitem__.call_args
-        == [(prop, ), {}])
+        == (entry.__getitem__.return_value
+            if prop in ["area", "change"]
+            else entry.get.return_value))
+    if prop in ["area", "change"]:
+        assert (
+            entry.__getitem__.call_args
+            == [(prop, ), {}])
+    else:
+        assert (
+            entry.get.call_args
+            == [(prop, ), {}])
     assert prop not in changelogentry.__dict__
 
 
@@ -1340,6 +1346,7 @@ def test_legacy_changelog_lines():
 def test_legacy_changelog__parse_line(patches):
     legacy = abstract.project.changelog.LegacyChangelog("CONTENT")
     patched = patches(
+        "re",
         "dict",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
@@ -1347,11 +1354,16 @@ def test_legacy_changelog__parse_line(patches):
     area = MagicMock()
     change = MagicMock()
     line.__getitem__.return_value.split.return_value = [area, change]
+    pr_matches = ["12345", "67890"]
 
-    with patched as (m_dict, m_typing):
-        assert (
-            legacy._parse_line(line)
-            == m_dict.return_value)
+    with patched as (m_re, m_dict, m_typing):
+        m_re.findall.return_value = pr_matches
+        m_typing.Change.return_value = typing.Change("Test Change")
+        assert legacy._parse_line(line) == {
+            "area": area,
+            "change": m_typing.Change.return_value,
+            "prs": pr_matches
+        }
 
     assert (
         line.__getitem__.call_args
@@ -1360,8 +1372,8 @@ def test_legacy_changelog__parse_line(patches):
         line.__getitem__.return_value.split.call_args
         == [(":", 1), {}])
     assert (
-        m_dict.call_args
-        == [(), dict(area=area, change=m_typing.Change.return_value)])
+        m_re.findall.call_args
+        == [(r"(?:PR |#)(\d+)", change), {}])
     assert (
         m_typing.Change.call_args
         == [(change.lstrip.return_value, ), {}])
