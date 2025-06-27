@@ -1,7 +1,7 @@
 
 VERSION_AUTOCONF = "2.72"
-VERSION_AUTOMAKE = "1.17"
-VERSION_LIBTOOL = "2.5.4"
+VERSION_AUTOMAKE = "1.16.1"
+VERSION_LIBTOOL = "2.4.6"
 VERSION_M4 = "1.4.19"
 
 VERSIONS = {
@@ -44,7 +44,7 @@ VERSIONS = {
 
     "automake_source": {
         "type": "http_archive",
-        "sha256": "8920c1fc411e13b90bf704ef9db6f29d540e76d232cb3b2c9f4dc4cc599bd990",
+        "sha256": "5d05bb38a23fd3312b10aea93840feec685bdf4a41146e78882848165d3ae921",
         "version": VERSION_AUTOMAKE,
         "url": "https://mirrors.kernel.org/gnu/automake/automake-{version}.tar.xz",
         "strip_prefix": "automake-{version}",
@@ -128,7 +128,7 @@ VERSIONS = {
 
     "libtool_source": {
         "type": "http_archive",
-        "sha256": "f81f5860666b0bc7d84baddefa60d1cb9fa6fceb2398cc3baca6afaa60266675",
+        "sha256": "7c87a8c2c8c0fc9cd5019e402bed4292462d00a718a7cd5f11218153bf28b26f",
         "version": VERSION_LIBTOOL,
         "url": "https://mirrors.kernel.org/gnu/libtool/libtool-{version}.tar.xz",
         "strip_prefix": "libtool-{version}",
