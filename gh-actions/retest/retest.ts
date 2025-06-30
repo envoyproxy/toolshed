@@ -1,10 +1,10 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import {Buffer} from 'buffer'
-import {RestEndpointMethodTypes} from '@octokit/rest'
-import {Endpoints, OctokitResponse} from '@octokit/types'
+import type {RestEndpointMethodTypes} from '@octokit/rest'
+import type {Endpoints, OctokitResponse} from '@octokit/types'
 import axios from 'axios'
-import {GitHub} from '@actions/github/lib/utils'
+import type {GitHub} from '@actions/github/lib/utils'
 
 type GithubReactionType = 'rocket' | '+1' | '-1' | 'laugh' | 'confused' | 'heart' | 'hooray' | 'eyes'
 type CheckRunsType = Endpoints['GET /repos/{owner}/{repo}/commits/{ref}/check-runs']['response']
