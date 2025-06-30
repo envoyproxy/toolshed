@@ -3,7 +3,8 @@
     "module": "commonjs",
     "target": "ES2022",
     "lib": ["ES2022"],
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
+    "module": "node16",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -13,7 +14,8 @@
     "noImplicitAny": true,
     "removeComments": false,
     "preserveConstEnums": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "isolatedModules": true,
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]

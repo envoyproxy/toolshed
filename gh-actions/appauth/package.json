@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build main.ts -o dist -m",
+    "build": "tsc --noEmit && ncc build main.ts -o dist -m --external @octokit/auth-app --external universal-user-agent --external @octokit/rest",
     "test": "tsc --noEmit && jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
@@ -41,8 +41,9 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
+    "@octokit/auth-app": "^8.0.0",
     "@actions/core": "^1.10.0",
     "@octokit/rest": "^22.0.0",
-    "@octokit/auth-app": "^8.0.0"
+    "@octokit/types": "^14.0.0"
   }
 }
