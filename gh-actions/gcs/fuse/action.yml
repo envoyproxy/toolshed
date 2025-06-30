@@ -171,7 +171,7 @@ runs:
       echo "key-path=${KEY_PATH}" >> $GITHUB_OUTPUT
       echo "GOOGLE_APPLICATION_CREDENTIALS=${KEY_PATH}" >> $GITHUB_ENV
     shell: bash
-  - uses: envoyproxy/toolshed/gh-actions/github/script/run@actions-v0.3.21
+  - uses: envoyproxy/toolshed/gh-actions/github/script/run@actions-v0.3.22
     name: Mount GCS bucket
     id: mount
     env:
@@ -232,7 +232,7 @@ runs:
       post: |
         rm -rf ${{ steps.sa.outputs.key-path }}
         ${AS_ROOT} fusermount -u "${{ inputs.mount-point }}" || true
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.21
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.22
     name: Parse mount
     with:
       input: ${{ steps.mount.outputs.output-path }}
