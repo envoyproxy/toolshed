@@ -1,7 +1,7 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import {GitHub} from '@actions/github/lib/utils'
-import {RestEndpointMethodTypes} from '@octokit/rest'
+import type {GitHub} from '@actions/github/lib/utils'
+import type {RestEndpointMethodTypes} from '@octokit/rest'
 
 type ChecksCreateParams = RestEndpointMethodTypes['checks']['create']['parameters']
 

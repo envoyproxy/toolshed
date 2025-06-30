@@ -1,6 +1,6 @@
 import {createAppAuth} from '@octokit/auth-app'
 import * as core from '@actions/core'
-import {Endpoints} from '@octokit/types'
+import type {Endpoints} from '@octokit/types'
 import {Octokit} from '@octokit/rest'
 
 type listInstallationsResponse = Endpoints['GET /app/installations']['response']
