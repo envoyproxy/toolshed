@@ -1,0 +1,14 @@
+name: "CodeQL config for toolshed"
+
+paths-ignore:
+- node_modules
+- dist
+- '**/*.test.ts'
+
+query-filters:
+- exclude:
+    id: js/weak-cryptography
+    tags:
+    - security
+    paths:
+    - gh-actions/appauth/**
