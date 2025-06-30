@@ -18,4 +18,8 @@ module.exports = {
     '^.+\\.ts$': 'ts-jest',
   },
   verbose: true,
+  moduleNameMapper: {
+    '^@octokit/auth-app$': '<rootDir>/__mocks__/@octokit/auth-app.js',
+    '^@octokit/rest$': '<rootDir>/__mocks__/@octokit/rest.js'
+  }
 }

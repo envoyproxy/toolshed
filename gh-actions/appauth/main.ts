@@ -1,18 +1,9 @@
+import {Octokit} from '@octokit/rest'
 import * as core from '@actions/core'
 import type {Endpoints} from '@octokit/types'
+import {createAppAuth} from '@octokit/auth-app'
 
 type listInstallationsResponse = Endpoints['GET /app/installations']['response']
-
-// These are ESM modules, import dynamically to make jest work
-const getOctokit = async () => {
-  const {Octokit} = await import('@octokit/rest')
-  return Octokit
-}
-
-const getAppAuth = async () => {
-  const {createAppAuth} = await import('@octokit/auth-app')
-  return createAppAuth
-}
 
 const run = async (): Promise<void> => {
   try {
@@ -36,8 +27,6 @@ const run = async (): Promise<void> => {
     }
 
     let installationId = parseInt(core.getInput('installation_id'))
-    const Octokit = await getOctokit()
-    const createAppAuth = await getAppAuth()
     const appOctokit = new Octokit({
       authStrategy: createAppAuth,
       auth: {

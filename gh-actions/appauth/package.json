@@ -20,8 +20,8 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build main.ts -o dist -m --external @octokit/auth-app --external universal-user-agent --external @octokit/rest",
-    "test": "tsc --noEmit && jest",
+    "build": "esbuild main.ts --bundle --platform=node --target=node16 --outfile=dist/index.js --minify --format=cjs",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
   },
@@ -31,6 +31,7 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vercel/ncc": "^0.38.1",
+    "esbuild": "^0.20.0",
     "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-prettier": "^5.1.3",
