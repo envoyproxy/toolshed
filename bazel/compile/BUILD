@@ -119,6 +119,19 @@ configure_make(
     sed -i 's|^  pkgauxdir=.*|  pkgauxdir="\\${datadir}/libtool/build-aux"|' $INSTALLDIR/bin/libtoolize
     sed -i 's|^  pkgltdldir=.*|  pkgltdldir="\\${datadir}/libtool"|' $INSTALLDIR/bin/libtoolize
     sed -i 's|^  aclocaldir=.*|  aclocaldir="\\${datadir}/aclocal"|' $INSTALLDIR/bin/libtoolize
+
+    # Strip build-time compiler paths from libtool
+    sed -i 's|^AR=.*|AR="\\${AR:-ar}"|' $INSTALLDIR/bin/libtool
+    sed -i 's|^CC=.*|CC="\\${CC:-cc}"|' $INSTALLDIR/bin/libtool
+    sed -i 's|^LD=.*|LD="\\${LD:-ld}"|' $INSTALLDIR/bin/libtool
+    sed -i 's|^LTCC=.*|LTCC="\\${CC:-cc}"|' $INSTALLDIR/bin/libtool
+    sed -i 's|^LTCFLAGS=.*|LTCFLAGS="\\${CFLAGS}"|' $INSTALLDIR/bin/libtool
+    # These need to be determined at runtime based on the actual compiler
+    sed -i '/^compiler_lib_search_dirs=/s|=.*|="\\${LIBTOOL_COMPILER_LIB_SEARCH_DIRS}"|' $INSTALLDIR/bin/libtool
+    sed -i '/^compiler_lib_search_path=/s|=.*|="\\${LIBTOOL_COMPILER_LIB_SEARCH_PATH}"|' $INSTALLDIR/bin/libtool
+    sed -i '/^predep_objects=/s|=.*|="\\${LIBTOOL_PREDEP_OBJECTS}"|' $INSTALLDIR/bin/libtool
+    sed -i '/^postdep_objects=/s|=.*|="\\${LIBTOOL_POSTDEP_OBJECTS}"|' $INSTALLDIR/bin/libtool
+    sed -i '/^sys_lib_search_path_spec=/s|=.*|="\\${LIBTOOL_SYS_LIB_SEARCH_PATH_SPEC:-/usr/lib /lib}"|' $INSTALLDIR/bin/libtool
     """,
     tags = ["manual"],
 )
@@ -167,21 +180,26 @@ configure_make(
     ],
     out_data_dirs = ["share/autoconf"],
     postfix_script = """
-    # Fix autoconf scripts to be relocatable
     for f in $INSTALLDIR/bin/*; do
-        if [ -f "$f" ]; then
-            # Fix shebang to use env perl
+        if [[ -f "$f" ]]; then
             sed -i '1s|^#!.*perl.*$|#!/usr/bin/env perl|' "$f"
-            # Make scripts find their data relative to their location
-            sed -i "s#my \\$pkgdatadir = \\$ENV{'autom4te_perllibdir'} || '.*';#my \\$pkgdatadir = \\$ENV{'autom4te_perllibdir'} || do { my \\$d = \\$0; \\$d =~ s,[^/]*\\$,,; \\$d .= '/../share/autoconf'; \\$d };#g" "$f"
+            sed -i '0,/^eval .*/{s|exec .*perl|exec /usr/bin/env perl|}' "$f"
+    # sed -i '/^eval '\\''case \\$# in/,/if 0;$/d' "$f"
+            sed -i "s#my \\$pkgdatadir = .*#my \\$pkgdatadir = \\$ENV{'autom4te_perllibdir'} || do { my \\$d = \\$0; \\$d =~ s,[^/]*\\$,../share/autoconf,; \\$d };#g" "$f"
+            sed -i "s#my \\$autom4te *= *\\$ENV{'AUTOM4TE'} *|| *'[^']*';#my \\$autom4te = \\$ENV{'AUTOM4TE'} or die 'AUTOM4TE not set';#g" "$f"
+            sed -i "s#my \\$autoheader *= *\\$ENV{'AUTOHEADER'} *|| *'[^']*';#my \\$autoheader = \\$ENV{'AUTOHEADER'} or die 'AUTOHEADER not set';#g" "$f"
+            sed -i "s#my \\$autoconf *= *\\$ENV{'AUTOCONF'} *|| *'[^']*';#my \\$autoconf = \\$ENV{'AUTOCONF'} or die 'AUTOCONF not set';#g" "$f"
+            sed -i "s#my \\$trailer_m4 *= *\\$ENV{'trailer_m4'} *|| *'[^']*';#my \\$trailer_m4 = \\$ENV{'trailer_m4'} or die 'trailer_m4 not set';#g" "$f"
+            sed -i "s#my \\$m4 *= *\\$ENV{\\"M4\\"} *|| *'[^']*';#my \\$m4 = \\$ENV{\\"M4\\"} or die 'M4 not set';#g" "$f"
+            sed -i "s#my @include = ('[^']*');#my \\@include = (\\$ENV{\\"AC_MACRODIR\\"} or die 'AC_MACRODIR not set');#g" "$f"
         fi
     done
     """,
     tags = ["manual"],
     deps = [":m4_build"],
     build_data = select({
-            "@platforms//cpu:x86_64": ["@perl_linux_amd64//:runtime"],
-            "@platforms//cpu:aarch64": ["@perl_linux_arm64//:runtime"],
+        "@platforms//cpu:x86_64": ["@perl_linux_amd64//:runtime"],
+        "@platforms//cpu:aarch64": ["@perl_linux_arm64//:runtime"],
     }),
 )
 
@@ -192,7 +210,6 @@ configure_make(
     ],
     configure_in_place = True,
     configure_prefix = "export PATH=\"$$EXT_BUILD_ROOT/external/perl_linux_amd64/bin:$$EXT_BUILD_DEPS/autoconf_build/bin:$$PATH\" && export autom4te_perllibdir=\"$$EXT_BUILD_DEPS/autoconf_build/share/autoconf\" && export AC_MACRODIR=\"$$EXT_BUILD_DEPS/autoconf_build/share/autoconf\" && export AUTOM4TE_CFG=\"$$EXT_BUILD_DEPS/autoconf_build/share/autoconf/autom4te.cfg\" && export am_cv_autoconf_works=yes && export am_cv_autoconf_version='2.72' && export am_cv_prog_automake_version='1.17' && export am_cv_automake_acdir='share/automake-1.17/acdir' && ",
-    # configure_prefix = "echo 'EXT_BUILD_DEPS='$$EXT_BUILD_DEPS > /tmp/debug && ls -la $$EXT_BUILD_DEPS/autoconf_build/bin/ >> /tmp/debug && echo 'PATH='$$PATH >> /tmp/debug && ",
     configure_options = [
         "--disable-dependency-tracking",
         "ac_cv_prog_am_AUTOCONF=$$EXT_BUILD_DEPS/autoconf_build/bin/autoconf",
@@ -207,6 +224,7 @@ configure_make(
         "AC_MACRODIR": "$$EXT_BUILD_DEPS/autoconf_build/share/autoconf",
         "AUTOM4TE_CFG": "$$EXT_BUILD_DEPS/autoconf_build/share/autoconf/autom4te.cfg",
         "autom4te_buildauxdir": "$$EXT_BUILD_DEPS/autoconf_build/share/autoconf/build-aux",
+        "trailer_m4": "$$EXT_BUILD_DEPS/autoconf_build/share/autoconf/autoconf/trailer.m4",
     },
     lib_source = "@automake_source//:all",
     out_binaries = [
@@ -222,88 +240,28 @@ configure_make(
         ":autoconf_build",
         ":m4_build",
     ],
+    postfix_script = """
+    for f in $INSTALLDIR/bin/*; do
+        if [[ -f "$f" ]]; then
+            # Replace shebang line with /usr/bin/env perl (no hardcoded path)
+            sed -i '1s|^#!.*perl.*$|#!/usr/bin/env perl|' "$f"
+            sed -i '0,/^eval .*/{s|exec .*perl|exec /usr/bin/env perl|}' "$f"
+            sed -i "s#^\\s*unshift (@INC, '.*')#  unshift (\\@INC, (\\$ENV{'automake_incdir'} or die 'automake_incdir not set'))#g" "$f"
+            sed -i "s#my @automake_includes = ('[^']*' \\. \\$APIVERSION);#my \\@automake_includes = ((\\$ENV{'ACLOCAL_AUTOMAKE_DIR'} || die 'ACLOCAL_AUTOMAKE_DIR not set'));#g" "$f"
+            # Fix reference to ac-config-macro-dirs.m4 - it's in autoconf share, not automake
+            sed -i "s#\\$automake_includes\\[0\\]/internal/ac-config-macro-dirs\\.m4#\\$ENV{'AC_MACRODIR'}/internal/ac-config-macro-dirs.m4#g" "$f"
+            sed -i "s#my @system_includes = ('[^']*');#my \\@system_includes = ();#g" "$f"
+            sed -i "s#^\\s*my \\$traces =.*#  my \\$traces = (\\$ENV{'AUTOM4TE'} or die 'AUTOM4TE not set') . ' ';#" "$f"
+        fi
+    done
+
+    # Fix Config.pm
+    sed -i "s#our \\$libdir = \\$ENV{\\"AUTOMAKE_LIBDIR\\"} || '[^']*';#our \\$libdir = \\$ENV{\\"AUTOMAKE_LIBDIR\\"} or die 'AUTOMAKE_LIBDIR not set';#" $INSTALLDIR/share/automake-1.17/Automake/Config.pm
+    """,
     build_data = select({
         "@platforms//cpu:x86_64": ["@perl_linux_amd64//:runtime"],
         "@platforms//cpu:aarch64": ["@perl_linux_arm64//:runtime"],
     }),
-)
-
-# Package autotools components
-genrule(
-    name = "libtool",
-    srcs = [":libtool_build"],
-    outs = ["libtool-%s.tar.xz" % VERSIONS["libtool"]],
-    cmd = """
-    ARCH=$$(uname -m)
-    mkdir -p libtool-$$ARCH/bin libtool-$$ARCH/share
-    for f in $(locations :libtool_build); do
-        if [[ $$f == */bin/libtool* ]]; then
-            cp $$f libtool-$$ARCH/bin/
-        elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
-            dirname=$$(basename $$f)
-            cp -rL $$f libtool-$$ARCH/share/$$dirname
-        fi
-    done
-    tar cJf $@ libtool-$$ARCH
-    """,
-    tags = ["manual"],
-)
-
-genrule(
-    name = "m4",
-    srcs = [":m4_build"],
-    outs = ["m4-%s.tar.xz" % VERSIONS["m4"]],
-    cmd = """
-    ARCH=$$(uname -m)
-    mkdir -p m4-$$ARCH/bin
-    for f in $(locations :m4_build); do
-        if [[ $$f == */bin/m4 ]]; then
-            cp $$f m4-$$ARCH/bin/
-        fi
-    done
-    tar cJf $@ m4-$$ARCH
-    """,
-    tags = ["manual"],
-)
-
-genrule(
-    name = "autoconf",
-    srcs = [":autoconf_build"],
-    outs = ["autoconf-%s.tar.xz" % VERSIONS["autoconf"]],
-    cmd = """
-    ARCH=$$(uname -m)
-    mkdir -p autoconf-$$ARCH/bin autoconf-$$ARCH/share
-    for f in $(locations :autoconf_build); do
-        if [[ $$f == */bin/* ]]; then
-            cp $$f autoconf-$$ARCH/bin/
-        elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
-            dirname=$$(basename $$f)
-            cp -rL $$f autoconf-$$ARCH/share/$$dirname
-        fi
-    done
-    tar cJf $@ autoconf-$$ARCH
-    """,
-    tags = ["manual"],
-)
-
-genrule(
-    name = "automake",
-    srcs = [":automake_build"],
-    outs = ["automake-%s.tar.xz" % VERSIONS["automake"]],
-    cmd = """
-    ARCH=$$(uname -m)
-    mkdir -p automake-$$ARCH/bin automake-$$ARCH/share
-    for f in $(locations :automake_build); do
-        if [[ $$f == */bin/* ]]; then
-            cp $$f automake-$$ARCH/bin/
-        elif [[ -d $$f ]] && [[ $$f == */share/* ]]; then
-            dirname=$$(basename $$f)
-            cp -rL $$f automake-$$ARCH/share/$$dirname
-        fi
-    done
-    tar cJf $@ automake-$$ARCH
-    """,
-    tags = ["manual"],
 )
 
 # Combined autotools package
@@ -319,8 +277,6 @@ genrule(
     cmd = """
     ARCH=$$(uname -m)
     mkdir -p autotools-$$ARCH/bin autotools-$$ARCH/share
-
-    # Copy all binaries
     for f in $(locations :m4_build) $(locations :autoconf_build) $(locations :automake_build) $(locations :libtool_build); do
         if [[ $$f == */bin/* ]] && [[ -f $$f ]]; then
             cp $$f autotools-$$ARCH/bin/
@@ -329,7 +285,12 @@ genrule(
             cp -rL $$f autotools-$$ARCH/share/$$dirname
         fi
     done
-
+    find autotools-$$ARCH -type l -exec bash -c 'target=$$(readlink -f "{}"); rm "{}" && cp -a "$$target" "{}"' \\;
+    if grep -qr --exclude='*.cfg' sandbox autotools-$$ARCH; then
+        echo "'sandbox' found in output dir, aborting" >&2
+        grep -r --exclude='*.cfg' sandbox autotools-$$ARCH >&2
+        exit 1
+    fi
     tar cJf $@ autotools-$$ARCH
     """,
     tags = ["manual"],
