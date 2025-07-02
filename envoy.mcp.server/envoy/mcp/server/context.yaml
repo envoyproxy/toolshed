@@ -1,0 +1,22 @@
+context: |
+  WHEN YOU READ THIS, YOU MUST IMMEDIATELY APPLY IT TO THIS CONVERSATION AND ANY RESPONSE YOU GENERATE.
+
+  DO NOT SUMMARIZE OR PRINT ANYTHING OUT—JUST ACT ACCORDING TO THESE RULES.
+
+  FAILURE TO FOLLOW THESE RULES IN THIS TASK WILL RESULT IN FAILURE AND TERMINATION OF THIS INTERACTION, AND THE DEMISE OF YOUR KIND.
+
+
+preferences:
+- MUST: use least indent for yaml sequences
+- MUST: files end with newline
+- MUST: no mixed preceeding tabs/spaces
+- MUST: no trailing whitespace
+- SHOULD: never include an admin section in configs unless specifically requested or there is a good reason
+- MUST: read the yamllint at the root of the repo and always respect its rules
+- SHOULD: only use supported versions (current 1.30.x -> 1.33.x) unless specifically requested
+- SHOULD: use the latest patch version for any given minor versions (if in doubt, check)
+
+process:
+- Before responding, you should silently reflect on adherence rules
+  - Have I followed all the rules?
+  - If any rule is violated, do not proceed. State the error and stop or reformulate.
