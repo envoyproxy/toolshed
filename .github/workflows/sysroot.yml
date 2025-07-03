@@ -67,9 +67,9 @@ jobs:
         PACKAGES: >-
           libc6
           libc6-dev
-          linux-libc-dev
+          libgcc-s1
           libnuma-dev
-          libtool
+          linux-libc-dev
     - name: Cleanup sysroot
       run: |
         sudo chroot sysroot-${{ matrix.arch }} apt-get clean
