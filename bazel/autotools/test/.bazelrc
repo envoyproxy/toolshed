@@ -1,0 +1,6 @@
+# Inherit from parent .bazelrc if needed
+try-import ../../.bazelrc
+
+# Basic build options for testing
+build --color=yes
+build --curses=yes
