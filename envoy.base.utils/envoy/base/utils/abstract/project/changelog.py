@@ -1,4 +1,3 @@
-
 import logging
 import pathlib
 import re
@@ -95,9 +94,18 @@ class LegacyChangelog:
 
     def _parse_line(self, line: str) -> typing.ChangeDict:
         area, change = line[2:].split(":", 1)
-        return dict(
-            area=area,
-            change=typing.Change(change.lstrip(" ")))
+
+        # Try to extract PR references from the change text if they exist
+        pr_matches = re.findall(r"(?:PR |#)(\d+)", change)
+        prs = [int(pr) for pr in pr_matches] if pr_matches else None
+
+        result: typing.ChangeDict = {
+            "area": area,
+            "change": typing.Change(change.lstrip(" "))
+        }
+        if prs:
+            result["prs"] = prs
+        return result
 
 
 @abstracts.implementer(interface.IChangelogEntry)
@@ -125,6 +133,10 @@ class AChangelogEntry(metaclass=abstracts.Abstraction):
     def change(self) -> str:
         return self.entry["change"]
 
+    @property
+    def prs(self) -> list[int] | None:
+        return self.entry.get("prs")
+
 
 @abstracts.implementer(interface.IChangelog)
 class AChangelog(metaclass=abstracts.Abstraction):
@@ -141,7 +153,8 @@ class AChangelog(metaclass=abstracts.Abstraction):
             {k: (v
                  if k == "date"
                  else [dict(area=c["area"],
-                            change=typing.Change(c["change"]))
+                            change=typing.Change(c["change"]),
+                            **_get_prs_dict(c))
                        for c
                        in v])
              for k, v
@@ -420,3 +433,13 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             path.stem
             if path.stem != "current"
             else self.project.version.base_version)
+
+
+def _get_prs_dict(c: typing.SourceChangeDict) -> dict[str, list[int]]:
+    """Helper function to extract and convert PR references."""
+    prs = c.get("prs")
+    if prs is not None:
+        return {"prs": [int(pr) for pr in prs]}
+    if "pr" in c:
+        return {"prs": [int(c["pr"])]}
+    return {}
