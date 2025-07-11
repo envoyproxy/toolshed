@@ -97,7 +97,7 @@ class LegacyChangelog:
 
         # Try to extract PR references from the change text if they exist
         pr_matches = re.findall(r"(?:PR |#)(\d+)", change)
-        prs = pr_matches if pr_matches else None
+        prs = [int(pr) for pr in pr_matches] if pr_matches else None
 
         result: typing.ChangeDict = {
             "area": area,
@@ -134,7 +134,7 @@ class AChangelogEntry(metaclass=abstracts.Abstraction):
         return self.entry["change"]
 
     @property
-    def prs(self) -> list[str] | None:
+    def prs(self) -> list[int] | None:
         return self.entry.get("prs")
 
 
@@ -154,8 +154,7 @@ class AChangelog(metaclass=abstracts.Abstraction):
                  if k == "date"
                  else [dict(area=c["area"],
                             change=typing.Change(c["change"]),
-                            **({"prs": c["prs"]} if "prs" in c else
-                               {"prs": [c["pr"]]} if "pr" in c else {}))
+                            **_get_prs_dict(c))
                        for c
                        in v])
              for k, v
@@ -434,3 +433,13 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             path.stem
             if path.stem != "current"
             else self.project.version.base_version)
+
+
+def _get_prs_dict(c: typing.SourceChangeDict) -> dict[str, list[int]]:
+    """Helper function to extract and convert PR references."""
+    prs = c.get("prs")
+    if prs is not None:
+        return {"prs": [int(pr) for pr in prs]}
+    if "pr" in c:
+        return {"prs": [int(c["pr"])]}
+    return {}

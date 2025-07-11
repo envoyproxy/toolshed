@@ -129,7 +129,7 @@ class IChangelogEntry(metaclass=abstracts.Interface):
 
     @property
     @abstracts.interfacemethod
-    def prs(self) -> list[str] | None:
+    def prs(self) -> list[int] | None:
         """PR reference numbers for this entry."""
         raise NotImplementedError
 

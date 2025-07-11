@@ -1002,6 +1002,7 @@ def test_abstract_changelog_get_data(iters, patches, raises):
         "cast",
         "utils.from_yaml",
         "typing",
+        "_get_prs_dict",
         prefix="envoy.base.utils.abstract.project.changelog")
 
     changes = iters(dict, count=10, cb=lambda c: (f"K{c}", c))
@@ -1013,8 +1014,9 @@ def test_abstract_changelog_get_data(iters, patches, raises):
     changes["date"] = "NOTCHANGE"
     path = MagicMock()
 
-    with patched as (m_cast, m_yaml, m_typing):
+    with patched as (m_cast, m_yaml, m_typing, m_get_prs):
         m_yaml.return_value.items.return_value = changes.items()
+        m_get_prs.return_value = {}  # Mock _get_prs_dict to return empty dict
         if raises:
             error = raises("AN ERROR OCCURRED", 7, 23, "Y", "Z")
             m_yaml.side_effect = error
@@ -1045,7 +1047,8 @@ def test_abstract_changelog_get_data(iters, patches, raises):
         k: (v
             if k == "date"
             else [dict(area=c.__getitem__.return_value,
-                       change=m_typing.Change.return_value)
+                       change=m_typing.Change.return_value,
+                       **m_get_prs.return_value)
                   for c
                   in v])
         for k, v
@@ -1354,7 +1357,7 @@ def test_legacy_changelog__parse_line(patches):
     area = MagicMock()
     change = MagicMock()
     line.__getitem__.return_value.split.return_value = [area, change]
-    pr_matches = ["12345", "67890"]
+    pr_matches = ["12345", "67890"]  # regex returns strings from text
 
     with patched as (m_re, m_dict, m_typing):
         m_re.findall.return_value = pr_matches
@@ -1362,7 +1365,7 @@ def test_legacy_changelog__parse_line(patches):
         assert legacy._parse_line(line) == {
             "area": area,
             "change": m_typing.Change.return_value,
-            "prs": pr_matches
+            "prs": [12345, 67890]  # converted to integers in result
         }
 
     assert (
