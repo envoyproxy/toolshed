@@ -354,7 +354,7 @@ impl Patch {
             })
         });
 
-        let mut commands: runner::CommandsFn<DummyHandler> = HashMap::new();
+        let mut commands: runner::CommandsFn<'a, DummyHandler> = HashMap::new();
         commands.insert("COMMAND_NAME", command.clone());
         commands
     }

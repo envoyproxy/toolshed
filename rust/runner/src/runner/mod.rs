@@ -34,7 +34,7 @@ macro_rules! runner {
         }
 
         fn commands(&self) -> toolshed_runner::runner::CommandsFn<'_, $handler_type> {
-            let mut commands: toolshed_runner::runner::CommandsFn<$handler_type> = std::collections::HashMap::new();
+            let mut commands: toolshed_runner::runner::CommandsFn<'_, $handler_type> = std::collections::HashMap::new();
             $(
                 commands.insert($cmd_name, std::sync::Arc::new(|s: &std::sync::Arc<dyn toolshed_runner::runner::Runner<$handler_type>>| {
                     let s = s.as_any().downcast_ref::<Self>().expect("Downcast failed").clone();
@@ -75,7 +75,7 @@ pub type CommandsFn<'a, T> = HashMap<&'a str, CommandFn<T>>;
 #[async_trait]
 pub trait Runner<T: Handler + 'static>: Any + AsAny + Send + Sync {
     fn as_arc(&self) -> Arc<dyn Runner<T>>;
-    fn commands(&self) -> CommandsFn<T>;
+    fn commands(&self) -> CommandsFn<'_, T>;
     fn get_handler(&self) -> &T;
 
     fn get_command(&self) -> Box<&dyn Command> {
