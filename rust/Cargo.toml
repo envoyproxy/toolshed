@@ -2,6 +2,7 @@
 members = [
   "core",
   "echo",
+  "glint",
   "runner",
   "test",
 ]
