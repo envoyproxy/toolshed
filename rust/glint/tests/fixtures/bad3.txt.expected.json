@@ -1,0 +1,17 @@
+{
+  "files": {
+    "tests/fixtures/bad3.txt": {
+      "trailing_whitespace": [
+        1,
+        2,
+        4,
+        6
+      ]
+    }
+  },
+  "summary": {
+    "total_files": 1,
+    "files_with_issues": 1,
+    "total_issues": 4
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "files": {
+    "tests/fixtures/bad2.txt": {
+      "trailing_whitespace": [
+        2,
+        5
+      ],
+      "mixed_indentation": true,
+      "no_final_newline": true
+    }
+  },
+  "summary": {
+    "total_files": 1,
+    "files_with_issues": 1,
+    "total_issues": 4
+  }
+}

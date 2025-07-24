@@ -1,0 +1,7 @@
+Line 1 is clean
+Line 2 has trailing space 
+	Tab indented line 3
+Line 4 is normal
+Line 5 ends with tabs		
+ Space indented line 6
+Line 7 is the last line without newline
