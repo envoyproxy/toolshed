@@ -1,0 +1,50 @@
+This is line 1 with trailing spaces
+    This line 2 starts with a tab
+ This line 3 starts with a space
+Line 4 is normal
+Line 5 has trailing tabs
+    Another tab-indented line (6)
+Line 7 is clean
+ Space-indented line 8
+Line 9 is normal
+Line 10 ends with mixed whitespace
+    Tab line 11
+Line 12 is clean
+Line 13 is normal
+ Space line 14
+Line 15 has a trailing space
+Line 16 is clean
+    Tab line 17
+Line 18 is normal
+Line 19 is clean
+Line 20 with trailing whitespace
+ Space line 21
+Line 22 is normal
+    Tab line 23
+Line 24 is clean
+Line 25 is normal
+Line 26 is clean
+ Space line 27
+Line 28 is normal
+Line 29 is clean
+Line 30 has many trailing spaces
+    Tab line 31
+Line 32 is normal
+ Space line 33
+Line 34 is clean
+Line 35 is normal
+Line 36 is clean
+    Tab line 37
+Line 38 is normal
+Line 39 is clean
+Line 40 with subtle trailing space
+ Space line 41
+Line 42 is normal
+    Tab line 43
+Line 44 is clean
+Line 45 is normal
+Line 46 is clean
+ Space line 47
+Line 48 is normal
+Line 49 is clean
+Line 50 is the last line with no newline

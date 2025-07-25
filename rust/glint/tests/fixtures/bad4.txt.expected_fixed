@@ -1,0 +1,4 @@
+    All lines start with tabs
+    So no mixed indentation
+    But this one has trailing whitespace
+    And this file ends without a newline
