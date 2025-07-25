@@ -1,0 +1,14 @@
+{
+  "files": {
+    "tests/fixtures/bad3.txt": {
+      "trailing_whitespace_fixed": 4,
+      "tabs_converted": 2,
+      "final_newline_added": false
+    }
+  },
+  "summary": {
+    "total_files": 1,
+    "files_fixed": 1,
+    "total_fixes": 6
+  }
+}
