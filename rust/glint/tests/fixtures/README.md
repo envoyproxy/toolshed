@@ -4,7 +4,7 @@ This directory contains test files and their expected outputs.
 
 ## Test Files:
 - `bad.txt` - 50 lines with all types of issues (trailing whitespace, mixed indentation, no final newline)
-- `bad2.txt` - 7 lines with all types of issues  
+- `bad2.txt` - 7 lines with all types of issues
 - `bad3.txt` - 7 lines with only trailing whitespace issues
 - `good.txt` - Clean file with no issues
 
