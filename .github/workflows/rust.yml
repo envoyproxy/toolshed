@@ -86,18 +86,15 @@ jobs:
     - name: Strip binary
       run: strip rust/target/release/glint
 
-    - name: Package glint
+    - name: Rename binary with version and architecture
       run: |
-        mkdir -p glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
-        cp rust/target/release/glint glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}/
-        tar -cJf glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}.tar.xz \
-          glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
+        cp rust/target/release/glint glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
 
     - name: Upload glint binary
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
       with:
         name: glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
-        path: glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}.tar.xz
+        path: glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
         retention-days: 30
 
   publish:
@@ -120,9 +117,9 @@ jobs:
         for artifact in artifacts/*; do
             [[ ! -d "$artifact" ]] && continue
             name=$(basename "$artifact")
-            file=$(ls "$artifact"/*.tar.xz)
-            echo "Uploading $file as $name.tar.xz"
+            file=$(ls "$artifact"/glint-*)
+            echo "Uploading $file as $name"
             gh release upload "${{ github.event.release.tag_name }}" \
-                "$file#$name.tar.xz" \
+                "$file#$name" \
                 --clobber
         done
