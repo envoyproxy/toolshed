@@ -3,6 +3,7 @@ VERSION_AUTOCONF = "2.72"
 VERSION_AUTOMAKE = "1.17"
 VERSION_LIBTOOL = "2.5.4"
 VERSION_M4 = "1.4.19"
+VERSION_GLINT = "0.1.0"
 
 VERSIONS = {
     "cmake": "3.23.2",
@@ -15,6 +16,8 @@ VERSIONS = {
     "automake": VERSION_AUTOMAKE,
 
     "bins_release": "0.1.11",
+    "glint_amd64_sha256": "",  # TODO: Update with actual sha256 after first release
+    "glint_arm64_sha256": "",  # TODO: Update with actual sha256 after first release,
     "msan_libs_sha256": "38a90e3e015f3e762f51e66d6b3306e91916e03e69295f37b408ebaf80e12d05",
     "tsan_libs_sha256": "3c281d4c823634c74bcb83b6db4a75b5c3b4cbb9dee2346d313826d43392bfe7",
     "sysroot_amd64_sha256": "d9e5879125be147d91f6801176c10a98e2355685ced9ad5a047919dcdbfa93e9",
@@ -133,5 +136,13 @@ VERSIONS = {
         "url": "https://mirrors.kernel.org/gnu/libtool/libtool-{version}.tar.xz",
         "strip_prefix": "libtool-{version}",
         "build_file_content": """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
+    },
+
+    "rules_rust": {
+        "type": "github_archive",
+        "repo": "bazelbuild/rules_rust",
+        "version": "0.56.0",
+        "sha256": "f1306aac0b258b790df01ad9abc6abb0df0b65416c74b4ef27f4aab298780a64",
+        "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
     },
 }
