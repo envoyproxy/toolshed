@@ -1,0 +1,37 @@
+name: Install regctl
+
+inputs:
+  version:
+    description: regctl version to install
+    required: true
+    default: v0.9.0
+  arch:
+    description: regctl arch to install
+    required: true
+    default: amd64
+  sha:
+    description: sha256 of regctl binary
+    required: true
+    default: 17e45fc20aacdde01634ab1a38fd33de040891821acbb62f222331ef1fb02d0d
+
+
+runs:
+  using: 'composite'
+  steps:
+  - name: Fetch regctl
+    uses: envoyproxy/toolshed/gh-actions/fetch@actions-v0.3.23
+    with:
+      url: https://github.com/regclient/regclient/releases/download/${{ inputs.version }}/regctl-linux-${{ inputs.arch }}
+      path: /tmp/regctl
+      filename: regctl
+      sha256: ${{ inputs.sha }}
+  - name: Install regctl
+    shell: bash
+    run: |
+      echo "Installing regctl ${{ inputs.version }}..."
+      chmod +x /tmp/regctl/regctl
+      sudo mv /tmp/regctl/regctl /usr/local/bin/regctl
+  - name: regctl version
+    shell: bash
+    run: |
+      regctl version
