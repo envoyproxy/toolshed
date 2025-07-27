@@ -14,3 +14,6 @@ load_packages()
 
 load("@toolshed_pip3//:requirements.bzl", "install_deps")
 install_deps()
+
+load("@crates//:defs.bzl", "crate_repositories")
+crate_repositories()
