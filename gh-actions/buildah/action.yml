@@ -1,0 +1,90 @@
+name: Run buildah commands
+description: Execute buildah commands from structured configuration
+
+inputs:
+  operations:
+    description: |
+      JSON/YAML array of buildah operations. Format:
+      [
+        {
+          "command": "manifest",
+          "args": ["create", "manifest-name"]
+        },
+        {
+          "command": "manifest",
+          "args": ["add", "manifest-name", "oci:/path/to/oci/dir"]
+        },
+        {
+          "command": "manifest",
+          "args": ["push", "--all", "manifest-name", "docker://registry/image:tag"]
+        }
+      ]
+    required: true
+  dry-run:
+    description: Run in dry-run mode (don't push results)
+    required: false
+    default: false
+  dockerhub-username:
+    description: Docker Hub username for authentication
+    required: false
+  dockerhub-password:
+    description: Docker Hub token/password for authentication
+    required: false
+  gcr-key:
+    description: GCR service account JSON for authentication
+    required: false
+  bash-postfix:
+    required: true
+    default: |
+      echo 'Buildah operations completed.'
+  bash-prefix:
+    required: true
+    default: |
+      #!/bin/bash
+      set -euo pipefail
+
+      export DRY_RUN=\($dry_run)
+      source \($action_path)/buildah.sh
+
+
+runs:
+  using: composite
+  steps:
+  - name: Authenticate Docker Hub
+    if: inputs.dockerhub-username != '' && inputs.dockerhub-password != ''
+    shell: bash
+    run: |
+      echo "::group::Authenticating with Docker Hub"
+      echo "${{ inputs.dockerhub-password }}" | buildah login --username "${{ inputs.dockerhub-username }}" --password-stdin docker.io
+      echo "::endgroup::"
+  - name: Authenticate GCR
+    if: inputs.gcr-key != ''
+    shell: bash
+    run: |
+      echo "::group::Authenticating with GCR"
+      echo '${{ inputs.gcr-key }}' | base64 -d | buildah login --username _json_key --password-stdin gcr.io
+      echo "::endgroup::"
+  - name: Execute buildah operations
+    uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.23
+    id: execute
+    with:
+      title: Execute buildah operations
+      input: |
+        operations: ${{ inputs.operations }}
+        dry_run: ${{ inputs.dry-run }}
+        action_path: ${{ github.action_path }}
+      input-format: yaml
+      filter: |
+        .dry_run as $dry_run
+        | .action_path as $action_path
+        | (.operations
+           | map(
+             .command as $command
+             | .args | map(@sh) | join(" ") as $args
+             | if $command == "manifest" then
+                 "handle_\($command) \($args)"
+               else
+                 "echo \"::error::Unknown command: \($command)\"\nexit 1"
+               end)
+           | join("\n")) as $actions
+        | "${{ inputs.bash-prefix }}\n\($actions)\n${{ inputs.bash-postfix }}"
