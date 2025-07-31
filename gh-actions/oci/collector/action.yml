@@ -110,7 +110,12 @@ runs:
                metadata: {tag: $manifest_tag}}),
            {command: "manifest",
             args: ["push", "--all", $manifest_name, "docker://\($manifest_tag)"],
-            metadata: {tag: $manifest_tag}}]
+            metadata: {tag: $manifest_tag}},
+           ($additional_tags[]
+            | "\($registry)/\($name):\(.)" as $additional_tag
+            | {command: "manifest",
+               args: ["push", "--all", $manifest_name, "docker://\($additional_tag)"],
+               metadata: {tag: $additional_tag}})]
   - name: Execute buildah operations
     uses: envoyproxy/toolshed/gh-actions/buildah@actions-v0.3.24
     id: buildah
