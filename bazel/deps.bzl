@@ -11,7 +11,8 @@ def resolve_dependencies(
         cmake_version=None,
         llvm_version=None,
         ninja_version=None,
-        setup_autotools_toolchain=True):
+        setup_autotools_toolchain=True,
+        autotools_local_tarball_path=None):
     py_repositories()
     bazel_toolchain_dependencies()
     rules_foreign_cc_dependencies(
@@ -32,4 +33,4 @@ def resolve_dependencies(
         }
     )
     if setup_autotools_toolchain:
-        setup_autotools()
+        setup_autotools(local_tarball_path = autotools_local_tarball_path)

@@ -232,8 +232,8 @@ configure_make(
         "aclocal",
     ],
     out_data_dirs = [
-        "share/aclocal-1.17",
-        "share/automake-1.17",
+        "share/aclocal-1.16",
+        "share/automake-1.16",
     ],
     tags = ["manual"],
     deps = [
@@ -250,6 +250,10 @@ configure_make(
             sed -i "s#my @automake_includes = ('[^']*' \\. \\$APIVERSION);#my \\@automake_includes = ((\\$ENV{'ACLOCAL_AUTOMAKE_DIR'} || die 'ACLOCAL_AUTOMAKE_DIR not set'));#g" "$f"
             # Fix reference to ac-config-macro-dirs.m4 - it's in autoconf share, not automake
             sed -i "s#\\$automake_includes\\[0\\]/internal/ac-config-macro-dirs\\.m4#\\$ENV{'AC_MACRODIR'}/internal/ac-config-macro-dirs.m4#g" "$f"
+            # sed -i "s#my @automake_includes = ('[^']*' \\. \\$APIVERSION);#my \\@automake_includes = split(':', \\$ENV{'ACLOCAL_PATH'} or die 'ACLOCAL_PATH not set');#g" "$f"
+            # sed -i "s#my @automake_includes = ('[^']*' \\. \\$APIVERSION);#my \\@automake_includes = split(':', \\$ENV{'ACLOCAL_PATH'} or die 'ACLOCAL_PATH not set');#g" "$f"
+            # Fix reference to ac-config-macro-dirs.m4 - it's in autoconf share, not automake
+            # sed -i "s#\\$automake_includes\\[0\\]/internal/ac-config-macro-dirs\\.m4#\\$ENV{'AC_MACRODIR'}/internal/ac-config-macro-dirs.m4#g" "$f"
             sed -i "s#my @system_includes = ('[^']*');#my \\@system_includes = ();#g" "$f"
             sed -i "s#^\\s*my \\$traces =.*#  my \\$traces = (\\$ENV{'AUTOM4TE'} or die 'AUTOM4TE not set') . ' ';#" "$f"
         fi

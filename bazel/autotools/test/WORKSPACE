@@ -1,0 +1,23 @@
+workspace(name = "autotools_test")
+
+local_repository(
+    name = "envoy_toolshed",
+    path = "../..",
+)
+
+load("@envoy_toolshed//:archives.bzl", "load_archives")
+load_archives()
+
+load("@envoy_toolshed//:deps.bzl", "resolve_dependencies")
+resolve_dependencies(
+    autotools_local_tarball_path = "/tmp/autotools-18.tar.xz",
+)
+
+load("@envoy_toolshed//:toolchains.bzl", "load_toolchains")
+load_toolchains()
+
+load("@envoy_toolshed//:packages.bzl", "load_packages")
+load_packages()
+
+load("@toolshed_pip3//:requirements.bzl", "install_deps")
+install_deps()
