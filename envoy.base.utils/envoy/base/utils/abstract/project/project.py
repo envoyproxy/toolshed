@@ -229,6 +229,7 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         self.write_version(new_version, dev=True)
         self.changelogs.write_version(self.version)
         self.changelogs.write_current()
+        self.changelogs.blank_summary()
         return dict(
             date="Pending",
             version=self.version_string(new_version, dev=True),

@@ -362,6 +362,18 @@ def test_abstract_changelogs_sections_path():
     assert "sections_path" not in changelogs.__dict__
 
 
+def test_abstract_changelogs_summary_path():
+    project = MagicMock()
+    changelogs = DummyChangelogs(project)
+    assert (
+        changelogs.summary_path
+        == project.path.joinpath.return_value)
+    assert (
+        project.path.joinpath.call_args
+        == [(abstract.project.changelog.CHANGELOG_SUMMARY_PATH, ), {}])
+    assert "summary_path" not in changelogs.__dict__
+
+
 def test_abstract_changelogs_section_re(patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
@@ -451,6 +463,21 @@ def test_abstract_changelogs_changelog_url(patches, is_rst):
     assert not not_tpl.called
 
 
+def test_abstract_changelogs_blank_summary(patches):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        ("AChangelogs.summary_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_path, ):
+        assert not changelogs.blank_summary()
+
+    assert (
+        m_path.return_value.write_text.call_args
+        == [("", ), {}])
+
+
 @pytest.mark.parametrize("current", [True, False])
 @pytest.mark.parametrize("dev", [True, False])
 @pytest.mark.parametrize(
@@ -464,8 +491,11 @@ def test_abstract_changelogs_changes_for_commit(patches, current, dev, items):
     patched = patches(
         "any",
         "set",
+        "str",
         "CHANGELOG_CURRENT_PATH",
         "AChangelogs.rel_changelog_path",
+        ("AChangelogs.summary_path",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
     change = MagicMock()
     change.get.return_value.get.return_value = items
@@ -477,7 +507,7 @@ def test_abstract_changelogs_changes_for_commit(patches, current, dev, items):
 
     change.__contains__.side_effect = contains
 
-    with patched as (m_any, m_set, m_path, m_rel):
+    with patched as (m_any, m_set, m_str, m_path, m_rel, m_summary):
         m_any.return_value = current
         assert (
             changelogs.changes_for_commit(change)
@@ -501,6 +531,10 @@ def test_abstract_changelogs_changes_for_commit(patches, current, dev, items):
         assert (
             change.__getitem__.return_value.__getitem__.call_args
             == [("old_version", ), {}])
+        expected_add.append(m_str.return_value)
+        assert (
+            m_str.call_args
+            == [(m_summary.return_value, ), {}])
     assert (
         change.get.call_args
         == [("sync", {}), {}])
