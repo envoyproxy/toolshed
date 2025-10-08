@@ -324,7 +324,7 @@ class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
                 "and category is set", )
         return tuple(
             (f"Unknown extension category for {extension}: {cat}. "
-             "Please add it to {EXTENSIONS_SCHEMA}")
+             f"Please add it to {EXTENSIONS_SCHEMA}")
             for cat
             in categories
             if cat not in self.extension_categories)
