@@ -719,6 +719,7 @@ async def test_abstract_project_dev(patches, dev, pending, patch):
         assert not m_version.called
         assert not m_clogs.return_value.write_version.called
         assert not m_clogs.return_value.write_current.called
+        assert not m_clogs.return_value.blank_summary.called
         assert not m_str.called
         assert not m_write.called
         assert (
@@ -741,6 +742,9 @@ async def test_abstract_project_dev(patches, dev, pending, patch):
         == [(m_version.return_value, ), {}])
     assert (
         m_clogs.return_value.write_current.call_args
+        == [(), {}])
+    assert (
+        m_clogs.return_value.blank_summary.call_args
         == [(), {}])
     assert (
         m_str.call_args

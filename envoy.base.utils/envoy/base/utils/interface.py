@@ -240,6 +240,11 @@ class IChangelogs(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
+    def blank_summary(self) -> None:
+        """Make the changelog summary empty."""
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
     def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         """Changes to add/commit for a given change dictionary."""
         raise NotImplementedError

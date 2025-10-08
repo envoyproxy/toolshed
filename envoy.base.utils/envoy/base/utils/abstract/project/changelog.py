@@ -29,6 +29,7 @@ CHANGELOG_PATH_GLOB = "changelogs/*.*.*.yaml"
 CHANGELOG_PATH_FMT = "changelogs/{version}.yaml"
 CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
 CHANGELOG_SECTIONS_PATH = "changelogs/sections.yaml"
+CHANGELOG_SUMMARY_PATH = "changelogs/summary.md"
 CHANGELOG_URL_TPL = (
     "https://raw.githubusercontent.com/envoyproxy/envoy/"
     "v{version}/changelogs/current.yaml")
@@ -287,10 +288,17 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def sections_path(self) -> pathlib.Path:
         return self.project.path.joinpath(CHANGELOG_SECTIONS_PATH)
 
+    @property
+    def summary_path(self) -> pathlib.Path:
+        return self.project.path.joinpath(CHANGELOG_SUMMARY_PATH)
+
     @cached_property
     def yaml(self) -> types.ModuleType:
         _yaml.add_representer(typing.Change, self.yaml_change_presenter)
         return _yaml
+
+    def blank_summary(self) -> None:
+        self.summary_path.write_text("")
 
     def changelog_path(self, version: _version.Version) -> pathlib.Path:
         return self.project.path.joinpath(self.rel_changelog_path(version))
@@ -307,6 +315,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             changed.add(CHANGELOG_CURRENT_PATH)
         if "dev" in change:
             changed.add(self.rel_changelog_path(change["dev"]["old_version"]))
+            changed.add(str(self.summary_path))
         changelog = change.get("sync", {}).get("changelog", {})
         for version, sync in changelog.items():
             if sync:
