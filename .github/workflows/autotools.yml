@@ -44,28 +44,28 @@ jobs:
         bazel build //:deps.json
         VERSIONS=$(cat bazel-bin/deps.json)
         echo "versions=${VERSIONS}" >> $GITHUB_OUTPUT
-    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.25
+    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.27
       id: m4_version
       name: M4 version
       with:
         input: ${{ steps.deps.outputs.versions }}
         options: -r
         filter: .m4_source.version
-    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.25
+    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.27
       id: autoconf_version
       name: Autoconf version
       with:
         input: ${{ steps.deps.outputs.versions }}
         options: -r
         filter: .autoconf_source.version
-    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.25
+    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.27
       id: automake_version
       name: Automake version
       with:
         input: ${{ steps.deps.outputs.versions }}
         options: -r
         filter: .automake_source.version
-    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.25
+    - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.27
       id: libtool_version
       name: Libtool version
       with:
