@@ -32,7 +32,7 @@ runs:
       output-path: ${{ steps.path.outputs.directory }}/${{ inputs.name }}.json
 
   - name: Upload environment data
-    uses: actions/upload-artifact@v4
+    uses: actions/upload-artifact@v5
     with:
       name: ${{ inputs.name }}
       path: ${{ steps.path.outputs.directory }}
