@@ -44,7 +44,7 @@ jobs:
         cd bazel
         bazel build //compile:cxx_${{ matrix.sanitizer }}
     - name: Upload ${{ matrix.sanitizer }} libraries
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.sanitizer }}-llvm18.1.8-x86_64
         path: bazel/bazel-bin/compile/${{ matrix.sanitizer }}-llvm18.1.8-x86_64.tar.xz

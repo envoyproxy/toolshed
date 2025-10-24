@@ -112,7 +112,7 @@ jobs:
         cp bazel-bin/compile/autotools-${FULL_VERSION}.tar.xz \
            bazel-bin/compile/autotools-${FULL_VERSION}-${{ matrix.arch }}.tar.xz
     - name: Upload autotools ${{ matrix.arch }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: >-
           autotools-${{
