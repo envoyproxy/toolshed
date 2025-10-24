@@ -9,13 +9,13 @@ inputs:
 # - src: /mnt/foo
 #   target: /some/other/path/foo
 #   rm: false
-#   permissions:
+#   chown:
 #   command-pre:
 #   command-post:
 # - src: /mnt/bar
 #   target: /some/other/path/bar
 #   rm: true
-#   permissions: runner:runner
+#   chown: runner:runner
 #   command-pre: sudo systemctl stop bar
 #   command-post: sudo systemctl start bar
 
@@ -30,10 +30,13 @@ runs:
       input-format: yaml
       filter: |
         .[]
+        | (.target
+           | gsub("RUNNER_TEMP"; "${{ runner.temp }}")
+           | gsub("GITHUB_WORKSPACE"; "${{ github.workspace }}")) as $target
         | (if ."command-pre" then ."command-pre" + "\n" else "" end),
           "sudo mkdir -p \(.src)",
-          (if .permissions then "sudo chown \(.permissions) \(.src)" else "" end),
-          (if .rm then "sudo rm -rf \(.target)" else "" end),
-          "sudo mkdir -p \(.target)",
-          "sudo mount -o bind \(.src) \(.target)",
+          (if .chown then "sudo chown \(.chown) \(.src)" else "" end),
+          (if .rm then "sudo rm -rf \($target)" else "" end),
+          "sudo mkdir -p \($target)",
+          "sudo mount -o bind \(.src) \($target)",
           (if ."command-post" then ."command-post" + "\n" else "" end)
