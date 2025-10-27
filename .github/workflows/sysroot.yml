@@ -80,6 +80,7 @@ jobs:
           libgcc-s1
           libnuma-dev
           linux-libc-dev
+          libxml2-dev
     - name: Cleanup sysroot
       run: |
         sudo chroot sysroot-${{ matrix.arch }} apt-get clean
