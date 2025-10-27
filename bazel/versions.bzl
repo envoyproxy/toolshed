@@ -14,13 +14,13 @@ VERSIONS = {
     "autoconf": VERSION_AUTOCONF,
     "automake": VERSION_AUTOMAKE,
 
-    "bins_release": "0.1.11",
-    "msan_libs_sha256": "38a90e3e015f3e762f51e66d6b3306e91916e03e69295f37b408ebaf80e12d05",
-    "tsan_libs_sha256": "3c281d4c823634c74bcb83b6db4a75b5c3b4cbb9dee2346d313826d43392bfe7",
-    "sysroot_amd64_sha256": "d9e5879125be147d91f6801176c10a98e2355685ced9ad5a047919dcdbfa93e9",
-    "sysroot_arm64_sha256": "05d4d1d61182dec169e4eee0fb3713de4dbd229dfbaac0b9a303edc2155ea5b7",
-    "autotools_x86_64_sha256": "30ecac0a2d8d6cae12bfd92b81227628045fc501877e63194c0cd25687a13041",
-    "autotools_aarch64_sha256": "f0605601b1ca77832d783259808a18c99c063cf40ec77f705dd551c54e90ec01",
+    "bins_release": "0.1.18",
+    "msan_libs_sha256": "84ad1f3a1abf4c62a6fbc8208d2e76301d4a4809698ff1ae505166b06b23d9b8",
+    "tsan_libs_sha256": "006fe0dfc3eb3d0079d65dfb6d44d45e9e71ff7fca755ac35647064bc458bae1",
+    "sysroot_amd64_sha256": "45ab29cf8e963de54ec2fbe27b1f811c8ae0aedfe3dc9798dd1d1650cf78ed3c",
+    "sysroot_arm64_sha256": "b05464343d67cdac55bb175531ddd67d77e4a18aaccfe975b61d85ba1f095d82",
+    "autotools_x86_64_sha256": "c7185997a6ca28052b290e72ab17435c010ca9aa9d076da948a6282719b39956",
+    "autotools_aarch64_sha256": "ea5af8e95186c329bc407e000c07217ecc970f87f139b104182eac7271a92293",
 
     "m4_source": {
         "type": "http_archive",
