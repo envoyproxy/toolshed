@@ -84,15 +84,61 @@ jobs:
     - name: Cleanup sysroot
       run: |
         sudo chroot sysroot-${{ matrix.arch }} apt-get clean
-        sudo rm -rf sysroot-${{ matrix.arch }}/var/lib/apt/lists/*
-        sudo rm -rf sysroot-${{ matrix.arch }}/var/cache/apt/*
-        sudo rm -rf sysroot-${{ matrix.arch }}/usr/share/doc/*
-        sudo rm -rf sysroot-${{ matrix.arch }}/usr/share/man/*
-        sudo rm -rf sysroot-${{ matrix.arch }}/usr/share/info/*
-        sudo rm -rf sysroot-${{ matrix.arch }}/usr/share/lintian/*
+        sudo rm -rf "sysroot-${{ matrix.arch }}/boot"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/bin"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/dev"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/etc/alternatives"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/etc/rmt"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/etc/systemd"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/etc/localtime"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/home"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/media"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/opt"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/proc"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/root"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/run"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/sbin"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/srv"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/sys"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/tmp"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/bin/awk"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/bin/nawk"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/bin/pager"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/bin/pidof"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/sbin"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/share/doc"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/share/info"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/share/lintian"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/share/man"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/usr/share/zoneinfo"
+        sudo rm -rf "sysroot-${{ matrix.arch }}/var"
+
         if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
             sudo rm -rf sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/*
         fi
+
+        root_dir="sysroot-${{ matrix.arch }}"
+        find "$root_dir" -type l | while read symlink; do
+            # Get the current target
+            current_target=$(readlink "$symlink")
+
+            # Skip if already relative
+            if [[ "$current_target" != /* ]]; then
+                continue
+            fi
+
+            # If target exists within our sysroot, make it relative
+            if [[ -e "$root_dir$current_target" ]]; then
+                link_dir=$(dirname "$symlink")
+                relative_path=$(realpath --relative-to="$link_dir" "$root_dir$current_target")
+                sudo ln -sf "$relative_path" "$symlink"
+
+                echo "Fixed: $symlink -> $relative_path (was: $current_target)"
+            else
+                echo "Skipping - target outside sysroot: $symlink -> $current_target"
+            fi
+        done
+
     - name: Package sysroot
       run: |
         if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
