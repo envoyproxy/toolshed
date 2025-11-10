@@ -5,6 +5,9 @@ inputs:
   key-suffix:
     type: string
     required: true
+  bind-mount:
+    type: string
+    default:
   mount-tmpfs:
     type: string
     default: true
@@ -22,6 +25,10 @@ runs:
         systemctl stop docker docker.socket
         mv /var/lib/docker /var/lib/docker.orig
         mkdir -p /var/lib/docker
+        if [[ -n "${{ inputs.bind-mount }}" ]]; then
+            mkdir -p "${{ inputs.bind-mount }}"
+            mount -o bind "${{ inputs.bind-mount }}" /var/lib/docker
+        fi
         zstd --stdout -d docker.tar.zst | tar -xf - -C /var/lib/docker
         systemctl start docker
       mount-tmpfs: ${{ inputs.mount-tmpfs }}
