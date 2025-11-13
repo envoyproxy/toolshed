@@ -87,18 +87,27 @@ def test_base_bazel_query_query_kwargs(patches):
 
 @pytest.mark.parametrize(
     "kwargs", [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
-async def test_base_bazel_query_query(patches, kwargs):
+@pytest.mark.parametrize(
+    "query_options", [None, (), ("QUERY", "OPTIONS")])
+async def test_base_bazel_query_query(patches, kwargs, query_options):
     query = DummyBazelQuery("PATH")
     patched = patches(
         "ABazelQuery.handle_query_response",
         "ABazelQuery.run_query",
         prefix="aio.api.bazel.abstract.query")
+    kwargs = kwargs.copy()
+    if query_options is not None:
+        kwargs["query_options"] = query_options or ()
 
     with patched as (m_response, m_query):
         assert (
-            await query.query("EXPRESSION", **kwargs)
+            await query.query(
+                "EXPRESSION",
+                **kwargs)
             == m_response.return_value)
 
+    if query_options is None:
+        kwargs["query_options"] = None
     assert (
         m_response.call_args
         == [(m_query.return_value, ), {}])
@@ -147,17 +156,26 @@ def test_base_bazel_query_handle_query_response(patches, failed):
         == [("\n", ), {}])
 
 
-def test_base_bazel_query_query_command(patches):
+@pytest.mark.parametrize(
+    "query_options", [None, (), ("QUERY", "OPTIONS")])
+def test_base_bazel_query_query_command(patches, query_options):
     query = DummyBazelQuery("PATH")
     patched = patches(
         ("ABazelQuery.bazel_path",
          dict(new_callable=PropertyMock)),
         prefix="aio.api.bazel.abstract.query")
+    kwargs = (
+        dict(query_options=query_options)
+        if query_options is not None
+        else {})
 
     with patched as (m_bazel, ):
         assert (
-            query.query_command("EXPRESSION")
-            == (str(m_bazel.return_value), "query", "EXPRESSION"))
+            query.query_command("EXPRESSION", **kwargs)
+            == (str(m_bazel.return_value),
+                "query",
+                *(query_options or ()),
+                "EXPRESSION"))
 
 
 @pytest.mark.parametrize("returncode", [0, 1, 2])
@@ -183,7 +201,9 @@ def test_base_bazel_query_query_failed(returncode, startswith):
 
 @pytest.mark.parametrize(
     "kwargs", [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
-async def test_base_bazel_query_run_query(patches, kwargs):
+@pytest.mark.parametrize(
+    "query_options", [None, (), ("QUERY", "OPTIONS")])
+async def test_base_bazel_query_run_query(patches, kwargs, query_options):
     query = DummyBazelQuery("PATH")
     patched = patches(
         ("ABazelQuery.query_kwargs",
@@ -195,11 +215,14 @@ async def test_base_bazel_query_run_query(patches, kwargs):
     mapping = {
         f"K1{i}": f"V1{i}"
         for i in range(0, 3)}
+    all_kwargs = kwargs.copy()
+    if query_options is not None:
+        all_kwargs["query_options"] = query_options
 
     with patched as (m_kwargs, m_command, m_run):
         m_kwargs.return_value.copy.return_value = mapping
         assert (
-            await query.run_query("EXPRESSION", **kwargs)
+            await query.run_query("EXPRESSION", **all_kwargs)
             == m_run.return_value)
 
     expected = {**mapping, **kwargs}
@@ -208,4 +231,4 @@ async def test_base_bazel_query_run_query(patches, kwargs):
         == [(m_command.return_value, ), expected])
     assert (
         m_command.call_args
-        == [("EXPRESSION", ), {}])
+        == [("EXPRESSION", query_options), {}])
