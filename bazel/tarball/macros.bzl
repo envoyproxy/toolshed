@@ -1,3 +1,4 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 def unpacker(
         name,
@@ -52,7 +53,7 @@ def unpacker(
         data += [zstd]
         env["ZSTD"] = "$(location %s)" % zstd
 
-    native.sh_binary(
+    sh_binary(
         name = name,
         srcs = [script],
         visibility = visibility,

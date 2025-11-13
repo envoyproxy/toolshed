@@ -1,3 +1,4 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 def updater(
         name,
@@ -61,7 +62,7 @@ def updater(
         data += [post_script]
         env["VERSION_UPDATE_POST_SCRIPT"] = "$(location %s)" % post_script
 
-    native.sh_binary(
+    sh_binary(
         name = name,
         srcs = [update_script],
         data = data,
