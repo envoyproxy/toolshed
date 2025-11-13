@@ -1,0 +1,5 @@
+{
+    "integrity": "",
+    "strip_prefix": "{REPO}-{VERSION}/bazel",
+    "url": "https://github.com/{OWNER}/{REPO}/archive/refs/tags/bazel-v{TAG}.tar.gz"
+}
