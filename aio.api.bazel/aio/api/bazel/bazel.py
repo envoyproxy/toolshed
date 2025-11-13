@@ -1,7 +1,6 @@
 
 import pathlib
 from functools import cached_property
-from typing import Type
 
 import abstracts
 
@@ -24,11 +23,11 @@ class Bazel:
 class BazelEnv(Bazel):
 
     @property
-    def bazel_query_class(self) -> Type["ABazelQuery"]:
+    def bazel_query_class(self) -> type["ABazelQuery"]:
         return BazelQuery
 
     @property
-    def bazel_run_class(self) -> Type["ABazelRun"]:
+    def bazel_run_class(self) -> type["ABazelRun"]:
         return BazelRun
 
 

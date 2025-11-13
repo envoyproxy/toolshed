@@ -1,7 +1,6 @@
 
 import subprocess
 from functools import cached_property
-from typing import List, Type
 
 import abstracts
 
@@ -19,7 +18,7 @@ class ABazelEnv(ABazel, metaclass=abstracts.Abstraction):
 
     @property  # type: ignore
     @abstracts.interfacemethod
-    def bazel_query_class(self) -> Type["abstract.ABazelQuery"]:
+    def bazel_query_class(self) -> type["abstract.ABazelQuery"]:
         raise NotImplementedError
 
     @cached_property
@@ -28,10 +27,10 @@ class ABazelEnv(ABazel, metaclass=abstracts.Abstraction):
 
     @property  # type: ignore
     @abstracts.interfacemethod
-    def bazel_run_class(self) -> Type["abstract.ABazelRun"]:
+    def bazel_run_class(self) -> type["abstract.ABazelRun"]:
         raise NotImplementedError
 
-    async def query(self, query: str, **kwargs) -> List:
+    async def query(self, query: str, **kwargs) -> list:
         """Run a bazel query and return stdout as list of lines."""
         return await self.bazel_query(query, **kwargs)
 
