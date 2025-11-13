@@ -1,11 +1,10 @@
 
 import sys
-from typing import Optional
 
 from .worker import BazelWorker
 
 
-def main(*args: str) -> Optional[int]:
+def main(*args: str) -> int | None:
     return BazelWorker(*args)()
 
 

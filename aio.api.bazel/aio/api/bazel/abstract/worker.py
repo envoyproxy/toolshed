@@ -2,7 +2,6 @@
 import argparse
 import json
 from functools import cached_property
-from typing import Optional, Type
 
 import abstracts
 
@@ -40,7 +39,7 @@ class ABazelWorkerProcessor(
     async def recv(self) -> argparse.Namespace:
         return await self._load(await super().recv())
 
-    async def send(self, msg: Optional[str]) -> None:
+    async def send(self, msg: str | None) -> None:
         await super().send(self._dump(msg or ""))
 
     def _dump(self, msg: str) -> str:
@@ -62,7 +61,7 @@ class ABazelWorker(runner.Runner, metaclass=abstracts.Abstraction):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def processor_class(self) -> Type[interface.IBazelWorkerProcessor]:
+    def processor_class(self) -> type[interface.IBazelWorkerProcessor]:
         raise NotImplementedError
 
     @cached_property
@@ -72,7 +71,7 @@ class ABazelWorker(runner.Runner, metaclass=abstracts.Abstraction):
         return parser.parse_args(self.extra_args)
 
     @cached_property
-    def protocol_class(self) -> Type[pipe.IProcessProtocol]:
+    def protocol_class(self) -> type[pipe.IProcessProtocol]:
         return utils.dottedname_resolve(self.args.protocol)
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:

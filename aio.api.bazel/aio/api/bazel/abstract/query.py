@@ -1,6 +1,5 @@
 
 import subprocess
-from typing import Dict, List, Tuple
 
 import abstracts
 
@@ -11,11 +10,11 @@ from .base import ABazelCommand
 class ABazelQuery(ABazelCommand, metaclass=abstracts.Abstraction):
     """Execute a bazel query asynchronously."""
 
-    async def __call__(self, *args, **kwargs) -> List[str]:
+    async def __call__(self, *args, **kwargs) -> list[str]:
         return await self.query(*args, **kwargs)
 
     @property
-    def query_kwargs(self) -> Dict[str, str]:
+    def query_kwargs(self) -> dict[str, str]:
         """Subprocess kwargs for running the Bazel query."""
         return dict(
             cwd=str(self.path),
@@ -24,21 +23,21 @@ class ABazelQuery(ABazelCommand, metaclass=abstracts.Abstraction):
     async def query(
             self,
             expression: str,
-            **kwargs) -> List[str]:
+            **kwargs) -> list[str]:
         """Run the Bazel query and return a response if no errors."""
         return self.handle_query_response(
             await self.run_query(expression, **kwargs))
 
     def handle_query_response(
             self,
-            response: subprocess.CompletedProcess) -> List[str]:
+            response: subprocess.CompletedProcess) -> list[str]:
         """Handle the subprocess response from running the query."""
         if self.query_failed(response):
             raise exceptions.BazelQueryError(
                 f"\n{response.stdout.strip()}{response.stderr.strip()}")
         return response.stdout.strip().split("\n")
 
-    def query_command(self, expression: str) -> Tuple[str, ...]:
+    def query_command(self, expression: str) -> tuple[str, ...]:
         """The Bazel query command."""
         return (
             str(self.bazel_path),
