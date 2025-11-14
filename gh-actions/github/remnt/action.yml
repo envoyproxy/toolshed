@@ -1,0 +1,49 @@
+inputs:
+  mnt-path:
+    type: string
+    default: /mnt
+  recreate-swap:
+    type: boolean
+    default: true
+
+
+runs:
+  using: composite
+  steps:
+  - id: remnt
+    name: Reformat /mnt partition
+    run: |
+      DISK_NAME=$(findmnt -n -o SOURCE --target ${{ inputs.mnt-path }})
+
+      disk_state () {
+          df -h
+          mount
+          sudo ls -alh ${{ inputs.mnt-path }}
+          free
+      }
+
+      umount_drive () {
+           sudo swapoff ${{ inputs.mnt-path }}/swapfile
+           sudo umount ${{ inputs.mnt-path }}
+      }
+
+      reformat_drive () {
+           sudo mkfs.ext4 -F "$DISK_NAME"
+           sudo mount $DISKNAME ${{ inputs.mnt-path }}
+      }
+
+      recreate_swap () {
+          sudo fallocate -l 4G ${{ inputs.mnt-path }}/swapfile
+          sudo chmod 600 ${{ inputs.mnt-path }}/swapfile
+          sudo mkswap ${{ inputs.mnt-path }}/swapfile
+          sudo swapon ${{ inputs.mnt-path }}/swapfile
+      }
+
+      disk_state
+      umount_drive
+      reformat_drive
+      if [[ "${{ inputs.recreate-swap }}" != "false" ]]; then
+          recreate_swap
+      fi
+      disk_state
+    shell: bash
