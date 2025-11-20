@@ -36,7 +36,7 @@ jobs:
         - arch: aarch64
           runs-on: ubuntu-22.04-arm
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Fetch versions
       id: deps
       run: |
@@ -146,7 +146,7 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v5
       with:
