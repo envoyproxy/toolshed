@@ -1,3 +1,4 @@
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 def cat(name = "cat", flag = "target"):
     """
@@ -44,7 +45,7 @@ def cat(name = "cat", flag = "target"):
         srcs = [":%s" % flag],
     )
 
-    native.sh_binary(
+    sh_binary(
         name = name,
         srcs = ["%s_sh" % name],
         data = [":%s" % flag],
@@ -92,7 +93,7 @@ def jqcat(
         build_setting_default = ":jqempty",
     )
 
-    native.sh_binary(
+    sh_binary(
         name = name,
         srcs = [jq_script],
         data = [

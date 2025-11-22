@@ -1,4 +1,5 @@
 load("@aspect_bazel_lib//lib:jq.bzl", "jq")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 def rules_pools(
         name,
@@ -10,7 +11,7 @@ def rules_pools(
     """Generate a dict with keys being non-`default` pools, and values
     are a list of targets configured to use the pool.
     """
-    native.sh_binary(
+    sh_binary(
         name = "find_rules_pools",
         srcs = [pool_script],
         data = [
@@ -358,7 +359,7 @@ def ci_changes(
         """,
     )
 
-    native.sh_binary(
+    sh_binary(
         name = "update",
         srcs = [update_script],
         data = [
