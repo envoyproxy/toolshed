@@ -5,8 +5,12 @@ inputs:
   background:
     type: boolean
     default: true
-    description: "Run removal commands in parallel (true) or sequentially (false). Defaults to parallel for faster execution."
+    description: "Run removal commands in background (true) or foreground (false). When true, returns immediately with PIDs as outputs."
 
+outputs:
+  pids:
+    description: "Space-separated list of background process PIDs (only set when background: true)"
+    value: ${{ steps.remove_cruft.outputs.pids }}
 
 runs:
   using: composite
@@ -30,26 +34,17 @@ runs:
               sudo rm -rf "$removal" &
               pids+=($!)
           done
-          # Wait for all background processes to complete
-          failed=0
-          for pid in "${pids[@]}"; do
-              if ! wait "$pid"; then
-                  failed=1
-              fi
-          done
-          if [ "$failed" -eq 1 ]; then
-              echo "Warning: One or more disk cleanup processes failed. Check previous output for specific errors."
-          fi
+          echo "pids=${pids[*]}" >> $GITHUB_OUTPUT
+          echo "Background removal started with PIDs: ${pids[*]}"
       else
           # Run rm commands in foreground
           for removal in "${TO_REMOVE[@]}"; do
               echo "Removing: ${removal} ..."
               sudo rm -rf "$removal"
           done
+          echo "Disk after cruft removal"
+          df -h
       fi
-
-      echo "Disk after cruft removal"
-      df -h
     env:
       DEFAULT_DIRECTORIES: |
         /opt/hostedtoolcache
