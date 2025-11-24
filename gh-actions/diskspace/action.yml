@@ -2,7 +2,15 @@ inputs:
   to_remove:
     type: string
     default:
+  background:
+    type: boolean
+    default: true
+    description: "Run removal commands in background (true) or foreground (false). When true, returns immediately with PIDs as outputs."
 
+outputs:
+  pids:
+    description: "Space-separated list of background process PIDs (only set when background: true)"
+    value: ${{ steps.remove_cruft.outputs.pids }}
 
 runs:
   using: composite
@@ -17,11 +25,23 @@ runs:
       else
           TO_REMOVE=(${DEFAULT_DIRECTORIES})
       fi
+      if [[ "${{ inputs.background }}" == "true" ]]; then
+          # Run rm commands in background
+          pids=()
+          for removal in "${TO_REMOVE[@]}"; do
+              echo "Removing: ${removal} (background) ..."
+              sudo rm -rf "$removal" &
+              pids+=($!)
+          done
+          echo "pids=${pids[*]}" >> $GITHUB_OUTPUT
+          echo "Background removal started with PIDs: ${pids[*]}"
+          exit 0
+      fi
+      # Run rm commands in foreground
       for removal in "${TO_REMOVE[@]}"; do
           echo "Removing: ${removal} ..."
           sudo rm -rf "$removal"
       done
-
       echo "Disk after cruft removal"
       df -h
     env:
