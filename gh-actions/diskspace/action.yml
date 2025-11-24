@@ -25,7 +25,6 @@ runs:
       else
           TO_REMOVE=(${DEFAULT_DIRECTORIES})
       fi
-
       if [[ "${{ inputs.background }}" == "true" ]]; then
           # Run rm commands in background
           pids=()
@@ -36,16 +35,15 @@ runs:
           done
           echo "pids=${pids[*]}" >> $GITHUB_OUTPUT
           echo "Background removal started with PIDs: ${pids[*]}"
-          # Note: Disk space check skipped in background mode as processes haven't completed yet
-      else
-          # Run rm commands in foreground
-          for removal in "${TO_REMOVE[@]}"; do
-              echo "Removing: ${removal} ..."
-              sudo rm -rf "$removal"
-          done
-          echo "Disk after cruft removal"
-          df -h
+          exit 0
       fi
+      # Run rm commands in foreground
+      for removal in "${TO_REMOVE[@]}"; do
+          echo "Removing: ${removal} ..."
+          sudo rm -rf "$removal"
+      done
+      echo "Disk after cruft removal"
+      df -h
     env:
       DEFAULT_DIRECTORIES: |
         /opt/hostedtoolcache
