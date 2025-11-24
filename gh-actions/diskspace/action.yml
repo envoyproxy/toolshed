@@ -5,6 +5,7 @@ inputs:
   background:
     type: boolean
     default: true
+    description: "Run removal commands in parallel (true) or sequentially (false). Defaults to parallel for faster execution."
 
 
 runs:
@@ -37,7 +38,7 @@ runs:
               fi
           done
           if [ "$failed" -eq 1 ]; then
-              echo "Warning: Some removal processes may have failed"
+              echo "Warning: One or more disk cleanup processes failed. Check previous output for specific errors."
           fi
       else
           # Run rm commands in foreground
