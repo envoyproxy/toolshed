@@ -2,6 +2,9 @@ inputs:
   to_remove:
     type: string
     default:
+  background:
+    type: boolean
+    default: true
 
 
 runs:
@@ -17,10 +20,22 @@ runs:
       else
           TO_REMOVE=(${DEFAULT_DIRECTORIES})
       fi
-      for removal in "${TO_REMOVE[@]}"; do
-          echo "Removing: ${removal} ..."
-          sudo rm -rf "$removal"
-      done
+
+      if [[ "${{ inputs.background }}" == "true" ]]; then
+          # Run rm commands in background
+          for removal in "${TO_REMOVE[@]}"; do
+              echo "Removing: ${removal} (background) ..."
+              sudo rm -rf "$removal" &
+          done
+          # Wait for all background processes to complete
+          wait
+      else
+          # Run rm commands in foreground
+          for removal in "${TO_REMOVE[@]}"; do
+              echo "Removing: ${removal} ..."
+              sudo rm -rf "$removal"
+          done
+      fi
 
       echo "Disk after cruft removal"
       df -h
