@@ -23,12 +23,22 @@ runs:
 
       if [[ "${{ inputs.background }}" == "true" ]]; then
           # Run rm commands in background
+          pids=()
           for removal in "${TO_REMOVE[@]}"; do
               echo "Removing: ${removal} (background) ..."
               sudo rm -rf "$removal" &
+              pids+=($!)
           done
           # Wait for all background processes to complete
-          wait
+          failed=0
+          for pid in "${pids[@]}"; do
+              if ! wait "$pid"; then
+                  failed=1
+              fi
+          done
+          if [ "$failed" -eq 1 ]; then
+              echo "Warning: Some removal processes may have failed"
+          fi
       else
           # Run rm commands in foreground
           for removal in "${TO_REMOVE[@]}"; do
