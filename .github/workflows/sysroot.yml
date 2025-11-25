@@ -78,7 +78,6 @@ jobs:
           libc6
           libc6-dev
           libgcc-s1
-          libnuma-dev
           linux-libc-dev
           libxml2-dev
     - name: Cleanup sysroot
