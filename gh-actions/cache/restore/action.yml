@@ -1,8 +1,13 @@
 inputs:
+  artifact-id:
+    type: string
+    default:
+  artifact-name:
+    type: string
+    default:
   key:
     type: string
     required: true
-
   command:
     type: string
     default:
@@ -44,21 +49,35 @@ runs:
           sudo chown -R ${{ inputs.owner }} ${{ inputs.path || inputs.path-tmp }}
       fi
     shell: bash
+
+  # Restore cache
   - name: Restore cache
-    if: ${{ ! inputs.gcs-bucket }}
+    if: >-
+      ! inputs.gcs-bucket
+      && ! inputs.artifact-name
     id: cache-restore
     uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
     with:
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
   - name: Restore GCS cache
-    if: ${{ inputs.gcs-bucket }}
+    if: inputs.gcs-bucket
     id: cache-restore-gcs
     uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@actions-v0.3.30
     with:
       bucket: ${{ inputs.gcs-bucket }}
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
+  - name: Restore artifact cache
+    if: inputs.artifact-name
+    id: cache-restore-artifact
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/restore@fc706873f4b584510349491f1ab87eb6fcc20cb1
+    with:
+      id: ${{ inputs.artifact-id }}
+      name: ${{ inputs.artifact-name }}
+      path: ${{ inputs.path || inputs.path-tmp }}
+
+  # Command
   - run: |
       # Create cache script
       cat <<'EOF' >> "${{ inputs.path-script }}"
