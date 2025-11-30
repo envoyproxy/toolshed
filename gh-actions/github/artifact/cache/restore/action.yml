@@ -1,0 +1,60 @@
+inputs:
+  id:
+    type: string
+    required: false
+  name:
+    type: string
+    required: true
+  path:
+    type: string
+    required: true
+  repository:
+    type: string
+    required: true
+    default: ${{ github.repository }}
+  token:
+    # requires: `actions: read`
+    type: string
+    required: true
+    default: ${{ github.token }}
+
+
+runs:
+  using: composite
+  steps:
+  - name: Find artifact cache
+    if: >-
+      ! inputs.id
+    id: cache-id
+    shell: bash
+    run: |
+      artifact_id=$(gh api \
+        -H "Accept: application/vnd.github+json" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "/repos/${REPOSITORY}/actions/artifacts?name=${ARTIFACT_NAME}&per_page=1" \
+        --jq '.artifacts[0] | .id')
+      echo "id=${artifact_id}" >> $GITHUB_OUTPUT
+    env:
+      ARTIFACT_NAME: ${{ inputs.name }}.tar.zst
+      GH_TOKEN: ${{ inputs.token }}
+      REPOSITORY: ${{ inputs.repository }}
+  - name: Restore artifact cache
+    if: |
+      inputs.id
+      || steps.cache-id.outputs.id
+    shell: bash
+    run: |
+      gh api \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "/repos/${REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+          | tar --warning=no-timestamp \
+                --keep-directory-symlink \
+                -xI unzstd \
+                -f - \
+                -C ${OUTPUT_PATH}
+    env:
+      GH_TOKEN: ${{ inputs.token }}
+      ARTIFACT_ID: ${{ inputs.id || steps.cache-id.outputs.id }}
+      OUTPUT_PATH: ${{ inputs.path }}
+      REPOSITORY: ${{ inputs.repository }}
