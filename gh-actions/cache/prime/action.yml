@@ -1,4 +1,7 @@
 inputs:
+  artifact-name:
+    type: string
+    default:
   change-directory:
     type: boolean
     default: true
@@ -8,7 +11,6 @@ inputs:
   key:
     type: string
     required: true
-
   gcs-bucket:
     type: string
     default:
@@ -54,24 +56,40 @@ runs:
       fi
     shell: bash
 
+  # Initial checks
   - name: Check GCS bucket cache
     id: gcs-object
-    if: ${{ inputs.gcs-bucket }}
+    if: inputs.gcs-bucket
     uses: envoyproxy/toolshed/gh-actions/gcs/cache/exists@actions-v0.3.30
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
+  - name: Check artifact cache
+    id: artifact-object
+    if: >-
+      ! inputs.gcs-bucket
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/id@fc706873f4b584510349491f1ab87eb6fcc20cb1
+    with:
+      name: ${{ inputs.key }}
 
   - name: Check cache
     id: cache-restore-initial
-    if: ${{ ! inputs.gcs-bucket }}
+    if: >-
+      ! inputs.gcs-bucket
+      && ! inputs.artifact-name
     uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
     with:
       lookup-only: true
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
+
+  # Mutex
   - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.30
-    if: ${{ ! inputs.lock-id && steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.gcs-object.outputs.exists != 'true' }}
+    if: >-
+      ! inputs.lock-id
+      && steps.cache-restore-initial.outputs.cache-hit != 'true'
+      && steps.gcs-object.outputs.exists != 'true'
+      && steps.artifact-object.outputs.id == ''
     id: lock-id
     with:
       input: ${{ inputs.key }}
@@ -79,32 +97,53 @@ runs:
       filter: |
         @base64
   - uses: envoyproxy/toolshed/gh-actions/github/mutex@actions-v0.3.30
-    if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' && steps.gcs-object.outputs.exists != 'true' }}
+    if: >-
+      inputs.lock-token
+      && steps.cache-restore-initial.outputs.cache-hit != 'true'
+      && steps.gcs-object.outputs.exists != 'true'
+      && steps.artifact-object.outputs.id == ''
     with:
       key: ${{ inputs.lock-id || steps.lock-id.outputs.value }}
       repository: ${{ inputs.lock-repository }}
       token: ${{ inputs.lock-token }}
-  - name: Check cache
+
+  # Lock is free - but something might have cached it ... recheck
+  - name: Recheck cache
     id: cache-restore
-    if: ${{ inputs.lock-token && steps.cache-restore-initial.outputs.cache-hit != 'true' && ! inputs.gcs-bucket }}
+    if: >-
+      inputs.lock-token
+      && steps.cache-restore-initial.outputs.cache-hit != 'true'
+      && ! inputs.gcs-bucket
+      && ! inputs.artifact-name
     uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
     with:
       lookup-only: true
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
-
+  - name: Recheck artifacts
+    id: artifact-object-recheck
+    if: >-
+      ! inputs.gcs-bucket
+      && steps.artifact-object.outputs.exists == ''
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/id@fc706873f4b584510349491f1ab87eb6fcc20cb1
+    with:
+      name: ${{ inputs.key }}
   - name: Check GCS bucket cache
     id: gcs-object-recheck
-    if: ${{ inputs.gcs-bucket && steps.gcs-object.outputs.exists != 'true' }}
+    if: >-
+      inputs.gcs-bucket
+      && steps.gcs-object.outputs.exists != 'true'
     uses: envoyproxy/toolshed/gh-actions/gcs/cache/exists@actions-v0.3.30
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
 
+  # Prime the cache
   - if: >-
-      ${{ steps.cache-restore-initial.outputs.cache-hit != 'true'
-          && steps.cache-restore.outputs.cache-hit != 'true'
-          && steps.gcs-object-recheck.outputs.exists != 'true' }}
+      steps.cache-restore-initial.outputs.cache-hit != 'true'
+      && steps.cache-restore.outputs.cache-hit != 'true'
+      && steps.gcs-object-recheck.outputs.exists != 'true'
+      && steps.artifact-object-recheck.outputs.id == ''
     run: |
       # Create cache script
       cat <<'EOF' >> "${{ inputs.path-script }}"
@@ -118,9 +157,10 @@ runs:
     shell: bash
 
   - if: >-
-      ${{ steps.cache-restore-initial.outputs.cache-hit != 'true'
+      steps.cache-restore-initial.outputs.cache-hit != 'true'
       && steps.cache-restore.outputs.cache-hit != 'true'
-      && steps.gcs-object-recheck.outputs.exists != 'true' }}
+      && steps.gcs-object-recheck.outputs.exists != 'true'
+      && steps.artifact-object-recheck.outputs.id == ''
     name: Create cache
     id: restore
     run: |
@@ -148,18 +188,32 @@ runs:
     env:
       CACHE_PATH: ${{ inputs.path || inputs.path-tmp }}
 
-  - if: ${{ steps.restore.outputs.save == 'true' && ! inputs.gcs-bucket }}
+  - if: >-
+      steps.restore.outputs.save == 'true'
+      && ! inputs.gcs-bucket
+      && ! inputs.artifact-name
     name: Save cache
     uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
     with:
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
 
-  - if: ${{ steps.restore.outputs.save == 'true' && inputs.gcs-bucket }}
+  - if: >-
+      steps.restore.outputs.save == 'true'
+      && inputs.gcs-bucket
     uses: envoyproxy/toolshed/gh-actions/gcs/cache/save@actions-v0.3.30
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
+      path: ${{ inputs.path || inputs.path-tmp }}
+
+  - name: Save archive cache
+    if: >-
+      steps.restore.outputs.save == 'true'
+      && inputs.artifact-name
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/save@c86d657609fbcd77fe129bb3e9b17dad5b7b3f96
+    with:
+      name: ${{ inputs.artifact-name }}
       path: ${{ inputs.path || inputs.path-tmp }}
 
   - if: ${{ steps.restore.outputs.save == 'true' && ! inputs.path }}
