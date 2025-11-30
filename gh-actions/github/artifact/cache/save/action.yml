@@ -1,0 +1,26 @@
+inputs:
+  compressor:
+    type: string
+    default: zstd -7 -T0
+  name:
+    type: string
+    required: true
+  path:
+    type: string
+    required: true
+
+
+runs:
+  using: composite
+  steps:
+  - name: Setup artifact client for streaming upload
+    uses: lhotari/gh-actions-artifact-client@ef03990878cb292d789ee6c36b5bbc8369aa30ed  # v2
+  - name: Stream save archive cache
+    shell: bash
+    run: |
+      tar cf - -I "${COMPRESSOR}" -C "${UPLOAD_PATH}" .  \
+          | gh-actions-artifact-client.js upload "${ARTIFACT_NAME}"
+    env:
+      ARTIFACT_NAME: ${{ inputs.name }}.tar.zst
+      COMPRESSOR: ${{ inputs.compressor }}
+      UPLOAD_PATH: ${{ inputs.path }}
