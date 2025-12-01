@@ -51,12 +51,11 @@ runs:
           artifact_id="$aid"
           break
         else
-          echo "::warning::Skipping artifact ${aid} from workflow ${path} (event: ${event})" >&2
+          run_url="https://github.com/${REPOSITORY}/actions/runs/${wfid}"
+          echo "::warning::Suspected cache poisoning attempt from ${run_url} (event: ${event})" >&2
         fi
       done <<< "$artifacts"
       echo "id=${artifact_id}" >> $GITHUB_OUTPUT
-
-      exit 1
     env:
       ARTIFACT_NAME: ${{ inputs.name }}.tar.zst
       GH_TOKEN: ${{ inputs.token }}
