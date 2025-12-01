@@ -5,6 +5,9 @@ inputs:
   artifact-name:
     type: string
     default:
+  artifact-wf-path:
+    type: string
+    default:
   key:
     type: string
     required: true
@@ -71,11 +74,12 @@ runs:
   - name: Restore artifact cache
     if: inputs.artifact-name
     id: cache-restore-artifact
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/restore@fc706873f4b584510349491f1ab87eb6fcc20cb1
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/restore@0df07afbbea88bc5248813829ee49439747002d2
     with:
       id: ${{ inputs.artifact-id }}
       name: ${{ inputs.artifact-name }}
       path: ${{ inputs.path || inputs.path-tmp }}
+      wf-path: ${{ inputs.artifact-wf-path }}
 
   # Command
   - run: |
