@@ -66,7 +66,7 @@ runs:
   - name: Restore GCS cache
     if: inputs.gcs-bucket
     id: cache-restore-gcs
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@actions-v0.3.30
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@actions-v0.3.33
     with:
       bucket: ${{ inputs.gcs-bucket }}
       path: ${{ inputs.path || inputs.path-tmp }}
@@ -74,7 +74,7 @@ runs:
   - name: Restore artifact cache
     if: inputs.artifact-name
     id: cache-restore-artifact
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/restore@0df07afbbea88bc5248813829ee49439747002d2
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/restore@actions-v0.3.33
     with:
       id: ${{ inputs.artifact-id }}
       name: ${{ inputs.artifact-name }}
