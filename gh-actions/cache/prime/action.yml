@@ -2,6 +2,9 @@ inputs:
   artifact-name:
     type: string
     default:
+  artifact-wf-path:
+    type: string
+    default:
   change-directory:
     type: boolean
     default: true
@@ -68,9 +71,10 @@ runs:
     id: artifact-object
     if: >-
       ! inputs.gcs-bucket
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/id@fc706873f4b584510349491f1ab87eb6fcc20cb1
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/id@a9a0a4aab15d43aa292f25f7a0618ad461d2cc59
     with:
       name: ${{ inputs.key }}
+      wf-path: ${{ inputs.artifact-wf-path }}
 
   - name: Check cache
     id: cache-restore-initial
@@ -125,9 +129,10 @@ runs:
     if: >-
       ! inputs.gcs-bucket
       && steps.artifact-object.outputs.exists == ''
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/id@fc706873f4b584510349491f1ab87eb6fcc20cb1
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/id@a9a0a4aab15d43aa292f25f7a0618ad461d2cc59
     with:
       name: ${{ inputs.key }}
+      wf-path: ${{ inputs.artifact-wf-path }}
   - name: Check GCS bucket cache
     id: gcs-object-recheck
     if: >-
