@@ -30,13 +30,14 @@ runs:
   - id: cache-id
     shell: bash
     run: |
-      # Fetch up to 10 recent artifacts with matching name
       artifacts=$(gh api \
           -H "Accept: application/vnd.github+json" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           "/repos/${REPOSITORY}/actions/artifacts?name=${ARTIFACT_NAME}&per_page=${MAX_ARTIFACTS_TO_CHECK}" \
           --jq '.artifacts[] | "\(.id) \(.workflow_run.id)"')
-
+      if [[ -z "$artifacts" ]]; then
+          exit 0
+      fi
       found_artifact_id=""
       while IFS=' ' read -r artifact_id wf_id; do
           workflow_data=$(gh api \
