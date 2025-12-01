@@ -54,8 +54,9 @@ runs:
           echo "::warning::Skipping artifact ${aid} from workflow ${path} (event: ${event})" >&2
         fi
       done <<< "$artifacts"
-
       echo "id=${artifact_id}" >> $GITHUB_OUTPUT
+
+      exit 1
     env:
       ARTIFACT_NAME: ${{ inputs.name }}.tar.zst
       GH_TOKEN: ${{ inputs.token }}
