@@ -2,6 +2,10 @@ inputs:
   name:
     type: string
     required: true
+  max-artifacts-to-check:
+    type: number
+    required: true
+    default: 10
   repository:
     type: string
     required: true
@@ -11,6 +15,9 @@ inputs:
     type: string
     required: true
     default: ${{ github.token }}
+  wf-path:
+    type: string
+    required: true
 
 outputs:
   id:
@@ -23,13 +30,35 @@ runs:
   - id: cache-id
     shell: bash
     run: |
-      artifact_id=$(gh api \
+      # Fetch up to 10 recent artifacts with matching name
+      artifacts=$(gh api \
           -H "Accept: application/vnd.github+json" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
-          "/repos/${REPOSITORY}/actions/artifacts?name=${ARTIFACT_NAME}&per_page=1" \
-          --jq '.artifacts[0] | .id')
-      echo "id=${artifact_id}" >> $GITHUB_OUTPUT
+          "/repos/${REPOSITORY}/actions/artifacts?name=${ARTIFACT_NAME}&per_page=${MAX_ARTIFACTS_TO_CHECK}" \
+          --jq '.artifacts[] | "\(.id) \(.workflow_run.id)"')
+
+      found_artifact_id=""
+      while IFS=' ' read -r artifact_id wf_id; do
+          workflow_data=$(gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${REPOSITORY}/actions/runs/${wf_id}" \
+              --jq '{path: .path, event: .event}')
+          path=$(echo "$workflow_data" | jq -r '.path')
+          event=$(echo "$workflow_data" | jq -r '.event')
+          run_url="https://github.com/${REPOSITORY}/actions/runs/${wf_id}"
+          if [[ "$path" == "${WF_PATH}" && "$event" != "pull_request" ]]; then
+              found_artifact_id="$artifact_id"
+              echo "::notice::Found cache in ${run_url} (event: ${event})" >&2
+              break
+          else
+              echo "::warning::Suspected cache poisoning attempt from ${run_url} (event: ${event})" >&2
+          fi
+      done <<< "$artifacts"
+      echo "id=${found_artifact_id}" >> $GITHUB_OUTPUT
     env:
       ARTIFACT_NAME: ${{ inputs.name }}.tar.zst
       GH_TOKEN: ${{ inputs.token }}
+      MAX_ARTIFACTS_TO_CHECK: ${{ inputs.max-artifacts-to-check }}
       REPOSITORY: ${{ inputs.repository }}
+      WF_PATH: ${{ inputs.wf-path }}
