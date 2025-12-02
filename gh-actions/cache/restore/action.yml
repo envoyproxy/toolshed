@@ -8,6 +8,11 @@ inputs:
   artifact-wf-path:
     type: string
     default:
+  cache-type:
+    type: string
+    default: github
+    description: |
+      Cache type, should be one of "github", "gcs", "artifact"
   key:
     type: string
     required: true
@@ -36,6 +41,7 @@ inputs:
     type: boolean
     default: false
 
+
 runs:
   using: "composite"
   steps:
@@ -56,15 +62,15 @@ runs:
   # Restore cache
   - name: Restore cache
     if: >-
-      ! inputs.gcs-bucket
-      && ! inputs.artifact-name
+      inputs.cache-type == 'github'
     id: cache-restore
     uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830  # v4.3.0
     with:
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
   - name: Restore GCS cache
-    if: inputs.gcs-bucket
+    if: >-
+      inputs.cache-type == 'gcs'
     id: cache-restore-gcs
     uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@actions-v0.3.33
     with:
@@ -72,7 +78,8 @@ runs:
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
   - name: Restore artifact cache
-    if: inputs.artifact-name
+    if: >-
+      inputs.cache-type == 'artifact'
     id: cache-restore-artifact
     uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/restore@actions-v0.3.33
     with:
