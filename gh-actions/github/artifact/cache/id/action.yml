@@ -34,7 +34,7 @@ runs:
           -H "Accept: application/vnd.github+json" \
           -H "X-GitHub-Api-Version: 2022-11-28" \
           "/repos/${REPOSITORY}/actions/artifacts?name=${ARTIFACT_NAME}&per_page=${MAX_ARTIFACTS_TO_CHECK}" \
-          --jq '.artifacts[] | "\(.id) \(.workflow_run.id)"')
+          --jq '.artifacts[] | select(.expired == false) | "\(.id) \(.workflow_run.id)"')
       if [[ -z "$artifacts" ]]; then
           exit 0
       fi
