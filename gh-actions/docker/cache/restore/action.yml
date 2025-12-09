@@ -19,12 +19,28 @@ runs:
   using: "composite"
   steps:
   - uses: envoyproxy/toolshed/gh-actions/cache/restore@actions-v0.3.35
+    id: recreate
     with:
       key: ${{ inputs.image-tag }}${{ inputs.key-suffix }}
       command: |
         systemctl stop docker docker.socket
-        mv /var/lib/docker /var/lib/docker.orig
-        mkdir -p /var/lib/docker
+        if mountpoint -q /var/lib/docker; then
+            MOUNT_SOURCE=$(findmnt -n -o SOURCE --mountpoint /var/lib/docker)
+            umount /var/lib/docker
+            if [[ -n "$MOUNT_SOURCE" && -d "$MOUNT_SOURCE" ]]; then
+                mv "$MOUNT_SOURCE" "${MOUNT_SOURCE}.orig"
+                mkdir -p "$MOUNT_SOURCE"
+                mount -o bind "$MOUNT_SOURCE" /var/lib/docker
+                echo "needs-delete=${MOUNT_SOURCE}.orig" >> $GITHUB_OUTPUT
+            else
+                echo "Error: Detected mount source '$MOUNT_SOURCE' is invalid or not a directory."
+                exit 1
+            fi
+        else
+            mv /var/lib/docker /var/lib/docker.orig
+            mkdir -p /var/lib/docker
+            echo "needs-delete=/var/lib/docker.orig" >> $GITHUB_OUTPUT
+        fi
         if [[ -n "${{ inputs.bind-mount }}" ]]; then
             mkdir -p "${{ inputs.bind-mount }}"
             mount -o bind "${{ inputs.bind-mount }}" /var/lib/docker
@@ -33,7 +49,9 @@ runs:
         systemctl start docker
       mount-tmpfs: ${{ inputs.mount-tmpfs }}
       run-as-sudo: true
-  - if: ${{ fromJSON(inputs.overwrite) }}
+  - if: >-
+      fromJSON(inputs.overwrite)
+      && steps.recreate.outputs.needs-delete
     run: |
-      sudo rm -rf /var/lib/docker.orig &
+      sudo rm -rf ${{ steps.recreate.outputs.needs-delete }} &
     shell: bash
