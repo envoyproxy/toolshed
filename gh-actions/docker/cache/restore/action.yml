@@ -19,7 +19,6 @@ runs:
   using: "composite"
   steps:
   - uses: envoyproxy/toolshed/gh-actions/cache/restore@actions-v0.3.35
-    id: recreate
     with:
       key: ${{ inputs.image-tag }}${{ inputs.key-suffix }}
       command: |
@@ -31,7 +30,7 @@ runs:
                 mv "$MOUNT_SOURCE" "${MOUNT_SOURCE}.orig"
                 mkdir -p "$MOUNT_SOURCE"
                 mount -o bind "$MOUNT_SOURCE" /var/lib/docker
-                echo "needs-delete=${MOUNT_SOURCE}.orig" >> $GITHUB_OUTPUT
+                echo "${MOUNT_SOURCE}.orig" > /tmp/NEEDS_DELETE
             else
                 echo "Error: Detected mount source '$MOUNT_SOURCE' is invalid or not a directory."
                 exit 1
@@ -39,7 +38,7 @@ runs:
         else
             mv /var/lib/docker /var/lib/docker.orig
             mkdir -p /var/lib/docker
-            echo "needs-delete=/var/lib/docker.orig" >> $GITHUB_OUTPUT
+            echo "/var/lib/docker.orig" > /tmp/NEEDS_DELETE
         fi
         if [[ -n "${{ inputs.bind-mount }}" ]]; then
             mkdir -p "${{ inputs.bind-mount }}"
@@ -51,7 +50,7 @@ runs:
       run-as-sudo: true
   - if: >-
       fromJSON(inputs.overwrite)
-      && steps.recreate.outputs.needs-delete
     run: |
-      sudo rm -rf ${{ steps.recreate.outputs.needs-delete }} &
+      TO_DELETE="$(sudo cat /tmp/NEEDS_DELETE)"
+      sudo rm -rf ${TO_DELETE} &
     shell: bash
