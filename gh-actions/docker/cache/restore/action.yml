@@ -28,7 +28,7 @@ runs:
             MOUNT_SOURCE=$(echo "$MOUNT_SOURCE" | sed -E 's/.*\[([^]]+)\].*/\1/')
 
             # TEMP WORKAROUND
-            MOUNT_SOURCE=/tmp/docker
+            MOUNT_SOURCE=/mnt/docker
 
             umount /var/lib/docker
             if [[ -n "$MOUNT_SOURCE" && -d "$MOUNT_SOURCE" ]]; then
