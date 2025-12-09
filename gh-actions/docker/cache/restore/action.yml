@@ -25,6 +25,7 @@ runs:
         systemctl stop docker docker.socket
         if mountpoint -q /var/lib/docker; then
             MOUNT_SOURCE=$(findmnt -n -o SOURCE --mountpoint /var/lib/docker)
+            MOUNT_SOURCE=$(echo "$MOUNT_SOURCE" | sed -E 's/.*\[([^]]+)\].*/\1/')
             umount /var/lib/docker
             if [[ -n "$MOUNT_SOURCE" && -d "$MOUNT_SOURCE" ]]; then
                 mv "$MOUNT_SOURCE" "${MOUNT_SOURCE}.orig"
