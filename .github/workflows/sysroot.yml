@@ -47,7 +47,7 @@ jobs:
         echo "glibc=${GLIBC_VERSION}" >> $GITHUB_OUTPUT
       env:
         PPA_TOOLCHAIN_VERSION: focal
-        DEBIAN_VERSION: bookworm
+        DEBIAN_VERSION: bullseye
         STDCC_VERSION: 13
         GLIBC_VERSION: 2.31
 
@@ -63,8 +63,15 @@ jobs:
           ${{ steps.versions.outputs.debian }} \
           sysroot-${{ matrix.arch }} \
           http://deb.debian.org/debian/
+        # Add backports repository for newer kernel headers
+        echo "deb http://deb.debian.org/debian ${{ steps.versions.outputs.debian }}-backports main" \
+          | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/backports.list
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
+        # Install base packages from stable
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y ${PACKAGES}
+        # Install linux-libc-dev from backports for newer kernel headers (includes openat2.h)
+        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y \
+          -t ${{ steps.versions.outputs.debian }}-backports linux-libc-dev
         if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
             echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${{ steps.versions.outputs.ppa-toolchain }} main" \
               | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/toolchain.list
@@ -78,7 +85,6 @@ jobs:
           libc6
           libc6-dev
           libgcc-s1
-          linux-libc-dev
           libxml2-dev
     - name: Cleanup sysroot
       run: |
