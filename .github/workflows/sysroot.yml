@@ -47,7 +47,7 @@ jobs:
         echo "glibc=${GLIBC_VERSION}" >> $GITHUB_OUTPUT
       env:
         PPA_TOOLCHAIN_VERSION: focal
-        DEBIAN_VERSION: bullseye
+        DEBIAN_VERSION: bookworm
         STDCC_VERSION: 13
         GLIBC_VERSION: 2.31
 
