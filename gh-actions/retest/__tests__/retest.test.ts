@@ -18,7 +18,7 @@ beforeEach(() => {
   const githubApiUrl = 'https://api.github.com'
   const commentId = 12357
   const apiPath = `/repos/${repository}/issues/comments/${commentId}/reactions`
-  const githubMock = fetchMock.sandbox().post(
+  const githubMock = fetchMock.createInstance().post(
     `${githubApiUrl}${apiPath}`,
     {ok: true},
     {
@@ -28,7 +28,7 @@ beforeEach(() => {
     },
   )
 
-  const testokit = github.getOctokit('12345', {request: {fetch: githubMock}})
+  const testokit = github.getOctokit('12345', {request: {fetch: githubMock.fetchHandler.bind(githubMock)}})
 
   jest.spyOn(github, 'getOctokit').mockImplementation(() => {
     return testokit
