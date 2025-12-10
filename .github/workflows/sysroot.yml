@@ -63,8 +63,12 @@ jobs:
           ${{ steps.versions.outputs.debian }} \
           sysroot-${{ matrix.arch }} \
           http://deb.debian.org/debian/
+        echo "deb [check-valid-until=no] http://archive.debian.org/debian ${{ steps.versions.outputs.debian }}-backports main" \
+          | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/backports.list
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y ${PACKAGES}
+        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y \
+          -t ${{ steps.versions.outputs.debian }}-backports linux-libc-dev
         if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
             echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${{ steps.versions.outputs.ppa-toolchain }} main" \
               | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/toolchain.list
@@ -78,7 +82,6 @@ jobs:
           libc6
           libc6-dev
           libgcc-s1
-          linux-libc-dev
           libxml2-dev
     - name: Cleanup sysroot
       run: |
@@ -112,9 +115,7 @@ jobs:
         sudo rm -rf "sysroot-${{ matrix.arch }}/usr/share/zoneinfo"
         sudo rm -rf "sysroot-${{ matrix.arch }}/var"
 
-        if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
-            sudo rm -rf sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/*
-        fi
+        sudo rm -rf sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/*
 
         root_dir="sysroot-${{ matrix.arch }}"
         find "$root_dir" -type l | while read symlink; do
