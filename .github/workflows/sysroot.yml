@@ -63,8 +63,10 @@ jobs:
           ${{ steps.versions.outputs.debian }} \
           sysroot-${{ matrix.arch }} \
           http://deb.debian.org/debian/
-        echo "deb http://deb.debian.org/debian ${{ steps.versions.outputs.debian }}-backports main" \
+        echo "deb [check-valid-until=no] http://archive.debian.org/debian ${{ steps.versions.outputs.debian }}-backports main" \
           | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/backports.list
+        echo 'Acquire::Check-Valid-Until "false";' \
+          | sudo tee sysroot-${{ matrix.arch }}/etc/apt/apt.conf.d/99no-check-valid-until
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y ${PACKAGES}
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y \
@@ -116,6 +118,7 @@ jobs:
         sudo rm -rf "sysroot-${{ matrix.arch }}/var"
 
         sudo rm -rf sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/*
+        sudo rm -rf sysroot-${{ matrix.arch }}/etc/apt/apt.conf.d/*
 
         root_dir="sysroot-${{ matrix.arch }}"
         find "$root_dir" -type l | while read symlink; do
