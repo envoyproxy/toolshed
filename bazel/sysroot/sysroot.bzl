@@ -167,7 +167,7 @@ def setup_sysroots(
         glibc_version: glibc version to use (default: "2.31", also available: "2.28")
         stdcc_version: libstdc++ version to use (default: "13", set to None for base sysroot)
         name_prefix: Optional prefix for sysroot repository names (default: "")
-                    Allows multiple sysroot setups, e.g., name_prefix="old_" creates
+                    Allows multiple sysroot setups, e.g., name_prefix="old" creates
                     @old_sysroot_linux_amd64 and @old_sysroot_linux_arm64
     """
     # Get hashes from versions.bzl based on configuration
@@ -175,8 +175,12 @@ def setup_sysroots(
     arm64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "arm64")
     
     # Construct repository names with optional prefix
-    amd64_name = "{}sysroot_linux_amd64".format(name_prefix)
-    arm64_name = "{}sysroot_linux_arm64".format(name_prefix)
+    if name_prefix:
+        amd64_name = "{}_sysroot_linux_amd64".format(name_prefix)
+        arm64_name = "{}_sysroot_linux_arm64".format(name_prefix)
+    else:
+        amd64_name = "sysroot_linux_amd64"
+        arm64_name = "sysroot_linux_arm64"
     
     # AMD64 sysroot
     sysroot(

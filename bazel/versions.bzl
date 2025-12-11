@@ -4,10 +4,6 @@ VERSION_AUTOMAKE = "1.17"
 VERSION_LIBTOOL = "2.5.4"
 VERSION_M4 = "1.4.19"
 
-# Define sysroot hashes as constants for reuse
-_SYSROOT_GLIBC_2_31_LIBSTDCXX_13_AMD64 = "c240a01d7ccb57de0f90a0c3aaa040a64da6a66732006c88959a91b92ab51785"
-_SYSROOT_GLIBC_2_31_LIBSTDCXX_13_ARM64 = "cf1536d3b4f49f10b9d11c133817301f76ff21c32e8740584018c76fdc086399"
-
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": "18.1.8",
@@ -18,7 +14,7 @@ VERSIONS = {
     "autoconf": VERSION_AUTOCONF,
     "automake": VERSION_AUTOMAKE,
 
-    "bins_release": "0.1.20",
+    "bins_release": "0.1.21",
     "msan_libs_sha256": "276ef4bcc23d600ca3a68891d7ff8574b28efbede5f084d1edb1c991ca9ef4fa",
     "tsan_libs_sha256": "07172d6e1fe0c9c9ef634da8e42d2f475e01572219e64ec1ec7338cd70aa1113",
     
@@ -28,29 +24,29 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "",  # To be filled when artifacts are built
-                "arm64": "",
+                "amd64": "464802e4c1eadc3297f8e3c033325a1c0e32097fb4ed56c9df9dec9a41fe8ecd",
+                "arm64": "2dabcf9623c40207c14b441ab394c60e6f79fbdf1e53c98f04df7525eb001a6a",
             },
             "13": {
-                "amd64": _SYSROOT_GLIBC_2_31_LIBSTDCXX_13_AMD64,
-                "arm64": _SYSROOT_GLIBC_2_31_LIBSTDCXX_13_ARM64,
+                "amd64": "a02b8045b59f425cf3f7200abaf03745b03fa213d6592d10c4ec722d83525555",
+                "arm64": "0eda7b5ba799bd24b37f4837356d8b0b6a1887c3cf505772018bc2e7c14e5cfd",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "",  # To be filled when artifacts are built
-                "arm64": "",
+                "amd64": "ce0d09eb5b6e4c47871b0e92870bb5426de9ef6459fcb22edce2be9424880bfe",
+                "arm64": "0d816b8ac2643ddb84e58760f416dc6e56094bb2fa1c8dd71122a5fb9a6d560c",
             },
             "13": {
-                "amd64": "",  # To be filled when artifacts are built
-                "arm64": "",
+                "amd64": "313a91586621c2ee5417ae6a9e387b94ab92b9fc9d75dbca3b17ae5f7e1b9ee8",
+                "arm64": "1326247965b804163614249b1f228e6239f8c1369aaa862cfdde8b6d13fc66c4",
             },
         },
     },
     
     # Legacy hash keys for backward compatibility (default: glibc 2.31 with libstdc++13)
-    "sysroot_amd64_sha256": _SYSROOT_GLIBC_2_31_LIBSTDCXX_13_AMD64,
-    "sysroot_arm64_sha256": _SYSROOT_GLIBC_2_31_LIBSTDCXX_13_ARM64,
+    "sysroot_amd64_sha256": "a02b8045b59f425cf3f7200abaf03745b03fa213d6592d10c4ec722d83525555",
+    "sysroot_arm64_sha256": "0eda7b5ba799bd24b37f4837356d8b0b6a1887c3cf505772018bc2e7c14e5cfd",
     "autotools_x86_64_sha256": "6ef4a0a3565b5c31732f2fee2f31bd84fb8ed79da53f358a493e85075633b1d3",
     "autotools_aarch64_sha256": "86b30570ce7d4d1b6cb5bee5d7b080929cb30b0f2907ab691bab65ae19a94769",
 
