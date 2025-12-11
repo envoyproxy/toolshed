@@ -1,9 +1,18 @@
 
+VERSION_AUTOCONF = "2.72"
+VERSION_AUTOMAKE = "1.17"
+VERSION_LIBTOOL = "2.5.4"
+VERSION_M4 = "1.4.19"
+
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": "18.1.8",
     "ninja": "1.12.0",
     "python": "3.12",
+    "libtool": VERSION_LIBTOOL,
+    "m4": VERSION_M4,
+    "autoconf": VERSION_AUTOCONF,
+    "automake": VERSION_AUTOMAKE,
 
     "bins_release": "0.1.21",
     "msan_libs_sha256": "2747f66b447af7c422d7db0bfca7147e197ff0ebe7500f10388ade2f9265a359",
@@ -38,6 +47,37 @@ VERSIONS = {
     # Legacy hash keys for backward compatibility (default: glibc 2.31 with libstdc++13)
     "sysroot_amd64_sha256": "a02b8045b59f425cf3f7200abaf03745b03fa213d6592d10c4ec722d83525555",
     "sysroot_arm64_sha256": "0eda7b5ba799bd24b37f4837356d8b0b6a1887c3cf505772018bc2e7c14e5cfd",
+    "autotools_x86_64_sha256": "6ef4a0a3565b5c31732f2fee2f31bd84fb8ed79da53f358a493e85075633b1d3",
+    "autotools_aarch64_sha256": "86b30570ce7d4d1b6cb5bee5d7b080929cb30b0f2907ab691bab65ae19a94769",
+
+    "m4_source": {
+        "type": "http_archive",
+        "sha256": "63aede5c6d33b6d9b13511cd0be2cac046f2e70fd0a07aa9573a04a82783af96",
+        "version": VERSION_M4,
+        "url": "https://mirrors.kernel.org/gnu/m4/m4-{version}.tar.xz",
+        "strip_prefix": "m4-{version}",
+        "patches": ["//compile:m4-sysroot.patch"],
+        "patch_args": ["-p1"],
+        "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
+    },
+
+    "autoconf_source": {
+        "type": "http_archive",
+        "sha256": "ba885c1319578d6c94d46e9b0dceb4014caafe2490e437a0dbca3f270a223f5a",
+        "version": VERSION_AUTOCONF,
+        "url": "https://mirrors.kernel.org/gnu/autoconf/autoconf-{version}.tar.xz",
+        "strip_prefix": "autoconf-{version}",
+        "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
+    },
+
+    "automake_source": {
+        "type": "http_archive",
+        "sha256": "8920c1fc411e13b90bf704ef9db6f29d540e76d232cb3b2c9f4dc4cc599bd990",
+        "version": VERSION_AUTOMAKE,
+        "url": "https://mirrors.kernel.org/gnu/automake/automake-{version}.tar.xz",
+        "strip_prefix": "automake-{version}",
+        "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
+    },
 
     "aspect_bazel_lib": {
         "type": "github_archive",
@@ -112,5 +152,14 @@ VERSIONS = {
         "sha256": "fded02569617d24551a0ad09c0750dc53a3097237157b828a245681f0ae739f8",
         "url": "https://github.com/{repo}/releases/download/v{version}/{name}-v{version}.tar.gz",
         "strip_prefix": "{name}-v{version}",
+    },
+
+    "libtool_source": {
+        "type": "http_archive",
+        "sha256": "f81f5860666b0bc7d84baddefa60d1cb9fa6fceb2398cc3baca6afaa60266675",
+        "version": VERSION_LIBTOOL,
+        "url": "https://mirrors.kernel.org/gnu/libtool/libtool-{version}.tar.xz",
+        "strip_prefix": "libtool-{version}",
+        "build_file_content": """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
     },
 }

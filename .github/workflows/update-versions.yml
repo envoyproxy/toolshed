@@ -72,6 +72,8 @@ jobs:
             ["tsan_libs_sha256"]="tsan-libs.*\.tar\.xz"
             ["sysroot_amd64_sha256"]="sysroot.*amd64.*\.tar\.xz"
             ["sysroot_arm64_sha256"]="sysroot.*arm64.*\.tar\.xz"
+            ["autotools_aarch64_sha256"]="autotools.*aarch64.*\.tar\.xz"
+            ["autotools_x86_64_sha256"]="autotools.*x86_64.*\.tar\.xz"
         )
         for file in *.tar.xz; do
             [[ -e "$file" ]] || continue
@@ -99,6 +101,8 @@ jobs:
             ["tsan_libs_sha256"]="${{ steps.hashes.outputs.tsan_libs_sha256 }}"
             ["sysroot_amd64_sha256"]="${{ steps.hashes.outputs.sysroot_amd64_sha256 }}"
             ["sysroot_arm64_sha256"]="${{ steps.hashes.outputs.sysroot_arm64_sha256 }}"
+            ["autotools_aarch64_sha256"]="${{ steps.hashes.outputs.autotools_aarch64_sha256 }}"
+            ["autotools_x86_64_sha256"]="${{ steps.hashes.outputs.autotools_x86_64_sha256 }}"
         )
         for key in "${!HASH_UPDATES[@]}"; do
             if [[ -n "${HASH_UPDATES[$key]}" ]]; then
@@ -121,6 +125,14 @@ jobs:
       if: github.event_name == 'workflow_dispatch' && steps.changes.outputs.changed == 'true' && steps.release.outputs.skip != 'true'
       uses: peter-evans/create-pull-request@v7
       env:
+        LIBTO0L_ARM64_SHA: >-
+          ${{ steps.hashes.outputs.autotools_aarch64_sha256
+              && format('autotools_aarch64_sha256: {0}', steps.hashes.outputs.autotools_aarch64_sha256)
+              || '' }}
+        LIBTO0L_X64_SHA: >-
+          ${{ steps.hashes.outputs.autotools_x86_64_sha256
+              && format('autotools_x86_64_sha256: {0}', steps.hashes.outputs.autotools_x86_64_sha256)
+              || '' }}
         MSAN_SHA: >-
           ${{ steps.hashes.outputs.msan_libs_sha256
               && format('msan_libs_sha256: {0}', steps.hashes.outputs.msan_libs_sha256)
@@ -155,6 +167,8 @@ jobs:
           ```
           $MSAN_SHA
           $TSAN_SHA
+          $AUTOTOOLS_ARM64_SHA
+          $AUTOTOOLS_X64_SHA
           $SYSROOT_ARM64_SHA
           $SYSROOT_X64_SHA
           ```
