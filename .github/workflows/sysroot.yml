@@ -86,7 +86,7 @@ jobs:
       env:
         STDCC_VERSION: 13
 
-    - name: Install debootstrap/
+    - name: Install debootstrap
       run: |
         sudo apt-get -qq update
         sudo apt-get -qq install -y debootstrap
