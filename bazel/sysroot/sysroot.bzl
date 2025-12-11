@@ -17,7 +17,7 @@ def _sysroot_impl(ctx):
     arch = ctx.attr.arch or _get_platform_arch(ctx)
     glibc_version = ctx.attr.glibc_version
     stdcc_version = ctx.attr.stdcc_version
-    
+
     # Construct URL based on whether stdcc_version is specified
     if stdcc_version:
         url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
@@ -32,7 +32,7 @@ def _sysroot_impl(ctx):
             arch = arch,
             glibc_version = glibc_version,
         )
-    
+
     ctx.download_and_extract(
         url = url,
         sha256 = ctx.attr.sha256,
