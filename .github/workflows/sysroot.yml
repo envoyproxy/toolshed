@@ -92,12 +92,18 @@ jobs:
         sudo apt-get -qq install -y debootstrap
     - name: Build ${{ matrix.arch }} ${{ matrix.variant }} sysroot
       run: |
+        # Use archive.debian.org for archived releases (buster), deb.debian.org for current releases
+        if [[ "${{ steps.versions.outputs.debian }}" == "buster" ]]; then
+          DEBIAN_MIRROR="http://archive.debian.org/debian/"
+        else
+          DEBIAN_MIRROR="http://deb.debian.org/debian/"
+        fi
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
           --variant=minbase \
           ${{ steps.versions.outputs.debian }} \
           sysroot-${{ matrix.arch }} \
-          http://deb.debian.org/debian/
+          $DEBIAN_MIRROR
         echo "deb [check-valid-until=no] http://archive.debian.org/debian ${{ steps.versions.outputs.debian }}-backports main" \
           | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/backports.list
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
