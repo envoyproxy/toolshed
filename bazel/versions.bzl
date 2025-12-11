@@ -15,8 +15,8 @@ VERSIONS = {
     "automake": VERSION_AUTOMAKE,
 
     "bins_release": "0.1.21",
-    "msan_libs_sha256": "276ef4bcc23d600ca3a68891d7ff8574b28efbede5f084d1edb1c991ca9ef4fa",
-    "tsan_libs_sha256": "07172d6e1fe0c9c9ef634da8e42d2f475e01572219e64ec1ec7338cd70aa1113",
+    "msan_libs_sha256": "2747f66b447af7c422d7db0bfca7147e197ff0ebe7500f10388ade2f9265a359",
+    "tsan_libs_sha256": "9fb57a2b209e766487f00456d05462cb7030549b22f7885cfd6d89d448d40ee8",
 
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
     # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
