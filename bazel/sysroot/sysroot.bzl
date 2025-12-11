@@ -106,12 +106,12 @@ sysroot = repository_rule(
 
 def _get_sysroot_hash(glibc_version, stdcc_version, arch):
     """Get the SHA256 hash for a specific sysroot configuration.
-    
+
     Args:
         glibc_version: glibc version (e.g., "2.31" or "2.28")
         stdcc_version: libstdc++ version (e.g., "13") or None for base sysroot
         arch: Architecture (e.g., "amd64" or "arm64")
-    
+
     Returns:
         SHA256 hash string
     """
@@ -121,10 +121,10 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
             glibc_version,
             ", ".join(VERSIONS["sysroot_hashes"].keys())
         ))
-    
+
     # Determine stdlib variant key
     stdlib_variant = stdcc_version if stdcc_version else "base"
-    
+
     # Validate stdlib variant
     if stdlib_variant not in VERSIONS["sysroot_hashes"][glibc_version]:
         fail("Unsupported libstdc++ version '{}' for glibc {}. Supported variants: {}".format(
@@ -132,7 +132,7 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
             glibc_version,
             ", ".join(VERSIONS["sysroot_hashes"][glibc_version].keys())
         ))
-    
+
     # Validate architecture
     if arch not in VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant]:
         fail("Unsupported architecture '{}' for glibc {} with libstdc++ {}. Supported architectures: {}".format(
@@ -141,10 +141,10 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
             stdcc_version or "base",
             ", ".join(VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant].keys())
         ))
-    
+
     # Get the hash
     sha256 = VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant][arch]
-    
+
     # Validate hash is not empty
     if not sha256:
         fail("SHA256 hash not yet available for glibc {} with libstdc++ {} on {}. This configuration may not be released yet.".format(
@@ -152,7 +152,7 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
             stdcc_version or "base",
             arch
         ))
-    
+
     return sha256
 
 def setup_sysroots(
@@ -173,7 +173,7 @@ def setup_sysroots(
     # Get hashes from versions.bzl based on configuration
     amd64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "amd64")
     arm64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "arm64")
-    
+
     # Construct repository names with optional prefix
     if name_prefix:
         amd64_name = "{}_sysroot_linux_amd64".format(name_prefix)
@@ -181,7 +181,7 @@ def setup_sysroots(
     else:
         amd64_name = "sysroot_linux_amd64"
         arm64_name = "sysroot_linux_arm64"
-    
+
     # AMD64 sysroot
     sysroot(
         name = amd64_name,

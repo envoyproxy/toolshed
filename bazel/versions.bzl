@@ -17,7 +17,7 @@ VERSIONS = {
     "bins_release": "0.1.21",
     "msan_libs_sha256": "276ef4bcc23d600ca3a68891d7ff8574b28efbede5f084d1edb1c991ca9ef4fa",
     "tsan_libs_sha256": "07172d6e1fe0c9c9ef634da8e42d2f475e01572219e64ec1ec7338cd70aa1113",
-    
+
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
     # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
     # stdlib_variant is either "base" (no libstdc++) or the libstdc++ version (e.g., "13")
@@ -43,7 +43,7 @@ VERSIONS = {
             },
         },
     },
-    
+
     # Legacy hash keys for backward compatibility (default: glibc 2.31 with libstdc++13)
     "sysroot_amd64_sha256": "a02b8045b59f425cf3f7200abaf03745b03fa213d6592d10c4ec722d83525555",
     "sysroot_arm64_sha256": "0eda7b5ba799bd24b37f4837356d8b0b6a1887c3cf505772018bc2e7c14e5cfd",
