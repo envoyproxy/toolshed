@@ -22,6 +22,7 @@ jobs:
   build:
     runs-on: ${{ matrix.runs-on }}
     strategy:
+      fail-fast: false
       matrix:
         include:
         # glibc 2.31 (current) - Debian bullseye
