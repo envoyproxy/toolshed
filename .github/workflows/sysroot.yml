@@ -95,8 +95,12 @@ jobs:
         # Use archive.debian.org for archived releases (buster), deb.debian.org for current releases
         if [[ "${{ steps.versions.outputs.debian }}" == "buster" ]]; then
           DEBIAN_MIRROR="http://archive.debian.org/debian/"
+          # buster uses libgcc1 (old package name)
+          LIBGCC_PACKAGE="libgcc1"
         else
           DEBIAN_MIRROR="http://deb.debian.org/debian/"
+          # bullseye and newer use libgcc-s1
+          LIBGCC_PACKAGE="libgcc-s1"
         fi
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
@@ -107,7 +111,8 @@ jobs:
         echo "deb [check-valid-until=no] http://archive.debian.org/debian ${{ steps.versions.outputs.debian }}-backports main" \
           | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/backports.list
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
-        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y ${PACKAGES}
+        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y \
+          libc6 libc6-dev $LIBGCC_PACKAGE libxml2-dev
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y \
           -t ${{ steps.versions.outputs.debian }}-backports linux-libc-dev
         if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
@@ -118,12 +123,6 @@ jobs:
             sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
             sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install -y libstdc++-${{ steps.versions.outputs.stdcc }}-dev
         fi
-      env:
-        PACKAGES: >-
-          libc6
-          libc6-dev
-          libgcc-s1
-          libxml2-dev
     - name: Cleanup sysroot
       run: |
         sudo chroot sysroot-${{ matrix.arch }} apt-get clean
