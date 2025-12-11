@@ -58,7 +58,30 @@ setup_sysroots(
     glibc_version = "2.31",
     stdcc_version = None,
 )
+
+# Or use multiple sysroot configurations with name prefixes
+setup_sysroots(
+    glibc_version = "2.31",
+    stdcc_version = "13",
+    name_prefix = "new_",
+)
+setup_sysroots(
+    glibc_version = "2.28",
+    stdcc_version = "13",
+    name_prefix = "old_",
+)
+# This creates @new_sysroot_linux_amd64, @new_sysroot_linux_arm64,
+# @old_sysroot_linux_amd64, and @old_sysroot_linux_arm64
 ```
+
+### Configuration Validation
+
+The setup will automatically validate your configuration:
+- **Unsupported glibc versions** will fail with a clear error message
+- **Incompatible combinations** (e.g., requesting a variant that doesn't exist) will fail
+- **Missing hashes** (e.g., for unreleased configurations) will fail with a helpful message
+
+All SHA256 hashes are centrally managed in `versions.bzl` for ease of maintenance.
 
 ## Release Process
 

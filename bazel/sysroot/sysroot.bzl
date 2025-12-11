@@ -104,35 +104,94 @@ sysroot = repository_rule(
     doc = "Downloads sysroot for the specified or host architecture",
 )
 
+def _get_sysroot_hash(glibc_version, stdcc_version, arch):
+    """Get the SHA256 hash for a specific sysroot configuration.
+    
+    Args:
+        glibc_version: glibc version (e.g., "2.31" or "2.28")
+        stdcc_version: libstdc++ version (e.g., "13") or None for base sysroot
+        arch: Architecture (e.g., "amd64" or "arm64")
+    
+    Returns:
+        SHA256 hash string
+    """
+    # Validate glibc version
+    if glibc_version not in VERSIONS["sysroot_hashes"]:
+        fail("Unsupported glibc version: {}. Supported versions: {}".format(
+            glibc_version,
+            ", ".join(VERSIONS["sysroot_hashes"].keys())
+        ))
+    
+    # Determine stdlib variant key
+    stdlib_variant = stdcc_version if stdcc_version else "base"
+    
+    # Validate stdlib variant
+    if stdlib_variant not in VERSIONS["sysroot_hashes"][glibc_version]:
+        fail("Unsupported libstdc++ version '{}' for glibc {}. Supported variants: {}".format(
+            stdcc_version or "base",
+            glibc_version,
+            ", ".join(VERSIONS["sysroot_hashes"][glibc_version].keys())
+        ))
+    
+    # Validate architecture
+    if arch not in VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant]:
+        fail("Unsupported architecture '{}' for glibc {} with libstdc++ {}. Supported architectures: {}".format(
+            arch,
+            glibc_version,
+            stdcc_version or "base",
+            ", ".join(VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant].keys())
+        ))
+    
+    # Get the hash
+    sha256 = VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant][arch]
+    
+    # Validate hash is not empty
+    if not sha256:
+        fail("SHA256 hash not yet available for glibc {} with libstdc++ {} on {}. This configuration may not be released yet.".format(
+            glibc_version,
+            stdcc_version or "base",
+            arch
+        ))
+    
+    return sha256
+
 def setup_sysroots(
         version = None,
-        amd64_sha256 = None,
-        arm64_sha256 = None,
         glibc_version = "2.31",
-        stdcc_version = "13"):
+        stdcc_version = "13",
+        name_prefix = ""):
     """Setup function for WORKSPACE to configure sysroots.
 
     Args:
-        version: Version of sysroot release to use
-        amd64_sha256: SHA256 hash for amd64 sysroot
-        arm64_sha256: SHA256 hash for arm64 sysroot
+        version: Version of sysroot release to use (default: uses VERSIONS["bins_release"])
         glibc_version: glibc version to use (default: "2.31", also available: "2.28")
         stdcc_version: libstdc++ version to use (default: "13", set to None for base sysroot)
+        name_prefix: Optional prefix for sysroot repository names (default: "")
+                    Allows multiple sysroot setups, e.g., name_prefix="old_" creates
+                    @old_sysroot_linux_amd64 and @old_sysroot_linux_arm64
     """
+    # Get hashes from versions.bzl based on configuration
+    amd64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "amd64")
+    arm64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "arm64")
+    
+    # Construct repository names with optional prefix
+    amd64_name = "{}sysroot_linux_amd64".format(name_prefix)
+    arm64_name = "{}sysroot_linux_arm64".format(name_prefix)
+    
     # AMD64 sysroot
     sysroot(
-        name = "sysroot_linux_amd64",
+        name = amd64_name,
         version = version or VERSIONS["bins_release"],
-        sha256 = amd64_sha256 or VERSIONS["sysroot_amd64_sha256"],
+        sha256 = amd64_sha256,
         arch = "amd64",
         glibc_version = glibc_version,
         stdcc_version = stdcc_version,
     )
     # ARM64 sysroot
     sysroot(
-        name = "sysroot_linux_arm64",
+        name = arm64_name,
         version = version or VERSIONS["bins_release"],
-        sha256 = arm64_sha256 or VERSIONS["sysroot_arm64_sha256"],
+        sha256 = arm64_sha256,
         arch = "arm64",
         glibc_version = glibc_version,
         stdcc_version = stdcc_version,

@@ -17,6 +17,34 @@ VERSIONS = {
     "bins_release": "0.1.20",
     "msan_libs_sha256": "276ef4bcc23d600ca3a68891d7ff8574b28efbede5f084d1edb1c991ca9ef4fa",
     "tsan_libs_sha256": "07172d6e1fe0c9c9ef634da8e42d2f475e01572219e64ec1ec7338cd70aa1113",
+    
+    # Sysroot hashes organized by glibc version, stdlib variant, and architecture
+    # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
+    # stdlib_variant is either "base" (no libstdc++) or the libstdc++ version (e.g., "13")
+    "sysroot_hashes": {
+        "2.31": {
+            "base": {
+                "amd64": "",  # To be filled when artifacts are built
+                "arm64": "",
+            },
+            "13": {
+                "amd64": "c240a01d7ccb57de0f90a0c3aaa040a64da6a66732006c88959a91b92ab51785",
+                "arm64": "cf1536d3b4f49f10b9d11c133817301f76ff21c32e8740584018c76fdc086399",
+            },
+        },
+        "2.28": {
+            "base": {
+                "amd64": "",  # To be filled when artifacts are built
+                "arm64": "",
+            },
+            "13": {
+                "amd64": "",  # To be filled when artifacts are built
+                "arm64": "",
+            },
+        },
+    },
+    
+    # Legacy hash keys for backward compatibility (default: glibc 2.31 with libstdc++13)
     "sysroot_amd64_sha256": "c240a01d7ccb57de0f90a0c3aaa040a64da6a66732006c88959a91b92ab51785",
     "sysroot_arm64_sha256": "cf1536d3b4f49f10b9d11c133817301f76ff21c32e8740584018c76fdc086399",
     "autotools_x86_64_sha256": "6ef4a0a3565b5c31732f2fee2f31bd84fb8ed79da53f358a493e85075633b1d3",
