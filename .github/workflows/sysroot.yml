@@ -94,13 +94,13 @@ jobs:
       run: |
         # Use archive.debian.org for archived releases (buster), deb.debian.org for current releases
         if [[ "${{ steps.versions.outputs.debian }}" == "buster" ]]; then
-          DEBIAN_MIRROR="http://archive.debian.org/debian/"
-          # buster uses libgcc1 (old package name)
-          LIBGCC_PACKAGE="libgcc1"
+            DEBIAN_MIRROR="http://archive.debian.org/debian/"
+            # buster uses libgcc1 (old package name)
+            LIBGCC_PACKAGE="libgcc1"
         else
-          DEBIAN_MIRROR="http://deb.debian.org/debian/"
-          # bullseye and newer use libgcc-s1
-          LIBGCC_PACKAGE="libgcc-s1"
+            DEBIAN_MIRROR="http://deb.debian.org/debian/"
+            # bullseye and newer use libgcc-s1
+            LIBGCC_PACKAGE="libgcc-s1"
         fi
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
