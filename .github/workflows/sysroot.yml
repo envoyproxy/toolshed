@@ -5,11 +5,11 @@ on:
     branches:
     - main
     paths:
-    - 'sysroot/**'
+    - 'bazel/sysroot/**'
     - '.github/workflows/sysroot.yml'
   pull_request:
     paths:
-    - 'sysroot/**'
+    - 'bazel/sysroot/**'
     - '.github/workflows/sysroot.yml'
   release:
     types:
@@ -22,51 +22,98 @@ jobs:
   build:
     runs-on: ${{ matrix.runs-on }}
     strategy:
+      fail-fast: false
       matrix:
         include:
+        # glibc 2.31 (current) - Debian bullseye
         - arch: amd64
           runs-on: ubuntu-24.04
           variant: base
+          glibc-version: "2.31"
+          debian-version: bullseye
+          ppa-toolchain: focal
         - arch: arm64
           runs-on: ubuntu-24.04-arm
           variant: base
+          glibc-version: "2.31"
+          debian-version: bullseye
+          ppa-toolchain: focal
         - arch: amd64
           runs-on: ubuntu-24.04
           variant: libstdcxx
+          glibc-version: "2.31"
+          debian-version: bullseye
+          ppa-toolchain: focal
         - arch: arm64
           runs-on: ubuntu-24.04-arm
           variant: libstdcxx
+          glibc-version: "2.31"
+          debian-version: bullseye
+          ppa-toolchain: focal
+        # glibc 2.28 (older) - Debian buster for Ubuntu 18.04/RHEL 8 compatibility
+        - arch: amd64
+          runs-on: ubuntu-24.04
+          variant: base
+          glibc-version: "2.28"
+          debian-version: buster
+          ppa-toolchain: bionic
+        - arch: arm64
+          runs-on: ubuntu-24.04-arm
+          variant: base
+          glibc-version: "2.28"
+          debian-version: buster
+          ppa-toolchain: bionic
+        - arch: amd64
+          runs-on: ubuntu-24.04
+          variant: libstdcxx
+          glibc-version: "2.28"
+          debian-version: buster
+          ppa-toolchain: bionic
+        - arch: arm64
+          runs-on: ubuntu-24.04-arm
+          variant: libstdcxx
+          glibc-version: "2.28"
+          debian-version: buster
+          ppa-toolchain: bionic
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - name: Set versions
       id: versions
       run: |
-        echo "ppa-toolchain=${PPA_TOOLCHAIN_VERSION}" >> $GITHUB_OUTPUT
-        echo "debian=${DEBIAN_VERSION}" >> $GITHUB_OUTPUT
+        echo "ppa-toolchain=${{ matrix.ppa-toolchain }}" >> $GITHUB_OUTPUT
+        echo "debian=${{ matrix.debian-version }}" >> $GITHUB_OUTPUT
         echo "stdcc=${STDCC_VERSION}" >> $GITHUB_OUTPUT
-        echo "glibc=${GLIBC_VERSION}" >> $GITHUB_OUTPUT
+        echo "glibc=${{ matrix.glibc-version }}" >> $GITHUB_OUTPUT
       env:
-        PPA_TOOLCHAIN_VERSION: focal
-        DEBIAN_VERSION: bullseye
         STDCC_VERSION: 13
-        GLIBC_VERSION: 2.31
 
-    - name: Install debootstrap/
+    - name: Install debootstrap
       run: |
         sudo apt-get -qq update
         sudo apt-get -qq install -y debootstrap
     - name: Build ${{ matrix.arch }} ${{ matrix.variant }} sysroot
       run: |
+        # Use archive.debian.org for archived releases (buster), deb.debian.org for current releases
+        if [[ "${{ steps.versions.outputs.debian }}" == "buster" ]]; then
+            DEBIAN_MIRROR="http://archive.debian.org/debian/"
+            # buster uses libgcc1 (old package name)
+            LIBGCC_PACKAGE="libgcc1"
+        else
+            DEBIAN_MIRROR="http://deb.debian.org/debian/"
+            # bullseye and newer use libgcc-s1
+            LIBGCC_PACKAGE="libgcc-s1"
+        fi
         sudo debootstrap \
           --arch=${{ matrix.arch }} \
           --variant=minbase \
           ${{ steps.versions.outputs.debian }} \
           sysroot-${{ matrix.arch }} \
-          http://deb.debian.org/debian/
+          $DEBIAN_MIRROR
         echo "deb [check-valid-until=no] http://archive.debian.org/debian ${{ steps.versions.outputs.debian }}-backports main" \
           | sudo tee sysroot-${{ matrix.arch }}/etc/apt/sources.list.d/backports.list
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
-        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y ${PACKAGES}
+        sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y \
+          libc6 libc6-dev $LIBGCC_PACKAGE libxml2-dev
         sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install --no-install-recommends -y \
           -t ${{ steps.versions.outputs.debian }}-backports linux-libc-dev
         if [[ "${{ matrix.variant }}" == "libstdcxx" ]]; then
@@ -77,12 +124,6 @@ jobs:
             sudo chroot sysroot-${{ matrix.arch }} apt-get -qq update
             sudo chroot sysroot-${{ matrix.arch }} apt-get -qq install -y libstdc++-${{ steps.versions.outputs.stdcc }}-dev
         fi
-      env:
-        PACKAGES: >-
-          libc6
-          libc6-dev
-          libgcc-s1
-          libxml2-dev
     - name: Cleanup sysroot
       run: |
         sudo chroot sysroot-${{ matrix.arch }} apt-get clean

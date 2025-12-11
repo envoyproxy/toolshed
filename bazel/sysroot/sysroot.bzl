@@ -15,13 +15,26 @@ def _get_platform_arch(ctx):
 def _sysroot_impl(ctx):
     """Implementation for sysroot repository rule."""
     arch = ctx.attr.arch or _get_platform_arch(ctx)
-    ctx.download_and_extract(
+    glibc_version = ctx.attr.glibc_version
+    stdcc_version = ctx.attr.stdcc_version
+
+    # Construct URL based on whether stdcc_version is specified
+    if stdcc_version:
         url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
             version = ctx.attr.version,
             arch = arch,
-            glibc_version = "2.31",
-            stdcc_version = "13",
-        ),
+            glibc_version = glibc_version,
+            stdcc_version = stdcc_version,
+        )
+    else:
+        url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
+            version = ctx.attr.version,
+            arch = arch,
+            glibc_version = glibc_version,
+        )
+
+    ctx.download_and_extract(
+        url = url,
         sha256 = ctx.attr.sha256,
         stripPrefix = "",
     )
@@ -80,6 +93,13 @@ sysroot = repository_rule(
         "arch": attr.string(
             doc = "Architecture to download (amd64 or arm64). If not specified, uses host architecture",
         ),
+        "glibc_version": attr.string(
+            mandatory = True,
+            doc = "glibc version (e.g., '2.31' or '2.28')",
+        ),
+        "stdcc_version": attr.string(
+            doc = "libstdc++ version (e.g., '13'). If not specified, base sysroot without libstdc++ is used",
+        ),
     },
     doc = "Downloads sysroot for the specified or host architecture",
 )
@@ -87,13 +107,17 @@ sysroot = repository_rule(
 def setup_sysroots(
         version = None,
         amd64_sha256 = None,
-        arm64_sha256 = None):
+        arm64_sha256 = None,
+        glibc_version = "2.31",
+        stdcc_version = "13"):
     """Setup function for WORKSPACE to configure sysroots.
 
     Args:
         version: Version of sysroot release to use
         amd64_sha256: SHA256 hash for amd64 sysroot
         arm64_sha256: SHA256 hash for arm64 sysroot
+        glibc_version: glibc version to use (default: "2.31", also available: "2.28")
+        stdcc_version: libstdc++ version to use (default: "13", set to None for base sysroot)
     """
     # AMD64 sysroot
     sysroot(
@@ -101,6 +125,8 @@ def setup_sysroots(
         version = version or VERSIONS["bins_release"],
         sha256 = amd64_sha256 or VERSIONS["sysroot_amd64_sha256"],
         arch = "amd64",
+        glibc_version = glibc_version,
+        stdcc_version = stdcc_version,
     )
     # ARM64 sysroot
     sysroot(
@@ -108,4 +134,6 @@ def setup_sysroots(
         version = version or VERSIONS["bins_release"],
         sha256 = arm64_sha256 or VERSIONS["sysroot_arm64_sha256"],
         arch = "arm64",
+        glibc_version = glibc_version,
+        stdcc_version = stdcc_version,
     )
