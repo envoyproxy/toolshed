@@ -4,6 +4,10 @@ VERSION_AUTOMAKE = "1.17"
 VERSION_LIBTOOL = "2.5.4"
 VERSION_M4 = "1.4.19"
 
+# Define sysroot hashes as constants for reuse
+_SYSROOT_GLIBC_2_31_LIBSTDCXX_13_AMD64 = "c240a01d7ccb57de0f90a0c3aaa040a64da6a66732006c88959a91b92ab51785"
+_SYSROOT_GLIBC_2_31_LIBSTDCXX_13_ARM64 = "cf1536d3b4f49f10b9d11c133817301f76ff21c32e8740584018c76fdc086399"
+
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": "18.1.8",
@@ -28,8 +32,8 @@ VERSIONS = {
                 "arm64": "",
             },
             "13": {
-                "amd64": "c240a01d7ccb57de0f90a0c3aaa040a64da6a66732006c88959a91b92ab51785",
-                "arm64": "cf1536d3b4f49f10b9d11c133817301f76ff21c32e8740584018c76fdc086399",
+                "amd64": _SYSROOT_GLIBC_2_31_LIBSTDCXX_13_AMD64,
+                "arm64": _SYSROOT_GLIBC_2_31_LIBSTDCXX_13_ARM64,
             },
         },
         "2.28": {
@@ -45,8 +49,8 @@ VERSIONS = {
     },
     
     # Legacy hash keys for backward compatibility (default: glibc 2.31 with libstdc++13)
-    "sysroot_amd64_sha256": "c240a01d7ccb57de0f90a0c3aaa040a64da6a66732006c88959a91b92ab51785",
-    "sysroot_arm64_sha256": "cf1536d3b4f49f10b9d11c133817301f76ff21c32e8740584018c76fdc086399",
+    "sysroot_amd64_sha256": _SYSROOT_GLIBC_2_31_LIBSTDCXX_13_AMD64,
+    "sysroot_arm64_sha256": _SYSROOT_GLIBC_2_31_LIBSTDCXX_13_ARM64,
     "autotools_x86_64_sha256": "6ef4a0a3565b5c31732f2fee2f31bd84fb8ed79da53f358a493e85075633b1d3",
     "autotools_aarch64_sha256": "86b30570ce7d4d1b6cb5bee5d7b080929cb30b0f2907ab691bab65ae19a94769",
 
