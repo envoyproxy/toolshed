@@ -5,11 +5,11 @@ on:
     branches:
     - main
     paths:
-    - 'sysroot/**'
+    - 'bazel/sysroot/**'
     - '.github/workflows/sysroot.yml'
   pull_request:
     paths:
-    - 'sysroot/**'
+    - 'bazel/sysroot/**'
     - '.github/workflows/sysroot.yml'
   release:
     types:
