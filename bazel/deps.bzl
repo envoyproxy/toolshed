@@ -5,13 +5,11 @@ load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
 load("//:versions.bzl", "VERSIONS")
 load("//sysroot:sysroot.bzl", "setup_sysroots")
-load("//autotools:setup.bzl", "setup_autotools")
 
 def resolve_dependencies(
         cmake_version=None,
         llvm_version=None,
-        ninja_version=None,
-        setup_autotools_toolchain=True):
+        ninja_version=None):
     py_repositories()
     bazel_toolchain_dependencies()
     rules_foreign_cc_dependencies(
@@ -31,5 +29,3 @@ def resolve_dependencies(
             "linux-aarch64": "@sysroot_linux_arm64//:sysroot",
         }
     )
-    if setup_autotools_toolchain:
-        setup_autotools()
