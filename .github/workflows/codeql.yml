@@ -30,6 +30,7 @@ jobs:
         language:
         - javascript-typescript
         - python
+        - rust
 
     steps:
     - name: Checkout repository
