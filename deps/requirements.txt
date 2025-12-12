@@ -10,7 +10,7 @@ aiofiles
 aiohttp>=3.11.6
 colorama
 coloredlogs
-docutils~=0.21
+docutils~=0.22
 envoy.base.utils>=0.5.10
 envoy.distribution.distrotest>=0.0.12
 envoy.distribution.release>=0.0.8
@@ -26,7 +26,7 @@ frozendict
 gidgethub
 jinja2>=3.1.4
 multidict>=6.0.2
-mypy==1.16.1
+mypy==1.19.0
 mypy-abstracts
 orjson
 packaging>=23.0
