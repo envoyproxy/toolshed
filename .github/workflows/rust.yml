@@ -21,33 +21,33 @@ permissions:
   contents: read
 
 jobs:
-  coverage:
+  test:
     runs-on: ubuntu-24.04
     if: github.repository_owner == 'envoyproxy'
+    strategy:
+      matrix:
+        toolchain:
+        - stable
+        - nightly
+        test-type:
+        - coverage
+        - integration
+    name: test (${{ matrix.toolchain }}, ${{ matrix.test-type }})
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
-        toolchain: nightly
+        toolchain: ${{ matrix.toolchain }}
     - name: Install cargo-tarpaulin
+      if: matrix.test-type == 'coverage'
       run: cargo install cargo-tarpaulin
     - name: Run coverage
+      if: matrix.test-type == 'coverage'
       run: |
         cargo tarpaulin --config tarpaulin.toml
       working-directory: rust
-
-  integration:
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        rust:
-        - stable
-    steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
-    - uses: actions-rust-lang/setup-rust-toolchain@v1
-      with:
-        toolchain: ${{ matrix.rust }}
-    - name: Run glint integration tests specifically
+    - name: Run glint integration tests
+      if: matrix.test-type == 'integration'
       run: |
         cargo test --package glint --test integration_test --verbose
       working-directory: rust

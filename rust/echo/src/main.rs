@@ -1,4 +1,4 @@
-#![feature(coverage_attribute)]
+#![cfg_attr(coverage, feature(coverage_attribute))]
 
 mod args;
 mod command;
@@ -22,7 +22,7 @@ const DEFAULT_HTTP_PORT: u16 = 8787;
 
 #[allow(dead_code)]
 #[tokio::main]
-#[coverage(off)]
+#[cfg_attr(coverage, coverage(off))]
 async fn main() -> ! {
     runner::main().await;
     process::exit(0);

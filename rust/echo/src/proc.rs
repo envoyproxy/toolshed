@@ -1,8 +1,8 @@
-use std::time::Duration;
+use std::{net::SocketAddr, time::Duration};
 use tokio::signal;
 use toolshed_runner as runner;
 
-pub async fn shutdown_signal(handle: axum_server::Handle) {
+pub async fn shutdown_signal(handle: axum_server::Handle<SocketAddr>) {
     let ctrl_c = async { runner::runner::ctrl_c().await };
 
     #[cfg(unix)]
