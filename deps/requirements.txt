@@ -64,7 +64,7 @@ yarl>=1.7.2
 zstandard
 
 types-aiofiles
-types-docutils==0.22.3.20251115
+types-docutils==0.21.0.20250715
 types-frozendict
 types-orjson
 types-protobuf
