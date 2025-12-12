@@ -101,7 +101,7 @@ impl Patch {
         )
     }
 
-    pub fn axum_server_handle_new(test: Arc<Mutex<ttest::Test>>) -> axum_server::Handle {
+    pub fn axum_server_handle_new(test: Arc<Mutex<ttest::Test>>) -> axum_server::Handle<std::net::SocketAddr> {
         let test = test.lock().unwrap();
         test.notify(&format!("axum_server::Handle::new({:?})", !test.fails));
         axum_server::Handle::default()

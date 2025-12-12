@@ -345,7 +345,7 @@ mod tests {
         ])
         .with_patches(vec![
             patch0(axum_server::Handle::new, || {
-                static HANDLE: OnceCell<axum_server::Handle> = OnceCell::new();
+                static HANDLE: OnceCell<axum_server::Handle<std::net::SocketAddr>> = OnceCell::new();
                 let handle = HANDLE.get_or_init(|| {
                     let h = Patch::axum_server_handle_new(TESTS.get("host_serve_tls"));
                     let h_clone = h.clone();
