@@ -28,7 +28,7 @@ jobs:
     - name: Run Bazel test
       run: |
         cd bazel
-        bazel test //format/clang_tidy/parser:parse_clang_tidy_test
+        bazel test --test_output=errors //format/clang_tidy/parser:parse_clang_tidy_test
 
     - name: Build sh_binary
       run: |

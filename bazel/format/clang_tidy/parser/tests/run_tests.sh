@@ -1,8 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PARSER="${SCRIPT_DIR}/../parse_clang_tidy.jq"
+# Handle Bazel runfiles
+if [ -n "${TEST_SRCDIR:-}" ]; then
+    # Running under Bazel test
+    RUNFILES_DIR="${TEST_SRCDIR}/envoy_toolshed"
+    SCRIPT_DIR="${RUNFILES_DIR}/format/clang_tidy/parser/tests"
+    PARSER="${RUNFILES_DIR}/format/clang_tidy/parser/parse_clang_tidy.jq"
+else
+    # Running directly
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PARSER="${SCRIPT_DIR}/../parse_clang_tidy.jq"
+fi
+
 JQ="${JQ_BIN:-jq}"
 
 if ! command -v "$JQ" &> /dev/null; then
