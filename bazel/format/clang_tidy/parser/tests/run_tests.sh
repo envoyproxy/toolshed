@@ -27,7 +27,7 @@ run_test() {
     actual_output=$(mktemp)
     
     # Run the parser
-    if ! cat "${input_file}" | jq -Rf "${PARSER}" > "${actual_output}" 2>&1; then
+    if ! jq -Rf "${PARSER}" < "${input_file}" > "${actual_output}" 2>&1; then
         echo "✗ Test FAILED: Parser error"
         cat "${actual_output}"
         rm -f "${actual_output}"

@@ -15,29 +15,16 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.platform }}
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-        - ubuntu-24.04
-        - ubuntu-22.04
-        - macos-14
-        - macos-13
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     
-    - name: Install jq (Ubuntu)
+    - name: Install jq
       run: |
         sudo apt-get update
         sudo apt-get -qq install -y jq
-      if: startsWith(matrix.platform, 'ubuntu')
-    
-    - name: Install jq (macOS)
-      run: brew install jq
-      if: startsWith(matrix.platform, 'macos')
     
     - name: Verify jq installation
       run: jq --version
@@ -52,5 +39,5 @@ jobs:
     - name: Performance test
       run: |
         echo "Testing parser performance..."
-        time cat ./bazel/format/clang_tidy/parser/tests/sample_input.txt | \
-          jq -Rf ./bazel/format/clang_tidy/parser/parse_clang_tidy.jq > /dev/null
+        time jq -Rf ./bazel/format/clang_tidy/parser/parse_clang_tidy.jq \
+          < ./bazel/format/clang_tidy/parser/tests/sample_input.txt > /dev/null

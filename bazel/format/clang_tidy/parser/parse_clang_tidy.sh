@@ -127,6 +127,6 @@ else
             echo "ERROR: File not found: ${file}" >&2
             exit 1
         fi
-        cat "${file}" | jq ${COMPACT_FLAG} -Rf "${PARSER}" | jq ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
+        jq ${COMPACT_FLAG} -Rf "${PARSER}" < "${file}" | jq ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
     done
 fi

@@ -21,38 +21,38 @@
 #   cat clang_tidy_output.txt | jq -Rf parse_clang_tidy.jq
 
 # Collect all input lines into an array (including the first line)
-[., inputs] | 
+[., inputs]
 
 # Join lines back together for processing
-join("\n") |
+| join("\n")
 
 # Split on lines that match the diagnostic pattern (file:line:col: severity:)
 # This regex matches: <filepath>:<line>:<col>: <severity>: <message>
-split("\n") |
+| split("\n")
 
 # Process lines to build diagnostic entries
-reduce .[] as $line (
+| reduce .[] as $line (
   {diagnostics: [], current: null, context: []};
   
   # Check if this line starts a new diagnostic
   if ($line | test("^[^:]+:[0-9]+:[0-9]+: (error|warning|note|remark|fatal error): ")) then
     # Parse the diagnostic line
-    (($line | match("^([^:]+):([0-9]+):([0-9]+): (error|warning|note|remark|fatal error): (.*)$")) as $m |
+    (($line | match("^([^:]+):([0-9]+):([0-9]+): (error|warning|note|remark|fatal error): (.*)$")) as $m
       # Save previous diagnostic if exists
-      (if .current then
+      | (if .current then
         .diagnostics += [.current + {context_lines: .context}]
-      else . end) |
+      else . end)
       # Extract message and check name from the message line
-      ($m.captures[4].string | 
-        if test("\\[([^\\]]+)\\]\\s*$") then
-          match("^(.*)\\s*\\[([^\\]]+)\\]\\s*$") | 
-          {msg: (.captures[0].string | sub("^\\s+"; "") | sub("\\s+$"; "")), chk: .captures[1].string}
+      | ($m.captures[4].string
+        | if test("\\[([^\\]]+)\\]\\s*$") then
+          match("^(.*)\\s*\\[([^\\]]+)\\]\\s*$")
+          | {msg: (.captures[0].string | sub("^\\s+"; "") | sub("\\s+$"; "")), chk: .captures[1].string}
         else
           {msg: (. | sub("^\\s+"; "") | sub("\\s+$"; "")), chk: ""}
         end
-      ) as $parsed |
+      ) as $parsed
       # Start new diagnostic
-      .current = {
+      | .current = {
         file: $m.captures[0].string,
         line: ($m.captures[1].string | tonumber),
         column: ($m.captures[2].string | tonumber),
@@ -60,8 +60,8 @@ reduce .[] as $line (
         message: $parsed.msg,
         check: $parsed.chk,
         context_lines: []
-      } |
-      .context = []
+      }
+      | .context = []
     )
   # Check if this is a summary line to ignore
   elif ($line | test("^[0-9]+ (warning|error|note)s? (and [0-9]+ (warning|error|note)s? )?generated\\.\\s*$")) then
@@ -75,12 +75,12 @@ reduce .[] as $line (
   else
     .
   end
-) |
+)
 
 # Add the last diagnostic if exists
-(if .current then
+| (if .current then
   .diagnostics += [.current + {context_lines: .context}]
-else . end) |
+else . end)
 
 # Return the array of diagnostics
-.diagnostics
+| .diagnostics

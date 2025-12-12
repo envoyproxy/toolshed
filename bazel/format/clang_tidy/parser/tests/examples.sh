@@ -15,7 +15,7 @@ echo ""
 # Example 1: Basic parsing
 echo "Example 1: Basic parsing"
 echo "------------------------"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | jq -C '.' | head -30
+jq -Rf "${PARSER}" < "${SAMPLE}" | jq -C '.' | head -30
 echo ""
 echo "..."
 echo ""
@@ -23,35 +23,35 @@ echo ""
 # Example 2: Count diagnostics by severity
 echo "Example 2: Count diagnostics by severity"
 echo "-----------------------------------------"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | \
+jq -Rf "${PARSER}" < "${SAMPLE}" | \
   jq 'group_by(.severity) | map({severity: .[0].severity, count: length})'
 echo ""
 
 # Example 3: Filter only errors
 echo "Example 3: Filter only errors"
 echo "------------------------------"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | \
+jq -Rf "${PARSER}" < "${SAMPLE}" | \
   jq '[.[] | select(.severity == "error")]'
 echo ""
 
 # Example 4: Group by file
 echo "Example 4: Group by file"
 echo "------------------------"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | \
+jq -Rf "${PARSER}" < "${SAMPLE}" | \
   jq 'group_by(.file) | map({file: .[0].file, count: length})'
 echo ""
 
 # Example 5: Extract unique check names
 echo "Example 5: Extract unique check names"
 echo "--------------------------------------"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | \
+jq -Rf "${PARSER}" < "${SAMPLE}" | \
   jq '[.[].check] | unique | sort'
 echo ""
 
 # Example 6: Summary for CI
 echo "Example 6: CI Summary"
 echo "---------------------"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | \
+jq -Rf "${PARSER}" < "${SAMPLE}" | \
   jq '{
     total: length,
     errors: [.[] | select(.severity == "error")] | length,
@@ -66,16 +66,16 @@ echo ""
 echo "Example 7: Deduplicate by file, line, and message"
 echo "--------------------------------------------------"
 echo "Original count:"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | jq 'length'
+jq -Rf "${PARSER}" < "${SAMPLE}" | jq 'length'
 echo "After deduplication:"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | \
+jq -Rf "${PARSER}" < "${SAMPLE}" | \
   jq 'unique_by([.file, .line, .message]) | length'
 echo ""
 
 # Example 8: Format for human-readable output
 echo "Example 8: Human-readable format"
 echo "---------------------------------"
-cat "${SAMPLE}" | jq -Rf "${PARSER}" | \
+jq -Rf "${PARSER}" < "${SAMPLE}" | \
   jq -r '.[] | "\(.file):\(.line):\(.column): \(.severity): \(.message) [\(.check)]"' | head -5
 echo ""
 
