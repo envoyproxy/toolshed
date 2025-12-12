@@ -1,122 +1,91 @@
 version: 2
 updates:
-- package-ecosystem: github-actions
-  directory: /
+- package-ecosystem: bazel
+  directories:
+  - /bazel
   schedule:
     interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/bson
+  groups:
+    dependencies:
+      patterns:
+      - "*"
+
+- package-ecosystem: cargo
+  directories:
+  - /rust
   schedule:
     interval: daily
+  groups:
+    dependencies:
+      patterns:
+      - "*"
+
 - package-ecosystem: github-actions
-  directory: /gh-actions/cache/prime
+  directories:
+  - /
+  - /gh-actions/bson
+  - /gh-actions/cache/prime
+  - /gh-actions/cache/restore
+  - /gh-actions/docker/cache/prime
+  - /gh-actions/docker/cache/restore
+  - /gh-actions/docker/fetch
+  - /gh-actions/docker/shas
+  - /gh-actions/envoy/android/pre
+  - /gh-actions/envoy/ci/env
+  - /gh-actions/envoy/ci/request
+  - /gh-actions/envoy/ios/post
+  - /gh-actions/envoy/run/summary
+  - /gh-actions/foreach
+  - /gh-actions/github/artifact/download
+  - /gh-actions/github/checkout
+  - /gh-actions/github/command
+  - /gh-actions/github/env/load
+  - /gh-actions/github/env/save
+  - /gh-actions/github/env/summary
+  - /gh-actions/github/merge-commit
+  - /gh-actions/github/pr
+  - /gh-actions/github/run
+  - /gh-actions/json/table
+  - /gh-actions/upload/diff
+  - /gh-actions/using/recurse
+  - /gh-actions/using/steps
   schedule:
     interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/cache/restore
+  groups:
+    dependencies:
+      patterns:
+      - "*"
+
+- package-ecosystem: npm
+  directories:
+  - /gh-actions/appauth
+  - /gh-actions/dispatch
+  - /gh-actions/github/checks
+  - /gh-actions/github/mutex
+  - /gh-actions/github/script/run
+  - /gh-actions/hashfiles
+  - /gh-actions/jq
+  - /gh-actions/retest
+  - /gh-actions/torun
   schedule:
     interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/docker/cache/prime
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/docker/cache/restore
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/docker/fetch
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/docker/shas
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/envoy/android/pre
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/envoy/ci/env
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/envoy/ci/request
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/envoy/ios/post
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/envoy/run/summary
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/foreach
-  schedule:
-    interval: daily
+  groups:
+    dependencies:
+      patterns:
+      - "*"
+
 - package-ecosystem: pip
-  directory: /gh-actions/gcp/setup
+  directories:
+  - /bazel
+  - /bazel/website
+  - /deps
+  - /deps/flake8
+  - /deps/mypy
+  - /deps/pytest
+  - /gh-actions/gcp/setup
   schedule:
     interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/artifact/download
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/checkout
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/command
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/env/load
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/env/save
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/env/summary
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/merge-commit
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/pr
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/github/run
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/json/table
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/upload/diff
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/using/recurse
-  schedule:
-    interval: daily
-- package-ecosystem: github-actions
-  directory: /gh-actions/using/steps
-  schedule:
-    interval: daily
-- package-ecosystem: pip
-  directory: /bazel/website
-  schedule:
-    interval: daily
-- package-ecosystem: pip
-  directory: /deps
-  schedule:
-    interval: daily
+  groups:
+    dependencies:
+      patterns:
+      - "*"
