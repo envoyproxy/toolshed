@@ -92,7 +92,7 @@ impl Patch {
         test: Arc<Mutex<ttest::Test>>,
         address: SocketAddr,
         router: RustlsConfig,
-    ) -> Server<RustlsAcceptor> {
+    ) -> Server<SocketAddr, RustlsAcceptor> {
         let test = test.lock().unwrap();
         test.notify(&format!("axum_server::bind_rustls({:?})", !test.fails));
         disable_patch!(
