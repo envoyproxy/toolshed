@@ -10,9 +10,9 @@ test = ["guerrilla", "once_cell", "toolshed-test"]
 anyhow = "^1.0.97"
 as-any = "^0.3.2"
 async-trait = "^0.1.88"
-axum = { version = "=0.8.1", features = ["macros"] }
+axum = { version = "=0.8.7", features = ["macros"] }
 axum-core = "^0.5.0"
-axum-server = { version = "^0.7.2", features = ["tls-rustls"] }
+axum-server = { version = "^0.8.0", features = ["tls-rustls"] }
 bytes = "=1.10.1"
 clap = "^4.5.32"
 futures = "^0.3.31"
