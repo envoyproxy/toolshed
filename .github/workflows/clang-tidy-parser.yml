@@ -9,6 +9,8 @@ on:
     - bazel/format/clang_tidy/parser/**
     - .github/workflows/clang-tidy-parser.yml
   push:
+    branches:
+    - main
     paths:
     - bazel/format/clang_tidy/parser/**
     - .github/workflows/clang-tidy-parser.yml
