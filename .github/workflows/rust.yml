@@ -32,9 +32,6 @@ jobs:
         test-type:
         - coverage
         - integration
-        exclude:
-        - toolchain: stable
-          test-type: coverage
     name: test (${{ matrix.toolchain }}, ${{ matrix.test-type }})
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
