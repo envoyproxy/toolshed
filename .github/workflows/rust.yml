@@ -45,7 +45,7 @@ jobs:
     - name: Run coverage
       if: matrix.test-type == 'coverage'
       run: |
-        cargo tarpaulin --config tarpaulin.toml
+        cargo tarpaulin --config tarpaulin.toml --features test
       working-directory: rust
     - name: Run glint integration tests
       if: matrix.test-type == 'integration'
