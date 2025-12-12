@@ -21,15 +21,15 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
-    
+
     - name: Setup Bazel
       uses: bazelbuild/setup-bazelisk@v3
-    
+
     - name: Run Bazel test
       run: |
         cd bazel
         bazel test //format/clang_tidy/parser:parse_clang_tidy_test
-    
+
     - name: Build sh_binary
       run: |
         cd bazel
