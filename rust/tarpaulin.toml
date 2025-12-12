@@ -5,7 +5,7 @@ workspace = true
 color = "Always"
 features = "test"
 exclude-files = ["runner/src/test/*", "echo/src/test/*", "glint/tests"]
-run-types = ["Lib", "Bins"]
+run-types = ["lib", "bins"]
 
 [report]
 out = ["Html"]
