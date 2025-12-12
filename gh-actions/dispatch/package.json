@@ -41,7 +41,7 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
-    "@actions/core": "^1.10.0",
+    "@actions/core": "^2.0.0",
     "@actions/github": "^6.0.0",
     "js-yaml": "^4.1.1"
   }

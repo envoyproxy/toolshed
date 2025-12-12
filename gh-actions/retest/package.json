@@ -41,7 +41,7 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
-    "@actions/core": "^1.9.1",
+    "@actions/core": "^2.0.0",
     "@actions/github": "^6.0.0",
     "@octokit/rest": "^22.0.0",
     "axios": "^1.7.7",
