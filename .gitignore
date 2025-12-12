@@ -181,6 +181,4 @@ $RECYCLE.BIN/
 !gh-actions/github/mutex/lib
 
 # Bazel
-MODULE.bazel.lock
-
 bazel-*

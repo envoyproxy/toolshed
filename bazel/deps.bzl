@@ -3,6 +3,7 @@ load("@rules_perl//perl:deps.bzl", "perl_register_toolchains", "perl_rules_depen
 load("@rules_python//python:repositories.bzl", "py_repositories")
 load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
+load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains")
 load("//:versions.bzl", "VERSIONS")
 load("//sysroot:sysroot.bzl", "setup_sysroots")
 
@@ -12,6 +13,7 @@ def resolve_dependencies(
         ninja_version=None):
     py_repositories()
     bazel_toolchain_dependencies()
+    register_jq_toolchains()
     rules_foreign_cc_dependencies(
         register_preinstalled_tools = True,
         register_default_tools = True,
