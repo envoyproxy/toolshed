@@ -87,7 +87,7 @@ runs:
     id: cache-restore-initial
     if: >-
       inputs.cache-type == 'github'
-    uses: actions/cache/restore@a7833574556fa59680c1b7cb190c1735db73ebf0  # v5.0.0
+    uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb  # v5.0.1
     with:
       lookup-only: true
       path: ${{ inputs.path || inputs.path-tmp }}
@@ -124,7 +124,7 @@ runs:
       inputs.lock-token
       && steps.cache-restore-initial.outputs.cache-hit != 'true'
       && inputs.cache-type == 'github'
-    uses: actions/cache/restore@a7833574556fa59680c1b7cb190c1735db73ebf0  # v5.0.0
+    uses: actions/cache/restore@9255dc7a253b0ccc959486e2bca901246202afeb  # v5.0.1
     with:
       lookup-only: true
       path: ${{ inputs.path || inputs.path-tmp }}
@@ -202,7 +202,7 @@ runs:
       steps.restore.outputs.save == 'true'
       && inputs.cache-type == 'github'
     name: Save cache
-    uses: actions/cache/save@a7833574556fa59680c1b7cb190c1735db73ebf0  # v5.0.0
+    uses: actions/cache/save@9255dc7a253b0ccc959486e2bca901246202afeb  # v5.0.1
     with:
       path: ${{ inputs.path || inputs.path-tmp }}
       key: ${{ inputs.key }}
