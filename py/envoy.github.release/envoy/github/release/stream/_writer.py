@@ -12,8 +12,8 @@ class Writer(AsyncStream):
     """This wraps an async file object and provides a `stream_bytes` method to
     stream an `aiohttp.ClientResponse` to the file.
 
-    It makes use of aiohttp's stream buffering to download chunks, and then
-    writes the chunks to disk asynchronously.
+    It makes use of aiohttp's stream buffering to download chunks, and
+    then writes the chunks to disk asynchronously.
 
     This allows large file downloads to use little or no additional
     memory while downloading with aiohttp.

@@ -1,6 +1,6 @@
 [GLOBAL]
 pythonpath = ["%(buildroot)s/py/pants-toolshed"]
-pants_version = "2.23.0"
+pants_version = "2.30.0"
 backend_packages = [
     "pants.backend.python",
     "pants.backend.python.lint.docformatter",
@@ -24,6 +24,7 @@ deps = "py/deps/deps.lock"
 flake8 = "py/deps/flake8/flake8.lock"
 pytest = "py/deps/pytest/pytest.lock"
 mypy = "py/deps/mypy/mypy.lock"
+docformatter = "py/deps/docformatter/docformatter.lock"
 
 [test]
 use_coverage = true
@@ -43,6 +44,9 @@ enabled = false
 [source]
 marker_filenames = ["setup.cfg"]
 root_patterns = ["py/pants-toolshed"]
+
+[docformatter]
+install_from_resolve = "docformatter"
 
 [flake8]
 install_from_resolve = "flake8"
