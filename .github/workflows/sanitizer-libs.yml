@@ -44,7 +44,7 @@ jobs:
         cd bazel
         bazel build //compile:cxx_${{ matrix.sanitizer }}
     - name: Upload ${{ matrix.sanitizer }} libraries
-      uses: actions/upload-artifact@v6.0.0
+      uses: actions/upload-artifact@v5
       with:
         name: ${{ matrix.sanitizer }}-llvm18.1.8-x86_64
         path: bazel/bazel-bin/compile/${{ matrix.sanitizer }}-llvm18.1.8-x86_64.tar.xz
@@ -60,7 +60,7 @@ jobs:
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - name: Download all workflow run artifacts
-      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+      uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53  # v6.0.0
       with:
         path: artifacts
     - name: Upload release assets
