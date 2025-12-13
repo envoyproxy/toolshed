@@ -70,17 +70,40 @@ curl -I https://files.pythonhosted.org/
 
 ## Troubleshooting
 
+### Critical Discovery: SSL Certificate Validation Issue
+
+**IMPORTANT:** The actual problem observed when running Pants is **NOT** blocked domains, but **SSL certificate validation failure**.
+
+**Error observed:**
+```
+invalid peer certificate: UnknownIssuer
+```
+
+**Root Cause:**
+The firewall/proxy performs SSL interception and presents a certificate that Pants doesn't trust. This causes Pants to retry downloads indefinitely, appearing to "hang".
+
+**Solution:**
+The firewall must be configured to either:
+1. **Bypass SSL interception** for GitHub and PyPI domains (RECOMMENDED)
+2. **Add the proxy's CA certificate** to the system trust store
+
+Simply adding domains to the allowlist is **NOT sufficient** if SSL interception is enabled.
+
+---
+
+### Other Common Issues
+
 **Symptom:** Pants hangs after "Bootstrapping Pants" message  
-**Likely Cause:** `github.com` or `objects.githubusercontent.com` blocked  
-**Solution:** Add both domains to allowlist
+**Likely Cause:** `github.com` or `objects.githubusercontent.com` blocked OR SSL interception  
+**Solution:** Add both domains to allowlist AND disable SSL interception for these domains
 
 **Symptom:** Pants hangs during "Resolving dependencies"  
-**Likely Cause:** `pypi.org` or `files.pythonhosted.org` blocked  
-**Solution:** Add both domains to allowlist
+**Likely Cause:** `pypi.org` or `files.pythonhosted.org` blocked OR SSL interception  
+**Solution:** Add both domains to allowlist AND disable SSL interception
 
 **Symptom:** Error downloading Python interpreter  
-**Likely Cause:** `github.com` blocked for python-build-standalone releases  
-**Solution:** Ensure `github.com` and `objects.githubusercontent.com` are allowed
+**Likely Cause:** `github.com` blocked for python-build-standalone releases OR SSL interception  
+**Solution:** Ensure `github.com` and `objects.githubusercontent.com` are allowed AND SSL interception is disabled
 
 ## Additional Information
 

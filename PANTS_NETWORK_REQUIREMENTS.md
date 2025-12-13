@@ -29,6 +29,7 @@ files.pythonhosted.org
 - URL pattern: `https://github.com/pantsbuild/scie-pants/releases/{version}/scie-pants-{os}-{arch}`
 - The script downloads both the binary and its SHA256 checksum (`.sha256` file)
 - GitHub serves release assets via their CDN at `objects.githubusercontent.com`
+- **Verified:** Successfully downloaded `scie-pants-linux-x86_64` from GitHub releases
 
 **Configuration:**
 - Version can be specified in the `get-pants.sh` script via `--version` flag
@@ -43,11 +44,26 @@ files.pythonhosted.org
 **Required:** Yes (Critical for initialization)  
 **Details:**
 - After the launcher binary is installed, Pants downloads its own PEX file
-- URL pattern: `https://github.com/pantsbuild/pants/releases/download/release_{version}/pants.{version}.pex`
-- The PEX contains the actual Pants implementation
+- URL pattern: `https://github.com/pantsbuild/pants/releases/download/release_{version}/pants.{version}-{python_version}-{platform}.pex`
+- The PEX contains the actual Pants implementation (~56 MB for v2.23.0)
 - Also served via GitHub's release CDN
+- **Verified:** Downloaded `pants.2.23.0-cp39-linux_x86_64.pex` (56.05 MiB) from GitHub
 
-### 3. Python Interpreter Downloads
+### 3. PEX Tool Downloads
+
+**Domain:** `github.com`  
+**CDN Domain:** `objects.githubusercontent.com`  
+**Purpose:** Download the PEX tool for creating Python executables  
+**Required:** Yes (Critical for Python dependency management)  
+**Details:**
+- Pants downloads the PEX tool from its GitHub releases
+- URL pattern: `https://github.com/pex-tool/pex/releases/download/v{version}/pex`
+- PEX is used to create isolated Python environments and executables
+- **Verified:** Observed download of `pex` v2.16.2 (4.09 MB) during initialization
+
+**Note:** This is a distinct download from the Pants PEX itself
+
+### 4. Python Interpreter Downloads
 
 **Domain:** `github.com`  
 **CDN Domain:** `objects.githubusercontent.com`  
@@ -58,13 +74,14 @@ files.pythonhosted.org
 - URL pattern: `https://github.com/indygreg/python-build-standalone/releases/download/{date}/{python-version}-{platform}.tar.gz`
 - This ensures consistent Python versions across environments
 - The repository requires Python `>=3.11.0` (from `pants.toml`)
+- May not download if system Python is available and compatible
 
 **Configuration:**
 - Can be disabled by using system Python interpreters
 - Controlled by `[python-bootstrap]` configuration in `pants.toml`
 - This repository does not explicitly disable it, so it uses the default (hermetic interpreters)
 
-### 4. PyPI Package Index
+### 5. PyPI Package Index
 
 **Domain:** `pypi.org`  
 **CDN Domain:** `files.pythonhosted.org`  
@@ -81,7 +98,7 @@ files.pythonhosted.org
   - `deps/mypy/mypy.lock` (type checking)
 - Plugins like `jinja2` are also downloaded from PyPI
 
-### 5. Pants Plugins (via PyPI)
+### 6. Pants Plugins (via PyPI)
 
 **Domain:** `pypi.org`  
 **CDN Domain:** `files.pythonhosted.org`  
@@ -92,7 +109,7 @@ files.pythonhosted.org
 - These are local plugins, not downloaded from the internet
 - If external Pants plugins were specified, they would be downloaded from PyPI
 
-### 6. GitHub Raw Content (Potential)
+### 7. GitHub Raw Content (Potential)
 
 **Domain:** `raw.githubusercontent.com`  
 **Purpose:** Download remote BUILD files, scripts, or configuration from GitHub  
@@ -157,7 +174,7 @@ files.pythonhosted.org
 
 | Domain | Purpose | Required | Used For |
 |--------|---------|----------|----------|
-| `github.com` | GitHub API and releases | ✅ Yes | Pants launcher, Pants PEX, Python interpreters |
+| `github.com` | GitHub API and releases | ✅ Yes | Pants launcher, Pants PEX, PEX tool, Python interpreters |
 | `objects.githubusercontent.com` | GitHub CDN for release assets | ✅ Yes | Binary and PEX downloads |
 | `raw.githubusercontent.com` | GitHub raw content | ⚠️ Optional | Remote configuration files |
 | `pypi.org` | Python package index API | ✅ Yes | Package metadata and discovery |
@@ -194,6 +211,45 @@ files.pythonhosted.org
 2. **Hanging during initialization:** Likely blocked access to Python interpreter downloads
 3. **Hanging during dependency resolution:** Likely blocked access to `pypi.org` or `files.pythonhosted.org`
 4. **Timeout errors:** Check firewall logs for blocked connections
+5. **SSL/TLS Certificate Errors:** If you see `invalid peer certificate: UnknownIssuer` errors, this indicates the firewall/proxy is using SSL interception with an untrusted CA
+
+### Critical Issue: SSL/TLS Certificate Validation
+
+**DISCOVERED ISSUE:** When running Pants in the GitHub Copilot workspace environment, the actual problem is **NOT** that the domains are blocked, but that **SSL certificate validation is failing**.
+
+**Error observed:**
+```
+Error while downloading https://github.com/pex-tool/pex/releases/download/v2.16.2/pex: 
+Error downloading file: error sending request for url: 
+error trying to connect: invalid peer certificate: UnknownIssuer (retryable)
+```
+
+**Root Cause:**
+The firewall/proxy is performing SSL/TLS interception (also known as SSL inspection or HTTPS decryption). It presents its own certificate to Pants, but Pants doesn't trust the Certificate Authority (CA) that signed the proxy's certificate.
+
+**Why this causes hanging:**
+- Pants retries downloads with exponential backoff when it encounters "retryable" errors
+- The SSL certificate error is marked as retryable
+- Pants will retry many times (observed: attempts #1, #2, #3, etc.) with increasing delays
+- This creates the appearance of "hanging" even though Pants is actually retrying
+
+**Solutions:**
+
+1. **Option A: Configure the firewall to trust Pants' certificate validation**
+   - Add the proxy/firewall's CA certificate to the system trust store
+   - Pants uses the system's trusted CA certificates
+
+2. **Option B: Disable SSL interception for GitHub and PyPI domains**
+   - Configure the firewall to allow direct HTTPS connections to:
+     - `github.com`
+     - `objects.githubusercontent.com`
+     - `pypi.org`
+     - `files.pythonhosted.org`
+   - This is the RECOMMENDED approach as it avoids SSL interception issues
+
+3. **Option C: Use Pants with custom CA bundle (if supported)**
+   - Set environment variable pointing to CA bundle
+   - Note: Pants uses Rust's reqwest library which respects system CA certificates
 
 ### Diagnostic Commands
 
@@ -204,12 +260,22 @@ curl -v https://github.com/pantsbuild/scie-pants/releases/latest/download/scie-p
 # Test Pants PEX download
 curl -v https://github.com/pantsbuild/pants/releases/download/release_2.23.0/pants.2.23.0.pex
 
+# Test PEX tool download (this is where SSL issues were observed)
+curl -v https://github.com/pex-tool/pex/releases/download/v2.16.2/pex
+
 # Test Python interpreter download (example)
 curl -v https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.11.7+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz
 
 # Test PyPI access
 curl -v https://pypi.org/pypi/jinja2/json
 curl -v https://files.pythonhosted.org/packages/ed/55/39036716d19cab0747a5020fc7e907f362fbf48c984b14e62127f7e68e5d/jinja2-3.1.4-py3-none-any.whl
+
+# Check SSL certificate being presented (look for issuer)
+openssl s_client -connect github.com:443 -servername github.com < /dev/null 2>/dev/null | openssl x509 -noout -issuer -subject
+
+# Run Pants with debug logging to see SSL errors
+cd /path/to/repo
+~/.local/bin/pants --level=debug --no-pantsd --version 2>&1 | grep -i "certificate\|ssl\|tls"
 ```
 
 ### Environment Variables for Debugging
