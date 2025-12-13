@@ -76,15 +76,15 @@ updates:
 
 - package-ecosystem: pip
   directories:
-  - /.github/workflows
   - /bazel
   - /bazel/website
+  - /ci
+  - /gh-actions/gcp/setup
   - /py/deps
   - /py/deps/docformatter
   - /py/deps/flake8
   - /py/deps/mypy
   - /py/deps/pytest
-  - /gh-actions/gcp/setup
   schedule:
     interval: daily
   groups:
