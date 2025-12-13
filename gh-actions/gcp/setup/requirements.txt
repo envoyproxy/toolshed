@@ -305,7 +305,7 @@ cryptography==46.0.3 \
     --hash=sha256:a2c0cd47381a3229c403062f764160d57d4d175e022c1df84e168c6251a22eec \
     --hash=sha256:a8b17438104fed022ce745b362294d9ce35b4c2e45c1d958ad4a4b019285f4a1
     # via pyopenssl
-    # Only manylinux_2_28 wheels for x86_64 and aarch64, macOS universal2, plus source
+    # Platform-specific wheels for manylinux_2_28 (x86_64/aarch64), macOS universal2, plus source
     # Hashes for: cryptography-46.0.3-cp311-abi3-macosx_10_9_universal2.whl
     #             cryptography-46.0.3-cp311-abi3-manylinux_2_28_aarch64.whl
     #             cryptography-46.0.3-cp311-abi3-manylinux_2_28_x86_64.whl
