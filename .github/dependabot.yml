@@ -78,10 +78,10 @@ updates:
   directories:
   - /bazel
   - /bazel/website
-  - /deps
-  - /deps/flake8
-  - /deps/mypy
-  - /deps/pytest
+  - /py/deps
+  - /py/deps/flake8
+  - /py/deps/mypy
+  - /py/deps/pytest
   - /gh-actions/gcp/setup
   schedule:
     interval: daily
