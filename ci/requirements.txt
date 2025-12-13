@@ -231,9 +231,7 @@ cryptography==46.0.3 \
     --hash=sha256:6eae65d4c3d33da080cff9c4ab1f711b15c1d9760809dad6ea763f3812d254cb \
     --hash=sha256:a2c0cd47381a3229c403062f764160d57d4d175e022c1df84e168c6251a22eec \
     --hash=sha256:a8b17438104fed022ce745b362294d9ce35b4c2e45c1d958ad4a4b019285f4a1
-    # via
-    #   -r requirements.in
-    #   pyjwt
+    # via pyjwt
 envoy-base-utils==0.5.7 \
     --hash=sha256:20fc12b798c18b794b705fbbcc55996bbeb02f6fdf311d2f73691d49a8d58771 \
     --hash=sha256:d69808f1035ddcd28ec5ccbe348a8b60329f9190f13278f9bed3cf17483ea1a8
@@ -400,9 +398,7 @@ idna==3.10 \
 jinja2==3.1.6 \
     --hash=sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d \
     --hash=sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67
-    # via
-    #   -r requirements.in
-    #   envoy-base-utils
+    # via envoy-base-utils
 markupsafe==3.0.2 \
     --hash=sha256:0bff5e0ae4ef2e1ae4fdf2dfd5b76c75e5c2fa4132d05fc1b0dabcd20c7e28c4 \
     --hash=sha256:0f4ca02bea9a23221c0182836703cbf8930c5e9454bacce27e767509fa286a30 \
