@@ -4,16 +4,30 @@
 
 <img src="https://github.com/envoyproxy/toolshed/raw/2f3ada749e0d8052b3be2705ac808ed649fcf7e1/envoy-pytooling.png" width="100" align="left" />
 
-Python libraries, runners and checkers for Envoy proxy's CI
+Multi-language tooling and libraries for Envoy proxy's CI and development workflows
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/envoyproxy/toolshed/badge)](https://securityscorecards.dev/viewer/?uri=github.com/envoyproxy/toolshed)
 
 <br clear="both" />
 
-### Packages
+### Contents
 
+- **[py/](py/)** - Python packages, libraries, runners, checkers, and dependencies - see [py/README.md](py/README.md) for details
+- **[bazel/](bazel/)** - Bazel build configurations and rules
+- **[rust/](rust/)** - Rust tooling and libraries
+- **[gh-actions/](gh-actions/)** - GitHub Actions workflows
+- **[sh/](sh/)** - Shell scripts and utilities
 
-#### [abstracts](abstracts)
+### Development
+
+See [DEVELOPER.md](DEVELOPER.md) for information on building, testing, and contributing to the toolshed.
+
+<details>
+<summary>Legacy: Detailed Python package list (click to expand)</summary>
+
+This detailed package information is maintained for backward compatibility. For current information, please see [py/README.md](py/README.md).
+
+#### [abstracts](py/abstracts)
 
 version: 0.0.13.dev0
 
@@ -22,7 +36,7 @@ pypi: https://pypi.org/project/abstracts
 ---
 
 
-#### [aio.api.bazel](aio.api.bazel)
+#### [aio.api.bazel](py/aio.api.bazel)
 
 version: 0.0.3.dev0
 
@@ -37,7 +51,7 @@ pypi: https://pypi.org/project/aio.api.bazel
 ---
 
 
-#### [aio.api.github](aio.api.github)
+#### [aio.api.github](py/aio.api.github)
 
 version: 0.2.8.dev0
 
@@ -56,7 +70,7 @@ pypi: https://pypi.org/project/aio.api.github
 ---
 
 
-#### [aio.api.nist](aio.api.nist)
+#### [aio.api.nist](py/aio.api.nist)
 
 version: 0.0.5.dev0
 
@@ -74,7 +88,7 @@ pypi: https://pypi.org/project/aio.api.nist
 ---
 
 
-#### [aio.core](aio.core)
+#### [aio.core](py/aio.core)
 
 version: 0.10.4.dev0
 
@@ -90,7 +104,7 @@ pypi: https://pypi.org/project/aio.core
 ---
 
 
-#### [aio.run.checker](aio.run.checker)
+#### [aio.run.checker](py/aio.run.checker)
 
 version: 0.5.8.dev0
 
@@ -104,7 +118,7 @@ pypi: https://pypi.org/project/aio.run.checker
 ---
 
 
-#### [aio.run.runner](aio.run.runner)
+#### [aio.run.runner](py/aio.run.runner)
 
 version: 0.3.4.dev0
 
@@ -122,7 +136,7 @@ pypi: https://pypi.org/project/aio.run.runner
 ---
 
 
-#### [dependatool](dependatool)
+#### [dependatool](py/dependatool)
 
 version: 0.2.4.dev0
 
@@ -137,7 +151,7 @@ pypi: https://pypi.org/project/dependatool
 ---
 
 
-#### [envoy.base.utils](envoy.base.utils)
+#### [envoy.base.utils](py/envoy.base.utils)
 
 version: 0.5.6.dev0
 
@@ -166,7 +180,7 @@ pypi: https://pypi.org/project/envoy.base.utils
 ---
 
 
-#### [envoy.ci.report](envoy.ci.report)
+#### [envoy.ci.report](py/envoy.ci.report)
 
 version: 0.0.1.dev0
 
@@ -182,7 +196,7 @@ pypi: https://pypi.org/project/envoy.ci.report
 ---
 
 
-#### [envoy.code.check](envoy.code.check)
+#### [envoy.code.check](py/envoy.code.check)
 
 version: 0.5.14.dev0
 
@@ -203,7 +217,7 @@ pypi: https://pypi.org/project/envoy.code.check
 ---
 
 
-#### [envoy.dependency.check](envoy.dependency.check)
+#### [envoy.dependency.check](py/envoy.dependency.check)
 
 version: 0.1.14.dev0
 
@@ -227,7 +241,7 @@ pypi: https://pypi.org/project/envoy.dependency.check
 ---
 
 
-#### [envoy.distribution.distrotest](envoy.distribution.distrotest)
+#### [envoy.distribution.distrotest](py/envoy.distribution.distrotest)
 
 version: 0.0.11.dev0
 
@@ -243,7 +257,7 @@ pypi: https://pypi.org/project/envoy.distribution.distrotest
 ---
 
 
-#### [envoy.distribution.release](envoy.distribution.release)
+#### [envoy.distribution.release](py/envoy.distribution.release)
 
 version: 0.0.10.dev0
 
@@ -258,7 +272,7 @@ pypi: https://pypi.org/project/envoy.distribution.release
 ---
 
 
-#### [envoy.distribution.repo](envoy.distribution.repo)
+#### [envoy.distribution.repo](py/envoy.distribution.repo)
 
 version: 0.0.9.dev0
 
@@ -276,7 +290,7 @@ pypi: https://pypi.org/project/envoy.distribution.repo
 ---
 
 
-#### [envoy.distribution.verify](envoy.distribution.verify)
+#### [envoy.distribution.verify](py/envoy.distribution.verify)
 
 version: 0.0.12.dev0
 
@@ -291,7 +305,7 @@ pypi: https://pypi.org/project/envoy.distribution.verify
 ---
 
 
-#### [envoy.docker.utils](envoy.docker.utils)
+#### [envoy.docker.utils](py/envoy.docker.utils)
 
 version: 0.0.3.dev0
 
@@ -304,7 +318,7 @@ pypi: https://pypi.org/project/envoy.docker.utils
 ---
 
 
-#### [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner)
+#### [envoy.docs.sphinx_runner](py/envoy.docs.sphinx_runner)
 
 version: 0.2.12.dev0
 
@@ -335,7 +349,7 @@ pypi: https://pypi.org/project/envoy.docs.sphinx_runner
 ---
 
 
-#### [envoy.github.abstract](envoy.github.abstract)
+#### [envoy.github.abstract](py/envoy.github.abstract)
 
 version: 0.0.23.dev0
 
@@ -353,7 +367,7 @@ pypi: https://pypi.org/project/envoy.github.abstract
 ---
 
 
-#### [envoy.github.release](envoy.github.release)
+#### [envoy.github.release](py/envoy.github.release)
 
 version: 0.0.16.dev0
 
@@ -375,7 +389,7 @@ pypi: https://pypi.org/project/envoy.github.release
 ---
 
 
-#### [envoy.gpg.identity](envoy.gpg.identity)
+#### [envoy.gpg.identity](py/envoy.gpg.identity)
 
 version: 0.1.2.dev0
 
@@ -389,7 +403,7 @@ pypi: https://pypi.org/project/envoy.gpg.identity
 ---
 
 
-#### [envoy.gpg.sign](envoy.gpg.sign)
+#### [envoy.gpg.sign](py/envoy.gpg.sign)
 
 version: 0.2.1.dev0
 
@@ -404,7 +418,7 @@ pypi: https://pypi.org/project/envoy.gpg.sign
 ---
 
 
-#### [mypy-abstracts](mypy-abstracts)
+#### [mypy-abstracts](py/mypy-abstracts)
 
 version: 0.0.7.dev0
 
@@ -417,7 +431,7 @@ pypi: https://pypi.org/project/mypy-abstracts
 ---
 
 
-#### [pytest-abstracts](pytest-abstracts)
+#### [pytest-abstracts](py/pytest-abstracts)
 
 version: 0.0.5.dev0
 
@@ -431,7 +445,7 @@ pypi: https://pypi.org/project/pytest-abstracts
 ---
 
 
-#### [pytest-iters](pytest-iters)
+#### [pytest-iters](py/pytest-iters)
 
 version: 0.0.4.dev0
 
@@ -444,7 +458,7 @@ pypi: https://pypi.org/project/pytest-iters
 ---
 
 
-#### [pytest-patches](pytest-patches)
+#### [pytest-patches](py/pytest-patches)
 
 version: 0.0.4.dev0
 
@@ -455,4 +469,6 @@ pypi: https://pypi.org/project/pytest-patches
 - [pytest](https://pypi.org/project/pytest) >=3.5.0
 
 ---
+
+</details>
 

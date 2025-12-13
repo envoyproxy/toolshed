@@ -1,0 +1,25 @@
+
+toolshed_library(
+    "envoy.ci.report",
+    dependencies=[
+        "//py/deps:reqs#abstracts",
+        "//py/deps:reqs#aio.api.github",
+        "//py/deps:reqs#aio.core",
+        "//py/deps:reqs#aio.run.runner",
+    ],
+    sources=[
+        "__init__.py",
+        "ci.py",
+        "cmd.py",
+        "exceptions.py",
+        "interface.py",
+        "runner.py",
+        "typing.py",
+        "abstract/__init__.py",
+        "abstract/filters.py",
+        "abstract/format.py",
+        "abstract/runner.py",
+        "abstract/runs.py",
+    ],
+    tags=["abstract-types"],
+)

@@ -1,5 +1,5 @@
 [GLOBAL]
-pythonpath = ["%(buildroot)s/pants-toolshed"]
+pythonpath = ["%(buildroot)s/py/pants-toolshed"]
 pants_version = "2.23.0"
 backend_packages = [
     "pants.backend.python",
@@ -10,7 +10,7 @@ backend_packages = [
     "toolshed_readme"]
 pants_ignore = ["not", "/bazel/"]
 build_file_prelude_globs = [
-  "pants-toolshed/macros.py",
+  "py/pants-toolshed/macros.py",
 ]
 plugins = ["jinja2"]
 
@@ -20,10 +20,10 @@ enable_resolves = true
 default_resolve = "deps"
 
 [python.resolves]
-deps = "deps/deps.lock"
-flake8 = "deps/flake8/flake8.lock"
-pytest = "deps/pytest/pytest.lock"
-mypy = "deps/mypy/mypy.lock"
+deps = "py/deps/deps.lock"
+flake8 = "py/deps/flake8/flake8.lock"
+pytest = "py/deps/pytest/pytest.lock"
+mypy = "py/deps/mypy/mypy.lock"
 
 [test]
 use_coverage = true
@@ -42,7 +42,7 @@ enabled = false
 
 [source]
 marker_filenames = ["setup.cfg"]
-root_patterns = ["pants-toolshed"]
+root_patterns = ["py/pants-toolshed"]
 
 [flake8]
 install_from_resolve = "flake8"
