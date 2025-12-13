@@ -124,3 +124,16 @@ jobs:
                 "$file#$name" \
                 --clobber
         done
+
+  status:
+    runs-on: ubuntu-24.04
+    if: always()
+    needs:
+    - test
+    steps:
+    - run: |
+        if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+        fi
+        echo "All required jobs passed or were skipped"
