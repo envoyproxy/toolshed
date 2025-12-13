@@ -23,7 +23,7 @@ jobs:
       uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
 
     - name: Setup Bazel
-      uses: bazelbuild/setup-bazelisk@v3
+      uses: bazelbuild/setup-bazelisk@6ecf4fd8b7d1f9721785f1dd656a689acf9add47  # v3
 
     - name: Run Bazel test
       run: |
