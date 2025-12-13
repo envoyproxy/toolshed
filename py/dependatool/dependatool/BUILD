@@ -1,0 +1,30 @@
+
+toolshed_library(
+    "dependatool",
+    dependencies=[
+        "//py/deps:reqs#abstracts",
+        "//py/deps:reqs#aio.core",
+        "//py/deps:reqs#aio.run.checker",
+    ],
+    sources=[
+        "__init__.py",
+        "abstract/__init__.py",
+        "abstract/check.py",
+        "abstract/checker.py",
+        "docker/__init__.py",
+        "docker/abstract.py",
+        "docker/check.py",
+        "gomod/__init__.py",
+        "gomod/abstract.py",
+        "gomod/check.py",
+        "checker.py",
+        "cmd.py",
+        "exceptions.py",
+        "npm/__init__.py",
+        "npm/abstract.py",
+        "npm/check.py",
+        "pip/__init__.py",
+        "pip/abstract.py",
+        "pip/check.py",
+    ],
+)

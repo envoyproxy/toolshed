@@ -1,0 +1,29 @@
+
+toolshed_library(
+    "envoy.docs.sphinx_runner",
+    dependencies=[
+        "//py/deps:reqs#aio.run.runner",
+        "//py/deps:reqs#envoy.base.utils",
+        "//py/deps:reqs#colorama",
+        "//py/deps:reqs#docutils",
+        "//py/deps:reqs#packaging",
+        "//py/deps:reqs#protobuf",
+        "//py/deps:reqs#pygments",
+        "//py/deps:reqs#sphinx",
+        "//py/deps:reqs#sphinx-copybutton",
+        "//py/deps:reqs#sphinx-rtd-theme",
+        "//py/deps:reqs#sphinxcontrib-jquery",
+        "//py/deps:reqs#sphinxcontrib-httpdomain",
+        "//py/deps:reqs#sphinxcontrib-serializinghtml",
+        "//py/deps:reqs#sphinxext-rediraffe",
+        "//py/deps:reqs#types-pygments",
+        "./sphinx_tabs",
+    ],
+    sources=[
+        "__init__.py",
+        "cmd.py",
+        "exceptions.py",
+        "runner.py",
+        "ext/*.py",
+    ],
+)

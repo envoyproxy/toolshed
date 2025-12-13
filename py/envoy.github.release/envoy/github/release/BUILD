@@ -1,0 +1,24 @@
+
+toolshed_library(
+    "envoy.github.release",
+    dependencies=[
+        "//py/deps:reqs#abstracts",
+        "//py/deps:reqs#aio.core",
+        "//py/deps:reqs#aio.run.runner",
+        "//py/deps:reqs#aiofiles",
+        "//py/deps:reqs#envoy.github.abstract",
+        "//py/deps:reqs#envoy.base.utils",
+        "//py/deps:reqs#types-aiofiles",
+    ],
+    tags=["abstract-types"],
+    sources=[
+        "__init__.py",
+        "assets.py",
+        "manager.py",
+        "release.py",
+        "stream/__init__.py",
+        "stream/base.py",
+        "stream/_reader.py",
+        "stream/_writer.py",
+    ],
+)

@@ -131,11 +131,11 @@ For example to work on the `envoy.dependency.check` package, edit `tools/dev/req
 adding the following (adjusted to your environment):
 
 ```console
--e file:///src/workspace/toolshed/envoy.dependency.check#egg=envoy.dependency.check&cachebust=000
+-e file:///src/workspace/toolshed/py/envoy.dependency.check#egg=envoy.dependency.check&cachebust=000
 
 ```
 
-In this example, my toolshed directory is located in `/src/workspace/toolshed`.
+In this example, my toolshed directory is located in `/src/workspace/toolshed`. Note that Python packages are now located in the `py/` subdirectory.
 
 Whatever file path that you put here must be accessible to your Envoy environment, so if you are running inside a container,
 you may need to mount your toolshed directory to a matching path.
