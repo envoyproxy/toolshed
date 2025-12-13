@@ -128,6 +128,7 @@ jobs:
   status:
     runs-on: ubuntu-24.04
     if: always()
+    name: Rust
     needs:
     - test
     steps:

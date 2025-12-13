@@ -80,6 +80,7 @@ jobs:
   status:
     runs-on: ubuntu-24.04
     if: always()
+    name: Sanitizers
     needs:
     - build
     steps:

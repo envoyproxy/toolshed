@@ -240,6 +240,7 @@ jobs:
   status:
     runs-on: ubuntu-24.04
     if: always()
+    name: Sysroot
     needs:
     - build
     steps:

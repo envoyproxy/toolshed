@@ -58,6 +58,7 @@ jobs:
   status:
     runs-on: ubuntu-24.04
     if: always()
+    name: Actions
     needs:
     - gh-actions
     steps:
