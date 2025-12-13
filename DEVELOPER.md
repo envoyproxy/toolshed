@@ -1,38 +1,5 @@
 # Developer documentation
 
-## CI and Required Checks
-
-This repository is a monorepo containing multiple languages (Python, Rust, Bash, Bazel, GitHub Actions). Each language has its own workflow that only runs when relevant files change (using path filters).
-
-### Status Jobs
-
-Each workflow contains a `status` job that:
-- Always runs (`if: always()`)
-- Depends on the core jobs in that workflow
-- Returns success if all jobs passed or were skipped (due to path filters)
-- Returns failure if any job failed or was cancelled
-
-### Configuring Branch Protection
-
-To properly configure required checks in branch protection settings:
-
-1. Go to Settings → Branches → Branch protection rules
-2. For the `main` branch, configure these status jobs as required:
-   - `Python / status` - for Python code changes
-   - `Rust / status` - for Rust code changes  
-   - `Ba/sh tests / status` - for shell script changes
-   - `Github/actions / status` - for GitHub Actions changes
-   - `Clang-tidy parser tests / status` - for clang-tidy parser changes
-   - `Build Sanitizer Libraries / status` - for sanitizer library changes
-   - `Build Sysroots / status` - for sysroot changes
-   - `Lint / status` - for general linting (always runs)
-
-Do **not** make individual jobs like `publish`, `test`, `lint`, `build`, etc. required, as they may not run when their relevant files don't change.
-
-This approach ensures that:
-- When relevant files change, the workflow runs and status reports actual results
-- When files don't change, the workflow doesn't run and GitHub doesn't require it
-- All necessary checks are enforced without blocking PRs that don't touch certain areas
 
 ## Toolshed packages
 
