@@ -101,7 +101,7 @@ class Checker(runner.Runner):
 
     @property
     def paths(self) -> list:
-        """list of paths to apply checks to."""
+        """List of paths to apply checks to."""
         return self.args.paths or [self.path]
 
     @property
@@ -354,7 +354,7 @@ class Checker(runner.Runner):
 
     @cached_property
     def preload_tasks(self) -> tuple[Awaitable, ...]:
-        """tuple of awaitables for preloading check data."""
+        """Tuple of awaitables for preloading check data."""
         tasks = [
             self.preload_data(name)
             for name

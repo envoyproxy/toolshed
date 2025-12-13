@@ -524,7 +524,7 @@ class IGithubTrackedIssues(metaclass=abstracts.Interface):
     @property
     @abstracts.interfacemethod
     async def titles(self) -> tuple[str, ...]:
-        """tuple of current matching issue titles."""
+        """Tuple of current matching issue titles."""
         raise NotImplementedError
 
     @abstracts.interfacemethod

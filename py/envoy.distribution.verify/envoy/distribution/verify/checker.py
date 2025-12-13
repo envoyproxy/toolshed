@@ -95,11 +95,11 @@ class PackagesDistroChecker(checker.Checker):
     def test_config(self) -> distrotest.DistroTestConfig:
         """The test config.
 
-        Parses global and provided configs to store and resolve configurations
-        for the test runner.
+        Parses global and provided configs to store and resolve
+        configurations for the test runner.
 
-        Also extracts the packages to the temporary directory and provides info
-        on available packages to test with.
+        Also extracts the packages to the temporary directory and
+        provides info on available packages to test with.
         """
         return self.test_config_class(
             docker=self.docker,

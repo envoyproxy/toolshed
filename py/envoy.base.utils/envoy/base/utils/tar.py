@@ -163,7 +163,7 @@ def _open(
 def _open_zst(
         path: pathlib.Path | str,
         inmem: bool = True) -> tarfile.TarFile:
-    """extract .zst file."""
+    """Extract .zst file."""
     archive = pathlib.Path(path).expanduser()
     dctx = zstandard.ZstdDecompressor()
     outfile = (

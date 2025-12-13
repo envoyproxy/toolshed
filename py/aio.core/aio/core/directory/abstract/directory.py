@@ -161,7 +161,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def files(self) -> set[str]:
-        """set of relative file paths associated with this directory."""
+        """Set of relative file paths associated with this directory."""
         return await self.get_files()
 
     @cached_property
