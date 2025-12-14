@@ -1,0 +1,87 @@
+"""Repository rule for glint."""
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+
+GLINT_VERSION = "0.1.0"
+
+# SHA256 hashes for glint binaries
+# These will be populated after the first release containing glint binaries
+# Until then, downloads will not be checksum-verified
+GLINT_SHA256 = {
+    "amd64": "",
+    "arm64": "",
+}
+
+def _get_platform_info(ctx):
+    """Get platform information for selecting the correct glint binary."""
+    os_name = ctx.os.name
+    arch = ctx.os.arch
+    if os_name == "linux":
+        if arch == "x86_64" or arch == "amd64":
+            return "amd64"
+        elif arch == "aarch64" or arch == "arm64":
+            return "arm64"
+    elif os_name == "mac os x" or os_name == "darwin":
+        # glint is currently only built for Linux, but we can extend this later
+        if arch == "x86_64" or arch == "amd64":
+            return "amd64"
+        elif arch == "aarch64" or arch == "arm64":
+            return "arm64"
+    fail("Unsupported platform: {} {}".format(os_name, arch))
+
+def _glint_repo_impl(ctx):
+    """Implementation of the glint repository rule."""
+    platform = _get_platform_info(ctx)
+    url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/glint-{glint_version}-{arch}".format(
+        version = ctx.attr.bins_release_version,
+        glint_version = GLINT_VERSION,
+        arch = platform,
+    )
+    
+    # Download the binary
+    ctx.download(
+        url = url,
+        sha256 = GLINT_SHA256.get(platform, ""),
+        output = "glint",
+        executable = True,
+    )
+    
+    # Create a BUILD file that exports the binary
+    ctx.file("BUILD.bazel", """
+exports_files(["glint"])
+
+filegroup(
+    name = "glint_bin",
+    srcs = ["glint"],
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "glint",
+    srcs = ["glint"],
+    visibility = ["//visibility:public"],
+)
+""")
+
+_glint_repo = repository_rule(
+    implementation = _glint_repo_impl,
+    attrs = {
+        "bins_release_version": attr.string(
+            doc = "Version of bazel-bins release to use",
+            mandatory = True,
+        ),
+    },
+)
+
+def glint_repository(bins_release_version):
+    """Download glint binary for the current platform.
+    
+    Args:
+        bins_release_version: Version of the bazel-bins release (e.g., "0.1.21")
+    """
+    maybe(
+        _glint_repo,
+        name = "glint",
+        bins_release_version = bins_release_version,
+    )
