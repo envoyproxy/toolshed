@@ -1,0 +1,80 @@
+name: Should run
+description: Check if paths have changed that match filter config.
+author: phlax
+inputs:
+  base-ref:
+    description: >
+      Base ref for pull requests
+    type: string
+    required: false
+    default: ${{ github.base_ref }}
+  checkout-repo:
+    description: >
+      Boolean flag to control whether the action should check out the repo
+    default: true
+    type: boolean
+  config:
+    description: >
+      YAML paths configuration. Can be a list of paths, or an object with keys like 'paths' and 'push'.
+    type: string
+    required: true
+  event:
+    description: >
+      GitHub event name
+    type: string
+    required: false
+    default: ${{ github.event_name }}
+  remote:
+    description: >
+      Remote name to check against
+    type: string
+    default: origin
+outputs:
+  run:
+    description: Boolean indicating if paths matched
+    value: ${{ steps.check.outputs.value }}
+
+runs:
+  using: composite
+  steps:
+  - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
+    if: inputs.checkout-repo
+    with:
+      fetch-depth: 0
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.35
+    id: changed
+    with:
+      input: |
+        base_ref: ${{ inputs.base-ref }}
+        remote: ${{ inputs.remote }}
+      input-format: yaml
+      filter: |
+        .
+        | if .base_ref != "" then
+            "OUTPUT=\"$(git diff --name-only \(.remote)/\(.base_ref)...HEAD)\""
+          else
+            "OUTPUT=\"$(git diff --name-only HEAD^1 HEAD)\""
+          end
+        | bash::output
+      result-filter: |
+        rtrimstr("\n")
+        | split("\n")
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+    id: config
+    with:
+      input: ${{ inputs.config }}
+      input-format: yaml
+      filter: |
+        {"check": .}
+  - uses: envoyproxy/toolshed/gh-actions/torun@actions-v0.3.35
+    id: torun
+    with:
+      event: ${{ inputs.event }}
+      paths: ${{ steps.changed.outputs.output }}
+      config: ${{ steps.config.outputs.value }}
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+    id: check
+    with:
+      input: ${{ steps.torun.outputs.runs }}
+      filter: |
+        .check
