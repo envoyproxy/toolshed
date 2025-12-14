@@ -4,15 +4,9 @@ on:
   push:
     branches:
     - main
-    paths:
-    - rust/**
-    - .github/workflows/rust.yml
   pull_request:
     branches:
     - main
-    paths:
-    - rust/**
-    - .github/workflows/rust.yml
   release:
     types:
       released
@@ -21,9 +15,27 @@ permissions:
   contents: read
 
 jobs:
+  should:
+    runs-on: ubuntu-24.04
+    if: github.event_type != 'release'
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@83b35b461aa5ca1d507da9919e85302a4d5a27ff
+      id: filter
+      with:
+        config: |
+          paths:
+          - 'rust/**'
+          - '.github/workflows/rust.yml'
+
   test:
     runs-on: ubuntu-24.04
-    if: github.repository_owner == 'envoyproxy'
+    needs: should
+    if: >-
+      github.repository_owner == 'envoyproxy'
+      && github.event_type != 'release'
+      && fromJSON(needs.should.outputs.run)
     strategy:
       fail-fast: false
       matrix:
@@ -54,7 +66,9 @@ jobs:
       working-directory: rust
 
   build:
-    if: github.event_name == 'release' && startsWith(github.event.release.name, 'bazel-bins')
+    if: >-
+      github.event_name == 'release'
+      && startsWith(github.event.release.name, 'bazel-bins')
     runs-on: ${{ matrix.runs-on }}
     strategy:
       matrix:
@@ -99,7 +113,9 @@ jobs:
         retention-days: 30
 
   publish:
-    if: github.event_name == 'release' && startsWith(github.event.release.name, 'bazel-bins')
+    if: >-
+      github.event_name == 'release'
+      && startsWith(github.event.release.name, 'bazel-bins')
     runs-on: ubuntu-24.04
     needs:
     - build
@@ -130,6 +146,7 @@ jobs:
     if: always()
     name: Rust
     needs:
+    - should
     - test
     steps:
     - run: |

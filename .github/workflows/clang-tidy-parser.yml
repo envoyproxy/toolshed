@@ -5,19 +5,28 @@ permissions:
 
 on:
   pull_request:
-    paths:
-    - bazel/format/clang_tidy/parser/**
-    - .github/workflows/clang-tidy-parser.yml
   push:
     branches:
     - main
-    paths:
-    - bazel/format/clang_tidy/parser/**
-    - .github/workflows/clang-tidy-parser.yml
 
 jobs:
+  should:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@83b35b461aa5ca1d507da9919e85302a4d5a27ff
+      id: filter
+      with:
+        config: |
+          paths:
+          - 'bazel/format/clang_tidy/parser/**'
+          - '.github/workflows/clang-tidy-parser.yml'
+
   test:
     runs-on: ubuntu-24.04
+    needs: should
+    if: fromJSON(needs.should.outputs.run)
     steps:
     - name: Checkout Repository
       uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
@@ -40,6 +49,7 @@ jobs:
     if: always()
     name: Clang-tidy parser
     needs:
+    - should
     - test
     steps:
     - run: |
