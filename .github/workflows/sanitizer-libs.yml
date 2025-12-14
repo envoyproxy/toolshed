@@ -90,7 +90,9 @@ jobs:
 
   status:
     runs-on: ubuntu-24.04
-    if: always()
+    if: >-
+      always()
+      && github.event_name == 'pull_request'
     name: Sanitizers
     needs:
     - should
