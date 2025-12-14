@@ -19,11 +19,14 @@ on:
     - .github/workflows/update-versions.yml
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+
 
 jobs:
   update-versions:
+    permissions:
+      contents: write
+      pull-requests: write
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
