@@ -4,13 +4,7 @@ on:
   push:
     branches:
     - main
-    paths:
-    - 'bazel/sysroot/**'
-    - '.github/workflows/sysroot.yml'
   pull_request:
-    paths:
-    - 'bazel/sysroot/**'
-    - '.github/workflows/sysroot.yml'
   release:
     types:
       released
@@ -19,8 +13,26 @@ permissions:
   contents: read
 
 jobs:
+  should:
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'release'
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@83b35b461aa5ca1d507da9919e85302a4d5a27ff
+      id: filter
+      with:
+        config: |
+          paths:
+          - 'bazel/sysroot/**'
+          - '.github/workflows/sysroot.yml'
+
   build:
     runs-on: ${{ matrix.runs-on }}
+    needs: should
+    if: >-
+      github.event_name == 'release'
+      || fromJSON(needs.should.outputs.run)
     strategy:
       fail-fast: false
       matrix:
@@ -211,7 +223,9 @@ jobs:
         retention-days: 30
 
   publish:
-    if: github.event_name == 'release' && startsWith(github.event.release.name, 'bazel-bins')
+    if: >-
+      github.event_name == 'release'
+      && startsWith(github.event.release.name, 'bazel-bins')
     runs-on: ubuntu-24.04
     needs:
     - build
@@ -242,6 +256,7 @@ jobs:
     if: always()
     name: Sysroot
     needs:
+    - should
     - build
     steps:
     - run: |

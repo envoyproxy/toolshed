@@ -5,20 +5,30 @@ permissions:
 
 on:
   pull_request:
-    paths:
-    - sh/**
-    - .github/workflows/sh.yml
-    - get-pants.sh
   push:
-    paths:
-    - sh/**
-    - .github/workflows/sh.yml
-    - get-pants.sh
+    branches:
+    - main
 
 
 jobs:
+  should:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@83b35b461aa5ca1d507da9919e85302a4d5a27ff
+      id: filter
+      with:
+        config: |
+          paths:
+          - 'sh/**'
+          - '.github/workflows/sh.yml'
+          - 'get-pants.sh'
+
   shebang:
     runs-on: ${{ matrix.platform }}
+    needs: should
+    if: fromJSON(needs.should.outputs.run)
     strategy:
       fail-fast: false
       matrix:
@@ -47,6 +57,7 @@ jobs:
     if: always()
     name: Sh
     needs:
+    - should
     - shebang
     steps:
     - run: |

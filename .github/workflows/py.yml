@@ -4,41 +4,9 @@ on:
   push:
     branches:
     - "main"
-    paths:
-    - "**/*.py"
-    - "**/*.pyi"
-    - "**/BUILD"
-    - "**/BUILD.pyi"
-    - "**/BUILD.tools"
-    - ".github/workflows/py.yml"
-    - "pants.toml"
-    - "pants.ci.toml"
-    - ".coveragerc"
-    - ".flake8"
-    - ".flake8.lock"
-    - "mypy.ini"
-    - "pytest.ini"
-    - "py/**"
-    - "patches/**"
   pull_request:
     branches:
     - "main"
-    paths:
-    - "**/*.py"
-    - "**/*.pyi"
-    - "**/BUILD"
-    - "**/BUILD.pyi"
-    - "**/BUILD.tools"
-    - ".github/workflows/py.yml"
-    - "pants.toml"
-    - "pants.ci.toml"
-    - ".coveragerc"
-    - ".flake8"
-    - ".flake8.lock"
-    - "mypy.ini"
-    - "pytest.ini"
-    - "py/**"
-    - "patches/**"
   release:
     types:
       released
@@ -47,9 +15,40 @@ permissions:
   contents: read
 
 jobs:
+  should:
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'release'
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@83b35b461aa5ca1d507da9919e85302a4d5a27ff
+      id: filter
+      with:
+        config: |
+          paths:
+          - '**/*.py'
+          - '**/*.pyi'
+          - '**/BUILD'
+          - '**/BUILD.pyi'
+          - '**/BUILD.tools'
+          - '.github/workflows/py.yml'
+          - 'pants.toml'
+          - 'pants.ci.toml'
+          - '.coveragerc'
+          - '.flake8'
+          - '.flake8.lock'
+          - 'mypy.ini'
+          - 'pytest.ini'
+          - 'py/**'
+          - 'patches/**'
+
   test:
     runs-on: ubuntu-24.04
-    if: github.repository_owner == 'envoyproxy'
+    needs: should
+    if: >-
+      github.repository_owner == 'envoyproxy'
+      && github.event_type != 'release'
+      && fromJSON(needs.should.outputs.run)
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
@@ -70,6 +69,10 @@ jobs:
 
   lint:
     runs-on: ubuntu-24.04
+    needs: should
+    if: >-
+      github.event_type != 'release'
+      && fromJSON(needs.should.outputs.run)
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
@@ -85,6 +88,10 @@ jobs:
 
   typecheck:
     runs-on: ubuntu-24.04
+    needs: should
+    if: >-
+      github.event_type != 'release'
+      && fromJSON(needs.should.outputs.run)
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
@@ -117,10 +124,14 @@ jobs:
   package:
     runs-on: ubuntu-24.04
     needs:
+    - should
     - test
     - lint
     - typecheck
     # - docs
+    if: >-
+      github.event_name == 'release'
+      || fromJSON(needs.should.outputs.run)
     steps:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
@@ -141,6 +152,9 @@ jobs:
 
   publish:
     runs-on: ubuntu-24.04
+    if: >-
+      github.event_name == 'release'
+      || fromJSON(needs.should.outputs.run)
     needs:
     - package
     steps:
@@ -169,10 +183,12 @@ jobs:
     if: always()
     name: Python
     needs:
+    - should
     - test
     - lint
     - typecheck
     - package
+    - publish
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then

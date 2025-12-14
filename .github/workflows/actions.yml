@@ -4,20 +4,29 @@ on:
   push:
     branches:
     - main
-    paths:
-    - gh-actions/**
-    - .github/workflows/actions.yml
   pull_request:
-    paths:
-    - gh-actions/**
-    - .github/workflows/actions.yml
 
 permissions:
   contents: read
 
 jobs:
+  should:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@83b35b461aa5ca1d507da9919e85302a4d5a27ff
+      id: filter
+      with:
+        config: |
+          paths:
+          - 'gh-actions/**'
+          - '.github/workflows/actions.yml'
+
   gh-actions:
     runs-on: ubuntu-24.04
+    needs: should
+    if: fromJSON(needs.should.outputs.run)
     strategy:
       fail-fast: false
       matrix:
@@ -60,6 +69,7 @@ jobs:
     if: always()
     name: Actions
     needs:
+    - should
     - gh-actions
     steps:
     - run: |
