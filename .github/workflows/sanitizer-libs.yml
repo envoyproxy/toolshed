@@ -16,7 +16,7 @@ permissions:
 jobs:
   should:
     runs-on: ubuntu-24.04
-    if: github.event_type != 'release'
+    if: github.event_name != 'release'
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
@@ -36,7 +36,7 @@ jobs:
     needs: should
     if: >-
       github.event_name == 'release'
-      || fromJSON(needs.should.outputs.run)
+      || fromJSON(needs.should.outputs.run || 'false')
     strategy:
       matrix:
         sanitizer: [msan, tsan]
