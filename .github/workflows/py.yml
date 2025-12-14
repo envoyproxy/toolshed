@@ -26,11 +26,6 @@ jobs:
       with:
         config: |
           paths:
-          - '**/*.py'
-          - '**/*.pyi'
-          - '**/BUILD'
-          - '**/BUILD.pyi'
-          - '**/BUILD.tools'
           - '.github/workflows/py.yml'
           - 'pants.toml'
           - 'pants.ci.toml'
@@ -40,7 +35,6 @@ jobs:
           - 'mypy.ini'
           - 'pytest.ini'
           - 'py/**'
-          - 'patches/**'
 
   test:
     runs-on: ubuntu-24.04
