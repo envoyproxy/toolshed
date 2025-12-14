@@ -13,7 +13,10 @@ GLINT_SHA256 = {
 }
 
 def _get_platform_info(ctx):
-    """Get platform information for selecting the correct glint binary."""
+    """Get platform information for selecting the correct glint binary.
+    
+    Currently only Linux is supported as glint binaries are only built for Linux.
+    """
     os_name = ctx.os.name
     arch = ctx.os.arch
     if os_name == "linux":
@@ -21,13 +24,7 @@ def _get_platform_info(ctx):
             return "amd64"
         elif arch == "aarch64" or arch == "arm64":
             return "arm64"
-    elif os_name == "mac os x" or os_name == "darwin":
-        # glint is currently only built for Linux, but we can extend this later
-        if arch == "x86_64" or arch == "amd64":
-            return "amd64"
-        elif arch == "aarch64" or arch == "arm64":
-            return "arm64"
-    fail("Unsupported platform: {} {}".format(os_name, arch))
+    fail("Unsupported platform: {} {}. glint binaries are currently only available for Linux.".format(os_name, arch))
 
 def _glint_repo_impl(ctx):
     """Implementation of the glint repository rule."""
