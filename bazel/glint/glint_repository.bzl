@@ -1,6 +1,5 @@
 """Repository rule for glint."""
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 GLINT_VERSION = "0.1.0"
