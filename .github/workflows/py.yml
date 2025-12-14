@@ -54,7 +54,7 @@ jobs:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
       with:
-        python-version: "3.11"
+        python-version: "3.12"
     - name: Initialize Pants
       uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
@@ -74,7 +74,7 @@ jobs:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
       with:
-        python-version: "3.11"
+        python-version: "3.12"
     - name: Initialize Pants
       uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
@@ -89,7 +89,7 @@ jobs:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
       with:
-        python-version: "3.11"
+        python-version: "3.12"
     - name: Initialize Pants
       uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
@@ -105,7 +105,7 @@ jobs:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
       with:
-        python-version: "3.11"
+        python-version: "3.12"
     - name: Initialize Pants
       uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
@@ -125,7 +125,7 @@ jobs:
     - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
       with:
-        python-version: "3.11"
+        python-version: "3.12"
     - name: Initialize Pants
       uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
       with:
@@ -149,7 +149,7 @@ jobs:
       uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
     - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
       with:
-        python-version: "3.11"
+        python-version: "3.12"
     - name: Find packages to publish
       run: |
         echo "PUBLISH_PACKAGES=true" >> $GITHUB_ENV
