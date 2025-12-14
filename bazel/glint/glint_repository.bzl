@@ -12,13 +12,13 @@ GLINT_SHA256 = {
     "arm64": "",
 }
 
-def _get_platform_info(ctx):
+def _get_platform_info(rctx):
     """Get platform information for selecting the correct glint binary.
     
     Currently only Linux is supported as glint binaries are only built for Linux.
     """
-    os_name = ctx.os.name
-    arch = ctx.os.arch
+    os_name = rctx.os.name
+    arch = rctx.os.arch
     if os_name == "linux":
         if arch == "x86_64" or arch == "amd64":
             return "amd64"
@@ -26,17 +26,17 @@ def _get_platform_info(ctx):
             return "arm64"
     fail("Unsupported platform: {} {}. glint binaries are currently only available for Linux.".format(os_name, arch))
 
-def _glint_repo_impl(ctx):
+def _glint_repo_impl(rctx):
     """Implementation of the glint repository rule."""
-    platform = _get_platform_info(ctx)
+    platform = _get_platform_info(rctx)
     url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/glint-{glint_version}-{arch}".format(
-        version = ctx.attr.bins_release_version,
+        version = rctx.attr.bins_release_version,
         glint_version = GLINT_VERSION,
         arch = platform,
     )
     
     # Download the binary
-    ctx.download(
+    rctx.download(
         url = url,
         sha256 = GLINT_SHA256.get(platform, ""),
         output = "glint",
@@ -44,7 +44,7 @@ def _glint_repo_impl(ctx):
     )
     
     # Create a BUILD file that exports the binary
-    ctx.file("BUILD.bazel", """
+    rctx.file("BUILD.bazel", """
 exports_files(["glint"])
 
 filegroup(
