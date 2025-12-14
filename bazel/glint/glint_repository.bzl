@@ -7,7 +7,7 @@ GLINT_VERSION = "0.1.0"
 
 def _get_platform_info(rctx):
     """Get platform information for selecting the correct glint binary.
-    
+
     Currently only Linux is supported as glint binaries are only built for Linux.
     """
     os_name = rctx.os.name
@@ -27,7 +27,7 @@ def _glint_repo_impl(rctx):
         glint_version = GLINT_VERSION,
         arch = platform,
     )
-    
+
     # Download the binary
     rctx.download(
         url = url,
@@ -35,7 +35,7 @@ def _glint_repo_impl(rctx):
         output = "glint",
         executable = True,
     )
-    
+
     # Create a BUILD file that exports the binary
     rctx.file("BUILD.bazel", """
 exports_files(["glint"])
@@ -65,7 +65,7 @@ _glint_repo = repository_rule(
 
 def glint_repository(bins_release_version):
     """Download glint binary for the current platform.
-    
+
     Args:
         bins_release_version: Version of the bazel-bins release (e.g., "0.1.21")
     """
