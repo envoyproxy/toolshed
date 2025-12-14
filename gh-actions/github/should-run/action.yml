@@ -50,8 +50,9 @@ runs:
       input-format: yaml
       filter: |
         .
-        | if .base_ref != "" then
-            "OUTPUT=\"$(git diff --name-only \(.remote)/\(.base_ref)...HEAD)\""
+        | .base_ref // "" as $base_ref
+        | if $base_ref != "" then
+            "OUTPUT=\"$(git diff --name-only \(.remote)/\($base_ref)...HEAD)\""
           else
             "OUTPUT=\"$(git diff --name-only HEAD^1 HEAD)\""
           end
