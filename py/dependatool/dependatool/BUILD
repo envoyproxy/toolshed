@@ -3,8 +3,8 @@ toolshed_library(
     "dependatool",
     dependencies=[
         "//py/deps:reqs#abstracts",
-        "//py/deps:reqs#aio.core",
-        "//py/deps:reqs#aio.run.checker",
+        "//py/deps:reqs#aio-core",
+        "//py/deps:reqs#aio-run-checker",
     ],
     sources=[
         "__init__.py",
