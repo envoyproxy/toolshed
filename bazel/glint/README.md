@@ -17,16 +17,25 @@ glint_repository(
 Then you can reference the glint binary in your BUILD files:
 
 ```starlark
-# Use as a tool in a genrule
+# Use as a tool in a genrule (shorthand)
 genrule(
     name = "check_files",
     srcs = ["file.txt"],
     outs = ["checked.txt"],
+    tools = ["@glint"],
+    cmd = "$(location @glint) check $(location file.txt) > $@",
+)
+
+# Or use the full form
+genrule(
+    name = "check_files_explicit",
+    srcs = ["file.txt"],
+    outs = ["checked2.txt"],
     tools = ["@glint//:glint"],
     cmd = "$(location @glint//:glint) check $(location file.txt) > $@",
 )
 
-# Or use as a filegroup
+# Or use the glint_bin filegroup
 filegroup(
     name = "glint_tool",
     srcs = ["@glint//:glint_bin"],
