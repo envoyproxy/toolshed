@@ -9,6 +9,12 @@ VERSIONS = {
     "msan_libs_sha256": "2747f66b447af7c422d7db0bfca7147e197ff0ebe7500f10388ade2f9265a359",
     "tsan_libs_sha256": "9fb57a2b209e766487f00456d05462cb7030549b22f7885cfd6d89d448d40ee8",
 
+    # Glint binary hashes by architecture
+    "glint_sha256": {
+        "amd64": "495e081f2fb397fa25dcc108512449f70eb986cfa16a1193ecc422a61bf154a5",
+        "arm64": "caf9dab2b99f2756f29f9872bb82a1252e42fb9fec56c31245af0cf209dc273a",
+    },
+
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
     # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
     # stdlib_variant is either "base" (no libstdc++) or the libstdc++ version (e.g., "13")

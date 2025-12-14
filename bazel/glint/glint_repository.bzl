@@ -1,14 +1,9 @@
 """Repository rule for glint."""
 
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("//:versions.bzl", "VERSIONS")
 
 GLINT_VERSION = "0.1.0"
-
-# SHA256 hashes for glint binaries from bazel-bins-v0.1.21
-GLINT_SHA256 = {
-    "amd64": "495e081f2fb397fa25dcc108512449f70eb986cfa16a1193ecc422a61bf154a5",
-    "arm64": "caf9dab2b99f2756f29f9872bb82a1252e42fb9fec56c31245af0cf209dc273a",
-}
 
 def _get_platform_info(rctx):
     """Get platform information for selecting the correct glint binary.
@@ -36,7 +31,7 @@ def _glint_repo_impl(rctx):
     # Download the binary
     rctx.download(
         url = url,
-        sha256 = GLINT_SHA256.get(platform, ""),
+        sha256 = VERSIONS["glint_sha256"].get(platform, ""),
         output = "glint",
         executable = True,
     )
