@@ -3,7 +3,7 @@ python_sources(
         "//py/deps:reqs#jinja2",
         "//py/deps:reqs#packaging",
         "//py/deps:reqs#setuptools",
-        "//py/deps:reqs#aio.run.runner",
+        "//py/deps:reqs#aio-run-runner",
     ],
 )
 
