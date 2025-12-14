@@ -71,9 +71,6 @@ target/
 # IPython Notebook
 .ipynb_checkpoints
 
-# pyenv
-.python-version
-
 # Pants workspace files
 /.pants.d/
 /dist/
