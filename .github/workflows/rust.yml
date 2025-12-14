@@ -17,7 +17,7 @@ permissions:
 jobs:
   should:
     runs-on: ubuntu-24.04
-    if: github.event_type != 'release'
+    if: github.event_name != 'release'
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
@@ -34,8 +34,8 @@ jobs:
     needs: should
     if: >-
       github.repository_owner == 'envoyproxy'
-      && github.event_type != 'release'
-      && fromJSON(needs.should.outputs.run)
+      && github.event_name != 'release'
+      && fromJSON(needs.should.outputs.run || 'false')
     strategy:
       fail-fast: false
       matrix:
