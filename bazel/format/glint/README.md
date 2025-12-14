@@ -7,7 +7,7 @@ This directory contains Bazel repository rules for downloading and using the `gl
 To use glint in your Bazel workspace, add the following to your `WORKSPACE` file:
 
 ```starlark
-load("@envoy_toolshed//bazel/glint:glint_repository.bzl", "glint_repository")
+load("@envoy_toolshed//bazel/format/glint:glint_repository.bzl", "glint_repository")
 
 glint_repository(
     bins_release_version = "0.1.21",  # Use the version you want
