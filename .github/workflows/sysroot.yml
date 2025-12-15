@@ -33,7 +33,7 @@ jobs:
     if: >-
       always()
       && (github.event_name == 'release'
-      || fromJSON(needs.should.outputs.run || 'false'))
+          || fromJSON(needs.should.outputs.run || 'false'))
     strategy:
       fail-fast: false
       matrix:
