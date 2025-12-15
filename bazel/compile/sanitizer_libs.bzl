@@ -8,7 +8,7 @@ def _sanitizer_libs_impl(ctx, sanitizer):
     if arch == "x86_64":
         # Download from releases
         ctx.download_and_extract(
-            url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/{sanitizer}-llvm{llvm_version}-{arch}.tar.xz".format(
+            url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/{sanitizer}-llvm{llvm_version}-{arch}.tar.xz".format(
                 arch = arch,
                 version = ctx.attr.version,
                 sanitizer = sanitizer,
@@ -63,7 +63,7 @@ msan_libs = repository_rule(
     attrs = {
         "version": attr.string(
             mandatory = True,
-            doc = "Release version to download (e.g., 'bazel-bins-v1.0.0')",
+            doc = "Release version to download (e.g., 'bins-v1.0.0')",
         ),
         "sha256": attr.string(
             mandatory = True,
@@ -82,7 +82,7 @@ tsan_libs = repository_rule(
     attrs = {
         "version": attr.string(
             mandatory = True,
-            doc = "Release version to download (e.g., 'bazel-bins-v1.0.0')",
+            doc = "Release version to download (e.g., 'bins-v1.0.0')",
         ),
         "sha256": attr.string(
             mandatory = True,

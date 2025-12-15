@@ -49,4 +49,4 @@ The glint binary is automatically downloaded for your platform:
 - Linux aarch64 (arm64)
 
 The binaries are downloaded from the GitHub releases at:
-`https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/glint-{glint_version}-{arch}`
+`https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/glint-{glint_version}-{arch}`

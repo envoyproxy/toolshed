@@ -20,14 +20,14 @@ def _sysroot_impl(ctx):
 
     # Construct URL based on whether stdcc_version is specified
     if stdcc_version:
-        url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
+        url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
             version = ctx.attr.version,
             arch = arch,
             glibc_version = glibc_version,
             stdcc_version = stdcc_version,
         )
     else:
-        url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
+        url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
             version = ctx.attr.version,
             arch = arch,
             glibc_version = glibc_version,

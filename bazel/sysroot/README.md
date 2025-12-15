@@ -87,6 +87,6 @@ All SHA256 hashes are centrally managed in `versions.bzl` for ease of maintenanc
 
 Sysroots are automatically built and published when:
 1. Changes are pushed to `main` that affect this directory or the workflow
-2. A release is created with name starting with `bazel-bins`
+2. A release is created with name starting with `bins`
 
 The artifacts are uploaded to the release assets.
