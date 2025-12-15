@@ -9,7 +9,7 @@ on:
     - "main"
   release:
     types:
-      released
+    - published
 
 permissions:
   contents: read
