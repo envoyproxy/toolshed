@@ -56,12 +56,13 @@ def update_versions_file(file_path: str, version: str, hashes: dict) -> bool:
                     # Pattern to match the hash within the nested structure
                     # "2.31": { ... "base": { ... "amd64": "hash", ...
                     glibc_escaped = re.escape(glibc)
+                    # Use DOTALL flag to match across newlines
                     pattern = (
-                        rf'("{glibc_escaped}":\s*\{{[^}}]*'
-                        rf'"{variant}":\s*\{{[^}}]*'
+                        rf'("{glibc_escaped}":\s*\{{.*?'
+                        rf'"{variant}":\s*\{{.*?'
                         rf'"{arch}":\s*")([a-f0-9]+)(")'
                     )
-                    content = re.sub(pattern, rf'\g<1>{hashes[key]}\g<3>', content)
+                    content = re.sub(pattern, rf'\g<1>{hashes[key]}\g<3>', content, flags=re.DOTALL)
     
     # Update legacy sysroot hashes
     for arch in ['amd64', 'arm64']:

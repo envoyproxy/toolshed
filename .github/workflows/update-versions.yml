@@ -69,11 +69,11 @@ jobs:
       id: hashes
       run: |
         cd artifacts
-        
+
         # Calculate hashes for all files
         echo "## Calculating SHA256 hashes" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        
+
         # Sanitizer libraries
         for sanitizer in msan tsan; do
             file=$(ls ${sanitizer}-llvm*-x86_64.tar.xz 2>/dev/null || true)
@@ -85,7 +85,7 @@ jobs:
                 echo "⚠️ Warning: ${sanitizer} libs not found" >> $GITHUB_STEP_SUMMARY
             fi
         done
-        
+
         # Sysroot archives - nested structure for versions.bzl
         # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
         for glibc in "2.31" "2.28"; do
@@ -96,7 +96,7 @@ jobs:
                     else
                         file=$(ls sysroot-glibc${glibc}-libstdc++${variant}-${arch}.tar.xz 2>/dev/null || true)
                     fi
-                    
+
                     if [[ -n "$file" && -e "$file" ]]; then
                         hash=$(sha256sum "$file" | cut -d' ' -f1)
                         # Output in format that can be parsed later
@@ -108,20 +108,20 @@ jobs:
                 done
             done
         done
-        
+
         # Legacy sysroot hashes (for backward compatibility with glibc 2.31 + libstdc++13)
         file=$(ls sysroot-glibc2.31-libstdc++13-amd64.tar.xz 2>/dev/null || true)
         if [[ -n "$file" && -e "$file" ]]; then
             hash=$(sha256sum "$file" | cut -d' ' -f1)
             echo "sysroot_amd64_sha256=${hash}" >> $GITHUB_OUTPUT
         fi
-        
+
         file=$(ls sysroot-glibc2.31-libstdc++13-arm64.tar.xz 2>/dev/null || true)
         if [[ -n "$file" && -e "$file" ]]; then
             hash=$(sha256sum "$file" | cut -d' ' -f1)
             echo "sysroot_arm64_sha256=${hash}" >> $GITHUB_OUTPUT
         fi
-        
+
         # Glint binaries
         for arch in "amd64" "arm64"; do
             file=$(ls glint-*-${arch} 2>/dev/null || true)
@@ -153,12 +153,12 @@ jobs:
         SYSROOT_ARM64_SHA256: ${{ steps.hashes.outputs.sysroot_arm64_sha256 }}
       run: |
         python3 .github/scripts/update_hashes.py
-        
+
         echo "## Updated versions.bzl" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY
         git diff bazel/versions.bzl >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-        
+
         echo "Updated versions.bzl:"
         git diff bazel/versions.bzl
     - name: Check for changes
