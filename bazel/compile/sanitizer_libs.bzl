@@ -6,22 +6,14 @@ def _sanitizer_libs_impl(ctx, sanitizer):
     """Implementation for sanitizer library repository rules."""
     arch = ctx.attr.arch or "x86_64"
     if arch == "x86_64":
-        # Download from releases - try new bins-v naming first, fallback to legacy bazel-bins-v
+        # Download from releases
         ctx.download_and_extract(
-            url = [
-                "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/{sanitizer}-llvm{llvm_version}-{arch}.tar.xz".format(
-                    arch = arch,
-                    version = ctx.attr.version,
-                    sanitizer = sanitizer,
-                    llvm_version = VERSIONS["llvm"],
-                ),
-                "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/{sanitizer}-llvm{llvm_version}-{arch}.tar.xz".format(
-                    arch = arch,
-                    version = ctx.attr.version,
-                    sanitizer = sanitizer,
-                    llvm_version = VERSIONS["llvm"],
-                ),
-            ],
+            url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/{sanitizer}-llvm{llvm_version}-{arch}.tar.xz".format(
+                arch = arch,
+                version = ctx.attr.version,
+                sanitizer = sanitizer,
+                llvm_version = VERSIONS["llvm"],
+            ),
             sha256 = ctx.attr.sha256,
             stripPrefix = "{}-libs-{}".format(sanitizer, arch),
         )
