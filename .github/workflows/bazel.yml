@@ -24,7 +24,7 @@ jobs:
       with:
         config: |
           paths:
-          - 'bazel/format/**'
+          - 'bazel/**'
           - '.github/workflows/bazel.yml'
 
   test:
