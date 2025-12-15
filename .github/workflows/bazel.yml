@@ -36,20 +36,14 @@ jobs:
     needs: should
     if: >-
       always()
-      && (github.event_name == 'release'
-          || fromJSON(needs.should.outputs.run || 'false'))
+      && github.event_name != 'release'
+      && fromJSON(needs.should.outputs.run || 'false')
     steps:
     - name: Checkout Repository
       uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
 
     - name: Setup Bazel
       uses: bazelbuild/setup-bazelisk@6ecf4fd8b7d1f9721785f1dd656a689acf9add47  # v3
-
-    - name: Install libtinfo
-      if: github.event_name == 'release' && startsWith(github.event.release.name, 'bins-')
-      run: |
-        sudo apt-get -qq update
-        sudo apt-get -qq install -y libtinfo5
 
     - name: Run Bazel test
       run: |
@@ -61,20 +55,36 @@ jobs:
         cd bazel
         bazel build //...
 
-    - name: Upload msan libraries
-      if: github.event_name == 'release' && startsWith(github.event.release.name, 'bins-')
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
-      with:
-        name: msan-llvm18.1.8-x86_64
-        path: bazel/bazel-bin/compile/msan-llvm18.1.8-x86_64.tar.xz
-        retention-days: 30
+  build-sanitizers:
+    runs-on: ubuntu-22.04
+    if: >-
+      github.event_name == 'release'
+      && startsWith(github.event.release.name, 'bins-')
+    strategy:
+      matrix:
+        sanitizer: [msan, tsan]
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
 
-    - name: Upload tsan libraries
-      if: github.event_name == 'release' && startsWith(github.event.release.name, 'bins-')
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@6ecf4fd8b7d1f9721785f1dd656a689acf9add47  # v3
+
+    - name: Install libtinfo
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y libtinfo5
+
+    - name: Build ${{ matrix.sanitizer }} libraries
+      run: |
+        cd bazel
+        bazel build //compile:cxx_${{ matrix.sanitizer }}
+
+    - name: Upload ${{ matrix.sanitizer }} libraries
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
       with:
-        name: tsan-llvm18.1.8-x86_64
-        path: bazel/bazel-bin/compile/tsan-llvm18.1.8-x86_64.tar.xz
+        name: ${{ matrix.sanitizer }}-llvm18.1.8-x86_64
+        path: bazel/bazel-bin/compile/${{ matrix.sanitizer }}-llvm18.1.8-x86_64.tar.xz
         retention-days: 30
 
   publish:
@@ -84,7 +94,7 @@ jobs:
           && startsWith(github.event.release.name, 'bins-'))
     runs-on: ubuntu-24.04
     needs:
-    - test
+    - build-sanitizers
     permissions:
       contents: write
     steps:

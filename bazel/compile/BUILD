@@ -37,6 +37,7 @@ cmake(
         "libc++.a",
         "libc++abi.a",
     ],
+    tags = ["manual"],
     working_directory = "runtimes",
 )
 
@@ -51,6 +52,7 @@ cmake(
         "libc++.a",
         "libc++abi.a",
     ],
+    tags = ["manual"],
     working_directory = "runtimes",
 )
 
@@ -67,6 +69,7 @@ genrule(
         done
         tar cJf $@ msan-libs-x86_64
     """,
+    tags = ["manual"],
 )
 
 genrule(
@@ -82,4 +85,5 @@ genrule(
         done
         tar cJf $@ tsan-libs-x86_64
     """,
+    tags = ["manual"],
 )
