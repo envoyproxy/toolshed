@@ -1,5 +1,6 @@
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 load("@rules_perl//perl:deps.bzl", "perl_register_toolchains", "perl_rules_dependencies")
+load("@rules_pkg//pkg:deps.bzl", "rules_pkg_dependencies")
 load("@rules_python//python:repositories.bzl", "py_repositories")
 load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
@@ -20,6 +21,7 @@ def resolve_dependencies(
         cmake_version = cmake_version or VERSIONS["cmake"],
         ninja_version = ninja_version or VERSIONS["ninja"],
     )
+    rules_pkg_dependencies()
     perl_rules_dependencies()
     perl_register_toolchains()
     setup_sysroots()

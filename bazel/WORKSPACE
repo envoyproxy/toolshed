@@ -9,8 +9,13 @@ resolve_dependencies()
 load(":toolchains.bzl", "load_toolchains")
 load_toolchains()
 
-load(":packages.bzl", "load_packages")
+load(":packages.bzl", "load_packages", "load_website_packages")
 load_packages()
 
 load("@toolshed_pip3//:requirements.bzl", "install_deps")
 install_deps()
+
+load_website_packages()
+
+load("@website_pip3//:requirements.bzl", website_install_deps = "install_deps")
+website_install_deps()

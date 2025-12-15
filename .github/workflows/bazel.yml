@@ -24,7 +24,7 @@ jobs:
       with:
         config: |
           paths:
-          - 'bazel/format/**'
+          - 'bazel/**'
           - '.github/workflows/bazel.yml'
 
   test:
@@ -41,12 +41,12 @@ jobs:
     - name: Run Bazel test
       run: |
         cd bazel
-        bazel test --test_output=errors //format/...
+        bazel test --test_output=errors //...
 
     - name: Build Bazel targets
       run: |
         cd bazel
-        bazel build //format/...
+        bazel build //...
 
   status:
     runs-on: ubuntu-24.04

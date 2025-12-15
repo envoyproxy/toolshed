@@ -4,7 +4,7 @@ load("@website_pip3//:requirements.bzl", "requirement")
 
 py_console_script_binary(
     name = "pelican",
-    pkg = "@website_pip3//pelican",
+    pkg = requirement("pelican"),
     script = "pelican",
     deps = [
         requirement("cssmin"),
@@ -19,12 +19,12 @@ py_console_script_binary(
 
 py_console_script_binary(
     name = "pelican-quickstart",
-    pkg = "@website_pip3//pelican",
+    pkg = requirement("pelican"),
     script = "pelican-quickstart",
 )
 
 py_console_script_binary(
     name = "pelican-themes",
-    pkg = "@website_pip3//pelican",
+    pkg = requirement("pelican"),
     script = "pelican-themes",
 )
