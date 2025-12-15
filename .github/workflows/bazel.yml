@@ -45,6 +45,13 @@ jobs:
     - name: Setup Bazel
       uses: bazelbuild/setup-bazelisk@6ecf4fd8b7d1f9721785f1dd656a689acf9add47  # v3
 
+    - name: Install libtinfo5
+      run: |
+        # Workaround for https://github.com/llvm/llvm-project/issues/75490
+        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+
     - name: Run Bazel test
       run: |
         cd bazel
