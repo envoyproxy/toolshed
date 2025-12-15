@@ -71,7 +71,7 @@ msan_libs = repository_rule(
     attrs = {
         "version": attr.string(
             mandatory = True,
-            doc = "Release version to download (e.g., 'bins-v1.0.0')",
+            doc = "Release version to download (e.g., '1.0.0')",
         ),
         "sha256": attr.string(
             mandatory = True,
@@ -90,7 +90,7 @@ tsan_libs = repository_rule(
     attrs = {
         "version": attr.string(
             mandatory = True,
-            doc = "Release version to download (e.g., 'bins-v1.0.0')",
+            doc = "Release version to download (e.g., '1.0.0')",
         ),
         "sha256": attr.string(
             mandatory = True,
