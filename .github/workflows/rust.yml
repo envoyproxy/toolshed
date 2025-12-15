@@ -66,8 +66,10 @@ jobs:
       working-directory: rust
 
   build:
+    needs: should
     if: >-
-      github.event_name == 'release'
+      always()
+      && github.event_name == 'release'
       && startsWith(github.event.release.name, 'bazel-bins')
     runs-on: ${{ matrix.runs-on }}
     strategy:

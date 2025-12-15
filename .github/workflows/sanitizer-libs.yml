@@ -35,8 +35,9 @@ jobs:
     runs-on: ubuntu-22.04
     needs: should
     if: >-
-      github.event_name == 'release'
-      || fromJSON(needs.should.outputs.run || 'false')
+      always()
+      && (github.event_name == 'release'
+          || fromJSON(needs.should.outputs.run || 'false'))
     strategy:
       matrix:
         sanitizer: [msan, tsan]
