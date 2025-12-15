@@ -1,4 +1,4 @@
-name: Clang-tidy parser tests
+name: Bazel tests
 
 permissions:
   contents: read
@@ -24,8 +24,8 @@ jobs:
       with:
         config: |
           paths:
-          - 'bazel/format/clang_tidy/parser/**'
-          - '.github/workflows/clang-tidy-parser.yml'
+          - 'bazel/format/**'
+          - '.github/workflows/bazel.yml'
 
   test:
     runs-on: ubuntu-24.04
@@ -41,19 +41,19 @@ jobs:
     - name: Run Bazel test
       run: |
         cd bazel
-        bazel test --test_output=errors //format/clang_tidy/parser:parse_clang_tidy_test
+        bazel test --test_output=errors //format/...
 
-    - name: Build sh_binary
+    - name: Build Bazel targets
       run: |
         cd bazel
-        bazel build //format/clang_tidy/parser:parse_clang_tidy
+        bazel build //format/...
 
   status:
     runs-on: ubuntu-24.04
     if: >-
       always()
       && github.event_name == 'pull_request'
-    name: Clang-tidy parser
+    name: Bazel
     needs:
     - should
     - test
