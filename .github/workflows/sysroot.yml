@@ -7,7 +7,7 @@ on:
   pull_request:
   release:
     types:
-      released
+    - published
 
 permissions:
   contents: read
