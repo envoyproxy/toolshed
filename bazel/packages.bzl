@@ -12,9 +12,11 @@ def load_packages():
     bazel_features_deps()
 
 def load_website_packages():
-    # Only call this if you wish to use the website functionality
     pip_parse(
         name = "website_pip3",
         requirements_lock = "@envoy_toolshed//website:requirements.txt",
         python_interpreter_target = "@python3_12_host//:python",
+        pip_data_exclude = [
+            "pelican/tests/**",
+        ],
     )
