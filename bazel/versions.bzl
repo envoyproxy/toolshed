@@ -41,10 +41,6 @@ VERSIONS = {
         },
     },
 
-    # Legacy hash keys for backward compatibility (default: glibc 2.31 with libstdc++13)
-    "sysroot_amd64_sha256": "7486b62f5531cc7d4935cb7ed86f049a7bb2acafcc7e890bd24886c8b05b7be0",
-    "sysroot_arm64_sha256": "4ec43c43995dec87fbfb376c4168d6d51e88caaa5f6cf8cf37359c2de1e8b0ca",
-
     "aspect_bazel_lib": {
         "type": "github_archive",
         "repo": "aspect-build/bazel-lib",
