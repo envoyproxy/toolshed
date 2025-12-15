@@ -73,45 +73,131 @@ jobs:
       id: hashes
       run: |
         cd artifacts
-        declare -A HASHES
-        declare -A FILE_PATTERNS=(
-            ["msan_libs_sha256"]="msan-libs.*\.tar\.xz"
-            ["tsan_libs_sha256"]="tsan-libs.*\.tar\.xz"
-            ["sysroot_amd64_sha256"]="sysroot.*amd64.*\.tar\.xz"
-            ["sysroot_arm64_sha256"]="sysroot.*arm64.*\.tar\.xz"
-        )
-        for file in *.tar.xz; do
-            [[ -e "$file" ]] || continue
-            hash=$(sha256sum "$file" | cut -d' ' -f1)
 
-            for key in "${!FILE_PATTERNS[@]}"; do
-                if [[ "$file" =~ ${FILE_PATTERNS[$key]} ]]; then
-                    HASHES["$key"]="$hash"
-                    break
-                fi
-            done
-            echo "${file}: ${hash}"
+        # Calculate hashes for all files
+        echo "## Calculating SHA256 hashes" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        # Sanitizer libraries
+        for sanitizer in msan tsan; do
+            file=$(ls ${sanitizer}-llvm*-x86_64.tar.xz 2>/dev/null || true)
+            if [[ -n "$file" && -e "$file" ]]; then
+                hash=$(sha256sum "$file" | cut -d' ' -f1)
+                echo "${sanitizer}_libs_sha256=${hash}" >> $GITHUB_OUTPUT
+                echo "- ${file}: \`${hash}\`" >> $GITHUB_STEP_SUMMARY
+            else
+                echo "⚠️ Warning: ${sanitizer} libs not found" >> $GITHUB_STEP_SUMMARY
+            fi
         done
-        for key in "${!HASHES[@]}"; do
-            echo "${key}=${HASHES[$key]}" >> $GITHUB_OUTPUT
+
+        # Sysroot archives - nested structure for versions.bzl
+        # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
+        for glibc in "2.31" "2.28"; do
+            for variant in "base" "13"; do
+                for arch in "amd64" "arm64"; do
+                    if [[ "$variant" == "base" ]]; then
+                        file=$(ls sysroot-glibc${glibc}-${arch}.tar.xz 2>/dev/null || true)
+                    else
+                        file=$(ls sysroot-glibc${glibc}-libstdc++${variant}-${arch}.tar.xz 2>/dev/null || true)
+                    fi
+
+                    if [[ -n "$file" && -e "$file" ]]; then
+                        hash=$(sha256sum "$file" | cut -d' ' -f1)
+                        # Output with underscores (dots not allowed in output names)
+                        glibc_clean=$(echo "$glibc" | tr '.' '_')
+                        echo "sysroot_${glibc_clean}_${variant}_${arch}=${hash}" >> $GITHUB_OUTPUT
+                        echo "- ${file}: \`${hash}\`" >> $GITHUB_STEP_SUMMARY
+                    else
+                        echo "⚠️ Warning: sysroot glibc${glibc} ${variant} ${arch} not found" >> $GITHUB_STEP_SUMMARY
+                    fi
+                done
+            done
+        done
+
+        # Legacy sysroot hashes (for backward compatibility with glibc 2.31 + libstdc++13)
+        file=$(ls sysroot-glibc2.31-libstdc++13-amd64.tar.xz 2>/dev/null || true)
+        if [[ -n "$file" && -e "$file" ]]; then
+            hash=$(sha256sum "$file" | cut -d' ' -f1)
+            echo "sysroot_amd64_sha256=${hash}" >> $GITHUB_OUTPUT
+        fi
+
+        file=$(ls sysroot-glibc2.31-libstdc++13-arm64.tar.xz 2>/dev/null || true)
+        if [[ -n "$file" && -e "$file" ]]; then
+            hash=$(sha256sum "$file" | cut -d' ' -f1)
+            echo "sysroot_arm64_sha256=${hash}" >> $GITHUB_OUTPUT
+        fi
+
+        # Glint binaries
+        for arch in "amd64" "arm64"; do
+            file=$(ls glint-*-${arch} 2>/dev/null || true)
+            if [[ -n "$file" && -e "$file" ]]; then
+                hash=$(sha256sum "$file" | cut -d' ' -f1)
+                echo "glint_${arch}_sha256=${hash}" >> $GITHUB_OUTPUT
+                echo "- ${file}: \`${hash}\`" >> $GITHUB_STEP_SUMMARY
+            else
+                echo "⚠️ Warning: glint ${arch} binary not found" >> $GITHUB_STEP_SUMMARY
+            fi
         done
     - name: Update versions.bzl
       if: steps.release.outputs.skip != 'true'
       run: |
         VERSION="${{ steps.release.outputs.version }}"
         FILE="bazel/versions.bzl"
+
+        # Update bins_release version
         sed -i "s/\"bins_release\": \"[^\"]*\"/\"bins_release\": \"${VERSION}\"/" "$FILE"
-        declare -A HASH_UPDATES=(
-            ["msan_libs_sha256"]="${{ steps.hashes.outputs.msan_libs_sha256 }}"
-            ["tsan_libs_sha256"]="${{ steps.hashes.outputs.tsan_libs_sha256 }}"
-            ["sysroot_amd64_sha256"]="${{ steps.hashes.outputs.sysroot_amd64_sha256 }}"
-            ["sysroot_arm64_sha256"]="${{ steps.hashes.outputs.sysroot_arm64_sha256 }}"
-        )
-        for key in "${!HASH_UPDATES[@]}"; do
-            if [[ -n "${HASH_UPDATES[$key]}" ]]; then
-                sed -i "s/\"${key}\": \"[a-f0-9]*\"/\"${key}\": \"${HASH_UPDATES[$key]}\"/" "$FILE"
-            fi
-        done
+
+        # Update sanitizer library hashes
+        if [[ -n "${{ steps.hashes.outputs.msan_libs_sha256 }}" ]]; then
+            sed -i "s/\"msan_libs_sha256\": \"[a-f0-9]*\"/\"msan_libs_sha256\": \"${{ steps.hashes.outputs.msan_libs_sha256 }}\"/" "$FILE"
+        fi
+        if [[ -n "${{ steps.hashes.outputs.tsan_libs_sha256 }}" ]]; then
+            sed -i "s/\"tsan_libs_sha256\": \"[a-f0-9]*\"/\"tsan_libs_sha256\": \"${{ steps.hashes.outputs.tsan_libs_sha256 }}\"/" "$FILE"
+        fi
+
+        # Update glint hashes in nested structure
+        if [[ -n "${{ steps.hashes.outputs.glint_amd64_sha256 }}" ]]; then
+            HASH="${{ steps.hashes.outputs.glint_amd64_sha256 }}"
+            sed -i '/glint_sha256/,/^    },/{s/"amd64": "[a-f0-9]*"/"amd64": "'"$HASH"'"/}' "$FILE"
+        fi
+
+        if [[ -n "${{ steps.hashes.outputs.glint_arm64_sha256 }}" ]]; then
+            HASH="${{ steps.hashes.outputs.glint_arm64_sha256 }}"
+            sed -i '/glint_sha256/,/^    },/{s/"arm64": "[a-f0-9]*"/"arm64": "'"$HASH"'"/}' "$FILE"
+        fi
+
+        # Update sysroot hashes in nested structure using sed
+        # Helper function to update nested hash
+        update_sysroot() {
+            local g="$1" v="$2" a="$3" h="$4"
+            [[ -z "$h" ]] && return
+            sed -i '/"'"$g"'":/,/^        },/{/"'"$v"'":/,/^            },/{s/"'"$a"'": "[a-f0-9]*"/"'"$a"'": "'"$h"'"/}}' "$FILE"
+        }
+
+        update_sysroot "2.31" "base" "amd64" "${{ steps.hashes.outputs.sysroot_2_31_base_amd64 }}"
+        update_sysroot "2.31" "base" "arm64" "${{ steps.hashes.outputs.sysroot_2_31_base_arm64 }}"
+        update_sysroot "2.31" "13" "amd64" "${{ steps.hashes.outputs.sysroot_2_31_13_amd64 }}"
+        update_sysroot "2.31" "13" "arm64" "${{ steps.hashes.outputs.sysroot_2_31_13_arm64 }}"
+        update_sysroot "2.28" "base" "amd64" "${{ steps.hashes.outputs.sysroot_2_28_base_amd64 }}"
+        update_sysroot "2.28" "base" "arm64" "${{ steps.hashes.outputs.sysroot_2_28_base_arm64 }}"
+        update_sysroot "2.28" "13" "amd64" "${{ steps.hashes.outputs.sysroot_2_28_13_amd64 }}"
+        update_sysroot "2.28" "13" "arm64" "${{ steps.hashes.outputs.sysroot_2_28_13_arm64 }}"
+
+        # Update legacy sysroot hashes for backward compatibility
+        HASH="${{ steps.hashes.outputs.sysroot_amd64_sha256 }}"
+        if [[ -n "$HASH" ]]; then
+            sed -i "s/\"sysroot_amd64_sha256\": \"[a-f0-9]*\"/\"sysroot_amd64_sha256\": \"${HASH}\"/" "$FILE"
+        fi
+        HASH="${{ steps.hashes.outputs.sysroot_arm64_sha256 }}"
+        if [[ -n "$HASH" ]]; then
+            sed -i "s/\"sysroot_arm64_sha256\": \"[a-f0-9]*\"/\"sysroot_arm64_sha256\": \"${HASH}\"/" "$FILE"
+        fi
+
+        echo "## Updated versions.bzl" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY
+        git diff bazel/versions.bzl >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
         echo "Updated versions.bzl:"
         git diff bazel/versions.bzl
     - name: Check for changes
