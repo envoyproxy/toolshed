@@ -31,8 +31,9 @@ jobs:
     runs-on: ${{ matrix.runs-on }}
     needs: should
     if: >-
-      github.event_name == 'release'
-      || fromJSON(needs.should.outputs.run || 'false')
+      always()
+      && (github.event_name == 'release'
+      || fromJSON(needs.should.outputs.run || 'false'))
     strategy:
       fail-fast: false
       matrix:
