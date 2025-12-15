@@ -119,7 +119,7 @@ The repository uses:
 - **mypy** for type checking
 - **docformatter** for docstring formatting
 
-All configured in `pants.toml`.
+All linting and type checking tools are configured in `pants.toml`.
 
 ### Testing in Envoy Environment
 
