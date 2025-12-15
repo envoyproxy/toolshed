@@ -5,14 +5,14 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
 
-    "bins_release": "0.1.21",
-    "msan_libs_sha256": "2747f66b447af7c422d7db0bfca7147e197ff0ebe7500f10388ade2f9265a359",
-    "tsan_libs_sha256": "9fb57a2b209e766487f00456d05462cb7030549b22f7885cfd6d89d448d40ee8",
+    "bins_release": "0.1.27",
+    "msan_libs_sha256": "ee33e4209ddb9c788830816a49725d7a362fbc65ab12767e76b75f167c890f8d",
+    "tsan_libs_sha256": "35fb93acc6e520db4fd98a538910941e85dae4f2a8f17b6d5c917c8ec26c09de",
 
     # Glint binary hashes by architecture
     "glint_sha256": {
-        "amd64": "495e081f2fb397fa25dcc108512449f70eb986cfa16a1193ecc422a61bf154a5",
-        "arm64": "caf9dab2b99f2756f29f9872bb82a1252e42fb9fec56c31245af0cf209dc273a",
+        "amd64": "6e430f8a6a6ca808f91cf1258bfb7adaec8932cbebcb1274a27b041585227d23",
+        "arm64": "d33c35c61cec1f8e183f53215c3e2066785648700ede83c613aee257859b8865",
     },
 
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
@@ -21,29 +21,29 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "464802e4c1eadc3297f8e3c033325a1c0e32097fb4ed56c9df9dec9a41fe8ecd",
-                "arm64": "2dabcf9623c40207c14b441ab394c60e6f79fbdf1e53c98f04df7525eb001a6a",
+                "amd64": "05b96aabf74bb4b1305dc4ec22e50d403d072d0225133be26bf7c6c3ab1eb238",
+                "arm64": "0075d66066c17581acc90fece5f00bbf97d7ae00e60110903d66fcda62bcf28a",
             },
             "13": {
-                "amd64": "a02b8045b59f425cf3f7200abaf03745b03fa213d6592d10c4ec722d83525555",
-                "arm64": "0eda7b5ba799bd24b37f4837356d8b0b6a1887c3cf505772018bc2e7c14e5cfd",
+                "amd64": "7486b62f5531cc7d4935cb7ed86f049a7bb2acafcc7e890bd24886c8b05b7be0",
+                "arm64": "4ec43c43995dec87fbfb376c4168d6d51e88caaa5f6cf8cf37359c2de1e8b0ca",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "ce0d09eb5b6e4c47871b0e92870bb5426de9ef6459fcb22edce2be9424880bfe",
-                "arm64": "0d816b8ac2643ddb84e58760f416dc6e56094bb2fa1c8dd71122a5fb9a6d560c",
+                "amd64": "5dae985101aebc5c0463be9bb1cc2cf264b341fc66e75da1f814693ec5c9f282",
+                "arm64": "de91bc368ba10797041f0e04e6646d8cf7b76709f6c443d67e1593fb85233ceb",
             },
             "13": {
-                "amd64": "313a91586621c2ee5417ae6a9e387b94ab92b9fc9d75dbca3b17ae5f7e1b9ee8",
-                "arm64": "1326247965b804163614249b1f228e6239f8c1369aaa862cfdde8b6d13fc66c4",
+                "amd64": "c24d37fe6dab95fd49c5c5fca924e3e3d25454562cdce07b24effee3ffd84aa8",
+                "arm64": "b88498e359922d5935be66465e01113ea6e89a1a8b633eec5615f573bfd8d4de",
             },
         },
     },
 
     # Legacy hash keys for backward compatibility (default: glibc 2.31 with libstdc++13)
-    "sysroot_amd64_sha256": "a02b8045b59f425cf3f7200abaf03745b03fa213d6592d10c4ec722d83525555",
-    "sysroot_arm64_sha256": "0eda7b5ba799bd24b37f4837356d8b0b6a1887c3cf505772018bc2e7c14e5cfd",
+    "sysroot_amd64_sha256": "7486b62f5531cc7d4935cb7ed86f049a7bb2acafcc7e890bd24886c8b05b7be0",
+    "sysroot_arm64_sha256": "4ec43c43995dec87fbfb376c4168d6d51e88caaa5f6cf8cf37359c2de1e8b0ca",
 
     "aspect_bazel_lib": {
         "type": "github_archive",
