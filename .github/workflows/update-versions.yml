@@ -99,8 +99,9 @@ jobs:
 
                     if [[ -n "$file" && -e "$file" ]]; then
                         hash=$(sha256sum "$file" | cut -d' ' -f1)
-                        # Output in format that can be parsed later
-                        echo "sysroot_${glibc}_${variant}_${arch}=${hash}" >> $GITHUB_OUTPUT
+                        # Output with underscores (dots not allowed in output names)
+                        glibc_clean=$(echo "$glibc" | tr '.' '_')
+                        echo "sysroot_${glibc_clean}_${variant}_${arch}=${hash}" >> $GITHUB_OUTPUT
                         echo "- ${file}: \`${hash}\`" >> $GITHUB_STEP_SUMMARY
                     else
                         echo "⚠️ Warning: sysroot glibc${glibc} ${variant} ${arch} not found" >> $GITHUB_STEP_SUMMARY
