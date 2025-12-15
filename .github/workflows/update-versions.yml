@@ -61,18 +61,18 @@ jobs:
       env:
         GH_TOKEN: ${{ github.token }}
       run: |
-        mkdir -p artifacts
+        mkdir -p /tmp/release-artifacts
         gh release view "${{ steps.release.outputs.tag }}" --json assets -q '.assets[].name' | while read -r asset; do
             echo "Downloading ${asset}..."
-            gh release download "${{ steps.release.outputs.tag }}" --pattern "${asset}" --dir artifacts
+            gh release download "${{ steps.release.outputs.tag }}" --pattern "${asset}" --dir /tmp/release-artifacts
         done
         echo "Downloaded artifacts:"
-        ls -la artifacts/
+        ls -la /tmp/release-artifacts/
     - name: Calculate SHA256 hashes
       if: steps.release.outputs.skip != 'true'
       id: hashes
       run: |
-        cd artifacts
+        cd /tmp/release-artifacts
 
         # Calculate hashes for all files
         echo "## Calculating SHA256 hashes" >> $GITHUB_STEP_SUMMARY
@@ -235,6 +235,7 @@ jobs:
         commit-message: "Update bins to ${{ steps.release.outputs.version }}"
         branch: "update-bins-${{ steps.release.outputs.version }}"
         delete-branch: true
+        signoff: true
         title: "Update bins to ${{ steps.release.outputs.version }}"
         body: |
           This PR updates the bins version and SHA256 hashes for release `${{ steps.release.outputs.tag }}`.
