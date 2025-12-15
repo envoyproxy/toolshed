@@ -22,11 +22,19 @@ def _get_platform_info(rctx):
 def _glint_repo_impl(rctx):
     """Implementation of the glint repository rule."""
     platform = _get_platform_info(rctx)
-    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/glint-{glint_version}-{arch}".format(
-        version = rctx.attr.bins_release_version,
-        glint_version = GLINT_VERSION,
-        arch = platform,
-    )
+    # Try new bins-v naming first, fallback to legacy bazel-bins-v
+    url = [
+        "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/glint-{glint_version}-{arch}".format(
+            version = rctx.attr.bins_release_version,
+            glint_version = GLINT_VERSION,
+            arch = platform,
+        ),
+        "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/glint-{glint_version}-{arch}".format(
+            version = rctx.attr.bins_release_version,
+            glint_version = GLINT_VERSION,
+            arch = platform,
+        ),
+    ]
 
     # Download the binary
     rctx.download(
