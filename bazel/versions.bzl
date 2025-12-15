@@ -107,6 +107,24 @@ VERSIONS = {
         "strip_prefix": "{name}-{version}",
     },
 
+    "rules_pkg": {
+        "type": "github_archive",
+        "repo": "bazelbuild/rules_pkg",
+        "version": "1.0.1",
+        "sha256": "d20c951960ed77cb7b341c2a59488534e494d5ad1d30c4818c736d57772a9fef",
+        "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
+        "strip_prefix": "{name}-{version}",
+    },
+
+    "rules_license": {
+        "type": "github_archive",
+        "repo": "bazelbuild/rules_license",
+        "version": "0.0.7",
+        "sha256": "4531deccb913639c30e5c7512a054d5d875698daeb75d8cf90f284375fe7c360",
+        "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
+        "strip_prefix": "{name}-{version}",
+    },
+
     "rules_shell": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_shell",
