@@ -2,7 +2,10 @@ load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 load("//:macros.bzl", "json_data")
 load("//:versions.bzl", "VERSIONS")
 
-exports_files(["jq.sh"])
+exports_files([
+    "jq.sh",
+    "versions.bzl",
+])
 
 json_data(
     name = "deps",
@@ -16,4 +19,5 @@ jq(
     filter = """
     with_entries(select(.value | objects and .type == "github_archive") | .value |= {repo, sha256, url, version})
     """,
+    visibility = ["//visibility:public"],
 )

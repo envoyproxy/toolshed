@@ -113,7 +113,6 @@ VERSIONS = {
         "version": "1.0.1",
         "sha256": "d20c951960ed77cb7b341c2a59488534e494d5ad1d30c4818c736d57772a9fef",
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
-        "strip_prefix": "{name}-{version}",
     },
 
     "rules_license": {
