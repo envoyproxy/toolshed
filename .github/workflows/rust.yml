@@ -157,6 +157,7 @@ jobs:
     needs:
     - should
     - test
+    - publish
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
