@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Release tag to update from (e.g., bazel-bins/v0.1.7)
+        description: Release tag to update from (e.g., bins/v0.1.7)
         required: false
         type: string
   push:
@@ -44,10 +44,10 @@ jobs:
         if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ github.event.inputs.release_tag }}" ]]; then
             TAG="${{ github.event.inputs.release_tag }}"
         else
-            TAG=$(gh release list --limit 100 | grep "bazel-bins-v" | head -1 | awk '{print $1}' || true)
+            TAG=$(gh release list --limit 100 | grep "bins-v" | head -1 | awk '{print $1}' || true)
             echo "TAG: $TAG"
             if [[ -z "$TAG" ]]; then
-                echo "No bazel-bins release found - skipping version check"
+                echo "No bins release found - skipping version check"
                 echo "skip=true" >> $GITHUB_OUTPUT
                 exit 0
             fi
@@ -232,12 +232,12 @@ jobs:
               || '' }}
       with:
         token: ${{ github.token }}
-        commit-message: "Update bazel-bins to ${{ steps.release.outputs.version }}"
-        branch: "update-bazel-bins-${{ steps.release.outputs.version }}"
+        commit-message: "Update bins to ${{ steps.release.outputs.version }}"
+        branch: "update-bins-${{ steps.release.outputs.version }}"
         delete-branch: true
-        title: "Update bazel-bins to ${{ steps.release.outputs.version }}"
+        title: "Update bins to ${{ steps.release.outputs.version }}"
         body: |
-          This PR updates the bazel-bins version and SHA256 hashes for release `${{ steps.release.outputs.tag }}`.
+          This PR updates the bins version and SHA256 hashes for release `${{ steps.release.outputs.tag }}`.
 
           ## Changes
           - Updated `bins_release` version to `${{ steps.release.outputs.version }}`
@@ -261,7 +261,7 @@ jobs:
       run: |
         echo "## Versions Check Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Latest bazel-bins release: ${{ steps.release.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "Latest bins release: ${{ steps.release.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
         echo "Version: ${{ steps.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Changes detected:" >> $GITHUB_STEP_SUMMARY

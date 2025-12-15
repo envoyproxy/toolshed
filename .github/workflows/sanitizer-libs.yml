@@ -68,7 +68,7 @@ jobs:
     if: >-
       always()
       && (github.event_name == 'release'
-          && startsWith(github.event.release.name, 'bazel-bins'))
+          && startsWith(github.event.release.name, 'bins'))
     runs-on: ubuntu-24.04
     needs:
     - build

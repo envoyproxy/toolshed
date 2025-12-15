@@ -19,19 +19,35 @@ def _sysroot_impl(ctx):
     stdcc_version = ctx.attr.stdcc_version
 
     # Construct URL based on whether stdcc_version is specified
+    # Try new bins-v naming first, fallback to legacy bazel-bins-v
     if stdcc_version:
-        url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
-            version = ctx.attr.version,
-            arch = arch,
-            glibc_version = glibc_version,
-            stdcc_version = stdcc_version,
-        )
+        url = [
+            "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
+                version = ctx.attr.version,
+                arch = arch,
+                glibc_version = glibc_version,
+                stdcc_version = stdcc_version,
+            ),
+            "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
+                version = ctx.attr.version,
+                arch = arch,
+                glibc_version = glibc_version,
+                stdcc_version = stdcc_version,
+            ),
+        ]
     else:
-        url = "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
-            version = ctx.attr.version,
-            arch = arch,
-            glibc_version = glibc_version,
-        )
+        url = [
+            "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
+                version = ctx.attr.version,
+                arch = arch,
+                glibc_version = glibc_version,
+            ),
+            "https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
+                version = ctx.attr.version,
+                arch = arch,
+                glibc_version = glibc_version,
+            ),
+        ]
 
     ctx.download_and_extract(
         url = url,

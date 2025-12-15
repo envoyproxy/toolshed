@@ -22,14 +22,14 @@ The sanitizer libraries are automatically built and published to GitHub releases
 
 1. **Make changes** to the build configuration and merge them to main
 
-2. **Create a release** with the naming format `bazel-bins-v{version}`
+2. **Create a release** with the naming format `bins-v{version}`
 
 3. **Wait for CI** to build and publish the binaries to the release
 
 4. **Get SHA256 hashes** for the published artifacts:
    ```bash
-   curl -L https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v1.0.0/msan-libs-x86_64.tar.gz | sha256sum
-   curl -L https://github.com/envoyproxy/toolshed/releases/download/bazel-bins-v1.0.0/tsan-libs-x86_64.tar.gz | sha256sum
+   curl -L https://github.com/envoyproxy/toolshed/releases/download/bins-v1.0.0/msan-libs-x86_64.tar.gz | sha256sum
+   curl -L https://github.com/envoyproxy/toolshed/releases/download/bins-v1.0.0/tsan-libs-x86_64.tar.gz | sha256sum
    ```
 
 5. **Update versions.bzl** with the new release tag and SHA256 values:
