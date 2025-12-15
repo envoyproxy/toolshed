@@ -39,7 +39,7 @@ Pants is used for Python package development, testing, and linting.
 
 #### Environment Variables for Pants
 
-When working in environments with SSL-intercepting proxies (e.g., corporate proxies with custom certificates):
+When working in the Copilot workspace or other environments with SSL-intercepting proxies (e.g., corporate proxies with custom certificates):
 
 ```bash
 # Set the CA certificates path for Pants
