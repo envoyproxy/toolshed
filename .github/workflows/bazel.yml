@@ -8,6 +8,9 @@ on:
   push:
     branches:
     - main
+  release:
+    types:
+    - published
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -16,6 +19,7 @@ concurrency:
 jobs:
   should:
     runs-on: ubuntu-24.04
+    if: github.event_name != 'release'
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
@@ -30,13 +34,22 @@ jobs:
   test:
     runs-on: ubuntu-24.04
     needs: should
-    if: fromJSON(needs.should.outputs.run)
+    if: >-
+      always()
+      && (github.event_name == 'release'
+          || fromJSON(needs.should.outputs.run || 'false'))
     steps:
     - name: Checkout Repository
       uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
 
     - name: Setup Bazel
       uses: bazelbuild/setup-bazelisk@6ecf4fd8b7d1f9721785f1dd656a689acf9add47  # v3
+
+    - name: Install libtinfo
+      if: github.event_name == 'release' && startsWith(github.event.release.name, 'bins-')
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y libtinfo5
 
     - name: Run Bazel test
       run: |
@@ -47,6 +60,52 @@ jobs:
       run: |
         cd bazel
         bazel build //...
+
+    - name: Upload msan libraries
+      if: github.event_name == 'release' && startsWith(github.event.release.name, 'bins-')
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      with:
+        name: msan-llvm18.1.8-x86_64
+        path: bazel/bazel-bin/compile/msan-llvm18.1.8-x86_64.tar.xz
+        retention-days: 30
+
+    - name: Upload tsan libraries
+      if: github.event_name == 'release' && startsWith(github.event.release.name, 'bins-')
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      with:
+        name: tsan-llvm18.1.8-x86_64
+        path: bazel/bazel-bin/compile/tsan-llvm18.1.8-x86_64.tar.xz
+        retention-days: 30
+
+  publish:
+    if: >-
+      always()
+      && (github.event_name == 'release'
+          && startsWith(github.event.release.name, 'bins-'))
+    runs-on: ubuntu-24.04
+    needs:
+    - test
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+      with:
+        path: artifacts
+    - name: Upload release assets
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for artifact in artifacts/*; do
+            [[ ! -d "$artifact" ]] && continue
+            name=$(basename "$artifact")
+            file=$(ls "$artifact"/*.tar.xz)
+            echo "Uploading $file as $name.tar.xz"
+            gh release upload "${{ github.event.release.tag_name }}" \
+                "$file#$name.tar.xz" \
+                --clobber
+        done
 
   status:
     runs-on: ubuntu-24.04
