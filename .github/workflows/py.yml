@@ -148,8 +148,9 @@ jobs:
   publish:
     runs-on: ubuntu-24.04
     if: >-
-      github.event_name == 'release'
-      || fromJSON(needs.should.outputs.run || 'false')
+      always()
+      && (github.event_name == 'release'
+          || fromJSON(needs.should.outputs.run || 'false'))
     needs:
     - package
     steps:

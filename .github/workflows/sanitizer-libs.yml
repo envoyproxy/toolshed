@@ -62,8 +62,9 @@ jobs:
 
   publish:
     if: >-
-      github.event_name == 'release'
-      && startsWith(github.event.release.name, 'bazel-bins')
+      always()
+      && (github.event_name == 'release'
+          && startsWith(github.event.release.name, 'bazel-bins'))
     runs-on: ubuntu-24.04
     needs:
     - build
