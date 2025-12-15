@@ -135,24 +135,58 @@ jobs:
         done
     - name: Update versions.bzl
       if: steps.release.outputs.skip != 'true'
-      env:
-        VERSION: ${{ steps.release.outputs.version }}
-        MSAN_LIBS_SHA256: ${{ steps.hashes.outputs.msan_libs_sha256 }}
-        TSAN_LIBS_SHA256: ${{ steps.hashes.outputs.tsan_libs_sha256 }}
-        GLINT_AMD64_SHA256: ${{ steps.hashes.outputs.glint_amd64_sha256 }}
-        GLINT_ARM64_SHA256: ${{ steps.hashes.outputs.glint_arm64_sha256 }}
-        SYSROOT_2_31_BASE_AMD64: ${{ steps.hashes.outputs.sysroot_2_31_base_amd64 }}
-        SYSROOT_2_31_BASE_ARM64: ${{ steps.hashes.outputs.sysroot_2_31_base_arm64 }}
-        SYSROOT_2_31_13_AMD64: ${{ steps.hashes.outputs.sysroot_2_31_13_amd64 }}
-        SYSROOT_2_31_13_ARM64: ${{ steps.hashes.outputs.sysroot_2_31_13_arm64 }}
-        SYSROOT_2_28_BASE_AMD64: ${{ steps.hashes.outputs.sysroot_2_28_base_amd64 }}
-        SYSROOT_2_28_BASE_ARM64: ${{ steps.hashes.outputs.sysroot_2_28_base_arm64 }}
-        SYSROOT_2_28_13_AMD64: ${{ steps.hashes.outputs.sysroot_2_28_13_amd64 }}
-        SYSROOT_2_28_13_ARM64: ${{ steps.hashes.outputs.sysroot_2_28_13_arm64 }}
-        SYSROOT_AMD64_SHA256: ${{ steps.hashes.outputs.sysroot_amd64_sha256 }}
-        SYSROOT_ARM64_SHA256: ${{ steps.hashes.outputs.sysroot_arm64_sha256 }}
       run: |
-        python3 .github/scripts/update_hashes.py
+        VERSION="${{ steps.release.outputs.version }}"
+        FILE="bazel/versions.bzl"
+
+        # Update bins_release version
+        sed -i "s/\"bins_release\": \"[^\"]*\"/\"bins_release\": \"${VERSION}\"/" "$FILE"
+
+        # Update sanitizer library hashes
+        if [[ -n "${{ steps.hashes.outputs.msan_libs_sha256 }}" ]]; then
+            sed -i "s/\"msan_libs_sha256\": \"[a-f0-9]*\"/\"msan_libs_sha256\": \"${{ steps.hashes.outputs.msan_libs_sha256 }}\"/" "$FILE"
+        fi
+        if [[ -n "${{ steps.hashes.outputs.tsan_libs_sha256 }}" ]]; then
+            sed -i "s/\"tsan_libs_sha256\": \"[a-f0-9]*\"/\"tsan_libs_sha256\": \"${{ steps.hashes.outputs.tsan_libs_sha256 }}\"/" "$FILE"
+        fi
+
+        # Update glint hashes in nested structure
+        if [[ -n "${{ steps.hashes.outputs.glint_amd64_sha256 }}" ]]; then
+            HASH="${{ steps.hashes.outputs.glint_amd64_sha256 }}"
+            sed -i '/glint_sha256/,/^    },/{s/"amd64": "[a-f0-9]*"/"amd64": "'"$HASH"'"/}' "$FILE"
+        fi
+
+        if [[ -n "${{ steps.hashes.outputs.glint_arm64_sha256 }}" ]]; then
+            HASH="${{ steps.hashes.outputs.glint_arm64_sha256 }}"
+            sed -i '/glint_sha256/,/^    },/{s/"arm64": "[a-f0-9]*"/"arm64": "'"$HASH"'"/}' "$FILE"
+        fi
+
+        # Update sysroot hashes in nested structure using sed
+        # Helper function to update nested hash
+        update_sysroot() {
+            local g="$1" v="$2" a="$3" h="$4"
+            [[ -z "$h" ]] && return
+            sed -i '/"'"$g"'":/,/^        },/{/"'"$v"'":/,/^            },/{s/"'"$a"'": "[a-f0-9]*"/"'"$a"'": "'"$h"'"/}}' "$FILE"
+        }
+
+        update_sysroot "2.31" "base" "amd64" "${{ steps.hashes.outputs.sysroot_2_31_base_amd64 }}"
+        update_sysroot "2.31" "base" "arm64" "${{ steps.hashes.outputs.sysroot_2_31_base_arm64 }}"
+        update_sysroot "2.31" "13" "amd64" "${{ steps.hashes.outputs.sysroot_2_31_13_amd64 }}"
+        update_sysroot "2.31" "13" "arm64" "${{ steps.hashes.outputs.sysroot_2_31_13_arm64 }}"
+        update_sysroot "2.28" "base" "amd64" "${{ steps.hashes.outputs.sysroot_2_28_base_amd64 }}"
+        update_sysroot "2.28" "base" "arm64" "${{ steps.hashes.outputs.sysroot_2_28_base_arm64 }}"
+        update_sysroot "2.28" "13" "amd64" "${{ steps.hashes.outputs.sysroot_2_28_13_amd64 }}"
+        update_sysroot "2.28" "13" "arm64" "${{ steps.hashes.outputs.sysroot_2_28_13_arm64 }}"
+
+        # Update legacy sysroot hashes for backward compatibility
+        HASH="${{ steps.hashes.outputs.sysroot_amd64_sha256 }}"
+        if [[ -n "$HASH" ]]; then
+            sed -i "s/\"sysroot_amd64_sha256\": \"[a-f0-9]*\"/\"sysroot_amd64_sha256\": \"${HASH}\"/" "$FILE"
+        fi
+        HASH="${{ steps.hashes.outputs.sysroot_arm64_sha256 }}"
+        if [[ -n "$HASH" ]]; then
+            sed -i "s/\"sysroot_arm64_sha256\": \"[a-f0-9]*\"/\"sysroot_arm64_sha256\": \"${HASH}\"/" "$FILE"
+        fi
 
         echo "## Updated versions.bzl" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY
