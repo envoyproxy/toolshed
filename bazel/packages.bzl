@@ -16,7 +16,4 @@ def load_website_packages():
         name = "website_pip3",
         requirements_lock = "@envoy_toolshed//website:requirements.txt",
         python_interpreter_target = "@python3_12_host//:python",
-        pip_data_exclude = [
-            "pelican/tests/**",
-        ],
     )
