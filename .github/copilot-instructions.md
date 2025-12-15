@@ -46,7 +46,7 @@ When working in environments with SSL-intercepting proxies (e.g., corporate prox
 export PANTS_CA_CERTS_PATH=/etc/ssl/certs/ca-certificates.crt
 
 # Then run pants commands
-pants test ::
+./pants test ::
 ```
 
 **Why this is needed:** Pants (Rust binary) uses compiled-in CA certificates and ignores the system trust store by default. When a proxy intercepts HTTPS with its own CA (e.g., mkcert), Pants fails with `invalid peer certificate: UnknownIssuer`.
