@@ -298,5 +298,11 @@ fi
 
 sudo tar -cJf "$OUTPUT_FILE" -C "$OUTPUT_DIR" .
 echo ""
-echo "Successfully built sysroot: $OUTPUT_FILE"
+if [[ "$CROSS_COMPILE" == "true" ]]; then
+    echo "Successfully packaged minimal cross-compile sysroot: $OUTPUT_FILE"
+    echo "Note: This is a minimal sysroot created with debootstrap --foreign"
+    echo "      It contains unpacked packages but no configured system."
+else
+    echo "Successfully built sysroot: $OUTPUT_FILE"
+fi
 echo "Size: $(du -h "$OUTPUT_FILE" | cut -f1)"
