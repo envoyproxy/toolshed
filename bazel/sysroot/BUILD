@@ -14,13 +14,28 @@ so they must be explicitly requested.
 """
 
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
-load(":sysroot_genrule.bzl", "sysroots")
+load(":sysroot_genrule.bzl", "sysroots_from_config")
+load(":config.bzl", "SYSROOT_CONFIG")
 
 exports_files([
     "sysroot.bzl",
     "sysroot_genrule.bzl",
     "build_sysroot.sh",
+    "config.yaml",
+    "yaml_to_bzl.sh",
 ])
+
+# Generate config.bzl from config.yaml
+# Run this target to regenerate config.bzl after editing config.yaml:
+#   bazel build //sysroot:config_bzl
+genrule(
+    name = "config_bzl",
+    srcs = ["config.yaml"],
+    outs = ["config.bzl.generated"],
+    cmd = "$(location :yaml_to_bzl.sh) $(location config.yaml) $@",
+    tools = [":yaml_to_bzl.sh"],
+    message = "Generating config.bzl from config.yaml",
+)
 
 # Shell binary for building sysroots
 # This can be used directly to build custom sysroot configurations
@@ -30,64 +45,6 @@ sh_binary(
     visibility = ["//visibility:public"],
 )
 
-# Generate all sysroot targets using a matrix configuration
-sysroots([
-    # glibc 2.31 (current) - Debian bullseye
-    {
-        "arch": "amd64",
-        "glibc_version": "2.31",
-        "debian_version": "bullseye",
-        "variant": "base",
-    },
-    {
-        "arch": "arm64",
-        "glibc_version": "2.31",
-        "debian_version": "bullseye",
-        "variant": "base",
-    },
-    {
-        "arch": "amd64",
-        "glibc_version": "2.31",
-        "debian_version": "bullseye",
-        "variant": "libstdcxx",
-        "ppa_toolchain": "focal",
-        "stdcc_version": "13",
-    },
-    {
-        "arch": "arm64",
-        "glibc_version": "2.31",
-        "debian_version": "bullseye",
-        "variant": "libstdcxx",
-        "ppa_toolchain": "focal",
-        "stdcc_version": "13",
-    },
-    # glibc 2.28 (older) - Debian buster for Ubuntu 18.04/RHEL 8 compatibility
-    {
-        "arch": "amd64",
-        "glibc_version": "2.28",
-        "debian_version": "buster",
-        "variant": "base",
-    },
-    {
-        "arch": "arm64",
-        "glibc_version": "2.28",
-        "debian_version": "buster",
-        "variant": "base",
-    },
-    {
-        "arch": "amd64",
-        "glibc_version": "2.28",
-        "debian_version": "buster",
-        "variant": "libstdcxx",
-        "ppa_toolchain": "bionic",
-        "stdcc_version": "13",
-    },
-    {
-        "arch": "arm64",
-        "glibc_version": "2.28",
-        "debian_version": "buster",
-        "variant": "libstdcxx",
-        "ppa_toolchain": "bionic",
-        "stdcc_version": "13",
-    },
-])
+# Generate all sysroot targets from config.yaml
+# The config is loaded from config.bzl
+sysroots_from_config(SYSROOT_CONFIG)

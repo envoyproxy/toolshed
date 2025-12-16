@@ -72,14 +72,14 @@ def sysroot_genrule(
         local = 1,  # Force local execution (no sandbox, no remote)
     )
 
-def sysroots(matrix):
-    """Create multiple sysroot genrules from a matrix configuration.
+def sysroots_from_config(config):
+    """Create multiple sysroot genrules from configuration.
     
-    This macro generates individual sysroot_genrule targets based on a matrix
-    of configurations, similar to GitHub Actions matrix builds.
+    This macro generates individual sysroot_genrule targets based on a list
+    of configurations loaded from config.yaml.
     
     Args:
-        matrix: A list of dictionaries, where each dictionary contains:
+        config: A list of dictionaries, where each dictionary contains:
             - arch: Architecture (amd64 or arm64)
             - glibc_version: glibc version (e.g., "2.31" or "2.28")
             - debian_version: Debian version (e.g., "bullseye" or "buster")
@@ -88,7 +88,7 @@ def sysroots(matrix):
             - stdcc_version: (optional) libstdc++ version (default: "13")
     
     Example:
-        sysroots([
+        sysroots_from_config([
             {
                 "arch": "amd64",
                 "glibc_version": "2.31",
@@ -109,13 +109,13 @@ def sysroots(matrix):
     # Collect all target names for the convenience filegroup
     target_names = []
     
-    for config in matrix:
-        arch = config["arch"]
-        glibc_version = config["glibc_version"]
-        debian_version = config["debian_version"]
-        variant = config.get("variant", "base")
-        ppa_toolchain = config.get("ppa_toolchain")
-        stdcc_version = config.get("stdcc_version", "13")
+    for item in config:
+        arch = item["arch"]
+        glibc_version = item["glibc_version"]
+        debian_version = item["debian_version"]
+        variant = item.get("variant", "base")
+        ppa_toolchain = item.get("ppa_toolchain")
+        stdcc_version = item.get("stdcc_version", "13")
         
         # Generate target name
         if variant == "libstdcxx":
