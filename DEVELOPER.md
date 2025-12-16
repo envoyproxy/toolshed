@@ -33,6 +33,26 @@ This allows tasks to be orchestrated efficiently, both for IO-bound tasks, or wh
 
 The code also has a high level of coverage with unit tests and makes extensive use of type-hinting and checking.
 
+## Install `pants`
+
+```console
+$ ./get-pants.sh
+```
+
+Add the pants bin to `PATH`:
+
+```console
+$ export PATH=~/.local/bin:$PATH
+```
+
+Run `pants`
+
+```console
+$ pants --version
+```
+
+You may wish to ensure `~/.local/bin` is always on your path to use pants immediately.
+
 ## Testing and linting with `pants`
 
 The repo makes use of [pants](https://www.pantsbuild.org/) to manage the packages.
@@ -44,14 +64,14 @@ A basic introduction to the key tasks is given here, but you are encouraged to v
 To run all code tests, as tested in CI:
 
 ```shell
-$ ./pants test ::
+$ pants test ::
 
 ```
 
 You can also test in an individual package, eg:
 
 ```shell
-$ ./pants test envoy.dependency.check::
+$ pants test envoy.dependency.check::
 
 ```
 
@@ -60,14 +80,14 @@ $ ./pants test envoy.dependency.check::
 You can see the current coverage for all tests with:
 
 ```shell
-$ ./pants test --open-coverage ::
+$ pants test --open-coverage ::
 
 ```
 
 Similarly you can see the coverage for a specific package:
 
 ```shell
-$ ./pants test --open-coverage envoy.dependency.check::
+$ pants test --open-coverage envoy.dependency.check::
 
 ```
 
@@ -81,7 +101,7 @@ allows you to make use of `pdb` to introspect variables and step through and ove
 Assuming relevant `breakpoint`s have been added, you might debug while testing:
 
 ```shell
-$ ./pants test --debug envoy.dependency.check::
+$ pants test --debug envoy.dependency.check::
 
 ```
 
@@ -93,7 +113,7 @@ For example, the following would run debug testing for tests containing `checker
 
 ```console
 
-$ ./pants test --debug envoy.dependency.check:: -- -k checker_cves
+$ pants test --debug envoy.dependency.check:: -- -k checker_cves
 
 ```
 
@@ -107,7 +127,7 @@ The repo is linted with `flake8` and the default config.
 To lint the entire repo:
 
 ```shell
-$ ./pants lint ::
+$ pants lint ::
 
 ```
 
