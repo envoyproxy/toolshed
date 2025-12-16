@@ -4,7 +4,12 @@ set -euo pipefail
 # Handle Bazel runfiles
 if [ -n "${TEST_SRCDIR:-}" ]; then
     # Running under Bazel test
-    RUNFILES_DIR="${TEST_SRCDIR}/envoy_toolshed"
+    # Support both WORKSPACE (envoy_toolshed) and bzlmod (_main) repository names
+    if [ -d "${TEST_SRCDIR}/envoy_toolshed" ]; then
+        RUNFILES_DIR="${TEST_SRCDIR}/envoy_toolshed"
+    else
+        RUNFILES_DIR="${TEST_SRCDIR}/_main"
+    fi
     SCRIPT_DIR="${RUNFILES_DIR}/format/clang_tidy/parser/tests"
     PARSER="${RUNFILES_DIR}/format/clang_tidy/parser/parse_clang_tidy.jq"
 else
