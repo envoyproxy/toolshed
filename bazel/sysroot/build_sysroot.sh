@@ -179,7 +179,7 @@ else
         "$DEBIAN_MIRROR"
 fi
 
-# Step 2: Configure package sources
+# Step 2: Configure package sources and prepare chroot environment
 echo ""
 echo "Step 2: Configuring package sources..."
 echo "deb [check-valid-until=no] http://archive.debian.org/debian $DEBIAN_VERSION-backports main" \
@@ -193,11 +193,28 @@ if [[ "$CROSS_COMPILE" == "true" ]]; then
     echo "      with the essential packages already extracted but not configured."
 else
     echo "Step 3: Installing base packages..."
+    
+    # Setup DNS resolution for chroot
+    sudo cp /etc/resolv.conf "$OUTPUT_DIR/etc/resolv.conf"
+    
+    # Mount necessary filesystems for chroot (if not already mounted)
+    sudo mount --bind /proc "$OUTPUT_DIR/proc" 2>/dev/null || true
+    sudo mount --bind /sys "$OUTPUT_DIR/sys" 2>/dev/null || true
+    sudo mount --bind /dev "$OUTPUT_DIR/dev" 2>/dev/null || true
+    sudo mount --bind /dev/pts "$OUTPUT_DIR/dev/pts" 2>/dev/null || true
+    
+    # Install packages
     sudo chroot "$OUTPUT_DIR" apt-get -qq update
     sudo chroot "$OUTPUT_DIR" apt-get -qq install --no-install-recommends -y \
         libc6 libc6-dev "$LIBGCC_PACKAGE" libxml2-dev
     sudo chroot "$OUTPUT_DIR" apt-get -qq install --no-install-recommends -y \
         -t "$DEBIAN_VERSION-backports" linux-libc-dev
+    
+    # Unmount filesystems
+    sudo umount "$OUTPUT_DIR/dev/pts" 2>/dev/null || true
+    sudo umount "$OUTPUT_DIR/dev" 2>/dev/null || true
+    sudo umount "$OUTPUT_DIR/sys" 2>/dev/null || true
+    sudo umount "$OUTPUT_DIR/proc" 2>/dev/null || true
 fi
 
 # Step 4: Install libstdc++ if requested
