@@ -108,13 +108,52 @@ The built sysroots will be in `bazel-bin/sysroot/` directory.
 
 ### Direct Script Usage
 
-You can also use the build script directly:
+You can also use the build script directly for custom configurations:
 
 ```bash
-# From the bazel/ directory
+# Basic usage
 cd bazel
-bazel run //sysroot:build_sysroot -- --arch amd64 --glibc 2.31 --debian bullseye --variant base --output /tmp/mysysroot
+bazel run //sysroot:build_sysroot -- \
+  --arch amd64 \
+  --glibc 2.31 \
+  --debian bullseye \
+  --variant base \
+  --output /tmp/mysysroot
+
+# Keep specific directories (e.g., keep bin and sbin for debugging)
+bazel run //sysroot:build_sysroot -- \
+  --arch amd64 \
+  --glibc 2.31 \
+  --debian bullseye \
+  --keep-dirs bin,sbin
+
+# Remove additional directories beyond the defaults
+bazel run //sysroot:build_sysroot -- \
+  --arch amd64 \
+  --glibc 2.31 \
+  --debian bullseye \
+  --remove-dirs usr/games,usr/local
+
+# Skip cleanup entirely (keep everything)
+bazel run //sysroot:build_sysroot -- \
+  --arch amd64 \
+  --glibc 2.31 \
+  --debian bullseye \
+  --skip-cleanup
 ```
+
+#### Cleanup Configuration
+
+By default, the build script removes directories that are typically not needed for cross-compilation:
+- System directories: `boot`, `dev`, `proc`, `sys`, `run`, etc.
+- Binaries: `bin`, `sbin`, `usr/sbin`, and standalone utilities
+- Documentation: `usr/share/doc`, `usr/share/man`, `usr/share/info`
+- Other: `var`, `tmp`, `home`, `opt`, etc.
+
+You can customize this behavior:
+- **`--keep-dirs`**: Comma-separated list of directories to preserve from the default cleanup
+- **`--remove-dirs`**: Comma-separated list of additional directories to remove
+- **`--skip-cleanup`**: Skip the cleanup phase entirely
 
 ### Requirements
 

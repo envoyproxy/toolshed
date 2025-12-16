@@ -5,6 +5,16 @@
 
 set -e
 
+# Default directories to remove during cleanup
+# These are typical directories not needed for a cross-compilation sysroot
+DEFAULT_REMOVE_DIRS=(
+    boot bin dev etc/alternatives etc/rmt etc/systemd etc/localtime
+    home media opt proc root run sbin srv sys tmp
+    usr/bin/awk usr/bin/nawk usr/bin/pager usr/bin/pidof usr/sbin
+    usr/share/doc usr/share/info usr/share/lintian usr/share/man usr/share/zoneinfo
+    var
+)
+
 # Parse command line arguments
 ARCH=""
 GLIBC_VERSION=""
@@ -13,18 +23,43 @@ VARIANT="base"
 PPA_TOOLCHAIN=""
 STDCC_VERSION="13"
 OUTPUT_DIR="sysroot"
+KEEP_DIRS=""
+REMOVE_DIRS=""
+SKIP_CLEANUP="false"
 
 usage() {
-    echo "Usage: $0 --arch <amd64|arm64> --glibc <version> --debian <version> [--variant <base|libstdcxx>] [--ppa-toolchain <version>] [--stdcc <version>] [--output <dir>]"
+    echo "Usage: $0 --arch <amd64|arm64> --glibc <version> --debian <version> [options]"
     echo ""
-    echo "Options:"
+    echo "Required Options:"
     echo "  --arch           Architecture to build (amd64 or arm64)"
     echo "  --glibc          glibc version (e.g., 2.31 or 2.28)"
     echo "  --debian         Debian version (e.g., bullseye or buster)"
+    echo ""
+    echo "Variant Options:"
     echo "  --variant        Sysroot variant: base or libstdcxx (default: base)"
     echo "  --ppa-toolchain  Ubuntu PPA toolchain version (required for libstdcxx variant)"
     echo "  --stdcc          libstdc++ version (default: 13)"
+    echo ""
+    echo "Output Options:"
     echo "  --output         Output directory name (default: sysroot)"
+    echo ""
+    echo "Cleanup Options:"
+    echo "  --keep-dirs      Comma-separated list of dirs to keep (preserves them from default cleanup)"
+    echo "  --remove-dirs    Comma-separated list of additional dirs to remove (added to defaults)"
+    echo "  --skip-cleanup   Skip the cleanup phase entirely (keeps everything)"
+    echo ""
+    echo "Examples:"
+    echo "  # Standard build with default cleanup"
+    echo "  $0 --arch amd64 --glibc 2.31 --debian bullseye"
+    echo ""
+    echo "  # Keep the bin directory"
+    echo "  $0 --arch amd64 --glibc 2.31 --debian bullseye --keep-dirs bin"
+    echo ""
+    echo "  # Remove additional directories"
+    echo "  $0 --arch amd64 --glibc 2.31 --debian bullseye --remove-dirs 'usr/games,usr/local'"
+    echo ""
+    echo "  # Skip cleanup entirely"
+    echo "  $0 --arch amd64 --glibc 2.31 --debian bullseye --skip-cleanup"
     exit 1
 }
 
@@ -57,6 +92,18 @@ while [[ $# -gt 0 ]]; do
         --output)
             OUTPUT_DIR="$2"
             shift 2
+            ;;
+        --keep-dirs)
+            KEEP_DIRS="$2"
+            shift 2
+            ;;
+        --remove-dirs)
+            REMOVE_DIRS="$2"
+            shift 2
+            ;;
+        --skip-cleanup)
+            SKIP_CLEANUP="true"
+            shift 1
             ;;
         *)
             echo "Unknown option: $1"
@@ -143,19 +190,46 @@ echo ""
 echo "Step 5: Cleaning up sysroot..."
 sudo chroot "$OUTPUT_DIR" apt-get clean
 
-# Remove unnecessary directories
-for dir in boot bin dev etc/alternatives etc/rmt etc/systemd etc/localtime \
-           home media opt proc root run sbin srv sys tmp \
-           usr/bin/awk usr/bin/nawk usr/bin/pager usr/bin/pidof usr/sbin \
-           usr/share/doc usr/share/info usr/share/lintian usr/share/man usr/share/zoneinfo \
-           var; do
-    if [[ -e "$OUTPUT_DIR/$dir" ]]; then
-        sudo rm -rf "$OUTPUT_DIR/$dir"
+if [[ "$SKIP_CLEANUP" == "true" ]]; then
+    echo "Skipping cleanup (--skip-cleanup specified)"
+else
+    # Build the list of directories to remove
+    DIRS_TO_REMOVE=("${DEFAULT_REMOVE_DIRS[@]}")
+    
+    # Add additional directories if specified
+    if [[ -n "$REMOVE_DIRS" ]]; then
+        IFS=',' read -ra EXTRA_DIRS <<< "$REMOVE_DIRS"
+        DIRS_TO_REMOVE+=("${EXTRA_DIRS[@]}")
+        echo "Adding extra directories to remove: ${EXTRA_DIRS[*]}"
     fi
-done
-
-# Clean up apt sources
-sudo rm -rf "$OUTPUT_DIR/etc/apt/sources.list.d/"*
+    
+    # Build list of directories to keep
+    declare -A KEEP_SET
+    if [[ -n "$KEEP_DIRS" ]]; then
+        IFS=',' read -ra KEEP_ARRAY <<< "$KEEP_DIRS"
+        for dir in "${KEEP_ARRAY[@]}"; do
+            KEEP_SET["$dir"]=1
+        done
+        echo "Preserving directories: ${KEEP_ARRAY[*]}"
+    fi
+    
+    # Remove directories that are not in the keep list
+    for dir in "${DIRS_TO_REMOVE[@]}"; do
+        if [[ -n "${KEEP_SET[$dir]}" ]]; then
+            echo "Keeping: $dir (in keep list)"
+            continue
+        fi
+        if [[ -e "$OUTPUT_DIR/$dir" ]]; then
+            echo "Removing: $dir"
+            sudo rm -rf "$OUTPUT_DIR/$dir"
+        fi
+    done
+    
+    # Clean up apt sources (unless etc is in keep list)
+    if [[ -z "${KEEP_SET[etc]}" ]]; then
+        sudo rm -rf "$OUTPUT_DIR/etc/apt/sources.list.d/"*
+    fi
+fi
 
 # Step 6: Fix absolute symlinks to be relative
 echo ""
