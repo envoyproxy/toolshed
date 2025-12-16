@@ -160,9 +160,19 @@ filegroup(
 # Configure LLVM toolchain
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
+    name = "llvm_toolchain",
     llvm_version = "18.1.8",
-    sysroot = {
-        "linux-x86_64": "@sysroot_linux_amd64//:sysroot",
-        "linux-aarch64": "@sysroot_linux_arm64//:sysroot",
-    },
 )
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_amd64//:sysroot",
+    targets = ["linux-x86_64"],
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_arm64//:sysroot",
+    targets = ["linux-aarch64"],
+)
+use_repo(llvm, "llvm_toolchain")
+
+register_toolchains("@llvm_toolchain//:all")
