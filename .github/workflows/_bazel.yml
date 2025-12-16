@@ -1,0 +1,113 @@
+name: _bazel
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: 'Bazel mode (workspace or bzlmod)'
+        required: true
+        type: string
+      enable-publishing:
+        description: 'Enable publishing of artifacts'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+
+    - name: Install libtinfo5
+      run: |
+        # Workaround for https://github.com/llvm/llvm-project/issues/75490
+        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+
+    - name: Run Bazel test (${{ inputs.mode }})
+      run: |
+        cd bazel
+        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
+          bazel test --enable_bzlmod --test_output=errors //...
+        else
+          bazel test --test_output=errors //...
+        fi
+
+    - name: Build Bazel targets (${{ inputs.mode }})
+      run: |
+        cd bazel
+        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
+          bazel build --enable_bzlmod //...
+        else
+          bazel build //...
+        fi
+
+  build-sanitizers:
+    runs-on: ubuntu-22.04
+    if: inputs.enable-publishing
+    strategy:
+      matrix:
+        sanitizer: [msan, tsan]
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+
+    - name: Install libtinfo
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y libtinfo5
+
+    - name: Build ${{ matrix.sanitizer }} libraries (${{ inputs.mode }})
+      run: |
+        cd bazel
+        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
+          bazel build --enable_bzlmod //compile:cxx_${{ matrix.sanitizer }}
+        else
+          bazel build //compile:cxx_${{ matrix.sanitizer }}
+        fi
+
+    - name: Upload ${{ matrix.sanitizer }} libraries
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      with:
+        name: ${{ matrix.sanitizer }}-llvm18.1.8-x86_64
+        path: bazel/bazel-bin/compile/${{ matrix.sanitizer }}-llvm18.1.8-x86_64.tar.xz
+        retention-days: 30
+
+  publish:
+    if: inputs.enable-publishing
+    runs-on: ubuntu-24.04
+    needs:
+    - build-sanitizers
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - name: Download all workflow run artifacts
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
+      with:
+        path: artifacts
+    - name: Upload release assets
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        for artifact in artifacts/*; do
+            [[ ! -d "$artifact" ]] && continue
+            name=$(basename "$artifact")
+            file=$(ls "$artifact"/*.tar.xz)
+            echo "Uploading $file as $name.tar.xz"
+            gh release upload "${{ github.event.release.tag_name }}" \
+                "$file#$name.tar.xz" \
+                --clobber
+        done

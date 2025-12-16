@@ -1,4 +1,4 @@
-name: Bazel tests
+name: Bazel tests (bzlmod)
 
 permissions:
   contents: read
@@ -8,9 +8,6 @@ on:
   push:
     branches:
     - main
-  release:
-    types:
-    - published
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -19,7 +16,6 @@ concurrency:
 jobs:
   should:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'release'
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
@@ -29,39 +25,27 @@ jobs:
         config: |
           paths:
           - 'bazel/**'
-          - '.github/workflows/bazel.yml'
+          - '.github/workflows/bzlmod.yml'
           - '.github/workflows/_bazel.yml'
 
   test:
     if: >-
       always()
-      && github.event_name != 'release'
       && fromJSON(needs.should.outputs.run || 'false')
     needs: should
     uses: ./.github/workflows/_bazel.yml
     permissions:
       contents: read
     with:
-      mode: workspace
+      mode: bzlmod
       enable-publishing: false
-
-  build-and-publish:
-    if: >-
-      github.event_name == 'release'
-      && startsWith(github.event.release.name, 'bins-')
-    uses: ./.github/workflows/_bazel.yml
-    permissions:
-      contents: write
-    with:
-      mode: workspace
-      enable-publishing: true
 
   status:
     runs-on: ubuntu-24.04
     if: >-
       always()
       && github.event_name == 'pull_request'
-    name: Bazel
+    name: Bazel (bzlmod)
     needs:
     - should
     - test
