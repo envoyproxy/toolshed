@@ -25,6 +25,8 @@ jobs:
         curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
         sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
         rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        apt-get -qq update
+        apt-get -qq install -y --no-install-recommends debootstrap
     - name: Build Bazel targets (${{ inputs.mode }})
       run: |
         if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
