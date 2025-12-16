@@ -30,33 +30,49 @@ jobs:
           paths:
           - 'bazel/**'
           - '.github/workflows/bazel.yml'
-          - '.github/workflows/_bazel.yml'
 
-  test-workspace:
+  test:
+    runs-on: ubuntu-24.04
+    needs: should
     if: >-
       always()
       && github.event_name != 'release'
       && fromJSON(needs.should.outputs.run || 'false')
-    needs: should
-    uses: ./.github/workflows/_bazel.yml
-    permissions:
-      contents: read
-    with:
-      mode: workspace
-      enable-publishing: false
+    strategy:
+      matrix:
+        mode: [workspace, bzlmod]
+    name: test (${{ matrix.mode }})
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
 
-  test-bzlmod:
-    if: >-
-      always()
-      && github.event_name != 'release'
-      && fromJSON(needs.should.outputs.run || 'false')
-    needs: should
-    uses: ./.github/workflows/_bazel.yml
-    permissions:
-      contents: read
-    with:
-      mode: bzlmod
-      enable-publishing: false
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+
+    - name: Install libtinfo5
+      run: |
+        # Workaround for https://github.com/llvm/llvm-project/issues/75490
+        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+
+    - name: Run Bazel test (${{ matrix.mode }})
+      run: |
+        cd bazel
+        if [[ "${{ matrix.mode }}" == "bzlmod" ]]; then
+          bazel test --enable_bzlmod --test_output=errors //...
+        else
+          bazel test --test_output=errors //...
+        fi
+
+    - name: Build Bazel targets (${{ matrix.mode }})
+      run: |
+        cd bazel
+        if [[ "${{ matrix.mode }}" == "bzlmod" ]]; then
+          bazel build --enable_bzlmod //...
+        else
+          bazel build //...
+        fi
 
   build-and-publish:
     if: >-
@@ -77,8 +93,7 @@ jobs:
     name: Bazel
     needs:
     - should
-    - test-workspace
-    - test-bzlmod
+    - test
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
