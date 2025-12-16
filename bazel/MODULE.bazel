@@ -51,3 +51,14 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 ]
 
 use_repo(pip, "pip3", "website_pip3")
+
+# Load llvm_source for compile targets
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "llvm_source",
+    build_file_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
+    sha256 = "09c08693a9afd6236f27a2ebae62cda656eba19021ef3f94d59e931d662d4856",
+    strip_prefix = "llvm-project-llvmorg-18.1.8",
+    url = "https://github.com/llvm/llvm-project/archive/llvmorg-18.1.8.tar.gz",
+)
