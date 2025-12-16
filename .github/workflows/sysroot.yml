@@ -23,7 +23,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/github/should-run@bccac0f1695cc07c67c46d5f494db6cef3e0a94e
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@c04bdf5c854da00a30144f3597967e73ca376f38
       id: filter
       with:
         config: |
@@ -93,7 +93,7 @@ jobs:
           debian-version: buster
           ppa-toolchain: bionic
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
     - name: Set versions
       id: versions
       run: |
@@ -238,7 +238,7 @@ jobs:
     permissions:
       contents: write
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
       with:

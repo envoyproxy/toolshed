@@ -19,7 +19,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/github/should-run@bccac0f1695cc07c67c46d5f494db6cef3e0a94e
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@c04bdf5c854da00a30144f3597967e73ca376f38
       id: filter
       with:
         config: |
@@ -47,7 +47,7 @@ jobs:
         - retest
         - torun
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3  # v6.0.0
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f  # v6.1.0
       with:
