@@ -92,8 +92,11 @@ You can build sysroots locally using Bazel. The builds are marked as `manual` so
 All sysroot build targets are in the `//bazel/sysroot` package:
 
 ```bash
-# Build specific sysroot variants (from the bazel/ directory):
+# Build ALL sysroots at once (from the bazel/ directory):
 cd bazel
+bazel build //sysroot:sysroots
+
+# Or build specific sysroot variants:
 bazel build //sysroot:sysroot_glibc2.31_amd64
 bazel build //sysroot:sysroot_glibc2.31_arm64
 bazel build //sysroot:sysroot_glibc2.31_libstdcxx_amd64
@@ -174,10 +177,17 @@ The artifacts are uploaded to the release assets.
 
 ### Building for Release
 
-To build all sysroot variants for a release:
+To build all sysroot variants for a release, use the convenience target:
 
 ```bash
 cd bazel
+# Build all sysroots at once
+bazel build //sysroot:sysroots
+```
+
+Or build specific glibc versions:
+
+```bash
 # Build all glibc 2.31 variants
 bazel build //sysroot:sysroot_glibc2.31_amd64 //sysroot:sysroot_glibc2.31_arm64 \
             //sysroot:sysroot_glibc2.31_libstdcxx_amd64 //sysroot:sysroot_glibc2.31_libstdcxx_arm64

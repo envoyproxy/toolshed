@@ -167,3 +167,22 @@ genrule(
     ],
     visibility = ["//visibility:public"],
 )
+
+# Convenience target to build all sysroots at once
+filegroup(
+    name = "sysroots",
+    srcs = [
+        ":sysroot_glibc2.31_amd64",
+        ":sysroot_glibc2.31_arm64",
+        ":sysroot_glibc2.31_libstdcxx_amd64",
+        ":sysroot_glibc2.31_libstdcxx_arm64",
+        ":sysroot_glibc2.28_amd64",
+        ":sysroot_glibc2.28_arm64",
+        ":sysroot_glibc2.28_libstdcxx_amd64",
+        ":sysroot_glibc2.28_libstdcxx_arm64",
+    ],
+    tags = [
+        "manual",
+    ],
+    visibility = ["//visibility:public"],
+)
