@@ -1,7 +1,7 @@
 matrix:
   unix_platform:
   - debian11
-  - ubuntu2404
+  - ubuntu2204
   - macos_arm64
   bazel:
   - 7.x
@@ -13,4 +13,13 @@ tasks:
     platform: ${{ unix_platform }}
     bazel: ${{ bazel }}
     build_targets:
-    - "@envoy_toolshed//..."
+    - "@envoy_toolshed//compile/..."
+    - "@envoy_toolshed//coverage/..."
+    - "@envoy_toolshed//dependency/..."
+    - "@envoy_toolshed//format/..."
+    - "@envoy_toolshed//repository/..."
+    - "@envoy_toolshed//sha/..."
+    - "@envoy_toolshed//sysroot/..."
+    - "@envoy_toolshed//tarball/..."
+    - "@envoy_toolshed//toolchains/..."
+    - "@envoy_toolshed//:dependency_versions"
