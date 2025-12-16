@@ -32,7 +32,7 @@ jobs:
           - '.github/workflows/bazel.yml'
           - '.github/workflows/_bazel.yml'
 
-  test:
+  test-workspace:
     if: >-
       always()
       && github.event_name != 'release'
@@ -43,6 +43,19 @@ jobs:
       contents: read
     with:
       mode: workspace
+      enable-publishing: false
+
+  test-bzlmod:
+    if: >-
+      always()
+      && github.event_name != 'release'
+      && fromJSON(needs.should.outputs.run || 'false')
+    needs: should
+    uses: ./.github/workflows/_bazel.yml
+    permissions:
+      contents: read
+    with:
+      mode: bzlmod
       enable-publishing: false
 
   build-and-publish:
@@ -64,7 +77,8 @@ jobs:
     name: Bazel
     needs:
     - should
-    - test
+    - test-workspace
+    - test-bzlmod
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
