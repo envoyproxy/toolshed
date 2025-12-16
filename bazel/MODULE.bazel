@@ -166,6 +166,3 @@ llvm.toolchain(
         "linux-aarch64": "@sysroot_linux_arm64//:sysroot",
     },
 )
-use_repo(llvm, "llvm_toolchain")
-
-register_toolchains("@llvm_toolchain//:all")
