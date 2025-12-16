@@ -1,0 +1,43 @@
+name: _bazel
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: 'Bazel mode (workspace or bzlmod)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+    - name: Install libtinfo5
+      run: |
+        # Workaround for https://github.com/llvm/llvm-project/issues/75490
+        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+    - name: Run Bazel test (${{ inputs.mode }})
+      run: |
+        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
+            bazel test --enable_bzlmod --test_output=errors //...
+        else
+            bazel test --test_output=errors //...
+        fi
+      working-directory: bazel
+    - name: Build Bazel targets (${{ inputs.mode }})
+      run: |
+        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
+            bazel build --enable_bzlmod //...
+        else
+            bazel build //...
+        fi
+      working-directory: bazel
