@@ -6,6 +6,7 @@ py_console_script_binary(
     name = "pelican",
     pkg = requirement("pelican"),
     script = "pelican",
+    visibility = ["//visibility:public"],
     deps = [
         requirement("cssmin"),
         requirement("libsass"),
@@ -14,7 +15,6 @@ py_console_script_binary(
         requirement("packaging"),
         requirement("pyyaml"),
     ],
-    visibility = ["//visibility:public"],
 )
 
 py_console_script_binary(

@@ -19,8 +19,7 @@ def updater(
         version_selector = None,
         toolchains = None,
         pydict = False,
-        **kwargs,
-):
+        **kwargs):
     toolchains = [jq_toolchain] + (toolchains or [])
     deps = deps or []
     data = (data or []) + [
@@ -70,5 +69,5 @@ def updater(
         args = args,
         deps = deps,
         toolchains = toolchains,
-        **kwargs,
+        **kwargs
     )

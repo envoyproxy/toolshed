@@ -1,4 +1,3 @@
-
 sh_binary(
     name = "replace",
     srcs = ["replace.sh"],

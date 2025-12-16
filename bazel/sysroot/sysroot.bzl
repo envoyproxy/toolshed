@@ -115,11 +115,12 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
     Returns:
         SHA256 hash string
     """
+
     # Validate glibc version
     if glibc_version not in VERSIONS["sysroot_hashes"]:
         fail("Unsupported glibc version: {}. Supported versions: {}".format(
             glibc_version,
-            ", ".join(VERSIONS["sysroot_hashes"].keys())
+            ", ".join(VERSIONS["sysroot_hashes"].keys()),
         ))
 
     # Determine stdlib variant key
@@ -130,7 +131,7 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
         fail("Unsupported libstdc++ version '{}' for glibc {}. Supported variants: {}".format(
             stdcc_version or "base",
             glibc_version,
-            ", ".join(VERSIONS["sysroot_hashes"][glibc_version].keys())
+            ", ".join(VERSIONS["sysroot_hashes"][glibc_version].keys()),
         ))
 
     # Validate architecture
@@ -139,7 +140,7 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
             arch,
             glibc_version,
             stdcc_version or "base",
-            ", ".join(VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant].keys())
+            ", ".join(VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant].keys()),
         ))
 
     # Get the hash
@@ -150,7 +151,7 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
         fail("SHA256 hash not yet available for glibc {} with libstdc++ {} on {}. This configuration may not be released yet.".format(
             glibc_version,
             stdcc_version or "base",
-            arch
+            arch,
         ))
 
     return sha256
@@ -170,6 +171,7 @@ def setup_sysroots(
                     Allows multiple sysroot setups, e.g., name_prefix="old" creates
                     @old_sysroot_linux_amd64 and @old_sysroot_linux_arm64
     """
+
     # Get hashes from versions.bzl based on configuration
     amd64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "amd64")
     arm64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "arm64")
@@ -191,6 +193,7 @@ def setup_sysroots(
         glibc_version = glibc_version,
         stdcc_version = stdcc_version,
     )
+
     # ARM64 sysroot
     sysroot(
         name = arm64_name,

@@ -6,6 +6,7 @@ def load_github_archives():
         if type(v) == type("") or v.get("type") != "github_archive":
             continue
         kwargs = dict(name = k, **v)
+
         # Format string values, but not lists
         formatted_kwargs = {}
         for arg_k, arg_v in kwargs.items():
@@ -22,6 +23,7 @@ def load_http_archives():
         if type(v) == type("") or v.get("type") != "http_archive":
             continue
         kwargs = dict(name = k, **v)
+
         # Format string values, but not lists
         formatted_kwargs = {}
         for arg_k, arg_v in kwargs.items():

@@ -27,7 +27,7 @@ def cat(name = "cat", flag = "target"):
         outs = ["empty.txt"],
         cmd = """
         echo "" > $@
-        """
+        """,
     )
 
     native.label_flag(
@@ -49,7 +49,7 @@ def cat(name = "cat", flag = "target"):
         name = name,
         srcs = ["%s_sh" % name],
         data = [":%s" % flag],
-        args = ["$(location :%s)" % flag]
+        args = ["$(location :%s)" % flag],
     )
 
 def jqcat(
@@ -85,7 +85,7 @@ def jqcat(
         outs = ["jqempty.txt"],
         cmd = """
         echo "" > $@
-        """
+        """,
     )
 
     native.label_flag(

@@ -1,17 +1,17 @@
+load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains")
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 load("@rules_perl//perl:deps.bzl", "perl_register_toolchains", "perl_rules_dependencies")
 load("@rules_pkg//pkg:deps.bzl", "rules_pkg_dependencies")
 load("@rules_python//python:repositories.bzl", "py_repositories")
 load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
-load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains")
 load("//:versions.bzl", "VERSIONS")
 load("//sysroot:sysroot.bzl", "setup_sysroots")
 
 def resolve_dependencies(
-        cmake_version=None,
-        llvm_version=None,
-        ninja_version=None):
+        cmake_version = None,
+        llvm_version = None,
+        ninja_version = None):
     py_repositories()
     bazel_toolchain_dependencies()
     register_jq_toolchains()
@@ -31,5 +31,5 @@ def resolve_dependencies(
         sysroot = {
             "linux-x86_64": "@sysroot_linux_amd64//:sysroot",
             "linux-aarch64": "@sysroot_linux_arm64//:sysroot",
-        }
+        },
     )
