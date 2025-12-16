@@ -1,0 +1,4 @@
+startup --host_jvm_args=-Djavax.net.ssl.trustStore=/tmp/custom-cacerts
+startup --host_jvm_args=-Djavax.net.ssl.trustStorePassword=changeit
+startup --output_user_root=/build/bazel_root
+startup --output_base=/build/bazel_root/base
