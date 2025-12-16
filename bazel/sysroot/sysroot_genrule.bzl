@@ -9,7 +9,7 @@ def sysroot_genrule(
         ppa_toolchain = None,
         stdcc_version = "13"):
     """Create a genrule to build a sysroot.
-    
+
     Args:
         name: Name of the genrule target
         arch: Architecture (amd64 or arm64)
@@ -19,7 +19,7 @@ def sysroot_genrule(
         ppa_toolchain: Ubuntu PPA toolchain version (required for libstdcxx variant)
         stdcc_version: libstdc++ version (default: "13")
     """
-    
+
     # Construct output filename
     if variant == "libstdcxx":
         output_file = "sysroot-glibc{}-libstdc++{}-{}.tar.xz".format(
@@ -46,7 +46,7 @@ def sysroot_genrule(
             debian_version,
             variant,
         )
-    
+
     native.genrule(
         name = name,
         srcs = [":build_sysroot.sh"],
@@ -72,77 +72,54 @@ def sysroot_genrule(
         local = 1,  # Force local execution (no sandbox, no remote)
     )
 
-def sysroots_from_config(config):
-    """Create multiple sysroot genrules from configuration.
-    
-    This macro generates individual sysroot_genrule targets based on a list
-    of configurations loaded from config.yaml.
-    
+def sysroots(arches, glibc, stdcc):
+    """Generates matrix of sysroot targets.
+
     Args:
-        config: A list of dictionaries, where each dictionary contains:
-            - arch: Architecture (amd64 or arm64)
-            - glibc_version: glibc version (e.g., "2.31" or "2.28")
-            - debian_version: Debian version (e.g., "bullseye" or "buster")
-            - variant: Sysroot variant ("base" or "libstdcxx")
-            - ppa_toolchain: (optional) Ubuntu PPA toolchain version
-            - stdcc_version: (optional) libstdc++ version (default: "13")
-    
-    Example:
-        sysroots_from_config([
-            {
-                "arch": "amd64",
-                "glibc_version": "2.31",
-                "debian_version": "bullseye",
-                "variant": "base",
-            },
-            {
-                "arch": "amd64",
-                "glibc_version": "2.31",
-                "debian_version": "bullseye",
-                "variant": "libstdcxx",
-                "ppa_toolchain": "focal",
-                "stdcc_version": "13",
-            },
-        ])
+        arches: List of architectures (e.g. ["amd64", "arm64"])
+        glibc: List of glibc versions (e.g. ["2.28", "2.31"])
+        stdcc: List of stdcc versions (e.g. ["13", ""]).
+               "" (empty string) implies variant="base".
+               "13" implies variant="libstdcxx".
     """
-    
-    # Collect all target names for the convenience filegroup
     target_names = []
-    
-    for item in config:
-        arch = item["arch"]
-        glibc_version = item["glibc_version"]
-        debian_version = item["debian_version"]
-        variant = item.get("variant", "base")
-        ppa_toolchain = item.get("ppa_toolchain")
-        stdcc_version = item.get("stdcc_version", "13")
-        
-        # Generate target name
-        if variant == "libstdcxx":
-            name = "sysroot_glibc{}_libstdcxx_{}".format(
-                glibc_version.replace(".", ""),
-                arch,
-            )
-        else:
-            name = "sysroot_glibc{}_{}".format(
-                glibc_version.replace(".", ""),
-                arch,
-            )
-        
-        # Create the genrule
-        sysroot_genrule(
-            name = name,
-            arch = arch,
-            glibc_version = glibc_version,
-            debian_version = debian_version,
-            variant = variant,
-            ppa_toolchain = ppa_toolchain,
-            stdcc_version = stdcc_version,
-        )
-        
-        target_names.append(":" + name)
-    
-    # Create convenience filegroup to build all sysroots at once
+
+    for arch in arches:
+        for glibc_version in glibc:
+            # 1. Infer Debian version based on glibc
+            if glibc_version == "2.31":
+                debian_version = "bullseye"
+            elif glibc_version == "2.28":
+                debian_version = "buster"
+            else:
+                fail("Unsupported glibc version: {}".format(glibc_version))
+            for cc_ver in stdcc:
+                if cc_ver:
+                    variant = "libstdcxx"
+                    stdcc_version = cc_ver
+                    ppa_toolchain = "focal" if debian_version == "bullseye" else "bionic"
+                    name_suffix = "_libstdcxx"
+                else:
+                    variant = "base"
+                    stdcc_version = None
+                    ppa_toolchain = None
+                    name_suffix = ""
+                name = "sysroot_glibc{v}{s}_{a}".format(
+                    v = glibc_version.replace(".", ""),
+                    s = name_suffix,
+                    a = arch,
+                )
+                sysroot_genrule(
+                    name = name,
+                    arch = arch,
+                    glibc_version = glibc_version,
+                    debian_version = debian_version,
+                    variant = variant,
+                    ppa_toolchain = ppa_toolchain,
+                    stdcc_version = stdcc_version,
+                )
+                target_names.append(":" + name)
+
     native.filegroup(
         name = "sysroots",
         srcs = target_names,
