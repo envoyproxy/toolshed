@@ -25,19 +25,19 @@ jobs:
         curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
         sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
         rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+    - name: Build Bazel targets (${{ inputs.mode }})
+      run: |
+        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
+            bazel build --enable_bzlmod //... //sysroot:sysroots
+        else
+            bazel build //... //sysroot:sysroots
+        fi
+      working-directory: bazel
     - name: Run Bazel test (${{ inputs.mode }})
       run: |
         if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
             bazel test --enable_bzlmod --test_output=errors //...
         else
             bazel test --test_output=errors //...
-        fi
-      working-directory: bazel
-    - name: Build Bazel targets (${{ inputs.mode }})
-      run: |
-        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
-            bazel build --enable_bzlmod //...
-        else
-            bazel build //...
         fi
       working-directory: bazel
