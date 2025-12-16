@@ -18,6 +18,9 @@ This repository uses **two build systems**:
 
 Pants is used for Python package development, testing, and linting.
 
+**IMPORTANT:** DO NOT run ./get-pants.sh or try to install pants it should be available to you already
+    You can run `pants` directly.
+
 #### Running Pants Commands
 
 ```bash

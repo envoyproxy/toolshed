@@ -182,3 +182,5 @@ bazel-*
 
 # Rust coverage reports
 rust/tarpaulin-report.html
+
+user.bazelrc
