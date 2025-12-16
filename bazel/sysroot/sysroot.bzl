@@ -210,6 +210,11 @@ def _sysroot_build_impl(ctx):
     """Implementation for sysroot build rule."""
     output = ctx.outputs.output
     
+    # Validate libstdcxx variant requirements
+    if ctx.attr.variant == "libstdcxx":
+        if not ctx.attr.ppa_toolchain or not ctx.attr.stdcc_version:
+            fail("libstdcxx variant requires ppa_toolchain and stdcc_version")
+    
     # Prepare arguments for the build script
     args = ctx.actions.args()
     args.add("--arch", ctx.attr.arch)
@@ -219,8 +224,6 @@ def _sysroot_build_impl(ctx):
     args.add("--output", output.path)
     
     if ctx.attr.variant == "libstdcxx":
-        if not ctx.attr.ppa_toolchain or not ctx.attr.stdcc_version:
-            fail("libstdcxx variant requires ppa_toolchain and stdcc_version")
         args.add("--ppa-toolchain", ctx.attr.ppa_toolchain)
         args.add("--stdcc-version", ctx.attr.stdcc_version)
     
@@ -228,20 +231,9 @@ def _sysroot_build_impl(ctx):
     ctx.actions.run_shell(
         outputs = [output],
         inputs = [ctx.file._build_script],
-        command = "{script} {args}".format(
-            script = ctx.file._build_script.path,
-            args = " ".join([
-                "--arch", ctx.attr.arch,
-                "--glibc-version", ctx.attr.glibc_version,
-                "--debian-version", ctx.attr.debian_version,
-                "--variant", ctx.attr.variant,
-                "--output", output.path,
-            ] + (
-                ["--ppa-toolchain", ctx.attr.ppa_toolchain, "--stdcc-version", ctx.attr.stdcc_version]
-                if ctx.attr.variant == "libstdcxx" and ctx.attr.ppa_toolchain and ctx.attr.stdcc_version
-                else []
-            )),
-        ),
+        arguments = [args],
+        command = "$1 \"$@\"",
+        tools = [ctx.file._build_script],
         mnemonic = "BuildSysroot",
         progress_message = "Building sysroot for {} ({})".format(ctx.attr.arch, ctx.attr.variant),
         use_default_shell_env = True,

@@ -109,10 +109,15 @@ sudo chroot "${SYSROOT_DIR}" apt-get -qq install --no-install-recommends -y \
 # Install libstdc++ if requested
 if [[ "$VARIANT" == "libstdcxx" ]]; then
     echo "Installing libstdc++${STDCC_VERSION}..."
-    echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${PPA_TOOLCHAIN} main" \
+    # Download and add GPG key
+    sudo mkdir -p "${SYSROOT_DIR}/etc/apt/keyrings"
+    sudo gpg --keyserver keyserver.ubuntu.com \
+        --recv-keys 1E9377A2BA9EF27F \
+        --keyring "${SYSROOT_DIR}/etc/apt/keyrings/ubuntu-toolchain.gpg" \
+        --no-default-keyring
+    # Add repository with signed-by
+    echo "deb [signed-by=/etc/apt/keyrings/ubuntu-toolchain.gpg] http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu ${PPA_TOOLCHAIN} main" \
         | sudo tee "${SYSROOT_DIR}/etc/apt/sources.list.d/toolchain.list"
-    sudo apt-key --keyring "${SYSROOT_DIR}/etc/apt/trusted.gpg" adv \
-        --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
     sudo chroot "${SYSROOT_DIR}" apt-get -qq update
     sudo chroot "${SYSROOT_DIR}" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
 fi
@@ -152,7 +157,7 @@ sudo rm -rf "${SYSROOT_DIR}/etc/apt/sources.list.d/"*
 
 # Fix symlinks to be relative
 echo "Fixing symlinks..."
-find "${SYSROOT_DIR}" -type l | while read symlink; do
+while IFS= read -r -d '' symlink; do
     # Get the current target
     current_target=$(readlink "$symlink")
     
@@ -170,7 +175,7 @@ find "${SYSROOT_DIR}" -type l | while read symlink; do
     else
         echo "Skipping - target outside sysroot: $symlink -> $current_target"
     fi
-done
+done < <(find "${SYSROOT_DIR}" -type l -print0)
 
 # Package sysroot
 echo "Packaging sysroot..."
