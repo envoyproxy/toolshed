@@ -56,9 +56,8 @@ def sysroot_genrule(
             SCRIPT=$(location :build_sysroot.sh)
             SCRIPT_DIR=$$(dirname $$SCRIPT)
             OUTPUT_DIR=$$(mktemp -d)
-            cd $$SCRIPT_DIR
-            chmod +x build_sysroot.sh
-            ./build_sysroot.sh {} --output $$OUTPUT_DIR/sysroot-build
+            # Use bash to execute the script (avoids chmod issues in read-only sandbox)
+            bash $$SCRIPT {} --output $$OUTPUT_DIR/sysroot-build
             # Move the generated tar file to Bazel's expected output location
             mv $$SCRIPT_DIR/{} $@
         """.format(build_args, output_file),
@@ -66,8 +65,10 @@ def sysroot_genrule(
             "manual",
             "no-cache",
             "no-remote",
+            "no-sandbox",  # Requires sudo, can't run in sandbox
         ],
         visibility = ["//visibility:public"],
+        local = 1,  # Force local execution (no sandbox, no remote)
     )
 
 def sysroots(matrix):
