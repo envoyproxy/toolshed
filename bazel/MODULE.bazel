@@ -11,6 +11,7 @@ bazel_dep(name = "rules_perl", version = "0.4.1")
 bazel_dep(name = "rules_pkg", version = "1.0.1")
 bazel_dep(name = "rules_python", version = "1.6.0")
 bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "toolchains_llvm", version = "1.4.0")
 
 bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
 bazel_lib_toolchains.jq(version = "1.7")
@@ -51,3 +52,127 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 ]
 
 use_repo(pip, "pip3", "website_pip3")
+
+# Load llvm_source for compile targets
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "llvm_source",
+    build_file_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
+    sha256 = "09c08693a9afd6236f27a2ebae62cda656eba19021ef3f94d59e931d662d4856",
+    strip_prefix = "llvm-project-llvmorg-18.1.8",
+    url = "https://github.com/llvm/llvm-project/archive/llvmorg-18.1.8.tar.gz",
+)
+
+# Setup sysroots for LLVM toolchain
+http_archive(
+    name = "sysroot_linux_amd64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "sysroot",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "**/*:*",
+            "**/*.pl",
+        ],
+    ),
+)
+
+filegroup(
+    name = "headers",
+    srcs = glob(
+        ["usr/include/**"],
+        exclude = ["**/*:*"],
+    ),
+)
+
+filegroup(
+    name = "libs",
+    srcs = glob(
+        [
+            "usr/lib/**/*.a",
+            "usr/lib/**/*.so*",
+            "lib/**/*.a",
+            "lib/**/*.so*",
+        ],
+        exclude = ["**/*:*"],
+    ),
+)
+
+filegroup(
+    name = "toolchain_sysroot",
+    srcs = [":sysroot"],
+)
+""",
+    sha256 = "7486b62f5531cc7d4935cb7ed86f049a7bb2acafcc7e890bd24886c8b05b7be0",
+    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.27/sysroot-glibc2.31-libstdc++13-amd64.tar.xz",
+)
+
+http_archive(
+    name = "sysroot_linux_arm64",
+    build_file_content = """
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "sysroot",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "**/*:*",
+            "**/*.pl",
+        ],
+    ),
+)
+
+filegroup(
+    name = "headers",
+    srcs = glob(
+        ["usr/include/**"],
+        exclude = ["**/*:*"],
+    ),
+)
+
+filegroup(
+    name = "libs",
+    srcs = glob(
+        [
+            "usr/lib/**/*.a",
+            "usr/lib/**/*.so*",
+            "lib/**/*.a",
+            "lib/**/*.so*",
+        ],
+        exclude = ["**/*:*"],
+    ),
+)
+
+filegroup(
+    name = "toolchain_sysroot",
+    srcs = [":sysroot"],
+)
+""",
+    sha256 = "4ec43c43995dec87fbfb376c4168d6d51e88caaa5f6cf8cf37359c2de1e8b0ca",
+    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.27/sysroot-glibc2.31-libstdc++13-arm64.tar.xz",
+)
+
+# Configure LLVM toolchain
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
+llvm.toolchain(
+    name = "llvm_toolchain",
+    llvm_version = "18.1.8",
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_amd64//:sysroot",
+    targets = ["linux-x86_64"],
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_arm64//:sysroot",
+    targets = ["linux-aarch64"],
+)
+use_repo(llvm, "llvm_toolchain")
+
+register_toolchains("@llvm_toolchain//:all")
