@@ -67,3 +67,81 @@ def sysroot_genrule(
         ],
         visibility = ["//visibility:public"],
     )
+
+def sysroots(matrix):
+    """Create multiple sysroot genrules from a matrix configuration.
+    
+    This macro generates individual sysroot_genrule targets based on a matrix
+    of configurations, similar to GitHub Actions matrix builds.
+    
+    Args:
+        matrix: A list of dictionaries, where each dictionary contains:
+            - arch: Architecture (amd64 or arm64)
+            - glibc_version: glibc version (e.g., "2.31" or "2.28")
+            - debian_version: Debian version (e.g., "bullseye" or "buster")
+            - variant: Sysroot variant ("base" or "libstdcxx")
+            - ppa_toolchain: (optional) Ubuntu PPA toolchain version
+            - stdcc_version: (optional) libstdc++ version (default: "13")
+    
+    Example:
+        sysroots([
+            {
+                "arch": "amd64",
+                "glibc_version": "2.31",
+                "debian_version": "bullseye",
+                "variant": "base",
+            },
+            {
+                "arch": "amd64",
+                "glibc_version": "2.31",
+                "debian_version": "bullseye",
+                "variant": "libstdcxx",
+                "ppa_toolchain": "focal",
+                "stdcc_version": "13",
+            },
+        ])
+    """
+    
+    # Collect all target names for the convenience filegroup
+    target_names = []
+    
+    for config in matrix:
+        arch = config["arch"]
+        glibc_version = config["glibc_version"]
+        debian_version = config["debian_version"]
+        variant = config.get("variant", "base")
+        ppa_toolchain = config.get("ppa_toolchain")
+        stdcc_version = config.get("stdcc_version", "13")
+        
+        # Generate target name
+        if variant == "libstdcxx":
+            name = "sysroot_glibc{}_libstdcxx_{}".format(
+                glibc_version.replace(".", ""),
+                arch,
+            )
+        else:
+            name = "sysroot_glibc{}_{}".format(
+                glibc_version.replace(".", ""),
+                arch,
+            )
+        
+        # Create the genrule
+        sysroot_genrule(
+            name = name,
+            arch = arch,
+            glibc_version = glibc_version,
+            debian_version = debian_version,
+            variant = variant,
+            ppa_toolchain = ppa_toolchain,
+            stdcc_version = stdcc_version,
+        )
+        
+        target_names.append(":" + name)
+    
+    # Create convenience filegroup to build all sysroots at once
+    native.filegroup(
+        name = "sysroots",
+        srcs = target_names,
+        tags = ["manual"],
+        visibility = ["//visibility:public"],
+    )
