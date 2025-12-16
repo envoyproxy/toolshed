@@ -23,5 +23,8 @@ sh_test(
         "parse_clang_tidy.jq",
         "parse_clang_tidy.sh",
         "@jq_toolchains//:resolved_toolchain",
-    ] + glob(["tests/*.txt", "tests/*.json"]),
+    ] + glob([
+        "tests/*.txt",
+        "tests/*.json",
+    ]),
 )

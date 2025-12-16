@@ -8,8 +8,8 @@ pkg_files(
         "**/*.svg",
         "**/*.png",
     ]),
-    strip_prefix = "",
     prefix = "theme/static/images",
+    strip_prefix = "",
     visibility = ["//visibility:public"],
 )
 

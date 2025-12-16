@@ -20,7 +20,7 @@ def static_website(
             "pages",
             "theme/.webassets-cache",
             "theme/css/_sass",
-            "theme/css/main.scss"
+            "theme/css/main.scss",
         ],
         generator = "@envoy_toolshed//website/tools/pelican",
         extension = "tar.gz",
@@ -33,8 +33,7 @@ def static_website(
         output_path = "output",
         srcs = None,
         url = "",
-        visibility = ["//visibility:public"],
-):
+        visibility = ["//visibility:public"]):
     name_html = "%s_html" % name
     name_sources = "%s_sources" % name
     name_website = "%s_website" % name
@@ -138,9 +137,7 @@ def website_theme(
         js = None,
         templates = "@envoy_toolshed//website/theme/templates",
         templates_extra = None,
-        visibility = ["//visibility:public"],
-):
-
+        visibility = ["//visibility:public"]):
     name_home = "home_%s" % name
     sources = [
         css,

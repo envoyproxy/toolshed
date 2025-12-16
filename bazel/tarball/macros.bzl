@@ -4,9 +4,7 @@ def unpacker(
         name,
         script = "@envoy_toolshed//tarball:unpack.sh",
         zstd = None,
-        visibility = ["//visibility:public"],
-):
-
+        visibility = ["//visibility:public"]):
     native.genrule(
         name = "placeholder",
         outs = ["PLACEHOLDER.TXT"],
@@ -60,5 +58,6 @@ def unpacker(
         data = data,
         env = env | select({
             ":overwrite_enabled": {"OVERWRITE": "1"},
-            "//conditions:default": {}}),
+            "//conditions:default": {},
+        }),
     )

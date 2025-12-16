@@ -4,7 +4,7 @@ def _string_flag_file_impl(ctx):
     flavor_value = ctx.attr.flag[BuildSettingInfo].value
     output_file = ctx.actions.declare_file(ctx.outputs.output.basename)
     ctx.actions.write(output_file, flavor_value)
-    return [DefaultInfo(files=depset([output_file]))]
+    return [DefaultInfo(files = depset([output_file]))]
 
 string_flag_file = rule(
     implementation = _string_flag_file_impl,
@@ -13,7 +13,7 @@ string_flag_file = rule(
     },
     outputs = {
         "output": "%{name}_output.txt",
-    }
+    },
 )
 
 def string_flag_output(name, flag, default = ""):
@@ -32,9 +32,7 @@ def string_flag_output(name, flag, default = ""):
     genrule(
         name = "dinner",
         outs = ["dinner.txt"],
-        cmd = """
-        echo "Soup: $$(cat $(location :soup))" > $@
-        """,
+        cmd = "echo \"Soup: $$(cat $(location :soup))\" > $@",
         srcs = [":soup"],
     )
 

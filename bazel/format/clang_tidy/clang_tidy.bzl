@@ -2,7 +2,19 @@ load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 
 TARGET_EXTENSIONS = [
-    "c", "cc", "cpp", "cxx", "c++", "C", "h", "hh", "hpp", "hxx", "inc", "inl", "H",
+    "c",
+    "cc",
+    "cpp",
+    "cxx",
+    "c++",
+    "C",
+    "h",
+    "hh",
+    "hpp",
+    "hxx",
+    "inc",
+    "inl",
+    "H",
 ]
 
 def _run_tidy(
@@ -29,7 +41,7 @@ def _run_tidy(
 
     # specify the output file - twice
     outfile = ctx.actions.declare_file(
-        "bazel_clang_tidy_%s.%s.clang-tidy.yaml" % (infile.path, discriminator)
+        "bazel_clang_tidy_%s.%s.clang-tidy.yaml" % (infile.path, discriminator),
     )
 
     args.add(exe.files_to_run.executable if exe.files else "clang-tidy")
@@ -37,16 +49,20 @@ def _run_tidy(
     args.add(config.path)
     args.add("--export-fixes", outfile.path)
     args.add("--quiet")
+
     # add source to check
     args.add(infile.path)
 
     # start args passed to the compiler
     args.add("--")
+
     # add args specified by the toolchain, on the command line and rule copts
     args.add_all(flags)
+
     # add defines
     args.add_all(compilation_context.defines, before_each = "-D")
     args.add_all(compilation_context.local_defines, before_each = "-D")
+
     # add includes
     args.add_all(compilation_context.framework_includes, before_each = "-F")
     args.add_all(compilation_context.includes, before_each = "-I")
@@ -131,7 +147,7 @@ def _clang_tidy_aspect_impl(target, ctx):
     ]
 
     return [
-        OutputGroupInfo(report = depset(direct = outputs))
+        OutputGroupInfo(report = depset(direct = outputs)),
     ]
 
 clang_tidy_aspect = aspect(

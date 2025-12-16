@@ -1,10 +1,8 @@
-
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": "18.1.8",
     "ninja": "1.12.0",
     "python": "3.12",
-
     "bins_release": "0.1.27",
     "msan_libs_sha256": "ee33e4209ddb9c788830816a49725d7a362fbc65ab12767e76b75f167c890f8d",
     "tsan_libs_sha256": "35fb93acc6e520db4fd98a538910941e85dae4f2a8f17b6d5c917c8ec26c09de",
@@ -40,7 +38,6 @@ VERSIONS = {
             },
         },
     },
-
     "aspect_bazel_lib": {
         "type": "github_archive",
         "repo": "aspect-build/bazel-lib",
@@ -49,7 +46,6 @@ VERSIONS = {
         "strip_prefix": "bazel-lib-{version}",
         "url": "https://github.com/{repo}/archive/v{version}.tar.gz",
     },
-
     "bazel_skylib": {
         "type": "github_archive",
         "repo": "bazelbuild/bazel-skylib",
@@ -57,7 +53,6 @@ VERSIONS = {
         "sha256": "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
         "url": "https://github.com/{repo}/releases/download/{version}/bazel-skylib-{version}.tar.gz",
     },
-
     "llvm_source": {
         "type": "github_archive",
         "repo": "llvm/llvm-project",
@@ -67,7 +62,6 @@ VERSIONS = {
         "strip_prefix": "llvm-project-{version}",
         "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
     },
-
     "org_chromium_sysroot_linux_x64": {
         "type": "github_archive",
         "sha256": "5df5be9357b425cdd70d92d4697d07e7d55d7a923f037c22dc80a78e85842d2c",
@@ -79,7 +73,6 @@ VERSIONS = {
     visibility = ["//visibility:public"],
 )""",
     },
-
     "rules_python": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_python",
@@ -88,7 +81,6 @@ VERSIONS = {
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
         "strip_prefix": "{name}-{version}",
     },
-
     "rules_foreign_cc": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_foreign_cc",
@@ -97,7 +89,6 @@ VERSIONS = {
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
         "strip_prefix": "{name}-{version}",
     },
-
     "rules_perl": {
         "type": "github_archive",
         "repo": "bazel-contrib/rules_perl",
@@ -106,7 +97,6 @@ VERSIONS = {
         "url": "https://github.com/{repo}/archive/refs/tags/{version}.tar.gz",
         "strip_prefix": "{name}-{version}",
     },
-
     "rules_pkg": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_pkg",
@@ -114,7 +104,6 @@ VERSIONS = {
         "sha256": "d20c951960ed77cb7b341c2a59488534e494d5ad1d30c4818c736d57772a9fef",
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
     },
-
     "rules_license": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_license",
@@ -123,7 +112,6 @@ VERSIONS = {
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
         "strip_prefix": "{name}-{version}",
     },
-
     "rules_shell": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_shell",
@@ -132,7 +120,6 @@ VERSIONS = {
         "url": "https://github.com/{repo}/releases/download/v{version}/{name}-v{version}.tar.gz",
         "strip_prefix": "{name}-{version}",
     },
-
     "toolchains_llvm": {
         "type": "github_archive",
         "repo": "bazel-contrib/toolchains_llvm",
