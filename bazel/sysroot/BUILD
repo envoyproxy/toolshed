@@ -1,4 +1,17 @@
-"""BUILD file for sysroot package."""
+"""BUILD file for sysroot package.
+
+This package provides Bazel targets for building Debian sysroots for cross-compilation.
+
+IMPORTANT: These are non-hermetic builds that:
+  - Require sudo access
+  - Use debootstrap and chroot
+  - Download packages from Debian mirrors
+  - Are marked as 'manual' so they don't build by default
+  - Are marked as 'no-cache' and 'no-remote' to prevent caching
+
+These targets are intended for specific purposes and take a while to build,
+so they must be explicitly requested.
+"""
 
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
