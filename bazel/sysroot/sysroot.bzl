@@ -1,4 +1,4 @@
-"""Repository rules for sysroots."""
+"""Repository rules and build rules for sysroots."""
 
 load("//:versions.bzl", "VERSIONS")
 
@@ -203,3 +203,91 @@ def setup_sysroots(
         glibc_version = glibc_version,
         stdcc_version = stdcc_version,
     )
+
+# Build rule for generating sysroots
+
+def _sysroot_build_impl(ctx):
+    """Implementation for sysroot build rule."""
+    output = ctx.outputs.output
+    
+    # Prepare arguments for the build script
+    args = ctx.actions.args()
+    args.add("--arch", ctx.attr.arch)
+    args.add("--glibc-version", ctx.attr.glibc_version)
+    args.add("--debian-version", ctx.attr.debian_version)
+    args.add("--variant", ctx.attr.variant)
+    args.add("--output", output.path)
+    
+    if ctx.attr.variant == "libstdcxx":
+        if not ctx.attr.ppa_toolchain or not ctx.attr.stdcc_version:
+            fail("libstdcxx variant requires ppa_toolchain and stdcc_version")
+        args.add("--ppa-toolchain", ctx.attr.ppa_toolchain)
+        args.add("--stdcc-version", ctx.attr.stdcc_version)
+    
+    # Run the build script
+    ctx.actions.run_shell(
+        outputs = [output],
+        inputs = [ctx.file._build_script],
+        command = "{script} {args}".format(
+            script = ctx.file._build_script.path,
+            args = " ".join([
+                "--arch", ctx.attr.arch,
+                "--glibc-version", ctx.attr.glibc_version,
+                "--debian-version", ctx.attr.debian_version,
+                "--variant", ctx.attr.variant,
+                "--output", output.path,
+            ] + (
+                ["--ppa-toolchain", ctx.attr.ppa_toolchain, "--stdcc-version", ctx.attr.stdcc_version]
+                if ctx.attr.variant == "libstdcxx" and ctx.attr.ppa_toolchain and ctx.attr.stdcc_version
+                else []
+            )),
+        ),
+        mnemonic = "BuildSysroot",
+        progress_message = "Building sysroot for {} ({})".format(ctx.attr.arch, ctx.attr.variant),
+        use_default_shell_env = True,
+        execution_requirements = {
+            "requires-network": "1",
+            "no-sandbox": "1",  # debootstrap requires filesystem access
+            "no-cache": "1",    # sysroot builds should not be cached
+        },
+    )
+    
+    return [DefaultInfo(files = depset([output]))]
+
+sysroot_build = rule(
+    implementation = _sysroot_build_impl,
+    attrs = {
+        "arch": attr.string(
+            mandatory = True,
+            doc = "Architecture to build for (amd64 or arm64)",
+        ),
+        "glibc_version": attr.string(
+            mandatory = True,
+            doc = "glibc version (e.g., '2.31' or '2.28')",
+        ),
+        "debian_version": attr.string(
+            mandatory = True,
+            doc = "Debian version to base on (e.g., 'bullseye' or 'buster')",
+        ),
+        "variant": attr.string(
+            mandatory = True,
+            values = ["base", "libstdcxx"],
+            doc = "Variant to build (base or libstdcxx)",
+        ),
+        "ppa_toolchain": attr.string(
+            doc = "PPA toolchain version for libstdc++ (e.g., 'focal' or 'bionic'). Required for libstdcxx variant",
+        ),
+        "stdcc_version": attr.string(
+            doc = "libstdc++ version (e.g., '13'). Required for libstdcxx variant",
+        ),
+        "_build_script": attr.label(
+            default = Label("//sysroot:build_sysroot.sh"),
+            allow_single_file = True,
+            doc = "Build script for creating sysroots",
+        ),
+    },
+    outputs = {
+        "output": "%{name}.tar.xz",
+    },
+    doc = "Builds a sysroot using debootstrap. Requires debootstrap to be installed and may require elevated permissions.",
+)

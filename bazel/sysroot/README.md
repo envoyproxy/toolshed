@@ -39,7 +39,9 @@ This ensures that even older glibc sysroots can compile code using modern kernel
 
 ## Usage in Bazel
 
-To use these sysroots in your Bazel WORKSPACE:
+### Using Pre-built Sysroots (WORKSPACE)
+
+To use pre-built sysroots from releases in your Bazel WORKSPACE:
 
 ```starlark
 load("@toolshed//bazel/sysroot:sysroot.bzl", "setup_sysroots")
@@ -73,6 +75,53 @@ setup_sysroots(
 # This creates @new_sysroot_linux_amd64, @new_sysroot_linux_arm64,
 # @old_sysroot_linux_amd64, and @old_sysroot_linux_arm64
 ```
+
+### Building Sysroots Locally (BUILD)
+
+To build sysroots locally using the `sysroot_build` rule in your BUILD file:
+
+```starlark
+load("@toolshed//bazel/sysroot:sysroot.bzl", "sysroot_build")
+
+# Build a base sysroot with glibc 2.31
+sysroot_build(
+    name = "my_sysroot_base",
+    arch = "amd64",
+    glibc_version = "2.31",
+    debian_version = "bullseye",
+    variant = "base",
+)
+
+# Build a sysroot with libstdc++13
+sysroot_build(
+    name = "my_sysroot_libstdcxx",
+    arch = "amd64",
+    glibc_version = "2.31",
+    debian_version = "bullseye",
+    variant = "libstdcxx",
+    ppa_toolchain = "focal",
+    stdcc_version = "13",
+)
+
+# Build an older sysroot for compatibility
+sysroot_build(
+    name = "my_sysroot_compat",
+    arch = "amd64",
+    glibc_version = "2.28",
+    debian_version = "buster",
+    variant = "libstdcxx",
+    ppa_toolchain = "bionic",
+    stdcc_version = "13",
+)
+```
+
+**Requirements for local builds:**
+- `debootstrap` must be installed (`sudo apt-get install debootstrap`)
+- May require elevated permissions (sudo)
+- Network access for downloading Debian packages
+- The build is not sandboxed due to debootstrap requirements
+
+The output will be a `.tar.xz` file containing the sysroot.
 
 ### Configuration Validation
 
