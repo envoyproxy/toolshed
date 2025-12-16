@@ -14,7 +14,7 @@ This repository contains multi-language tooling and libraries for Envoy proxy's 
 
 This repository uses **two build systems**:
 
-### 1. Pants (Primary for Python Development)
+### Pants (Primary for Python Development)
 
 Pants is used for Python package development, testing, and linting.
 
@@ -22,31 +22,25 @@ Pants is used for Python package development, testing, and linting.
 
 ```bash
 # Run all tests
-./pants test ::
+pants test ::
 
 # Run tests for a specific package
-./pants test envoy.dependency.check::
+pants test envoy.dependency.check::
 
 # Run tests with coverage
-./pants test --open-coverage ::
+pants test --open-coverage ::
 
 # Lint the code
-./pants lint ::
+pants lint ::
 
 # Debug tests
-./pants test --debug envoy.dependency.check::
+pants test --debug envoy.dependency.check::
 ```
 
 #### Environment Variables for Pants
 
-When working in the Copilot workspace or other environments with SSL-intercepting proxies (e.g., corporate proxies with custom certificates):
-
 ```bash
-# Set the CA certificates path for Pants
-export PANTS_CA_CERTS_PATH=/etc/ssl/certs/ca-certificates.crt
-
-# Then run pants commands
-./pants test ::
+pants test ::
 ```
 
 **Why this is needed:** Pants (Rust binary) uses compiled-in CA certificates and ignores the system trust store by default. When a proxy intercepts HTTPS with its own CA (e.g., mkcert), Pants fails with `invalid peer certificate: UnknownIssuer`.
@@ -57,13 +51,16 @@ Pants requires access to these domains:
 - `github.com` / `objects.githubusercontent.com` - Pants releases, PEX tool, Python interpreters
 - `pypi.org` / `files.pythonhosted.org` - Python packages
 
-### 2. Bazel (For Build Configurations and Integration)
+### Bazel (For Build Configurations and Integration)
 
 Bazel is used primarily for build configurations and testing integration with Envoy.
 
-#### Running Bazel Commands
+#### Running Bazel commands in Copilot's local environment
 
+**IMPORTANT:** You MUST run `/tmp/fix-bazel-truststore.sh` before the first time you issue a bazel command!!!
 **IMPORTANT:** Always run Bazel commands from the `/bazel` directory or use the full path:
+
+#### Running Bazel Commands
 
 ```bash
 # Build all targets
@@ -136,14 +133,14 @@ When testing toolshed code in an Envoy environment without publishing to PyPI:
 
 ```bash
 # Pants: Test everything
-./pants test ::
+pants test ::
 
 # Pants: Lint everything
-./pants lint ::
+pants lint ::
 
 # Pants: Run with SSL proxy support
 export PANTS_CA_CERTS_PATH=/etc/ssl/certs/ca-certificates.crt
-./pants test ::
+pants test ::
 
 # Bazel: Build everything (from bazel directory)
 cd bazel && bazel build //...
