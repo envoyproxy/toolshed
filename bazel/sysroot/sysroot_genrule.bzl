@@ -54,11 +54,13 @@ def sysroot_genrule(
         cmd = """
             set -e
             SCRIPT=$(location :build_sysroot.sh)
+            SCRIPT_DIR=$$(dirname $$SCRIPT)
             OUTPUT_DIR=$$(mktemp -d)
-            cd $$(dirname $$SCRIPT)
+            cd $$SCRIPT_DIR
             chmod +x build_sysroot.sh
             ./build_sysroot.sh {} --output $$OUTPUT_DIR/sysroot-build
-            mv {} $@
+            # Move the generated tar file to Bazel's expected output location
+            mv $$SCRIPT_DIR/{} $@
         """.format(build_args, output_file),
         tags = [
             "manual",
