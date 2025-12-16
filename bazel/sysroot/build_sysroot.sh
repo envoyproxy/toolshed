@@ -148,15 +148,36 @@ if [[ -d "$OUTPUT_DIR" ]]; then
     sudo rm -rf "$OUTPUT_DIR"
 fi
 
+# Detect if we're cross-compiling
+HOST_ARCH=$(dpkg --print-architecture)
+CROSS_COMPILE="false"
+if [[ "$HOST_ARCH" != "$ARCH" ]]; then
+    CROSS_COMPILE="true"
+    echo "Detected cross-compilation: building $ARCH on $HOST_ARCH"
+fi
+
 # Step 1: Create base sysroot with debootstrap
 echo ""
 echo "Step 1: Creating base sysroot with debootstrap..."
-sudo debootstrap \
-    --arch="$ARCH" \
-    --variant=minbase \
-    "$DEBIAN_VERSION" \
-    "$OUTPUT_DIR" \
-    "$DEBIAN_MIRROR"
+if [[ "$CROSS_COMPILE" == "true" ]]; then
+    # For cross-compilation, use --foreign to skip the second stage that requires chroot
+    echo "Using --foreign for cross-compilation (will skip chroot operations)"
+    sudo debootstrap \
+        --arch="$ARCH" \
+        --variant=minbase \
+        --foreign \
+        "$DEBIAN_VERSION" \
+        "$OUTPUT_DIR" \
+        "$DEBIAN_MIRROR"
+else
+    # Native compilation can use full debootstrap
+    sudo debootstrap \
+        --arch="$ARCH" \
+        --variant=minbase \
+        "$DEBIAN_VERSION" \
+        "$OUTPUT_DIR" \
+        "$DEBIAN_MIRROR"
+fi
 
 # Step 2: Configure package sources
 echo ""
@@ -166,29 +187,41 @@ echo "deb [check-valid-until=no] http://archive.debian.org/debian $DEBIAN_VERSIO
 
 # Step 3: Update and install base packages
 echo ""
-echo "Step 3: Installing base packages..."
-sudo chroot "$OUTPUT_DIR" apt-get -qq update
-sudo chroot "$OUTPUT_DIR" apt-get -qq install --no-install-recommends -y \
-    libc6 libc6-dev "$LIBGCC_PACKAGE" libxml2-dev
-sudo chroot "$OUTPUT_DIR" apt-get -qq install --no-install-recommends -y \
-    -t "$DEBIAN_VERSION-backports" linux-libc-dev
+if [[ "$CROSS_COMPILE" == "true" ]]; then
+    echo "Step 3: Skipping package installation (cross-compile mode)"
+    echo "Note: For cross-compilation, debootstrap --foreign creates a minimal sysroot"
+    echo "      with the essential packages already extracted but not configured."
+else
+    echo "Step 3: Installing base packages..."
+    sudo chroot "$OUTPUT_DIR" apt-get -qq update
+    sudo chroot "$OUTPUT_DIR" apt-get -qq install --no-install-recommends -y \
+        libc6 libc6-dev "$LIBGCC_PACKAGE" libxml2-dev
+    sudo chroot "$OUTPUT_DIR" apt-get -qq install --no-install-recommends -y \
+        -t "$DEBIAN_VERSION-backports" linux-libc-dev
+fi
 
 # Step 4: Install libstdc++ if requested
 if [[ "$VARIANT" == "libstdcxx" ]]; then
     echo ""
-    echo "Step 4: Installing libstdc++..."
-    echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
-        | sudo tee "$OUTPUT_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-    sudo apt-key --keyring "$OUTPUT_DIR/etc/apt/trusted.gpg" adv \
-        --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
-    sudo chroot "$OUTPUT_DIR" apt-get -qq update
-    sudo chroot "$OUTPUT_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
+    if [[ "$CROSS_COMPILE" == "true" ]]; then
+        echo "Step 4: Skipping libstdc++ installation (cross-compile mode)"
+    else
+        echo "Step 4: Installing libstdc++..."
+        echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
+            | sudo tee "$OUTPUT_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
+        sudo apt-key --keyring "$OUTPUT_DIR/etc/apt/trusted.gpg" adv \
+            --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
+        sudo chroot "$OUTPUT_DIR" apt-get -qq update
+        sudo chroot "$OUTPUT_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
+    fi
 fi
 
 # Step 5: Cleanup sysroot
 echo ""
 echo "Step 5: Cleaning up sysroot..."
-sudo chroot "$OUTPUT_DIR" apt-get clean
+if [[ "$CROSS_COMPILE" == "false" ]]; then
+    sudo chroot "$OUTPUT_DIR" apt-get clean
+fi
 
 if [[ "$SKIP_CLEANUP" == "true" ]]; then
     echo "Skipping cleanup (--skip-cleanup specified)"
