@@ -39,6 +39,7 @@ jobs:
       && github.event_name != 'release'
       && fromJSON(needs.should.outputs.run || 'false')
     strategy:
+      fail-fast: false
       matrix:
         mode: [workspace, bzlmod]
     name: test (${{ matrix.mode }})
