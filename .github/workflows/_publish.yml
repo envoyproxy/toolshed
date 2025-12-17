@@ -44,12 +44,30 @@ jobs:
         filter: |
           .repo as $repo
           | .sha as $sha
-          | ("gh api --jq '[.[] | {number, created_at}] | sort_by(.created_at) | last | .number' "
+          | ("gh api --jq '[.[] | {number, created_at, title}] | sort_by(.created_at) | last' "
              + "\"/repos/\($repo)/commits/\($sha)/pulls\"") as $cmd
           | "OUTPUT=$(\($cmd))"
           | bash::output
         result-filter: |
-          if . != "" then . else "null" end
+          if . != "" and . != "null" then . else "{}" end
+    - name: Get commit info
+      id: commit-info
+      uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.35
+      env:
+        GH_TOKEN: ${{ github.token }}
+      with:
+        catch-errors: true
+        input: |
+          repo: ${{ github.repository }}
+          sha: ${{ inputs.sha }}
+        input-format: yaml
+        filter: |
+          .repo as $repo
+          | .sha as $sha
+          | "OUTPUT=$(gh api --jq '{message: .commit.message}' \"/repos/\($repo)/commits/\($sha)\")"
+          | bash::output
+        result-filter: |
+          if . != "" and . != "null" then . else "{}" end
     - name: Download Artifacts (Bazel CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
@@ -62,15 +80,45 @@ jobs:
       with:
         run-id: ${{ fromJSON(fromJSON(steps.afterall.outputs.status)['run-ids'])['Rust CI'] }}
         path: ./artifacts/rust
-    - name: List downloaded artifacts
-      id: list-artifacts
+    - name: List downloaded files
+      id: list-files
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       run: |
         {
           echo 'files<<EOF'
-          find ./artifacts -type f -exec ls -lh {} + | awk '{for(i=9;i<=NF;i++) printf "%s%s", $i, (i==NF?"":" "); print " (" $5 ")"}'
+          find ./artifacts -type f | while read -r file; do
+            source=$(echo "$file" | sed 's|./artifacts/||' | cut -d'/' -f1)
+            filename=$(basename "$file")
+            size=$(ls -lh "$file" | awk '{print $5}')
+            echo "{\"source\":\"$source\",\"file\":\"$filename\",\"size\":\"$size\"}"
+          done | jq -s '.'
           echo 'EOF'
         } >> $GITHUB_OUTPUT
+    - name: Generate workflow status table
+      id: status-table
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: |
+          afterall: ${{ steps.afterall.outputs.status }}
+          workflows: ${{ inputs.workflows }}
+          repository: ${{ github.repository }}
+        input-format: yaml
+        options: -r
+        filter: |
+          .afterall as $afterall
+          | ($afterall.status | fromjson) as $status
+          | ($afterall["run-ids"] | fromjson) as $runIds
+          | (.workflows | split("\n") | map(select(length > 0))) as $expectedWorkflows
+          | .repository as $repo
+          | $expectedWorkflows | map(
+              . as $wf
+              | if $status[$wf] then
+                  $status[$wf] as $st
+                  | [$wf, $st.status, $st.conclusion, "[#\($st.id)](https://github.com/\($repo)/actions/runs/\($st.id))"]
+                else
+                  [$wf, "-", "-", "-"]
+                end
+            )
     - name: Workflow Status Summary
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
@@ -78,10 +126,11 @@ jobs:
           sha: ${{ inputs.sha }}
           conclusion: ${{ inputs.conclusion }}
           continue: ${{ steps.afterall.outputs.continue }}
-          afterall: ${{ steps.afterall.outputs.status }}
           repository: ${{ github.repository }}
           pr: ${{ steps.find-pr.outputs.output }}
-          files: ${{ steps.list-artifacts.outputs.files }}
+          commit_info: ${{ steps.commit-info.outputs.output }}
+          status_table: ${{ steps.status-table.outputs.value }}
+          files: ${{ steps.list-files.outputs.files }}
         input-format: yaml
         options: -r
         output-path: GITHUB_STEP_SUMMARY
@@ -89,31 +138,46 @@ jobs:
           .sha as $sha
           | .conclusion as $conclusion
           | .continue as $continue
-          | .afterall as $afterall
-          | ($afterall.status | fromjson) as $status
-          | ($afterall["run-ids"] | fromjson) as $runIds
           | .repository as $repo
-          | .pr as $pr
+          | .pr as $prInfo
+          | .commit_info as $commitInfo
+          | .status_table as $statusTable
           | .files as $files
-          | (if $pr != "null" then
-               " ([PR #\($pr)](https://github.com/\($repo)/pull/\($pr)))"
-             else "" end) as $prLink
-          | ($status | to_entries | map(
-               "- **\(.key):** Status: `\(.value.status)`, "
-               + "Conclusion: `\(.value.conclusion)`, Run ID: `\(.value.id)`"
-             ) | join("\n")) as $statusList
-          | ($runIds | to_entries | map(
-               "- **\(.key):** [\(.value)](https://github.com/\($repo)/actions/runs/\(.value))"
-             ) | join("\n")) as $runIdList
+          | (if $prInfo != "{}" and $prInfo != "" then
+               $prInfo | if type == "object" then . else fromjson end
+             else {} end) as $pr
+          | (if $commitInfo != "{}" and $commitInfo != "" then
+               $commitInfo | if type == "object" then . else fromjson end
+             else {} end) as $commit
+          | (if $pr.number then
+               $pr.title // "PR #\($pr.number)"
+             elif $commit.message then
+               $commit.message | split("\n")[0]
+             else
+               $sha[0:7]
+             end) as $title
+          | (if $pr.number then
+               " ([PR #\($pr.number)](https://github.com/\($repo)/pull/\($pr.number)))"
+             else ""
+             end) as $prLink
+          | ({data: $statusTable, headers: ["Workflow", "Status", "Conclusion", "Run"]}
+             | gfm::table(.; null; .cell; null)) as $statusTableMd
           | (if ($files | length) > 0 then
-               "\n\n### Downloaded Artifacts\n\n```\n\($files)\n```"
-             else "" end) as $filesList
+               $files | map([.source, .file, .size])
+               | {data: ., headers: ["Source", "File", "Size"]}
+               | gfm::table(.; null; .cell; null)
+             else ""
+             end) as $filesTableMd
           | "## Publish Workflow Triggered\n\n"
-            + "**Commit SHA:** [\($sha)](https://github.com/\($repo)/commit/\($sha))\($prLink)\n"
-            + "**Conclusion:** \($conclusion)\n"
+            + "**\($title)**\n\n"
+            + "**Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha))\($prLink)  \n"
+            + "**Conclusion:** \($conclusion)  \n"
             + "**Continue:** \($continue)\n\n"
-            + "### Required Workflows Status\n\n\($statusList)\n\n"
-            + "### Workflow Run IDs\n\n\($runIdList)\($filesList)"
+            + "### Required Workflows Status\n\n\($statusTableMd)\n\n"
+            + (if ($filesTableMd | length) > 0 then
+                "### Downloaded Files\n\n\($filesTableMd)\n"
+               else ""
+               end)
 
     - name: Publish / Release
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
