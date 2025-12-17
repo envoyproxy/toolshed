@@ -35,28 +35,33 @@ const run = async (): Promise<void> => {
     console.log(`Dispatched ${repository}/${workflow}`)
 
     // Add output to GitHub step summary
-    core.summary
-      .addHeading('Workflow Dispatched', 2)
-      .addRaw('\n')
-      .addTable([
-        [
-          {data: 'Property', header: true},
-          {data: 'Value', header: true},
-        ],
-        ['Repository', repository],
-        ['Workflow', workflow],
-        ['Ref', ref],
-      ])
+    try {
+      let summary = core.summary
+        .addHeading('Workflow Dispatched', 2)
+        .addRaw('\n')
+        .addTable([
+          [
+            {data: 'Property', header: true},
+            {data: 'Value', header: true},
+          ],
+          ['Repository', repository],
+          ['Workflow', workflow],
+          ['Ref', ref],
+        ])
 
-    if (Object.keys(inputs).length > 0) {
-      core.summary
-        .addRaw('\n')
-        .addHeading('Inputs', 3)
-        .addRaw('\n')
-        .addCodeBlock(JSON.stringify(inputs, null, 2), 'json')
+      if (Object.keys(inputs).length > 0) {
+        summary = summary
+          .addRaw('\n')
+          .addHeading('Inputs', 3)
+          .addRaw('\n')
+          .addCodeBlock(JSON.stringify(inputs, null, 2), 'json')
+      }
+
+      await summary.write()
+    } catch (summaryError) {
+      // Log but don't fail if summary write fails
+      console.warn('Failed to write step summary:', summaryError)
     }
-
-    await core.summary.write()
   } catch (error) {
     if (error instanceof Error) {
       console.error(error.message)
