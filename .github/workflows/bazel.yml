@@ -1,4 +1,4 @@
-name: Bazel tests
+name: Bazel CI
 
 permissions:
   contents: read
@@ -39,7 +39,17 @@ jobs:
       && fromJSON(needs.should.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
     with:
-      mode: ${{ matrix.mode }}
+      action: test
+      bazel-args: >-
+        --config=ci
+        ${{ matrix.mode == 'bzlmod'
+            && '--enable_bzlmod'
+            || '' }}
+      bazel-mode: ${{ matrix.mode }}
+      bazel-path: bazel
+      targets: >-
+        //...
+        //sysroot:sysroots
     strategy:
       fail-fast: false
       matrix:
@@ -47,67 +57,38 @@ jobs:
         - workspace
         - bzlmod
 
-  build-sanitizers:
-    runs-on: ubuntu-22.04
-    if: >-
-      github.event_name == 'release'
-      && startsWith(github.event.release.name, 'bins-')
-    strategy:
-      matrix:
-        sanitizer: [msan, tsan]
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
-
-    - name: Setup Bazel
-      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
-
-    - name: Install libtinfo
-      run: |
-        sudo apt-get -qq update
-        sudo apt-get -qq install -y libtinfo5
-
-    - name: Build ${{ matrix.sanitizer }} libraries
-      run: |
-        cd bazel
-        bazel build --config=ci //compile:cxx_${{ matrix.sanitizer }}
-
-    - name: Upload ${{ matrix.sanitizer }} libraries
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
-      with:
-        name: ${{ matrix.sanitizer }}-llvm18.1.8-x86_64
-        path: bazel/bazel-bin/compile/${{ matrix.sanitizer }}-llvm18.1.8-x86_64.tar.xz
-        retention-days: 30
-
-  publish:
-    if: >-
-      always()
-      && (github.event_name == 'release'
-          && startsWith(github.event.release.name, 'bins-'))
-    runs-on: ubuntu-24.04
-    needs:
-    - build-sanitizers
+  build:
     permissions:
       contents: write
-    steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
-    - name: Download all workflow run artifacts
-      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
-      with:
-        path: artifacts
-    - name: Upload release assets
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        for artifact in artifacts/*; do
-            [[ ! -d "$artifact" ]] && continue
-            name=$(basename "$artifact")
-            file=$(ls "$artifact"/*.tar.xz)
-            echo "Uploading $file as $name.tar.xz"
-            gh release upload "${{ github.event.release.tag_name }}" \
-                "$file#$name.tar.xz" \
-                --clobber
-        done
+    needs: should
+    if: >-
+      always()
+      && github.event_name != 'release'
+      && fromJSON(needs.should.outputs.run || 'false')
+    uses: ./.github/workflows/_bazel.yml
+    with:
+      action: build
+      artifacts: |
+          compile/msan-llvm18.1.8-x86_64.tar.xz
+          compile/tsan-llvm18.1.8-x86_64.tar.xz
+          sysroot/sysroot-*.tar.xz
+      bazel-args: >-
+        --config=ci
+        ${{ matrix.mode == 'bzlmod'
+            && '--enable_bzlmod'
+            || '' }}
+      bazel-path: bazel
+      bazel-mode: ${{ matrix.mode }}
+      targets: >-
+        //...
+        //sysroot:sysroots
+      upload: ${{ matrix.mode == 'workspace' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+        - workspace
+        - bzlmod
 
   status:
     runs-on: ubuntu-24.04
@@ -118,6 +99,7 @@ jobs:
     needs:
     - should
     - test
+    - build
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then

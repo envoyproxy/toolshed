@@ -1,6 +1,6 @@
 # Sysroots
 
-This directory triggers the sysroot build workflow when modified.
+This directory contains both sysroot repository rules for downloading pre-built sysroots and build targets for creating new sysroots.
 
 ## Available Sysroots
 
@@ -83,6 +83,90 @@ The setup will automatically validate your configuration:
 
 All SHA256 hashes are centrally managed in `versions.bzl` for ease of maintenance.
 
+## Building Sysroots with Bazel
+
+You can build sysroots locally using Bazel. The builds are marked as `manual` so they won't be built by default.
+
+### Available Build Targets
+
+All sysroot build targets are in the `//bazel/sysroot` package:
+
+```bash
+# Build ALL sysroots at once (from the bazel/ directory):
+cd bazel
+bazel build //sysroot:sysroots
+
+# Or build specific sysroot variants:
+bazel build //sysroot:sysroot_glibc2.31_amd64
+bazel build //sysroot:sysroot_glibc2.31_arm64
+bazel build //sysroot:sysroot_glibc2.31_libstdcxx_amd64
+bazel build //sysroot:sysroot_glibc2.31_libstdcxx_arm64
+bazel build //sysroot:sysroot_glibc2.28_amd64
+bazel build //sysroot:sysroot_glibc2.28_arm64
+bazel build //sysroot:sysroot_glibc2.28_libstdcxx_amd64
+bazel build //sysroot:sysroot_glibc2.28_libstdcxx_arm64
+```
+
+The built sysroots will be in `bazel-bin/sysroot/` directory.
+
+### Direct Script Usage
+
+You can also use the build script directly for custom configurations:
+
+```bash
+# Basic usage
+cd bazel
+bazel run //sysroot:build_sysroot -- \
+  --arch amd64 \
+  --glibc 2.31 \
+  --debian bullseye \
+  --variant base \
+  --output /tmp/mysysroot
+
+# Keep specific directories (e.g., keep bin and sbin for debugging)
+bazel run //sysroot:build_sysroot -- \
+  --arch amd64 \
+  --glibc 2.31 \
+  --debian bullseye \
+  --keep-dirs bin,sbin
+
+# Remove additional directories beyond the defaults
+bazel run //sysroot:build_sysroot -- \
+  --arch amd64 \
+  --glibc 2.31 \
+  --debian bullseye \
+  --remove-dirs usr/games,usr/local
+
+# Skip cleanup entirely (keep everything)
+bazel run //sysroot:build_sysroot -- \
+  --arch amd64 \
+  --glibc 2.31 \
+  --debian bullseye \
+  --skip-cleanup
+```
+
+#### Cleanup Configuration
+
+By default, the build script removes directories that are typically not needed for cross-compilation:
+- System directories: `boot`, `dev`, `proc`, `sys`, `run`, etc.
+- Binaries: `bin`, `sbin`, `usr/sbin`, and standalone utilities
+- Documentation: `usr/share/doc`, `usr/share/man`, `usr/share/info`
+- Other: `var`, `tmp`, `home`, `opt`, etc.
+
+You can customize this behavior:
+- **`--keep-dirs`**: Comma-separated list of directories to preserve from the default cleanup
+- **`--remove-dirs`**: Comma-separated list of additional directories to remove
+- **`--skip-cleanup`**: Skip the cleanup phase entirely
+
+### Requirements
+
+Building sysroots requires:
+- `sudo` access (for debootstrap and chroot operations)
+- `debootstrap` package installed
+- Linux host (uses debootstrap and chroot)
+
+**Note:** These builds are non-hermetic and require network access to download Debian packages.
+
 ## Release Process
 
 Sysroots are automatically built and published when:
@@ -90,3 +174,25 @@ Sysroots are automatically built and published when:
 2. A release is created with name starting with `bins`
 
 The artifacts are uploaded to the release assets.
+
+### Building for Release
+
+To build all sysroot variants for a release, use the convenience target:
+
+```bash
+cd bazel
+# Build all sysroots at once
+bazel build //sysroot:sysroots
+```
+
+Or build specific glibc versions:
+
+```bash
+# Build all glibc 2.31 variants
+bazel build //sysroot:sysroot_glibc2.31_amd64 //sysroot:sysroot_glibc2.31_arm64 \
+            //sysroot:sysroot_glibc2.31_libstdcxx_amd64 //sysroot:sysroot_glibc2.31_libstdcxx_arm64
+
+# Build all glibc 2.28 variants
+bazel build //sysroot:sysroot_glibc2.28_amd64 //sysroot:sysroot_glibc2.28_arm64 \
+            //sysroot:sysroot_glibc2.28_libstdcxx_amd64 //sysroot:sysroot_glibc2.28_libstdcxx_arm64
+```
