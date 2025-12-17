@@ -50,44 +50,6 @@ jobs:
           | bash::output
         result-filter: |
           if . != "" then . else "null" end
-    - name: Workflow Status Summary
-      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
-      with:
-        input: |
-          sha: ${{ inputs.sha }}
-          conclusion: ${{ inputs.conclusion }}
-          continue: ${{ steps.afterall.outputs.continue }}
-          afterall: ${{ steps.afterall.outputs.status }}
-          repository: ${{ github.repository }}
-          pr: ${{ steps.find-pr.outputs.output }}
-        input-format: yaml
-        options: -r
-        output-path: GITHUB_STEP_SUMMARY
-        filter: |
-          .sha as $sha
-          | .conclusion as $conclusion
-          | .continue as $continue
-          | .afterall as $afterall
-          | ($afterall.status | fromjson) as $status
-          | ($afterall["run-ids"] | fromjson) as $runIds
-          | .repository as $repo
-          | .pr as $pr
-          | (if $pr != "null" then
-               " ([PR #\($pr)](https://github.com/\($repo)/pull/\($pr)))"
-             else "" end) as $prLink
-          | ($status | to_entries | map(
-               "- **\(.key):** Status: `\(.value.status)`, "
-               + "Conclusion: `\(.value.conclusion)`, Run ID: `\(.value.id)`"
-             ) | join("\n")) as $statusList
-          | ($runIds | to_entries | map(
-               "- **\(.key):** [\(.value)](https://github.com/\($repo)/actions/runs/\(.value))"
-             ) | join("\n")) as $runIdList
-          | "## Publish Workflow Triggered\n\n"
-            + "**Commit SHA:** [\($sha)](https://github.com/\($repo)/commit/\($sha))\($prLink)\n"
-            + "**Conclusion:** \($conclusion)\n"
-            + "**Continue:** \($continue)\n\n"
-            + "### Required Workflows Status\n\n\($statusList)\n\n"
-            + "### Workflow Run IDs\n\n\($runIdList)"
     - name: Download Artifacts (Bazel CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
@@ -100,6 +62,58 @@ jobs:
       with:
         run-id: ${{ fromJSON(fromJSON(steps.afterall.outputs.status)['run-ids'])['Rust CI'] }}
         path: ./artifacts/rust
+    - name: List downloaded artifacts
+      id: list-artifacts
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      run: |
+        {
+          echo 'files<<EOF'
+          find ./artifacts -type f -exec ls -lh {} \; | awk '{print $9, "(" $5 ")"}'
+          echo 'EOF'
+        } >> $GITHUB_OUTPUT
+    - name: Workflow Status Summary
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: |
+          sha: ${{ inputs.sha }}
+          conclusion: ${{ inputs.conclusion }}
+          continue: ${{ steps.afterall.outputs.continue }}
+          afterall: ${{ steps.afterall.outputs.status }}
+          repository: ${{ github.repository }}
+          pr: ${{ steps.find-pr.outputs.output }}
+          files: ${{ steps.list-artifacts.outputs.files }}
+        input-format: yaml
+        options: -r
+        output-path: GITHUB_STEP_SUMMARY
+        filter: |
+          .sha as $sha
+          | .conclusion as $conclusion
+          | .continue as $continue
+          | .afterall as $afterall
+          | ($afterall.status | fromjson) as $status
+          | ($afterall["run-ids"] | fromjson) as $runIds
+          | .repository as $repo
+          | .pr as $pr
+          | .files as $files
+          | (if $pr != "null" then
+               " ([PR #\($pr)](https://github.com/\($repo)/pull/\($pr)))"
+             else "" end) as $prLink
+          | ($status | to_entries | map(
+               "- **\(.key):** Status: `\(.value.status)`, "
+               + "Conclusion: `\(.value.conclusion)`, Run ID: `\(.value.id)`"
+             ) | join("\n")) as $statusList
+          | ($runIds | to_entries | map(
+               "- **\(.key):** [\(.value)](https://github.com/\($repo)/actions/runs/\(.value))"
+             ) | join("\n")) as $runIdList
+          | (if $files and $files != "" then
+               "\n\n### Downloaded Artifacts\n\n```\n\($files)\n```"
+             else "" end) as $filesList
+          | "## Publish Workflow Triggered\n\n"
+            + "**Commit SHA:** [\($sha)](https://github.com/\($repo)/commit/\($sha))\($prLink)\n"
+            + "**Conclusion:** \($conclusion)\n"
+            + "**Continue:** \($continue)\n\n"
+            + "### Required Workflows Status\n\n\($statusList)\n\n"
+            + "### Workflow Run IDs\n\n\($runIdList)\($filesList)"
 
     - name: Publish / Release
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
