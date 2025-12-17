@@ -1,0 +1,44 @@
+name: Test Publish Workflow
+
+permissions:
+  actions: read
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/_publish.yml
+    - .github/workflows/test-publish.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+
+jobs:
+  get-main-sha:
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.get-sha.outputs.sha }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Get latest SHA from main
+      id: get-sha
+      run: |
+        SHA=$(git rev-parse origin/main)
+        echo "sha=$SHA" >> $GITHUB_OUTPUT
+        echo "Latest SHA from main: $SHA"
+
+  test-publish:
+    needs: get-main-sha
+    permissions:
+      actions: read
+    uses: ./.github/workflows/_publish.yml
+    with:
+      conclusion: success
+      sha: ${{ needs.get-main-sha.outputs.sha }}
+      workflows: |
+        Bazel CI
+        Rust CI
