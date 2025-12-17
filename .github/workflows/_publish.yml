@@ -68,7 +68,7 @@ jobs:
       run: |
         {
           echo 'files<<EOF'
-          find ./artifacts -type f -exec ls -lh {} \; | awk '{print $9, "(" $5 ")"}'
+          find ./artifacts -type f -exec ls -lh {} + | awk '{for(i=9;i<=NF;i++) printf "%s%s", $i, (i==NF?"":" "); print " (" $5 ")"}'
           echo 'EOF'
         } >> $GITHUB_OUTPUT
     - name: Workflow Status Summary
@@ -105,7 +105,7 @@ jobs:
           | ($runIds | to_entries | map(
                "- **\(.key):** [\(.value)](https://github.com/\($repo)/actions/runs/\(.value))"
              ) | join("\n")) as $runIdList
-          | (if $files and $files != "" then
+          | (if ($files | length) > 0 then
                "\n\n### Downloaded Artifacts\n\n```\n\($files)\n```"
              else "" end) as $filesList
           | "## Publish Workflow Triggered\n\n"
