@@ -8,11 +8,9 @@ on:
     inputs:
       conclusion:
         default: ${{ github.event.workflow_run.conclusion }}
-        required: true
         type: string
       sha:
         default: ${{ github.event.workflow_run.head_sha }}
-        required: true
         type: string
       workflows:
         type: string
