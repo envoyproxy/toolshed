@@ -96,21 +96,22 @@ jobs:
         } >> $GITHUB_OUTPUT
     - name: Generate workflow status table
       id: status-table
-      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
       with:
-        input: |
-          afterall: ${{ steps.afterall.outputs.status }}
-          workflows: ${{ toJSON(inputs.workflows) }}
-          repository: ${{ github.repository }}
-        input-format: yaml
-        options: -r
+        headers: |
+          Workflow
+          Status
+          Conclusion
+          Run
+        json: |
+          ${{ steps.afterall.outputs.status }}
         filter: |
-          .afterall as $afterall
-          | ($afterall.status | fromjson) as $status
-          | ($afterall["run-ids"] | fromjson) as $runIds
-          | (.workflows | split("\n") | map(select(length > 0))) as $expectedWorkflows
-          | .repository as $repo
-          | $expectedWorkflows | map(
+          . as $data
+          | ($data.status | fromjson) as $status
+          | ($data["run-ids"] | fromjson) as $runIds
+          | "${{ toJSON(inputs.workflows) }}" | split("\n") | map(select(length > 0)) as $workflows
+          | "${{ github.repository }}" as $repo
+          | $workflows | map(
               . as $wf
               | if $status[$wf] then
                   $status[$wf] as $st
@@ -119,6 +120,18 @@ jobs:
                   [$wf, "-", "-", "-"]
                 end
             )
+    - name: Generate files table
+      id: files-table
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
+      with:
+        headers: |
+          Source
+          File
+          Size
+        json: ${{ steps.list-files.outputs.files }}
+        filter: |
+          map([.source, .file, .size])
     - name: Workflow Status Summary
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
@@ -129,8 +142,8 @@ jobs:
           repository: ${{ github.repository }}
           pr: ${{ steps.find-pr.outputs.output }}
           commit_info: ${{ steps.commit-info.outputs.output }}
-          status_table: ${{ steps.status-table.outputs.value }}
-          files: ${{ steps.list-files.outputs.files }}
+          status_table: ${{ steps.status-table.outputs.table }}
+          files_table: ${{ steps.files-table.outputs.table }}
         input-format: yaml
         options: -r
         output-path: GITHUB_STEP_SUMMARY
@@ -142,7 +155,7 @@ jobs:
           | .pr as $prInfo
           | .commit_info as $commitInfo
           | .status_table as $statusTable
-          | .files as $files
+          | .files_table as $filesTable
           | (if $prInfo != "{}" and $prInfo != "" then
                $prInfo | if type == "object" then . else fromjson end
              else {} end) as $pr
@@ -160,22 +173,14 @@ jobs:
                " ([PR #\($pr.number)](https://github.com/\($repo)/pull/\($pr.number)))"
              else ""
              end) as $prLink
-          | ({data: $statusTable, headers: ["Workflow", "Status", "Conclusion", "Run"]}
-             | gfm::table(.; null; .cell; null)) as $statusTableMd
-          | (if ($files | length) > 0 then
-               $files | map([.source, .file, .size])
-               | {data: ., headers: ["Source", "File", "Size"]}
-               | gfm::table(.; null; .cell; null)
-             else ""
-             end) as $filesTableMd
           | "## Publish Workflow Triggered\n\n"
             + "**\($title)**\n\n"
             + "**Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha))\($prLink)  \n"
             + "**Conclusion:** \($conclusion)  \n"
             + "**Continue:** \($continue)\n\n"
-            + "### Required Workflows Status\n\n\($statusTableMd)\n\n"
-            + (if ($filesTableMd | length) > 0 then
-                "### Downloaded Files\n\n\($filesTableMd)\n"
+            + "### Required Workflows Status\n\n\($statusTable)\n\n"
+            + (if ($filesTable | length) > 0 then
+                "### Downloaded Files\n\n\($filesTable)\n"
                else ""
                end)
 
