@@ -57,8 +57,8 @@ jobs:
           sha: ${{ inputs.sha }}
           conclusion: ${{ inputs.conclusion }}
           continue: ${{ steps.afterall.outputs.continue }}
-          status: ${{ steps.afterall.outputs.status }}
-          run-ids: ${{ steps.afterall.outputs.run-ids }}
+          status: ${{ fromJSON(steps.afterall.outputs.status).status }}
+          run-ids: ${{ fromJSON(steps.afterall.outputs.status)['run-ids'] }}
           repository: ${{ github.repository }}
           pr: ${{ steps.find-pr.outputs.output }}
         input-format: yaml
