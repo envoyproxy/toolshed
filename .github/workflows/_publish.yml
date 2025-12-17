@@ -30,7 +30,7 @@ jobs:
       with:
         script: |
           const requiredWorkflows = ["Bazel CI", "Rust CI"];
-          const currentSha = ${{ inputs.sha }};
+          const currentSha = "${{ inputs.sha }}";
           const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
             owner: context.repo.owner,
             repo: context.repo.repo,
