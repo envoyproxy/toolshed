@@ -67,32 +67,27 @@ jobs:
           .sha as $sha
           | .conclusion as $conclusion
           | .continue as $continue
-          | (.afterall | fromjson) as $afterall
+          | .afterall as $afterall
           | ($afterall.status | fromjson) as $status
           | ($afterall["run-ids"] | fromjson) as $runIds
           | .repository as $repo
           | .pr as $pr
+          | (if $pr != "null" then
+               " ([PR #\($pr)](https://github.com/\($repo)/pull/\($pr)))"
+             else "" end) as $prLink
+          | ($status | to_entries | map(
+               "- **\(.key):** Status: `\(.value.status)`, "
+               + "Conclusion: `\(.value.conclusion)`, Run ID: `\(.value.id)`"
+             ) | join("\n")) as $statusList
+          | ($runIds | to_entries | map(
+               "- **\(.key):** [\(.value)](https://github.com/\($repo)/actions/runs/\(.value))"
+             ) | join("\n")) as $runIdList
           | "## Publish Workflow Triggered\n\n"
-          | . + "**Commit SHA:** [\($sha)](https://github.com/\($repo)/commit/\($sha))"
-          | if $pr != "null" then
-              . + " ([PR #\($pr)](https://github.com/\($repo)/pull/\($pr)))"
-            else . end
-          | . + "\n**Conclusion:** \($conclusion)\n"
-          | . + "**Continue:** \($continue)\n\n"
-          | . + "### Required Workflows Status\n\n"
-          | . as $header
-          | ($status
-             | to_entries
-             | map("- **\(.key):** Status: `\(.value.status)`, Conclusion: `\(.value.conclusion)`, Run ID: `\(.value.id)`")
-             | join("\n")) as $statusList
-          | $header + $statusList + "\n\n"
-          | . + "### Workflow Run IDs\n\n"
-          | . as $beforeRunIds
-          | ($runIds
-             | to_entries
-             | map("- **\(.key):** [\(.value)](https://github.com/\($repo)/actions/runs/\(.value))")
-             | join("\n")) as $runIdList
-          | $beforeRunIds + $runIdList
+            + "**Commit SHA:** [\($sha)](https://github.com/\($repo)/commit/\($sha))\($prLink)\n"
+            + "**Conclusion:** \($conclusion)\n"
+            + "**Continue:** \($continue)\n\n"
+            + "### Required Workflows Status\n\n\($statusList)\n\n"
+            + "### Workflow Run IDs\n\n\($runIdList)"
     - name: Download Artifacts (Bazel CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
