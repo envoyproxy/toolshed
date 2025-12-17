@@ -72,13 +72,13 @@ jobs:
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
       with:
-        run-id: ${{ fromJSON(fromJSON(steps.afterall.outputs.status)['run-ids'])['Bazel CI'] }}
+        run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Bazel CI'] }}
         path: ./artifacts/bazel
     - name: Download Artifacts (Rust CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
       with:
-        run-id: ${{ fromJSON(fromJSON(steps.afterall.outputs.status)['run-ids'])['Rust CI'] }}
+        run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Rust CI'] }}
         path: ./artifacts/rust
     - name: List downloaded files
       id: list-files
