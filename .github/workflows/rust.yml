@@ -73,8 +73,8 @@ jobs:
     needs: should
     if: >-
       always()
-      && github.event_name == 'release'
-      && startsWith(github.event.release.name, 'bins')
+      && (github.event_name == 'release'
+          || fromJSON(needs.should.outputs.run || 'false'))
     runs-on: ${{ matrix.runs-on }}
     strategy:
       matrix:
@@ -117,36 +117,6 @@ jobs:
         name: glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
         path: glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
         retention-days: 30
-
-  publish:
-    if: >-
-      always()
-      && (github.event_name == 'release'
-          && startsWith(github.event.release.name, 'bins'))
-    runs-on: ubuntu-24.04
-    needs:
-    - build
-    permissions:
-      contents: write
-    steps:
-    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
-    - name: Download all workflow run artifacts
-      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
-      with:
-        path: artifacts
-    - name: Upload release assets
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        for artifact in artifacts/*; do
-            [[ ! -d "$artifact" ]] && continue
-            name=$(basename "$artifact")
-            file=$(ls "$artifact"/glint-*)
-            echo "Uploading $file as $name"
-            gh release upload "${{ github.event.release.tag_name }}" \
-                "$file#$name" \
-                --clobber
-        done
 
   status:
     runs-on: ubuntu-24.04
