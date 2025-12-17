@@ -20,14 +20,12 @@ jobs:
     outputs:
       sha: ${{ steps.get-sha.outputs.sha }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
     - name: Get latest SHA from main
       id: get-sha
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
-        SHA=$(git rev-parse origin/main)
+        SHA=$(gh api /repos/${{ github.repository }}/git/ref/heads/main --jq '.object.sha')
         echo "sha=$SHA" >> $GITHUB_OUTPUT
         echo "Latest SHA from main: $SHA"
 
