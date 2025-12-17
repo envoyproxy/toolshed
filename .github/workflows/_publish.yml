@@ -31,39 +31,43 @@ jobs:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
     - name: Workflow Status Summary
-      run: |
-        echo "## Publish Workflow Triggered" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Commit SHA:** \`${{ inputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "**Conclusion:** ${{ inputs.conclusion }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Continue:** ${{ steps.afterall.outputs.continue }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### Required Workflows Status" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-
-        # Parse and display the status of each workflow
-        if echo '${{ steps.afterall.outputs.status }}' | jq -r '
-          to_entries | .[] |
-          "- **\(.key):** Status: `\(.value.status)`, Conclusion: `\(.value.conclusion)`, Run ID: `\(.value.id)`"
-        ' >> $GITHUB_STEP_SUMMARY 2>/dev/null; then
-          echo "" >> $GITHUB_STEP_SUMMARY
-        else
-          echo "_Status information unavailable_" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-        fi
-
-        echo "### Workflow Run IDs" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-
-        # Display the run IDs being used for artifact downloads
-        if echo '${{ steps.afterall.outputs.run-ids }}' | jq -r '
-          to_entries | .[] |
-          "- **\(.key):** [\(.value)](https://github.com/${{ github.repository }}/actions/runs/\(.value))"
-        ' >> $GITHUB_STEP_SUMMARY 2>/dev/null; then
-          :
-        else
-          echo "_Run ID information unavailable_" >> $GITHUB_STEP_SUMMARY
-        fi
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: |
+          sha: ${{ inputs.sha }}
+          conclusion: ${{ inputs.conclusion }}
+          continue: ${{ steps.afterall.outputs.continue }}
+          status: ${{ steps.afterall.outputs.status }}
+          run-ids: ${{ steps.afterall.outputs.run-ids }}
+          repository: ${{ github.repository }}
+        input-format: yaml
+        options: -r
+        output-path: GITHUB_STEP_SUMMARY
+        filter: |
+          .sha as $sha
+          | .conclusion as $conclusion
+          | .continue as $continue
+          | (.status | fromjson) as $status
+          | (."run-ids" | fromjson) as $runIds
+          | .repository as $repo
+          | "## Publish Workflow Triggered\n\n"
+          | . + "**Commit SHA:** [\($sha)](https://github.com/\($repo)/commit/\($sha))\n"
+          | . + "**Conclusion:** \($conclusion)\n"
+          | . + "**Continue:** \($continue)\n\n"
+          | . + "### Required Workflows Status\n\n"
+          | . as $header
+          | ($status
+             | to_entries
+             | map("- **\(.key):** Status: `\(.value.status)`, Conclusion: `\(.value.conclusion)`, Run ID: `\(.value.id)`")
+             | join("\n")) as $statusList
+          | $header + $statusList + "\n\n"
+          | . + "### Workflow Run IDs\n\n"
+          | . as $beforeRunIds
+          | ($runIds
+             | to_entries
+             | map("- **\(.key):** [\(.value)](https://github.com/\($repo)/actions/runs/\(.value))")
+             | join("\n")) as $runIdList
+          | $beforeRunIds + $runIdList
     - name: Download Artifacts (Bazel CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
