@@ -1,0 +1,54 @@
+name: Test afterall action
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to check (leave empty for latest main)'
+        required: false
+        type: string
+  pull_request:
+
+permissions:
+  actions: read
+
+jobs:
+  test-afterall:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Get latest main commit SHA
+      id: sha
+      run: |
+        if [[ -n "${{ inputs.sha }}" ]]; then
+            SHA="${{ inputs.sha }}"
+        else
+            SHA=57ce8823f3dae9a2adb289acc5333dcd34e8fb53
+        fi
+        echo "sha=$SHA" >> $GITHUB_OUTPUT
+        echo "Using SHA: $SHA"
+
+    - name: Test afterall action
+      id: afterall
+      uses: envoyproxy/toolshed/gh-actions/github/afterall@e58f077a57c0d33535f73e717e67700b6c764368
+      with:
+        sha: ${{ steps.sha.outputs.sha }}
+        workflows: |
+          Bazel CI
+          Rust CI
+          Python CI
+
+    - name: Display results
+      run: |
+        echo "Value: ${{ steps.afterall.outputs.status }}"
+
+
+        echo "Continue: ${{ steps.afterall.outputs.continue }}"
+        echo "Run IDs: ${{ steps.afterall.outputs.run-ids }}"
+        echo "Status: ${{ steps.afterall.outputs.status }}"
+        echo ""
+        echo "Full output for debugging:"
+        echo "continue=${{ steps.afterall.outputs.continue }}"
+        echo "run-ids=${{ steps.afterall.outputs.run-ids }}"
+        echo "status=${{ steps.afterall.outputs.status }}"
