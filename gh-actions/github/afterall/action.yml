@@ -1,0 +1,91 @@
+name: After all workflows check
+description: Checks if all required workflows have completed successfully for a given commit SHA
+
+inputs:
+  jq-pre-filter:
+    type: string
+    default: >-
+      {workflow_runs: [.workflow_runs[] | {name, id, status, conclusion, created_at}]}
+  repo:
+    type: string
+    default: ${{ github.repository }}
+  sha:
+    type: string
+    required: true
+    description: Commit SHA to check
+  workflows:
+    type: string
+    required: true
+    description: JSON array of required workflow names
+  token:
+    type: string
+    required: false
+    default: ${{ github.token }}
+    description: GitHub token
+  template-script:
+    type: string
+    default: |
+      OUTPUT=$(gh api --jq '\(.jq)' \"/repos/\(.repo)/actions/runs?head_sha=\($sha)&per_page=100\")
+
+outputs:
+  status:
+    value: ${{ steps.check-workflows.outputs.output }}
+    description: Full status JSON object with details for each workflow
+  continue:
+    value: ${{ fromJSON(steps.check-workflows.outputs.output).continue }}
+    description: "'true' or 'false' - whether all required workflows passed"
+  run-ids:
+    value: ${{ fromJSON(steps.check-workflows.outputs.output)['run-ids'] }}
+    description: JSON object mapping workflow names to run IDs
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+    id: workflows
+    with:
+      options: -sRc
+      input: ${{ inputs.workflows }}
+      filter: |
+        .
+        | split("\n")
+        | map(select(length > 0))
+  - uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.35
+    id: check-workflows
+    env:
+      GH_TOKEN: ${{ inputs.token }}
+    with:
+      input: |
+        jq: "${{ inputs.jq-pre-filter }}"
+        repo: ${{ inputs.repo }}
+        sha: ${{ inputs.sha }}
+        workflows: ${{ steps.workflows.outputs.value }}
+      input-format: yaml
+      filter: |
+        . as $input
+        | .sha as $sha
+        | .workflows as $workflows
+        | ("${{ inputs.template-script }}" | bash::output)
+      result-format: json
+      result-filter-options: "-c"
+      result-filter: |
+        . as $data
+        | ${{ steps.workflows.outputs.value }} as $workflows
+        | .workflow_runs as $runs
+        | {continue: true, "run-ids": {}, status: {}} as $init
+        | reduce $workflows[] as $name ($init;
+            ([$runs[] | select(.name == $name)] | sort_by(.created_at) | last) as $run
+            | if $run then
+                .status[$name] = {id: $run.id, status: $run.status, conclusion: $run.conclusion}
+                | if $run.status == "completed" and $run.conclusion == "success" then
+                    .["run-ids"][$name] = $run.id
+                  else
+                    .continue = false
+                  end
+              else
+                .continue = false
+              end)
+        | {continue: (.continue | tostring),
+           "run-ids": (."run-ids" | tojson),
+           status: (.status | tojson)}
