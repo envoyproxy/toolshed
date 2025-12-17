@@ -24,60 +24,27 @@ jobs:
     if: ${{ inputs.conclusion == 'success' }}
     runs-on: ubuntu-24.04
     steps:
-    - name: Check Status of All Workflows
-      uses: actions/github-script@v7
-      id: check_all
+    - name: Check all workflows ran
+      id: afterall
+      uses: envoyproxy/toolshed/gh-actions/github/afterall@bf09e91fd215754df30e54a293983484845465ca
       with:
-        script: |
-          const requiredWorkflows = ["Bazel CI", "Rust CI"];
-          const currentSha = "${{ inputs.sha }}";
-          const { data: runs } = await github.rest.actions.listWorkflowRunsForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            head_sha: currentSha,
-            per_page: 100
-          });
-          let allFinished = true;
-          let runIds = {};
-          for (const name of requiredWorkflows) {
-            const workflowRun = runs.workflow_runs.find(r => r.name === name);
-            if (!workflowRun) {
-              console.log(`Workflow ${name} has not started for this commit yet.`);
-              allFinished = false;
-              break;
-            }
-            if (workflowRun.status !== 'completed' || workflowRun.conclusion !== 'success') {
-              console.log(`Workflow ${name} is ${workflowRun.status} with conclusion ${workflowRun.conclusion}.`);
-              allFinished = false;
-              break;
-            }
-            runIds[name] = workflowRun.id;
-          }
-
-          if (!allFinished) {
-            console.log("Not all workflows are complete/successful. Stopping.");
-            return "STOP";
-          }
-          console.log("All workflows passed! Proceeding.");
-          return runIds;
-
+        sha: ${{ inputs.sha }}
+        workflows: ${{ inputs.workflows }}
     - name: Download Artifacts (Bazel CI)
-      if: ${{ steps.check_all.outputs.result != '"STOP"' }}
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
       with:
-        run-id: ${{ fromJson(steps.check_all.outputs.result)['Bazel CI'] }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Bazel CI'] }}
         path: ./artifacts/bazel
     - name: Download Artifacts (Rust CI)
-      if: ${{ steps.check_all.outputs.result != '"STOP"' }}
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
       with:
-        run-id: ${{ fromJson(steps.check_all.outputs.result)['Rust CI'] }}
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Rust CI'] }}
         path: ./artifacts/rust
 
     - name: Publish / Release
-      if: ${{ steps.check_all.outputs.result != '"STOP"' }}
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       run: |
         echo "Deploying artifacts..."
         mkdir -p artifacts
