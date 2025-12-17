@@ -57,8 +57,7 @@ jobs:
           sha: ${{ inputs.sha }}
           conclusion: ${{ inputs.conclusion }}
           continue: ${{ steps.afterall.outputs.continue }}
-          status: ${{ fromJSON(steps.afterall.outputs.status).status }}
-          run-ids: ${{ fromJSON(steps.afterall.outputs.status)['run-ids'] }}
+          afterall: ${{ steps.afterall.outputs.status }}
           repository: ${{ github.repository }}
           pr: ${{ steps.find-pr.outputs.output }}
         input-format: yaml
@@ -68,8 +67,9 @@ jobs:
           .sha as $sha
           | .conclusion as $conclusion
           | .continue as $continue
-          | (.status | fromjson) as $status
-          | (."run-ids" | fromjson) as $runIds
+          | (.afterall | fromjson) as $afterall
+          | ($afterall.status | fromjson) as $status
+          | ($afterall["run-ids"] | fromjson) as $runIds
           | .repository as $repo
           | .pr as $pr
           | "## Publish Workflow Triggered\n\n"
