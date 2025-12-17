@@ -16,6 +16,8 @@ jobs:
   check-and-publish:
     permissions:
       actions: read
+      contents: write
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     uses: ./.github/workflows/_publish.yml
     with:
       workflows: |

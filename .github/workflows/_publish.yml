@@ -25,6 +25,13 @@ jobs:
       actions: read
     if: ${{ inputs.conclusion == 'success' }}
     runs-on: ubuntu-24.04
+
+jobs:
+  check-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
     - name: Check Status of All Workflows
       uses: actions/github-script@v7
@@ -64,6 +71,7 @@ jobs:
           return runIds;
 
     - name: Download Artifacts (Bazel CI)
+      id: download_bazel
       if: ${{ steps.check_all.outputs.result != '"STOP"' }}
       uses: actions/download-artifact@v4
       with:
@@ -84,3 +92,165 @@ jobs:
         echo "Deploying artifacts..."
         mkdir -p artifacts
         ls -R ./artifacts
+
+    - name: Collect Release Artifacts
+      if: ${{ steps.check_all.outputs.result != '"STOP"' }}
+      id: collect
+      run: |
+        # Define expected artifact path globs
+        ARTIFACT_GLOBS=(
+          "compile/msan-llvm*.tar.xz"
+          "compile/tsan-llvm*.tar.xz"
+          "sysroot/sysroot-*.tar.xz"
+          "glint-*"
+        )
+
+        # Create release directory
+        mkdir -p ./release
+
+        # Check if artifacts directory exists and has content
+        if [[ ! -d ./artifacts ]]; then
+          echo "::notice::No artifacts directory found"
+          echo "found=false" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+
+        # Find and copy matching artifacts
+        echo "Searching for artifacts..."
+        found_any=false
+        found_count=0
+
+        for glob in "${ARTIFACT_GLOBS[@]}"; do
+          echo "Looking for: $glob"
+          # Use null-delimited output to safely handle filenames with spaces or special characters
+          while IFS= read -r -d '' file; do
+            if [[ -f "$file" ]]; then
+              echo "  Found: $file"
+              cp "$file" ./release/
+              found_any=true
+              found_count=$((found_count + 1))
+            fi
+          done < <(find ./artifacts -type f -path "*/$glob" -print0 2>/dev/null)
+        done
+
+        if [[ "$found_any" == "true" ]]; then
+          echo "found=true" >> $GITHUB_OUTPUT
+          echo "count=$found_count" >> $GITHUB_OUTPUT
+          echo "::notice::Collected $found_count artifact(s)"
+          echo "Collected artifacts:"
+          ls -lh ./release
+        else
+          echo "found=false" >> $GITHUB_OUTPUT
+          echo "count=0" >> $GITHUB_OUTPUT
+          echo "::notice::No artifacts found matching patterns - this is expected if neither Bazel nor Rust CI produced artifacts"
+        fi
+
+    - name: Read Version
+      if: ${{ steps.check_all.outputs.result != '"STOP"' && steps.collect.outputs.found == 'true' }}
+      id: version
+      run: |
+        if [[ -f bazel/BINS_VERSION.txt ]]; then
+          VERSION=$(tr -d '[:space:]' < bazel/BINS_VERSION.txt)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+          # Check if version ends with -dev
+          if [[ "$VERSION" =~ -dev$ ]]; then
+            echo "is_dev=true" >> $GITHUB_OUTPUT
+            echo "Version ends with -dev, will not create release"
+          else
+            echo "is_dev=false" >> $GITHUB_OUTPUT
+            echo "Version does not end with -dev, eligible for release"
+          fi
+        else
+          echo "version=" >> $GITHUB_OUTPUT
+          echo "is_dev=true" >> $GITHUB_OUTPUT
+          echo "No BINS_VERSION.txt found"
+        fi
+
+    - name: Check Triggering Event
+      if: ${{ steps.check_all.outputs.result != '"STOP"' && steps.collect.outputs.found == 'true' }}
+      id: trigger
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Get the triggering workflow run event
+          const triggeringEvent = context.payload.workflow_run.event;
+          console.log(`Triggering event: ${triggeringEvent}`);
+
+          // Check if this was triggered by a push (not a PR)
+          const isPush = triggeringEvent === 'push';
+          console.log(`Is push event: ${isPush}`);
+
+          return isPush ? 'true' : 'false';
+
+    - name: Create Release
+      # Only create release when: workflows passed, artifacts found, non-dev version, and push event
+      if: |
+        steps.check_all.outputs.result != '"STOP"'
+        && steps.collect.outputs.found == 'true'
+        && steps.version.outputs.is_dev == 'false'
+        && steps.trigger.outputs.result == '"true"'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        RELEASE_NAME="bins-${VERSION}"
+        TAG_NAME="bins-v${VERSION}"
+
+        echo "Creating release: $RELEASE_NAME with tag: $TAG_NAME"
+
+        # Check if release already exists
+        if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+          echo "::warning::Release $TAG_NAME already exists, skipping creation"
+        else
+          # Create the release
+          if gh release create "$TAG_NAME" \
+            --title "$RELEASE_NAME" \
+            --notes "Automated release of binaries for version $VERSION" \
+            ./release/*; then
+            echo "::notice::Successfully created release $TAG_NAME"
+          else
+            echo "::error::Failed to create release $TAG_NAME"
+            exit 1
+          fi
+        fi
+
+    - name: Summary
+      if: ${{ steps.check_all.outputs.result != '"STOP"' }}
+      run: |
+        echo "## Publish Workflow Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- Bazel CI download: ${{ steps.download_bazel.outcome }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Rust CI download: ${{ steps.download_rust.outcome }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Artifacts found: ${{ steps.collect.outputs.found }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Artifact count: ${{ steps.collect.outputs.count || 0 }}" >> $GITHUB_STEP_SUMMARY
+
+        if [[ "${{ steps.collect.outputs.found }}" == "true" ]]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Version Information" >> $GITHUB_STEP_SUMMARY
+          echo "- Version: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Is dev version: ${{ steps.version.outputs.is_dev }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Triggering event: ${{ github.event.workflow_run.event }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Is push event: ${{ steps.trigger.outputs.result }}" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.version.outputs.is_dev }}" == "false" && "${{ steps.trigger.outputs.result }}" == '"true"' ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ✅ Release Created" >> $GITHUB_STEP_SUMMARY
+            echo "- **Release name: bins-${{ steps.version.outputs.version }}**" >> $GITHUB_STEP_SUMMARY
+            echo "- **Tag: bins-v${{ steps.version.outputs.version }}**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ℹ️ Release Not Created" >> $GITHUB_STEP_SUMMARY
+            echo "Reason: Version is dev (${{ steps.version.outputs.is_dev }}) or not a push event" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Collected Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          ls -lh ./release 2>/dev/null || echo "No artifacts"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ No artifacts to publish - this is expected if neither workflow produced artifacts" >> $GITHUB_STEP_SUMMARY
+        fi
