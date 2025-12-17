@@ -134,7 +134,7 @@ jobs:
         json: ${{ steps.list-files.outputs.files }}
         filter: |
           map([.source, .file, .size])
-    - name: Workflow Status Summary
+    - name: Workflow Status Summary Header
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
         input: |
@@ -144,8 +144,6 @@ jobs:
           repository: ${{ github.repository }}
           pr: ${{ steps.find-pr.outputs.output }}
           commit_info: ${{ steps.commit-info.outputs.output }}
-          status_table: ${{ steps.status-table.outputs.table }}
-          files_table: ${{ steps.files-table.outputs.table }}
         input-format: yaml
         options: -r
         output-path: GITHUB_STEP_SUMMARY
@@ -156,8 +154,6 @@ jobs:
           | .repository as $repo
           | .pr as $prInfo
           | .commit_info as $commitInfo
-          | .status_table as $statusTable
-          | .files_table as $filesTable
           | (if $prInfo != "{}" and $prInfo != "" then
                $prInfo | if type == "object" then . else fromjson end
              else {} end) as $pr
@@ -180,11 +176,17 @@ jobs:
             + "**Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha))\($prLink)  \n"
             + "**Conclusion:** \($conclusion)  \n"
             + "**Continue:** \($continue)\n\n"
-            + "### Required Workflows Status\n\n\($statusTable)\n\n"
-            + (if ($filesTable | length) > 0 then
-                "### Downloaded Files\n\n\($filesTable)\n"
-               else ""
-               end)
+            + "### Required Workflows Status\n\n"
+    - name: Append workflow status table
+      run: |
+        echo '${{ steps.status-table.outputs.table }}' >> $GITHUB_STEP_SUMMARY
+        echo '' >> $GITHUB_STEP_SUMMARY
+    - name: Append files table
+      if: ${{ fromJSON(steps.afterall.outputs.continue) && steps.files-table.outputs.table != '' }}
+      run: |
+        echo '### Downloaded Files' >> $GITHUB_STEP_SUMMARY
+        echo '' >> $GITHUB_STEP_SUMMARY
+        echo '${{ steps.files-table.outputs.table }}' >> $GITHUB_STEP_SUMMARY
 
     - name: Publish / Release
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
