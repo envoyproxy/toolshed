@@ -30,6 +30,24 @@ jobs:
       with:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
+    - name: Find associated PR
+      id: find-pr
+      uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.35
+      env:
+        GH_TOKEN: ${{ github.token }}
+      with:
+        catch-errors: true
+        input: |
+          repo: ${{ github.repository }}
+          sha: ${{ inputs.sha }}
+        input-format: yaml
+        filter: |
+          .repo as $repo
+          | .sha as $sha
+          | "OUTPUT=$(gh api --jq '.[] | .number' \"/repos/\($repo)/commits/\($sha)/pulls\" | head -1)"
+          | bash::output
+        result-filter: |
+          if . != "" then . else "null" end
     - name: Workflow Status Summary
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
@@ -40,6 +58,7 @@ jobs:
           status: ${{ steps.afterall.outputs.status }}
           run-ids: ${{ steps.afterall.outputs.run-ids }}
           repository: ${{ github.repository }}
+          pr: ${{ steps.find-pr.outputs.output }}
         input-format: yaml
         options: -r
         output-path: GITHUB_STEP_SUMMARY
@@ -50,9 +69,13 @@ jobs:
           | (.status | fromjson) as $status
           | (."run-ids" | fromjson) as $runIds
           | .repository as $repo
+          | .pr as $pr
           | "## Publish Workflow Triggered\n\n"
-          | . + "**Commit SHA:** [\($sha)](https://github.com/\($repo)/commit/\($sha))\n"
-          | . + "**Conclusion:** \($conclusion)\n"
+          | . + "**Commit SHA:** [\($sha)](https://github.com/\($repo)/commit/\($sha))"
+          | if $pr != "null" then
+              . + " ([PR #\($pr)](https://github.com/\($repo)/pull/\($pr)))"
+            else . end
+          | . + "\n**Conclusion:** \($conclusion)\n"
           | . + "**Continue:** \($continue)\n\n"
           | . + "### Required Workflows Status\n\n"
           | . as $header
