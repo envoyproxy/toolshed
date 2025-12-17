@@ -44,7 +44,9 @@ jobs:
         filter: |
           .repo as $repo
           | .sha as $sha
-          | "OUTPUT=$(gh api --jq '.[] | .number' \"/repos/\($repo)/commits/\($sha)/pulls\" | head -1)"
+          | ("gh api --jq '[.[] | {number, created_at}] | sort_by(.created_at) | last | .number' "
+             + "\"/repos/\($repo)/commits/\($sha)/pulls\"") as $cmd
+          | "OUTPUT=$(\($cmd))"
           | bash::output
         result-filter: |
           if . != "" then . else "null" end
