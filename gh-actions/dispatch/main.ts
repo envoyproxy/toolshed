@@ -33,6 +33,30 @@ const run = async (): Promise<void> => {
     const octokit = github.getOctokit(token)
     await octokit.request(request.action, request.params)
     console.log(`Dispatched ${repository}/${workflow}`)
+
+    // Add output to GitHub step summary
+    core.summary
+      .addHeading('Workflow Dispatched', 2)
+      .addRaw('\n')
+      .addTable([
+        [
+          {data: 'Property', header: true},
+          {data: 'Value', header: true},
+        ],
+        ['Repository', repository],
+        ['Workflow', workflow],
+        ['Ref', ref],
+      ])
+
+    if (Object.keys(inputs).length > 0) {
+      core.summary
+        .addRaw('\n')
+        .addHeading('Inputs', 3)
+        .addRaw('\n')
+        .addCodeBlock(JSON.stringify(inputs, null, 2), 'json')
+    }
+
+    await core.summary.write()
   } catch (error) {
     if (error instanceof Error) {
       console.error(error.message)
