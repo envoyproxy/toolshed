@@ -3,17 +3,43 @@ name: _bazel
 on:
   workflow_call:
     inputs:
-      mode:
-        description: 'Bazel mode (workspace or bzlmod)'
+      action:
+        description: Bazel action (build or test)
         required: true
         type: string
+      artifacts:
+        description: Artifacts to upload
+        required: false
+        type: string
+      bazel-args:
+        description: Bazel args
+        default:
+        type: string
+      bazel-mode:
+        description: Bazel mode (workspace or bzlmod)
+        required: true
+        type: string
+      bazel-path:
+        description: Path to bazel workspace
+        default: .
+        type: string
+      targets:
+        description: Bazel targets
+        required: true
+        type: string
+      upload:
+        description: Upload CI artifacts
+        type: boolean
+        default: false
+
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  bazel:
     runs-on: ubuntu-24.04
+    name: Bazel (${{ inputs.action }})
     steps:
     - name: Checkout Repository
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
@@ -25,19 +51,32 @@ jobs:
         curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
         sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
         rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
-    - name: Run Bazel test (${{ inputs.mode }})
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y --no-install-recommends debootstrap qemu-user-static binfmt-support
+
+    - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
       run: |
-        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
-            bazel test --config=ci --enable_bzlmod --test_output=errors //...
-        else
-            bazel test --config=ci --test_output=errors //...
-        fi
-      working-directory: bazel
-    - name: Build Bazel targets (${{ inputs.mode }})
-      run: |
-        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
-            bazel build --config=ci --enable_bzlmod //...
-        else
-            bazel build --config=ci //...
-        fi
-      working-directory: bazel
+        exec bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }}
+      working-directory: ${{ inputs.bazel-path }}
+    - name: Bazel artifact paths
+      id: artifact-paths
+      if: >-
+        inputs.action == 'build'
+        && inputs.artifacts
+        && inputs.upload
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: ${{ inputs.artifacts }}
+        input-format: text
+        options: -Rr
+        filter: |
+          select(length > 0)
+          | "${{ inputs.bazel-path }}/bazel-bin/\(.)"
+    - name: Bazel artifacts
+      if: ${{ steps.artifact-paths.outputs.value }}
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      with:
+        name: bazel-artifacts
+        path: |
+          ${{ steps.artifact-paths.outputs.value }}
+        retention-days: 30
