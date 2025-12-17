@@ -100,7 +100,7 @@ jobs:
       with:
         input: |
           afterall: ${{ steps.afterall.outputs.status }}
-          workflows: ${{ inputs.workflows }}
+          workflows: ${{ toJSON(inputs.workflows) }}
           repository: ${{ github.repository }}
         input-format: yaml
         options: -r
