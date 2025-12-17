@@ -30,6 +30,35 @@ jobs:
       with:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
+    - name: Workflow trigger summary
+      run: |
+        echo "## Publish Workflow Triggered" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit SHA:** \`${{ inputs.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Triggered by workflow conclusion:** \`${{ inputs.conclusion }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Required workflows:**" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "${{ inputs.workflows }}" >> $GITHUB_STEP_SUMMARY
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**All workflows passed:** \`${{ steps.afterall.outputs.continue }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Workflow Status" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        STATUS_JSON='${{ steps.afterall.outputs.status }}'
+        echo "$STATUS_JSON" | jq -r 'to_entries | .[] | "- **\(.key)**: ID \(.value.id) - Status: `\(.value.status)` - Conclusion: `\(.value.conclusion)`"' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [[ "${{ steps.afterall.outputs.continue }}" == "true" ]]; then
+          echo "### ✅ Proceeding with artifact download and publish" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Run IDs:**" >> $GITHUB_STEP_SUMMARY
+          RUN_IDS='${{ steps.afterall.outputs.run-ids }}'
+          echo "$RUN_IDS" | jq -r 'to_entries | .[] | "- **\(.key)**: [\(.value)](https://github.com/${{ github.repository }}/actions/runs/\(.value))"' >> $GITHUB_STEP_SUMMARY
+        else
+          echo "### ⚠️ Not all workflows passed - skipping publish" >> $GITHUB_STEP_SUMMARY
+        fi
     - name: Download Artifacts (Bazel CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
