@@ -10,6 +10,20 @@ on:
     - Rust CI
     types:
     - completed
+  workflow_dispatch:
+    inputs:
+      conclusion:
+        description: 'Workflow conclusion (success/failure)'
+        required: false
+        default: 'success'
+        type: choice
+        options:
+        - success
+        - failure
+      sha:
+        description: 'Commit SHA to publish (leave empty for current HEAD)'
+        required: false
+        type: string
 
 
 jobs:
@@ -18,6 +32,8 @@ jobs:
       actions: read
     uses: ./.github/workflows/_publish.yml
     with:
+      conclusion: ${{ inputs.conclusion || github.event.workflow_run.conclusion }}
+      sha: ${{ inputs.sha || github.event.workflow_run.head_sha }}
       workflows: |
         Bazel CI
         Rust CI
