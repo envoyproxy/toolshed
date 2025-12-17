@@ -70,7 +70,7 @@ jobs:
     - name: Build ${{ matrix.sanitizer }} libraries
       run: |
         cd bazel
-        bazel build //compile:cxx_${{ matrix.sanitizer }}
+        bazel build --config=ci //compile:cxx_${{ matrix.sanitizer }}
 
     - name: Upload ${{ matrix.sanitizer }} libraries
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
