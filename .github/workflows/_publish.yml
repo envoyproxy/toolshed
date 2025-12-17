@@ -6,12 +6,49 @@ permissions:
 on:
   workflow_call:
     inputs:
+      bins-version:
+        default:
+        type: string
+      commit-message:
+        default: ${{ github.event.workflow_run.head_commit.message }}
+        type: string
       conclusion:
         default: ${{ github.event.workflow_run.conclusion }}
+        type: string
+      dry-run:
+        default: false
+        type: boolean
+      event:
+        default: ${{ github.event_name }}
+        type: string
+      pr:
+        default: ${{ github.event.pull_request && toJSON(github.event.pull_request) || '{}' }}
+        type: string
+      repository:
+        default: ${{ github.repository }}
         type: string
       sha:
         default: ${{ github.event.workflow_run.head_sha }}
         type: string
+      skip:
+        type: boolean
+        default: false
+      template-pr-link:
+        type: string
+        default: >-
+          ([PR #\($pr.number)](https://github.com/\($repo)/pull/\($pr.number)))
+      template-status:
+        type: string
+        default: |
+          ## Publish workflow: \(.event) \($release_info)
+
+          ### \($title)
+
+          **Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha)) \($pr_link)
+          **Bins version:** \(.bins.version) \($bins_release)
+          **Continue:** `\($continue)`
+
+
       workflows:
         type: string
         required: true
@@ -21,31 +58,203 @@ jobs:
   check-and-publish:
     permissions:
       actions: read
-    if: ${{ inputs.conclusion == 'success' }}
+    if: >-
+      inputs.conclusion == 'success'
+      && ! inputs.skip
     runs-on: ubuntu-24.04
     steps:
     - name: Check all workflows ran
       id: afterall
-      uses: envoyproxy/toolshed/gh-actions/github/afterall@bf09e91fd215754df30e54a293983484845465ca
+      uses: envoyproxy/toolshed/gh-actions/github/afterall@499abdb7e1a90ac9ce7ee45cc47acb07fc68a235
       with:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
+        repo: ${{ inputs.repository }}
+
+    - name: Checkout the repo
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - name: Check for bins release
+      id: bins-version
+      run: |
+        if [[ -z "${{ inputs.bins-version }}" ]]; then
+            version=$(cat BINS_VERSION.txt)
+        else
+            version="${{ inputs.bins-version }}"
+        fi
+        echo "version=${version}" >> $GITHUB_OUTPUT
+    - name: Bins version info
+      id: bins
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: ${{ steps.bins-version.outputs.version }}
+        options: -Rc
+        filter: |
+          .
+          | endswith("-dev") as $is_dev
+          | {version: ., is_dev: $is_dev}
+
+    - name: Status summary
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: |
+          bins: ${{ steps.bins.outputs.value }}
+          event: ${{ inputs.event }}
+          sha: ${{ inputs.sha }}
+          conclusion: ${{ inputs.conclusion }}
+          continue: ${{ steps.afterall.outputs.continue }}
+          repository: ${{ inputs.repository }}
+          pr: ${{ inputs.pr }}
+          commit_message: "${{ inputs.commit-message }}"
+        input-format: yaml
+        options: -r
+        output-path: GITHUB_STEP_SUMMARY
+        filter: |
+          .sha as $sha
+          | .conclusion as $conclusion
+          | .continue as $continue
+          | .repository as $repo
+          | (.commit_message | split("\n") | first) as $commit_message
+          | (if .bins.is_dev then ""
+             else "**(RELEASE)**"
+             end) as $bins_release
+          | (if .bins.is_dev then ""
+             else "(release: bins-v\(.bins.version))"
+             end) as $release_info
+          | .commit_info as $commitInfo
+          | (if .event == "pull_request" and .pr != null and .pr != "{}" and .pr != "" then
+               .pr
+               | if type == "object" then .
+                 else fromjson end
+             else {} end) as $pr
+          | (if $pr.number then
+               $pr.title // "PR #\($pr.number)"
+             else $commit_message
+             end) as $title
+          | (if $pr.number then
+               "${{ inputs.template-pr-link }}"
+             else ""
+             end) as $pr_link
+          | "${{ inputs.template-status }}"
+    - name: Generate workflow status table
+      uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
+      with:
+        title: Required Workflows Status
+        append: true
+        output-path: GITHUB_STEP_SUMMARY
+        columns: 4
+        headers: |
+          Workflow
+          Status/conclusion
+        json: |
+          ${{ steps.afterall.outputs.status }}
+        filter: |
+          . as $data
+          | (.status | fromjson) as $status
+          | ($data["run-ids"] | fromjson) as $runIds
+          | "${{ inputs.workflows }}" | split("\n") | map(select(length > 0)) as $workflows
+          | ${{ toJSON(inputs.repository) }} as $repo
+          | $workflows
+          | map(
+              . as $wf
+              | if $status[$wf] then
+                  $status[$wf] as $st
+                  | ($st.conclusion // "pending") as $conclusion
+                  | {key: "[\($wf) (#\($st.id))](https://github.com/\($repo)/actions/runs/\($st.id))",
+                     value: "`\($st.status)`/`\($conclusion)`"}
+                else
+                  {key: $wf, value: "-"}
+                end
+            )
+          | from_entries
+
     - name: Download Artifacts (Bazel CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
       with:
+        github-token: ${{ github.token }}
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Bazel CI'] }}
         path: ./artifacts/bazel
+        repository: ${{ inputs.repository }}
     - name: Download Artifacts (Rust CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
       with:
+        github-token: ${{ github.token }}
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Rust CI'] }}
         path: ./artifacts/rust
-
-    - name: Publish / Release
+        repository: ${{ inputs.repository }}
+    - name: List downloaded artifacts
+      id: artifacts
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
-      run: |
-        echo "Deploying artifacts..."
-        mkdir -p artifacts
-        ls -R ./artifacts
+      uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.35
+      with:
+        catch-errors: true
+        input: |
+          OUTPUT=$(find ./artifacts -type f | xargs -I{} sh -c 'echo "$(stat -c %s "{}") {}"')
+        filter: bash::output
+        input-format: text
+        options: -Rr
+        result-filter-options: -sRc
+        result-filter: |
+          .
+          | split("\n")
+          | map(
+              select(length > 0)
+              | split(" ")
+              | {key: (.[1] | split("/")[-1]), value: {path: .[1], size: (.[0] | tonumber)}}
+            )
+          | from_entries
+
+    - name: List downloaded artifacts
+      id: artifact-sizes
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: ${{ steps.artifacts.outputs.output }}
+        filter: |
+          map_values(
+            .size
+            | if . >= 1099511627776 then "\(.  / 1099511627776 * 100 | round / 100)TB"
+              elif . >= 1073741824 then "\(. / 1073741824 * 100 | round / 100)GB"
+              elif . >= 1048576 then "\(.  / 1048576 * 100 | round / 100)MB"
+              elif . >= 1024 then "\(. / 1024 * 100 | round / 100)KB"
+              else "\(.)B"
+              end)
+
+    - name: Generate workflow artifacts table
+      uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
+      with:
+        title: Artifacts to publish
+        append: true
+        output-path: GITHUB_STEP_SUMMARY
+        headers: |
+          Name
+          Size
+        json: ${{ steps.artifact-sizes.outputs.value }}
+
+    - name: >-
+        Create release
+        ${{ (inputs.event == 'pull_request' || inputs.dry-run)
+             && '(dry-run)'
+             || ''  }}
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && (! fromJSON(steps.bins.outputs.value).is_dev
+            || inputs.event == 'pull_request')
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: |
+          bins: ${{ steps.bins.outputs.value }}
+          dry_run: ${{ inputs.dry-run }}
+          event: ${{ inputs.event }}
+          repository: ${{ inputs.repository }}
+          sha: ${{ inputs.sha }}
+        input-format: yaml
+        options: -r
+        output-path: GITHUB_STEP_SUMMARY
+        filter: |
+          .
+          | (if (.event == "pull_request" or .dry_run) then "**(DRY RUN)**"
+             else ""
+             end) as $dry_run
+          | "### Release created [bins-v\(.bins.version)](https://github.com/\(.repository)/releases/bins-v\(.bins.version)) \($dry_run)"
