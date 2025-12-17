@@ -73,12 +73,14 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Bazel CI'] }}
+        github-token: ${{ github.token }}
         path: ./artifacts/bazel
     - name: Download Artifacts (Rust CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: actions/download-artifact@v4
       with:
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Rust CI'] }}
+        github-token: ${{ github.token }}
         path: ./artifacts/rust
     - name: List downloaded files
       id: list-files
@@ -109,8 +111,8 @@ jobs:
           . as $data
           | ($data.status | fromjson) as $status
           | ($data["run-ids"] | fromjson) as $runIds
-          | "${{ toJSON(inputs.workflows) }}" | split("\n") | map(select(length > 0)) as $workflows
-          | "${{ github.repository }}" as $repo
+          | ${{ toJSON(inputs.workflows) }} | split("\n") | map(select(length > 0)) as $workflows
+          | ${{ toJSON(github.repository) }} as $repo
           | $workflows | map(
               . as $wf
               | if $status[$wf] then
