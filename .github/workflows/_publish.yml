@@ -116,10 +116,10 @@ jobs:
           | .repository as $repo
           | .pr as $prInfo
           | .commit_info as $commitInfo
-          | (if $prInfo != "{}" and $prInfo != "" then
+          | (if $prInfo != null and $prInfo != "{}" and $prInfo != "" then
                $prInfo | if type == "object" then . else fromjson end
              else {} end) as $pr
-          | (if $commitInfo != "{}" and $commitInfo != "" then
+          | (if $commitInfo != null and $commitInfo != "{}" and $commitInfo != "" then
                $commitInfo | if type == "object" then . else fromjson end
              else {} end) as $commit
           | (if $pr.number then
