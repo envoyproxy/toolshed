@@ -96,12 +96,54 @@ jobs:
           done | jq -s '.'
           echo 'EOF'
         } >> $GITHUB_OUTPUT
+    - name: Workflow Status Summary Header
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: |
+          sha: ${{ inputs.sha }}
+          conclusion: ${{ inputs.conclusion }}
+          continue: ${{ steps.afterall.outputs.continue }}
+          repository: ${{ github.repository }}
+          pr: ${{ steps.find-pr.outputs.output }}
+          commit_info: ${{ steps.commit-info.outputs.output }}
+        input-format: yaml
+        options: -r
+        output-path: GITHUB_STEP_SUMMARY
+        filter: |
+          .sha as $sha
+          | .conclusion as $conclusion
+          | .continue as $continue
+          | .repository as $repo
+          | .pr as $prInfo
+          | .commit_info as $commitInfo
+          | (if $prInfo != "{}" and $prInfo != "" then
+               $prInfo | if type == "object" then . else fromjson end
+             else {} end) as $pr
+          | (if $commitInfo != "{}" and $commitInfo != "" then
+               $commitInfo | if type == "object" then . else fromjson end
+             else {} end) as $commit
+          | (if $pr.number then
+               $pr.title // "PR #\($pr.number)"
+             elif $commit.message then
+               $commit.message | split("\n")[0]
+             else
+               $sha[0:7]
+             end) as $title
+          | (if $pr.number then
+               " ([PR #\($pr.number)](https://github.com/\($repo)/pull/\($pr.number)))"
+             else ""
+             end) as $prLink
+          | "## Publish Workflow Triggered\n\n"
+            + "**\($title)**\n\n"
+            + "**Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha))\($prLink)  \n"
+            + "**Conclusion:** \($conclusion)  \n"
+            + "**Continue:** \($continue)\n\n"
     - name: Generate workflow status table
-      id: status-table
       uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
       with:
         title: Required Workflows Status
-        append: false
+        append: true
+        output-path: GITHUB_STEP_SUMMARY
         headers: |
           Workflow
           Status
@@ -125,12 +167,12 @@ jobs:
                 end
             )
     - name: Generate files table
-      id: files-table
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
       with:
         title: Downloaded Files
-        append: false
+        append: true
+        output-path: GITHUB_STEP_SUMMARY
         headers: |
           Source
           File
@@ -138,57 +180,6 @@ jobs:
         json: ${{ steps.list-files.outputs.files }}
         filter: |
           map([.source, .file, .size])
-    - name: Workflow Status Summary
-      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
-      with:
-        input: |
-          sha: ${{ inputs.sha }}
-          conclusion: ${{ inputs.conclusion }}
-          continue: ${{ steps.afterall.outputs.continue }}
-          repository: ${{ github.repository }}
-          pr: ${{ steps.find-pr.outputs.output }}
-          commit_info: ${{ steps.commit-info.outputs.output }}
-          status_table: ${{ steps.status-table.outputs.summary }}
-          files_table: ${{ steps.files-table.outputs.summary }}
-        input-format: yaml
-        options: -r
-        output-path: GITHUB_STEP_SUMMARY
-        filter: |
-          .sha as $sha
-          | .conclusion as $conclusion
-          | .continue as $continue
-          | .repository as $repo
-          | .pr as $prInfo
-          | .commit_info as $commitInfo
-          | .status_table as $statusTable
-          | .files_table as $filesTable
-          | (if $prInfo != "{}" and $prInfo != "" then
-               $prInfo | if type == "object" then . else fromjson end
-             else {} end) as $pr
-          | (if $commitInfo != "{}" and $commitInfo != "" then
-               $commitInfo | if type == "object" then . else fromjson end
-             else {} end) as $commit
-          | (if $pr.number then
-               $pr.title // "PR #\($pr.number)"
-             elif $commit.message then
-               $commit.message | split("\n")[0]
-             else
-               $sha[0:7]
-             end) as $title
-          | (if $pr.number then
-               " ([PR #\($pr.number)](https://github.com/\($repo)/pull/\($pr.number)))"
-             else ""
-             end) as $prLink
-          | "## Publish Workflow Triggered\n\n"
-            + "**\($title)**\n\n"
-            + "**Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha))\($prLink)  \n"
-            + "**Conclusion:** \($conclusion)  \n"
-            + "**Continue:** \($continue)\n\n"
-            + $statusTable + "\n\n"
-            + (if $filesTable and ($filesTable | length) > 0 then
-                $filesTable + "\n"
-              else ""
-              end)
 
     - name: Publish / Release
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
