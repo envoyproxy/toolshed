@@ -5,7 +5,7 @@ inputs:
   jq-pre-filter:
     type: string
     default: >-
-      {workflow_runs: [.workflow_runs[] | select(name=\"Bazel CI\") | {name, id, conclusion, created_at}]}
+      {workflow_runs: [.workflow_runs[] | select(.name | IN(\"Bazel CI\", \"Rust CI\")) | {name, id, conclusion, created_at, status}]}
   max-results:
     type: number
     default: 200
@@ -28,7 +28,8 @@ inputs:
   template-script:
     type: string
     default: |
-      OUTPUT=$(gh api --jq '\(.jq)' \"/repos/\(.repo)/actions/runs?head_sha=\(.sha)&status=completed&per_page=\(.per_page)\")
+      OUTPUT=$(gh api --jq '\(.jq)' \"/repos/\(.repo)/actions/runs?page=\($page)&head_sha=\(.sha)&status=completed&per_page=\(.per_page)\")
+
 
 outputs:
   status:
@@ -68,6 +69,7 @@ runs:
       input-format: yaml
       filter: |
         .
+        | "2" as $page
         | ("${{ inputs.template-script }}" | bash::output)
       result-format: json
       result-filter-options: "-c"
