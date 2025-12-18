@@ -5,7 +5,13 @@ inputs:
   jq-pre-filter:
     type: string
     default: >-
-      {workflow_runs: [.workflow_runs[] | {name, id, status, conclusion, created_at}]}
+      {workflow_runs: [.workflow_runs[] | select(.name | IN(\($wf_names))) | {name, id, conclusion, created_at, status}]}
+  max-pages:
+    type: number
+    default: 5
+  per-page:
+    type: number
+    default: 200
   repo:
     type: string
     default: ${{ github.repository }}
@@ -25,7 +31,15 @@ inputs:
   template-script:
     type: string
     default: |
-      OUTPUT=$(gh api --jq '\(.jq)' \"/repos/\(.repo)/actions/runs?head_sha=\($sha)&per_page=100\")
+      export SCRIPT_JQ='\($jq)'
+      export MAX_PAGES='\(.max_pages)'
+      export HEAD_SHA='\(.sha)'
+      export PER_PAGE='\(.per_page)'
+      export REPO='\(.repo)'
+      export OUTPUT=\"[]\"
+      export WF_NAMES='\($wf_names)'
+      OUTPUT=$(${AFTERALL_ACTION_PATH}/check-runs.sh)
+
 
 outputs:
   status:
@@ -55,17 +69,19 @@ runs:
     id: check-workflows
     env:
       GH_TOKEN: ${{ inputs.token }}
+      AFTERALL_ACTION_PATH: ${{ github.action_path }}
     with:
       input: |
-        jq: "${{ inputs.jq-pre-filter }}"
+        max_pages: ${{ inputs.max-pages }}
+        per_page: ${{ inputs.per-page }}
         repo: ${{ inputs.repo }}
         sha: ${{ inputs.sha }}
         workflows: ${{ steps.workflows.outputs.value }}
       input-format: yaml
       filter: |
-        . as $input
-        | .sha as $sha
-        | .workflows as $workflows
+        .
+        | (.workflows | tojson | .[1:-1]) as $wf_names
+        | "${{ inputs.jq-pre-filter }}" as $jq
         | ("${{ inputs.template-script }}" | bash::output)
       result-format: json
       result-filter-options: "-c"
