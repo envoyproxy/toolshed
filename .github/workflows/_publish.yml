@@ -26,7 +26,7 @@ jobs:
     steps:
     - name: Check all workflows ran
       id: afterall
-      uses: envoyproxy/toolshed/gh-actions/github/afterall@bf09e91fd215754df30e54a293983484845465ca
+      uses: envoyproxy/toolshed/gh-actions/github/afterall@cc3136295fbb020ee9f2acd309dc307ee6df10a5
       with:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
@@ -82,20 +82,39 @@ jobs:
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Rust CI'] }}
         github-token: ${{ github.token }}
         path: ./artifacts/rust
-    - name: List downloaded files
-      id: list-files
+    - name: List downloaded artifacts
+      id: artifacts
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
-      run: |
-        {
-          echo 'files<<EOF'
-          find ./artifacts -type f | while read -r file; do
-            source=$(echo "$file" | sed 's|./artifacts/||' | cut -d'/' -f1)
-            filename=$(basename "$file")
-            size=$(ls -lh "$file" | awk '{print $5}')
-            echo "{\"source\":\"$source\",\"file\":\"$filename\",\"size\":\"$size\"}"
-          done | jq -s '.'
-          echo 'EOF'
-        } >> $GITHUB_OUTPUT
+      uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.35
+      with:
+        catch-errors: true
+        input: |
+          OUTPUT=$(find ./artifacts -type f | xargs -I{} sh -c 'echo "$(stat -c %s "{}") {}"')
+        filter: bash::output
+        input-format: text
+        options: -Rr
+        result-filter-options: -sRc
+        result-filter: |
+          .
+          | split("\n")
+          | map(
+              select(length > 0)
+              | split(" ")
+              | {key: (.[1] | split("/")[-1]), value: {path: .[1], size: .[0]}}
+            )
+          | from_entries
+
+
+    - name: List downloaded artifacts
+      id: artifact-sizes
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: ${{ steps.artifacts.outputs.output }}
+        filter: |
+          map_values(.size)
+
+
     - name: Workflow Status Summary Header
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
@@ -138,6 +157,86 @@ jobs:
             + "**Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha))\($prLink)  \n"
             + "**Conclusion:** \($conclusion)  \n"
             + "**Continue:** \($continue)\n\n"
+
+    - name: Generate workflow artifacts table
+      uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
+      with:
+        title: Artifacts to publish
+        append: true
+        output-path: GITHUB_STEP_SUMMARY
+        headers: |
+          Name
+          Size
+        json: ${{ steps.artifact-sizes.outputs.value }}
+
+    - name: Generate wf data
+      id: wf-data
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: ${{ fromJSON(steps.afterall.outputs.status) }}
+        print-result: true
+        filter: |
+          .
+
+    - name: Generate workflow status table
+      uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
+      with:
+        title: Required Workflows Status
+        append: true
+        output-path: GITHUB_STEP_SUMMARY
+        columns: 4
+        headers: |
+          Workflow
+          Status
+          Conclusion
+          Run
+        json: |
+          ${{ fromJSON(steps.afterall.outputs.status) }}
+        filter: |
+          . as $data
+          | ($data |  .status) as $status
+          | ($data["run-ids"] | fromjson) as $runIds
+          | "${{ inputs.workflows }}" | split("\n") | map(select(length > 0)) as $workflows
+          | ${{ toJSON(github.repository) }} as $repo
+          | $workflows
+          | map(
+              . as $wf
+              | if $status[$wf] then
+                  $status[$wf] as $st
+                  | {key: "#\($wf)](https://github.com/\($repo)/actions/runs/\($st.id))", value: "\($st.status)/\($st.conclusion)"}
+                else
+                  {key: $wf, value: "-"}
+                end
+            )
+          | from_entries
+
+
+    - name: Generate workflow status table data
+      id: table-data
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        print-result: true
+        input: |
+          ${{ steps.afterall.outputs.status }}
+        filter: |
+          . as $data
+          | ($data.status | fromjson) as $status
+          | ($data["run-ids"] | fromjson) as $runIds
+          | "${{ inputs.workflows }}" | split("\n") | map(select(length > 0)) as $workflows
+          | ${{ toJSON(github.repository) }} as $repo
+          | $workflows
+          | map(
+              . as $wf
+              | if $status[$wf] then
+                  $status[$wf] as $st
+                  | [$wf, $st.status, $st.conclusion, "[#\($st.id)](https://github.com/\($repo)/actions/runs/\($st.id))"]
+                else
+                  [$wf, "-", "-", "-"]
+                end
+            )
+
+
     - name: Generate workflow status table
       uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
       with:
@@ -149,25 +248,11 @@ jobs:
           Status
           Conclusion
           Run
-        json: |
-          ${{ steps.afterall.outputs.status }}
-        filter: |
-          . as $data
-          | ($data.status | fromjson) as $status
-          | ($data["run-ids"] | fromjson) as $runIds
-          | ${{ toJSON(inputs.workflows) }} | split("\n") | map(select(length > 0)) as $workflows
-          | ${{ toJSON(github.repository) }} as $repo
-          | $workflows | map(
-              . as $wf
-              | if $status[$wf] then
-                  $status[$wf] as $st
-                  | [$wf, $st.status, $st.conclusion, "[#\($st.id)](https://github.com/\($repo)/actions/runs/\($st.id))"]
-                else
-                  [$wf, "-", "-", "-"]
-                end
-            )
+        json: ${{ steps.table-data.outputs.value }}
+
+
     - name: Generate files table
-      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      if: false && ${{ fromJSON(steps.afterall.outputs.continue) }}
       uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
       with:
         title: Downloaded Files

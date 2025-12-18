@@ -5,7 +5,10 @@ inputs:
   jq-pre-filter:
     type: string
     default: >-
-      {workflow_runs: [.workflow_runs[] | {name, id, status, conclusion, created_at}]}
+      {workflow_runs: [.workflow_runs[] | select(name=\"Bazel CI\") | {name, id, conclusion, created_at}]}
+  max-results:
+    type: number
+    default: 200
   repo:
     type: string
     default: ${{ github.repository }}
@@ -25,7 +28,7 @@ inputs:
   template-script:
     type: string
     default: |
-      OUTPUT=$(gh api --jq '\(.jq)' \"/repos/\(.repo)/actions/runs?head_sha=\($sha)&per_page=100\")
+      OUTPUT=$(gh api --jq '\(.jq)' \"/repos/\(.repo)/actions/runs?head_sha=\(.sha)&status=completed&per_page=\(.per_page)\")
 
 outputs:
   status:
@@ -58,14 +61,13 @@ runs:
     with:
       input: |
         jq: "${{ inputs.jq-pre-filter }}"
+        per_page: ${{ inputs.max-results }}
         repo: ${{ inputs.repo }}
         sha: ${{ inputs.sha }}
         workflows: ${{ steps.workflows.outputs.value }}
       input-format: yaml
       filter: |
-        . as $input
-        | .sha as $sha
-        | .workflows as $workflows
+        .
         | ("${{ inputs.template-script }}" | bash::output)
       result-format: json
       result-filter-options: "-c"
@@ -77,8 +79,8 @@ runs:
         | reduce $workflows[] as $name ($init;
             ([$runs[] | select(.name == $name)] | sort_by(.created_at) | last) as $run
             | if $run then
-                .status[$name] = {id: $run.id, status: $run.status, conclusion: $run.conclusion}
-                | if $run.status == "completed" and $run.conclusion == "success" then
+                .status[$name] = {id: $run.id, conclusion: $run.conclusion}
+                | if $run.conclusion == "success" then
                     .["run-ids"][$name] = $run.id
                   else
                     .continue = false
