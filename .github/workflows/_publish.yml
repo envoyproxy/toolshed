@@ -30,7 +30,7 @@ jobs:
     steps:
     - name: Check all workflows ran
       id: afterall
-      uses: phlax/toolshed/gh-actions/github/afterall@816186c8e17af508a4da26d9fd7d9d745b5636b1
+      uses: envoyproxy/toolshed/gh-actions/github/afterall@43c4cefb2f73323d5621c661f7afc4d8a85ea3ac
       with:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
