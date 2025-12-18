@@ -1,0 +1,21 @@
+"""Test targets for arch_alias extension validation."""
+
+# Simple genrule to validate that the build system works
+genrule(
+    name = "test_genrule",
+    outs = ["test_output.txt"],
+    cmd = "echo 'arch_alias extension test passed' > $@",
+)
+
+# Filegroup to test platform resolution
+filegroup(
+    name = "test_files",
+    srcs = ["test_output.txt"],
+)
+
+# Test alias to verify platform aliases work correctly
+alias(
+    name = "test",
+    actual = ":test_genrule",
+    visibility = ["//visibility:public"],
+)
