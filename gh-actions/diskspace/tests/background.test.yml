@@ -1,0 +1,28 @@
+uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.3.35
+with:
+  background: true
+id: diskspace
+
+after:
+- shell: bash
+  run: |
+    # Check that PIDs were output
+    if [[ -z "%{{ steps.diskspace.outputs.pids }}" ]]; then
+        echo "Error: PIDs output is empty"
+        exit 1
+    fi
+    echo "✓ Background mode returned PIDs: ${{ steps.diskspace.outputs.pids }}"
+    for pid in %{{ steps.diskspace.outputs.pids }}; do
+        echo "Waiting for process $pid to complete..."
+        # Wait with timeout - process should complete quickly
+        timeout=10
+        while kill -0 "$pid" 2>/dev/null && [ "$timeout" -gt 0 ]; do
+            sleep 1
+            timeout=$((timeout - 1))
+        done
+        if [ "$timeout" -eq 0 ]; then
+            echo "Warning: Process $pid did not complete in time"
+        else
+            echo "✓ Process $pid completed"
+        fi
+    done
