@@ -93,6 +93,15 @@ jobs:
           | endswith("-dev") as $is_dev
           | {version: ., is_dev: $is_dev}
 
+    - name: Commit messsage
+      id: commit-message
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        options: -Rr
+        input: |
+          ${{ inputs.commit-message }}
+        filter: |
+          split("\n") | first
     - name: Status summary
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
@@ -105,7 +114,7 @@ jobs:
           repository: ${{ inputs.repository }}
           pr: ${{ inputs.pr }}
           commit_message: |
-            ${{ inputs.commit-message }}
+            ${{ steps.commit-message.outputs.value }}
         input-format: yaml
         options: -r
         output-path: GITHUB_STEP_SUMMARY
@@ -114,7 +123,6 @@ jobs:
           | .conclusion as $conclusion
           | .continue as $continue
           | .repository as $repo
-          | (.commit_message | split("\n") | first) as $commit_message
           | (if .bins.is_dev then ""
              else "**(RELEASE)**"
              end) as $bins_release
@@ -129,7 +137,7 @@ jobs:
              else {} end) as $pr
           | (if $pr.number then
                $pr.title // "PR #\($pr.number)"
-             else $commit_message
+             else .commit_message
              end) as $title
           | (if $pr.number then
                "${{ inputs.template-pr-link }}"
