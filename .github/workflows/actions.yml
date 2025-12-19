@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       run: ${{ steps.filter.outputs.run }}
+      tests: ${{ steps.tests.outputs.output }}
     steps:
     - uses: envoyproxy/toolshed/gh-actions/github/should-run@c04bdf5c854da00a30144f3597967e73ca376f38
       id: filter
@@ -26,8 +27,42 @@ jobs:
           paths:
           - 'gh-actions/**'
           - '.github/workflows/actions.yml'
+    - id: tests
+      uses: envoyproxy/toolshed/gh-actions/bson@9bb6f3a6aa6bf95ae2e1c8676dbf7056ff6e7440
+      with:
+        input: |
+          OUTPUT="$(find gh-actions -path "*/tests/*.test.yml" -type f)"
+        filter: |
+          bash::output
+        result-filter: |
+          split("\n")
+          | map(select(length > 0))
 
-  gh-actions:
+  actions:
+    runs-on: ubuntu-24.04
+    needs: should
+    if: >-
+      fromJSON(needs.should.outputs.run)
+      && needs.should.outputs.tests != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.should.outputs.tests) }}
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - name: Load config
+      id: config
+      uses: envoyproxy/toolshed/gh-actions/jq@9bb6f3a6aa6bf95ae2e1c8676dbf7056ff6e7440
+      with:
+        input: ${{ matrix.test }}
+        input-format: yaml-path
+    - name: Run test
+      uses: envoyproxy/toolshed/gh-actions/test-runner@9bb6f3a6aa6bf95ae2e1c8676dbf7056ff6e7440
+      with:
+        config: ${{ steps.config.outputs.value }}
+        name: ${{ matrix.test }}
+
+  js-actions:
     runs-on: ubuntu-24.04
     needs: should
     if: fromJSON(needs.should.outputs.run)
@@ -76,7 +111,8 @@ jobs:
     name: Actions
     needs:
     - should
-    - gh-actions
+    - actions
+    - js-actions
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
