@@ -57,7 +57,7 @@ jobs:
         input: ${{ matrix.test }}
         input-format: yaml-path
     - name: Run test
-      uses: envoyproxy/toolshed/gh-actions/test-runner@3b0ce61ae29da2a0ac9ce43db547bd5d7f72bd63
+      uses: envoyproxy/toolshed/gh-actions/test-runner@365e470aa8904efb3b02075fb84495ec399b6b08
       with:
         config: ${{ steps.config.outputs.value }}
         name: ${{ matrix.test }}
