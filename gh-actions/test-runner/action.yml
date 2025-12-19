@@ -1,0 +1,53 @@
+name: Test runner
+description: Test GitHub Actions with fixtures and side effect validation
+author: phlax
+
+inputs:
+  config:
+    description: Test configuration YAML
+    type: string
+    required: true
+  name:
+    description: Name of the test
+    type: string
+    default: Action Test
+  template-test-run:
+    type: string
+    default: |
+      mkdir -p .tmp.test-action
+      cat > .tmp.test-action/action.yml << 'EOFACTION'
+      runs:
+        using: composite
+        steps:
+        - uses: \($config.using)
+          id: test-action
+          (if ($inputs | length) > 0 then "with:\n\($inputs)\n" else "" end)
+      outputs:
+        outputs:
+          value: %{{ toJSON(steps.test-action.outputs) }}
+      EOFACTION
+      OUTPUT=\(.)
+
+outputs:
+  result:
+    description: Test result (pass/fail)
+    value: ${{ steps.final-result.outputs.result }}
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+    id: config
+    with:
+      input: ${{ inputs.config }}
+      input-format: yaml
+      print-result: true
+      filter: |
+        .before + [{uses, with: (.with // {})}] + .after
+
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.3.35
+    id: run
+    with:
+      name: Run test
+      steps: ${{ steps.config.outputs.value }}
+      step-format: json

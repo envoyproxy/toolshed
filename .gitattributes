@@ -1,0 +1,4 @@
+# Exclude test directories from git archives (used for releases)
+# Note: This does not affect GitHub Actions 'uses:' references,
+# which clone the entire repository
+**/tests/ export-ignore

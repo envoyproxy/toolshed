@@ -1,0 +1,91 @@
+name: Action Tests
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  should:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@c04bdf5c854da00a30144f3597967e73ca376f38
+      id: filter
+      with:
+        config: |
+          paths:
+          - 'gh-actions/**'
+          - '.github/workflows/action-tests.yml'
+          - '.github/workflows/tests/**'
+
+  discover-tests:
+    runs-on: ubuntu-24.04
+    needs: should
+    if: fromJSON(needs.should.outputs.run)
+    outputs:
+      tests: ${{ steps.find-tests.outputs.tests }}
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - id: find-tests
+      shell: bash
+      run: |
+        # Find all test files in gh-actions/*/tests/ directories
+        tests=$(find gh-actions -path "*/tests/*.test.yml" -type f \
+          | jq -R -s -c 'split("\n") | map(select(length > 0))')
+        echo "tests=$tests" >> $GITHUB_OUTPUT
+        echo "Found tests: $tests"
+
+  run-tests:
+    runs-on: ubuntu-24.04
+    needs: discover-tests
+    if: ${{ needs.discover-tests.outputs.tests != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        test: ${{ fromJSON(needs.discover-tests.outputs.tests) }}
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+
+    - name: Load test config
+      id: load-test
+      shell: bash
+      run: |
+        config=$(cat "${{ matrix.test }}")
+        # Use a delimiter to handle multiline content
+        echo "config<<EOFCONFIG" >> $GITHUB_OUTPUT
+        echo "$config" >> $GITHUB_OUTPUT
+        echo "EOFCONFIG" >> $GITHUB_OUTPUT
+
+    - name: Run test
+      uses: envoyproxy/toolshed/gh-actions/test-runner@281ca0e6015fe5539205c3df8760335ddf53aa19
+      with:
+        config: ${{ steps.load-test.outputs.config }}
+        name: ${{ matrix.test }}
+
+  status:
+    runs-on: ubuntu-24.04
+    if: >-
+      always()
+      && github.event_name == 'pull_request'
+    name: Action Tests
+    needs:
+    - should
+    - discover-tests
+    - run-tests
+    steps:
+    - run: |
+        if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+        fi
+        echo "All required jobs passed or were skipped"

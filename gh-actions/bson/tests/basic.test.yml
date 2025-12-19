@@ -1,0 +1,16 @@
+# Example test for the bson action
+using: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.35
+with:
+  input: |
+    message: "Hello World"
+    count: 42
+  input-format: yaml
+  filter: |
+    "echo \(.message)"
+    | bash::code
+
+after:
+- shell: bash
+  run: |
+    # The bson action should have executed the bash code
+    echo "✓ Bson action executed successfully"

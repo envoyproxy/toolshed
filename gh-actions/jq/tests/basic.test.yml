@@ -1,0 +1,9 @@
+# Example test for the jq action
+using: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+with:
+  input: '{"foo": "bar", "baz": 123}'
+  filter: .foo
+  options: -r
+
+outputs:
+  value: bar

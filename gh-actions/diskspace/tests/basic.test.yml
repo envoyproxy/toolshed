@@ -1,0 +1,22 @@
+# Example test for the diskspace action with mocking
+before:
+- shell: bash
+  run: |
+    # Create a test directory to remove
+    mkdir -p /tmp/test-cruft
+    echo "test data" > /tmp/test-cruft/testfile.txt
+
+using: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.3.35
+with:
+  to_remove: /tmp/test-cruft
+  background: false
+
+after:
+- shell: bash
+  run: |
+    # Verify the directory was removed
+    if [[ -d /tmp/test-cruft ]]; then
+      echo "Error: /tmp/test-cruft still exists"
+      exit 1
+    fi
+    echo "✓ Diskspace action successfully removed test directory"

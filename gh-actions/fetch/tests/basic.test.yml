@@ -1,0 +1,41 @@
+# Example test for the fetch action
+before:
+- shell: bash
+  run: |
+    # Create a temporary file to serve
+    mkdir -p /tmp/test-server
+    echo "test content" > /tmp/test-server/test.txt
+    # Start a simple HTTP server in the background
+    cd /tmp/test-server
+    python3 -m http.server 8765 &
+    echo $! > /tmp/server.pid
+    sleep 2
+
+using: envoyproxy/toolshed/gh-actions/fetch@actions-v0.3.35
+with:
+  url: http://localhost:8765/test.txt
+  filename: downloaded.txt
+
+after:
+- shell: bash
+  run: |
+    # Check that the file was downloaded
+    if [[ ! -f downloaded.txt ]]; then
+      echo "Error: downloaded.txt not found"
+      exit 1
+    fi
+    # Check content
+    content=$(cat downloaded.txt)
+    if [[ "$content" != "test content" ]]; then
+      echo "Error: content mismatch"
+      echo "Expected: test content"
+      echo "Got: $content"
+      exit 1
+    fi
+    # Cleanup
+    kill $(cat /tmp/server.pid) || true
+    rm -rf /tmp/test-server /tmp/server.pid downloaded.txt
+    echo "✓ Fetch action test passed"
+
+outputs:
+  path: downloaded.txt

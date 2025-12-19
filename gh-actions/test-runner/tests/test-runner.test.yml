@@ -1,0 +1,37 @@
+before:
+- uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+  id: before
+  with:
+    input-format: yaml
+    input: |
+      before:
+      - shell: bash
+        run: |
+          echo "BEFORE" >> /tmp/test-output
+          mkdir /tmp/DELETEME
+      uses: envoyproxy/toolshed/gh-actions/diskspace@281ca0e6015fe5539205c3df8760335ddf53aa19
+      with:
+        background: false
+        to_remove: |
+          /tmp/DELETEME
+      after:
+      - shell: bash
+        run: |
+          echo "AFTER" >> /tmp/test-output
+          ls -alh /tmp/DELETEME >& /dev/null && {
+              echo "/tmp/DELETEME was not deleted"
+              exit 1
+          } || {
+              echo "/tmp/DELETEME successfully removed"
+          }
+
+uses: envoyproxy/toolshed/gh-actions/test-runner@281ca0e6015fe5539205c3df8760335ddf53aa19
+with:
+  config: |
+    %{{ steps.before.outputs.value }}
+
+after:
+- shell: bash
+  run: |
+    grep BEFORE /tmp/test-output
+    grep AFTER /tmp/test-output
