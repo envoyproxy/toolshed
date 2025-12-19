@@ -1,0 +1,67 @@
+name: Publishing
+
+permissions:
+  actions: read
+
+on:
+  pull_request:
+    paths:
+    - .github/workflows/_publish.yml
+    - .github/workflows/test-publish.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+
+jobs:
+  get-main:
+    runs-on: ubuntu-24.04
+    outputs:
+      message: ${{ steps.commit.outputs.message }}
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+    - name: Get latest commit from main
+      id: commit
+      env:
+        GH_TOKEN: ${{ github.token }}
+        REPO: ${{ github.repository }}
+      run: |
+        SHA=$(gh api /repos/${{ 'envoyproxy/toolshed' || github.repository }}/git/ref/heads/main --jq '.object.sha')
+        echo "sha=$SHA" >> $GITHUB_OUTPUT
+        echo "Latest SHA from main: $SHA"
+        MESSAGE=$(\
+            gh api "/repos/${REPO}/commits/${SHA}" \
+                --jq '.commit.message | split("\n") | first')
+        echo "message=$MESSAGE" >> $GITHUB_OUTPUT
+        echo "Latest MESSAGE from main: $MESSAGE"
+
+  publish:
+    needs: get-main
+    permissions:
+      actions: read
+    uses: ./.github/workflows/_publish.yml
+    with:
+      commit-message: ${{ needs.get-main.outputs.message }}
+      conclusion: ${{ matrix.conclusion || 'success' }}
+      bins-version: ${{ matrix.bins-version }}
+      dry-run: true
+      event: ${{ matrix.event }}
+      sha: ${{ matrix.sha || needs.get-main.outputs.sha }}
+      skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
+      workflows: |
+        Bazel CI
+        Rust CI
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - event: push
+        - event: push
+          conclusion: failure
+        - event: push
+          skip: true
+        - event: push
+          bins-version: 0.1.23
+        - sha: ${{ github.event.pull_request.head.sha }}
+          event: pull_request

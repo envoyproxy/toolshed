@@ -7,9 +7,6 @@ on:
   pull_request:
     branches:
     - main
-  release:
-    types:
-    - published
 
 permissions:
   contents: read
@@ -21,7 +18,6 @@ concurrency:
 jobs:
   should:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'release'
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
@@ -30,6 +26,7 @@ jobs:
       with:
         config: |
           paths:
+          - BINS_VERSION.txt
           - 'rust/**'
           - '.github/workflows/rust.yml'
 
@@ -38,7 +35,6 @@ jobs:
     needs: should
     if: >-
       github.repository_owner == 'envoyproxy'
-      && github.event_name != 'release'
       && fromJSON(needs.should.outputs.run || 'false')
     strategy:
       fail-fast: false
@@ -73,8 +69,7 @@ jobs:
     needs: should
     if: >-
       always()
-      && (github.event_name == 'release'
-          || fromJSON(needs.should.outputs.run || 'false'))
+      && fromJSON(needs.should.outputs.run || 'false')
     runs-on: ${{ matrix.runs-on }}
     strategy:
       matrix:
@@ -127,6 +122,7 @@ jobs:
     needs:
     - should
     - test
+    - build
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
