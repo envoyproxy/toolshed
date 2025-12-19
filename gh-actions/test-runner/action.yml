@@ -28,9 +28,10 @@ runs:
       input-format: yaml
       print-result: true
       filter: |
-        {uses, with: (.with // {})}
-        | if .id then
-            .id = .id
+        . as $config
+        | {uses, with: (.with // {})}
+        | if $config.id then
+            .id = $config.id
           else . end
         | .before + [.] + .after
 
