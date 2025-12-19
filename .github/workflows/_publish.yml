@@ -68,7 +68,7 @@ jobs:
     steps:
     - name: Check all workflows ran
       id: afterall
-      uses: envoyproxy/toolshed/gh-actions/github/afterall@499abdb7e1a90ac9ce7ee45cc47acb07fc68a235
+      uses: envoyproxy/toolshed/gh-actions/github/afterall@b78171200b6cf28afef2fd16c9015e8dba6e37cc
       with:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
@@ -181,7 +181,7 @@ jobs:
 
     - name: Download Artifacts (Bazel CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         github-token: ${{ github.token }}
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Bazel CI'] }}
@@ -189,7 +189,7 @@ jobs:
         repository: ${{ inputs.repository }}
     - name: Download Artifacts (Rust CI)
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         github-token: ${{ github.token }}
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Rust CI'] }}
