@@ -9,7 +9,7 @@ before:
         run: |
           echo "BEFORE" >> /tmp/test-output
           mkdir /tmp/DELETEME
-      uses: envoyproxy/toolshed/gh-actions/diskspace@9bb6f3a6aa6bf95ae2e1c8676dbf7056ff6e7440
+      uses: envoyproxy/toolshed/gh-actions/diskspace@722c8b2889dfdd7e06be5dee48c02ccacc357a0c
       with:
         background: false
         to_remove: |
