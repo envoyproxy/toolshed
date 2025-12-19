@@ -104,7 +104,8 @@ jobs:
           continue: ${{ steps.afterall.outputs.continue }}
           repository: ${{ inputs.repository }}
           pr: ${{ inputs.pr }}
-          commit_message: "${{ inputs.commit-message }}"
+          commit_message: |
+            ${{ inputs.commit-message }}
         input-format: yaml
         options: -r
         output-path: GITHUB_STEP_SUMMARY
