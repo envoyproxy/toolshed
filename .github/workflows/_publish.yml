@@ -19,10 +19,13 @@ on:
         default: false
         type: boolean
       event:
-        default: ${{ github.event_name }}
+        default: ${{ github.event.workflow_run.event }}
         type: string
       pr:
-        default: ${{ github.event.pull_request && toJSON(github.event.pull_request) || '{}' }}
+        default: >-
+          ${{ github.event.workflow_run.event == 'pull_request'
+              && toJSON(github.event.workflow_run.pull_requests)[0]
+              || '{}' }}
         type: string
       repository:
         default: ${{ github.repository }}
@@ -97,7 +100,7 @@ jobs:
       id: commit-message
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
-        options: -Rr
+        options: -sRr
         input: |
           ${{ inputs.commit-message }}
         filter: |
