@@ -28,7 +28,7 @@ runs:
       input-format: yaml
       print-result: true
       filter: |
-        .before + [{uses, with: (.with // {})}] + .after
+        .before + [{id, uses, with: (.with // {})}] + .after
 
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.3.35
     id: run
