@@ -1,0 +1,19 @@
+before:
+- shell: bash
+  run: |
+    mkdir -p /tmp/test-cruft/sub
+    echo "test data" > /tmp/test-cruft/sub/testfile.txt
+
+uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.3.35
+with:
+  to_remove: /tmp/test-cruft
+  background: false
+
+after:
+- shell: bash
+  run: |
+    if [[ -d /tmp/test-cruft ]]; then
+        echo "Error: /tmp/test-cruft still exists"
+        exit 1
+    fi
+    echo "✓ Diskspace action successfully removed test directory"
