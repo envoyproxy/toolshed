@@ -67,7 +67,7 @@ jobs:
         echo "EOFCONFIG" >> $GITHUB_OUTPUT
 
     - name: Run test
-      uses: envoyproxy/toolshed/gh-actions/test-runner@281ca0e6015fe5539205c3df8760335ddf53aa19
+      uses: envoyproxy/toolshed/gh-actions/test-runner@9bb6f3a6aa6bf95ae2e1c8676dbf7056ff6e7440
       with:
         config: ${{ steps.load-test.outputs.config }}
         name: ${{ matrix.test }}
