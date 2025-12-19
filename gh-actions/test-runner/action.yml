@@ -28,7 +28,11 @@ runs:
       input-format: yaml
       print-result: true
       filter: |
-        .before + [{id: (.id // ""), uses, with: (.with // {})}] + .after
+        {uses, with: (.with // {})} as $test
+        | if .id then
+            $test.id = .id
+          else . end
+        | .before + [$test] + .after
 
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.3.35
     id: run
