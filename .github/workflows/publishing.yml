@@ -15,8 +15,23 @@ concurrency:
 
 
 jobs:
+  should:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@b78171200b6cf28afef2fd16c9015e8dba6e37cc
+      id: filter
+      with:
+        config: |
+          paths:
+          - '.github/workflows/_publish.yml'
+          - '.github/workflows/publishing.yml'
+
   get-main:
     runs-on: ubuntu-24.04
+    needs: should
+    if: fromJSON(needs.should.outputs.run || 'false')
     outputs:
       message: ${{ steps.commit.outputs.message }}
       sha: ${{ steps.commit.outputs.sha }}
@@ -37,7 +52,10 @@ jobs:
         echo "Latest MESSAGE from main: $MESSAGE"
 
   publish:
-    needs: get-main
+    needs:
+    - should
+    - get-main
+    if: fromJSON(needs.should.outputs.run || 'false')
     permissions:
       actions: read
     uses: ./.github/workflows/_publish.yml
@@ -65,3 +83,21 @@ jobs:
           bins-version: 0.1.23
         - sha: ${{ github.event.pull_request.head.sha }}
           event: pull_request
+
+  status:
+    runs-on: ubuntu-24.04
+    if: >-
+      always()
+      && github.event_name == 'pull_request'
+    name: Publishing
+    needs:
+    - should
+    - get-main
+    - publish
+    steps:
+    - run: |
+        if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+        fi
+        echo "All required jobs passed or were skipped"
