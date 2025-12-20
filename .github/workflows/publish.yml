@@ -16,6 +16,15 @@ jobs:
   check-and-publish:
     permissions:
       actions: read
+    secrets:
+      app-id: >-
+        ${{ github.event.workflow_run.event == 'push'
+            && secrets.ENVOY_CI_PUBLISH_APP_ID
+            || '' }}
+      app-key: >-
+        ${{ github.event.workflow_run.event == 'push'
+            && secrets.ENVOY_CI_PUBLISH_APP_KEY
+            || '' }}
     uses: ./.github/workflows/_publish.yml
     with:
       workflows: |
