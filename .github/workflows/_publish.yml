@@ -31,6 +31,9 @@ on:
               && toJSON(github.event.workflow_run.pull_requests)[0]
               || '{}' }}
         type: string
+      python-version:
+        default:
+        type: string
       repository:
         default: ${{ github.repository }}
         type: string
@@ -53,6 +56,7 @@ on:
 
           **Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha)) \($pr_link)
           **Bins version:** \(.bins.version) \($bins_release)
+          **Python version:** \(.python.version) \($python_release)
           **Continue:** `\($continue)`
 
 
@@ -115,6 +119,25 @@ jobs:
           .
           | endswith("-dev") as $is_dev
           | {version: ., is_dev: $is_dev}
+    - name: Check for python release
+      id: python-version
+      run: |
+        if [[ -z "${{ inputs.python-version }}" ]]; then
+            version=$(cat py/VERSION.txt)
+        else
+            version="${{ inputs.python-version }}"
+        fi
+        echo "version=${version}" >> $GITHUB_OUTPUT
+    - name: Python version info
+      id: python
+      uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+      with:
+        input: ${{ steps.python-version.outputs.version }}
+        options: -Rc
+        filter: |
+          .
+          | endswith("-dev") as $is_dev
+          | {version: ., is_dev: $is_dev}
 
     - name: Commit messsage
       id: commit-message
@@ -134,6 +157,7 @@ jobs:
           sha: ${{ inputs.sha }}
           conclusion: ${{ inputs.conclusion }}
           continue: ${{ steps.afterall.outputs.continue }}
+          python: ${{ steps.python.outputs.value }}
           repository: ${{ inputs.repository }}
           pr: ${{ inputs.pr }}
           commit_message: |
@@ -151,6 +175,12 @@ jobs:
              end) as $bins_release
           | (if .bins.is_dev then ""
              else "(release: bins-v\(.bins.version))"
+             end) as $release_info
+          | (if .python.is_dev then ""
+             else "**(RELEASE)**"
+             end) as $python_release
+          | (if .python.is_dev then ""
+             else "(release: python-v\(.python.version))"
              end) as $release_info
           | .commit_info as $commitInfo
           | (if .event == "pull_request" and .pr != null and .pr != "{}" and .pr != "" then
@@ -173,6 +203,7 @@ jobs:
         title: Required Workflows Status
         append: true
         output-path: GITHUB_STEP_SUMMARY
+        collapse-open: ${{ ! fromJSON(steps.afterall.outputs.continue) }}
         columns: 4
         headers: |
           Workflow
@@ -215,6 +246,15 @@ jobs:
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Rust CI'] }}
         path: ./artifacts/rust
         repository: ${{ inputs.repository }}
+    - name: Download Artifacts (Python CI)
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      uses: actions/download-artifact@v7
+      with:
+        github-token: ${{ github.token }}
+        run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Python CI'] }}
+        pattern: python-artifacts
+        path: ./artifacts/python
+        repository: ${{ inputs.repository }}
     - name: List downloaded artifacts
       id: artifacts
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
@@ -233,8 +273,14 @@ jobs:
           | map(
               select(length > 0)
               | split(" ")
-              | {key: (.[1] | split("/")[-1]), value: {path: .[1], size: (.[0] | tonumber)}}
+              | (.[1]
+                 | split("/")[-1] as $name
+                 | split("/")[2] as $ci
+                 | "\($ci):\($name)") as $key
+              | {key: ($key),
+                 value: {path: .[1], size: (.[0] | tonumber)}}
             )
+          | sort_by(.key)
           | from_entries
 
     - name: List downloaded artifacts

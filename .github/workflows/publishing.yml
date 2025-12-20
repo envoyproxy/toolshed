@@ -65,24 +65,31 @@ jobs:
       bins-version: ${{ matrix.bins-version }}
       dry-run: true
       event: ${{ matrix.event }}
+      python-version: ${{ matrix.python-version }}
       sha: ${{ matrix.sha || needs.get-main.outputs.sha }}
       skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
       workflows: |
         Bazel CI
+        Python CI
         Rust CI
     strategy:
       fail-fast: false
       matrix:
         include:
+        - sha: ${{ github.event.pull_request.head.sha }}
+          event: pull_request
         - event: push
+        - event: push
+          bins-version: 0.1.23
+        - event: push
+          python-version: 0.0.23
+        - event: push
+          bins-version: 0.1.23
+          python-version: 0.0.23
         - event: push
           conclusion: failure
         - event: push
           skip: true
-        - event: push
-          bins-version: 0.1.23
-        - sha: ${{ github.event.pull_request.head.sha }}
-          event: pull_request
 
   status:
     runs-on: ubuntu-24.04
