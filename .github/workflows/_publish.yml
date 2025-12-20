@@ -244,6 +244,17 @@ jobs:
           Size
         json: ${{ steps.artifact-sizes.outputs.value }}
 
+    - name: Set up Python
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install envoy.base.utils
+      if: ${{ fromJSON(steps.afterall.outputs.continue) }}
+      run: |
+        pip install envoy.base.utils>=0.5.7
+
     - name: >-
         Create release
         ${{ (inputs.event == 'pull_request' || inputs.dry-run)
@@ -253,11 +264,33 @@ jobs:
         fromJSON(steps.afterall.outputs.continue)
         && (! fromJSON(steps.bins.outputs.value).is_dev
             || inputs.event == 'pull_request')
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        DRY_RUN_FLAG=""
+        if [[ "${{ inputs.event }}" == "pull_request" || "${{ inputs.dry-run }}" == "true" ]]; then
+          DRY_RUN_FLAG="--dry-run"
+          echo "DRY RUN: Would create release bins-v${{ steps.bins-version.outputs.version }}"
+        fi
+        
+        envoy.project \
+          --repo ${{ inputs.repository }} \
+          $DRY_RUN_FLAG \
+          --publish-assets ./artifacts \
+          --publish-commitish ${{ inputs.sha }} \
+          publish \
+          ./
+
+    - name: Update summary
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && (! fromJSON(steps.bins.outputs.value).is_dev
+            || inputs.event == 'pull_request')
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
         input: |
           bins: ${{ steps.bins.outputs.value }}
-          dry_run: ${{ inputs.dry-run }}
+          dry_run: ${{ inputs.dry-run || inputs.event == 'pull_request' }}
           event: ${{ inputs.event }}
           repository: ${{ inputs.repository }}
           sha: ${{ inputs.sha }}
