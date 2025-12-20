@@ -7,6 +7,7 @@ on:
   workflow_run:
     workflows:
     - Bazel CI
+    - Github/actions CI
     - Python CI
     - Rust CI
     types:
@@ -30,5 +31,6 @@ jobs:
     with:
       workflows: |
         Bazel CI
+        Github/actions CI
         Python CI
         Rust CI
