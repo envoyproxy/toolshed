@@ -1,3 +1,11 @@
+uses: ./gh-actions/bind-mounts
+with:
+  mounts: |
+    - src: /tmp/bind-test-src1
+      target: /tmp/bind-test-target1
+    - src: /tmp/bind-test-src2
+      target: /tmp/bind-test-target2
+
 before:
 - shell: bash
   run: |
@@ -7,14 +15,6 @@ before:
     echo "test-content-2" | sudo tee /tmp/bind-test-src2/file2.txt
     mkdir -p /tmp/bind-test-target1
     mkdir -p /tmp/bind-test-target2
-
-uses: ./gh-actions/bind-mounts
-with:
-  mounts: |
-    - src: /tmp/bind-test-src1
-      target: /tmp/bind-test-target1
-    - src: /tmp/bind-test-src2
-      target: /tmp/bind-test-target2
 
 after:
 - shell: bash

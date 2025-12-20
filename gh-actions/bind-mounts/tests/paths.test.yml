@@ -1,3 +1,11 @@
+uses: ./gh-actions/bind-mounts
+with:
+  mounts: |
+    - src: /tmp/bind-paths-src1
+      target: GITHUB_WORKSPACE/bind-test-workspace
+    - src: /tmp/bind-paths-src2
+      target: RUNNER_TEMP/bind-test-runner
+
 before:
 - shell: bash
   run: |
@@ -7,14 +15,6 @@ before:
     echo "runner-temp-content" | sudo tee /tmp/bind-paths-src2/runner-temp.txt
     mkdir -p "${{ github.workspace }}/bind-test-workspace"
     mkdir -p "${{ runner.temp }}/bind-test-runner"
-
-uses: ./gh-actions/bind-mounts
-with:
-  mounts: |
-    - src: /tmp/bind-paths-src1
-      target: GITHUB_WORKSPACE/bind-test-workspace
-    - src: /tmp/bind-paths-src2
-      target: RUNNER_TEMP/bind-test-runner
 
 after:
 - shell: bash

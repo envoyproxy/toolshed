@@ -1,3 +1,10 @@
+uses: ./gh-actions/bind-mounts
+with:
+  mounts: |
+    - src: /tmp/bind-chown-src
+      target: /tmp/bind-chown-target
+      chown: runner:runner
+
 before:
 - shell: bash
   run: |
@@ -5,13 +12,6 @@ before:
     sudo chown root:root /tmp/bind-chown-src
     echo "test-content" | sudo tee /tmp/bind-chown-src/testfile.txt
     mkdir -p /tmp/bind-chown-target
-
-uses: ./gh-actions/bind-mounts
-with:
-  mounts: |
-    - src: /tmp/bind-chown-src
-      target: /tmp/bind-chown-target
-      chown: runner:runner
 
 after:
 - shell: bash
