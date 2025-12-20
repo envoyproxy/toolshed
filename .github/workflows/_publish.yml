@@ -61,6 +61,7 @@ jobs:
   check-and-publish:
     permissions:
       actions: read
+      contents: write
     if: >-
       inputs.conclusion == 'success'
       && ! inputs.skip
@@ -279,7 +280,7 @@ jobs:
           --publish-assets ./artifacts \
           --publish-commitish ${{ inputs.sha }} \
           publish \
-          ./
+          .
 
     - name: Update summary
       if: >-
