@@ -61,7 +61,7 @@ jobs:
   check-and-publish:
     permissions:
       actions: read
-      contents: inputs.dry-run && read || write
+      contents: write
     if: >-
       inputs.conclusion == 'success'
       && ! inputs.skip
