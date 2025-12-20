@@ -7,13 +7,14 @@ on:
   workflow_run:
     workflows:
     - Bazel CI
+    - Python CI
     - Rust CI
     types:
     - completed
 
 
 jobs:
-  check-and-publish:
+  publish:
     permissions:
       actions: read
     secrets:
@@ -29,4 +30,5 @@ jobs:
     with:
       workflows: |
         Bazel CI
+        Python CI
         Rust CI

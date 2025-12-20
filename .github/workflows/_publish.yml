@@ -65,7 +65,7 @@ on:
 
 
 jobs:
-  check-and-publish:
+  publish:
     permissions:
       actions: read
     if: >-
