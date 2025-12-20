@@ -28,7 +28,14 @@ runs:
       input-format: yaml
       print-result: true
       filter: |
-        .before + [{uses, with: (.with // {})}] + .after
+        . as $config
+        | .before as $before
+        | .after as $after
+        | {uses, with: (.with // {})}
+        | if $config.id then
+            .id = $config.id
+          else . end
+        | ($before // []) + [.] + ($after // [])
 
   - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.3.35
     id: run
