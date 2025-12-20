@@ -1,1 +1,2 @@
 envoy.code.check>=0.5.14
+envoy.github.release>=0.0.11
