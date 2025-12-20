@@ -1,0 +1,59 @@
+uses: ./gh-actions/diskspace
+id: diskspace
+
+before:
+- shell: bash
+  run: |
+    sudo mkdir -p /opt/hostedtoolcache
+    sudo mkdir -p /usr/local/lib/android
+    sudo mkdir -p /usr/local/.ghcup
+
+after:
+- shell: bash
+  run: |
+    if [[ -z "${{ steps.diskspace.outputs.pids }}" ]]; then
+        echo "Error: PIDs output is empty"
+        exit 1
+    fi
+    echo "✓ Background mode returned PIDs: ${{ steps.diskspace. outputs.pids }}"
+    for pid in ${{ steps.diskspace.outputs.pids }}; do
+        echo "Waiting for process $pid to complete..."
+        timeout=120
+        while kill -0 "$pid" 2>/dev/null && [[ "$timeout" -gt 0 ]]; do
+            sleep 1
+            timeout=$((timeout - 1))
+        done
+        if [[ "$timeout" -eq 0 ]]; then
+            echo "Warning: Process $pid did not complete in time"
+        else
+            echo "✓ Process $pid completed"
+        fi
+    done
+    echo ""
+    echo "Verifying directories have been removed..."
+    failed=0
+    if [[ -d "/opt/hostedtoolcache" ]]; then
+        echo "✗ Error: /opt/hostedtoolcache still exists"
+        failed=1
+    else
+        echo "✓ /opt/hostedtoolcache has been removed"
+    fi
+    if [[ -d "/usr/local/lib/android" ]]; then
+        echo "✗ Error: /usr/local/lib/android still exists"
+        failed=1
+    else
+        echo "✓ /usr/local/lib/android has been removed"
+    fi
+    if [[ -d "/usr/local/.ghcup" ]]; then
+        echo "✗ Error: /usr/local/.ghcup still exists"
+        failed=1
+    else
+        echo "✓ /usr/local/.ghcup has been removed"
+    fi
+    if [[ "$failed" -eq 1 ]]; then
+        echo ""
+        echo "Error: Some directories were not removed"
+        exit 1
+    fi
+    echo ""
+    echo "✓ All directories successfully removed"
