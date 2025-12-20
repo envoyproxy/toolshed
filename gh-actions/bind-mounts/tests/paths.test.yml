@@ -28,14 +28,14 @@ after:
         exit 1
     fi
     echo "✓ GITHUB_WORKSPACE path correctly interpolated and mounted"
-    
+
     # Verify content is accessible
     if [[ "$(cat "$WORKSPACE_TARGET/workspace.txt")" != "workspace-content" ]]; then
         echo "✗ Error: Content not accessible in GITHUB_WORKSPACE mount"
         exit 1
     fi
     echo "✓ Content accessible in GITHUB_WORKSPACE mount"
-    
+
     # Verify RUNNER_TEMP mount
     RUNNER_TARGET="${{ runner.temp }}/bind-test-runner"
     if ! mountpoint -q "$RUNNER_TARGET"; then
@@ -43,19 +43,19 @@ after:
         exit 1
     fi
     echo "✓ RUNNER_TEMP path correctly interpolated and mounted"
-    
+
     # Verify content is accessible
     if [[ "$(cat "$RUNNER_TARGET/runner-temp.txt")" != "runner-temp-content" ]]; then
         echo "✗ Error: Content not accessible in RUNNER_TEMP mount"
         exit 1
     fi
     echo "✓ Content accessible in RUNNER_TEMP mount"
-    
+
     # Cleanup
     sudo umount "$WORKSPACE_TARGET"
     sudo umount "$RUNNER_TARGET"
     sudo rm -rf /tmp/bind-paths-src1 /tmp/bind-paths-src2
     rm -rf "$WORKSPACE_TARGET" "$RUNNER_TARGET"
-    
+
     echo ""
     echo "✓ Path interpolation test passed"
