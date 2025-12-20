@@ -4,7 +4,7 @@ before:
     mkdir -p /tmp/test-cruft/sub
     echo "test data" > /tmp/test-cruft/sub/testfile.txt
 
-uses: envoyproxy/toolshed/gh-actions/diskspace@actions-v0.3.35
+uses: ./gh-actions/diskspace
 with:
   to_remove: /tmp/test-cruft
   background: false
