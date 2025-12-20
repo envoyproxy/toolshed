@@ -254,7 +254,7 @@ jobs:
     - name: Install envoy.base.utils
       if: ${{ fromJSON(steps.afterall.outputs.continue) }}
       run: |
-        pip install envoy.base.utils>=0.5.7 uvloop<0.21.0
+        pip install envoy.base.utils>=0.5.7 "uvloop<0.21.0"
 
     - name: >-
         Create release
