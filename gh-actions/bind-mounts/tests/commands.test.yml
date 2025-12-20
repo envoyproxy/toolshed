@@ -1,0 +1,76 @@
+before:
+- shell: bash
+  run: |
+    # Create test tracking file
+    echo "START" > /tmp/bind-commands-log.txt
+    # Create source and target directories
+    sudo mkdir -p /tmp/bind-commands-src
+    mkdir -p /tmp/bind-commands-target
+
+uses: ./gh-actions/bind-mounts
+with:
+  mounts: |
+    - src: /tmp/bind-commands-src
+      target: /tmp/bind-commands-target
+      command-pre: echo "PRE-MOUNT" >> /tmp/bind-commands-log.txt
+      command-post: echo "POST-MOUNT" >> /tmp/bind-commands-log.txt
+
+after:
+- shell: bash
+  run: |
+    # Verify mount exists
+    if ! mountpoint -q /tmp/bind-commands-target; then
+        echo "✗ Error: /tmp/bind-commands-target is not a mount point"
+        exit 1
+    fi
+    echo "✓ /tmp/bind-commands-target is mounted"
+    
+    # Verify command-pre was executed before the mount
+    if ! grep -q "PRE-MOUNT" /tmp/bind-commands-log.txt; then
+        echo "✗ Error: command-pre was not executed"
+        cat /tmp/bind-commands-log.txt
+        exit 1
+    fi
+    echo "✓ command-pre was executed"
+    
+    # Verify command-post was executed after the mount
+    if ! grep -q "POST-MOUNT" /tmp/bind-commands-log.txt; then
+        echo "✗ Error: command-post was not executed"
+        cat /tmp/bind-commands-log.txt
+        exit 1
+    fi
+    echo "✓ command-post was executed"
+    
+    # Verify the order: START -> PRE-MOUNT -> POST-MOUNT
+    LOG_CONTENT=$(cat /tmp/bind-commands-log.txt)
+    if ! echo "$LOG_CONTENT" | grep -q "START"; then
+        echo "✗ Error: START marker not found"
+        exit 1
+    fi
+    
+    # Check order by line numbers
+    START_LINE=$(grep -n "START" /tmp/bind-commands-log.txt | cut -d: -f1)
+    PRE_LINE=$(grep -n "PRE-MOUNT" /tmp/bind-commands-log.txt | cut -d: -f1)
+    POST_LINE=$(grep -n "POST-MOUNT" /tmp/bind-commands-log.txt | cut -d: -f1)
+    
+    if [[ $PRE_LINE -le $START_LINE ]]; then
+        echo "✗ Error: PRE-MOUNT executed before START"
+        cat /tmp/bind-commands-log.txt
+        exit 1
+    fi
+    echo "✓ PRE-MOUNT executed after START"
+    
+    if [[ $POST_LINE -le $PRE_LINE ]]; then
+        echo "✗ Error: POST-MOUNT executed before PRE-MOUNT"
+        cat /tmp/bind-commands-log.txt
+        exit 1
+    fi
+    echo "✓ POST-MOUNT executed after PRE-MOUNT"
+    
+    # Cleanup
+    sudo umount /tmp/bind-commands-target
+    sudo rm -rf /tmp/bind-commands-src
+    rm -rf /tmp/bind-commands-target /tmp/bind-commands-log.txt
+    
+    echo ""
+    echo "✓ Commands test passed"
