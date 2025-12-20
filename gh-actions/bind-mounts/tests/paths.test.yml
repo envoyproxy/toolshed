@@ -1,12 +1,10 @@
 before:
 - shell: bash
   run: |
-    # Create source directories
     sudo mkdir -p /tmp/bind-paths-src1
     sudo mkdir -p /tmp/bind-paths-src2
     echo "workspace-content" | sudo tee /tmp/bind-paths-src1/workspace.txt
     echo "runner-temp-content" | sudo tee /tmp/bind-paths-src2/runner-temp.txt
-    # Create target directories that will be interpolated
     mkdir -p "${{ github.workspace }}/bind-test-workspace"
     mkdir -p "${{ runner.temp }}/bind-test-runner"
 
@@ -21,41 +19,30 @@ with:
 after:
 - shell: bash
   run: |
-    # Verify GITHUB_WORKSPACE mount
     WORKSPACE_TARGET="${{ github.workspace }}/bind-test-workspace"
     if ! mountpoint -q "$WORKSPACE_TARGET"; then
         echo "✗ Error: $WORKSPACE_TARGET is not a mount point"
         exit 1
     fi
     echo "✓ GITHUB_WORKSPACE path correctly interpolated and mounted"
-
-    # Verify content is accessible
     if [[ "$(cat "$WORKSPACE_TARGET/workspace.txt")" != "workspace-content" ]]; then
         echo "✗ Error: Content not accessible in GITHUB_WORKSPACE mount"
         exit 1
     fi
     echo "✓ Content accessible in GITHUB_WORKSPACE mount"
-
-    # Verify RUNNER_TEMP mount
     RUNNER_TARGET="${{ runner.temp }}/bind-test-runner"
     if ! mountpoint -q "$RUNNER_TARGET"; then
         echo "✗ Error: $RUNNER_TARGET is not a mount point"
         exit 1
     fi
     echo "✓ RUNNER_TEMP path correctly interpolated and mounted"
-
-    # Verify content is accessible
     if [[ "$(cat "$RUNNER_TARGET/runner-temp.txt")" != "runner-temp-content" ]]; then
         echo "✗ Error: Content not accessible in RUNNER_TEMP mount"
         exit 1
     fi
     echo "✓ Content accessible in RUNNER_TEMP mount"
-
-    # Cleanup
     sudo umount "$WORKSPACE_TARGET"
     sudo umount "$RUNNER_TARGET"
     sudo rm -rf /tmp/bind-paths-src1 /tmp/bind-paths-src2
     rm -rf "$WORKSPACE_TARGET" "$RUNNER_TARGET"
-
-    echo ""
     echo "✓ Path interpolation test passed"

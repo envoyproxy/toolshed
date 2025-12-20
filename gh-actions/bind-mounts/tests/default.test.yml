@@ -1,12 +1,10 @@
 before:
 - shell: bash
   run: |
-    # Create source directories
     sudo mkdir -p /tmp/bind-test-src1
     sudo mkdir -p /tmp/bind-test-src2
     echo "test-content-1" | sudo tee /tmp/bind-test-src1/file1.txt
     echo "test-content-2" | sudo tee /tmp/bind-test-src2/file2.txt
-    # Create target directories
     mkdir -p /tmp/bind-test-target1
     mkdir -p /tmp/bind-test-target2
 
@@ -21,37 +19,28 @@ with:
 after:
 - shell: bash
   run: |
-    # Verify mounts exist and content is accessible
     if ! mountpoint -q /tmp/bind-test-target1; then
         echo "✗ Error: /tmp/bind-test-target1 is not a mount point"
         exit 1
     fi
     echo "✓ /tmp/bind-test-target1 is mounted"
-
     if ! mountpoint -q /tmp/bind-test-target2; then
         echo "✗ Error: /tmp/bind-test-target2 is not a mount point"
         exit 1
     fi
     echo "✓ /tmp/bind-test-target2 is mounted"
-
-    # Verify content is accessible through mount
     if [[ "$(cat /tmp/bind-test-target1/file1.txt)" != "test-content-1" ]]; then
         echo "✗ Error: Content not accessible in mount 1"
         exit 1
     fi
     echo "✓ Content accessible in mount 1"
-
     if [[ "$(cat /tmp/bind-test-target2/file2.txt)" != "test-content-2" ]]; then
         echo "✗ Error: Content not accessible in mount 2"
         exit 1
     fi
     echo "✓ Content accessible in mount 2"
-
-    # Cleanup
     sudo umount /tmp/bind-test-target1
     sudo umount /tmp/bind-test-target2
     sudo rm -rf /tmp/bind-test-src1 /tmp/bind-test-src2
     rm -rf /tmp/bind-test-target1 /tmp/bind-test-target2
-
-    echo ""
     echo "✓ Default bind-mounts test passed"
