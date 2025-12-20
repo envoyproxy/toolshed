@@ -58,6 +58,7 @@ jobs:
     if: fromJSON(needs.should.outputs.run || 'false')
     permissions:
       actions: read
+      contents: write
     uses: ./.github/workflows/_publish.yml
     with:
       commit-message: ${{ needs.get-main.outputs.message }}

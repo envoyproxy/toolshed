@@ -61,7 +61,7 @@ jobs:
   check-and-publish:
     permissions:
       actions: read
-      contents: write
+      contents: inputs.dry-run && read || write
     if: >-
       inputs.conclusion == 'success'
       && ! inputs.skip
@@ -273,7 +273,7 @@ jobs:
           DRY_RUN_FLAG="--dry-run"
           echo "DRY RUN: Would create release bins-v${{ steps.bins-version.outputs.version }}"
         fi
-        
+
         envoy.project \
           --repo ${{ inputs.repository }} \
           $DRY_RUN_FLAG \
