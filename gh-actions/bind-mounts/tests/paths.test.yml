@@ -1,0 +1,48 @@
+uses: ./gh-actions/bind-mounts
+with:
+  mounts: |
+    - src: /tmp/bind-paths-src1
+      target: GITHUB_WORKSPACE/bind-test-workspace
+    - src: /tmp/bind-paths-src2
+      target: RUNNER_TEMP/bind-test-runner
+
+before:
+- shell: bash
+  run: |
+    sudo mkdir -p /tmp/bind-paths-src1
+    sudo mkdir -p /tmp/bind-paths-src2
+    echo "workspace-content" | sudo tee /tmp/bind-paths-src1/workspace.txt
+    echo "runner-temp-content" | sudo tee /tmp/bind-paths-src2/runner-temp.txt
+    mkdir -p "${{ github.workspace }}/bind-test-workspace"
+    mkdir -p "${{ runner.temp }}/bind-test-runner"
+
+after:
+- shell: bash
+  run: |
+    WORKSPACE_TARGET="${{ github.workspace }}/bind-test-workspace"
+    if ! mountpoint -q "$WORKSPACE_TARGET"; then
+        echo "✗ Error: $WORKSPACE_TARGET is not a mount point"
+        exit 1
+    fi
+    echo "✓ GITHUB_WORKSPACE path correctly interpolated and mounted"
+    if [[ "$(cat "$WORKSPACE_TARGET/workspace.txt")" != "workspace-content" ]]; then
+        echo "✗ Error: Content not accessible in GITHUB_WORKSPACE mount"
+        exit 1
+    fi
+    echo "✓ Content accessible in GITHUB_WORKSPACE mount"
+    RUNNER_TARGET="${{ runner.temp }}/bind-test-runner"
+    if ! mountpoint -q "$RUNNER_TARGET"; then
+        echo "✗ Error: $RUNNER_TARGET is not a mount point"
+        exit 1
+    fi
+    echo "✓ RUNNER_TEMP path correctly interpolated and mounted"
+    if [[ "$(cat "$RUNNER_TARGET/runner-temp.txt")" != "runner-temp-content" ]]; then
+        echo "✗ Error: Content not accessible in RUNNER_TEMP mount"
+        exit 1
+    fi
+    echo "✓ Content accessible in RUNNER_TEMP mount"
+    sudo umount "$WORKSPACE_TARGET"
+    sudo umount "$RUNNER_TARGET"
+    sudo rm -rf /tmp/bind-paths-src1 /tmp/bind-paths-src2
+    rm -rf "$WORKSPACE_TARGET" "$RUNNER_TARGET"
+    echo "✓ Path interpolation test passed"

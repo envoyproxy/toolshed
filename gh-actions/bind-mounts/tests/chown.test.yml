@@ -1,0 +1,45 @@
+uses: ./gh-actions/bind-mounts
+with:
+  mounts: |
+    - src: /tmp/bind-chown-src
+      target: /tmp/bind-chown-target
+      chown: runner:runner
+
+before:
+- shell: bash
+  run: |
+    sudo mkdir -p /tmp/bind-chown-src
+    sudo chown root:root /tmp/bind-chown-src
+    echo "test-content" | sudo tee /tmp/bind-chown-src/testfile.txt
+    mkdir -p /tmp/bind-chown-target
+
+after:
+- shell: bash
+  run: |
+    if ! mountpoint -q /tmp/bind-chown-target; then
+        echo "✗ Error: /tmp/bind-chown-target is not a mount point"
+        exit 1
+    fi
+    echo "✓ /tmp/bind-chown-target is mounted"
+    SRC_OWNER=$(stat -c '%U' /tmp/bind-chown-src)
+    SRC_GROUP=$(stat -c '%G' /tmp/bind-chown-src)
+    if [[ "$SRC_OWNER" != "runner" ]]; then
+        echo "✗ Error: Source directory owner is $SRC_OWNER, expected runner"
+        exit 1
+    fi
+    echo "✓ Source directory owner is runner"
+    if [[ "$SRC_GROUP" != "runner" ]]; then
+        echo "✗ Error: Source directory group is $SRC_GROUP, expected runner"
+        exit 1
+    fi
+    echo "✓ Source directory group is runner"
+    echo "new-content" > /tmp/bind-chown-target/newfile.txt
+    if [[ ! -f /tmp/bind-chown-target/newfile.txt ]]; then
+        echo "✗ Error: Could not write to mounted directory"
+        exit 1
+    fi
+    echo "✓ Successfully wrote to mounted directory as runner user"
+    sudo umount /tmp/bind-chown-target
+    sudo rm -rf /tmp/bind-chown-src
+    rm -rf /tmp/bind-chown-target
+    echo "✓ Chown test passed"
