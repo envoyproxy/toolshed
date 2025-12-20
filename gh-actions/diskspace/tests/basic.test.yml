@@ -1,13 +1,13 @@
+uses: ./gh-actions/diskspace
+with:
+  to_remove: /tmp/test-cruft
+  background: false
+
 before:
 - shell: bash
   run: |
     mkdir -p /tmp/test-cruft/sub
     echo "test data" > /tmp/test-cruft/sub/testfile.txt
-
-uses: ./gh-actions/diskspace
-with:
-  to_remove: /tmp/test-cruft
-  background: false
 
 after:
 - shell: bash
