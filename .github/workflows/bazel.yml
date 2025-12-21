@@ -15,7 +15,7 @@ concurrency:
 
 
 jobs:
-  should:
+  request:
     runs-on: ubuntu-24.04
     outputs:
       run: ${{ steps.filter.outputs.run }}
@@ -30,10 +30,10 @@ jobs:
           - '.github/workflows/bazel.yml'
 
   test:
-    needs: should
+    needs: request
     if: >-
       always()
-      && fromJSON(needs.should.outputs.run || 'false')
+      && fromJSON(needs.request.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
     with:
       action: test
@@ -57,10 +57,10 @@ jobs:
   build:
     permissions:
       contents: write
-    needs: should
+    needs: request
     if: >-
       always()
-      && fromJSON(needs.should.outputs.run || 'false')
+      && fromJSON(needs.request.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
     with:
       action: build
@@ -93,7 +93,7 @@ jobs:
       && github.event_name == 'pull_request'
     name: Bazel
     needs:
-    - should
+    - request
     - test
     - build
     steps:
