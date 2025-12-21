@@ -1,0 +1,43 @@
+inputs:
+  template-version:
+    type: string
+    default: |
+      if [[ -z ${VERSION} ]]; then
+          OUTPUT=$(cat ${VERSION_FILE})
+      else
+          OUTPUT=${VERSION}
+      fi
+  version:
+    type: string
+    default:
+  version-file:
+    type: string
+    default: VERSION.txt
+  version-filter:
+    type: string
+    default: |
+      .
+      | endswith("-dev") as $is_dev
+      | {version: ., is_dev: $is_dev}
+
+outputs:
+  version:
+    value: ${{ steps.version.outputs.output }}
+
+
+runs:
+  using: composite
+  steps:
+  - id: version
+    uses: envoyproxy/toolshed/gh-actions/bson@actions-v0.3.35
+    env:
+      VERSION: ${{ inputs.version }}
+      VERSION_FILE: ${{ inputs.version-file }}
+    with:
+      catch-errors: true
+      input: ${{ inputs.template-version }}
+      filter: bash::output
+      input-format: text
+      options: -Rr
+      result-filter-options: -sRc
+      result-filter: ${{ inputs.version-filter }}
