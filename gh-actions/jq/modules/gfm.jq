@@ -79,10 +79,14 @@ def fence(name):
 ;
 
 def table_headers:
-  . as $headers
-  | ("| " + (. | join(" | ")) + " |")
-      + "\n"
-      + ("| " + "--- | " * ($headers | length))
+  .
+  | (if (.headers // []) == [] then
+      [range(.columns) | " "]
+     else .headers
+     end) as $headers
+  | ("| " + ($headers | join(" | ")) + " |")
+       + "\n"
+       + ("| " + "--- | " * ($headers | length))
 ;
 
 def table_cell_sanitize:
@@ -104,7 +108,7 @@ def table_cell_sanitize:
 
 def table(filter; ifempty; mutate; sanitize):
   . as $table
-  | ($table.headers // [] | table_headers) as $headers
+  | ($table | table_headers) as $headers
   | $table.data
   | (filter // .)
   | if (. | length) == 0 then
