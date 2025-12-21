@@ -25,8 +25,15 @@ jobs:
       with:
         config: |
           paths:
-          - '.github/workflows/_publish.yml'
-          - '.github/workflows/publishing.yml'
+          - .github/workflows/_publish.yml
+          - .github/workflows/actions.yml
+          - .github/workflows/bazel.yml
+          - .github/workflows/rust.yml
+          - .github/workflows/publishing.yml
+          - bazel/VERSION.txt
+          - BINS_VERSION.txt
+          - gh-actions/VERSION.txt
+          - python/VERSION.txt
 
   get-main:
     runs-on: ubuntu-24.04
@@ -62,6 +69,8 @@ jobs:
     with:
       commit-message: ${{ needs.get-main.outputs.message }}
       conclusion: ${{ matrix.conclusion || 'success' }}
+      actions-version: ${{ matrix.actions-version }}
+      bazel-version: ${{ matrix.bazel-version }}
       bins-version: ${{ matrix.bins-version }}
       dry-run: true
       event: ${{ matrix.event }}
@@ -70,6 +79,7 @@ jobs:
       skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
       workflows: |
         Bazel CI
+        Github/actions CI
         Python CI
         Rust CI
     strategy:
@@ -80,10 +90,16 @@ jobs:
           event: pull_request
         - event: push
         - event: push
+          actions-version: 0.1.73
+        - event: push
+          bazel-version: 0.2.17
+        - event: push
           bins-version: 0.1.23
         - event: push
           python-version: 0.0.23
         - event: push
+          actions-version: 0.1.73
+          bazel-version: 0.2.17
           bins-version: 0.1.23
           python-version: 0.0.23
         - event: push
