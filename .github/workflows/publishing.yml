@@ -18,7 +18,9 @@ jobs:
   should:
     runs-on: ubuntu-24.04
     outputs:
+      message: ${{ steps.commit.outputs.message }}
       run: ${{ steps.filter.outputs.run }}
+      sha: ${{ steps.commit.outputs.sha }}
     steps:
     - uses: envoyproxy/toolshed/gh-actions/github/should-run@b78171200b6cf28afef2fd16c9015e8dba6e37cc
       id: filter
@@ -34,17 +36,9 @@ jobs:
           - BINS_VERSION.txt
           - gh-actions/VERSION.txt
           - python/VERSION.txt
-
-  get-main:
-    runs-on: ubuntu-24.04
-    needs: should
-    if: fromJSON(needs.should.outputs.run || 'false')
-    outputs:
-      message: ${{ steps.commit.outputs.message }}
-      sha: ${{ steps.commit.outputs.sha }}
-    steps:
     - name: Get latest commit from main
       id: commit
+      if: fromJSON(steps.filter.outputs.run)
       env:
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
@@ -61,13 +55,12 @@ jobs:
   publish:
     needs:
     - should
-    - get-main
     if: fromJSON(needs.should.outputs.run || 'false')
     permissions:
       actions: read
     uses: ./.github/workflows/_publish.yml
     with:
-      commit-message: ${{ needs.get-main.outputs.message }}
+      commit-message: ${{ needs.should.outputs.message }}
       conclusion: ${{ matrix.conclusion || 'success' }}
       actions-version: ${{ matrix.actions-version }}
       bazel-version: ${{ matrix.bazel-version }}
@@ -75,7 +68,7 @@ jobs:
       dry-run: true
       event: ${{ matrix.event }}
       python-version: ${{ matrix.python-version }}
-      sha: ${{ matrix.sha || needs.get-main.outputs.sha }}
+      sha: ${{ matrix.sha || needs.should.outputs.sha }}
       skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
       workflows: |
         Bazel CI
@@ -115,7 +108,6 @@ jobs:
     name: Publishing
     needs:
     - should
-    - get-main
     - publish
     steps:
     - run: |
