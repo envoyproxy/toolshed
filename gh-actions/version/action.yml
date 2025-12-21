@@ -16,9 +16,7 @@ inputs:
   version-filter:
     type: string
     default: |
-      .
-      | endswith("-dev") as $is_dev
-      | {version: ., is_dev: $is_dev}
+      utils::version
 
 outputs:
   version:
@@ -29,7 +27,7 @@ runs:
   using: composite
   steps:
   - id: version
-    uses: envoyproxy/toolshed/gh-actions/bson@4db1102447743c6eea61debf33a67218c9d0b01a
+    uses: envoyproxy/toolshed/gh-actions/bson@b4aac0a625ec4a3c885a70a449add5c41d4f0079
     env:
       VERSION: ${{ inputs.version }}
       VERSION_FILE: ${{ inputs.version-file }}
