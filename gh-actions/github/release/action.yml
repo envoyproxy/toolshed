@@ -15,17 +15,25 @@ inputs:
     type: string
     default: |
       CREATE_ARGS=(\($release_args))
-      if [[ \"\(.dry_run)\" == \"true\" ]]; then
-          OUTPUT=(\"gh release create ${CREATE_ARGS[*]}\")
+      TAG=\"\($tag)\"
+      REPO=\"\(.repo)\"
+
+      # Check if release already exists
+      if gh release view \"$TAG\" --repo \"$REPO\" &>/dev/null; then
+          OUTPUT=(\"Release $TAG already exists, skipping creation\")
       else
-          OUTPUT=($(gh release create \"${CREATE_ARGS[@]}\"))
-      fi
-      echo \($next_version) > \(.version_file)
-      OUTPUT+=(\"git commit \(.version_file) -m \($reopen_message) --signoff\")
-      if [[ \"\(.dry_run)\" == \"true\" ]]; then
-          OUTPUT+=(\"git push origin refs/heads/main\")
-      else
-          OUTPUT+=($(git push origin refs/heads/main))
+          if [[ \"\(.dry_run)\" == \"true\" ]]; then
+              OUTPUT=(\"gh release create ${CREATE_ARGS[*]}\")
+          else
+              OUTPUT=($(gh release create \"${CREATE_ARGS[@]}\"))
+          fi
+          echo \($next_version) > \(.version_file)
+          OUTPUT+=(\"git commit \(.version_file) -m \($reopen_message) --signoff\")
+          if [[ \"\(.dry_run)\" == \"true\" ]]; then
+              OUTPUT+=(\"git push origin refs/heads/main\")
+          else
+              OUTPUT+=($(git push origin refs/heads/main))
+          fi
       fi
       OUTPUT=$(printf '%s\n' \"${OUTPUT[@]}\")
 
