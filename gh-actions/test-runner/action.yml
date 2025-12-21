@@ -21,7 +21,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+  - uses: envoyproxy/toolshed/gh-actions/jq@4db1102447743c6eea61debf33a67218c9d0b01a
     id: config
     with:
       input: ${{ inputs.config }}
@@ -37,7 +37,7 @@ runs:
           else . end
         | ($before // []) + [.] + ($after // [])
 
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@actions-v0.3.35
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@4db1102447743c6eea61debf33a67218c9d0b01a
     id: run
     with:
       name: Run test
