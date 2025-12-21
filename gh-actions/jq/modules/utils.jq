@@ -15,3 +15,20 @@ def bytesize:
     else "\(.)B"
     end
 ;
+
+def version:
+  .
+  | endswith("-dev") as $is_dev
+  | (. | split("-") | .[0] | split(".") | map(tonumber)) as $parts
+  | (if $is_dev then "\($parts[0]).\($parts[1]).\($parts[2])"
+     else "\($parts[0]).\($parts[1]).\($parts[2] + 1)"
+     end) as $next
+  | {
+      version: .,
+      is_dev:  $is_dev,
+      major: $parts[0],
+      minor:  $parts[1],
+      patch: $parts[2],
+      next: $next
+    }
+;
