@@ -28,9 +28,15 @@ inputs:
     default: |
       Variable
       Value
+  input:
+    type: string
+    default: "{}"
+  input-format:
+    type: string
+    required: false
   json:
     type: string
-    required: true
+    required: false
   filter:
     default:
   sanitize-filter:
@@ -84,11 +90,12 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+  - uses: envoyproxy/toolshed/gh-actions/jq@01a8f4130587aaa5fc9059dc40dfef2cea95c5a8
     name: Generate table
     id: table
     with:
-      input: ${{ inputs.json }}
+      input: ${{ inputs.input || inputs.json }}
+      input-format: ${{ inputs.input-format }}
       trim-result: false
       options: -r
       filter: |
@@ -96,13 +103,14 @@ runs:
         | "${{ inputs.headers }}"
         | split("\n")
         | map(. | str::trim | select(length > 0)) as $headers
-        | {data: $data, headers: $headers}
+        | {data: $data, headers: $headers, columns: ${{ inputs.columns }}}
+        | (. | debug)
         | gfm::table(${{ inputs.filter || '.' }};
                      ${{ fromJSON(inputs.show-empty) && '.' || '"" | halt_error(0)' }};
                      ${{ inputs.mutate-cells || '.cell' }};
                      ${{ inputs.sanitize-filter || '.' }})
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
+  - uses: envoyproxy/toolshed/gh-actions/jq@01a8f4130587aaa5fc9059dc40dfef2cea95c5a8
     id: summary
     if: ${{ steps.table.outputs.value }}
     with:
@@ -114,11 +122,11 @@ runs:
         | $input.heading as $heading
         | $input.summary as $summary
         | $input.title as $title
-        | if $input.collapse then
+        | if ($input.collapse | fromjson) then
             $title as $_title
             | $summary as $title
             | "${{ inputs.template-table }}"
-            | {title: $_title, content: ., open: ${{ fromJSON(inputs.collapse-open) }}}
+            | {title: $_title, content: ., open: ($input["collapse-open"] // "false" | fromjson)}
             | gfm::collapse
           else
             "${{ inputs.template-table }}"
