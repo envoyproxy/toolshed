@@ -77,9 +77,7 @@ on:
           ### \($title)
 
           **Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha)) \($pr_link)
-          **Bins version:** \(.bins.version) \($bins_release)
-          **Python version:** \(.python.version) \($python_release)
-          **Continue:** `\($continue)`
+          **Continue:** `\(.continue)`
 
 
       workflows:
@@ -152,7 +150,8 @@ jobs:
           ${{ inputs.commit-message }}
         filter: |
           split("\n") | first
-    - name: Status summary
+    - name: Status summary title
+      id: status-summary-title
       uses: envoyproxy/toolshed/gh-actions/jq@actions-v0.3.35
       with:
         input: |
@@ -161,7 +160,6 @@ jobs:
           bins: ${{ steps.bins.outputs.version }}
           event: ${{ inputs.event }}
           sha: ${{ inputs.sha }}
-          conclusion: ${{ inputs.conclusion }}
           continue: ${{ steps.afterall.outputs.continue }}
           python: ${{ steps.python.outputs.version }}
           repository: ${{ inputs.repository }}
@@ -173,21 +171,7 @@ jobs:
         output-path: GITHUB_STEP_SUMMARY
         filter: |
           .sha as $sha
-          | .conclusion as $conclusion
-          | .continue as $continue
           | .repository as $repo
-          | (if .actions.is_dev then ""
-             else "**(RELEASE)**"
-             end) as $actions_release
-          | (if .bazel.is_dev then ""
-             else "**(RELEASE)**"
-             end) as $bazel_release
-          | (if .bins.is_dev then ""
-             else "**(RELEASE)**"
-             end) as $bins_release
-          | (if .python.is_dev then ""
-             else "**(RELEASE)**"
-             end) as $python_release
           | ([
                (if .actions.is_dev then "" else "actions-v\(.actions.version)" end),
                (if .bazel.is_dev then "" else "bazel-v\(.bazel.version)" end),
@@ -213,18 +197,54 @@ jobs:
              else ""
              end) as $pr_link
           | "${{ inputs.template-status }}"
+    - name: Versions info
+      uses: envoyproxy/toolshed/gh-actions/json/table@4a63c3e7e72cf2d6010d4d1312f04470745d04e1
+      with:
+        append: true
+        output-path: GITHUB_STEP_SUMMARY
+        collapse: false
+        input: |
+          actions: ${{ steps.actions.outputs.version }}
+          bazel: ${{ steps.bazel.outputs.version }}
+          bins: ${{ steps.bins.outputs.version }}
+          python: ${{ steps.python.outputs.version }}
+        headers:
+        input-format: yaml
+        filter: |
+          .
+          | (if .actions.is_dev then ""
+             else "**(RELEASE)**"
+             end) as $actions_release
+          | (if .bazel.is_dev then ""
+             else "**(RELEASE)**"
+             end) as $bazel_release
+          | (if .bins.is_dev then ""
+             else "**(RELEASE)**"
+             end) as $bins_release
+          | (if .python.is_dev then ""
+             else "**(RELEASE)**"
+             end) as $python_release
+          | (if .python.is_dev then ""
+             else "**(RELEASE)**"
+             end) as $python_release
+          | {
+              "Actions version": "\(.actions.version) \($actions_release)",
+              "Bins version": "\(.bins.version) \($bins_release)",
+              "Bazel version": "\(.bazel.version) \($bazel_release)",
+              "Python version": "\(.python.version) \($python_release)",
+            }
+
     - name: Generate workflow status table
-      uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
+      uses: envoyproxy/toolshed/gh-actions/json/table@4a63c3e7e72cf2d6010d4d1312f04470745d04e1
       with:
         title: Required Workflows Status
         append: true
         output-path: GITHUB_STEP_SUMMARY
         collapse-open: ${{ ! fromJSON(steps.afterall.outputs.continue) }}
-        columns: 4
         headers: |
           Workflow
           Status/conclusion
-        json: |
+        input: |
           ${{ steps.afterall.outputs.status }}
         filter: |
           . as $data
@@ -307,7 +327,7 @@ jobs:
         filter: |
           map_values(.size | utils::bytesize)
     - name: Generate workflow artifacts table
-      uses: envoyproxy/toolshed/gh-actions/json/table@actions-v0.3.35
+      uses: envoyproxy/toolshed/gh-actions/json/table@4a63c3e7e72cf2d6010d4d1312f04470745d04e1
       with:
         title: Artifacts to publish
         append: true
@@ -315,7 +335,7 @@ jobs:
         headers: |
           Name
           Size
-        json: ${{ steps.artifact-sizes.outputs.value }}
+        input: ${{ steps.artifact-sizes.outputs.value }}
 
     - name: >-
         Create release

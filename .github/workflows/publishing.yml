@@ -5,9 +5,6 @@ permissions:
 
 on:
   pull_request:
-    paths:
-    - .github/workflows/_publish.yml
-    - .github/workflows/publishing.yml
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
