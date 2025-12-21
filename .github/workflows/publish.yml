@@ -29,6 +29,8 @@ jobs:
             || '' }}
     uses: ./.github/workflows/_publish.yml
     with:
+      committer-email: "140627008+publish-envoy[bot]@users. noreply.github.com"
+      committer-name: "publish-envoy[bot]"
       workflows: |
         Bazel CI
         Github/actions CI
