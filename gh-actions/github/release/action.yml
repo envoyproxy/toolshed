@@ -1,0 +1,76 @@
+inputs:
+  dry-run:
+    type: boolean
+    default: true
+  name:
+    type: string
+    required: true
+  repository:
+    type: string
+    required: true
+  sha:
+    type: string
+    required: true
+  template-release:
+    type: string
+    default: |
+      CREATE_ARGS=(\($release_args))
+      if [[ \"\(.dry_run)\" == \"true\" ]]; then
+          OUTPUT=(\"gh release create ${CREATE_ARGS[*]}\")
+      else
+          OUTPUT=($(gh release create \"${CREATE_ARGS[@]}\"))
+      fi
+      echo \($next_version) > \(.version_file)
+      OUTPUT+=(\"git commit \(.version_file) -m \($reopen_message) --signoff\")
+      if [[ \"\(.dry_run)\" == \"true\" ]]; then
+          OUTPUT+=(\"git push origin refs/heads/main\")
+      else
+          OUTPUT+=($(git push origin refs/heads/main))
+      fi
+      OUTPUT=$(printf '%s\n' \"${OUTPUT[@]}\")
+
+  version:
+    type: string
+    required: true
+  version-file:
+    type: string
+    required: true
+
+outputs:
+  result:
+    value: ${{ steps.release.outputs.output }}
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/bson@4db1102447743c6eea61debf33a67218c9d0b01a
+    id: release
+    with:
+      input: |
+        dry_run: ${{ inputs.dry-run }}
+        name: actions
+        repo: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
+        version: ${{ inputs.version }}
+        version_file: ${{ inputs.version-file }}
+      filter: |
+        .
+        | .version.version as $version
+        | .version.next as $next_version
+        | "\(.name)-v\($version)" as $tag
+        | (.name | "\(.[0:1] | ascii_upcase)\(.[1:])") as $title
+        | "repo: Dev \($title) v\($next_version)" as $reopen_message
+        | (["\"\($tag)\"",
+            "--target \"\(.sha)\"",
+            "--title \"\($tag)\"",
+            "--notes \"\($title) release \($version)\"",
+            "--repo \"\(.repo)\""]
+           | join(" ")) as $release_args
+        | "${{ inputs.template-release }}"
+        | bash::output
+      options: -r
+      result-filter-options: -sRc
+      result-filter: |
+        .
+        | split("\n")
