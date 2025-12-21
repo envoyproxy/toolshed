@@ -12,20 +12,20 @@ after:
         exit 1
     fi
     echo "✓ Version output: $VERSION_OUTPUT"
-    
+
     VERSION_VALUE=$(echo "$VERSION_OUTPUT" | jq -r '.version')
     IS_DEV=$(echo "$VERSION_OUTPUT" | jq -r '.is_dev')
-    
+
     if [[ "$VERSION_VALUE" != "2.5.8" ]]; then
         echo "✗ Error: Expected version '2.5.8', got '$VERSION_VALUE'"
         exit 1
     fi
     echo "✓ Version value is correct: $VERSION_VALUE"
-    
+
     if [[ "$IS_DEV" != "false" ]]; then
         echo "✗ Error: Expected is_dev 'false', got '$IS_DEV'"
         exit 1
     fi
     echo "✓ is_dev flag is correct: $IS_DEV"
-    
+
     echo "✓ Version input test passed"
