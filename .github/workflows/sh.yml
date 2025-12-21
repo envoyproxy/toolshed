@@ -15,7 +15,7 @@ concurrency:
 
 
 jobs:
-  should:
+  request:
     runs-on: ubuntu-24.04
     outputs:
       run: ${{ steps.filter.outputs.run }}
@@ -31,8 +31,8 @@ jobs:
 
   shebang:
     runs-on: ${{ matrix.platform }}
-    needs: should
-    if: fromJSON(needs.should.outputs.run)
+    needs: request
+    if: fromJSON(needs.request.outputs.run)
     strategy:
       fail-fast: false
       matrix:
@@ -63,7 +63,7 @@ jobs:
       && github.event_name == 'pull_request'
     name: Sh
     needs:
-    - should
+    - request
     - shebang
     steps:
     - run: |

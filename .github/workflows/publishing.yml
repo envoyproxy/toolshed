@@ -15,7 +15,7 @@ concurrency:
 
 
 jobs:
-  should:
+  request:
     runs-on: ubuntu-24.04
     outputs:
       message: ${{ steps.commit.outputs.message }}
@@ -54,13 +54,13 @@ jobs:
 
   publish:
     needs:
-    - should
-    if: fromJSON(needs.should.outputs.run || 'false')
+    - request
+    if: fromJSON(needs.request.outputs.run || 'false')
     permissions:
       actions: read
     uses: ./.github/workflows/_publish.yml
     with:
-      commit-message: ${{ needs.should.outputs.message }}
+      commit-message: ${{ needs.request.outputs.message }}
       conclusion: ${{ matrix.conclusion || 'success' }}
       actions-version: ${{ matrix.actions-version }}
       bazel-version: ${{ matrix.bazel-version }}
@@ -68,7 +68,7 @@ jobs:
       dry-run: true
       event: ${{ matrix.event }}
       python-version: ${{ matrix.python-version }}
-      sha: ${{ matrix.sha || needs.should.outputs.sha }}
+      sha: ${{ matrix.sha || needs.request.outputs.sha }}
       skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
       workflows: |
         Bazel CI
@@ -107,7 +107,7 @@ jobs:
       && github.event_name == 'pull_request'
     name: Publishing
     needs:
-    - should
+    - request
     - publish
     steps:
     - run: |

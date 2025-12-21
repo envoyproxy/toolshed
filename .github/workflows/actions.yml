@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  should:
+  request:
     runs-on: ubuntu-24.04
     outputs:
       run: ${{ steps.filter.outputs.run }}
@@ -40,14 +40,14 @@ jobs:
 
   actions:
     runs-on: ubuntu-24.04
-    needs: should
+    needs: request
     if: >-
-      fromJSON(needs.should.outputs.run)
-      && needs.should.outputs.tests != '[]'
+      fromJSON(needs.request.outputs.run)
+      && needs.request.outputs.tests != '[]'
     strategy:
       fail-fast: false
       matrix:
-        test: ${{ fromJSON(needs.should.outputs.tests) }}
+        test: ${{ fromJSON(needs.request.outputs.tests) }}
     steps:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
     - name: Load config
@@ -64,8 +64,8 @@ jobs:
 
   js-actions:
     runs-on: ubuntu-24.04
-    needs: should
-    if: fromJSON(needs.should.outputs.run)
+    needs: request
+    if: fromJSON(needs.request.outputs.run)
     strategy:
       fail-fast: false
       matrix:
@@ -110,7 +110,7 @@ jobs:
       && github.event_name == 'pull_request'
     name: Actions
     needs:
-    - should
+    - request
     - actions
     - js-actions
     steps:
