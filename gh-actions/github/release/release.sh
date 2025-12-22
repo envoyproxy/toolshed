@@ -84,6 +84,8 @@ if gh release view "$TAG" --repo "$REPO" &>/dev/null; then
 fi
 
 _run gh release create "${RELEASE_ARGS[@]}"
+_run git fetch origin main
+_run git checkout -B main origin/main
 echo "$ echo ${NEXT_VERSION} > ${VERSION_FILE}" >> "$TMP_OUTPUT"
 if [[ -n "$DEBUG" ]]; then
     echo "$ echo ${NEXT_VERSION} > ${VERSION_FILE}" >&2
@@ -91,4 +93,4 @@ fi
 echo "${NEXT_VERSION}" > "${VERSION_FILE}"
 _run git commit "${VERSION_FILE}" -m "${REOPEN_MESSAGE}" --signoff
 _run git show
-_run git push origin refs/heads/main
+_run git push origin HEAD:refs/heads/main
