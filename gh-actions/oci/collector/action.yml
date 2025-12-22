@@ -80,7 +80,7 @@ runs:
       ls -la ${{ inputs.oci-tmp-path }}
       echo "::endgroup::"
   - name: Buildah operations
-    uses: envoyproxy/toolshed/gh-actions/jq@32aeb5acdf19691c6057ae45a4e1ef9617087996
+    uses: envoyproxy/toolshed/gh-actions/jq@2dc2e3e29914b3bc04cc63c1c8aae5b52e4650d6
     id: operations
     with:
       input: |
@@ -117,7 +117,7 @@ runs:
                args: ["push", "--all", $manifest_name, "docker://\($additional_tag)"],
                metadata: {tag: $additional_tag}})]
   - name: Execute buildah operations
-    uses: envoyproxy/toolshed/gh-actions/buildah@32aeb5acdf19691c6057ae45a4e1ef9617087996
+    uses: envoyproxy/toolshed/gh-actions/buildah@2dc2e3e29914b3bc04cc63c1c8aae5b52e4650d6
     id: buildah
     with:
       operations: ${{ steps.operations.outputs.value }}
