@@ -21,7 +21,7 @@ def version:
   | endswith("-dev") as $is_dev
   | (. | split("-") | .[0] | split(".") | map(tonumber)) as $parts
   | (if $is_dev then "\($parts[0]).\($parts[1]).\($parts[2])"
-     else "\($parts[0]).\($parts[1]).\($parts[2] + 1)"
+     else "\($parts[0]).\($parts[1]).\($parts[2] + 1)-dev"
      end) as $next
   | {
       version: .,
