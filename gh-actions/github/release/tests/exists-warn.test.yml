@@ -1,9 +1,5 @@
 uses: ./gh-actions/github/release
 id: release
-env:
-  MOCK_LOG: /tmp/gh-mock-exists-warn.log
-  MOCK_GIT_LOG: /tmp/git-mock-exists-warn.log
-  MOCK_RELEASE_EXISTS: true
 with:
   dry-run: false
   fail-if-exists: false
@@ -23,6 +19,9 @@ before:
     rm -f /tmp/gh-mock-exists-warn.log
     rm -f /tmp/git-mock-exists-warn.log
     echo "${{ github.workspace }}/gh-actions/github/release/tests/mocks:$PATH" >> $GITHUB_PATH
+    echo "MOCK_LOG=/tmp/gh-mock-exists-warn.log" >> $GITHUB_ENV
+    echo "MOCK_GIT_LOG=/tmp/git-mock-exists-warn.log" >> $GITHUB_ENV
+    echo "MOCK_RELEASE_EXISTS=true" >> $GITHUB_ENV
     echo "✓ Test setup complete"
 
 after:
