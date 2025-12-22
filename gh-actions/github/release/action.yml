@@ -17,31 +17,15 @@ inputs:
   template-release:
     type: string
     default: |
-      RELEASE_ARGS=(\($release_args))
-      TAG=\"\($tag)\"
-      REPO=\"\(.repo)\"
-      FAIL_IF_EXISTS=\"\(.fail_if_exists)\"
-      if gh release view \"$TAG\" --repo \"$REPO\" &>/dev/null; then
-          OUTPUT=(\"Release $TAG already exists, skipping creation\")
-          if [[ \"${FAIL_IF_EXISTS}\" == \"true\" ]]; then
-              echo \"::error::Release $TAG already exists, skipping creation\" >&2
-              exit 1
-          fi
-          echo \"::warning::Release $TAG already exists, skipping creation\" >&2
-      else
-          OUTPUT=(\"gh release create ${RELEASE_ARGS[*]}\")
-          if [[ \"\(.dry_run)\" != \"true\" ]]; then
-              OUTPUT=($(gh release create \"${RELEASE_ARGS[@]}\"))
-          fi
-          echo \($next_version) > \(.version_file)
-          OUTPUT+=(\"git commit \(.version_file) -m '\($reopen_message)' --signoff\")
-          if [[ \"\(.dry_run)\" == \"true\" ]]; then
-              OUTPUT+=(\"git push origin refs/heads/main\")
-          else
-              OUTPUT+=($(git push origin refs/heads/main))
-          fi
-      fi
-      OUTPUT=$(printf '%s\n' \"${OUTPUT[@]}\")
+      export RELEASE_ARGS='\($release_args)'
+      export TAG='\($tag)'
+      export REPO='\(.repo)'
+      export FAIL_IF_EXISTS='\(.fail_if_exists)'
+      export DRY_RUN='\(.dry_run)'
+      export NEXT_VERSION='\($next_version)'
+      export VERSION_FILE='\(.version_file)'
+      export REOPEN_MESSAGE='\($reopen_message)'
+      OUTPUT=$(${RELEASE_ACTION_PATH}/release.sh)
   token:
     type: string
     required: true
@@ -64,6 +48,7 @@ runs:
     id: release
     env:
       GH_TOKEN: ${{ inputs.token }}
+      RELEASE_ACTION_PATH: ${{ github.action_path }}
     with:
       input: |
         dry_run: ${{ inputs.dry-run }}
