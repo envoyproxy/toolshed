@@ -7,10 +7,11 @@ with:
   repository: test/repo
   sha: abc123def456
   token: fake-token
-  version: 1.2.3
+  version: |
+    {"version": "1.2.3", "next": "1.2.4-dev"}
   version-file: /tmp/test-version-dry-run.txt
   template-release: |
-    export PATH="$(pwd)/gh-actions/github/release/tests/mocks:$PATH"
+    export PATH=\"$(pwd)/gh-actions/github/release/tests/mocks:$PATH\"
     export MOCK_LOG=/tmp/gh-mock-dry-run.log
     export MOCK_GIT_LOG=/tmp/git-mock-dry-run.log
     export MOCK_RELEASE_EXISTS=false
@@ -31,75 +32,75 @@ before:
     # Setup test environment
     mkdir -p /tmp/test-release-dry-run
     cd /tmp/test-release-dry-run
-    
+
     # Setup PATH for git operations in before/after
     export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
     export MOCK_GIT_LOG=/tmp/git-mock-dry-run.log
-    
+
     git init --initial-branch=main
     git config user.email "test@example.com"
     git config user.name "Test User"
-    
+
     # Create version file
     echo "1.2.3-dev" > /tmp/test-version-dry-run.txt
     git add /tmp/test-version-dry-run.txt
     git commit -m "Initial commit"
-    
+
     # Setup mock logs
     rm -f /tmp/gh-mock-dry-run.log
     rm -f /tmp/git-mock-dry-run.log
-    
+
     echo "✓ Test setup complete"
 
 after:
 - shell: bash
   run: |
     cd /tmp/test-release-dry-run
-    
+
     # Get the output
     RELEASE_OUTPUT='${{ steps.release.outputs.result }}'
     echo "Release output:"
     echo "$RELEASE_OUTPUT"
-    
+
     # Verify output is not empty
     if [[ -z "$RELEASE_OUTPUT" ]]; then
         echo "✗ Error: Release output is empty"
         exit 1
     fi
     echo "✓ Release output is not empty"
-    
+
     # Parse as JSON array and check contents
     OUTPUT_LINES=$(echo "$RELEASE_OUTPUT" | jq -r '.[]')
     echo "Output lines:"
     echo "$OUTPUT_LINES"
-    
+
     # Check for gh release create command
     if ! echo "$OUTPUT_LINES" | grep -q "gh release create"; then
         echo "✗ Error: Expected 'gh release create' in output"
         exit 1
     fi
     echo "✓ Found 'gh release create' command in output"
-    
+
     # Check for SKIPPED (dry run)
     if ! echo "$OUTPUT_LINES" | grep -q "SKIPPED"; then
         echo "✗ Error: Expected 'SKIPPED' in output for dry run"
         exit 1
     fi
     echo "✓ Found 'SKIPPED' markers for dry run"
-    
+
     # Verify gh release view was called
     if [[ ! -f /tmp/gh-mock-dry-run.log ]]; then
         echo "✗ Error: Mock log file not found"
         exit 1
     fi
-    
+
     if ! grep -q "gh release view" /tmp/gh-mock-dry-run.log; then
         echo "✗ Error: 'gh release view' not found in mock log"
         cat /tmp/gh-mock-dry-run.log
         exit 1
     fi
     echo "✓ Mock gh command was called correctly"
-    
+
     # Verify gh release create was NOT called (dry run)
     if grep -q "gh release create" /tmp/gh-mock-dry-run.log; then
         echo "✗ Error: 'gh release create' should not be called in dry run"
@@ -107,33 +108,33 @@ after:
         exit 1
     fi
     echo "✓ gh release create was not called (dry run)"
-    
+
     # Verify version file was updated
     if [[ ! -f /tmp/test-version-dry-run.txt ]]; then
         echo "✗ Error: Version file not found"
         exit 1
     fi
-    
+
     VERSION_CONTENT=$(cat /tmp/test-version-dry-run.txt)
-    if [[ "$VERSION_CONTENT" != "1.3.0-dev" ]]; then
-        echo "✗ Error: Expected version '1.3.0-dev', got '$VERSION_CONTENT'"
+    if [[ "$VERSION_CONTENT" != "1.2.4-dev" ]]; then
+        echo "✗ Error: Expected version '1.2.4-dev', got '$VERSION_CONTENT'"
         exit 1
     fi
     echo "✓ Version file updated to next dev version"
-    
+
     # Verify git commands were called
     if [[ ! -f /tmp/git-mock-dry-run.log ]]; then
         echo "✗ Error: Git mock log file not found"
         exit 1
     fi
-    
+
     if ! grep -q "git commit" /tmp/git-mock-dry-run.log; then
         echo "✗ Error: 'git commit' not found in git mock log"
         cat /tmp/git-mock-dry-run.log
         exit 1
     fi
     echo "✓ Git commit was called"
-    
+
     # Verify git push was NOT called (dry run)
     if grep -q "git push" /tmp/git-mock-dry-run.log; then
         echo "✗ Error: 'git push' should not be called in dry run"
@@ -141,11 +142,11 @@ after:
         exit 1
     fi
     echo "✓ Git push was not called (dry run)"
-    
+
     # Cleanup
     rm -rf /tmp/test-release-dry-run
     rm -f /tmp/test-version-dry-run.txt
     rm -f /tmp/gh-mock-dry-run.log
     rm -f /tmp/git-mock-dry-run.log
-    
+
     echo "✓ Dry run test passed"
