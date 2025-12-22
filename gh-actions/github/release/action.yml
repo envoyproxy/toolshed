@@ -17,14 +17,17 @@ inputs:
   template-release:
     type: string
     default: |
-      export RELEASE_ARGS='\($release_args)'
-      export TAG='\($tag)'
-      export REPO='\(.repo)'
-      export FAIL_IF_EXISTS='\(.fail_if_exists)'
-      export DRY_RUN='\(.dry_run)'
-      export NEXT_VERSION='\($next_version)'
-      export VERSION_FILE='\(.version_file)'
-      export REOPEN_MESSAGE='\($reopen_message)'
+      export DEBUG=1
+      export SHA=\"\(.sha)\"
+      export TAG=\"\($tag)\"
+      export TITLE=\"\($title)\"
+      export REPO=\"\(.repo)\"
+      export FAIL_IF_EXISTS=\"\(.fail_if_exists)\"
+      export DRY_RUN=\"\(.dry_run)\"
+      export NEXT_VERSION=\"\($next_version)\"
+      export VERSION=\"\($version)\"
+      export VERSION_FILE=\"\(.version_file)\"
+      export REOPEN_MESSAGE=\"\($reopen_message)\"
       OUTPUT=$(${RELEASE_ACTION_PATH}/release.sh)
   token:
     type: string
@@ -65,12 +68,6 @@ runs:
         | "\(.name)-v\($version)" as $tag
         | (.name | "\(.[0:1] | ascii_upcase)\(.[1:])") as $title
         | "repo: Dev \($title) v\($next_version)" as $reopen_message
-        | (["\"\($tag)\"",
-            "--target \"\(.sha)\"",
-            "--title \"\($tag)\"",
-            "--notes \"\($title) release \($version)\"",
-            "--repo \"\(.repo)\""]
-           | join(" ")) as $release_args
         | "${{ inputs.template-release }}"
         | bash::output
       options: -r
