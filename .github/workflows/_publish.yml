@@ -49,12 +49,6 @@ on:
       fail-if-exists:
         default: false
         type: boolean
-      pr:
-        default: >-
-          ${{ github.event.workflow_run.event == 'pull_request'
-              && toJSON(github.event.workflow_run.pull_requests)[0]
-              || '{}' }}
-        type: string
       python-version:
         default:
         type: string
@@ -126,12 +120,19 @@ jobs:
       with:
         app_id: ${{ secrets.app-id }}
         key: ${{ secrets.app-key }}
+
     - id: checkout
       name: Checkout the repository
       uses: envoyproxy/toolshed/gh-actions/github/checkout@1a3b60ace2838f68e5a0fb077226eebae122d5e6
       with:
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
+        config: |
+          ref: >-
+            ${{ github.event_name == 'pull_request'
+                && github.event.pull_request.merge_commit_sha
+                || inputs.sha }}
+        pr: ${{ github.event_name == 'pull_request' && github.event.pull_request.number }}
         strip-prefix: release/
         token: ${{ steps.appauth.outputs.token }}
     - name: Commit messsage (for PR or branch)
@@ -182,7 +183,7 @@ jobs:
           continue: ${{ steps.afterall.outputs.continue }}
           python: ${{ steps.python.outputs.version }}
           repository: ${{ inputs.repository }}
-          pr: ${{ inputs.pr }}
+          pr: ${{ github.event.workflow_run.event }}
           commit_message: |
             ${{ steps.commit-message.outputs.value }}
         input-format: yaml

@@ -28,7 +28,7 @@ if gh release view "$TAG" --repo "$REPO" &>/dev/null; then
     echo "${_OUTPUT}"
     exit 0
 fi
-OUTPUT=("$ gh release create ${RELEASE_ARGS[*]}")
+OUTPUT=("$ gh release create ${RELEASE_ARGS_ARR[*]}")
 if [[ "${DRY_RUN}" == "true" ]]; then
     OUTPUT+=("SKIPPED")
 else
