@@ -5,11 +5,9 @@
 
 set -e
 
-# Log all calls to a file
 MOCK_LOG="${MOCK_LOG:-/tmp/gh-mock.log}"
 echo "gh $*" >> "$MOCK_LOG"
 
-# Parse command
 command="$1"
 subcommand="${2:-}"
 
@@ -17,8 +15,6 @@ case "$command" in
     release)
         case "$subcommand" in
             view)
-                # gh release view TAG --repo REPO
-                # Check if MOCK_RELEASE_EXISTS is set to simulate existing release
                 if [[ "${MOCK_RELEASE_EXISTS}" == "true" ]]; then
                     echo "Release exists"
                     exit 0
@@ -28,14 +24,7 @@ case "$command" in
                 fi
                 ;;
             create)
-                # gh release create TAG --target SHA --title TITLE --notes NOTES --repo REPO
-                # Record the call and return success
-                if [[ "${MOCK_RELEASE_CREATE_FAIL}" == "true" ]]; then
-                    echo "Error: failed to create release" >&2
-                    exit 1
-                fi
-                # Extract tag from arguments (should be the first non-flag argument)
-                shift 2  # skip "release create"
+                shift 2
                 tag=""
                 for arg in "$@"; do
                     if [[ "$arg" != --* ]]; then

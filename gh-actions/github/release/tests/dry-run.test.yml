@@ -1,5 +1,9 @@
 uses: ./gh-actions/github/release
 id: release
+env:
+  MOCK_LOG: /tmp/gh-mock-dry-run.log
+  MOCK_GIT_LOG: /tmp/git-mock-dry-run.log
+  MOCK_RELEASE_EXISTS: false
 with:
   dry-run: true
   fail-if-exists: true
@@ -10,21 +14,6 @@ with:
   version: |
     {"version": "1.2.3", "next": "1.2.4-dev"}
   version-file: /tmp/test-version-dry-run.txt
-  template-release: |
-    export PATH=\"$(pwd)/gh-actions/github/release/tests/mocks:$PATH\"
-    export MOCK_LOG=/tmp/gh-mock-dry-run.log
-    export MOCK_GIT_LOG=/tmp/git-mock-dry-run.log
-    export MOCK_RELEASE_EXISTS=false
-    export RELEASE_ARGS='\($release_args)'
-    export TAG='\($tag)'
-    export REPO='\(.repo)'
-    export FAIL_IF_EXISTS='\(.fail_if_exists)'
-    export DRY_RUN='\(.dry_run)'
-    export NEXT_VERSION='\($next_version)'
-    export VERSION_FILE='\(.version_file)'
-    export REOPEN_MESSAGE='\($reopen_message)'
-    cd /tmp/test-release-dry-run
-    OUTPUT=$(${RELEASE_ACTION_PATH}/release.sh)
 
 before:
 - shell: bash
@@ -33,6 +22,7 @@ before:
     echo "1.2.3-dev" > /tmp/test-version-dry-run.txt
     rm -f /tmp/gh-mock-dry-run.log
     rm -f /tmp/git-mock-dry-run.log
+    echo "${{ github.workspace }}/gh-actions/github/release/tests/mocks:$PATH" >> $GITHUB_PATH
     echo "✓ Test setup complete"
 
 after:

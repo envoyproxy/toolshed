@@ -1,34 +1,16 @@
 #!/usr/bin/env bash
 
 # Mock git command for testing
-# Mocks all git commands to provide controlled test environment
+# Mocks only the commands used by release.sh
 
-# Log all calls
 MOCK_GIT_LOG="${MOCK_GIT_LOG:-/tmp/git-mock.log}"
 echo "git $*" >> "$MOCK_GIT_LOG"
 
-# Parse command
 command="${1:-}"
 
 case "$command" in
-    init)
-        # Mock git init
-        shift
-        mkdir -p .git
-        echo "Initialized empty Git repository in $(pwd)/.git/"
-        ;;
-    config)
-        # Mock git config - just succeed silently
-        exit 0
-        ;;
-    add)
-        # Mock git add - just succeed silently
-        exit 0
-        ;;
     commit)
-        # Mock git commit
         shift
-        # Parse commit message
         message=""
         while [[ $# -gt 0 ]]; do
             case "$1" in
@@ -44,49 +26,14 @@ case "$command" in
                     ;;
             esac
         done
-        
-        if [[ "${MOCK_GIT_COMMIT_FAIL}" == "true" ]]; then
-            echo "Error: failed to commit" >&2
-            exit 1
-        fi
-        
         echo "[main $(echo $RANDOM | md5sum | head -c 7)] $message"
         echo " 1 file changed, 1 insertion(+), 1 deletion(-)"
         ;;
-    log)
-        # Mock git log
-        shift
-        # Check for --oneline flag
-        if [[ "$*" == *"--oneline"* ]]; then
-            # Return mock commits including the one we just made
-            echo "abc1234 repo: Dev Test-package v1.3.0-dev"
-            echo "def5678 Initial commit"
-        else
-            echo "commit abc1234567890"
-            echo "Author: Test User <test@example.com>"
-            echo "Date:   $(date)"
-            echo ""
-            echo "    repo: Dev Test-package v1.3.0-dev"
-        fi
-        ;;
-    status)
-        # Mock git status
-        echo "On branch main"
-        echo "nothing to commit, working tree clean"
-        ;;
     push)
-        # Mock git push
-        if [[ "${MOCK_GIT_PUSH_FAIL}" == "true" ]]; then
-            echo "Error: failed to push" >&2
-            exit 1
-        fi
-        
-        # Simulate successful push
         echo "To mock-origin"
         echo "   abc123..def456  main -> main"
         ;;
     *)
-        # For any other command, just succeed silently
         exit 0
         ;;
 esac
