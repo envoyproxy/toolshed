@@ -14,6 +14,10 @@ set -e -o pipefail
 # - VERSION: the release version
 # - VERSION_FILE: path to version file
 # - REOPEN_MESSAGE: commit message for version file update
+#
+# Expected git configuration (set via git config):
+# - user.name: the committer/author name (e.g., "publish-envoy[bot]")
+# - user.email: the committer/author email (e.g., "140627008+publish-envoy[bot]@users.noreply.github.com")
 
 cleanup() {
     local exit_code=$?
@@ -91,6 +95,9 @@ if [[ -n "$DEBUG" ]]; then
     echo "$ echo ${NEXT_VERSION} > ${VERSION_FILE}" >&2
 fi
 echo "${NEXT_VERSION}" > "${VERSION_FILE}"
-_run git commit "${VERSION_FILE}" -m "${REOPEN_MESSAGE}" --signoff
+# Get the configured git user to use as author
+GIT_USER_NAME=$(git config user.name)
+GIT_USER_EMAIL=$(git config user.email)
+_run git commit "${VERSION_FILE}" -m "${REOPEN_MESSAGE}" --author="${GIT_USER_NAME} <${GIT_USER_EMAIL}>" --signoff
 _run git show
 _run git push origin HEAD:refs/heads/main
