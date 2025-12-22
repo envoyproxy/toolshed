@@ -29,27 +29,10 @@ with:
 before:
 - shell: bash
   run: |
-    # Setup test environment
     mkdir -p /tmp/test-release-dry-run
-    cd /tmp/test-release-dry-run
-
-    # Setup PATH for git operations in before/after
-    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
-    export MOCK_GIT_LOG=/tmp/git-mock-dry-run.log
-
-    git init --initial-branch=main
-    git config user.email "test@example.com"
-    git config user.name "Test User"
-
-    # Create version file
     echo "1.2.3-dev" > /tmp/test-version-dry-run.txt
-    git add /tmp/test-version-dry-run.txt
-    git commit -m "Initial commit"
-
-    # Setup mock logs
     rm -f /tmp/gh-mock-dry-run.log
     rm -f /tmp/git-mock-dry-run.log
-
     echo "✓ Test setup complete"
 
 after:

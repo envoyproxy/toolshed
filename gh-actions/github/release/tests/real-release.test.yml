@@ -30,22 +30,9 @@ before:
 - shell: bash
   run: |
     mkdir -p /tmp/test-release-real
-    cd /tmp/test-release-real
-
-    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
-    export MOCK_GIT_LOG=/tmp/git-mock-real.log
-
-    git init --initial-branch=main
-    git config user.email "test@example.com"
-    git config user.name "Test User"
-
     echo "1.2.3-dev" > /tmp/test-version-real.txt
-    git add /tmp/test-version-real.txt
-    git commit -m "Initial commit"
-
     rm -f /tmp/gh-mock-real.log
     rm -f /tmp/git-mock-real.log
-
     echo "✓ Test setup complete"
 
 after:
