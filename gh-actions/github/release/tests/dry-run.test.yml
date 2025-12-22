@@ -10,7 +10,7 @@ with:
   version: 1.2.3
   version-file: /tmp/test-version-dry-run.txt
   template-release: |
-    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    export PATH="$(pwd)/gh-actions/github/release/tests/mocks:$PATH"
     export MOCK_LOG=/tmp/gh-mock-dry-run.log
     export MOCK_GIT_LOG=/tmp/git-mock-dry-run.log
     export MOCK_RELEASE_EXISTS=false
