@@ -9,6 +9,21 @@ with:
   token: fake-token
   version: 1.2.3
   version-file: /tmp/test-version-exists-warn.txt
+  template-release: |
+    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    export MOCK_LOG=/tmp/gh-mock-exists-warn.log
+    export MOCK_GIT_LOG=/tmp/git-mock-exists-warn.log
+    export MOCK_RELEASE_EXISTS=true
+    export RELEASE_ARGS='\($release_args)'
+    export TAG='\($tag)'
+    export REPO='\(.repo)'
+    export FAIL_IF_EXISTS='\(.fail_if_exists)'
+    export DRY_RUN='\(.dry_run)'
+    export NEXT_VERSION='\($next_version)'
+    export VERSION_FILE='\(.version_file)'
+    export REOPEN_MESSAGE='\($reopen_message)'
+    cd /tmp/test-release-exists-warn
+    OUTPUT=$(${RELEASE_ACTION_PATH}/release.sh)
 
 before:
 - shell: bash
@@ -16,6 +31,11 @@ before:
     # Setup test environment
     mkdir -p /tmp/test-release-exists-warn
     cd /tmp/test-release-exists-warn
+    
+    # Setup PATH for git operations
+    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    export MOCK_GIT_LOG=/tmp/git-mock-exists-warn.log
+    
     git init --initial-branch=main
     git config user.email "test@example.com"
     git config user.name "Test User"
@@ -25,15 +45,9 @@ before:
     git add /tmp/test-version-exists-warn.txt
     git commit -m "Initial commit"
     
-    # Setup mock log
-    export MOCK_LOG=/tmp/gh-mock-exists-warn.log
-    rm -f "$MOCK_LOG"
-    
-    # Add mocks to PATH
-    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
-    
-    # Configure mock: release already exists
-    export MOCK_RELEASE_EXISTS=true
+    # Setup mock logs
+    rm -f /tmp/gh-mock-exists-warn.log
+    rm -f /tmp/git-mock-exists-warn.log
     
     echo "✓ Test setup complete"
 
@@ -41,10 +55,6 @@ after:
 - shell: bash
   run: |
     cd /tmp/test-release-exists-warn
-    
-    # Add mocks to PATH
-    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
-    export MOCK_LOG=/tmp/gh-mock-exists-warn.log
     
     # Get the output
     RELEASE_OUTPUT='${{ steps.release.outputs.result }}'
@@ -78,22 +88,22 @@ after:
     echo "✓ Found 'already exists, skipping creation' message"
     
     # Verify gh release view was called
-    if [[ ! -f "$MOCK_LOG" ]]; then
+    if [[ ! -f /tmp/gh-mock-exists-warn.log ]]; then
         echo "✗ Error: Mock log file not found"
         exit 1
     fi
     
-    if ! grep -q "gh release view" "$MOCK_LOG"; then
+    if ! grep -q "gh release view" /tmp/gh-mock-exists-warn.log; then
         echo "✗ Error: 'gh release view' not found in mock log"
-        cat "$MOCK_LOG"
+        cat /tmp/gh-mock-exists-warn.log
         exit 1
     fi
     echo "✓ Mock gh release view was called"
     
     # Verify gh release create was NOT called (release exists)
-    if grep -q "gh release create" "$MOCK_LOG"; then
+    if grep -q "gh release create" /tmp/gh-mock-exists-warn.log; then
         echo "✗ Error: 'gh release create' should not be called when release exists"
-        cat "$MOCK_LOG"
+        cat /tmp/gh-mock-exists-warn.log
         exit 1
     fi
     echo "✓ gh release create was not called"
@@ -101,6 +111,7 @@ after:
     # Cleanup
     rm -rf /tmp/test-release-exists-warn
     rm -f /tmp/test-version-exists-warn.txt
-    rm -f "$MOCK_LOG"
+    rm -f /tmp/gh-mock-exists-warn.log
+    rm -f /tmp/git-mock-exists-warn.log
     
     echo "✓ Release exists with warning test passed"

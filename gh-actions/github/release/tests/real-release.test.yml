@@ -9,6 +9,21 @@ with:
   token: fake-token
   version: 1.2.3
   version-file: /tmp/test-version-real.txt
+  template-release: |
+    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    export MOCK_LOG=/tmp/gh-mock-real.log
+    export MOCK_GIT_LOG=/tmp/git-mock-real.log
+    export MOCK_RELEASE_EXISTS=false
+    export RELEASE_ARGS='\($release_args)'
+    export TAG='\($tag)'
+    export REPO='\(.repo)'
+    export FAIL_IF_EXISTS='\(.fail_if_exists)'
+    export DRY_RUN='\(.dry_run)'
+    export NEXT_VERSION='\($next_version)'
+    export VERSION_FILE='\(.version_file)'
+    export REOPEN_MESSAGE='\($reopen_message)'
+    cd /tmp/test-release-real
+    OUTPUT=$(${RELEASE_ACTION_PATH}/release.sh)
 
 before:
 - shell: bash
@@ -16,6 +31,11 @@ before:
     # Setup test environment
     mkdir -p /tmp/test-release-real
     cd /tmp/test-release-real
+    
+    # Setup PATH for git operations
+    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    export MOCK_GIT_LOG=/tmp/git-mock-real.log
+    
     git init --initial-branch=main
     git config user.email "test@example.com"
     git config user.name "Test User"
@@ -25,18 +45,9 @@ before:
     git add /tmp/test-version-real.txt
     git commit -m "Initial commit"
     
-    # Setup a fake remote (we won't actually push, but need to test the command)
-    # We'll need to mock git push as well or make it fail gracefully
-    
-    # Setup mock log
-    export MOCK_LOG=/tmp/gh-mock-real.log
-    rm -f "$MOCK_LOG"
-    
-    # Add mocks to PATH
-    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
-    
-    # Configure mock: release doesn't exist
-    export MOCK_RELEASE_EXISTS=false
+    # Setup mock logs
+    rm -f /tmp/gh-mock-real.log
+    rm -f /tmp/git-mock-real.log
     
     echo "✓ Test setup complete"
 
@@ -44,10 +55,6 @@ after:
 - shell: bash
   run: |
     cd /tmp/test-release-real
-    
-    # Add mocks to PATH
-    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
-    export MOCK_LOG=/tmp/gh-mock-real.log
     
     # Get the output
     RELEASE_OUTPUT='${{ steps.release.outputs.result }}'
@@ -89,30 +96,30 @@ after:
     echo "✓ Found release URL in output"
     
     # Verify gh release view was called
-    if [[ ! -f "$MOCK_LOG" ]]; then
+    if [[ ! -f /tmp/gh-mock-real.log ]]; then
         echo "✗ Error: Mock log file not found"
         exit 1
     fi
     
-    if ! grep -q "gh release view" "$MOCK_LOG"; then
+    if ! grep -q "gh release view" /tmp/gh-mock-real.log; then
         echo "✗ Error: 'gh release view' not found in mock log"
-        cat "$MOCK_LOG"
+        cat /tmp/gh-mock-real.log
         exit 1
     fi
     echo "✓ Mock gh release view was called"
     
     # Verify gh release create WAS called (not dry run)
-    if ! grep -q "gh release create" "$MOCK_LOG"; then
+    if ! grep -q "gh release create" /tmp/gh-mock-real.log; then
         echo "✗ Error: 'gh release create' should be called for real release"
-        cat "$MOCK_LOG"
+        cat /tmp/gh-mock-real.log
         exit 1
     fi
     echo "✓ gh release create was called"
     
     # Verify the tag name in the mock log
-    if ! grep "gh release create" "$MOCK_LOG" | grep -q "test-package-v1.2.3"; then
+    if ! grep "gh release create" /tmp/gh-mock-real.log | grep -q "test-package-v1.2.3"; then
         echo "✗ Error: Expected tag 'test-package-v1.2.3' in gh release create call"
-        grep "gh release create" "$MOCK_LOG"
+        grep "gh release create" /tmp/gh-mock-real.log
         exit 1
     fi
     echo "✓ Correct tag used in gh release create"
@@ -130,15 +137,28 @@ after:
     fi
     echo "✓ Version file updated to next dev version"
     
-    # Verify git commit was made
-    if ! git log --oneline | grep -q "repo: Dev Test-package"; then
-        echo "✗ Error: Expected commit message not found"
-        git log --oneline
+    # Verify git commands were called
+    if [[ ! -f /tmp/git-mock-real.log ]]; then
+        echo "✗ Error: Git mock log file not found"
         exit 1
     fi
-    echo "✓ Git commit created with correct message"
     
-    # Check for git push in output (even though it will fail, the command should be there)
+    if ! grep -q "git commit" /tmp/git-mock-real.log; then
+        echo "✗ Error: 'git commit' not found in git mock log"
+        cat /tmp/git-mock-real.log
+        exit 1
+    fi
+    echo "✓ Git commit was called"
+    
+    # Verify git push WAS called (not dry run)
+    if ! grep -q "git push" /tmp/git-mock-real.log; then
+        echo "✗ Error: 'git push' should be called for real release"
+        cat /tmp/git-mock-real.log
+        exit 1
+    fi
+    echo "✓ Git push was called"
+    
+    # Check for git push in output
     if ! echo "$OUTPUT_LINES" | grep -q "git push"; then
         echo "✗ Error: Expected 'git push' in output"
         exit 1
@@ -148,6 +168,7 @@ after:
     # Cleanup
     rm -rf /tmp/test-release-real
     rm -f /tmp/test-version-real.txt
-    rm -f "$MOCK_LOG"
+    rm -f /tmp/gh-mock-real.log
+    rm -f /tmp/git-mock-real.log
     
     echo "✓ Real release test passed"
