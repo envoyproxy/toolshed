@@ -7,7 +7,8 @@ with:
   repository: test/repo
   sha: abc123def456
   token: fake-token
-  version: 1.2.3
+  version: |
+    {"version": "1.2.3", "next": "1.2.4-dev"}
   version-file: /tmp/test-version-exists-warn.txt
   template-release: |
     export PATH=\"$(pwd)/gh-actions/github/release/tests/mocks:$PATH\"
@@ -28,11 +29,9 @@ with:
 before:
 - shell: bash
   run: |
-    # Setup test environment
     mkdir -p /tmp/test-release-exists-warn
     cd /tmp/test-release-exists-warn
 
-    # Setup PATH for git operations
     export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
     export MOCK_GIT_LOG=/tmp/git-mock-exists-warn.log
 
@@ -40,12 +39,10 @@ before:
     git config user.email "test@example.com"
     git config user.name "Test User"
 
-    # Create version file
     echo "1.2.3-dev" > /tmp/test-version-exists-warn.txt
     git add /tmp/test-version-exists-warn.txt
     git commit -m "Initial commit"
 
-    # Setup mock logs
     rm -f /tmp/gh-mock-exists-warn.log
     rm -f /tmp/git-mock-exists-warn.log
 
@@ -56,38 +53,32 @@ after:
   run: |
     cd /tmp/test-release-exists-warn
 
-    # Get the output
     RELEASE_OUTPUT='${{ steps.release.outputs.result }}'
     echo "Release output:"
     echo "$RELEASE_OUTPUT"
 
-    # Verify output is not empty
     if [[ -z "$RELEASE_OUTPUT" ]]; then
         echo "✗ Error: Release output is empty"
         exit 1
     fi
     echo "✓ Release output is not empty"
 
-    # Parse as JSON array and check contents
     OUTPUT_LINES=$(echo "$RELEASE_OUTPUT" | jq -r '.[]')
     echo "Output lines:"
     echo "$OUTPUT_LINES"
 
-    # Check for gh release view command
     if ! echo "$OUTPUT_LINES" | grep -q "gh release view"; then
         echo "✗ Error: Expected 'gh release view' in output"
         exit 1
     fi
     echo "✓ Found 'gh release view' command in output"
 
-    # Check for "already exists, skipping creation" message
     if ! echo "$OUTPUT_LINES" | grep -q "already exists, skipping creation"; then
         echo "✗ Error: Expected 'already exists, skipping creation' message"
         exit 1
     fi
     echo "✓ Found 'already exists, skipping creation' message"
 
-    # Verify gh release view was called
     if [[ ! -f /tmp/gh-mock-exists-warn.log ]]; then
         echo "✗ Error: Mock log file not found"
         exit 1
@@ -100,7 +91,6 @@ after:
     fi
     echo "✓ Mock gh release view was called"
 
-    # Verify gh release create was NOT called (release exists)
     if grep -q "gh release create" /tmp/gh-mock-exists-warn.log; then
         echo "✗ Error: 'gh release create' should not be called when release exists"
         cat /tmp/gh-mock-exists-warn.log
@@ -108,7 +98,6 @@ after:
     fi
     echo "✓ gh release create was not called"
 
-    # Cleanup
     rm -rf /tmp/test-release-exists-warn
     rm -f /tmp/test-version-exists-warn.txt
     rm -f /tmp/gh-mock-exists-warn.log
