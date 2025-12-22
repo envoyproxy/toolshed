@@ -47,7 +47,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/bson@03365a95641ac7ddff073d9ddff976ec49a1a4cd
+  - uses: envoyproxy/toolshed/gh-actions/bson@0ca46fe8665ce4f33cf92ba52814e6dd40b52934
     id: release
     env:
       GH_TOKEN: ${{ inputs.token }}
