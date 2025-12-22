@@ -25,7 +25,7 @@ jobs:
       app-key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
     uses: ./.github/workflows/_publish.yml
     with:
-      committer-email: "140627008+publish-envoy[bot]@users. noreply.github.com"
+      committer-email: "140627008+publish-envoy[bot]@users.noreply.github.com"
       committer-name: "publish-envoy[bot]"
       workflows: |
         Bazel CI
