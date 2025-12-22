@@ -111,12 +111,12 @@ jobs:
     steps:
     - name: Check all workflows ran
       id: afterall
-      uses: envoyproxy/toolshed/gh-actions/github/afterall@488ae3ddb60ac17f80fce3753f42ad44fae6d8ba
+      uses: envoyproxy/toolshed/gh-actions/github/afterall@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
         repo: ${{ inputs.repository }}
-    - uses: envoyproxy/toolshed/gh-actions/appauth@488ae3ddb60ac17f80fce3753f42ad44fae6d8ba
+    - uses: envoyproxy/toolshed/gh-actions/appauth@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       id: appauth
       name: Appauth
       if: >-
@@ -128,7 +128,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
@@ -136,7 +136,7 @@ jobs:
         token: ${{ steps.appauth.outputs.token }}
     - name: Commit messsage (for PR or branch)
       id: commit-message
-      uses: envoyproxy/toolshed/gh-actions/jq@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/jq@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         options: -sRr
         input: |
@@ -146,32 +146,32 @@ jobs:
 
     - name: Actions version info
       id: actions
-      uses: envoyproxy/toolshed/gh-actions/version@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/version@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         version: ${{ inputs.actions-version }}
         version-file: ${{ inputs.actions-version-file }}
     - name: Bazel version info
       id: bazel
-      uses: envoyproxy/toolshed/gh-actions/version@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/version@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         version: ${{ inputs.bazel-version }}
         version-file: ${{ inputs.bazel-version-file }}
     - name: Bins version info
       id: bins
-      uses: envoyproxy/toolshed/gh-actions/version@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/version@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         version: ${{ inputs.bins-version }}
         version-file: ${{ inputs.bins-version-file }}
     - name: Python version info
       id: python
-      uses: envoyproxy/toolshed/gh-actions/version@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/version@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         version: ${{ inputs.python-version }}
         version-file: ${{ inputs.python-version-file }}
 
     - name: Status summary title
       id: status-summary-title
-      uses: envoyproxy/toolshed/gh-actions/jq@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/jq@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         input: |
           actions: ${{ steps.actions.outputs.version }}
@@ -217,7 +217,7 @@ jobs:
              end) as $pr_link
           | "${{ inputs.template-status }}"
     - name: Versions info
-      uses: envoyproxy/toolshed/gh-actions/json/table@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/json/table@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         append: true
         output-path: GITHUB_STEP_SUMMARY
@@ -254,7 +254,7 @@ jobs:
             }
 
     - name: Generate workflow status table
-      uses: envoyproxy/toolshed/gh-actions/json/table@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/json/table@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         title: Required Workflows Status
         append: true
@@ -287,7 +287,7 @@ jobs:
 
     - name: Download Artifacts (Bazel CI)
       if: fromJSON(steps.afterall.outputs.continue)
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
       with:
         github-token: ${{ github.token }}
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Bazel CI'] }}
@@ -295,7 +295,7 @@ jobs:
         repository: ${{ inputs.repository }}
     - name: Download Artifacts (Rust CI)
       if: fromJSON(steps.afterall.outputs.continue)
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
       with:
         github-token: ${{ github.token }}
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Rust CI'] }}
@@ -303,7 +303,7 @@ jobs:
         repository: ${{ inputs.repository }}
     - name: Download Artifacts (Python CI)
       if: fromJSON(steps.afterall.outputs.continue)
-      uses: actions/download-artifact@v7
+      uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131  # v7.0.0
       with:
         github-token: ${{ github.token }}
         run-id: ${{ fromJSON(steps.afterall.outputs.run-ids)['Python CI'] }}
@@ -313,7 +313,7 @@ jobs:
     - name: List downloaded artifacts
       id: artifacts
       if: fromJSON(steps.afterall.outputs.continue)
-      uses: envoyproxy/toolshed/gh-actions/bson@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/bson@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         catch-errors: true
         input: |
@@ -340,13 +340,13 @@ jobs:
     - name: Artifact sizes
       id: artifact-sizes
       if: fromJSON(steps.afterall.outputs.continue)
-      uses: envoyproxy/toolshed/gh-actions/jq@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/jq@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         input: ${{ steps.artifacts.outputs.output }}
         filter: |
           map_values(.size | utils::bytesize)
     - name: Generate workflow artifacts table
-      uses: envoyproxy/toolshed/gh-actions/json/table@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/json/table@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         title: Artifacts to publish
         append: true
@@ -365,7 +365,7 @@ jobs:
       if: >-
         fromJSON(steps.afterall.outputs.continue)
         && ! fromJSON(steps.actions.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/github/release@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/github/release@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
@@ -384,7 +384,7 @@ jobs:
       if: >-
         fromJSON(steps.afterall.outputs.continue)
         && ! fromJSON(steps.bazel.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/github/release@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/github/release@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
@@ -403,7 +403,7 @@ jobs:
       if: >-
         fromJSON(steps.afterall.outputs.continue)
         && ! fromJSON(steps.bins.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/github/release@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/github/release@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
@@ -422,7 +422,7 @@ jobs:
       if: >-
         fromJSON(steps.afterall.outputs.continue)
         && ! fromJSON(steps.python.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/github/release@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/github/release@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
@@ -445,7 +445,7 @@ jobs:
             || ! fromJSON(steps.bins.outputs.version).is_dev
             || ! fromJSON(steps.python.outputs.version).is_dev
             || inputs.event == 'pull_request')
-      uses: envoyproxy/toolshed/gh-actions/jq@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      uses: envoyproxy/toolshed/gh-actions/jq@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
       with:
         input: |
           actions: ${{ steps.actions.outputs.version }}
