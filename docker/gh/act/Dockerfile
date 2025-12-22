@@ -1,4 +1,4 @@
-FROM catthehacker/ubuntu:act-latest@fa8a60baa56636079943a6d5321a74bd61f8c8d43df923fec9157704a676e86a
+FROM catthehacker/ubuntu:act-latest@sha256:fa8a60baa56636079943a6d5321a74bd61f8c8d43df923fec9157704a676e86a
 
 RUN sudo mkdir -p -m 755 /etc/apt/keyrings \
     && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg \
