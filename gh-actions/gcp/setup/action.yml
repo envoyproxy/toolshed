@@ -49,7 +49,7 @@ runs:
     id: gsutil
     if: ${{ inputs.key && ! fromJSON(inputs.force-install) }}
     shell: bash
-  - uses: actions/setup-python@v5
+  - uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
     if: ${{ inputs.key && steps.gsutil.outputs.installed != 'true' }}
     with:
       python-version: ${{ inputs.python-version }}
@@ -64,7 +64,7 @@ runs:
     if: ${{ inputs.key }}
     shell: bash
 
-  - uses: envoyproxy/toolshed/gh-actions/github/script/run@4db1102447743c6eea61debf33a67218c9d0b01a
+  - uses: envoyproxy/toolshed/gh-actions/github/script/run@11c9b010a4c9c8c2908faacb1878a11bfa4f0652
     id: key
     if: ${{ inputs.key }}
     with:
