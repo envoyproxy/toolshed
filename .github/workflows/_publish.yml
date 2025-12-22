@@ -366,7 +366,7 @@ jobs:
       if: >-
         fromJSON(steps.afterall.outputs.continue)
         && ! fromJSON(steps.actions.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/github/release@7d1632763326ab3136271213d3fb17a51e8d3ec7
+      uses: envoyproxy/toolshed/gh-actions/github/release@3f1aadb56f3b3981a2e42281235e36a5212b3948
       with:
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
@@ -385,7 +385,7 @@ jobs:
       if: >-
         fromJSON(steps.afterall.outputs.continue)
         && ! fromJSON(steps.bazel.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/github/release@7d1632763326ab3136271213d3fb17a51e8d3ec7
+      uses: envoyproxy/toolshed/gh-actions/github/release@3f1aadb56f3b3981a2e42281235e36a5212b3948
       with:
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
@@ -404,7 +404,7 @@ jobs:
       if: >-
         fromJSON(steps.afterall.outputs.continue)
         && ! fromJSON(steps.bins.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/github/release@7d1632763326ab3136271213d3fb17a51e8d3ec7
+      uses: envoyproxy/toolshed/gh-actions/github/release@3f1aadb56f3b3981a2e42281235e36a5212b3948
       with:
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
@@ -423,7 +423,7 @@ jobs:
       if: >-
         fromJSON(steps.afterall.outputs.continue)
         && ! fromJSON(steps.python.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/github/release@7d1632763326ab3136271213d3fb17a51e8d3ec7
+      uses: envoyproxy/toolshed/gh-actions/github/release@3f1aadb56f3b3981a2e42281235e36a5212b3948
       with:
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
