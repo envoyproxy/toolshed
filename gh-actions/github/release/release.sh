@@ -98,6 +98,10 @@ echo "${NEXT_VERSION}" > "${VERSION_FILE}"
 # Get the configured git user to use as author
 GIT_USER_NAME=$(git config user.name)
 GIT_USER_EMAIL=$(git config user.email)
+if [[ -z "$GIT_USER_NAME" || -z "$GIT_USER_EMAIL" ]]; then
+    echo "::error::Git user.name and user.email must be configured" >&2
+    exit 1
+fi
 _run git commit "${VERSION_FILE}" -m "${REOPEN_MESSAGE}" --author="${GIT_USER_NAME} <${GIT_USER_EMAIL}>" --signoff
 _run git show
 _run git push origin HEAD:refs/heads/main
