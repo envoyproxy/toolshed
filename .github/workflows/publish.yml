@@ -16,17 +16,13 @@ on:
 
 jobs:
   publish:
+    if: >-
+      github.event.workflow_run.event == 'push'
     permissions:
       actions: read
     secrets:
-      app-id: >-
-        ${{ github.event.workflow_run.event == 'push'
-            && secrets.ENVOY_CI_PUBLISH_APP_ID
-            || '' }}
-      app-key: >-
-        ${{ github.event.workflow_run.event == 'push'
-            && secrets.ENVOY_CI_PUBLISH_APP_KEY
-            || '' }}
+      app-id: ${{ secrets.ENVOY_CI_PUBLISH_APP_ID }}
+      app-key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
     uses: ./.github/workflows/_publish.yml
     with:
       committer-email: "140627008+publish-envoy[bot]@users. noreply.github.com"
