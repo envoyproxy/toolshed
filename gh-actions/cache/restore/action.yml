@@ -72,7 +72,7 @@ runs:
     if: >-
       inputs.cache-type == 'gcs'
     id: cache-restore-gcs
-    uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@2dc2e3e29914b3bc04cc63c1c8aae5b52e4650d6
+    uses: envoyproxy/toolshed/gh-actions/gcs/cache/restore@c175595d2ff9ebd8c9a2ce94bcb34c43d0a4b2a2
     with:
       bucket: ${{ inputs.gcs-bucket }}
       path: ${{ inputs.path || inputs.path-tmp }}
@@ -81,7 +81,7 @@ runs:
     if: >-
       inputs.cache-type == 'artifact'
     id: cache-restore-artifact
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/restore@2dc2e3e29914b3bc04cc63c1c8aae5b52e4650d6
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/restore@c175595d2ff9ebd8c9a2ce94bcb34c43d0a4b2a2
     with:
       id: ${{ inputs.artifact-id }}
       name: ${{ inputs.artifact-name }}
