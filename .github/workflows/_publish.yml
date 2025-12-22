@@ -31,6 +31,12 @@ on:
       commit-message:
         default: ${{ github.event.workflow_run.head_commit.message }}
         type: string
+      committer-email:
+        required: true
+        type: string
+      committer-name:
+        required: true
+        type: string
       conclusion:
         default: ${{ github.event.workflow_run.conclusion }}
         type: string
@@ -40,6 +46,9 @@ on:
       event:
         default: ${{ github.event.workflow_run.event }}
         type: string
+      fail-if-exists:
+        default: false
+        type: boolean
       pr:
         default: >-
           ${{ github.event.workflow_run.event == 'pull_request'
@@ -61,6 +70,12 @@ on:
       skip:
         type: boolean
         default: false
+      template-console:
+        type: string
+        default: |
+          ```console
+          \(.)
+          ```
       template-pr-link:
         type: string
         default: >-
@@ -96,12 +111,12 @@ jobs:
     steps:
     - name: Check all workflows ran
       id: afterall
-      uses: envoyproxy/toolshed/gh-actions/github/afterall@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/github/afterall@488ae3ddb60ac17f80fce3753f42ad44fae6d8ba
       with:
         sha: ${{ inputs.sha }}
         workflows: ${{ inputs.workflows }}
         repo: ${{ inputs.repository }}
-    - uses: envoyproxy/toolshed/gh-actions/appauth@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+    - uses: envoyproxy/toolshed/gh-actions/appauth@488ae3ddb60ac17f80fce3753f42ad44fae6d8ba
       id: appauth
       name: Appauth
       if: >-
@@ -111,48 +126,52 @@ jobs:
       with:
         app_id: ${{ secrets.app-id }}
         key: ${{ secrets.app-key }}
-        token: ${{ github.token }}
-        token-ok: true
-    - name: Checkout the repo
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
-
-    - name: Actions version info
-      id: actions
-      uses: envoyproxy/toolshed/gh-actions/version@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+    - id: checkout
+      name: Checkout the repository
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
-        version: ${{ inputs.actions-version }}
-        version-file: ${{ inputs.actions-version-file }}
-    - name: Bazel version info
-      id: bazel
-      uses: envoyproxy/toolshed/gh-actions/version@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
-      with:
-        version: ${{ inputs.bazel-version }}
-        version-file: ${{ inputs.bazel-version-file }}
-    - name: Bins version info
-      id: bins
-      uses: envoyproxy/toolshed/gh-actions/version@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
-      with:
-        version: ${{ inputs.bins-version }}
-        version-file: ${{ inputs.bins-version-file }}
-    - name: Python version info
-      id: python
-      uses: envoyproxy/toolshed/gh-actions/version@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
-      with:
-        version: ${{ inputs.python-version }}
-        version-file: ${{ inputs.python-version-file }}
-
-    - name: Commit messsage
+        committer-name: ${{ inputs.committer-name }}
+        committer-email: ${{ inputs.committer-email }}
+        strip-prefix: release/
+        token: ${{ steps.appauth.outputs.token }}
+    - name: Commit messsage (for PR or branch)
       id: commit-message
-      uses: envoyproxy/toolshed/gh-actions/jq@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/jq@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
         options: -sRr
         input: |
           ${{ inputs.commit-message }}
         filter: |
           split("\n") | first
+
+    - name: Actions version info
+      id: actions
+      uses: envoyproxy/toolshed/gh-actions/version@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      with:
+        version: ${{ inputs.actions-version }}
+        version-file: ${{ inputs.actions-version-file }}
+    - name: Bazel version info
+      id: bazel
+      uses: envoyproxy/toolshed/gh-actions/version@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      with:
+        version: ${{ inputs.bazel-version }}
+        version-file: ${{ inputs.bazel-version-file }}
+    - name: Bins version info
+      id: bins
+      uses: envoyproxy/toolshed/gh-actions/version@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      with:
+        version: ${{ inputs.bins-version }}
+        version-file: ${{ inputs.bins-version-file }}
+    - name: Python version info
+      id: python
+      uses: envoyproxy/toolshed/gh-actions/version@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      with:
+        version: ${{ inputs.python-version }}
+        version-file: ${{ inputs.python-version-file }}
+
     - name: Status summary title
       id: status-summary-title
-      uses: envoyproxy/toolshed/gh-actions/jq@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/jq@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
         input: |
           actions: ${{ steps.actions.outputs.version }}
@@ -198,7 +217,7 @@ jobs:
              end) as $pr_link
           | "${{ inputs.template-status }}"
     - name: Versions info
-      uses: envoyproxy/toolshed/gh-actions/json/table@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/json/table@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
         append: true
         output-path: GITHUB_STEP_SUMMARY
@@ -235,7 +254,7 @@ jobs:
             }
 
     - name: Generate workflow status table
-      uses: envoyproxy/toolshed/gh-actions/json/table@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/json/table@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
         title: Required Workflows Status
         append: true
@@ -294,7 +313,7 @@ jobs:
     - name: List downloaded artifacts
       id: artifacts
       if: fromJSON(steps.afterall.outputs.continue)
-      uses: envoyproxy/toolshed/gh-actions/bson@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/bson@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
         catch-errors: true
         input: |
@@ -321,13 +340,13 @@ jobs:
     - name: Artifact sizes
       id: artifact-sizes
       if: fromJSON(steps.afterall.outputs.continue)
-      uses: envoyproxy/toolshed/gh-actions/jq@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/jq@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
         input: ${{ steps.artifacts.outputs.output }}
         filter: |
           map_values(.size | utils::bytesize)
     - name: Generate workflow artifacts table
-      uses: envoyproxy/toolshed/gh-actions/json/table@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/json/table@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
         title: Artifacts to publish
         append: true
@@ -338,7 +357,84 @@ jobs:
         input: ${{ steps.artifact-sizes.outputs.value }}
 
     - name: >-
-        Create release
+        Publish actions release
+        ${{ (inputs.event == 'pull_request' || inputs.dry-run)
+             && '(dry-run)'
+             || ''  }}
+      id: actions-publish
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.actions.outputs.version).is_dev
+      uses: envoyproxy/toolshed/gh-actions/github/release@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      with:
+        dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
+        fail-if-exists: ${{ inputs.fail-if-exists }}
+        name: actions
+        repository: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
+        token: ${{ steps.appauth.outputs.token || github.token }}
+        version: ${{ steps.actions.outputs.version }}
+        version-file: ${{ inputs.actions-version-file }}
+    - name: >-
+        Publish bazel release
+        ${{ (inputs.event == 'pull_request' || inputs.dry-run)
+             && '(dry-run)'
+             || ''  }}
+      id: bazel-publish
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.bazel.outputs.version).is_dev
+      uses: envoyproxy/toolshed/gh-actions/github/release@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      with:
+        dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
+        fail-if-exists: ${{ inputs.fail-if-exists }}
+        name: bazel
+        repository: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
+        token: ${{ steps.appauth.outputs.token || github.token }}
+        version: ${{ steps.bazel.outputs.version }}
+        version-file: ${{ inputs.bazel-version-file }}
+    - name: >-
+        Publish bins release
+        ${{ (inputs.event == 'pull_request' || inputs.dry-run)
+             && '(dry-run)'
+             || ''  }}
+      id: bins-publish
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.bins.outputs.version).is_dev
+      uses: envoyproxy/toolshed/gh-actions/github/release@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      with:
+        dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
+        fail-if-exists: ${{ inputs.fail-if-exists }}
+        name: bins
+        repository: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
+        token: ${{ steps.appauth.outputs.token || github.token }}
+        version: ${{ steps.bins.outputs.version }}
+        version-file: ${{ inputs.bins-version-file }}
+    - name: >-
+        Publish python release
+        ${{ (inputs.event == 'pull_request' || inputs.dry-run)
+             && '(dry-run)'
+             || ''  }}
+      id: python-publish
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.python.outputs.version).is_dev
+      uses: envoyproxy/toolshed/gh-actions/github/release@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
+      with:
+        dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
+        fail-if-exists: ${{ inputs.fail-if-exists }}
+        name: python
+        repository: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
+        token: ${{ steps.appauth.outputs.token || github.token }}
+        version: ${{ steps.python.outputs.version }}
+        version-file: ${{ inputs.python-version-file }}
+
+    - name: >-
+        Release created
         ${{ (inputs.event == 'pull_request' || inputs.dry-run)
              && '(dry-run)'
              || ''  }}
@@ -349,15 +445,19 @@ jobs:
             || ! fromJSON(steps.bins.outputs.version).is_dev
             || ! fromJSON(steps.python.outputs.version).is_dev
             || inputs.event == 'pull_request')
-      uses: envoyproxy/toolshed/gh-actions/jq@225974ffa607ccd57a1dc7f24db2a45cd47d2fd8
+      uses: envoyproxy/toolshed/gh-actions/jq@ab7f9f773bce8f1f157b4d716d8fa85c6f8f36f5
       with:
         input: |
           actions: ${{ steps.actions.outputs.version }}
+          actions_result: ${{ steps.actions-publish.outputs.result || '[]' }}
           bins: ${{ steps.bins.outputs.version }}
+          bins_result: ${{ steps.bins-publish.outputs.result || '[]' }}
           bazel: ${{ steps.bazel.outputs.version }}
-          dry_run: ${{ inputs.dry-run }}
+          bazel_result: ${{ steps.bazel-publish.outputs.result || '[]' }}
+          dry_run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
           event: ${{ inputs.event }}
           python: ${{ steps.python.outputs.version }}
+          python_result: ${{ steps.python-publish.outputs.result || '[]' }}
           repository: ${{ inputs.repository }}
           sha: ${{ inputs.sha }}
         input-format: yaml
@@ -365,29 +465,61 @@ jobs:
         output-path: GITHUB_STEP_SUMMARY
         filter: |
           .
-          | (if (.event == "pull_request" or .dry_run) then "**(DRY RUN)**"
+          | (if .dry_run then "**(DRY RUN)**"
              else ""
              end) as $dry_run
+
+          | (if .actions_result == [] then ""
+             else
+               .actions_result
+               | join("\n")
+               | "${{ inputs.template-console }}"
+             end) as $actions_result
           | (if .actions.is_dev then ""
              else
                ("actions-v\(.actions.version)" as $version
                 | "${{ inputs.template-release-message }}")
              end) as $actions_release
+
           | (if .bazel.is_dev then ""
              else
                ("bazel-v\(.bazel.version)" as $version
                 | "${{ inputs.template-release-message }}")
              end) as $bazel_release
+          | (if .bazel_result == [] then ""
+             else
+               .bazel_result
+               | join("\n")
+               | "${{ inputs.template-console }}"
+             end) as $bazel_result
+
           | (if .bins.is_dev then ""
              else
                ("bins-v\(.bins.version)" as $version
                 | "${{ inputs.template-release-message }}")
              end) as $bins_release
+          | (if .bins_result == [] then ""
+             else
+               .bins_result
+               | join("\n")
+               | "${{ inputs.template-console }}"
+             end) as $bins_result
+
           | (if .python.is_dev then ""
              else
                ("python-v\(.python.version)" as $version
                 | "${{ inputs.template-release-message }}")
              end) as $python_release
-          | [$actions_release, $bazel_release, $bins_release, $python_release]
+          | (if .python_result == [] then ""
+             else
+               .python_result
+               | join("\n")
+               | "${{ inputs.template-console }}"
+             end) as $python_result
+
+          | [$actions_release, $actions_result,
+             $bazel_release, $bazel_result,
+             $bins_release, $bins_result,
+             $python_release, $python_result]
           | map(select(. != ""))
           | join("\n\n")
