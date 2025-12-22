@@ -1,0 +1,80 @@
+uses: ./gh-actions/github/release
+id: release
+with:
+  dry-run: false
+  fail-if-exists: true
+  name: test-package
+  repository: test/repo
+  sha: abc123def456
+  token: fake-token
+  version: 1.2.3
+  version-file: /tmp/test-version-exists-fail.txt
+
+before:
+- shell: bash
+  run: |
+    # Setup test environment
+    mkdir -p /tmp/test-release-exists-fail
+    cd /tmp/test-release-exists-fail
+    git init --initial-branch=main
+    git config user.email "test@example.com"
+    git config user.name "Test User"
+    
+    # Create version file
+    echo "1.2.3-dev" > /tmp/test-version-exists-fail.txt
+    git add /tmp/test-version-exists-fail.txt
+    git commit -m "Initial commit"
+    
+    # Setup mock log
+    export MOCK_LOG=/tmp/gh-mock-exists-fail.log
+    rm -f "$MOCK_LOG"
+    
+    # Add mocks to PATH
+    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    
+    # Configure mock: release already exists
+    export MOCK_RELEASE_EXISTS=true
+    
+    echo "✓ Test setup complete"
+
+after:
+- shell: bash
+  run: |
+    cd /tmp/test-release-exists-fail
+    
+    # Add mocks to PATH
+    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    export MOCK_LOG=/tmp/gh-mock-exists-fail.log
+    
+    # This test expects the action to fail, so we check for the error
+    # The test framework should have caught the error
+    
+    # Check if mock was called
+    if [[ ! -f "$MOCK_LOG" ]]; then
+        echo "✗ Error: Mock log file not found"
+        exit 1
+    fi
+    
+    # Verify gh release view was called
+    if ! grep -q "gh release view" "$MOCK_LOG"; then
+        echo "✗ Error: 'gh release view' not found in mock log"
+        cat "$MOCK_LOG"
+        exit 1
+    fi
+    echo "✓ Mock gh release view was called"
+    
+    # Verify gh release create was NOT called (release exists)
+    if grep -q "gh release create" "$MOCK_LOG"; then
+        echo "✗ Error: 'gh release create' should not be called when release exists"
+        cat "$MOCK_LOG"
+        exit 1
+    fi
+    echo "✓ gh release create was not called"
+    
+    # Cleanup
+    rm -rf /tmp/test-release-exists-fail
+    rm -f /tmp/test-version-exists-fail.txt
+    rm -f "$MOCK_LOG"
+    
+    echo "✓ Release exists with fail-if-exists test passed"
+    echo "Note: This test expects the action to exit with error code 1"

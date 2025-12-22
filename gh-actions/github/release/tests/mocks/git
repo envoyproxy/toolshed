@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Mock git command for testing
+# Only mocks specific commands that would otherwise fail in test environment
+
+# Get the actual git path (should be /usr/bin/git or similar)
+REAL_GIT=$(which -a git | grep -v "^${BASH_SOURCE[0]%/*}" | head -1)
+
+if [[ -z "$REAL_GIT" ]]; then
+    echo "Error: Could not find real git binary" >&2
+    exit 1
+fi
+
+# Parse command
+command="${1:-}"
+
+case "$command" in
+    push)
+        # Mock git push to avoid needing a real remote
+        # Log the call
+        MOCK_GIT_LOG="${MOCK_GIT_LOG:-/tmp/git-mock.log}"
+        echo "git $*" >> "$MOCK_GIT_LOG"
+        
+        # Check if we should fail
+        if [[ "${MOCK_GIT_PUSH_FAIL}" == "true" ]]; then
+            echo "Error: failed to push" >&2
+            exit 1
+        fi
+        
+        # Simulate successful push
+        echo "To mock-origin"
+        echo "   abc123..def456  main -> main"
+        exit 0
+        ;;
+    *)
+        # Pass through to real git for all other commands
+        exec "$REAL_GIT" "$@"
+        ;;
+esac

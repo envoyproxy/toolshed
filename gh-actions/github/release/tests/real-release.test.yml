@@ -1,0 +1,153 @@
+uses: ./gh-actions/github/release
+id: release
+with:
+  dry-run: false
+  fail-if-exists: true
+  name: test-package
+  repository: test/repo
+  sha: abc123def456
+  token: fake-token
+  version: 1.2.3
+  version-file: /tmp/test-version-real.txt
+
+before:
+- shell: bash
+  run: |
+    # Setup test environment
+    mkdir -p /tmp/test-release-real
+    cd /tmp/test-release-real
+    git init --initial-branch=main
+    git config user.email "test@example.com"
+    git config user.name "Test User"
+    
+    # Create version file
+    echo "1.2.3-dev" > /tmp/test-version-real.txt
+    git add /tmp/test-version-real.txt
+    git commit -m "Initial commit"
+    
+    # Setup a fake remote (we won't actually push, but need to test the command)
+    # We'll need to mock git push as well or make it fail gracefully
+    
+    # Setup mock log
+    export MOCK_LOG=/tmp/gh-mock-real.log
+    rm -f "$MOCK_LOG"
+    
+    # Add mocks to PATH
+    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    
+    # Configure mock: release doesn't exist
+    export MOCK_RELEASE_EXISTS=false
+    
+    echo "✓ Test setup complete"
+
+after:
+- shell: bash
+  run: |
+    cd /tmp/test-release-real
+    
+    # Add mocks to PATH
+    export PATH="${GITHUB_WORKSPACE}/gh-actions/github/release/tests/mocks:$PATH"
+    export MOCK_LOG=/tmp/gh-mock-real.log
+    
+    # Get the output
+    RELEASE_OUTPUT='${{ steps.release.outputs.result }}'
+    echo "Release output:"
+    echo "$RELEASE_OUTPUT"
+    
+    # Verify output is not empty
+    if [[ -z "$RELEASE_OUTPUT" ]]; then
+        echo "✗ Error: Release output is empty"
+        exit 1
+    fi
+    echo "✓ Release output is not empty"
+    
+    # Parse as JSON array and check contents
+    OUTPUT_LINES=$(echo "$RELEASE_OUTPUT" | jq -r '.[]')
+    echo "Output lines:"
+    echo "$OUTPUT_LINES"
+    
+    # Check for gh release create command
+    if ! echo "$OUTPUT_LINES" | grep -q "gh release create"; then
+        echo "✗ Error: Expected 'gh release create' in output"
+        exit 1
+    fi
+    echo "✓ Found 'gh release create' command in output"
+    
+    # Check that SKIPPED is NOT present (real release)
+    # The release URL should be present instead
+    if echo "$OUTPUT_LINES" | grep -A1 "gh release create" | grep -q "SKIPPED"; then
+        echo "✗ Error: Should not have 'SKIPPED' for real release"
+        exit 1
+    fi
+    echo "✓ No 'SKIPPED' marker found (real release executed)"
+    
+    # Check for release URL in output
+    if ! echo "$OUTPUT_LINES" | grep -q "https://github.com/test/repo/releases"; then
+        echo "✗ Error: Expected release URL in output"
+        exit 1
+    fi
+    echo "✓ Found release URL in output"
+    
+    # Verify gh release view was called
+    if [[ ! -f "$MOCK_LOG" ]]; then
+        echo "✗ Error: Mock log file not found"
+        exit 1
+    fi
+    
+    if ! grep -q "gh release view" "$MOCK_LOG"; then
+        echo "✗ Error: 'gh release view' not found in mock log"
+        cat "$MOCK_LOG"
+        exit 1
+    fi
+    echo "✓ Mock gh release view was called"
+    
+    # Verify gh release create WAS called (not dry run)
+    if ! grep -q "gh release create" "$MOCK_LOG"; then
+        echo "✗ Error: 'gh release create' should be called for real release"
+        cat "$MOCK_LOG"
+        exit 1
+    fi
+    echo "✓ gh release create was called"
+    
+    # Verify the tag name in the mock log
+    if ! grep "gh release create" "$MOCK_LOG" | grep -q "test-package-v1.2.3"; then
+        echo "✗ Error: Expected tag 'test-package-v1.2.3' in gh release create call"
+        grep "gh release create" "$MOCK_LOG"
+        exit 1
+    fi
+    echo "✓ Correct tag used in gh release create"
+    
+    # Verify version file was updated
+    if [[ ! -f /tmp/test-version-real.txt ]]; then
+        echo "✗ Error: Version file not found"
+        exit 1
+    fi
+    
+    VERSION_CONTENT=$(cat /tmp/test-version-real.txt)
+    if [[ "$VERSION_CONTENT" != "1.3.0-dev" ]]; then
+        echo "✗ Error: Expected version '1.3.0-dev', got '$VERSION_CONTENT'"
+        exit 1
+    fi
+    echo "✓ Version file updated to next dev version"
+    
+    # Verify git commit was made
+    if ! git log --oneline | grep -q "repo: Dev Test-package"; then
+        echo "✗ Error: Expected commit message not found"
+        git log --oneline
+        exit 1
+    fi
+    echo "✓ Git commit created with correct message"
+    
+    # Check for git push in output (even though it will fail, the command should be there)
+    if ! echo "$OUTPUT_LINES" | grep -q "git push"; then
+        echo "✗ Error: Expected 'git push' in output"
+        exit 1
+    fi
+    echo "✓ Found 'git push' command in output"
+    
+    # Cleanup
+    rm -rf /tmp/test-release-real
+    rm -f /tmp/test-version-real.txt
+    rm -f "$MOCK_LOG"
+    
+    echo "✓ Real release test passed"
