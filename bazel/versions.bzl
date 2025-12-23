@@ -3,14 +3,14 @@ VERSIONS = {
     "llvm": "18.1.8",
     "ninja": "1.12.0",
     "python": "3.12",
-    "bins_release": "0.1.27",
-    "msan_libs_sha256": "ee33e4209ddb9c788830816a49725d7a362fbc65ab12767e76b75f167c890f8d",
-    "tsan_libs_sha256": "35fb93acc6e520db4fd98a538910941e85dae4f2a8f17b6d5c917c8ec26c09de",
+    "bins_release": "0.1.28",
+    "msan_libs_sha256": "d641a4c38503fad34abdc919ca7f9bbe940e40b4dd64098fd021af1caa517618",
+    "tsan_libs_sha256": "dfff147dd24240b99faf7a5b6b9ee281f302347f2e9c1406eccdb265194a4db8",
 
     # Glint binary hashes by architecture
     "glint_sha256": {
-        "amd64": "6e430f8a6a6ca808f91cf1258bfb7adaec8932cbebcb1274a27b041585227d23",
-        "arm64": "d33c35c61cec1f8e183f53215c3e2066785648700ede83c613aee257859b8865",
+        "amd64": "130c206996d94bd6f9d08f806ce81c4a1289e89a41c0543ed4e243fe2a558321",
+        "arm64": "402863fd28f8bce0810c2df88e54c2f3d9a13a72b8766a69e1a8af76a6d68a8c",
     },
 
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
@@ -19,22 +19,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "05b96aabf74bb4b1305dc4ec22e50d403d072d0225133be26bf7c6c3ab1eb238",
-                "arm64": "0075d66066c17581acc90fece5f00bbf97d7ae00e60110903d66fcda62bcf28a",
+                "amd64": "0d77bf5c49adc6d141330665e4f75fe73b833e410fdd971e525b5de00658fb4c",
+                "arm64": "14e7497f16a8f349cfd82da1b846f77182073dfd923f92e3c02d6f3ba4958d30",
             },
             "13": {
-                "amd64": "7486b62f5531cc7d4935cb7ed86f049a7bb2acafcc7e890bd24886c8b05b7be0",
-                "arm64": "4ec43c43995dec87fbfb376c4168d6d51e88caaa5f6cf8cf37359c2de1e8b0ca",
+                "amd64": "0844b2e9abf42b881e4f8f2f796d7af0d81eac2d3b8d14a504e43a767088291c",
+                "arm64": "59d564c8f28d3bf5c13ecbf882a3fb7bd0d88cae321d3a09a84d141f717fabed",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "5dae985101aebc5c0463be9bb1cc2cf264b341fc66e75da1f814693ec5c9f282",
-                "arm64": "de91bc368ba10797041f0e04e6646d8cf7b76709f6c443d67e1593fb85233ceb",
+                "amd64": "cb4491b3d26aa956c889eda72ed6a7a4c43cfd8bb5ec3d30e019cec6d68e52de",
+                "arm64": "2114348dd3e8fe3a5c4dd2c1d47286654cb1f006576b836b549af7682c5a225e",
             },
             "13": {
-                "amd64": "c24d37fe6dab95fd49c5c5fca924e3e3d25454562cdce07b24effee3ffd84aa8",
-                "arm64": "b88498e359922d5935be66465e01113ea6e89a1a8b633eec5615f573bfd8d4de",
+                "amd64": "72a947a5f763ee1f9954ffb70bab2222ccf2693c05439898fa903551e22908d2",
+                "arm64": "131b2048c3f4b1fffcd6e20ca619d834cad8169ac60812ae4d1034a1a0e95a1c",
             },
         },
     },
