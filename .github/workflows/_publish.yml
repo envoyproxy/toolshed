@@ -429,7 +429,7 @@ jobs:
       uses: envoyproxy/toolshed/gh-actions/github/release@9b8b4d2e89c1f649303636b913f184e9f8324937
       with:
         assets: |
-          artifacts/python/**/*
+          artifacts/python/*
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
         name: python
