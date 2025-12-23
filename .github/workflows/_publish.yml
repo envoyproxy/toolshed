@@ -381,7 +381,7 @@ jobs:
         python-version: "3.12"
     - name: >-
         Publish Python packages to PyPI
-        ${{ (inputs.event == 'pull_request' || inputs['dry-run'])
+        ${{ (inputs.event == 'pull_request' || inputs.dry-run)
              && '(dry-run)'
              || ''  }}
       id: pypi-publish
@@ -410,7 +410,7 @@ jobs:
         pip install twine
         
         # Publish to PyPI
-        DRY_RUN="${{ inputs.event == 'pull_request' || inputs['dry-run'] }}"
+        DRY_RUN="${{ inputs.event == 'pull_request' || inputs.dry-run }}"
         if [ "$DRY_RUN" = "true" ]; then
           echo "DRY RUN: Would publish the following packages:"
           for artifact in $(echo "$ARTIFACTS" | jq -r '.[]'); do
