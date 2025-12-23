@@ -1,4 +1,7 @@
 inputs:
+  assets:
+    type: string
+    default:
   dry-run:
     type: boolean
     default: true
@@ -17,6 +20,7 @@ inputs:
   template-release:
     type: string
     default: |
+      export ASSETS=\"\($assets)\"
       export DEBUG=1
       export SHA=\"\(.sha)\"
       export TAG=\"\($tag)\"
@@ -47,6 +51,17 @@ outputs:
 runs:
   using: composite
   steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@96eb7ac14988055e16064febfc4c035e6cff23ff
+    id: assets
+    with:
+      input: ${{ inputs.assets }}
+      options: -sRr
+      print-result: true
+      filter: |
+        .
+        | split("\n")
+        | join(" ")
+
   - uses: envoyproxy/toolshed/gh-actions/bson@96eb7ac14988055e16064febfc4c035e6cff23ff
     id: release
     env:
@@ -54,6 +69,7 @@ runs:
       RELEASE_ACTION_PATH: ${{ github.action_path }}
     with:
       input: |
+        assets: ${{ steps.assets.outputs.value }}
         dry_run: ${{ inputs.dry-run }}
         fail_if_exists: ${{ inputs.fail-if-exists }}
         name: ${{ inputs.name }}
@@ -63,6 +79,7 @@ runs:
         version_file: ${{ inputs.version-file }}
       filter: |
         .
+        | (.assets // "") as $assets
         | .version.version as $version
         | .version.next as $next_version
         | "\(.name)-v\($version)" as $tag
