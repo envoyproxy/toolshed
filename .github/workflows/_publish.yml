@@ -372,6 +372,13 @@ jobs:
           | map(select(.key | startswith("python:")))
           | map(select(.key | contains("-dev-") | not))
           | map(.value.path)
+    - name: Setup Python for PyPI publishing
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.python.outputs.version).is_dev
+      uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548  # v6.1.0
+      with:
+        python-version: "3.12"
     - name: >-
         Publish Python packages to PyPI
         ${{ (inputs.event == 'pull_request' || inputs.dry-run)
@@ -387,7 +394,7 @@ jobs:
         TWINE_NON_INTERACTIVE: "1"
       run: |
         set -e
-        echo "Installing pants and dependencies..."
+        echo "Preparing to publish Python packages to PyPI..."
         
         # Get list of non-dev artifacts
         ARTIFACTS='${{ steps.python-artifacts-nondev.outputs.value }}'
@@ -403,7 +410,8 @@ jobs:
         pip install twine
         
         # Publish to PyPI
-        if [ "${{ inputs.event == 'pull_request' || inputs.dry-run }}" = "true" ]; then
+        DRY_RUN="${{ inputs.event == 'pull_request' || inputs.dry-run }}"
+        if [ "$DRY_RUN" = "true" ]; then
           echo "DRY RUN: Would publish the following packages:"
           echo "$ARTIFACTS" | jq -r '.[]' | while read -r artifact; do
             echo "  - $artifact"
