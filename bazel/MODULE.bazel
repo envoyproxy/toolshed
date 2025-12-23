@@ -107,8 +107,8 @@ filegroup(
     srcs = [":sysroot"],
 )
 """,
-    sha256 = "7486b62f5531cc7d4935cb7ed86f049a7bb2acafcc7e890bd24886c8b05b7be0",
-    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.27/sysroot-glibc2.31-libstdc++13-amd64.tar.xz",
+    sha256 = "0844b2e9abf42b881e4f8f2f796d7af0d81eac2d3b8d14a504e43a767088291c",
+    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.28/sysroot-glibc2.31-libstdc++13-amd64.tar.xz",
 )
 
 http_archive(
@@ -153,8 +153,8 @@ filegroup(
     srcs = [":sysroot"],
 )
 """,
-    sha256 = "4ec43c43995dec87fbfb376c4168d6d51e88caaa5f6cf8cf37359c2de1e8b0ca",
-    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.27/sysroot-glibc2.31-libstdc++13-arm64.tar.xz",
+    sha256 = "59d564c8f28d3bf5c13ecbf882a3fb7bd0d88cae321d3a09a84d141f717fabed",
+    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.28/sysroot-glibc2.31-libstdc++13-arm64.tar.xz",
 )
 
 # Configure LLVM toolchain
