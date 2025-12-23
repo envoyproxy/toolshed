@@ -3,6 +3,7 @@
 set -e -o pipefail
 
 # Expected environment variables:
+# - ASSETS: the release assets
 # - DEBUG: echo args as executed
 # - SHA: the release sha
 # - TAG: the release tag
@@ -25,6 +26,7 @@ cleanup() {
 
 trap cleanup EXIT
 
+read -ra ASSET_GLOBS <<< "$ASSETS"
 RELEASE_ARGS=(
     --target "$SHA"
     --title "$TAG"
@@ -83,7 +85,7 @@ if gh release view "$TAG" --repo "$REPO" &>/dev/null; then
     exit 0
 fi
 
-_run gh release create "${RELEASE_ARGS[@]}"
+_run gh release create "${RELEASE_ARGS[@]}" "${ASSET_GLOBS[@]}"
 _run git fetch origin main
 _run git checkout -B main origin/main
 echo "$ echo ${NEXT_VERSION} > ${VERSION_FILE}" >> "$TMP_OUTPUT"
