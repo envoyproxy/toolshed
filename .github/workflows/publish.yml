@@ -23,6 +23,8 @@ jobs:
     secrets:
       app-id: ${{ secrets.ENVOY_CI_PUBLISH_APP_ID }}
       app-key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
+      pypi-username: ${{ secrets.PYPI_USERNAME }}
+      pypi-password: ${{ secrets.PYPI_PASSWORD }}
     uses: ./.github/workflows/_publish.yml
     with:
       committer-email: "140627008+publish-envoy[bot]@users.noreply.github.com"

@@ -8,6 +8,8 @@ on:
     secrets:
       app-id:
       app-key:
+      pypi-username:
+      pypi-password:
 
     inputs:
       actions-version:
@@ -356,6 +358,65 @@ jobs:
           Name
           Size
         input: ${{ steps.artifact-sizes.outputs.value }}
+
+    - name: Filter non-dev Python artifacts
+      id: python-artifacts-nondev
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.python.outputs.version).is_dev
+      uses: envoyproxy/toolshed/gh-actions/jq@9b8b4d2e89c1f649303636b913f184e9f8324937
+      with:
+        input: ${{ steps.artifacts.outputs.output }}
+        filter: |
+          to_entries
+          | map(select(.key | startswith("python:")))
+          | map(select(.key | contains("-dev-") | not))
+          | map(.value.path)
+    - name: >-
+        Publish Python packages to PyPI
+        ${{ (inputs.event == 'pull_request' || inputs.dry-run)
+             && '(dry-run)'
+             || ''  }}
+      id: pypi-publish
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.python.outputs.version).is_dev
+      env:
+        TWINE_USERNAME: ${{ secrets.pypi-username }}
+        TWINE_PASSWORD: ${{ secrets.pypi-password }}
+        TWINE_NON_INTERACTIVE: "1"
+      run: |
+        set -e
+        echo "Installing pants and dependencies..."
+        
+        # Get list of non-dev artifacts
+        ARTIFACTS='${{ steps.python-artifacts-nondev.outputs.value }}'
+        echo "Non-dev artifacts to publish:"
+        echo "$ARTIFACTS" | jq -r '.[]'
+        
+        if [ "$ARTIFACTS" = "[]" ] || [ -z "$ARTIFACTS" ]; then
+          echo "No non-dev artifacts to publish"
+          exit 0
+        fi
+        
+        # Install twine
+        pip install twine
+        
+        # Publish to PyPI
+        if [ "${{ inputs.event == 'pull_request' || inputs.dry-run }}" = "true" ]; then
+          echo "DRY RUN: Would publish the following packages:"
+          echo "$ARTIFACTS" | jq -r '.[]' | while read -r artifact; do
+            echo "  - $artifact"
+            twine check "$artifact"
+          done
+        else
+          echo "Publishing packages to PyPI..."
+          echo "$ARTIFACTS" | jq -r '.[]' | while read -r artifact; do
+            echo "Publishing $artifact..."
+            twine upload --non-interactive "$artifact"
+          done
+          echo "All packages published successfully"
+        fi
 
     - name: >-
         Publish actions release
