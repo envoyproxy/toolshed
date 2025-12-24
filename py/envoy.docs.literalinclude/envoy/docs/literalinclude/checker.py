@@ -229,24 +229,33 @@ class LiteralIncludeChecker:
             added_lines = []
             removed_lines = []
 
-            # Parse unified diff format
+            # Parse unified diff format more accurately
+            current_old_start = None
+            current_new_start = None
+
             for line in diff_output.split('\n'):
                 if line.startswith('@@'):
                     # Parse hunk header: @@ -old_start,old_count +new_start,new_count @@  # noqa: E501
                     match = re.match(r'@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@', line)  # noqa: E501
                     if match:
-                        old_start = int(match.group(1))
-                        old_count = int(match.group(2)) if match.group(2) else 1  # noqa: E501
-                        new_start = int(match.group(3))
-                        new_count = int(match.group(4)) if match.group(4) else 1  # noqa: E501
-
-                        # Lines were removed
-                        if old_count > 0:
-                            removed_lines.extend(range(old_start, old_start + old_count))  # noqa: E501
-
-                        # Lines were added
-                        if new_count > 0:
-                            added_lines.extend(range(new_start, new_start + new_count))  # noqa: E501
+                        current_old_start = int(match.group(1))
+                        current_new_start = int(match.group(3))
+                elif line.startswith('-') and not line.startswith('---'):
+                    # Line was removed
+                    if current_old_start is not None:
+                        removed_lines.append(current_old_start)
+                        current_old_start += 1
+                elif line.startswith('+') and not line.startswith('+++'):
+                    # Line was added
+                    if current_new_start is not None:
+                        added_lines.append(current_new_start)
+                        current_new_start += 1
+                elif line.startswith(' '):
+                    # Context line - advance both counters
+                    if current_old_start is not None:
+                        current_old_start += 1
+                    if current_new_start is not None:
+                        current_new_start += 1
 
             return {
                 'added_lines': added_lines,
@@ -289,16 +298,22 @@ class LiteralIncludeChecker:
                 text=True,
                 check=True
             )
-            source_commits = result.stdout.strip().split('\n')
+            source_commits_str = result.stdout.strip()
+            if not source_commits_str:
+                return False
+            source_commits = source_commits_str.split('\n')
 
             result = subprocess.run(
-                ['git', 'log', '--format=%H', '--', str(directive.rst_file)],
+                ['git', 'log', '--format=%H', '--', str(directive.rst_file)],  # noqa: E501
                 cwd=self.repo_root,
                 capture_output=True,
                 text=True,
                 check=True
             )
-            rst_commits = result.stdout.strip().split('\n')
+            rst_commits_str = result.stdout.strip()
+            if not rst_commits_str:
+                return False
+            rst_commits = rst_commits_str.split('\n')
 
             # Find the commit where the directive was last modified
             # Simple heuristic: if source file has commits after the RST's last commit  # noqa: E501
