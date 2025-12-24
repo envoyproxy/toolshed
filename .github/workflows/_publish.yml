@@ -357,43 +357,45 @@ jobs:
           Size
         input: ${{ steps.artifact-sizes.outputs.value }}
 
-    - name: Create publish directory structure
+    - name: Organize artifacts for publishing
       if: fromJSON(steps.afterall.outputs.continue)
-      run: |
-        mkdir -p artifacts/publish/bins
-        mkdir -p artifacts/publish/python
-      shell: bash
-    - name: Move binaries to publish directory
-      if: fromJSON(steps.afterall.outputs.continue)
-      run: |
-        find ./artifacts/bazel ./artifacts/rust -type f 2>/dev/null | while read -r file; do
-          cp "$file" ./artifacts/publish/bins/
-        done || true
-      shell: bash
-    - name: Filter non-dev Python artifacts
-      id: python-artifacts-nondev
-      if: >-
-        fromJSON(steps.afterall.outputs.continue)
-        && ! fromJSON(steps.python.outputs.version).is_dev
-      uses: envoyproxy/toolshed/gh-actions/jq@9b8b4d2e89c1f649303636b913f184e9f8324937
+      uses: envoyproxy/toolshed/gh-actions/bson@9b8b4d2e89c1f649303636b913f184e9f8324937
       with:
-        input: ${{ steps.artifacts.outputs.output }}
+        input: |
+          artifacts: ${{ steps.artifacts.outputs.output }}
+          python_is_dev: ${{ fromJSON(steps.python.outputs.version).is_dev }}
+        input-format: yaml
+        options: -r
         filter: |
-          to_entries
-          | map(select(.key | startswith("python:")))
-          | map(select(.key | contains("-dev-") | not))
-          | map(.value.path)
-    - name: Move Python artifacts to publish directory
-      if: >-
-        fromJSON(steps.afterall.outputs.continue)
-        && ! fromJSON(steps.python.outputs.version).is_dev
-      run: |
-        echo '${{ steps.python-artifacts-nondev.outputs.value }}' | jq -r '.[]' | while read -r file; do
-          if [ -f "$file" ]; then
-            cp "$file" ./artifacts/publish/python/
-          fi
-        done
-      shell: bash
+          .artifacts as $artifacts
+          | .python_is_dev as $python_is_dev
+          | (
+              $artifacts
+              | to_entries
+              | map(
+                  select(.key | startswith("bazel:") or startswith("rust:"))
+                  | "cp \"\(.value.path)\" ./artifacts/publish/bins/"
+                )
+            ) as $bins_cmds
+          | (
+              if $python_is_dev then
+                []
+              else
+                $artifacts
+                | to_entries
+                | map(
+                    select(.key | startswith("python:"))
+                    | select(.key | contains("-dev-") | not)
+                    | "cp \"\(.value.path)\" ./artifacts/publish/python/"
+                  )
+              end
+            ) as $python_cmds
+          | [
+              "set -euo pipefail",
+              "mkdir -p artifacts/publish/bins",
+              "mkdir -p artifacts/publish/python"
+            ] + $bins_cmds + $python_cmds
+          | join("\n")
 
     - name: >-
         Publish actions release
