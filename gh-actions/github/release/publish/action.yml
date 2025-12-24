@@ -1,0 +1,133 @@
+inputs:
+  artifacts:
+    type: boolean
+    default: false
+  assets:
+    type: string
+    default:
+  dry-run:
+    default: false
+    type: boolean
+  event:
+    required: true
+    type: string
+  fail-if-exists:
+    default: false
+    type: boolean
+  name:
+    required: true
+    type: string
+  repository:
+    default: ${{ github.repository }}
+    type: string
+  sha:
+    default: ${{ github.event.workflow_run.head_sha }}
+    type: string
+  summary:
+    default: true
+    type: boolean
+  template-console:
+    type: string
+    default: |
+      ```console
+      \(.)
+      ```
+  template-release-message:
+    type: string
+    default: |
+      ### Release created [\($version)](https://github.com/\(.repository)/releases/\($version)) \($dry_run)
+  token:
+    required: true
+    type: string
+  version:
+    default:
+    type: string
+  version-file:
+    required: true
+    type: string
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@96eb7ac14988055e16064febfc4c035e6cff23ff
+    if: >-
+      inputs.assets
+    id: assets
+    with:
+      input: ${{ inputs.assets }}
+      options: -sRr
+      print-result: true
+      filter: |
+        .
+        | split("\n")
+        | join(" ")
+  - uses: envoyproxy/toolshed/gh-actions/bson@96eb7ac14988055e16064febfc4c035e6cff23ff
+    id: release
+    env:
+      GH_TOKEN: ${{ inputs.token }}
+      RELEASE_ACTION_PATH: ${{ github.action_path }}
+    with:
+      input: |
+        assets: ${{ steps.assets.outputs.value }}
+        dry_run: ${{ inputs.dry-run }}
+        fail_if_exists: ${{ inputs.fail-if-exists }}
+        name: ${{ inputs.name }}
+        repo: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
+        version: ${{ inputs.version }}
+        version_file: ${{ inputs.version-file }}
+      filter: |
+        .
+        | (.assets // "") as $assets
+        | .version.version as $version
+        | .version.next as $next_version
+        | "\(.name)-v\($version)" as $tag
+        | (.name | "\(.[0:1] | ascii_upcase)\(.[1:])") as $title
+        | "repo: Dev \($title) v\($next_version)" as $reopen_message
+        | "${{ inputs.template-release }}"
+        | bash::output
+      options: -r
+      result-filter-options: -sRc
+      result-filter: |
+        .
+        | split("\n")
+
+  - name: >-
+      Release created
+      ${{ inputs.dry-run
+          && '(dry-run)'
+          || ''  }}
+    if: inputs.summary
+    uses: envoyproxy/toolshed/gh-actions/jq@6db1532d4d44c6a291fdf163ad68fa9cf353aec3
+    with:
+      input: |
+        result: ${{ steps.release.outputs.output || '[]' }}
+        dry_run: ${{ inputs.dry-run }}
+        event: ${{ inputs.event }}
+        name: ${{ inputs.name }}
+        repository: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
+        version: ${{ inputs.version }}
+      input-format: yaml
+      options: -r
+      output-path: GITHUB_STEP_SUMMARY
+      filter: |
+        .
+        | (if .dry_run then "**(DRY RUN)**"
+           else ""
+           end) as $dry_run
+        | (if .result == [] then ""
+           else
+             .result
+             | join("\n")
+             | "${{ inputs.template-console }}"
+           end) as $result
+        | (if .version.is_dev then ""
+           else
+             ("\(.name)-v\(.version.version)" as $version
+              | "${{ inputs.template-release-message }}")
+           end) as $release
+        | [$release, $result]
+        | map(select(. != ""))
+        | join("\n\n")
