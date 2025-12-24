@@ -363,12 +363,10 @@ jobs:
       with:
         input: |
           artifacts: ${{ steps.artifacts.outputs.output }}
-          python_is_dev: ${{ fromJSON(steps.python.outputs.version).is_dev }}
         input-format: yaml
         options: -r
         filter: |
           .artifacts as $artifacts
-          | .python_is_dev as $python_is_dev
           | (
               $artifacts
               | to_entries
@@ -378,17 +376,13 @@ jobs:
                 )
             ) as $bins_cmds
           | (
-              if $python_is_dev then
-                []
-              else
-                $artifacts
-                | to_entries
-                | map(
-                    select(.key | startswith("python:"))
-                    | select(.key | contains("-dev-") | not)
-                    | "cp \"\(.value.path)\" ./artifacts/publish/python/"
-                  )
-              end
+              $artifacts
+              | to_entries
+              | map(
+                  select(.key | startswith("python:"))
+                  | select(.key | contains("-dev-") | not)
+                  | "cp \"\(.value.path)\" ./artifacts/publish/python/"
+                )
             ) as $python_cmds
           | [
               "set -euo pipefail",
