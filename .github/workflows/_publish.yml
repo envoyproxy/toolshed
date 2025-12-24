@@ -357,6 +357,44 @@ jobs:
           Size
         input: ${{ steps.artifact-sizes.outputs.value }}
 
+    - name: Create publish directory structure
+      if: fromJSON(steps.afterall.outputs.continue)
+      run: |
+        mkdir -p artifacts/publish/bins
+        mkdir -p artifacts/publish/python
+      shell: bash
+    - name: Move binaries to publish directory
+      if: fromJSON(steps.afterall.outputs.continue)
+      run: |
+        find ./artifacts/bazel ./artifacts/rust -type f 2>/dev/null | while read -r file; do
+          cp "$file" ./artifacts/publish/bins/
+        done || true
+      shell: bash
+    - name: Filter non-dev Python artifacts
+      id: python-artifacts-nondev
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.python.outputs.version).is_dev
+      uses: envoyproxy/toolshed/gh-actions/jq@9b8b4d2e89c1f649303636b913f184e9f8324937
+      with:
+        input: ${{ steps.artifacts.outputs.output }}
+        filter: |
+          to_entries
+          | map(select(.key | startswith("python:")))
+          | map(select(.key | contains("-dev-") | not))
+          | map(.value.path)
+    - name: Move Python artifacts to publish directory
+      if: >-
+        fromJSON(steps.afterall.outputs.continue)
+        && ! fromJSON(steps.python.outputs.version).is_dev
+      run: |
+        echo '${{ steps.python-artifacts-nondev.outputs.value }}' | jq -r '.[]' | while read -r file; do
+          if [ -f "$file" ]; then
+            cp "$file" ./artifacts/publish/python/
+          fi
+        done
+      shell: bash
+
     - name: >-
         Publish actions release
         ${{ (inputs.event == 'pull_request' || inputs.dry-run)
@@ -407,8 +445,7 @@ jobs:
       uses: envoyproxy/toolshed/gh-actions/github/release@9b8b4d2e89c1f649303636b913f184e9f8324937
       with:
         assets: |
-          artifacts/bazel/**/*
-          artifacts/rust/**/*
+          artifacts/publish/bins/**/*
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
         name: bins
@@ -429,7 +466,7 @@ jobs:
       uses: envoyproxy/toolshed/gh-actions/github/release@9b8b4d2e89c1f649303636b913f184e9f8324937
       with:
         assets: |
-          artifacts/python/*
+          artifacts/publish/python/*
         dry-run: ${{ inputs.event == 'pull_request' || inputs.dry-run }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
         name: python
