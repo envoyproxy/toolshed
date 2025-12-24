@@ -1,0 +1,141 @@
+inputs:
+  artifacts:
+    type: string
+    required: true
+  dry-run:
+    type: boolean
+    default: true
+  filter-artifacts:
+    default: .
+    type: string
+  repository:
+    type: string
+    default: ${{ github.repository }}
+  run-ids:
+    type: string
+    required: true
+  template-organize-artifacts:
+    type: string
+    default: |
+      set -euo pipefail
+      mkdir -p artifacts/publish
+      \($cmds)
+  workflows:
+    type: string
+    required: true
+
+outputs:
+  missing:
+    value: ${{ steps.missing.outputs.artifacts || 'false' }}
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@96eb7ac14988055e16064febfc4c035e6cff23ff
+    name: Generate download config
+    id: download-config
+    with:
+      input: ${{ inputs.workflows }}
+      input-format: text
+      options: -sR
+      filter: |
+        .
+        | ${{ inputs.run-ids }} as $run_ids
+        | split("\n")
+        | map(
+            (. | split(" ") | .[0] | ascii_downcase) as $name
+            | {key: $name,
+               value: {name: $name, run_id: $run_ids[.]}})
+        | from_entries
+  - uses: envoyproxy/toolshed/gh-actions/foreach@96eb7ac14988055e16064febfc4c035e6cff23ff
+    if: steps.download-config.outputs.value
+    with:
+      items: ${{ steps.download-config.outputs.value }}
+      secret: ${{ github.token }}
+      steps: |
+        - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427  # v4.1.4
+          with:
+            github-token: >-
+              %{{ inputs.secret }}
+            run-id: >-
+              %{{ fromJSON(inputs.context).items['$KEY']['run_id'] }}
+            path: >-
+              ./artifacts/%{{ fromJSON(inputs.context).items['$KEY']['name'] }}
+            pattern: >-
+              %{{ fromJSON(inputs.context).items['$KEY']['name'] }}-artifacts
+            repository: ${{ inputs.repository }}
+  - name: List downloaded artifacts
+    id: artifacts
+    if: steps.download-config.outputs.value
+    uses: envoyproxy/toolshed/gh-actions/bson@9b8b4d2e89c1f649303636b913f184e9f8324937
+    with:
+      catch-errors: true
+      input: |
+        OUTPUT=$(find ./artifacts -type f | xargs -I{} sh -c 'echo "$(stat -c %s "{}") {}"')
+      filter: bash::output
+      input-format: text
+      options: -Rr
+      result-filter-options: -sRc
+      result-filter: |
+        .
+        | split("\n")
+        | map(
+            select(length > 0)
+            | split(" ")
+            | (.[1]
+               | split("/")[-1] as $name
+               | split("/")[2] as $ci
+               | "\($ci):\($name)") as $key
+            | ${{ inputs.filter-artifacts }}
+            | {key: ($key),
+               value: {path: .[1], size: (.[0] | tonumber)}})
+        | sort_by(.key)
+        | from_entries
+  - name: Organize artifacts for publishing
+    if: steps.artifacts.outputs.output
+    uses: envoyproxy/toolshed/gh-actions/bson@9b8b4d2e89c1f649303636b913f184e9f8324937
+    with:
+      input: |
+        artifacts: ${{ steps.artifacts.outputs.output }}
+      input-format: yaml
+      options: -r
+      filter: |
+        .artifacts
+        | to_entries
+        | (map("cp \"\(.value.path)\" ./artifacts/publish/")
+           | join("\n")) as $cmds
+        | "${{ inputs.template-organize-artifacts }}"
+  - name: Artifact sizes
+    id: artifact-sizes
+    if: steps.artifacts.outputs.output
+    uses: envoyproxy/toolshed/gh-actions/jq@9b8b4d2e89c1f649303636b913f184e9f8324937
+    with:
+      input: ${{ steps.artifacts.outputs.output }}
+  - name: Generate workflow artifacts table
+    if: steps.artifacts.outputs.output
+    uses: envoyproxy/toolshed/gh-actions/json/table@9b8b4d2e89c1f649303636b913f184e9f8324937
+    with:
+      title: Artifacts to publish
+      append: true
+      output-path: GITHUB_STEP_SUMMARY
+      headers: |
+        Name
+        Size
+      input: ${{ steps.artifacts.outputs.output }}
+      filter: |
+        map_values(.size | utils::bytesize)
+  - name: Check for expected artifacts
+    if: >-
+      ! steps.artifacts.outputs.output
+    id: missing
+    shell: bash
+    run: |
+      MESSAGE="Publishing is set but no artifacts were provided."
+      echo "artifacts=1" >> "$GITHUB_OUTPUT"
+      if [[ "${{ inputs.dry-run }}" == "true" ]]; then
+          echo "::warning::${MESSAGE}" >&2
+      else
+          echo "::error::${MESSAGE}" >&2
+          exit 1
+      fi
