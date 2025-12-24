@@ -27,8 +27,3 @@ jobs:
     with:
       committer-email: "140627008+publish-envoy[bot]@users.noreply.github.com"
       committer-name: "publish-envoy[bot]"
-      workflows: |
-        Bazel CI
-        Github/actions CI
-        Python CI
-        Rust CI

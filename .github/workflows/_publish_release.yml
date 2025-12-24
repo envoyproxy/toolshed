@@ -1,0 +1,103 @@
+name: _publish_release
+
+permissions:
+  actions: read
+
+on:
+  workflow_call:
+    secrets:
+      app-id:
+      app-key:
+
+    inputs:
+      artifacts:
+        type: boolean
+        default: false
+      commit-message:
+        default: ${{ github.event.workflow_run.head_commit.message }}
+        type: string
+      committer-email:
+        required: true
+        type: string
+      committer-name:
+        required: true
+        type: string
+      dry-run:
+        default: false
+        type: boolean
+      event:
+        default: ${{ github.event.workflow_run.event }}
+        type: string
+      fail-if-exists:
+        default: false
+        type: boolean
+      filter-artifacts:
+        default: .
+        type: string
+      name:
+        required: true
+        type: string
+      repository:
+        default: ${{ github.repository }}
+        type: string
+      sha:
+        default: ${{ github.event.workflow_run.head_sha }}
+        type: string
+      version:
+        default:
+        type: string
+      version-file:
+        required: true
+        type: string
+      workflows:
+        type: string
+        required: true
+
+
+jobs:
+  release:
+    permissions:
+      actions: read
+    name: release (${{ inputs.name }})
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/appauth@2773d31eaee14743b8bc1c2ffb6cc0dd84ce5e3c
+      id: appauth
+      name: Appauth
+      if: >-
+        inputs.event == 'push'
+        && ! inputs.dry-run
+      with:
+        app_id: ${{ secrets.app-id }}
+        key: ${{ secrets.app-key }}
+    - id: checkout
+      name: Checkout the repository
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@2773d31eaee14743b8bc1c2ffb6cc0dd84ce5e3c
+      with:
+        committer-name: ${{ inputs.committer-name }}
+        committer-email: ${{ inputs.committer-email }}
+        config: |
+          ref: >-
+            ${{ github.event_name == 'pull_request'
+                && github.event.pull_request.merge_commit_sha
+                || inputs.sha }}
+        pr: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}
+        strip-prefix: release/
+        token: ${{ steps.appauth.outputs.token }}
+
+    - name: Publish the release
+      uses: envoyproxy/toolshed/gh-actions/github/release@2773d31eaee14743b8bc1c2ffb6cc0dd84ce5e3c
+      with:
+        artifacts: ${{ inputs.artifacts }}
+        dry-run: ${{ inputs.dry-run }}
+        event: ${{ inputs.event }}
+        fail-if-exists: ${{ inputs.fail-if-exists }}
+        filter-artifacts: ${{ inputs.filter-artifacts }}
+        name: ${{ inputs.name }}
+        repository: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
+        summary: true
+        token: ${{ steps.appauth.outputs.token || github.token }}
+        version: ${{ inputs.version }}
+        version-file: ${{ inputs.version-file }}
+        workflows: ${{ inputs.workflows }}

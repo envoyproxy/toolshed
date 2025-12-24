@@ -66,14 +66,10 @@ jobs:
       bins-version: ${{ matrix.bins-version }}
       dry-run: true
       event: ${{ matrix.event }}
+      python-filter-artifacts: ${{ matrix.python-filter-artifacts }}
       python-version: ${{ matrix.python-version }}
       sha: ${{ matrix.sha || needs.request.outputs.sha }}
       skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
-      workflows: |
-        Bazel CI
-        Github/actions CI
-        Python CI
-        Rust CI
     strategy:
       fail-fast: false
       matrix:
@@ -89,6 +85,9 @@ jobs:
           bins-version: 0.1.23
         - event: push
           python-version: 0.0.23
+        - event: push
+          python-version: 0.0.23
+          python-filter-artifacts: .
         - event: push
           actions-version: 0.0.123
           bazel-version: 0.2.17
