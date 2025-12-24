@@ -70,6 +70,14 @@ on:
           ```console
           \(.)
           ```
+      template-organize-artifacts:
+        type: string
+        default: |
+          set -euo pipefail
+          mkdir -p artifacts/publish/bins
+          mkdir -p artifacts/publish/python
+          \($bins_cmds)
+          \($python_cmds)
       template-pr-link:
         type: string
         default: >-
@@ -331,13 +339,39 @@ jobs:
               | split(" ")
               | (.[1]
                  | split("/")[-1] as $name
-                 | split("/")[2] as $ci
+                 | split("/")[3] as $ci
                  | "\($ci):\($name)") as $key
               | {key: ($key),
                  value: {path: .[1], size: (.[0] | tonumber)}}
             )
           | sort_by(.key)
           | from_entries
+
+    - name: Organize artifacts for publishing
+      if: fromJSON(steps.afterall.outputs.continue)
+      uses: envoyproxy/toolshed/gh-actions/bson@9b8b4d2e89c1f649303636b913f184e9f8324937
+      with:
+        input: |
+          artifacts: ${{ steps.artifacts.outputs.output }}
+        input-format: yaml
+        options: -r
+        filter: |
+          .artifacts
+          | to_entries
+          | (map(
+               select(
+                 .key
+                 | (startswith("bazel:")
+                    or startswith("rust:")))
+               | "cp \"\(.value.path)\" ./artifacts/publish/bins/")
+             | join("\n")) as $bins_cmds
+          | (map(
+               select(
+                 .key
+                 | (startswith("python:"))
+               | "cp \"\(.value.path)\" ./artifacts/publish/python/")
+             | join("\n")) as $python_cmds
+          | "${{ inputs.template-organize-artifacts }}"
     - name: Artifact sizes
       id: artifact-sizes
       if: fromJSON(steps.afterall.outputs.continue)
@@ -356,40 +390,6 @@ jobs:
           Name
           Size
         input: ${{ steps.artifact-sizes.outputs.value }}
-
-    - name: Organize artifacts for publishing
-      if: fromJSON(steps.afterall.outputs.continue)
-      uses: envoyproxy/toolshed/gh-actions/bson@9b8b4d2e89c1f649303636b913f184e9f8324937
-      with:
-        input: |
-          artifacts: ${{ steps.artifacts.outputs.output }}
-        input-format: yaml
-        options: -r
-        filter: |
-          .artifacts as $artifacts
-          | (
-              $artifacts
-              | to_entries
-              | map(
-                  select(.key | startswith("bazel:") or startswith("rust:"))
-                  | "cp \"\(.value.path)\" ./artifacts/publish/bins/"
-                )
-            ) as $bins_cmds
-          | (
-              $artifacts
-              | to_entries
-              | map(
-                  select(.key | startswith("python:"))
-                  | select(.key | contains("-dev-") | not)
-                  | "cp \"\(.value.path)\" ./artifacts/publish/python/"
-                )
-            ) as $python_cmds
-          | [
-              "set -euo pipefail",
-              "mkdir -p artifacts/publish/bins",
-              "mkdir -p artifacts/publish/python"
-            ] + $bins_cmds + $python_cmds
-          | join("\n")
 
     - name: >-
         Publish actions release
