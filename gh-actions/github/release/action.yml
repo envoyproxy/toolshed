@@ -1,13 +1,22 @@
 inputs:
-  assets:
+  artifacts:
+    type: boolean
+    default: true
+  commit-message:
     type: string
     default:
   dry-run:
     type: boolean
     default: true
+  event:
+    type: string
+    default:
   fail-if-exists:
     type: boolean
     default: true
+  filter-artifacts:
+    default: .
+    type: string
   name:
     type: string
     required: true
@@ -17,6 +26,9 @@ inputs:
   sha:
     type: string
     required: true
+  summary:
+    type: boolean
+    default: true
   template-release:
     type: string
     default: |
@@ -42,6 +54,9 @@ inputs:
   version-file:
     type: string
     required: true
+  workflows:
+    type: string
+    required: true
 
 outputs:
   result:
@@ -51,44 +66,43 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@96eb7ac14988055e16064febfc4c035e6cff23ff
-    id: assets
+  - name: Check release status
+    id: status
+    uses: envoyproxy/toolshed/gh-actions/github/release/status@60f2bfe43da275d7e10b8d00987e14b5429b8590
     with:
-      input: ${{ inputs.assets }}
-      options: -sRr
-      print-result: true
-      filter: |
-        .
-        | split("\n")
-        | join(" ")
-
-  - uses: envoyproxy/toolshed/gh-actions/bson@96eb7ac14988055e16064febfc4c035e6cff23ff
-    id: release
-    env:
-      GH_TOKEN: ${{ inputs.token }}
-      RELEASE_ACTION_PATH: ${{ github.action_path }}
+      commit-message: ${{ inputs.commit-message }}
+      event: ${{ inputs.event }}
+      name: ${{ inputs.name }}
+      repository: ${{ inputs.repository }}
+      sha: ${{ inputs.sha }}
+      version: ${{ inputs.version }}
+      version-file: ${{ inputs.version-file }}
+      workflows: ${{ inputs.workflows }}
+  - id: artifacts
+    if: >-
+      inputs.artifacts
+      && fromJSON(steps.status.outputs.continue)
+    name: Download artifacts from workflow runs
+    uses: envoyproxy/toolshed/gh-actions/github/release/artifacts@60f2bfe43da275d7e10b8d00987e14b5429b8590
     with:
-      input: |
-        assets: ${{ steps.assets.outputs.value }}
-        dry_run: ${{ inputs.dry-run }}
-        fail_if_exists: ${{ inputs.fail-if-exists }}
-        name: ${{ inputs.name }}
-        repo: ${{ inputs.repository }}
-        sha: ${{ inputs.sha }}
-        version: ${{ inputs.version }}
-        version_file: ${{ inputs.version-file }}
-      filter: |
-        .
-        | (.assets // "") as $assets
-        | .version.version as $version
-        | .version.next as $next_version
-        | "\(.name)-v\($version)" as $tag
-        | (.name | "\(.[0:1] | ascii_upcase)\(.[1:])") as $title
-        | "repo: Dev \($title) v\($next_version)" as $reopen_message
-        | "${{ inputs.template-release }}"
-        | bash::output
-      options: -r
-      result-filter-options: -sRc
-      result-filter: |
-        .
-        | split("\n")
+      artifacts: ${{ inputs.artifacts }}
+      filter-artifacts: ${{ inputs.filter-artifacts }}
+      run-ids: ${{ steps.status.outputs.run-ids }}
+      workflows: ${{ inputs.workflows }}
+  - name: Publish the release
+    if: >-
+      fromJSON(steps.status.outputs.continue)
+    uses: envoyproxy/toolshed/gh-actions/github/release/publish@60f2bfe43da275d7e10b8d00987e14b5429b8590
+    with:
+      artifacts: ${{ inputs.artifacts }}
+      assets: ${{ inputs.artifacts && 'artifacts/publish/*' || '' }}
+      dry-run: ${{ inputs.dry-run }}
+      event: ${{ inputs.event }}
+      fail-if-exists: ${{ inputs.fail-if-exists }}
+      name: ${{ inputs.name }}
+      repository: ${{ inputs.repository }}
+      sha: ${{ inputs.sha }}
+      summary: ${{ inputs.summary }}
+      token: ${{ inputs.token || github.token }}
+      version: ${{ steps.status.outputs.version }}
+      version-file: ${{ inputs.version-file }}
