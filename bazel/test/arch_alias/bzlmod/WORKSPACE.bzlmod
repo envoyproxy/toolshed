@@ -1,0 +1,2 @@
+# This file marks the test directory as a separate workspace for bzlmod testing.
+# It should remain empty as MODULE.bazel is used instead.
