@@ -14,24 +14,24 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+  - uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     id: yaml
     with:
       input: ${{ inputs.images }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/foreach@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+  - uses: envoyproxy/toolshed/gh-actions/foreach@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     id: json_actions
     with:
       items: ${{ steps.yaml.outputs.value }}
       steps: |
-        - uses: envoyproxy/toolshed/gh-actions/docker/sha@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+        - uses: envoyproxy/toolshed/gh-actions/docker/sha@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
           id: $KEY
           with:
             image: >-
               %{{ fromJSON(inputs.context).items['$KEY'] }}
             env_var: ${{ inputs.env_prefix }}_$KEY
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+  - uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     id: images
     with:
       input: ${{ steps.json_actions.outputs.out }}
