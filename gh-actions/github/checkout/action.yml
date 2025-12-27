@@ -1,41 +1,78 @@
 inputs:
-  ancestor-fetch-depth:
-    type: number
-    default: 20
+  ancestor-check:
+    type: boolean
+    default: true
   config:
+    description: >-
+      YAML configuration for actions/checkout. Supports all actions/checkout inputs.
+      Special handling: 'ref' field triggers ancestor checking for non-PR workflows.
     type: string
     required: true
   branch:
+    description: >-
+      Target branch name. Defaults to the current github.ref.
+      Used as the base branch for checkout and ancestor verification.
     type: string
     default: ${{ github.ref }}
   committer-name:
+    description: >-
+      Git committer name for subsequent git operations.
+      If provided with committer-email, configures git user.name globally.
     type: string
     default:
   committer-email:
+    description: >-
+      Git committer email for subsequent git operations.
+      If provided with committer-name, configures git user.email globally.
     type: string
     default:
   fetch-merge-commit:
+    description: >-
+      For PR workflows, whether to fetch and use the merge commit SHA instead of the HEAD commit.
+      Enables testing the result of merging the PR into the target branch.
     type: boolean
     default: true
   pr:
+    description: >-
+      Pull request number for PR-specific checkout behavior.
+      When provided, fetches the PR's merge commit (if fetch-merge-commit is true).
+      When empty, enables ref ancestry checking for non-PR workflows.
     type: number
     default:
   token:
+    description: >-
+      GitHub token for authentication. Falls back to github.token if not provided.
+      Used for API calls and git operations.
     type: string
     default:
   show-progress:
+    description: >-
+      Whether to show progress status during git operations.
+      Passed through to actions/checkout.
     type: boolean
     default: false
   ssh-key:
+    description: >-
+      SSH private key for git authentication. When provided, uses SSH instead of token auth.
+      Passed through to actions/checkout.
     type: string
   strip-prefix:
+    description: >-
+      Prefix to strip from the branch name in the output.
+      Useful for removing common prefixes like organization names.
     type: string
     default:
 
 outputs:
   branch-name:
+    description: >-
+      The sanitized branch name with refs/pull/ and refs/heads/ prefixes removed,
+      and optional strip-prefix applied.
     value: ${{ steps.branch.outputs.value }}
   merge-commit:
+    description: >-
+      For PR workflows with fetch-merge-commit enabled, the SHA of the merge commit.
+      Empty for non-PR workflows.
     value: ${{ steps.merge-commit.outputs.sha }}
 
 
@@ -50,11 +87,8 @@ runs:
       repository: ${{ github.repository }}
       pr: ${{ inputs.pr }}
       token: ${{ inputs.token || github.token }}
-  # If its not a pr and the ref is set, fetch-depth should not be 1 as it
-  # wont be able to check ancestry
-  # If its not set or set to 1 it will be changed to 0
-  # Otherwise the current value is preserved, allowing you to specify the
-  # depth of the checked ancestor.
+  # If its a not pr and the ref is set, fetch-depth is set to 0 (full history)
+  # otherwise the config value is respected.
   - name: Parse YAML config
     id: parsed-config
     uses: envoyproxy/toolshed/gh-actions/jq@fbd4c0e646b2c97d3ba2749d9b96cb960b784b8d
@@ -71,11 +105,13 @@ runs:
         | if (. | has("show-progress") | not) and "${{ inputs.show-progress }}" != "" then
             .["show-progress"] = ${{ inputs.show-progress }}
           else . end
-        | if ${{ inputs.pr == '' }} and .ref then
-            if .["fetch-depth"] == 1 or .["fetch-depth"] == "" then
-               .["fetch-depth"] = ${{ inputs.ancestor-fetch-depth }}
-            else . end
-          else . end
+        | if .["fetch-depth"] then
+            .
+          elif ${{ inputs.pr == '' }} and .ref then
+            .["fetch-depth"] = 0
+          else
+            .["fetch-depth"] = 1
+          end
         | if "${{ inputs.branch }}" != "" then
             .branch = "${{ inputs.branch }}"
           elif (.branch  != "") and (.branch | type != null) then
@@ -131,8 +167,9 @@ runs:
     name: Checkout repository
     with: ${{ fromJSON(steps.config-ssh.outputs.value || steps.config-token.outputs.value) }}
   - if: >-
-      fromJSON(steps.parsed-config.outputs.value).requested-ref
-      && inputs.pr != ''
+      fromJSON(inputs.ancestor-check)
+      && fromJSON(steps.parsed-config.outputs.value).requested-ref
+      && inputs.pr == ''
     run: |
       if ! git merge-base --is-ancestor "${REF}" HEAD; then
           echo "Provided ref (${REF}) is not an ancestor of current branch" >&2
