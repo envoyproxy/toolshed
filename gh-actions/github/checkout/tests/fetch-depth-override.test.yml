@@ -1,0 +1,34 @@
+uses: ./gh-actions/github/checkout
+id: checkout
+with:
+  branch: main
+  config: |
+    ref: main
+    fetch-depth: 3
+
+after:
+- shell: bash
+  run: |
+    if [[ ! -d ".git" ]]; then
+        echo "✗ Error: Repository not checked out"
+        exit 1
+    fi
+    echo "✓ Repository checked out successfully"
+
+    # Even though ref is specified (which would normally set fetch-depth: 0),
+    # the explicit fetch-depth: 3 in config should be respected
+    COMMIT_COUNT=$(git rev-list --count HEAD)
+    echo "Commit count: $COMMIT_COUNT"
+
+    # Should have around 3 commits, allow up to 5 for flexibility
+    if [[ $COMMIT_COUNT -gt 5 ]]; then
+        echo "✗ Error: Expected ~3 commits (explicit fetch-depth: 3), but got $COMMIT_COUNT"
+        exit 1
+    fi
+    echo "✓ Explicit fetch-depth respected (got $COMMIT_COUNT commits)"
+
+    # Verify we're on the right ref
+    CURRENT_REF=$(git rev-parse HEAD)
+    echo "✓ Checked out ref: $CURRENT_REF"
+
+    echo "✓ Fetch-depth override test passed"

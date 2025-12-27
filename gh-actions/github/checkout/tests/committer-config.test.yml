@@ -1,0 +1,34 @@
+uses: ./gh-actions/github/checkout
+id: checkout
+with:
+  config: |
+    repository: ${{ github.repository }}
+  committer-name: "Test User"
+  committer-email: "test@example.com"
+
+after:
+- shell: bash
+  run: |
+    if [[ ! -d ".git" ]]; then
+        echo "✗ Error: Repository not checked out"
+        exit 1
+    fi
+    echo "✓ Repository checked out successfully"
+
+    # Verify git user.name is set
+    GIT_NAME=$(git config --global user.name)
+    if [[ "$GIT_NAME" != "Test User" ]]; then
+        echo "✗ Error: Expected git user.name 'Test User', got '$GIT_NAME'"
+        exit 1
+    fi
+    echo "✓ Git user.name correctly set: $GIT_NAME"
+
+    # Verify git user.email is set
+    GIT_EMAIL=$(git config --global user.email)
+    if [[ "$GIT_EMAIL" != "test@example.com" ]]; then
+        echo "✗ Error: Expected git user.email 'test@example.com', got '$GIT_EMAIL'"
+        exit 1
+    fi
+    echo "✓ Git user.email correctly set: $GIT_EMAIL"
+
+    echo "✓ Committer configuration test passed"

@@ -1,0 +1,45 @@
+uses: ./gh-actions/github/checkout
+id: checkout
+with:
+  config: |
+    repository: ${{ github.repository }}
+  branch: refs/heads/envoyproxy/main
+  strip-prefix: "envoyproxy/"
+
+after:
+- shell: bash
+  run: |
+    if [[ ! -d ".git" ]]; then
+        echo "✗ Error: Repository not checked out"
+        exit 1
+    fi
+    echo "✓ Repository checked out successfully"
+
+    # Verify branch-name output has custom prefix stripped
+    BRANCH_NAME="${{ steps.checkout.outputs.branch-name }}"
+    if [[ -z "$BRANCH_NAME" ]]; then
+        echo "✗ Error: branch-name output is empty"
+        exit 1
+    fi
+    echo "✓ branch-name output: $BRANCH_NAME"
+
+    # Should have both refs/heads/ and envoyproxy/ stripped
+    if [[ "$BRANCH_NAME" == *"refs/heads/"* ]]; then
+        echo "✗ Error: refs/heads/ prefix not stripped"
+        exit 1
+    fi
+    echo "✓ refs/heads/ prefix correctly stripped"
+
+    if [[ "$BRANCH_NAME" == *"envoyproxy/"* ]]; then
+        echo "✗ Error: Custom prefix 'envoyproxy/' not stripped"
+        exit 1
+    fi
+    echo "✓ Custom prefix correctly stripped"
+
+    if [[ "$BRANCH_NAME" != "main" ]]; then
+        echo "✗ Error: Expected branch name 'main', got '$BRANCH_NAME'"
+        exit 1
+    fi
+    echo "✓ Final branch name is correct: $BRANCH_NAME"
+
+    echo "✓ Strip-prefix test passed"
