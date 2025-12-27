@@ -2,9 +2,6 @@ inputs:
   artifacts:
     type: boolean
     default: true
-  commit-message:
-    type: string
-    default:
   dry-run:
     type: boolean
     default: true
@@ -29,22 +26,9 @@ inputs:
   summary:
     type: boolean
     default: true
-  template-release:
+  title:
     type: string
-    default: |
-      export ASSETS=\"\($assets)\"
-      export DEBUG=1
-      export SHA=\"\(.sha)\"
-      export TAG=\"\($tag)\"
-      export TITLE=\"\($title)\"
-      export REPO=\"\(.repo)\"
-      export FAIL_IF_EXISTS=\"\(.fail_if_exists)\"
-      export DRY_RUN=\"\(.dry_run)\"
-      export NEXT_VERSION=\"\($next_version)\"
-      export VERSION=\"\($version)\"
-      export VERSION_FILE=\"\(.version_file)\"
-      export REOPEN_MESSAGE=\"\($reopen_message)\"
-      OUTPUT=$(${RELEASE_ACTION_PATH}/release.sh)
+    default:
   token:
     type: string
     required: true
@@ -68,13 +52,13 @@ runs:
   steps:
   - name: Check release status
     id: status
-    uses: envoyproxy/toolshed/gh-actions/github/release/status@60f2bfe43da275d7e10b8d00987e14b5429b8590
+    uses: envoyproxy/toolshed/gh-actions/github/release/status@13bb62eb11e053ce8d0950fa725f44034cfd1f21
     with:
-      commit-message: ${{ inputs.commit-message }}
-      event: ${{ inputs.event }}
       name: ${{ inputs.name }}
       repository: ${{ inputs.repository }}
       sha: ${{ inputs.sha }}
+      title: >-
+        ${{ inputs.title }}
       version: ${{ inputs.version }}
       version-file: ${{ inputs.version-file }}
       workflows: ${{ inputs.workflows }}
@@ -83,7 +67,7 @@ runs:
       fromJSON(inputs.artifacts)
       && fromJSON(steps.status.outputs.continue)
     name: Download artifacts from workflow runs
-    uses: envoyproxy/toolshed/gh-actions/github/release/artifacts@60f2bfe43da275d7e10b8d00987e14b5429b8590
+    uses: envoyproxy/toolshed/gh-actions/github/release/artifacts@13bb62eb11e053ce8d0950fa725f44034cfd1f21
     with:
       filter-artifacts: ${{ inputs.filter-artifacts }}
       run-ids: ${{ steps.status.outputs.run-ids }}
@@ -91,7 +75,7 @@ runs:
   - name: Publish the release
     if: >-
       fromJSON(steps.status.outputs.continue)
-    uses: envoyproxy/toolshed/gh-actions/github/release/publish@60f2bfe43da275d7e10b8d00987e14b5429b8590
+    uses: envoyproxy/toolshed/gh-actions/github/release/publish@13bb62eb11e053ce8d0950fa725f44034cfd1f21
     with:
       artifacts: ${{ inputs.artifacts }}
       assets: ${{ inputs.artifacts && 'artifacts/publish/*' || '' }}
