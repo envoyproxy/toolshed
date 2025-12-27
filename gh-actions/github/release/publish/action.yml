@@ -1,7 +1,4 @@
 inputs:
-  artifacts:
-    type: boolean
-    default: false
   assets:
     type: string
     default:
@@ -111,10 +108,10 @@ runs:
 
   - name: >-
       Release created
-      ${{ inputs.dry-run
+      ${{ fromJSON(inputs.dry-run)
           && '(dry-run)'
           || ''  }}
-    if: inputs.summary
+    if: fromJSON(inputs.summary)
     uses: envoyproxy/toolshed/gh-actions/jq@096010c6d6fa0dda46956ceab0054d50ebb81c28
     with:
       input: |
