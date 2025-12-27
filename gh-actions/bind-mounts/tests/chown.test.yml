@@ -17,29 +17,33 @@ after:
 - shell: bash
   run: |
     if ! mountpoint -q /tmp/bind-chown-target; then
-        echo "✗ Error: /tmp/bind-chown-target is not a mount point"
-        exit 1
+        echo "fail:/tmp/bind-chown-target is not a mount point" >> "$TEST_OUTPUT"
+    else
+        echo "success:/tmp/bind-chown-target is mounted" >> "$TEST_OUTPUT"
     fi
-    echo "✓ /tmp/bind-chown-target is mounted"
+
     SRC_OWNER=$(stat -c '%U' /tmp/bind-chown-src)
     SRC_GROUP=$(stat -c '%G' /tmp/bind-chown-src)
+
     if [[ "$SRC_OWNER" != "runner" ]]; then
-        echo "✗ Error: Source directory owner is $SRC_OWNER, expected runner"
-        exit 1
+        echo "fail:Source directory owner is $SRC_OWNER, expected runner" >> "$TEST_OUTPUT"
+    else
+        echo "success:Source directory owner is runner" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Source directory owner is runner"
+
     if [[ "$SRC_GROUP" != "runner" ]]; then
-        echo "✗ Error: Source directory group is $SRC_GROUP, expected runner"
-        exit 1
+        echo "fail:Source directory group is $SRC_GROUP, expected runner" >> "$TEST_OUTPUT"
+    else
+        echo "success:Source directory group is runner" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Source directory group is runner"
+
     echo "new-content" > /tmp/bind-chown-target/newfile.txt
     if [[ ! -f /tmp/bind-chown-target/newfile.txt ]]; then
-        echo "✗ Error: Could not write to mounted directory"
-        exit 1
+        echo "fail:Could not write to mounted directory" >> "$TEST_OUTPUT"
+    else
+        echo "success:Successfully wrote to mounted directory as runner user" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Successfully wrote to mounted directory as runner user"
+
     sudo umount /tmp/bind-chown-target
     sudo rm -rf /tmp/bind-chown-src
     rm -rf /tmp/bind-chown-target
-    echo "✓ Chown test passed"

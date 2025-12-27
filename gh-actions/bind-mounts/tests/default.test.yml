@@ -20,27 +20,30 @@ after:
 - shell: bash
   run: |
     if ! mountpoint -q /tmp/bind-test-target1; then
-        echo "✗ Error: /tmp/bind-test-target1 is not a mount point"
-        exit 1
+        echo "fail:/tmp/bind-test-target1 is not a mount point" >> "$TEST_OUTPUT"
+    else
+        echo "success:/tmp/bind-test-target1 is mounted" >> "$TEST_OUTPUT"
     fi
-    echo "✓ /tmp/bind-test-target1 is mounted"
+
     if ! mountpoint -q /tmp/bind-test-target2; then
-        echo "✗ Error: /tmp/bind-test-target2 is not a mount point"
-        exit 1
+        echo "fail:/tmp/bind-test-target2 is not a mount point" >> "$TEST_OUTPUT"
+    else
+        echo "success:/tmp/bind-test-target2 is mounted" >> "$TEST_OUTPUT"
     fi
-    echo "✓ /tmp/bind-test-target2 is mounted"
+
     if [[ "$(cat /tmp/bind-test-target1/file1.txt)" != "test-content-1" ]]; then
-        echo "✗ Error: Content not accessible in mount 1"
-        exit 1
+        echo "fail:Content not accessible in mount 1" >> "$TEST_OUTPUT"
+    else
+        echo "success:Content accessible in mount 1" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Content accessible in mount 1"
+
     if [[ "$(cat /tmp/bind-test-target2/file2.txt)" != "test-content-2" ]]; then
-        echo "✗ Error: Content not accessible in mount 2"
-        exit 1
+        echo "fail:Content not accessible in mount 2" >> "$TEST_OUTPUT"
+    else
+        echo "success:Content accessible in mount 2" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Content accessible in mount 2"
+
     sudo umount /tmp/bind-test-target1
     sudo umount /tmp/bind-test-target2
     sudo rm -rf /tmp/bind-test-src1 /tmp/bind-test-src2
     rm -rf /tmp/bind-test-target1 /tmp/bind-test-target2
-    echo "✓ Default bind-mounts test passed"

@@ -12,10 +12,11 @@ after:
 - shell: bash
   run: |
     if [[ -z "${{ steps.diskspace.outputs.pids }}" ]]; then
-        echo "Error: PIDs output is empty"
-        exit 1
+        echo "fail:PIDs output is empty" >> "$TEST_OUTPUT"
+    else
+        echo "success:Background mode returned PIDs: ${{ steps.diskspace.outputs.pids }}" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Background mode returned PIDs: ${{ steps.diskspace. outputs.pids }}"
+
     for pid in ${{ steps.diskspace.outputs.pids }}; do
         echo "Waiting for process $pid to complete..."
         timeout=120
@@ -26,34 +27,26 @@ after:
         if [[ "$timeout" -eq 0 ]]; then
             echo "Warning: Process $pid did not complete in time"
         else
-            echo "✓ Process $pid completed"
+            echo "success:Process $pid completed" >> "$TEST_OUTPUT"
         fi
     done
+
     echo ""
     echo "Verifying directories have been removed..."
-    failed=0
     if [[ -d "/opt/hostedtoolcache" ]]; then
-        echo "✗ Error: /opt/hostedtoolcache still exists"
-        failed=1
+        echo "fail:/opt/hostedtoolcache still exists" >> "$TEST_OUTPUT"
     else
-        echo "✓ /opt/hostedtoolcache has been removed"
+        echo "success:/opt/hostedtoolcache has been removed" >> "$TEST_OUTPUT"
     fi
+
     if [[ -d "/usr/local/lib/android" ]]; then
-        echo "✗ Error: /usr/local/lib/android still exists"
-        failed=1
+        echo "fail:/usr/local/lib/android still exists" >> "$TEST_OUTPUT"
     else
-        echo "✓ /usr/local/lib/android has been removed"
+        echo "success:/usr/local/lib/android has been removed" >> "$TEST_OUTPUT"
     fi
+
     if [[ -d "/usr/local/.ghcup" ]]; then
-        echo "✗ Error: /usr/local/.ghcup still exists"
-        failed=1
+        echo "fail:/usr/local/.ghcup still exists" >> "$TEST_OUTPUT"
     else
-        echo "✓ /usr/local/.ghcup has been removed"
+        echo "success:/usr/local/.ghcup has been removed" >> "$TEST_OUTPUT"
     fi
-    if [[ "$failed" -eq 1 ]]; then
-        echo ""
-        echo "Error: Some directories were not removed"
-        exit 1
-    fi
-    echo ""
-    echo "✓ All directories successfully removed"
