@@ -25,6 +25,7 @@ jobs:
         config: |
           paths:
           - .github/workflows/_publish.yml
+          - .github/workflows/_publish_release.yml
           - .github/workflows/actions.yml
           - .github/workflows/bazel.yml
           - .github/workflows/rust.yml
