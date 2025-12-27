@@ -14,24 +14,24 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@fbd4c0e646b2c97d3ba2749d9b96cb960b784b8d
+  - uses: envoyproxy/toolshed/gh-actions/jq@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
     id: yaml
     with:
       input: ${{ inputs.images }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/foreach@fbd4c0e646b2c97d3ba2749d9b96cb960b784b8d
+  - uses: envoyproxy/toolshed/gh-actions/foreach@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
     id: json_actions
     with:
       items: ${{ steps.yaml.outputs.value }}
       steps: |
-        - uses: envoyproxy/toolshed/gh-actions/docker/sha@fbd4c0e646b2c97d3ba2749d9b96cb960b784b8d
+        - uses: envoyproxy/toolshed/gh-actions/docker/sha@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
           id: $KEY
           with:
             image: >-
               %{{ fromJSON(inputs.context).items['$KEY'] }}
             env_var: ${{ inputs.env_prefix }}_$KEY
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@fbd4c0e646b2c97d3ba2749d9b96cb960b784b8d
+  - uses: envoyproxy/toolshed/gh-actions/jq@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
     id: images
     with:
       input: ${{ steps.json_actions.outputs.out }}

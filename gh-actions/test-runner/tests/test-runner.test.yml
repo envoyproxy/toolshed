@@ -4,7 +4,7 @@ with:
     %{{ steps.before.outputs.value }}
 
 before:
-- uses: envoyproxy/toolshed/gh-actions/jq@fbd4c0e646b2c97d3ba2749d9b96cb960b784b8d
+- uses: envoyproxy/toolshed/gh-actions/jq@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
   id: before
   with:
     input-format: yaml
@@ -14,7 +14,7 @@ before:
         run: |
           echo "BEFORE" >> /tmp/test-output
           mkdir /tmp/DELETEME
-      uses: envoyproxy/toolshed/gh-actions/diskspace@fbd4c0e646b2c97d3ba2749d9b96cb960b784b8d
+      uses: envoyproxy/toolshed/gh-actions/diskspace@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
       with:
         background: false
         to_remove: |
