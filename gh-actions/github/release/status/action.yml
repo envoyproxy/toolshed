@@ -1,10 +1,4 @@
 inputs:
-  commit-message:
-    required: true
-    type: string
-  event:
-    type: string
-    required: true
   name:
     type: string
     required: true
@@ -14,20 +8,15 @@ inputs:
   sha:
     type: string
     required: true
-  template-pr-link:
+  title:
     type: string
-    default: >-
-      ([PR #\($pr.number)](https://github.com/\($repo)/pull/\($pr.number)))
+    required: true
   template-status:
     type: string
     default: |
-      ## Publish (\(.name)): `\(.event)` \($release_info)
+      ## Publish: \(.name) \($release_info)
 
-      ### \($title)
-
-      **Commit:** [\($sha[0:7])](https://github.com/\($repo)/commit/\($sha)) \($pr_link)
-      **Continue:** `\(.continue)`
-
+      ### \(.title)
 
   version:
     type: string
@@ -58,15 +47,6 @@ runs:
       sha: ${{ inputs.sha }}
       workflows: ${{ inputs.workflows }}
       repo: ${{ inputs.repository }}
-  - name: Commit messsage (for PR or branch)
-    id: commit-message
-    uses: envoyproxy/toolshed/gh-actions/jq@64d95bf651f750701fc23603a81cd512d9f5997d
-    with:
-      options: -sRr
-      input: |
-        ${{ inputs.commit-message }}
-      filter: |
-        split("\n") | first
   - name: Version info
     id: version
     uses: envoyproxy/toolshed/gh-actions/version@64d95bf651f750701fc23603a81cd512d9f5997d
@@ -78,37 +58,18 @@ runs:
     uses: envoyproxy/toolshed/gh-actions/jq@64d95bf651f750701fc23603a81cd512d9f5997d
     with:
       input: |
-        event: ${{ inputs.event }}
-        sha: ${{ inputs.sha }}
-        continue: ${{ steps.afterall.outputs.continue }}
         name: ${{ inputs.name }}
-        repository: ${{ inputs.repository }}
-        pr: ${{ github.event.workflow_run.event }}
-        commit_message: |
-          ${{ steps.commit-message.outputs.value }}
+        title: >-
+          ${{ inputs.title }}
         version: ${{ steps.version.outputs.version }}
       input-format: yaml
       options: -r
       output-path: GITHUB_STEP_SUMMARY
       filter: |
-        .sha as $sha
-        | .repository as $repo
+        .
         | (if .version.is_dev then ""
-           else "release: \(.name)-v\(.version.version)"
+           else "(release: \(.name)-v\(.version.version))"
            end) as $release_info
-        | (if .event == "pull_request" and .pr != null and .pr != "{}" and .pr != "" then
-             .pr
-             | if type == "object" then .
-               else fromjson end
-           else {} end) as $pr
-        | (if $pr.number then
-             $pr.title // "PR #\($pr.number)"
-           else .commit_message
-           end) as $title
-        | (if $pr.number then
-             "${{ inputs.template-pr-link }}"
-           else ""
-           end) as $pr_link
         | "${{ inputs.template-status }}"
   - name: Versions info
     uses: envoyproxy/toolshed/gh-actions/json/table@64d95bf651f750701fc23603a81cd512d9f5997d
@@ -117,17 +78,23 @@ runs:
       output-path: GITHUB_STEP_SUMMARY
       collapse: false
       input: |
+        continue: ${{ steps.afterall.outputs.continue }}
         name: ${{ inputs.name }}
+        repository: ${{ inputs.repository }}
+        sha: ${{ inputs.sha }}
         version: ${{ steps.version.outputs.version }}
       headers:
       input-format: yaml
       filter: |
         .
         | (if .version.is_dev then ""
-           else "**(RELEASE)**"
+           else " **(RELEASE)**"
            end) as $release
+        | ("[\(.sha[0:7])](https://github.com/\(.repository)/commit/\(.sha))") as $commit
         | {
-            "\(.name) version": "\(.version.version) \($release)",
+            "\(.name) version": "\(.version.version)\($release)",
+            "commit": "\($commit)",
+            "continue": .continue,
           }
   - name: Generate workflow status table
     uses: envoyproxy/toolshed/gh-actions/json/table@64d95bf651f750701fc23603a81cd512d9f5997d
