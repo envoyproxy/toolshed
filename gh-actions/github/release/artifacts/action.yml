@@ -1,7 +1,4 @@
 inputs:
-  artifacts:
-    type: string
-    required: true
   dry-run:
     type: boolean
     default: true

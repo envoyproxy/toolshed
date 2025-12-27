@@ -80,12 +80,11 @@ runs:
       workflows: ${{ inputs.workflows }}
   - id: artifacts
     if: >-
-      inputs.artifacts
+      fromJSON(inputs.artifacts)
       && fromJSON(steps.status.outputs.continue)
     name: Download artifacts from workflow runs
     uses: envoyproxy/toolshed/gh-actions/github/release/artifacts@60f2bfe43da275d7e10b8d00987e14b5429b8590
     with:
-      artifacts: ${{ inputs.artifacts }}
       filter-artifacts: ${{ inputs.filter-artifacts }}
       run-ids: ${{ steps.status.outputs.run-ids }}
       workflows: ${{ inputs.workflows }}
