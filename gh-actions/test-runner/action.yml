@@ -4,9 +4,13 @@ author: phlax
 
 inputs:
   config:
-    description: Test configuration YAML
+    description: Path to test configuration YAML
     type: string
     required: true
+  debug:
+    description: Debug action
+    type: boolean
+    default: false
   name:
     description: Name of the test
     type: string
@@ -25,8 +29,8 @@ runs:
     id: config
     with:
       input: ${{ inputs.config }}
-      input-format: yaml
-      print-result: true
+      input-format: yaml-path
+      print-result: ${{ fromJSON(inputs.debug) }}
       filter: |
         . as $config
         | .before as $before
@@ -36,10 +40,42 @@ runs:
             .id = $config.id
           else . end
         | ($before // []) + [.] + ($after // [])
-
+  - id: before-test
+    shell: bash
+    run: |
+      TEST_OUTPUT="$(mktemp)"
+      echo "TEST_OUTPUT=${TEST_OUTPUT}" >> "$GITHUB_ENV"
+      ACTION_TEST_PATH="$(dirname "${{ inputs.config }}")"
+      echo "ACTION_TEST_PATH=${ACTION_TEST_PATH}" >> "$GITHUB_ENV"
   - uses: envoyproxy/toolshed/gh-actions/using/steps@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     id: run
     with:
       name: Run test
       steps: ${{ steps.config.outputs.value }}
       step-format: json
+  - id: after-test
+    shell: bash
+    run: |
+      FAILED=0
+      if [[ ! -s "$TEST_OUTPUT" ]]; then
+          echo "::warning::No test output in ${{ inputs.name }}" >&2
+          exit 0
+      fi
+      while IFS= read -r line; do
+          if [[ "$line" == fail:* ]]; then
+              message="${line#fail:}"
+              echo "✗ Error: ${message}"
+              echo "::error::Test failed (${{ inputs.name }}): ${message}" >&2
+              FAILED=1
+          elif [[ "$line" == success:* ]]; then
+              message="${line#success:}"
+              echo "✓ Success: ${message}"
+          fi
+      done < "$TEST_OUTPUT"
+      if [[ $FAILED -eq 0 ]]; then
+          echo "✓✓✓ ${{ inputs.name }} PASSED"
+      else
+          echo "✗✗✗ ${{ inputs.name }} FAILED"
+          echo "::error::Tests failed: ${{ inputs.name }}" >&2
+          exit 1
+      fi

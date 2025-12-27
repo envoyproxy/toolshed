@@ -1,13 +1,16 @@
 uses: ./gh-actions/test-runner
 with:
-  config: |
-    %{{ steps.before.outputs.value }}
+  config: /tmp/testfiles/default.test.yml
 
 before:
+- shell: bash
+  run: |
+    mkdir -p /tmp/testfiles
 - uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
   id: before
   with:
     input-format: yaml
+    output-path: /tmp/testfiles/default.test.yml
     input: |
       before:
       - shell: bash
@@ -24,10 +27,9 @@ before:
         run: |
           echo "AFTER" >> /tmp/test-output
           ls -alh /tmp/DELETEME >& /dev/null && {
-              echo "/tmp/DELETEME was not deleted"
-              exit 1
+              echo "fail:/tmp/DELETEME was not deleted" >> "$TEST_OUTPUT"
           } || {
-              echo "/tmp/DELETEME successfully removed"
+              echo "success:/tmp/DELETEME successfully removed" >> "$TEST_OUTPUT"
           }
 
 after:
@@ -35,3 +37,4 @@ after:
   run: |
     grep BEFORE /tmp/test-output
     grep AFTER /tmp/test-output
+    grep success "$TEST_OUTPUT"
