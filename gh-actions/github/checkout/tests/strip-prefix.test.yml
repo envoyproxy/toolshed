@@ -1,11 +1,8 @@
 uses: ./gh-actions/github/checkout
 id: checkout
 with:
-  config: |
-    repository: ${{ github.repository }}
-    fetch-depth: 5
-    clean: true
-    submodules: false
+  branch: test/branch-name
+  strip-prefix: "test/"
 
 after:
 - shell: bash
@@ -13,8 +10,8 @@ after:
     . "${ACTION_TEST_PATH}/test_fun.sh"
     EXPECTED_REPO="%{{ github.repository }}"
     OUTPUT_BRANCH="%{{ steps.checkout.outputs.branch-name }}"
-    EXPECTED_BRANCH="%{{ github.ref_name }}"
+    EXPECTED_BRANCH="branch-name"
     test_checkout
     test_repository $EXPECTED_REPO
     test_branch "$OUTPUT_BRANCH" "$EXPECTED_BRANCH"
-    test_depth 5 5
+    test_depth 1 1

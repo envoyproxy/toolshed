@@ -183,8 +183,8 @@ runs:
   - name: Configure committer
     if: ${{ inputs.committer-name && inputs.committer-email }}
     run: |
-      git config --global user.name $COMMITTER_NAME
-      git config --global user.email $COMMITTER_EMAIL
+      git config --global user.name "$COMMITTER_NAME"
+      git config --global user.email "$COMMITTER_EMAIL"
     env:
       COMMITTER_NAME: ${{ inputs.committer-name }}
       COMMITTER_EMAIL: ${{ inputs.committer-email }}
