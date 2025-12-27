@@ -29,7 +29,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+  - uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     name: Generate download config
     id: download-config
     with:
@@ -45,7 +45,7 @@ runs:
             | {key: $name,
                value: {name: $name, run_id: $run_ids[.]}})
         | from_entries
-  - uses: envoyproxy/toolshed/gh-actions/foreach@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+  - uses: envoyproxy/toolshed/gh-actions/foreach@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     if: steps.download-config.outputs.value
     with:
       items: ${{ steps.download-config.outputs.value }}
@@ -65,7 +65,7 @@ runs:
   - name: List downloaded artifacts
     id: artifacts
     if: steps.download-config.outputs.value
-    uses: envoyproxy/toolshed/gh-actions/bson@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+    uses: envoyproxy/toolshed/gh-actions/bson@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     with:
       catch-errors: true
       input: |
@@ -91,7 +91,7 @@ runs:
         | from_entries
   - name: Organize artifacts for publishing
     if: steps.artifacts.outputs.output
-    uses: envoyproxy/toolshed/gh-actions/bson@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+    uses: envoyproxy/toolshed/gh-actions/bson@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     with:
       input: |
         artifacts: ${{ steps.artifacts.outputs.output }}
@@ -106,12 +106,12 @@ runs:
   - name: Artifact sizes
     id: artifact-sizes
     if: steps.artifacts.outputs.output
-    uses: envoyproxy/toolshed/gh-actions/jq@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+    uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     with:
       input: ${{ steps.artifacts.outputs.output }}
   - name: Generate workflow artifacts table
     if: steps.artifacts.outputs.output
-    uses: envoyproxy/toolshed/gh-actions/json/table@491ae6ac4a59ca36ecc3284161222e6ab4082ce9
+    uses: envoyproxy/toolshed/gh-actions/json/table@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
     with:
       title: Artifacts to publish
       append: true
