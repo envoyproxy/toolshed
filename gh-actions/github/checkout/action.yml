@@ -45,7 +45,7 @@ runs:
   - uses: envoyproxy/toolshed/gh-actions/github/merge-commit@096010c6d6fa0dda46956ceab0054d50ebb81c28
     id: merge-commit
     name: Fetch merge commit hash
-    if: ${{ inputs.pr && fromJSON(inputs.fetch-merge-commit) }}
+    if: ${{ inputs.pr != '' && fromJSON(inputs.fetch-merge-commit) }}
     with:
       repository: ${{ github.repository }}
       pr: ${{ inputs.pr }}
@@ -71,7 +71,7 @@ runs:
         | if (. | has("show-progress") | not) and "${{ inputs.show-progress }}" != "" then
             .["show-progress"] = ${{ inputs.show-progress }}
           else . end
-        | if ${{ ! inputs.pr }} and .ref then
+        | if ${{ inputs.pr == '' }} and .ref then
             if .["fetch-depth"] == 1 or .["fetch-depth"] == "" then
                .["fetch-depth"] = ${{ inputs.ancestor-fetch-depth }}
             else . end
@@ -85,7 +85,7 @@ runs:
           else
             .branch = "main"
           end
-        | if ${{ ! inputs.pr }} then
+        | if ${{ inputs.pr == '' }} then
             if .ref then
               .["requested-ref"] = .ref
             else . end
