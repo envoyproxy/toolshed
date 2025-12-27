@@ -32,14 +32,14 @@ runs:
     shell: bash
     env:
       URL: https://api.github.com/repos/${{ inputs.repository }}/pulls/${{ inputs.pr }}
-  - uses: envoyproxy/toolshed/gh-actions/jq@096010c6d6fa0dda46956ceab0054d50ebb81c28
+  - uses: envoyproxy/toolshed/gh-actions/jq@afa4fe6f25d64ad915756d824f5d356de23eb4c1
     id: jq
     with:
       input: ${{ steps.fetch.outputs.response }}
       options: -r
       filter: |
         .merge_commit_sha // ""
-  - uses: envoyproxy/toolshed/gh-actions/jq@096010c6d6fa0dda46956ceab0054d50ebb81c28
+  - uses: envoyproxy/toolshed/gh-actions/jq@afa4fe6f25d64ad915756d824f5d356de23eb4c1
     if: ${{ ! steps.jq.outputs.value }}
     with:
       input: ${{ steps.fetch.outputs.response }}

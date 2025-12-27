@@ -64,7 +64,7 @@ jobs:
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/appauth@586d6bd0c3b26dcac407b9e67cc2c923bbca3d42
+    - uses: envoyproxy/toolshed/gh-actions/appauth@afa4fe6f25d64ad915756d824f5d356de23eb4c1
       id: appauth
       name: Appauth
       if: >-
@@ -75,7 +75,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@586d6bd0c3b26dcac407b9e67cc2c923bbca3d42
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@afa4fe6f25d64ad915756d824f5d356de23eb4c1
       with:
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
@@ -89,7 +89,7 @@ jobs:
 
     - name: Release title (eg commit message)
       id: title
-      uses: envoyproxy/toolshed/gh-actions/jq@586d6bd0c3b26dcac407b9e67cc2c923bbca3d42
+      uses: envoyproxy/toolshed/gh-actions/jq@afa4fe6f25d64ad915756d824f5d356de23eb4c1
       with:
         options: -sRr
         input: |
@@ -98,7 +98,7 @@ jobs:
           split("\n") | first
 
     - name: Publish the release
-      uses: envoyproxy/toolshed/gh-actions/github/release@586d6bd0c3b26dcac407b9e67cc2c923bbca3d42
+      uses: envoyproxy/toolshed/gh-actions/github/release@afa4fe6f25d64ad915756d824f5d356de23eb4c1
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
         artifacts: ${{ inputs.artifacts }}
