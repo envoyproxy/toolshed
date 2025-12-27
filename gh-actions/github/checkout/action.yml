@@ -1,8 +1,8 @@
 inputs:
   ancestor-fetch-depth:
     description: >-
-      Fetch depth for checking ancestry when a specific ref is provided for non-PR workflows.
-      This ensures enough history is fetched to verify the ref is an ancestor of the target branch.
+      (Deprecated - no longer used) Previously controlled fetch depth for ancestry checking.
+      Ancestry checking now uses fetch-depth: 0 (full history) by default.
     type: number
     default: 20
   config:
@@ -92,7 +92,7 @@ runs:
       token: ${{ inputs.token || github.token }}
   # If its not a pr and the ref is set, fetch-depth should not be 1 as it
   # wont be able to check ancestry
-  # If its not set or set to 1 it will be changed to 0
+  # If its not set or set to 1 it will be changed to 0 (full history)
   # Otherwise the current value is preserved, allowing you to specify the
   # depth of the checked ancestor.
   - name: Parse YAML config
@@ -112,8 +112,8 @@ runs:
             .["show-progress"] = ${{ inputs.show-progress }}
           else . end
         | if ${{ inputs.pr == '' }} and .ref then
-            if .["fetch-depth"] == 1 or .["fetch-depth"] == "" then
-               .["fetch-depth"] = ${{ inputs.ancestor-fetch-depth }}
+            if .["fetch-depth"] == 1 or .["fetch-depth"] == "" or (.["fetch-depth"] | type == "null") then
+               .["fetch-depth"] = 0
             else . end
           else . end
         | if "${{ inputs.branch }}" != "" then

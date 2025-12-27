@@ -23,8 +23,8 @@ This action extends the standard `actions/checkout` with two key features:
 1. If a `ref` is specified in the config:
    - Sets the `ref` as the `requested-ref` for later verification
    - Changes the checkout ref to the `branch` value
-   - Ensures sufficient fetch depth (minimum `ancestor-fetch-depth`) to verify ancestry
-2. Checks out the branch
+   - Ensures full history is fetched (fetch-depth: 0) to verify ancestry
+2. Checks out the branch with full history
 3. Verifies that the `requested-ref` is an ancestor of the checked-out branch
 4. If verification passes, checks out the `requested-ref`
 5. If verification fails, exits with an error
@@ -76,7 +76,6 @@ This will:
 | `config` | YAML configuration for actions/checkout. Supports all actions/checkout inputs. Special handling: 'ref' field triggers ancestor checking for non-PR workflows. | Yes | - |
 | `branch` | Target branch name. Used as the base branch for checkout and ancestor verification. | No | `${{ github.ref }}` |
 | `pr` | Pull request number. When provided, uses PR-specific checkout behavior. When empty, enables ref ancestry checking. | No | - |
-| `ancestor-fetch-depth` | Fetch depth for checking ancestry when a specific ref is provided for non-PR workflows. | No | `20` |
 | `fetch-merge-commit` | For PR workflows, whether to fetch and use the merge commit SHA. | No | `true` |
 | `token` | GitHub token for authentication. | No | `${{ github.token }}` |
 | `ssh-key` | SSH private key for git authentication. When provided, uses SSH instead of token auth. | No | - |
