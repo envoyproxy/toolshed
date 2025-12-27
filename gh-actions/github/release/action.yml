@@ -1,4 +1,7 @@
 inputs:
+  artifact-workflows:
+    type: string
+    required: true
   artifacts:
     type: boolean
     default: true
@@ -66,19 +69,17 @@ runs:
     if: >-
       fromJSON(steps.status.outputs.continue)
       && fromJSON(inputs.artifacts)
-      && (fromJSON(inputs.dry-run)
-          || ! fromJSON(steps.status.outputs.version).is_dev)
+      && ! fromJSON(steps.status.outputs.version).is_dev
     name: Download artifacts from workflow runs
     uses: envoyproxy/toolshed/gh-actions/github/release/artifacts@4c0ff5a35e0dd3159d94f8315becbbfb4fdd1922
     with:
       filter-artifacts: ${{ inputs.filter-artifacts }}
       run-ids: ${{ steps.status.outputs.run-ids }}
-      workflows: ${{ inputs.workflows }}
+      workflows: ${{ inputs.artifact-workflows }}
   - name: Publish the release
     if: >-
       fromJSON(steps.status.outputs.continue)
-      && (fromJSON(inputs.dry-run)
-          || ! fromJSON(steps.status.outputs.version).is_dev)
+      && ! fromJSON(steps.status.outputs.version).is_dev
     uses: envoyproxy/toolshed/gh-actions/github/release/publish@4c0ff5a35e0dd3159d94f8315becbbfb4fdd1922
     with:
       assets: ${{ inputs.artifacts && 'artifacts/publish/*' || '' }}
