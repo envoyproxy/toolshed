@@ -1,41 +1,81 @@
 inputs:
   ancestor-fetch-depth:
+    description: >-
+      Fetch depth for checking ancestry when a specific ref is provided for non-PR workflows.
+      This ensures enough history is fetched to verify the ref is an ancestor of the target branch.
     type: number
     default: 20
   config:
+    description: >-
+      YAML configuration for actions/checkout. Supports all actions/checkout inputs.
+      Special handling: 'ref' field triggers ancestor checking for non-PR workflows.
     type: string
     required: true
   branch:
+    description: >-
+      Target branch name. Defaults to the current github.ref.
+      Used as the base branch for checkout and ancestor verification.
     type: string
     default: ${{ github.ref }}
   committer-name:
+    description: >-
+      Git committer name for subsequent git operations.
+      If provided with committer-email, configures git user.name globally.
     type: string
     default:
   committer-email:
+    description: >-
+      Git committer email for subsequent git operations.
+      If provided with committer-name, configures git user.email globally.
     type: string
     default:
   fetch-merge-commit:
+    description: >-
+      For PR workflows, whether to fetch and use the merge commit SHA instead of the HEAD commit.
+      Enables testing the result of merging the PR into the target branch.
     type: boolean
     default: true
   pr:
+    description: >-
+      Pull request number for PR-specific checkout behavior.
+      When provided, fetches the PR's merge commit (if fetch-merge-commit is true).
+      When empty, enables ref ancestry checking for non-PR workflows.
     type: number
     default:
   token:
+    description: >-
+      GitHub token for authentication. Falls back to github.token if not provided.
+      Used for API calls and git operations.
     type: string
     default:
   show-progress:
+    description: >-
+      Whether to show progress status during git operations.
+      Passed through to actions/checkout.
     type: boolean
     default: false
   ssh-key:
+    description: >-
+      SSH private key for git authentication. When provided, uses SSH instead of token auth.
+      Passed through to actions/checkout.
     type: string
   strip-prefix:
+    description: >-
+      Prefix to strip from the branch name in the output.
+      Useful for removing common prefixes like organization names.
     type: string
     default:
 
 outputs:
   branch-name:
+    description: >-
+      The sanitized branch name with refs/pull/ and refs/heads/ prefixes removed,
+      and optional strip-prefix applied.
     value: ${{ steps.branch.outputs.value }}
   merge-commit:
+    description: >-
+      For PR workflows with fetch-merge-commit enabled, the SHA of the merge commit.
+      Empty for non-PR workflows.
     value: ${{ steps.merge-commit.outputs.sha }}
 
 
@@ -132,7 +172,7 @@ runs:
     with: ${{ fromJSON(steps.config-ssh.outputs.value || steps.config-token.outputs.value) }}
   - if: >-
       fromJSON(steps.parsed-config.outputs.value).requested-ref
-      && inputs.pr != ''
+      && inputs.pr == ''
     run: |
       if ! git merge-base --is-ancestor "${REF}" HEAD; then
           echo "Provided ref (${REF}) is not an ancestor of current branch" >&2
