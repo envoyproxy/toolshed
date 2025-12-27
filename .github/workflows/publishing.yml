@@ -58,7 +58,6 @@ jobs:
       actions: read
     uses: ./.github/workflows/_publish.yml
     with:
-      commit-message: ${{ needs.request.outputs.message }}
       committer-email: "140627008+publish-envoy[bot]@users. noreply.github.com"
       committer-name: "publish-envoy[bot]"
       conclusion: ${{ matrix.conclusion || 'success' }}
@@ -71,6 +70,7 @@ jobs:
       python-version: ${{ matrix.python-version }}
       sha: ${{ matrix.sha || needs.request.outputs.sha }}
       skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
+      title: ${{ needs.request.outputs.message }}
     strategy:
       fail-fast: false
       matrix:

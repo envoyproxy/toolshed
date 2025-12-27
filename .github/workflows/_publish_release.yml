@@ -13,9 +13,6 @@ on:
       artifacts:
         type: boolean
         default: false
-      commit-message:
-        default: ${{ github.event.workflow_run.head_commit.message }}
-        type: string
       committer-email:
         required: true
         type: string
@@ -43,6 +40,9 @@ on:
       sha:
         default: ${{ github.event.workflow_run.head_sha }}
         type: string
+      title:
+        default: ${{ github.event.workflow_run.head_commit.message }}
+        type: string
       version:
         default:
         type: string
@@ -61,7 +61,7 @@ jobs:
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/appauth@ce0a832490a57dc6977ef4babe0427db2baf8fbd
+    - uses: envoyproxy/toolshed/gh-actions/appauth@a6435a532a7428b88b3b2df18872741d91a626a2
       id: appauth
       name: Appauth
       if: >-
@@ -72,7 +72,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@ce0a832490a57dc6977ef4babe0427db2baf8fbd
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@a6435a532a7428b88b3b2df18872741d91a626a2
       with:
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
@@ -82,11 +82,20 @@ jobs:
                 && github.event.pull_request.merge_commit_sha
                 || inputs.sha }}
         pr: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || '' }}
-        strip-prefix: release/
         token: ${{ steps.appauth.outputs.token }}
 
+    - name: Release title (eg commit message)
+      id: title
+      uses: envoyproxy/toolshed/gh-actions/jq@64d95bf651f750701fc23603a81cd512d9f5997d
+      with:
+        options: -sRr
+        input: |
+          ${{ inputs.title }}
+        filter: |
+          split("\n") | first
+
     - name: Publish the release
-      uses: envoyproxy/toolshed/gh-actions/github/release@ce0a832490a57dc6977ef4babe0427db2baf8fbd
+      uses: envoyproxy/toolshed/gh-actions/github/release@a6435a532a7428b88b3b2df18872741d91a626a2
       with:
         artifacts: ${{ inputs.artifacts }}
         dry-run: ${{ inputs.dry-run }}
@@ -97,6 +106,7 @@ jobs:
         repository: ${{ inputs.repository }}
         sha: ${{ inputs.sha }}
         summary: true
+        title: ${{ steps.title.outputs.value }}
         token: ${{ steps.appauth.outputs.token || github.token }}
         version: ${{ inputs.version }}
         version-file: ${{ inputs.version-file }}
