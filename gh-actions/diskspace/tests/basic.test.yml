@@ -13,7 +13,7 @@ after:
 - shell: bash
   run: |
     if [[ -d /tmp/test-cruft ]]; then
-        echo "Error: /tmp/test-cruft still exists"
-        exit 1
+        echo "fail:/tmp/test-cruft still exists" >> "$TEST_OUTPUT"
+    else
+        echo "success:Diskspace action successfully removed test directory" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Diskspace action successfully removed test directory"

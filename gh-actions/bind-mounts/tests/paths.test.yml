@@ -21,28 +21,31 @@ after:
   run: |
     WORKSPACE_TARGET="${{ github.workspace }}/bind-test-workspace"
     if ! mountpoint -q "$WORKSPACE_TARGET"; then
-        echo "✗ Error: $WORKSPACE_TARGET is not a mount point"
-        exit 1
+        echo "fail:$WORKSPACE_TARGET is not a mount point" >> "$TEST_OUTPUT"
+    else
+        echo "success:GITHUB_WORKSPACE path correctly interpolated and mounted" >> "$TEST_OUTPUT"
     fi
-    echo "✓ GITHUB_WORKSPACE path correctly interpolated and mounted"
+
     if [[ "$(cat "$WORKSPACE_TARGET/workspace.txt")" != "workspace-content" ]]; then
-        echo "✗ Error: Content not accessible in GITHUB_WORKSPACE mount"
-        exit 1
+        echo "fail:Content not accessible in GITHUB_WORKSPACE mount" >> "$TEST_OUTPUT"
+    else
+        echo "success:Content accessible in GITHUB_WORKSPACE mount" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Content accessible in GITHUB_WORKSPACE mount"
+
     RUNNER_TARGET="${{ runner.temp }}/bind-test-runner"
     if ! mountpoint -q "$RUNNER_TARGET"; then
-        echo "✗ Error: $RUNNER_TARGET is not a mount point"
-        exit 1
+        echo "fail:$RUNNER_TARGET is not a mount point" >> "$TEST_OUTPUT"
+    else
+        echo "success:RUNNER_TEMP path correctly interpolated and mounted" >> "$TEST_OUTPUT"
     fi
-    echo "✓ RUNNER_TEMP path correctly interpolated and mounted"
+
     if [[ "$(cat "$RUNNER_TARGET/runner-temp.txt")" != "runner-temp-content" ]]; then
-        echo "✗ Error: Content not accessible in RUNNER_TEMP mount"
-        exit 1
+        echo "fail:Content not accessible in RUNNER_TEMP mount" >> "$TEST_OUTPUT"
+    else
+        echo "success:Content accessible in RUNNER_TEMP mount" >> "$TEST_OUTPUT"
     fi
-    echo "✓ Content accessible in RUNNER_TEMP mount"
+
     sudo umount "$WORKSPACE_TARGET"
     sudo umount "$RUNNER_TARGET"
     sudo rm -rf /tmp/bind-paths-src1 /tmp/bind-paths-src2
     rm -rf "$WORKSPACE_TARGET" "$RUNNER_TARGET"
-    echo "✓ Path interpolation test passed"
