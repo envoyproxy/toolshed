@@ -11,7 +11,8 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
+
 
 jobs:
   request:
@@ -20,7 +21,7 @@ jobs:
       run: ${{ steps.filter.outputs.run }}
       tests: ${{ steps.tests.outputs.output }}
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/github/should-run@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@73301f2be0a9d4c451aa6c782013be451ad942a1
       id: filter
       with:
         config: |
@@ -28,7 +29,7 @@ jobs:
           - 'gh-actions/**'
           - '.github/workflows/actions.yml'
     - id: tests
-      uses: envoyproxy/toolshed/gh-actions/bson@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+      uses: envoyproxy/toolshed/gh-actions/bson@73301f2be0a9d4c451aa6c782013be451ad942a1
       with:
         input: |
           OUTPUT="$(find gh-actions -path "*/tests/*.test.yml" -type f)"
@@ -50,16 +51,10 @@ jobs:
         test: ${{ fromJSON(needs.request.outputs.tests) }}
     steps:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
-    - name: Load config
-      id: config
-      uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
-      with:
-        input: ${{ matrix.test }}
-        input-format: yaml-path
     - name: Run test
-      uses: envoyproxy/toolshed/gh-actions/test-runner@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+      uses: envoyproxy/toolshed/gh-actions/test-runner@73301f2be0a9d4c451aa6c782013be451ad942a1
       with:
-        config: ${{ steps.config.outputs.value }}
+        config: ${{ matrix.test }}
         name: ${{ matrix.test }}
 
   js-actions:
