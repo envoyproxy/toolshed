@@ -82,6 +82,7 @@ jobs:
     name: ${{ matrix.name }}
     uses: ./.github/workflows/_publish_release.yml
     with:
+      artifact-workflows: ${{ matrix.artifact-workflows }}
       artifacts: ${{ matrix.artifacts || false }}
       committer-email: ${{ inputs.committer-email }}
       committer-name: ${{ inputs.committer-name }}
@@ -96,7 +97,13 @@ jobs:
       title: ${{ inputs.title }}
       version: ${{ matrix.version }}
       version-file: ${{ matrix.version-file }}
-      workflows: ${{ matrix.workflows }}
+      # Wait for all workflows to complete or else publishing
+      # is repeatedly triggered
+      workflows: |
+        Bazel CI
+        Github/actions CI
+        Python CI
+        Rust CI
     strategy:
       fail-fast: false
       # Best not to run in parallel for real releases as it
@@ -105,28 +112,28 @@ jobs:
       matrix:
         include:
         - name: actions
+          artifact-workflows: |
+            Github/actions CI
           version: ${{ inputs.actions-version }}
           version-file: ${{ inputs.actions-version-file }}
-          workflows: |
-            Github/actions CI
         - name: bazel
+          artifact-workflows: |
+            Bazel CI
           version: ${{ inputs.bazel-version }}
           version-file: ${{ inputs.bazel-version-file }}
-          workflows: |
-            Bazel CI
         - name: bins
+          artifact-workflows: |
+            Bazel CI
+            Rust CI
           artifacts: true
           version: ${{ inputs.bins-version }}
           version-file: ${{ inputs.bins-version-file }}
-          workflows: |
-            Bazel CI
-            Rust CI
         - name: python
+          artifact-workflows: |
+            Python CI
           artifacts: true
           filter-artifacts: >-
             ${{ inputs.python-filter-artifacts
                 || 'select($key | contains(".dev") | not)' }}
           version: ${{ inputs.python-version }}
           version-file: ${{ inputs.python-version-file }}
-          workflows: |
-            Python CI
