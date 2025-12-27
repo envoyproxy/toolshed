@@ -104,7 +104,6 @@ runs:
         | split("\n")
         | map(. | str::trim | select(length > 0)) as $headers
         | {data: $data, headers: $headers, columns: ${{ inputs.columns }}}
-        | (. | debug)
         | gfm::table(${{ inputs.filter || '.' }};
                      ${{ fromJSON(inputs.show-empty) && '.' || '"" | halt_error(0)' }};
                      ${{ inputs.mutate-cells || '.cell' }};
