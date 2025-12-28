@@ -1,0 +1,73 @@
+uses: ./gh-actions/gpg
+id: gpg
+with:
+  gpg-key: >-
+    %{{ env.GPG_KEY }}
+  gpg-password: >-
+    %{{ env.GPG_PASSWORD }}
+
+before:
+- shell: bash
+  run: |
+    # Generate a test key for import testing
+    gpgconf --kill gpg-agent || true
+    cat > /tmp/test-key-params <<EOF
+    %echo Generating test GPG key
+    Key-Type: RSA
+    Key-Length: 2048
+    Subkey-Type: RSA
+    Subkey-Length: 2048
+    Name-Real: Test User
+    Name-Email: test@example.com
+    Passphrase: testpassword123
+    Expire-Date: 0
+    %commit
+    %echo Done
+    EOF
+
+    gpg --batch --gen-key /tmp/test-key-params
+
+    # Export the key with passphrase
+    TEST_KEY=$(gpg --batch --yes --pinentry-mode loopback \
+      --passphrase "testpassword123" \
+      --armor --export-secret-keys test@example.com)
+
+    # Set as env vars for testing
+    echo "GPG_KEY<<EOF" >> $GITHUB_ENV
+    echo "$TEST_KEY" >> $GITHUB_ENV
+    echo "EOF" >> $GITHUB_ENV
+    echo "GPG_PASSWORD=testpassword123" >> $GITHUB_ENV
+
+    # Clear the keyring for a clean import test
+    FPR=$(gpg --list-secret-keys --with-colons test@example.com | \
+      awk -F: '/^fpr:/ { print $10; exit }')
+    gpg --batch --yes --delete-secret-and-public-key "$FPR" || true
+
+after:
+- shell: bash
+  run: |
+    FINGERPRINT='%{{ steps.gpg.outputs.fingerprint }}'
+    PASSPHRASE='%{{ steps.gpg.outputs.passphrase }}'
+
+    if [[ -z "$FINGERPRINT" ]]; then
+        echo "fail:Fingerprint output is empty" >> "$TEST_OUTPUT"
+    elif [[ ! "$FINGERPRINT" =~ ^[A-F0-9]{40}$ ]]; then
+        echo "fail:Fingerprint format is invalid: $FINGERPRINT" >> "$TEST_OUTPUT"
+    else
+        echo "success:Fingerprint output is valid: $FINGERPRINT" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ -z "$PASSPHRASE" ]]; then
+        echo "fail:Passphrase output is empty" >> "$TEST_OUTPUT"
+    elif [[ "$PASSPHRASE" != "testpassword123" ]]; then
+        echo "fail:Passphrase output is incorrect: $PASSPHRASE" >> "$TEST_OUTPUT"
+    else
+        echo "success:Passphrase output is correct" >> "$TEST_OUTPUT"
+    fi
+
+    # Verify the key exists and can be used
+    if gpg --list-secret-keys | grep -q "$FINGERPRINT"; then
+        echo "success:GPG key is in keyring" >> "$TEST_OUTPUT"
+    else
+        echo "fail:GPG key not found in keyring" >> "$TEST_OUTPUT"
+    fi
