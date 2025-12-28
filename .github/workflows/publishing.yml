@@ -50,6 +50,25 @@ jobs:
         echo "message=$MESSAGE" >> $GITHUB_OUTPUT
         echo "Latest MESSAGE from main: $MESSAGE"
 
+  release:
+    needs:
+    - request
+    if: fromJSON(needs.request.outputs.run || 'false')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/_release.yml
+    with:
+      dry-run: true
+      type: ${{ matrix.type }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - type: actions
+        - type: bazel
+        - type: bins
+        - type: python
+
   publish:
     needs:
     - request
@@ -116,6 +135,7 @@ jobs:
     name: Publishing
     needs:
     - request
+    - release
     - publish
     steps:
     - run: |

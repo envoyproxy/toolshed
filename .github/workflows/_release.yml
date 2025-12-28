@@ -1,0 +1,72 @@
+name: _release
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    secrets:
+      app-id:
+      app-key:
+    inputs:
+      dry-run:
+        description: Dry run (no PR created)
+        type: boolean
+        default: false
+      template-version-update:
+        type: string
+        default: |
+          echo \"\(.version.next)\" > \"\(.version_file)\"
+      type:
+        description: Release type
+        required: true
+        type: string
+
+
+jobs:
+  create-release:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - name: Get version file
+      id: version-file
+      uses: envoyproxy/toolshed/gh-actions/jq@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
+      with:
+        input: |
+          actions: gh-actions/VERSION.txt
+          bins: BINS_VERSION.txt
+          bazel: bazel/VERSION.txt
+          python: py/VERSION.txt
+        input-format: yaml
+        options: -r
+        filter: .["${{ inputs.type }}"]
+    - name: Get version info
+      id: version
+      uses: envoyproxy/toolshed/gh-actions/version@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
+      with:
+        version-file: ${{ steps.version-file.outputs.value }}
+    - name: Update version file
+      uses: envoyproxy/toolshed/gh-actions/bson@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
+      with:
+        input: |
+          version: ${{ steps.version.outputs.version }}
+          version_file: ${{ steps.version-file.outputs.value }}
+        filter: |
+          if .version.is_dev then
+            "${{ inputs.template-version-update }}"
+          else ":" end
+    - name: Create Pull Request
+      uses: envoyproxy/toolshed/gh-actions/github/pr@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
+      with:
+        base: main
+        branch: release/create/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
+        title: >-
+          ${{ inputs.type }}: Release v${{ fromJSON(steps.version.outputs.version).next }}
+        body: |
+          Created by publish-envoy[bot] for @${{ github.actor }}
+        commit-message: Release ${{ github.event.inputs.type }} ${{ fromJSON(steps.version.outputs.version).next }}
+        committer-name: publish-envoy[bot]
+        committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
+        dry-run: ${{ inputs.dry-run }}
+        GITHUB_TOKEN: ${{ github.token }}
