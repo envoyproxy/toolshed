@@ -1,0 +1,94 @@
+inputs:
+  debug:
+    type: boolean
+    default: false
+  gpg-email:
+    type: string
+    default: snakeoil@ci.testing
+  gpg-name:
+    type: string
+    default: Snakeoil CI
+  passphrase:
+    type: string
+    default:
+  use-passphrase:
+    type: boolean
+    default: true
+
+outputs:
+  fingerprint:
+    value: >-
+      ${{ steps.gpg.outputs.fingerprint
+          || steps.gpg-no-passphrase.outputs.fingerprint }}
+  passphrase:
+    value: ${{ inputs.passphrase || steps.passphrase.outputs.generated }}
+
+runs:
+  using: "composite"
+  steps:
+  - name: Generate passphrase
+    id: passphrase
+    if: >-
+      fromJSON(inputs.use-passphrase)
+      && inputs.passphrase == ''
+    shell: bash
+    run: |
+      PASSPHRASE=$(openssl rand -base64 32)
+      echo "generated=${PASSPHRASE}" >> "$GITHUB_OUTPUT"
+  - name: Generate GPG key (no passphrase)
+    id: gpg-no-passphrase
+    if: >-
+      inputs.passphrase == ''
+      && steps.passphrase.outputs.generated == ''
+    shell: bash
+    run: |
+      gpgconf --kill gpg-agent || true
+      cat > key-params <<EOF
+      %echo Generating GPG key
+      %no-protection
+      Key-Type: RSA
+      Key-Length: 4096
+      Subkey-Type: RSA
+      Subkey-Length:  4096
+      Name-Real: ${GPG_NAME}
+      Name-Email: ${GPG_NAME}
+      Expire-Date: 0
+      %commit
+      %echo Done
+      EOF
+      KEY_FPR=$(gpg --batch --gen-key key-params 2>&1 | grep -o '[A-F0-9]\{40\}')
+      echo "fingerprint=${KEY_FPR}" >> $GITHUB_OUTPUT
+    env:
+      GPG_NAME: ${{ inputs.gpg-name }}
+      GPG_EMAIL: ${{ inputs.gpg-email }}
+  - name: Generate GPG key
+    id: gpg
+    if: >-
+      fromJSON(inputs.use-passphrase)
+    shell: bash
+    run: |
+      gpgconf --kill gpg-agent || true
+      cat > key-params <<EOF
+      %echo Generating GPG key
+      Key-Type: RSA
+      Key-Length: 4096
+      Subkey-Type: RSA
+      Subkey-Length:  4096
+      Name-Real: ${GPG_NAME}
+      Name-Email: ${GPG_NAME}
+      Passphrase: ${PASSPHRASE}
+      Expire-Date: 0
+      %commit
+      %echo Done
+      EOF
+      KEY_FPR=$(gpg --batch --gen-key key-params 2>&1 | grep -o '[A-F0-9]\{40\}')
+      echo "fingerprint=${KEY_FPR}" >> $GITHUB_OUTPUT
+    env:
+      GPG_NAME: ${{ inputs.gpg-name }}
+      GPG_EMAIL: ${{ inputs.gpg-email }}
+      PASSPHRASE: ${{ inputs.passphrase || steps.passphrase.outputs.generated }}
+  - name: Show GPG keys
+    if: fromJSON(inputs.debug)
+    shell: bash
+    run: |
+      gpg --list-secret-keys
