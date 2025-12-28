@@ -86,3 +86,28 @@ test_key_in_keyring() {
         return 1
     fi
 }
+
+test_passphrase_file_exists() {
+    local path="${1}"
+
+    if [[ -f "$path" ]]; then
+        echo "success:Passphrase file exists at $path" >> "$TEST_OUTPUT"
+        return 0
+    else
+        echo "fail:Passphrase file not found at $path" >> "$TEST_OUTPUT"
+        return 1
+    fi
+}
+
+test_gpg_config_has_passphrase_file() {
+    local expected_path="${1}"
+    local gnupghome="${GNUPGHOME:-${HOME}/.gnupg}"
+
+    if grep -q "passphrase-file ${expected_path}" "${gnupghome}/gpg.conf"; then
+        echo "success:GPG config contains passphrase-file directive" >> "$TEST_OUTPUT"
+        return 0
+    else
+        echo "fail:GPG config missing passphrase-file directive" >> "$TEST_OUTPUT"
+        return 1
+    fi
+}
