@@ -10,13 +10,16 @@ inputs:
     type: string
 
 outputs:
-  path:
-    value: ${{ steps.fetch.outputs.path }}
+  fingerprint:
+    value: ${{ steps.import.outputs.fingerprint }}
+  passphrase:
+    value: ${{ inputs.passphrase }}
 
 runs:
   using: "composite"
   steps:
   - name: Import GPG key
+    id: import
     uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec  # v6
     with:
       gpg_private_key: ${{ inputs.key }}
