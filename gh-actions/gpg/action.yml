@@ -1,0 +1,37 @@
+inputs:
+  debug:
+    type: boolean
+    default: false
+  gpg-key:
+    type: string
+    default:
+  gpg-password:
+    type: string
+    default:
+
+outputs:
+  fingerprint:
+    value: >-
+      ${{ steps.gpg-import.outputs.fingerprint || steps.gpg.outputs.fingerprint }}
+  passphrase:
+    value: ${{ inputs.gpg-password || steps.gpg.outputs.passphrase }}
+
+
+runs:
+  using: "composite"
+  steps:
+  - name: Generate GPG key
+    id: gpg
+    if: >-
+      inputs.gpg-key == ''
+    uses: envoyproxy/toolshed/gh-actions/gpg/generate@63140926d347922ba29e8e6a9087702726e49b16
+    with:
+      debug: ${{ inputs.debug }}
+  - name: Import GPG key
+    id: gpg-import
+    if: >-
+      inputs.gpg-key != ''
+    uses: envoyproxy/toolshed/gh-actions/gpg/import@63140926d347922ba29e8e6a9087702726e49b16
+    with:
+      key: ${{ inputs.gpg-key }}
+      passphrase: ${{ inputs.gpg-password }}
