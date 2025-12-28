@@ -8,6 +8,8 @@ on:
     secrets:
       app-id:
       app-key:
+      gpg-key:
+      gpg-key-password:
 
     inputs:
       artifact-workflows:
@@ -64,7 +66,7 @@ jobs:
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/appauth@368bc1188c06426fe419d10e76c95b3ce2ef565b
+    - uses: envoyproxy/toolshed/gh-actions/appauth@073c56eac04771028e207beb43c80d9d7d4b4c3f
       id: appauth
       name: Appauth
       if: >-
@@ -75,7 +77,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@368bc1188c06426fe419d10e76c95b3ce2ef565b
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@073c56eac04771028e207beb43c80d9d7d4b4c3f
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -84,19 +86,25 @@ jobs:
           ref: ${{ inputs.sha }}
         pr: ${{ inputs.event == 'pull_request' && github.event.pull_request.number || '' }}
         token: ${{ steps.appauth.outputs.token }}
-
+    - name: Initialize GPG
+      id: gpg
+      if: >-
+        inputs.artifacts
+      uses: envoyproxy/toolshed/gh-actions/gpg@073c56eac04771028e207beb43c80d9d7d4b4c3f
+      with:
+        gpg-key: ${{ secrets.gpg-key }}
+        gpg-password: ${{ secrets.gpg-password }}
     - name: Release title (eg commit message)
       id: title
-      uses: envoyproxy/toolshed/gh-actions/jq@368bc1188c06426fe419d10e76c95b3ce2ef565b
+      uses: envoyproxy/toolshed/gh-actions/jq@073c56eac04771028e207beb43c80d9d7d4b4c3f
       with:
         options: -sRr
         input: |
           ${{ inputs.title }}
         filter: |
           split("\n") | first
-
     - name: Publish the release
-      uses: envoyproxy/toolshed/gh-actions/github/release@368bc1188c06426fe419d10e76c95b3ce2ef565b
+      uses: envoyproxy/toolshed/gh-actions/github/release@073c56eac04771028e207beb43c80d9d7d4b4c3f
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
         artifacts: ${{ inputs.artifacts }}
@@ -104,6 +112,8 @@ jobs:
         event: ${{ inputs.event }}
         fail-if-exists: ${{ inputs.fail-if-exists }}
         filter-artifacts: ${{ inputs.filter-artifacts }}
+        gpg-fingerprint: ${{ steps.gpg.outputs.fingerprint }}
+        gpg-passphrase: ${{ steps.gpg.outputs.passphrase }}
         name: ${{ inputs.name }}
         repository: ${{ inputs.repository }}
         sha: ${{ inputs.sha }}

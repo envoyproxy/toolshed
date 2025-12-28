@@ -8,6 +8,8 @@ on:
     secrets:
       app-id:
       app-key:
+      gpg-key:
+      gpg-key-password:
 
     inputs:
       actions-version:

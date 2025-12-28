@@ -56,6 +56,8 @@ jobs:
     if: fromJSON(needs.request.outputs.run || 'false')
     permissions:
       actions: read
+    # secrets.ENVOY_GPG_SNAKEOIL_KEY_PASSWORD
+    # secrets.ENVOY_GPG_SNAKEOIL_KEY
     uses: ./.github/workflows/_publish.yml
     with:
       committer-email: "140627008+publish-envoy[bot]@users. noreply.github.com"
