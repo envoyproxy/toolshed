@@ -1,0 +1,43 @@
+inputs:
+  debug:
+    type: boolean
+    default: false
+  fingerprint:
+    type: string
+    required: true
+  passphrase:
+    type: string
+    required: false
+  path:
+    type: string
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+  - name: Generate checksums and sign
+    env:
+      FINGERPRINT: ${{ inputs.fingerprint }}
+      PASSPHRASE: ${{ inputs.passphrase }}
+    shell: bash
+    working-directory: ${{ inputs.path }}
+    run: |
+      sha256sum * > checksums.txt
+      GPG_ARGS=(
+          --batch
+          --local-user "${FINGERPRINT}"
+          --clearsign
+          --digest-algo SHA512)
+      if [[ -n "$PASSPHRASE" ]]; then
+          GPG_ARGS+=(
+              --yes
+              --pinentry-mode loopback
+              --passphrase "${PASSPHRASE}")
+      fi
+      gpg "${GPG_ARGS[@]}" checksums.txt
+  - name: Show checksum file
+    if: fromJSON(inputs.debug)
+    working-directory: ${{ inputs.path }}
+    shell: bash
+    run: |
+      cat checksums.txt.asc
