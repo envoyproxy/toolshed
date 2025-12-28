@@ -25,7 +25,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+  - uses: envoyproxy/toolshed/gh-actions/jq@c7909018823296378308315861b01e1849b45067
     id: config
     with:
       input: ${{ inputs.config }}
@@ -47,7 +47,7 @@ runs:
       echo "TEST_OUTPUT=${TEST_OUTPUT}" >> "$GITHUB_ENV"
       ACTION_TEST_PATH="$(dirname "${{ inputs.config }}")"
       echo "ACTION_TEST_PATH=${ACTION_TEST_PATH}" >> "$GITHUB_ENV"
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@c7909018823296378308315861b01e1849b45067
     id: run
     with:
       name: Run test
