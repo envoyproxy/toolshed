@@ -90,6 +90,8 @@ jobs:
         python-version: "3.12"
     - name: Pants
       run: |
-        ./get-pants.sh
+        # Install the pants wrapper script that auto-installs pants if needed
+        sudo cp pants-wrapper.sh /usr/local/bin/pants
+        sudo chmod +x /usr/local/bin/pants
         echo "PANTS_CA_CERTS_PATH=/etc/ssl/certs/ca-certificates.crt" >> $GITHUB_ENV
         pants --version
