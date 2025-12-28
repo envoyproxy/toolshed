@@ -165,7 +165,7 @@ runs:
         | del(.branch, .["requested-ref"])
   - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
     name: Checkout repository
-    with: ${{ fromJSON(steps.config-ssh.outputs.value || steps.config-token.outputs.value) }}
+    with: ${{ fromJSON(steps.config-ssh.outputs.value || steps.config-token.outputs.value || '{}') }}
   - if: >-
       fromJSON(inputs.ancestor-check)
       && fromJSON(steps.parsed-config.outputs.value).requested-ref
