@@ -8,10 +8,8 @@ test_checkout () {
 }
 
 test_depth () {
-    local min_depth="${1}"
-    local max_depth="${2}"
+    local depth="${1}"
     local commit_count=$(git rev-list --count HEAD)
-
     # In a PR, we need to account for:
     # - The merge commit (1)
     # - The fetch-depth from base branch
@@ -25,27 +23,14 @@ test_depth () {
         # Subtract 1 for the merge commit
         pr_commit_count=$((pr_commit_count > 0 ? pr_commit_count - 1 : 0))
     fi
-
     # Adjust expectations
-    local adjusted_min=$((min_depth + pr_commit_count))
-    local adjusted_max=$((max_depth + pr_commit_count))
-
+    local adjusted_count=$((depth + pr_commit_count))
     echo "Commit count: $commit_count"
-    echo "PR Commit count: $pr_commit_count"
-    git log
-    if [[ -n "$adjusted_min" ]]; then
-        if [[ $commit_count -lt "${adjusted_min}" ]]; then
-            echo "fail:Expected min (fetch-depth: ${adjusted_min}), but only got $commit_count commits" >> "$TEST_OUTPUT"
+    if [[ -n "$adjusted_count" ]]; then
+        if [[ $commit_count -lt "${adjusted_count}" ]]; then
+            echo "fail:Expected (fetch-depth: ${adjusted_count}), but only got $commit_count commits" >> "$TEST_OUTPUT"
         else
-            echo "success:Expected min (fetch-depth: ${adjusted_min}) applied correctly, got $commit_count commits" >> "$TEST_OUTPUT"
-            git log
-        fi
-    fi
-    if [[ -n "$adjusted_max" ]]; then
-        if [[ $commit_count -gt "${adjusted_max}" ]]; then
-            echo "fail:Expected max (fetch-depth: ${adjusted_max}), but got $commit_count commits" >> "$TEST_OUTPUT"
-        else
-            echo "success:Expected max (fetch-depth: ${adjusted_max}) applied correctly, got $commit_count commits" >> "$TEST_OUTPUT"
+            echo "success:Expected (fetch-depth: ${adjusted_count}) applied correctly, got $commit_count commits" >> "$TEST_OUTPUT"
             git log
         fi
     fi

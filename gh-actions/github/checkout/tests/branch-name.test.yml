@@ -1,8 +1,6 @@
 uses: ./gh-actions/github/checkout
 id: checkout
 with:
-  config: |
-    repository: ${{ github.repository }}
   # setting main here would work - but partly this is testing
   # that the branch-name is just `main`
   branch: refs/heads/main
