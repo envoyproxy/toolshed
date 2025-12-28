@@ -1,9 +1,18 @@
 inputs:
+  debug:
+    type: boolean
+    default: false
   dry-run:
     type: boolean
     default: true
   filter-artifacts:
     default: .
+    type: string
+  gpg-fingerprint:
+    default:
+    type: string
+  gpg-passphrase:
+    default:
     type: string
   repository:
     type: string
@@ -11,6 +20,9 @@ inputs:
   run-ids:
     type: string
     required: true
+  publish-directory:
+    type: string
+    default: artifacts/publish
   template-organize-artifacts:
     type: string
     default: |
@@ -93,7 +105,9 @@ runs:
         | sort_by(.key)
         | from_entries
   - name: Organize artifacts for publishing
-    if: steps.artifacts.outputs.output
+    if: >-
+      steps.artifacts.outputs.output != ''
+      && steps.artifacts.outputs.output != '{}'
     uses: envoyproxy/toolshed/gh-actions/bson@368bc1188c06426fe419d10e76c95b3ce2ef565b
     with:
       input: |
@@ -108,12 +122,16 @@ runs:
         | "${{ inputs.template-organize-artifacts }}"
   - name: Artifact sizes
     id: artifact-sizes
-    if: steps.artifacts.outputs.output
+    if: >-
+      steps.artifacts.outputs.output != ''
+      && steps.artifacts.outputs.output != '{}'
     uses: envoyproxy/toolshed/gh-actions/jq@368bc1188c06426fe419d10e76c95b3ce2ef565b
     with:
       input: ${{ steps.artifacts.outputs.output }}
   - name: Generate workflow artifacts table
-    if: steps.artifacts.outputs.output
+    if: >-
+      steps.artifacts.outputs.output != ''
+      && steps.artifacts.outputs.output != '{}'
     uses: envoyproxy/toolshed/gh-actions/json/table@368bc1188c06426fe419d10e76c95b3ce2ef565b
     with:
       title: Artifacts to publish
@@ -127,7 +145,8 @@ runs:
         map_values(.size | utils::bytesize)
   - name: Check for expected artifacts
     if: >-
-      ! steps.artifacts.outputs.output
+      steps.artifacts.outputs.output == ''
+      || steps.artifacts.outputs.output == '{}'
     id: missing
     shell: bash
     run: |
@@ -139,3 +158,15 @@ runs:
           echo "::error::${MESSAGE}" >&2
           exit 1
       fi
+  - name: Sign binaries
+    id: gpg-sign
+    if: >-
+      steps.artifacts.outputs.output != '{}'
+      && steps.artifacts.outputs.output != ''
+      && inputs.gpg-fingerprint != ''
+    uses: envoyproxy/toolshed/gh-actions/gpg/sign@6f40e96a2e80bdf04163a5afaeb846838bbc6b07
+    with:
+      debug: ${{ inputs.debug }}
+      fingerprint: ${{ inputs.gpg-fingerprint }}
+      passphrase: ${{ inputs.gpg-passphrase }}
+      path: ${{ inputs.publish-directory }}
