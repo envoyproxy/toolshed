@@ -29,7 +29,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+  - uses: envoyproxy/toolshed/gh-actions/jq@c7909018823296378308315861b01e1849b45067
     name: Generate download config
     id: download-config
     with:
@@ -48,7 +48,7 @@ runs:
                  name: $name,
                  run_id: $run_ids[.]}})
         | from_entries
-  - uses: envoyproxy/toolshed/gh-actions/foreach@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+  - uses: envoyproxy/toolshed/gh-actions/foreach@c7909018823296378308315861b01e1849b45067
     if: steps.download-config.outputs.value
     with:
       items: ${{ steps.download-config.outputs.value }}
@@ -68,7 +68,7 @@ runs:
   - name: List downloaded artifacts
     id: artifacts
     if: steps.download-config.outputs.value
-    uses: envoyproxy/toolshed/gh-actions/bson@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+    uses: envoyproxy/toolshed/gh-actions/bson@c7909018823296378308315861b01e1849b45067
     with:
       catch-errors: true
       input: |
@@ -94,7 +94,7 @@ runs:
         | from_entries
   - name: Organize artifacts for publishing
     if: steps.artifacts.outputs.output
-    uses: envoyproxy/toolshed/gh-actions/bson@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+    uses: envoyproxy/toolshed/gh-actions/bson@c7909018823296378308315861b01e1849b45067
     with:
       input: |
         artifacts: ${{ steps.artifacts.outputs.output }}
@@ -109,12 +109,12 @@ runs:
   - name: Artifact sizes
     id: artifact-sizes
     if: steps.artifacts.outputs.output
-    uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+    uses: envoyproxy/toolshed/gh-actions/jq@c7909018823296378308315861b01e1849b45067
     with:
       input: ${{ steps.artifacts.outputs.output }}
   - name: Generate workflow artifacts table
     if: steps.artifacts.outputs.output
-    uses: envoyproxy/toolshed/gh-actions/json/table@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+    uses: envoyproxy/toolshed/gh-actions/json/table@c7909018823296378308315861b01e1849b45067
     with:
       title: Artifacts to publish
       append: true

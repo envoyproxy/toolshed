@@ -21,7 +21,7 @@ jobs:
       run: ${{ steps.filter.outputs.run }}
       tests: ${{ steps.tests.outputs.output }}
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/github/should-run@8dee3c8e05a8ff5837b455f8f552708e01ae1b57
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@c7909018823296378308315861b01e1849b45067
       id: filter
       with:
         config: |
@@ -29,7 +29,7 @@ jobs:
           - 'gh-actions/**'
           - '.github/workflows/actions.yml'
     - id: tests
-      uses: envoyproxy/toolshed/gh-actions/bson@8dee3c8e05a8ff5837b455f8f552708e01ae1b57
+      uses: envoyproxy/toolshed/gh-actions/bson@c7909018823296378308315861b01e1849b45067
       with:
         input: |
           OUTPUT="$(find gh-actions -path "*/tests/*.test.yml" -type f)"
@@ -52,7 +52,7 @@ jobs:
     steps:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
     - name: Run test
-      uses: envoyproxy/toolshed/gh-actions/test-runner@8dee3c8e05a8ff5837b455f8f552708e01ae1b57
+      uses: envoyproxy/toolshed/gh-actions/test-runner@c7909018823296378308315861b01e1849b45067
       with:
         config: ${{ matrix.test }}
         name: ${{ matrix.test }}

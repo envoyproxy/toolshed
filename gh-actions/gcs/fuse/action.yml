@@ -131,7 +131,7 @@ runs:
           ARCH="arm64"
       fi
       echo "address=${GCSFUSE_DOWNLOAD_ROOT}/${GCSFUSE_VERSION}/gcsfuse_${GCSFUSE_VERSION#v}_${ARCH}.deb" >> $GITHUB_OUTPUT
-  - uses: envoyproxy/toolshed/gh-actions/fetch@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+  - uses: envoyproxy/toolshed/gh-actions/fetch@c7909018823296378308315861b01e1849b45067
     name: Fetch gcsfuse
     if: ${{ steps.status.outputs.installed != 'true' }}
     with:
@@ -171,7 +171,7 @@ runs:
       echo "key-path=${KEY_PATH}" >> $GITHUB_OUTPUT
       echo "GOOGLE_APPLICATION_CREDENTIALS=${KEY_PATH}" >> $GITHUB_ENV
     shell: bash
-  - uses: envoyproxy/toolshed/gh-actions/github/script/run@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+  - uses: envoyproxy/toolshed/gh-actions/github/script/run@c7909018823296378308315861b01e1849b45067
     name: Mount GCS bucket
     id: mount
     env:
@@ -232,7 +232,7 @@ runs:
       post: |
         rm -rf ${{ steps.sa.outputs.key-path }}
         ${AS_ROOT} fusermount -u "${{ inputs.mount-point }}" || true
-  - uses: envoyproxy/toolshed/gh-actions/jq@8291d6f542f1e1c7902bdbea63b80f76bd7f754b
+  - uses: envoyproxy/toolshed/gh-actions/jq@c7909018823296378308315861b01e1849b45067
     name: Parse mount
     with:
       input: ${{ steps.mount.outputs.output-path }}
