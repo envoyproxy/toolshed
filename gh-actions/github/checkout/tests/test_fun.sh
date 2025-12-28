@@ -7,6 +7,27 @@ test_checkout () {
     echo "success:Repository checked out successfully" >> $TEST_OUTPUT
 }
 
+test_depth () {
+    local min_depth="${1}"
+    local max_depth="${1}"
+    local commit_count=$(git rev-list --count HEAD)
+    echo "Commit count: $commit_count"
+    if [[ -n "$min_depth" ]]; then
+        if [[ $commit_count -lt "${min_depth}" ]]; then
+            echo "fail:Expected full history (fetch-depth: 0), but only got $commit_count commits" >> "$TEST_OUTPUT"
+        else
+            echo "success:Full history fetched (fetch-depth: 0 applied correctly, got $commit_count commits)" >> "$TEST_OUTPUT"
+        fi
+    fi
+    if [[ -n "$max_depth" ]]; then
+        if [[ $commit_count -gt "${max_depth}" ]]; then
+            echo "fail:Expected max (fetch-depth: ${max_depth}), but only got $commit_count commits" >> "$TEST_OUTPUT"
+        else
+            echo "success:Expected max (fetch-depth: ${max_depth} applied correctly, got $commit_count commits)" >> "$TEST_OUTPUT"
+        fi
+    fi
+}
+
 test_repository () {
     # Verify we're in the right repository
     local expected_repo="${1}"

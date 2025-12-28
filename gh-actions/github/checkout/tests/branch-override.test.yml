@@ -15,3 +15,5 @@ after:
     test_checkout
     test_repository $EXPECTED_REPO
     test_branch "$OUTPUT_BRANCH" "$EXPECTED_BRANCH"
+    # add this once the script lands
+    # test_depth 2 ?
