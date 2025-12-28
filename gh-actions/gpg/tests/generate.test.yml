@@ -4,26 +4,11 @@ id: gpg
 after:
 - shell: bash
   run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
     FINGERPRINT='%{{ steps.gpg.outputs.fingerprint }}'
     PASSPHRASE='%{{ steps.gpg.outputs.passphrase }}'
 
-    if [[ -z "$FINGERPRINT" ]]; then
-        echo "fail:Fingerprint output is empty" >> "$TEST_OUTPUT"
-    elif [[ ! "$FINGERPRINT" =~ ^[A-F0-9]{40}$ ]]; then
-        echo "fail:Fingerprint format is invalid: $FINGERPRINT" >> "$TEST_OUTPUT"
-    else
-        echo "success:Fingerprint output is valid: $FINGERPRINT" >> "$TEST_OUTPUT"
-    fi
-
-    if [[ -z "$PASSPHRASE" ]]; then
-        echo "fail:Passphrase output is empty" >> "$TEST_OUTPUT"
-    else
-        echo "success:Passphrase output is present" >> "$TEST_OUTPUT"
-    fi
-
-    # Verify the key exists and can be used
-    if gpg --list-secret-keys | grep -q "$FINGERPRINT"; then
-        echo "success:GPG key is in keyring" >> "$TEST_OUTPUT"
-    else
-        echo "fail:GPG key not found in keyring" >> "$TEST_OUTPUT"
-    fi
+    test_fingerprint_output "$FINGERPRINT"
+    test_passphrase_output "$PASSPHRASE"
+    test_key_in_keyring "$FINGERPRINT"
