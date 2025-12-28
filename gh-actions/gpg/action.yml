@@ -8,6 +8,10 @@ inputs:
   gpg-password:
     type: string
     default:
+  passphrase-path:
+    type: string
+  configured-passphrase-path:
+    type: string
 
 outputs:
   fingerprint:
@@ -25,14 +29,16 @@ runs:
     id: gpg
     if: >-
       inputs.gpg-key == ''
-    uses: envoyproxy/toolshed/gh-actions/gpg/generate@0e9dfeeadc98496f24f75110100badc0de1a236b
+    uses: envoyproxy/toolshed/gh-actions/gpg/generate@1a4102bf29bffefd25b261adbb3bdc97491c108a
     with:
       debug: ${{ inputs.debug }}
   - name: Import GPG key
     id: gpg-import
     if: >-
       inputs.gpg-key != ''
-    uses: envoyproxy/toolshed/gh-actions/gpg/import@0e9dfeeadc98496f24f75110100badc0de1a236b
+    uses: envoyproxy/toolshed/gh-actions/gpg/import@1a4102bf29bffefd25b261adbb3bdc97491c108a
     with:
       key: ${{ inputs.gpg-key }}
       passphrase: ${{ inputs.gpg-password }}
+      passphrase-path: ${{ inputs.passphrase-path }}
+      configured-passphrase-path: ${{ inputs.configured-passphrase-path }}
