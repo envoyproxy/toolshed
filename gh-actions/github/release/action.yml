@@ -17,9 +17,18 @@ inputs:
   filter-artifacts:
     default: .
     type: string
+  gpg-fingerprint:
+    default:
+    type: string
+  gpg-passphrase:
+    default:
+    type: string
   name:
     type: string
     required: true
+  publish-directory:
+    type: string
+    default: artifacts/publish
   repository:
     type: string
     required: true
@@ -55,7 +64,7 @@ runs:
   steps:
   - name: Check release status
     id: status
-    uses: envoyproxy/toolshed/gh-actions/github/release/status@368bc1188c06426fe419d10e76c95b3ce2ef565b
+    uses: envoyproxy/toolshed/gh-actions/github/release/status@52e96e59ccb961e0f930f024b76c42eadc40a315
     with:
       name: ${{ inputs.name }}
       repository: ${{ inputs.repository }}
@@ -71,18 +80,21 @@ runs:
       && fromJSON(inputs.artifacts)
       && ! fromJSON(steps.status.outputs.version).is_dev
     name: Download artifacts from workflow runs
-    uses: envoyproxy/toolshed/gh-actions/github/release/artifacts@368bc1188c06426fe419d10e76c95b3ce2ef565b
+    uses: envoyproxy/toolshed/gh-actions/github/release/artifacts@52e96e59ccb961e0f930f024b76c42eadc40a315
     with:
       filter-artifacts: ${{ inputs.filter-artifacts }}
+      gpg-fingerprint: ${{ inputs.gpg-fingerprint }}
+      gpg-passphrase: ${{ inputs.gpg-passphrase }}
       run-ids: ${{ steps.status.outputs.run-ids }}
+      publish-directory: ${{ inputs.publish-directory }}
       workflows: ${{ inputs.artifact-workflows }}
   - name: Publish the release
     if: >-
       fromJSON(steps.status.outputs.continue)
       && ! fromJSON(steps.status.outputs.version).is_dev
-    uses: envoyproxy/toolshed/gh-actions/github/release/publish@368bc1188c06426fe419d10e76c95b3ce2ef565b
+    uses: envoyproxy/toolshed/gh-actions/github/release/publish@52e96e59ccb961e0f930f024b76c42eadc40a315
     with:
-      assets: ${{ fromJSON(inputs.artifacts) && 'artifacts/publish/*' || '' }}
+      assets: ${{ fromJSON(inputs.artifacts) && format('{0}/*', inputs.publish-directory) || '' }}
       dry-run: ${{ inputs.dry-run }}
       event: ${{ inputs.event }}
       fail-if-exists: ${{ inputs.fail-if-exists }}
