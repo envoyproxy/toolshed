@@ -2,7 +2,6 @@ uses: ./gh-actions/github/checkout
 id: checkout
 with:
   config: |
-    repository: ${{ github.repository }}
     fetch-depth: 5
     clean: true
     submodules: false
@@ -17,4 +16,4 @@ after:
     test_checkout
     test_repository $EXPECTED_REPO
     test_branch "$OUTPUT_BRANCH" "$EXPECTED_BRANCH"
-    test_depth 5 5
+    test_depth 5

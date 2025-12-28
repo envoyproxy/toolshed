@@ -11,4 +11,4 @@ after:
     test_checkout
     test_repository $EXPECTED_REPO
     test_branch "$OUTPUT_BRANCH" "$EXPECTED_BRANCH"
-    test_depth 1 1
+    test_depth 1
