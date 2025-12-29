@@ -35,8 +35,17 @@ jobs:
       with:
         app_id: ${{ secrets.app-id }}
         key: ${{ secrets.app-key }}
-    - name: Checkout repository
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - id: checkout
+      name: Checkout the repository
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@073c56eac04771028e207beb43c80d9d7d4b4c3f
+      with:
+        branch: main
+        committer-name: publish-envoy[bot]
+        committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
+        config: |
+          ref: ${{ inputs.sha }}
+        pr: ${{ github.event.pull_request.number || '' }}
+        token: ${{ steps.appauth.outputs.token }}
     - name: Get version file
       id: version-file
       uses: envoyproxy/toolshed/gh-actions/jq@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
@@ -73,7 +82,8 @@ jobs:
           ${{ inputs.type }}: Release v${{ fromJSON(steps.version.outputs.version).next }}
         body: |
           Created by publish-envoy[bot] for @${{ github.actor }}
-        commit-message: Release ${{ github.event.inputs.type }} ${{ fromJSON(steps.version.outputs.version).next }}
+        commit-message: >-
+          ${{ inputs.type }}: Release ${{ fromJSON(steps.version.outputs.version).next }}
         committer-name: publish-envoy[bot]
         committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
         dry-run: ${{ inputs.dry-run }}
