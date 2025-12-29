@@ -83,8 +83,8 @@ runs:
         | (.body | sub("\\s+$"; "")) as $body
         | .branch as $branch
         | (.title | @sh) as $title
-        | .committer_name as $committer_name
-        | .committer_email as $committer_email
+        | (.committer_name // "") as $committer_name
+        | (.committer_email // "") as $committer_email
         | (((.commit_message // ""
              | sub("\\s+$"; ""))
              | select(. != "")) // $input.title) as $commit_message

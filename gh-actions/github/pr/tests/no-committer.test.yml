@@ -1,0 +1,41 @@
+uses: ./gh-actions/github/pr
+id: pr
+with:
+  base: main
+  branch: ${{ env.TEST_BRANCH }}
+  title: ${{ env.TEST_TITLE }}
+  body: ${{ env.TEST_BODY }}
+  commit: true
+  commit-message: ${{ env.TEST_COMMIT_MESSAGE }}
+  GITHUB_TOKEN: "VERYSECRET"
+
+before:
+- shell: bash
+  env:
+    MOCK_LOG: /tmp/mock.log
+    TEST_BODY: This PR tests no committer functionality
+    TEST_BRANCH: test/pr-action-no-committer
+    TEST_COMMIT_MESSAGE: >-
+      chore: Test no-commit from action
+    TEST_COMMITTER_EMAIL: no@committer.email
+    TEST_COMMITTER_NAME: NO COMMITTER
+    TEST_TITLE: Test PR without committer
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    git config --global user.name "$TEST_COMMITTER_NAME"
+    git config --global user.email "$TEST_COMMITTER_EMAIL"
+    echo "${{ github.workspace }}/gh-actions/github/pr/tests/mocks:$PATH" >> $GITHUB_PATH
+    echo "MOCK_LOG=${MOCK_LOG}" >> $GITHUB_ENV
+    setup_test
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_noconfig_output_log \
+        "${TEST_COMMITTER_NAME}" \
+        "${TEST_COMMITTER_EMAIL}" \
+        "${TEST_COMMIT_MESSAGE}" \
+        "${TEST_BRANCH}" \
+        "${TEST_TITLE}" \
+        "${TEST_BODY}"
