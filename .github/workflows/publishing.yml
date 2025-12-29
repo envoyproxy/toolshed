@@ -62,6 +62,7 @@ jobs:
       committer-name: CI TESTING
       committer-email: ci-testing@does.not.exist
       dry-run: true
+      action: release
       type: ${{ matrix.type }}
     strategy:
       fail-fast: false

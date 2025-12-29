@@ -9,6 +9,9 @@ on:
       app-id:
       app-key:
     inputs:
+      action:
+        type: string
+        required: true
       committer-email:
         type: string
         required: true
@@ -17,12 +20,6 @@ on:
         required: true
       dry-run:
         description: Dry run (no PR created)
-        type: boolean
-        default: false
-      prepare:
-        type: boolean
-        default: true
-      prepare-only:
         type: boolean
         default: false
       template-version-update:
@@ -76,7 +73,7 @@ jobs:
     - name: Update version file
       uses: envoyproxy/toolshed/gh-actions/bson@b0d8eb78838d6868d53829942a06a1b14ab2231d
       if: >-
-        ! inputs.prepare-only
+        inputs.action != 'prepare'
       with:
         input: |
           version: ${{ steps.version.outputs.version }}
@@ -90,7 +87,7 @@ jobs:
     - name: Prepare actions
       if: >-
         inputs.type == 'actions'
-        && inputs.prepare
+        && inputs.action != 'release-no-prepare'
       run: |
         HEAD=$(git rev-parse HEAD)
         OUTDATED=()
@@ -105,22 +102,28 @@ jobs:
         done < <(git grep toolshed/gh-actions/ gh-actions/ | grep @ | grep -v VERSION | cut -d@ -f2 | sort -u)
 
     - name: Commit changes
+      id: commit
       env:
         COMMIT_MESSAGE: >-
           ${{ inputs.type }}:
-          ${{ inputs.prepare-only && 'Prepare release' || 'Release' }}
+          ${{ inputs.action == 'prepare' && 'Prepare release' || 'Release' }}
           v${{ fromJSON(steps.version.outputs.version).next }}
       run: |
         git commit . -m "${COMMIT_MESSAGE}" --signoff
+        echo "message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
     - name: Create Pull Request
       uses: envoyproxy/toolshed/gh-actions/github/pr@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         base: main
         branch: >-
-          release/${{ inputs.prepare-only && 'prepare' || 'create' }}/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
+          release/${{
+            inputs.action == 'prepare'
+            && 'prepare'
+            || 'create'
+          }}/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
         commit: false
         title: >-
-          ${{ inputs.type }}: Release v${{ fromJSON(steps.version.outputs.version).next }}
+          ${{ steps.commit.outputs.message }}
         body: |
           Created by publish-envoy[bot] for @${{ github.actor }}
         dry-run: ${{ inputs.dry-run }}
