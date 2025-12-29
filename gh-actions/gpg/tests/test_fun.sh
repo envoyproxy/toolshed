@@ -147,53 +147,49 @@ test_checksums_file_exists() {
 test_signature_valid() {
     local signed_file="${1}"
     local fingerprint="${2}"
+    local key_fingerprints
+    local signing_key
+    local verify_output
 
     if [[ ! -f "$signed_file" ]]; then
         echo "fail:Cannot verify signature - file not found: $signed_file" >> "$TEST_OUTPUT"
-        return 0
+        return
     fi
-
-    # Verify the signature and capture output
-    local verify_output
     verify_output=$(gpg --verify "$signed_file" 2>&1)
-    
     if echo "$verify_output" | grep -q "Good signature"; then
         echo "success:Signature is valid" >> "$TEST_OUTPUT"
     else
         echo "fail:Signature verification failed" >> "$TEST_OUTPUT"
-        return 0
+        return
+    fi
+    if [[ -z "$fingerprint" ]]; then
+        return
+    fi
+    signing_key=$(\
+        echo "$verify_output" \
+            | grep -E "using [A-Z]+ key" \
+            | sed -E 's/.*using [A-Z]+ key //' \
+            | awk '{print $1}')
+    if [[ -z "$signing_key" ]]; then
+        echo "fail:Could not extract signing key from verify output" >> "$TEST_OUTPUT"
+        return
+    fi
+    key_fingerprints=$(\
+        gpg --list-keys --with-colons --with-subkey-fingerprint "$fingerprint" \
+            2>/dev/null \
+            | awk -F: '/^fpr:/ { print $10 }' \
+            | tr '\n' ' ')
+    if [[ -z "$key_fingerprints" ]]; then
+        echo "fail:Could not list fingerprints for key $fingerprint" >> "$TEST_OUTPUT"
+        return
+    fi
+    if echo "$key_fingerprints" | grep -qi "$signing_key"; then
+        echo "success:Signature is from expected key" >> "$TEST_OUTPUT"
+    else
+        echo "fail:Signature is not from expected key $fingerprint" >> "$TEST_OUTPUT"
+        echo "fail:Signing key was: $signing_key" >> "$TEST_OUTPUT"
     fi
 
-    # Check if the signature is from the expected fingerprint
-    if [[ -n "$fingerprint" ]]; then
-        # Extract the signing key from verify output (supports RSA, ECDSA, EdDSA, etc.)
-        local signing_key
-        signing_key=$(echo "$verify_output" | grep -E "using [A-Z]+ key" | sed -E 's/.*using [A-Z]+ key //' | awk '{print $1}')
-        
-        if [[ -z "$signing_key" ]]; then
-            echo "fail:Could not extract signing key from verify output" >> "$TEST_OUTPUT"
-            return 0
-        fi
-        
-        # Check if this signing key belongs to the expected primary key
-        # List all fingerprints (primary and subkeys) for the expected key
-        local key_fingerprints
-        key_fingerprints=$(gpg --list-keys --with-colons --with-subkey-fingerprint "$fingerprint" 2>/dev/null | \
-            awk -F: '/^fpr:/ { print $10 }' | tr '\n' ' ')
-        
-        if [[ -z "$key_fingerprints" ]]; then
-            echo "fail:Could not list fingerprints for key $fingerprint" >> "$TEST_OUTPUT"
-            return 0
-        fi
-        
-        # Check if the signing key matches any of the fingerprints
-        if echo "$key_fingerprints" | grep -qi "$signing_key"; then
-            echo "success:Signature is from expected key" >> "$TEST_OUTPUT"
-        else
-            echo "fail:Signature is not from expected key $fingerprint" >> "$TEST_OUTPUT"
-            echo "fail:Signing key was: $signing_key" >> "$TEST_OUTPUT"
-        fi
-    fi
 }
 
 test_checksums_contain_files() {

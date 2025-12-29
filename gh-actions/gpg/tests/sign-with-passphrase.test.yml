@@ -16,17 +16,11 @@ before:
     EMAIL="test@example.com"
     PASSPHRASE="testpassword123"
 
-    # Generate and import test key
     generate_test_key "$NAME" "$EMAIL" "$PASSPHRASE"
-
-    # Get the fingerprint
     FINGERPRINT=$(gpg --list-secret-keys --with-colons "${EMAIL}" | \
         awk -F: '/^fpr:/ { print $10; exit }')
-
     echo "GPG_FINGERPRINT=${FINGERPRINT}" >> $GITHUB_ENV
     echo "GPG_PASSWORD=${PASSPHRASE}" >> $GITHUB_ENV
-
-    # Create test directory with files
     mkdir -p /tmp/test-sign-dir
     echo "test file 1" > /tmp/test-sign-dir/file1.txt
     echo "test file 2" > /tmp/test-sign-dir/file2.txt
