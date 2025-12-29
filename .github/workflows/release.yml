@@ -7,9 +7,18 @@ on:
   workflow_dispatch:
     inputs:
       dry-run:
-        description: Dry run (no PR created)
+        description: Dry run (no PR created).
         type: boolean
         default: false
+      prepare:
+        description: Run any preparatory steps.
+        type: boolean
+        default: true
+      prepare-only:
+        description: |
+          Only run the preparatory steps (ie don't update the version).
+        type: boolean
+        default: true
       type:
         description: Release type
         required: true
@@ -31,4 +40,7 @@ jobs:
       committer-name: publish-envoy[bot]
       committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
       dry-run: ${{ inputs.dry-run }}
+      prepare: ${{ inputs.prepare }}
+      prepare-only: ${{ inputs.prepare-only }}
+
       type: ${{ inputs.type }}
