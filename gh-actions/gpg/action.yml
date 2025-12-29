@@ -8,13 +8,18 @@ inputs:
   gpg-password:
     type: string
     default:
+  passphrase-path:
+    type: string
+  configured-passphrase-path:
+    type: string
 
 outputs:
   fingerprint:
     value: >-
       ${{ steps.gpg-import.outputs.fingerprint || steps.gpg.outputs.fingerprint }}
   passphrase:
-    value: ${{ inputs.gpg-password || steps.gpg.outputs.passphrase }}
+    value: >-
+      ${{ steps.gpg-import.outputs.passphrase || steps.gpg.outputs.passphrase }}
 
 
 runs:
@@ -24,14 +29,16 @@ runs:
     id: gpg
     if: >-
       inputs.gpg-key == ''
-    uses: envoyproxy/toolshed/gh-actions/gpg/generate@63140926d347922ba29e8e6a9087702726e49b16
+    uses: envoyproxy/toolshed/gh-actions/gpg/generate@1a4102bf29bffefd25b261adbb3bdc97491c108a
     with:
       debug: ${{ inputs.debug }}
   - name: Import GPG key
     id: gpg-import
     if: >-
       inputs.gpg-key != ''
-    uses: envoyproxy/toolshed/gh-actions/gpg/import@63140926d347922ba29e8e6a9087702726e49b16
+    uses: envoyproxy/toolshed/gh-actions/gpg/import@1a4102bf29bffefd25b261adbb3bdc97491c108a
     with:
       key: ${{ inputs.gpg-key }}
       passphrase: ${{ inputs.gpg-password }}
+      passphrase-path: ${{ inputs.passphrase-path }}
+      configured-passphrase-path: ${{ inputs.configured-passphrase-path }}

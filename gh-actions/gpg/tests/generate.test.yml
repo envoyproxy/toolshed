@@ -1,0 +1,14 @@
+uses: ./gh-actions/gpg
+id: gpg
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    FINGERPRINT='%{{ steps.gpg.outputs.fingerprint }}'
+    PASSPHRASE='%{{ steps.gpg.outputs.passphrase }}'
+
+    test_fingerprint_output "$FINGERPRINT"
+    test_passphrase_output "$PASSPHRASE"
+    test_key_in_keyring "$FINGERPRINT"
