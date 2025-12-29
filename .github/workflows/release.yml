@@ -6,19 +6,6 @@ permissions:
 on:
   workflow_dispatch:
     inputs:
-      dry-run:
-        description: Dry run (no PR created).
-        type: boolean
-        default: false
-      prepare:
-        description: Run any preparatory steps.
-        type: boolean
-        default: true
-      prepare-only:
-        description: |
-          Only run the preparatory steps (ie don't update the version).
-        type: boolean
-        default: true
       type:
         description: Release type
         required: true
@@ -28,6 +15,19 @@ on:
         - bins
         - bazel
         - python
+      prepare-only:
+        description: |
+          Only run the preparatory steps, and don't update the version.
+        type: boolean
+        default: false
+      prepare:
+        description: Run preparatory steps.
+        type: boolean
+        default: true
+      dry-run:
+        description: Dry run (no PR created).
+        type: boolean
+        default: false
 
 
 jobs:
@@ -42,5 +42,4 @@ jobs:
       dry-run: ${{ inputs.dry-run }}
       prepare: ${{ inputs.prepare }}
       prepare-only: ${{ inputs.prepare-only }}
-
       type: ${{ inputs.type }}
