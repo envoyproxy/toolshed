@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+# Mock git command for testing github/pr action
+# Only mocks commands used by create.sh - does NOT call real git
+
+MOCK_LOG="${MOCK_LOG:-/tmp/git-mock.log}"
+
+print_cmd() {
+    local arg
+    for arg in "$@"; do
+        if [[ "$arg" =~ [[:space:]] ]]; then
+            printf '"%s" ' "$arg"
+        else
+            printf '%s ' "$arg"
+        fi
+    done | sed 's/ $//'
+    echo
+}
+
+print_cmd git "$@" >> "$MOCK_LOG"
+
+command="${1:-}"
+
+case "$command" in
+    log)
+        # Mock git log for getting signoff
+        echo "Mock commit
+
+Signed-off-by: Mock User <mock@example.com>"
+        exit 0
+        ;;
+    checkout)
+        # Mock git checkout -b (branch creation)
+        echo "Switched to a new branch '$3'"
+        exit 0
+        ;;
+    config)
+        # Mock git config (does nothing, just succeeds)
+        exit 0
+        ;;
+    commit)
+        # Mock git commit
+        echo "[main abc1234] $*"
+        echo " 1 file changed, 1 insertion(+)"
+        exit 0
+        ;;
+    push)
+        # Mock push - don't actually push
+        echo "To mock-origin"
+        echo "   abc123..def456  HEAD -> ${MOCK_BRANCH:-test-branch}"
+        exit 0
+        ;;
+    *)
+        # For any other git command, just succeed silently
+        exit 0
+        ;;
+esac

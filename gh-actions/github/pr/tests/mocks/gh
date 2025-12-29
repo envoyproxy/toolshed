@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+# Mock gh command for testing github/pr action
+# Records all calls and responds based on environment variables
+
+set -e
+
+MOCK_LOG="${MOCK_LOG:-/tmp/gh-mock.log}"
+
+print_cmd() {
+    local arg
+    for arg in "$@"; do
+        if [[ "$arg" =~ [[:space:]] ]]; then
+            printf '"%s" ' "$arg"
+        else
+            printf '%s ' "$arg"
+        fi
+    done | sed 's/ $//'
+    echo
+}
+
+print_cmd gh "$@" >> "$MOCK_LOG"
+
+command="$1"
+subcommand="${2:-}"
+
+case "$command" in
+    pr)
+        case "$subcommand" in
+            create)
+                # Mock PR creation - return fake URL
+                echo "https://github.com/envoyproxy/test/pull/12345"
+                exit 0
+                ;;
+            *)
+                echo "Unknown pr subcommand: $subcommand" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+    *)
+        echo "Unknown gh command: $command" >&2
+        exit 1
+        ;;
+esac

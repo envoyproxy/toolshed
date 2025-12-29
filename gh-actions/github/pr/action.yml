@@ -17,9 +17,6 @@ inputs:
     type: string
     required: true
 
-  append-commit-message:
-    type: boolean
-    default: false
   committer-name:
     type: string
   committer-email:
@@ -49,12 +46,13 @@ inputs:
       export PR_DO_COMMIT='\($input.commit)'
       export PR_COMMITTER_EMAIL='\($committer_email)'
       export PR_COMMITTER_NAME='\($committer_name)'
-      export PR_COMMIT_MESSAGE=\($commit_message)
+      export PR_COMMIT_MESSAGE='\($commit_message)'
       cd \(.working_directory)
       ${PR_ACTION_PATH}/create.sh
   wip:
     type: boolean
     default: false
+    description: Not currently used
 
 
 runs:
@@ -82,12 +80,14 @@ runs:
       filter: |
         . as $input
         | .base as $base
-        | .body as $body
+        | (.body | sub("\\s+$"; "")) as $body
         | .branch as $branch
         | (.title | @sh) as $title
         | .committer_name as $committer_name
         | .committer_email as $committer_email
-        | ((.commit_message // $input.title) | @sh) as $commit_message
+        | (((.commit_message // ""
+             | sub("\\s+$"; ""))
+             | select(. != "")) // $input.title) as $commit_message
         | "${{ inputs.template-create-pr }}"
 
   - name: Upload diff
