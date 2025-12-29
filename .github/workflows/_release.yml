@@ -89,7 +89,7 @@ jobs:
     # ACTIONS ONLY
     - name: Prepare actions
       if: >-
-        inputs.name == 'actions'
+        inputs.type == 'actions'
         && inputs.prepare
       run: |
         HEAD=$(git rev-parse HEAD)
