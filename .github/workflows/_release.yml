@@ -30,7 +30,7 @@ jobs:
     - uses: envoyproxy/toolshed/gh-actions/appauth@073c56eac04771028e207beb43c80d9d7d4b4c3f
       id: appauth
       name: Appauth
-      if: ! inputs.dry-run
+      if: ! fromJSON(inputs.dry-run)
       with:
         app_id: ${{ secrets.app-id }}
         key: ${{ secrets.app-key }}
