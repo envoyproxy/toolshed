@@ -34,11 +34,10 @@ export_secret_key() {
 
 clear_keyring() {
     local email="${1:-test@example.com}"
-
     local fpr
+
     fpr=$(gpg --list-secret-keys --with-colons "${email}" | \
         awk -F: '/^fpr:/ { print $10; exit }')
-
     if [[ -n "$fpr" ]]; then
         gpg --batch --yes --delete-secret-and-public-key "$fpr" || true
     fi
@@ -65,13 +64,10 @@ test_passphrase_output() {
 
     if [[ -z "$passphrase" ]]; then
         echo "fail:Passphrase output is empty" >> "$TEST_OUTPUT"
-        return 1
     elif [[ -n "$expected" && "$passphrase" != "$expected" ]]; then
         echo "fail:Passphrase output is incorrect: $passphrase" >> "$TEST_OUTPUT"
-        return 1
     else
         echo "success:Passphrase output is correct" >> "$TEST_OUTPUT"
-        return 0
     fi
 }
 
@@ -80,10 +76,8 @@ test_key_in_keyring() {
 
     if gpg --list-secret-keys | grep -q "$fingerprint"; then
         echo "success:GPG key is in keyring" >> "$TEST_OUTPUT"
-        return 0
     else
         echo "fail:GPG key not found in keyring" >> "$TEST_OUTPUT"
-        return 1
     fi
 }
 
@@ -92,10 +86,8 @@ test_passphrase_file_exists() {
 
     if [[ -f "$path" ]]; then
         echo "success:Passphrase file exists at $path" >> "$TEST_OUTPUT"
-        return 0
     else
         echo "fail:Passphrase file not found at $path" >> "$TEST_OUTPUT"
-        return 1
     fi
 }
 
@@ -105,9 +97,7 @@ test_gpg_config_has_passphrase_file() {
 
     if grep -q "passphrase-file ${expected_path}" "${gnupghome}/gpg.conf"; then
         echo "success:GPG config contains passphrase-file directive" >> "$TEST_OUTPUT"
-        return 0
     else
         echo "fail:GPG config missing passphrase-file directive" >> "$TEST_OUTPUT"
-        return 1
     fi
 }
