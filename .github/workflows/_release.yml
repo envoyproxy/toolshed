@@ -76,7 +76,7 @@ jobs:
     - name: Update version file
       uses: envoyproxy/toolshed/gh-actions/bson@b0d8eb78838d6868d53829942a06a1b14ab2231d
       if: >-
-        ! fromJSON(inputs.prepare-only)
+        ! inputs.prepare-only
       with:
         input: |
           version: ${{ steps.version.outputs.version }}
@@ -90,7 +90,7 @@ jobs:
     - name: Prepare actions
       if: >-
         inputs.name == 'actions'
-        && fromJSON(inputs.prepare)
+        && inputs.prepare
       run: |
         HEAD=$(git rev-parse HEAD)
         OUTDATED=()
@@ -116,7 +116,8 @@ jobs:
       uses: envoyproxy/toolshed/gh-actions/github/pr@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         base: main
-        branch: release/create/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
+        branch: >-
+          release/${{ inputs.prepare-only && 'prepare' || 'create' }}/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
         commit: false
         title: >-
           ${{ inputs.type }}: Release v${{ fromJSON(steps.version.outputs.version).next }}
