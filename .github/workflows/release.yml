@@ -23,9 +23,9 @@ on:
 
 jobs:
   bump-version:
-    permissions:
-      contents: write
-      pull-requests: write
+    secrets:
+      app-id: ${{ ! inputs.dry-run && secrets.ENVOY_CI_PUBLISH_APP_ID }}
+      app-key: ${{ ! inputs.dry-run && secrets.ENVOY_CI_PUBLISH_APP_KEY }}
     uses: ./.github/workflows/_release.yml
     with:
       dry-run: ${{ inputs.dry-run }}
