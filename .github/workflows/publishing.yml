@@ -59,6 +59,8 @@ jobs:
       contents: read
     uses: ./.github/workflows/_release.yml
     with:
+      committer-name: CI TESTING
+      committer-email: ci-testing@does.not.exist
       dry-run: true
       type: ${{ matrix.type }}
     strategy:

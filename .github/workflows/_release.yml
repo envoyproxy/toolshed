@@ -9,6 +9,12 @@ on:
       app-id:
       app-key:
     inputs:
+      committer-email:
+        type: string
+        required: true
+      committer-name:
+        type: string
+        required: true
       dry-run:
         description: Dry run (no PR created)
         type: boolean
@@ -27,7 +33,7 @@ jobs:
   create-release:
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/appauth@073c56eac04771028e207beb43c80d9d7d4b4c3f
+    - uses: envoyproxy/toolshed/gh-actions/appauth@b0d8eb78838d6868d53829942a06a1b14ab2231d
       id: appauth
       name: Appauth
       if: >-
@@ -37,7 +43,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@073c56eac04771028e207beb43c80d9d7d4b4c3f
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         branch: main
         committer-name: publish-envoy[bot]
@@ -48,7 +54,7 @@ jobs:
         token: ${{ steps.appauth.outputs.token }}
     - name: Get version file
       id: version-file
-      uses: envoyproxy/toolshed/gh-actions/jq@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
+      uses: envoyproxy/toolshed/gh-actions/jq@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         input: |
           actions: gh-actions/VERSION.txt
@@ -60,11 +66,11 @@ jobs:
         filter: .["${{ inputs.type }}"]
     - name: Get version info
       id: version
-      uses: envoyproxy/toolshed/gh-actions/version@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
+      uses: envoyproxy/toolshed/gh-actions/version@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         version-file: ${{ steps.version-file.outputs.value }}
     - name: Update version file
-      uses: envoyproxy/toolshed/gh-actions/bson@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
+      uses: envoyproxy/toolshed/gh-actions/bson@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         input: |
           version: ${{ steps.version.outputs.version }}
@@ -74,7 +80,7 @@ jobs:
             "${{ inputs.template-version-update }}"
           else ":" end
     - name: Create Pull Request
-      uses: envoyproxy/toolshed/gh-actions/github/pr@f8fccb4213f0d7d4315ab5db60a0d8dfb8299db1
+      uses: envoyproxy/toolshed/gh-actions/github/pr@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         base: main
         branch: release/create/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
@@ -82,9 +88,5 @@ jobs:
           ${{ inputs.type }}: Release v${{ fromJSON(steps.version.outputs.version).next }}
         body: |
           Created by publish-envoy[bot] for @${{ github.actor }}
-        commit-message: >-
-          ${{ inputs.type }}: Release ${{ fromJSON(steps.version.outputs.version).next }}
-        committer-name: publish-envoy[bot]
-        committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
         dry-run: ${{ inputs.dry-run }}
         GITHUB_TOKEN: ${{ steps.appauth.outputs.token || github.token }}
