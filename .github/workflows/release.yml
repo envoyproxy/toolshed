@@ -1,0 +1,32 @@
+name: Release
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Dry run (no PR created)
+        type: boolean
+        default: false
+      type:
+        description: Release type
+        required: true
+        type: choice
+        options:
+        - actions
+        - bins
+        - bazel
+        - python
+
+
+jobs:
+  bump-version:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/_release.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      type: ${{ inputs.type }}
