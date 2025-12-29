@@ -28,5 +28,7 @@ jobs:
       app-key: ${{ ! inputs.dry-run && secrets.ENVOY_CI_PUBLISH_APP_KEY }}
     uses: ./.github/workflows/_release.yml
     with:
+      committer-name: publish-envoy[bot]
+      committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
       dry-run: ${{ inputs.dry-run }}
       type: ${{ inputs.type }}
