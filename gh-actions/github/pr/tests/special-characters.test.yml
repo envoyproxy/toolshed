@@ -1,0 +1,51 @@
+uses: ./gh-actions/github/pr
+id: pr
+with:
+  base: main
+  branch: ${{ env.TEST_BRANCH }}
+  title: ${{ env.TEST_TITLE }}
+  body: |
+    ${{ env.TEST_BODY }}
+  commit: true
+  committer-name: ${{ env.TEST_COMMITTER_NAME }}
+  committer-email: ${{ env.TEST_COMMITTER_EMAIL }}
+  commit-message: |
+    ${{ env.TEST_COMMIT_MESSAGE }}
+  GITHUB_TOKEN: "VERYSECRET"
+
+before:
+- shell: bash
+  env:
+    # - Single quotes: 'test' (NOT WORKING)
+    TEST_BODY: |
+      ☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠
+      This tests special characters:
+      - Double quotes: "test"
+      - Variables: $PATH
+      - Backticks: `command`
+      ☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠☠
+    TEST_BRANCH: test/pr-action-special-chars-commit
+    TEST_COMMIT_MESSAGE: >-
+      chore: Test commit from action
+    TEST_COMMITTER_EMAIL: special-chars-bot@example.com
+    TEST_COMMITTER_NAME: PR special chars Bot
+    MOCK_LOG: /tmp/mock.log
+    TEST_TITLE: Test PR with special chars
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    rm -f ${MOCK_LOG}
+    echo "${{ github.workspace }}/gh-actions/github/pr/tests/mocks:$PATH" >> $GITHUB_PATH
+    echo "MOCK_LOG=${MOCK_LOG}" >> $GITHUB_ENV
+    setup_test
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_output_log \
+        "${TEST_COMMITTER_NAME}" \
+        "${TEST_COMMITTER_EMAIL}" \
+        "${TEST_COMMIT_MESSAGE}" \
+        "${TEST_BRANCH}" \
+        "${TEST_TITLE}" \
+        "${TEST_BODY}"
