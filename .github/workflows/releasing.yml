@@ -1,4 +1,4 @@
-name: Publishing CI
+name: Releasing CI
 
 permissions:
   actions: read
@@ -24,12 +24,11 @@ jobs:
       with:
         config: |
           paths:
-          - .github/workflows/_publish.yml
-          - .github/workflows/_publish_release.yml
+          - .github/workflows/_release.yml
           - .github/workflows/actions.yml
           - .github/workflows/bazel.yml
           - .github/workflows/rust.yml
-          - .github/workflows/publishing.yml
+          - .github/workflows/releasing.yml
           - bazel/VERSION.txt
           - BINS_VERSION.txt
           - gh-actions/VERSION.txt
@@ -50,63 +49,30 @@ jobs:
         echo "message=$MESSAGE" >> $GITHUB_OUTPUT
         echo "Latest MESSAGE from main: $MESSAGE"
 
-  publish:
+  release:
     needs:
     - request
     if: fromJSON(needs.request.outputs.run || 'false')
     permissions:
-      actions: read
-    # secrets.ENVOY_GPG_SNAKEOIL_KEY_PASSWORD
-    # secrets.ENVOY_GPG_SNAKEOIL_KEY
-    uses: ./.github/workflows/_publish.yml
+      contents: read
+    uses: ./.github/workflows/_release.yml
     with:
-      committer-email: "140627008+publish-envoy[bot]@users. noreply.github.com"
-      committer-name: "publish-envoy[bot]"
-      conclusion: ${{ matrix.conclusion || 'success' }}
-      actions-version: ${{ matrix.actions-version }}
-      bazel-version: ${{ matrix.bazel-version }}
-      bins-version: ${{ matrix.bins-version }}
+      committer-name: CI TESTING
+      committer-email: ci-testing@does.not.exist
       dry-run: true
-      event: ${{ matrix.event }}
-      python-filter-artifacts: ${{ matrix.python-filter-artifacts }}
-      python-version: ${{ matrix.python-version }}
-      sha: ${{ matrix.sha || needs.request.outputs.sha }}
-      skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
-      title: ${{ needs.request.outputs.message }}
+      action: ${{ matrix.action }}
+      type: ${{ matrix.type }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-        - sha: ${{ github.event.pull_request.head.sha }}
-          event: pull_request
-        - event: push
-        - event: push
-          actions-version: 0.0.123
-        - event: push
-          bazel-version: 0.2.17
-        - event: push
-          bins-version: 0.1.23
-        - event: push
-          python-version: 0.0.23
-        - event: push
-          python-version: 0.0.23
-          python-filter-artifacts: .
-        - event: push
-          actions-version: 0.0.123
-          bazel-version: 0.2.17
-          bins-version: 0.1.23
-          python-version: 0.0.23
-        # existing versions
-        - event: push
-          actions-version: 0.3.33
-          bazel-version: 0.3.11
-          bins-version: 0.1.27
-          # not pre-existing version
-          python-version: 0.0.23
-        - event: push
-          conclusion: failure
-        - event: push
-          skip: true
+        type:
+        - actions
+        - bazel
+        - bins
+        - python
+        action:
+        - prepare
+        - release
 
   status:
     runs-on: ubuntu-24.04
@@ -116,7 +82,7 @@ jobs:
     name: Publishing
     needs:
     - request
-    - publish
+    - release
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
