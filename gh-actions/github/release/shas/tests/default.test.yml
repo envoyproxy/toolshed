@@ -1,0 +1,23 @@
+uses: ./gh-actions/github/release/shas
+id: shas
+with:
+  tag: v1.0.0
+  repository: owner/repo
+  token: MOCK_TOKEN
+
+before:
+- shell: bash
+  env:
+    MOCK_LOG: /tmp/mock.log
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    echo "${{ github.workspace }}/gh-actions/github/release/shas/tests/mocks:$PATH" >> $GITHUB_PATH
+    echo "MOCK_LOG=${MOCK_LOG}" >> $GITHUB_ENV
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    SHAS_OUTPUT='%{{ steps.shas.outputs.shas }}'
+    test_output "$SHAS_OUTPUT"
+    cat "$MOCK_LOG"

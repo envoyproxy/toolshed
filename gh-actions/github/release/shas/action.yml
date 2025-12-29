@@ -1,0 +1,45 @@
+name: GitHub Release SHAs
+description: Get SHA256 checksums for artifacts from a GitHub release
+
+inputs:
+  tag:
+    description: Release tag name
+    type: string
+    required: true
+  repository:
+    description: Repository in the format owner/repo
+    type: string
+    default: ${{ github.repository }}
+  token:
+    description: GitHub token for authentication
+    type: string
+
+outputs:
+  shas:
+    description: JSON object mapping artifact names to their SHA256 checksums
+    value: ${{ steps.filtered-assets.outputs.output }}
+
+
+runs:
+  using: composite
+  steps:
+  - id: filtered-assets
+    uses: envoyproxy/toolshed/gh-actions/bson@32dac4ced47ea29570488947f2f5ce99da408af6
+    with:
+      input: |
+        tag: ${{ inputs.tag }}
+        repo: ${{ inputs.repository }}
+        patterns: ${{ steps.patterns.outputs.value }}
+      input-format: yaml
+      options: -r
+      filter: |
+        .tag as $tag
+        | .repo as $repo
+        | .patterns as $patterns
+        | "OUTPUT=$(gh release view \"\($tag)\" --repo \"\($repo)\" --json assets --jq '.assets[] | {key: .name, value: .digest}')"
+        | bash::output
+      result-filter: |
+        from_entries
+      result-filter-options: -sc
+    env:
+      GH_TOKEN: ${{ inputs.token || github.token }}

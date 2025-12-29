@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+# Mock gh command for testing github/release/shas action
+# Records all calls and responds with mock release data
+
+set -e
+
+MOCK_LOG="${MOCK_LOG:-/tmp/gh-mock.log}"
+
+print_cmd() {
+    local arg
+    for arg in "$@"; do
+        if [[ "$arg" =~ [[:space:]] ]]; then
+            printf '"%s" ' "$arg"
+        else
+            printf '%s ' "$arg"
+        fi
+    done | sed 's/ $//'
+    echo
+}
+
+print_cmd gh "$@" >> "$MOCK_LOG"
+
+command="$1"
+subcommand="${2:-}"
+
+case "$command" in
+    release)
+        case "$subcommand" in
+            view)
+                # Mock release view - return fake asset data
+                cat << 'EOF'
+{
+  "key": "artifact-linux-amd64.tar.gz", "value": "869373d2d22ffccc022e2acbf0e1d337c5c553b3a2187a9067d84c0082f868ec"
+}
+{
+  "key": "artifact-darwin-arm64.tar.gz", "value": "b798061bef81b227cbe7bfea791087cf877a3457685d971ca2a14ebfa67df6c4"
+}
+{
+  "key": "checksums.txt", "value": "6d247fcf0e5346087f016c9ec43e29344e02ea12549214424d09676a9a76cb79"
+}
+{
+  "key": "artifact.deb", "value": "21750c993876d9f213cebdf42266cfc92bc078c51be8e1e3eb8e7fe6790058fc"
+}
+EOF
+                exit 0
+                ;;
+        esac
+        ;;
+    *)
+        echo "Unknown gh command: $command" >&2
+        exit 1
+        ;;
+esac
