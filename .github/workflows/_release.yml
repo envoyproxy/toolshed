@@ -19,6 +19,12 @@ on:
         description: Dry run (no PR created)
         type: boolean
         default: false
+      prepare:
+        type: boolean
+        default: true
+      prepare-only:
+        type: boolean
+        default: false
       template-version-update:
         type: string
         default: |
@@ -46,10 +52,8 @@ jobs:
       uses: envoyproxy/toolshed/gh-actions/github/checkout@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         branch: main
-        committer-name: publish-envoy[bot]
-        committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
-        config: |
-          ref: ${{ inputs.sha }}
+        committer-name: ${{ inputs.committer-name }}
+        committer-email: ${{ inputs.committer-email }}
         pr: ${{ github.event.pull_request.number || '' }}
         token: ${{ steps.appauth.outputs.token }}
     - name: Get version file
@@ -71,6 +75,8 @@ jobs:
         version-file: ${{ steps.version-file.outputs.value }}
     - name: Update version file
       uses: envoyproxy/toolshed/gh-actions/bson@b0d8eb78838d6868d53829942a06a1b14ab2231d
+      if: >-
+        ! fromJSON(inputs.prepare-only)
       with:
         input: |
           version: ${{ steps.version.outputs.version }}
@@ -79,11 +85,39 @@ jobs:
           if .version.is_dev then
             "${{ inputs.template-version-update }}"
           else ":" end
+
+    # ACTIONS ONLY
+    - name: Prepare actions
+      if: >-
+        inputs.name == 'actions'
+        && fromJSON(inputs.prepare)
+      run: |
+        HEAD=$(git rev-parse HEAD)
+        OUTDATED=()
+        while read -r hash; do
+            if [[ "$hash" != "$HEAD" ]]; then
+                OUTDATED+=("$hash")
+                git grep "${hash}" gh-actions/ \
+                    | cut -d: -f1 \
+                    | sort -u \
+                    | xargs sed -i s/${hash}/${HEAD}/g
+            fi
+        done < <(git grep toolshed/gh-actions/ gh-actions/ | grep @ | grep -v VERSION | cut -d@ -f2 | sort -u)
+
+    - name: Commit changes
+      env:
+        COMMIT_MESSAGE: >-
+          ${{ inputs.type }}:
+          ${{ inputs.prepare-only && 'Prepare release' || 'Release' }}
+          v${{ fromJSON(steps.version.outputs.version).next }}
+      run: |
+        git commit . -m "${COMMIT_MESSAGE}" --signoff
     - name: Create Pull Request
       uses: envoyproxy/toolshed/gh-actions/github/pr@b0d8eb78838d6868d53829942a06a1b14ab2231d
       with:
         base: main
         branch: release/create/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
+        commit: false
         title: >-
           ${{ inputs.type }}: Release v${{ fromJSON(steps.version.outputs.version).next }}
         body: |
