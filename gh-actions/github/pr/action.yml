@@ -38,6 +38,20 @@ inputs:
   dry-run:
     type: boolean
     default: false
+  template-create-pr:
+    type: string
+    default: |
+      export PR_BODY='\($body)'
+      export PR_BASE='\($base)'
+      export PR_BRANCH='\($branch)'
+      export PR_DRY_RUN='\(.dry_run)'
+      export PR_TITLE=\($title)
+      export PR_DO_COMMIT='\($input.commit)'
+      export PR_COMMITTER_EMAIL='\($committer_email)'
+      export PR_COMMITTER_NAME='\($committer_name)'
+      export PR_COMMIT_MESSAGE=\($commit_message)
+      cd \(.working_directory)
+      ${PR_ACTION_PATH}/create.sh
   wip:
     type: boolean
     default: false
@@ -51,59 +65,30 @@ runs:
     env:
       GH_TOKEN: ${{ inputs.GITHUB_TOKEN }}
       CI_DEBUG: true
+      PR_ACTION_PATH: ${{ github.action_path }}
     with:
       input: |
         base: ${{ inputs.base }}
         branch: ${{ inputs.branch }}
         body: ${{ toJSON(inputs.body) }}
         commit: ${{ inputs.commit }}
-        committer-name: ${{ inputs.committer-name }}
-        committer-email: ${{ inputs.committer-email }}
-        commit-message: ${{ toJSON(inputs.commit-message) }}
-        diff-show: ${{ inputs.diff-show }}
-        diff-upload: ${{ inputs.diff-upload }}
+        committer_name: ${{ inputs.committer-name }}
+        committer_email: ${{ inputs.committer-email }}
+        commit_message: ${{ toJSON(inputs.commit-message) }}
+        dry_run: ${{ inputs.dry-run }}
         title: ${{ toJSON(inputs.title) }}
-        working-directory: ${{ inputs.working-directory }}
+        working_directory: ${{ inputs.working-directory }}
       input-format: yaml
       filter: |
         . as $input
-        | .["working-directory"] as $workingDirectory
         | .base as $base
         | .body as $body
         | .branch as $branch
         | (.title | @sh) as $title
-        | "git -C \($workingDirectory)" as $git
-        | .["committer-name"] as $committerName
-        | .["committer-email"] as $committerEmail
-        | (($input["commit-message"] // $input.title) | @sh) as $commitMessage
-        | "
-        \($git) config --global user.name \($committerName)
-        \($git) config --global user.email \($committerEmail)
-        \($git) commit . -m \($commitMessage)
-        " as $gitCommit
-        | if $input.commit then
-            $gitCommit
-          else "" end
-        | . as $gitCommit
-        | if $input["diff-show"] and ($input["diff-upload"] | not) then
-            "\($git) diff HEAD^1"
-          else "" end
-        | . as $gitDiff
-        | "
-        \($git) checkout -b \($branch)
-        \($gitCommit)
-        \($gitDiff)
-        \($git) push --no-verify --set-upstream origin \($branch)
-        BODY=\"\($body)\"
-        SIGNOFF=\"$(\($git) log -1 --pretty=%B | tail -n +2)\"
-        BODY=\"${BODY}\n\n${SIGNOFF}\"
-        cd \($workingDirectory)
-        gh pr create \\
-          -B \($base) \\
-          -H \($branch) \\
-          --title \($title) \\
-          --body \"$BODY\"
-        "
+        | .committer_name as $committer_name
+        | .committer_email as $committer_email
+        | ((.commit_message // $input.title) | @sh) as $commit_message
+        | "${{ inputs.template-create-pr }}"
 
   - name: Upload diff
     uses: envoyproxy/toolshed/gh-actions/upload/diff@368bc1188c06426fe419d10e76c95b3ce2ef565b
