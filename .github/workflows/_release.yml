@@ -102,6 +102,131 @@ jobs:
             fi
         done < <(git grep toolshed/gh-actions/ gh-actions/ | grep @ | grep -v VERSION | cut -d@ -f2 | sort -u)
 
+    # BAZEL ONLY
+    - name: Prepare bazel
+      if: >-
+        inputs.type == 'bazel'
+        && inputs.action != 'release-no-prepare'
+      run: |
+        # Get the latest published bins version from versions.bzl
+        CURRENT_BINS_VERSION=$(grep '"bins_release":' bazel/versions.bzl | sed -n 's/.*"\([0-9.]*\)".*/\1/p')
+        RELEASE_TAG="bins-v${CURRENT_BINS_VERSION}"
+        GITHUB_REPO="envoyproxy/toolshed"
+        VERSIONS_FILE="bazel/versions.bzl"
+
+        echo "Updating bazel bins versions from release: ${RELEASE_TAG}"
+
+        # Function to download artifact and compute SHA256
+        compute_sha256() {
+            local artifact_name="$1"
+            local url="https://github.com/${GITHUB_REPO}/releases/download/${RELEASE_TAG}/${artifact_name}"
+            curl -sL "${url}" | sha256sum | cut -d' ' -f1
+        }
+
+        # Get versions from current files
+        GLINT_VERSION=$(grep "GLINT_VERSION =" bazel/format/glint/glint_repository.bzl | sed -n 's/.*"\([^"]*\)".*/\1/p')
+        LLVM_VERSION=$(grep '"llvm":' "${VERSIONS_FILE}" | sed -n 's/.*"\([0-9.]*\)".*/\1/p')
+
+        echo "Collecting artifact hashes..."
+
+        # Collect glint hashes
+        GLINT_AMD64_SHA=$(compute_sha256 "glint-${GLINT_VERSION}-amd64")
+        GLINT_ARM64_SHA=$(compute_sha256 "glint-${GLINT_VERSION}-arm64")
+
+        # Collect sanitizer hashes
+        MSAN_SHA=$(compute_sha256 "compile/msan-llvm${LLVM_VERSION}-x86_64.tar.xz")
+        TSAN_SHA=$(compute_sha256 "compile/tsan-llvm${LLVM_VERSION}-x86_64.tar.xz")
+
+        # Collect sysroot hashes
+        SYSROOT_2_31_BASE_AMD64=$(compute_sha256 "sysroot-glibc2.31-amd64.tar.xz")
+        SYSROOT_2_31_BASE_ARM64=$(compute_sha256 "sysroot-glibc2.31-arm64.tar.xz")
+        SYSROOT_2_31_13_AMD64=$(compute_sha256 "sysroot-glibc2.31-libstdc++13-amd64.tar.xz")
+        SYSROOT_2_31_13_ARM64=$(compute_sha256 "sysroot-glibc2.31-libstdc++13-arm64.tar.xz")
+        SYSROOT_2_28_BASE_AMD64=$(compute_sha256 "sysroot-glibc2.28-amd64.tar.xz")
+        SYSROOT_2_28_BASE_ARM64=$(compute_sha256 "sysroot-glibc2.28-arm64.tar.xz")
+        SYSROOT_2_28_13_AMD64=$(compute_sha256 "sysroot-glibc2.28-libstdc++13-amd64.tar.xz")
+        SYSROOT_2_28_13_ARM64=$(compute_sha256 "sysroot-glibc2.28-libstdc++13-arm64.tar.xz")
+
+        echo "Updating ${VERSIONS_FILE} using bazel //sha:replace..."
+
+        # Build replacement pairs: old_hash:new_hash
+        # Extract current hashes from versions.bzl and create replacement pairs
+        REPLACEMENTS=()
+
+        # Get current msan hash and replace it
+        CURRENT_MSAN=$(grep '"msan_libs_sha256":' "${VERSIONS_FILE}" | sed -n 's/.*"\([a-f0-9]\{64\}\)".*/\1/p')
+        if [[ -n "${CURRENT_MSAN}" && "${CURRENT_MSAN}" != "${MSAN_SHA}" ]]; then
+            REPLACEMENTS+=("${CURRENT_MSAN}:${MSAN_SHA}")
+        fi
+
+        # Get current tsan hash and replace it
+        CURRENT_TSAN=$(grep '"tsan_libs_sha256":' "${VERSIONS_FILE}" | sed -n 's/.*"\([a-f0-9]\{64\}\)".*/\1/p')
+        if [[ -n "${CURRENT_TSAN}" && "${CURRENT_TSAN}" != "${TSAN_SHA}" ]]; then
+            REPLACEMENTS+=("${CURRENT_TSAN}:${TSAN_SHA}")
+        fi
+
+        # Get current glint hashes from the nested glint_sha256 dict
+        CURRENT_GLINT_AMD64=$(sed -n '/"glint_sha256":/,/},/p' "${VERSIONS_FILE}" | grep '"amd64":' | sed -n 's/.*"\([a-f0-9]\{64\}\)".*/\1/p')
+        if [[ -n "${CURRENT_GLINT_AMD64}" && "${CURRENT_GLINT_AMD64}" != "${GLINT_AMD64_SHA}" ]]; then
+            REPLACEMENTS+=("${CURRENT_GLINT_AMD64}:${GLINT_AMD64_SHA}")
+        fi
+
+        CURRENT_GLINT_ARM64=$(sed -n '/"glint_sha256":/,/},/p' "${VERSIONS_FILE}" | grep '"arm64":' | sed -n 's/.*"\([a-f0-9]\{64\}\)".*/\1/p')
+        if [[ -n "${CURRENT_GLINT_ARM64}" && "${CURRENT_GLINT_ARM64}" != "${GLINT_ARM64_SHA}" ]]; then
+            REPLACEMENTS+=("${CURRENT_GLINT_ARM64}:${GLINT_ARM64_SHA}")
+        fi
+
+        # Get current sysroot hashes from the nested sysroot_hashes dict
+        # Extract the entire sysroot_hashes section
+        SYSROOT_SECTION=$(sed -n '/"sysroot_hashes":/,/^[[:space:]]*},$/p' "${VERSIONS_FILE}")
+
+        # Helper to extract hash from sysroot section
+        get_sysroot_hash() {
+            local glibc=$1
+            local variant=$2
+            local arch=$3
+            local glibc_section=$(echo "$SYSROOT_SECTION" | sed -n "/\"${glibc}\":/,/^[[:space:]]*},$/p")
+            local variant_section=$(echo "$glibc_section" | sed -n "/\"${variant}\":/,/^[[:space:]]*},$/p")
+            echo "$variant_section" | grep "\"${arch}\":" | sed -n 's/.*"\([a-f0-9]\{64\}\)".*/\1/p'
+        }
+
+        # Add sysroot hash replacements
+        declare -A SYSROOT_HASHES=(
+            ["2_31_BASE_AMD64"]="${SYSROOT_2_31_BASE_AMD64}"
+            ["2_31_BASE_ARM64"]="${SYSROOT_2_31_BASE_ARM64}"
+            ["2_31_13_AMD64"]="${SYSROOT_2_31_13_AMD64}"
+            ["2_31_13_ARM64"]="${SYSROOT_2_31_13_ARM64}"
+            ["2_28_BASE_AMD64"]="${SYSROOT_2_28_BASE_AMD64}"
+            ["2_28_BASE_ARM64"]="${SYSROOT_2_28_BASE_ARM64}"
+            ["2_28_13_AMD64"]="${SYSROOT_2_28_13_AMD64}"
+            ["2_28_13_ARM64"]="${SYSROOT_2_28_13_ARM64}"
+        )
+
+        for glibc in "2.31" "2.28"; do
+            for variant in "base" "13"; do
+                for arch in "amd64" "arm64"; do
+                    # Build variable name
+                    VAR_NAME="${glibc//./_}_${variant^^}_${arch^^}"
+                    NEW_HASH="${SYSROOT_HASHES[$VAR_NAME]}"
+                    CURRENT_HASH=$(get_sysroot_hash "$glibc" "$variant" "$arch")
+                    if [[ -n "${CURRENT_HASH}" && "${CURRENT_HASH}" != "${NEW_HASH}" ]]; then
+                        REPLACEMENTS+=("${CURRENT_HASH}:${NEW_HASH}")
+                    fi
+                done
+            done
+        done
+
+        # Use bazel to run the sha replace tool
+        if [[ ${#REPLACEMENTS[@]} -gt 0 ]]; then
+            echo "Performing ${#REPLACEMENTS[@]} hash replacements..."
+            cd bazel
+            bazel run //sha:replace -- "$(pwd)/.." "${REPLACEMENTS[@]}"
+        else
+            echo "No hash updates needed - all hashes are already current"
+        fi
+
+        echo "Successfully updated ${VERSIONS_FILE}"
+
     - name: Commit changes
       id: commit
       env:
