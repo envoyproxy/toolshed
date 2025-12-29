@@ -1,0 +1,82 @@
+uses: ./gh-actions/github/release
+id: release
+with:
+  dry-run: false
+  fail-if-exists: false
+  name: test-package
+  repository: test/repo
+  sha: abc123def456
+  token: fake-token
+  version: |
+    {"version": "1.2.3", "next": "1.2.4-dev"}
+  version-file: /tmp/test-version-exists-warn.txt
+
+before:
+- shell: bash
+  run: |
+    mkdir -p /tmp/test-release-exists-warn
+    echo "1.2.3-dev" > /tmp/test-version-exists-warn.txt
+    rm -f /tmp/gh-mock-exists-warn.log
+    rm -f /tmp/git-mock-exists-warn.log
+    echo "${{ github.workspace }}/gh-actions/github/release/tests/mocks:$PATH" >> $GITHUB_PATH
+    echo "MOCK_LOG=/tmp/gh-mock-exists-warn.log" >> $GITHUB_ENV
+    echo "MOCK_GIT_LOG=/tmp/git-mock-exists-warn.log" >> $GITHUB_ENV
+    echo "MOCK_RELEASE_EXISTS=true" >> $GITHUB_ENV
+    echo "✓ Test setup complete"
+
+after:
+- shell: bash
+  run: |
+    cd /tmp/test-release-exists-warn
+
+    RELEASE_OUTPUT='${{ steps.release.outputs.result }}'
+    echo "Release output:"
+    echo "$RELEASE_OUTPUT"
+
+    if [[ -z "$RELEASE_OUTPUT" ]]; then
+        echo "✗ Error: Release output is empty"
+        exit 1
+    fi
+    echo "✓ Release output is not empty"
+
+    OUTPUT_LINES=$(echo "$RELEASE_OUTPUT" | jq -r '.[]')
+    echo "Output lines:"
+    echo "$OUTPUT_LINES"
+
+    if ! echo "$OUTPUT_LINES" | grep -q "gh release view"; then
+        echo "✗ Error: Expected 'gh release view' in output"
+        exit 1
+    fi
+    echo "✓ Found 'gh release view' command in output"
+
+    if ! echo "$OUTPUT_LINES" | grep -q "already exists, skipping creation"; then
+        echo "✗ Error: Expected 'already exists, skipping creation' message"
+        exit 1
+    fi
+    echo "✓ Found 'already exists, skipping creation' message"
+
+    if [[ ! -f /tmp/gh-mock-exists-warn.log ]]; then
+        echo "✗ Error: Mock log file not found"
+        exit 1
+    fi
+
+    if ! grep -q "gh release view" /tmp/gh-mock-exists-warn.log; then
+        echo "✗ Error: 'gh release view' not found in mock log"
+        cat /tmp/gh-mock-exists-warn.log
+        exit 1
+    fi
+    echo "✓ Mock gh release view was called"
+
+    if grep -q "gh release create" /tmp/gh-mock-exists-warn.log; then
+        echo "✗ Error: 'gh release create' should not be called when release exists"
+        cat /tmp/gh-mock-exists-warn.log
+        exit 1
+    fi
+    echo "✓ gh release create was not called"
+
+    rm -rf /tmp/test-release-exists-warn
+    rm -f /tmp/test-version-exists-warn.txt
+    rm -f /tmp/gh-mock-exists-warn.log
+    rm -f /tmp/git-mock-exists-warn.log
+
+    echo "✓ Release exists with warning test passed"
