@@ -42,7 +42,7 @@ jobs:
     - uses: envoyproxy/toolshed/gh-actions/github/release/shas@f2aa95348f1e520682cacf7757509e6d232a62f7
       id: release
       with:
-        tag: ${{ steps.outputs.latest.tag }}
+        tag: ${{ steps.latest.outputs.tag }}
     - run: |
         echo "SHAS: ${{ steps.release.outputs.shas }}"
 
