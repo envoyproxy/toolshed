@@ -75,6 +75,12 @@ runs:
       TMPFILE: ${{ steps.script.outputs.path }}
     shell: bash
 
+  - if: inputs.result-filter
+    run: |
+      echo "GETTING HERE!!!"
+
+
+
   - id: output
     uses: envoyproxy/toolshed/gh-actions/jq@32dac4ced47ea29570488947f2f5ce99da408af6
     if: inputs.result-filter
