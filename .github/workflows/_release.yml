@@ -39,6 +39,8 @@ jobs:
     steps:
     - uses: envoyproxy/toolshed/gh-actions/github/release/latest@161e727b06520231f31cd56374f2c66505eb357d
       id: latest
+      with:
+        pattern: ^bins-
     - uses: envoyproxy/toolshed/gh-actions/github/release/shas@161e727b06520231f31cd56374f2c66505eb357d
       id: release
       with:
