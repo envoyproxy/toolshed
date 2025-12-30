@@ -56,3 +56,8 @@ runs:
         | bash::output
     env:
       GH_TOKEN: ${{ inputs.token || github.token }}
+
+  - shell: bash
+    run: |
+      echo "RESULT2:"
+      echo "${{ steps.latest.outputs.output }}"

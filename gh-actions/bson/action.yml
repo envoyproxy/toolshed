@@ -77,11 +77,6 @@ runs:
       TMPFILE: ${{ steps.script.outputs.path }}
     shell: bash
 
-  - shell: bash
-    run: |
-      echo "RESULT:"
-      echo "${{ steps.run.outputs.output }}"
-
   - id: output
     uses: envoyproxy/toolshed/gh-actions/jq@32dac4ced47ea29570488947f2f5ce99da408af6
     if: inputs.result-filter
