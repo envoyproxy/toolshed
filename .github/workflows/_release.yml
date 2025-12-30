@@ -37,12 +37,12 @@ jobs:
     name: ${{ inputs.action }}
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/github/release/latest@2dc987ba1de7b983da410f78ed6e17644d9a524d
+    - uses: envoyproxy/toolshed/gh-actions/github/release/latest@4384acab7ccd7b0e0061fb2d54014624bbc6773f
       id: latest
     - run: |
         echo "LATEST: ${{ steps.latest.output.tag }}"
 
-    - uses: envoyproxy/toolshed/gh-actions/appauth@2dc987ba1de7b983da410f78ed6e17644d9a524d
+    - uses: envoyproxy/toolshed/gh-actions/appauth@4384acab7ccd7b0e0061fb2d54014624bbc6773f
       id: appauth
       name: Appauth
       if: >-
@@ -52,7 +52,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@2dc987ba1de7b983da410f78ed6e17644d9a524d
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@4384acab7ccd7b0e0061fb2d54014624bbc6773f
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -61,7 +61,7 @@ jobs:
         token: ${{ steps.appauth.outputs.token }}
     - name: Get version file
       id: version-file
-      uses: envoyproxy/toolshed/gh-actions/jq@2dc987ba1de7b983da410f78ed6e17644d9a524d
+      uses: envoyproxy/toolshed/gh-actions/jq@4384acab7ccd7b0e0061fb2d54014624bbc6773f
       with:
         input: |
           actions: gh-actions/VERSION.txt
@@ -73,11 +73,11 @@ jobs:
         filter: .["${{ inputs.type }}"]
     - name: Get version info
       id: version
-      uses: envoyproxy/toolshed/gh-actions/version@2dc987ba1de7b983da410f78ed6e17644d9a524d
+      uses: envoyproxy/toolshed/gh-actions/version@4384acab7ccd7b0e0061fb2d54014624bbc6773f
       with:
         version-file: ${{ steps.version-file.outputs.value }}
     - name: Update version file
-      uses: envoyproxy/toolshed/gh-actions/bson@2dc987ba1de7b983da410f78ed6e17644d9a524d
+      uses: envoyproxy/toolshed/gh-actions/bson@4384acab7ccd7b0e0061fb2d54014624bbc6773f
       if: >-
         inputs.action != 'prepare'
       with:
@@ -123,7 +123,7 @@ jobs:
         fi
         echo "changes=false" >> "$GITHUB_OUTPUT"
     - name: Create Pull Request
-      uses: envoyproxy/toolshed/gh-actions/github/pr@2dc987ba1de7b983da410f78ed6e17644d9a524d
+      uses: envoyproxy/toolshed/gh-actions/github/pr@4384acab7ccd7b0e0061fb2d54014624bbc6773f
       if: fromJSON(steps.commit.outputs.changes)
       with:
         base: main
