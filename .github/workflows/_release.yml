@@ -39,8 +39,12 @@ jobs:
     steps:
     - uses: envoyproxy/toolshed/gh-actions/github/release/latest@f2aa95348f1e520682cacf7757509e6d232a62f7
       id: latest
+    - uses: envoyproxy/toolshed/gh-actions/github/release/shas@f2aa95348f1e520682cacf7757509e6d232a62f7
+      id: release
+      with:
+        tag: ${{ steps.outputs.latest.tag }}
     - run: |
-        echo "LATEST: ${{ steps.latest.outputs.tag }}"
+        echo "SHAS: ${{ steps.release.outputs.shas }}"
 
     - uses: envoyproxy/toolshed/gh-actions/appauth@f2aa95348f1e520682cacf7757509e6d232a62f7
       id: appauth
