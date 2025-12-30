@@ -1,0 +1,13 @@
+uses: ./gh-actions/github/release/latest
+id: latest
+with:
+  repository: owner/repo
+  token: MOCK_TOKEN
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    TAG_OUTPUT='%{{ steps.latest.outputs.tag }}'
+    test_output "$TAG_OUTPUT" actions-v0.3.48
+    test_output_log 1

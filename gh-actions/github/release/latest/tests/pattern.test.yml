@@ -1,0 +1,14 @@
+uses: ./gh-actions/github/release/latest
+id: latest-pattern
+with:
+  repository: owner/repo
+  pattern: ^bins-
+  token: MOCK_TOKEN
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    TAG_OUTPUT='%{{ steps.latest-pattern.outputs.tag }}'
+    test_output "$TAG_OUTPUT" bins-v0.1.32
+    test_output_log 100 '[.[]|select(.tagName|test("^bins-"))]|'

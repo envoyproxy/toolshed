@@ -1,0 +1,58 @@
+name: GitHub Release Latest
+description: Get the latest release tag, optionally filtered by pattern
+
+inputs:
+  repository:
+    description: Repository in the format owner/repo
+    type: string
+    default: ${{ github.repository }}
+  token:
+    description: GitHub token for authentication
+    type: string
+  pattern:
+    description: Regex pattern to filter release tags (e.g., '^bins-' for bins releases)
+    type: string
+    default: ""
+  limit:
+    description: Maximum number of releases to fetch when pattern is specified (1-200)
+    type: number
+    default: 100
+  template-command:
+    type: string
+    default: >-
+      gh release list --repo \"\($r)\" --limit 1 --json tagName --jq '.[0].tagName'
+  template-command-pattern:
+    type: string
+    default: >-
+      gh release list --repo \"\($r)\" --limit \($l) --json tagName --jq '[.[]|select(.tagName|test(\"\($p)\"))]|.[0].tagName'
+
+outputs:
+  tag:
+    description: The tag name of the latest release matching the pattern
+    value: ${{ steps.latest.outputs.output }}
+
+
+runs:
+  using: composite
+  steps:
+  - id: latest
+    uses: envoyproxy/toolshed/gh-actions/bson@29532e2453a8b3fd4a8656c139a267368dcc9387
+    with:
+      input: |
+        repo: ${{ inputs.repository }}
+        pattern: ${{ inputs.pattern }}
+        limit: ${{ inputs.limit }}
+      input-format: yaml
+      filter: |
+        .repo as $r
+        | .pattern as $p
+        | .limit as $l
+        | if ($p // "") == "" then
+            "${{ inputs.template-command }}"
+          else
+            "${{ inputs.template-command-pattern }}"
+          end
+        | "OUTPUT=$(\(.)) && echo $OUTPUT"
+        | bash::output
+    env:
+      GH_TOKEN: ${{ inputs.token || github.token }}
