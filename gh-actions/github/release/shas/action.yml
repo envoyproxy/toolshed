@@ -36,7 +36,7 @@ runs:
         .tag as $tag
         | .repo as $repo
         | .patterns as $patterns
-        | "OUTPUT=$(gh release view \"\($tag)\" --repo \"\($repo)\" --json assets --jq '.assets[] | {key: .name, value: .digest}')"
+        | "OUTPUT=$(gh release view \"\($tag)\" --repo \"\($repo)\" --json assets --jq '.assets[] | {key: .name, value: .digest}') && echo $OUTPUT"
         | bash::output
       result-filter: |
         from_entries
