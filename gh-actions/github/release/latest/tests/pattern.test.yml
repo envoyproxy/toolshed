@@ -1,0 +1,23 @@
+uses: ./gh-actions/github/release/latest
+id: latest-pattern
+with:
+  repository: owner/repo
+  pattern: ^bins-
+  token: MOCK_TOKEN
+
+before:
+- shell: bash
+  env:
+    MOCK_LOG: /tmp/mock-pattern.log
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    echo "${{ github.workspace }}/gh-actions/github/release/latest/tests/mocks:$PATH" >> $GITHUB_PATH
+    echo "MOCK_LOG=${MOCK_LOG}" >> $GITHUB_ENV
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    TAG_OUTPUT='%{{ steps.latest-pattern.outputs.tag }}'
+    test_pattern_output "$TAG_OUTPUT"
+    test_pattern_output_log
