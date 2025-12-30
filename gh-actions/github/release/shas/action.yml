@@ -38,6 +38,7 @@ runs:
         | .patterns as $patterns
         | "OUTPUT=$(gh release view \"\($tag)\" --repo \"\($repo)\" --json assets --jq '.assets[] | {key: .name, value: .digest}') && echo $OUTPUT"
         | bash::output
+        | (. | debug)
       result-filter: |
         from_entries
       result-filter-options: -sc
