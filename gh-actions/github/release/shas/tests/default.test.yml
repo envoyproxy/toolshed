@@ -20,4 +20,4 @@ after:
     . "${ACTION_TEST_PATH}/test_fun.sh"
     SHAS_OUTPUT='%{{ steps.shas.outputs.shas }}'
     test_output "$SHAS_OUTPUT"
-    cat "$MOCK_LOG"
+    test_output_log
