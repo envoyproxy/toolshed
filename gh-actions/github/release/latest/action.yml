@@ -47,10 +47,10 @@ runs:
         .repo as $r
         | .pattern as $p
         | .limit as $l
-        | if ($p // "") != "" then
-            "${{ inputs.template-command-pattern }}"
-          else
+        | if ($p // "") == "" then
             "${{ inputs.template-command }}"
+          else
+            "${{ inputs.template-command-pattern }}"
           end
         | "OUTPUT=$(\(.)) && echo $OUTPUT"
         | bash::output
