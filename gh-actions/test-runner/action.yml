@@ -45,7 +45,7 @@ runs:
     run: |
       TEST_OUTPUT="$(mktemp)"
       echo "TEST_OUTPUT=${TEST_OUTPUT}" >> "$GITHUB_ENV"
-      ACTION_TEST_PATH="$(dirname "${{ inputs.config }}")"
+      ACTION_TEST_PATH="$(realpath $(dirname "${{ inputs.config }}"))"
       echo "ACTION_TEST_PATH=${ACTION_TEST_PATH}" >> "$GITHUB_ENV"
       MOCK_LOG="$(mktemp)"
       echo "MOCK_LOG=${MOCK_LOG}" >> "$GITHUB_ENV"
