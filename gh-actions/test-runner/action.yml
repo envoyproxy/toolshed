@@ -47,6 +47,9 @@ runs:
       echo "TEST_OUTPUT=${TEST_OUTPUT}" >> "$GITHUB_ENV"
       ACTION_TEST_PATH="$(dirname "${{ inputs.config }}")"
       echo "ACTION_TEST_PATH=${ACTION_TEST_PATH}" >> "$GITHUB_ENV"
+      MOCK_LOG="$(mktemp)"
+      echo "MOCK_LOG=${MOCK_LOG}" >> "$GITHUB_ENV"
+      echo "${ACTION_TEST_PATH}/mocks:$PATH" >> $GITHUB_PATH
   - uses: envoyproxy/toolshed/gh-actions/using/steps@32dac4ced47ea29570488947f2f5ce99da408af6
     id: run
     with:
