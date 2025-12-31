@@ -12,6 +12,13 @@ on:
       action:
         type: string
         required: true
+      arches:
+        type: string
+        default: |
+          ["amd64", "arm64"]
+      bazel-versions-file:
+        type: string
+        default: bazel/versions.bzl
       committer-email:
         type: string
         required: true
@@ -22,6 +29,18 @@ on:
         description: Dry run (no PR created)
         type: boolean
         default: false
+      glibc-versions:
+        type: string
+        default: |
+          ["2.28", "2.31"]
+      glint-version:
+        # TODO: think of a better solution for this
+        type: string
+        default: 0.1.0
+      stdcc-versions:
+        type: string
+        default: |
+          ["base", "13"]
       template-version-update:
         type: string
         default: |
@@ -37,7 +56,7 @@ jobs:
     name: ${{ inputs.action }}
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/appauth@1f44d0ee168e3d60617be31c420b030e0f596349
+    - uses: envoyproxy/toolshed/gh-actions/appauth@ec242b61b3b58c14e3744f6a229d38e49702ef71
       id: appauth
       name: Appauth
       if: >-
@@ -47,7 +66,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@1f44d0ee168e3d60617be31c420b030e0f596349
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@ec242b61b3b58c14e3744f6a229d38e49702ef71
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -56,7 +75,7 @@ jobs:
         token: ${{ steps.appauth.outputs.token }}
     - name: Get version file
       id: version-file
-      uses: envoyproxy/toolshed/gh-actions/jq@1f44d0ee168e3d60617be31c420b030e0f596349
+      uses: envoyproxy/toolshed/gh-actions/jq@ec242b61b3b58c14e3744f6a229d38e49702ef71
       with:
         input: |
           actions: gh-actions/VERSION.txt
@@ -68,11 +87,11 @@ jobs:
         filter: .["${{ inputs.type }}"]
     - name: Get version info
       id: version
-      uses: envoyproxy/toolshed/gh-actions/version@1f44d0ee168e3d60617be31c420b030e0f596349
+      uses: envoyproxy/toolshed/gh-actions/version@ec242b61b3b58c14e3744f6a229d38e49702ef71
       with:
         version-file: ${{ steps.version-file.outputs.value }}
     - name: Update version file
-      uses: envoyproxy/toolshed/gh-actions/bson@1f44d0ee168e3d60617be31c420b030e0f596349
+      uses: envoyproxy/toolshed/gh-actions/bson@ec242b61b3b58c14e3744f6a229d38e49702ef71
       if: >-
         inputs.action != 'prepare'
       with:
@@ -102,6 +121,109 @@ jobs:
             fi
         done < <(git grep toolshed/gh-actions/ gh-actions/ | grep @ | grep -v VERSION | cut -d@ -f2 | sort -u)
 
+    # BAZEL ONLY
+    - name: Get latest bins release (for bazel)
+      uses: envoyproxy/toolshed/gh-actions/github/release/latest@ec242b61b3b58c14e3744f6a229d38e49702ef71
+      id: bins-version
+      if: >-
+        inputs.type == 'bazel'
+        && inputs.action != 'release-no-prepare'
+      with:
+        pattern: ^bins-
+    - name: Get SHAs for latest bins release (for bazel)
+      uses: envoyproxy/toolshed/gh-actions/github/release/shas@ec242b61b3b58c14e3744f6a229d38e49702ef71
+      id: bins-shas
+      if: >-
+        inputs.type == 'bazel'
+        && inputs.action != 'release-no-prepare'
+      with:
+        tag: ${{ steps.bins-version.outputs.tag }}
+    - name: Get current SHAs and version (for bazel)
+      uses: envoyproxy/toolshed/gh-actions/bson@ec242b61b3b58c14e3744f6a229d38e49702ef71
+      id: bins-deps
+      if: >-
+        inputs.type == 'bazel'
+        && inputs.action != 'release-no-prepare'
+      with:
+        input: |
+          cd bazel
+          bazel build //:deps
+          OUTPUT=$(cat bazel-bin/deps.json)
+        input-format: text
+        filter:
+          bash::output
+        options: -sRr
+    - name: Update bins shas (for bazel)
+      uses: envoyproxy/toolshed/gh-actions/bson@ec242b61b3b58c14e3744f6a229d38e49702ef71
+      id: bins-updates
+      if: >-
+        inputs.type == 'bazel'
+        && inputs.action != 'release-no-prepare'
+      with:
+        input: |
+          bins_latest: ${{ steps.bins-version.outputs.tag }}
+          current: ${{ steps.bins-deps.outputs.output }}
+          shas: ${{ steps.bins-shas.outputs.shas }}
+          glibc_versions: ${{ inputs.glibc-versions }}
+          stdcc_versions: ${{ inputs.stdcc-versions }}
+          arches: ${{ inputs.arches }}
+          glint_version: ${{ inputs.glint-version }}
+          versions_file: ${{ inputs.bazel-versions-file }}
+          san:
+          - msan
+          - tsan
+        input-format: yaml
+        filter: |
+          .
+          | .shas as $shas
+          | .current as $current
+          | .glibc_versions as $glibc_versions
+          | .arches as $arches
+          | .stdcc_versions as $stdccs
+          | .san as $san
+          | .glint_version as $glint_version
+          | .versions_file as $versions_file
+          | (.bins_latest | split("-v") | .[1]) as $bins_latest
+          | (if $current.bins_release != $bins_latest then
+               ["sed -i 's/\"bins_release\": \"\($current.bins_release)\"/\"bins_release\": \"\($bins_latest)\"/g' \($versions_file)"]
+             else [] end) as $bins_update
+          | [$san[]
+             | . as $san_type
+             | $current["\($san_type)_libs_sha256"] as $current_sha
+             | ($shas["\($san_type)-llvm18.1.8-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
+             | if $current_sha != $new_sha then
+                 "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+               else "" end
+             | select(. != "")] as $san_updates
+          | [$arches[]
+             | . as $arch
+             | [($shas["glint-\($glint_version)-\($arch)"] | split(":") | .[1]) as $new_sha
+                | $current["glint_sha256"][$arch] as $current_sha
+                | if $current_sha != $new_sha then
+                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                  else "" end] as $glint_updates
+             | [$glibc_versions[]
+                | . as $glibc
+                | $stdccs[]
+                | . as $stdcc
+                | (if $stdcc == "base" then ""
+                   else "-libstdc++\($stdcc)"
+                   end) as $stdcc_extra
+                | "sysroot-glibc\($glibc)\($stdcc_extra)-\($arch).tar.xz" as $sysroot
+                | ($shas[$sysroot]
+                   | split(":")
+                   | .[1]) as $new_sha
+                | $current.sysroot_hashes[$glibc][$stdcc][$arch] as $current_sha
+                | if $current_sha != $new_sha then
+                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                  else "" end
+                | select(. != "")] as $sysroot_updates
+              | $glint_updates + $sysroot_updates] as $arch_updates
+          | $bins_update + $san_updates + $arch_updates
+          | [flatten[]
+             | select(. != "")]
+          | join("\n")
+
     - name: Commit changes
       id: commit
       env:
@@ -112,13 +234,14 @@ jobs:
       run: |
         if [[ -n "$(git status --porcelain)" ]]; then
             git commit . -m "${COMMIT_MESSAGE}" --signoff
+            git show
             echo "message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
             echo "changes=true" >> "$GITHUB_OUTPUT"
             exit
         fi
         echo "changes=false" >> "$GITHUB_OUTPUT"
     - name: Create Pull Request
-      uses: envoyproxy/toolshed/gh-actions/github/pr@1f44d0ee168e3d60617be31c420b030e0f596349
+      uses: envoyproxy/toolshed/gh-actions/github/pr@ec242b61b3b58c14e3744f6a229d38e49702ef71
       if: fromJSON(steps.commit.outputs.changes)
       with:
         base: main
