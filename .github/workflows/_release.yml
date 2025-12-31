@@ -37,7 +37,7 @@ jobs:
     name: ${{ inputs.action }}
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/appauth@b0d8eb78838d6868d53829942a06a1b14ab2231d
+    - uses: envoyproxy/toolshed/gh-actions/appauth@1f44d0ee168e3d60617be31c420b030e0f596349
       id: appauth
       name: Appauth
       if: >-
@@ -47,7 +47,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@b0d8eb78838d6868d53829942a06a1b14ab2231d
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@1f44d0ee168e3d60617be31c420b030e0f596349
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -56,7 +56,7 @@ jobs:
         token: ${{ steps.appauth.outputs.token }}
     - name: Get version file
       id: version-file
-      uses: envoyproxy/toolshed/gh-actions/jq@b0d8eb78838d6868d53829942a06a1b14ab2231d
+      uses: envoyproxy/toolshed/gh-actions/jq@1f44d0ee168e3d60617be31c420b030e0f596349
       with:
         input: |
           actions: gh-actions/VERSION.txt
@@ -68,11 +68,11 @@ jobs:
         filter: .["${{ inputs.type }}"]
     - name: Get version info
       id: version
-      uses: envoyproxy/toolshed/gh-actions/version@b0d8eb78838d6868d53829942a06a1b14ab2231d
+      uses: envoyproxy/toolshed/gh-actions/version@1f44d0ee168e3d60617be31c420b030e0f596349
       with:
         version-file: ${{ steps.version-file.outputs.value }}
     - name: Update version file
-      uses: envoyproxy/toolshed/gh-actions/bson@b0d8eb78838d6868d53829942a06a1b14ab2231d
+      uses: envoyproxy/toolshed/gh-actions/bson@1f44d0ee168e3d60617be31c420b030e0f596349
       if: >-
         inputs.action != 'prepare'
       with:
@@ -118,7 +118,7 @@ jobs:
         fi
         echo "changes=false" >> "$GITHUB_OUTPUT"
     - name: Create Pull Request
-      uses: envoyproxy/toolshed/gh-actions/github/pr@b0d8eb78838d6868d53829942a06a1b14ab2231d
+      uses: envoyproxy/toolshed/gh-actions/github/pr@1f44d0ee168e3d60617be31c420b030e0f596349
       if: fromJSON(steps.commit.outputs.changes)
       with:
         base: main

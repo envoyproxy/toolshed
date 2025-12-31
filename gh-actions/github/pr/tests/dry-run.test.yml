@@ -21,13 +21,9 @@ before:
       chore: Test dry-run commit from action
     TEST_COMMITTER_EMAIL: dry-run-bot@example.com
     TEST_COMMITTER_NAME: PR dry-run bot
-    MOCK_LOG: /tmp/mock.log
     TEST_TITLE: Test PR with dry-run
   run: |
     . "${ACTION_TEST_PATH}/test_fun.sh"
-    rm -f ${MOCK_LOG}
-    echo "${{ github.workspace }}/gh-actions/github/pr/tests/mocks:$PATH" >> $GITHUB_PATH
-    echo "MOCK_LOG=${MOCK_LOG}" >> $GITHUB_ENV
     setup_test
 
 after:

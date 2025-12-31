@@ -29,13 +29,9 @@ before:
       chore: Test commit from action
     TEST_COMMITTER_EMAIL: special-chars-bot@example.com
     TEST_COMMITTER_NAME: PR special chars Bot
-    MOCK_LOG: /tmp/mock.log
     TEST_TITLE: Test PR with special chars
   run: |
     . "${ACTION_TEST_PATH}/test_fun.sh"
-    rm -f ${MOCK_LOG}
-    echo "${{ github.workspace }}/gh-actions/github/pr/tests/mocks:$PATH" >> $GITHUB_PATH
-    echo "MOCK_LOG=${MOCK_LOG}" >> $GITHUB_ENV
     setup_test
 
 after:

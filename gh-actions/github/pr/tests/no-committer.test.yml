@@ -12,7 +12,6 @@ with:
 before:
 - shell: bash
   env:
-    MOCK_LOG: /tmp/mock.log
     TEST_BODY: This PR tests no committer functionality
     TEST_BRANCH: test/pr-action-no-committer
     TEST_COMMIT_MESSAGE: >-
@@ -22,10 +21,6 @@ before:
     TEST_TITLE: Test PR without committer
   run: |
     . "${ACTION_TEST_PATH}/test_fun.sh"
-    git config --global user.name "$TEST_COMMITTER_NAME"
-    git config --global user.email "$TEST_COMMITTER_EMAIL"
-    echo "${{ github.workspace }}/gh-actions/github/pr/tests/mocks:$PATH" >> $GITHUB_PATH
-    echo "MOCK_LOG=${MOCK_LOG}" >> $GITHUB_ENV
     setup_test
 
 after:
