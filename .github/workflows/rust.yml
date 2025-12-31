@@ -21,7 +21,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/github/should-run@1f44d0ee168e3d60617be31c420b030e0f596349
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@38d2c6e04add894bfadf230ce0f87d6fc9ff431e
       id: filter
       with:
         config: |
