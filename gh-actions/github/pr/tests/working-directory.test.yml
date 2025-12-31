@@ -21,13 +21,9 @@ before:
       feat: Test from subdir
     TEST_COMMITTER_EMAIL: test-working-dir@example.com
     TEST_COMMITTER_NAME: Test User in working dir
-    MOCK_LOG: /tmp/mock.log
     TEST_TITLE: This PR tests working directory
   run: |
     . "${ACTION_TEST_PATH}/test_fun.sh"
-    rm -f ${MOCK_LOG}
-    echo "${{ github.workspace }}/gh-actions/github/pr/tests/mocks:$PATH" >> $GITHUB_PATH
-    echo "MOCK_LOG=${MOCK_LOG}" >> $GITHUB_ENV
     setup_test
     mkdir -p testsubdir
 
