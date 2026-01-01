@@ -37,6 +37,22 @@ on:
         # TODO: think of a better solution for this
         type: string
         default: 0.1.0
+      prepare-args:
+        type: string
+        default:
+      python-find-versions:
+        type: string
+        default: |
+          _OUTPUT=()
+          for version_file in py/*/VERSION; do
+              if [[ -f "$version_file" ]]; then
+                  package_dir=$(dirname "$version_file")
+                  package_name=$(basename "$package_dir")
+                  version=$(cat "$version_file")
+                  _OUTPUT+=("$package_name $version")
+              fi
+          done
+          OUTPUT=$(printf '%s\n' "${_OUTPUT[@]}")
       stdcc-versions:
         type: string
         default: |
@@ -49,6 +65,10 @@ on:
         description: Release type
         required: true
         type: string
+      warn-on-error:
+        description: Only warn for release issues
+        default: false
+        type: boolean
 
 
 jobs:
@@ -222,6 +242,80 @@ jobs:
              | select(. != "")]
           | join("\n")
 
+    # PYTHON ONLY
+    - name: Get python package versions
+      id: python-versions
+      if: >-
+        inputs.type == 'python'
+        && inputs.action != 'release-no-prepare'
+      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      with:
+        input: |
+          ${{ inputs.python-find-versions }}
+        filter: bash::output
+        input-format: text
+        options: -sRr
+        result-filter: |
+          split("\n")
+          | map(select(.  != ""))
+          | map(split(" ") | {key: .[0], value: (.[1] | utils::version)})
+          | from_entries
+        result-filter-options: -sRc
+    - if: >-
+        inputs.type == 'python'
+        && inputs.action != 'release-no-prepare'
+      name: Update python release packages
+      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      with:
+        input: |
+          args: >-
+            ${{ inputs.prepare-args }}
+          versions: ${{ steps.python-versions.outputs.output }}
+        input-format: yaml
+        filter: |
+          .versions as $versions
+          | .args // ""
+          | [args::parse({"options": ["u"]})
+             | (.options.u // [])[]
+             | split("=")
+             | $versions[.[0]].version as $current
+             | $versions[.[0]].next as $next
+             | "sed -i s/\($current)/\(.[1] // $next)/ py/\(.[0])/VERSION"]
+          | join("\n")
+    - name: Get python release package versions
+      id: python-updated-versions
+      if: >-
+        inputs.type == 'python'
+        && inputs.action != 'release-no-prepare'
+      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      with:
+        input: |
+          ${{ inputs.python-find-versions }}
+        filter: bash::output
+        input-format: text
+        options: -sRr
+        result-filter: |
+          split("\n")
+          | map(
+              select(.  != "")
+              | split(" ")
+              | select(.[1] | endswith("-dev") | not)
+              | {key: .[0], value: .[1]})
+          | from_entries
+        result-filter-options: -sRc
+    - if: >-
+        inputs.type == 'python'
+        && inputs.action != 'release-no-prepare'
+        && steps.python-updated-versions.outputs.output == '{}'
+      name: Check python release packages
+      run: |
+        if [[ "${{ inputs.warn-on-error }}" == "true" ]]; then
+            echo "::warning::No Python packages are set for release, this will create an empty release" >&2
+        else
+            echo "::error::No Python packages are set for release, this will create an empty release" >&2
+            exit 1
+        fi
+
     - name: Commit changes
       id: commit
       env:
@@ -230,14 +324,14 @@ jobs:
           ${{ inputs.action == 'prepare' && 'Prepare release' || 'Release' }}
           v${{ fromJSON(steps.version.outputs.version).next }}
       run: |
-        if [[ -n "$(git status --porcelain)" ]]; then
-            git commit . -m "${COMMIT_MESSAGE}" --signoff
-            git show
-            echo "message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
-            echo "changes=true" >> "$GITHUB_OUTPUT"
+        if [[ -z "$(git status --porcelain)" ]]; then
+            echo "changes=false" >> "$GITHUB_OUTPUT"
             exit
         fi
-        echo "changes=false" >> "$GITHUB_OUTPUT"
+        git commit . -m "${COMMIT_MESSAGE}" --signoff
+        git show
+        echo "message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
+        echo "changes=true" >> "$GITHUB_OUTPUT"
     - name: Create Pull Request
       uses: envoyproxy/toolshed/gh-actions/github/pr@d9c68240141573419ab1aa4b619c289b17e13b87
       if: fromJSON(steps.commit.outputs.changes)
