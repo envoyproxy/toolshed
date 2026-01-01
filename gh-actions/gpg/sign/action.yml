@@ -35,6 +35,7 @@ runs:
               --passphrase "${PASSPHRASE}")
       fi
       gpg "${GPG_ARGS[@]}" checksums.txt
+      rm checksums.txt
   - name: Show checksum file
     if: fromJSON(inputs.debug)
     working-directory: ${{ inputs.path }}
