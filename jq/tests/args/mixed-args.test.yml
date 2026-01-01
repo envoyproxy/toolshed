@@ -1,0 +1,18 @@
+name: args::parse mixed flags, options, and positional args
+
+input: "--verbose -o out.txt --debug -f format arg1"
+
+expression: 'args::parse({"flags": ["verbose", "debug"], "options": ["o", "f"]})'
+
+imports:
+- args
+
+expected:
+  args:
+  - "arg1"
+  flags:
+    verbose: true
+    debug: true
+  options:
+    o: "out.txt"
+    f: "format"

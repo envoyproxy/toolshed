@@ -1,0 +1,15 @@
+name: args::parse short flags only
+
+input: "-v -f"
+
+expression: 'args::parse({"flags": ["v", "f"]})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags:
+    v: true
+    f: true
+  options: {}

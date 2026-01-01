@@ -1,0 +1,16 @@
+name: args::parse repeated short option with space-separated values
+
+input: "-u this -u that"
+
+expression: 'args::parse({"options": ["u"]})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags: {}
+  options:
+    u:
+    - "this"
+    - "that"

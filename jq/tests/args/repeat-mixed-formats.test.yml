@@ -1,0 +1,17 @@
+name: args::parse repeated option with mixed formats
+
+input: "-u foo -u bar=23.0.0 -u baz"
+
+expression: 'args::parse({"options": ["u"]})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags: {}
+  options:
+    u:
+    - "foo"
+    - "bar=23.0.0"
+    - "baz"

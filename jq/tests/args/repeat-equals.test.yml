@@ -1,0 +1,16 @@
+name: args::parse repeated option with equals format
+
+input: "--foo=bar --foo=baz"
+
+expression: 'args::parse({"options": ["foo"]})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags: {}
+  options:
+    foo:
+    - "bar"
+    - "baz"

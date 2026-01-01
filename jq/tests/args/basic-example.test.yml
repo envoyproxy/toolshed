@@ -1,0 +1,17 @@
+name: args::parse basic example with flags and options
+
+input: "--verbose -o output.txt --name=foo input.txt"
+
+expression: 'args::parse({"flags": ["verbose", "v"], "options": ["o", "output", "name"]})'
+
+imports:
+- args
+
+expected:
+  args:
+  - "input.txt"
+  flags:
+    verbose: true
+  options:
+    o: "output.txt"
+    name: "foo"

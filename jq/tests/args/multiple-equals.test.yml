@@ -1,0 +1,14 @@
+name: args::parse multiple equals signs in value
+
+input: "--config=key1=value1"
+
+expression: 'args::parse({"flags": [], "options": ["config"]})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags: {}
+  options:
+    config: "key1=value1"

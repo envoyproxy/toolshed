@@ -1,0 +1,15 @@
+name: args::parse empty value with equals sign
+
+input: "--empty= --full=value"
+
+expression: 'args::parse({"flags": [], "options": ["empty", "full"]})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags: {}
+  options:
+    empty: ""
+    full: "value"
