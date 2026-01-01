@@ -56,10 +56,16 @@ jobs:
 
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
       run: |
-        set -m  # enable job control for process groups
-        bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }} &
+        # Run bazel in a new process group using setsid
+        setsid bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }} &
         BAZEL_PID=$!
-        trap "kill -KILL -$BAZEL_PID 2>/dev/null; exit 130" SIGTERM SIGINT
+
+        # Get the process group ID
+        BAZEL_PGID=$(ps -o pgid= -p $BAZEL_PID | tr -d ' ')
+
+        # Trap cancellation signals and kill the entire process group with SIGKILL
+        trap "kill -KILL -- -$BAZEL_PGID 2>/dev/null; exit 130" SIGTERM SIGINT
+
         wait $BAZEL_PID
       working-directory: ${{ inputs.bazel-path }}
     - name: Bazel artifact paths
