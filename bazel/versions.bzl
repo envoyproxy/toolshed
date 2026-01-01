@@ -3,9 +3,9 @@ VERSIONS = {
     "llvm": "18.1.8",
     "ninja": "1.12.0",
     "python": "3.12",
-    "bins_release": "0.1.31",
-    "msan_libs_sha256": "dbd909b9000f7e634e10db071ff7e436d150199beef7fc32756c09ae28681e7b",
-    "tsan_libs_sha256": "9cf5b6e203a0d0126f8053f347d687d75a331b70c131460965341aff74a91a14",
+    "bins_release": "0.1.32",
+    "msan_libs_sha256": "c6446b0748bd6ea3b7f2dd803dfc6667b95146ffa5601cb60cedb14822f54c46",
+    "tsan_libs_sha256": "1f6e25271da97b83144c9f28bbbddaa0253f2f26a950556199fc86b2a67b0b1f",
 
     # Glint binary hashes by architecture
     "glint_sha256": {
@@ -19,22 +19,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "66671acdc908bf4c9418aa8821a02558f62e2b4d336d3a378ac2078974633872",
-                "arm64": "2f2f254d1f8cecf785fffb8736583b1d750de84cd7f236cd3fe65aba9f6aa733",
+                "amd64": "26a6ab483968a376de7a16e165ae083cac83183f4f8fa26f18a2ca3406232fa2",
+                "arm64": "77fc642fe3fbd2193dbe85fdcf3d5155bc94181359e214c78ae1fcb0ffa7d71c",
             },
             "13": {
-                "amd64": "6e9fd9e87026fe28250d202c15a7592b7076ce7da3c88210d8e35f1a35301c76",
-                "arm64": "d194487cb90e175f870cc4c086cb0cef98bccfc7e34a2a7f2f9bbd0cd8c12caf",
+                "amd64": "c52c960e7810b9b0776d59ab8f98bf4729bcd22a64686277044df88b1127be92",
+                "arm64": "fca92ee55be018f4d065da1f31676fb37ae58d1fa6ec96322ab8bcd9981b2a3f",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "32a992ec137177b763e745b5c89cf8e744a85a528e9d67d92e412e45847e9d8d",
-                "arm64": "36424a53d6519ecf68efb81dbb1b7412721bee71c107a072968e4e025985e3bb",
+                "amd64": "c0337b598ddc4ac801d52cc913740c80658dcaacf3e7e402253d5e8354d27ea8",
+                "arm64": "9a4befb8c9eba53abd52c1378a91d5fafa215d1f13fae50a6fcfa50a46550364",
             },
             "13": {
-                "amd64": "23c05daf82ec2a7a2b67c552655f80bc4387008d7bfc6c01c2af3b549b36a116",
-                "arm64": "e3b8bf04afef8fb8319de92d142be1ecd90e19d8202d662f11c1113bd57c4393",
+                "amd64": "cfde7053d80b45e8b0425ca7dad18d5ddf067fb1e6335b46f342c69fce49c176",
+                "arm64": "3b3126148d40880f1dde04259e868e27f187a723afd6b64c540a24aa52e88292",
             },
         },
     },
