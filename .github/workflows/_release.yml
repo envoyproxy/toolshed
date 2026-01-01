@@ -193,8 +193,7 @@ jobs:
              | ($shas["\($san_type)-llvm18.1.8-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
              | if $current_sha != $new_sha then
                  "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
-               else "" end
-             | select(. != "")] as $san_updates
+               else "" end] as $san_updates
           | [$arches[]
              | . as $arch
              | [($shas["glint-\($glint_version)-\($arch)"] | split(":") | .[1]) as $new_sha
@@ -216,8 +215,7 @@ jobs:
                 | $current.sysroot_hashes[$glibc][$stdcc][$arch] as $current_sha
                 | if $current_sha != $new_sha then
                     "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
-                  else "" end
-                | select(. != "")] as $sysroot_updates
+                  else "" end] as $sysroot_updates
               | $glint_updates + $sysroot_updates] as $arch_updates
           | $bins_update + $san_updates + $arch_updates
           | [flatten[]
