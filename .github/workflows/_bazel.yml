@@ -63,10 +63,26 @@ jobs:
         # Get the process group ID
         BAZEL_PGID=$(ps -o pgid= -p $BAZEL_PID | tr -d ' ')
 
-        # Trap cancellation signals and kill the entire process group with SIGKILL
-        trap "kill -KILL -- -$BAZEL_PGID 2>/dev/null; exit 130" SIGTERM SIGINT
+        echo "::notice::Bazel started with PID=$BAZEL_PID, PGID=$BAZEL_PGID"
+
+        # Function to handle termination signals
+        cleanup() {
+          echo "::warning::Received termination signal, killing Bazel process group $BAZEL_PGID"
+          ps -eo pid,pgid,command | grep -E 'bazel|java' | head -20 || true
+          kill -KILL -- -$BAZEL_PGID 2>/dev/null || true
+          echo "::notice::Sent SIGKILL to process group"
+          exit 130
+        }
+
+        # Trap cancellation signals
+        trap cleanup SIGTERM SIGINT
+
+        echo "::notice::Signal trap configured, waiting for Bazel to complete..."
 
         wait $BAZEL_PID
+        EXIT_CODE=$?
+        echo "::notice::Bazel exited with code $EXIT_CODE"
+        exit $EXIT_CODE
       working-directory: ${{ inputs.bazel-path }}
     - name: Bazel artifact paths
       id: artifact-paths
