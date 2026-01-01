@@ -61,6 +61,10 @@ cmake(
 pkg_files(
     name = "msan_libs_files",
     srcs = [":libcxx_msan"],
+    excludes = [
+        "**/*.h",
+        "**/include/**",
+    ],
     prefix = "msan-libs-x86_64/lib",
     strip_prefix = ".",
 )
@@ -75,6 +79,10 @@ pkg_tar(
 pkg_files(
     name = "tsan_libs_files",
     srcs = [":libcxx_tsan"],
+    excludes = [
+        "**/*.h",
+        "**/include/**",
+    ],
     prefix = "tsan-libs-x86_64/lib",
     strip_prefix = ".",
 )
