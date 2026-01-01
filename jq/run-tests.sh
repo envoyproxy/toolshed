@@ -18,24 +18,21 @@ PASSED=0
 FAILED=0
 FAILED_TESTS=()
 
-run_test () {
+parse_test_field () {
     local test_file="$1"
-    local jq_filter=""
+    local field="$2"
+    local default="${3:-}"
+    
+    if [[ -n "$default" ]]; then
+        yq eval ".$field // \"$default\"" "$test_file"
+    else
+        yq eval ".$field // \"\"" "$test_file"
+    fi
+}
 
-    local name
-    name=$(yq eval '.name' "$test_file")
-    local input
-    input=$(yq eval '.input' "$test_file" -o json)
-    local expected
-    expected=$(yq eval '.expected' "$test_file" -o json)
-    local before
-    before=$(yq eval '.before // "."' "$test_file")
-    local module
-    module=$(yq eval '.module // ""' "$test_file")
-    local expression
-    expression=$(yq eval '.expression // ""' "$test_file")
-    local imports
-    imports=$(yq eval '.imports // []' "$test_file" -o json)
+build_imports () {
+    local imports="$1"
+    local jq_filter=""
 
     if [[ "$imports" != "[]" && "$imports" != "null" ]]; then
         local import_count
@@ -46,45 +43,95 @@ run_test () {
             jq_filter+="import \"$imp\" as $imp; "
         done
     fi
+    echo "$jq_filter"
+}
+
+build_jq_filter () {
+    local test_file="$1"
+    local jq_filter=""
+
+    local imports
+    imports=$(yq eval '.imports // []' "$test_file" -o json)
+    local before
+    before=$(parse_test_field "$test_file" "before" ".")
+    local module
+    module=$(parse_test_field "$test_file" "module")
+    local expression
+    expression=$(parse_test_field "$test_file" "expression")
+
+    jq_filter+=$(build_imports "$imports")
     jq_filter+="$before | "
-    if [[ -n "$module" ]]; then
+
+    if [[ -n "$module" && "$module" != "" ]]; then
         local mod_name="${module%%::*}"
         local func_name="${module#*::}"
         if [[ "$imports" == "[]" || "$imports" == "null" ]]; then
             jq_filter="import \"$mod_name\" as $mod_name; $jq_filter"
         fi
         jq_filter+="$mod_name::$func_name"
-    elif [[ -n "$expression" ]]; then
+    elif [[ -n "$expression" && "$expression" != "" ]]; then
         jq_filter+="$expression"
     else
-        echo -e "${RED}✗${NC} $name"
-        echo "  Error: Test must specify either 'module' or 'expression' field"
         return 1
     fi
+    echo "$jq_filter"
+}
+
+test_passed () {
+    local name="$1"
+    echo -e "${GREEN}✓${NC} $name"
+    ((PASSED++))
+}
+
+test_failed () {
+    local name="$1"
+    local expected="$2"
+    local got="$3"
+    echo -e "${RED}✗${NC} $name"
+    if [[ -n "$expected" ]]; then
+        echo "  expected: $expected"
+        echo "  got:      $got"
+    fi
+    ((FAILED++))
+    FAILED_TESTS+=("$name")
+}
+
+run_test () {
+    local test_file="$1"
+
+    local name
+    name=$(parse_test_field "$test_file" "name")
+    local input
+    input=$(yq eval '.input' "$test_file" -o json)
+    local expected
+    expected=$(yq eval '.expected' "$test_file" -o json)
+
+    local jq_filter
+    if ! jq_filter=$(build_jq_filter "$test_file"); then
+        echo -e "${RED}✗${NC} $name"
+        echo "  Error: Test must specify either 'module' or 'expression' field"
+        test_failed "$name" "" ""
+        return 1
+    fi
+
     local result
     if result=$(echo "$input" | jq -L "$SCRIPT_DIR" -r "$jq_filter" 2>&1); then
         local result_trimmed="${result%$'\n'}"
         local expected_raw
         expected_raw=$(echo "$expected" | jq -r '.')
-
+        
         if [[ "$result_trimmed" == "$expected_raw" ]]; then
-            echo -e "${GREEN}✓${NC} $name"
-            ((PASSED++))
+            test_passed "$name"
             return 0
         else
-            echo -e "${RED}✗${NC} $name"
-            echo "  expected: $expected_raw"
-            echo "  got:      $result_trimmed"
-            ((FAILED++))
-            FAILED_TESTS+=("$name")
+            test_failed "$name" "$expected_raw" "$result_trimmed"
             return 1
         fi
     else
         echo -e "${RED}✗${NC} $name"
         echo "  Error running jq filter:"
         echo "  $result"
-        ((FAILED++))
-        FAILED_TESTS+=("$name")
+        test_failed "$name" "" ""
         return 1
     fi
 }
