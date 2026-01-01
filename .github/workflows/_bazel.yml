@@ -56,7 +56,11 @@ jobs:
 
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
       run: |
-        exec bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }}
+        set -m  # enable job control for process groups
+        bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }} &
+        BAZEL_PID=$!
+        trap "kill -KILL -$BAZEL_PID 2>/dev/null; exit 130" SIGTERM SIGINT
+        wait $BAZEL_PID
       working-directory: ${{ inputs.bazel-path }}
     - name: Bazel artifact paths
       id: artifact-paths
