@@ -1,0 +1,15 @@
+name: gfm::fence wraps code in markdown fence
+
+input: "echo 'hello world'"
+
+imports:
+  - gfm
+
+expression: |
+  gfm::fence("bash")
+
+expected: |2
+
+  ```bash
+  echo 'hello world'
+  ```

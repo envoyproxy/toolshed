@@ -1,0 +1,7 @@
+name: str::cleaned removes ANSI escape codes
+
+input: "\u001b[32mGreen text\u001b[0m"
+
+module: str::cleaned
+
+expected: "Green text"
