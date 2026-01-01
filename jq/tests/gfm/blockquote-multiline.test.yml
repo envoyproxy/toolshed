@@ -1,0 +1,7 @@
+name: gfm::blockquote adds prefix to multiple lines
+
+input: "hello\nworld\ntest"
+
+module: gfm::blockquote
+
+expected: "> hello\n> world\n> test"

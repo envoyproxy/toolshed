@@ -1,0 +1,7 @@
+name: str::trim removes only trailing spaces
+
+input: "hello world  "
+
+module: str::trim
+
+expected: "hello world"

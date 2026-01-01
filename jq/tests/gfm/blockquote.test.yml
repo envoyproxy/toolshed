@@ -1,0 +1,7 @@
+name: gfm::blockquote adds prefix to single line
+
+input: "hello world"
+
+module: gfm::blockquote
+
+expected: "> hello world"

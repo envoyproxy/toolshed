@@ -1,0 +1,7 @@
+name: str::trim removes only leading spaces
+
+input: "  hello world"
+
+module: str::trim
+
+expected: "hello world"

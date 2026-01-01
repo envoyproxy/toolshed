@@ -1,0 +1,60 @@
+name: jq CI
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+  push:
+    branches:
+    - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+
+jobs:
+  request:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@be288057ad2e27ab959e8a862a8e35aec091b544
+      id: filter
+      with:
+        config: |
+          paths:
+          - jq/**
+          - .github/workflows/jq.yml
+
+  tests:
+    runs-on: ubuntu-24.04
+    needs: request
+    if: fromJSON(needs.request.outputs.run)
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - name: Verify tools
+      run: |
+        jq --version
+        yq --version
+    - name: Run jq tests
+      run: ./jq/run-tests.sh
+
+  status:
+    runs-on: ubuntu-24.04
+    if: >-
+      always()
+      && github.event_name == 'pull_request'
+    name: jq
+    needs:
+    - request
+    - tests
+    steps:
+    - run: |
+        if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+        fi
+        echo "All required jobs passed or were skipped"

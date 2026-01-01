@@ -1,0 +1,21 @@
+name: gfm::collapse creates collapsible section
+
+input:
+  title: "Click to expand"
+  content: "Hidden content here"
+  open: false
+
+imports:
+- gfm
+
+expression: |
+  gfm::collapse
+
+expected: |2
+
+  <details >
+    <summary><b>Click to expand</b></summary>
+
+    Hidden content here
+
+  </details>

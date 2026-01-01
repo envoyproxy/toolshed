@@ -1,0 +1,7 @@
+name: utils::bytesize formats gigabytes
+
+input: 1073741824
+
+module: utils::bytesize
+
+expected: "1GB"

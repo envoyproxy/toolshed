@@ -1,0 +1,7 @@
+name: str::trim handles string with no spaces
+
+input: "hello"
+
+module: str::trim
+
+expected: "hello"
