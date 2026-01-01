@@ -36,21 +36,21 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
-    
+
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get -qq install -y jq
-        
+
         # Install yq (mikefarah/yq)
         sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
         sudo chmod +x /usr/local/bin/yq
-    
+
     - name: Verify tools
       run: |
         jq --version
         yq --version
-    
+
     - name: Run jq tests
       run: ./jq/run-tests.sh
 
