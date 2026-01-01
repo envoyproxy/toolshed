@@ -55,6 +55,7 @@ jobs:
         sudo apt-get -qq install -y --no-install-recommends debootstrap qemu-user-static binfmt-support
 
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
+      shell: bash
       run: |
         # Run bazel in a new process group using setsid
         setsid bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }} &
@@ -67,17 +68,18 @@ jobs:
 
         # Function to handle termination signals
         cleanup() {
-          echo "::warning::Received termination signal, killing Bazel process group $BAZEL_PGID"
+          echo "::warning::Received termination signal ($$, signal received), killing Bazel process group $BAZEL_PGID"
           ps -eo pid,pgid,command | grep -E 'bazel|java' | head -20 || true
           kill -KILL -- -$BAZEL_PGID 2>/dev/null || true
           echo "::notice::Sent SIGKILL to process group"
           exit 130
         }
 
-        # Trap cancellation signals
-        trap cleanup SIGTERM SIGINT
+        # Trap ALL relevant cancellation signals (SIGINT, SIGTERM, SIGHUP)
+        # GitHub Actions may send SIGHUP instead of SIGINT/SIGTERM
+        trap cleanup SIGTERM SIGINT SIGHUP
 
-        echo "::notice::Signal trap configured, waiting for Bazel to complete..."
+        echo "::notice::Signal trap configured for SIGTERM, SIGINT, SIGHUP - waiting for Bazel to complete..."
 
         wait $BAZEL_PID
         EXIT_CODE=$?
