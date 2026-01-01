@@ -1,0 +1,17 @@
+name: args::parse repeated long option with space-separated values
+
+input: "cmd --update foo --update bar"
+
+expression: 'args::parse({"options": ["update"]})'
+
+imports:
+- args
+
+expected:
+  args:
+  - "cmd"
+  flags: {}
+  options:
+    update:
+    - "foo"
+    - "bar"
