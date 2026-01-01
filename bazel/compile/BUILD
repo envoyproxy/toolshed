@@ -1,4 +1,6 @@
 load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
+load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load("//:versions.bzl", "VERSIONS")
 
 package(default_visibility = ["//visibility:public"])
@@ -56,32 +58,38 @@ cmake(
     working_directory = "runtimes",
 )
 
-genrule(
-    name = "cxx_msan",
+pkg_files(
+    name = "msan_libs_files",
     srcs = [":libcxx_msan"],
-    outs = ["msan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"]],
-    cmd = """
-        mkdir -p msan-libs-x86_64/lib
-        for f in $(locations :libcxx_msan); do
-            if [[ $$f == *.a ]]; then
-                cp $$f msan-libs-x86_64/lib/
-            fi
-        done
-        tar cJf $@ msan-libs-x86_64
-    """,
+    excludes = [
+        "**/*.h",
+        "**/include/**",
+    ],
+    prefix = "msan-libs-x86_64/lib",
+    strip_prefix = ".",
 )
 
-genrule(
-    name = "cxx_tsan",
+pkg_tar(
+    name = "cxx_msan",
+    srcs = [":msan_libs_files"],
+    extension = "tar.xz",
+    package_file_name = "msan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"],
+)
+
+pkg_files(
+    name = "tsan_libs_files",
     srcs = [":libcxx_tsan"],
-    outs = ["tsan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"]],
-    cmd = """
-        mkdir -p tsan-libs-x86_64/lib
-        for f in $(locations :libcxx_tsan); do
-            if [[ $$f == *.a ]]; then
-                cp $$f tsan-libs-x86_64/lib/
-            fi
-        done
-        tar cJf $@ tsan-libs-x86_64
-    """,
+    excludes = [
+        "**/*.h",
+        "**/include/**",
+    ],
+    prefix = "tsan-libs-x86_64/lib",
+    strip_prefix = ".",
+)
+
+pkg_tar(
+    name = "cxx_tsan",
+    srcs = [":tsan_libs_files"],
+    extension = "tar.xz",
+    package_file_name = "tsan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"],
 )
