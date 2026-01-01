@@ -25,7 +25,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
+  - uses: envoyproxy/toolshed/gh-actions/jq@f9c50a148da1c38264ea2a12293104fd18709b77
     name: Context
     id: context
     with:
@@ -33,13 +33,13 @@ runs:
       filter: |
         ${{ inputs.context-filter }}
         | . * {"items": ${{ inputs.items }}}
-  - uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
+  - uses: envoyproxy/toolshed/gh-actions/jq@f9c50a148da1c38264ea2a12293104fd18709b77
     name: Steps (JSON)
     id: steps-json
     with:
       input: ${{ inputs.steps }}
       input-format: yaml
-  - uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
+  - uses: envoyproxy/toolshed/gh-actions/jq@f9c50a148da1c38264ea2a12293104fd18709b77
     name: Steps
     id: steps-subs
     with:
@@ -55,7 +55,7 @@ runs:
         | map(.key as $k | $out | . + [($steps | walk(if type == "string" then sub("\\$KEY"; "\($k)") else . end))])
         | flatten
 
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@0ce7a3535f840f48da71d967cddf9e27ece54a18
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@f9c50a148da1c38264ea2a12293104fd18709b77
     id: steps
     with:
       name: ${{ inputs.name }}

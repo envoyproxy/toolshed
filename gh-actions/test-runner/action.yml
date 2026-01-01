@@ -25,7 +25,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
+  - uses: envoyproxy/toolshed/gh-actions/jq@f9c50a148da1c38264ea2a12293104fd18709b77
     id: config
     with:
       input: ${{ inputs.config }}
@@ -50,7 +50,7 @@ runs:
       MOCK_LOG="$(mktemp)"
       echo "MOCK_LOG=${MOCK_LOG}" >> "$GITHUB_ENV"
       echo "${ACTION_TEST_PATH}/mocks:$PATH" >> $GITHUB_PATH
-  - uses: envoyproxy/toolshed/gh-actions/using/steps@0ce7a3535f840f48da71d967cddf9e27ece54a18
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@f9c50a148da1c38264ea2a12293104fd18709b77
     id: run
     with:
       name: Run test
