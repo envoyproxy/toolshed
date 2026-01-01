@@ -33,6 +33,6 @@ after:
     FINGERPRINT='%{{ env.GPG_FINGERPRINT }}'
 
     test_signed_file_exists "/tmp/test-sign-dir/checksums.txt.asc"
-    test_checksums_file_exists "/tmp/test-sign-dir/checksums.txt"
+    test_checksums_file_does_not_exist "/tmp/test-sign-dir/checksums.txt"
     test_signature_valid "/tmp/test-sign-dir/checksums.txt.asc" "$FINGERPRINT"
-    test_checksums_contain_files "/tmp/test-sign-dir/checksums.txt" "file1.txt" "file2.txt"
+    test_checksums_contain_files "/tmp/test-sign-dir/checksums.txt.asc" "file1.txt" "file2.txt"

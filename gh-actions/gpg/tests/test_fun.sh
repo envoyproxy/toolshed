@@ -134,13 +134,13 @@ test_signed_file_exists() {
     fi
 }
 
-test_checksums_file_exists() {
+test_checksums_file_does_not_exist() {
     local path="${1}"
 
     if [[ -f "$path" ]]; then
-        echo "success:Checksums file exists at $path" >> "$TEST_OUTPUT"
+        echo "fail:Checksums file found at $path" >> "$TEST_OUTPUT"
     else
-        echo "fail:Checksums file not found at $path" >> "$TEST_OUTPUT"
+        echo "success:Checksums file does not exist at $path" >> "$TEST_OUTPUT"
     fi
 }
 
