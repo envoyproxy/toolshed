@@ -1,6 +1,6 @@
 name: args::parse multiple positional arguments
 
-input: "cmd arg1 arg2 arg3"
+input: "arg1 arg2 arg3"
 
 expression: 'args::parse({"flags": [], "options": []})'
 
@@ -9,7 +9,6 @@ imports:
 
 expected:
   args:
-  - "cmd"
   - "arg1"
   - "arg2"
   - "arg3"

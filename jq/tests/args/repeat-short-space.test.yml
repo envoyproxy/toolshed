@@ -1,6 +1,6 @@
 name: args::parse repeated short option with space-separated values
 
-input: "cmd -u this -u that"
+input: "-u this -u that"
 
 expression: 'args::parse({"options": ["u"]})'
 
@@ -8,8 +8,7 @@ imports:
 - args
 
 expected:
-  args:
-  - "cmd"
+  args: []
   flags: {}
   options:
     u:

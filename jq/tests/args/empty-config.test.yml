@@ -1,6 +1,6 @@
 name: args::parse empty config object
 
-input: "cmd arg1 arg2"
+input: "arg1 arg2"
 
 expression: 'args::parse({})'
 
@@ -9,7 +9,6 @@ imports:
 
 expected:
   args:
-  - "cmd"
   - "arg1"
   - "arg2"
   flags: {}

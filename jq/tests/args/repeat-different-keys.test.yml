@@ -1,6 +1,6 @@
 name: args::parse repeated option with long and short forms
 
-input: "cmd -u foo --update bar -u baz"
+input: "-u foo --update bar -u baz"
 
 expression: 'args::parse({"options": ["u", "update"]})'
 
@@ -8,8 +8,7 @@ imports:
 - args
 
 expected:
-  args:
-  - "cmd"
+  args: []
   flags: {}
   options:
     u:

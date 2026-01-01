@@ -1,6 +1,6 @@
 name: args::parse multiple equals signs in value
 
-input: "cmd --config=key1=value1"
+input: "--config=key1=value1"
 
 expression: 'args::parse({"flags": [], "options": ["config"]})'
 
@@ -8,8 +8,7 @@ imports:
 - args
 
 expected:
-  args:
-  - "cmd"
+  args: []
   flags: {}
   options:
     config: "key1=value1"

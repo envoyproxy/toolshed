@@ -1,6 +1,6 @@
 name: args::parse repeated option with equals format
 
-input: "cmd --foo=bar --foo=baz"
+input: "--foo=bar --foo=baz"
 
 expression: 'args::parse({"options": ["foo"]})'
 
@@ -8,8 +8,7 @@ imports:
 - args
 
 expected:
-  args:
-  - "cmd"
+  args: []
   flags: {}
   options:
     foo:

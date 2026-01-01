@@ -1,6 +1,6 @@
 name: args::parse short flags only
 
-input: "cmd -v -f"
+input: "-v -f"
 
 expression: 'args::parse({"flags": ["v", "f"]})'
 
@@ -8,8 +8,7 @@ imports:
 - args
 
 expected:
-  args:
-  - "cmd"
+  args: []
   flags:
     v: true
     f: true

@@ -1,6 +1,6 @@
 name: args::parse space-separated option
 
-input: "cmd --output file.txt"
+input: "--output file.txt"
 
 expression: 'args::parse({"flags": [], "options": ["output"]})'
 
@@ -8,8 +8,7 @@ imports:
 - args
 
 expected:
-  args:
-  - "cmd"
+  args: []
   flags: {}
   options:
     output: "file.txt"
