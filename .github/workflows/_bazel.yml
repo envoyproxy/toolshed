@@ -57,30 +57,31 @@ jobs:
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
       shell: bash
       run: |
-        # Run bazel in a new process group using setsid
-        setsid bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }} &
+        # Start bazel in the background (don't use setsid - it detaches from signal handling)
+        bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }} &
         BAZEL_PID=$!
 
-        # Get the process group ID
-        BAZEL_PGID=$(ps -o pgid= -p $BAZEL_PID | tr -d ' ')
-
-        echo "::notice::Bazel started with PID=$BAZEL_PID, PGID=$BAZEL_PGID"
+        echo "::notice::Bazel started with PID=$BAZEL_PID"
 
         # Function to handle termination signals
         cleanup() {
-          echo "::warning::Received termination signal ($$, signal received), killing Bazel process group $BAZEL_PGID"
-          ps -eo pid,pgid,command | grep -E 'bazel|java' | head -20 || true
-          kill -KILL -- -$BAZEL_PGID 2>/dev/null || true
-          echo "::notice::Sent SIGKILL to process group"
+          echo "::warning::Received termination signal! Killing Bazel and all children..."
+          # List processes before killing
+          ps -eo pid,ppid,command | grep -E "bazel|java" | grep -v grep | head -20 || true
+          # Kill bazel itself with SIGKILL (unkillable)
+          kill -KILL $BAZEL_PID 2>/dev/null || true
+          # Kill all child processes of bazel
+          ps -o pid= --ppid $BAZEL_PID 2>/dev/null | xargs -r kill -KILL 2>/dev/null || true
+          echo "::notice::Sent SIGKILL to Bazel process tree"
           exit 130
         }
 
         # Trap ALL relevant cancellation signals (SIGINT, SIGTERM, SIGHUP)
-        # GitHub Actions may send SIGHUP instead of SIGINT/SIGTERM
         trap cleanup SIGTERM SIGINT SIGHUP
 
-        echo "::notice::Signal trap configured for SIGTERM, SIGINT, SIGHUP - waiting for Bazel to complete..."
+        echo "::notice::Signal trap configured for SIGTERM, SIGINT, SIGHUP - waiting for Bazel..."
 
+        # Wait for bazel - this should be interrupted by signals
         wait $BAZEL_PID
         EXIT_CODE=$?
         echo "::notice::Bazel exited with code $EXIT_CODE"
