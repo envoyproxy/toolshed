@@ -1,4 +1,4 @@
-name: jq tests
+name: jq CI
 
 permissions:
   contents: read
@@ -11,7 +11,7 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 
 jobs:
@@ -25,32 +25,20 @@ jobs:
       with:
         config: |
           paths:
-          - 'jq/**'
-          - '.github/workflows/jq.yml'
+          - jq/**
+          - .github/workflows/jq.yml
 
   tests:
     runs-on: ubuntu-24.04
     needs: request
     if: fromJSON(needs.request.outputs.run)
-
     steps:
     - name: Checkout Repository
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
-
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get -qq install -y jq
-
-        # Install yq (mikefarah/yq)
-        sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-        sudo chmod +x /usr/local/bin/yq
-
     - name: Verify tools
       run: |
         jq --version
         yq --version
-
     - name: Run jq tests
       run: ./jq/run-tests.sh
 

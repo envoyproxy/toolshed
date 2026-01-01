@@ -22,7 +22,7 @@ parse_test_field () {
     local test_file="$1"
     local field="$2"
     local default="${3:-}"
-    
+
     if [[ -n "$default" ]]; then
         yq eval ".$field // \"$default\"" "$test_file"
     else
@@ -119,7 +119,7 @@ run_test () {
         local result_trimmed="${result%$'\n'}"
         local expected_raw
         expected_raw=$(echo "$expected" | jq -r '.')
-        
+
         if [[ "$result_trimmed" == "$expected_raw" ]]; then
             test_passed "$name"
             return 0
