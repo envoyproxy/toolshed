@@ -69,7 +69,7 @@ runs:
   #
   # Only specified bots are trusted.
   - id: trusted
-    uses: envoyproxy/toolshed/gh-actions/jq@be288057ad2e27ab959e8a862a8e35aec091b544
+    uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
     with:
       input: |
         trusted_bots: |
@@ -87,7 +87,7 @@ runs:
         | (. and ($input.event_name | startswith("pull_request") | not))
 
   # Check requested changes
-  - uses: envoyproxy/toolshed/gh-actions/bson@be288057ad2e27ab959e8a862a8e35aec091b544
+  - uses: envoyproxy/toolshed/gh-actions/bson@0ce7a3535f840f48da71d967cddf9e27ece54a18
     id: changed
     with:
       title: git diff changes from ${{ inputs.merge-commit || 'HEAD^1' }}
@@ -108,7 +108,7 @@ runs:
         | split("\n")
 
   # Check current/requested config (currently only build-images can be overridden)
-  - uses: envoyproxy/toolshed/gh-actions/bson@be288057ad2e27ab959e8a862a8e35aec091b544
+  - uses: envoyproxy/toolshed/gh-actions/bson@0ce7a3535f840f48da71d967cddf9e27ece54a18
     id: config
     with:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
@@ -128,7 +128,7 @@ runs:
       result-filter: .
 
   - id: build-images
-    uses: envoyproxy/toolshed/gh-actions/jq@be288057ad2e27ab959e8a862a8e35aec091b544
+    uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
     with:
       input-format: yaml-path
       input: ${{ inputs.working-directory }}/${{ inputs.config-file }}
@@ -151,7 +151,7 @@ runs:
         | {$requested, current: .}
 
   # Check current/request versions
-  - uses: envoyproxy/toolshed/gh-actions/jq@be288057ad2e27ab959e8a862a8e35aec091b544
+  - uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
     name: Validate given version string
     id: version-string
     with:
@@ -160,7 +160,7 @@ runs:
       input: ${{ inputs.working-directory }}/VERSION.txt
       filter: |
         validate::version
-  - uses: envoyproxy/toolshed/gh-actions/bson@be288057ad2e27ab959e8a862a8e35aec091b544
+  - uses: envoyproxy/toolshed/gh-actions/bson@0ce7a3535f840f48da71d967cddf9e27ece54a18
     id: version
     with:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.version-file }}
@@ -192,7 +192,7 @@ runs:
         | {requested: ., current: $current}
 
   - id: request
-    uses: envoyproxy/toolshed/gh-actions/jq@be288057ad2e27ab959e8a862a8e35aec091b544
+    uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
     with:
       input: |
         actor: ${{ toJSON(github.actor) }}
@@ -240,18 +240,18 @@ runs:
 
   - name: Run config
     id: run-config
-    uses: envoyproxy/toolshed/gh-actions/jq@be288057ad2e27ab959e8a862a8e35aec091b544
+    uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
     with:
       input-format: yaml
       input: ${{ toJSON(fromJSON(steps.config.outputs.output).run) }}
-  - uses: envoyproxy/toolshed/gh-actions/torun@be288057ad2e27ab959e8a862a8e35aec091b544
+  - uses: envoyproxy/toolshed/gh-actions/torun@0ce7a3535f840f48da71d967cddf9e27ece54a18
     id: torun
     with:
       event: ${{ github.event_name }}
       config: ${{ steps.run-config.outputs.value }}
       paths: ${{ steps.changed.outputs.output || '[]' }}
 
-  - uses: envoyproxy/toolshed/gh-actions/jq@be288057ad2e27ab959e8a862a8e35aec091b544
+  - uses: envoyproxy/toolshed/gh-actions/jq@0ce7a3535f840f48da71d967cddf9e27ece54a18
     name: Create data
     id: data
     with:
