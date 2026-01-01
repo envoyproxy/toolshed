@@ -99,7 +99,6 @@ VERSIONS = {
         "version": "0.0.7",
         "sha256": "4531deccb913639c30e5c7512a054d5d875698daeb75d8cf90f284375fe7c360",
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
-        "strip_prefix": "{name}-{version}",
     },
     "rules_shell": {
         "type": "github_archive",

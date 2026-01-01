@@ -62,7 +62,7 @@ pkg_files(
     name = "msan_libs_files",
     srcs = [":libcxx_msan"],
     prefix = "msan-libs-x86_64/lib",
-    strip_prefix = "libcxx_msan",
+    strip_prefix = ".",
 )
 
 pkg_tar(
@@ -76,7 +76,7 @@ pkg_files(
     name = "tsan_libs_files",
     srcs = [":libcxx_tsan"],
     prefix = "tsan-libs-x86_64/lib",
-    strip_prefix = "libcxx_tsan",
+    strip_prefix = ".",
 )
 
 pkg_tar(
