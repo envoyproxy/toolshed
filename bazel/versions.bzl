@@ -62,17 +62,6 @@ VERSIONS = {
         "strip_prefix": "llvm-project-{version}",
         "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
     },
-    "org_chromium_sysroot_linux_x64": {
-        "type": "github_archive",
-        "sha256": "5df5be9357b425cdd70d92d4697d07e7d55d7a923f037c22dc80a78e85842d2c",
-        "version": "bullseye",
-        "url": "https://commondatastorage.googleapis.com/chrome-linux-sysroot/toolchain/4f611ec025be98214164d4bf9fbe8843f58533f7/debian_{version}_amd64_sysroot.tar.xz",
-        "build_file_content": """filegroup(
-    name = "sysroot",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
-)""",
-    },
     "rules_python": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_python",
