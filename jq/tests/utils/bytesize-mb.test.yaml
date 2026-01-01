@@ -1,0 +1,7 @@
+name: utils::bytesize formats megabytes
+
+input: 1048576
+
+module: utils::bytesize
+
+expected: "1MB"

@@ -1,0 +1,11 @@
+name: str::indent adds 4 spaces to each line
+
+input: "foo\nbar\nbaz"
+
+imports:
+  - str
+
+expression: |
+  str::indent(4)
+
+expected: "    foo\n    bar\n    baz"

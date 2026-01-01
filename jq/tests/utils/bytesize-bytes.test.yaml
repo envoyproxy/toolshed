@@ -1,0 +1,7 @@
+name: utils::bytesize formats bytes
+
+input: 512
+
+module: utils::bytesize
+
+expected: "512B"

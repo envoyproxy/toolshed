@@ -1,0 +1,7 @@
+name: utils::bytesize formats kilobytes
+
+input: 2048
+
+module: utils::bytesize
+
+expected: "2KB"
