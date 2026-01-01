@@ -1,0 +1,15 @@
+name: args::parse URL with multiple equals signs in value
+
+input: "cmd --url=https://example.com/path?key=value"
+
+expression: 'args::parse({"flags": [], "options": ["url"]})'
+
+imports:
+- args
+
+expected:
+  args:
+  - "cmd"
+  flags: {}
+  options:
+    url: "https://example.com/path?key=value"

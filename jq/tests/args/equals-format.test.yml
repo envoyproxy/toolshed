@@ -1,0 +1,16 @@
+name: args::parse options with equals sign format
+
+input: "cmd --output=file.txt --name=test"
+
+expression: 'args::parse({"flags": [], "options": ["output", "name"]})'
+
+imports:
+- args
+
+expected:
+  args:
+  - "cmd"
+  flags: {}
+  options:
+    output: "file.txt"
+    name: "test"

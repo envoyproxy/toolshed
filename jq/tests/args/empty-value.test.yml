@@ -1,0 +1,16 @@
+name: args::parse empty value with equals sign
+
+input: "cmd --empty= --full=value"
+
+expression: 'args::parse({"flags": [], "options": ["empty", "full"]})'
+
+imports:
+- args
+
+expected:
+  args:
+  - "cmd"
+  flags: {}
+  options:
+    empty: ""
+    full: "value"
