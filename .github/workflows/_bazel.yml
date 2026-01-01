@@ -57,7 +57,12 @@ jobs:
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
       shell: bash
       run: |
-        # Start bazel in the background (don't use setsid - it detaches from signal handling)
+        # Debug: Show our PID and parent PID
+        echo "::notice::Script PID=$$, PPID=$PPID"
+        echo "::notice::Process tree:"
+        ps -ef | grep -E "$$|$PPID" | grep -v grep || true
+
+        # Start bazel in the background
         bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }} &
         BAZEL_PID=$!
 
@@ -65,26 +70,37 @@ jobs:
 
         # Function to handle termination signals
         cleanup() {
-          echo "::warning::Received termination signal! Killing Bazel and all children..."
+          echo "::warning::==== CLEANUP TRIGGERED ==== Signal received!"
+          echo "::warning::Killing Bazel PID $BAZEL_PID and all children..."
           # List processes before killing
           ps -eo pid,ppid,command | grep -E "bazel|java" | grep -v grep | head -20 || true
           # Kill bazel itself with SIGKILL (unkillable)
           kill -KILL $BAZEL_PID 2>/dev/null || true
           # Kill all child processes of bazel
           ps -o pid= --ppid $BAZEL_PID 2>/dev/null | xargs -r kill -KILL 2>/dev/null || true
-          echo "::notice::Sent SIGKILL to Bazel process tree"
+          echo "::warning::Sent SIGKILL to Bazel process tree"
           exit 130
         }
 
-        # Trap ALL relevant cancellation signals (SIGINT, SIGTERM, SIGHUP)
-        trap cleanup SIGTERM SIGINT SIGHUP
+        # Trap ALL relevant cancellation signals
+        trap cleanup SIGTERM SIGINT SIGHUP EXIT
 
-        echo "::notice::Signal trap configured for SIGTERM, SIGINT, SIGHUP - waiting for Bazel..."
+        # Show trap status
+        echo "::notice::Traps configured:"
+        trap -p
 
-        # Wait for bazel - this should be interrupted by signals
+        echo "::notice::Waiting for Bazel (PID $BAZEL_PID)..."
+        echo "::notice::To cancel, GitHub Actions should send SIGINT/SIGTERM to PID $$"
+
+        # Wait for bazel - wait is interruptible by signals
         wait $BAZEL_PID
         EXIT_CODE=$?
-        echo "::notice::Bazel exited with code $EXIT_CODE"
+        echo "::notice::Wait returned with exit code $EXIT_CODE"
+
+        # If we get here normally, remove EXIT trap to avoid double cleanup
+        trap - EXIT
+
+        echo "::notice::Bazel completed with code $EXIT_CODE"
         exit $EXIT_CODE
       working-directory: ${{ inputs.bazel-path }}
     - name: Bazel artifact paths
