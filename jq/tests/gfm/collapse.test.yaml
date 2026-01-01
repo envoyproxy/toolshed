@@ -6,7 +6,7 @@ input:
   open: false
 
 imports:
-  - gfm
+- gfm
 
 expression: |
   gfm::collapse

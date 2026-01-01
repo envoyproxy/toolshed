@@ -3,7 +3,7 @@ name: str::indent adds 2 spaces to each line
 input: "hello\nworld"
 
 imports:
-  - str
+- str
 
 expression: |
   str::indent(2)

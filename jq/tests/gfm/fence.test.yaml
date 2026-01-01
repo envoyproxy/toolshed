@@ -3,7 +3,7 @@ name: gfm::fence wraps code in markdown fence
 input: "echo 'hello world'"
 
 imports:
-  - gfm
+- gfm
 
 expression: |
   gfm::fence("bash")

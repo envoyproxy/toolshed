@@ -3,7 +3,7 @@ name: str::indent adds 4 spaces to each line
 input: "foo\nbar\nbaz"
 
 imports:
-  - str
+- str
 
 expression: |
   str::indent(4)
