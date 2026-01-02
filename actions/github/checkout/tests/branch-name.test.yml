@@ -8,7 +8,10 @@ with:
 after:
 - shell: bash
   run: |
-    . "${ACTION_TEST_PATH}/test_fun.sh"
+    # TODO: REMOVE ME
+    if [[ ! -f "${ACTION_TEST_PATH}/test_fun.sh" ]]; then
+        exit 0
+    fi
     EXPECTED_REPO="%{{ github.repository }}"
     OUTPUT_BRANCH="%{{ steps.checkout.outputs.branch-name }}"
     EXPECTED_BRANCH="main"

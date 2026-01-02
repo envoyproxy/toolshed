@@ -47,18 +47,6 @@ runs:
       echo "TEST_OUTPUT=${TEST_OUTPUT}" >> "$GITHUB_ENV"
       ACTION_TEST_PATH="$(realpath $(dirname "${{ inputs.config }}"))"
       echo "ACTION_TEST_PATH=${ACTION_TEST_PATH}" >> "$GITHUB_ENV"
-      
-      # Create symlink shim at repository root to handle directory rename
-      # This ensures both gh-actions/ and actions/ paths work
-      REPO_ROOT="$(git rev-parse --show-toplevel)"
-      if [[ -d "${REPO_ROOT}/actions" && ! -L "${REPO_ROOT}/gh-actions" && ! -e "${REPO_ROOT}/gh-actions" ]]; then
-        ln -s "${REPO_ROOT}/actions" "${REPO_ROOT}/gh-actions"
-        echo "Created symlink: gh-actions -> actions"
-      elif [[ -d "${REPO_ROOT}/gh-actions" && ! -L "${REPO_ROOT}/actions" && ! -e "${REPO_ROOT}/actions" ]]; then
-        ln -s "${REPO_ROOT}/gh-actions" "${REPO_ROOT}/actions"
-        echo "Created symlink: actions -> gh-actions"
-      fi
-      
       MOCK_LOG="$(mktemp)"
       echo "MOCK_LOG=${MOCK_LOG}" >> "$GITHUB_ENV"
       echo "${ACTION_TEST_PATH}/mocks:$PATH" >> $GITHUB_PATH
