@@ -19,7 +19,28 @@
       }
     ],
     // octokit/rest requires parameters that are not in camelcase
-    "camelcase": "off"
+    "camelcase": "off",
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "variable",
+        "format": ["snake_case", "UPPER_CASE"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "function",
+        "format": ["snake_case"]
+      },
+      {
+        "selector": "parameter",
+        "format": ["snake_case"],
+        "leadingUnderscore": "allow"
+      },
+      {
+        "selector": "typeLike",
+        "format": ["PascalCase"]
+      }
+    ]
   },
   "env": {
     "node": true,

@@ -3,31 +3,31 @@ import os from 'os'
 import {exec} from 'child_process'
 import tmp from 'tmp'
 import type {JqConfig, JqResult, TempFileHandles} from './types'
-import {processInput} from './input'
-import {buildFilter, cleanupTempFiles} from './filter'
+import {process_input} from './input'
+import {build_filter, cleanup_temp_files} from './filter'
 
 /**
  * Execute jq with the given configuration
  */
-export async function runJq(config: JqConfig): Promise<JqResult> {
+export async function run_jq(config: JqConfig): Promise<JqResult> {
   return new Promise((resolve, reject) => {
     try {
-      const mangledInput = processInput(config.input, config.inputFormat, config.decode)
-      const {filterArg, filterFunArg, tempHandles} = buildFilter(
+      const mangled_input = process_input(config.input, config.input_format, config.decode)
+      const {filter_arg, filter_fun_arg, temp_handles} = build_filter(
         config.filter,
-        config.filterFun,
-        config.useTmpFileForFilter,
+        config.filter_fun,
+        config.use_tmp_file_for_filter,
       )
-      const shellCommand = buildShellCommand(
-        mangledInput,
+      const shell_command = build_shell_command(
+        mangled_input,
         config.options,
-        filterFunArg,
-        filterArg,
-        config.useTmpFile,
-        tempHandles,
+        filter_fun_arg,
+        filter_arg,
+        config.use_tmp_file,
+        temp_handles,
       )
-      const proc = exec(shellCommand, (error, stdout, stderr) => {
-        cleanupTempFiles(tempHandles)
+      const proc = exec(shell_command, (error, stdout, stderr) => {
+        cleanup_temp_files(temp_handles)
         if (error) {
           reject(error)
           return
@@ -51,19 +51,19 @@ export async function runJq(config: JqConfig): Promise<JqResult> {
 /**
  * Build the shell command for executing jq
  */
-function buildShellCommand(
+function build_shell_command(
   input: string,
   options: string,
-  filterFunArg: string,
-  filterArg: string,
-  useTmpFile: boolean,
-  tempHandles: TempFileHandles,
+  filter_fun_arg: string,
+  filter_arg: string,
+  use_tmp_file: boolean,
+  temp_handles: TempFileHandles,
 ): string {
-  let shellCommand = `printf '%s' '${input}' | jq ${options} ${filterFunArg} ${filterArg}`
-  if (os.platform() === 'win32' || useTmpFile) {
-    tempHandles.tmpFile = tmp.fileSync()
-    fs.writeFileSync(tempHandles.tmpFile.name, input)
-    shellCommand = `cat ${tempHandles.tmpFile.name} | jq ${options} ${filterFunArg} ${filterArg}`
+  let shell_command = `printf '%s' '${input}' | jq ${options} ${filter_fun_arg} ${filter_arg}`
+  if (os.platform() === 'win32' || use_tmp_file) {
+    temp_handles.tmp_file = tmp.fileSync()
+    fs.writeFileSync(temp_handles.tmp_file.name, input)
+    shell_command = `cat ${temp_handles.tmp_file.name} | jq ${options} ${filter_fun_arg} ${filter_arg}`
   }
-  return shellCommand
+  return shell_command
 }

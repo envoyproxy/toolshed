@@ -5,17 +5,17 @@ export interface JqConfig {
   input: string
   filter: string
   options: string
-  inputFormat: string
-  useTmpFile: boolean
-  useTmpFileForFilter: boolean
-  filterFun?: string
+  input_format: string
+  use_tmp_file: boolean
+  use_tmp_file_for_filter: boolean
+  filter_fun?: string
   decode: boolean
   encode: boolean
-  printOutput: boolean
-  printResult: boolean
-  trimResult: boolean
-  envVar?: string
-  outputPath?: string
+  print_output: boolean
+  print_result: boolean
+  trim_result: boolean
+  env_var?: string
+  output_path?: string
 }
 
 /**
@@ -30,7 +30,7 @@ export interface JqResult {
  * Temporary file handles for cleanup
  */
 export interface TempFileHandles {
-  tmpFile?: {name: string; removeCallback: () => void}
-  tmpFileFilter?: {name: string; removeCallback: () => void}
-  tmpDirFun?: {name: string; removeCallback: () => void}
+  tmp_file?: {name: string; removeCallback: () => void}
+  tmp_file_filter?: {name: string; removeCallback: () => void}
+  tmp_dir_fun?: {name: string; removeCallback: () => void}
 }

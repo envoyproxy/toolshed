@@ -2,37 +2,37 @@ import * as core from '@actions/core'
 import os from 'os'
 import * as path from 'path'
 import type {JqConfig} from './types'
-import {runJq} from './runner'
-import {processOutput, writeOutput, type OutputOptions} from './output'
+import {run_jq} from './runner'
+import {process_output, write_output, type OutputOptions} from './output'
 
 /**
  * GitHub Actions integration for jq
  */
-export async function runGitHubAction(): Promise<void> {
+export async function run_github_action(): Promise<void> {
   try {
     const input = core.getInput('input')
     if (!input || input === '') return
-    const config = buildConfigFromInputs()
+    const config = build_config_from_inputs()
     core.debug(`Running jq with config: ${JSON.stringify(config)}`)
-    const result = await runJq(config)
-    const outputOptions: OutputOptions = {
+    const result = await run_jq(config)
+    const output_options: OutputOptions = {
       encode: core.getBooleanInput('encode'),
-      printOutput: core.getBooleanInput('print-output'),
-      printResult: core.getBooleanInput('print-result'),
-      trimResult: core.getBooleanInput('trim-result'),
-      outputPath: getOutputPath(),
+      print_output: core.getBooleanInput('print-output'),
+      print_result: core.getBooleanInput('print-result'),
+      trim_result: core.getBooleanInput('trim-result'),
+      output_path: get_output_path(),
     }
-    const processedOutput = processOutput(result.output, outputOptions)
-    core.setOutput('value', processedOutput)
-    const envVar = core.getInput('env_var')
-    if (envVar) {
-      process.env[envVar] = processedOutput
-      core.exportVariable(envVar, processedOutput)
+    const processed_output = process_output(result.output, output_options)
+    core.setOutput('value', processed_output)
+    const env_var = core.getInput('env_var')
+    if (env_var) {
+      process.env[env_var] = processed_output
+      core.exportVariable(env_var, processed_output)
     }
-    if (outputOptions.printOutput) {
-      process.stdout.write(outputOptions.trimResult ? processedOutput.trim() : processedOutput)
+    if (output_options.print_output) {
+      process.stdout.write(output_options.trim_result ? processed_output.trim() : processed_output)
     }
-    writeOutput(processedOutput, outputOptions.outputPath, core.summary)
+    write_output(processed_output, output_options.output_path, core.summary)
     if (result.stderr) {
       process.stderr.write(`stderr: ${result.stderr}`)
     }
@@ -51,39 +51,39 @@ export async function runGitHubAction(): Promise<void> {
 /**
  * Build JqConfig from GitHub Actions inputs
  */
-function buildConfigFromInputs(): JqConfig {
-  let outputPath = core.getInput('output-path')
-  if (outputPath && outputPath.startsWith('/tmp') && process.platform === 'win32') {
-    outputPath = path.join(os.tmpdir(), path.basename(outputPath))
+function build_config_from_inputs(): JqConfig {
+  let output_path = core.getInput('output-path')
+  if (output_path && output_path.startsWith('/tmp') && process.platform === 'win32') {
+    output_path = path.join(os.tmpdir(), path.basename(output_path))
   }
   return {
     input: core.getInput('input'),
     filter: core.getInput('filter'),
     options: core.getInput('options'),
-    inputFormat: core.getInput('input-format'),
-    useTmpFile: core.getBooleanInput('use-tmp-file'),
-    useTmpFileForFilter: core.getBooleanInput('use-tmp-file-filter'),
-    filterFun: core.getInput('filter-fun') || undefined,
+    input_format: core.getInput('input-format'),
+    use_tmp_file: core.getBooleanInput('use-tmp-file'),
+    use_tmp_file_for_filter: core.getBooleanInput('use-tmp-file-filter'),
+    filter_fun: core.getInput('filter-fun') || undefined,
     decode: core.getBooleanInput('decode'),
     encode: core.getBooleanInput('encode'),
-    printOutput: core.getBooleanInput('print-output'),
-    printResult: core.getBooleanInput('print-result'),
-    trimResult: core.getBooleanInput('trim-result'),
-    envVar: core.getInput('env_var') || undefined,
-    outputPath: outputPath || undefined,
+    print_output: core.getBooleanInput('print-output'),
+    print_result: core.getBooleanInput('print-result'),
+    trim_result: core.getBooleanInput('trim-result'),
+    env_var: core.getInput('env_var') || undefined,
+    output_path: output_path || undefined,
   }
 }
 
 /**
  * Get output path with Windows path handling
  */
-function getOutputPath(): string | undefined {
-  let outputPath = core.getInput('output-path')
-  if (!outputPath) {
+function get_output_path(): string | undefined {
+  let output_path = core.getInput('output-path')
+  if (!output_path) {
     return undefined
   }
-  if (outputPath && outputPath.startsWith('/tmp') && process.platform === 'win32') {
-    outputPath = path.join(os.tmpdir(), path.basename(outputPath))
+  if (output_path && output_path.startsWith('/tmp') && process.platform === 'win32') {
+    output_path = path.join(os.tmpdir(), path.basename(output_path))
   }
-  return outputPath
+  return output_path
 }
