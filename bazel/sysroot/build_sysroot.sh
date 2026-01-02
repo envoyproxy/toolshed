@@ -5,6 +5,38 @@
 
 set -e
 
+# Retry function to handle transient network failures
+# Usage: retry <max_attempts> <delay_seconds> <command> [args...]
+retry() {
+    local max_attempts="$1"
+    local delay="$2"
+    shift 2
+    local attempt=1
+    local exit_code=0
+
+    while [ "$attempt" -le "$max_attempts" ]; do
+        echo "Attempt $attempt of $max_attempts: $*"
+        
+        # Run the command and capture exit code
+        if "$@"; then
+            echo "Command succeeded on attempt $attempt"
+            return 0
+        else
+            exit_code=$?
+            echo "Command failed with exit code $exit_code on attempt $attempt"
+            
+            if [ "$attempt" -lt "$max_attempts" ]; then
+                echo "Waiting ${delay} seconds before retry..."
+                sleep "$delay"
+                attempt=$((attempt + 1))
+            else
+                echo "All $max_attempts attempts failed"
+                return $exit_code
+            fi
+        fi
+    done
+}
+
 DEFAULT_REMOVE_DIRS=(
     bin
     boot
@@ -193,7 +225,8 @@ create_base_sysroot () {
         "$WORK_DIR"
         "$DEBIAN_MIRROR"
     )
-    sudo debootstrap "${DEBOOTSTRAP_ARGS[@]}"
+    # Retry debootstrap up to 3 times with 30 second delays
+    retry 3 30 sudo debootstrap "${DEBOOTSTRAP_ARGS[@]}"
 }
 
 configure_package_sources () {
@@ -206,10 +239,13 @@ configure_package_sources () {
 install_base_packages () {
     echo ""
     echo "Step 3: Installing base packages..."
-    sudo chroot "$WORK_DIR" apt-get -qq update
-    sudo chroot "$WORK_DIR" apt-get -qq install --no-install-recommends -y \
+    # Retry apt-get update up to 3 times with 10 second delays
+    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
+    # Retry apt-get install up to 3 times with 10 second delays
+    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install --no-install-recommends -y \
          libc6 libc6-dev "$LIBGCC_PACKAGE" libxml2-dev
-    sudo chroot "$WORK_DIR" apt-get -qq install --no-install-recommends -y \
+    # Retry apt-get install up to 3 times with 10 second delays
+    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install --no-install-recommends -y \
          -t "$DEBIAN_VERSION-backports" linux-libc-dev
 }
 
@@ -222,10 +258,13 @@ install_libstdcc () {
             echo "Step 4: Installing libstdc++..."
             echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
                 | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-            sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
+            # Retry apt-key up to 3 times with 10 second delays
+            retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
                 --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
-            sudo chroot "$WORK_DIR" apt-get -qq update
-            sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
+            # Retry apt-get update up to 3 times with 10 second delays
+            retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
+            # Retry apt-get install up to 3 times with 10 second delays
+            retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
         fi
     fi
 }
