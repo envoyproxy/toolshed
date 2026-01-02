@@ -110,7 +110,6 @@ RUN --mount=type=bind,source=/debian/fun.sh,target=/fun.sh \
     && stamp_build gcc "$CONTAINER_TAG"
 
 FROM docker-base AS docker
-FROM docker-base AS docker
 ARG CONTAINER_TAG
 RUN --mount=type=bind,source=/debian/fun.sh,target=/fun.sh \
     . /fun.sh \
