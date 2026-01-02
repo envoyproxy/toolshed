@@ -55,7 +55,7 @@ jobs:
         TAG_SHA=$(git log -1 --pretty=format:"%H" ./docker/build)
         echo "sha=${TAG_SHA}" >> $GITHUB_OUTPUT
 
-    - name: Build Docker image (debian-${{ matrix.arch }})
+     - name: Build Docker image (debian-${{ matrix.arch }})
       run: |
         cd docker/build
         export OS_FAMILY=linux
@@ -64,7 +64,6 @@ jobs:
         export CONTAINER_TAG=${{ steps.docker-sha.outputs.sha }}
         export BUILD_TOOLS_PLATFORMS=${{ matrix.arch == 'amd64' && 'linux/amd64' || 'linux/arm64' }}
         export SAVE_OCI=false
-        export NO_BUILD_VARIANTS=true
         export LOAD_IMAGE=true
         ./push.sh
         echo "::group::Docker images"
@@ -74,9 +73,16 @@ jobs:
 
     - name: Test Docker image
       run: |
-        echo "Testing image: envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }}"
-        if docker image inspect envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} >/dev/null 2>&1; then
-          docker run --rm envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} cat /.build-id
+        echo "Testing main image: envoyproxy/envoy-build:ci-${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }}"
+        if docker image inspect envoyproxy/envoy-build:ci-${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} >/dev/null 2>&1; then
+          BUILD_ID=$(docker run --rm envoyproxy/envoy-build:ci-${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} cat /.build-id)
+          echo "Build ID: $BUILD_ID"
+          if [[ "$BUILD_ID" == "ci-${{ steps.docker-sha.outputs.sha }}" ]]; then
+            echo "✓ Build ID is correct"
+          else
+            echo "✗ Build ID mismatch: expected 'ci-${{ steps.docker-sha.outputs.sha }}', got '$BUILD_ID'"
+            exit 1
+          fi
         else
           echo "ERROR: Image not found!"
           docker images

@@ -51,6 +51,9 @@ build_and_push_variants () {
         if [[ "${SAVE_OCI}" == "true" ]]; then
             # Save to OCI format
             push_arg+=(--output "type=oci,dest=${OCI_OUTPUT_DIR}/${OS_DISTRO}-${variant}-${CONTAINER_TAG}${ARCH_SUFFIX}.tar")
+        elif [[ "$LOAD_IMAGE" == "true" && "$BUILD_TOOLS_PLATFORMS" != *","* ]]; then
+            # Load image locally when LOAD_IMAGE is set and building single platform
+            push_arg+=(--load)
         elif [[ -n "${IMAGE_TAGS}" && "$variant" != "test" ]]; then
             # Variants are only pushed to dockerhub currently, so if we are pushing images
             # just push the variants immediately.
@@ -61,7 +64,7 @@ build_and_push_variants () {
         if [[ "$variant" == "test" || "$variant" == "ci" || "$variant" == "gcc" || "$variant" == "docker" || "$variant" == "worker" || "$variant" == "devtools" ]]; then
             platform="${BUILD_TOOLS_PLATFORMS}"
         elif [[ "$BUILD_TOOLS_PLATFORMS" == *"linux/amd64"* ]]; then
-            # devtools and mobile are amd64 only (matching original behavior for full/mobile)
+            # mobile is amd64 only
             platform="linux/amd64"
         else
             continue
@@ -79,19 +82,7 @@ build_and_push_variants () {
 
 ci_log_run config_env
 
-# Default target for Debian is 'ci' (includes bazel for builds)
-if [[ "${SAVE_OCI}" == "true" ]]; then
-    echo "Building OCI artifact to: ${OCI_OUTPUT_DIR}/${OS_DISTRO}-ci-${CONTAINER_TAG}${ARCH_SUFFIX}.tar"
-    ci_log_run docker buildx build . -f "${OS_DISTRO}/Dockerfile" -t "${IMAGE_NAME}:${CONTAINER_TAG}${ARCH_SUFFIX}" --target ci --platform "${BUILD_TOOLS_PLATFORMS}" \
-        --build-arg "CONTAINER_TAG=${CONTAINER_TAG}" \
-        --output "type=oci,dest=${OCI_OUTPUT_DIR}/${OS_DISTRO}-ci-${CONTAINER_TAG}${ARCH_SUFFIX}.tar"
-elif [[ "$LOAD_IMAGE" != "true" || "$BUILD_TOOLS_PLATFORMS" == *","* ]]; then
-    # Only build here if we're not loading the image later (multi-arch or LOAD_IMAGE not set)
-    ci_log_run docker buildx build . -f "${OS_DISTRO}/Dockerfile" -t "${IMAGE_NAME}:${CONTAINER_TAG}${ARCH_SUFFIX}" \
-        --build-arg "CONTAINER_TAG=${CONTAINER_TAG}" \
-        --target ci --platform "${BUILD_TOOLS_PLATFORMS}"
-fi
-
+# Build all variants (worker, ci, gcc, devtools, docker, mobile, test)
 if [[ -z "${NO_BUILD_VARIANTS}" ]]; then
     # variants are only pushed for the dockerhub image (not other `IMAGE_TAGS`)
     build_and_push_variants
@@ -111,10 +102,4 @@ if [[ "${SAVE_OCI}" != "true" ]] && [[ -n "${IMAGE_TAGS}" ]]; then
                 --target ci --platform "${BUILD_TOOLS_PLATFORMS}" --push
         fi
     done
-fi
-
-if [[ "$LOAD_IMAGE" == "true" && "$BUILD_TOOLS_PLATFORMS" == *"linux/amd64"*  ]]; then
-    ci_log_run docker buildx build . -f "${OS_DISTRO}/Dockerfile" -t "${IMAGE_NAME}:${CONTAINER_TAG}${ARCH_SUFFIX}" \
-        --build-arg "CONTAINER_TAG=${CONTAINER_TAG}" \
-        --target ci --platform "linux/amd64" --load
 fi
