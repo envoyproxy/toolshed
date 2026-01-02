@@ -29,7 +29,7 @@ runs:
     if: >-
       ! inputs.id
     id: cache-id
-    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/id@05aac27c017b7523d29a7719ba269244112f0722
+    uses: envoyproxy/toolshed/gh-actions/github/artifact/cache/id@a21001ed0c7c2f0ea04c391373b79bbf388706c5
     with:
       name: ${{ inputs.name }}
       token: ${{ inputs.token }}
