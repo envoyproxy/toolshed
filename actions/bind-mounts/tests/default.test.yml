@@ -1,0 +1,49 @@
+uses: ./actions/bind-mounts
+with:
+  mounts: |
+    - src: /tmp/bind-test-src1
+      target: /tmp/bind-test-target1
+    - src: /tmp/bind-test-src2
+      target: /tmp/bind-test-target2
+
+before:
+- shell: bash
+  run: |
+    sudo mkdir -p /tmp/bind-test-src1
+    sudo mkdir -p /tmp/bind-test-src2
+    echo "test-content-1" | sudo tee /tmp/bind-test-src1/file1.txt
+    echo "test-content-2" | sudo tee /tmp/bind-test-src2/file2.txt
+    mkdir -p /tmp/bind-test-target1
+    mkdir -p /tmp/bind-test-target2
+
+after:
+- shell: bash
+  run: |
+    if ! mountpoint -q /tmp/bind-test-target1; then
+        echo "fail:/tmp/bind-test-target1 is not a mount point" >> "$TEST_OUTPUT"
+    else
+        echo "success:/tmp/bind-test-target1 is mounted" >> "$TEST_OUTPUT"
+    fi
+
+    if ! mountpoint -q /tmp/bind-test-target2; then
+        echo "fail:/tmp/bind-test-target2 is not a mount point" >> "$TEST_OUTPUT"
+    else
+        echo "success:/tmp/bind-test-target2 is mounted" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ "$(cat /tmp/bind-test-target1/file1.txt)" != "test-content-1" ]]; then
+        echo "fail:Content not accessible in mount 1" >> "$TEST_OUTPUT"
+    else
+        echo "success:Content accessible in mount 1" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ "$(cat /tmp/bind-test-target2/file2.txt)" != "test-content-2" ]]; then
+        echo "fail:Content not accessible in mount 2" >> "$TEST_OUTPUT"
+    else
+        echo "success:Content accessible in mount 2" >> "$TEST_OUTPUT"
+    fi
+
+    sudo umount /tmp/bind-test-target1
+    sudo umount /tmp/bind-test-target2
+    sudo rm -rf /tmp/bind-test-src1 /tmp/bind-test-src2
+    rm -rf /tmp/bind-test-target1 /tmp/bind-test-target2

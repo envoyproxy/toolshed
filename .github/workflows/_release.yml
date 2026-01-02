@@ -102,7 +102,7 @@ jobs:
       uses: envoyproxy/toolshed/gh-actions/jq@2d46e676172c17700ec475a69ae0893eb55b484d
       with:
         input: |
-          actions: gh-actions/VERSION.txt
+          actions: actions/VERSION.txt
           bins: BINS_VERSION.txt
           bazel: bazel/VERSION.txt
           python: py/VERSION.txt
@@ -139,12 +139,12 @@ jobs:
         while read -r hash; do
             if [[ "$hash" != "$HEAD" ]]; then
                 OUTDATED+=("$hash")
-                git grep "${hash}" gh-actions/ \
+                git grep "${hash}" actions/ \
                     | cut -d: -f1 \
                     | sort -u \
                     | xargs sed -i s/${hash}/${HEAD}/g
             fi
-        done < <(git grep toolshed/gh-actions/ gh-actions/ | grep @ | grep -v VERSION | cut -d@ -f2 | sort -u)
+        done < <(git grep toolshed/gh-actions/ actions/ | grep @ | grep -v VERSION | cut -d@ -f2 | sort -u)
 
     # BAZEL ONLY
     - name: Get latest bins release (for bazel)

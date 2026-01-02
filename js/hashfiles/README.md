@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - id: hashed
-      uses: envoproxy/toolshed/gh-actions/hashfiles@VERSION
+      uses: envoproxy/toolshed/actions/hashfiles@VERSION
       with:
         files: ${input.files}
     - name: Cache something

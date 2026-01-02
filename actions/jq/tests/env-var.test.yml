@@ -1,0 +1,16 @@
+uses: ./actions/jq
+id: jq
+with:
+  input: '{"version": "1.2.3"}'
+  filter: '.version'
+  options: '-r'
+  env_var: 'JQ_VERSION'
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    JQ_OUTPUT='${{ steps.jq.outputs.value }}'
+    test_output_not_empty "$JQ_OUTPUT"
+    test_env_var_set "JQ_VERSION" "1.2.3"

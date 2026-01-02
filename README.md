@@ -17,7 +17,7 @@ Multi-language tooling and libraries for Envoy proxy's CI and development workfl
 - **[rust/](rust/)** - Rust tooling and libraries
 - **[js/](js/)** - JavaScript/TypeScript sources for GitHub Actions
 - **[jq/](jq/)** - jq modules for data processing and command-line argument parsing
-- **[gh-actions/](gh-actions/)** - GitHub Actions workflows
+- **[actions/](actions/)** - GitHub Actions workflows
 - **[sh/](sh/)** - Shell scripts and utilities
 
 ### Development

@@ -1,0 +1,23 @@
+uses: ./actions/github/checkout
+id: checkout
+with:
+  # Note you have to unset the default branch for the config branch
+  #  to take effect.
+  branch:
+  config: |
+    branch: main
+
+after:
+- shell: bash
+  run: |
+    # TODO: REMOVE ME
+    if [[ ! -f "${ACTION_TEST_PATH}/test_fun.sh" ]]; then
+        exit 0
+    fi
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    EXPECTED_REPO="%{{ github.repository }}"
+    OUTPUT_BRANCH="%{{ steps.checkout.outputs.branch-name }}"
+    EXPECTED_BRANCH="main"
+    test_checkout
+    test_repository $EXPECTED_REPO
+    test_branch "$OUTPUT_BRANCH" "$EXPECTED_BRANCH"

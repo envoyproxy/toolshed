@@ -16,7 +16,7 @@ jobs:
     name: Retest
     runs-on: ubuntu-latest
     steps:
-      - uses: envoproxy/toolshed/gh-actions/retest@VERSION
+      - uses: envoproxy/toolshed/actions/retest@VERSION
 ```
 
 ## Development

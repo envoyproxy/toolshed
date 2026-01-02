@@ -1,0 +1,40 @@
+uses: ./actions/github/pr
+id: pr
+with:
+  base: main
+  branch: ${{ env.TEST_BRANCH }}
+  title: ${{ env.TEST_TITLE }}
+  body: ${{ env.TEST_BODY }}
+  commit: true
+  committer-name: ${{ env.TEST_COMMITTER_NAME }}
+  committer-email: ${{ env.TEST_COMMITTER_EMAIL }}
+  commit-message: ${{ env.TEST_COMMIT_MESSAGE }}
+  working-directory: testsubdir
+  GITHUB_TOKEN: "VERYSECRET"
+
+before:
+- shell: bash
+  env:
+    TEST_BODY: This PR tests commit functionality
+    TEST_BRANCH: test/pr-action-workdir
+    TEST_COMMIT_MESSAGE: |
+      feat: Test from subdir
+    TEST_COMMITTER_EMAIL: test-working-dir@example.com
+    TEST_COMMITTER_NAME: Test User in working dir
+    TEST_TITLE: This PR tests working directory
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    setup_test
+    mkdir -p testsubdir
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_output_log \
+        "${TEST_COMMITTER_NAME}" \
+        "${TEST_COMMITTER_EMAIL}" \
+        "${TEST_COMMIT_MESSAGE}" \
+        "${TEST_BRANCH}" \
+        "${TEST_TITLE}" \
+        "${TEST_BODY}"

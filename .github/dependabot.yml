@@ -23,32 +23,32 @@ updates:
 - package-ecosystem: github-actions
   directories:
   - /
-  - /gh-actions/bson
-  - /gh-actions/cache/prime
-  - /gh-actions/cache/restore
-  - /gh-actions/docker/cache/prime
-  - /gh-actions/docker/cache/restore
-  - /gh-actions/docker/fetch
-  - /gh-actions/docker/shas
-  - /gh-actions/envoy/android/pre
-  - /gh-actions/envoy/ci/env
-  - /gh-actions/envoy/ci/request
-  - /gh-actions/envoy/ios/post
-  - /gh-actions/envoy/run/summary
-  - /gh-actions/foreach
-  - /gh-actions/github/artifact/download
-  - /gh-actions/github/checkout
-  - /gh-actions/github/command
-  - /gh-actions/github/env/load
-  - /gh-actions/github/env/save
-  - /gh-actions/github/env/summary
-  - /gh-actions/github/merge-commit
-  - /gh-actions/github/pr
-  - /gh-actions/github/run
-  - /gh-actions/json/table
-  - /gh-actions/upload/diff
-  - /gh-actions/using/recurse
-  - /gh-actions/using/steps
+  - /actions/bson
+  - /actions/cache/prime
+  - /actions/cache/restore
+  - /actions/docker/cache/prime
+  - /actions/docker/cache/restore
+  - /actions/docker/fetch
+  - /actions/docker/shas
+  - /actions/envoy/android/pre
+  - /actions/envoy/ci/env
+  - /actions/envoy/ci/request
+  - /actions/envoy/ios/post
+  - /actions/envoy/run/summary
+  - /actions/foreach
+  - /actions/github/artifact/download
+  - /actions/github/checkout
+  - /actions/github/command
+  - /actions/github/env/load
+  - /actions/github/env/save
+  - /actions/github/env/summary
+  - /actions/github/merge-commit
+  - /actions/github/pr
+  - /actions/github/run
+  - /actions/json/table
+  - /actions/upload/diff
+  - /actions/using/recurse
+  - /actions/using/steps
   schedule:
     interval: daily
   groups:
@@ -58,15 +58,15 @@ updates:
 
 - package-ecosystem: npm
   directories:
-  - /gh-actions/appauth
-  - /gh-actions/dispatch
-  - /gh-actions/github/checks
-  - /gh-actions/github/mutex
-  - /gh-actions/github/script/run
-  - /gh-actions/hashfiles
-  - /gh-actions/jq
-  - /gh-actions/retest
-  - /gh-actions/torun
+  - /actions/appauth
+  - /actions/dispatch
+  - /actions/github/checks
+  - /actions/github/mutex
+  - /actions/github/script/run
+  - /actions/hashfiles
+  - /actions/jq
+  - /actions/retest
+  - /actions/torun
   schedule:
     interval: daily
   groups:
@@ -79,7 +79,7 @@ updates:
   - /bazel
   - /bazel/website
   - /ci
-  - /gh-actions/gcp/setup
+  - /actions/gcp/setup
   - /py/deps
   - /py/deps/docformatter
   - /py/deps/flake8

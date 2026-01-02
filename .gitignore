@@ -175,7 +175,7 @@ $RECYCLE.BIN/
 *.lnk
 
 !js/**/dist
-!gh-actions/github/mutex/lib
+!actions/github/mutex/lib
 
 # Bazel
 bazel-*
