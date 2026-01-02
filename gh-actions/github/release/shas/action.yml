@@ -24,7 +24,7 @@ runs:
   using: composite
   steps:
   - id: filtered-assets
-    uses: envoyproxy/toolshed/gh-actions/bson@3fc4ba66aac5f2e94becf1523293d2b695428699
+    uses: envoyproxy/toolshed/gh-actions/bson@e4126f0adcaaf0a81739ad7fa4e44ff2d32287e0
     with:
       input: |
         tag: ${{ inputs.tag }}
