@@ -116,11 +116,14 @@ jobs:
         version-file: ${{ steps.version-file.outputs.value }}
     - name: Determine release version
       id: release-version
+      env:
+        RELEASE_VERSION: ${{ inputs.release-version }}
+        VERSION_NEXT: ${{ fromJSON(steps.version.outputs.version).next }}
       run: |
-        if [[ -n "${{ inputs.release-version }}" ]]; then
-            echo "version=${{ inputs.release-version }}" >> "$GITHUB_OUTPUT"
+        if [[ -n "${RELEASE_VERSION}" ]]; then
+            echo "version=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
         else
-            echo "version=${{ fromJSON(steps.version.outputs.version).next }}" >> "$GITHUB_OUTPUT"
+            echo "version=${VERSION_NEXT}" >> "$GITHUB_OUTPUT"
         fi
     - name: Update version file
       uses: envoyproxy/toolshed/gh-actions/bson@2d46e676172c17700ec475a69ae0893eb55b484d

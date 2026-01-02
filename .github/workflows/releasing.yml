@@ -69,7 +69,12 @@ jobs:
         ${{ matrix.type == 'actions-with-version'
             && '0.3.99'
             || '' }}
-      type: ${{ matrix.type == 'python-args' && 'python' || (matrix.type == 'actions-with-version' && 'actions' || matrix.type) }}
+      type: >-
+        ${{
+          matrix.type == 'python-args' && 'python'
+          || matrix.type == 'actions-with-version' && 'actions'
+          || matrix.type
+        }}
       warn-on-error: ${{ matrix.type == 'python' && true || false }}
     strategy:
       fail-fast: false
