@@ -85,7 +85,8 @@ if [[ "${SAVE_OCI}" == "true" ]]; then
     ci_log_run docker buildx build . -f "${OS_DISTRO}/Dockerfile" -t "${IMAGE_NAME}:${CONTAINER_TAG}${ARCH_SUFFIX}" --target ci --platform "${BUILD_TOOLS_PLATFORMS}" \
         --build-arg "CONTAINER_TAG=${CONTAINER_TAG}" \
         --output "type=oci,dest=${OCI_OUTPUT_DIR}/${OS_DISTRO}-ci-${CONTAINER_TAG}${ARCH_SUFFIX}.tar"
-else
+elif [[ "$LOAD_IMAGE" != "true" || "$BUILD_TOOLS_PLATFORMS" == *","* ]]; then
+    # Only build here if we're not loading the image later (multi-arch or LOAD_IMAGE not set)
     ci_log_run docker buildx build . -f "${OS_DISTRO}/Dockerfile" -t "${IMAGE_NAME}:${CONTAINER_TAG}${ARCH_SUFFIX}" \
         --build-arg "CONTAINER_TAG=${CONTAINER_TAG}" \
         --target ci --platform "${BUILD_TOOLS_PLATFORMS}"
