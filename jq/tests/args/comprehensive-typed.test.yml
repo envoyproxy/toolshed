@@ -1,0 +1,21 @@
+name: args::parse comprehensive typed example
+
+input: "--name=App --port=8080 --debug --workers=4 --tags v1 --tags v2 input.conf"
+
+expression: 'args::parse({"flags": {"debug": "bool"}, "options": {"name": "string", "port": "int", "workers": "int", "tags": "array"}})'
+
+imports:
+- args
+
+expected:
+  args:
+  - "input.conf"
+  flags:
+    debug: true
+  options:
+    name: "App"
+    port: 8080
+    workers: 4
+    tags:
+    - "v1"
+    - "v2"

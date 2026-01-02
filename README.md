@@ -15,6 +15,7 @@ Multi-language tooling and libraries for Envoy proxy's CI and development workfl
 - **[py/](py/)** - Python packages, libraries, runners, checkers, and dependencies - see [py/README.md](py/README.md) for details
 - **[bazel/](bazel/)** - Bazel build configurations and rules
 - **[rust/](rust/)** - Rust tooling and libraries
+- **[jq/](jq/)** - jq modules for data processing and command-line argument parsing
 - **[gh-actions/](gh-actions/)** - GitHub Actions workflows
 - **[sh/](sh/)** - Shell scripts and utilities
 

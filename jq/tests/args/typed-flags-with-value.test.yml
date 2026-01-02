@@ -1,0 +1,15 @@
+name: args::parse typed flags with explicit values
+
+input: "--verbose=true --level=3"
+
+expression: 'args::parse({"flags": {"verbose": "bool", "level": "int"}})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags:
+    verbose: true
+    level: 3
+  options: {}

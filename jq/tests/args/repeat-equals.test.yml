@@ -2,7 +2,7 @@ name: args::parse repeated option with equals format
 
 input: "--foo=bar --foo=baz"
 
-expression: 'args::parse({"options": ["foo"]})'
+expression: 'args::parse({"options": {"foo": "array"}})'
 
 imports:
 - args

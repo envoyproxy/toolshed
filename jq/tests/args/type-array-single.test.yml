@@ -1,0 +1,15 @@
+name: args::parse array type with single value
+
+input: "--item foo"
+
+expression: 'args::parse({"options": {"item": "array"}})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags: {}
+  options:
+    item:
+    - "foo"

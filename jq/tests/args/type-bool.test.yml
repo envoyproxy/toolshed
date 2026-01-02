@@ -1,0 +1,16 @@
+name: args::parse bool type conversion
+
+input: "--verbose=true --quiet=false --enable yes"
+
+expression: 'args::parse({"options": {"verbose": "bool", "quiet": "bool", "enable": "bool"}})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags: {}
+  options:
+    verbose: true
+    quiet: false
+    enable: true
