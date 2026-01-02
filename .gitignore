@@ -12,6 +12,8 @@ __pycache__/
 .Python
 env/
 build/
+# Exception for docker build directory
+!docker/build/
 develop-eggs/
 dist/
 downloads/
@@ -184,3 +186,6 @@ bazel-*
 rust/tarpaulin-report.html
 
 user.bazelrc
+
+# Docker build artifacts
+docker/build/oci-output/
