@@ -20,8 +20,6 @@ export interface OutputOptions {
  */
 export function processOutput(output: string, options: OutputOptions): string {
   let processedOutput = options.trimResult ? output.trim() : output
-
-  // Print colored result if requested
   if (options.printResult) {
     const tmpFileResult = tmp.fileSync()
     fs.writeFileSync(tmpFileResult.name, processedOutput)
@@ -31,12 +29,9 @@ export function processOutput(output: string, options: OutputOptions): string {
       tmpFileResult.removeCallback()
     })
   }
-
-  // Encode output if requested
   if (options.encode) {
     processedOutput = btoa(unescape(encodeURIComponent(processedOutput)))
   }
-
   return processedOutput
 }
 
@@ -51,7 +46,6 @@ export function writeOutput(
   if (!outputPath) {
     return
   }
-
   if (outputPath === 'GITHUB_STEP_SUMMARY') {
     if (summaryWriter) {
       summaryWriter.addRaw(output).write()

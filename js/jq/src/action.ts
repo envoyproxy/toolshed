@@ -7,24 +7,14 @@ import {processOutput, writeOutput, type OutputOptions} from './output'
 
 /**
  * GitHub Actions integration for jq
- * Reads inputs from GitHub Actions, runs jq, and sets outputs
  */
 export async function runGitHubAction(): Promise<void> {
   try {
-    // Read input
     const input = core.getInput('input')
     if (!input || input === '') return
-
-    // Build configuration from GitHub Actions inputs
     const config = buildConfigFromInputs()
-
-    // Debug logging
     core.debug(`Running jq with config: ${JSON.stringify(config)}`)
-
-    // Run jq
     const result = await runJq(config)
-
-    // Process output
     const outputOptions: OutputOptions = {
       encode: core.getBooleanInput('encode'),
       printOutput: core.getBooleanInput('print-output'),
@@ -32,28 +22,17 @@ export async function runGitHubAction(): Promise<void> {
       trimResult: core.getBooleanInput('trim-result'),
       outputPath: getOutputPath(),
     }
-
     const processedOutput = processOutput(result.output, outputOptions)
-
-    // Set GitHub Actions outputs
     core.setOutput('value', processedOutput)
-
-    // Export environment variable if requested
     const envVar = core.getInput('env_var')
     if (envVar) {
       process.env[envVar] = processedOutput
       core.exportVariable(envVar, processedOutput)
     }
-
-    // Print output if requested
     if (outputOptions.printOutput) {
       process.stdout.write(outputOptions.trimResult ? processedOutput.trim() : processedOutput)
     }
-
-    // Write to file or summary
     writeOutput(processedOutput, outputOptions.outputPath, core.summary)
-
-    // Log stderr if present
     if (result.stderr) {
       process.stderr.write(`stderr: ${result.stderr}`)
     }
@@ -77,7 +56,6 @@ function buildConfigFromInputs(): JqConfig {
   if (outputPath && outputPath.startsWith('/tmp') && process.platform === 'win32') {
     outputPath = path.join(os.tmpdir(), path.basename(outputPath))
   }
-
   return {
     input: core.getInput('input'),
     filter: core.getInput('filter'),
@@ -104,10 +82,8 @@ function getOutputPath(): string | undefined {
   if (!outputPath) {
     return undefined
   }
-
   if (outputPath && outputPath.startsWith('/tmp') && process.platform === 'win32') {
     outputPath = path.join(os.tmpdir(), path.basename(outputPath))
   }
-
   return outputPath
 }

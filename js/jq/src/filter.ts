@@ -23,13 +23,9 @@ export function buildFilter(
 ): FilterBuildResult {
   const tempHandles: TempFileHandles = {}
   let mangledFilter = filter
-
-  // Add standard library imports
   const modPath = path.join(__dirname, '../../../jq')
   mangledFilter = `import "args" as args; import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${mangledFilter}`
   let filterFunArg = `-L ${modPath}`
-
-  // Handle custom filter functions
   if (filterFun) {
     tempHandles.tmpDirFun = tmp.dirSync()
     const funFilename = 'fun.jq'
@@ -38,8 +34,6 @@ export function buildFilter(
     filterFunArg = `-L ${tempHandles.tmpDirFun.name}`
     mangledFilter = `import "fun" as fun; ${mangledFilter}`
   }
-
-  // Handle filter argument (Windows or explicit tmp file)
   let filterArg: string
   if (os.platform() === 'win32' || useTmpFileForFilter) {
     tempHandles.tmpFileFilter = tmp.fileSync()
@@ -48,7 +42,6 @@ export function buildFilter(
   } else {
     filterArg = `'${mangledFilter}'`
   }
-
   return {
     filterArg,
     filterFunArg,
