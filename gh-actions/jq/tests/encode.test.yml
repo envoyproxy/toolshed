@@ -9,24 +9,9 @@ with:
 after:
 - shell: bash
   run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    
     JQ_OUTPUT='${{ steps.jq.outputs.value }}'
-    if [[ -z "$JQ_OUTPUT" ]]; then
-        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
-    else
-        echo "success:jq output is not empty" >> "$TEST_OUTPUT"
-    fi
-
-    # Decode the base64 output to verify it contains the expected value
-    DECODED=$(echo "$JQ_OUTPUT" | base64 -d)
-    if [[ "$DECODED" != "hello world" ]]; then
-        echo "fail:Expected decoded value 'hello world', got '$DECODED'" >> "$TEST_OUTPUT"
-    else
-        echo "success:Decoded value is correct: $DECODED" >> "$TEST_OUTPUT"
-    fi
-
-    # Verify it was actually base64 encoded (should not equal original)
-    if [[ "$JQ_OUTPUT" == "hello world" ]]; then
-        echo "fail:Output was not base64 encoded" >> "$TEST_OUTPUT"
-    else
-        echo "success:Output was base64 encoded" >> "$TEST_OUTPUT"
-    fi
+    test_output_not_empty "$JQ_OUTPUT"
+    test_is_base64_encoded "$JQ_OUTPUT" "hello world"
+    test_base64_decoded "$JQ_OUTPUT" "hello world"

@@ -9,16 +9,8 @@ with:
 after:
 - shell: bash
   run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    
     JQ_OUTPUT='${{ steps.jq.outputs.value }}'
-    if [[ -z "$JQ_OUTPUT" ]]; then
-        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
-    else
-        echo "success:jq output is not empty" >> "$TEST_OUTPUT"
-    fi
-
-    # Verify the decoded and filtered value
-    if [[ "$JQ_OUTPUT" != "hello decoded" ]]; then
-        echo "fail:Expected 'hello decoded', got '$JQ_OUTPUT'" >> "$TEST_OUTPUT"
-    else
-        echo "success:Decoded and filtered value is correct: $JQ_OUTPUT" >> "$TEST_OUTPUT"
-    fi
+    test_output_not_empty "$JQ_OUTPUT"
+    test_output_equals "$JQ_OUTPUT" "hello decoded" "Decoded and filtered value"

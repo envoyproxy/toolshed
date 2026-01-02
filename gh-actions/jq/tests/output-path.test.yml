@@ -9,27 +9,12 @@ with:
 after:
 - shell: bash
   run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    
     JQ_OUTPUT='${{ steps.jq.outputs.value }}'
-    if [[ -z "$JQ_OUTPUT" ]]; then
-        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
-    else
-        echo "success:jq output is not empty: $JQ_OUTPUT" >> "$TEST_OUTPUT"
-    fi
-
-    # Verify the file was created
-    if [[ ! -f /tmp/jq-test-output.txt ]]; then
-        echo "fail:Output file /tmp/jq-test-output.txt not created" >> "$TEST_OUTPUT"
-    else
-        echo "success:Output file was created" >> "$TEST_OUTPUT"
-    fi
-
-    # Verify the file content
-    FILE_CONTENT=$(cat /tmp/jq-test-output.txt)
-    if [[ "$FILE_CONTENT" != "test output" ]]; then
-        echo "fail:Expected file content 'test output', got '$FILE_CONTENT'" >> "$TEST_OUTPUT"
-    else
-        echo "success:File content is correct: $FILE_CONTENT" >> "$TEST_OUTPUT"
-    fi
-
+    test_output_not_empty "$JQ_OUTPUT"
+    test_file_exists "/tmp/jq-test-output.txt" "Output file"
+    test_file_content "/tmp/jq-test-output.txt" "test output"
+    
     # Cleanup
     rm -f /tmp/jq-test-output.txt

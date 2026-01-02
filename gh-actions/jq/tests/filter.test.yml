@@ -7,23 +7,9 @@ with:
 after:
 - shell: bash
   run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    
     JQ_OUTPUT='${{ steps.jq.outputs.value }}'
-    if [[ -z "$JQ_OUTPUT" ]]; then
-        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
-    else
-        echo "success:jq output is not empty: $JQ_OUTPUT" >> "$TEST_OUTPUT"
-    fi
-
-    FIRST_NAME=$(echo "$JQ_OUTPUT" | jq -r '.[0]')
-    if [[ "$FIRST_NAME" != "Alice" ]]; then
-        echo "fail:Expected first name 'Alice', got '$FIRST_NAME'" >> "$TEST_OUTPUT"
-    else
-        echo "success:First name is correct: $FIRST_NAME" >> "$TEST_OUTPUT"
-    fi
-
-    SECOND_NAME=$(echo "$JQ_OUTPUT" | jq -r '.[1]')
-    if [[ "$SECOND_NAME" != "Bob" ]]; then
-        echo "fail:Expected second name 'Bob', got '$SECOND_NAME'" >> "$TEST_OUTPUT"
-    else
-        echo "success:Second name is correct: $SECOND_NAME" >> "$TEST_OUTPUT"
-    fi
+    test_output_not_empty "$JQ_OUTPUT"
+    test_json_array_item "$JQ_OUTPUT" "0" "Alice" "First name"
+    test_json_array_item "$JQ_OUTPUT" "1" "Bob" "Second name"

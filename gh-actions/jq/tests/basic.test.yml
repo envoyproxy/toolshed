@@ -7,23 +7,9 @@ with:
 after:
 - shell: bash
   run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    
     JQ_OUTPUT='${{ steps.jq.outputs.value }}'
-    if [[ -z "$JQ_OUTPUT" ]]; then
-        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
-    else
-        echo "success:jq output is not empty" >> "$TEST_OUTPUT"
-    fi
-
-    KEY_VALUE=$(echo "$JQ_OUTPUT" | jq -r '.key')
-    if [[ "$KEY_VALUE" != "value" ]]; then
-        echo "fail:Expected key 'value', got '$KEY_VALUE'" >> "$TEST_OUTPUT"
-    else
-        echo "success:Key value is correct: $KEY_VALUE" >> "$TEST_OUTPUT"
-    fi
-
-    NUMBER_VALUE=$(echo "$JQ_OUTPUT" | jq -r '.number')
-    if [[ "$NUMBER_VALUE" != "42" ]]; then
-        echo "fail:Expected number '42', got '$NUMBER_VALUE'" >> "$TEST_OUTPUT"
-    else
-        echo "success:Number value is correct: $NUMBER_VALUE" >> "$TEST_OUTPUT"
-    fi
+    test_output_not_empty "$JQ_OUTPUT"
+    test_json_key "$JQ_OUTPUT" "key" "value"
+    test_json_key "$JQ_OUTPUT" "number" "42"
