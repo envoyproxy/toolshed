@@ -30,11 +30,18 @@ jobs:
           - '.github/workflows/docker.yml'
 
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
     needs: request
     if: >-
       github.repository_owner == 'envoyproxy'
       && fromJSON(needs.request.outputs.run || 'false')
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+        - amd64
+        - arm64
+    name: build (${{ matrix.arch }})
     steps:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
 
@@ -48,14 +55,14 @@ jobs:
         TAG_SHA=$(git log -1 --pretty=format:"%H" ./docker/build)
         echo "sha=${TAG_SHA}" >> $GITHUB_OUTPUT
 
-    - name: Build Docker image (debian)
+    - name: Build Docker image (debian-${{ matrix.arch }})
       run: |
         cd docker/build
         export OS_FAMILY=linux
         export OS_DISTRO=debian
         export CONTAINER_SHA=${{ steps.docker-sha.outputs.sha }}
         export CONTAINER_TAG=${{ steps.docker-sha.outputs.sha }}
-        export BUILD_TOOLS_PLATFORMS=linux/amd64
+        export BUILD_TOOLS_PLATFORMS=${{ matrix.arch == 'amd64' && 'linux/amd64' || 'linux/arm64' }}
         export SAVE_OCI=false
         export NO_BUILD_VARIANTS=true
         export LOAD_IMAGE=true
@@ -64,7 +71,7 @@ jobs:
 
     - name: Test Docker image
       run: |
-        docker run --rm envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-amd64 cat /.build-id
+        docker run --rm envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} cat /.build-id
       shell: bash
 
   status:
