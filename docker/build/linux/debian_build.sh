@@ -51,9 +51,6 @@ build_and_push_variants () {
         if [[ "${SAVE_OCI}" == "true" ]]; then
             # Save to OCI format
             push_arg+=(--output "type=oci,dest=${OCI_OUTPUT_DIR}/${OS_DISTRO}-${variant}-${CONTAINER_TAG}${ARCH_SUFFIX}.tar")
-        elif [[ "$LOAD_IMAGE" == "true" && "$BUILD_TOOLS_PLATFORMS" != *","* ]]; then
-            # Load image locally when LOAD_IMAGE is set and building single platform
-            push_arg+=(--load)
         elif [[ -n "${IMAGE_TAGS}" && "$variant" != "test" ]]; then
             # Variants are only pushed to dockerhub currently, so if we are pushing images
             # just push the variants immediately.
@@ -101,5 +98,26 @@ if [[ "${SAVE_OCI}" != "true" ]] && [[ -n "${IMAGE_TAGS}" ]]; then
                 --build-arg "CONTAINER_TAG=${CONTAINER_TAG}" \
                 --target ci --platform "${BUILD_TOOLS_PLATFORMS}" --push
         fi
+    done
+fi
+
+# When LOAD_IMAGE is true, do additional builds with --load for testing
+# This is needed because --load and OCI output are mutually exclusive
+if [[ "$LOAD_IMAGE" == "true" && "$BUILD_TOOLS_PLATFORMS" != *","* ]]; then
+    # Load all variants for testing when building single platform
+    for variant in "${DEBIAN_DOCKER_VARIANTS[@]}"; do
+        if [[ "$variant" == "test" || "$variant" == "ci" || "$variant" == "gcc" || "$variant" == "docker" || "$variant" == "worker" || "$variant" == "devtools" ]]; then
+            platform="${BUILD_TOOLS_PLATFORMS}"
+        elif [[ "$BUILD_TOOLS_PLATFORMS" == *"linux/amd64"* && "$variant" == "mobile" ]]; then
+            platform="linux/amd64"
+        else
+            continue
+        fi
+        ci_log_run docker buildx build . -f "${OS_DISTRO}/Dockerfile" \
+                   -t "${IMAGE_NAME}:${variant}-${CONTAINER_TAG}${ARCH_SUFFIX}" \
+                   --build-arg "CONTAINER_TAG=${CONTAINER_TAG}" \
+                   --target "${variant}" \
+                   --platform "$platform" \
+                   --load
     done
 fi
