@@ -8,58 +8,58 @@ import type {TempFileHandles} from './types'
  * Result of building a filter with temp files and arguments
  */
 export interface FilterBuildResult {
-  filterArg: string
-  filterFunArg: string
-  tempHandles: TempFileHandles
+  filter_arg: string
+  filter_fun_arg: string
+  temp_handles: TempFileHandles
 }
 
 /**
  * Build jq filter with imports and manage temporary files
  */
-export function buildFilter(
+export function build_filter(
   filter: string,
-  filterFun: string | undefined,
-  useTmpFileForFilter: boolean,
+  filter_fun: string | undefined,
+  use_tmp_file_for_filter: boolean,
 ): FilterBuildResult {
-  const tempHandles: TempFileHandles = {}
-  let mangledFilter = filter
-  const modPath = path.join(__dirname, '../../../jq')
-  mangledFilter = `import "args" as args; import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${mangledFilter}`
-  let filterFunArg = `-L ${modPath}`
-  if (filterFun) {
-    tempHandles.tmpDirFun = tmp.dirSync()
-    const funFilename = 'fun.jq'
-    const funPath = path.join(tempHandles.tmpDirFun.name, funFilename)
-    fs.writeFileSync(funPath, filterFun)
-    filterFunArg = `-L ${tempHandles.tmpDirFun.name}`
-    mangledFilter = `import "fun" as fun; ${mangledFilter}`
+  const temp_handles: TempFileHandles = {}
+  let mangled_filter = filter
+  const mod_path = path.join(__dirname, '../../../jq')
+  mangled_filter = `import "args" as args; import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${mangled_filter}`
+  let filter_fun_arg = `-L ${mod_path}`
+  if (filter_fun) {
+    temp_handles.tmp_dir_fun = tmp.dirSync()
+    const fun_filename = 'fun.jq'
+    const fun_path = path.join(temp_handles.tmp_dir_fun.name, fun_filename)
+    fs.writeFileSync(fun_path, filter_fun)
+    filter_fun_arg = `-L ${temp_handles.tmp_dir_fun.name}`
+    mangled_filter = `import "fun" as fun; ${mangled_filter}`
   }
-  let filterArg: string
-  if (os.platform() === 'win32' || useTmpFileForFilter) {
-    tempHandles.tmpFileFilter = tmp.fileSync()
-    fs.writeFileSync(tempHandles.tmpFileFilter.name, mangledFilter)
-    filterArg = `-f ${tempHandles.tmpFileFilter.name}`
+  let filter_arg: string
+  if (os.platform() === 'win32' || use_tmp_file_for_filter) {
+    temp_handles.tmp_file_filter = tmp.fileSync()
+    fs.writeFileSync(temp_handles.tmp_file_filter.name, mangled_filter)
+    filter_arg = `-f ${temp_handles.tmp_file_filter.name}`
   } else {
-    filterArg = `'${mangledFilter}'`
+    filter_arg = `'${mangled_filter}'`
   }
   return {
-    filterArg,
-    filterFunArg,
-    tempHandles,
+    filter_arg,
+    filter_fun_arg,
+    temp_handles,
   }
 }
 
 /**
  * Clean up temporary files
  */
-export function cleanupTempFiles(tempHandles: TempFileHandles): void {
-  if (tempHandles.tmpFile) {
-    tempHandles.tmpFile.removeCallback()
+export function cleanup_temp_files(temp_handles: TempFileHandles): void {
+  if (temp_handles.tmp_file) {
+    temp_handles.tmp_file.removeCallback()
   }
-  if (tempHandles.tmpFileFilter) {
-    tempHandles.tmpFileFilter.removeCallback()
+  if (temp_handles.tmp_file_filter) {
+    temp_handles.tmp_file_filter.removeCallback()
   }
-  if (tempHandles.tmpDirFun) {
-    tempHandles.tmpDirFun.removeCallback()
+  if (temp_handles.tmp_dir_fun) {
+    temp_handles.tmp_dir_fun.removeCallback()
   }
 }
