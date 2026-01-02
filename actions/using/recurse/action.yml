@@ -11,7 +11,7 @@ runs:
   steps:
   # .tmp.action/action.yml **must** be hardcoded
 
-  - uses: envoyproxy/toolshed/actions/jq@6a20085af231aba4c72d6866f94098343a8c5616
+  - uses: envoyproxy/toolshed/actions/jq@69aa462c0be204fd842d01fae8d345888e44d133
     id: yaml
     with:
       input: ${{ inputs.with }}
