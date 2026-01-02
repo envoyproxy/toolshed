@@ -25,6 +25,10 @@ on:
         description: Dry run (no PR created).
         type: boolean
         default: false
+      prepare-args:
+        description: Prepare args.
+        type: string
+        default:
 
 
 jobs:
@@ -38,4 +42,5 @@ jobs:
       committer-name: publish-envoy[bot]
       committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
       dry-run: ${{ inputs.dry-run }}
+      prepare-args: ${{ inputs.prepare-args }}
       type: ${{ inputs.type }}
