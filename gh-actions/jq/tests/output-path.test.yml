@@ -1,0 +1,20 @@
+uses: ./gh-actions/jq
+id: jq
+with:
+  input: '{"data": "test output"}'
+  filter: '.data'
+  options: '-r'
+  output-path: '/tmp/jq-test-output.txt'
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    JQ_OUTPUT='${{ steps.jq.outputs.value }}'
+    test_output_not_empty "$JQ_OUTPUT"
+    test_file_exists "/tmp/jq-test-output.txt" "Output file"
+    test_file_content "/tmp/jq-test-output.txt" "test output"
+
+    # Cleanup
+    rm -f /tmp/jq-test-output.txt
