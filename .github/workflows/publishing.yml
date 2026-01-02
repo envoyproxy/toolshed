@@ -19,7 +19,7 @@ jobs:
       run: ${{ steps.filter.outputs.run }}
       sha: ${{ steps.commit.outputs.sha }}
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/github/should-run@be288057ad2e27ab959e8a862a8e35aec091b544
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@d9c68240141573419ab1aa4b619c289b17e13b87
       id: filter
       with:
         config: |
