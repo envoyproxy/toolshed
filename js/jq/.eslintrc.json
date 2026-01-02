@@ -18,7 +18,6 @@
         "semi": false
       }
     ],
-    // octokit/rest requires parameters that are not in camelcase
     "camelcase": "off",
     "@typescript-eslint/naming-convention": [
       "error",
@@ -42,6 +41,14 @@
       }
     ]
   },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off"
+      }
+    }
+  ],
   "env": {
     "node": true,
     "jest": true

@@ -3,7 +3,10 @@ nock.disableNetConnect()
 
 const processStdoutWrite = process.stdout.write.bind(process.stdout)
 process.stdout.write = (str, encoding, cb) => {
-  if (!str.match(/^##/)) {
+  if (typeof str === 'string' && !str.match(/^##/)) {
+    return processStdoutWrite(str, encoding, cb)
+  }
+  if (typeof str !== 'string') {
     return processStdoutWrite(str, encoding, cb)
   }
   return false
