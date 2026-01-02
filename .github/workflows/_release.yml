@@ -144,7 +144,7 @@ jobs:
                     | sort -u \
                     | xargs sed -i s/${hash}/${HEAD}/g
             fi
-        done < <(git grep toolshed/gh-actions/ actions/ | grep @ | grep -v VERSION | cut -d@ -f2 | sort -u)
+        done < <(git grep toolshed/actions/ actions/ | grep @ | grep -v VERSION | cut -d@ -f2 | sort -u)
 
     # BAZEL ONLY
     - name: Get latest bins release (for bazel)
