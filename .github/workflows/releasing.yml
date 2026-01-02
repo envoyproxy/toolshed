@@ -63,8 +63,9 @@ jobs:
       action: ${{ matrix.action }}
       prepare-args: >-
         ${{ matrix.type == 'python-args'
-            && '-u abstracts -u aio.api.github -u envoy.base.utils=0.6.0'
+            && '-u abstracts'
             || '' }}
+      #  -u aio.api.github -u envoy.base.utils=0.6.0
       type: ${{ matrix.type == 'python-args' && 'python' || matrix.type }}
       warn-on-error: ${{ matrix.type == 'python' && true || false }}
     strategy:
