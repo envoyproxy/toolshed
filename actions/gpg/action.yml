@@ -29,14 +29,14 @@ runs:
     id: gpg
     if: >-
       inputs.gpg-key == ''
-    uses: envoyproxy/toolshed/actions/gpg/generate@6a20085af231aba4c72d6866f94098343a8c5616
+    uses: envoyproxy/toolshed/actions/gpg/generate@69aa462c0be204fd842d01fae8d345888e44d133
     with:
       debug: ${{ inputs.debug }}
   - name: Import GPG key
     id: gpg-import
     if: >-
       inputs.gpg-key != ''
-    uses: envoyproxy/toolshed/actions/gpg/import@6a20085af231aba4c72d6866f94098343a8c5616
+    uses: envoyproxy/toolshed/actions/gpg/import@69aa462c0be204fd842d01fae8d345888e44d133
     with:
       key: ${{ inputs.gpg-key }}
       passphrase: ${{ inputs.gpg-password }}
