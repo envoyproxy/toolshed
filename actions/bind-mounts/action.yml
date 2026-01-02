@@ -23,7 +23,7 @@ runs:
   using: composite
   steps:
   - name: Bind mount directories
-    uses: envoyproxy/toolshed/actions/bson@6074d2d8a82935db4157accca5394c40d94caf92
+    uses: envoyproxy/toolshed/actions/bson@21db6f02bb77cfed5fd91555e21172be59ff99eb
     id: mount
     with:
       input: ${{ inputs.mounts }}
