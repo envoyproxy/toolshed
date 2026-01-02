@@ -1,0 +1,5 @@
+# Ignore node_modules in all JS action directories
+node_modules/
+
+# Ignore dist directories - builds output to gh-actions/*/dist/ instead
+dist/
