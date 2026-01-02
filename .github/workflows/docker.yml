@@ -55,7 +55,7 @@ jobs:
         TAG_SHA=$(git log -1 --pretty=format:"%H" ./docker/build)
         echo "sha=${TAG_SHA}" >> $GITHUB_OUTPUT
 
-     - name: Build Docker image (debian-${{ matrix.arch }})
+    - name: Build Docker image (debian-${{ matrix.arch }})
       run: |
         cd docker/build
         export OS_FAMILY=linux
