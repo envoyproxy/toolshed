@@ -61,7 +61,12 @@ jobs:
       committer-email: ci-testing@does.not.exist
       dry-run: true
       action: ${{ matrix.action }}
-      type: ${{ matrix.type }}
+      prepare-args: >-
+        ${{ matrix.type == 'python-args'
+            && '-u abstracts -u aio.api.github -u envoy.base.utils=0.6.0'
+            || '' }}
+      type: ${{ matrix.type == 'python-args' && 'python' || matrix.type }}
+      warn-on-error: ${{ matrix.type == 'python' && true || false }}
     strategy:
       fail-fast: false
       matrix:
@@ -70,6 +75,7 @@ jobs:
         - bazel
         - bins
         - python
+        - python-args
         action:
         - prepare
         - release
