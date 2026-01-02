@@ -21,13 +21,13 @@ runs:
 
   - id: fetch
     name: Fetch AZP agents list
-    uses: envoyproxy/toolshed/actions/fetch@69aa462c0be204fd842d01fae8d345888e44d133
+    uses: envoyproxy/toolshed/actions/fetch@c690d096b071d79027d784add67b9874ba96009d
     with:
       url: https://dev.azure.com/${{ inputs.azp-org }}/_apis/distributedtask/pools/${{ inputs.pool-id }}/agents?api-version=7.1-preview.1
       args: -u ":${{ inputs.azp-token }}"
 
   - name: Get dead AZP agent ids
-    uses: envoyproxy/toolshed/actions/jq@69aa462c0be204fd842d01fae8d345888e44d133
+    uses: envoyproxy/toolshed/actions/jq@c690d096b071d79027d784add67b9874ba96009d
     with:
       input-format: json-path
       input: ${{ steps.fetch.outputs.path }}

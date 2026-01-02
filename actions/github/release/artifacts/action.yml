@@ -41,7 +41,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/jq@69aa462c0be204fd842d01fae8d345888e44d133
+  - uses: envoyproxy/toolshed/actions/jq@c690d096b071d79027d784add67b9874ba96009d
     name: Generate download config
     id: download-config
     with:
@@ -60,7 +60,7 @@ runs:
                  name: $name,
                  run_id: $run_ids[.]}})
         | from_entries
-  - uses: envoyproxy/toolshed/actions/foreach@69aa462c0be204fd842d01fae8d345888e44d133
+  - uses: envoyproxy/toolshed/actions/foreach@c690d096b071d79027d784add67b9874ba96009d
     if: steps.download-config.outputs.value
     with:
       items: ${{ steps.download-config.outputs.value }}
@@ -80,7 +80,7 @@ runs:
   - name: List downloaded artifacts
     id: artifacts
     if: steps.download-config.outputs.value
-    uses: envoyproxy/toolshed/actions/bson@69aa462c0be204fd842d01fae8d345888e44d133
+    uses: envoyproxy/toolshed/actions/bson@c690d096b071d79027d784add67b9874ba96009d
     with:
       catch-errors: true
       input: |
@@ -108,7 +108,7 @@ runs:
     if: >-
       steps.artifacts.outputs.output != ''
       && steps.artifacts.outputs.output != '{}'
-    uses: envoyproxy/toolshed/actions/bson@69aa462c0be204fd842d01fae8d345888e44d133
+    uses: envoyproxy/toolshed/actions/bson@c690d096b071d79027d784add67b9874ba96009d
     with:
       input: |
         artifacts: ${{ steps.artifacts.outputs.output }}
@@ -125,14 +125,14 @@ runs:
     if: >-
       steps.artifacts.outputs.output != ''
       && steps.artifacts.outputs.output != '{}'
-    uses: envoyproxy/toolshed/actions/jq@69aa462c0be204fd842d01fae8d345888e44d133
+    uses: envoyproxy/toolshed/actions/jq@c690d096b071d79027d784add67b9874ba96009d
     with:
       input: ${{ steps.artifacts.outputs.output }}
   - name: Generate workflow artifacts table
     if: >-
       steps.artifacts.outputs.output != ''
       && steps.artifacts.outputs.output != '{}'
-    uses: envoyproxy/toolshed/actions/json/table@69aa462c0be204fd842d01fae8d345888e44d133
+    uses: envoyproxy/toolshed/actions/json/table@c690d096b071d79027d784add67b9874ba96009d
     with:
       title: Artifacts to publish
       append: true
@@ -164,7 +164,7 @@ runs:
       steps.artifacts.outputs.output != '{}'
       && steps.artifacts.outputs.output != ''
       && inputs.gpg-fingerprint != ''
-    uses: envoyproxy/toolshed/actions/gpg/sign@69aa462c0be204fd842d01fae8d345888e44d133
+    uses: envoyproxy/toolshed/actions/gpg/sign@c690d096b071d79027d784add67b9874ba96009d
     with:
       debug: ${{ inputs.debug }}
       fingerprint: ${{ inputs.gpg-fingerprint }}
