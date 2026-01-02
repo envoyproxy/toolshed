@@ -167,16 +167,6 @@ Building sysroots requires:
 
 **Note:** These builds are non-hermetic and require network access to download Debian packages.
 
-### Retry Logic
-
-The build script includes automatic retry logic to handle transient network failures:
-- **debootstrap**: Retries up to 3 times with 30-second delays between attempts
-- **apt-get update**: Retries up to 3 times with 10-second delays between attempts
-- **apt-get install**: Retries up to 3 times with 10-second delays between attempts
-- **apt-key**: Retries up to 3 times with 10-second delays between attempts
-
-This helps ensure successful builds even when temporary network issues occur during package downloads.
-
 ## Release Process
 
 Sysroots are automatically built and published when:

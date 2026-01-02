@@ -1,31 +1,28 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Script to build a Debian sysroot for cross-compilation
 # This is a non-hermetic build that uses debootstrap to create a minimal Debian system
 
-set -e
+set -e -o pipefail
 
-# Retry function to handle transient network failures
-# Usage: retry <max_attempts> <delay_seconds> <command> [args...]
+
 retry() {
+    # Retry function to handle transient network failures
+    # Usage: retry <max_attempts> <delay_seconds> <command> [args...]
     local max_attempts="$1"
     local delay="$2"
     shift 2
     local attempt=1
     local exit_code=0
 
-    while [ "$attempt" -le "$max_attempts" ]; do
-        echo "Attempt $attempt of $max_attempts: $*"
-        
-        # Run the command and capture exit code
+    while [[ "$attempt" -le "$max_attempts" ]]; do
         if "$@"; then
-            echo "Command succeeded on attempt $attempt"
             return 0
         else
             exit_code=$?
             echo "Command failed with exit code $exit_code on attempt $attempt"
-            
-            if [ "$attempt" -lt "$max_attempts" ]; then
+
+            if [[ "$attempt" -lt "$max_attempts" ]]; then
                 echo "Waiting ${delay} seconds before retry..."
                 sleep "$delay"
                 attempt=$((attempt + 1))
@@ -239,12 +236,9 @@ configure_package_sources () {
 install_base_packages () {
     echo ""
     echo "Step 3: Installing base packages..."
-    # Retry apt-get update up to 3 times with 10 second delays
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
-    # Retry apt-get install up to 3 times with 10 second delays
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install --no-install-recommends -y \
          libc6 libc6-dev "$LIBGCC_PACKAGE" libxml2-dev
-    # Retry apt-get install up to 3 times with 10 second delays
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install --no-install-recommends -y \
          -t "$DEBIAN_VERSION-backports" linux-libc-dev
 }
@@ -258,12 +252,9 @@ install_libstdcc () {
             echo "Step 4: Installing libstdc++..."
             echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
                 | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-            # Retry apt-key up to 3 times with 10 second delays
             retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
                 --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
-            # Retry apt-get update up to 3 times with 10 second delays
             retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
-            # Retry apt-get install up to 3 times with 10 second delays
             retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
         fi
     fi
