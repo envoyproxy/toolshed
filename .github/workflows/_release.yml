@@ -40,6 +40,10 @@ on:
       prepare-args:
         type: string
         default:
+      release-version:
+        description: Release version (overrides version.next if set)
+        type: string
+        default:
       python-find-versions:
         type: string
         default: |
@@ -110,6 +114,14 @@ jobs:
       uses: envoyproxy/toolshed/gh-actions/version@2d46e676172c17700ec475a69ae0893eb55b484d
       with:
         version-file: ${{ steps.version-file.outputs.value }}
+    - name: Determine release version
+      id: release-version
+      run: |
+        if [[ -n "${{ inputs.release-version }}" ]]; then
+            echo "version=${{ inputs.release-version }}" >> "$GITHUB_OUTPUT"
+        else
+            echo "version=${{ fromJSON(steps.version.outputs.version).next }}" >> "$GITHUB_OUTPUT"
+        fi
     - name: Update version file
       uses: envoyproxy/toolshed/gh-actions/bson@2d46e676172c17700ec475a69ae0893eb55b484d
       if: >-
@@ -118,9 +130,10 @@ jobs:
         input: |
           version: ${{ steps.version.outputs.version }}
           version_file: ${{ steps.version-file.outputs.value }}
+          release_version: ${{ steps.release-version.outputs.version }}
         filter: |
           if .version.is_dev then
-            "${{ inputs.template-version-update }}"
+            "echo \"\(.release_version)\" > \"\(.version_file)\""
           else ":" end
 
     # ACTIONS ONLY
@@ -322,7 +335,7 @@ jobs:
         COMMIT_MESSAGE: >-
           ${{ inputs.type }}:
           ${{ inputs.action == 'prepare' && 'Prepare release' || 'Release' }}
-          v${{ fromJSON(steps.version.outputs.version).next }}
+          v${{ steps.release-version.outputs.version }}
       run: |
         if [[ -z "$(git status --porcelain)" ]]; then
             echo "changes=false" >> "$GITHUB_OUTPUT"
@@ -342,7 +355,7 @@ jobs:
             inputs.action == 'prepare'
             && 'prepare'
             || 'create'
-          }}/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
+          }}/${{ inputs.type }}/${{ steps.release-version.outputs.version }}
         commit: false
         title: >-
           ${{ steps.commit.outputs.message }}
