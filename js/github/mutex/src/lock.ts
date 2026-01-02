@@ -121,7 +121,7 @@ DO NOT TOUCH this branch manually.
       cwd: this.local,
       ignoreReturnCode: true,
       listeners: {
-        stderr: data => {
+        stderr: (data) => {
           stderr += data.toString()
         },
       },

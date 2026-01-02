@@ -28,4 +28,4 @@ inputs:
     default:
 runs:
   using: node20
-  main: 'dist/index.js'
+  main: '../../js/hashfiles/dist/index.js'

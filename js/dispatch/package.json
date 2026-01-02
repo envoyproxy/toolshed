@@ -1,7 +1,7 @@
 {
-  "name": "@envoy/toolshed/actions/github/checks",
+  "name": "@envoy/toolshed/actions/dispatch",
   "version": "1.0.0",
-  "description": "Start github checks.",
+  "description": "An action to hash files that is more flexible than the Github function.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/envoyproxy/toolshed.git"
@@ -10,6 +10,7 @@
     "action",
     "ci",
     "github",
+    "dispatch",
     "workflow"
   ],
   "author": "",
@@ -19,20 +20,20 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build main.ts -o dist -m",
-    "test": "tsc --noEmit && jest",
+    "build": "tsc --noEmit --skipLibCheck && ncc build main.ts -o dist -d -m",
+    "test": "tsc --noEmit --skipLibCheck && jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.2",
-    "@types/tmp": "^0.2.5",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "@vercel/ncc": "^0.38.1",
+    "eslint": "^9.0.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-prettier": "^5.1.3",
-    "@vercel/ncc": "^0.38.1",
     "jest": "^30.0.0",
     "nock": "^14.0.0",
     "prettier": "^3.2.5",
@@ -42,7 +43,6 @@
   "dependencies": {
     "@actions/core": "^2.0.0",
     "@actions/github": "^6.0.0",
-    "@octokit/rest": "^22.0.0",
-    "@octokit/types": "^16.0.0"
+    "js-yaml": "^4.1.1"
   }
 }

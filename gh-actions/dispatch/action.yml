@@ -22,4 +22,4 @@ inputs:
       are not one of string, number, boolean already.
 runs:
   using: node20
-  main: 'dist/index.js'
+  main: '../../js/dispatch/dist/index.js'
