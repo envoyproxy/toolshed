@@ -3,8 +3,8 @@ import os from 'os'
 import {exec} from 'child_process'
 import tmp from 'tmp'
 import type {JqConfig, JqResult, TempFileHandles} from './types'
-import {processInput} from './input-processor'
-import {buildFilter, cleanupTempFiles} from './filter-builder'
+import {processInput} from './input'
+import {buildFilter, cleanupTempFiles} from './filter'
 
 /**
  * Execute jq with the given configuration

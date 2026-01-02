@@ -1,4 +1,4 @@
-import {runGitHubAction} from './src/github-action'
+import {runGitHubAction} from './src/action'
 
 const run = runGitHubAction
 

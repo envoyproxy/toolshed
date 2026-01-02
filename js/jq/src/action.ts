@@ -2,8 +2,8 @@ import * as core from '@actions/core'
 import os from 'os'
 import * as path from 'path'
 import type {JqConfig} from './types'
-import {runJq} from './jq-runner'
-import {processOutput, writeOutput, type OutputOptions} from './output-processor'
+import {runJq} from './runner'
+import {processOutput, writeOutput, type OutputOptions} from './output'
 
 /**
  * GitHub Actions integration for jq
