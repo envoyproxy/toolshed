@@ -1,0 +1,19 @@
+uses: ./actions/github/checkout
+id: checkout
+with:
+  branch: main
+  config: |
+    ref: main
+    fetch-depth: 3
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    EXPECTED_REPO="%{{ github.repository }}"
+    OUTPUT_BRANCH="%{{ steps.checkout.outputs.branch-name }}"
+    EXPECTED_BRANCH="main"
+    test_checkout
+    test_repository $EXPECTED_REPO
+    test_branch "$OUTPUT_BRANCH" "$EXPECTED_BRANCH"
+    test_depth 3

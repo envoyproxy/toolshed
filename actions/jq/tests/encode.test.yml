@@ -1,0 +1,17 @@
+uses: ./actions/jq
+id: jq
+with:
+  input: '{"message": "hello world"}'
+  filter: '.message'
+  encode: true
+  options: '-r'
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    JQ_OUTPUT='${{ steps.jq.outputs.value }}'
+    test_output_not_empty "$JQ_OUTPUT"
+    test_is_base64_encoded "$JQ_OUTPUT" "hello world"
+    test_base64_decoded "$JQ_OUTPUT" "hello world"

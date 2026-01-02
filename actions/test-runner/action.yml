@@ -1,0 +1,96 @@
+name: Test runner
+description: Test GitHub Actions with fixtures and side effect validation
+author: phlax
+
+inputs:
+  config:
+    description: Path to test configuration YAML
+    type: string
+    required: true
+  debug:
+    description: Debug action
+    type: boolean
+    default: false
+  name:
+    description: Name of the test
+    type: string
+    default: Action Test
+
+outputs:
+  result:
+    description: Test result (pass/fail)
+    value: ${{ steps.final-result.outputs.result }}
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/gh-actions/jq@e4126f0adcaaf0a81739ad7fa4e44ff2d32287e0
+    id: config
+    with:
+      input: ${{ inputs.config }}
+      input-format: yaml-path
+      print-result: ${{ fromJSON(inputs.debug) }}
+      filter: |
+        . as $config
+        | .before as $before
+        | .after as $after
+        | {uses, with: (.with // {})}
+        | if $config.id then
+            .id = $config.id
+          else . end
+        | ($before // []) + [.] + ($after // [])
+  - id: before-test
+    shell: bash
+    run: |
+      TEST_OUTPUT="$(mktemp)"
+      echo "TEST_OUTPUT=${TEST_OUTPUT}" >> "$GITHUB_ENV"
+      ACTION_TEST_PATH="$(realpath $(dirname "${{ inputs.config }}"))"
+      echo "ACTION_TEST_PATH=${ACTION_TEST_PATH}" >> "$GITHUB_ENV"
+      
+      # Create symlink shim at repository root to handle directory rename
+      # This ensures both gh-actions/ and actions/ paths work
+      REPO_ROOT="$(git rev-parse --show-toplevel)"
+      if [[ -d "${REPO_ROOT}/actions" && ! -L "${REPO_ROOT}/gh-actions" && ! -e "${REPO_ROOT}/gh-actions" ]]; then
+        ln -s "${REPO_ROOT}/actions" "${REPO_ROOT}/gh-actions"
+        echo "Created symlink: gh-actions -> actions"
+      elif [[ -d "${REPO_ROOT}/gh-actions" && ! -L "${REPO_ROOT}/actions" && ! -e "${REPO_ROOT}/actions" ]]; then
+        ln -s "${REPO_ROOT}/gh-actions" "${REPO_ROOT}/actions"
+        echo "Created symlink: actions -> gh-actions"
+      fi
+      
+      MOCK_LOG="$(mktemp)"
+      echo "MOCK_LOG=${MOCK_LOG}" >> "$GITHUB_ENV"
+      echo "${ACTION_TEST_PATH}/mocks:$PATH" >> $GITHUB_PATH
+  - uses: envoyproxy/toolshed/gh-actions/using/steps@e4126f0adcaaf0a81739ad7fa4e44ff2d32287e0
+    id: run
+    with:
+      name: Run test
+      steps: ${{ steps.config.outputs.value }}
+      step-format: json
+  - id: after-test
+    shell: bash
+    run: |
+      FAILED=0
+      if [[ ! -s "$TEST_OUTPUT" ]]; then
+          echo "::warning::No test output in ${{ inputs.name }}" >&2
+          exit 0
+      fi
+      while IFS= read -r line; do
+          if [[ "$line" == fail:* ]]; then
+              message="${line#fail:}"
+              echo "✗ Error: ${message}"
+              echo "::error::Test failed (${{ inputs.name }}): ${message}" >&2
+              FAILED=1
+          elif [[ "$line" == success:* ]]; then
+              message="${line#success:}"
+              echo "✓ Success: ${message}"
+          fi
+      done < "$TEST_OUTPUT"
+      if [[ $FAILED -eq 0 ]]; then
+          echo "✓✓✓ ${{ inputs.name }} PASSED"
+      else
+          echo "✗✗✗ ${{ inputs.name }} FAILED"
+          echo "::error::Tests failed: ${{ inputs.name }}" >&2
+          exit 1
+      fi

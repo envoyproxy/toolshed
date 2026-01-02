@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - id: auth
-      uses: envoyproxy/toolshed/gh-actions/appauth@VERSION
+      uses: envoyproxy/toolshed/actions/appauth@VERSION
       with:
         key: ${{ secrets.BOT_KEY }}
         app_id: ${{ secrets.APP_ID }}

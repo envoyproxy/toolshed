@@ -1,0 +1,38 @@
+uses: ./actions/gpg
+id: gpg
+with:
+  gpg-key: >-
+    %{{ env.GPG_KEY }}
+  gpg-password: >-
+    %{{ env.GPG_PASSWORD }}
+
+before:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    NAME="Test User"
+    EMAIL="test@example.com"
+    PASSPHRASE="testpassword123"
+
+    generate_test_key "$NAME" "$EMAIL" "$PASSPHRASE"
+    TEST_KEY=$(export_secret_key "$EMAIL" "$PASSPHRASE")
+
+    echo "GPG_KEY<<EOF" >> $GITHUB_ENV
+    echo "$TEST_KEY" >> $GITHUB_ENV
+    echo "EOF" >> $GITHUB_ENV
+    echo "GPG_PASSWORD=${PASSPHRASE}" >> $GITHUB_ENV
+
+    clear_keyring "$EMAIL"
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    FINGERPRINT='%{{ steps.gpg.outputs.fingerprint }}'
+    PASSPHRASE='%{{ steps.gpg.outputs.passphrase }}'
+
+    test_fingerprint_output "$FINGERPRINT"
+    test_passphrase_output "$PASSPHRASE" "testpassword123"
+    test_key_in_keyring "$FINGERPRINT"

@@ -16,7 +16,7 @@ on:
         default:
         type: string
       actions-version-file:
-        default: gh-actions/VERSION.txt
+        default: actions/VERSION.txt
         type: string
       bazel-version:
         default:

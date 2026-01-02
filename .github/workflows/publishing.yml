@@ -32,7 +32,7 @@ jobs:
           - .github/workflows/publishing.yml
           - bazel/VERSION.txt
           - BINS_VERSION.txt
-          - gh-actions/VERSION.txt
+          - actions/VERSION.txt
           - python/VERSION.txt
     - name: Get latest commit from main
       id: commit

@@ -7,7 +7,7 @@ This repository contains multi-language tooling and libraries for Envoy proxy's 
 - **py/** - Python packages, libraries, runners, checkers, and dependencies
 - **bazel/** - Bazel build configurations and rules
 - **rust/** - Rust tooling and libraries
-- **gh-actions/** - GitHub Actions workflows
+- **actions/** - GitHub Actions workflows
 - **sh/** - Shell scripts and utilities
 
 ## Build Systems

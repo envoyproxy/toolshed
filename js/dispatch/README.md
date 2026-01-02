@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - id: dispatch
-      uses: envoyproxy/toolshed/gh-actions/dispatch@VERSION
+      uses: envoyproxy/toolshed/actions/dispatch@VERSION
       with:
         repository: repoowner/reponame
         ref: main

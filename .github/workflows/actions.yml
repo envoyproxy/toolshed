@@ -26,14 +26,14 @@ jobs:
       with:
         config: |
           paths:
-          - 'gh-actions/**'
+          - 'actions/**'
           - 'js/**'
           - '.github/workflows/actions.yml'
     - id: tests
       uses: envoyproxy/toolshed/gh-actions/bson@2d46e676172c17700ec475a69ae0893eb55b484d
       with:
         input: |
-          OUTPUT="$(find gh-actions -path "*/tests/*.test.yml" -type f)"
+          OUTPUT="$(find actions -path "*/tests/*.test.yml" -type f)"
         filter: |
           bash::output
         result-filter: |
