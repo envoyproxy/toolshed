@@ -81,12 +81,12 @@ export OCI_OUTPUT_DIR
 export BASE_IMAGE_NAME
 
 # Use distro-specific build script if available
-if [[ "${OS_DISTRO}" == "debian" && -f "./debian_build.sh" ]]; then
-    # shellcheck source=docker/linux/debian_build.sh
-    source "./debian_build.sh"
+if [[ "${OS_DISTRO}" == "debian" && -f "./linux/debian_build.sh" ]]; then
+    # shellcheck source=linux/debian_build.sh disable=SC1091
+    source "./linux/debian_build.sh"
 else
-    # shellcheck source=docker/linux/build.sh
-    source "./build.sh"
+    # shellcheck source=linux/build.sh disable=SC1091
+    source "./linux/build.sh"
 fi
 
 ci_log_run docker images
