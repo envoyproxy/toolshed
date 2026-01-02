@@ -8,10 +8,6 @@ with:
 after:
 - shell: bash
   run: |
-    # TODO: REMOVE ME
-    if [[ ! -f "${ACTION_TEST_PATH}/test_fun.sh" ]]; then
-        exit 0
-    fi
     . "${ACTION_TEST_PATH}/test_fun.sh"
     EXPECTED_REPO="%{{ github.repository }}"
     OUTPUT_BRANCH="%{{ steps.checkout.outputs.branch-name }}"
