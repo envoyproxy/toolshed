@@ -1,0 +1,26 @@
+uses: ./gh-actions/jq
+id: jq
+with:
+  input: |
+    name: test
+    version: 2.0.0
+    enabled: true
+  input-format: yaml
+  filter: '.version'
+  options: '-r'
+
+after:
+- shell: bash
+  run: |
+    JQ_OUTPUT='${{ steps.jq.outputs.value }}'
+    if [[ -z "$JQ_OUTPUT" ]]; then
+        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
+    else
+        echo "success:jq output is not empty: $JQ_OUTPUT" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ "$JQ_OUTPUT" != "2.0.0" ]]; then
+        echo "fail:Expected version '2.0.0', got '$JQ_OUTPUT'" >> "$TEST_OUTPUT"
+    else
+        echo "success:Version from YAML is correct: $JQ_OUTPUT" >> "$TEST_OUTPUT"
+    fi

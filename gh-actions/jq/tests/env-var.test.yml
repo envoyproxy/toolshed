@@ -1,0 +1,30 @@
+uses: ./gh-actions/jq
+id: jq
+with:
+  input: '{"version": "1.2.3"}'
+  filter: '.version'
+  options: '-r'
+  env_var: 'JQ_VERSION'
+
+after:
+- shell: bash
+  run: |
+    JQ_OUTPUT='${{ steps.jq.outputs.value }}'
+    if [[ -z "$JQ_OUTPUT" ]]; then
+        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
+    else
+        echo "success:jq output is not empty: $JQ_OUTPUT" >> "$TEST_OUTPUT"
+    fi
+
+    # Verify the environment variable was set
+    if [[ -z "$JQ_VERSION" ]]; then
+        echo "fail:Environment variable JQ_VERSION not set" >> "$TEST_OUTPUT"
+    else
+        echo "success:Environment variable JQ_VERSION is set: $JQ_VERSION" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ "$JQ_VERSION" != "1.2.3" ]]; then
+        echo "fail:Expected JQ_VERSION '1.2.3', got '$JQ_VERSION'" >> "$TEST_OUTPUT"
+    else
+        echo "success:Environment variable value is correct: $JQ_VERSION" >> "$TEST_OUTPUT"
+    fi

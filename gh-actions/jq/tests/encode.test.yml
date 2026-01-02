@@ -1,0 +1,32 @@
+uses: ./gh-actions/jq
+id: jq
+with:
+  input: '{"message": "hello world"}'
+  filter: '.message'
+  encode: true
+  options: '-r'
+
+after:
+- shell: bash
+  run: |
+    JQ_OUTPUT='${{ steps.jq.outputs.value }}'
+    if [[ -z "$JQ_OUTPUT" ]]; then
+        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
+    else
+        echo "success:jq output is not empty" >> "$TEST_OUTPUT"
+    fi
+
+    # Decode the base64 output to verify it contains the expected value
+    DECODED=$(echo "$JQ_OUTPUT" | base64 -d)
+    if [[ "$DECODED" != "hello world" ]]; then
+        echo "fail:Expected decoded value 'hello world', got '$DECODED'" >> "$TEST_OUTPUT"
+    else
+        echo "success:Decoded value is correct: $DECODED" >> "$TEST_OUTPUT"
+    fi
+
+    # Verify it was actually base64 encoded (should not equal original)
+    if [[ "$JQ_OUTPUT" == "hello world" ]]; then
+        echo "fail:Output was not base64 encoded" >> "$TEST_OUTPUT"
+    else
+        echo "success:Output was base64 encoded" >> "$TEST_OUTPUT"
+    fi

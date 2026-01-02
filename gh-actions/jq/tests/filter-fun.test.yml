@@ -1,0 +1,24 @@
+uses: ./gh-actions/jq
+id: jq
+with:
+  input: '{"text": "  hello world  "}'
+  filter: 'str::trim'
+  filter-fun: |
+    include "str";
+  options: '-r'
+
+after:
+- shell: bash
+  run: |
+    JQ_OUTPUT='${{ steps.jq.outputs.value }}'
+    if [[ -z "$JQ_OUTPUT" ]]; then
+        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
+    else
+        echo "success:jq output is not empty: $JQ_OUTPUT" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ "$JQ_OUTPUT" != "hello world" ]]; then
+        echo "fail:Expected trimmed 'hello world', got '$JQ_OUTPUT'" >> "$TEST_OUTPUT"
+    else
+        echo "success:Filter function worked correctly: $JQ_OUTPUT" >> "$TEST_OUTPUT"
+    fi

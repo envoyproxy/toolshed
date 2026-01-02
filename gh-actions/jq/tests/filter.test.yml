@@ -1,0 +1,29 @@
+uses: ./gh-actions/jq
+id: jq
+with:
+  input: '{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}'
+  filter: '.users | map(.name)'
+
+after:
+- shell: bash
+  run: |
+    JQ_OUTPUT='${{ steps.jq.outputs.value }}'
+    if [[ -z "$JQ_OUTPUT" ]]; then
+        echo "fail:jq output is empty" >> "$TEST_OUTPUT"
+    else
+        echo "success:jq output is not empty: $JQ_OUTPUT" >> "$TEST_OUTPUT"
+    fi
+
+    FIRST_NAME=$(echo "$JQ_OUTPUT" | jq -r '.[0]')
+    if [[ "$FIRST_NAME" != "Alice" ]]; then
+        echo "fail:Expected first name 'Alice', got '$FIRST_NAME'" >> "$TEST_OUTPUT"
+    else
+        echo "success:First name is correct: $FIRST_NAME" >> "$TEST_OUTPUT"
+    fi
+
+    SECOND_NAME=$(echo "$JQ_OUTPUT" | jq -r '.[1]')
+    if [[ "$SECOND_NAME" != "Bob" ]]; then
+        echo "fail:Expected second name 'Bob', got '$SECOND_NAME'" >> "$TEST_OUTPUT"
+    else
+        echo "success:Second name is correct: $SECOND_NAME" >> "$TEST_OUTPUT"
+    fi
