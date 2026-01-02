@@ -176,6 +176,7 @@ fi
 create_base_sysroot () {
     echo ""
     echo "Step 1: Creating base sysroot with debootstrap..."
+    echo ""
     if [[ -d "$WORK_DIR" ]]; then
         echo "Removing existing sysroot directory..."
         sudo rm -rf "$WORK_DIR"
@@ -187,6 +188,7 @@ create_base_sysroot () {
     DEBOOTSTRAP_ARGS+=(
         --arch="$ARCH"
         --variant=minbase
+        --keyring=/usr/share/keyrings/debian-archive-keyring.gpg
         "$DEBIAN_VERSION"
         "$WORK_DIR"
         "$DEBIAN_MIRROR"
