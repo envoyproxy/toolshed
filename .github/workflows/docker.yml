@@ -75,7 +75,7 @@ jobs:
       run: |
         echo "Testing main image: envoyproxy/envoy-build:ci-${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }}"
         echo "Attempting to run container and read build-id..."
-        if BUILD_ID=$(docker run --rm envoyproxy/envoy-build:ci-${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} cat /.build-id 2>&1); then
+        if BUILD_ID=$(docker run --rm --entrypoint /bin/cat envoyproxy/envoy-build:ci-${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} /.build-id 2>&1); then
           echo "Build ID: $BUILD_ID"
           if [[ "$BUILD_ID" == "ci-${{ steps.docker-sha.outputs.sha }}" ]]; then
             echo "✓ Build ID is correct"
@@ -89,7 +89,7 @@ jobs:
           echo "Checking if image exists:"
           docker images | grep -E "(REPOSITORY|envoy-build.*ci-)"
           echo "Trying docker inspect:"
-          docker image inspect envoyproxy/envoy-build:ci-${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} 2>&1 || echo "Inspect failed"
+          docker image inspect envoyproxy/envoy-build:ci-${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} 2>&1 | head -20 || echo "Inspect failed"
           exit 1
         fi
       shell: bash
