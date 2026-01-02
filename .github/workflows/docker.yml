@@ -1,0 +1,85 @@
+name: Docker CI
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  request:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+    steps:
+    - uses: envoyproxy/toolshed/gh-actions/github/should-run@2d46e676172c17700ec475a69ae0893eb55b484d
+      id: filter
+      with:
+        config: |
+          paths:
+          - 'docker/build/**'
+          - '.github/workflows/docker.yml'
+
+  build:
+    runs-on: ubuntu-24.04
+    needs: request
+    if: >-
+      github.repository_owner == 'envoyproxy'
+      && fromJSON(needs.request.outputs.run || 'false')
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349  # v3.7.1
+
+    - name: Get docker SHA
+      id: docker-sha
+      shell: bash
+      run: |
+        TAG_SHA=$(git log -1 --pretty=format:"%H" ./docker/build)
+        echo "sha=${TAG_SHA}" >> $GITHUB_OUTPUT
+
+    - name: Build Docker image (debian)
+      run: |
+        cd docker/build
+        export OS_FAMILY=linux
+        export OS_DISTRO=debian
+        export CONTAINER_SHA=${{ steps.docker-sha.outputs.sha }}
+        export CONTAINER_TAG=${{ steps.docker-sha.outputs.sha }}
+        export BUILD_TOOLS_PLATFORMS=linux/amd64
+        export SAVE_OCI=false
+        export NO_BUILD_VARIANTS=true
+        export LOAD_IMAGE=true
+        ./push.sh
+      shell: bash
+
+    - name: Test Docker image
+      run: |
+        docker run --rm envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-amd64 cat /.build-id
+      shell: bash
+
+  status:
+    runs-on: ubuntu-24.04
+    if: >-
+      always()
+      && github.event_name == 'pull_request'
+    name: Docker
+    needs:
+    - request
+    - build
+    steps:
+    - run: |
+        if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+        fi
+        echo "All required jobs passed or were skipped"

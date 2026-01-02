@@ -184,3 +184,6 @@ bazel-*
 rust/tarpaulin-report.html
 
 user.bazelrc
+
+# Docker build artifacts
+docker/build/oci-output/
