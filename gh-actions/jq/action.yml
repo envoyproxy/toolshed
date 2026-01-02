@@ -55,4 +55,4 @@ inputs:
     default: json
 runs:
   using: node20
-  main: 'dist/index.js'
+  main: '../../js/jq/dist/index.js'

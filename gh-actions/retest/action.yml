@@ -40,4 +40,4 @@ inputs:
 
 runs:
   using: node20
-  main: 'dist/index.js'
+  main: '../../js/retest/dist/index.js'

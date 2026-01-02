@@ -174,7 +174,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-!gh-actions/**/dist
+!js/**/dist
 !gh-actions/github/mutex/lib
 
 # Bazel

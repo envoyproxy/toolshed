@@ -20,8 +20,8 @@ inputs:
 
 runs:
   using: node20
-  main: "dist/main/index.js"
-  post: "dist/cleanup/index.js"
+  main: "../../../js/github/mutex/dist/main/index.js"
+  post: "../../../js/github/mutex/dist/cleanup/index.js"
   post-if: "always()"
 
 branding:

@@ -19,4 +19,4 @@ inputs:
     required: true
 runs:
   using: node20
-  main: 'dist/index.js'
+  main: '../../js/torun/dist/index.js'
