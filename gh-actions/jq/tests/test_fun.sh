@@ -33,7 +33,7 @@ test_json_key() {
     local json="${1}"
     local key="${2}"
     local expected="${3}"
-    local description="${4:-Key '${key}'}"
+    local description="${4:-Key \"${key}\"}"
 
     local value
     value=$(echo "$json" | jq -r ".${key}")

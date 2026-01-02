@@ -8,7 +8,7 @@ after:
 - shell: bash
   run: |
     . "${ACTION_TEST_PATH}/test_fun.sh"
-    
+
     JQ_OUTPUT='${{ steps.jq.outputs.value }}'
     test_output_not_empty "$JQ_OUTPUT"
     test_json_array_item "$JQ_OUTPUT" "0" "Alice" "First name"

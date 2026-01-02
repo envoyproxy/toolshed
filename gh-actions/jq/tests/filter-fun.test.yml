@@ -3,15 +3,14 @@ id: jq
 with:
   input: '{"text": "  hello world  "}'
   filter: '.text | fun::my_trim'
-  filter-fun: |
-    def my_trim: ltrimstr(" ") | rtrimstr(" ");
+  filter-fun: 'def my_trim: ltrimstr(" ") | rtrimstr(" ");'
   options: '-r'
 
 after:
 - shell: bash
   run: |
     . "${ACTION_TEST_PATH}/test_fun.sh"
-    
+
     JQ_OUTPUT='${{ steps.jq.outputs.value }}'
     test_output_not_empty "$JQ_OUTPUT"
     test_output_equals "$JQ_OUTPUT" "hello world" "Custom filter function output"
