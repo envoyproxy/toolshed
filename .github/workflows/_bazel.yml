@@ -52,8 +52,8 @@ jobs:
         sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
         rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
         sudo apt-get -qq update
-        sudo apt-get -qq install -y --no-install-recommends debootstrap qemu-user-static binfmt-support
-
+        sudo apt-get -qq install -y --no-install-recommends \
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
       run: |
         exec bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }}
