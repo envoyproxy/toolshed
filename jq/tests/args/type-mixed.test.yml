@@ -1,0 +1,20 @@
+name: args::parse mixed types
+
+input: "--name=John --age=30 --active=true --tags foo --tags bar arg1"
+
+expression: 'args::parse({"options": {"name": "string", "age": "int", "active": "bool", "tags": "array"}})'
+
+imports:
+- args
+
+expected:
+  args:
+  - "arg1"
+  flags: {}
+  options:
+    name: "John"
+    age: 30
+    active: true
+    tags:
+    - "foo"
+    - "bar"

@@ -2,7 +2,7 @@ name: args::parse repeated option with mixed formats
 
 input: "-u foo -u bar=23.0.0 -u baz"
 
-expression: 'args::parse({"options": ["u"]})'
+expression: 'args::parse({"options": {"u": "array"}})'
 
 imports:
 - args

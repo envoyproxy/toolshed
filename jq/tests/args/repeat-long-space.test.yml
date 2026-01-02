@@ -2,7 +2,7 @@ name: args::parse repeated long option with space-separated values
 
 input: "--update foo --update bar"
 
-expression: 'args::parse({"options": ["update"]})'
+expression: 'args::parse({"options": {"update": "array"}})'
 
 imports:
 - args

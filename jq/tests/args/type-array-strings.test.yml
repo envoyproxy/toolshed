@@ -1,0 +1,17 @@
+name: args::parse int array type
+
+input: "--ports=8080 --ports=8081 --ports=8082"
+
+expression: 'args::parse({"options": {"ports": "array"}})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags: {}
+  options:
+    ports:
+    - "8080"
+    - "8081"
+    - "8082"

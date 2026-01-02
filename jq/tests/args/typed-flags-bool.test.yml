@@ -1,0 +1,15 @@
+name: args::parse typed boolean flags
+
+input: "--verbose --debug"
+
+expression: 'args::parse({"flags": {"verbose": "bool", "debug": "bool"}})'
+
+imports:
+- args
+
+expected:
+  args: []
+  flags:
+    verbose: true
+    debug: true
+  options: {}

@@ -2,7 +2,7 @@ name: args::parse repeated option with long and short forms
 
 input: "-u foo --update bar -u baz"
 
-expression: 'args::parse({"options": ["u", "update"]})'
+expression: 'args::parse({"options": {"u": "array", "update": "string"}})'
 
 imports:
 - args
