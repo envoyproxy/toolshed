@@ -275,7 +275,7 @@ jobs:
         filter: |
           .versions as $versions
           | .args // ""
-          | [args::parse({"options": ["u"]})
+          | [args::parse({"options": {"u": "array"})
              | (.options.u // [])[]
              | split("=")
              | $versions[.[0]].version as $current
