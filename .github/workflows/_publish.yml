@@ -18,6 +18,9 @@ on:
       actions-version-file:
         default: actions/VERSION.txt
         type: string
+      actions-version-file-legacy:
+        default: gh-actions/VERSION.txt
+        type: string
       bazel-version:
         default:
         type: string
@@ -117,7 +120,10 @@ jobs:
           artifact-workflows: |
             Github/actions CI
           version: ${{ inputs.actions-version }}
-          version-file: ${{ inputs.actions-version-file }}
+          version-file: >-
+            ${{ inputs.event == 'push'
+                && inputs.actions-version-file-legacy
+                || inputs.actions-version-file }}
         - name: bazel
           artifact-workflows: |
             Bazel CI
