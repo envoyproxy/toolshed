@@ -76,7 +76,7 @@ jobs:
     name: ${{ inputs.action }}
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/gh-actions/appauth@d9c68240141573419ab1aa4b619c289b17e13b87
+    - uses: envoyproxy/toolshed/gh-actions/appauth@3067ae34d13c569fe1651da3346dcba517701000
       id: appauth
       name: Appauth
       if: >-
@@ -86,7 +86,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/gh-actions/github/checkout@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/github/checkout@3067ae34d13c569fe1651da3346dcba517701000
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -95,7 +95,7 @@ jobs:
         token: ${{ steps.appauth.outputs.token }}
     - name: Get version file
       id: version-file
-      uses: envoyproxy/toolshed/gh-actions/jq@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/jq@3067ae34d13c569fe1651da3346dcba517701000
       with:
         input: |
           actions: gh-actions/VERSION.txt
@@ -107,11 +107,11 @@ jobs:
         filter: .["${{ inputs.type }}"]
     - name: Get version info
       id: version
-      uses: envoyproxy/toolshed/gh-actions/version@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/version@3067ae34d13c569fe1651da3346dcba517701000
       with:
         version-file: ${{ steps.version-file.outputs.value }}
     - name: Update version file
-      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/bson@3067ae34d13c569fe1651da3346dcba517701000
       if: >-
         inputs.action != 'prepare'
       with:
@@ -143,7 +143,7 @@ jobs:
 
     # BAZEL ONLY
     - name: Get latest bins release (for bazel)
-      uses: envoyproxy/toolshed/gh-actions/github/release/latest@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/github/release/latest@3067ae34d13c569fe1651da3346dcba517701000
       id: bins-version
       if: >-
         inputs.type == 'bazel'
@@ -151,7 +151,7 @@ jobs:
       with:
         pattern: ^bins-
     - name: Get SHAs for latest bins release (for bazel)
-      uses: envoyproxy/toolshed/gh-actions/github/release/shas@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/github/release/shas@3067ae34d13c569fe1651da3346dcba517701000
       id: bins-shas
       if: >-
         inputs.type == 'bazel'
@@ -159,7 +159,7 @@ jobs:
       with:
         tag: ${{ steps.bins-version.outputs.tag }}
     - name: Get current SHAs and version (for bazel)
-      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/bson@3067ae34d13c569fe1651da3346dcba517701000
       id: bins-deps
       if: >-
         inputs.type == 'bazel'
@@ -174,7 +174,7 @@ jobs:
           bash::output
         options: -sRr
     - name: Update bins shas (for bazel)
-      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/bson@3067ae34d13c569fe1651da3346dcba517701000
       id: bins-updates
       if: >-
         inputs.type == 'bazel'
@@ -248,7 +248,7 @@ jobs:
       if: >-
         inputs.type == 'python'
         && inputs.action != 'release-no-prepare'
-      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/bson@3067ae34d13c569fe1651da3346dcba517701000
       with:
         input: |
           ${{ inputs.python-find-versions }}
@@ -265,7 +265,7 @@ jobs:
         inputs.type == 'python'
         && inputs.action != 'release-no-prepare'
       name: Update python release packages
-      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/bson@3067ae34d13c569fe1651da3346dcba517701000
       with:
         input: |
           args: >-
@@ -287,7 +287,7 @@ jobs:
       if: >-
         inputs.type == 'python'
         && inputs.action != 'release-no-prepare'
-      uses: envoyproxy/toolshed/gh-actions/bson@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/bson@3067ae34d13c569fe1651da3346dcba517701000
       with:
         input: |
           ${{ inputs.python-find-versions }}
@@ -333,7 +333,7 @@ jobs:
         echo "message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
         echo "changes=true" >> "$GITHUB_OUTPUT"
     - name: Create Pull Request
-      uses: envoyproxy/toolshed/gh-actions/github/pr@d9c68240141573419ab1aa4b619c289b17e13b87
+      uses: envoyproxy/toolshed/gh-actions/github/pr@3067ae34d13c569fe1651da3346dcba517701000
       if: fromJSON(steps.commit.outputs.changes)
       with:
         base: main
