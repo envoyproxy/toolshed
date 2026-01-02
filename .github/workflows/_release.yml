@@ -64,7 +64,7 @@ on:
       template-version-update:
         type: string
         default: |
-          echo \"\(.version.next)\" > \"\(.version_file)\"
+          echo \"\(.release_version)\" > \"\(.version_file)\"
       type:
         description: Release type
         required: true
@@ -133,7 +133,7 @@ jobs:
           release_version: ${{ steps.release-version.outputs.version }}
         filter: |
           if .version.is_dev then
-            "echo \"\(.release_version)\" > \"\(.version_file)\""
+            "${{ inputs.template-version-update }}"
           else ":" end
 
     # ACTIONS ONLY
