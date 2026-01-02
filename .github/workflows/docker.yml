@@ -67,11 +67,21 @@ jobs:
         export NO_BUILD_VARIANTS=true
         export LOAD_IMAGE=true
         ./push.sh
+        echo "::group::Docker images"
+        docker images | grep envoy-build || echo "No envoy-build images found"
+        echo "::endgroup::"
       shell: bash
 
     - name: Test Docker image
       run: |
-        docker run --rm envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} cat /.build-id
+        echo "Testing image: envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }}"
+        if docker image inspect envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} >/dev/null 2>&1; then
+          docker run --rm envoyproxy/envoy-build:${{ steps.docker-sha.outputs.sha }}-${{ matrix.arch }} cat /.build-id
+        else
+          echo "ERROR: Image not found!"
+          docker images
+          exit 1
+        fi
       shell: bash
 
   status:
