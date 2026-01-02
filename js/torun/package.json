@@ -1,7 +1,7 @@
 {
-  "name": "@envoy/toolshed/actions/github/script/run",
+  "name": "@envoy/toolshed/actions/torun",
   "version": "1.0.0",
-  "description": "Run a script with postscript.",
+  "description": "Decide what to run.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/envoyproxy/toolshed.git"
@@ -13,14 +13,14 @@
     "workflow"
   ],
   "author": "",
-  "license": "Apache2",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/envoyproxy/toolshed/issues"
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build main.ts -o dist -m",
-    "test": "tsc --noEmit && jest",
+    "build": "tsc --noEmit --skipLibCheck && ncc build main.ts -o ../../gh-actions/torun/dist -m",
+    "test": "tsc --noEmit --skipLibCheck && jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
   },
@@ -41,6 +41,7 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
-    "@actions/core": "^2.0.0"
+    "@actions/core": "^2.0.0",
+    "minimatch": "^10.1.1"
   }
 }

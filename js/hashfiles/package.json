@@ -20,8 +20,8 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build hashfiles.ts -o dist -m",
-    "test": "tsc --noEmit && jest",
+    "build": "tsc --noEmit --skipLibCheck && ncc build hashfiles.ts -o ../../gh-actions/hashfiles/dist -m",
+    "test": "tsc --noEmit --skipLibCheck && jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
   },

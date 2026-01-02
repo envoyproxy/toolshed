@@ -1,7 +1,7 @@
 {
-  "name": "@envoy/toolshed/actions/dispatch",
+  "name": "@envoy/toolshed/actions/jq",
   "version": "1.0.0",
-  "description": "An action to hash files that is more flexible than the Github function.",
+  "description": "Run jq against strings in Github actions.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/envoyproxy/toolshed.git"
@@ -10,7 +10,7 @@
     "action",
     "ci",
     "github",
-    "dispatch",
+    "jq",
     "workflow"
   ],
   "author": "",
@@ -20,14 +20,15 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build main.ts -o dist -d -m",
-    "test": "tsc --noEmit && jest",
+    "build": "tsc --noEmit --skipLibCheck && ncc build jq.ts -o ../../gh-actions/jq/dist -m",
+    "test": "tsc --noEmit --skipLibCheck && jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.2",
+    "@types/tmp": "^0.2.5",
     "@typescript-eslint/eslint-plugin": "^8.50.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vercel/ncc": "^0.38.1",
@@ -42,7 +43,8 @@
   },
   "dependencies": {
     "@actions/core": "^2.0.0",
-    "@actions/github": "^6.0.0",
-    "js-yaml": "^4.1.1"
+    "@await/spawn": "^9.0.0",
+    "js-yaml": "^4.1.1",
+    "tmp": "^0.2.4"
   }
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@envoy/toolshed/actions/jq",
+  "name": "@envoy/toolshed/actions/github/script/run",
   "version": "1.0.0",
-  "description": "Run jq against strings in Github actions.",
+  "description": "Run a script with postscript.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/envoyproxy/toolshed.git"
@@ -10,17 +10,16 @@
     "action",
     "ci",
     "github",
-    "jq",
     "workflow"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "Apache2",
   "bugs": {
     "url": "https://github.com/envoyproxy/toolshed/issues"
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build jq.ts -o dist -m",
+    "build": "tsc --noEmit && ncc build main.ts -o ../../../gh-actions/github/script/run/dist -m",
     "test": "tsc --noEmit && jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
@@ -42,9 +41,6 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
-    "@actions/core": "^2.0.0",
-    "@await/spawn": "^9.0.0",
-    "js-yaml": "^4.1.1",
-    "tmp": "^0.2.4"
+    "@actions/core": "^2.0.0"
   }
 }

@@ -1,7 +1,7 @@
 {
-  "name": "@envoy/toolshed/actions/retest",
+  "name": "@envoy/toolshed/actions/dispatch",
   "version": "1.0.0",
-  "description": "A GitHub action to re-run failed GitHub Workflow runs on PRs by commenting '/retest'.",
+  "description": "An action to hash files that is more flexible than the Github function.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/envoyproxy/toolshed.git"
@@ -10,7 +10,7 @@
     "action",
     "ci",
     "github",
-    "retest",
+    "dispatch",
     "workflow"
   ],
   "author": "",
@@ -20,8 +20,8 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build retest.ts -o dist -m",
-    "test": "tsc --noEmit && jest",
+    "build": "tsc --noEmit --skipLibCheck && ncc build main.ts -o ../../gh-actions/dispatch/dist -d -m",
+    "test": "tsc --noEmit --skipLibCheck && jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
   },
@@ -43,9 +43,6 @@
   "dependencies": {
     "@actions/core": "^2.0.0",
     "@actions/github": "^6.0.0",
-    "@octokit/rest": "^22.0.1",
-    "axios": "^1.13.2",
-    "fetch-mock": "^12.0.0",
-    "node-fetch": "^3.0.0"
+    "js-yaml": "^4.1.1"
   }
 }
