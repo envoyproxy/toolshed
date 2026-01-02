@@ -165,6 +165,29 @@ fi
 echo "  Debian mirror: $DEBIAN_MIRROR"
 echo "  libgcc package: $LIBGCC_PACKAGE"
 
+ensure_debian_keyring () {
+    echo ""
+    echo "Ensuring debian-archive-keyring is installed..."
+    
+    # Check if debian-archive-keyring is installed
+    if ! dpkg -l debian-archive-keyring &>/dev/null; then
+        echo "debian-archive-keyring not found, installing..."
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq debian-archive-keyring
+    else
+        echo "debian-archive-keyring is already installed"
+    fi
+    
+    # Verify the keyring file exists
+    if [[ ! -f /usr/share/keyrings/debian-archive-keyring.gpg ]]; then
+        echo "ERROR: /usr/share/keyrings/debian-archive-keyring.gpg not found even after installation attempt"
+        echo "This will cause debootstrap to fail with signature verification errors"
+        exit 1
+    fi
+    
+    echo "Debian keyring verified at /usr/share/keyrings/debian-archive-keyring.gpg"
+}
+
 # Detect if we're cross-compiling
 HOST_ARCH=$(dpkg --print-architecture)
 CROSS_COMPILE="false"
@@ -187,6 +210,7 @@ create_base_sysroot () {
     DEBOOTSTRAP_ARGS+=(
         --arch="$ARCH"
         --variant=minbase
+        --keyring=/usr/share/keyrings/debian-archive-keyring.gpg
         "$DEBIAN_VERSION"
         "$WORK_DIR"
         "$DEBIAN_MIRROR"
@@ -312,6 +336,7 @@ package_sysroot () {
 }
 
 build_sysroot () {
+    ensure_debian_keyring
     create_base_sysroot
     configure_package_sources
     install_base_packages
