@@ -40,6 +40,10 @@ on:
       prepare-args:
         type: string
         default:
+      release-version:
+        description: Release version (overrides version.next if set)
+        type: string
+        default:
       python-find-versions:
         type: string
         default: |
@@ -60,7 +64,7 @@ on:
       template-version-update:
         type: string
         default: |
-          echo \"\(.version.next)\" > \"\(.version_file)\"
+          echo \"\(.release_version)\" > \"\(.version_file)\"
       type:
         description: Release type
         required: true
@@ -118,6 +122,7 @@ jobs:
         input: |
           version: ${{ steps.version.outputs.version }}
           version_file: ${{ steps.version-file.outputs.value }}
+          release_version: ${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
         filter: |
           if .version.is_dev then
             "${{ inputs.template-version-update }}"
@@ -322,7 +327,7 @@ jobs:
         COMMIT_MESSAGE: >-
           ${{ inputs.type }}:
           ${{ inputs.action == 'prepare' && 'Prepare release' || 'Release' }}
-          v${{ fromJSON(steps.version.outputs.version).next }}
+          v${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
       run: |
         if [[ -z "$(git status --porcelain)" ]]; then
             echo "changes=false" >> "$GITHUB_OUTPUT"
@@ -342,7 +347,7 @@ jobs:
             inputs.action == 'prepare'
             && 'prepare'
             || 'create'
-          }}/${{ inputs.type }}/${{ fromJSON(steps.version.outputs.version).next }}
+          }}/${{ inputs.type }}/${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
         commit: false
         title: >-
           ${{ steps.commit.outputs.message }}

@@ -29,6 +29,10 @@ on:
         description: Prepare args.
         type: string
         default:
+      release-version:
+        description: Release version (overrides version.next if set).
+        type: string
+        default:
 
 
 jobs:
@@ -43,4 +47,5 @@ jobs:
       committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
       dry-run: ${{ inputs.dry-run }}
       prepare-args: ${{ inputs.prepare-args }}
+      release-version: ${{ inputs.release-version }}
       type: ${{ inputs.type }}
