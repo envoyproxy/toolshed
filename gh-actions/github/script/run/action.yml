@@ -15,5 +15,5 @@ inputs:
 
 runs:
   using: node20
-  main: '../../../js/github/script/run/dist/index.js'
+  main: '../../../../js/github/script/run/dist/index.js'
   post: 'dist/index.js'
