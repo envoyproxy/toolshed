@@ -66,7 +66,7 @@ jobs:
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/actions/appauth@c690d096b071d79027d784add67b9874ba96009d
+    - uses: envoyproxy/toolshed/actions/appauth@21db6f02bb77cfed5fd91555e21172be59ff99eb
       id: appauth
       name: Appauth
       if: >-
@@ -77,7 +77,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/actions/github/checkout@c690d096b071d79027d784add67b9874ba96009d
+      uses: envoyproxy/toolshed/actions/github/checkout@21db6f02bb77cfed5fd91555e21172be59ff99eb
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -90,13 +90,13 @@ jobs:
       id: gpg
       if: >-
         inputs.artifacts
-      uses: envoyproxy/toolshed/actions/gpg@c690d096b071d79027d784add67b9874ba96009d
+      uses: envoyproxy/toolshed/actions/gpg@21db6f02bb77cfed5fd91555e21172be59ff99eb
       with:
         gpg-key: ${{ secrets.gpg-key }}
         gpg-password: ${{ secrets.gpg-password }}
     - name: Release title (eg commit message)
       id: title
-      uses: envoyproxy/toolshed/actions/jq@c690d096b071d79027d784add67b9874ba96009d
+      uses: envoyproxy/toolshed/actions/jq@21db6f02bb77cfed5fd91555e21172be59ff99eb
       with:
         options: -sRr
         input: |
@@ -104,7 +104,7 @@ jobs:
         filter: |
           split("\n") | first
     - name: Publish the release
-      uses: envoyproxy/toolshed/actions/github/release@c690d096b071d79027d784add67b9874ba96009d
+      uses: envoyproxy/toolshed/actions/github/release@21db6f02bb77cfed5fd91555e21172be59ff99eb
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
         artifacts: ${{ inputs.artifacts }}
