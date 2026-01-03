@@ -14,6 +14,9 @@ env/
 build/
 # Exception for docker build directory
 !docker/build/
+# Exception for actions/envoy/ci/env directory
+!actions/envoy/ci/env/
+!actions/github/env/
 develop-eggs/
 dist/
 downloads/
