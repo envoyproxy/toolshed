@@ -1,0 +1,44 @@
+inputs:
+  name:
+    type: string
+    default: env
+  env:
+    type: string
+    required: true
+  env-format:
+    type: string
+  env-filter:
+    type: string
+
+
+runs:
+  using: composite
+  steps:
+  - id: path
+    shell: bash
+    run: |
+      # Create temporary directory
+      OUTPUT_DIR=$(mktemp -d)
+      echo "directory=${OUTPUT_DIR}" >> $GITHUB_OUTPUT
+  - uses: envoyproxy/toolshed/gh-actions/jq@2d46e676172c17700ec475a69ae0893eb55b484d
+    name: Check proxy data
+    id: env
+    with:
+      input: |
+        ${{ inputs.env }}
+      input-format: ${{ inputs.env-format }}
+      filter: ${{ inputs.env-filter || '.' }}
+      print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
+      output-path: ${{ steps.path.outputs.directory }}/${{ inputs.name }}.json
+
+  - name: Upload environment data
+    uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+    with:
+      name: ${{ inputs.name }}
+      path: ${{ steps.path.outputs.directory }}
+
+  - name: Cleanup temporary directory
+    shell: bash
+    run: |
+      # Cleanup temporary directory
+      rm -rf ${{ steps.path.outputs.directory }}
