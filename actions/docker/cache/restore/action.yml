@@ -18,7 +18,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/actions/cache/restore@718038ba06daddeee163f264a77aa47b31a66779
+  - uses: envoyproxy/toolshed/actions/cache/restore@107a7e656237dd6ef9fde026f4d14d5e71f60cb4
     with:
       key: ${{ inputs.image-tag }}${{ inputs.key-suffix }}
       command: |

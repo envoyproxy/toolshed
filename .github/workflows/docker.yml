@@ -21,7 +21,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/actions/github/should-run@28425876b3da9328b7b1bd4e8399d599c2460035
+    - uses: envoyproxy/toolshed/actions/github/should-run@107a7e656237dd6ef9fde026f4d14d5e71f60cb4
       id: filter
       with:
         config: |
@@ -46,7 +46,7 @@ jobs:
     - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@c47758b77c9736f4b2ef4073d4d51994fabfe349  # v3.7.1
+      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
 
     - name: Get docker SHA
       id: docker-sha
