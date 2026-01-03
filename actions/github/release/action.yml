@@ -64,7 +64,7 @@ runs:
   steps:
   - name: Check release status
     id: status
-    uses: envoyproxy/toolshed/actions/github/release/status@5544efa32de04553cf299b2b02e1bf7b6f1d43dc
+    uses: envoyproxy/toolshed/actions/github/release/status@8112f2d26efebaf72bb0f70b2fbaa58feaa4fee1
     with:
       name: ${{ inputs.name }}
       repository: ${{ inputs.repository }}
@@ -80,7 +80,7 @@ runs:
       && fromJSON(inputs.artifacts)
       && ! fromJSON(steps.status.outputs.version).is_dev
     name: Download artifacts from workflow runs
-    uses: envoyproxy/toolshed/actions/github/release/artifacts@5544efa32de04553cf299b2b02e1bf7b6f1d43dc
+    uses: envoyproxy/toolshed/actions/github/release/artifacts@8112f2d26efebaf72bb0f70b2fbaa58feaa4fee1
     with:
       filter-artifacts: ${{ inputs.filter-artifacts }}
       gpg-fingerprint: ${{ inputs.gpg-fingerprint }}
@@ -92,7 +92,7 @@ runs:
     if: >-
       fromJSON(steps.status.outputs.continue)
       && ! fromJSON(steps.status.outputs.version).is_dev
-    uses: envoyproxy/toolshed/actions/github/release/publish@5544efa32de04553cf299b2b02e1bf7b6f1d43dc
+    uses: envoyproxy/toolshed/actions/github/release/publish@8112f2d26efebaf72bb0f70b2fbaa58feaa4fee1
     with:
       assets: ${{ fromJSON(inputs.artifacts) && format('{0}/*', inputs.publish-directory) || '' }}
       dry-run: ${{ inputs.dry-run }}
