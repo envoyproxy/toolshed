@@ -1,0 +1,36 @@
+"""Test workspace for envoy_toolshed arch_alias repository rule.
+
+This test validates the arch_alias functionality in WORKSPACE mode
+for backward compatibility.
+"""
+
+workspace(name = "envoy_toolshed_workspace_test")
+
+local_repository(
+    name = "envoy_toolshed",
+    path = "../../..",
+)
+
+load("@envoy_toolshed//repository:utils.bzl", "arch_alias")
+
+# Test basic arch_alias functionality
+arch_alias(
+    name = "test_platform",
+    aliases = {
+        "amd64": "@platforms//host",
+        "aarch64": "@platforms//host",
+        "x86_64": "@platforms//host",
+        "arm64": "@platforms//host",
+    },
+)
+
+# Test with multiple platform aliases
+arch_alias(
+    name = "test_clang_platform",
+    aliases = {
+        "amd64": "@platforms//os:linux",
+        "aarch64": "@platforms//os:linux",
+        "x86_64": "@platforms//os:linux",
+        "arm64": "@platforms//os:linux",
+    },
+)

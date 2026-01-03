@@ -1,0 +1,43 @@
+"""Test module for envoy_toolshed arch_alias extension.
+
+This test module validates the arch_alias bzlmod extension functionality
+and serves as a BCR presubmit test.
+
+Note: This test module does not declare module() as it is not intended
+to be published to BCR, only used for testing.
+"""
+
+# Use the parent module (envoy_toolshed) for testing
+bazel_dep(name = "envoy_toolshed", version = "")
+local_path_override(
+    module_name = "envoy_toolshed",
+    path = "../../..",
+)
+
+# Required dependency for test targets
+bazel_dep(name = "platforms", version = "1.0.0")
+
+# Test the arch_alias extension with a simple platform alias
+arch_alias_ext = use_extension("@envoy_toolshed//repository:utils.bzl", "arch_alias_ext")
+arch_alias_ext.alias(
+    name = "test_platform",
+    aliases = {
+        "amd64": "@platforms//host",
+        "aarch64": "@platforms//host",
+        "x86_64": "@platforms//host",
+        "arm64": "@platforms//host",
+    },
+)
+use_repo(arch_alias_ext, "test_platform")
+
+# Test with multiple platform aliases to ensure the extension can handle multiple repositories
+arch_alias_ext.alias(
+    name = "test_clang_platform",
+    aliases = {
+        "amd64": "@platforms//os:linux",
+        "aarch64": "@platforms//os:linux",
+        "x86_64": "@platforms//os:linux",
+        "arm64": "@platforms//os:linux",
+    },
+)
+use_repo(arch_alias_ext, "test_clang_platform")
