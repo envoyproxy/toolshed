@@ -35,7 +35,7 @@ echo "✓ PASSED: Tarball exists"
 
 # Extract and verify contents
 EXTRACT_DIR=$(mktemp -d)
-trap "rm -rf ${EXTRACT_DIR}" EXIT
+trap 'rm -rf ${EXTRACT_DIR}' EXIT
 
 echo ""
 echo "Test 2: Extracting tarball"

@@ -32,18 +32,18 @@ if [ ! -f "${TARBALL}" ]; then
     failed=$((failed + 1))
 else
     EXTRACT_DIR=$(mktemp -d)
-    trap "rm -rf ${EXTRACT_DIR}" EXIT
-    
+    trap 'rm -rf ${EXTRACT_DIR}' EXIT
+
     if tar -xzf "${TARBALL}" -C "${EXTRACT_DIR}" 2>&1; then
         echo "✓ PASSED: Custom exclude tarball extracted"
-        
+
         # Verify that fewer items are excluded
         # Note: This is a basic check - actual verification would depend on
         # knowing what the generator produces
         echo "  Checking extracted contents..."
         file_count=$(find "${EXTRACT_DIR}" -type f | wc -l)
         echo "  Found ${file_count} files"
-        
+
         if [ "${file_count}" -gt 0 ]; then
             echo "✓ PASSED: Files exist in custom exclude output"
         else
@@ -65,14 +65,14 @@ if [ ! -f "${TARBALL}" ]; then
     failed=$((failed + 1))
 else
     EXTRACT_DIR=$(mktemp -d)
-    
+
     if tar -xzf "${TARBALL}" -C "${EXTRACT_DIR}" 2>&1; then
         echo "✓ PASSED: Custom mappings tarball extracted"
-        
+
         # Check that output was generated
         file_count=$(find "${EXTRACT_DIR}" -type f | wc -l)
         echo "  Found ${file_count} files"
-        
+
         if [ "${file_count}" -gt 0 ]; then
             echo "✓ PASSED: Files exist in custom mappings output"
         else

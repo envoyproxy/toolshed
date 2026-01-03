@@ -84,7 +84,7 @@ bazel test //website/tests/...
 
 ## Recommendations for Future Iterations
 
-1. **Create Generator-Specific Wrappers**: 
+1. **Create Generator-Specific Wrappers**:
    ```starlark
    def pelican_website(**kwargs):
        # Set Pelican-specific defaults
