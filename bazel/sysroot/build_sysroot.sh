@@ -256,8 +256,9 @@ install_libstdcc () {
         retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
         
         if [[ "$CROSS_COMPILE" == "true" ]]; then
-            # For cross-compilation, we need to install GCC runtime libraries
-            # These provide crtbegin*.o, crtend*.o, libgcc.a, etc.
+            # For cross-compilation, we need to explicitly install GCC runtime libraries.
+            # These provide crtbegin*.o, crtend*.o, libgcc.a, etc. that are required even
+            # when using libc++ as the C++ standard library (e.g., Envoy).
             echo "Installing GCC-${STDCC_VERSION} runtime for cross-compilation"
             retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y \
                 "gcc-${STDCC_VERSION}-base" \
