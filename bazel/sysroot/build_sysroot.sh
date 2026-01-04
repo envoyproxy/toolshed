@@ -246,15 +246,25 @@ install_base_packages () {
 install_libstdcc () {
     if [[ "$VARIANT" == "libstdcxx" ]]; then
         echo ""
+        echo "Step 4: Installing libstdc++ and GCC runtime..."
+        
+        # Add Ubuntu toolchain PPA for newer GCC
+        echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
+            | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
+        retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
+            --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
+        retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
+        
         if [[ "$CROSS_COMPILE" == "true" ]]; then
-            echo "Step 4: Skipping libstdc++ installation (cross-compile mode)"
+            # For cross-compilation, we need to install GCC runtime libraries
+            # These provide crtbegin*.o, crtend*.o, libgcc.a, etc.
+            echo "Installing GCC-${STDCC_VERSION} runtime for cross-compilation"
+            retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y \
+                "gcc-${STDCC_VERSION}-base" \
+                "libgcc-${STDCC_VERSION}-dev" \
+                "libstdc++-${STDCC_VERSION}-dev"
         else
-            echo "Step 4: Installing libstdc++..."
-            echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
-                | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-            retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
-                --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
-            retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
+            # For native compilation, libstdc++-dev pulls in everything needed
             retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
         fi
     fi
