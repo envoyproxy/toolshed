@@ -244,20 +244,17 @@ install_base_packages () {
 }
 
 install_libstdcc () {
-    if [[ "$VARIANT" == "libstdcxx" ]]; then
-        echo ""
-        if [[ "$CROSS_COMPILE" == "true" ]]; then
-            echo "Step 4: Skipping libstdc++ installation (cross-compile mode)"
-        else
-            echo "Step 4: Installing libstdc++..."
-            echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
-                | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-            retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
-                --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
-            retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
-            retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
-        fi
+    if [[ "$VARIANT" != "libstdcxx" ]]; then
+        return
     fi
+    echo ""
+    echo "Step 4: Installing libstdc++..."
+    echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
+        | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
+    retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
+        --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
+    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
+    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
 }
 
 cleanup_sysroot () {
