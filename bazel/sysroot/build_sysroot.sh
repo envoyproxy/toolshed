@@ -247,27 +247,16 @@ install_libstdcc () {
     if [[ "$VARIANT" == "libstdcxx" ]]; then
         echo ""
         echo "Step 4: Installing libstdc++ and GCC runtime..."
-        
-        # Add Ubuntu toolchain PPA for newer GCC
+        # With qemu-user-static, we can run ARM binaries in the chroot regardless of host arch
         echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
             | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
         retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
             --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
         retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
-        
-        if [[ "$CROSS_COMPILE" == "true" ]]; then
-            # For cross-compilation, we need to explicitly install GCC runtime libraries.
-            # These provide crtbegin*.o, crtend*.o, libgcc.a, etc. that are required even
-            # when using libc++ as the C++ standard library (e.g., Envoy).
-            echo "Installing GCC-${STDCC_VERSION} runtime for cross-compilation"
-            retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y \
-                "gcc-${STDCC_VERSION}-base" \
-                "libgcc-${STDCC_VERSION}-dev" \
-                "libstdc++-${STDCC_VERSION}-dev"
-        else
-            # For native compilation, libstdc++-dev pulls in everything needed
-            retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
-        fi
+        # Install libgcc-dev explicitly to ensure GCC runtime files (crt*.o, libgcc.a) are present
+        retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y \
+            "libgcc-${STDCC_VERSION}-dev" \
+            "libstdc++-${STDCC_VERSION}-dev"
     fi
 }
 
