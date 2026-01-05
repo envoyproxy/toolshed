@@ -12,7 +12,7 @@ log = "^0.4"
 once_cell = { version = "^1.21" }
 
 [dev-dependencies]
-serial_test = "^3.2.0"
+serial_test = "^3.3.1"
 scopeguard = "^1.2"
 
 [lib]
