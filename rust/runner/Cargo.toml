@@ -24,11 +24,11 @@ toolshed-test = { path = "../test", optional = true }
 
 [dev-dependencies]
 assert_matches = "^1.5"
-libc = "^0.2.171"
+libc = "^0.2.179"
 mockall = { version = "^0.14.0" }
 mockall_double = "^0.3"
 scopeguard = "^1.2"
-serial_test = "^3.2.0"
+serial_test = "^3.3.1"
 tokio-test = "^0.4"
 
 [lib]
