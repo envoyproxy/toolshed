@@ -80,3 +80,13 @@ jobs:
         path: |
           ${{ steps.artifact-paths.outputs.value }}
         retention-days: 30
+    - name: Test arch_alias (${{ inputs.mode }})
+      run: |
+        if [[ "${{ inputs.mode }}" == "bzlmod" ]]; then
+            cd test/arch_alias/bzlmod
+            bazel build --enable_bzlmod //...
+        else
+            cd test/arch_alias/workspace
+            bazel build //...
+        fi
+      working-directory: bazel

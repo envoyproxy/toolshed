@@ -1,0 +1,12 @@
+# Bazel configuration for arch_alias WORKSPACE mode test
+
+# Disable bzlmod and enable WORKSPACE for this test
+common --noenable_bzlmod
+common --enable_workspace
+
+# Use the test platform alias to verify it resolves correctly
+build --host_platform=@test_platform
+
+# Standard build configurations
+build --color=yes
+test --test_output=errors

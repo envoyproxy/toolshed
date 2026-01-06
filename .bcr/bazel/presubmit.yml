@@ -23,3 +23,10 @@ tasks:
     - "@envoy_toolshed//tarball/..."
     - "@envoy_toolshed//toolchains/..."
     - "@envoy_toolshed//:dependency_versions"
+  test_arch_alias:
+    name: Test arch_alias module extension
+    platform: ${{ unix_platform }}
+    bazel: ${{ bazel }}
+    module_path: test/arch_alias/bzlmod
+    build_targets:
+    - "//:test"
