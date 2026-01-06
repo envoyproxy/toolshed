@@ -64,7 +64,7 @@ http_archive(
 )
 
 # Setup sysroots for LLVM toolchain using the sysroot extension
-sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension")
+sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev_dependency=True)
 sysroot_ext.setup()
 use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 
