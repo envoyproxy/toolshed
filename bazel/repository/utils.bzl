@@ -39,6 +39,28 @@ alias(
 )
 """
 
+def _alias_name(name):
+    """Extract the appropriate alias name from the repository context.
+
+    In bzlmod, repository names include the canonical name
+    (e.g., "module++ext+name"), but we want the alias target to use
+    just the apparent name (e.g., "name"). In WORKSPACE mode, the
+    repository name is already the apparent name.
+
+    Args:
+        ctx: The repository rule context
+
+    Returns:
+        The apparent name to use for the alias target
+    """
+    if not "++" in name and not "~" in name:
+        return name
+    name = name.replace("++", "+").replace("~~", "~")
+    if "+" in name:
+        return name.split("+")[-1]
+    elif "~" in name:
+        return name.split("~")[-1]
+
 def _arch_alias_impl(ctx):
     arch = ctx.os.arch
     actual = ctx.attr.aliases.get(arch)
@@ -50,7 +72,7 @@ def _arch_alias_impl(ctx):
     ctx.file(
         "BUILD.bazel",
         ALIAS_BUILD.format(
-            name = ctx.name,
+            name = _alias_name(ctx.name),
             actual = actual,
         ),
     )
