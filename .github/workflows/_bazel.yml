@@ -64,7 +64,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@a64caca35cf1872601518b84aa85650c06ef85e2
+      uses: envoyproxy/toolshed/actions/jq@b9bc33aa3bf3c324f8945b6421864cf092715bbf
       with:
         input: ${{ inputs.artifacts }}
         input-format: text
