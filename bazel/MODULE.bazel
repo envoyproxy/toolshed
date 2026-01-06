@@ -63,98 +63,10 @@ http_archive(
     url = "https://github.com/llvm/llvm-project/archive/llvmorg-18.1.8.tar.gz",
 )
 
-# Setup sysroots for LLVM toolchain
-http_archive(
-    name = "sysroot_linux_amd64",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "sysroot",
-    srcs = glob(
-        ["**"],
-        exclude = [
-            "**/*:*",
-            "**/*.pl",
-        ],
-    ),
-)
-
-filegroup(
-    name = "headers",
-    srcs = glob(
-        ["usr/include/**"],
-        exclude = ["**/*:*"],
-    ),
-)
-
-filegroup(
-    name = "libs",
-    srcs = glob(
-        [
-            "usr/lib/**/*.a",
-            "usr/lib/**/*.so*",
-            "lib/**/*.a",
-            "lib/**/*.so*",
-        ],
-        exclude = ["**/*:*"],
-    ),
-)
-
-filegroup(
-    name = "toolchain_sysroot",
-    srcs = [":sysroot"],
-)
-""",
-    sha256 = "0844b2e9abf42b881e4f8f2f796d7af0d81eac2d3b8d14a504e43a767088291c",
-    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.28/sysroot-glibc2.31-libstdc++13-amd64.tar.xz",
-)
-
-http_archive(
-    name = "sysroot_linux_arm64",
-    build_file_content = """
-package(default_visibility = ["//visibility:public"])
-
-filegroup(
-    name = "sysroot",
-    srcs = glob(
-        ["**"],
-        exclude = [
-            "**/*:*",
-            "**/*.pl",
-        ],
-    ),
-)
-
-filegroup(
-    name = "headers",
-    srcs = glob(
-        ["usr/include/**"],
-        exclude = ["**/*:*"],
-    ),
-)
-
-filegroup(
-    name = "libs",
-    srcs = glob(
-        [
-            "usr/lib/**/*.a",
-            "usr/lib/**/*.so*",
-            "lib/**/*.a",
-            "lib/**/*.so*",
-        ],
-        exclude = ["**/*:*"],
-    ),
-)
-
-filegroup(
-    name = "toolchain_sysroot",
-    srcs = [":sysroot"],
-)
-""",
-    sha256 = "59d564c8f28d3bf5c13ecbf882a3fb7bd0d88cae321d3a09a84d141f717fabed",
-    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.28/sysroot-glibc2.31-libstdc++13-arm64.tar.xz",
-)
+# Setup sysroots for LLVM toolchain using the sysroot extension
+sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension")
+sysroot_ext.setup()
+use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 
 # Configure LLVM toolchain
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency=True)

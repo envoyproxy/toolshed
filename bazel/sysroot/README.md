@@ -39,6 +39,8 @@ This ensures that even older glibc sysroots can compile code using modern kernel
 
 ## Usage in Bazel
 
+### WORKSPACE Mode
+
 To use these sysroots in your Bazel WORKSPACE:
 
 ```starlark
@@ -72,6 +74,52 @@ setup_sysroots(
 )
 # This creates @new_sysroot_linux_amd64, @new_sysroot_linux_arm64,
 # @old_sysroot_linux_amd64, and @old_sysroot_linux_arm64
+```
+
+### MODULE.bazel (bzlmod) Mode
+
+To use these sysroots in your MODULE.bazel file:
+
+```starlark
+# Add envoy_toolshed as a dependency
+bazel_dep(name = "envoy_toolshed", version = "0.3.12")
+
+# Setup sysroots using the extension
+sysroot_ext = use_extension("@envoy_toolshed//bazel/sysroot:extensions.bzl", "sysroot_extension")
+
+# Use default glibc 2.31 with libstdc++13
+sysroot_ext.setup()
+
+# Or configure with specific options:
+# sysroot_ext.setup(
+#     glibc_version = "2.28",
+#     stdcc_version = "13",
+# )
+
+# Or use base sysroot without libstdc++:
+# sysroot_ext.setup(
+#     glibc_version = "2.31",
+#     stdcc_version = "",
+# )
+
+# Or use multiple sysroot configurations with name prefixes:
+# sysroot_ext.setup(
+#     glibc_version = "2.31",
+#     stdcc_version = "13",
+#     name_prefix = "new",
+# )
+# sysroot_ext.setup(
+#     glibc_version = "2.28",
+#     stdcc_version = "13",
+#     name_prefix = "old",
+# )
+
+# Make the sysroots available to your module
+use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
+
+# If using name prefixes, specify all repository names:
+# use_repo(sysroot_ext, "new_sysroot_linux_amd64", "new_sysroot_linux_arm64",
+#                       "old_sysroot_linux_amd64", "old_sysroot_linux_arm64")
 ```
 
 ### Configuration Validation
