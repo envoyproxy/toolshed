@@ -14,7 +14,7 @@ def _sanitizer_libs_impl(module_ctx):
     setup_tag = None
     for mod in module_ctx.modules:
         for tag in mod.tags.setup:
-            if setup_tag is None:
+            if setup_tag == None:
                 setup_tag = tag
             else:
                 # Fail if multiple tags are found
