@@ -81,6 +81,12 @@ use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 # # )
 # use_repo(sanitizer_ext, "msan_libs", "tsan_libs")
 
+# Setup grcov for code coverage - example for downstream consumers
+# Uncomment to use in your MODULE.bazel:
+# grcov_ext = use_extension("@envoy_toolshed//coverage/grcov:extensions.bzl", "grcov_extension")
+# grcov_ext.setup()
+# use_repo(grcov_ext, "grcov")
+
 # Configure LLVM toolchain
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency=True)
 llvm.toolchain(
