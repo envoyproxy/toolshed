@@ -5,7 +5,7 @@ load("//:versions.bzl", "VERSIONS")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["sanitizer_libs.bzl"])
+exports_files(["sanitizer_libs.bzl", "extensions.bzl"])
 
 SANITIZER_ENV = {
     "CXXFLAGS": "-nostdinc++ -nostdlib++",

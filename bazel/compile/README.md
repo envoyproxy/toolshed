@@ -38,3 +38,41 @@ The sanitizer libraries are automatically built and published to GitHub releases
    "msan_libs_sha256": "...",  # Add actual SHA256
    "tsan_libs_sha256": "...",  # Add actual SHA256
    ```
+
+## Using with WORKSPACE
+
+In your WORKSPACE file:
+
+```starlark
+load("@envoy_toolshed//compile:sanitizer_libs.bzl", "setup_sanitizer_libs")
+
+setup_sanitizer_libs()
+```
+
+This will create `@msan_libs` and `@tsan_libs` repositories you can use in your builds.
+
+## Using with bzlmod (MODULE.bazel)
+
+In your MODULE.bazel file:
+
+```starlark
+bazel_dep(name = "envoy_toolshed", version = "0.3.12")
+
+# Setup sanitizer libraries
+sanitizer_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "sanitizer_extension")
+sanitizer_ext.setup()  # Uses default versions
+use_repo(sanitizer_ext, "msan_libs", "tsan_libs")
+```
+
+Or with custom versions:
+
+```starlark
+sanitizer_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "sanitizer_extension")
+sanitizer_ext.setup(
+    msan_version = "0.1.34",
+    msan_sha256 = "534e5e6893f177f891d78d6e85a80c680c84f0abd64681f8ddbf2f5457e97a52",
+    tsan_version = "0.1.34",
+    tsan_sha256 = "2cd571a07014972ff9bc0f189c5725c2ea121aeab0daa4c27ef171842ea13985",
+)
+use_repo(sanitizer_ext, "msan_libs", "tsan_libs")
+```
