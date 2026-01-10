@@ -238,7 +238,7 @@ install_base_packages () {
     echo "Step 3: Installing base packages..."
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install --no-install-recommends -y \
-         libc6 libc6-dev "$LIBGCC_PACKAGE" libxml2-dev libatomic1
+         libc6 libc6-dev "$LIBGCC_PACKAGE" libxml2-dev
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install --no-install-recommends -y \
          -t "$DEBIAN_VERSION-backports" linux-libc-dev
 }
