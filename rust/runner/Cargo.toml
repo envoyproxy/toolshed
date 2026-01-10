@@ -24,7 +24,7 @@ toolshed-test = { path = "../test", optional = true }
 
 [dev-dependencies]
 assert_matches = "^1.5"
-libc = "^0.2.179"
+libc = "^0.2.180"
 mockall = { version = "^0.14.0" }
 mockall_double = "^0.3"
 scopeguard = "^1.2"
