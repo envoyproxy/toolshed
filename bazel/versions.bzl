@@ -89,8 +89,8 @@ VERSIONS = {
     "rules_pkg": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_pkg",
-        "version": "1.0.1",
-        "sha256": "d20c951960ed77cb7b341c2a59488534e494d5ad1d30c4818c736d57772a9fef",
+        "version": "1.2.0",
+        "sha256": "b5c9184a23bb0bcff241981fd9d9e2a97638a1374c9953bb1808836ce711f990",
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
     },
     "rules_license": {
