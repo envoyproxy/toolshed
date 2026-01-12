@@ -23,6 +23,10 @@ inputs:
   publish-directory:
     type: string
     default: artifacts/publish
+  template-artifacts:
+    type: string
+    default: |
+      \($name)-{artifacts,source}*
   template-organize-artifacts:
     type: string
     default: |
@@ -56,7 +60,7 @@ runs:
             (. | split(" ") | .[0] | ascii_downcase) as $name
             | {key: $name,
                value: {
-                 artifacts: "\($name)-artifacts*",
+                 artifacts: "${{ inputs.template-artifacts }}",
                  name: $name,
                  run_id: $run_ids[.]}})
         | from_entries
