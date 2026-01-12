@@ -121,6 +121,7 @@ jobs:
         - name: bazel
           artifact-workflows: |
             Bazel CI
+          artifacts: true
           version: ${{ inputs.bazel-version }}
           version-file: ${{ inputs.bazel-version-file }}
         - name: bins
