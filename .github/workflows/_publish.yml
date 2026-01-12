@@ -96,6 +96,7 @@ jobs:
             || '.' }}
       name: ${{ matrix.name }}
       sha: ${{ inputs.sha }}
+      template-artifacts: ${{ matrix.template-artifacts }}
       title: ${{ inputs.title }}
       version: ${{ matrix.version }}
       version-file: ${{ matrix.version-file }}
@@ -121,6 +122,9 @@ jobs:
         - name: bazel
           artifact-workflows: |
             Bazel CI
+          artifacts: true
+          template-artifacts: |
+            \($name)-source*
           version: ${{ inputs.bazel-version }}
           version-file: ${{ inputs.bazel-version-file }}
         - name: bins
