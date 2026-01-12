@@ -58,6 +58,31 @@ jobs:
       run: |
         exec bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }}
       working-directory: ${{ inputs.bazel-path }}
+    - name: Create source tarball
+      id: source-tarball
+      if: >-
+        inputs.action == 'build'
+        && inputs.bazel-path == 'bazel'
+        && inputs.upload
+      run: |
+        VERSION=$(sed 's/-dev$//' bazel/VERSION.txt | tr -d '\n')
+        TARBALL_NAME="toolshed-bazel-v${VERSION}.tar.gz"
+        echo "Creating source tarball: ${TARBALL_NAME}"
+        tar --exclude='.git*' \
+            --exclude='bazel-*' \
+            --transform='s,^bazel,toolshed-bazel,' \
+            -czf "${TARBALL_NAME}" \
+            bazel/
+        echo "tarball=${TARBALL_NAME}" >> "$GITHUB_OUTPUT"
+        echo "Created ${TARBALL_NAME}"
+        ls -lh "${TARBALL_NAME}"
+    - name: Bazel source
+      if: ${{ steps.source-tarball.outputs.tarball }}
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      with:
+        name: bazel-source
+        path: ${{ steps.source-tarball.outputs.tarball }}
+        retention-days: 30
     - name: Bazel artifact paths
       id: artifact-paths
       if: >-
@@ -73,10 +98,11 @@ jobs:
           select(length > 0)
           | "${{ inputs.bazel-path }}/bazel-bin/\(.)"
     - name: Bazel artifacts
-      if: ${{ steps.artifact-paths.outputs.value }}
+      if: ${{ inputs.upload && (steps.artifact-paths.outputs.value || steps.source-tarball.outputs.tarball) }}
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
       with:
         name: bazel-artifacts
         path: |
           ${{ steps.artifact-paths.outputs.value }}
+          ${{ steps.source-tarball.outputs.tarball }}
         retention-days: 30
