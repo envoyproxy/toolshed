@@ -45,6 +45,10 @@ on:
       sha:
         default: ${{ github.event.workflow_run.head_sha }}
         type: string
+      template-artifacts:
+        type: string
+        default: |
+          \($name)-{artifacts,source}*
       title:
         default: ${{ github.event.workflow_run.head_commit.message }}
         type: string
@@ -66,7 +70,7 @@ jobs:
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/actions/appauth@c73c1b842058331a14008432c0e162b97cccb2f5
+    - uses: envoyproxy/toolshed/actions/appauth@e894de51f1aa722d7b766fbf55c88d772136613c
       id: appauth
       name: Appauth
       if: >-
@@ -77,7 +81,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/actions/github/checkout@c73c1b842058331a14008432c0e162b97cccb2f5
+      uses: envoyproxy/toolshed/actions/github/checkout@e894de51f1aa722d7b766fbf55c88d772136613c
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -90,13 +94,13 @@ jobs:
       id: gpg
       if: >-
         inputs.artifacts
-      uses: envoyproxy/toolshed/actions/gpg@c73c1b842058331a14008432c0e162b97cccb2f5
+      uses: envoyproxy/toolshed/actions/gpg@e894de51f1aa722d7b766fbf55c88d772136613c
       with:
         gpg-key: ${{ secrets.gpg-key }}
         gpg-password: ${{ secrets.gpg-password }}
     - name: Release title (eg commit message)
       id: title
-      uses: envoyproxy/toolshed/actions/jq@c73c1b842058331a14008432c0e162b97cccb2f5
+      uses: envoyproxy/toolshed/actions/jq@e894de51f1aa722d7b766fbf55c88d772136613c
       with:
         options: -sRr
         input: |
@@ -104,7 +108,7 @@ jobs:
         filter: |
           split("\n") | first
     - name: Publish the release
-      uses: envoyproxy/toolshed/actions/github/release@c73c1b842058331a14008432c0e162b97cccb2f5
+      uses: envoyproxy/toolshed/actions/github/release@e894de51f1aa722d7b766fbf55c88d772136613c
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
         artifacts: ${{ inputs.artifacts }}
@@ -118,6 +122,7 @@ jobs:
         repository: ${{ inputs.repository }}
         sha: ${{ inputs.sha }}
         summary: true
+        template-artifacts: ${{ inputs.template-artifacts }}
         title: ${{ steps.title.outputs.value }}
         token: ${{ steps.appauth.outputs.token || github.token }}
         version: ${{ inputs.version }}
