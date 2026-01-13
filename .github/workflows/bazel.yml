@@ -120,6 +120,39 @@ jobs:
         - workspace
         - bzlmod
 
+  test-macos:
+    runs-on: macos-14
+    needs: request
+    if: >-
+      always()
+      && fromJSON(needs.request.outputs.run || 'false')
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+        - workspace
+        - bzlmod
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+    - name: Bazel targets (build/${{ matrix.mode }}-macos)
+      run: |
+        exec bazel build \
+          --config=ci \
+          --config=macos \
+          ${{ matrix.mode == 'bzlmod' && '--enable_bzlmod' || '' }} \
+          //coverage/... \
+          //dependency/... \
+          //format/... \
+          //repository/... \
+          //sha/... \
+          //tarball/... \
+          //toolchains/... \
+          //:dependency_versions
+      working-directory: bazel
+
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -131,6 +164,7 @@ jobs:
     - test
     - build
     - test-gcc
+    - test-macos
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
