@@ -65,12 +65,12 @@ jobs:
         && inputs.bazel-path == 'bazel'
         && inputs.upload
       run: |
-        VERSION=$(sed 's/-dev$//' bazel/VERSION.txt | tr -d '\n')
+        VERSION=$(cat bazel/VERSION.txt | tr -d '\n')
         TARBALL_NAME="toolshed-bazel-v${VERSION}.tar.gz"
         echo "Creating source tarball: ${TARBALL_NAME}"
         tar --exclude='.git*' \
             --exclude='bazel-*' \
-            --transform='s,^bazel,toolshed-bazel,' \
+            --transform="s,^bazel,toolshed-bazel-$VERSION," \
             -czf "${TARBALL_NAME}" \
             bazel/
         echo "tarball=${TARBALL_NAME}" >> "$GITHUB_OUTPUT"
