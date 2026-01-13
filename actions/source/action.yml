@@ -46,7 +46,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/bson@b947ebfe9eda97a0da3e1b3a6a3598fbb55de7b6
+  - uses: envoyproxy/toolshed/actions/bson@d10938876b114aa2a001b43b43158f1bf7008f1a
     id: create-tarball
     env:
       SOURCE_ACTION_PATH: ${{ github.action_path }}
