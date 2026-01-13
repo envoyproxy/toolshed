@@ -87,6 +87,39 @@ jobs:
         - workspace
         - bzlmod
 
+  test-gcc:
+    needs: request
+    if: >-
+      always()
+      && fromJSON(needs.request.outputs.run || 'false')
+    uses: ./.github/workflows/_bazel.yml
+    with:
+      action: build
+      bazel-args: >-
+        --config=ci
+        --config=gcc
+        ${{ matrix.mode == 'bzlmod'
+            && '--enable_bzlmod'
+            || '' }}
+      bazel-mode: ${{ matrix.mode }}-gcc
+      bazel-path: bazel
+      targets: >-
+        //compile/...
+        //coverage/...
+        //dependency/...
+        //format/...
+        //repository/...
+        //sha/...
+        //tarball/...
+        //toolchains/...
+        //:dependency_versions
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+        - workspace
+        - bzlmod
+
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -97,6 +130,7 @@ jobs:
     - request
     - test
     - build
+    - test-gcc
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
