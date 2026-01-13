@@ -13,22 +13,16 @@ permissions:
 
 jobs:
   rebuild-dist:
-    # Only run if the workflow was triggered by a pull_request event from dependabot
+    # Only run if the workflow was triggered by a pull_request event and failed
+    # The failure is likely because dist files are out of sync
     if: >
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'failure' &&
-      github.event.workflow_run.actor.login == 'dependabot[bot]'
+      github.event.workflow_run.head_repository.full_name == github.repository
 
     runs-on: ubuntu-24.04
 
     steps:
-    - name: Setup appauth
-      id: appauth
-      uses: envoyproxy/toolshed/actions/appauth@c73c1b842058331a14008432c0e162b97cccb2f5
-      with:
-        app_id: ${{ secrets.ENVOY_CI_PUBLISH_APP_ID }}
-        key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
-
     - name: Get PR details
       id: pr
       uses: actions/github-script@v7
@@ -40,25 +34,54 @@ jobs:
             return;
           }
           const pr = pullRequests[0];
+
+          // Fetch full PR details to check if it's from dependabot
+          const prDetails = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: pr.number
+          });
+
+          const author = prDetails.data.user.login;
+          console.log(`PR #${pr.number} author: ${author}`);
+
+          if (author !== 'dependabot[bot]') {
+            core.info('PR is not from dependabot, skipping rebuild');
+            core.setOutput('is_dependabot', 'false');
+            return;
+          }
+
+          core.setOutput('is_dependabot', 'true');
           core.setOutput('number', pr.number);
           core.setOutput('head_ref', pr.head.ref);
           core.setOutput('head_sha', pr.head.sha);
-          console.log(`PR #${pr.number}, branch: ${pr.head.ref}, sha: ${pr.head.sha}`);
+          console.log(`Will rebuild dist files for PR #${pr.number}, branch: ${pr.head.ref}`);
+
+    - name: Setup appauth
+      if: steps.pr.outputs.is_dependabot == 'true'
+      id: appauth
+      uses: envoyproxy/toolshed/actions/appauth@c73c1b842058331a14008432c0e162b97cccb2f5
+      with:
+        app_id: ${{ secrets.ENVOY_CI_PUBLISH_APP_ID }}
+        key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
 
     - name: Checkout PR branch
+      if: steps.pr.outputs.is_dependabot == 'true'
       uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
       with:
         ref: ${{ steps.pr.outputs.head_ref }}
         token: ${{ steps.appauth.outputs.token }}
 
     - name: Setup Node.js
+      if: steps.pr.outputs.is_dependabot == 'true'
       uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f  # v6.1.0
       with:
         node-version: 20.x
 
     - name: Rebuild all JS packages
+      if: steps.pr.outputs.is_dependabot == 'true'
       run: |
-        # Find all package.json files in js directory
+        # Rebuild all JS packages with dist directories
         packages="js/appauth js/dispatch js/github/checks js/github/mutex"
         packages="$packages js/github/script/run js/hashfiles js/jq js/retest js/torun"
         for pkg_dir in $packages; do
@@ -72,6 +95,7 @@ jobs:
         done
 
     - name: Commit and push if changes detected
+      if: steps.pr.outputs.is_dependabot == 'true'
       run: |
         git config --local user.name "github-actions[bot]"
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
