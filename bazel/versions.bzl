@@ -3,9 +3,9 @@ VERSIONS = {
     "llvm": "18.1.8",
     "ninja": "1.12.0",
     "python": "3.12",
-    "bins_release": "0.1.37",
+    "bins_release": "0.1.38",
     "msan_libs_sha256": "5c1eac7459b10f9bd8a73b2b6a9bfea5db8684c64c0b755fb54559dc68585c01",
-    "tsan_libs_sha256": "2550adc0abe20e68b94a931000174438f2f4990f2c3907d117617676ef29eb0e",
+    "tsan_libs_sha256": "94029706c0a453fa2ad1e9e6ddb16cc601e6f40a0b72b2a1fa20c2d106bc4a97",
 
     # Glint binary hashes by architecture
     "glint_sha256": {
@@ -19,22 +19,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "43b97d7c5e3b5f4fff0cce88f92760bd4b68ab4a3d5dfb3824f812f58f22195c",
-                "arm64": "3c039f72b3a2a4b0d36e7f89827d830feab11b5789c8793dde7da53a8c4440f3",
+                "amd64": "8368e01f6b70bd7de73978d79d0a05ece813556d13fed945ab6c6578dc0f9c57",
+                "arm64": "2dedc9b8e3ed9836df1e0e6960339548e60b636ecc47f4cc0f22bc40dac098b9",
             },
             "13": {
-                "amd64": "f4c224046cb35ee10d517c0593c5cc39e31b6f84f241042a23ab719dfb20558a",
-                "arm64": "3de561127792708cadc5d9b525688e1860c3978bd5c23048488dd73fca30b365",
+                "amd64": "e35e1f2bcaacb944f221ad91ec9e573f326c8c439b65ec18d75f42d7a6f4fbd4",
+                "arm64": "b801de865879a2a1dd5591646a9f9032ccf2ae118953147b7b5830b3a9c9994e",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "f82d4569ef0d373f48cfe8d1b5afec8e4aaf51021c63e85fd6a34e26bcdbeb93",
-                "arm64": "135b13eda70dedbc8b645a46f27fe30fe837e951e900907c0d493832b24120a8",
+                "amd64": "014670b8764c9ffb3850807e2887152fbc2ebd9aa724d548af5a5d3c40c69589",
+                "arm64": "34089de4596ba8b83cbfbba9b9268008ab5235fa7794e9dcb68d8154869cb258",
             },
             "13": {
-                "amd64": "8c1a002eb96167929fb0beba5dcb1a293d5b426e613ccc659aad78c5b196c06b",
-                "arm64": "93f07ec4498d48dc00d6c5698bc9c8eab97be826ebe932a178f8339ed0755def",
+                "amd64": "7352495fab03bef11e58beb90b3e5b27e916962c3ccdfb58ad072c0c433dc7ef",
+                "arm64": "57aee30c3a878a7084f39b0d1320807bf696bd06e6d6dc1bbb62eed67d9a7c90",
             },
         },
     },
