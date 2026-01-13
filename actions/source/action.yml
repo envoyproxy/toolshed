@@ -56,7 +56,8 @@ runs:
         version_file: ${{ inputs.version-file }}
         output_name: ${{ inputs.output-name }}
         transform: ${{ inputs.transform }}
-        exclude_patterns: ${{ inputs.exclude-patterns }}
+        exclude_patterns: |
+          ${{ inputs.exclude-patterns }}
         source_path: ${{ inputs.source-path }}
         working_directory: ${{ inputs.working-directory }}
       filter: |
