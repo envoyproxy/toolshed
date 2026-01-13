@@ -136,6 +136,8 @@ jobs:
             Bazel CI
             Rust CI
           artifacts: true
+          template-artifacts: |
+            \($name)-artifacts*
           version: ${{ inputs.bins-version }}
           version-file: ${{ inputs.bins-version-file }}
         - name: python
