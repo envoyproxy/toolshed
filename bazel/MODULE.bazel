@@ -1,6 +1,6 @@
 module(
     name = "envoy_toolshed",
-    version = "0.3.23-dev",
+    version = "0.3.23",
 )
 
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")

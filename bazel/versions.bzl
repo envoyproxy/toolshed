@@ -3,9 +3,9 @@ VERSIONS = {
     "llvm": "18.1.8",
     "ninja": "1.12.0",
     "python": "3.12",
-    "bins_release": "0.1.41",
-    "msan_libs_sha256": "534e5e6893f177f891d78d6e85a80c680c84f0abd64681f8ddbf2f5457e97a52",
-    "tsan_libs_sha256": "2cd571a07014972ff9bc0f189c5725c2ea121aeab0daa4c27ef171842ea13985",
+    "bins_release": "0.1.42",
+    "msan_libs_sha256": "0d9c1ffbf0216c9aeeff5224fd77105f8f23e73c081f4a2e6cfa47eb19d574fe",
+    "tsan_libs_sha256": "bdafcdde0f42cbb0f29ae63bdb039c0151df0765c3ea84274c5be22426f03f12",
 
     # Glint binary hashes by architecture
     "glint_sha256": {
@@ -19,22 +19,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "6a90f49a4510056ccc2b64f62181d04011d0fad68c98bca4580a5d6061266dc2",
-                "arm64": "c9aa3a81c2a54f92a0ee4b6f52909100774d1ee935af8cacc93155d32d2524ff",
+                "amd64": "744ae9c829c87fbc430f366a9073183a0d63884d7e1ed5a350c457b38e985449",
+                "arm64": "a709c9612aebbe9b6156a2700d83bb5b79186837b51be3b29e1a558d0a058d1d",
             },
             "13": {
-                "amd64": "9b2a5ce4d9b554b323b7092af214da7980c07e56db99c78c2f0049e1a5c9efec",
-                "arm64": "5a335f8f2cf2f5c25cd2ce8b356253bb6264466f9b737e2712cb5b2384d00372",
+                "amd64": "2777ade4710e04b9875ae4a2be6e9c927c625f20ef713d24684d80c2b1733aa6",
+                "arm64": "57c30453045675f1479d2d1201232bdce63288c170090f3868b3d08394f1cf13",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "d231aef930da8f4466f40e94c13d83b3d45f17af038ab6f76526b95aaf211c78",
-                "arm64": "2159e3ba4be7c1461c3547ce3f5a9fc54d6cbf741137fe6d9d5d5e826b84b52b",
+                "amd64": "21590240b2d44bb28debfacae22fa535d488ccc10f3178a7dd49d70d6ef1f3ca",
+                "arm64": "de513e73db56b26a8bf9a3d29449e1532866a86f00fd0f9a06202eace379d15e",
             },
             "13": {
-                "amd64": "8e36ac914a3f42de506357a276601d5193d7dfdd230f5b000711634f6ad02ad7",
-                "arm64": "745a8bd0c8c7dd499c5cf701e2facaa55989333a0c3c3d2a93936597bdee59e7",
+                "amd64": "cff80638a4c297f3251abdb2689ec155877c2bf26015d11b0ee78087b8a2edc3",
+                "arm64": "7bddf60b80f266971b8996adc13215b49499e1e95b52d7259da3b44e949dca5f",
             },
         },
     },
