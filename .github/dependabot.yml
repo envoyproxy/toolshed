@@ -23,32 +23,79 @@ updates:
 - package-ecosystem: github-actions
   directories:
   - /
+  - /actions/appauth
+  - /actions/azp/agent-cleanup
+  - /actions/bind-mounts
   - /actions/bson
+  - /actions/buildah
   - /actions/cache/prime
   - /actions/cache/restore
+  - /actions/diskspace
+  - /actions/dispatch
   - /actions/docker/cache/prime
   - /actions/docker/cache/restore
   - /actions/docker/fetch
+  - /actions/docker/registry
+  - /actions/docker/sha
   - /actions/docker/shas
+  - /actions/email/validate
+  - /actions/envoy/android/post
   - /actions/envoy/android/pre
   - /actions/envoy/ci/env
   - /actions/envoy/ci/request
   - /actions/envoy/ios/post
   - /actions/envoy/run/summary
+  - /actions/fetch
   - /actions/foreach
+  - /actions/gcp/setup
+  - /actions/gcs/artefact/sync
+  - /actions/gcs/cache/exists
+  - /actions/gcs/cache/restore
+  - /actions/gcs/cache/save
+  - /actions/gcs/fuse
+  - /actions/github/afterall
+  - /actions/github/artifact/cache/id
+  - /actions/github/artifact/cache/restore
+  - /actions/github/artifact/cache/save
   - /actions/github/artifact/download
   - /actions/github/checkout
+  - /actions/github/checks
   - /actions/github/command
   - /actions/github/env/load
   - /actions/github/env/save
   - /actions/github/env/summary
+  - /actions/github/issue/get
   - /actions/github/merge-commit
+  - /actions/github/mutex
   - /actions/github/pr
+  - /actions/github/release
+  - /actions/github/release/artifacts
+  - /actions/github/release/latest
+  - /actions/github/release/publish
+  - /actions/github/release/shas
+  - /actions/github/release/status
+  - /actions/github/remnt
   - /actions/github/run
+  - /actions/github/script/run
+  - /actions/github/should-run
+  - /actions/gpg
+  - /actions/gpg/generate
+  - /actions/gpg/import
+  - /actions/gpg/sign
+  - /actions/hashfiles
+  - /actions/jq
   - /actions/json/table
+  - /actions/oci/collector
+  - /actions/regctl/auth
+  - /actions/regctl/install
+  - /actions/retest
+  - /actions/source
+  - /actions/test-runner
+  - /actions/torun
   - /actions/upload/diff
   - /actions/using/recurse
   - /actions/using/steps
+  - /actions/version
   schedule:
     interval: daily
   groups:
