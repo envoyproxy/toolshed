@@ -64,18 +64,15 @@ jobs:
         inputs.action == 'build'
         && inputs.bazel-path == 'bazel'
         && inputs.upload
-      run: |
-        VERSION=$(cat bazel/VERSION.txt | tr -d '\n')
-        TARBALL_NAME="toolshed-bazel-v${VERSION}.tar.gz"
-        echo "Creating source tarball: ${TARBALL_NAME}"
-        tar --exclude='.git*' \
-            --exclude='bazel-*' \
-            --transform="s,^bazel,toolshed-bazel-$VERSION," \
-            -czf "${TARBALL_NAME}" \
-            bazel/
-        echo "tarball=${TARBALL_NAME}" >> "$GITHUB_OUTPUT"
-        echo "Created ${TARBALL_NAME}"
-        ls -lh "${TARBALL_NAME}"
+      uses: envoyproxy/toolshed/actions/source@b947ebfe9eda97a0da3e1b3a6a3598fbb55de7b6
+      with:
+        exclude-patterns: |
+          .git*
+          bazel-*
+        output-name: toolshed-bazel-v{version}.tar.gz
+        source-path: bazel/
+        transform: s,^bazel,toolshed-bazel-v{version},
+        version-file: bazel/VERSION.txt
     - name: Bazel source
       if: ${{ steps.source-tarball.outputs.tarball }}
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
@@ -89,7 +86,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@9e23dddd74d612f3971c03138d265780e8a5ece7
+      uses: envoyproxy/toolshed/actions/jq@b947ebfe9eda97a0da3e1b3a6a3598fbb55de7b6
       with:
         input: ${{ inputs.artifacts }}
         input-format: text
