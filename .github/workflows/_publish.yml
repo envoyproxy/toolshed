@@ -95,6 +95,7 @@ jobs:
         ${{ matrix.filter-artifacts
             || '.' }}
       name: ${{ matrix.name }}
+      prepare-dev: ${{ matrix.prepare-dev }}
       sha: ${{ inputs.sha }}
       template-artifacts: ${{ matrix.template-artifacts }}
       title: ${{ inputs.title }}
@@ -123,6 +124,7 @@ jobs:
           artifact-workflows: |
             Bazel CI
           artifacts: true
+          prepare-dev: .github/workflows/prepare_bazel_dev.sh
           template-artifacts: |
             \($name)-source*
           version: ${{ inputs.bazel-version }}
