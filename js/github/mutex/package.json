@@ -19,14 +19,14 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed/tree/main/actions/github/mutex",
   "dependencies": {
-    "@actions/core": "^2.0.0",
+    "@actions/core": "^2.0.2",
     "@actions/exec": "^2.0.0",
     "@actions/io": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.2",
+    "@types/node": "^25.0.7",
     "@types/jest": "^30.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vercel/ncc": "^0.38.1",
     "eslint": "^9.0.0",
