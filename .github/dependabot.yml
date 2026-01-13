@@ -22,7 +22,7 @@ updates:
 
 - package-ecosystem: github-actions
   directories:
-  - /
+  - /.github/workflows
   - /actions/appauth
   - /actions/azp/agent-cleanup
   - /actions/bind-mounts
