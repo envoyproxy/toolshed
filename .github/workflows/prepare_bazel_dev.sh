@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e -opipefail
+set -e -o pipefail
 
 MODULE_BAZEL="bazel/MODULE.bazel"
 echo "\$ sed -i '/^module(/,/^)/s/version = \\\"[^\\\"]*\\\"/version = \\\"${NEXT_VERSION}\\\"/' ${MODULE_BAZEL}" >> "$TMP_OUTPUT"
