@@ -1,0 +1,39 @@
+uses: ./actions/source
+id: source
+with:
+  debug: true
+  exclude-patterns: |
+    .git*
+  output-name: test-v{version}.tar.gz
+  source-path: test-source/
+  version-file: VERSION.txt
+
+before:
+- shell: bash
+  run: |
+    # Create a test directory structure
+    mkdir -p test-source
+    echo "1.0.0" > VERSION.txt
+    echo "test content" > test-source/file.txt
+    mkdir -p test-source/subdir
+    echo "subdir content" > test-source/subdir/file2.txt
+    echo "should be excluded" > test-source/.gitignore
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    TARBALL="%{{ steps.source.outputs.tarball }}"
+    VERSION="%{{ steps.source.outputs.version }}"
+
+    test_tarball_exists "$TARBALL"
+    test_tarball_content "$TARBALL" "test-source/"
+    test_version_output "$VERSION" "1.0.0"
+
+    # Verify .gitignore was excluded
+    if tar -tzf "$TARBALL" | grep -q ".gitignore"; then
+        echo "fail:Excluded file (.gitignore) found in tarball" >> "$TEST_OUTPUT"
+    else
+        echo "success:Excluded file (.gitignore) not in tarball" >> "$TEST_OUTPUT"
+    fi

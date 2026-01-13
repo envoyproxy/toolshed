@@ -1,0 +1,42 @@
+uses: ./actions/source
+id: source
+with:
+  debug: true
+  output-name: myapp-v{version}.tar.gz
+  source-path: test-dir/
+  transform: s,^test-dir,myapp-{version},
+  version-file: VERSION.txt
+
+before:
+- shell: bash
+  run: |
+    # Create a test directory structure
+    mkdir -p test-dir
+    echo "2.5.0" > VERSION.txt
+    echo "test content" > test-dir/file.txt
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    TARBALL="%{{ steps.source.outputs.tarball }}"
+    VERSION="%{{ steps.source.outputs.version }}"
+
+    test_tarball_exists "$TARBALL"
+    test_version_output "$VERSION" "2.5.0"
+
+    # Check that transform was applied - directory should be renamed
+    if tar -tzf "$TARBALL" | grep -q "^myapp-2.5.0/"; then
+        echo "success:Transform applied correctly (myapp-2.5.0/ found)" >> "$TEST_OUTPUT"
+    else
+        echo "fail:Transform not applied correctly" >> "$TEST_OUTPUT"
+        tar -tzf "$TARBALL" | head -5
+    fi
+
+    # Verify original path is not in tarball
+    if tar -tzf "$TARBALL" | grep -q "^test-dir/"; then
+        echo "fail:Original path (test-dir/) still in tarball" >> "$TEST_OUTPUT"
+    else
+        echo "success:Original path not in tarball" >> "$TEST_OUTPUT"
+    fi

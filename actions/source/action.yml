@@ -1,0 +1,79 @@
+name: Create Source Tarball
+description: Creates a source tarball from a directory with version substitution and configurable exclusions
+author: phlax
+
+inputs:
+  debug:
+    type: boolean
+    default: false
+  exclude-patterns:
+    type: string
+    default: |
+      .git*
+  output-name:
+    type: string
+    required: true
+  source-path:
+    type: string
+    required: true
+  template-command:
+    type: string
+    default: |
+      export VERSION_FILE=\"\(.version_file)\"
+      export OUTPUT_NAME=\"\(.output_name)\"
+      export WORKING_DIRECTORY=\"\(.working_directory)\"
+      export EXCLUDES=\"\($excludes)\"
+      export TRANSFORM_ARG=\"\($transform_arg)\"
+      export SOURCE_PATH=\"\(.source_path)\"
+      OUTPUT=$(${SOURCE_ACTION_PATH}/source.sh)
+  transform:
+    type: string
+    default: ""
+  version-file:
+    type: string
+    default: VERSION.txt
+  working-directory:
+    type: string
+    default: .
+
+outputs:
+  tarball:
+    value: ${{ fromJSON(steps.create-tarball.outputs.output).tarball }}
+  version:
+    value: ${{ fromJSON(steps.create-tarball.outputs.output).version }}
+
+
+runs:
+  using: composite
+  steps:
+  - uses: envoyproxy/toolshed/actions/bson@c73c1b842058331a14008432c0e162b97cccb2f5
+    id: create-tarball
+    env:
+      SOURCE_ACTION_PATH: ${{ github.action_path }}
+      DEBUG: ${{ inputs.debug == 'true' && '1' || '' }}
+    with:
+      input: |
+        version_file: ${{ inputs.version-file }}
+        output_name: ${{ inputs.output-name }}
+        transform: ${{ inputs.transform }}
+        exclude_patterns: ${{ inputs.exclude-patterns }}
+        source_path: ${{ inputs.source-path }}
+        working_directory: ${{ inputs.working-directory }}
+      filter: |
+        .version_file as $version_file
+        | .output_name as $output_name
+        | (.transform // "") as $transform
+        | (.exclude_patterns // "") as $exclude_patterns
+        | .source_path as $source_path
+        | .working_directory as $working_directory
+        | ($exclude_patterns | split("\n") | map(select(length > 0)) | map("--exclude=\(.)") | join(" ")) as $excludes
+        | (if $transform != "" then "--transform=\($transform)" else "" end) as $transform_arg
+        | "${{ inputs.template-command }}"
+        | bash::output
+      options: -r
+      result-filter: |
+        .
+        | split("\n")
+        | map(select(length > 0))
+        | map(split("=") | {key: .[0], value: .[1]})
+        | from_entries
