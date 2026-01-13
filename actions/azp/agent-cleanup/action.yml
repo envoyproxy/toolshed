@@ -17,17 +17,17 @@ runs:
   using: "composite"
   steps:
   - name: Checkout repository
-    uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
+    uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
 
   - id: fetch
     name: Fetch AZP agents list
-    uses: envoyproxy/toolshed/actions/fetch@0479cd54b42382491d1b8366c759d11b3a74b087
+    uses: envoyproxy/toolshed/actions/fetch@9e23dddd74d612f3971c03138d265780e8a5ece7
     with:
       url: https://dev.azure.com/${{ inputs.azp-org }}/_apis/distributedtask/pools/${{ inputs.pool-id }}/agents?api-version=7.1-preview.1
       args: -u ":${{ inputs.azp-token }}"
 
   - name: Get dead AZP agent ids
-    uses: envoyproxy/toolshed/actions/jq@0479cd54b42382491d1b8366c759d11b3a74b087
+    uses: envoyproxy/toolshed/actions/jq@9e23dddd74d612f3971c03138d265780e8a5ece7
     with:
       input-format: json-path
       input: ${{ steps.fetch.outputs.path }}
