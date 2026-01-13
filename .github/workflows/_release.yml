@@ -246,6 +246,17 @@ jobs:
           | [flatten[]
              | select(. != "")]
           | join("\n")
+    - name: Update MODULE.bazel version (for bazel)
+      if: >-
+        inputs.type == 'bazel'
+        && inputs.action != 'release-no-prepare'
+      env:
+        RELEASE_VERSION: ${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
+      run: |
+        sed -i '/^module(/,/^)/s/version = "[^"]*"/version = "'"${RELEASE_VERSION}"'"/' bazel/MODULE.bazel
+        echo "Updated bazel/MODULE.bazel to version ${RELEASE_VERSION}"
+        git add bazel/MODULE.bazel
+        git diff --cached bazel/MODULE.bazel
 
     # PYTHON ONLY
     - name: Get python package versions
