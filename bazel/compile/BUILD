@@ -20,6 +20,11 @@ config_setting(
     flag_values = {":use_gcc_toolchain": "true"},
 )
 
+config_setting(
+    name = "macos_build",
+    constraint_values = ["@platforms//os:osx"],
+)
+
 # LLVM/Clang specific environment variables
 LLVM_SANITIZER_ENV = {
     "CXXFLAGS": "-nostdinc++ -nostdlib++",
@@ -32,8 +37,14 @@ GCC_SANITIZER_ENV = {
     "LDFLAGS": "",
 }
 
+MACOS_SANITIZER_ENV = {
+    "CXXFLAGS": "-nostdinc++",
+    "LDFLAGS": "",
+}
+
 SANITIZER_ENV = select({
     ":gcc_build": GCC_SANITIZER_ENV,
+    ":macos_build": MACOS_SANITIZER_ENV,
     "//conditions:default": LLVM_SANITIZER_ENV,
 })
 
@@ -47,6 +58,12 @@ LLVM_LINKER_FLAGS = {
 
 GCC_LINKER_FLAGS = {
     # Don't specify LLVM_USE_LINKER for GCC, let CMake/compiler choose
+    "CMAKE_SHARED_LINKER_FLAGS": "-shared -Wl,-S",
+    "CMAKE_MODULE_LINKER_FLAGS": "-shared -Wl,-S",
+    "CMAKE_EXE_LINKER_FLAGS": "-Wl,-S",
+}
+
+MACOS_LINKER_FLAGS = {
     "CMAKE_SHARED_LINKER_FLAGS": "-shared -Wl,-S",
     "CMAKE_MODULE_LINKER_FLAGS": "-shared -Wl,-S",
     "CMAKE_EXE_LINKER_FLAGS": "-Wl,-S",
@@ -70,6 +87,7 @@ BASE_CMAKE_CACHE_COMMON = {
 # Merge with linker-specific flags based on toolchain
 BASE_CMAKE_CACHE = BASE_CMAKE_CACHE_COMMON | select({
     ":gcc_build": GCC_LINKER_FLAGS,
+    ":macos_build": MACOS_LINKER_FLAGS,
     "//conditions:default": LLVM_LINKER_FLAGS,
 })
 
@@ -84,6 +102,11 @@ cmake(
         "libc++.a",
         "libc++abi.a",
     ],
+    target_compatible_with = select({
+        ":gcc_build": ["@platforms//:incompatible"],
+        ":macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     working_directory = "runtimes",
 )
 
@@ -98,6 +121,11 @@ cmake(
         "libc++.a",
         "libc++abi.a",
     ],
+    target_compatible_with = select({
+        ":gcc_build": ["@platforms//:incompatible"],
+        ":macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     working_directory = "runtimes",
 )
 
