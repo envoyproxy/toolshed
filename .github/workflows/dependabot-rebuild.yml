@@ -29,7 +29,7 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       run: |
         # Extract PR number from workflow_run event
-        PR_NUMBER=$(echo '${{ toJson(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number')
+        PR_NUMBER=$(echo "${{ toJson(github.event.workflow_run.pull_requests) }}" | jq -r '.[0].number')
 
         if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" == "null" ]; then
             echo "No pull request found in workflow_run event"
