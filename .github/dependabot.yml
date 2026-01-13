@@ -58,15 +58,15 @@ updates:
 
 - package-ecosystem: npm
   directories:
-  - /actions/appauth
-  - /actions/dispatch
-  - /actions/github/checks
-  - /actions/github/mutex
-  - /actions/github/script/run
-  - /actions/hashfiles
-  - /actions/jq
-  - /actions/retest
-  - /actions/torun
+  - /js/appauth
+  - /js/dispatch
+  - /js/github/checks
+  - /js/github/mutex
+  - /js/github/script/run
+  - /js/hashfiles
+  - /js/jq
+  - /js/retest
+  - /js/torun
   schedule:
     interval: daily
   groups:
