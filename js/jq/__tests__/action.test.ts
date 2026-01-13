@@ -304,8 +304,10 @@ describe('run_github_action', () => {
 
       await run_github_action()
 
-      expect(process.env['MY_RESULT']).toBe('"test"')
+      // exportVariable should be called with the correct value
+      // Note: process.env is NOT set directly - core.exportVariable handles this
       expect(mock_core.exportVariable).toHaveBeenCalledWith('MY_RESULT', '"test"')
+      expect(process.env['MY_RESULT']).toBeUndefined()
     })
 
     it('should not export environment variable when env_var is empty', async () => {
@@ -572,6 +574,71 @@ describe('run_github_action', () => {
 
       expect(mock_runner.run_jq).toHaveBeenCalled()
       expect(mock_core.setOutput).toHaveBeenCalledWith('value', '1')
+    })
+  })
+
+  describe('multiline output handling', () => {
+    it('should handle multiline output correctly with setOutput', async () => {
+      mock_core.getInput.mockImplementation((name: string) => {
+        if (name === 'input') return '{"lines": ["line1", "line2", "line3"]}'
+        if (name === 'filter') return '.lines | join("\\n")'
+        return ''
+      })
+
+      const multiline_output = 'line1\nline2\nline3'
+      const jq_result: JqResult = {output: multiline_output, stderr: undefined}
+      mock_runner.run_jq.mockResolvedValue(jq_result)
+      mock_output.process_output.mockReturnValue(multiline_output)
+
+      await run_github_action()
+
+      // setOutput should be called with multiline string
+      // @actions/core handles the EOF delimiter automatically
+      expect(mock_core.setOutput).toHaveBeenCalledWith('value', multiline_output)
+    })
+
+    it('should handle multiline output with exportVariable', async () => {
+      mock_core.getInput.mockImplementation((name: string) => {
+        if (name === 'input') return '{"text": "Hello\\nWorld\\nTest"}'
+        if (name === 'filter') return '.text'
+        if (name === 'env_var') return 'MY_MULTILINE_VAR'
+        return ''
+      })
+
+      const multiline_output = 'Hello\nWorld\nTest'
+      const jq_result: JqResult = {output: multiline_output, stderr: undefined}
+      mock_runner.run_jq.mockResolvedValue(jq_result)
+      mock_output.process_output.mockReturnValue(multiline_output)
+
+      await run_github_action()
+
+      // exportVariable should be called with multiline string
+      // @actions/core handles the EOF delimiter automatically  
+      expect(mock_core.exportVariable).toHaveBeenCalledWith('MY_MULTILINE_VAR', multiline_output)
+      
+      // process.env should NOT be set directly as it's redundant
+      // and doesn't persist across steps
+      expect(process.env['MY_MULTILINE_VAR']).toBeUndefined()
+    })
+
+    it('should handle multiline output with special characters', async () => {
+      mock_core.getInput.mockImplementation((name: string) => {
+        if (name === 'input') return '{"data": "line1\\n\\nline3\\n"}'
+        if (name === 'filter') return '.data'
+        if (name === 'env_var') return 'SPECIAL_VAR'
+        return ''
+      })
+
+      const multiline_output = 'line1\n\nline3\n'
+      const jq_result: JqResult = {output: multiline_output, stderr: undefined}
+      mock_runner.run_jq.mockResolvedValue(jq_result)
+      mock_output.process_output.mockReturnValue(multiline_output)
+
+      await run_github_action()
+
+      expect(mock_core.setOutput).toHaveBeenCalledWith('value', multiline_output)
+      expect(mock_core.exportVariable).toHaveBeenCalledWith('SPECIAL_VAR', multiline_output)
+      expect(process.env['SPECIAL_VAR']).toBeUndefined()
     })
   })
 })
