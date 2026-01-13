@@ -37,6 +37,8 @@ RELEASE_ARGS=(
     "${TAG}")
 TMP_OUTPUT="$(mktemp)"
 CMD_OUTPUT="$(mktemp)"
+export TMP_OUTPUT
+export CMD_OUTPUT
 
 if [[ -n "$DEBUG" ]]; then
     gh version >&2
@@ -106,9 +108,12 @@ if [[ -n "${PREPARE_DEV}" ]]; then
         echo "Prepare script (${PREPARE_DEV}): Not executable" >&2
         exit 1
     fi
+    output=$("$PREPARE_DEV")
     while IFS= read -r file; do
-        [[ -n "$file" ]] && COMMIT_FILES+=("$file")
-    done < <("$PREPARE_DEV")
+        if [[ -n "$file" ]]; then
+            COMMIT_FILES+=("$file")
+        fi
+    done <<< "$output"
 fi
 
 _run git commit "${COMMIT_FILES[@]}" -m "${REOPEN_MESSAGE}" --signoff
