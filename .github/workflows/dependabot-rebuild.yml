@@ -25,37 +25,36 @@ jobs:
     steps:
     - name: Get PR details
       id: pr
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const pullRequests = context.payload.workflow_run.pull_requests;
-          if (!pullRequests || pullRequests.length === 0) {
-            core.setFailed('No pull request found in workflow_run event');
-            return;
-          }
-          const pr = pullRequests[0];
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Extract PR number from workflow_run event
+        PR_NUMBER=$(echo '${{ toJson(github.event.workflow_run.pull_requests) }}' | jq -r '.[0].number')
 
-          // Fetch full PR details to check if it's from dependabot
-          const prDetails = await github.rest.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: pr.number
-          });
+        if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" == "null" ]; then
+            echo "No pull request found in workflow_run event"
+            exit 1
+        fi
 
-          const author = prDetails.data.user.login;
-          console.log(`PR #${pr.number} author: ${author}`);
+        # Fetch PR details to check author
+        PR_DATA=$(gh pr view "$PR_NUMBER" --json number,author,headRefName,headRefOid)
+        AUTHOR=$(echo "$PR_DATA" | jq -r '.author.login')
+        HEAD_REF=$(echo "$PR_DATA" | jq -r '.headRefName')
+        HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headRefOid')
 
-          if (author !== 'dependabot[bot]') {
-            core.info('PR is not from dependabot, skipping rebuild');
-            core.setOutput('is_dependabot', 'false');
-            return;
-          }
+        echo "PR #$PR_NUMBER author: $AUTHOR"
 
-          core.setOutput('is_dependabot', 'true');
-          core.setOutput('number', pr.number);
-          core.setOutput('head_ref', pr.head.ref);
-          core.setOutput('head_sha', pr.head.sha);
-          console.log(`Will rebuild dist files for PR #${pr.number}, branch: ${pr.head.ref}`);
+        if [ "$AUTHOR" != "dependabot[bot]" ]; then
+            echo "PR is not from dependabot, skipping rebuild"
+            echo "is_dependabot=false" >> $GITHUB_OUTPUT
+            exit 0
+        fi
+
+        echo "is_dependabot=true" >> $GITHUB_OUTPUT
+        echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
+        echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+        echo "Will rebuild dist files for PR #$PR_NUMBER, branch: $HEAD_REF"
 
     - name: Setup appauth
       if: steps.pr.outputs.is_dependabot == 'true'
@@ -85,13 +84,13 @@ jobs:
         packages="js/appauth js/dispatch js/github/checks js/github/mutex"
         packages="$packages js/github/script/run js/hashfiles js/jq js/retest js/torun"
         for pkg_dir in $packages; do
-          if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
-            echo "Processing $pkg_dir"
-            cd "$pkg_dir"
-            npm ci
-            npm run build
-            cd - > /dev/null
-          fi
+            if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
+                echo "Processing $pkg_dir"
+                cd "$pkg_dir"
+                npm ci
+                npm run build
+                cd - > /dev/null
+            fi
         done
 
     - name: Commit and push if changes detected
@@ -100,12 +99,12 @@ jobs:
         git config --local user.name "github-actions[bot]"
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
 
-        if [[ $(git status --porcelain) ]]; then
-          echo "Changes detected in dist files after rebuild"
-          git add js/**/dist/
-          git commit -m "chore: rebuild dist files for dependabot PR #${{ steps.pr.outputs.number }}"
-          git push origin ${{ steps.pr.outputs.head_ref }}
-          echo "Changes committed and pushed successfully"
+        if [[ "$(git status --porcelain)" ]]; then
+            echo "Changes detected in dist files after rebuild"
+            git add js/**/dist/
+            git commit -m "chore: rebuild dist files for dependabot PR #${{ steps.pr.outputs.number }}"
+            git push origin ${{ steps.pr.outputs.head_ref }}
+            echo "Changes committed and pushed successfully"
         else
-          echo "No changes detected in dist files"
+            echo "No changes detected in dist files"
         fi
