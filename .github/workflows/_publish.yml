@@ -9,7 +9,7 @@ on:
       app-id:
       app-key:
       gpg-key:
-      gpg-key-password:
+      gpg-password:
 
     inputs:
       actions-version:

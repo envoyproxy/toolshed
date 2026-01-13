@@ -24,7 +24,7 @@ jobs:
       app-id: ${{ secrets.ENVOY_CI_PUBLISH_APP_ID }}
       app-key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
       gpg-key: ${{ secrets.ENVOY_GPG_MAINTAINER_KEY }}
-      gpg-key-password: ${{ secrets.ENVOY_GPG_MAINTAINER_KEY_PASSWORD }}
+      gpg-password: ${{ secrets.ENVOY_GPG_MAINTAINER_KEY_PASSWORD }}
     uses: ./.github/workflows/_publish.yml
     with:
       committer-email: "140627008+publish-envoy[bot]@users.noreply.github.com"
