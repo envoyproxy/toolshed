@@ -78,6 +78,8 @@ jobs:
     secrets:
       app-id: ${{ secrets.app-id }}
       app-key: ${{ secrets.app-key }}
+      gpg-key: ${{ secrets.gpg-key }}
+      gpg-password: ${{ secrets.gpg-password }}
     if: >-
       inputs.conclusion == 'success'
       && ! inputs.skip

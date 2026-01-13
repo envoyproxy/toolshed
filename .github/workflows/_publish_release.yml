@@ -108,8 +108,8 @@ jobs:
         inputs.artifacts
       uses: envoyproxy/toolshed/actions/gpg@fa7bbf3b718788fe1d3f3606afa92304748559e2
       with:
-        gpg-key: ${{ secrets.gpg-key }}
-        gpg-password: ${{ secrets.gpg-password }}
+        gpg-key: ${{ ! inputs.dry-run && secrets.gpg-key || '' }}
+        gpg-password: ${{ ! inputs.dry-run && secrets.gpg-password || '' }}
     - name: Release title (eg commit message)
       id: title
       uses: envoyproxy/toolshed/actions/jq@fa7bbf3b718788fe1d3f3606afa92304748559e2
