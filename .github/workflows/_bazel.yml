@@ -66,9 +66,6 @@ jobs:
         && inputs.upload
       uses: envoyproxy/toolshed/actions/source@b947ebfe9eda97a0da3e1b3a6a3598fbb55de7b6
       with:
-        exclude-patterns: |
-          .git*
-          bazel-*
         output-name: toolshed-bazel-v{version}.tar.gz
         source-path: bazel/
         transform: s,^bazel,toolshed-bazel-v{version},
@@ -101,5 +98,4 @@ jobs:
         name: bazel-artifacts
         path: |
           ${{ steps.artifact-paths.outputs.value }}
-          ${{ steps.source-tarball.outputs.tarball }}
         retention-days: 30
