@@ -15,6 +15,8 @@ set -e -o pipefail
 # - VERSION: the release version
 # - VERSION_FILE: path to version file
 # - REOPEN_MESSAGE: commit message for version file update
+# - PREPARE_DEV: executable for additional preparation,
+#     that echos list of additional files to commit
 
 cleanup() {
     local exit_code=$?
@@ -93,6 +95,22 @@ if [[ -n "$DEBUG" ]]; then
     echo "$ echo ${NEXT_VERSION} > ${VERSION_FILE}" >&2
 fi
 echo "${NEXT_VERSION}" > "${VERSION_FILE}"
-_run git commit "${VERSION_FILE}" -m "${REOPEN_MESSAGE}" --signoff
+
+COMMIT_FILES=("${VERSION_FILE}")
+if [[ -n "${PREPARE_DEV}" ]]; then
+    if [[ ! -e "${PREPARE_DEV}" ]]; then
+        echo "Prepare script (${PREPARE_DEV}): Not found" >&2
+        exit 1
+    fi
+    if [[ ! -x "${PREPARE_DEV}" ]]; then
+        echo "Prepare script (${PREPARE_DEV}): Not executable" >&2
+        exit 1
+    fi
+    while IFS= read -r file; do
+        [[ -n "$file" ]] && COMMIT_FILES+=("$file")
+    done < <("$PREPARE_DEV")
+fi
+
+_run git commit "${COMMIT_FILES[@]}" -m "${REOPEN_MESSAGE}" --signoff
 _run git show
 _run git push origin HEAD:refs/heads/main

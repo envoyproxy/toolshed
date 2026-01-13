@@ -14,6 +14,9 @@ inputs:
   name:
     required: true
     type: string
+  prepare-dev:
+    required: false
+    type: string
   repository:
     default: ${{ github.repository }}
     type: string
@@ -43,6 +46,7 @@ inputs:
       export NEXT_VERSION=\"\($next_version)\"
       export VERSION=\"\($version)\"
       export VERSION_FILE=\"\(.version_file)\"
+      export PREPARE_DEV=\"\($prepare_dev)\"
       export REOPEN_MESSAGE=\"\($reopen_message)\"
       OUTPUT=$(${RELEASE_ACTION_PATH}/release.sh)
   template-release-message:
@@ -86,6 +90,7 @@ runs:
         dry_run: ${{ inputs.dry-run }}
         fail_if_exists: ${{ inputs.fail-if-exists }}
         name: ${{ inputs.name }}
+        prepare_dev: ${{ inputs.prepare-dev }}
         repo: ${{ inputs.repository }}
         sha: ${{ inputs.sha }}
         version: ${{ inputs.version }}
@@ -93,6 +98,7 @@ runs:
       filter: |
         .
         | (.assets // "") as $assets
+        | (.prepare_dev // "") as $prepare_dev
         | .version.version as $version
         | .version.next as $next_version
         | "\(.name)-v\($version)" as $tag
