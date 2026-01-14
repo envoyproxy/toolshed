@@ -27,9 +27,9 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.0.2",
+    "@types/node": "^25.0.8",
     "@types/tmp": "^0.2.5",
-    "@typescript-eslint/eslint-plugin": "^8.50.0",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vercel/ncc": "^0.38.1",
     "eslint": "^9.0.0",
@@ -42,7 +42,7 @@
     "typescript": "^5.4.2"
   },
   "dependencies": {
-    "@actions/core": "^2.0.0",
+    "@actions/core": "^2.0.2",
     "@await/spawn": "^9.0.0",
     "js-yaml": "^4.1.1",
     "tmp": "^0.2.4"
