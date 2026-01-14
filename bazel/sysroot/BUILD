@@ -19,6 +19,7 @@ load(":fs.bzl", "sysroots")
 exports_files([
     "build_sysroot.sh",
     "config.yaml",
+    "extensions.bzl",
     "fs.bzl",
     "sysroot.bzl",
 ])
