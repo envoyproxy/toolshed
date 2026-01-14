@@ -16,7 +16,10 @@ bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "t
 bazel_lib_toolchains.jq(version = "1.7")
 use_repo(bazel_lib_toolchains, "jq", "jq_toolchains")
 
+PYTHON_VERSION_DEFAULT = "3.12"
+
 PYTHON_VERSIONS = [
+    "3.11",
     "3.12",
 ]
 
@@ -24,7 +27,7 @@ python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 
 [
     python.toolchain(
-        is_default = python_version == PYTHON_VERSIONS[-1],
+        is_default = python_version == PYTHON_VERSION_DEFAULT,
         python_version = python_version,
     )
     for python_version in PYTHON_VERSIONS
