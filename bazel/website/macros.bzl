@@ -96,7 +96,7 @@ def static_website(
             TAR_COMMAND=$$(which tar)
         fi
 
-        $$TAR_COMMAND -xf $$SOURCE "$${DECOMPRESS_ARGS}"
+        $$TAR_COMMAND -xf $$SOURCE $${DECOMPRESS_ARGS:+DECOMPRESS_ARGS}
 
         while IFS= read -r CMD; do
             $$CMD
@@ -104,7 +104,7 @@ def static_website(
 
         $$GENERATOR "$$CONTENT"
 
-        $$TAR_COMMAND cfh $@ $$EXCLUDES -C "$$OUTPUT" .
+        $$TAR_COMMAND cfh $@ $${EXCLUDES:+$$EXCLUDES} -C "$$OUTPUT" .
         """ % (name_sources, decompressor_args, generator, content_path, output_path, mapping_commands, exclude_args, url),
         outs = [name_website_tarball],
         srcs = extra_srcs,
