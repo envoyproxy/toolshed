@@ -1,0 +1,186 @@
+name: _bazel_registry
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      metadata:
+        default: metadata.json
+        description: Metadata file
+        type: string
+      module:
+        description: Module name
+        required: true
+        type: string
+      modules-root:
+        default: bazel-registry
+        description: Path to modules root dir
+        type: string
+      source:
+        default: source.json
+        description: Source file
+        type: string
+      template-integrity:
+        type: string
+        default: |
+          export SOURCE_URL=\"\(.url)\"
+          export MODULE=\"\($module)\"
+          export MODULE_VERSION=\"\($module_version)\"
+          export MODULES_ROOT=\"\($modules_root)\"
+          OUTPUT=\"$($GITHUB_WORKSPACE/.github/workflows/registry_integrity.sh)\"
+
+
+jobs:
+  module:
+    runs-on: ubuntu-24.04
+    name: Bazel module (${{ inputs.module }})
+    outputs:
+      versions: ${{ steps.versions.outputs.value }}
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - uses: envoyproxy/toolshed/actions/jq@d10938876b114aa2a001b43b43158f1bf7008f1a
+      id: versions
+      with:
+        input: ${{ inputs.modules-root }}/modules/${{ inputs.module }}/${{ inputs.metadata }}
+        input-format: json-path
+        filter: |
+          .versions
+          | map(select(. | endswith(".envoy")))
+
+  version:
+    if: >-
+      needs.module.outputs.versions != '[]'
+    runs-on: ubuntu-24.04
+    needs:
+    - module
+    name: Bazel module version (${{ inputs.module }}:${{ matrix.version }})
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.module.outputs.versions) }}
+    steps:
+    - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+    - uses: envoyproxy/toolshed/actions/jq@d10938876b114aa2a001b43b43158f1bf7008f1a
+      with:
+        input: ${{ inputs.modules-root }}/modules/${{ inputs.module }}/${{ matrix.version }}/${{ inputs.source }}
+        input-format: json-path
+        print-result: true
+    - uses: envoyproxy/toolshed/actions/bson@d10938876b114aa2a001b43b43158f1bf7008f1a
+      id: source
+      with:
+        input: ${{ inputs.modules-root }}/modules/${{ inputs.module }}/${{ matrix.version }}/${{ inputs.source }}
+        input-format: json-path
+        filter: |
+          .
+          | "${{ inputs.module }}" as $module
+          | "${{ matrix.version }}" as $module_version
+          | "${{ inputs.modules-root }}" as $modules_root
+          | "${{ inputs.template-integrity }}"
+          | bash::output
+        result-filter-options: -sRc
+        result-filter: |
+          split("\n")
+          | map(select(length > 0) | split(" ") | {key: .[0], value: .[1]})
+          | from_entries
+    - uses: envoyproxy/toolshed/actions/bson@d10938876b114aa2a001b43b43158f1bf7008f1a
+      with:
+        input: ${{ inputs.modules-root }}/modules/${{ inputs.module }}/${{ matrix.version }}/${{ inputs.source }}
+        input-format: json-path
+        filter: |
+          . as $source
+          | ${{ steps.source.outputs.output }} as $actual
+
+          # Check main integrity
+          | (if $source.integrity != $actual.integrity then
+              {
+                result: "::error::✗ Integrity does not match (actual: \($actual.integrity), expected: \($source.integrity))",
+                error: true
+              }
+            else
+              {
+                result: "✓ Integrity matches \($actual.integrity)",
+                error: false
+              }
+            end) as $integrity_check
+
+          # Check overlay files
+          | (if $source.overlay then
+              [
+                $source.overlay
+                | to_entries[]
+                | . as $entry
+                | if $actual["overlay:\($entry.key)"] then
+                    if $entry.value != $actual["overlay:\($entry.key)"] then
+                      {
+                        result: (
+                          "::error::✗ Overlay \($entry.key) does not match " +
+                          "(actual: \($actual["overlay:\($entry.key)"]), expected: \($entry.value))"
+                        ),
+                        error: true
+                      }
+                    else
+                      {
+                        result: "✓ Overlay \($entry.key) matches \($entry.value)",
+                        error: false
+                      }
+                    end
+                  else
+                    {
+                      result: "::error::✗ Overlay \($entry.key) not found in calculated checksums",
+                      error: true
+                    }
+                  end
+              ]
+            else
+              []
+            end) as $overlay_checks
+
+          # Check patch files
+          | (if $source.patches then
+              [
+                $source.patches
+                | to_entries[]
+                | . as $entry
+                | if $actual["patches:\($entry.key)"] then
+                    if $entry.value != $actual["patches:\($entry.key)"] then
+                      {
+                        result: (
+                          "::error::✗ Patch \($entry.key) does not match " +
+                          "(actual: \($actual["patches:\($entry.key)"]), expected: \($entry.value))"
+                        ),
+                        error: true
+                      }
+                    else
+                      {
+                        result: "✓ Patch \($entry.key) matches \($entry.value)",
+                        error: false
+                      }
+                    end
+                  else
+                    {
+                      result: "::error::✗ Patch \($entry.key) not found in calculated checksums",
+                      error: true
+                    }
+                  end
+              ]
+            else
+              []
+            end) as $patch_checks
+
+          # Combine all checks
+          | ([$integrity_check] + $overlay_checks + $patch_checks) as $checks
+
+          # Determine if any errors occurred
+          | ($checks | map(select(.error)) | length > 0) as $has_errors
+
+          # Generate bash script
+          | $checks
+          | map("echo \"\(.result)\" >&2")
+          | join("\n")
+          | if $has_errors then
+              . + "\nexit 1"
+            else
+              .
+            end

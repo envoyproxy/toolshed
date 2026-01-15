@@ -1,0 +1,77 @@
+name: Bazel registry CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+
+jobs:
+  request:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.filter.outputs.run }}
+      modules: ${{ steps.modules.outputs.output }}
+    steps:
+    - uses: envoyproxy/toolshed/actions/github/should-run@d10938876b114aa2a001b43b43158f1bf7008f1a
+      id: filter
+      with:
+        config: |
+          paths:
+          - 'bazel-registry/**'
+          - '.github/workflows/bazel-registry.yml'
+    - name: Find modules
+      uses: ./actions/bson
+      id: modules
+      with:
+        input: |
+          registry_path: bazel-registry/modules
+          metadata_file: metadata.json
+        filter: |
+          .
+          | "OUTPUT=$(find \(.registry_path) -name \(.metadata_file))"
+          | bash::output
+        result-filter: |
+          split("\n")
+          | map(
+              select(length > 0)
+              | split("/")[2])
+        result-filter-options: -sRc
+
+  modules:
+    needs: request
+    if: >-
+      fromJSON(needs.request.outputs.run)
+      && needs.request.outputs.modules != '[]'
+    uses: ./.github/workflows/_bazel_registry.yml
+    with:
+      module: ${{ matrix.module }}
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJSON(needs.request.outputs.modules) }}
+
+  status:
+    runs-on: ubuntu-24.04
+    if: >-
+      always()
+      && github.event_name == 'pull_request'
+    name: Bazel registry CI
+    needs:
+    - request
+    - modules
+    steps:
+    - run: |
+        if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+        fi
+        echo "All required jobs passed or were skipped"

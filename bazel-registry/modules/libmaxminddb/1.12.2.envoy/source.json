@@ -1,0 +1,10 @@
+{
+    "url": "https://github.com/maxmind/libmaxminddb/releases/download/1.12.2/libmaxminddb-1.12.2.tar.gz",
+    "integrity": "sha256-G/v477o+1kYuBOIlkGrVzl/pWKo9YmoSNbKiJT1gB0M=",
+    "strip_prefix": "libmaxminddb-1.12.2",
+    "patches": {
+        "add_build_file.patch": "sha256-PmFO3yEJPkoPgj4YhmwOPcmRr/ieSi32Z8A5ck3zNZE=",
+        "module_dot_bazel.patch": "sha256-C2FSVMCNtIR45JocRzUuaNBeumEPZlPz722KKtP3iRg="
+    },
+    "patch_strip": 0
+}
