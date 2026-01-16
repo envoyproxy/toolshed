@@ -1,0 +1,18 @@
+{
+    "url": "https://github.com/confluentinc/librdkafka/archive/refs/tags/v2.6.0.tar.gz",
+    "integrity": "sha256-q+AhLs0+ftPEgYpPK697+RboRekCuxWuSINMotNqx0U=",
+    "strip_prefix": "librdkafka-2.6.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-XTTN6kw9ignsplfNB2yUkrmbrM3aEIjl1vn8aJEUrpc=",
+        "MODULE.bazel": "sha256-C32S8L/mh+P0xwti+YT0V/hmkzAHJd9m9w//rzYG+b0=",
+        "test/MODULE.bazel": "sha256-kQPvwdNWbQpmOS4aq+IJ7mCv2N1Im5PgfUCaBYa+iPE="
+    },
+    "patch_strip": 0,
+    "patches": {
+        "envoy-remove-cjson.patch": "sha256-Egf03Uu3rHCB4MXn2ECk8wTsdeUnjJDDaJ5zfXOO2iM=",
+        "src-cpp_rdkafkacpp_int.h.patch": "sha256-2jKbC/v3rD2JnBYLzIOI0YlXH+8Vj8jSWl0Gw64ighM=",
+        "src_rd.h.patch": "sha256-2V7q6rr5B4QkfTvEkMIwC9yJL35NZkggs70BHecg2lo=",
+        "src_tinycthread.h.patch": "sha256-5cf9SXy35+x6qjiNy8lLyGSGWzgmrqYfPwnj2E0qmvM=",
+        "tests_testcpp.h.patch": "sha256-CriMImYBcoBE8ibDz2Bjncexm+V/3ZkKghW5JLMnZPE="
+    }
+}
