@@ -26,10 +26,12 @@ jobs:
       with:
         config: |
           paths:
-          - 'bazel-registry/**'
-          - '.github/workflows/bazel-registry.yml'
+          - bazel-registry/**
+          - .github/workflows/bazel-registry.yml
+          - .github/workflows/_bazel_registry.yml
+          - .github/workflows/registry_integrity.sh
     - name: Find modules
-    - uses: envoyproxy/toolshed/actions/bson@d10938876b114aa2a001b43b43158f1bf7008f1a
+      uses: envoyproxy/toolshed/actions/bson@d10938876b114aa2a001b43b43158f1bf7008f1a
       id: modules
       with:
         input: |
