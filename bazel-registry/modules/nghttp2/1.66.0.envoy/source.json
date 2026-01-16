@@ -1,0 +1,15 @@
+{
+    "url": "https://github.com/nghttp2/nghttp2/releases/download/v1.66.0/nghttp2-1.66.0.tar.gz",
+    "integrity": "sha256-4XhodzDCB/OmWXMAlt8ZK1LTdSeGwGi45e56647a4Fo=",
+    "strip_prefix": "nghttp2-1.66.0",
+    "patch_strip": 1,
+    "patches": {
+        "nghttp2.patch": "sha256-XQTQH0EJzv+6EZKfCzGeNB3JPCthlcBraERW5O7o5M8=",
+        "nghttp2_huffman.patch": "sha256-drOOnUUbMMKZOb/PSEss5wgQHPz7NxC9N3FbI2kRGsk="
+    },
+    "overlay": {
+        "BUILD.bazel": "sha256-6crOWZbwrSXyOuoOqUPvlMcQnfKHEhFqdJ9cGPQqSro=",
+        "MODULE.bazel": "sha256-ScZKDR1YDXK6VDUGVAuvqevKyfyYmdHWuDoMcB8whbE=",
+        "config/config.h": "sha256-ionfCCUf7G0RP+Ae+9PyGof5bAGYtcha5tDCEY7wHUQ="
+    }
+}

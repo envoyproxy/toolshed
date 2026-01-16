@@ -1,0 +1,18 @@
+{
+    "homepage": "https://nghttp2.org/",
+    "maintainers": [
+        {
+            "email": "206078155+daemoninstitute@users.noreply.github.com",
+            "github": "daemoninstitute",
+            "github_user_id": 206078155,
+            "name": "James Wilson"
+        }
+    ],
+    "repository": [
+        "github:nghttp2/nghttp2"
+    ],
+    "versions": [
+        "1.66.0.envoy"
+    ],
+    "yanked_versions": {}
+}
