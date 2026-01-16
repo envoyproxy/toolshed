@@ -183,7 +183,8 @@ $RECYCLE.BIN/
 !actions/github/mutex/lib
 
 # Bazel
-bazel-*
+/bazel-*
+!/bazel-registry/
 
 # Rust coverage reports
 rust/tarpaulin-report.html
