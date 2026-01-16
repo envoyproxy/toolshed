@@ -1,0 +1,18 @@
+{
+    "homepage": "https://github.com/zlib-ng/zlib-ng",
+    "maintainers": [
+        {
+            "email": "206078155+daemoninstitute@users.noreply.github.com",
+            "github": "daemoninstitute",
+            "github_user_id": 206078155,
+            "name": "James Wilson"
+        }
+    ],
+    "repository": [
+        "github:zlib-ng/zlib-ng"
+    ],
+    "versions": [
+        "2.3.2.envoy"
+    ],
+    "yanked_versions": {}
+}

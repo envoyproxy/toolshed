@@ -1,0 +1,10 @@
+{
+    "integrity": "sha256-agVhtQuPX2Q0pqnmZ6ZwJvKyBkof+pWcay2uMgFhwqg=",
+    "patch_strip": 0,
+    "patches": {
+        "add_build_file.patch": "sha256-m5+7d0hOP1jo+H3jir1YOIdaE/y5HvVEyYb+G12tILc=",
+        "add_module_dot_bazel.patch": "sha256-nMZO0Eq5igLcWKUkHjU7/AaBQa0rWzNgMyAZ2D+3uAg="
+    },
+    "strip_prefix": "zlib-ng-2.3.2",
+    "url": "https://github.com/zlib-ng/zlib-ng/archive/refs/tags/2.3.2.tar.gz"
+}
