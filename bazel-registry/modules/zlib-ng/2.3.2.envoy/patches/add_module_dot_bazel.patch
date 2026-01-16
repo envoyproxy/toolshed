@@ -1,0 +1,8 @@
+--- MODULE.bazel
++++ MODULE.bazel
+@@ -0,0 +1,5 @@
++module(
++    name = "zlib-ng",
++    version = "2.3.2.envoy",
++    compatibility_level = 1,
++)
