@@ -8,7 +8,7 @@ backend_packages = [
     "pants.backend.python.typecheck.mypy",
     "toolshed_distribution",
     "toolshed_readme"]
-pants_ignore = ["not", "/bazel/"]
+pants_ignore = ["not", "/bazel/", "/bazel-registry/"]
 build_file_prelude_globs = [
   "py/pants-toolshed/macros.py",
 ]
