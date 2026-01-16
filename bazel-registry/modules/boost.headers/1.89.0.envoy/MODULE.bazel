@@ -1,5 +1,5 @@
 module(
     name = "boost.headers",
-    version = "1.89.0",
+    version = "1.89.0.envoy",
     compatibility_level = 1,
 )
