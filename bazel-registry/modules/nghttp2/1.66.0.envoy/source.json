@@ -4,7 +4,7 @@
     "strip_prefix": "nghttp2-1.66.0",
     "overlay": {
         "BUILD.bazel": "sha256-6crOWZbwrSXyOuoOqUPvlMcQnfKHEhFqdJ9cGPQqSro=",
-        "MODULE.bazel": "sha256-5gNCaYT95+mqE6HINpdwDgZ24BOLUYM/AiinsMlma5w=",
+        "MODULE.bazel": "sha256-ScZKDR1YDXK6VDUGVAuvqevKyfyYmdHWuDoMcB8whbE=",
         "config/config.h": "sha256-ionfCCUf7G0RP+Ae+9PyGof5bAGYtcha5tDCEY7wHUQ="
     }
 }
