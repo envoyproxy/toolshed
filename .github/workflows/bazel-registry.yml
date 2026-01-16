@@ -29,7 +29,7 @@ jobs:
           - 'bazel-registry/**'
           - '.github/workflows/bazel-registry.yml'
     - name: Find modules
-      uses: ./actions/bson
+    - uses: envoyproxy/toolshed/actions/bson@d10938876b114aa2a001b43b43158f1bf7008f1a
       id: modules
       with:
         input: |
