@@ -1,0 +1,8 @@
+module(
+    name = "googleurl",
+    version = "0.0.0.dd4080f.envoy",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "abseil-cpp", version = "20211102.0", repo_name = "com_google_absl")
+bazel_dep(name = "rules_cc", version = "0.0.9")

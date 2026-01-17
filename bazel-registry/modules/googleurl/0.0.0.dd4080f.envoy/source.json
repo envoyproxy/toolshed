@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/google/gurl/archive/dd4080fec0b443296c0ed0036e1e776df8813aa7.tar.gz",
+    "integrity": "sha256-T/pFqCdkZpLnsm4qjA3LwbF2Oibe8vu9gjYpcJYqL88=",
+    "strip_prefix": "gurl-dd4080fec0b443296c0ed0036e1e776df8813aa7",
+    "patch_strip": 1,
+    "patches": {
+        "googleurl.patch": "sha256-091hZXHO8ipbcDw8IwPdMrzxbwXrIeKtsfgoo36yFtU="
+    }
+}
