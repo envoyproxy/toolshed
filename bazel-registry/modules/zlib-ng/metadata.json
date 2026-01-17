@@ -1,13 +1,6 @@
 {
     "homepage": "https://github.com/zlib-ng/zlib-ng",
-    "maintainers": [
-        {
-            "email": "206078155+daemoninstitute@users.noreply.github.com",
-            "github": "daemoninstitute",
-            "github_user_id": 206078155,
-            "name": "James Wilson"
-        }
-    ],
+    "maintainers": [],
     "repository": [
         "github:zlib-ng/zlib-ng"
     ],
