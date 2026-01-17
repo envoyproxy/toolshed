@@ -1,0 +1,18 @@
+{
+    "homepage": "https://perfetto.dev/",
+    "maintainers": [
+        {
+            "email": "htuch@google.com",
+            "github": "htuch",
+            "name": "Harvey Tuch",
+            "github_user_id": 504333
+        }
+    ],
+    "repository": [
+        "github:google/perfetto"
+    ],
+    "versions": [
+        "53.0.envoy"
+    ],
+    "yanked_versions": {}
+}

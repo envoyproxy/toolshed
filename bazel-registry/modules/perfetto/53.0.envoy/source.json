@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/google/perfetto/archive/refs/tags/v53.0.tar.gz",
+    "integrity": "sha256-slAj8ygRZaGn183p8+0t/PzgIv/XJ+d/ZYmVHgumr5o=",
+    "strip_prefix": "perfetto-53.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-pL5SKNc/cX8S54KSRdlQCP1wojW9nRUIwaOuPk3d7/w=",
+        "MODULE.bazel": "sha256-9nv2E8FDYu++Setv8MaHXtmyus8baO9Zc4BS+LkENsE="
+    }
+}
