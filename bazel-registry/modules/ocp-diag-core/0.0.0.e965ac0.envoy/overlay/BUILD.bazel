@@ -1,0 +1,7 @@
+# This file is intentionally minimal. The ocp-diag-core repository already
+# contains comprehensive BUILD files. This overlay just ensures proper visibility
+# for external consumers.
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["MODULE.bazel"])
