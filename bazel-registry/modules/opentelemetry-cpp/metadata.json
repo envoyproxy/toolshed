@@ -1,0 +1,11 @@
+{
+    "homepage": "https://opentelemetry.io/",
+    "maintainers": [],
+    "repository": [
+        "github:open-telemetry/opentelemetry-cpp"
+    ],
+    "versions": [
+        "1.24.0.envoy"
+    ],
+    "yanked_versions": {}
+}
