@@ -1,0 +1,17 @@
+{
+    "homepage": "https://github.com/confluentinc/librdkafka",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:confluentinc/librdkafka"
+    ],
+    "versions": [
+        "2.6.0.envoy"
+    ],
+    "yanked_versions": {}
+}
