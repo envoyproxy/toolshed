@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/google/gurl",
+    "maintainers": [],
+    "repository": [
+        "github:google/gurl"
+    ],
+    "versions": [
+        "0.0.0.dd4080f.envoy"
+    ],
+    "yanked_versions": {}
+}
