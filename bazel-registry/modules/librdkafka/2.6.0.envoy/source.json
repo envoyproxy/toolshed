@@ -9,7 +9,7 @@
     },
     "patch_strip": 0,
     "patches": {
-        "envoy-remove-cjson.patch": "sha256-sKSemuRSw2ygEZ7id4pNWi1M9MuWHItXaLNimy8kDQ8=",
+        "envoy-remove-cjson.patch": "sha256-Egf03Uu3rHCB4MXn2ECk8wTsdeUnjJDDaJ5zfXOO2iM=",
         "src-cpp_rdkafkacpp_int.h.patch": "sha256-2jKbC/v3rD2JnBYLzIOI0YlXH+8Vj8jSWl0Gw64ighM=",
         "src_rd.h.patch": "sha256-2V7q6rr5B4QkfTvEkMIwC9yJL35NZkggs70BHecg2lo=",
         "src_tinycthread.h.patch": "sha256-5cf9SXy35+x6qjiNy8lLyGSGWzgmrqYfPwnj2E0qmvM=",
