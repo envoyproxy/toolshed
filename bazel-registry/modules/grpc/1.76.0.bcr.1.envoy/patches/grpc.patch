@@ -1,6 +1,6 @@
 diff -Naur grpc-original/BUILD grpc-modified/BUILD
---- grpc-original/BUILD	2026-01-18 10:36:57.927551089 +0000
-+++ grpc-modified/BUILD	2026-01-18 10:38:13.700330753 +0000
+--- grpc-original/BUILD	2026-01-18 10:48:26.448637816 +0000
++++ grpc-modified/BUILD	2026-01-18 10:48:34.668599457 +0000
 @@ -34,7 +34,7 @@
      default_visibility = ["//visibility:public"],
      features = [
@@ -11,8 +11,8 @@ diff -Naur grpc-original/BUILD grpc-modified/BUILD
  )
  
 diff -Naur grpc-original/MODULE.bazel grpc-modified/MODULE.bazel
---- grpc-original/MODULE.bazel	2026-01-18 10:36:57.930551078 +0000
-+++ grpc-modified/MODULE.bazel	2026-01-18 10:38:26.759306619 +0000
+--- grpc-original/MODULE.bazel	2026-01-18 10:48:26.449637811 +0000
++++ grpc-modified/MODULE.bazel	2026-01-18 10:48:52.983452404 +0000
 @@ -19,6 +19,7 @@
      repo_name = "com_github_grpc_grpc",
  )
@@ -30,8 +30,8 @@ diff -Naur grpc-original/MODULE.bazel grpc-modified/MODULE.bazel
  
  python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 diff -Naur grpc-original/bazel/grpc_build_system.bzl grpc-modified/bazel/grpc_build_system.bzl
---- grpc-original/bazel/grpc_build_system.bzl	2026-01-18 10:36:57.931551075 +0000
-+++ grpc-modified/bazel/grpc_build_system.bzl	2026-01-18 10:38:13.701330752 +0000
+--- grpc-original/bazel/grpc_build_system.bzl	2026-01-18 10:48:26.450637807 +0000
++++ grpc-modified/bazel/grpc_build_system.bzl	2026-01-18 10:48:34.668599457 +0000
 @@ -27,7 +27,6 @@
  Contains macros used throughout the repo.
  """
@@ -58,8 +58,8 @@ diff -Naur grpc-original/bazel/grpc_build_system.bzl grpc-modified/bazel/grpc_bu
          }),
          outs = [name + "_binary"],
 diff -Naur grpc-original/src/core/BUILD grpc-modified/src/core/BUILD
---- grpc-original/src/core/BUILD	2026-01-18 10:36:57.988550880 +0000
-+++ grpc-modified/src/core/BUILD	2026-01-18 10:38:13.702330751 +0000
+--- grpc-original/src/core/BUILD	2026-01-18 10:48:26.477637689 +0000
++++ grpc-modified/src/core/BUILD	2026-01-18 10:48:34.669599449 +0000
 @@ -29,7 +29,7 @@
  package(
      default_visibility = ["//:__subpackages__"],
@@ -70,8 +70,8 @@ diff -Naur grpc-original/src/core/BUILD grpc-modified/src/core/BUILD
  )
  
 diff -Naur grpc-original/src/core/lib/promise/detail/promise_factory.h grpc-modified/src/core/lib/promise/detail/promise_factory.h
---- grpc-original/src/core/lib/promise/detail/promise_factory.h	2026-01-18 10:36:58.071550596 +0000
-+++ grpc-modified/src/core/lib/promise/detail/promise_factory.h	2026-01-18 10:38:13.702330751 +0000
+--- grpc-original/src/core/lib/promise/detail/promise_factory.h	2026-01-18 10:48:26.518637511 +0000
++++ grpc-modified/src/core/lib/promise/detail/promise_factory.h	2026-01-18 10:48:34.669599449 +0000
 @@ -125,17 +125,16 @@
  // Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
  // capturing A.
@@ -226,8 +226,8 @@ diff -Naur grpc-original/src/core/lib/promise/detail/promise_factory.h grpc-modi
    }
  };
 diff -Naur grpc-original/src/proto/grpc/health/v1/BUILD grpc-modified/src/proto/grpc/health/v1/BUILD
---- grpc-original/src/proto/grpc/health/v1/BUILD	2026-01-18 10:36:58.134550381 +0000
-+++ grpc-modified/src/proto/grpc/health/v1/BUILD	2026-01-18 10:38:13.702330751 +0000
+--- grpc-original/src/proto/grpc/health/v1/BUILD	2026-01-18 10:48:26.547637384 +0000
++++ grpc-modified/src/proto/grpc/health/v1/BUILD	2026-01-18 10:48:34.669599449 +0000
 @@ -44,3 +44,10 @@
          "health.proto",
      ],
@@ -240,14 +240,8 @@ diff -Naur grpc-original/src/proto/grpc/health/v1/BUILD grpc-modified/src/proto/
 +    visibility = ["//visibility:public"],
 +)
 diff -Naur grpc-original/third_party/BUILD grpc-modified/third_party/BUILD
---- grpc-original/third_party/BUILD	2026-01-18 10:36:58.247549994 +0000
-+++ grpc-modified/third_party/BUILD	2026-01-18 10:38:55.709243007 +0000
-@@ -1,4 +1,4 @@
--load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
-+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "label_flag")
- 
- exports_files([
-     "gtest.BUILD",
+--- grpc-original/third_party/BUILD	2026-01-18 10:48:26.599637157 +0000
++++ grpc-modified/third_party/BUILD	2026-01-18 10:48:52.580455387 +0000
 @@ -31,21 +31,43 @@
      flag_values = {":grpc_use_openssl": "true"},
  )
