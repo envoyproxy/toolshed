@@ -1,0 +1,9 @@
+{
+    "integrity": "sha256-yKqAbPYGZnmsI0YyQe6ArWkiZdrQRl9RERy74wuJA1I=",
+    "patches": {
+        "rules_rust.patch": "sha256-whud/J7ghRQnb9yFC5QXKsqBRrcJdVpPzNfh+EUdhlk="
+    },
+    "patch_strip": 1,
+    "strip_prefix": "",
+    "url": "https://github.com/bazelbuild/rules_rust/releases/download/0.68.1/rules_rust-0.68.1.tar.gz"
+}
