@@ -1,0 +1,9 @@
+module(
+    name = "colm",
+    version = "0.14.7-2d8ba76.envoy",
+    bazel_compatibility = [">=7.2.1"],  # need support for "overlay" directory
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "platforms", version = "0.0.11")
