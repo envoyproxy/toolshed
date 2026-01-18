@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/proxy-wasm/proxy-wasm-cpp-host",
+    "maintainers": [],
+    "repository": [
+        "github:proxy-wasm/proxy-wasm-cpp-host"
+    ],
+    "versions": [
+        "0.0.0.c8868da.envoy"
+    ],
+    "yanked_versions": {}
+}
