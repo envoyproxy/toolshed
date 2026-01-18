@@ -5,6 +5,7 @@
     "patch_strip": 1,
     "patches": {
         "proto-converter.patch": "sha256-U7J77oWo+d/C+MuVNcue9yEOoZtM/JabVyXOJMcbMmU=",
-        "module_dot_bazel.patch": "sha256-esyJZsLcvK+s1BrA9Ov/nxFO1Kfl+Gcf3q9QyER7H/I="
+        "module_dot_bazel.patch": "sha256-esyJZsLcvK+s1BrA9Ov/nxFO1Kfl+Gcf3q9QyER7H/I=",
+        "envoy-specific.patch": "sha256-+eOfVsCyWEOz+AHXVNGeXc4hlS2xoQOINxp9w+NMAds="
     }
 }
