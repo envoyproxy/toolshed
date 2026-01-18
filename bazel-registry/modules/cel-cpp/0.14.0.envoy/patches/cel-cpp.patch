@@ -1,0 +1,62 @@
+diff --git a/common/internal/byte_string.cc b/common/internal/byte_string.cc
+index b9f47922..9d096424 100644
+--- a/common/internal/byte_string.cc
++++ b/common/internal/byte_string.cc
+@@ -104,6 +104,13 @@ ByteString ByteString::Concat(const ByteString& lhs, const ByteString& rhs,
+ 
+ ByteString::ByteString(Allocator<> allocator, absl::string_view string) {
+   ABSL_DCHECK_LE(string.size(), max_size());
++
++  // Check for null data pointer in the string_view
++  if (string.data() == nullptr) {
++    // Handle null data by creating an empty ByteString
++    SetSmallEmpty(allocator.arena());
++    return;
++  }
+   auto* arena = allocator.arena();
+   if (string.size() <= kSmallByteStringCapacity) {
+     SetSmall(arena, string);
+diff --git a/common/typeinfo.h b/common/typeinfo.h
+index 6c0a1c42..6a284790 100644
+--- a/common/typeinfo.h
++++ b/common/typeinfo.h
+@@ -80,7 +80,7 @@ std::enable_if_t<
+     std::conjunction_v<common_internal::HasNativeTypeTraitsId<T>,
+                        std::negation<common_internal::HasCelTypeId<T>>>,
+     TypeInfo>
+-TypeId(const T& t) {
++TypeId(const T& t [[maybe_unused]]) {
+   return NativeTypeTraits<absl::remove_cvref_t<T>>::Id(t);
+ }
+ 
+@@ -90,7 +90,7 @@ std::enable_if_t<
+                        std::negation<common_internal::HasCelTypeId<T>>,
+                        std::is_final<T>>,
+     TypeInfo>
+-TypeId(const T& t) {
++TypeId(const T& t [[maybe_unused]]) {
+   return cel::TypeId<absl::remove_cvref_t<T>>();
+ }
+ 
+@@ -99,7 +99,7 @@ std::enable_if_t<
+     std::conjunction_v<std::negation<common_internal::HasNativeTypeTraitsId<T>>,
+                        common_internal::HasCelTypeId<T>>,
+     TypeInfo>
+-TypeId(const T& t) {
++TypeId(const T& t [[maybe_unused]]) {
+   return CelTypeId(t);
+ }
+ 
+diff --git a/common/value.h b/common/value.h
+index 06225796..18f56e59 100644
+--- a/common/value.h
++++ b/common/value.h
+@@ -2794,7 +2794,7 @@ absl::StatusOr<std::pair<Value, int>> StructValueMixin<Base>::Qualify(
+     const google::protobuf::DescriptorPool* absl_nonnull descriptor_pool,
+     google::protobuf::MessageFactory* absl_nonnull message_factory,
+     google::protobuf::Arena* absl_nonnull arena) const {
+-  ABSL_DCHECK_GT(qualifiers.size(), 0);
++  ABSL_DCHECK_GT(static_cast<int>(qualifiers.size()), 0);
+   ABSL_DCHECK(descriptor_pool != nullptr);
+   ABSL_DCHECK(message_factory != nullptr);
+   ABSL_DCHECK(arena != nullptr);
