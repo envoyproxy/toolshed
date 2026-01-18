@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/google/flatbuffers",
+    "maintainers": [],
+    "repository": [
+        "github:google/flatbuffers"
+    ],
+    "versions": [
+        "25.12.19.envoy"
+    ],
+    "yanked_versions": {}
+}
