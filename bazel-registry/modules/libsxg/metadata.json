@@ -1,0 +1,17 @@
+{
+    "homepage": "https://github.com/google/libsxg",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:google/libsxg"
+    ],
+    "versions": [
+        "0.0.0-210708-beaa393.envoy"
+    ],
+    "yanked_versions": {}
+}
