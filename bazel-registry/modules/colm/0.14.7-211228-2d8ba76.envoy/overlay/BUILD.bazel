@@ -352,6 +352,7 @@ cc_binary(
         "-Wno-sign-compare",
         "-Wno-unused-variable",
     ],
+    includes = ["src"],
     local_defines = ["LOAD_COLM"],
     deps = [
         ":libcolm",
