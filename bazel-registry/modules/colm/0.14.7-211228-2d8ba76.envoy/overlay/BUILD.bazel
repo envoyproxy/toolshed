@@ -158,7 +158,7 @@ cc_library(
         "src/libfsm/tables.cc",
         "src/libfsm/tabvar.cc",
     ],
-    hdrs = glob(["src/libfsm/*.h"]),
+    hdrs = glob(["src/libfsm/*.h"]) + [":config_h"],
     copts = [
         "-Wall",
         "-Wno-unused-parameter",
@@ -166,7 +166,7 @@ cc_library(
         "-Wno-unused-variable",
         "-Wno-unused-but-set-variable",
     ],
-    includes = ["src/libfsm"],
+    includes = ["src/libfsm", "src"],
     visibility = ["//visibility:private"],
     deps = [":aapl"],
 )
