@@ -341,10 +341,12 @@ cc_binary(
     name = "bootstrap2",
     srcs = [
         "src/loadboot2.cc",
-        "src/loadfinal.cc",
-        "src/loadfinal.h",
         "src/main.cc",
         ":gen_stage2",
+    ],
+    data = [
+        "src/loadfinal.cc",
+        "src/loadfinal.h",
     ],
     copts = [
         "-Wall",
