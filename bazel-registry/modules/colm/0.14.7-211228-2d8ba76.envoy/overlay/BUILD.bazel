@@ -343,11 +343,8 @@ cc_binary(
         "src/loadboot2.cc",
         "src/main.cc",
         ":gen_stage2",
-    ],
-    data = [
-        "src/loadfinal.cc",
         "src/loadfinal.h",
-    ],
+    ] + glob(["src/loadfinal.cc"]),
     copts = [
         "-Wall",
         "-Wno-unused-parameter",
