@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/grpc/grpc",
+    "maintainers": [],
+    "repository": [
+        "github:grpc/grpc"
+    ],
+    "versions": [
+        "1.76.0.bcr.1.envoy"
+    ],
+    "yanked_versions": {}
+}
