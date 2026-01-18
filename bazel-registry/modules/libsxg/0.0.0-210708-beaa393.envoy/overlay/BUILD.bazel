@@ -1,0 +1,35 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])  # Apache-2.0
+
+cc_library(
+    name = "libsxg",
+    srcs = [
+        "src/sxg_buffer.c",
+        "src/sxg_buffer_debug.c",
+        "src/sxg_cbor.c",
+        "src/sxg_codec.c",
+        "src/sxg_encoded_response.c",
+        "src/sxg_generate.c",
+        "src/sxg_header.c",
+        "src/sxg_raw_response.c",
+        "src/sxg_sig.c",
+        "src/sxg_signer_list.c",
+    ],
+    hdrs = [
+        "include/libsxg.h",
+    ] + glob([
+        "include/libsxg/*.h",
+        "include/libsxg/internal/*.h",
+    ]),
+    copts = [
+        "-std=c99",
+        "-D_POSIX_C_SOURCE=200112L",
+    ],
+    includes = ["include"],
+    deps = [
+        "@boringssl//:crypto",
+    ],
+)
