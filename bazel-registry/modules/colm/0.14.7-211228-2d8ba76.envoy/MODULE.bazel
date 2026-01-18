@@ -1,6 +1,6 @@
 module(
     name = "colm",
-    version = "0.14.7-2d8ba76.envoy",
+    version = "0.14.7-211228-2d8ba76.envoy",
     bazel_compatibility = [">=7.2.1"],  # need support for "overlay" directory
     compatibility_level = 1,
 )
