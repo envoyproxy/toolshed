@@ -5,7 +5,7 @@
         "github:proxy-wasm/proxy-wasm-rust-sdk"
     ],
     "versions": [
-        "0.2.4.5283e57.envoy"
+        "0.2.4-251205-5283e57.envoy"
     ],
     "yanked_versions": {}
 }

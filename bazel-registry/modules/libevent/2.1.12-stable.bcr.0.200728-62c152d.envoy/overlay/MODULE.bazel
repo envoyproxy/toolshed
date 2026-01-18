@@ -1,8 +1,7 @@
 module(
     name = "libevent",
-    version = "2.1.12-stable.bcr.0.62c152d.envoy",
+    version = "2.1.12-stable.bcr.0.200728-62c152d",
     compatibility_level = 1,
-    bazel_compatibility = [">=7.2.1"],
 )
 
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")

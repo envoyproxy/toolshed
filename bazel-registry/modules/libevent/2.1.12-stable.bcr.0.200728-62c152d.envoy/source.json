@@ -5,7 +5,7 @@
     "integrity": "sha256-TIDl/gRM5fgFWyCi8UHuMuwmFAAPPpXSqoFhGkyPUhM=",
     "overlay": {
         "BUILD.bazel": "sha256-oayEzGvy5d/X4LiVGcUrZ1TOjcgkROLwZk4M7m0upgo=",
-        "MODULE.bazel": "sha256-xJ5by1IMmwe8wXMJ/IZ60dBPj854MKL3y5dCUWRTqmI=",
+        "MODULE.bazel": "sha256-0PPbUCDt3XhasACiDNMrYSjdaEvMfk93rIWZ3pkkVW0=",
         "WIN32-Code/BUILD.bazel": "sha256-7UbnkQwzRqS0Ie6T1yg3lvgPtUwmPhjLUk3AGSylnuE=",
         "compat/BUILD.bazel": "sha256-B70QeKdbM1SqJ137dCT+aax6DYq1Ed0tJW3kdD0oVAI=",
         "evconfig-private.h": "sha256-gzvjoXuscAL7Z8ozPGIB2cS1Ro709qOARbyruqFTJnM=",

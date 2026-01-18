@@ -1,6 +1,6 @@
 module(
     name = "ocp-diag-core",
-    version = "0.0.0.e965ac0",
+    version = "0.0.0-230505-e965ac0",
     compatibility_level = 1,
 )
 
