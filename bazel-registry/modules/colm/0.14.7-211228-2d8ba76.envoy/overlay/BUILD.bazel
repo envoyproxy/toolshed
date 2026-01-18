@@ -344,7 +344,7 @@ cc_binary(
         "src/main.cc",
         ":gen_stage2",
     ],
-    textual_hdrs = [
+    additional_compiler_inputs = [
         "src/loadfinal.cc",
         "src/loadfinal.h",
     ],
@@ -393,7 +393,7 @@ cc_binary(
         "src/main.cc",
         ":gen_stage3",
     ],
-    textual_hdrs = [
+    additional_compiler_inputs = [
         "src/loadfinal.cc",
         "src/loadfinal.h",
     ],
