@@ -1,0 +1,9 @@
+{
+    "integrity": "sha256-tSMUHw199EPMSBHoUdsGF4xIN7tGBb0mMu5Ns03YpOU=",
+    "strip_prefix": "grpc-f5ffb68d8a2fd603dff16287e90a4ac571e1fec6",
+    "url": "https://github.com/grpc/grpc/archive/f5ffb68d8a2fd603dff16287e90a4ac571e1fec6.tar.gz",
+    "patch_strip": 1,
+    "patches": {
+        "grpc.patch": "sha256-iMCcSsAA0hYRfhsUGdWMV1qpU/DRFaJ3RlLJdFrQrJo="
+    }
+}
