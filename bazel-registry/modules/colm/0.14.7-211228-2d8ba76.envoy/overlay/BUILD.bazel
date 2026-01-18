@@ -351,6 +351,7 @@ cc_binary(
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
         "-Wno-unused-variable",
+        "-Isrc",
     ],
     includes = ["src"],
     local_defines = ["LOAD_COLM"],
