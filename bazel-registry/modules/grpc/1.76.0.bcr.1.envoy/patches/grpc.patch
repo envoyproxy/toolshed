@@ -1,8 +1,7 @@
-diff --git a/BUILD b/BUILD
-index 9e067aa29e..089a447ec4 100644
---- a/BUILD
-+++ b/BUILD
-@@ -34,7 +34,7 @@ package(
+diff -Naur grpc-original/BUILD grpc-modified/BUILD
+--- grpc-original/BUILD	2026-01-18 10:36:57.927551089 +0000
++++ grpc-modified/BUILD	2026-01-18 10:38:13.700330753 +0000
+@@ -34,7 +34,7 @@
      default_visibility = ["//visibility:public"],
      features = [
          "-parse_headers",
@@ -11,20 +10,18 @@ index 9e067aa29e..089a447ec4 100644
      ],
  )
  
-diff --git a/MODULE.bazel b/MODULE.bazel
-index 60f216d6a8..7e475404fe 100644
---- a/MODULE.bazel
-+++ b/MODULE.bazel
-@@ -19,6 +19,8 @@ module(
+diff -Naur grpc-original/MODULE.bazel grpc-modified/MODULE.bazel
+--- grpc-original/MODULE.bazel	2026-01-18 10:36:57.930551078 +0000
++++ grpc-modified/MODULE.bazel	2026-01-18 10:38:26.759306619 +0000
+@@ -19,6 +19,7 @@
      repo_name = "com_github_grpc_grpc",
  )
  
-+bazel_dep(name = "envoy", version = "")
 +
  # Regular dependencies
  # ====================
  
-@@ -68,7 +70,6 @@ PYTHON_VERSIONS = [
+@@ -68,7 +69,6 @@
      "3.11",
      "3.12",
      "3.13",
@@ -32,10 +29,9 @@ index 60f216d6a8..7e475404fe 100644
  ]
  
  python = use_extension("@rules_python//python/extensions:python.bzl", "python")
-diff --git a/bazel/grpc_build_system.bzl b/bazel/grpc_build_system.bzl
-index a3b8923b6e..f4a2ed3f13 100644
---- a/bazel/grpc_build_system.bzl
-+++ b/bazel/grpc_build_system.bzl
+diff -Naur grpc-original/bazel/grpc_build_system.bzl grpc-modified/bazel/grpc_build_system.bzl
+--- grpc-original/bazel/grpc_build_system.bzl	2026-01-18 10:36:57.931551075 +0000
++++ grpc-modified/bazel/grpc_build_system.bzl	2026-01-18 10:38:13.701330752 +0000
 @@ -27,7 +27,6 @@
  Contains macros used throughout the repo.
  """
@@ -44,7 +40,7 @@ index a3b8923b6e..f4a2ed3f13 100644
  load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
  load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl", "ios_test_runner")
  load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
-@@ -195,16 +194,11 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
+@@ -195,16 +194,11 @@
          srcs = srcs,
          deps = deps,
      )
@@ -61,11 +57,10 @@ index a3b8923b6e..f4a2ed3f13 100644
              "//conditions:default": [name + "_native"],
          }),
          outs = [name + "_binary"],
-diff --git a/src/core/BUILD b/src/core/BUILD
-index 0a8eebafb9..6d4f158719 100644
---- a/src/core/BUILD
-+++ b/src/core/BUILD
-@@ -29,7 +29,7 @@ licenses(["reciprocal"])
+diff -Naur grpc-original/src/core/BUILD grpc-modified/src/core/BUILD
+--- grpc-original/src/core/BUILD	2026-01-18 10:36:57.988550880 +0000
++++ grpc-modified/src/core/BUILD	2026-01-18 10:38:13.702330751 +0000
+@@ -29,7 +29,7 @@
  package(
      default_visibility = ["//:__subpackages__"],
      features = [
@@ -74,11 +69,10 @@ index 0a8eebafb9..6d4f158719 100644
      ],
  )
  
-diff --git a/src/core/lib/promise/detail/promise_factory.h b/src/core/lib/promise/detail/promise_factory.h
-index 3fb5d68146..583a2f9553 100644
---- a/src/core/lib/promise/detail/promise_factory.h
-+++ b/src/core/lib/promise/detail/promise_factory.h
-@@ -125,17 +125,16 @@ struct OnceToken {};
+diff -Naur grpc-original/src/core/lib/promise/detail/promise_factory.h grpc-modified/src/core/lib/promise/detail/promise_factory.h
+--- grpc-original/src/core/lib/promise/detail/promise_factory.h	2026-01-18 10:36:58.071550596 +0000
++++ grpc-modified/src/core/lib/promise/detail/promise_factory.h	2026-01-18 10:38:13.702330751 +0000
+@@ -125,17 +125,16 @@
  // Promote a callable(A) -> T | Poll<T> to a PromiseFactory(A) -> Promise<T> by
  // capturing A.
  template <typename Token, typename A, typename F>
@@ -100,7 +94,7 @@ index 3fb5d68146..583a2f9553 100644
      !IsVoidCallable<ResultOf<F()>>::value, PromiseLike<RemoveCVRef<F>>>
  PromiseFactoryImpl(OnceToken, F f, A&&) {
    return PromiseLike<F>(std::move(f));
-@@ -143,7 +142,7 @@ PromiseFactoryImpl(OnceToken, F f, A&&) {
+@@ -143,7 +142,7 @@
  
  // Promote a callable() -> Poll<T> to a PromiseFactory() -> Promise<T>
  template <typename F>
@@ -109,7 +103,7 @@ index 3fb5d68146..583a2f9553 100644
      !IsVoidCallable<ResultOf<F()>>::value &&
          PollTraits<ResultOf<F()>>::is_poll(),
      PromiseLike<RemoveCVRef<F>>>
-@@ -153,7 +152,7 @@ PromiseFactoryImpl(OnceToken, F f) {
+@@ -153,7 +152,7 @@
  
  // Promote a callable() -> T to a PromiseFactory() -> Immediate<T>
  template <typename F>
@@ -118,7 +112,7 @@ index 3fb5d68146..583a2f9553 100644
      std::enable_if_t<!IsVoidCallable<ResultOf<F()>>::value &&
                           !PollTraits<ResultOf<F()>>::is_poll() &&
                           !std::is_same_v<ResultOf<F()>, void>,
-@@ -163,7 +162,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto PromiseFactoryImpl(
+@@ -163,7 +162,7 @@
    return PromiseLike<decltype(f2)>(std::move(f2));
  }
  template <typename F>
@@ -127,7 +121,7 @@ index 3fb5d68146..583a2f9553 100644
      std::enable_if_t<!IsVoidCallable<ResultOf<F()>>::value &&
                           !PollTraits<ResultOf<F()>>::is_poll() &&
                           std::is_same_v<ResultOf<F()>, void>,
-@@ -176,7 +175,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline auto PromiseFactoryImpl(
+@@ -176,7 +175,7 @@
  
  // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
  template <typename Token, typename A, typename F>
@@ -136,7 +130,7 @@ index 3fb5d68146..583a2f9553 100644
      IsVoidCallable<ResultOf<F(A)>>::value,
      PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
  PromiseFactoryImpl(Token, F&& f, A&& arg) {
-@@ -185,7 +184,7 @@ PromiseFactoryImpl(Token, F&& f, A&& arg) {
+@@ -185,7 +184,7 @@
  
  // Given a callable(A) -> Promise<T>, name it a PromiseFactory and use it.
  template <typename Token, typename A, typename F>
@@ -145,7 +139,7 @@ index 3fb5d68146..583a2f9553 100644
      IsVoidCallable<ResultOf<F(A)>>::value,
      PromiseLike<decltype(std::declval<F>()(std::declval<A>()))>>
  PromiseFactoryImpl(Token, F& f, A&& arg) {
-@@ -195,19 +194,17 @@ PromiseFactoryImpl(Token, F& f, A&& arg) {
+@@ -195,19 +194,17 @@
  // Given a callable() -> Promise<T>, promote it to a
  // PromiseFactory(A) -> Promise<T> by dropping the first argument.
  template <typename Token, typename A, typename F>
@@ -171,7 +165,7 @@ index 3fb5d68146..583a2f9553 100644
    return f();
  }
  
-@@ -225,10 +222,10 @@ class OncePromiseFactory {
+@@ -225,10 +222,10 @@
                                                std::declval<A>()));
    using UnderlyingFactory = F;
  
@@ -184,7 +178,7 @@ index 3fb5d68146..583a2f9553 100644
      return PromiseFactoryImpl(OnceToken{}, std::move(f_), std::forward<Arg>(a));
    }
  };
-@@ -243,10 +240,10 @@ class OncePromiseFactory<void, F> {
+@@ -243,10 +240,10 @@
    using Promise = decltype(PromiseFactoryImpl(OnceToken{}, std::move(f_)));
    using UnderlyingFactory = F;
  
@@ -197,7 +191,7 @@ index 3fb5d68146..583a2f9553 100644
      return PromiseFactoryImpl(OnceToken{}, std::move(f_));
    }
  };
-@@ -265,13 +262,13 @@ class RepeatedPromiseFactory {
+@@ -265,13 +262,13 @@
    using Promise =
        decltype(PromiseFactoryImpl(RepeatableToken{}, f_, std::declval<A>()));
  
@@ -214,7 +208,7 @@ index 3fb5d68146..583a2f9553 100644
      return PromiseFactoryImpl(RepeatableToken{}, f_, std::forward<Arg>(a));
    }
    template <typename U>
-@@ -293,13 +290,13 @@ class RepeatedPromiseFactory<void, F> {
+@@ -293,13 +290,13 @@
    using Arg = void;
    using Promise = decltype(PromiseFactoryImpl(RepeatableToken{}, f_));
  
@@ -231,11 +225,10 @@ index 3fb5d68146..583a2f9553 100644
      return PromiseFactoryImpl(RepeatableToken{}, f_);
    }
  };
-diff --git a/src/proto/grpc/health/v1/BUILD b/src/proto/grpc/health/v1/BUILD
-index f6165e0392..374653516a 100644
---- a/src/proto/grpc/health/v1/BUILD
-+++ b/src/proto/grpc/health/v1/BUILD
-@@ -44,3 +44,10 @@ filegroup(
+diff -Naur grpc-original/src/proto/grpc/health/v1/BUILD grpc-modified/src/proto/grpc/health/v1/BUILD
+--- grpc-original/src/proto/grpc/health/v1/BUILD	2026-01-18 10:36:58.134550381 +0000
++++ grpc-modified/src/proto/grpc/health/v1/BUILD	2026-01-18 10:38:13.702330751 +0000
+@@ -44,3 +44,10 @@
          "health.proto",
      ],
  )
@@ -246,38 +239,59 @@ index f6165e0392..374653516a 100644
 +    actual = ":health_proto",
 +    visibility = ["//visibility:public"],
 +)
-diff --git a/third_party/BUILD b/third_party/BUILD
-index 13a4714d4b..dbb986f405 100644
---- a/third_party/BUILD
-+++ b/third_party/BUILD
-@@ -33,19 +33,13 @@ config_setting(
+diff -Naur grpc-original/third_party/BUILD grpc-modified/third_party/BUILD
+--- grpc-original/third_party/BUILD	2026-01-18 10:36:58.247549994 +0000
++++ grpc-modified/third_party/BUILD	2026-01-18 10:38:55.709243007 +0000
+@@ -1,4 +1,4 @@
+-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
++load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "label_flag")
  
+ exports_files([
+     "gtest.BUILD",
+@@ -31,21 +31,43 @@
+     flag_values = {":grpc_use_openssl": "true"},
+ )
+ 
++label_flag(
++    name = "ssl_lib",
++    build_setting_default = ":_default_ssl",
++    visibility = ["//visibility:public"],
++)
++
++label_flag(
++    name = "crypto_lib",
++    build_setting_default = ":_default_crypto",
++    visibility = ["//visibility:public"],
++)
++
  alias(
-     name = "libssl",
--    actual = select({
--        ":grpc_use_openssl_setting": "@openssl//:ssl",
--        "//conditions:default": "@boringssl//:ssl",
--    }),
-+    actual = "@envoy//bazel:boringssl",
-     tags = ["manual"],
+-    name = "libssl",
++    name = "_default_ssl",
+     actual = select({
+         ":grpc_use_openssl_setting": "@openssl//:ssl",
+         "//conditions:default": "@boringssl//:ssl",
+     }),
+-    tags = ["manual"],
  )
  
  alias(
-     name = "libcrypto",
--    actual = select({
--        ":grpc_use_openssl_setting": "@openssl//:crypto",
--        "//conditions:default": "@boringssl//:crypto",
--    }),
-+    actual = "@envoy//bazel:boringcrypto",
-     tags = ["manual"],
- )
- 
-@@ -82,7 +76,7 @@ alias(
- 
- alias(
-     name = "cares",
--    actual = "@com_github_cares_cares//:ares",
-+    actual = "@com_github_cares_cares//:ares",
+-    name = "libcrypto",
++    name = "_default_crypto",
+     actual = select({
+         ":grpc_use_openssl_setting": "@openssl//:crypto",
+         "//conditions:default": "@boringssl//:crypto",
+     }),
++)
++
++alias(
++    name = "libssl",
++    actual = ":ssl_lib",
++    tags = ["manual"],
++)
++
++alias(
++    name = "libcrypto",
++    actual = ":crypto_lib",
      tags = ["manual"],
  )
  
