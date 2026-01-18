@@ -19,6 +19,13 @@ genrule(
 #define HAVE_SYS_WAIT_H 1
 #define HAVE_UNISTD_H 1
 
+/* Build/install directory macros */
+#define INCLUDEDIR "/usr/include"
+#define LIBDIR "/usr/lib"
+#define ABS_BUILDDIR "/nonexistent"
+#define ABS_TOP_BUILDDIR "/nonexistent"
+#define LT_OBJDIR ".libs/"
+
 #endif /* _COLM_CONFIG_H */
 EOF
 """,
