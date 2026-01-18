@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/grpc-ecosystem/grpc-httpjson-transcoding",
+    "maintainers": [],
+    "repository": [
+        "github:grpc-ecosystem/grpc-httpjson-transcoding"
+    ],
+    "versions": [
+        "0.0.0-20250507-a6e226f.envoy"
+    ],
+    "yanked_versions": {}
+}
