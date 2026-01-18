@@ -13,7 +13,7 @@
 # limitations under the License.
 
 module(
-    name = "proxy_wasm_rust_sdk",
+    name = "proxy-wasm-rust-sdk",
     version = "0.2.4.5283e57.envoy",
 )
 
