@@ -1,0 +1,10 @@
+{
+    "url": "https://github.com/grpc-ecosystem/grpc-httpjson-transcoding/archive/a6e226f9a2e656a973df3ad48f0ee5efacce1a28.tar.gz",
+    "integrity": "sha256-RdwaYw9RjfIbTgROMrJ8ewKud+9AG0iiDl/94PBwET8=",
+    "strip_prefix": "grpc-httpjson-transcoding-a6e226f9a2e656a973df3ad48f0ee5efacce1a28",
+    "patch_strip": 1,
+    "patches": {
+        "grpc-httpjson-transcoding.patch": "sha256-j0m2H8WbAUMzFH1AkwcLP8zVmcvjMgRtM20IPJk0gno=",
+        "module_dot_bazel.patch": "sha256-/q6F+0k80j6V3HjWXeLawHaTDeDEPQRYQpsBqYssluo="
+    }
+}
