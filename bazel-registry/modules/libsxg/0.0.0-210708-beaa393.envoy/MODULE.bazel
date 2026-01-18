@@ -1,0 +1,8 @@
+module(
+    name = "libsxg",
+    version = "0.0.0-210708-beaa393.envoy",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "boringssl", version = "0.20250415.0")
