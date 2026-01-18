@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/grpc-ecosystem/proto-converter",
+    "maintainers": [],
+    "repository": [
+        "github:grpc-ecosystem/proto-converter"
+    ],
+    "versions": [
+        "0.0.0-20240625-1db7653.envoy"
+    ],
+    "yanked_versions": {}
+}
