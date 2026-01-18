@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/proxy-wasm/proxy-wasm-rust-sdk",
+    "maintainers": [],
+    "repository": [
+        "github:proxy-wasm/proxy-wasm-rust-sdk"
+    ],
+    "versions": [
+        "0.2.4.5283e57.envoy"
+    ],
+    "yanked_versions": {}
+}
