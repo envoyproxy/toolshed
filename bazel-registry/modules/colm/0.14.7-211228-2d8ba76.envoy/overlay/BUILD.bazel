@@ -286,9 +286,10 @@ genrule(
         "gen/if1.cc",
     ],
     cmd = """
+        BOOTSTRAP0=$$(realpath $(location :bootstrap0))
         mkdir -p $$(dirname $(location gen/parse1.c))
         cd $$(dirname $(location gen/parse1.c))
-        $(location :bootstrap0) -c -p parse1.c -e if1.h -x if1.cc no-input
+        $$BOOTSTRAP0 -c -p parse1.c -e if1.h -x if1.cc no-input
     """,
     tools = [":bootstrap0"],
 )
@@ -326,9 +327,11 @@ genrule(
         "gen/if2.cc",
     ],
     cmd = """
+        BOOTSTRAP1=$$(realpath $(location :bootstrap1))
+        COLM_LM=$$(realpath $(location src/colm.lm))
         mkdir -p $$(dirname $(location gen/parse2.c))
         cd $$(dirname $(location gen/parse2.c))
-        $(location :bootstrap1) -c -p parse2.c -e if2.h -x if2.cc $$(realpath $(location src/colm.lm))
+        $$BOOTSTRAP1 -c -p parse2.c -e if2.h -x if2.cc $$COLM_LM
     """,
     tools = [":bootstrap1"],
 )
@@ -368,11 +371,12 @@ genrule(
         "gen/if3.cc",
     ],
     cmd = """
-        mkdir -p $$(dirname $(location gen/parse3.c))
-        cd $$(dirname $(location gen/parse3.c))
+        BOOTSTRAP2=$$(realpath $(location :bootstrap2))
         PROG_LM=$$(realpath $(location src/prog.lm))
         SRC_DIR=$$(dirname $$PROG_LM)
-        $(location :bootstrap2) -c -p parse3.c -e if3.h -x if3.cc -I$$SRC_DIR $$PROG_LM
+        mkdir -p $$(dirname $(location gen/parse3.c))
+        cd $$(dirname $(location gen/parse3.c))
+        $$BOOTSTRAP2 -c -p parse3.c -e if3.h -x if3.cc -I$$SRC_DIR $$PROG_LM
     """,
     tools = [":bootstrap2"],
 )
