@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/proxy-wasm/proxy-wasm-cpp-sdk",
+    "maintainers": [],
+    "repository": [
+        "github:proxy-wasm/proxy-wasm-cpp-sdk"
+    ],
+    "versions": [
+        "0.0.0.e5256b0.envoy"
+    ],
+    "yanked_versions": {}
+}
