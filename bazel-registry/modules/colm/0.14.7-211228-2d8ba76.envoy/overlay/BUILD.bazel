@@ -111,7 +111,8 @@ cc_library(
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
     ],
-    includes = ["src"],
+    strip_include_prefix = "src",
+    include_prefix = "colm",
     visibility = ["//visibility:private"],
     deps = [":aapl"],
 )
