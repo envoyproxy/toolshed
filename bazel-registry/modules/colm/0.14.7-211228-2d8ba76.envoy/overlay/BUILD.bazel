@@ -257,6 +257,17 @@ cc_library(
     ],
 )
 
+# Library for loadfinal files (included, not compiled)
+cc_library(
+    name = "loadfinal_lib",
+    textual_hdrs = [
+        "src/loadfinal.cc",
+        "src/loadfinal.h",
+    ],
+    includes = ["src"],
+    visibility = ["//visibility:private"],
+)
+
 # Bootstrap Stage 0: bootstrap0 binary with hardcoded grammar
 cc_binary(
     name = "bootstrap0",
@@ -344,21 +355,17 @@ cc_binary(
         "src/main.cc",
         ":gen_stage2",
     ],
-    additional_compiler_inputs = [
-        "src/loadfinal.cc",
-        "src/loadfinal.h",
-    ],
     copts = [
         "-Wall",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
         "-Wno-unused-variable",
     ],
-    includes = ["src"],
     local_defines = ["LOAD_COLM"],
     deps = [
         ":libcolm",
         ":libprog",
+        ":loadfinal_lib",
     ],
 )
 
@@ -393,21 +400,17 @@ cc_binary(
         "src/main.cc",
         ":gen_stage3",
     ],
-    additional_compiler_inputs = [
-        "src/loadfinal.cc",
-        "src/loadfinal.h",
-    ],
     copts = [
         "-Wall",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
         "-Wno-unused-variable",
     ],
-    includes = ["src"],
     local_defines = ["LOAD_COLM"],
     visibility = ["//visibility:public"],
     deps = [
         ":libcolm",
         ":libprog",
+        ":loadfinal_lib",
     ],
 )
