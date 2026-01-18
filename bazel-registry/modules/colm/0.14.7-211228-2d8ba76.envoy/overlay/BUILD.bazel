@@ -343,8 +343,10 @@ cc_binary(
         "src/loadboot2.cc",
         "src/main.cc",
         ":gen_stage2",
+    ],
+    textual_hdrs = [
+        "src/loadfinal.cc",
         "src/loadfinal.h",
-        "src/loadfinal.cc",  # Included by loadboot2.cc, not compiled standalone
     ],
     copts = [
         "-Wall",
@@ -352,6 +354,7 @@ cc_binary(
         "-Wno-sign-compare",
         "-Wno-unused-variable",
     ],
+    includes = ["src"],
     local_defines = ["LOAD_COLM"],
     deps = [
         ":libcolm",
@@ -387,9 +390,12 @@ cc_binary(
     name = "colm",
     srcs = [
         "src/loadcolm.cc",
-        "src/loadfinal.h",
         "src/main.cc",
         ":gen_stage3",
+    ],
+    textual_hdrs = [
+        "src/loadfinal.cc",
+        "src/loadfinal.h",
     ],
     copts = [
         "-Wall",
@@ -397,6 +403,7 @@ cc_binary(
         "-Wno-sign-compare",
         "-Wno-unused-variable",
     ],
+    includes = ["src"],
     local_defines = ["LOAD_COLM"],
     visibility = ["//visibility:public"],
     deps = [
