@@ -344,16 +344,14 @@ cc_binary(
         "src/main.cc",
         ":gen_stage2",
         "src/loadfinal.h",
+        "src/loadfinal.cc",  # Included by loadboot2.cc, not compiled standalone
     ],
-    data = ["src/loadfinal.cc"],
     copts = [
         "-Wall",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
         "-Wno-unused-variable",
-        "-Isrc",
     ],
-    includes = ["src"],
     local_defines = ["LOAD_COLM"],
     deps = [
         ":libcolm",
