@@ -10,7 +10,7 @@
         "github:opencomputeproject/ocp-diag-core"
     ],
     "versions": [
-        "0.0.0.e965ac0.envoy"
+        "0.0.0-230505-e965ac0.envoy"
     ],
     "yanked_versions": {}
 }

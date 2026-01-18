@@ -4,6 +4,6 @@
     "strip_prefix": "ocp-diag-core-e965ac0ac6db6686169678e2a6c77ede904fa82c/apis/c++",
     "overlay": {
         "BUILD.bazel": "sha256-pwBVkw/1kwB0j3WDH0lL+ar8wMNTejYi4yOrInrvfCQ=",
-        "MODULE.bazel": "sha256-vN7yIgG/8/2NP1I28fR2HlTz/JCUQrXC/sc+UmQUldk="
+        "MODULE.bazel": "sha256-XpkeKcCkowcDHyC8+zeezu/Lkasaynbtb9BvlGIleYc="
     }
 }

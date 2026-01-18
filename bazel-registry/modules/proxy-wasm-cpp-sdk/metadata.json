@@ -5,7 +5,7 @@
         "github:proxy-wasm/proxy-wasm-cpp-sdk"
     ],
     "versions": [
-        "0.0.0.e5256b0.envoy"
+        "0.0.0-250925-e5256b0.envoy"
     ],
     "yanked_versions": {}
 }
