@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/adrian-thurston/ragel/archive/d4577c924451b331c73c8ed0af04f6efd35ac0b4.tar.gz",
+    "integrity": "sha256-+jR00Q2pyHC3m1GtQ/jRHN8FJo9ewFoC7M1bG19f67A=",
+    "strip_prefix": "ragel-d4577c924451b331c73c8ed0af04f6efd35ac0b4",
+    "overlay": {
+        "BUILD.bazel": "sha256-KHMerzqnNlyQHk24P9rIp+LcaVr8UaoA7jgrRU5efcI=",
+        "MODULE.bazel": "sha256-VNNHYIosYcLd39xCHFHyppQJVMYYrCdtIp6W3CEGwac="
+    }
+}
