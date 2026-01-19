@@ -221,7 +221,8 @@ cc_library(
         "src/hs_compile.h",
         "src/hs_runtime.h",
     ],
-    includes = ["src"],
+    strip_include_prefix = "src",
+    include_prefix = "hs",
     visibility = ["//visibility:public"],
     deps = [
         ":hs_compile",
