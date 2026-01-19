@@ -1,0 +1,10 @@
+{
+    "url": "https://github.com/grpc-ecosystem/proto_processing_lib/archive/279353cfab372ac7f268ae529df29c4d546ca18d.zip",
+    "integrity": "sha256-useg0C/YUzzVzm0POdwyT8BWVwLYWp7jtlsL6OfL3Y0=",
+    "strip_prefix": "proto_processing_lib-279353cfab372ac7f268ae529df29c4d546ca18d",
+    "patch_strip": 1,
+    "patches": {
+        "ocp.patch": "sha256-aaKu7VgG8nI6hYMdNqLRoFm9LcCy2lMUJEq9GOJUmV0=",
+        "module_dot_bazel.patch": "sha256-jmWGjkU1H4BG2ZFMqrbxaUhGBAPcEq80V0U4wtAlxWQ="
+    }
+}
