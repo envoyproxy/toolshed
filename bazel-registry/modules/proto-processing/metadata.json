@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/grpc-ecosystem/proto_processing_lib",
+    "maintainers": [],
+    "repository": [
+        "github:grpc-ecosystem/proto_processing_lib"
+    ],
+    "versions": [
+        "0.0.0-250110-279353c.envoy"
+    ],
+    "yanked_versions": {}
+}
