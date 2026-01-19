@@ -1,0 +1,231 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# Generate config.h
+genrule(
+    name = "config_h",
+    outs = ["config.h"],
+    cmd = """cat > $@ << 'EOF'
+#ifndef CONFIG_H_
+#define CONFIG_H_
+
+#define ARCH_64_BIT
+#define ARCH_X86_64
+#define HAVE_CC_BUILTIN_ASSUME_ALIGNED
+#define HAVE_CXX_BUILTIN_ASSUME_ALIGNED
+#define HAVE_CXX_X86INTRIN_H
+#define HAVE_C_X86INTRIN_H
+#define HAVE_POSIX_MEMALIGN
+#define HAVE_UNISTD_H
+#define HAVE__BUILTIN_CONSTANT_P
+#define HS_OPTIMIZE
+#define HS_VERSION "5.4.2"
+#define HS_MAJOR_VERSION 5
+#define HS_MINOR_VERSION 4
+#define HS_PATCH_VERSION 2
+#define BUILD_DATE "2023-04-19"
+#define RELEASE_BUILD
+
+#endif /* CONFIG_H_ */
+EOF
+""",
+)
+
+# Generate hs_version.h
+genrule(
+    name = "hs_version_h",
+    outs = ["hs_version.h"],
+    cmd = """cat > $@ << 'EOF'
+#ifndef HS_VERSION_H_C6428FAF8E3713
+#define HS_VERSION_H_C6428FAF8E3713
+
+#define HS_VERSION_STRING "5.4.2 2023-04-19"
+#define HS_VERSION_32BIT ((5 << 24) | (4 << 16) | (2 << 8) | 0)
+
+#endif /* HS_VERSION_H_C6428FAF8E3713 */
+EOF
+""",
+)
+
+# Generate Parser.cpp from Parser.rl using ragel
+genrule(
+    name = "parser_cpp",
+    srcs = ["src/parser/Parser.rl"],
+    outs = ["src/parser/Parser.cpp"],
+    cmd = "$(location @ragel//:ragel) $(location src/parser/Parser.rl) -o $@",
+    tools = ["@ragel//:ragel"],
+)
+
+# Generate control_verbs.cpp from control_verbs.rl using ragel
+genrule(
+    name = "control_verbs_cpp",
+    srcs = ["src/parser/control_verbs.rl"],
+    outs = ["src/parser/control_verbs.cpp"],
+    cmd = "$(location @ragel//:ragel) $(location src/parser/control_verbs.rl) -o $@",
+    tools = ["@ragel//:ragel"],
+)
+
+# Common execution sources
+cc_library(
+    name = "hs_common",
+    srcs = [
+        "src/alloc.c",
+        "src/scratch.c",
+        "src/util/cpuid_flags.c",
+        "src/util/multibit.c",
+    ],
+    hdrs = [
+        ":config_h",
+        ":hs_version_h",
+    ] + glob([
+        "src/**/*.h",
+        "src/**/*.hpp",
+    ]),
+    copts = [
+        "-std=c99",
+        "-O3",
+        "-DNDEBUG",
+        "-fno-strict-aliasing",
+        "-Wno-unused-parameter",
+        "-Wno-sign-compare",
+    ],
+    includes = [
+        ".",
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+# Runtime library (all C runtime sources)
+# Note: This is a simplified build for x86_64 with -march=native.
+# Hyperscan is a performance-critical library that heavily relies on SIMD
+# instructions (SSE, AVX2, AVX512). For production use, consider building
+# a fat runtime with multiple architecture targets similar to upstream CMake.
+cc_library(
+    name = "hs_runtime",
+    srcs = glob(
+        [
+            "src/crc32.c",
+            "src/database.c",
+            "src/runtime.c",
+            "src/stream_compress.c",
+            "src/hs_version.c",
+            "src/hs_valid_platform.c",
+            "src/fdr/*.c",
+            "src/hwlm/*.c",
+            "src/nfa/*.c",
+            "src/rose/*.c",
+            "src/som/*.c",
+            "src/util/simd_utils.c",
+            "src/util/state_compress.c",
+        ],
+        exclude = [
+            "src/**/*_dump*.c",
+            "src/**/test_*.c",
+            "src/hwlm/noodle_engine_avx2.c",  # Textual include in noodle_engine.c
+            "src/hwlm/noodle_engine_avx512.c",  # Textual include in noodle_engine.c
+            "src/hwlm/noodle_engine_sse.c",  # Textual include in noodle_engine.c
+        ],
+    ),
+    hdrs = glob([
+        "src/**/*.h",
+    ]),
+    textual_hdrs = [
+        "src/hwlm/noodle_engine_avx2.c",
+        "src/hwlm/noodle_engine_avx512.c",
+        "src/hwlm/noodle_engine_sse.c",
+    ],
+    copts = [
+        "-std=c99",
+        "-O3",
+        "-DNDEBUG",
+        "-fno-strict-aliasing",
+        "-march=native",  # Required for SIMD optimizations
+        "-Wno-unused-parameter",
+        "-Wno-sign-compare",
+    ],
+    includes = [
+        ".",
+        "src",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [":hs_common"],
+)
+
+# Compiler library (all C++ compile sources)
+cc_library(
+    name = "hs_compile",
+    srcs = glob(
+        [
+            "src/grey.cpp",
+            "src/hs.cpp",
+            "src/compiler/*.cpp",
+            "src/fdr/*compile*.cpp",
+            "src/fdr/*engine*.cpp",
+            "src/hwlm/*.cpp",
+            "src/nfa/*.cpp",
+            "src/nfagraph/*.cpp",
+            "src/parser/*.cpp",
+            "src/rose/*.cpp",
+            "src/smallwrite/*.cpp",
+            "src/som/*.cpp",
+            "src/util/*.cpp",
+        ],
+        exclude = [
+            "src/**/*_dump*.cpp",
+            "src/**/*dump.cpp",
+            "src/**/test_*.cpp",
+            "src/parser/Parser.cpp",  # Generated
+            "src/parser/control_verbs.cpp",  # Generated
+        ],
+    ) + [
+        ":parser_cpp",
+        ":control_verbs_cpp",
+    ],
+    hdrs = glob([
+        "src/**/*.h",
+        "src/**/*.hpp",
+        "include/**/*.h",
+        "include/**/*.hpp",
+    ]) + [
+        ":config_h",
+        ":hs_version_h",
+    ],
+    copts = [
+        "-std=c++11",
+        "-O2",
+        "-DNDEBUG",
+        "-fno-strict-aliasing",
+        "-Wno-unused-parameter",
+        "-Wno-sign-compare",
+        "-Wno-unused-variable",
+        "-Wno-unused-but-set-variable",
+    ],
+    includes = [
+        ".",
+        "src",
+        "include",  # For boost-patched headers
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":hs_runtime",
+        "@boost.headers",
+    ],
+)
+
+# Main hyperscan library that exports public headers
+cc_library(
+    name = "hyperscan",
+    hdrs = [
+        "src/hs.h",
+        "src/hs_common.h",
+        "src/hs_compile.h",
+        "src/hs_runtime.h",
+    ],
+    strip_include_prefix = "src",
+    include_prefix = "hs",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":hs_compile",
+        ":hs_runtime",
+    ],
+)

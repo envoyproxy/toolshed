@@ -1,0 +1,13 @@
+{
+    "url": "https://github.com/intel/hyperscan/archive/v5.4.2.tar.gz",
+    "integrity": "sha256-MrDySzETu8Rra/qgXPfPRYQLa1kzPQeMwfYk5MQLK5k=",
+    "strip_prefix": "hyperscan-5.4.2",
+    "patches": {
+        "hyperscan.patch": "sha256-BEgiWAzG8joFYyCDzSu+fPjRbEIDMreZFXU46hVMeLU="
+    },
+    "patch_strip": 1,
+    "overlay": {
+        "BUILD.bazel": "sha256-/wMQUYzqwMskGUd+6spmXZjRJHIwdwVoXJ69SycBVDU=",
+        "MODULE.bazel": "sha256-rhTO03T2Bmq1sVdF5qhFZ74M8CPkFwl8g2qNmHpgTmQ="
+    }
+}
