@@ -1,0 +1,67 @@
+diff --git a/proto_processing_lib/proto_scrubber/BUILD.bazel b/proto_processing_lib/proto_scrubber/BUILD.bazel
+index 1cc225a..82b4acc 100644
+--- a/proto_processing_lib/proto_scrubber/BUILD.bazel
++++ b/proto_processing_lib/proto_scrubber/BUILD.bazel
+@@ -85,7 +85,7 @@ cc_library(
+         "@com_google_absl//absl/status",
+         "@com_google_absl//absl/strings",
+         "@com_google_protoconverter//:all",
+-        "@ocp//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
+     ],
+ )
+ 
+@@ -155,7 +155,7 @@ cc_library(
+         "@com_google_protobuf//:protobuf",
+         "@com_google_protoconverter//:all",
+         "@com_google_protofieldextraction//proto_field_extraction/message_data:message_data_interface",
+-        "@ocp//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
+     ],
+ )
+ 
+@@ -295,8 +295,8 @@ cc_test(
+         "@com_google_protobuf//:protobuf",
+         "@com_google_protofieldextraction//proto_field_extraction/message_data:cord_message_data",
+         "@com_google_protofieldextraction//proto_field_extraction/test_utils:utils",
+-        "@ocp//ocpdiag/core/compat:status_macros",
+-        "@ocp//ocpdiag/core/testing:status_matchers",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/testing:status_matchers",
+     ],
+ )
+ 
+@@ -318,8 +318,8 @@ cc_test(
+         "@com_google_absl//absl/strings",
+         "@com_google_googletest//:gtest_main",
+         "@com_google_protofieldextraction//proto_field_extraction/test_utils:utils",
+-        "@ocp//ocpdiag/core/compat:status_macros",
+-        "@ocp//ocpdiag/core/testing:status_matchers",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/testing:status_matchers",
+     ],
+ )
+ 
+@@ -352,8 +352,8 @@ cc_test(
+         "@com_google_absl//absl/strings",
+         "@com_google_googletest//:gtest_main",
+         "@com_google_protofieldextraction//proto_field_extraction/test_utils:utils",
+-        "@ocp//ocpdiag/core/compat:status_macros",
+-        "@ocp//ocpdiag/core/testing:status_matchers",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/testing:status_matchers",
+     ],
+ )
+ 
+@@ -403,8 +403,8 @@ cc_test(
+         "@com_google_googletest//:gtest_main",
+         "@com_google_protofieldextraction//proto_field_extraction/field_extractor:field_extractor_util",
+         "@com_google_protofieldextraction//proto_field_extraction/test_utils:utils",
+-        "@ocp//ocpdiag/core/compat:status_macros",
+-        "@ocp//ocpdiag/core/testing:proto_matchers",
+-        "@ocp//ocpdiag/core/testing:status_matchers",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/testing:proto_matchers",
++        "@ocp-diag-core//ocpdiag/core/testing:status_matchers",
+     ],
+ )
