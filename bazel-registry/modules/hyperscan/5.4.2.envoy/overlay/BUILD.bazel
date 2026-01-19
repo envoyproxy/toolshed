@@ -121,6 +121,9 @@ cc_library(
         exclude = [
             "src/**/*_dump*.c",
             "src/**/test_*.c",
+            "src/hwlm/noodle_engine_avx2.c",  # Textual include in noodle_engine.c
+            "src/hwlm/noodle_engine_avx512.c",  # Textual include in noodle_engine.c
+            "src/hwlm/noodle_engine_sse.c",  # Textual include in noodle_engine.c
         ],
     ),
     hdrs = glob([
