@@ -1,0 +1,17 @@
+matrix:
+  platform:
+  - debian11
+  - debian10
+  - ubuntu2004
+  - ubuntu2204
+  - macos
+  bazel:
+  - 8.x
+  - 7.x
+tasks:
+  verify_targets:
+    name: Build hyperscan
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_targets:
+    - '@hyperscan//:hyperscan'
