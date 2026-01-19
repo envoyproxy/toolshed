@@ -164,6 +164,7 @@ cc_library(
         ],
         exclude = [
             "src/**/*_dump*.cpp",
+            "src/**/*dump.cpp",
             "src/**/test_*.cpp",
             "src/parser/Parser.cpp",  # Generated
             "src/parser/control_verbs.cpp",  # Generated
