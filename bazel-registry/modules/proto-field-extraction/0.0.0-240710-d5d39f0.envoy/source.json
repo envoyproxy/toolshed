@@ -4,7 +4,7 @@
     "strip_prefix": "proto-field-extraction-d5d39f0373e9b6691c32c85929838b1006bcb3fb",
     "patch_strip": 1,
     "patches": {
-        "ocp.patch": "sha256-CVmXKfLz2Ph31YkMM7jpOu1RO37iumvRLn4TYAtSKF4=",
-        "module_dot_bazel.patch": "sha256-4slE9hRwGZOHgMAPvfmJyF7VaXbV5WFt2XQjtLziJzY="
+        "ocp.patch": "sha256-CVmXKfLz2Ph9WJDDO46SrtUTt+ziuvrRLn4TYAtSKF4=",
+        "module_dot_bazel.patch": "sha256-4slE9hRwGZOHgMAPvfmJyF7VaXbV5WFtmXQjtLziJzY="
     }
 }

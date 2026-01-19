@@ -1,5 +1,6 @@
 module(
     name = "proto-processing",
+    repo_name = "com_google_protoprocessinglib",
     version = "0.0.0-250110-279353c.envoy",
     compatibility_level = 1,
 )
