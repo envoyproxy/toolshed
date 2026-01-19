@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/google/libsxg/archive/beaa3939b76f8644f6833267e9f2462760838f18.tar.gz",
+    "integrity": "sha256-CCv4RAR6mu7A04goPV7caL0ivPTTLrWlZmVK6JlWrR8=",
+    "strip_prefix": "libsxg-beaa3939b76f8644f6833267e9f2462760838f18",
+    "overlay": {
+        "BUILD.bazel": "sha256-SNSt/P1+Qcme74aKiXMEtjft07m34ak81zrTiQJFOqI=",
+        "include/libsxg.h": "sha256-yvW4je5JO/hZ69v1dJgXtPrUbuEjYXJdWzteLY1TXuA="
+    }
+}
