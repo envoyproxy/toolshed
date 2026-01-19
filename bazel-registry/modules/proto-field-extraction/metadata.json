@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/grpc-ecosystem/proto-field-extraction",
+    "maintainers": [],
+    "repository": [
+        "github:grpc-ecosystem/proto-field-extraction"
+    ],
+    "versions": [
+        "0.0.0-240710-d5d39f0.envoy"
+    ],
+    "yanked_versions": {}
+}
