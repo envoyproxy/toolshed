@@ -96,6 +96,10 @@ cc_library(
 )
 
 # Runtime library (all C runtime sources)
+# Note: This is a simplified build for x86_64 with -march=native.
+# Hyperscan is a performance-critical library that heavily relies on SIMD
+# instructions (SSE, AVX2, AVX512). For production use, consider building
+# a fat runtime with multiple architecture targets similar to upstream CMake.
 cc_library(
     name = "hs_runtime",
     srcs = glob(
@@ -127,7 +131,7 @@ cc_library(
         "-O3",
         "-DNDEBUG",
         "-fno-strict-aliasing",
-        "-march=native",
+        "-march=native",  # Required for SIMD optimizations
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
     ],
