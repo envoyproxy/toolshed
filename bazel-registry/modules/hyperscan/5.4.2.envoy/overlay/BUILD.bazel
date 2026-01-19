@@ -129,6 +129,11 @@ cc_library(
     hdrs = glob([
         "src/**/*.h",
     ]),
+    textual_hdrs = [
+        "src/hwlm/noodle_engine_avx2.c",
+        "src/hwlm/noodle_engine_avx512.c",
+        "src/hwlm/noodle_engine_sse.c",
+    ],
     copts = [
         "-std=c99",
         "-O3",
