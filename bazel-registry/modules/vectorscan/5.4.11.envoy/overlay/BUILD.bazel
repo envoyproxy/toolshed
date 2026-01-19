@@ -92,7 +92,40 @@ cc_library(
         ".",
         "src",
     ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
     visibility = ["//visibility:private"],
+)
+
+# Runtime library - C++ sources (ARM NEON intrinsics)
+cc_library(
+    name = "hs_runtime_cpp",
+    srcs = [
+        "src/nfa/vermicelli_simd.cpp",
+        "src/util/supervector/arch/arm/impl.cpp",
+    ],
+    hdrs = glob([
+        "src/**/*.h",
+    ]),
+    copts = [
+        "-O3",
+        "-DNDEBUG",
+        "-fno-strict-aliasing",
+        "-Wno-unused-parameter",
+        "-Wno-sign-compare",
+    ],
+    includes = [
+        ".",
+        "src",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [":hs_common"],
 )
 
 # Runtime library (all C runtime sources) - ARM version
@@ -117,7 +150,6 @@ cc_library(
             "src/som/*.c",
             "src/util/simd_utils.c",
             "src/util/state_compress.c",
-            "src/util/supervector/arch/arm/impl.cpp",
         ],
         exclude = [
             "src/**/*_dump*.c",
@@ -125,10 +157,9 @@ cc_library(
             "src/hwlm/noodle_engine_avx2.c",
             "src/hwlm/noodle_engine_avx512.c",
             "src/hwlm/noodle_engine_sse.c",
+            "src/nfa/vermicelli_simd.cpp",
         ],
-    ) + [
-        "src/nfa/vermicelli_simd.cpp",
-    ],
+    ),
     hdrs = glob([
         "src/**/*.h",
     ]),
@@ -144,8 +175,15 @@ cc_library(
         ".",
         "src",
     ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
     visibility = ["//visibility:private"],
-    deps = [":hs_common"],
+    deps = [
+        ":hs_common",
+        ":hs_runtime_cpp",
+    ],
 )
 
 # Compiler library (all C++ compile sources)
@@ -202,6 +240,10 @@ cc_library(
         "src",
         "include",  # For boost-patched headers
     ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         ":hs_runtime",
@@ -220,6 +262,10 @@ cc_library(
     ],
     strip_include_prefix = "src",
     include_prefix = "hs",
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":hs_compile",
