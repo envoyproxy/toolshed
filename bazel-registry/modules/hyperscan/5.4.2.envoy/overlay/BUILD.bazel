@@ -176,6 +176,8 @@ cc_library(
     hdrs = glob([
         "src/**/*.h",
         "src/**/*.hpp",
+        "include/**/*.h",
+        "include/**/*.hpp",
     ]) + [
         ":config_h",
         ":hs_version_h",
