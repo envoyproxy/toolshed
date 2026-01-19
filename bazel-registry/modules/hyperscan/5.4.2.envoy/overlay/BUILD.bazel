@@ -193,6 +193,7 @@ cc_library(
     includes = [
         ".",
         "src",
+        "include",  # For boost-patched headers
     ],
     visibility = ["//visibility:private"],
     deps = [
