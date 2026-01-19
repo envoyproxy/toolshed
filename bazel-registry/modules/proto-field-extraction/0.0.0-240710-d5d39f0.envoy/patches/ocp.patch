@@ -1,0 +1,76 @@
+diff --git a/proto_field_extraction/field_extractor/BUILD.bazel b/proto_field_extraction/field_extractor/BUILD.bazel
+index 82b0cca..2129ae2 100644
+--- a/proto_field_extraction/field_extractor/BUILD.bazel
++++ b/proto_field_extraction/field_extractor/BUILD.bazel
+@@ -32,7 +32,7 @@ cc_library(
+         "@com_google_absl//absl/status:statusor",
+         "@com_google_absl//absl/strings",
+         "@com_google_protobuf//:protobuf",
+-        "@ocp//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
+     ],
+ )
+ 
+@@ -62,9 +62,9 @@ cc_test(
+         "@com_google_googletest//:gtest_main",
+         "@com_google_protobuf//:protobuf",
+         "@grpc_httpjson_transcoding//src:type_helper",
+-        "@ocp//ocpdiag/core/compat:status_macros",
+-        "@ocp//ocpdiag/core/testing:proto_matchers",
+-        "@ocp//ocpdiag/core/testing:status_matchers",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/testing:proto_matchers",
++        "@ocp-diag-core//ocpdiag/core/testing:status_matchers",
+     ],
+ )
+ 
+diff --git a/proto_field_extraction/field_value_extractor/BUILD.bazel b/proto_field_extraction/field_value_extractor/BUILD.bazel
+index 2d1967c..f337582 100644
+--- a/proto_field_extraction/field_value_extractor/BUILD.bazel
++++ b/proto_field_extraction/field_value_extractor/BUILD.bazel
+@@ -36,7 +36,7 @@ cc_library(
+         "@com_google_absl//absl/status:statusor",
+         "@com_google_absl//absl/strings",
+         "@com_google_protobuf//:protobuf",
+-        "@ocp//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
+     ],
+ )
+ 
+@@ -63,10 +63,10 @@ cc_test(
+         "@com_google_googletest//:gtest_main",
+         "@com_google_protobuf//:protobuf",
+         "@grpc_httpjson_transcoding//src:type_helper",
+-        "@ocp//ocpdiag/core/compat:status_macros",
+-        "@ocp//ocpdiag/core/testing:parse_text_proto",
+-        "@ocp//ocpdiag/core/testing:proto_matchers",
+-        "@ocp//ocpdiag/core/testing:status_matchers",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/testing:parse_text_proto",
++        "@ocp-diag-core//ocpdiag/core/testing:proto_matchers",
++        "@ocp-diag-core//ocpdiag/core/testing:status_matchers",
+     ],
+ )
+ 
+@@ -84,7 +84,7 @@ cc_library(
+         "@com_google_absl//absl/status:statusor",
+         "@com_google_absl//absl/strings",
+         "@com_google_googleapis//google/api:service_cc_proto",
+-        "@ocp//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
+     ],
+ )
+ 
+@@ -102,9 +102,9 @@ cc_test(
+         ":field_value_extractor_factory",
+         #        "//file/base",
+         #        "//file/base:path",
+-        "@ocp//ocpdiag/core/compat:status_macros",
+-        "@ocp//ocpdiag/core/testing:proto_matchers",
+-        "@ocp//ocpdiag/core/testing:status_matchers",
++        "@ocp-diag-core//ocpdiag/core/compat:status_macros",
++        "@ocp-diag-core//ocpdiag/core/testing:proto_matchers",
++        "@ocp-diag-core//ocpdiag/core/testing:status_matchers",
+         "//proto_field_extraction/message_data:cord_message_data",
+         "//proto_field_extraction/test_utils:utils",
+         "//proto_field_extraction/test_utils/testdata:field_extractor_test_cc_proto",
