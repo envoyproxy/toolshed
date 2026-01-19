@@ -1,0 +1,11 @@
+{
+    "url": "https://github.com/VectorCamp/vectorscan/archive/refs/tags/vectorscan/5.4.11.tar.gz",
+    "integrity": "sha256-kF92rR+p5K4OsoIyysmK/blsR5ZmICxaTCeHH7MKJxE=",
+    "strip_prefix": "vectorscan-vectorscan-5.4.11",
+    "patches": {},
+    "patch_strip": 1,
+    "overlay": {
+        "BUILD.bazel": "sha256-crvQkjOE9RcNP6BKEUW2tPYNOjulttMFj5kxE9wnf1Y=",
+        "MODULE.bazel": "sha256-Mhvz6sZ5XqMtwYFOcBanL5yN8BqlChNalS3iTvo5rPI="
+    }
+}

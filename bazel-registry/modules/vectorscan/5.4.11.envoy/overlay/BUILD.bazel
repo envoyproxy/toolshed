@@ -1,6 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-# Generate config.h
+# Generate config.h for ARM
 genrule(
     name = "config_h",
     outs = ["config.h"],
@@ -9,20 +9,20 @@ genrule(
 #define CONFIG_H_
 
 #define ARCH_64_BIT
-#define ARCH_X86_64
+#define ARCH_AARCH64
+#define HAVE_NEON
+#define HAVE_SIMD_128_BITS
 #define HAVE_CC_BUILTIN_ASSUME_ALIGNED
 #define HAVE_CXX_BUILTIN_ASSUME_ALIGNED
-#define HAVE_CXX_X86INTRIN_H
-#define HAVE_C_X86INTRIN_H
 #define HAVE_POSIX_MEMALIGN
 #define HAVE_UNISTD_H
 #define HAVE__BUILTIN_CONSTANT_P
 #define HS_OPTIMIZE
-#define HS_VERSION "5.4.2"
+#define HS_VERSION "5.4.11"
 #define HS_MAJOR_VERSION 5
 #define HS_MINOR_VERSION 4
-#define HS_PATCH_VERSION 2
-#define BUILD_DATE "2023-04-19"
+#define HS_PATCH_VERSION 11
+#define BUILD_DATE "2023-11-21"
 #define RELEASE_BUILD
 
 #endif /* CONFIG_H_ */
@@ -38,8 +38,8 @@ genrule(
 #ifndef HS_VERSION_H_C6428FAF8E3713
 #define HS_VERSION_H_C6428FAF8E3713
 
-#define HS_VERSION_STRING "5.4.2 2023-04-19"
-#define HS_VERSION_32BIT ((5 << 24) | (4 << 16) | (2 << 8) | 0)
+#define HS_VERSION_STRING "5.4.11 2023-11-21"
+#define HS_VERSION_32BIT ((5 << 24) | (4 << 16) | (11 << 8) | 0)
 
 #endif /* HS_VERSION_H_C6428FAF8E3713 */
 EOF
@@ -70,7 +70,7 @@ cc_library(
     srcs = [
         "src/alloc.c",
         "src/scratch.c",
-        "src/util/cpuid_flags.c",
+        "src/util/arch/arm/cpuid_flags.c",
         "src/util/multibit.c",
     ],
     hdrs = [
@@ -85,7 +85,6 @@ cc_library(
         "-O3",
         "-DNDEBUG",
         "-fno-strict-aliasing",
-        "-mavx2",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
     ],
@@ -96,10 +95,10 @@ cc_library(
     visibility = ["//visibility:private"],
 )
 
-# Runtime library (all C runtime sources)
-# Note: This is a simplified build for x86_64 with -march=native.
-# Hyperscan is a performance-critical library that heavily relies on SIMD
-# instructions (SSE, AVX2, AVX512). For production use, consider building
+# Runtime library (all C runtime sources) - ARM version
+# Note: This is a simplified build for aarch64/ARM64.
+# Vectorscan is a performance-critical library that heavily relies on SIMD
+# instructions (NEON, SVE, SVE2). For production use, consider building
 # a fat runtime with multiple architecture targets similar to upstream CMake.
 cc_library(
     name = "hs_runtime",
@@ -116,32 +115,28 @@ cc_library(
             "src/nfa/*.c",
             "src/rose/*.c",
             "src/som/*.c",
-            "src/util/masked_move.c",
             "src/util/simd_utils.c",
             "src/util/state_compress.c",
+            "src/util/supervector/arch/arm/impl.cpp",
         ],
         exclude = [
             "src/**/*_dump*.c",
             "src/**/test_*.c",
-            "src/hwlm/noodle_engine_avx2.c",  # Textual include in noodle_engine.c
-            "src/hwlm/noodle_engine_avx512.c",  # Textual include in noodle_engine.c
-            "src/hwlm/noodle_engine_sse.c",  # Textual include in noodle_engine.c
+            "src/hwlm/noodle_engine_avx2.c",
+            "src/hwlm/noodle_engine_avx512.c",
+            "src/hwlm/noodle_engine_sse.c",
         ],
-    ),
+    ) + [
+        "src/nfa/vermicelli_simd.cpp",
+    ],
     hdrs = glob([
         "src/**/*.h",
     ]),
-    textual_hdrs = [
-        "src/hwlm/noodle_engine_avx2.c",
-        "src/hwlm/noodle_engine_avx512.c",
-        "src/hwlm/noodle_engine_sse.c",
-    ],
     copts = [
         "-std=c99",
         "-O3",
         "-DNDEBUG",
         "-fno-strict-aliasing",
-        "-march=native",  # Required for SIMD optimizations
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
     ],
@@ -214,9 +209,9 @@ cc_library(
     ],
 )
 
-# Main hyperscan library that exports public headers
+# Main vectorscan library that exports public headers
 cc_library(
-    name = "hyperscan",
+    name = "vectorscan",
     hdrs = [
         "src/hs.h",
         "src/hs_common.h",

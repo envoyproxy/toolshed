@@ -1,0 +1,16 @@
+{
+    "homepage": "https://github.com/VectorCamp/vectorscan",
+    "maintainers": [
+        {
+            "name": "Envoy maintainers",
+            "github": "envoyproxy"
+        }
+    ],
+    "repository": [
+        "github:VectorCamp/vectorscan"
+    ],
+    "versions": [
+        "5.4.11.envoy"
+    ],
+    "yanked_versions": {}
+}
