@@ -51,7 +51,6 @@ genrule(
     cmd = """
         # Setup
         COLM=$$(realpath $(location @colm//:colm))
-        COLM_SHARE=$$(dirname $$(realpath $(location @colm//:colm_share)))
         RLPARSE_LM=$$(realpath $(location src/rlparse.lm))
         SRC_DIR=$$(dirname $$RLPARSE_LM)
         OUT_DIR=$$(dirname $(location gen/parse.c))
@@ -66,8 +65,6 @@ genrule(
     tools = [
         "@colm//:colm",
     ],
-    # We need the colm share files for the colm binary to work
-    data = ["@colm//:colm_share"],
 )
 
 # libragel - the ragel library
