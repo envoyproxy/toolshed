@@ -1,0 +1,16 @@
+{
+    "homepage": "https://www.hyperscan.io/",
+    "maintainers": [
+        {
+            "name": "Envoy maintainers",
+            "github": "envoyproxy"
+        }
+    ],
+    "repository": [
+        "github:intel/hyperscan"
+    ],
+    "versions": [
+        "5.4.2.envoy"
+    ],
+    "yanked_versions": {}
+}

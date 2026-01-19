@@ -1,0 +1,11 @@
+module(
+    name = "hyperscan",
+    version = "5.4.2.envoy",
+    bazel_compatibility = [">=7.2.1"],
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "ragel", version = "7.0.4-211228-d4577c9.envoy")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "boost.headers", version = "1.89.0.envoy")
