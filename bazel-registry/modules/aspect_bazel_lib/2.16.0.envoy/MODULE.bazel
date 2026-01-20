@@ -1,0 +1,52 @@
+"aspect-build/bazel-lib"
+
+module(
+    name = "aspect_bazel_lib",
+    bazel_compatibility = [">=6.5.0"],
+    compatibility_level = 1,
+    version = "2.16.0.envoy",
+)
+
+# Lower-bounds (minimum) versions for direct runtime dependencies
+bazel_dep(name = "bazel_features", version = "1.9.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "stardoc", version = "0.7.1")
+bazel_dep(name = "rules_shell", version = "0.4.1")
+
+# TODO(3.0): remove this back-compat
+bazel_dep(name = "jq.bzl", version = "0.1.0")
+bazel_dep(name = "yq.bzl", version = "0.1.1")
+bazel_dep(name = "tar.bzl", version = "0.5.1")
+
+bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
+bazel_lib_toolchains.copy_directory()
+bazel_lib_toolchains.copy_to_directory()
+bazel_lib_toolchains.jq()
+bazel_lib_toolchains.yq()
+bazel_lib_toolchains.coreutils()
+bazel_lib_toolchains.tar()
+bazel_lib_toolchains.zstd()
+bazel_lib_toolchains.expand_template()
+bazel_lib_toolchains.bats()
+use_repo(bazel_lib_toolchains, "bats_toolchains", "bsd_tar_toolchains", "copy_directory_toolchains", "copy_to_directory_toolchains", "coreutils_toolchains", "expand_template_toolchains", "jq", "jq_toolchains", "yq", "yq_toolchains", "zstd_toolchains")
+
+register_toolchains(
+    "@copy_directory_toolchains//:all",
+    "@copy_to_directory_toolchains//:all",
+    "@jq_toolchains//:all",
+    "@yq_toolchains//:all",
+    "@coreutils_toolchains//:all",
+    "@expand_template_toolchains//:all",
+    "@bats_toolchains//:all",
+    "@bsd_tar_toolchains//:all",
+    "@zstd_toolchains//:all",
+)
+
+####### Dev dependencies ########
+
+# To allow /tools to be built from source
+# NOTE: when publishing to BCR, we patch this to be dev_dependency, as we publish pre-built binaries
+# along with our releases.
+bazel_dep(name = "rules_go", version = "0.50.1", dev_dependency = True, repo_name = "io_bazel_rules_go")
+bazel_dep(name = "gazelle", version = "0.41.1", dev_dependency = True, repo_name = "bazel_gazelle")

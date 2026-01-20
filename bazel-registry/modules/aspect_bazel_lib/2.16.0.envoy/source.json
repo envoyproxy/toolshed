@@ -1,0 +1,12 @@
+{
+  "integrity": "sha256-CS+EHdnqjnNuqDTzBId6JRkKdi0PCmyO2sn5SqyLvxY=",
+  "strip_prefix": "bazel-lib-2.16.0",
+  "url": "https://github.com/aspect-build/bazel-lib/archive/v2.16.0.tar.gz",
+  "patch_strip": 1,
+  "patches": {
+    "aspect.patch": "sha256-bBrJAHyNBWppp9t9PUGt/fpFdGf+HepS40N/1tvRzAo="
+  },
+  "overlay": {
+    "MODULE.bazel": "sha256-eMQc7A3JTG6OuPahTNUjklgPCigj30I8RPG+036xCgA="
+  }
+}
