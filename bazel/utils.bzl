@@ -167,7 +167,7 @@ def json_merge(
 
     all_srcs = srcs + yaml_json
     args = args or ["--slurp"]
-    filter = filter or " *".join([(".[%s]" % i) for i, x in enumerate(all_srcs)])
+    filter = filter or "reduce .[] as $item ({}; . * $item)"
     jq(
         name = name,
         srcs = all_srcs,
