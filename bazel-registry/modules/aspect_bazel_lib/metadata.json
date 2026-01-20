@@ -5,7 +5,7 @@
     "github:bazel-contrib/bazel-lib"
   ],
   "versions": [
-    "2.21.2.envoy"
+    "2.16.0.envoy"
   ],
   "yanked_versions": {}
 }

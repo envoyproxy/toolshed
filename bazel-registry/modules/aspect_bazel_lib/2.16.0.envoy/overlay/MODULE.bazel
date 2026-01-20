@@ -4,7 +4,7 @@ module(
     name = "aspect_bazel_lib",
     bazel_compatibility = [">=6.5.0"],
     compatibility_level = 1,
-    version = "2.21.2.envoy",
+    version = "2.16.0.envoy",
 )
 
 # Lower-bounds (minimum) versions for direct runtime dependencies
