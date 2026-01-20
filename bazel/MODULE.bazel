@@ -15,7 +15,8 @@ bazel_dep(name = "toolchains_llvm", version = "1.6.0", dev_dependency = True)
 
 bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
 bazel_lib_toolchains.jq(version = "1.7")
-use_repo(bazel_lib_toolchains, "jq", "jq_toolchains")
+bazel_lib_toolchains.yq()
+use_repo(bazel_lib_toolchains, "jq", "jq_toolchains", "yq", "yq_toolchains")
 
 PYTHON_VERSION_DEFAULT = "3.12"
 

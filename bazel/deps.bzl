@@ -1,4 +1,4 @@
-load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains")
+load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains", "register_yq_toolchains")
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 load("@rules_perl//perl:deps.bzl", "perl_register_toolchains", "perl_rules_dependencies")
 load("@rules_pkg//pkg:deps.bzl", "rules_pkg_dependencies")
@@ -15,6 +15,7 @@ def resolve_dependencies(
     py_repositories()
     bazel_toolchain_dependencies()
     register_jq_toolchains()
+    register_yq_toolchains()
     rules_foreign_cc_dependencies(
         register_preinstalled_tools = True,
         register_default_tools = True,
