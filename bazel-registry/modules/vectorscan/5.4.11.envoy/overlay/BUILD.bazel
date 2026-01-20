@@ -1,6 +1,11 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 # Generate config.h for ARM
+# Uses C preprocessor to conditionally define HAVE__BUILTIN_CONSTANT_P based on compiler.
+# GCC optimizes __builtin_constant_p() properly, but Clang doesn't optimize away the
+# dead branch the same way, causing compile errors with ARM NEON intrinsics that require
+# constant arguments.
+# See: https://github.com/VectorCamp/vectorscan/blob/6bb8733e93f97a0e55b858ecd4e17d7e7b52619c/cmake/cflags-generic.cmake#L61-L64
 genrule(
     name = "config_h",
     outs = ["config.h"],
@@ -10,13 +15,18 @@ genrule(
 
 #define ARCH_64_BIT
 #define ARCH_AARCH64
+#define HAVE_C_ARM_NEON_H
 #define HAVE_NEON
 #define HAVE_SIMD_128_BITS
 #define HAVE_CC_BUILTIN_ASSUME_ALIGNED
 #define HAVE_CXX_BUILTIN_ASSUME_ALIGNED
 #define HAVE_POSIX_MEMALIGN
 #define HAVE_UNISTD_H
+/* Clang does not use __builtin_constant_p() the same way as GCC.
+ * Only define for GCC to avoid ARM NEON intrinsic errors with Clang. */
+#if defined(__GNUC__) && !defined(__clang__)
 #define HAVE__BUILTIN_CONSTANT_P
+#endif
 #define HS_OPTIMIZE
 #define HS_VERSION "5.4.11"
 #define HS_MAJOR_VERSION 5
@@ -81,7 +91,6 @@ cc_library(
         "src/**/*.hpp",
     ]),
     copts = [
-        "-std=c99",
         "-O3",
         "-DNDEBUG",
         "-fno-strict-aliasing",
@@ -117,7 +126,6 @@ cc_library(
             "src/som/*.c",
             "src/util/simd_utils.c",
             "src/util/state_compress.c",
-            "src/util/supervector/arch/arm/impl.cpp",
         ],
         exclude = [
             "src/**/*_dump*.c",
@@ -131,9 +139,11 @@ cc_library(
     ],
     hdrs = glob([
         "src/**/*.h",
-    ]),
+    ]) + [
+        ":config_h",
+    ],
+    textual_hdrs = ["src/util/supervector/arch/arm/impl.cpp"],
     copts = [
-        "-std=c99",
         "-O3",
         "-DNDEBUG",
         "-fno-strict-aliasing",
@@ -188,7 +198,6 @@ cc_library(
         ":hs_version_h",
     ],
     copts = [
-        "-std=c++11",
         "-O2",
         "-DNDEBUG",
         "-fno-strict-aliasing",
@@ -196,6 +205,7 @@ cc_library(
         "-Wno-sign-compare",
         "-Wno-unused-variable",
         "-Wno-unused-but-set-variable",
+        "-std=c++17",
     ],
     includes = [
         ".",
