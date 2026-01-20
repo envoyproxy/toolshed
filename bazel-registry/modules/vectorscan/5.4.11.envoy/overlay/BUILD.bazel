@@ -114,6 +114,7 @@ cc_library(
         "-O3",
         "-DNDEBUG",
         "-fno-strict-aliasing",
+        "-finline-functions",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
     ],
