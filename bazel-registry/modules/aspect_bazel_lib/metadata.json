@@ -1,0 +1,11 @@
+{
+  "homepage": "https://github.com/bazel-contrib/bazel-lib",
+  "maintainers": [],
+  "repository": [
+    "github:bazel-contrib/bazel-lib"
+  ],
+  "versions": [
+    "2.21.2.envoy"
+  ],
+  "yanked_versions": {}
+}
