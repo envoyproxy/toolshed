@@ -231,7 +231,7 @@ cc_library(
     ],
     copts = [
         "-std=c++11",
-        "-O2",
+        "-O3",
         "-DNDEBUG",
         "-fno-strict-aliasing",
         "-finline-functions",
