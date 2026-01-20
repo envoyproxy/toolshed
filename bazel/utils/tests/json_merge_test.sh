@@ -23,8 +23,8 @@ compare_json() {
     fi
 }
 
-compare_json "${SCRIPT_DIR}/test_merge.json" "${SCRIPT_DIR}/testdata/expected_merge.json" "basic merge"
-compare_json "${SCRIPT_DIR}/test_yaml_merge.json" "${SCRIPT_DIR}/testdata/expected_yaml_merge.json" "yaml merge"
-compare_json "${SCRIPT_DIR}/test_filter.json" "${SCRIPT_DIR}/testdata/expected_filter.json" "custom filter"
+compare_json "${SCRIPT_DIR}/test_merge.json" "${SCRIPT_DIR}/data/expected_merge.json" "basic merge"
+compare_json "${SCRIPT_DIR}/test_yaml_merge.json" "${SCRIPT_DIR}/data/expected_yaml_merge.json" "yaml merge"
+compare_json "${SCRIPT_DIR}/test_filter.json" "${SCRIPT_DIR}/data/expected_filter.json" "custom filter"
 
 echo "All tests passed!"

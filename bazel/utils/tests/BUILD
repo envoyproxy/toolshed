@@ -5,24 +5,24 @@ load("//:utils.bzl", "json_merge")
 json_merge(
     name = "test_merge",
     srcs = [
-        "testdata/input1.json",
-        "testdata/input2.json",
+        "data/input1.json",
+        "data/input2.json",
     ],
 )
 
 # Test: YAML conversion and merge
 json_merge(
     name = "test_yaml_merge",
-    srcs = ["testdata/input1.json"],
-    yaml_srcs = ["testdata/input.yaml"],
+    srcs = ["data/input1.json"],
+    yaml_srcs = ["data/input.yaml"],
 )
 
 # Test: Custom filter
 json_merge(
     name = "test_filter",
     srcs = [
-        "testdata/input1.json",
-        "testdata/input2.json",
+        "data/input1.json",
+        "data/input2.json",
     ],
     filter = "{\"combined\": (.[0] * .[1]), \"keys\": (.[0] | keys)}",
 )
@@ -35,9 +35,9 @@ sh_test(
         ":test_merge",
         ":test_yaml_merge",
         ":test_filter",
-        "testdata/expected_merge.json",
-        "testdata/expected_yaml_merge.json",
-        "testdata/expected_filter.json",
+        "data/expected_merge.json",
+        "data/expected_yaml_merge.json",
+        "data/expected_filter.json",
         "@jq_toolchains//:resolved_toolchain",
     ],
     env = {
