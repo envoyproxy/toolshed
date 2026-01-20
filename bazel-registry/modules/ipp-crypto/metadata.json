@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/intel/cryptography-primitives",
+    "maintainers": [],
+    "repository": [
+        "github:intel/cryptography-primitives"
+    ],
+    "versions": [
+        "1.3.0.envoy"
+    ],
+    "yanked_versions": {}
+}

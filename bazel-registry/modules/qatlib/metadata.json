@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/intel/qatlib",
+    "maintainers": [],
+    "repository": [
+        "github:intel/qatlib"
+    ],
+    "versions": [
+        "25.08.0.envoy"
+    ],
+    "yanked_versions": {}
+}

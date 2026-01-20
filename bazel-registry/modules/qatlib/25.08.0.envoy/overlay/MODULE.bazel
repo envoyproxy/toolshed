@@ -1,0 +1,4 @@
+module(
+    name = "qatlib",
+    version = "25.08.0.envoy",
+)

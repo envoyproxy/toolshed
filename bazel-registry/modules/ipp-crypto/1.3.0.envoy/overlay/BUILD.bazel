@@ -1,0 +1,38 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# Note: This is a simplified BUILD file for the crypto_mb library
+# The full implementation requires many more source files and configuration
+# This BUILD file needs to be expanded with all source files from:
+# sources/ippcp/crypto_mb/src/**/*.c
+
+cc_library(
+    name = "crypto_mb",
+    srcs = glob([
+        "sources/ippcp/crypto_mb/src/**/*.c",
+    ]),
+    hdrs = glob([
+        "sources/ippcp/crypto_mb/include/**/*.h",
+    ]),
+    strip_include_prefix = "sources/ippcp/crypto_mb/include",
+    visibility = ["//visibility:public"],
+    deps = [
+        # Note: External dependencies must be provided by consuming workspace:
+        # - "@boringssl//:crypto"
+    ],
+    copts = [
+        "-O3",
+        "-fPIC",
+        "-mavx512f",
+        "-mavx512dq",
+        "-mavx512ifma",
+        "-DSIMD_LEN=512",
+    ],
+    local_defines = [
+        "_K1",
+        "USE_AMS_5x",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)

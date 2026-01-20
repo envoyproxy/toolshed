@@ -1,0 +1,4 @@
+module(
+    name = "ipp-crypto",
+    version = "1.3.0.envoy",
+)

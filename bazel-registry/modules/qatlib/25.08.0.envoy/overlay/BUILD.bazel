@@ -1,0 +1,93 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+# Note: This is a simplified BUILD file for qatlib
+# The full implementation requires careful selection of source files
+# This BUILD file uses glob patterns to include necessary sources
+
+cc_library(
+    name = "osal",
+    srcs = glob([
+        "quickassist/utilities/osal/src/linux/user_space/*.c",
+    ]),
+    hdrs = glob([
+        "quickassist/utilities/osal/include/*.h",
+        "quickassist/utilities/osal/src/linux/user_space/include/*.h",
+    ]),
+    includes = [
+        "quickassist/utilities/osal/include",
+        "quickassist/utilities/osal/src/linux/user_space/include",
+    ],
+    copts = ["-fPIC"],
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "adf",
+    srcs = glob([
+        "quickassist/utilities/adf_ctl/*.c",
+    ]),
+    hdrs = glob([
+        "quickassist/utilities/adf_ctl/*.h",
+    ]),
+    includes = [
+        "quickassist/utilities/adf_ctl",
+        "quickassist/utilities/libusdm_drv",
+    ],
+    copts = ["-fPIC"],
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "usdm",
+    srcs = glob([
+        "quickassist/utilities/libusdm_drv/*.c",
+    ]),
+    hdrs = glob([
+        "quickassist/utilities/libusdm_drv/*.h",
+    ]),
+    includes = [
+        "quickassist/utilities/libusdm_drv",
+    ],
+    copts = ["-fPIC"],
+    visibility = ["//visibility:private"],
+    deps = [":osal"],
+)
+
+cc_library(
+    name = "qat",
+    srcs = glob([
+        "quickassist/lookaside/access_layer/src/**/*.c",
+    ]),
+    hdrs = glob([
+        "quickassist/include/*.h",
+        "quickassist/include/**/*.h",
+        "quickassist/lookaside/access_layer/include/*.h",
+        "quickassist/lookaside/access_layer/src/**/*.h",
+    ]),
+    strip_include_prefix = "quickassist",
+    includes = [
+        "quickassist/lookaside/access_layer/include",
+        "quickassist/utilities/libusdm_drv",
+        "quickassist/utilities/osal/include",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":adf",
+        ":osal",
+        ":usdm",
+        # Note: External dependencies must be provided by consuming workspace:
+        # - "@numa//:numa"
+        # - "@boringssl//:crypto_internal"
+    ],
+    copts = [
+        "-fPIC",
+        "-O3",
+        "-D_GNU_SOURCE",
+        "-DUSER_SPACE",
+        "-DLAC_BYTE_ORDER=__LITTLE_ENDIAN",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)

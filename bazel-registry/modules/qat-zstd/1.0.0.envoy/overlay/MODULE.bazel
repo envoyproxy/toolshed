@@ -1,0 +1,4 @@
+module(
+    name = "qat-zstd",
+    version = "1.0.0.envoy",
+)
