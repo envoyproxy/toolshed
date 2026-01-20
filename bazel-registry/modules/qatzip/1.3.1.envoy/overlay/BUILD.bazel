@@ -28,7 +28,7 @@ cc_library(
         # Note: External dependencies must be provided by consuming workspace:
         # - "@zlib//:zlib"
         # - "@numa//:numa"
-        # - "@boringssl//:crypto"
+        # - "@boringssl//:crypto_internal"
     ],
     copts = [
         "-Wall",

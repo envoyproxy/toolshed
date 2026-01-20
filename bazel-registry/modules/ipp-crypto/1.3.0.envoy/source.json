@@ -7,7 +7,7 @@
         "build.patch": "sha256-msoP0BS51EUiFYn7l35lI9UGGrkGTsQQPDadV62Awbg="
     },
     "overlay": {
-        "BUILD.bazel": "sha256-jS9iZ6k38i4be5NlFjU5fFq2ZQ5lYJREjLcrAPjGwHc=",
+        "BUILD.bazel": "sha256-HWX39PXwS0LoBwqzftqv2FOelqAdLiDatpDmqR9lFjM=",
         "MODULE.bazel": "sha256-D2Tjv3DnfDZ4E7jOhDrI2VYbY748/eTyUVauvF1aITU="
     }
 }

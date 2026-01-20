@@ -17,7 +17,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         # Note: External dependencies must be provided by consuming workspace:
-        # - "@boringssl//:crypto"
+        # - "@boringssl//:crypto_internal"
     ],
     copts = [
         "-O3",
