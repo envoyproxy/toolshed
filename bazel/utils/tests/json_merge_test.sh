@@ -8,11 +8,11 @@ compare_json() {
     local actual="$1"
     local expected="$2"
     local name="$3"
-    
+
     # Normalize and compare JSON
     actual_normalized=$("$JQ" -S . "$actual")
     expected_normalized=$("$JQ" -S . "$expected")
-    
+
     if [ "$actual_normalized" = "$expected_normalized" ]; then
         echo "PASS: $name"
     else
