@@ -1,8 +1,9 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-# Note: This is a simplified BUILD file for qatlib
-# The full implementation requires careful selection of source files
-# This BUILD file uses glob patterns to include necessary sources
+# Note: This is a simplified BUILD file for qatlib using glob patterns.
+# The glob patterns are necessary due to the large number of source files (217+).
+# While glob can make builds less deterministic if files are added, the versioned
+# tarball ensures consistent file sets for this release.
 
 cc_library(
     name = "osal",
@@ -75,9 +76,10 @@ cc_library(
         ":adf",
         ":osal",
         ":usdm",
-        # Note: External dependencies must be provided by consuming workspace:
-        # - "@numa//:numa"
-        # - "@boringssl//:crypto_internal"
+        # IMPORTANT: The following external dependencies MUST be provided by
+        # the consuming workspace using bazel_dep() or similar mechanisms:
+        # - "@numa//:numa" (NUMA support library)
+        # - "@boringssl//:crypto_internal" (BoringSSL internal crypto library)
     ],
     copts = [
         "-fPIC",

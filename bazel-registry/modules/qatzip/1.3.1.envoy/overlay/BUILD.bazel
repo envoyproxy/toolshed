@@ -25,10 +25,11 @@ cc_library(
     deps = [
         "@qatlib//:qat",
         "@lz4//:lz4",
-        # Note: External dependencies must be provided by consuming workspace:
-        # - "@zlib//:zlib"
-        # - "@numa//:numa"
-        # - "@boringssl//:crypto_internal"
+        # IMPORTANT: The following external dependencies MUST be provided by
+        # the consuming workspace using bazel_dep() or similar mechanisms:
+        # - "@zlib//:zlib" (zlib compression library)
+        # - "@numa//:numa" (NUMA support library)
+        # - "@boringssl//:crypto_internal" (BoringSSL internal crypto library)
     ],
     copts = [
         "-Wall",

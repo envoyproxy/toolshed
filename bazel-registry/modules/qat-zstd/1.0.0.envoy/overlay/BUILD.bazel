@@ -8,9 +8,10 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@qatlib//:qat",
-        # Note: External dependencies must be provided by consuming workspace:
-        # - "@zstd//:zstd"
-        # - "@numa//:numa"
+        # IMPORTANT: The following external dependencies MUST be provided by
+        # the consuming workspace using bazel_dep() or similar mechanisms:
+        # - "@zstd//:zstd" (ZSTD compression library)
+        # - "@numa//:numa" (NUMA support library)
     ],
     copts = [
         "-Wall",
