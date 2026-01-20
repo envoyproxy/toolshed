@@ -1,0 +1,28 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "qat-zstd",
+    srcs = ["src/qatseqprod.c"],
+    hdrs = ["src/qatseqprod.h"],
+    strip_include_prefix = "src",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@numactl//:numa",
+        "@qatlib//:qat",
+        "@zstd",
+    ],
+    copts = [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        "-O3",
+        "-fPIC",
+    ],
+    local_defines = [
+        "DEBUGLEVEL=0",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)

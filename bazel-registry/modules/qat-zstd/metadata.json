@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/intel/QAT-ZSTD-Plugin",
+    "maintainers": [],
+    "repository": [
+        "github:intel/QAT-ZSTD-Plugin"
+    ],
+    "versions": [
+        "1.0.0.envoy"
+    ],
+    "yanked_versions": {}
+}

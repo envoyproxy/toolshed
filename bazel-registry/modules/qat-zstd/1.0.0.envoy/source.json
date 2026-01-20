@@ -1,0 +1,13 @@
+{
+    "url": "https://github.com/intel/QAT-ZSTD-Plugin/archive/refs/tags/v1.0.0.tar.gz",
+    "integrity": "sha256-APJhFxnwoclYWWXGw8H+WZEZqo6TKlaQQbGHb/yUT7M=",
+    "strip_prefix": "QAT-ZSTD-Plugin-1.0.0",
+    "patch_strip": 1,
+    "patches": {
+        "build.patch": "sha256-Ury+V2GbaG/xjIuE7JFXzZYyjD01kt7aNu+P7+F1Kzc="
+    },
+    "overlay": {
+        "BUILD.bazel": "sha256-rWR9c3SEMX4aJWe3FWeVkS/Gn2g9aFmSkaNOQFpzF+8=",
+        "MODULE.bazel": "sha256-ZPjt1uV6Ggg/LysWRx8bheQebrWicDTt6ByjBCkxcAo="
+    }
+}
