@@ -1,0 +1,19 @@
+matrix:
+  platform:
+  - debian11
+  - macos
+  - ubuntu2404
+  bazel:
+  - 8.x
+
+tasks:
+  verify_targets:
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_targets:
+    - "@aspect_bazel_lib//lib:lib"
+    - "@aspect_bazel_lib//lib:copy_to_directory"
+    - "@aspect_bazel_lib//lib:copy_directory"
+    - "@aspect_bazel_lib//lib:jq"
+    - "@aspect_bazel_lib//lib:yq"
+    - "@aspect_bazel_lib//lib:tar"
