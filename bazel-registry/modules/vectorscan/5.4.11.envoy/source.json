@@ -5,7 +5,7 @@
     "patches": {},
     "patch_strip": 1,
     "overlay": {
-        "BUILD.bazel": "sha256-VEWxYFP4+xBHpuHtD6mX8PC92jua2Wy4lpqwddGhCHE=",
+        "BUILD.bazel": "sha256-xwmX374Rk4/aTM1TmD6Wf4kbDArnOoOdkKM6rVjJyYE=",
         "MODULE.bazel": "sha256-Mhvz6sZ5XqMtwYFOcBanL5yN8BqlChNalS3iTvo5rPI="
     }
 }
