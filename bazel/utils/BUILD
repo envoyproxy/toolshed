@@ -24,7 +24,7 @@ json_merge(
         "testdata/input1.json",
         "testdata/input2.json",
     ],
-    filter = "{combined: .[0] * .[1], keys: (.[0] | keys)}",
+    filter = "{\"combined\": (.[0] * .[1]), \"keys\": (.[0] | keys)}",
 )
 
 sh_test(
