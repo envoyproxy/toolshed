@@ -1,0 +1,36 @@
+module(
+    name = "envoy_toolshed_external",
+    bazel_compatibility = [">=7.2.1"],
+)
+
+bazel_dep(name = "envoy_toolshed")
+bazel_dep(name = "toolchains_llvm", version = "1.6.0", dev_dependency = True)
+
+local_path_override(
+    module_name = "envoy_toolshed",
+    path = "../..",
+)
+
+# Configure LLVM toolchain
+sysroot_ext = use_extension("@envoy_toolshed//sysroot:extensions.bzl", "sysroot_extension", dev_dependency=True)
+sysroot_ext.setup()
+use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
+
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency=True)
+llvm.toolchain(
+    name = "llvm_toolchain",
+    llvm_version = "18.1.8",
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_amd64//:sysroot",
+    targets = ["linux-x86_64"],
+)
+llvm.sysroot(
+    name = "llvm_toolchain",
+    label = "@sysroot_linux_arm64//:sysroot",
+    targets = ["linux-aarch64"],
+)
+use_repo(llvm, "llvm_toolchain")
+
+register_toolchains("@llvm_toolchain//:all", dev_dependency = True)

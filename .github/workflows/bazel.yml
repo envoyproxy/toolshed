@@ -30,31 +30,6 @@ jobs:
           - .github/workflows/bazel.yml
           - .github/workflows/_bazel.yml
 
-  test:
-    needs: request
-    if: >-
-      always()
-      && fromJSON(needs.request.outputs.run || 'false')
-    uses: ./.github/workflows/_bazel.yml
-    with:
-      action: test
-      bazel-args: >-
-        --config=ci
-        ${{ matrix.mode == 'bzlmod'
-            && '--enable_bzlmod'
-            || '' }}
-      bazel-mode: ${{ matrix.mode }}
-      bazel-path: bazel
-      targets: >-
-        //...
-        //sysroot:sysroots
-    strategy:
-      fail-fast: false
-      matrix:
-        mode:
-        - workspace
-        - bzlmod
-
   build:
     permissions:
       contents: write
@@ -72,7 +47,7 @@ jobs:
       bazel-args: >-
         --config=ci
         ${{ matrix.mode == 'bzlmod'
-            && '--enable_bzlmod'
+            && '--enable_bzlmod --noenable_workspace'
             || '' }}
       bazel-path: bazel
       bazel-mode: ${{ matrix.mode }}
@@ -80,6 +55,56 @@ jobs:
         //...
         //sysroot:sysroots
       upload: ${{ matrix.mode == 'workspace' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+        - workspace
+        - bzlmod
+
+  test:
+    needs: request
+    if: >-
+      always()
+      && fromJSON(needs.request.outputs.run || 'false')
+    uses: ./.github/workflows/_bazel.yml
+    with:
+      action: test
+      bazel-args: >-
+        --config=ci
+        ${{ matrix.mode == 'bzlmod'
+            && '--enable_bzlmod --noenable_workspace'
+            || '' }}
+      bazel-mode: ${{ matrix.mode }}
+      bazel-path: bazel
+      targets: >-
+        //...
+        //sysroot:sysroots
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+        - workspace
+        - bzlmod
+
+  test-external:
+    needs: request
+    if: >-
+      always()
+      && fromJSON(needs.request.outputs.run || 'false')
+    uses: ./.github/workflows/_bazel.yml
+    with:
+      action: test
+      bazel-args: >-
+        --config=ci
+        ${{ matrix.mode == 'bzlmod'
+            && '--enable_bzlmod --noenable_workspace'
+            || '' }}
+      bazel-mode: ${{ matrix.mode }}
+      bazel-path: bazel/tests/external
+      targets: >-
+        @envoy_toolshed//...
+        @envoy_toolshed//sysroot:sysroots
     strategy:
       fail-fast: false
       matrix:
@@ -99,7 +124,7 @@ jobs:
         --config=ci
         --config=gcc
         ${{ matrix.mode == 'bzlmod'
-            && '--enable_bzlmod'
+            && '--enable_bzlmod --noenable_workspace'
             || '' }}
       bazel-mode: ${{ matrix.mode }}-gcc
       bazel-path: bazel
@@ -134,7 +159,7 @@ jobs:
         exec bazel build \
           --config=ci \
           --config=macos \
-          ${{ matrix.mode == 'bzlmod' && '--enable_bzlmod' || '' }} \
+          ${{ matrix.mode == 'bzlmod' && '--enable_bzlmod --noenable_workspace' || '' }} \
           //...
       working-directory: bazel
 
@@ -146,8 +171,9 @@ jobs:
     name: Bazel
     needs:
     - request
-    - test
     - build
+    - test
+    - test-external
     - test-gcc
     - test-macos
     steps:

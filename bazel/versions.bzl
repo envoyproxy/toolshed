@@ -45,6 +45,8 @@ VERSIONS = {
         "sha256": "092f841dd9ea8e736ea834f304877a25190a762d0f0a6c8edac9f94aac8bbf16",
         "strip_prefix": "bazel-lib-{version}",
         "url": "https://github.com/{repo}/archive/v{version}.tar.gz",
+        "patches": ["@envoy_toolshed//patches:aspect.patch"],
+        "patch_args": ["-p1"],
     },
     "bazel_skylib": {
         "type": "github_archive",
