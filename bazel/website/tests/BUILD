@@ -36,6 +36,7 @@ genrule(
     outs = ["gzip.sh"],
     cmd = """
 cat > $@ << 'EOF'
+#!/bin/bash
 exec gzip "$$@"
 EOF
 chmod +x $@
