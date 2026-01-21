@@ -1,0 +1,19 @@
+services:
+  bazel:
+    build:
+      args:
+        USER_NAME: ${USER_NAME:-ubuntu}
+        USER_ID: ${UID:-1000}
+      context: .
+      dockerfile: bazel/Dockerfile
+    entrypoint:
+    - "/bin/bash"
+    - "-c"
+    - |
+      set -e
+
+      sudo -EHs -u ${USER_NAME:-ubuntu} bash
+    volumes:
+    - ${SOURCE_DIR:-..}:/source
+    - ${EXTRA_DEV:-/tmp/extra_dev}:/extra_dev
+    working_dir: /source/bazel
