@@ -31,21 +31,10 @@ pkg_filegroup(
 
 exports_files(["test_config.py"])
 
-genrule(
-    name = "gzip_tool",
-    outs = ["gzip.sh"],
-    cmd = """
-cat > $@ << 'EOF'
-#!/bin/bash
-exec gzip "$$@"
-EOF
-chmod +x $@
-    """,
-)
-
+# Use static gzip wrapper script for compression tests
 sh_binary(
     name = "gzip",
-    srcs = [":gzip_tool"],
+    srcs = ["gzip_wrapper.sh"],
 )
 
 # Test: Basic website generation with default Pelican generator
