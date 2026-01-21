@@ -5,7 +5,8 @@ ARG APT_BASE_PKGS="\
     curl \
     gnupg \
     language-pack-en-base \
-    software-properties-common"
+    software-properties-common \
+    sudo"
 ARG USER_NAME
 ARG USER_ID
 ARG GROUP_ID
