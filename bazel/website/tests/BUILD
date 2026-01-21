@@ -1,5 +1,6 @@
 load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup", "pkg_files")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//website:macros.bzl", "static_website", "website_theme")
 
 # Test content files
@@ -28,8 +29,13 @@ pkg_filegroup(
     srcs = [":test_theme_templates"],
 )
 
-# Test configuration
 exports_files(["test_config.py"])
+
+# Use static gzip wrapper script for compression tests
+sh_binary(
+    name = "gzip",
+    srcs = ["gzip_wrapper.sh"],
+)
 
 # Test: Basic website generation with default Pelican generator
 static_website(
@@ -86,6 +92,20 @@ static_website(
     mappings = {},  # Empty mappings to test flexibility
 )
 
+static_website(
+    name = "test_with_compression",
+    content = ":test_content",
+    theme = ":test_theme",
+    config = ":test_config.py",
+    content_path = "content",
+    output_path = "output",
+    data = None,
+    mappings = {},
+    exclude = [],
+    compressor = ":gzip",
+    extension = "tar.gz",
+)
+
 # Shell test for parameterized tests
 sh_test(
     name = "website_parameterized_test",
@@ -94,6 +114,18 @@ sh_test(
     data = [
         ":test_custom_exclude",
         ":test_custom_mappings",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+sh_test(
+    name = "website_compression_test",
+    size = "small",
+    srcs = ["run_compression_test.sh"],
+    data = [
+        ":test_with_compression",
     ],
     deps = [
         "@bazel_tools//tools/bash/runfiles",

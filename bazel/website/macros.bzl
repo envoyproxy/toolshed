@@ -96,7 +96,7 @@ def static_website(
             TAR_COMMAND=$$(which tar)
         fi
 
-        $$TAR_COMMAND -xf $$SOURCE $${DECOMPRESS_ARGS:+DECOMPRESS_ARGS}
+        $$TAR_COMMAND -xf $$SOURCE $${DECOMPRESS_ARGS:+$$DECOMPRESS_ARGS}
 
         while IFS= read -r CMD; do
             $$CMD
