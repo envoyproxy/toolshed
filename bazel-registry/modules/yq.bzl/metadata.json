@@ -1,0 +1,11 @@
+{
+  "homepage": "https://github.com/bazel-contrib/yq.bzl",
+  "maintainers": [],
+  "repository": [
+    "github:bazel-contrib/yq.bzl"
+  ],
+  "versions": [
+    "0.1.1.envoy"
+  ],
+  "yanked_versions": {}
+}
