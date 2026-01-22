@@ -3,56 +3,56 @@
 load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 
 _DEFAULT_MODULE_FILTER = """
-gsub("\\n"; " ") |
-[scan("bazel_dep\\\\([^)]*name\\\\s*=\\\\s*\\"([^\\"]+)\\"[^)]*version\\\\s*=\\\\s*\\"([^\\"]+)\\"[^)]*\\\\)")] |
-map({name: .[0], version: .[1]}) |
-map({(.name): {minimum_version: .version}}) |
-add // {}
+gsub("\\n"; " ")
+| [scan("bazel_dep\\\\([^)]*name\\\\s*=\\\\s*\\"([^\\"]+)\\"[^)]*version\\\\s*=\\\\s*\\"([^\\"]+)\\"[^)]*\\\\)")]
+| map({name: .[0], version: .[1]})
+| map({(.name): {minimum_version: .version}})
+| add // {}
 """
 
 _DEFAULT_LOCK_FILTER = """
 def version_key:
   if contains("-") then
-    (split("-") | {
-      release: (.[0] | split(".") | map(if test("^[0-9]+$") then [0, tonumber] else [1, .] end)),
-      has_prerelease: true,
-      prerelease: (.[1:] | join("-") | split(".") | map(if test("^[0-9]+$") then [0, tonumber] else [1, .] end))
-    })
+    (split("-")
+     | {release: (.[0]
+                  | split(".")
+                  | map(if test("^[0-9]+$") then [0, tonumber] else [1, .] end)),
+        has_prerelease: true,
+        prerelease: (.[1:]
+                     | join("-")
+                     | split(".")
+                     | map(if test("^[0-9]+$") then [0, tonumber] else [1, .] end))})
   else
-    {
-      release: (split(".") | map(if test("^[0-9]+$") then [0, tonumber] else [1, .] end)),
-      has_prerelease: false,
-      prerelease: []
-    }
-  end |
-  [.release, (if .has_prerelease then 0 else 1 end), .prerelease];
+    {release: (split(".")
+               | map(if test("^[0-9]+$") then [0, tonumber] else [1, .] end)),
+     has_prerelease: false,
+     prerelease: []}
+  end
+  | [.release, (if .has_prerelease then 0 else 1 end), .prerelease];
 
-.registryFileHashes // {} |
-keys |
-map(select(test("^https://[^/]+/modules/[^/]+/[^/]+/MODULE.bazel$"))) |
-map(capture("^(?<registry>https://[^/]+)/modules/(?<name>[^/]+)/(?<version>[^/]+)/MODULE.bazel$")) |
-group_by(.name) |
-map({
-  name: .[0].name,
-  registry: .[0].registry,
-  version: (map({version: .version, key: (.version | version_key)}) |
-            sort_by(.key) |
-            last |
-            .version)
-}) |
-map({(.name): {resolved_version: .version, registry: .registry}}) |
-add // {}
+.registryFileHashes // {}
+| keys
+| map(select(test("^https://[^/]+/modules/[^/]+/[^/]+/MODULE.bazel$")))
+| map(capture("^(?<registry>https://[^/]+)/modules/(?<name>[^/]+)/(?<version>[^/]+)/MODULE.bazel$"))
+| group_by(.name)
+| map({name: .[0].name,
+       registry: .[0].registry,
+       version: (map({version: .version, key: (.version | version_key)})
+                 | sort_by(.key)
+                 | last
+                 | .version)})
+| map({(.name): {resolved_version: .version, registry: .registry}})
+| add // {}
 """
 
 _MERGE_FILTER = """
-.[0] as $min | .[1] as $res |
-# Only process modules that have a minimum_version (direct dependencies)
-$min | keys | map(. as $key | {
-  ($key): (
-    $min[$key] * (if $res[$key] then $res[$key] else {} end)
-  )
-}) |
-add // {}
+.[0] as $min
+| .[1] as $res
+| $min
+| keys
+| map(. as $key
+      | {($key): ($min[$key] * (if $res[$key] then $res[$key] else {} end))})
+| add // {}
 """
 
 def module_versions(
