@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test that module_versions outputs the required new fields for Envoy compatibility
-# Tests for: version, minimum_version fields
+# Tests for: version, minimum_version, registry fields
 
 set -euo pipefail
 
@@ -91,7 +91,6 @@ else
 fi
 
 # Test 6: Check that version can differ from minimum_version (rules_python case)
-# Note: This test is informational and doesn't affect overall pass/fail
 echo "Test 6: Checking support for different minimum_version vs version"
 if "$JQ" -e '.rules_python' "$OUTPUT_FILE" > /dev/null 2>&1; then
     python_version=$("$JQ" -r '.rules_python.version' "$OUTPUT_FILE")
