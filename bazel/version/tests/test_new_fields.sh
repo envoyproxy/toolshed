@@ -40,7 +40,7 @@ else
 fi
 
 # Test 2: Check that 'resolved_version' field does NOT exist (renamed to 'version')
-echo "Test 2: Checking 'resolved_version' field does not exist"
+echo "Test 2: Checking resolved_version field does not exist"
 has_resolved=$("$JQ" -r 'any(.[]; has("resolved_version"))' "$OUTPUT_FILE")
 if [ "$has_resolved" = "false" ]; then
     echo "  ✓ PASS: No modules have 'resolved_version' field (correctly renamed to 'version')"
@@ -101,6 +101,7 @@ else
 fi
 
 # Test 8: Check URL construction matches registry + module path
+# Note: Only validates the first URL since current implementation produces single-element arrays
 echo "Test 8: Checking URL construction matches registry + module path"
 url_construction_valid=$("$JQ" -r '
   all(. | to_entries[]; 
@@ -138,6 +139,7 @@ else
 fi
 
 # Test 10: Check that version can differ from minimum_version (rules_python case)
+# Note: This test is informational and doesn't affect overall pass/fail
 echo "Test 10: Checking support for different minimum_version vs version"
 if "$JQ" -e '.rules_python' "$OUTPUT_FILE" > /dev/null 2>&1; then
     python_version=$("$JQ" -r '.rules_python.version' "$OUTPUT_FILE")
@@ -151,7 +153,8 @@ if "$JQ" -e '.rules_python' "$OUTPUT_FILE" > /dev/null 2>&1; then
         ((failures++))
     fi
 else
-    echo "  ⚠ SKIP: rules_python not in test data"
+    # Not a failure - just informational
+    echo "  ⚠ INFO: rules_python not in test data (test skipped)"
 fi
 
 echo ""
