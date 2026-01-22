@@ -1,0 +1,11 @@
+{
+    "homepage": "https://icu.unicode.org/",
+    "maintainers": [],
+    "repository": [
+        "github:unicode-org/icu"
+    ],
+    "versions": [
+        "78.2.envoy"
+    ],
+    "yanked_versions": {}
+}
