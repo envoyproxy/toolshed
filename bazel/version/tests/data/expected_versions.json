@@ -2,21 +2,33 @@
   "aspect_bazel_lib": {
     "minimum_version": "2.21.2",
     "registry": "https://bcr.bazel.build",
-    "resolved_version": "2.21.2"
+    "urls": [
+      "https://bcr.bazel.build/modules/aspect_bazel_lib/2.21.2/source.json"
+    ],
+    "version": "2.21.2"
   },
   "bazel_skylib": {
     "minimum_version": "1.8.0",
     "registry": "https://bcr.bazel.build",
-    "resolved_version": "1.8.0"
+    "urls": [
+      "https://bcr.bazel.build/modules/bazel_skylib/1.8.0/source.json"
+    ],
+    "version": "1.8.0"
   },
   "platforms": {
     "minimum_version": "1.0.0",
     "registry": "https://bcr.bazel.build",
-    "resolved_version": "1.0.0"
+    "urls": [
+      "https://bcr.bazel.build/modules/platforms/1.0.0/source.json"
+    ],
+    "version": "1.0.0"
   },
   "rules_python": {
     "minimum_version": "1.6.3",
     "registry": "https://bcr.bazel.build",
-    "resolved_version": "1.7.0"
+    "urls": [
+      "https://bcr.bazel.build/modules/rules_python/1.7.0/source.json"
+    ],
+    "version": "1.7.0"
   }
 }
