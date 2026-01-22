@@ -41,7 +41,7 @@ def version_key:
                  | sort_by(.key)
                  | last
                  | .version)})
-| map({(.name): {resolved_version: .version, registry: .registry}})
+| map({(.name): {version: .version, registry: .registry}})
 | add // {}
 """
 
@@ -51,7 +51,7 @@ _MERGE_FILTER = """
 | $min
 | keys
 | map(. as $key
-      | {($key): ($min[$key] * (if $res[$key] then $res[$key] else {} end))})
+      | {($key): (($min[$key] // {}) * ($res[$key] // {}))})
 | add // {}
 """
 
@@ -89,12 +89,12 @@ def module_versions(
     {
       "aspect_bazel_lib": {
         "minimum_version": "2.22.0",
-        "resolved_version": "2.22.0",
+        "version": "2.22.0",
         "registry": "https://bcr.bazel.build"
       },
       "rules_python": {
         "minimum_version": "1.7.0",
-        "resolved_version": "1.7.0",
+        "version": "1.7.0",
         "registry": "https://bcr.bazel.build"
       }
     }
