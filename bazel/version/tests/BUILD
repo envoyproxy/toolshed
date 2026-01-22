@@ -35,3 +35,17 @@ sh_test(
     },
     toolchains = ["@jq_toolchains//:resolved_toolchain"],
 )
+
+sh_test(
+    name = "new_fields_test",
+    size = "small",
+    srcs = ["test_new_fields.sh"],
+    data = [
+        ":test_versions",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+    env = {
+        "JQ_BIN": "$(JQ_BIN)",
+    },
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
