@@ -101,6 +101,10 @@ cc_library(
         ".",
         "src",
     ],
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
     visibility = ["//visibility:private"],
 )
 
@@ -153,6 +157,10 @@ cc_library(
     includes = [
         ".",
         "src",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
     ],
     visibility = ["//visibility:private"],
     deps = [":hs_common"],
@@ -212,6 +220,10 @@ cc_library(
         "src",
         "include",  # For boost-patched headers
     ],
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         ":hs_runtime",
@@ -230,6 +242,10 @@ cc_library(
     ],
     strip_include_prefix = "src",
     include_prefix = "hs",
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         ":hs_compile",
