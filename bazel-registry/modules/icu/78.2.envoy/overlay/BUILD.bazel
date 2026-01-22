@@ -5,6 +5,8 @@ exports_files(["source/data/in/icudt78l.dat"])
 cc_library(
     name = "icudata",
     srcs = ["icudata.S"],
+    data = ["source/data/in/icudt78l.dat"],
+    copts = ["-I."],
     alwayslink = 1,
     visibility = ["//visibility:public"],
 )
