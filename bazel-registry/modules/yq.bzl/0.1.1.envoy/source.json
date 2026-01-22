@@ -1,0 +1,12 @@
+{
+  "integrity": "sha256-tR2CtWGnirIdJlEHsO2/mNaKOQtBA5ktCwMli7OBlgE=",
+  "strip_prefix": "yq.bzl-0.1.1",
+  "url": "https://github.com/bazel-contrib/yq.bzl/releases/download/v0.1.1/yq.bzl-v0.1.1.tar.gz",
+  "patch_strip": 1,
+  "patches": {
+    "yq.patch": "sha256-mF5rntxrLQT96QpteskpEQAoM8JAeKrZmpIeOy7Z9QU="
+  },
+  "overlay": {
+    "MODULE.bazel": "sha256-nfPAKWo6RDnGN4++4sJTyVnzDUFF0jI8k+Z9mj+NaZ0="
+  }
+}
