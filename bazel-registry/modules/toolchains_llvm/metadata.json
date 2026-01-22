@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/bazel-contrib/toolchains_llvm",
+    "maintainers": [],
+    "repository": [
+        "github:bazel-contrib/toolchains_llvm"
+    ],
+    "versions": [
+        "1.6.0.envoy"
+    ],
+    "yanked_versions": {}
+}

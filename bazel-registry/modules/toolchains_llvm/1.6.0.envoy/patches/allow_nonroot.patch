@@ -1,0 +1,49 @@
+--- a/toolchain/extensions/llvm.bzl	2025-12-09 09:13:15.000000000 +0000
++++ b/toolchain/extensions/llvm.bzl	2026-01-22 12:17:12.564204880 +0000
+@@ -50,13 +50,21 @@
+     return constraints
+ 
+ def _llvm_impl_(module_ctx):
++    # Track registered toolchain names (first module wins)
++    registered_toolchain_names = {}
++    
+     for mod in module_ctx.modules:
+-        if not mod.is_root:
+-            fail("Only the root module can use the 'llvm' extension")
+-        toolchain_names = []
++        # REMOVED: Root module check to allow non-root modules to use the extension
++        
+         for toolchain_attr in mod.tags.toolchain:
+             name = toolchain_attr.name
+-            toolchain_names.append(name)
++            
++            # Skip if already registered by another module
++            if name in registered_toolchain_names:
++                continue
++            
++            registered_toolchain_names[name] = mod.name
++            
+             attrs = {
+                 key: getattr(toolchain_attr, key)
+                 for key in dir(toolchain_attr)
+@@ -77,13 +85,15 @@
+                 **attrs
+             )
+ 
+-        # Check that every defined toolchain_root or sysroot has a corresponding toolchain.
++        # Check that every defined toolchain_root or sysroot has a corresponding toolchain
++        # Only validate for the current module's tags
++        toolchain_names_for_module = [t.name for t in mod.tags.toolchain]
+         for root in mod.tags.toolchain_root:
+-            if root.name not in toolchain_names:
+-                fail("toolchain_root '%s' does not have a corresponding toolchain" % root.name)
++            if root.name not in toolchain_names_for_module:
++                fail("toolchain_root '%s' does not have a corresponding toolchain in module '%s'" % (root.name, mod.name))
+         for root in mod.tags.sysroot:
+-            if root.name not in toolchain_names:
+-                fail("sysroot '%s' does not have a corresponding toolchain" % root.name)
++            if root.name not in toolchain_names_for_module:
++                fail("sysroot '%s' does not have a corresponding toolchain in module '%s'" % (root.name, mod.name))
+ 
+     if bazel_features.external_deps.extension_metadata_has_reproducible:
+         return module_ctx.extension_metadata(reproducible = True)
