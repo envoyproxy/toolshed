@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test that module_versions outputs the required new fields for Envoy compatibility
-# Tests for: version, urls, minimum_version fields
+# Tests for: version, minimum_version fields
 
 set -euo pipefail
 
@@ -49,39 +49,8 @@ else
     ((failures++))
 fi
 
-# Test 3: Check that 'urls' field exists and is an array
-echo "Test 3: Checking 'urls' field exists and is an array for all modules"
-urls_valid=$("$JQ" -r 'all(.[]; has("urls") and (.urls | type == "array"))' "$OUTPUT_FILE")
-if [ "$urls_valid" = "true" ]; then
-    echo "  ✓ PASS: All modules have 'urls' field as an array"
-else
-    echo "  ✗ FAIL: Some modules are missing 'urls' field or it's not an array"
-    ((failures++))
-fi
-
-# Test 4: Check that 'urls' array is not empty
-echo "Test 4: Checking 'urls' arrays are not empty"
-urls_not_empty=$("$JQ" -r 'all(.[]; .urls | length > 0)' "$OUTPUT_FILE")
-if [ "$urls_not_empty" = "true" ]; then
-    echo "  ✓ PASS: All modules have non-empty 'urls' arrays"
-else
-    echo "  ✗ FAIL: Some modules have empty 'urls' arrays"
-    ((failures++))
-fi
-
-# Test 5: Check that 'urls' contain expected format (registry URL with source.json)
-echo "Test 5: Checking 'urls' contain source.json URLs"
-urls_format=$("$JQ" -r 'all(.[] | .urls[0]; test("/modules/.+/[^/]+/source\\.json$"))' "$OUTPUT_FILE")
-if [ "$urls_format" = "true" ]; then
-    echo "  ✓ PASS: All 'urls' follow expected format (.../modules/NAME/VERSION/source.json)"
-else
-    echo "  ✗ FAIL: Some 'urls' do not follow expected format"
-    echo "  Expected format: .../modules/NAME/VERSION/source.json"
-    ((failures++))
-fi
-
-# Test 6: Check that 'minimum_version' field exists
-echo "Test 6: Checking 'minimum_version' field exists for all modules"
+# Test 3: Check that 'minimum_version' field exists
+echo "Test 3: Checking 'minimum_version' field exists for all modules"
 has_minimum=$("$JQ" -r 'all(.[]; has("minimum_version"))' "$OUTPUT_FILE")
 if [ "$has_minimum" = "true" ]; then
     echo "  ✓ PASS: All modules have 'minimum_version' field"
@@ -90,8 +59,8 @@ else
     ((failures++))
 fi
 
-# Test 7: Check that 'registry' field exists
-echo "Test 7: Checking 'registry' field exists for all modules"
+# Test 4: Check that 'registry' field exists
+echo "Test 4: Checking 'registry' field exists for all modules"
 has_registry=$("$JQ" -r 'all(.[]; has("registry"))' "$OUTPUT_FILE")
 if [ "$has_registry" = "true" ]; then
     echo "  ✓ PASS: All modules have 'registry' field"
@@ -100,34 +69,17 @@ else
     ((failures++))
 fi
 
-# Test 8: Check URL construction matches registry + module path
-# Note: Only validates the first URL since current implementation produces single-element arrays
-echo "Test 8: Checking URL construction matches registry + module path"
-url_construction_valid=$("$JQ" -r '
-  all(. | to_entries[]; 
-    .value.urls[0] == (.value.registry + "/modules/" + .key + "/" + .value.version + "/source.json")
-  )
-' "$OUTPUT_FILE")
-if [ "$url_construction_valid" = "true" ]; then
-    echo "  ✓ PASS: URLs correctly constructed from registry + module name + version"
-else
-    echo "  ✗ FAIL: Some URLs not correctly constructed"
-    ((failures++))
-fi
-
-# Test 9: Verify specific example (aspect_bazel_lib)
-echo "Test 9: Checking specific module (aspect_bazel_lib) has correct structure"
+# Test 5: Verify specific example (aspect_bazel_lib)
+echo "Test 5: Checking specific module (aspect_bazel_lib) has correct structure"
 if "$JQ" -e '.aspect_bazel_lib' "$OUTPUT_FILE" > /dev/null 2>&1; then
     aspect_version=$("$JQ" -r '.aspect_bazel_lib.version' "$OUTPUT_FILE")
     aspect_min=$("$JQ" -r '.aspect_bazel_lib.minimum_version' "$OUTPUT_FILE")
-    aspect_urls=$("$JQ" -r '.aspect_bazel_lib.urls | length' "$OUTPUT_FILE")
     aspect_registry=$("$JQ" -r '.aspect_bazel_lib.registry' "$OUTPUT_FILE")
     
-    if [ -n "$aspect_version" ] && [ -n "$aspect_min" ] && [ "$aspect_urls" -gt 0 ] && [ -n "$aspect_registry" ]; then
+    if [ -n "$aspect_version" ] && [ -n "$aspect_min" ] && [ -n "$aspect_registry" ]; then
         echo "  ✓ PASS: aspect_bazel_lib has all required fields"
         echo "    - version: $aspect_version"
         echo "    - minimum_version: $aspect_min"
-        echo "    - urls count: $aspect_urls"
         echo "    - registry: $aspect_registry"
     else
         echo "  ✗ FAIL: aspect_bazel_lib missing some fields"
@@ -138,9 +90,9 @@ else
     ((failures++))
 fi
 
-# Test 10: Check that version can differ from minimum_version (rules_python case)
+# Test 6: Check that version can differ from minimum_version (rules_python case)
 # Note: This test is informational and doesn't affect overall pass/fail
-echo "Test 10: Checking support for different minimum_version vs version"
+echo "Test 6: Checking support for different minimum_version vs version"
 if "$JQ" -e '.rules_python' "$OUTPUT_FILE" > /dev/null 2>&1; then
     python_version=$("$JQ" -r '.rules_python.version' "$OUTPUT_FILE")
     python_min=$("$JQ" -r '.rules_python.minimum_version' "$OUTPUT_FILE")

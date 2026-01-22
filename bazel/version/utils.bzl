@@ -41,7 +41,7 @@ def version_key:
                  | sort_by(.key)
                  | last
                  | .version)})
-| map({(.name): {version: .version, registry: .registry, urls: [.registry + "/modules/" + .name + "/" + .version + "/source.json"]}})
+| map({(.name): {version: .version, registry: .registry}})
 | add // {}
 """
 
@@ -90,14 +90,12 @@ def module_versions(
       "aspect_bazel_lib": {
         "minimum_version": "2.22.0",
         "version": "2.22.0",
-        "registry": "https://bcr.bazel.build",
-        "urls": ["https://bcr.bazel.build/modules/aspect_bazel_lib/2.22.0/source.json"]
+        "registry": "https://bcr.bazel.build"
       },
       "rules_python": {
         "minimum_version": "1.7.0",
         "version": "1.7.0",
-        "registry": "https://bcr.bazel.build",
-        "urls": ["https://bcr.bazel.build/modules/rules_python/1.7.0/source.json"]
+        "registry": "https://bcr.bazel.build"
       }
     }
     ```
