@@ -139,8 +139,8 @@
     "https://bcr.bazel.build/modules/rules_license/1.0.0/source.json": "a52c89e54cc311196e478f8382df91c15f7a2bfdf4c6cd0e2675cc2ff0b56efb",
     "https://bcr.bazel.build/modules/rules_pkg/0.7.0/MODULE.bazel": "df99f03fc7934a4737122518bb87e667e62d780b610910f0447665a7e2be62dc",
     "https://bcr.bazel.build/modules/rules_pkg/1.0.1/MODULE.bazel": "5b1df97dbc29623bccdf2b0dcd0f5cb08e2f2c9050aab1092fd39a41e82686ff",
-    "https://bcr.bazel.build/modules/rules_pkg/1.2.0/MODULE.bazel": "c7db3c2b407e673c7a39e3625dc05dc9f12d6682cbd82a3a5924a13b491eda7e",
-    "https://bcr.bazel.build/modules/rules_pkg/1.2.0/source.json": "9062e00845bf91a4247465d371baa837adf9b6ff44c542f73ba084f07667e1dc",
+    "https://bcr.bazel.build/modules/rules_pkg/1.1.0/MODULE.bazel": "9db8031e71b6ef32d1846106e10dd0ee2deac042bd9a2de22b4761b0c3036453",
+    "https://bcr.bazel.build/modules/rules_pkg/1.1.0/source.json": "fef768df13a92ce6067e1cd0cdc47560dace01354f1d921cfb1d632511f7d608",
     "https://bcr.bazel.build/modules/rules_proto/4.0.0/MODULE.bazel": "a7a7b6ce9bee418c1a760b3d84f83a299ad6952f9903c67f19e4edd964894e06",
     "https://bcr.bazel.build/modules/rules_proto/5.3.0-21.7/MODULE.bazel": "e8dff86b0971688790ae75528fe1813f71809b5afd57facb44dad9e8eca631b7",
     "https://bcr.bazel.build/modules/rules_proto/6.0.2/MODULE.bazel": "ce916b775a62b90b61888052a416ccdda405212b6aaeb39522f7dc53431a5e73",
@@ -187,6 +187,40 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//sysroot:extensions.bzl%sysroot_extension": {
+      "general": {
+        "bzlTransitiveDigest": "A8YpcvoFnaOaXB3M23VhYBBV+2UI5iYs+aozIMuRJQU=",
+        "usagesDigest": "fd4AN2mcPqzNnr01G/zQvAfWBgY+jPTrWBMQzVIp32k=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "sysroot_linux_amd64": {
+            "bzlFile": "@@//sysroot:sysroot.bzl",
+            "ruleClassName": "sysroot",
+            "attributes": {
+              "version": "0.1.45",
+              "sha256": "183baed6a57747c76750fbeb8eedb149a9a3f7d87df9c4bd06351b5048a9f58f",
+              "arch": "amd64",
+              "glibc_version": "2.31",
+              "stdcc_version": "13"
+            }
+          },
+          "sysroot_linux_arm64": {
+            "bzlFile": "@@//sysroot:sysroot.bzl",
+            "ruleClassName": "sysroot",
+            "attributes": {
+              "version": "0.1.45",
+              "sha256": "b69a1459a0e8fa170700b166cd8239a54c806524055ae1e1d4451df72e839d73",
+              "arch": "arm64",
+              "glibc_version": "2.31",
+              "stdcc_version": "13"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
     "@@pybind11_bazel~//:python_configure.bzl%extension": {
       "general": {
         "bzlTransitiveDigest": "dFd3A3f+jPCss+EDKMp/jxjcUhfMku130eT1KGxSCwA=",
