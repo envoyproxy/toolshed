@@ -10,6 +10,6 @@
         "icu.patch": "sha256-KPvQw5GgJ4i8/81bRTBFjNczb5j0ache/yn/fDEIJA0=",
         "fix-shebangs.patch": "sha256-3qGrN2SP92mR4vN/M8dl4qroVUTeipV4gt96N40MUXw=",
         "icu4c_source_common_putil.cpp.patch": "sha256-UKuTZw/pjBL0yOvVyKevRbZAJBaNTyNJUyBdGt0uzv4=",
-        "icu4c_source_common_BUILD.bazel.patch": "sha256-34mHMwxBuIDMETmlxcEgJJ/rozU655v6Nz+/T7+aeKY="
+        "icu4c_source_common_BUILD.bazel.patch": "sha256-KKj+wYwf1a3f22hDDfSW0cV9oGZB9A77FINgxnbrils="
     }
 }

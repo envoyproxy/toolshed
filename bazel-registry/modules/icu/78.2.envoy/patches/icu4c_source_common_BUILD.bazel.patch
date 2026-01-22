@@ -44,14 +44,15 @@ index e894ed9..b0c91e5 100644
 -    ],
 +    hdrs = glob(["*.h"]),
 +    srcs = glob(["*.cpp"]),
++    textual_hdrs = ["//:source/data/in/icudt78l.dat"],
      deps = [
          ":headers",
          # omit other deps b/c they are sys symbols
      ],
-+    data = ["//:source/data/in/icudt78l.dat"],
+-    data = ["//:source/data/in/icudt78l.dat"],
      local_defines = [
          "U_COMMON_IMPLEMENTATION",
-+        "ICU_DATA_DIR_BAZEL=\\\"$(rlocationpath //:source/data/in/icudt78l.dat)\\\"",
+-        "ICU_DATA_DIR_BAZEL=\\\"$(rlocationpath //:source/data/in/icudt78l.dat)\\\"",
      ],
 -    linkopts = ["-ldl"],
 +    linkopts = select({
