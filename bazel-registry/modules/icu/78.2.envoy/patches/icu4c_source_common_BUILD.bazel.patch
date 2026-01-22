@@ -1,5 +1,5 @@
 diff --git a/source/common/BUILD.bazel b/source/common/BUILD.bazel
-index e894ed9..b0c91e5 100644
+index e894ed9..496ec24 100644
 --- a/source/common/BUILD.bazel
 +++ b/source/common/BUILD.bazel
 @@ -13,10 +13,10 @@ package(
@@ -15,7 +15,7 @@ index e894ed9..b0c91e5 100644
  # not specified correctly. Use dependencies.txt in depstest for assistance. See
  # https://stackoverflow.com/q/66111709/2077918 .
  
-@@ -43,37 +43,22 @@ cc_library(
+@@ -43,37 +43,20 @@ cc_library(
  
  cc_library(
      name = "platform",
@@ -49,10 +49,8 @@ index e894ed9..b0c91e5 100644
 +        "//:icudata",
          # omit other deps b/c they are sys symbols
      ],
--    data = ["//:source/data/in/icudt78l.dat"],
      local_defines = [
          "U_COMMON_IMPLEMENTATION",
--        "ICU_DATA_DIR_BAZEL=\\\"$(rlocationpath //:source/data/in/icudt78l.dat)\\\"",
      ],
 -    linkopts = ["-ldl"],
 +    linkopts = select({
@@ -62,7 +60,7 @@ index e894ed9..b0c91e5 100644
  )
  
  cc_library(
-@@ -1214,6 +1198,6 @@ cc_library(
+@@ -1214,6 +1197,6 @@ cc_library(
          ":headers",
      ],
      local_defines = [
