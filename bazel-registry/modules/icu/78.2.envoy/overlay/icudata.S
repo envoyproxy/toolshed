@@ -1,3 +1,6 @@
+// ICU data symbol definition for Linux/GCC/Clang
+// This assembly file creates the icudt78_dat symbol that ICU's udata.cpp expects.
+// The .incbin directive includes the raw binary data from the .dat file.
     .globl icudt78_dat
     .section .rodata,"a",@progbits
     .balign 16

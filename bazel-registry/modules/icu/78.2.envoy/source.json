@@ -4,7 +4,7 @@
     "strip_prefix": "icu",
     "overlay": {
         "BUILD.bazel": "sha256-Fwi//vFH6UBe3+nlHBDf7ffIqWCE4CIKM/pZYlyGBYM=",
-        "icudata.S": "sha256-PqZBuCf/e8/YeaybxCcjDrS41N+478bGF/XfibYUOGc="
+        "icudata.S": "sha256-X+PIkEUU4x1BaFzalwCqyHsjRq0f+yI+dXEV0tkQIec="
     },
     "patch_strip": 1,
     "patches": {
