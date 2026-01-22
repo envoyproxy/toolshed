@@ -38,6 +38,10 @@ genrule(
 #endif /* CONFIG_H_ */
 EOF
 """,
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
 )
 
 # Generate hs_version.h
@@ -54,6 +58,10 @@ genrule(
 #endif /* HS_VERSION_H_C6428FAF8E3713 */
 EOF
 """,
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
 )
 
 # Generate Parser.cpp from Parser.rl using ragel
@@ -63,6 +71,10 @@ genrule(
     outs = ["src/parser/Parser.cpp"],
     cmd = "$(location @ragel//:ragel) $(location src/parser/Parser.rl) -o $@",
     tools = ["@ragel//:ragel"],
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
 )
 
 # Generate control_verbs.cpp from control_verbs.rl using ragel
@@ -72,6 +84,10 @@ genrule(
     outs = ["src/parser/control_verbs.cpp"],
     cmd = "$(location @ragel//:ragel) $(location src/parser/control_verbs.rl) -o $@",
     tools = ["@ragel//:ragel"],
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
 )
 
 # Common execution sources
