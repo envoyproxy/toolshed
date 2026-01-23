@@ -22,7 +22,7 @@ cmake(
         "CMAKE_C_FLAGS": "-fPIC",
         "CMAKE_CXX_FLAGS": "-fPIC",
     },
-    lib_source = "@boringssl-fips//:all",
+    lib_source = "//:all",
     out_static_libs = [
         "libcrypto_unvalidated.a",
         "libssl_unvalidated.a",
