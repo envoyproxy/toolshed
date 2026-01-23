@@ -50,21 +50,6 @@ cmake(
     visibility = ["//visibility:private"],
 )
 
-# Filegroups to extract specific files from cmake build for validation
-filegroup(
-    name = "_libcrypto_unvalidated",
-    srcs = [":_boringssl_build"],
-    output_group = "libcrypto_unvalidated.a",
-    visibility = ["//visibility:private"],
-)
-
-filegroup(
-    name = "_libssl_unvalidated",
-    srcs = [":_boringssl_build"],
-    output_group = "libssl_unvalidated.a",
-    visibility = ["//visibility:private"],
-)
-
 # Private: Run FIPS validation tests
 # This genrule runs the FIPS self-tests and bssl isfips check
 # Only outputs the validated libraries if all tests pass
@@ -72,8 +57,7 @@ filegroup(
 genrule(
     name = "_boringssl_validated",
     srcs = [
-        ":_libcrypto_unvalidated",
-        ":_libssl_unvalidated",
+        ":_boringssl_build",
     ],
     outs = [
         "lib/libcrypto.a",
@@ -82,11 +66,10 @@ genrule(
     cmd = """
         set -eo pipefail
         
-        # Setup paths - rules_foreign_cc outputs to a specific structure
-        # Use location of a specific library to find directories
-        LIB_DIR=$$(dirname $(location :_libcrypto_unvalidated))
-        BUILD_ROOT=$$(dirname $$LIB_DIR)
-        BIN_DIR=$$BUILD_ROOT/bin
+        # Setup paths - rules_foreign_cc creates a known structure under $(RULEDIR)
+        BUILD_ROOT="$(RULEDIR)/../_boringssl_build"
+        LIB_DIR="$$BUILD_ROOT/lib"
+        BIN_DIR="$$BUILD_ROOT/bin"
         OUT_DIR=$$(dirname $(location lib/libcrypto.a))
         
         echo "=== BoringSSL FIPS Validation Starting ==="
