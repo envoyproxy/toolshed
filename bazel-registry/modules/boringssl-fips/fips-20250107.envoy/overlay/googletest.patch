@@ -1,0 +1,18 @@
+--- CMakeLists.txt
++++ CMakeLists.txt
+@@ -483,6 +483,7 @@
+   add_dependencies(${target} global_target)
+ endfunction()
+ 
++if(BUILD_TESTING)
+ add_library(
+   boringssl_gtest
+   third_party/googletest/googlemock/src/gmock-all.cc
+@@ -491,6 +492,7 @@
+ target_include_directories(boringssl_gtest PRIVATE third_party/googletest/googlemock)
+ target_include_directories(boringssl_gtest PUBLIC third_party/googletest/googletest/include)
+ target_include_directories(boringssl_gtest PUBLIC third_party/googletest/googlemock/include)
++endif()
+ 
+ add_library(
+   crypto

@@ -63,6 +63,12 @@ cmake(
     build_data = [
         "@go-fips//:go",
     ],
+    # Patch CMakeLists.txt to wrap boringssl_gtest target in if(BUILD_TESTING)
+    # This prevents cmake from trying to build googletest when BUILD_TESTING=OFF
+    # BoringSSL's CMakeLists.txt unconditionally defines this target, but googletest
+    # sources aren't included in the tarball. This matches Envoy's approach.
+    patches = ["googletest.patch"],
+    patch_args = ["-p0"],
     visibility = ["//visibility:private"],
 )
 
