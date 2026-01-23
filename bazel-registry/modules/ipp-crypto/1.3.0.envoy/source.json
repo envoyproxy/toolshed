@@ -3,7 +3,7 @@
     "integrity": "sha256-odh8s7kP5HGGCeTp3YND/UUxu4FeabrZAaxrRvmLO1M=",
     "strip_prefix": "cryptography-primitives-1.3.0",
     "overlay": {
-        "BUILD.bazel": "sha256-DnuInKR+xu1VwlVGqeqzYxYRHl06wpHYLpnTtxZ22Ss=",
+        "BUILD.bazel": "sha256-iLha/oPVSF3DgAP6JZlFjtRZeqYQ8IBTdOjGmCrBzow=",
         "MODULE.bazel": "sha256-D2Tjv3DnfDZ4E7jOhDrI2VYbY748/eTyUVauvF1aITU="
     }
 }

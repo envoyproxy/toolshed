@@ -1,5 +1,14 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
+# Label flag to allow injection of crypto library (e.g., for FIPS builds)
+# Default to BoringSSL's crypto_internal target
+# Consuming workspaces can override with: --@ipp-crypto//:ssl=@their_ssl//:crypto
+label_flag(
+    name = "ssl",
+    build_setting_default = "@boringssl//:crypto_internal",
+    visibility = ["//visibility:public"],
+)
+
 # Note: This is a simplified BUILD file for the crypto_mb library.
 # The full implementation uses glob patterns to include all 218+ source files
 # from sources/ippcp/crypto_mb/src/**/*.c. This approach is necessary due to
@@ -17,9 +26,7 @@ cc_library(
     strip_include_prefix = "sources/ippcp/crypto_mb/include",
     visibility = ["//visibility:public"],
     deps = [
-        # IMPORTANT: The following external dependency MUST be provided by
-        # the consuming workspace using bazel_dep() or similar mechanisms:
-        # - "@boringssl//:crypto_internal" (BoringSSL internal crypto library)
+        ":ssl",
     ],
     copts = [
         "-O3",
