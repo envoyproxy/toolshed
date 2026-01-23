@@ -3,6 +3,9 @@
     "integrity": "sha256-JUJ9SpKkpZcNnAXUtokbFw9EJltjm5aEyx/hTWp3JAE=",
     "strip_prefix": "boringssl-298ac78507178d1e7d058eee1e52333f760eb0c1",
     "overlay": {
-        "BUILD.bazel": "sha256-cxibl8k5KbekluAj80i2FN52MScHi4Nw3Jmh11EjnIQ="
+        "BUILD.bazel": "sha256-Hh3qKz+onVYSDY8quL19nK3aMcpqhSp5qeS1hHdka3s="
+    },
+    "patches": {
+        "boringssl_fips.patch": "sha256-C12t6GYk50T9433JKL88283WAGDIpL2cmO+zF8FX5e4="
     }
 }

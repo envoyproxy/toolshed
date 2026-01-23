@@ -1,7 +1,5 @@
-load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
 load("@rules_cc//cc:defs.bzl", "cc_library")
-
-package(default_visibility = ["//visibility:public"])
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
 
 licenses(["notice"])  # Apache 2 license
 
@@ -9,7 +7,6 @@ licenses(["notice"])  # Apache 2 license
 # This is based on Envoy's implementation but adapted for rules_foreign_cc and bzlmod
 # Reference: https://boringssl.googlesource.com/boringssl/+/refs/heads/main/crypto/fipsmodule/FIPS.md
 
-# Filegroup containing all BoringSSL source files for cmake to build
 filegroup(
     name = "all_srcs",
     srcs = glob(
@@ -18,21 +15,15 @@ filegroup(
     ),
 )
 
-# Private: Build boringssl with FIPS mode enabled using cmake
-# This builds the libraries AND the bssl tool needed for validation
-# Based on Envoy's bazel/external/boringssl_fips.genrule_cmd
 cmake(
     name = "_boringssl_build",
     cache_entries = {
         "CMAKE_BUILD_TYPE": "Release",
         "FIPS": "1",
         "BUILD_SHARED_LIBS": "0",
-        # Set -fPIC for compatibility (FIPS module is already built with -fPIC)
         "CMAKE_C_FLAGS": "-fPIC",
         "CMAKE_CXX_FLAGS": "-fPIC",
-        # Explicitly set GO_EXECUTABLE for cmake's find_program
         "GO_EXECUTABLE": "$$EXT_BUILD_DEPS$$/go-fips/bin/go",
-        # Disable building tests to avoid googletest dependency issues
         "BUILD_TESTING": "OFF",
     },
     lib_source = ":all_srcs",
@@ -40,148 +31,109 @@ cmake(
         "libcrypto_unvalidated.a",
         "libssl_unvalidated.a",
     ],
-    # Build the bssl tool for validation
-    out_binaries = [
-        "bssl",
-    ],
-    # Build only the libraries and bssl tool
-    # We don't build run_tests because it depends on googletest which isn't
-    # included in the BoringSSL tarball. FIPS validation is done via bssl isfips.
+    out_binaries = ["bssl"],
     targets = [
         "crypto",
         "ssl",
         "bssl",
     ],
-    # Use Go from go-fips module for building tests
-    # The env variables tell cmake/ninja where to find Go
     env = {
         "GOROOT": "$$EXT_BUILD_DEPS$$/go-fips",
         "PATH": "$$EXT_BUILD_DEPS$$/go-fips/bin:$$PATH",
     },
-    # Provide Go toolchain for the build via build_data
-    # This makes go-fips available through $$EXT_BUILD_DEPS$$
-    build_data = [
-        "@go-fips//:go",
-    ],
-    # Patch CMakeLists.txt to wrap boringssl_gtest target in if(BUILD_TESTING)
-    # This prevents cmake from trying to build googletest when BUILD_TESTING=OFF
-    # BoringSSL's CMakeLists.txt unconditionally defines this target, but googletest
-    # sources aren't included in the tarball. This matches Envoy's approach.
-    patches = ["googletest.patch"],
-    patch_args = ["-p0"],
+    build_data = ["@go-fips//:go"],
     visibility = ["//visibility:private"],
 )
 
-# Private: Run FIPS validation tests
-# This genrule runs the FIPS self-tests and bssl isfips check
-# Only outputs the validated libraries if all tests pass
-# Based on Envoy's validate_fips() function in boringssl_fips.genrule_cmd
 genrule(
     name = "_boringssl_validated",
-    srcs = [
-        ":_boringssl_build",
-    ],
+    srcs = [":_boringssl_build"],
     outs = [
         "lib/libcrypto.a",
         "lib/libssl.a",
     ],
     cmd = """
-        set -eo pipefail
-        
-        # Setup paths - rules_foreign_cc creates a known structure under $(RULEDIR)
-        BUILD_ROOT="$(RULEDIR)/../_boringssl_build"
-        LIB_DIR="$$BUILD_ROOT/lib"
-        BIN_DIR="$$BUILD_ROOT/bin"
-        OUT_DIR=$$(dirname $(location lib/libcrypto.a))
-        
-        echo "=== BoringSSL FIPS Validation Starting ==="
-        echo "BUILD_ROOT: $$BUILD_ROOT"
-        echo "LIB_DIR: $$LIB_DIR"
-        echo "BIN_DIR: $$BIN_DIR"
-        
-        # Check that FIPS libraries were built (unvalidated intermediates)
-        if [ ! -f "$$LIB_DIR/libcrypto_unvalidated.a" ]; then
-            echo "ERROR: libcrypto_unvalidated.a not found in $$LIB_DIR" >&2
-            echo "Contents of LIB_DIR:" >&2
-            ls -la "$$LIB_DIR" 2>&1 || true
-            exit 1
-        fi
-        
-        if [ ! -f "$$LIB_DIR/libssl_unvalidated.a" ]; then
-            echo "ERROR: libssl_unvalidated.a not found in $$LIB_DIR" >&2
-            echo "Contents of LIB_DIR:" >&2
-            ls -la "$$LIB_DIR" 2>&1 || true
-            exit 1
-        fi
-        
-        echo "✓ FIPS libraries found"
-        
-        # Run FIPS validation using bssl isfips
-        # The bssl isfips command returns 0 and outputs "1" if FIPS mode is enabled
-        # This follows Envoy's validation approach
-        if [ -f "$$BIN_DIR/bssl" ]; then
-            echo "Running FIPS validation: bssl isfips..."
-            IS_FIPS=$$($$BIN_DIR/bssl isfips || true)
-            if [ "$$IS_FIPS" = "1" ]; then
-                echo "✓ FIPS mode is ENABLED - bssl isfips returned 1"
-            else
-                echo "✗ ERROR: FIPS mode verification FAILED" >&2
-                echo "  expected: 1" >&2
-                echo "  found: $$IS_FIPS" >&2
-                exit 1
-            fi
+    set -eo pipefail
+
+    BUILD_ROOT="$(RULEDIR)/../_boringssl_build"
+    LIB_DIR="$$BUILD_ROOT/lib"
+    BIN_DIR="$$BUILD_ROOT/bin"
+    OUT_DIR=$$(dirname $(location lib/libcrypto.a))
+
+    echo "=== BoringSSL FIPS Validation Starting ==="
+    echo "BUILD_ROOT: $$BUILD_ROOT"
+    echo "LIB_DIR: $$LIB_DIR"
+    echo "BIN_DIR: $$BIN_DIR"
+
+    # Check that FIPS libraries were built (unvalidated intermediates)
+    if [ ! -f "$$LIB_DIR/libcrypto_unvalidated.a" ]; then
+        echo "ERROR: libcrypto_unvalidated.a not found in $$LIB_DIR" >&2
+        echo "Contents of LIB_DIR:" >&2
+        ls -la "$$LIB_DIR" 2>&1 || true
+        exit 1
+    fi
+
+    if [ ! -f "$$LIB_DIR/libssl_unvalidated.a" ]; then
+        echo "ERROR: libssl_unvalidated.a not found in $$LIB_DIR" >&2
+        echo "Contents of LIB_DIR:" >&2
+        ls -la "$$LIB_DIR" 2>&1 || true
+        exit 1
+    fi
+
+    echo "✓ FIPS libraries found"
+
+    # Run FIPS validation using bssl isfips
+    # The bssl isfips command returns 0 and outputs "1" if FIPS mode is enabled
+    # This follows Envoy's validation approach
+    if [ -f "$$BIN_DIR/bssl" ]; then
+        echo "Running FIPS validation: bssl isfips..."
+        IS_FIPS=$$($$BIN_DIR/bssl isfips || true)
+        if [ "$$IS_FIPS" = "1" ]; then
+            echo "✓ FIPS mode is ENABLED - bssl isfips returned 1"
         else
-            echo "ERROR: bssl tool not found at $$BIN_DIR/bssl" >&2
-            echo "FIPS validation requires the bssl tool" >&2
-            echo "Contents of BIN_DIR:" >&2
-            ls -la "$$BIN_DIR" 2>&1 || true
+            echo "✗ ERROR: FIPS mode verification FAILED" >&2
+            echo "  expected: 1" >&2
+            echo "  found: $$IS_FIPS" >&2
             exit 1
         fi
-        
-        # If we get here, validation passed
-        echo "✓ FIPS validation tests passed"
-        
-        # Create output directory
-        mkdir -p $$OUT_DIR
-        
-        # Copy validated libraries to output with standard names
-        # Only validated libraries are exposed to consumers
-        cp "$$LIB_DIR/libcrypto_unvalidated.a" "$(location lib/libcrypto.a)"
-        cp "$$LIB_DIR/libssl_unvalidated.a" "$(location lib/libssl.a)"
-        
-        echo "=== BoringSSL FIPS Validation Complete ==="
-        echo "✓ FIPS-validated BoringSSL libraries are ready for consumption"
-        echo "  These libraries have passed FIPS validation and are safe to use"
+    else
+        echo "ERROR: bssl tool not found at $$BIN_DIR/bssl" >&2
+        echo "FIPS validation requires the bssl tool" >&2
+        echo "Contents of BIN_DIR:" >&2
+        ls -la "$$BIN_DIR" 2>&1 || true
+        exit 1
+    fi
+
+    echo "✓ FIPS validation tests passed"
+
+    mkdir -p $$OUT_DIR
+    cp "$$LIB_DIR/libcrypto_unvalidated.a" "$(location lib/libcrypto.a)"
+    cp "$$LIB_DIR/libssl_unvalidated.a" "$(location lib/libssl.a)"
+
+    echo "=== BoringSSL FIPS Validation Complete ==="
+    echo "✓ FIPS-validated BoringSSL libraries are ready for consumption"
+    echo "  These libraries have passed FIPS validation and are safe to use"
+
     """,
-    tools = [
-        "@go-fips//:go",  # Go runtime for running BoringSSL tests
-    ],
+    tools = ["@go-fips//:go"],
     visibility = ["//visibility:private"],
 )
 
-# Public: Crypto library - only exposes VALIDATED output
-# Consumers of this target can ONLY get validated FIPS libraries
-# Unvalidated libraries are never exposed
 cc_library(
     name = "crypto",
     srcs = ["lib/libcrypto.a"],
-    hdrs = glob([
-        "include/**/*.h",
-    ]),
+    hdrs = glob(["include/**/*.h"]),
     includes = ["include"],
     linkstatic = 1,
+    visibility = ["//visibility:public"],
 )
 
-# Public: SSL library - only exposes VALIDATED output
-# Consumers of this target can ONLY get validated FIPS libraries
-# Unvalidated libraries are never exposed
 cc_library(
     name = "ssl",
     srcs = ["lib/libssl.a"],
-    hdrs = glob([
-        "include/**/*.h",
-    ]),
+    hdrs = glob(["include/**/*.h"]),
     includes = ["include"],
     linkstatic = 1,
     deps = [":crypto"],
+    visibility = ["//visibility:public"],
 )
