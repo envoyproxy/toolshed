@@ -1,0 +1,12 @@
+{
+    "url": "https://github.com/google/boringssl/archive/298ac78507178d1e7d058eee1e52333f760eb0c1.tar.gz",
+    "integrity": "sha256-JUJ9SpKkpZcNnAXUtokbFw9EJltjm5aEyx/hTWp3JAE=",
+    "strip_prefix": "boringssl-298ac78507178d1e7d058eee1e52333f760eb0c1",
+    "overlay": {
+        "BUILD.bazel": "sha256-D6+zwNkDhHWoZoM0APrO5U0+zU+CnVbhlTq2QTDp7k8="
+    },
+    "patch_strip": 1,
+    "patches": {
+        "boringssl_fips.patch": "sha256-C12t6GYk50T9433JKL88283WAGDIpL2cmO+zF8FX5e4="
+    }
+}
