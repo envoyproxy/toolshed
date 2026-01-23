@@ -9,6 +9,15 @@ licenses(["notice"])  # Apache 2 license
 # This is based on Envoy's implementation but adapted for rules_foreign_cc and bzlmod
 # Reference: https://boringssl.googlesource.com/boringssl/+/refs/heads/main/crypto/fipsmodule/FIPS.md
 
+# Filegroup containing all BoringSSL source files for cmake to build
+filegroup(
+    name = "all_srcs",
+    srcs = glob(
+        ["**"],
+        exclude = ["bazel-*"],
+    ),
+)
+
 # Private: Build boringssl with FIPS mode enabled using cmake
 # This builds the libraries AND the bssl tool needed for validation
 # Based on Envoy's bazel/external/boringssl_fips.genrule_cmd
@@ -22,7 +31,7 @@ cmake(
         "CMAKE_C_FLAGS": "-fPIC",
         "CMAKE_CXX_FLAGS": "-fPIC",
     },
-    lib_source = "//:all",
+    lib_source = ":all_srcs",
     out_static_libs = [
         "libcrypto_unvalidated.a",
         "libssl_unvalidated.a",
