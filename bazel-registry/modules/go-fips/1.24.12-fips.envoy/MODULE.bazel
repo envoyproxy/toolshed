@@ -1,0 +1,23 @@
+# FIPS-pinned Go runtime module
+#
+# This module provides a standalone FIPS-capable Go runtime for building and validating
+# BoringSSL FIPS libraries. It is intentionally kept separate from rules_go to isolate
+# it from Bazel's Minimum Version Selection (MVS), preventing accidental version drift
+# that could compromise FIPS compliance.
+#
+# This Go distribution includes native FIPS 140-3 support (Go 1.24+) via GODEBUG=fips140=on.
+# While the distribution itself isn't built with BoringCrypto, it can build and test
+# BoringSSL's FIPS module, which is the intended use case.
+#
+# FedRAMP Guidance: Use latest stable Go version (currently 1.24.12)
+#
+# Reference: https://go.dev/doc/security/fips140
+#
+module(
+    name = "go-fips",
+    version = "1.24.12-fips.envoy",
+    bazel_compatibility = [">=7.2.1"],
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "platforms", version = "0.0.11")

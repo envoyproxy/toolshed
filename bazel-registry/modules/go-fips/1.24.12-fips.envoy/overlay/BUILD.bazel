@@ -1,0 +1,31 @@
+# FIPS-pinned Go runtime for boringssl validation tests
+# This module provides a Go toolchain isolated from Bazel's MVS
+
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "bin/go",
+    "bin/gofmt",
+])
+
+# Filegroup for the entire Go distribution
+filegroup(
+    name = "go_sdk",
+    srcs = glob(["**"]),
+)
+
+# Main go binary target
+filegroup(
+    name = "go",
+    srcs = ["bin/go"],
+)
+
+# Go toolchain executables
+filegroup(
+    name = "all_files",
+    srcs = glob([
+        "bin/**",
+        "pkg/**",
+        "src/**",
+    ]),
+)

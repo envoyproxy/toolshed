@@ -1,0 +1,17 @@
+{
+    "homepage": "https://go.dev",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:golang/go"
+    ],
+    "versions": [
+        "1.24.12-fips.envoy"
+    ],
+    "yanked_versions": {}
+}

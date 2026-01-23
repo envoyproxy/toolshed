@@ -1,0 +1,29 @@
+# FIPS-compliant BoringSSL module
+#
+# This module provides FIPS-validated BoringSSL libraries for use in compliance-critical applications.
+# It is based on Envoy's WORKSPACE-based FIPS build but adapted for bzlmod and rules_foreign_cc.
+#
+# Security/Compliance Context:
+# 1. Build-time validation is ENFORCED - users can never consume unvalidated binaries
+# 2. All FIPS-relevant build tools are isolated from Bazel's MVS
+# 3. Uses BoringSSL fips-20250107 branch (FIPS 140-2/140-3 validated)
+#
+# Build Process:
+# 1. Private: cmake() builds libs with -DFIPS=1 and bssl tool
+# 2. Private: Validation runs `bssl isfips` (must return 1)
+# 3. Public: Only ssl and crypto targets expose VALIDATED libraries
+#
+# Reference: https://boringssl.googlesource.com/boringssl/+/refs/heads/main/crypto/fipsmodule/FIPS.md
+#
+module(
+    name = "boringssl-fips",
+    version = "fips-20250107.envoy",
+    bazel_compatibility = [">=7.2.1"],
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
+bazel_dep(name = "go-fips", version = "1.24.12-fips.envoy")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")

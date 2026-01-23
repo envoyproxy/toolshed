@@ -1,0 +1,17 @@
+{
+    "homepage": "https://boringssl.googlesource.com/boringssl/",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "googlesource:boringssl"
+    ],
+    "versions": [
+        "fips-20250107.envoy"
+    ],
+    "yanked_versions": {}
+}
