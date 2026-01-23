@@ -30,6 +30,8 @@ cmake(
         # Set -fPIC for compatibility (FIPS module is already built with -fPIC)
         "CMAKE_C_FLAGS": "-fPIC",
         "CMAKE_CXX_FLAGS": "-fPIC",
+        # Explicitly set GO_EXECUTABLE for cmake's find_program
+        "GO_EXECUTABLE": "$$EXT_BUILD_DEPS$$/go-fips/bin/go",
     },
     lib_source = ":all_srcs",
     out_static_libs = [
