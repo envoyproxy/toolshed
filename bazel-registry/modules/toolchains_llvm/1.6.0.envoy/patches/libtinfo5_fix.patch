@@ -1,0 +1,53 @@
+--- a/toolchain/cc_wrapper.sh.tpl
++++ b/toolchain/cc_wrapper.sh.tpl
+@@ -90,6 +90,11 @@ if [[ ! -f ${toolchain_path_prefix}bin/clang ]]; then
+   exit 5
+ fi
+ 
++# Inject libtinfo5 path if present to fix issues on Ubuntu 24.04+
++if [[ "$(uname -s)" == "Linux" ]]; then
++  export LD_LIBRARY_PATH="${toolchain_path_prefix}lib:${LD_LIBRARY_PATH}"
++fi
++
+ OUTPUT=
+ 
+ function parse_option() {
+--- a/toolchain/internal/repo.bzl
++++ b/toolchain/internal/repo.bzl
+@@ -437,6 +437,36 @@ def llvm_repo_impl(rctx):
+ 
+     updated_attrs = _download_llvm(rctx)
+ 
++    # Inject libtinfo5 for older LLVMs on Linux
++    # LLVM < 19 depends on libtinfo.so.5 which is missing on Ubuntu 24.04+
++    if os == "linux" and major_llvm_version < 19:
++        libtinfo_map = {
++            "amd64": {
++                "url": "http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb",
++                "sha256": "ab89265d8dd18bda6a29d7c796367d6d9f22a39a8fa83589577321e7caf3857b",
++                "path": "./lib/x86_64-linux-gnu/libtinfo.so.5.9",
++            },
++            "aarch64": {
++                "url": "http://ports.ubuntu.com/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_arm64.deb",
++                "sha256": "be34705c5d2952298f480b4b571b382e7c921d65195889e6870b55ad834ce02c",
++                "path": "./lib/aarch64-linux-gnu/libtinfo.so.5.9",
++            },
++        }
++
++        arch_info = libtinfo_map.get(rctx.os.arch)
++
++        if arch_info:
++            print("DEBUG: Injecting libtinfo5 compatibility lib for " + rctx.os.arch)
++            rctx.download(
++                url = arch_info["url"],
++                sha256 = arch_info["sha256"],
++                output = "libtinfo5.deb",
++            )
++            rctx.execute(["ar", "x", "libtinfo5.deb", "data.tar.xz"])
++            rctx.execute(["tar", "-xf", "data.tar.xz", "--strip-components=3", "-C", "lib", arch_info["path"]])
++            rctx.execute(["ln", "-s", "libtinfo.so.5.9", "lib/libtinfo.so.5"])
++
++
+     # We try to avoid patches to the downloaded repo so that it is easier for
+     # users to bring their own LLVM distribution through `http_archive`. If we
+     # do want to make changes, then we should do it through a patch file, and
