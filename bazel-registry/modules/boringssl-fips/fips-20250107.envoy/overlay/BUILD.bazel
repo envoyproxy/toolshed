@@ -39,14 +39,11 @@ cmake(
         "run_tests",  # Build test suite for FIPS validation
     ],
     # Use Go from go-fips module for building tests
+    # The env variables tell cmake/ninja where to find Go
     env = {
         "GOROOT": "$$EXT_BUILD_DEPS$$/go-fips",
         "PATH": "$$EXT_BUILD_DEPS$$/go-fips/bin:$$PATH",
     },
-    # Provide Go toolchain as data for the build
-    data = [
-        "@go-fips//:go_sdk",
-    ],
     visibility = ["//visibility:private"],
 )
 
