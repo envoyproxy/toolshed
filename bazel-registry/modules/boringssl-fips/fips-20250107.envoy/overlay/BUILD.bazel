@@ -53,6 +53,11 @@ cmake(
         "GOROOT": "$$EXT_BUILD_DEPS$$/go-fips",
         "PATH": "$$EXT_BUILD_DEPS$$/go-fips/bin:$$PATH",
     },
+    # Provide Go toolchain for the build via build_data
+    # This makes go-fips available through $$EXT_BUILD_DEPS$$
+    build_data = [
+        "@go-fips//:go",
+    ],
     visibility = ["//visibility:private"],
 )
 
