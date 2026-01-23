@@ -44,12 +44,13 @@ cmake(
     out_binaries = [
         "bssl",
     ],
-    # Build everything needed for FIPS validation
+    # Build only the libraries and bssl tool
+    # We don't build run_tests because it depends on googletest which isn't
+    # included in the BoringSSL tarball. FIPS validation is done via bssl isfips.
     targets = [
         "crypto",
         "ssl",
         "bssl",
-        "run_tests",  # Build test suite for FIPS validation
     ],
     # Use Go from go-fips module for building tests
     # The env variables tell cmake/ninja where to find Go
