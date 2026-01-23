@@ -5,6 +5,7 @@
     "overlay": {
         "BUILD.bazel": "sha256-Hh3qKz+onVYSDY8quL19nK3aMcpqhSp5qeS1hHdka3s="
     },
+    "patch_strip": 1,
     "patches": {
         "boringssl_fips.patch": "sha256-C12t6GYk50T9433JKL88283WAGDIpL2cmO+zF8FX5e4="
     }
