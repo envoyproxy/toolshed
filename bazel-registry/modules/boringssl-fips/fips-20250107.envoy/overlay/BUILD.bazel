@@ -56,7 +56,9 @@ cmake(
 # Based on Envoy's validate_fips() function in boringssl_fips.genrule_cmd
 genrule(
     name = "_boringssl_validated",
-    srcs = [":_boringssl_build"],
+    srcs = [
+        ":_boringssl_build",
+    ],
     outs = [
         "lib/libcrypto.a",
         "lib/libssl.a",
@@ -65,9 +67,16 @@ genrule(
         set -eo pipefail
         
         # Setup paths - rules_foreign_cc outputs to a specific structure
-        BUILD_ROOT=$$(dirname $$(dirname $(location :_boringssl_build)))
-        LIB_DIR=$$BUILD_ROOT/lib
-        BIN_DIR=$$BUILD_ROOT/bin
+        # $(SRCS) contains all outputs from cmake rule
+        # Find the lib directory by looking for one of the libraries
+        for f in $(SRCS); do
+            if [[ $$f == *"libcrypto_unvalidated.a" ]]; then
+                LIB_DIR=$$(dirname $$f)
+                BUILD_ROOT=$$(dirname $$LIB_DIR)
+                BIN_DIR=$$BUILD_ROOT/bin
+                break
+            fi
+        done
         OUT_DIR=$$(dirname $(location lib/libcrypto.a))
         
         echo "=== BoringSSL FIPS Validation Starting ==="
