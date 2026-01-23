@@ -1,0 +1,8 @@
+{
+    "url": "https://go.dev/dl/go1.24.12.linux-amd64.tar.gz",
+    "integrity": "sha256-vd+OZTyCQprqeuwlIHdOeZJdS7kp/iDmfswA3Vr0TFA=",
+    "strip_prefix": "go",
+    "overlay": {
+        "BUILD.bazel": "sha256-J5gQIVS+kz563PCC3APnSRtYup4/h353LiAq6rGVGag="
+    }
+}

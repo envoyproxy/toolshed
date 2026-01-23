@@ -1,0 +1,19 @@
+package(default_visibility = ["//visibility:public"])
+
+exports_files([
+    "bin/go",
+    "bin/gofmt",
+])
+
+filegroup(
+    name = "go_sdk",
+    srcs = glob(
+        ["**"],
+        exclude = ["**/test/**"],
+    ),
+)
+
+filegroup(
+    name = "go",
+    srcs = ["bin/go"],
+)
