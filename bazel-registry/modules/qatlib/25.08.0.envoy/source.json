@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/intel/qatlib/archive/refs/tags/25.08.0.tar.gz",
+    "integrity": "sha256-eGEBaDtIF97XLI6lEgShkKom4LWsggXuGZx6lDgTh3A=",
+    "strip_prefix": "qatlib-25.08.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-THIEwoOPkX6BFelDHl0KCrPQc5OhLclnkt7n8vuIDEQ="
+    }
+}
