@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/google/highway/archive/refs/tags/1.2.0.tar.gz",
+    "integrity": "sha256-fgvnuDGBgdPn8qXCPmbkn7bkyMl99PfHqt3CCGJ8NEM=",
+    "strip_prefix": "highway-1.2.0",
+    "patch_strip": 1,
+    "patches": {
+        "highway-ppc64le.patch": "sha256-VRYJmolnbF3ejN1vUBBV10faDeT2RaV10yzsCwwUDBU="
+    }
+}

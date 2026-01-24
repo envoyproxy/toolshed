@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/jk-jeon/dragonbox/archive/6c7c925b571d54486b9ffae8d9d18a822801cbda.tar.gz",
+    "integrity": "sha256-cfLtl8+JzGsFwK77NJvRN/Uh7KTifz/phdGoFad4iaY=",
+    "strip_prefix": "dragonbox-6c7c925b571d54486b9ffae8d9d18a822801cbda",
+    "overlay": {
+        "BUILD.bazel": "sha256-ehx10mwLmxwc/Grea0PkEsD84d4JgtgvMTeK/zVjGqE="
+    }
+}

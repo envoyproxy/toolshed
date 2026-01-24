@@ -1,0 +1,13 @@
+{
+    "url": "https://github.com/v8/v8/archive/refs/tags/13.8.258.26.tar.gz",
+    "integrity": "sha256-T/wnB00n93nonGQeOQRDz88vWUkALkobG4eVfZl9EUR=",
+    "strip_prefix": "v8-13.8.258.26",
+    "patch_strip": 1,
+    "patches": {
+        "v8.patch": "sha256-l/rwkgrmFHl5n6P1n1VrBoO7NpseF2RUng7dXPlO3Jk=",
+        "v8_include_rewrites.patch": "sha256-9Pmv9MFBkPzMyOd6xKs7kbceas6IlJLikuhRf2KO3Fk=",
+        "v8_novtune.patch": "sha256-9JlC+G+PGCRgzuha8HgpO2StSSuJFOLaHRNf9ygu3Fw=",
+        "v8_ppc64le.patch": "sha256-4tYdLecoiQlK+MayXpnCBAOsBEB0gN18iO0hQfT87Rs=",
+        "v8_python.patch": "sha256-JeplD42LmsxXk+o90s0cMEr6dTpMBggnExeQxa6Z67o="
+    }
+}

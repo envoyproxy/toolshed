@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/google/highway",
+    "maintainers": [],
+    "repository": [
+        "github:google/highway"
+    ],
+    "versions": [
+        "1.2.0.envoy"
+    ],
+    "yanked_versions": {}
+}

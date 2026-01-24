@@ -1,0 +1,11 @@
+{
+    "homepage": "https://v8.dev/",
+    "maintainers": [],
+    "repository": [
+        "github:v8/v8"
+    ],
+    "versions": [
+        "13.8.258.26.envoy"
+    ],
+    "yanked_versions": {}
+}
