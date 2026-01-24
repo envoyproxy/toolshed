@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/v8/v8/archive/refs/tags/13.8.258.26.tar.gz",
+    "integrity": "sha256-T/wnB00/eejmQB45BEPc8CdVNJACvkobAecqPNlFfRU=",
+    "strip_prefix": "v8-13.8.258.26",
+    "patch_strip": 1,
+    "patches": {
+        "v8.patch": "sha256-QMHJZBWmwcuVcqULZf/HRuFKAWxlhdlddD6K3e4IXZk="
+    }
+}
