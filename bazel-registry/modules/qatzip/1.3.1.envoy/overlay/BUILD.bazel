@@ -1,0 +1,46 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+label_flag(
+    name = "zlib_lib",
+    build_setting_default = "@zlib-ng",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "qatzip",
+    srcs = [
+        "src/qatzip.c",
+        "src/qatzip_counter.c",
+        "src/qatzip_gzip.c",
+        "src/qatzip_internal.h",
+        "src/qatzip_lz4.c",
+        "src/qatzip_mem.c",
+        "src/qatzip_page_table.h",
+        "src/qatzip_stream.c",
+        "src/qatzip_sw.c",
+        "src/qatzip_utils.c",
+        "src/xxhash.c",
+        "src/xxhash.h",
+    ],
+    hdrs = [
+        "include/qatzip.h",
+        "include/qz_utils.h",
+    ],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@lz4",
+        "@qatlib//:qat",
+        ":zlib_lib",
+    ],
+    copts = [
+        "-Wall",
+        "-Werror",
+        "-O3",
+        "-fPIC",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)

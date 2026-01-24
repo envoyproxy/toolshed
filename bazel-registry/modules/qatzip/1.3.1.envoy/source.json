@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/intel/QATzip/archive/refs/tags/v1.3.1.tar.gz",
+    "integrity": "sha256-deblf0nac50KUJIgJj6dq7MLHoyUvhHICa7MCt9O4tw=",
+    "strip_prefix": "QATzip-1.3.1",
+    "overlay": {
+        "BUILD.bazel": "sha256-u9RQHWsRsoVMWJfvsEJvXT9C6SoE+tkCXYg6z37SY6A="
+    }
+}
