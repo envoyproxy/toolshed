@@ -1,7 +1,7 @@
 module(
     name = "proxy-wasm-cpp-host",
     repo_name = "proxy_wasm_cpp_host",
-    version = "0.0.0-251124-c8868da.envoy",
+    version = "0.0.0-260115-beb8a4e.envoy",
 )
 
 bazel_dep(name = "abseil-cpp", version = "20250814.1")
