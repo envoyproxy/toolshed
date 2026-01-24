@@ -1,88 +1,136 @@
-diff --git a/src/builtins/builtins-typed-array.cc b/src/builtins/builtins-typed-array.cc
-index 0000000000..1111111111 100644
---- a/src/builtins/builtins-typed-array.cc
-+++ b/src/builtins/builtins-typed-array.cc
-@@ -1,1 +1,1 @@
+--- v8-13.8.258.26/src/builtins/builtins-typed-array.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/builtins/builtins-typed-array.cc	2026-01-24 23:21:17.322919989 +0000
+@@ -12,7 +12,7 @@
+ #include "src/objects/js-array-buffer-inl.h"
+ #include "src/objects/objects-inl.h"
+ #include "src/objects/simd.h"
 -#include "third_party/simdutf/simdutf.h"
 +#include "simdutf.h"
-diff --git a/src/wasm/wasm-objects-inl.h b/src/wasm/wasm-objects-inl.h
-index 0000000000..1111111111 100644
---- a/src/wasm/wasm-objects-inl.h
-+++ b/src/wasm/wasm-objects-inl.h
-@@ -1,1 +1,1 @@
+ 
+ namespace v8 {
+ namespace internal {
+--- v8-13.8.258.26/src/wasm/wasm-objects-inl.h	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/wasm/wasm-objects-inl.h	2026-01-24 23:21:17.526917999 +0000
+@@ -29,7 +29,7 @@
+ #include "src/roots/roots.h"
+ #include "src/wasm/wasm-code-manager.h"
+ #include "src/wasm/wasm-module.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/src/wasm/float16.h b/src/wasm/float16.h
-index 0000000000..1111111111 100644
---- a/src/wasm/float16.h
-+++ b/src/wasm/float16.h
-@@ -1,1 +1,1 @@
+ 
+ #if V8_ENABLE_DRUMBRAKE
+ #include "src/wasm/interpreter/wasm-interpreter-objects.h"
+--- v8-13.8.258.26/src/wasm/float16.h	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/wasm/float16.h	2026-01-24 23:21:17.526917999 +0000
+@@ -6,7 +6,7 @@
+ #define V8_WASM_FLOAT16_H_
+ 
+ #include "src/base/memory.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/src/wasm/wasm-value.h b/src/wasm/wasm-value.h
-index 0000000000..1111111111 100644
---- a/src/wasm/wasm-value.h
-+++ b/src/wasm/wasm-value.h
-@@ -1,1 +1,1 @@
+ 
+ namespace v8 {
+ namespace internal {
+--- v8-13.8.258.26/src/wasm/wasm-value.h	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/wasm/wasm-value.h	2026-01-24 23:21:17.527917989 +0000
+@@ -14,7 +14,7 @@
+ #include "src/handles/handles.h"
+ #include "src/utils/boxed-float.h"
+ #include "src/wasm/value-type.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/src/runtime/runtime-typedarray.cc b/src/runtime/runtime-typedarray.cc
-index 0000000000..1111111111 100644
---- a/src/runtime/runtime-typedarray.cc
-+++ b/src/runtime/runtime-typedarray.cc
-@@ -1,1 +1,1 @@
+ 
+ namespace v8 {
+ namespace internal {
+--- v8-13.8.258.26/src/runtime/runtime-typedarray.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/runtime/runtime-typedarray.cc	2026-01-24 23:21:17.527917989 +0000
+@@ -11,7 +11,7 @@
+ #include "src/objects/objects-inl.h"
+ #include "src/runtime/runtime-utils.h"
+ #include "src/runtime/runtime.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/src/codegen/external-reference.cc b/src/codegen/external-reference.cc
-index 0000000000..1111111111 100644
---- a/src/codegen/external-reference.cc
-+++ b/src/codegen/external-reference.cc
-@@ -1,1 +1,1 @@
+ 
+ namespace v8 {
+ namespace internal {
+--- v8-13.8.258.26/src/codegen/external-reference.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/codegen/external-reference.cc	2026-01-24 23:21:17.527917989 +0000
+@@ -43,7 +43,7 @@
+ #include "src/regexp/regexp-stack.h"
+ #include "src/strings/string-search.h"
+ #include "src/strings/unicode-inl.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/src/diagnostics/objects-printer.cc b/src/diagnostics/objects-printer.cc
-index 0000000000..1111111111 100644
---- a/src/diagnostics/objects-printer.cc
-+++ b/src/diagnostics/objects-printer.cc
-@@ -1,1 +1,1 @@
+ 
+ #if V8_ENABLE_WEBASSEMBLY
+ #include "src/wasm/wasm-external-refs.h"
+--- v8-13.8.258.26/src/diagnostics/objects-printer.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/diagnostics/objects-printer.cc	2026-01-24 23:21:17.528917979 +0000
+@@ -37,7 +37,7 @@
+ #include "src/snapshot/embedded/embedded-data.h"
+ #include "src/strings/string-stream.h"
+ #include "src/utils/ostreams.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/src/objects/elements.cc b/src/objects/elements.cc
-index 0000000000..1111111111 100644
---- a/src/objects/elements.cc
-+++ b/src/objects/elements.cc
-@@ -1,1 +1,1 @@
+ 
+ #if V8_ENABLE_WEBASSEMBLY
+ #include "src/debug/debug-wasm-objects-inl.h"
+--- v8-13.8.258.26/src/objects/elements.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/objects/elements.cc	2026-01-24 23:21:17.529917970 +0000
+@@ -25,7 +25,7 @@
+ #include "src/objects/slots-atomic-inl.h"
+ #include "src/objects/slots.h"
+ #include "src/utils/utils.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/src/execution/arm64/simulator-logic-arm64.cc b/src/execution/arm64/simulator-logic-arm64.cc
-index 0000000000..1111111111 100644
---- a/src/execution/arm64/simulator-logic-arm64.cc
-+++ b/src/execution/arm64/simulator-logic-arm64.cc
-@@ -1,1 +1,1 @@
+ 
+ // Each concrete ElementsAccessor can handle exactly one ElementsKind,
+ // several abstract ElementsAccessor classes are used to allow sharing
+--- v8-13.8.258.26/src/execution/arm64/simulator-logic-arm64.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/execution/arm64/simulator-logic-arm64.cc	2026-01-24 23:21:17.530917960 +0000
+@@ -9,7 +9,7 @@
+ #include <cmath>
+ 
+ #include "src/numbers/conversions-inl.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/test/cctest/wasm/wasm-simd-utils.cc b/test/cctest/wasm/wasm-simd-utils.cc
-index 0000000000..1111111111 100644
---- a/test/cctest/wasm/wasm-simd-utils.cc
-+++ b/test/cctest/wasm/wasm-simd-utils.cc
-@@ -1,1 +1,1 @@
+ 
+ namespace v8 {
+ namespace internal {
+--- v8-13.8.258.26/test/cctest/wasm/wasm-simd-utils.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/test/cctest/wasm/wasm-simd-utils.cc	2026-01-24 23:21:17.531917950 +0000
+@@ -18,7 +18,7 @@
+ #include "test/common/c-signature.h"
+ #include "test/common/value-helper.h"
+ #include "test/common/wasm/wasm-macro-gen.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/test/cctest/wasm/test-run-wasm-f16.cc b/test/cctest/wasm/test-run-wasm-f16.cc
-index 0000000000..1111111111 100644
---- a/test/cctest/wasm/test-run-wasm-f16.cc
-+++ b/test/cctest/wasm/test-run-wasm-f16.cc
-@@ -1,1 +1,1 @@
+ 
+ namespace v8 {
+ namespace internal {
+--- v8-13.8.258.26/test/cctest/wasm/test-run-wasm-f16.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/test/cctest/wasm/test-run-wasm-f16.cc	2026-01-24 23:21:17.531917950 +0000
+@@ -11,7 +11,7 @@
+ #include "test/cctest/wasm/wasm-simd-utils.h"
+ #include "test/common/wasm/test-signatures.h"
+ #include "test/common/wasm/wasm-macro-gen.h"
 -#include "third_party/fp16/src/include/fp16.h"
 +#include "fp16.h"
-diff --git a/src/numbers/conversions.cc b/src/numbers/conversions.cc
-index 0000000000..1111111111 100644
---- a/src/numbers/conversions.cc
-+++ b/src/numbers/conversions.cc
-@@ -1,3 +1,3 @@
+ 
+ namespace v8 {
+ namespace internal {
+--- v8-13.8.258.26/src/numbers/conversions.cc	2025-07-09 15:23:41.000000000 +0000
++++ v8-13.8.258.26-patched/src/numbers/conversions.cc	2026-01-24 23:21:17.631916975 +0000
+@@ -23,9 +23,9 @@
+ #include "src/objects/string-inl.h"
+ #include "src/strings/char-predicates-inl.h"
+ #include "src/utils/allocation.h"
 -#include "third_party/dragonbox/src/include/dragonbox/dragonbox.h"
-+#include "dragonbox/dragonbox.h"
 -#include "third_party/fast_float/src/include/fast_float/fast_float.h"
-+#include "fast_float/fast_float.h"
 -#include "third_party/fast_float/src/include/fast_float/float_common.h"
++#include "dragonbox/dragonbox.h"
++#include "fast_float/fast_float.h"
 +#include "fast_float/float_common.h"
+ 
+ #if defined(_STLP_VENDOR_CSTD)
+ // STLPort doesn't import fpclassify into the std namespace.
