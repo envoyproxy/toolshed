@@ -3,6 +3,6 @@
     "integrity": "sha256-APJhFxnwoclYWWXGw8H+WZEZqo6TKlaQQbGHb/yUT7M=",
     "strip_prefix": "QAT-ZSTD-Plugin-1.0.0",
     "overlay": {
-        "BUILD.bazel": "sha256-rWR9c3SEMX4aJWe3FWeVkS/Gn2g9aFmSkaNOQFpzF+8="
+        "BUILD.bazel": "sha256-as9gt7gH3ru2VsoE1iGE7Z/tHFKZaaWT1Gzd74vl5rc="
     }
 }
