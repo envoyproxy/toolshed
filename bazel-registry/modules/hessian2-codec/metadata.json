@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/alibaba/hessian2-codec",
+    "maintainers": [],
+    "repository": [
+        "github:alibaba/hessian2-codec"
+    ],
+    "versions": [
+        "0.0.0-250114-6f5a647.envoy"
+    ],
+    "yanked_versions": {}
+}

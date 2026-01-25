@@ -1,0 +1,11 @@
+module(
+    name = "hessian2-codec",
+    version = "0.0.0-250114-6f5a647.envoy",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "abseil-cpp", version = "20250814.1", repo_name = "com_google_absl")
+bazel_dep(name = "fmt", version = "10.0.0", repo_name = "com_github_fmtlib_fmt")
+bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
+bazel_dep(name = "platforms", version = "1.0.0")
