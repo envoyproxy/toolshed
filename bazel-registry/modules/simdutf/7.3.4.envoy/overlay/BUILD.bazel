@@ -1,0 +1,10 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # Apache 2
+
+cc_library(
+    name = "simdutf",
+    srcs = ["simdutf.cpp"],
+    hdrs = ["simdutf.h"],
+    visibility = ["//visibility:public"],
+)
