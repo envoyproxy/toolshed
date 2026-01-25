@@ -1,0 +1,11 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # Apache 2
+
+cc_library(
+    name = "dragonbox",
+    srcs = [],
+    hdrs = ["include/dragonbox/dragonbox.h"],
+    includes = ["include/"],
+    visibility = ["//visibility:public"],
+)
