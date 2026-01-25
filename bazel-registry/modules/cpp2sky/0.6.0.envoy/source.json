@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/SkyAPM/cpp2sky/archive/v0.6.0.tar.gz",
+    "integrity": "sha256-1+UvUX3lodx9kn3WOi5apc+MLc/Y/Pa2TheZeNrxw+0=",
+    "strip_prefix": "cpp2sky-0.6.0",
+    "patch_strip": 1,
+    "patches": {
+        "cpp2sky.patch": "sha256-zwkUxUfizFZokfbNnoL0AzbRTN9P+Fb3LO3Y26L5M4A="
+    }
+}
