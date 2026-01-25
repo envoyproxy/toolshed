@@ -1,0 +1,5 @@
+{
+    "url": "https://github.com/apache/skywalking-data-collect-protocol/archive/v10.3.0.tar.gz",
+    "integrity": "sha256-W3xJnv8gTEIrRPO91PmYTPBE5KPo8VZY45jTQsCkKqo=",
+    "strip_prefix": "skywalking-data-collect-protocol-10.3.0"
+}

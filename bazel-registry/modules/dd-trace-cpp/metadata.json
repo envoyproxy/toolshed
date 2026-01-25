@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/DataDog/dd-trace-cpp",
+    "maintainers": [],
+    "repository": [
+        "github:DataDog/dd-trace-cpp"
+    ],
+    "versions": [
+        "2.0.0"
+    ],
+    "yanked_versions": {}
+}
