@@ -3,6 +3,10 @@
     "integrity": "sha256-deblf0nac50KUJIgJj6dq7MLHoyUvhHICa7MCt9O4tw=",
     "strip_prefix": "QATzip-1.3.1",
     "overlay": {
-        "BUILD.bazel": "sha256-u9RQHWsRsoVMWJfvsEJvXT9C6SoE+tkCXYg6z37SY6A="
+        "BUILD.bazel": "sha256-2BXtP9fCuO1Bis5JqwxxsOtfYZ4avcy2jWXvKKgSF54="
+    },
+    "patch_strip": 1,
+    "patches": {
+        "cast.patch": "sha256-C8JIf2PKvgX9PM6Mo/xb8gmjIklVHoll3rXuOHH4CpU="
     }
 }

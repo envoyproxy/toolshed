@@ -26,10 +26,12 @@ cc_library(
         "include/qatzip.h",
         "include/qz_utils.h",
     ],
+    includes = ["src"],
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
     deps = [
         "@lz4",
+        "@lz4//foreign_cc",
         "@qatlib//:qat",
         ":zlib_lib",
     ],
@@ -38,6 +40,9 @@ cc_library(
         "-Werror",
         "-O3",
         "-fPIC",
+        "-DSAL_DEV_API",
+        "-D_GNU_SOURCE",
+        "-DXXH_NAMESPACE=QATZIP_",
     ],
     target_compatible_with = [
         "@platforms//os:linux",

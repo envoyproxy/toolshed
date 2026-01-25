@@ -1,0 +1,25 @@
+diff --git a/include/qatzip.h b/include/qatzip.h
+index 4cbd4a5..0a45624 100755
+--- a/include/qatzip.h
++++ b/include/qatzip.h
+@@ -361,14 +361,14 @@ typedef enum QzSoftwareComponentType_E {
+ #define QZ_NOT_SUPPORTED        (-200)
+ /**< Request not supported */
+ 
+-#define QZ_MAX_ALGORITHMS  ((int)255)
+-#define QZ_DEFLATE         ((unsigned char)8)
++#define QZ_MAX_ALGORITHMS  (255)
++#define QZ_DEFLATE         (8)
+ /**< used in gzip header to indicate deflate blocks */
+ /**< and in session params */
+-#define QZ_LZ4             ((unsigned char)'4')
+-#define QZ_LZ4_BLOCK       ((unsigned char)'B')
+-#define QZ_LZ4s            ((unsigned char)'s')
+-#define QZ_ZSTD            ((unsigned char)'Z')
++#define QZ_LZ4             ('4')
++#define QZ_LZ4_BLOCK       ('B')
++#define QZ_LZ4s            ('s')
++#define QZ_ZSTD            ('Z')
+ 
+ #ifndef MIN
+ #define MIN(a,b) (((a)<(b))?(a):(b))
