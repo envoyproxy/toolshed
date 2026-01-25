@@ -1,0 +1,5 @@
+{
+    "url": "https://github.com/DataDog/dd-trace-cpp/archive/v2.0.0.tar.gz",
+    "integrity": "sha256-5KDavD4YbOmccWhReESPk8UBV3ECzcUN2/EsuqulRxM=",
+    "strip_prefix": "dd-trace-cpp-2.0.0"
+}
