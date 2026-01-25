@@ -16,4 +16,5 @@ cc_library(
 alias(
     name = "fp16",
     actual = "FP16",
+    visibility = ["//visibility:public"],
 )
