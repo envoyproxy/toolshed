@@ -1,0 +1,9 @@
+module(
+    name = "skywalking-data-collect-protocol",
+    version = "10.3.0.envoy",
+    compatibility_level = 1,
+    repo_name = "skywalking_data_collect_protocol",
+)
+
+bazel_dep(name = "grpc", version = "1.76.0.bcr.1.envoy", repo_name = "com_github_grpc_grpc")
+bazel_dep(name = "protobuf", version = "33.0", repo_name = "com_google_protobuf")
