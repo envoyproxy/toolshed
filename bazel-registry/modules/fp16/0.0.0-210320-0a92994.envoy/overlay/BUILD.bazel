@@ -1,0 +1,19 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # MIT
+
+cc_library(
+    name = "FP16",
+    hdrs = [
+        "include/fp16.h",
+        "include/fp16/bitcasts.h",
+        "include/fp16/fp16.h",
+    ],
+    includes = ["include/"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "fp16",
+    actual = "FP16",
+)

@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/Maratyszcza/FP16/archive/0a92994d729ff76a58f692d3028ca1b64b145d91.tar.gz",
+    "integrity": "sha256-qR9HcP+cOfTXLjOcN59Wazu7NZ+mYSLYX8C6493nq8c=",
+    "strip_prefix": "FP16-0a92994d729ff76a58f692d3028ca1b64b145d91",
+    "overlay": {
+        "BUILD.bazel": "sha256-cduXn9NKN1OK4n+7iGFpbqpwS4Q3c6jOM8ABE2ldwGk="
+    }
+}
