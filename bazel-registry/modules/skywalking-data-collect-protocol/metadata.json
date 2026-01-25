@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/apache/skywalking-data-collect-protocol",
+    "maintainers": [],
+    "repository": [
+        "github:apache/skywalking-data-collect-protocol"
+    ],
+    "versions": [
+        "10.3.0.envoy"
+    ],
+    "yanked_versions": {}
+}
