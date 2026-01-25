@@ -5,7 +5,7 @@
         "github:alibaba/hessian2-codec"
     ],
     "versions": [
-        "6f5a64770f0374a761eece13c8863b80dc5adcd8"
+        "6f5a64770f0374a761eece13c8863b80dc5adcd8.envoy"
     ],
     "yanked_versions": {}
 }

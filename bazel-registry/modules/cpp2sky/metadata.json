@@ -5,7 +5,7 @@
         "github:SkyAPM/cpp2sky"
     ],
     "versions": [
-        "0.6.0"
+        "0.6.0.envoy"
     ],
     "yanked_versions": {}
 }

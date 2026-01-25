@@ -1,6 +1,6 @@
 module(
     name = "hessian2-codec",
-    version = "6f5a64770f0374a761eece13c8863b80dc5adcd8",
+    version = "6f5a64770f0374a761eece13c8863b80dc5adcd8.envoy",
     compatibility_level = 1,
 )
 

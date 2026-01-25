@@ -1,6 +1,6 @@
 module(
     name = "skywalking-data-collect-protocol",
-    version = "10.3.0",
+    version = "10.3.0.envoy",
     compatibility_level = 1,
     repo_name = "skywalking_data_collect_protocol",
 )
