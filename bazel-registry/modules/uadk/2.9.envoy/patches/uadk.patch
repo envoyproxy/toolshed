@@ -1,0 +1,15 @@
+diff --git a/v1/wd_util.h b/v1/wd_util.h
+index 9767be4..b11476c 100644
+--- a/v1/wd_util.h
++++ b/v1/wd_util.h
+@@ -112,8 +112,8 @@ struct wd_lock {
+ };
+ 
+ struct wd_fair_lock {
+-	__u32 ticket;
+-	__u32 serving;
++	_Atomic __u32 ticket;
++	_Atomic __u32 serving;
+ };
+ 
+ struct wd_ss_region {
