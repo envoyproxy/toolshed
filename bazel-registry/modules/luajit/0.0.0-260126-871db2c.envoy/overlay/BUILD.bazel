@@ -309,7 +309,7 @@ cc_library(
         "-fomit-frame-pointer",
         "-fno-function-sections",
         "-fno-data-sections",
-
+        "-DLUAJIT_UNWIND_EXTERNAL",
     ],
     includes = ["src"],
     local_defines = [
