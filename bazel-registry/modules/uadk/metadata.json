@@ -1,0 +1,17 @@
+{
+    "homepage": "https://github.com/Linaro/uadk",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:Linaro/uadk"
+    ],
+    "versions": [
+        "2.9.envoy"
+    ],
+    "yanked_versions": {}
+}
