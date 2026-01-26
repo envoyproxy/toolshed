@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/msgpack/msgpack-c",
+    "maintainers": [],
+    "repository": [
+        "github:msgpack/msgpack-c"
+    ],
+    "versions": [
+        "7.0.0.envoy"
+    ],
+    "yanked_versions": {}
+}
