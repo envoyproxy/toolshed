@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/msgpack/msgpack-c/releases/download/cpp-7.0.0/msgpack-cxx-7.0.0.tar.gz",
+    "integrity": "sha256-dQS3r357kALOUp1PlB4bf7H7Q1doeAzn2kq6rHm7FW8=",
+    "strip_prefix": "msgpack-cxx-7.0.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-3Qf+Qo7tWtHwfKZ3j3iZpBXMKShZ8IlEHvrBt/cLR5s="
+    }
+}

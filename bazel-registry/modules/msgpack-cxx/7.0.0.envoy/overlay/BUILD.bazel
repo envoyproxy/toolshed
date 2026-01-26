@@ -1,0 +1,14 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # Boost Software License 1.0
+
+cc_library(
+    name = "msgpack",
+    hdrs = glob([
+        "include/**/*.h",
+        "include/**/*.hpp",
+    ]),
+    defines = ["MSGPACK_NO_BOOST"],
+    includes = ["include"],
+    visibility = ["//visibility:public"],
+)
