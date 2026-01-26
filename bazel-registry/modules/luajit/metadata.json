@@ -1,0 +1,18 @@
+{
+    "homepage": "https://luajit.org/",
+    "maintainers": [
+        {
+            "email": "206078155+daemoninstitute@users.noreply.github.com",
+            "github": "daemoninstitute",
+            "github_user_id": 206078155,
+            "name": "James Wilson"
+        }
+    ],
+    "repository": [
+        "github:LuaJIT/LuaJIT"
+    ],
+    "versions": [
+        "0.0.0-260126-871db2c.envoy"
+    ],
+    "yanked_versions": {}
+}
