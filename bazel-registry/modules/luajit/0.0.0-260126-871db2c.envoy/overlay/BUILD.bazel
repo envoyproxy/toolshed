@@ -53,51 +53,35 @@ cc_binary(
 # Stage 2: Run DynASM preprocessing to generate buildvm_arch.h
 ##############################################################################
 
-# Common sources for all platforms
-DYNASM_SRCS = glob([
-    "dynasm/*.lua",
-    "dynasm/*.h",
-]) + glob([
-    "src/lj_*.h",
-])
-
-# Generate buildvm_arch.h for x86_64 (Linux and macOS)
 genrule(
-    name = "buildvm_arch_h_x64",
-    srcs = ["src/vm_x64.dasc"] + DYNASM_SRCS,
-    outs = ["buildvm_arch_x64.h"],
-    cmd = """
-        MINILUA=$$(realpath $(location :minilua))
-        DYNASM=$$(realpath $(location dynasm/dynasm.lua))
-        DASC=$$(realpath $(location src/vm_x64.dasc))
-        $$MINILUA $$DYNASM -D X64 -D JIT -D FFI -D VER=21 -D P64 -o $@ $$DASC
-    """,
-    tools = [":minilua"],
-)
-
-# Generate buildvm_arch.h for arm64 (Linux and macOS)
-genrule(
-    name = "buildvm_arch_h_arm64",
-    srcs = ["src/vm_arm64.dasc"] + DYNASM_SRCS,
-    outs = ["buildvm_arch_arm64.h"],
-    cmd = """
-        MINILUA=$$(realpath $(location :minilua))
-        DYNASM=$$(realpath $(location dynasm/dynasm.lua))
-        DASC=$$(realpath $(location src/vm_arm64.dasc))
-        $$MINILUA $$DYNASM -D ARM64 -D JIT -D FFI -D VER=21 -D ENDIAN_LE -D P64 -D DUALNUM -o $@ $$DASC
-    """,
-    tools = [":minilua"],
-)
-
-# Select the correct buildvm_arch.h based on platform
-alias(
     name = "buildvm_arch_h",
-    actual = select({
-        ":linux_x86_64": ":buildvm_arch_h_x64",
-        ":linux_arm64": ":buildvm_arch_h_arm64",
-        ":macos_x86_64": ":buildvm_arch_h_x64",
-        ":macos_arm64": ":buildvm_arch_h_arm64",
+    srcs = select({
+        ":linux_x86_64": ["src/vm_x64.dasc"],
+        ":linux_arm64": ["src/vm_arm64.dasc"],
+        ":macos_x86_64": ["src/vm_x64.dasc"],
+        ":macos_arm64": ["src/vm_arm64.dasc"],
+    }) + glob([
+        "dynasm/*.lua",
+        "dynasm/*.h",
+    ]) + glob([
+        "src/lj_*.h",
+    ]),
+    outs = ["buildvm_arch.h"],
+    cmd = select({
+        ":linux_x86_64": """
+            $(location :minilua) $(location dynasm/dynasm.lua) -D X64 -D JIT -D FFI -D VER=21 -D P64 -o $@ $(location src/vm_x64.dasc)
+        """,
+        ":linux_arm64": """
+            $(location :minilua) $(location dynasm/dynasm.lua) -D ARM64 -D JIT -D FFI -D VER=21 -D ENDIAN_LE -D P64 -D DUALNUM -o $@ $(location src/vm_arm64.dasc)
+        """,
+        ":macos_x86_64": """
+            $(location :minilua) $(location dynasm/dynasm.lua) -D X64 -D JIT -D FFI -D VER=21 -D P64 -o $@ $(location src/vm_x64.dasc)
+        """,
+        ":macos_arm64": """
+            $(location :minilua) $(location dynasm/dynasm.lua) -D ARM64 -D JIT -D FFI -D VER=21 -D ENDIAN_LE -D P64 -D DUALNUM -o $@ $(location src/vm_arm64.dasc)
+        """,
     }),
+    tools = [":minilua"],
 )
 
 ##############################################################################
@@ -152,31 +136,17 @@ LJLIB_C = [
     "src/lib_buffer.c",
 ]
 
-# VM assembly for ELF (Linux)
+# VM assembly (lj_vm.S)
 genrule(
-    name = "lj_vm_s_elf",
-    outs = ["lj_vm_elf.S"],
-    cmd = "$(location :buildvm) -m elfasm -o $@",
-    tools = [":buildvm"],
-)
-
-# VM assembly for Mach-O (macOS)
-genrule(
-    name = "lj_vm_s_mach",
-    outs = ["lj_vm_mach.S"],
-    cmd = "$(location :buildvm) -m machasm -o $@",
-    tools = [":buildvm"],
-)
-
-# Select the correct VM assembly based on platform
-alias(
     name = "lj_vm_s",
-    actual = select({
-        ":linux_x86_64": ":lj_vm_s_elf",
-        ":linux_arm64": ":lj_vm_s_elf",
-        ":macos_x86_64": ":lj_vm_s_mach",
-        ":macos_arm64": ":lj_vm_s_mach",
+    outs = ["lj_vm.S"],
+    cmd = select({
+        ":linux_x86_64": "$(location :buildvm) -m elfasm -o $@",
+        ":linux_arm64": "$(location :buildvm) -m elfasm -o $@",
+        ":macos_x86_64": "$(location :buildvm) -m machasm -o $@",
+        ":macos_arm64": "$(location :buildvm) -m machasm -o $@",
     }),
+    tools = [":buildvm"],
 )
 
 # Generated header: lj_bcdef.h
