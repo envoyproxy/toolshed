@@ -1,9 +1,9 @@
 {
     "url": "https://github.com/LuaJIT/LuaJIT/archive/871db2c.tar.gz",
-    "integrity": "sha256-qz8W2C3vlGVDVlz7DSENDYfXmjpD4EMWlbA0Zhiwo4A=",
-    "strip_prefix": "LuaJIT-871db2c84ecefd70a850e03a6c36435dbbf6c7022",
+    "integrity": "sha256-qz8W2C32lGVDVlz7DSgQ04fXmjpD4EMWlbA0ZhiOJoA=",
+    "strip_prefix": "LuaJIT-871db2c84ecefd70a850e03a6c340214a81739f0",
     "overlay": {
         "BUILD.bazel": "sha256-4gyKRmGc+zUm7/ZNK5fORrVV5dx6isAlL8xC3r10VYE=",
-        "MODULE.bazel": "sha256-C3pyi6wCcriBNGyQf9UvTc5on+60Tul5ModI19XTMcE="
+        "MODULE.bazel": "sha256-C3pyisAnK4E0bJB/1S9Nzmif7rSk7pkyhoHwfVUzHRw="
     }
 }
