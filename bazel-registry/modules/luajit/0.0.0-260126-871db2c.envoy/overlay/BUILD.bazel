@@ -309,6 +309,7 @@ cc_library(
         "-fomit-frame-pointer",
         "-fno-function-sections",
         "-fno-data-sections",
+
     ],
     includes = ["src"],
     local_defines = [
