@@ -1,0 +1,11 @@
+{
+    "url": "https://github.com/bazelbuild/rules_apple/releases/download/3.20.1/rules_apple.3.20.1.tar.gz",
+    "integrity": "sha256-c612jf6CTHNtCoqBUhhnsft6girNou0mWJfAPeauZ2c=",
+    "strip_prefix": "",
+    "patches": {
+        "module_dot_bazel_version.patch": "sha256-bRf6IwVrxN6MNwujBhrmYmSWKpB/DPjCGD3tOCAtLKs=",
+        "rules_apple.patch": "sha256-BbThFInJc23n/lz9eor3A2BtsTL02ZNTzNSTmiTvBwE=",
+        "rules_apple_py.patch": "sha256-wa2E41Ey4fYpCjClgFCqrvmcvVjr6F0SqTjz+or1YpQ="
+    },
+    "patch_strip": 1
+}
