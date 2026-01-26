@@ -101,7 +101,12 @@ cc_binary(
         "src/lj_*.h",
         "src/host/*.h",
         "dynasm/*.h",
-    ]),
+    ]) + [
+        "src/lua.h",
+        "src/lualib.h",
+        "src/lauxlib.h",
+        "src/luaconf.h",
+    ],
     copts = [
         "-O2",
         "-fomit-frame-pointer",
