@@ -104,18 +104,16 @@ cc_binary(
         "src/host/buildvm_lib.c",
         "src/host/buildvm_fold.c",
         ":buildvm_arch_h",
-    ],
-    hdrs = glob([
-        "src/lj_*.h",
-        "src/host/*.h",
-        "dynasm/*.h",
-    ]) + [
         "src/lua.h",
         "src/lualib.h",
         "src/lauxlib.h",
         "src/luaconf.h",
         ":luajit_h",
-    ],
+    ] + glob([
+        "src/lj_*.h",
+        "src/host/*.h",
+        "dynasm/*.h",
+    ]),
     copts = [
         "-O2",
         "-fomit-frame-pointer",

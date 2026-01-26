@@ -3,7 +3,7 @@
     "integrity": "sha256-qz8W2C32lGVDVlz7DSgQ04fXmjpD4EMWlbA0ZhiOJoA=",
     "strip_prefix": "LuaJIT-871db2c84ecefd70a850e03a6c340214a81739f0",
     "overlay": {
-        "BUILD.bazel": "sha256-vBlbnzCUB7hF0P0T2E6TJcyyXhOBoxV6aPQ6Xrivgro=",
+        "BUILD.bazel": "sha256-YXP+oTWAyskUXphXkDXxYUx0yvnWtMcOm8SeDIyt6to=",
         "MODULE.bazel": "sha256-C3pyisAnK4E0bJB/1S9Nzmif7rSk7pkyhoHwfVUzHRw="
     }
 }
