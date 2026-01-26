@@ -293,6 +293,7 @@ cc_library(
     ]),
     hdrs = [
         "src/lua.h",
+        "src/lua.hpp",
         "src/luajit.h",
         "src/lualib.h",
         "src/lauxlib.h",
