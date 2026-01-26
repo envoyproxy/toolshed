@@ -88,6 +88,13 @@ genrule(
 # Stage 3: Build buildvm (host tool)
 ##############################################################################
 
+genrule(
+    name = "luajit_h",
+    srcs = ["src/luajit_rolling.h"],
+    outs = ["src/luajit.h"],
+    cmd = "sed -e '/#error/d' $(location src/luajit_rolling.h) > $@",
+)
+
 cc_binary(
     name = "buildvm",
     srcs = [
@@ -97,7 +104,8 @@ cc_binary(
         "src/host/buildvm_lib.c",
         "src/host/buildvm_fold.c",
         ":buildvm_arch_h",
-    ] + glob([
+    ],
+    hdrs = glob([
         "src/lj_*.h",
         "src/host/*.h",
         "dynasm/*.h",
@@ -106,6 +114,7 @@ cc_binary(
         "src/lualib.h",
         "src/lauxlib.h",
         "src/luaconf.h",
+        ":luajit_h",
     ],
     copts = [
         "-O2",
