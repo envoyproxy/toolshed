@@ -1,8 +1,5 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-# VPP Version - hardcoded because version detection requires git metadata or .version file
-VPP_VERSION = "26.02-dev"
-
 # Generate config.h for vppinfra
 genrule(
     name = "config_h",
@@ -89,7 +86,7 @@ cc_library(
         "src/vppinfra/perfmon/bundle_default.c",
         "src/vppinfra/perfmon/bundle_core_power.c",
         "src/vppinfra/perfmon/perfmon.c",
-    ] + glob(["src/vppinfra/**/*.h"]),
+    ],
     hdrs = glob(["src/vppinfra/**/*.h"]) + [":config_h"],
     copts = [
         "-fvisibility=hidden",
@@ -141,7 +138,7 @@ cc_library(
     ],
     hdrs = glob(["src/vcl/*.h"]),
     copts = [
-        "-DHAVE_GNU_SOURCE",
+        "-D_GNU_SOURCE",
     ],
     includes = ["src"],
     linkopts = [
