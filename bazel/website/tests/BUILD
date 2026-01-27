@@ -2,6 +2,11 @@ load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup", "pkg_files")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//website:macros.bzl", "static_website", "website_theme")
+load("//website/content:markdown.bzl", "markdown_assets")
+load("//website/content:rst.bzl", "rst_assets")
+load("//website/generators:mock.bzl", "mock_generator")
+load("//website/generators:sphinx.bzl", "sphinx_generator")
+load("//website/generators:yew.bzl", "yew_generator")
 
 # Test content files
 pkg_files(
@@ -126,6 +131,116 @@ sh_test(
     srcs = ["run_compression_test.sh"],
     data = [
         ":test_with_compression",
+    ],
+    deps = [
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
+# ============================================================================
+# Provider Architecture Tests
+# ============================================================================
+
+# Test content using new typed asset rules
+markdown_assets(
+    name = "test_markdown_content",
+    srcs = glob(["test_content/**/*.md"]),
+    strip_prefix = "test_content",
+    prefix = "content",
+)
+
+rst_assets(
+    name = "test_rst_content",
+    srcs = [],  # No RST files yet, but tests the infrastructure
+    prefix = "content",
+)
+
+# Test generators with WebsiteGeneratorInfo
+
+mock_generator(
+    name = "mock_gen",
+    accepts = ["markdown", "rst", "jinja", "css", "js", "static"],
+    output_path = "output",
+)
+
+sphinx_generator(
+    name = "sphinx_gen",
+    accepts = ["rst", "markdown", "sphinx_theme", "css", "js", "static"],
+    output_path = "output",
+)
+
+yew_generator(
+    name = "yew_gen",
+    accepts = ["rust_component", "css", "js", "static", "wasm"],
+    output_path = "output",
+)
+
+# Test: Mock generator with markdown assets
+static_website(
+    name = "test_mock_markdown",
+    content = ":test_markdown_content",
+    theme = ":test_theme",
+    config = ":test_config.py",
+    content_path = "content",
+    output_path = "output",
+    data = None,
+    mappings = {},
+    exclude = [],
+    generator = ":mock_gen",
+)
+
+# Test: Sphinx generator skeleton with RST content
+static_website(
+    name = "test_sphinx_skeleton",
+    content = ":test_rst_content",
+    theme = ":test_theme",
+    config = ":test_config.py",
+    content_path = "content",
+    output_path = "output",
+    data = None,
+    mappings = {},
+    exclude = [],
+    generator = ":sphinx_gen",
+)
+
+# Test: Yew generator skeleton
+static_website(
+    name = "test_yew_skeleton",
+    content = ":test_rst_content",  # Yew doesn't use typical content
+    theme = ":test_theme",
+    config = ":test_config.py",
+    content_path = "content",
+    output_path = "output",
+    data = None,
+    mappings = {},
+    exclude = [],
+    generator = ":yew_gen",
+)
+
+# Test: Mock generator with mixed asset types
+static_website(
+    name = "test_mock_mixed",
+    content = ":test_markdown_content",
+    theme = ":test_theme",
+    config = ":test_config.py",
+    content_path = "content",
+    output_path = "output",
+    data = None,
+    mappings = {},
+    exclude = [],
+    generator = ":mock_gen",
+)
+
+# Provider architecture test suite
+sh_test(
+    name = "provider_architecture_test",
+    size = "small",
+    srcs = ["run_provider_tests.sh"],
+    data = [
+        ":test_mock_markdown",
+        ":test_sphinx_skeleton",
+        ":test_yew_skeleton",
+        ":test_mock_mixed",
     ],
     deps = [
         "@bazel_tools//tools/bash/runfiles",
