@@ -1,0 +1,17 @@
+{
+    "homepage": "https://github.com/awslabs/aws-c-auth",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:awslabs/aws-c-auth"
+    ],
+    "versions": [
+        "0.9.5.envoy"
+    ],
+    "yanked_versions": {}
+}
