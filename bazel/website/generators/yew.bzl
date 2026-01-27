@@ -1,6 +1,7 @@
 """Yew/Rust generator skeleton (for WASM extensibility testing)."""
 
 load("//website:providers.bzl", "WebsiteGeneratorInfo")
+load("//website:assets.bzl", "static_assets")
 
 def _yew_generator_impl(ctx):
     """Implementation for Yew generator skeleton."""
@@ -99,9 +100,6 @@ def rust_assets(
         prefix: Mount point (default: "components")
         **kwargs: Additional arguments
     """
-    # Import here to avoid circular dependency
-    load("//website:assets.bzl", "static_assets")
-    
     static_assets(
         name = name,
         srcs = srcs,
