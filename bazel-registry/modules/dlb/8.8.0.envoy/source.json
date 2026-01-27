@@ -1,0 +1,9 @@
+{
+    "url": "https://downloadmirror.intel.com/819078/dlb_linux_src_release_8.8.0.txz",
+    "integrity": "sha256-VkU0JU7zK/7VbgpGTFP8oJB+RGswkpwlMhDiw9beWLk=",
+    "strip_prefix": "dlb",
+    "overlay": {
+        "BUILD.bazel": "sha256-f+fbHwnC5tpM8kaFRcDqF7qygaTkSIfQDw+6ncvPm/s=",
+        "MODULE.bazel": "sha256-a8gcLrFZRRCDKQqcPHOheLeb6dSoE7b5VL48HMHoSuA="
+    }
+}

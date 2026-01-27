@@ -1,0 +1,38 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])  # Apache-2.0
+
+# Copy dlb2_user.h header from driver directory to libdlb directory
+# This replicates what Envoy does via patch_cmds
+genrule(
+    name = "copy_dlb2_user_h",
+    srcs = ["driver/dlb2/uapi/linux/dlb2_user.h"],
+    outs = ["libdlb/dlb2_user.h"],
+    cmd = "cp $< $@",
+)
+
+# Main libdlb static library
+cc_library(
+    name = "dlb",
+    srcs = glob([
+        "libdlb/*.c",
+    ], exclude = [
+        "libdlb/examples/**",
+    ]),
+    hdrs = glob([
+        "libdlb/*.h",
+    ]) + [":copy_dlb2_user_h"],
+    copts = [
+        "-std=c99",
+        "-D_GNU_SOURCE",
+        "-DDLB_DISABLE_DOMAIN_SERVER",
+        "-fPIC",
+    ],
+    includes = ["libdlb"],
+    strip_include_prefix = "libdlb",
+    linkopts = [
+        "-lpthread",
+    ],
+)

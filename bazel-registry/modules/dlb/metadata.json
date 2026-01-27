@@ -1,0 +1,16 @@
+{
+    "homepage": "https://www.intel.com/content/www/us/en/developer/topic-technology/open/overview.html",
+    "maintainers": [
+        {
+            "name": "Envoy maintainers",
+            "github": "envoyproxy"
+        }
+    ],
+    "repository": [
+        "github:intel/dlb"
+    ],
+    "versions": [
+        "8.8.0.envoy"
+    ],
+    "yanked_versions": {}
+}
