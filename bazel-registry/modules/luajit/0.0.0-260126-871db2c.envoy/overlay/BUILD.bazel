@@ -301,6 +301,11 @@ cc_library(
         "-fno-function-sections",
         "-fno-data-sections",
         "-DLUAJIT_UNWIND_EXTERNAL",
+        # Disable sanitizers for LuaJIT - upstream has declined to fix UBSan issues
+        # (see https://github.com/LuaJIT/LuaJIT/issues/841)
+        # This matches the previous foreign_cc build behavior which used a blocklist
+        # to exclude all LuaJIT functions from sanitizer instrumentation.
+        "-fno-sanitize=all",
     ],
     includes = ["src"],
     local_defines = [
