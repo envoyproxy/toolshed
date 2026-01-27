@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/grailbio/bazel-compilation-database",
+    "maintainers": [],
+    "repository": [
+        "github:grailbio/bazel-compilation-database"
+    ],
+    "versions": [
+        "0.0.0-20220906-4086479.envoy"
+    ],
+    "yanked_versions": {}
+}
