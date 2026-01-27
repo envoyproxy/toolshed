@@ -30,7 +30,6 @@ cc_library(
         "-DDLB_DISABLE_DOMAIN_SERVER",
         "-fPIC",
     ],
-    includes = ["libdlb"],
     strip_include_prefix = "libdlb",
     linkopts = [
         "-lpthread",
