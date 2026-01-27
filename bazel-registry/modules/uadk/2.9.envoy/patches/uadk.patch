@@ -1,0 +1,28 @@
+diff --git a/v1/wd.h b/v1/wd.h
+index 79b8a2a..3810175 100644
+--- a/v1/wd.h
++++ b/v1/wd.h
+@@ -153,7 +153,7 @@ extern wd_log log_out;
+ 		((char *)((uintptr_t)strrchr(__FILE__, '/') + 1)) : __FILE__)
+ 
+ #define WD_ERR(format, args...)	\
+-	(log_out ? log_out("[%s, %d, %s]:"format,	\
++	(log_out ? log_out("[%s, %d, %s]:" format,	\
+ 	__WD_FILENAME__, __LINE__, __func__, ##args) : 	\
+ 	fprintf(stderr, format, ##args))
+ #else
+diff --git a/v1/wd_util.h b/v1/wd_util.h
+index 9767be4..b11476c 100644
+--- a/v1/wd_util.h
++++ b/v1/wd_util.h
+@@ -112,8 +112,8 @@ struct wd_lock {
+ };
+ 
+ struct wd_fair_lock {
+-	__u32 ticket;
+-	__u32 serving;
++	_Atomic __u32 ticket;
++	_Atomic __u32 serving;
+ };
+ 
+ struct wd_ss_region {

@@ -1,0 +1,172 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # Apache-2.0
+
+genrule(
+    name = "uadk_version_h",
+    srcs = ["Makefile.am"],
+    outs = ["uadk_version.h"],
+    cmd = """
+        MAKEFILE="$(location Makefile.am)"
+        MAJOR=$$(grep '^MAJOR = ' "$$MAKEFILE" | awk '{print $$3}')
+        MINOR=$$(grep '^MINOR = ' "$$MAKEFILE" | awk '{print $$3}')
+        REVISION=$$(grep '^REVISION = ' "$$MAKEFILE" | awk '{print $$3}')
+        DAY=$$(grep '^DAY = ' "$$MAKEFILE" | awk '{print $$3}')
+        MONTH=$$(grep '^MONTH = ' "$$MAKEFILE" | awk '{print $$3}')
+        YEAR=$$(grep '^YEAR = ' "$$MAKEFILE" | awk '{print $$3}')
+        cat > $@ << EOF
+#ifndef UADK_VERSION_H_
+#define UADK_VERSION_H_
+
+#define UADK_VERSION_NUMBER "UADK version: $${MAJOR}.$${MINOR}.$${REVISION}"
+#define UADK_RELEASED_TIME "Released $${MONTH} $${DAY}, $${YEAR}"
+
+#endif
+EOF
+    """,
+)
+
+# v1 headers exported as uadk/v1/*
+cc_library(
+    name = "uadk_v1_hdrs",
+    hdrs = [
+        "v1/wd.h",
+        "v1/wd_rsa.h",
+        "v1/wd_bmm.h",
+        "v1/uacce.h",
+        "v1/wd_aead.h",
+        "v1/wd_cipher.h",
+        "v1/wd_comp.h",
+        "v1/wd_dh.h",
+        "v1/wd_digest.h",
+        "v1/wd_ecc.h",
+        "v1/wd_sgl.h",
+    ],
+    strip_include_prefix = "v1",
+    include_prefix = "uadk/v1",
+    visibility = ["//visibility:public"],
+)
+
+# include/ headers exported as uadk/*
+cc_library(
+    name = "uadk_include_hdrs",
+    hdrs = [
+        "include/wd.h",
+        "include/wd_cipher.h",
+        "include/wd_aead.h",
+        "include/wd_comp.h",
+        "include/wd_dh.h",
+        "include/wd_digest.h",
+        "include/wd_rsa.h",
+        "include/uacce.h",
+        "include/wd_alg_common.h",
+        "include/wd_ecc.h",
+        "include/wd_sched.h",
+        "include/wd_alg.h",
+        "include/wd_zlibwrapper.h",
+        "include/wd_dae.h",
+        "include/wd_agg.h",
+    ],
+    strip_include_prefix = "include",
+    include_prefix = "uadk",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "uadk",
+    srcs = [
+        "wd.c",
+        "wd_mempool.c",
+        "wd_alg.c",
+        "v1/wd.c",
+        "v1/wd_adapter.c",
+        "v1/wd_rsa.c",
+        "v1/wd_aead.c",
+        "v1/wd_dh.c",
+        "v1/wd_comp.c",
+        "v1/wd_cipher.c",
+        "v1/wd_digest.c",
+        "v1/wd_util.c",
+        "v1/wd_bmm.c",
+        "v1/wd_ecc.c",
+        "v1/wd_sgl.c",
+        "lib/crypto/aes.c",
+        "lib/crypto/sm4.c",
+        "lib/crypto/galois.c",
+        "v1/drv/hisi_qm_udrv.c",
+        "v1/drv/hisi_zip_udrv.c",
+        "v1/drv/hisi_zip_huf.c",
+        "v1/drv/hisi_hpre_udrv.c",
+        "v1/drv/hisi_sec_udrv.c",
+        ":uadk_version_h",
+    ],
+    hdrs = [
+        "v1/wd.h",
+        "v1/wd_rsa.h",
+        "v1/wd_bmm.h",
+        "v1/uacce.h",
+        "v1/wd_aead.h",
+        "v1/wd_cipher.h",
+        "v1/wd_comp.h",
+        "v1/wd_dh.h",
+        "v1/wd_digest.h",
+        "v1/wd_ecc.h",
+        "v1/wd_sgl.h",
+        "include/wd.h",
+        "include/wd_cipher.h",
+        "include/wd_aead.h",
+        "include/wd_comp.h",
+        "include/wd_dh.h",
+        "include/wd_digest.h",
+        "include/wd_rsa.h",
+        "include/uacce.h",
+        "include/wd_alg_common.h",
+        "include/wd_ecc.h",
+        "include/wd_sched.h",
+        "include/wd_alg.h",
+        "include/wd_zlibwrapper.h",
+        "include/wd_dae.h",
+        "include/wd_agg.h",
+    ],
+    textual_hdrs = [
+        "v1/wd_adapter.h",
+        "v1/wd_util.h",
+        "v1/drv/hisi_qm_udrv.h",
+        "v1/drv/hisi_zip_udrv.h",
+        "v1/drv/hisi_zip_huf.h",
+        "v1/drv/hisi_hpre_udrv.h",
+        "v1/drv/hisi_sec_udrv.h",
+        "v1/internal/wd_ecc_curve.h",
+        "include/crypto/aes.h",
+        "include/crypto/sm4.h",
+        "include/crypto/galois.h",
+    ],
+    copts = [
+        "-Wall",
+        "-fno-strict-aliasing",
+        "-fPIC",
+        "-O2",
+        "-DWD_STATIC_DRV",
+        "-DWD_NO_LOG",
+        "-Wno-reserved-user-defined-literal",
+        "-include",
+        "uadk_version.h",
+    ],
+    includes = [
+        ".",
+        "include",
+        "v1",
+        "v1/drv",
+    ],
+    linkopts = ["-ldl"],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@numactl",
+        ":uadk_v1_hdrs",
+        ":uadk_include_hdrs",
+    ],
+)

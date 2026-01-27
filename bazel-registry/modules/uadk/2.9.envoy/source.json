@@ -1,0 +1,12 @@
+{
+    "url": "https://github.com/Linaro/uadk/archive/refs/tags/v2.9.tar.gz",
+    "integrity": "sha256-hXM53ScNH7PAaOrg+RLIgU00kLf/JebvIACG/OK1dVc=",
+    "strip_prefix": "uadk-2.9",
+    "patches": {
+        "uadk.patch": "sha256-Ic0V11C/wtArraNCwSYjTPb4sJzYgQQywHvZa27RbVk="
+    },
+    "patch_strip": 1,
+    "overlay": {
+        "BUILD.bazel": "sha256-iggBMT3s0RiXrZQMBXLZ6IKoYnyqUChm+yQYFCdmIiU="
+    }
+}
