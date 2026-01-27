@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/awslabs/aws-c-auth/archive/refs/tags/v0.9.5.tar.gz",
+    "integrity": "sha256-OQAL/1X+jIImW5BEqWarN9pcGSp3Xhtotvy6fn+Ygvs=",
+    "strip_prefix": "aws-c-auth-0.9.5",
+    "overlay": {
+        "BUILD.bazel": "sha256-fYbkvIxTSZ5V/GTV0fA1TuNi0evkMC2uRmxJk3izPok="
+    }
+}

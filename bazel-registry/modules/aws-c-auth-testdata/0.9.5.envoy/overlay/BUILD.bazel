@@ -1,0 +1,25 @@
+"""AWS SigV4/SigV4A signing test corpus from aws-c-auth.
+
+This module provides only the test data files from aws-c-auth,
+not the library itself. Used by Envoy's signing implementation tests.
+"""
+
+licenses(["notice"])  # Apache 2
+
+# Test data for sigv4 signer corpus tests
+filegroup(
+    name = "sigv4_tests",
+    srcs = glob(
+        ["tests/aws-signing-test-suite/v4/**"],
+    ),
+    visibility = ["//visibility:public"],
+)
+
+# Test data for sigv4a signer corpus tests
+filegroup(
+    name = "sigv4a_tests",
+    srcs = glob(
+        ["tests/aws-signing-test-suite/v4a/**"],
+    ),
+    visibility = ["//visibility:public"],
+)

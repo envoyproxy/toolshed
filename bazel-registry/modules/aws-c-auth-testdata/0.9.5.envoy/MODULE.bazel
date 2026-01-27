@@ -1,0 +1,7 @@
+"""AWS SigV4/SigV4A signing test suite data from aws-c-auth."""
+
+module(
+    name = "aws-c-auth-testdata",
+    version = "0.9.5.envoy",
+    compatibility_level = 1,
+)
