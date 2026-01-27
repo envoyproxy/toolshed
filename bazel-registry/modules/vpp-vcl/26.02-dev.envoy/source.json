@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/FDio/vpp/archive/85abefb55ee931fa4e45c0b6a9fc8c43118651b3.tar.gz",
+    "integrity": "sha256-ViTEpAcChZ0vDadAHg7TSNX6NmSrwhUg4mNrAm+X0y4=",
+    "strip_prefix": "vpp-85abefb55ee931fa4e45c0b6a9fc8c43118651b3",
+    "overlay": {
+        "BUILD.bazel": "sha256-HVuXUNuZff8iYYO75dn245t4xZPKqJgGbKRdT2tPk1w=",
+        "MODULE.bazel": "sha256-wN1YYBmTImaTpZc7qXm+/rAM4LkNMNDFxLY/gE3nyOo="
+    }
+}
