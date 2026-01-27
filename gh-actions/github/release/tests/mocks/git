@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Mock git command for testing
+# Mocks only the commands used by release.sh
+
+MOCK_GIT_LOG="${MOCK_GIT_LOG:-/tmp/git-mock.log}"
+echo "git $*" >> "$MOCK_GIT_LOG"
+
+command="${1:-}"
+
+case "$command" in
+    commit)
+        shift
+        message=""
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                -m)
+                    message="$2"
+                    shift 2
+                    ;;
+                --signoff)
+                    shift
+                    ;;
+                *)
+                    shift
+                    ;;
+            esac
+        done
+        echo "[main $(echo $RANDOM | md5sum | head -c 7)] $message"
+        echo " 1 file changed, 1 insertion(+), 1 deletion(-)"
+        ;;
+    push)
+        echo "To mock-origin"
+        echo "   abc123..def456  main -> main"
+        ;;
+    *)
+        exit 0
+        ;;
+esac
