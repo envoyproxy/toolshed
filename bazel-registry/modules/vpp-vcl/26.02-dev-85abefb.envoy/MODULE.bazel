@@ -1,0 +1,9 @@
+module(
+    name = "vpp-vcl",
+    version = "26.02-dev-85abefb.envoy",
+    bazel_compatibility = [">=7.2.1"],
+    compatibility_level = 0,
+)
+
+bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "rules_cc", version = "0.0.17")
