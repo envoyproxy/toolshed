@@ -1,0 +1,5 @@
+module(
+    name = "bazel-compdb",
+    version = "0.0.0-20220906-4086479.envoy",
+    compatibility_level = 0,
+)
