@@ -185,6 +185,7 @@ $RECYCLE.BIN/
 # Bazel
 /bazel-*
 !/bazel-registry/
+bazel/bazel-*
 
 # Rust coverage reports
 rust/tarpaulin-report.html
