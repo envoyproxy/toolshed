@@ -7,7 +7,7 @@ matrix:
   - 7.x
 tasks:
   verify_targets:
-    name: Build dlb
+    name: Build dlb library
     platform: ${{ platform }}
     bazel: ${{ bazel }}
     build_targets:
