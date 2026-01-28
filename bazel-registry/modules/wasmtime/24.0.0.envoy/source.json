@@ -3,7 +3,7 @@
     "integrity": "sha256-LMtJuzv6TYaQetTIDRFHrvYVbHtuP38U7QKjnel2EVU=",
     "strip_prefix": "wasmtime-24.0.0",
     "overlay": {
-        "BUILD.bazel": "sha256-70H10L53fh3jB39rGCt28lHjDqHeytSaQXcFBTBoaNo=",
+        "BUILD.bazel": "sha256-PFs5cPyh6F2Uk0YGbg971+LGS6TnupjShtLUM5YVOcY=",
         "extensions.bzl": "sha256-ZcMgLP4pqV4EEZfxJGiEX+SCxwWSL4oYxbHXCXz2Vjk="
     }
 }

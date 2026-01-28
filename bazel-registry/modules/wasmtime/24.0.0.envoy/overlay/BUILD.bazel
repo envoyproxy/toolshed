@@ -21,9 +21,10 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "wasmtime_lib",
-    hdrs = [
-        "crates/c-api/include/wasm.h",
-    ],
+    hdrs = glob([
+        "crates/c-api/include/**/*.h",
+    ]),
+    includes = ["crates/c-api/include"],
     deps = [
         ":rust_c_api",
     ],
@@ -38,11 +39,10 @@ genrule(
         "crates/c-api/include/prefixed_wasm.h",
     ],
     cmd = """
-        sed -e 's/\\ wasm_/\\ wasmtime_wasm_/g' \
-            -e 's/\\*wasm_/\\*wasmtime_wasm_/g' \
-            -e 's/(wasm_/(wasmtime_wasm_/g'     \
+        sed -e 's/\\([[:space:](*,]\\)wasm_/\\1wasmtime_wasm_/g' \
+            -e 's/^wasm_/wasmtime_wasm_/g' \
         $(<) >$@
-        """,
+    """,
 )
 
 genrule(
@@ -55,11 +55,15 @@ genrule(
     ],
     cmd = """
         for symbol in $$(nm -P $(<) 2>/dev/null | grep -E ^_?wasm_ | cut -d" " -f1); do
-            echo $$symbol | sed -r 's/^(_?)(wasm_[a-z_]+)$$/\\1\\2 \\1wasmtime_\\2/' >>prefixed
+            echo $$symbol | sed -r 's/^(_?)(wasm_[a-z0-9_]+)$$/\\1\\2 \\1wasmtime_\\2/' >>$(GENDIR)/prefixed_symbols
         done
-        objcopy --redefine-syms=prefixed $(<) $@
+        objcopy --redefine-syms=$(GENDIR)/prefixed_symbols $(<) $@
         """,
     toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
 )
 
 cc_library(
@@ -71,6 +75,12 @@ cc_library(
         ":prefixed_wasmtime_c_api_headers",
     ],
     linkstatic = 1,
+    # Note: prefixed_wasmtime_lib is Linux-only due to objcopy dependency
+    # For cross-platform support, use wasmtime_lib instead
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
 )
 
 rust_static_library(
