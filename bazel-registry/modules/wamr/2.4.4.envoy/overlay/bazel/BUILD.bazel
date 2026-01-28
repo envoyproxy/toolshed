@@ -1,0 +1,52 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+package(default_visibility = ["//visibility:public"])
+
+# Debug/dev features - default OFF for production
+bool_flag(name = "dump_call_stack", build_setting_default = False)
+bool_flag(name = "custom_name_section", build_setting_default = False)
+bool_flag(name = "load_custom_section", build_setting_default = False)
+
+# Runtime mode
+bool_flag(name = "fast_interp", build_setting_default = True)
+
+# Wasm features
+bool_flag(name = "bulk_memory", build_setting_default = True)
+bool_flag(name = "ref_types", build_setting_default = True)
+bool_flag(name = "tail_call", build_setting_default = True)
+bool_flag(name = "simd", build_setting_default = False)
+
+# Config settings for selects
+config_setting(name = "dump_call_stack_enabled", flag_values = {":dump_call_stack": "True"})
+config_setting(name = "custom_name_section_enabled", flag_values = {":custom_name_section": "True"})
+config_setting(name = "load_custom_section_enabled", flag_values = {":load_custom_section": "True"})
+config_setting(name = "fast_interp_enabled", flag_values = {":fast_interp": "True"})
+config_setting(name = "bulk_memory_enabled", flag_values = {":bulk_memory": "True"})
+config_setting(name = "ref_types_enabled", flag_values = {":ref_types": "True"})
+config_setting(name = "tail_call_enabled", flag_values = {":tail_call": "True"})
+config_setting(name = "simd_enabled", flag_values = {":simd": "True"})
+
+# Combined arch + simd config settings
+config_setting(
+    name = "x86_64_simd",
+    constraint_values = ["@platforms//cpu:x86_64"],
+    flag_values = {":simd": "True"},
+)
+
+config_setting(
+    name = "x86_64_no_simd",
+    constraint_values = ["@platforms//cpu:x86_64"],
+    flag_values = {":simd": "False"},
+)
+
+config_setting(
+    name = "aarch64_simd",
+    constraint_values = ["@platforms//cpu:aarch64"],
+    flag_values = {":simd": "True"},
+)
+
+config_setting(
+    name = "aarch64_no_simd",
+    constraint_values = ["@platforms//cpu:aarch64"],
+    flag_values = {":simd": "False"},
+)

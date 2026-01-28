@@ -1,0 +1,175 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])  # Apache 2.0 with LLVM exception
+
+cc_library(
+    name = "iwasm",
+    srcs = [
+        # Memory allocator sources (EMS only - tlsf has been removed from upstream)
+        "core/shared/mem-alloc/ems/ems_alloc.c",
+        "core/shared/mem-alloc/ems/ems_gc.c",
+        "core/shared/mem-alloc/ems/ems_hmu.c",
+        "core/shared/mem-alloc/ems/ems_kfc.c",
+        "core/shared/mem-alloc/mem_alloc.c",
+        # Shared utils
+        "core/shared/utils/bh_assert.c",
+        "core/shared/utils/bh_bitmap.c",
+        "core/shared/utils/bh_common.c",
+        "core/shared/utils/bh_hashmap.c",
+        "core/shared/utils/bh_leb128.c",
+        "core/shared/utils/bh_list.c",
+        "core/shared/utils/bh_log.c",
+        "core/shared/utils/bh_queue.c",
+        "core/shared/utils/bh_vector.c",
+        "core/shared/utils/runtime_timer.c",
+        # IWASM common sources
+        "core/iwasm/common/wasm_blocking_op.c",
+        "core/iwasm/common/wasm_c_api.c",
+        "core/iwasm/common/wasm_exec_env.c",
+        "core/iwasm/common/wasm_loader_common.c",
+        "core/iwasm/common/wasm_memory.c",
+        "core/iwasm/common/wasm_native.c",
+        "core/iwasm/common/wasm_runtime_common.c",
+        "core/iwasm/common/wasm_shared_memory.c",
+        # Interpreter sources
+        "core/iwasm/interpreter/wasm_loader.c",
+        "core/iwasm/interpreter/wasm_runtime.c",
+    ] + select({
+        # Fast vs classic interpreter
+        "//bazel:fast_interp_enabled": ["core/iwasm/interpreter/wasm_interp_fast.c"],
+        "//conditions:default": ["core/iwasm/interpreter/wasm_interp_classic.c"],
+    }) + select({
+        # Platform-specific sources
+        "@platforms//os:linux": [
+            "core/shared/platform/linux/platform_init.c",
+            "core/shared/platform/common/posix/posix_malloc.c",
+            "core/shared/platform/common/posix/posix_memmap.c",
+            "core/shared/platform/common/posix/posix_thread.c",
+            "core/shared/platform/common/posix/posix_time.c",
+            "core/shared/platform/common/posix/posix_sleep.c",
+            "core/shared/platform/common/posix/posix_blocking_op.c",
+        ],
+        "@platforms//os:macos": [
+            "core/shared/platform/darwin/platform_init.c",
+            "core/shared/platform/common/posix/posix_malloc.c",
+            "core/shared/platform/common/posix/posix_memmap.c",
+            "core/shared/platform/common/posix/posix_thread.c",
+            "core/shared/platform/common/posix/posix_time.c",
+            "core/shared/platform/common/posix/posix_sleep.c",
+            "core/shared/platform/common/posix/posix_blocking_op.c",
+            # macOS doesn't have mremap, use fallback
+            "core/shared/platform/common/memory/mremap.c",
+        ],
+    }) + select({
+        # Architecture-specific native invoke sources
+        "//bazel:x86_64_simd": ["core/iwasm/common/arch/invokeNative_em64_simd.s"],
+        "//bazel:x86_64_no_simd": ["core/iwasm/common/arch/invokeNative_em64.s"],
+        "//bazel:aarch64_simd": ["core/iwasm/common/arch/invokeNative_aarch64_simd.s"],
+        "//bazel:aarch64_no_simd": ["core/iwasm/common/arch/invokeNative_aarch64.s"],
+        # Fallback to general C implementation for other architectures
+        "//conditions:default": ["core/iwasm/common/arch/invokeNative_general.c"],
+    }),
+    hdrs = glob([
+        "core/*.h",  # For version.h and config.h
+        "core/iwasm/include/*.h",
+        "core/shared/platform/include/*.h",
+        "core/shared/platform/linux/*.h",
+        "core/shared/platform/darwin/*.h",
+        "core/shared/platform/common/posix/*.h",
+        "core/shared/mem-alloc/*.h",
+        "core/shared/mem-alloc/ems/*.h",
+        "core/shared/utils/*.h",
+        "core/iwasm/common/*.h",
+        "core/iwasm/interpreter/*.h",
+        "core/iwasm/aot/*.h",
+        "core/iwasm/compilation/*.h",
+    ]),
+    copts = select({
+        "@platforms//os:windows": [],
+        "//conditions:default": [
+            "-std=gnu99",
+            "-Wno-unused-parameter",
+            "-Wno-pedantic",
+            "-Wno-unused-command-line-argument",
+        ],
+    }),
+    includes = [
+        ".",  # Root for all relative paths
+        "core",
+        "core/iwasm",  # For relative paths like ../aot/ from common/
+        "core/iwasm/include",
+        "core/shared/platform/include",
+        "core/shared/mem-alloc",
+        "core/shared/mem-alloc/ems",
+        "core/shared/utils",
+        "core/iwasm/common",
+        "core/iwasm/interpreter",
+        "core/iwasm/aot",
+        "core/iwasm/compilation",
+    ] + select({
+        "@platforms//os:linux": ["core/shared/platform/linux"],
+        "@platforms//os:macos": ["core/shared/platform/darwin"],
+        "//conditions:default": [],
+    }),
+    linkopts = select({
+        "@platforms//os:linux": ["-lpthread", "-lm"],
+        "@platforms//os:macos": ["-lpthread"],
+        "//conditions:default": [],
+    }),
+    local_defines = [
+        # Core defines
+        "WASM_ENABLE_INTERP=1",
+        "BH_MALLOC=wasm_runtime_malloc",
+        "BH_FREE=wasm_runtime_free",
+        # Use EMS allocator (tlsf has been removed from upstream WAMR)
+        "MEM_ALLOCATOR_EMS=0",
+        "MEM_ALLOCATOR_TLSF=1",
+        "DEFAULT_MEM_ALLOCATOR=MEM_ALLOCATOR_EMS",
+        # Disable features we don't need
+        "WASM_ENABLE_LIBC_WASI=0",
+        "WASM_ENABLE_LIBC_BUILTIN=0",
+        "WASM_ENABLE_MULTI_MODULE=0",
+        "WASM_ENABLE_AOT=0",
+        "WASM_ENABLE_JIT=0",
+    ] + select({
+        "@platforms//os:linux": [
+            "BH_PLATFORM_LINUX",
+            "_GNU_SOURCE",  # Required for mremap and MREMAP_MAYMOVE
+            "WASM_HAVE_MREMAP=1",  # Linux has native mremap syscall
+        ],
+        "@platforms//os:macos": ["BH_PLATFORM_DARWIN"],
+        "//conditions:default": [],
+    }) + select({
+        "//bazel:fast_interp_enabled": ["WASM_ENABLE_FAST_INTERP=1"],
+        "//conditions:default": ["WASM_ENABLE_FAST_INTERP=0"],
+    }) + select({
+        "//bazel:dump_call_stack_enabled": ["WASM_ENABLE_DUMP_CALL_STACK=1"],
+        "//conditions:default": ["WASM_ENABLE_DUMP_CALL_STACK=0"],
+    }) + select({
+        "//bazel:custom_name_section_enabled": ["WASM_ENABLE_CUSTOM_NAME_SECTION=1"],
+        "//conditions:default": ["WASM_ENABLE_CUSTOM_NAME_SECTION=0"],
+    }) + select({
+        "//bazel:load_custom_section_enabled": ["WASM_ENABLE_LOAD_CUSTOM_SECTION=1"],
+        "//conditions:default": ["WASM_ENABLE_LOAD_CUSTOM_SECTION=0"],
+    }) + select({
+        "//bazel:bulk_memory_enabled": ["WASM_ENABLE_BULK_MEMORY=1"],
+        "//conditions:default": ["WASM_ENABLE_BULK_MEMORY=0"],
+    }) + select({
+        "//bazel:ref_types_enabled": ["WASM_ENABLE_REF_TYPES=1"],
+        "//conditions:default": ["WASM_ENABLE_REF_TYPES=0"],
+    }) + select({
+        "//bazel:tail_call_enabled": ["WASM_ENABLE_TAIL_CALL=1"],
+        "//conditions:default": ["WASM_ENABLE_TAIL_CALL=0"],
+    }) + select({
+        "//bazel:simd_enabled": ["WASM_ENABLE_SIMD=1"],
+        "//conditions:default": ["WASM_ENABLE_SIMD=0"],
+    }),
+)
+
+# Alias for compatibility
+alias(
+    name = "wamr_lib",
+    actual = ":iwasm",
+)
