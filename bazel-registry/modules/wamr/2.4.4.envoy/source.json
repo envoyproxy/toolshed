@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/bytecodealliance/wasm-micro-runtime/archive/refs/tags/WAMR-2.4.4.tar.gz",
+    "integrity": "sha256-A61RA38GI1V3t2XuBCpGIybYkZMAEHr0VGcZw1Ulspg=",
+    "strip_prefix": "wasm-micro-runtime-WAMR-2.4.4",
+    "overlay": {
+        "BUILD.bazel": "sha256-15Kvn7oeE1LzysysQNzR8wmweMhfB/VsVuWRJpPR/GA=",
+        "bazel/BUILD.bazel": "sha256-zlpzIe/So0vrWA7sGML4CI5E1k5UOe8ebJ77XK4h8xc="
+    }
+}
