@@ -1,0 +1,250 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2018 Cisco and/or its affiliates.
+ */
+
+/*
+ * vpp_prometheus_export.c
+ */
+
+#include <arpa/inet.h>
+#include <sys/epoll.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
+#include <netdb.h>
+#ifdef __FreeBSD__
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#endif /* __FreeBSD__ */
+#include <sys/socket.h>
+#include <vpp-api/client/stat_client.h>
+#include <vlib/vlib.h>
+#include <vlib/stats/shared.h>
+#include <ctype.h>
+#include "dump_metrics.h"
+
+/* https://github.com/prometheus/prometheus/wiki/Default-port-allocations */
+#define SERVER_PORT 9482
+
+#define ROOTPAGE  "<html><head><title>Metrics exporter</title></head><body><ul><li><a href=\"/metrics\">metrics</a></li></ul></body></html>"
+#define NOT_FOUND_ERROR "<html><head><title>Document not found</title></head><body><h1>404 - Document not found</h1></body></html>"
+
+static void
+http_handler (FILE *stream, u8 **patterns, u8 v2, u8 *stats_segment_name)
+{
+  char status[80] = { 0 };
+  if (fgets (status, sizeof (status) - 1, stream) == 0)
+    {
+      fprintf (stderr, "fgets error: %s %s\n", status, strerror (errno));
+      return;
+    }
+  char *saveptr;
+  char *method = strtok_r (status, " \t\r\n", &saveptr);
+  if (method == 0 || strncmp (method, "GET", 4) != 0)
+    {
+      fputs ("HTTP/1.0 405 Method Not Allowed\r\n", stream);
+      return;
+    }
+  char *request_uri = strtok_r (NULL, " \t", &saveptr);
+  char *protocol = strtok_r (NULL, " \t\r\n", &saveptr);
+  if (protocol == 0 || strncmp (protocol, "HTTP/1.", 7) != 0)
+    {
+      fputs ("HTTP/1.0 400 Bad Request\r\n", stream);
+      return;
+    }
+  /* Read the other headers */
+  for (;;)
+    {
+      char header[1024];
+      if (fgets (header, sizeof (header) - 1, stream) == 0)
+	{
+	  fprintf (stderr, "fgets error: %s\n", strerror (errno));
+	  return;
+	}
+      if (header[0] == '\n' || header[1] == '\n')
+	{
+	  break;
+	}
+    }
+  if (strcmp (request_uri, "/") == 0)
+    {
+      fprintf (stream, "HTTP/1.0 200 OK\r\nContent-Length: %lu\r\n\r\n",
+	       (unsigned long) strlen (ROOTPAGE));
+      fputs (ROOTPAGE, stream);
+      return;
+    }
+  if (strcmp (request_uri, "/metrics") != 0)
+    {
+      fprintf (stream,
+	       "HTTP/1.0 404 Not Found\r\nContent-Length: %lu\r\n\r\n",
+	       (unsigned long) strlen (NOT_FOUND_ERROR));
+      fputs (NOT_FOUND_ERROR, stream);
+      return;
+    }
+  fputs ("HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\n", stream);
+  stat_client_main_t shm;
+  int rv = stat_segment_connect_r ((char *) stats_segment_name, &shm);
+  if (rv)
+    {
+      fformat (stderr, "Couldn't connect to vpp, does %s exist?\n",
+	       stats_segment_name);
+      return;
+    }
+  dump_metrics (stream, patterns, v2, &shm);
+  stat_segment_disconnect_r (&shm);
+}
+
+static int
+start_listen (u16 port)
+{
+  struct sockaddr_in6 serveraddr;
+  int addrlen = sizeof (serveraddr);
+  int enable = 1;
+
+  int listenfd = socket (AF_INET6, SOCK_STREAM, 0);
+  if (listenfd == -1)
+    {
+      perror ("Failed opening socket");
+      return -1;
+    }
+
+  int rv =
+    setsockopt (listenfd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof (int));
+  if (rv < 0)
+    {
+      perror ("Failed setsockopt");
+      close (listenfd);
+      return -1;
+    }
+
+  clib_memset (&serveraddr, 0, sizeof (serveraddr));
+  serveraddr.sin6_family = AF_INET6;
+  serveraddr.sin6_port = htons (port);
+  serveraddr.sin6_addr = in6addr_any;
+
+  if (bind (listenfd, (struct sockaddr *) &serveraddr, addrlen) < 0)
+    {
+      fprintf (stderr, "bind() error %s\n", strerror (errno));
+      close (listenfd);
+      return -1;
+    }
+  if (listen (listenfd, 1000000) != 0)
+    {
+      fprintf (stderr, "listen() error for %s\n", strerror (errno));
+      close (listenfd);
+      return -1;
+    }
+  return listenfd;
+}
+
+/* Socket epoll, linux-specific */
+union my_sockaddr
+{
+  struct sockaddr_storage storage;
+  struct sockaddr addr;
+  struct sockaddr_in sin_addr;
+  struct sockaddr_in6 sin6_addr;
+};
+
+
+
+int
+main (int argc, char **argv)
+{
+  unformat_input_t _argv, *a = &_argv;
+  u8 *stat_segment_name, *pattern = 0, **patterns = 0;
+  u16 port = SERVER_PORT;
+  char *usage =
+    "%s: usage [socket-name <name>] [port <0 - 65535>] [v2] <patterns> ...\n";
+  int rv;
+  u8 v2 = 0;
+
+  /* Allocating 256MB heap */
+  clib_mem_init (0, 256 << 20);
+
+  unformat_init_command_line (a, argv);
+
+  stat_segment_name = (u8 *) STAT_SEGMENT_SOCKET_FILE;
+
+  while (unformat_check_input (a) != UNFORMAT_END_OF_INPUT)
+    {
+      if (unformat (a, "socket-name %s", &stat_segment_name))
+	;
+      if (unformat (a, "v2"))
+	v2 = 1;
+      else if (unformat (a, "port %d", &port))
+	;
+      else if (unformat (a, "%s", &pattern))
+	{
+	  vec_add1 (patterns, pattern);
+	}
+      else
+	{
+	  fformat (stderr, usage, argv[0]);
+	  exit (1);
+	}
+    }
+
+  if (vec_len (patterns) == 0)
+    {
+      fformat (stderr, usage, argv[0]);
+      exit (1);
+    }
+  stat_client_main_t shm;
+  rv = stat_segment_connect_r ((char *) stat_segment_name, &shm);
+  if (rv)
+    {
+      fformat (stderr, "Couldn't connect to vpp, does %s exist?\n",
+	       stat_segment_name);
+      exit (1);
+    }
+  stat_segment_disconnect_r (&shm);
+  int fd = start_listen (port);
+  if (fd < 0)
+    {
+      exit (1);
+    }
+  for (;;)
+    {
+      int conn_sock = accept (fd, NULL, NULL);
+      if (conn_sock < 0)
+	{
+	  fprintf (stderr, "Accept failed: %s", strerror (errno));
+	  continue;
+	}
+      else
+	{
+	  struct sockaddr_in6 clientaddr = { 0 };
+	  char address[INET6_ADDRSTRLEN];
+	  memset (address, 0, sizeof (address));
+	  socklen_t addrlen = sizeof (clientaddr);
+	  getpeername (conn_sock, (struct sockaddr *) &clientaddr, &addrlen);
+	  if (inet_ntop
+	      (AF_INET6, &clientaddr.sin6_addr, address, sizeof (address)))
+	    {
+	      fprintf (stderr, "Client address is [%s]:%d\n", address,
+		       ntohs (clientaddr.sin6_port));
+	    }
+	}
+
+      FILE *stream = fdopen (conn_sock, "r+");
+      if (stream == NULL)
+	{
+	  fprintf (stderr, "fdopen error: %s\n", strerror (errno));
+	  close (conn_sock);
+	  continue;
+	}
+      /* Single reader at the moment */
+      http_handler (stream, patterns, v2, stat_segment_name);
+      fclose (stream);
+    }
+
+  close (fd);
+
+  exit (0);
+}

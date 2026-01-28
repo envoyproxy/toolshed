@@ -1,0 +1,43 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2018 Cisco and/or its affiliates.
+ */
+
+#ifndef included_acl_lookup_context_h
+#define included_acl_lookup_context_h
+
+typedef struct {
+  /* A name of the portion of the code using the ACL infra */
+  char *user_module_name;
+  /* text label for the first u32 user value assigned to context */
+  char *val1_label;
+  /* text label for the second u32 user value assigned to context */
+  char *val2_label;
+  /* vector of lookup contexts of this user */
+  u32 *lookup_contexts;
+} acl_lookup_context_user_t;
+
+typedef struct {
+  /* vector of acl #s within this context */
+  u32 *acl_indices;
+  /* index of corresponding acl_lookup_context_user_t */
+  u32 context_user_id;
+  /* per-instance user value 1 */
+  u32 user_val1;
+  /* per-instance user value 2 */
+  u32 user_val2;
+} acl_lookup_context_t;
+
+void acl_plugin_lookup_context_notify_acl_change(u32 acl_num);
+
+void acl_plugin_show_lookup_context (u32 lc_index);
+void acl_plugin_show_lookup_user (u32 user_index);
+
+/* These are in the hash matching for now */
+void acl_plugin_show_tables_mask_type (void);
+void acl_plugin_show_tables_acl_hash_info (u32 acl_index);
+void acl_plugin_show_tables_applied_info (u32 sw_if_index);
+void acl_plugin_show_tables_bihash (u32 show_bihash_verbose);
+
+#endif
+

@@ -1,0 +1,25 @@
+package hst
+
+import (
+	"fmt"
+)
+
+type NetDevConfig map[string]any
+type ContainerConfig map[string]any
+type VolumeConfig map[string]any
+
+type YamlTopology struct {
+	Devices    []NetDevConfig    `yaml:"devices"`
+	Containers []ContainerConfig `yaml:"containers"`
+	Volumes    []VolumeConfig    `yaml:"volumes"`
+}
+
+func addAddress(device, address, ns string) error {
+	c := []string{"ip", "addr", "add", address, "dev", device}
+	cmd := appendNetns(c, ns)
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("failed to set ip address for %s: %v", device, err)
+	}
+	return nil
+}

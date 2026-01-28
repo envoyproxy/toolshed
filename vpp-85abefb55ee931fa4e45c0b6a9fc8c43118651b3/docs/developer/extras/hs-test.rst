@@ -1,0 +1,1 @@
+../../../test/hs-test/README.rst

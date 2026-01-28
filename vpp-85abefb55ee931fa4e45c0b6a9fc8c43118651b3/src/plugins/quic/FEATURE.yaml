@@ -1,0 +1,10 @@
+---
+name: QUIC Protocol
+maintainer: Dave Wallace <dwallacelf@gmail.com>
+features:
+  - host stack integration via session layer
+    quic library api to allow selection of quic implementation
+description: "IETF QUIC Protocol implementation"
+state: experimental
+properties: [API, CLI, STATS, MULTITHREAD]
+

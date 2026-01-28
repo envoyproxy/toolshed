@@ -1,0 +1,31 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2019-2025 Cisco and/or its affiliates.
+ */
+
+option version = "1.0.0";
+
+enum virtio_net_features_first_32
+{
+  VIRTIO_NET_F_API_CSUM	= 0x0001, /* 0 */
+  VIRTIO_NET_F_API_GUEST_CSUM = 0x0002, /* 1 */
+  VIRTIO_NET_F_API_GUEST_TSO4 = 0x0080, /* 7 */
+  VIRTIO_NET_F_API_GUEST_TSO6 = 0x0100, /* 8 */
+  VIRTIO_NET_F_API_GUEST_UFO = 0x0400, /* 10 */
+  VIRTIO_NET_F_API_HOST_TSO4 = 0x0800, /* 11 */
+  VIRTIO_NET_F_API_HOST_TSO6 = 0x1000, /* 12 */
+  VIRTIO_NET_F_API_HOST_UFO = 0x4000, /* 14 */
+  VIRTIO_NET_F_API_MRG_RXBUF = 0x8000, /* 15 */
+  VIRTIO_NET_F_API_CTRL_VQ = 0x00020000, /* 17 */
+  VIRTIO_NET_F_API_GUEST_ANNOUNCE = 0x00200000, /* 21 */
+  VIRTIO_NET_F_API_MQ = 0x00400000, /* 22 */
+  VHOST_F_API_LOG_ALL = 0x04000000, /* 26 */
+  VIRTIO_F_API_ANY_LAYOUT = 0x08000000, /* 27 */
+  VIRTIO_F_API_INDIRECT_DESC = 0x10000000, /* 28*/
+  VHOST_USER_F_API_PROTOCOL_FEATURES = 0x40000000, /* 30 */
+};
+
+enum virtio_net_features_last_32
+{
+  VIRTIO_F_API_VERSION_1 = 0x0001, /* 32 */
+};

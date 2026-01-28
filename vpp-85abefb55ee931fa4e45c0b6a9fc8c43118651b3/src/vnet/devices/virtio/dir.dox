@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2016-2025 Cisco and/or its affiliates.
+ */
+
+/* Doxygen directory documentation */
+
+/**
+@dir
+@brief vHost User Interface Implementation.
+
+This directory contains the source code for vHost User driver.
+
+*/
+/*? %%clicmd:group_label vHost User %% ?*/
+/*? %%syscfg:group_label vHost User %% ?*/
