@@ -443,13 +443,22 @@ index 0000000..e69de29
 +load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 +
 +def wasm_engine_settings():
-+    """Creates build settings for WASM engine selection."""
++    """Creates build settings for WASM engine selection.
++    
++    These settings provide infrastructure for selecting different WASM engines at build time.
++    To use a specific engine, pass the --@proxy_wasm_cpp_host//:wasm_engine flag:
++      bazel build --@proxy_wasm_cpp_host//:wasm_engine=wamr //...
++      bazel build --@proxy_wasm_cpp_host//:wasm_engine=v8 //...
++    
++    Note: The config_settings are defined here but may need to be integrated with
++    select() statements in specific library targets to enable dynamic engine selection.
++    """
 +    string_flag(
 +        name = "wasm_engine",
 +        build_setting_default = "wamr",
 +        values = ["wamr", "v8", "wasmtime", "wasmedge"],
 +    )
-+    
++
 +    native.config_setting(
 +        name = "wasm_engine_wamr",
 +        flag_values = {":wasm_engine": "wamr"},
