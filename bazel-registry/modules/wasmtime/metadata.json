@@ -1,0 +1,11 @@
+{
+    "homepage": "https://wasmtime.dev/",
+    "maintainers": [],
+    "repository": [
+        "github:bytecodealliance/wasmtime"
+    ],
+    "versions": [
+        "24.0.0.envoy"
+    ],
+    "yanked_versions": {}
+}
