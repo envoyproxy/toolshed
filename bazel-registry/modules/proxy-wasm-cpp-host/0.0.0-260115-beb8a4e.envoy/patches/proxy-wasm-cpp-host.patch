@@ -1,0 +1,40 @@
+diff --git a/BUILD b/BUILD
+index 91792a8..94456d8 100644
+--- a/BUILD
++++ b/BUILD
+@@ -91,7 +91,7 @@ cc_library(
+         ":headers",
+     ] + select({
+         "//bazel:crypto_system": [],
+-        "//conditions:default": ["@boringssl//:crypto"],
++        "//conditions:default": ["//bazel:crypto_lib"],
+     }),
+     alwayslink = 1,
+ )
+diff --git a/bazel/BUILD b/bazel/BUILD
+index 15f323f..f304920 100644
+--- a/bazel/BUILD
++++ b/bazel/BUILD
+@@ -13,6 +13,7 @@
+ # limitations under the License.
+ 
+ load("@bazel_skylib//lib:selects.bzl", "selects")
++load("@bazel_skylib//rules:common_settings.bzl", "label_flag")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -68,5 +69,14 @@ selects.config_setting_group(
+         ":linux_s390x",
+     ],
+ )
++# Crypto library dependency - can be overridden by consuming repos
++# Default: @boringssl//:crypto
++# For FIPS: --@proxy_wasm_cpp_host//bazel:crypto_lib=@boringssl_fips//:crypto
++# For Envoy: --@proxy_wasm_cpp_host//bazel:crypto_lib=@envoy//bazel:boringcrypto
++label_flag(
++    name = "crypto_lib",
++    build_setting_default = "@boringssl//:crypto",
++)
++
+ 
+ exports_files(["tsan_suppressions.txt"])
