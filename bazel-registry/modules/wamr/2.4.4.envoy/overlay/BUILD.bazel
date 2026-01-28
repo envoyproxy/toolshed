@@ -26,8 +26,10 @@ cc_library(
         "core/shared/utils/bh_vector.c",
         "core/shared/utils/runtime_timer.c",
         # IWASM common sources
+        "core/iwasm/common/wasm_blocking_op.c",
         "core/iwasm/common/wasm_c_api.c",
         "core/iwasm/common/wasm_exec_env.c",
+        "core/iwasm/common/wasm_loader_common.c",
         "core/iwasm/common/wasm_memory.c",
         "core/iwasm/common/wasm_native.c",
         "core/iwasm/common/wasm_runtime_common.c",
