@@ -1,8 +1,23 @@
 diff --git a/BUILD b/BUILD
-index 6db5fd9..beafec1 100644
+index 6db5fd9..3e4f1a2 100644
 --- a/BUILD
 +++ b/BUILD
-@@ -91,7 +91,7 @@ cc_library(
+@@ -1,4 +1,5 @@
+ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
++load("//bazel:wasm.bzl", "wasm_engine_settings")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+@@ -6,6 +7,8 @@ licenses(["notice"])  # Apache 2
+ 
+ exports_files(["LICENSE"])
+ 
++wasm_engine_settings()
++
+ cc_library(
+     name = "wasm_vm_headers",
+     hdrs = [
+@@ -91,7 +94,7 @@ cc_library(
          ":headers",
      ] + select({
          "//bazel:crypto_system": [],
@@ -11,39 +26,59 @@ index 6db5fd9..beafec1 100644
      }),
      alwayslink = 1,
  )
-@@ -133,7 +133,7 @@ cc_library(
+@@ -133,7 +136,12 @@ cc_library(
      ],
      deps = [
          ":wasm_vm_headers",
 -        "//external:wee8",
-+        "@v8//:wee8",
++    ] + select({
++        ":wasm_engine_v8": ["@v8//:wee8"],
++        ":wasm_engine_wamr": ["@com_github_bytecodealliance_wasm_micro_runtime//:wamr"],
++        ":wasm_engine_wasmtime": ["@com_github_wasmtime//:wasmtime_lib"],
++        ":wasm_engine_wasmedge": ["@com_github_wasmedge_wasmedge//:wasmedge"],
++        "//conditions:default": ["@v8//:wee8"],
      ],
  )
  
-@@ -151,7 +151,7 @@ cc_library(
+@@ -151,7 +159,12 @@ cc_library(
      ],
      deps = [
          ":wasm_vm_headers",
 -        "//external:wamr",
-+        "@envoy//bazel/foreign_cc:wamr",
++    ] + select({
++        ":wasm_engine_wamr": ["@com_github_bytecodealliance_wasm_micro_runtime//:wamr"],
++        ":wasm_engine_v8": ["@v8//:wee8"],
++        ":wasm_engine_wasmtime": ["@com_github_wasmtime//:wasmtime_lib"],
++        ":wasm_engine_wasmedge": ["@com_github_wasmedge_wasmedge//:wasmedge"],
++        "//conditions:default": ["@com_github_bytecodealliance_wasm_micro_runtime//:wamr"],
      ],
  )
  
-@@ -217,7 +217,7 @@ cc_library(
+@@ -217,7 +230,12 @@ cc_library(
      }),
      deps = [
          ":wasm_vm_headers",
 -        "//external:wasmtime",
-+        "@com_github_wasmtime//:wasmtime_lib",
++    ] + select({
++        ":wasm_engine_wasmtime": ["@com_github_wasmtime//:wasmtime_lib"],
++        ":wasm_engine_wamr": ["@com_github_bytecodealliance_wasm_micro_runtime//:wamr"],
++        ":wasm_engine_v8": ["@v8//:wee8"],
++        ":wasm_engine_wasmedge": ["@com_github_wasmedge_wasmedge//:wasmedge"],
++        "//conditions:default": ["@com_github_wasmtime//:wasmtime_lib"],
      ],
  )
  
-@@ -276,7 +276,7 @@ cc_library(
+@@ -276,7 +294,12 @@ cc_library(
      }),
      deps = [
          ":wasm_vm_headers",
 -        "//external:prefixed_wasmtime",
-+        "@com_github_wasmtime//:prefixed_wasmtime_lib",
++    ] + select({
++        ":wasm_engine_wasmtime": ["@com_github_wasmtime//:prefixed_wasmtime_lib"],
++        ":wasm_engine_wamr": ["@com_github_bytecodealliance_wasm_micro_runtime//:wamr"],
++        ":wasm_engine_v8": ["@v8//:wee8"],
++        ":wasm_engine_wasmedge": ["@com_github_wasmedge_wasmedge//:wasmedge"],
++        "//conditions:default": ["@com_github_wasmtime//:prefixed_wasmtime_lib"],
      ],
  )
  
@@ -52,7 +87,7 @@ new file mode 100644
 index 0000000..0f825ec
 --- /dev/null
 +++ b/MODULE.bazel
-@@ -0,0 +1,197 @@
+@@ -0,0 +1,199 @@
 +module(
 +    name = "proxy_wasm_cpp_host",
 +    version = "0.0.0",
@@ -67,6 +102,7 @@ index 0000000..0f825ec
 +bazel_dep(name = "protobuf", version = "33.2", repo_name = "com_google_protobuf")
 +bazel_dep(name = "proxy-wasm-cpp-sdk", version = "0.0.0", repo_name = "proxy_wasm_cpp_sdk")
 +bazel_dep(name = "rules_cc", version = "0.1.5")
++bazel_dep(name = "rules_foreign_cc", version = "0.13.0")
 +bazel_dep(name = "rules_license", version = "1.0.0")
 +bazel_dep(name = "rules_python", version = "1.7.0")
 +bazel_dep(name = "rules_rust", version = "0.68.1")
@@ -447,3 +483,177 @@ index 9a2f0a6..e2e2ea0 100644
    virtual void trace(std::string_view message) = 0;
    // Get a NullVm implementation of a function.
    // @param function_name is the name of the function with the implementation specific prefix.
+
+diff --git a/bazel/BUILD b/bazel/BUILD
+new file mode 100644
+index 0000000..e69de29
+diff --git a/bazel/external/BUILD b/bazel/external/BUILD
+new file mode 100644
+index 0000000..cede8b1
+--- /dev/null
++++ b/bazel/external/BUILD
+@@ -0,0 +1,5 @@
++package(default_visibility = ["//visibility:public"])
++
++licenses(["notice"])  # Apache 2
++
++exports_files(glob(["*.BUILD", "*.patch"]))
+diff --git a/bazel/external/wamr.BUILD b/bazel/external/wamr.BUILD
+new file mode 100644
+index 0000000..a8d93f3
+--- /dev/null
++++ b/bazel/external/wamr.BUILD
+@@ -0,0 +1,87 @@
++# Copyright 2025 Google LLC
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
++
++package(default_visibility = ["//visibility:public"])
++
++licenses(["notice"])  # Apache 2
++
++cmake(
++    name = "wamr",
++    cache_entries = select({
++        "@proxy_wasm_cpp_host//:wasm_engine_debug": {
++            # interp by default
++            "WAMR_BUILD_AOT": "0",
++            "WAMR_BUILD_FAST_INTERP": "1",
++            "WAMR_BUILD_INTERP": "1",
++            "WAMR_BUILD_JIT": "0",
++            # disable WASI
++            "WAMR_BUILD_LIBC_WASI": "0",
++            "WAMR_BUILD_LIBC_BUILTIN": "0",
++            # MVP
++            "WAMR_BUILD_BULK_MEMORY": "1",
++            "WAMR_BUILD_REF_TYPES": "1",
++            # only for jit and aot
++            "WAMR_BUILD_SIMD": "0",
++            "WAMR_BUILD_TAIL_CALL": "1",
++            # others
++            "WAMR_BUILD_WASM_CACHE": "0",
++            "WAMR_BUILD_MULTI_MODULE": "0",
++            # debug/development options (enabled)
++            "WAMR_BUILD_CUSTOM_NAME_SECTION": "1",
++            "WAMR_BUILD_LOAD_CUSTOM_SECTION": "1",
++            "WAMR_BUILD_DUMP_CALL_STACK": "1",
++            "WAMR_BUILD_LINUX_PERF": "1",
++        },
++        "//conditions:default": {
++            # interp by default
++            "WAMR_BUILD_AOT": "0",
++            "WAMR_BUILD_FAST_INTERP": "1",
++            "WAMR_BUILD_INTERP": "1",
++            "WAMR_BUILD_JIT": "0",
++            # disable WASI
++            "WAMR_BUILD_LIBC_WASI": "0",
++            "WAMR_BUILD_LIBC_BUILTIN": "0",
++            # MVP
++            "WAMR_BUILD_BULK_MEMORY": "1",
++            "WAMR_BUILD_REF_TYPES": "1",
++            # only for jit and aot
++            "WAMR_BUILD_SIMD": "0",
++            "WAMR_BUILD_TAIL_CALL": "1",
++            # others
++            "WAMR_BUILD_WASM_CACHE": "0",
++            "WAMR_BUILD_MULTI_MODULE": "0",
++            # debug/development options (disabled)
++            "WAMR_BUILD_CUSTOM_NAME_SECTION": "0",
++            "WAMR_BUILD_LOAD_CUSTOM_SECTION": "0",
++            "WAMR_BUILD_DUMP_CALL_STACK": "0",
++            "WAMR_BUILD_LINUX_PERF": "0",
++        },
++    }),
++    generate_args = [
++        "-G",
++        "Ninja",
++    ],
++    lib_source = "//:all",
++    out_static_libs = ["libiwasm.a"],
++    tags = ["skip_on_windows"],
++)
+diff --git a/bazel/wasm.bzl b/bazel/wasm.bzl
+new file mode 100644
+index 0000000..0b84f7e
+--- /dev/null
++++ b/bazel/wasm.bzl
+@@ -0,0 +1,69 @@
++# Copyright 2025 Google LLC
++#
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++"""Build settings for WASM engine configuration."""
++
++load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
++
++def wasm_engine_settings():
++    """Define build settings for WASM engine selection and configuration."""
++    
++    # Flag to select which WASM engine to use
++    # Valid values: "wamr", "v8", "wasmtime", "wasmedge"
++    # Usage: --@proxy_wasm_cpp_host//:wasm_engine=wamr
++    string_flag(
++        name = "wasm_engine",
++        build_setting_default = "wamr",
++        values = ["wamr", "v8", "wasmtime", "wasmedge"],
++    )
++    
++    # Boolean flag to enable WAMR debug features
++    # When true, enables: WAMR_BUILD_CUSTOM_NAME_SECTION, WAMR_BUILD_DUMP_CALL_STACK,
++    # WAMR_BUILD_LOAD_CUSTOM_SECTION, WAMR_BUILD_LINUX_PERF
++    # Usage: --@proxy_wasm_cpp_host//:wasm_engine_debug=True
++    bool_flag(
++        name = "wasm_engine_debug",
++        build_setting_default = False,
++    )
++    
++    # Config settings for each WASM engine
++    native.config_setting(
++        name = "wasm_engine_wamr",
++        flag_values = {
++            ":wasm_engine": "wamr",
++        },
++    )
++    
++    native.config_setting(
++        name = "wasm_engine_v8",
++        flag_values = {
++            ":wasm_engine": "v8",
++        },
++    )
++    
++    native.config_setting(
++        name = "wasm_engine_wasmtime",
++        flag_values = {
++            ":wasm_engine": "wasmtime",
++        },
++    )
++    
++    native.config_setting(
++        name = "wasm_engine_wasmedge",
++        flag_values = {
++            ":wasm_engine": "wasmedge",
++        },
++    )
