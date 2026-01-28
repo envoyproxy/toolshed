@@ -1,0 +1,12 @@
+{
+    "url": "https://github.com/bytecodealliance/wasmtime/archive/refs/tags/v24.0.0.tar.gz",
+    "integrity": "sha256-LMtJuzv6TYaQetTIDRFHrvYVbHtuP38U7QKjnel2EVU=",
+    "strip_prefix": "wasmtime-24.0.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-k8sGin2NS+JI0+OWfk6rg0o0XYoxTdgGrF0A+7PWg4o="
+    },
+    "patch_strip": 1,
+    "patches": {
+        "wasmtime.patch": "sha256-g6PiIuMJe0M178XSai62fX16uU1l6q/c0Z9rsTVSxHA="
+    }
+}
