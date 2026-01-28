@@ -11,11 +11,56 @@ index 91792a8..94456d8 100644
      }),
      alwayslink = 1,
  )
+@@ -133,7 +133,7 @@ cc_library(
+     ],
+     deps = [
+         ":wasm_vm_headers",
+-        "@v8//:wee8",
++        "//bazel:v8_lib",
+     ],
+ )
+ 
+@@ -155,7 +155,7 @@ cc_library(
+     }),
+     deps = [
+         ":wasm_vm_headers",
+-        "@com_github_bytecodealliance_wasm_micro_runtime//:wamr_lib",
++        "//bazel:wamr_lib",
+     ],
+ )
+ 
+@@ -182,7 +182,7 @@ cc_library(
+     }),
+     deps = [
+         ":wasm_vm_headers",
+-        "@com_github_wasmedge_wasmedge//:wasmedge_lib",
++        "//bazel:wasmedge_lib",
+     ],
+ )
+ 
+@@ -221,7 +221,7 @@ cc_library(
+     }),
+     deps = [
+         ":wasm_vm_headers",
+-        "@com_github_bytecodealliance_wasmtime//:wasmtime_lib",
++        "//bazel:wasmtime_lib",
+     ],
+ )
+ 
+@@ -280,7 +280,7 @@ cc_library(
+     }),
+     deps = [
+         ":wasm_vm_headers",
+-        "@com_github_bytecodealliance_wasmtime//:prefixed_wasmtime_lib",
++        "//bazel:prefixed_wasmtime_lib",
+     ],
+ )
+ 
 diff --git a/bazel/BUILD b/bazel/BUILD
 index 15f323f..7e4b1dc 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
-@@ -68,5 +68,15 @@ selects.config_setting_group(
+@@ -68,5 +68,47 @@ selects.config_setting_group(
          ":linux_s390x",
      ],
  )
@@ -28,6 +73,38 @@ index 15f323f..7e4b1dc 100644
 +label_flag(
 +    name = "crypto_lib",
 +    build_setting_default = "@boringssl//:crypto",
++)
++
++# WAMR library - can be overridden by consuming repos
++# Default: @com_github_bytecodealliance_wasm_micro_runtime//:wamr_lib
++# Override example: --@proxy_wasm_cpp_host//bazel:wamr_lib=@envoy//bazel/foreign_cc:wamr
++label_flag(
++    name = "wamr_lib",
++    build_setting_default = "@com_github_bytecodealliance_wasm_micro_runtime//:wamr_lib",
++)
++
++# Wasmtime library - can be overridden by consuming repos
++label_flag(
++    name = "wasmtime_lib",
++    build_setting_default = "@com_github_bytecodealliance_wasmtime//:wasmtime_lib",
++)
++
++# Prefixed wasmtime library (for multi-engine builds)
++label_flag(
++    name = "prefixed_wasmtime_lib",
++    build_setting_default = "@com_github_bytecodealliance_wasmtime//:prefixed_wasmtime_lib",
++)
++
++# WasmEdge library - can be overridden by consuming repos
++label_flag(
++    name = "wasmedge_lib",
++    build_setting_default = "@com_github_wasmedge_wasmedge//:wasmedge_lib",
++)
++
++# V8/wee8 library - can be overridden by consuming repos
++label_flag(
++    name = "v8_lib",
++    build_setting_default = "@v8//:wee8",
 +)
  
  exports_files(["tsan_suppressions.txt"])
