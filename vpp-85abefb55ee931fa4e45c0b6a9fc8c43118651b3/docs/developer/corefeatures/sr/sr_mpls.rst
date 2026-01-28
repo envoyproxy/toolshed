@@ -1,1 +1,0 @@
-../../../../src/plugins/srmpls/sr_doc.rst

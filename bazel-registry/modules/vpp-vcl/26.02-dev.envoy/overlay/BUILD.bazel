@@ -136,7 +136,12 @@ cc_library(
         "src/vcl/vcl_locked.c",
         "src/vcl/vcl_sapi.c",
     ],
-    hdrs = glob(["src/vcl/*.h"]),
+    hdrs = glob([
+        "src/vcl/*.h",
+        "src/vnet/**/*.h",
+        "src/vlib/**/*.h",
+        "src/vlibmemory/**/*.h",
+    ]),
     copts = [
         "-D_GNU_SOURCE",
     ],

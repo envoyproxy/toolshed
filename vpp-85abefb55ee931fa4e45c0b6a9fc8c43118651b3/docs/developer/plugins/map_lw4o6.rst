@@ -1,1 +1,0 @@
-../../../src/plugins/map/map_doc.rst

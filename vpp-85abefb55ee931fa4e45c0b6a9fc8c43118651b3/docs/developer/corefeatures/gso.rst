@@ -1,1 +1,0 @@
-../../../src/vnet/gso/gso.rst

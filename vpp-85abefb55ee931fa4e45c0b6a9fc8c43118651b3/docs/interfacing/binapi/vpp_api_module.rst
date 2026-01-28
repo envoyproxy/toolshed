@@ -1,1 +1,0 @@
-../../../src/vpp-api/vapi/vapi_doc.rst

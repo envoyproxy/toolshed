@@ -1,1 +1,0 @@
-../../../../src/vnet/srv6/sr_doc.rst

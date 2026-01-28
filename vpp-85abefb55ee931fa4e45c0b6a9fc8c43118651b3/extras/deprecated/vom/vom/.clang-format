@@ -1,4 +1,0 @@
-
-BasedOnStyle: mozilla
-AlwaysBreakAfterReturnType: TopLevelDefinitions
-BinPackParameters: false

@@ -1,1 +1,0 @@
-../../src/scripts/fts.py

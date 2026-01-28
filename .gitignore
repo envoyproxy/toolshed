@@ -194,3 +194,4 @@ user.bazelrc
 # Docker build artifacts
 docker/build/oci-output/
 upstream.tar.gz
+vpp-85abefb55ee931fa4e45c0b6a9fc8c43118651b3/

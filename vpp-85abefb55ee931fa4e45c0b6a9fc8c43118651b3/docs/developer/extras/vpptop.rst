@@ -1,1 +1,0 @@
-../../../extras/vpptop/README.rst

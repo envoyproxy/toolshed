@@ -1,1 +1,0 @@
-../../../extras/strongswan/README.rst

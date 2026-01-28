@@ -1,1 +1,0 @@
-../../../src/vlibapi/api_doc.rst

@@ -1,1 +1,0 @@
-../../../extras/vpp_stats_fs/README.rst

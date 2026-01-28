@@ -1,1 +1,0 @@
-../../../src/examples/handoffdemo/handoffdemo.rst

@@ -1,1 +1,0 @@
-../../../extras/kube-test/README.rst

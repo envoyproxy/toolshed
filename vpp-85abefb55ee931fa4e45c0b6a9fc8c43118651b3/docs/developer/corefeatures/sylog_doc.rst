@@ -1,1 +1,0 @@
-../../../src/vnet/syslog/sylog_doc.rst

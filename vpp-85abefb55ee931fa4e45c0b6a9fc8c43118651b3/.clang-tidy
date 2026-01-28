@@ -1,9 +1,0 @@
-Checks: "-*,\
-misc-*,\
-bugprone-*,\
--bugprone-easily-swappable-parameters,\
--bugprone-reserved-identifier,\
--performance-*,\
-clang-analyzer-*,\
--clang-analyzer-valist.Uninitialized,\
-"

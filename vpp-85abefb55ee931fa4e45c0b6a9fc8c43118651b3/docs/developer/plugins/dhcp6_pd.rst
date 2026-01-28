@@ -1,1 +1,0 @@
-../../../src/plugins/dhcp/dhcp6_pd_doc.rst

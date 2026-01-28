@@ -1,1 +1,0 @@
-../../../src/plugins/nat/nat64/nat64_doc.rst

@@ -1,1 +1,0 @@
-../../../src/plugins/ip_session_redirect/ip_session_redirect_doc.rst

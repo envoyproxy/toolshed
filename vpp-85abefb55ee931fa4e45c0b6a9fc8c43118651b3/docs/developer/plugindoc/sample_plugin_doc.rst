@@ -1,1 +1,0 @@
-../../../src/examples/sample-plugin/sample_plugin_doc.rst

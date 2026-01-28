@@ -1,1 +1,0 @@
-../../../extras/libmemif/docs/buildinstructions_doc.rst

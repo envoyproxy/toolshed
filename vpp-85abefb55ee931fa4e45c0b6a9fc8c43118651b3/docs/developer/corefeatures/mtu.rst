@@ -1,1 +1,0 @@
-../../../src/vnet/mtu.rst
