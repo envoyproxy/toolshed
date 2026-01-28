@@ -3,7 +3,7 @@
     "integrity": "sha256-A61RAz8GI1V3t2XuBCpiYybYkTABB69FRnGcNVUlsyg=",
     "strip_prefix": "wasm-micro-runtime-WAMR-2.4.4",
     "overlay": {
-        "BUILD.bazel": "sha256-0YyeMNV2V/Fk0T4b7wEojyZOYUHQbyuOiQp0018/Hh4=",
-        "bazel/BUILD.bazel": "sha256-/02PFc29ap9fjEzAn5yu6Fzrdmc1f2J/T7K8fR+uNFk="
+        "BUILD.bazel": "sha256-6u/Br/5NcanvqQLO5QDgiu/RbH7PTcezkzLAbh6C8zM=",
+        "bazel/BUILD.bazel": "sha256-S2iUpxHEeP3zoqONDSi+e1sczaQdLe54ltslBSBqKBo="
     }
 }

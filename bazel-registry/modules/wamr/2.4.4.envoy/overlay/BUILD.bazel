@@ -63,14 +63,10 @@ cc_library(
         ],
     }) + select({
         # Architecture-specific native invoke sources
-        "@platforms//cpu:x86_64": select({
-            "//bazel:simd_enabled": ["core/iwasm/common/arch/invokeNative_em64_simd.s"],
-            "//conditions:default": ["core/iwasm/common/arch/invokeNative_em64.s"],
-        }),
-        "@platforms//cpu:aarch64": select({
-            "//bazel:simd_enabled": ["core/iwasm/common/arch/invokeNative_aarch64_simd.s"],
-            "//conditions:default": ["core/iwasm/common/arch/invokeNative_aarch64.s"],
-        }),
+        "//bazel:x86_64_simd": ["core/iwasm/common/arch/invokeNative_em64_simd.s"],
+        "//bazel:x86_64_no_simd": ["core/iwasm/common/arch/invokeNative_em64.s"],
+        "//bazel:aarch64_simd": ["core/iwasm/common/arch/invokeNative_aarch64_simd.s"],
+        "//bazel:aarch64_no_simd": ["core/iwasm/common/arch/invokeNative_aarch64.s"],
         # Fallback to general C implementation for other architectures
         "//conditions:default": ["core/iwasm/common/arch/invokeNative_general.c"],
     }),
