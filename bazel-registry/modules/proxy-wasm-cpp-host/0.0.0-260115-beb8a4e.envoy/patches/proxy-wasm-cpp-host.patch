@@ -1,0 +1,33 @@
+diff --git a/BUILD b/BUILD
+index 91792a8..94456d8 100644
+--- a/BUILD
++++ b/BUILD
+@@ -91,7 +91,7 @@ cc_library(
+         ":headers",
+     ] + select({
+         "//bazel:crypto_system": [],
+-        "//conditions:default": ["@boringssl//:crypto"],
++        "//conditions:default": ["//bazel:crypto_lib"],
+     }),
+     alwayslink = 1,
+ )
+diff --git a/bazel/BUILD b/bazel/BUILD
+index 15f323f..7e4b1dc 100644
+--- a/bazel/BUILD
++++ b/bazel/BUILD
+@@ -68,5 +68,15 @@ selects.config_setting_group(
+         ":linux_s390x",
+     ],
+ )
++# Crypto library dependency - can be overridden by consuming repos
++# Default: @boringssl//:crypto
++# Can be overriden, eg:
++#   --@proxy_wasm_cpp_host//bazel:crypto_lib=@boringssl-fips//:crypto
++#   --@proxy_wasm_cpp_host//bazel:crypto_lib=@envoy//bazel:boringcrypto
++#   --@proxy_wasm_cpp_host//bazel:crypto_lib=@some-other-ssl//:crypto
++label_flag(
++    name = "crypto_lib",
++    build_setting_default = "@boringssl//:crypto",
++)
+ 
+ exports_files(["tsan_suppressions.txt"])
