@@ -22,6 +22,7 @@ bazel_dep(name = "rules_python", version = "1.7.0")
 bazel_dep(name = "rules_rust", version = "0.68.1")
 bazel_dep(name = "simdutf", version = "7.3.4.envoy")
 bazel_dep(name = "v8", version = "13.8.258.26.envoy")
+bazel_dep(name = "wamr", version = "2.4.4.envoy")
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
@@ -148,10 +149,6 @@ use_repo(
     "cu__zerocopy-0.7.35",
     "cu__zerocopy-derive-0.7.35",
 )
-
-# WAMR runtime
-wamr = use_extension("//bazel:extensions.bzl", "wamr")
-use_repo(wamr, "com_github_bytecodealliance_wasm_micro_runtime")
 
 # WasmEdge runtime
 wasmedge = use_extension("//bazel:extensions.bzl", "wasmedge")
