@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/bytecodealliance/wasm-micro-runtime",
+    "maintainers": [],
+    "repository": [
+        "github:bytecodealliance/wasm-micro-runtime"
+    ],
+    "versions": [
+        "2.4.4.envoy"
+    ],
+    "yanked_versions": {}
+}
