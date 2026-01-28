@@ -1,0 +1,11 @@
+{
+    "homepage": "https://fd.io/",
+    "maintainers": [],
+    "repository": [
+        "github:FDio/vpp"
+    ],
+    "versions": [
+        "26.02-dev-85abefb.envoy"
+    ],
+    "yanked_versions": {}
+}
