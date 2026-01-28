@@ -3,7 +3,7 @@
     "integrity": "sha256-5/plz/EEhze66/QD52g5tZebKzK/AeMoUiOXa3FdGnQ=",
     "strip_prefix": "proxy-wasm-cpp-host-c8868da77499d414f3dcd07e4fbe584dc9a1c30d",
     "patches": {
-        "proxy-wasm-cpp-host.patch": "sha256-tyJRXOkAB1aTe7kG1FcIpwRBFQAEn5ToUMaX0RrRSro="
+        "proxy-wasm-cpp-host.patch": "sha256-MuImIlEHaSdX4LGqXt2/hnB1BThOpnlxZZNRvWRd7E4="
     },
     "patch_strip": 1
 }
