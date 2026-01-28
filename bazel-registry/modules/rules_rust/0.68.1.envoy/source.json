@@ -1,7 +1,7 @@
 {
     "integrity": "sha256-yKqAbPYGZnmsI0YyQe6ArWkiZdrQRl9RERy74wuJA1I=",
     "patches": {
-        "rules_rust.patch": "sha256-whud/J7ghRQnb9yFC5QXKsqBRrcJdVpPzNfh+EUdhlk="
+        "rules_rust.patch": "sha256-A4rNU/EIXWFCZsngm4IE2saYEYCpHy1MhhKLcAaTrxw="
     },
     "patch_strip": 1,
     "strip_prefix": "",
