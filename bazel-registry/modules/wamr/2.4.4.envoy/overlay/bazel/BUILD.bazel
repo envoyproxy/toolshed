@@ -50,4 +50,3 @@ config_setting(
     constraint_values = ["@platforms//cpu:aarch64"],
     flag_values = {":simd": "False"},
 )
-

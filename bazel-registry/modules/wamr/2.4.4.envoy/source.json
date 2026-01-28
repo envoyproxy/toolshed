@@ -4,6 +4,6 @@
     "strip_prefix": "wasm-micro-runtime-WAMR-2.4.4",
     "overlay": {
         "BUILD.bazel": "sha256-6u/Br/5NcanvqQLO5QDgiu/RbH7PTcezkzLAbh6C8zM=",
-        "bazel/BUILD.bazel": "sha256-S2iUpxHEeP3zoqONDSi+e1sczaQdLe54ltslBSBqKBo="
+        "bazel/BUILD.bazel": "sha256-zlpzIe/So0vrWA7sGML4CI5E1k5UOe8ebJ77XK4h8xc="
     }
 }

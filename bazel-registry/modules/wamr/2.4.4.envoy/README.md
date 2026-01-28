@@ -35,7 +35,7 @@ cc_binary(
 ## Configuration Flags
 
 ### Runtime Mode
-- `--@wamr//bazel:fast_interp` (default: True)  
+- `--@wamr//bazel:fast_interp=true` (default: True)  
   Enable fast interpreter for better performance
 
 ### Debug Features (default: False)
@@ -47,13 +47,13 @@ cc_binary(
   Enable loading custom sections
 
 ### WebAssembly Features
-- `--@wamr//bazel:bulk_memory` (default: True)  
+- `--@wamr//bazel:bulk_memory=true` (default: True)  
   Enable bulk memory operations
-- `--@wamr//bazel:ref_types` (default: True)  
+- `--@wamr//bazel:ref_types=true` (default: True)  
   Enable reference types
-- `--@wamr//bazel:tail_call` (default: True)  
+- `--@wamr//bazel:tail_call=true` (default: True)  
   Enable tail call optimization
-- `--@wamr//bazel:simd` (default: False)  
+- `--@wamr//bazel:simd=true` (default: False)  
   Enable SIMD support
 
 ## Examples
