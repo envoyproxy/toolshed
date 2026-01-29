@@ -1,0 +1,28 @@
+"""Kafka protocol message definitions.
+
+This module provides Kafka protocol message definitions (JSON files) from Apache Kafka.
+Used by Envoy's Kafka filter for protocol message parsing and code generation.
+"""
+
+licenses(["notice"])  # Apache 2.0
+
+# Kafka protocol request message definitions
+filegroup(
+    name = "request_protocol_files",
+    srcs = glob(["*Request.json"]),
+    visibility = ["//visibility:public"],
+)
+
+# Kafka protocol response message definitions
+filegroup(
+    name = "response_protocol_files",
+    srcs = glob(["*Response.json"]),
+    visibility = ["//visibility:public"],
+)
+
+# All Kafka protocol message definitions
+filegroup(
+    name = "all_protocol_files",
+    srcs = glob(["*.json"]),
+    visibility = ["//visibility:public"],
+)

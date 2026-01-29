@@ -1,0 +1,17 @@
+{
+    "homepage": "https://kafka.apache.org/",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:apache/kafka"
+    ],
+    "versions": [
+        "3.9.1.envoy"
+    ],
+    "yanked_versions": {}
+}
