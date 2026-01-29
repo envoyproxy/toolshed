@@ -157,21 +157,24 @@ index 475556bf5..ef434e99b 100644
      name = "any_proto",
      srcs = ["any.proto"],
 diff --git a/src/google/protobuf/compiler/BUILD.bazel b/src/google/protobuf/compiler/BUILD.bazel
-index 55b22d675..df7083d44 100644
+index 55b22d675..ef5a0eb63 100644
 --- a/src/google/protobuf/compiler/BUILD.bazel
 +++ b/src/google/protobuf/compiler/BUILD.bazel
-@@ -21,6 +21,11 @@ load(
+@@ -343,12 +343,8 @@ filegroup(
  )
- load("test_plugin_injection.bzl", "inject_plugin_paths")
  
-+exports_files(
+ exports_files(
+-    srcs = ["plugin.proto"],
+-    visibility = [
+-        "//:__pkg__",
+-        "//python:__pkg__",
+-        "//ruby:__pkg__",
+-    ],
 +    ["plugin.proto"],
 +    visibility = ["//visibility:public"],
-+)
-+
- proto_library(
-     name = "plugin_proto",
-     srcs = ["plugin.proto"],
+ )
+ 
+ cc_library(
 diff --git a/src/google/protobuf/io/BUILD.bazel b/src/google/protobuf/io/BUILD.bazel
 index bb00b0acc..51d79f534 100644
 --- a/src/google/protobuf/io/BUILD.bazel
