@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/apache/kafka/archive/3.9.1.zip",
+    "integrity": "sha256-wVuClAz7n2f86QnYYA3IvPxC0nldosJsFJ0Dpif4UjQ=",
+    "strip_prefix": "kafka-3.9.1/clients/src/main/resources/common/message",
+    "overlay": {
+        "BUILD.bazel": "sha256-4l4zD8+GCfZlGeAE7pmPvhbmQNZNviJOcqxVO1m7zG8="
+    }
+}
