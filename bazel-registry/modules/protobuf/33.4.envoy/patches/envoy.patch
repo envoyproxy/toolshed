@@ -101,14 +101,14 @@ index 9e76da8..8d5f4f4 100644
      name = "protoc_stage0",
      copts = COPTS,
 diff --git a/bazel/private/prebuilt_protoc_toolchain.bzl b/bazel/private/prebuilt_protoc_toolchain.bzl
-index b583e35..ecf4a1e 100644
+index b583e35..f1cf29f 100644
 --- a/bazel/private/prebuilt_protoc_toolchain.bzl
 +++ b/bazel/private/prebuilt_protoc_toolchain.bzl
 @@ -36,6 +36,11 @@ load("@com_google_protobuf//bazel/toolchains:proto_toolchain.bzl", "proto_toolch
  
  package(default_visibility = ["//visibility:public"])
  
-+filegroup(
++sh_binary(
 +    name = "protoc",
 +    srcs = ["{protoc_label}"],
 +)
