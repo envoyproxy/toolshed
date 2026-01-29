@@ -101,16 +101,24 @@ index 9e76da895..8d5f4f46a 100644
      name = "protoc_stage0",
      copts = COPTS,
 diff --git a/bazel/private/prebuilt_protoc_toolchain.bzl b/bazel/private/prebuilt_protoc_toolchain.bzl
-index b583e35d6..f1cf29f07 100644
+index b583e35d6..9fdd1feca 100644
 --- a/bazel/private/prebuilt_protoc_toolchain.bzl
 +++ b/bazel/private/prebuilt_protoc_toolchain.bzl
-@@ -36,6 +36,11 @@ load("@com_google_protobuf//bazel/toolchains:proto_toolchain.bzl", "proto_toolch
+@@ -36,6 +36,19 @@ load("@com_google_protobuf//bazel/toolchains:proto_toolchain.bzl", "proto_toolch
  
  package(default_visibility = ["//visibility:public"])
  
-+sh_binary(
++# For rules that need single-file output
++filegroup(
 +    name = "protoc",
 +    srcs = ["{protoc_label}"],
++)
++
++# For `bazel run`
++native_binary(
++    name = "protoc_bin",
++    src = "{protoc_label}",
++    out = "protoc_runner",
 +)
 +
  proto_toolchain(
