@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/protocolbuffers/protobuf",
+    "maintainers": [],
+    "repository": [
+        "github:protocolbuffers/protobuf"
+    ],
+    "versions": [
+        "33.4.envoy"
+    ],
+    "yanked_versions": {}
+}
