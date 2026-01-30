@@ -1,0 +1,17 @@
+{
+    "homepage": "https://github.com/aws/aws-lc",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:aws/aws-lc"
+    ],
+    "versions": [
+        "1.66.2.envoy"
+    ],
+    "yanked_versions": {}
+}

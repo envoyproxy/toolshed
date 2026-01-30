@@ -1,0 +1,151 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+licenses(["notice"])  # Apache 2 license
+
+# AWS-LC FIPS build for use in Envoy on ppc64le where BoringSSL FIPS is not available
+# This is based on the boringssl-fips implementation but adapted for AWS-LC
+# Reference: https://github.com/aws/aws-lc/blob/main/crypto/fipsmodule/FIPS.md
+#
+# FIPS Validation:
+# AWS-LC provides a 'bssl isfips' tool (similar to BoringSSL) that verifies FIPS mode.
+# This build includes explicit validation to ensure FIPS mode is enabled before
+# exposing the libraries for consumption.
+
+filegroup(
+    name = "all_srcs",
+    srcs = glob(
+        ["**"],
+    ),
+)
+
+cmake(
+    name = "_aws_lc_build",
+    cache_entries = {
+        "CMAKE_BUILD_TYPE": "Release",
+        "FIPS": "1",
+        "BUILD_SHARED_LIBS": "0",
+        "CMAKE_C_FLAGS": "-fPIC",
+        "CMAKE_CXX_FLAGS": "-fPIC",
+        "GO_EXECUTABLE": "$$EXT_BUILD_ROOT/external/go-fips~/bin/go",
+        "BUILD_TESTING": "OFF",
+    },
+    lib_source = ":all_srcs",
+    out_static_libs = [
+        "libcrypto_unvalidated.a",
+        "libssl_unvalidated.a",
+    ],
+    out_binaries = ["bssl"],
+    targets = [
+        "crypto",
+        "ssl",
+        "bssl",
+    ],
+    env = {
+        "GOCACHE": "$$EXT_BUILD_ROOT$$/gocache",
+        "GOPATH": "$$EXT_BUILD_ROOT$$/gopath",
+    },
+    postfix_script = """
+    mv $$INSTALLDIR/lib/libcrypto.a $$INSTALLDIR/lib/libcrypto_unvalidated.a
+    mv $$INSTALLDIR/lib/libssl.a $$INSTALLDIR/lib/libssl_unvalidated.a
+    """,
+    build_data = [
+        "@go-fips//:go",
+        "@go-fips//:go_sdk",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+genrule(
+    name = "_aws_lc_outputs",
+    srcs = [":_aws_lc_build"],
+    outs = [
+        "libcrypto_unvalidated.a",
+        "libssl_unvalidated.a",
+        "bssl",
+    ],
+    cmd = """
+    for f in $(locations :_aws_lc_build); do
+        case "$$f" in
+            *libcrypto_unvalidated.a)
+                cp "$$f" $(location libcrypto_unvalidated.a)
+                ;;
+            *libssl_unvalidated.a)
+                cp "$$f" $(location libssl_unvalidated.a)
+                ;;
+            */bin/bssl)
+                cp "$$f" $(location bssl)
+                ;;
+        esac
+    done
+    """,
+    visibility = ["//visibility:private"],
+)
+
+genrule(
+    name = "_aws_lc_validated",
+    srcs = [
+        ":libcrypto_unvalidated.a",
+        ":libssl_unvalidated.a",
+        ":bssl",
+    ],
+    outs = [
+        "lib/libcrypto.a",
+        "lib/libssl.a",
+    ],
+    cmd = """
+    set -eo pipefail
+
+    CRYPTO_LIB="$(location :libcrypto_unvalidated.a)"
+    SSL_LIB="$(location :libssl_unvalidated.a)"
+    BSSL="$(location :bssl)"
+    OUT_DIR=$$(dirname $(location lib/libcrypto.a))
+
+    echo "=== AWS-LC FIPS Validation Starting ==="
+    echo "CRYPTO_LIB: $$CRYPTO_LIB"
+    echo "SSL_LIB: $$SSL_LIB"
+    echo "BSSL: $$BSSL"
+
+    echo "Running FIPS validation: bssl isfips..."
+    IS_FIPS=$$($$BSSL isfips || true)
+    if [[ "$$IS_FIPS" = "1" ]]; then
+        echo "✓ FIPS mode is ENABLED - bssl isfips returned 1"
+    else
+        echo "✗ ERROR: FIPS mode verification FAILED" >&2
+        echo "  expected: 1" >&2
+        echo "  found: $$IS_FIPS" >&2
+        exit 1
+    fi
+
+    echo "✓ FIPS validation tests passed"
+
+    mkdir -p $$OUT_DIR
+    cp "$$CRYPTO_LIB" "$(location lib/libcrypto.a)"
+    cp "$$SSL_LIB" "$(location lib/libssl.a)"
+
+    echo "=== AWS-LC FIPS Validation Complete ==="
+    echo "✓ FIPS-validated AWS-LC libraries are ready for consumption"
+    echo "  These libraries have passed FIPS validation and are safe to use"
+
+    """,
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "crypto",
+    srcs = ["lib/libcrypto.a"],
+    hdrs = glob(["include/**/*.h"]),
+    includes = ["include"],
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "ssl",
+    srcs = ["lib/libssl.a"],
+    hdrs = glob(["include/**/*.h"]),
+    includes = ["include"],
+    linkstatic = 1,
+    deps = [":crypto"],
+    visibility = ["//visibility:public"],
+)
