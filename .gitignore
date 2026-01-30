@@ -186,6 +186,9 @@ $RECYCLE.BIN/
 /bazel-*
 !/bazel-registry/
 
+# Downloaded tarballs for testing
+upstream.tar.gz
+
 # Rust coverage reports
 rust/tarpaulin-report.html
 

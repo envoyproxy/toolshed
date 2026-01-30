@@ -3,6 +3,6 @@
     "integrity": "sha256-1kpGtPdfpTYtpBLx6W/1t37tdrOpVoVlH4GlWMXJ4SY=",
     "strip_prefix": "aws-lc-1.66.2",
     "overlay": {
-        "BUILD.bazel": "sha256-oc4WAvMELWR9oFr8WDnC6SmBx/GIwtDFPWOzpjsoqxw="
+        "BUILD.bazel": "sha256-vsWmN7z3HV5+p82gES3tE15iSxNOObJcf5Mv1Mdnx/k="
     }
 }
