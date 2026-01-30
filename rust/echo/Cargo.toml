@@ -17,7 +17,7 @@ axum = { version = "=0.8.8", features = ["macros"] }
 axum-core = "^0.5.6"
 axum-server = { version = "^0.8.0", features = ["tls-rustls"] }
 bytes = "=1.11.0"
-clap = "^4.5.54"
+clap = "^4.5.56"
 futures = "^0.3.31"
 futures-util = "^0.3.31"
 http-body-util = "=0.1.3"
