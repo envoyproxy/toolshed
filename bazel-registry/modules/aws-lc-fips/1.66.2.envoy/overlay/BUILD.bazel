@@ -1,0 +1,96 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+licenses(["notice"])  # Apache 2 license
+
+# AWS-LC FIPS build for use in Envoy on ppc64le where BoringSSL FIPS is not available
+# This is based on the boringssl-fips implementation but adapted for AWS-LC
+# Reference: https://github.com/aws/aws-lc/blob/main/crypto/fipsmodule/FIPS.md
+#
+# FIPS Validation Note:
+# Unlike BoringSSL which provides a 'bssl isfips' tool for validation, AWS-LC validates
+# FIPS compliance through automatic self-tests performed at library initialization.
+# The FIPS=1 CMake flag ensures the library is built in FIPS mode, and the module
+# performs all required self-tests when loaded. This is the standard FIPS 140-3 approach.
+# See: https://github.com/aws/aws-lc/blob/main/crypto/fipsmodule/FIPS.md
+
+filegroup(
+    name = "all_srcs",
+    srcs = glob(
+        ["**"],
+    ),
+)
+
+cmake(
+    name = "_aws_lc_build",
+    cache_entries = {
+        "CMAKE_BUILD_TYPE": "Release",
+        "FIPS": "1",
+        "BUILD_SHARED_LIBS": "0",
+        "CMAKE_C_FLAGS": "-fPIC",
+        "CMAKE_CXX_FLAGS": "-fPIC",
+        "GO_EXECUTABLE": "$$EXT_BUILD_ROOT/external/go-fips~/bin/go",
+        "BUILD_TESTING": "OFF",
+    },
+    lib_source = ":all_srcs",
+    out_static_libs = [
+        "libcrypto.a",
+        "libssl.a",
+    ],
+    targets = [
+        "crypto",
+        "ssl",
+    ],
+    env = {
+        "GOCACHE": "$$EXT_BUILD_ROOT$$/gocache",
+        "GOPATH": "$$EXT_BUILD_ROOT$$/gopath",
+    },
+    build_data = [
+        "@go-fips//:go",
+        "@go-fips//:go_sdk",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+genrule(
+    name = "_aws_lc_outputs",
+    srcs = [":_aws_lc_build"],
+    outs = [
+        "lib/libcrypto.a",
+        "lib/libssl.a",
+    ],
+    cmd = """
+    for f in $(locations :_aws_lc_build); do
+        case "$$f" in
+            *libcrypto.a)
+                mkdir -p $$(dirname $(location lib/libcrypto.a))
+                cp "$$f" $(location lib/libcrypto.a)
+                ;;
+            *libssl.a)
+                mkdir -p $$(dirname $(location lib/libssl.a))
+                cp "$$f" $(location lib/libssl.a)
+                ;;
+        esac
+    done
+    """,
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "crypto",
+    srcs = ["lib/libcrypto.a"],
+    hdrs = glob(["include/**/*.h"]),
+    includes = ["include"],
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "ssl",
+    srcs = ["lib/libssl.a"],
+    hdrs = glob(["include/**/*.h"]),
+    includes = ["include"],
+    linkstatic = 1,
+    deps = [":crypto"],
+    visibility = ["//visibility:public"],
+)

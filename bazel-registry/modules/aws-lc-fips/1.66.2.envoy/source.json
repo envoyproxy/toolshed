@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/aws/aws-lc/archive/v1.66.2.tar.gz",
+    "integrity": "sha256-1kpGtPdfpTYtpBLx6W/1t37tdrOpVoVlH4GlWMXJ4SY=",
+    "strip_prefix": "aws-lc-1.66.2",
+    "overlay": {
+        "BUILD.bazel": "sha256-oc4WAvMELWR9oFr8WDnC6SmBx/GIwtDFPWOzpjsoqxw="
+    }
+}
