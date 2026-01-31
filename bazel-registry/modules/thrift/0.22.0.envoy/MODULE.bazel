@@ -1,0 +1,8 @@
+module(
+    name = "thrift",
+    version = "0.22.0.envoy",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.7.0")
+bazel_dep(name = "rules_python", version = "1.0.0")

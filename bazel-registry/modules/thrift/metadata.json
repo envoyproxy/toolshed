@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/apache/thrift",
+    "maintainers": [],
+    "repository": [
+        "github:apache/thrift"
+    ],
+    "versions": [
+        "0.22.0.envoy"
+    ],
+    "yanked_versions": {}
+}
