@@ -177,13 +177,14 @@ def _hs_rename_symbols_impl(ctx):
 set -e
 
 # Arguments: AR_PATH NM_PATH OBJCOPY_PATH PREFIX INPUT_AR OUTPUT_AR KEEPSYMS
-AR="$1"
-NM="$2"
-OBJCOPY="$3"
+# Convert all paths to absolute before cd, so they work from any directory
+AR="$(realpath "$1")"
+NM="$(realpath "$2")"
+OBJCOPY="$(realpath "$3")"
 PREFIX="$4"
-INPUT_AR="$5"
-OUTPUT_AR="$6"
-KEEPSYMS="$7"
+INPUT_AR="$(realpath "$5")"
+OUTPUT_AR="$(realpath "$6")"
+KEEPSYMS="$(realpath "$7")"
 
 # Create temporary directory for work
 TMPDIR=$(mktemp -d)
