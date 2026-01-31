@@ -7,7 +7,8 @@
     },
     "patch_strip": 1,
     "overlay": {
-        "BUILD.bazel": "sha256-L9XNtFqxLX+QdM/yHJ0j4qCCrY8qN1yuhtMN0yxVz4E=",
-        "MODULE.bazel": "sha256-rhTO03T2Bmq1sVdF5qhFZ74M8CPkFwl8g2qNmHpgTmQ="
+        "BUILD.bazel": "sha256-8Koay9cilg2hxL3WCEhgDb13tSRT+w6Ko488ifu6zfQ=",
+        "dispatcher.c": "sha256-e4sIfBpaCdw9njVC5qR14HOMFzu9Ia5enK/WpLYqT9k=",
+        "fat_runtime.bzl": "sha256-md9wWJ9Zrs+kqxJX+hdfzvFeYW2tpvfNEKYJ15bhHu4="
     }
 }
