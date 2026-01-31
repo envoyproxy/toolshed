@@ -1,5 +1,5 @@
 diff --git a/BUILD b/BUILD
-index 91792a8..94456d8 100644
+index 91792a8..2200d08 100644
 --- a/BUILD
 +++ b/BUILD
 @@ -91,7 +91,7 @@ cc_library(
@@ -57,7 +57,7 @@ index 91792a8..94456d8 100644
  )
  
 diff --git a/bazel/BUILD b/bazel/BUILD
-index 15f323f..7e4b1dc 100644
+index 15f323f..f679920 100644
 --- a/bazel/BUILD
 +++ b/bazel/BUILD
 @@ -68,5 +68,47 @@ selects.config_setting_group(
@@ -86,13 +86,13 @@ index 15f323f..7e4b1dc 100644
 +# Wasmtime library - can be overridden by consuming repos
 +label_flag(
 +    name = "wasmtime_lib",
-+    build_setting_default = "@com_github_bytecodealliance_wasmtime//:wasmtime_lib",
++    build_setting_default = "@com_github_wasmtime//:wasmtime_lib",
 +)
 +
 +# Prefixed wasmtime library (for multi-engine builds)
 +label_flag(
 +    name = "prefixed_wasmtime_lib",
-+    build_setting_default = "@com_github_bytecodealliance_wasmtime//:prefixed_wasmtime_lib",
++    build_setting_default = "@com_github_wasmtime//:prefixed_wasmtime_lib",
 +)
 +
 +# WasmEdge library - can be overridden by consuming repos
