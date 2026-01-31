@@ -147,11 +147,18 @@ def _hs_rename_symbols_impl(ctx):
         action_name = ACTION_NAMES.cpp_link_static_library,
     )
     
-    # Get nm and objcopy from toolchain's tool_paths
-    # Note: These are not available via cc_common.get_tool_for_action, so we
-    # need to use the toolchain's all_files and construct the paths
-    nm_path = "nm"
-    objcopy_path = "objcopy"
+    # For LLVM toolchain, nm and objcopy are in the same directory as ar
+    # and named llvm-nm and llvm-objcopy
+    # Extract the directory from ar_path and construct the tool paths
+    # This assumes LLVM toolchain, which is what Envoy uses
+    ar_dir = ar_path.rpartition("/")[0]
+    if ar_dir:
+        nm_path = ar_dir + "/llvm-nm"
+        objcopy_path = ar_dir + "/llvm-objcopy"
+    else:
+        # Fallback to PATH
+        nm_path = "llvm-nm"
+        objcopy_path = "llvm-objcopy"
     
     input_archive = ctx.file.archive
     output_archive = ctx.actions.declare_file(ctx.label.name + ".a")
@@ -191,7 +198,7 @@ for obj in *.o; do
     
     # Get all global symbols from the object, filter out keep symbols,
     # and create rename map
-    "${{NM}}" -f p -g "${{obj}}" | cut -f1 -d' ' | grep -v -f "${{KEEPSYMS}}" | sed -e "s/\\(.*\\)/${{PREFIX}}_\\1/" | awk '{{print $1 " " $0}}' > "${{SYMSFILE}}" || true
+    "${{NM}}" -f p -g "${{obj}}" | cut -f1 -d' ' | grep -v -f "${{KEEPSYMS}}" | sed -e "s/\\(.*\\)/\\1 ${{PREFIX}}_\\1/" > "${{SYMSFILE}}" || true
     
     # Rename symbols if any need renaming
     if [ -s "${{SYMSFILE}}" ]; then
