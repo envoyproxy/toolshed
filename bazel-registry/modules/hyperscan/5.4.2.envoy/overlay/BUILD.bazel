@@ -1,6 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load(":fat_runtime.bzl", "hs_exec_variant")
 
-# Generate config.h
 genrule(
     name = "config_h",
     outs = ["config.h"],
@@ -24,6 +24,9 @@ genrule(
 #define HS_PATCH_VERSION 2
 #define BUILD_DATE "2023-04-19"
 #define RELEASE_BUILD
+#define FAT_RUNTIME
+#define BUILD_AVX512
+#define BUILD_AVX512VBMI
 
 #endif /* CONFIG_H_ */
 EOF
@@ -100,54 +103,28 @@ cc_library(
     visibility = ["//visibility:private"],
 )
 
-# Runtime library (all C runtime sources)
-# Note: This is a simplified build for x86_64 with -march=native.
-# Hyperscan is a performance-critical library that heavily relies on SIMD
-# instructions (SSE, AVX2, AVX512). For production use, consider building
-# a fat runtime with multiple architecture targets similar to upstream CMake.
+# Export the rename_symbols.sh script
+exports_files(["rename_symbols.sh"])
+
+# Build five architecture variants
+hs_exec_variant("core2", "core2", "-march=core2")
+hs_exec_variant("corei7", "corei7", "-march=corei7")
+hs_exec_variant("avx2", "avx2", "-march=core-avx2")
+hs_exec_variant("avx512", "avx512", "-march=skylake-avx512")
+hs_exec_variant("avx512vbmi", "avx512vbmi", "-march=icelake-server")
+
+# Dispatcher library
 cc_library(
-    name = "hs_runtime",
-    srcs = glob(
-        [
-            "src/crc32.c",
-            "src/database.c",
-            "src/runtime.c",
-            "src/stream_compress.c",
-            "src/hs_version.c",
-            "src/hs_valid_platform.c",
-            "src/fdr/*.c",
-            "src/hwlm/*.c",
-            "src/nfa/*.c",
-            "src/rose/*.c",
-            "src/som/*.c",
-            "src/util/masked_move.c",
-            "src/util/simd_utils.c",
-            "src/util/state_compress.c",
-        ],
-        exclude = [
-            "src/**/*_dump*.c",
-            "src/**/test_*.c",
-            "src/hwlm/noodle_engine_avx2.c",  # Textual include in noodle_engine.c
-            "src/hwlm/noodle_engine_avx512.c",  # Textual include in noodle_engine.c
-            "src/hwlm/noodle_engine_sse.c",  # Textual include in noodle_engine.c
-        ],
-    ),
-    hdrs = glob([
-        "src/**/*.h",
-    ]),
-    textual_hdrs = [
-        "src/hwlm/noodle_engine_avx2.c",
-        "src/hwlm/noodle_engine_avx512.c",
-        "src/hwlm/noodle_engine_sse.c",
-    ],
+    name = "hs_dispatcher",
+    srcs = ["dispatcher.c"],
+    hdrs = glob(["src/**/*.h"]),
     copts = [
         "-std=c99",
         "-O3",
         "-DNDEBUG",
         "-fno-strict-aliasing",
-        "-march=native",  # Required for SIMD optimizations
         "-Wno-unused-parameter",
-        "-Wno-sign-compare",
+        "-Wno-unused-function",
     ],
     includes = [
         ".",
@@ -159,6 +136,32 @@ cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [":hs_common"],
+)
+
+# Runtime library combining all variants with dispatcher
+# Note: This implements fat runtime with multiple architecture targets
+# to avoid SIGILL crashes when running on different CPUs.
+cc_library(
+    name = "hs_runtime",
+    hdrs = glob(["src/**/*.h"]),
+    includes = [
+        ".",
+        "src",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":hs_common",
+        ":hs_dispatcher",
+        ":hs_exec_core2_renamed_import",
+        ":hs_exec_corei7_renamed_import",
+        ":hs_exec_avx2_renamed_import",
+        ":hs_exec_avx512_renamed_import",
+        ":hs_exec_avx512vbmi_renamed_import",
+    ],
 )
 
 # Compiler library (all C++ compile sources)
@@ -205,10 +208,13 @@ cc_library(
         "-O2",
         "-DNDEBUG",
         "-fno-strict-aliasing",
+        "-fvisibility=hidden",
         "-Wno-unused-parameter",
         "-Wno-sign-compare",
         "-Wno-unused-variable",
         "-Wno-unused-but-set-variable",
+        "-Wno-unqualified-std-cast-call",
+        "-Wno-redundant-move",
     ],
     includes = [
         ".",
