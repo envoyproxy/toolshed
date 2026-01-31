@@ -160,7 +160,20 @@ def _hs_rename_symbols_impl(ctx):
         nm_path = "llvm-nm"
         objcopy_path = "llvm-objcopy"
     
-    input_archive = ctx.file.archive
+    # Extract the static library from the cc_library's CcInfo provider
+    input_archive = None
+    if CcInfo in ctx.attr.archive:
+        for linker_input in ctx.attr.archive[CcInfo].linking_context.linker_inputs.to_list():
+            for lib in linker_input.libraries:
+                if lib.static_library:
+                    input_archive = lib.static_library
+                    break
+            if input_archive:
+                break
+    
+    if not input_archive:
+        fail("Could not find static library in archive attribute")
+    
     output_archive = ctx.actions.declare_file(ctx.label.name + ".a")
     keep_syms = ctx.actions.declare_file(ctx.label.name + "_keep.syms")
     
@@ -251,8 +264,8 @@ hs_rename_symbols = rule(
     attrs = {
         "archive": attr.label(
             mandatory = True,
-            allow_single_file = [".a"],
-            doc = "Input static archive to rename symbols in",
+            providers = [CcInfo],
+            doc = "Input cc_library to extract static archive from and rename symbols in",
         ),
         "prefix": attr.string(
             mandatory = True,
