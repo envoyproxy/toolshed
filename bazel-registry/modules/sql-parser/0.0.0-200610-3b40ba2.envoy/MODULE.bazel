@@ -1,6 +1,6 @@
 module(
     name = "sql-parser",
-    version = "3b40ba2d.envoy",
+    version = "0.0.0-200610-3b40ba2.envoy",
     compatibility_level = 1,
     bazel_compatibility = [">=7.2.1"],
 )

@@ -10,7 +10,7 @@
         "github:envoyproxy/sql-parser"
     ],
     "versions": [
-        "3b40ba2d.envoy"
+        "0.0.0-200610-3b40ba2.envoy"
     ],
     "yanked_versions": {}
 }
