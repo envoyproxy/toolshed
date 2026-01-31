@@ -188,31 +188,31 @@ KEEPSYMS="$(realpath "$7")"
 
 # Create temporary directory for work
 TMPDIR=$(mktemp -d)
-trap "rm -rf ${{TMPDIR}}" EXIT
+trap "rm -rf ${TMPDIR}" EXIT
 
 # Extract archive to temporary directory
-cd "${{TMPDIR}}"
-"${{AR}}" x "${{INPUT_AR}}"
+cd "${TMPDIR}"
+"${AR}" x "${INPUT_AR}"
 
 # Process each object file
 for obj in *.o; do
-    [ -f "${{obj}}" ] || continue
-    SYMSFILE="${{obj}}.syms"
+    [ -f "${obj}" ] || continue
+    SYMSFILE="${obj}.syms"
     
     # Get all global symbols from the object, filter out keep symbols,
     # and create rename map
-    "${{NM}}" -f p -g "${{obj}}" | cut -f1 -d' ' | grep -v -f "${{KEEPSYMS}}" | sed -e "s/\\(.*\\)/\\1 ${{PREFIX}}_\\1/" > "${{SYMSFILE}}" || true
+    "${NM}" -f p -g "${obj}" | cut -f1 -d' ' | grep -v -f "${KEEPSYMS}" | sed -e "s/\\(.*\\)/\\1 ${PREFIX}_\\1/" > "${SYMSFILE}" || true
     
     # Rename symbols if any need renaming
-    if [ -s "${{SYMSFILE}}" ]; then
-        "${{OBJCOPY}}" --redefine-syms="${{SYMSFILE}}" "${{obj}}"
+    if [ -s "${SYMSFILE}" ]; then
+        "${OBJCOPY}" --redefine-syms="${SYMSFILE}" "${obj}"
     fi
     
-    rm -f "${{SYMSFILE}}"
+    rm -f "${SYMSFILE}"
 done
 
 # Create output archive with renamed symbols
-"${{AR}}" rcs "${{OUTPUT_AR}}" *.o
+"${AR}" rcs "${OUTPUT_AR}" *.o
 
 # Return to original directory
 cd - > /dev/null
