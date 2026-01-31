@@ -3,6 +3,6 @@
     "integrity": "",
     "overlay": {
         "BUILD.bazel": "sha256-zwWV//VghTHrN7xal/CLxaLQTHUjn3xjJU8OQbi8ysY=",
-        "fat_runtime.bzl": "sha256-qjByAdGRZlrcEDkcoCWsPcy33i6/LtZC0f3YJ8fxk64="
+        "fat_runtime.bzl": "sha256-AAnqAzKv2/yIqRmiWzRVVsITc6JCBe8fqyjzxiBUJI8="
     }
 }

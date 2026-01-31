@@ -6,7 +6,6 @@ fat runtime builds of xscan libraries that support multiple CPU architectures.
 
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "use_cpp_toolchain")
 
 # Symbol patterns to keep (not rename with architecture prefix)
 XSCAN_KEEP_SYMBOLS = [
