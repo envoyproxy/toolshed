@@ -124,6 +124,7 @@ hs_database_free
 ^abort$
 ^exit$
 ^pthread_
+^mmbit_
 """
 
 def _hs_rename_symbols_impl(ctx):
