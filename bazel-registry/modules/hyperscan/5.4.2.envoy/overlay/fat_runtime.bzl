@@ -141,24 +141,11 @@ def _hs_rename_symbols_impl(ctx):
         unsupported_features = ctx.disabled_features,
     )
     
-    # Get tool paths from the toolchain
-    ar_path = cc_common.get_tool_for_action(
+    # Get tool path for the archiver
+    ar_executable = cc_common.get_tool_for_action(
         feature_configuration = feature_configuration,
         action_name = ACTION_NAMES.cpp_link_static_library,
     )
-    
-    # For LLVM toolchain, nm and objcopy are in the same directory as ar
-    # and named llvm-nm and llvm-objcopy
-    # Extract the directory from ar_path and construct the tool paths
-    # This assumes LLVM toolchain, which is what Envoy uses
-    ar_dir = ar_path.rpartition("/")[0]
-    if ar_dir:
-        nm_path = ar_dir + "/llvm-nm"
-        objcopy_path = ar_dir + "/llvm-objcopy"
-    else:
-        # Fallback to PATH
-        nm_path = "llvm-nm"
-        objcopy_path = "llvm-objcopy"
     
     # Extract the static library from the cc_library's CcInfo provider
     input_archive = None
@@ -184,17 +171,19 @@ def _hs_rename_symbols_impl(ctx):
     )
     
     # Create a script that performs the symbol renaming
+    # The script accepts tool paths as arguments for flexibility in remote execution
     script = ctx.actions.declare_file(ctx.label.name + "_rename.sh")
     script_content = """#!/bin/bash
 set -e
 
-AR="{ar}"
-NM="{nm}"
-OBJCOPY="{objcopy}"
-PREFIX="{prefix}"
-INPUT_AR="{input}"
-OUTPUT_AR="{output}"
-KEEPSYMS="{keepsyms}"
+# Arguments: AR_PATH NM_PATH OBJCOPY_PATH PREFIX INPUT_AR OUTPUT_AR KEEPSYMS
+AR="$1"
+NM="$2"
+OBJCOPY="$3"
+PREFIX="$4"
+INPUT_AR="$5"
+OUTPUT_AR="$6"
+KEEPSYMS="$7"
 
 # Create temporary directory for work
 TMPDIR=$(mktemp -d)
@@ -226,21 +215,34 @@ done
 
 # Return to original directory
 cd - > /dev/null
-""".format(
-        ar = ar_path,
-        nm = nm_path,
-        objcopy = objcopy_path,
-        prefix = ctx.attr.prefix,
-        input = input_archive.path,
-        output = output_archive.path,
-        keepsyms = keep_syms.path,
-    )
+"""
     
     ctx.actions.write(
         output = script,
         content = script_content,
         is_executable = True,
     )
+    
+    # For LLVM toolchain, derive nm and objcopy paths from ar executable
+    # The ar_executable is a string path, we need to construct nm and objcopy paths
+    ar_dir = ar_executable.rpartition("/")[0]
+    if ar_dir:
+        nm_executable = ar_dir + "/llvm-nm"
+        objcopy_executable = ar_dir + "/llvm-objcopy"
+    else:
+        # Fallback to PATH
+        nm_executable = "llvm-nm"
+        objcopy_executable = "llvm-objcopy"
+    
+    # Create args for the script
+    args = ctx.actions.args()
+    args.add(ar_executable)
+    args.add(nm_executable)
+    args.add(objcopy_executable)
+    args.add(ctx.attr.prefix)
+    args.add(input_archive)
+    args.add(output_archive)
+    args.add(keep_syms)
     
     # Run the script
     ctx.actions.run(
@@ -250,6 +252,7 @@ cd - > /dev/null
         ),
         outputs = [output_archive],
         executable = script,
+        arguments = [args],
         mnemonic = "RenameSymbols",
         progress_message = "Renaming symbols in %s with prefix %s" % (input_archive.short_path, ctx.attr.prefix),
         use_default_shell_env = True,
