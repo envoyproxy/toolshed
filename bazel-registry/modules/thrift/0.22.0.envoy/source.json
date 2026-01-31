@@ -1,0 +1,12 @@
+{
+    "url": "https://github.com/apache/thrift/archive/refs/tags/v0.22.0.tar.gz",
+    "integrity": "sha256-xGScWHndVsiPHnocA+D7/MOyoocvuBYWv/ulqooiWjc=",
+    "strip_prefix": "thrift-0.22.0/lib/py",
+    "overlay": {
+        "BUILD.bazel": "sha256-PFpIBCfkbEWzgyn+7M3fmwTnhSdute2qWsZSgYQq0kg="
+    },
+    "patch_strip": 1,
+    "patches": {
+        "thrift.patch": "sha256-rzAy2/J27BsoBv0OJVxmU2LYYJifT5p0/i8XR19iId0="
+    }
+}

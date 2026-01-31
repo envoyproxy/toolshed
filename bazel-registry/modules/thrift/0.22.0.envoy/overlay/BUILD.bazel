@@ -1,0 +1,18 @@
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@rules_python//python:defs.bzl", "py_library")
+
+licenses(["notice"])  # Apache 2
+
+copy_to_directory(
+    name = "thrift_pkg",
+    srcs = glob(["src/**/*.py"]),
+    out = "thrift",
+    root_paths = ["src"],
+)
+
+py_library(
+    name = "thrift",
+    srcs = [":thrift_pkg"],
+    imports = ["."],
+    visibility = ["//visibility:public"],
+)
