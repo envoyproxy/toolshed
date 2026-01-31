@@ -1,0 +1,18 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # MIT
+
+cc_library(
+    name = "sqlparser",
+    srcs = glob(["src/**/*.cpp"]),
+    hdrs = glob([
+        "include/**/*.h",
+        "src/**/*.h",
+    ]),
+    includes = ["include/sqlparser"],
+    defines = select({
+        "@platforms//os:windows": ["YY_NO_UNISTD_H"],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/envoyproxy/sql-parser/archive/3b40ba2d106587bdf053a292f7e3bb17e818a57f.tar.gz",
+    "integrity": "sha256-lsEMjpUKFBoyA08ZsZzesdpI/oWc+Wrl4Z+JTzbGLHE=",
+    "strip_prefix": "sql-parser-3b40ba2d106587bdf053a292f7e3bb17e818a57f",
+    "overlay": {
+        "BUILD.bazel": "sha256-bmXzpb0f/JDHm3Z50J9WWyGOVYGwEVYRSW9ynmKmGTw=",
+        "MODULE.bazel": "sha256-tm7yw4h+E5OMTNMdTkYkHVDbViYXdKyo73h/s8qrohs="
+    }
+}
