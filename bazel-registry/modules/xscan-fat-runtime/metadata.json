@@ -1,0 +1,13 @@
+{
+    "homepage": "https://github.com/envoyproxy/toolshed",
+    "maintainers": [
+        {
+            "name": "Envoy maintainers",
+            "github": "envoyproxy"
+        }
+    ],
+    "versions": [
+        "1.0.0"
+    ],
+    "yanked_versions": {}
+}

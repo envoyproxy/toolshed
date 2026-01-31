@@ -1,0 +1,8 @@
+{
+    "url": "",
+    "integrity": "",
+    "overlay": {
+        "BUILD.bazel": "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+        "fat_runtime.bzl": "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    }
+}
