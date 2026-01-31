@@ -201,7 +201,9 @@ for obj in *.o; do
     
     # Get all global symbols from the object, filter out keep symbols,
     # and create rename map
-    "${NM}" -f p -g "${obj}" | cut -f1 -d' ' | grep -v -f "${KEEPSYMS}" | sed -e "s/\\(.*\\)/\\1 ${PREFIX}_\\1/" > "${SYMSFILE}" || true
+    # llvm-nm --format=posix outputs: symbol_name type address [size]
+    # We extract only the symbol name (first field) and create the rename map
+    "${NM}" --format=posix -g "${obj}" | awk '{print $1}' | grep -v -f "${KEEPSYMS}" | awk -v prefix="${PREFIX}" '{print $1 " " prefix "_" $1}' > "${SYMSFILE}" || true
     
     # Rename symbols if any need renaming
     if [ -s "${SYMSFILE}" ]; then

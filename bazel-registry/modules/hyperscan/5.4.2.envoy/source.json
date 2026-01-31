@@ -9,6 +9,6 @@
     "overlay": {
         "BUILD.bazel": "sha256-8KoazNcilg2hxL3WCEhgDb13tSRT+w6Ko48zifu6z9Q=",
         "dispatcher.c": "sha256-QxcWJt0umsfxxzGhoMK6yUAxpNqQWdO+VDdXHcLUlTo=",
-        "fat_runtime.bzl": "sha256-/qiI4AHSk6buhaC54MuV5OoLVCDBOOVO0n5Xb3ZbQhg="
+        "fat_runtime.bzl": "sha256-+n8QVakmgcw+iWPoT1WyjIKoy563ISn9aj67pw3xv5Y="
     }
 }
