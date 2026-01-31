@@ -103,9 +103,6 @@ cc_library(
     visibility = ["//visibility:private"],
 )
 
-# Export the rename_symbols.sh script
-exports_files(["rename_symbols.sh"])
-
 # Build five architecture variants
 hs_exec_variant("core2", "core2", "-march=core2")
 hs_exec_variant("corei7", "corei7", "-march=corei7")

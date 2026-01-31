@@ -1,6 +1,8 @@
 """Macro for building fat runtime variants of hyperscan."""
 
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 
 def hs_exec_variant(name, arch, march_flag):
     """Build an architecture-specific variant of the runtime library.
@@ -69,27 +71,11 @@ def hs_exec_variant(name, arch, march_flag):
         deps = [":hs_common"],
     )
     
-    # Extract the static library and rename symbols
-    native.genrule(
+    # Rename symbols using the hermetic toolchain-based rule
+    hs_rename_symbols(
         name = renamed_name,
-        srcs = [":" + lib_name],
-        outs = ["lib" + renamed_name + ".a"],
-        cmd = """
-            # Find the .a file in the inputs
-            for f in $(SRCS); do
-                if [[ "$$f" == *.a ]]; then
-                    INPUT_AR="$$f"
-                    break
-                fi
-            done
-            if [ -z "$$INPUT_AR" ]; then
-                echo "Error: Could not find .a file in inputs"
-                exit 1
-            fi
-            # Run the symbol renaming script
-            $(location :rename_symbols.sh) """ + arch + """ "$$INPUT_AR" $@
-        """,
-        tools = [":rename_symbols.sh"],
+        archive = ":" + lib_name,
+        prefix = arch,
         target_compatible_with = [
             "@platforms//cpu:x86_64",
             "@platforms//os:linux",
@@ -106,4 +92,171 @@ def hs_exec_variant(name, arch, march_flag):
         ],
         visibility = ["//visibility:private"],
     )
+
+# Keep symbols - from upstream keep.syms.in plus common libc symbols
+KEEP_SYMBOLS = """hs_misc_alloc
+hs_misc_free
+hs_free_scratch
+hs_stream_alloc
+hs_stream_free
+hs_scratch_alloc
+hs_scratch_free
+hs_database_alloc
+hs_database_free
+^_
+^malloc$
+^free$
+^calloc$
+^realloc$
+^memcpy$
+^memmove$
+^memset$
+^memcmp$
+^strlen$
+^strcmp$
+^strncmp$
+^strcpy$
+^strncpy$
+^printf$
+^fprintf$
+^sprintf$
+^snprintf$
+^abort$
+^exit$
+^pthread_
+"""
+
+def _hs_rename_symbols_impl(ctx):
+    """Implementation for hs_rename_symbols rule.
+    
+    This rule extracts object files from a static archive, renames their symbols
+    with a specified prefix (except for symbols in the keep list), and creates a
+    new archive with the renamed symbols.
+    """
+    cc_toolchain = find_cc_toolchain(ctx)
+    feature_configuration = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+    
+    # Get tool paths from the toolchain
+    ar_path = cc_common.get_tool_for_action(
+        feature_configuration = feature_configuration,
+        action_name = ACTION_NAMES.cpp_link_static_library,
+    )
+    
+    # Get nm and objcopy from toolchain's tool_paths
+    # Note: These are not available via cc_common.get_tool_for_action, so we
+    # need to use the toolchain's all_files and construct the paths
+    nm_path = "nm"
+    objcopy_path = "objcopy"
+    
+    input_archive = ctx.file.archive
+    output_archive = ctx.actions.declare_file(ctx.label.name + ".a")
+    keep_syms = ctx.actions.declare_file(ctx.label.name + "_keep.syms")
+    
+    # Write the keep symbols file
+    ctx.actions.write(
+        output = keep_syms,
+        content = KEEP_SYMBOLS,
+    )
+    
+    # Create a script that performs the symbol renaming
+    script = ctx.actions.declare_file(ctx.label.name + "_rename.sh")
+    script_content = """#!/bin/bash
+set -e
+
+AR="{ar}"
+NM="{nm}"
+OBJCOPY="{objcopy}"
+PREFIX="{prefix}"
+INPUT_AR="{input}"
+OUTPUT_AR="{output}"
+KEEPSYMS="{keepsyms}"
+
+# Create temporary directory for work
+TMPDIR=$(mktemp -d)
+trap "rm -rf ${{TMPDIR}}" EXIT
+
+# Extract archive to temporary directory
+cd "${{TMPDIR}}"
+"${{AR}}" x "${{INPUT_AR}}"
+
+# Process each object file
+for obj in *.o; do
+    [ -f "${{obj}}" ] || continue
+    SYMSFILE="${{obj}}.syms"
+    
+    # Get all global symbols from the object, filter out keep symbols,
+    # and create rename map
+    "${{NM}}" -f p -g "${{obj}}" | cut -f1 -d' ' | grep -v -f "${{KEEPSYMS}}" | sed -e "s/\\(.*\\)/${{PREFIX}}_\\1/" | awk '{{print $1 " " $0}}' > "${{SYMSFILE}}" || true
+    
+    # Rename symbols if any need renaming
+    if [ -s "${{SYMSFILE}}" ]; then
+        "${{OBJCOPY}}" --redefine-syms="${{SYMSFILE}}" "${{obj}}"
+    fi
+    
+    rm -f "${{SYMSFILE}}"
+done
+
+# Create output archive with renamed symbols
+"${{AR}}" rcs "${{OUTPUT_AR}}" *.o
+
+# Return to original directory
+cd - > /dev/null
+""".format(
+        ar = ar_path,
+        nm = nm_path,
+        objcopy = objcopy_path,
+        prefix = ctx.attr.prefix,
+        input = input_archive.path,
+        output = output_archive.path,
+        keepsyms = keep_syms.path,
+    )
+    
+    ctx.actions.write(
+        output = script,
+        content = script_content,
+        is_executable = True,
+    )
+    
+    # Run the script
+    ctx.actions.run(
+        inputs = depset(
+            direct = [input_archive, keep_syms],
+            transitive = [cc_toolchain.all_files],
+        ),
+        outputs = [output_archive],
+        executable = script,
+        mnemonic = "RenameSymbols",
+        progress_message = "Renaming symbols in %s with prefix %s" % (input_archive.short_path, ctx.attr.prefix),
+        use_default_shell_env = True,
+    )
+    
+    return [
+        DefaultInfo(files = depset([output_archive])),
+    ]
+
+hs_rename_symbols = rule(
+    implementation = _hs_rename_symbols_impl,
+    attrs = {
+        "archive": attr.label(
+            mandatory = True,
+            allow_single_file = [".a"],
+            doc = "Input static archive to rename symbols in",
+        ),
+        "prefix": attr.string(
+            mandatory = True,
+            doc = "Prefix to add to renamed symbols",
+        ),
+        "_cc_toolchain": attr.label(
+            default = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        ),
+    },
+    toolchains = use_cc_toolchain(),
+    fragments = ["cpp"],
+    doc = "Renames symbols in a static archive with a prefix, preserving allocation hooks and libc symbols",
+)
 
