@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/openhistogram/libcircllhist/archive/refs/tags/py-0.3.2.tar.gz",
+    "integrity": "sha256-bfvWSf3jgPeiJW3vQ7nGN0xtb+doF4sJ457t+HSxOfQ=",
+    "strip_prefix": "libcircllhist-py-0.3.2",
+    "overlay": {
+        "BUILD.bazel": "sha256-6+2LkE1pKJ4ZXJXy++MW4fEBkxqzGrmKJD3f/x7lZZc=",
+        "MODULE.bazel": "sha256-CT5Q7GelYVIpRThwxHcxCYX2/q8oLWotu07XBZvgCF0="
+    }
+}

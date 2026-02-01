@@ -1,0 +1,25 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+licenses(["notice"])  # Apache 2
+
+config_setting(
+    name = "windows_x86_64",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+cc_library(
+    name = "libcircllhist",
+    srcs = ["src/circllhist.c"],
+    hdrs = [
+        "src/circllhist.h",
+    ],
+    copts = select({
+        "//:windows_x86_64": ["-DWIN32"],
+        "//conditions:default": [],
+    }),
+    includes = ["src"],
+    visibility = ["//visibility:public"],
+)
