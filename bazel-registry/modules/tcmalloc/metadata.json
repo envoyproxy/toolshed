@@ -1,0 +1,17 @@
+{
+  "homepage": "https://github.com/google/tcmalloc",
+  "maintainers": [
+    {
+      "email": "maintainers@envoyproxy.io",
+      "github": "envoyproxy",
+      "name": "Envoy Proxy Maintainers"
+    }
+  ],
+  "repository": [
+    "github:google/tcmalloc"
+  ],
+  "versions": [
+    "0.0.0-20241022-5da4a88.envoy"
+  ],
+  "yanked_versions": {}
+}

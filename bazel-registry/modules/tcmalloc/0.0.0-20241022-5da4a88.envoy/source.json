@@ -1,0 +1,9 @@
+{
+  "integrity": "sha256-/ZLWTYMC8Wd1cP3/hE6BUsMU5Vmmx4jGv8OESVTQ2r0=",
+  "strip_prefix": "tcmalloc-5da4a882003102fba0c0c0e8f6372567057332eb",
+  "url": "https://github.com/google/tcmalloc/archive/5da4a882003102fba0c0c0e8f6372567057332eb.tar.gz",
+  "patch_strip": 1,
+  "patches": {
+    "add_module_bazel.patch": "sha256-AXv1LC7l/U6J64jW/l15POI4IFEUWYYAUbK8oOn4IB4="
+  }
+}
