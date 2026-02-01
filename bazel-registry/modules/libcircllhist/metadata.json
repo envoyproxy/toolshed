@@ -1,0 +1,17 @@
+{
+    "homepage": "https://github.com/openhistogram/libcircllhist",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:openhistogram/libcircllhist"
+    ],
+    "versions": [
+        "0.3.2.envoy"
+    ],
+    "yanked_versions": {}
+}
