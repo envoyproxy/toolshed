@@ -1,0 +1,24 @@
+diff --git a/bazel/pgv_proto_library.bzl b/bazel/pgv_proto_library.bzl
+index b8fb865..84ea112 100644
+--- a/bazel/pgv_proto_library.bzl
++++ b/bazel/pgv_proto_library.bzl
+@@ -22,6 +22,8 @@ def pgv_cc_proto_library(
+         deps = [],
+         cc_deps = [],
+         copts = [],
++        re2 = None,
++        protobuf = None,
+         **kargs):
+     """Bazel rule to create a C++ protobuf validation library from proto source files
+     Args:
+@@ -47,8 +49,8 @@ def pgv_cc_proto_library(
+             ":" + name + "_cc_proto",
+             "@com_envoyproxy_protoc_gen_validate//validate:cc_validate",
+             "@com_envoyproxy_protoc_gen_validate//validate:validate_cc",
+-            "@com_google_protobuf//:protobuf",
+-            "@com_googlesource_code_re2//:re2",
++            protobuf or "@com_google_protobuf//:protobuf",
++            re2 or "@com_googlesource_code_re2//:re2",
+         ],
+         copts = copts + select({
+             "@com_envoyproxy_protoc_gen_validate//bazel:windows_x86_64": ["-DWIN32"],
