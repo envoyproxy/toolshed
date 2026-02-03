@@ -16,7 +16,7 @@ async-trait = "^0.1.88"
 axum = { version = "=0.8.8", features = ["macros"] }
 axum-core = "^0.5.6"
 axum-server = { version = "^0.8.0", features = ["tls-rustls"] }
-bytes = "=1.11.0"
+bytes = "=1.11.1"
 clap = "^4.5.54"
 futures = "^0.3.31"
 futures-util = "^0.3.31"
