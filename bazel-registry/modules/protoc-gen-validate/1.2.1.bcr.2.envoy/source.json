@@ -1,5 +1,12 @@
 {
     "integrity": "sha256-5HGDUnVN8Tk7h5K2MTOKqFYvOQ6BYHg+NlRUvBHZYyg=",
     "strip_prefix": "protoc-gen-validate-1.2.1",
-    "url": "https://github.com/envoyproxy/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz"
+    "url": "https://github.com/envoyproxy/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz",
+    "overlay": {
+        "MODULE.bazel": "sha256-Zr6xU6VDgoRFGPo5N39OQnIRTi7S+CEhZ+urMhuLuu4="
+    },
+    "patches": {
+        "bazel_9_fixes.patch": "sha256-bv6l2BHe/pw7Zi5HBwBloPAzIC5YxEuqlW+26Brn3fM="
+    },
+    "patch_strip": 1
 }
