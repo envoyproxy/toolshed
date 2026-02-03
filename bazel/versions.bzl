@@ -13,12 +13,6 @@ VERSIONS = {
         "arm64": "a254b5e4875537b3ee945291103d0babde784608ed5fefc4c59d949ce7c50b13",
     },
 
-    # Echo binary hashes by architecture
-    "echo_sha256": {
-        "amd64": "",  # Will be populated after first release
-        "arm64": "",  # Will be populated after first release
-    },
-
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
     # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
     # stdlib_variant is either "base" (no libstdc++) or the libstdc++ version (e.g., "13")

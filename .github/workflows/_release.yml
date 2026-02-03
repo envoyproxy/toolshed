@@ -37,10 +37,6 @@ on:
         # TODO: think of a better solution for this
         type: string
         default: 0.1.0
-      echo-version:
-        # TODO: think of a better solution for this
-        type: string
-        default: 0.1.0
       prepare-args:
         type: string
         default:
@@ -197,7 +193,6 @@ jobs:
           stdcc_versions: ${{ inputs.stdcc-versions }}
           arches: ${{ inputs.arches }}
           glint_version: ${{ inputs.glint-version }}
-          echo_version: ${{ inputs.echo-version }}
           versions_file: ${{ inputs.bazel-versions-file }}
           san:
           - msan
@@ -212,7 +207,6 @@ jobs:
           | .stdcc_versions as $stdccs
           | .san as $san
           | .glint_version as $glint_version
-          | .echo_version as $echo_version
           | .versions_file as $versions_file
           | (.bins_latest | split("-v") | .[1]) as $bins_latest
           | (if $current.bins_release != $bins_latest then
@@ -232,11 +226,6 @@ jobs:
                 | if $current_sha != $new_sha then
                     "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
                   else "" end] as $glint_updates
-             | [($shas["echo-\($echo_version)-\($arch)"] | split(":") | .[1]) as $new_sha
-                | $current["echo_sha256"][$arch] as $current_sha
-                | if $current_sha != $new_sha then
-                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
-                  else "" end] as $echo_updates
              | [$glibc_versions[]
                 | . as $glibc
                 | $stdccs[]
@@ -252,7 +241,7 @@ jobs:
                 | if $current_sha != $new_sha then
                     "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
                   else "" end] as $sysroot_updates
-              | $glint_updates + $echo_updates + $sysroot_updates] as $arch_updates
+              | $glint_updates + $sysroot_updates] as $arch_updates
           | $bins_update + $san_updates + $arch_updates
           | [flatten[]
              | select(. != "")]
