@@ -1,0 +1,7 @@
+module(
+    name = "zipkin-api",
+    version = "1.0.0.envoy",
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "protobuf", version = "33.4.envoy")
