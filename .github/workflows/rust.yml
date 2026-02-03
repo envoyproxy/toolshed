@@ -113,6 +113,31 @@ jobs:
         path: glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
         retention-days: 30
 
+    - name: Build echo
+      run: cargo build --release -p toolshed-echo
+      working-directory: rust
+
+    - name: Get echo version
+      id: echo-version
+      run: |
+        cd rust/echo
+        VERSION=$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Strip echo binary
+      run: strip rust/target/release/toolshed-echo
+
+    - name: Rename echo binary with version and architecture
+      run: |
+        cp rust/target/release/toolshed-echo echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
+
+    - name: Upload echo binary
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      with:
+        name: rust-artifacts-echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
+        path: echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
+        retention-days: 30
+
   status:
     runs-on: ubuntu-24.04
     if: >-
