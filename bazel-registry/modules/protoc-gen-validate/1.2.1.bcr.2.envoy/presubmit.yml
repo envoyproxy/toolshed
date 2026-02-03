@@ -1,0 +1,13 @@
+matrix:
+  platform:
+  - debian10
+  - ubuntu2004
+  - macos
+  - macos_arm64
+tasks:
+  verify_targets:
+    name: Verify build targets
+    platform: ${{ platform }}
+    build_targets:
+    - '@com_envoyproxy_protoc_gen_validate//validate:validate_proto'
+    - '@com_envoyproxy_protoc_gen_validate//validate:validate_cc'

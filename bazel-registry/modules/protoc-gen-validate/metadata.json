@@ -1,0 +1,17 @@
+{
+  "homepage": "https://github.com/envoyproxy/protoc-gen-validate",
+  "maintainers": [
+    {
+      "email": "maintainers@envoyproxy.io",
+      "github": "envoyproxy",
+      "name": "Envoy Proxy Maintainers"
+    }
+  ],
+  "repository": [
+    "github:envoyproxy/protoc-gen-validate"
+  ],
+  "versions": [
+    "1.2.1.bcr.2.envoy"
+  ],
+  "yanked_versions": {}
+}
