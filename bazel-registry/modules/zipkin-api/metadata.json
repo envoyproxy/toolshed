@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/openzipkin/zipkin-api",
+    "maintainers": [],
+    "repository": [
+        "github:openzipkin/zipkin-api"
+    ],
+    "versions": [
+        "1.0.0.envoy"
+    ],
+    "yanked_versions": {}
+}
