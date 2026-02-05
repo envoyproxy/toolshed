@@ -1,0 +1,27 @@
+load("@protobuf//bazel:proto_library.bzl", "proto_library")
+load("@protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+
+proto_library(
+    name = "client_model_proto",
+    srcs = [
+        "io/prometheus/client/metrics.proto",
+    ],
+    strip_import_prefix = "",
+    deps = [
+        "@protobuf//src/google/protobuf:timestamp_proto",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "client_model",
+    deps = [":client_model_proto"],
+    visibility = ["//visibility:public"],
+)
+
+# Alias for compatibility
+alias(
+    name = "prometheus-metrics-model",
+    actual = ":client_model",
+    visibility = ["//visibility:public"],
+)
