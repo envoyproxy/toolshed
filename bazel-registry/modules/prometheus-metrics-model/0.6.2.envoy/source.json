@@ -3,6 +3,6 @@
     "integrity": "sha256-R8XqeUn2jn97NENQxZtr0x7rkh8O7Gw6Vm4nzxlRRww=",
     "strip_prefix": "client_model-0.6.2",
     "overlay": {
-        "BUILD.bazel": "sha256-UzOBxTvhVGKFLzBCupjWzw1WoOgAv7I0t7hsOEnPaB4="
+        "BUILD.bazel": "sha256-dQjxvJYJ9Es5e41iIrXaW9qy5R/OVcvurTfwd/E/hlQ="
     }
 }
