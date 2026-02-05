@@ -12,4 +12,5 @@ tasks:
     platform: ${{ platform }}
     bazel: ${{ bazel }}
     build_targets:
+    - "@prometheus-metrics-model//:client_model_cc_proto"
     - "@prometheus-metrics-model//:client_model"
