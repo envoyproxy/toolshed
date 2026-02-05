@@ -8,7 +8,7 @@ proto_library(
     ],
     strip_import_prefix = "",
     deps = [
-        "@protobuf//src/google/protobuf:timestamp_proto",
+        "@protobuf//:timestamp_proto",
     ],
     visibility = ["//visibility:public"],
 )
