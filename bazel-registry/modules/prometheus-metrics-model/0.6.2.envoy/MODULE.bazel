@@ -5,5 +5,4 @@ module(
     repo_name = "prometheus_metrics_model",
 )
 
-bazel_dep(name = "protobuf", version = "29.2")
-bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "protobuf", version = "33.4.envoy")
