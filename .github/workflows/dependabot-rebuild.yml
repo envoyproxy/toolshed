@@ -1,0 +1,110 @@
+name: Rebuild Dependabot dist files
+
+on:
+  workflow_run:
+    workflows:
+    - JavaScript CI
+    types:
+    - completed
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  rebuild-dist:
+    # Only run if the workflow was triggered by a pull_request event and failed
+    # The failure is likely because dist files are out of sync
+    if: >
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Get PR details
+      id: pr
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        # Extract PR number from workflow_run event
+        PR_NUMBER=$(echo "${{ toJson(github.event.workflow_run.pull_requests) }}" | jq -r '.[0].number')
+
+        if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" == "null" ]; then
+            echo "No pull request found in workflow_run event"
+            exit 1
+        fi
+
+        # Fetch PR details to check author
+        PR_DATA=$(gh pr view "$PR_NUMBER" --json number,author,headRefName,headRefOid)
+        AUTHOR=$(echo "$PR_DATA" | jq -r '.author.login')
+        HEAD_REF=$(echo "$PR_DATA" | jq -r '.headRefName')
+        HEAD_SHA=$(echo "$PR_DATA" | jq -r '.headRefOid')
+
+        echo "PR #$PR_NUMBER author: $AUTHOR"
+
+        if [ "$AUTHOR" != "dependabot[bot]" ]; then
+            echo "PR is not from dependabot, skipping rebuild"
+            echo "is_dependabot=false" >> $GITHUB_OUTPUT
+            exit 0
+        fi
+
+        echo "is_dependabot=true" >> $GITHUB_OUTPUT
+        echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        echo "head_ref=$HEAD_REF" >> $GITHUB_OUTPUT
+        echo "head_sha=$HEAD_SHA" >> $GITHUB_OUTPUT
+        echo "Will rebuild dist files for PR #$PR_NUMBER, branch: $HEAD_REF"
+
+    - name: Setup appauth
+      if: steps.pr.outputs.is_dependabot == 'true'
+      id: appauth
+      uses: envoyproxy/toolshed/actions/appauth@c73c1b842058331a14008432c0e162b97cccb2f5
+      with:
+        app_id: ${{ secrets.ENVOY_CI_PUBLISH_APP_ID }}
+        key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
+
+    - name: Checkout PR branch
+      if: steps.pr.outputs.is_dependabot == 'true'
+      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+      with:
+        ref: ${{ steps.pr.outputs.head_ref }}
+        token: ${{ steps.appauth.outputs.token }}
+
+    - name: Setup Node.js
+      if: steps.pr.outputs.is_dependabot == 'true'
+      uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f  # v6.1.0
+      with:
+        node-version: 20.x
+
+    - name: Rebuild all JS packages
+      if: steps.pr.outputs.is_dependabot == 'true'
+      run: |
+        # Rebuild all JS packages with dist directories
+        packages="js/appauth js/dispatch js/github/checks js/github/mutex"
+        packages="$packages js/github/script/run js/hashfiles js/jq js/retest js/torun"
+        for pkg_dir in $packages; do
+            if [ -d "$pkg_dir" ] && [ -f "$pkg_dir/package.json" ]; then
+                echo "Processing $pkg_dir"
+                cd "$pkg_dir"
+                npm ci
+                npm run build
+                cd - > /dev/null
+            fi
+        done
+
+    - name: Commit and push if changes detected
+      if: steps.pr.outputs.is_dependabot == 'true'
+      run: |
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+
+        if [[ -n "$(git status --porcelain)" ]]; then
+            echo "Changes detected in dist files after rebuild"
+            git add js/**/dist/
+            git commit -m "chore: rebuild dist files for dependabot PR #${{ steps.pr.outputs.number }}"
+            git push origin ${{ steps.pr.outputs.head_ref }}
+            echo "Changes committed and pushed successfully"
+        else
+            echo "No changes detected in dist files"
+        fi
