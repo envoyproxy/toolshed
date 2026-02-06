@@ -26,7 +26,6 @@ export async function run_github_action(): Promise<void> {
     core.setOutput('value', processed_output)
     const env_var = core.getInput('env_var')
     if (env_var) {
-      process.env[env_var] = processed_output
       core.exportVariable(env_var, processed_output)
     }
     if (output_options.print_output) {
