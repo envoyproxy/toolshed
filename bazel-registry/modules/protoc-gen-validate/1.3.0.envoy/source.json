@@ -4,7 +4,7 @@
     "strip_prefix": "protoc-gen-validate-1.3.0",
     "patches": {
         "bazel_9_fixes.patch": "sha256-dSY9Vm27yD5rYu4NGHFxOe1J1pjqa/SI1H3DrOdMkSc=",
-        "pgv.patch": "sha256-JiDCkX2TQ8qElPKQndtuvO7TFXS1TUDvHfzbjyewVvI="
+        "pgv.patch": "sha256-XORnzac7ud7pVksFj7F1uKn3DZ/A+mFkiSH4vXEZMRU="
     },
     "patch_strip": 1
 }
