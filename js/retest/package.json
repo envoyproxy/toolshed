@@ -44,7 +44,7 @@
     "@actions/core": "^2.0.0",
     "@actions/github": "^6.0.0",
     "@octokit/rest": "^22.0.1",
-    "axios": "^1.13.2",
+    "axios": "^1.13.5",
     "fetch-mock": "^12.0.0",
     "node-fetch": "^3.0.0"
   }
