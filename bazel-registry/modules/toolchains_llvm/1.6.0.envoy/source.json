@@ -4,6 +4,7 @@
     "url": "https://github.com/bazel-contrib/toolchains_llvm/releases/download/v1.6.0/toolchains_llvm-v1.6.0.tar.gz",
     "patch_strip": 1,
     "patches": {
-        "allow_nonroot.patch": "sha256-3E1Q4Yue4OQMBuasQwdPWl79kSnH7x+8KuW9uSFMMIQ="
+        "allow_nonroot.patch": "sha256-3E1Q4Yue4OQMBuasQwdPWl79kSnH7x+8KuW9uSFMMIQ=",
+        "libtinfo5_fix.patch": "sha256-Luj0bdWPoH1BE6Xoc/KuyrOy5xiXoxMQPmaBJcJwz9k="
     }
 }
