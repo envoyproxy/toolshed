@@ -26,7 +26,7 @@ frozendict
 gidgethub
 jinja2>=3.1.6
 multidict>=6.0.2
-mypy==1.19.0
+mypy==1.19.1
 mypy-abstracts
 orjson>=3.9.15
 packaging>=23.0
@@ -37,9 +37,9 @@ pytest-abstracts>=0.0.4
 pytest-iters>=0.0.3
 pytest-patches
 pytest-asyncio>=0.17.0
-python-gnupg<=0.4.4
+python-gnupg<=0.5.6
 pytz
-pyyaml==6.0.2
+pyyaml==6.0.3
 setuptools>=78.1.1
 sphinx>=6.2.0,<9
 sphinx-copybutton>=0.5.1
