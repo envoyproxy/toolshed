@@ -15,7 +15,7 @@ log = "^0.4"
 serde = { version = "^1", features = ["derive"] }
 serde_yaml = "^0.9"
 tokio = { version = "^1", features = ["full"] }
-tempfile = { version = "^3.24", optional = true }
+tempfile = { version = "^3.25", optional = true }
 once_cell = { version = "^1.21", optional = true }
 toolshed-core = { path = "../core" }
 # guerrilla = { path = "../../../guerrilla", optional = true }
@@ -24,7 +24,7 @@ toolshed-test = { path = "../test", optional = true }
 
 [dev-dependencies]
 assert_matches = "^1.5"
-libc = "^0.2.180"
+libc = "^0.2.182"
 mockall = { version = "^0.14.0" }
 mockall_double = "^0.3"
 scopeguard = "^1.2"
