@@ -5,8 +5,7 @@ import pathlib
 import sys
 from functools import cached_property
 
-import pkg_resources
-
+import packaging.requirements
 import packaging.version
 
 import jinja2
@@ -35,7 +34,7 @@ class Requirement:
 
     @property
     def requirement(self):
-        return pkg_resources.Requirement.parse(self.req)
+        return packaging.requirements.Requirement(self.req)
 
     @property
     def specifier(self):
