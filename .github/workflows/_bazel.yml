@@ -42,7 +42,7 @@ jobs:
     name: Bazel (${{ inputs.action }})
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
     - name: Setup Bazel
       uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
     - name: Install libtinfo5
@@ -64,7 +64,7 @@ jobs:
         inputs.action == 'build'
         && inputs.bazel-path == 'bazel'
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/source@b947ebfe9eda97a0da3e1b3a6a3598fbb55de7b6
+      uses: envoyproxy/toolshed/actions/source@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
       with:
         output-name: toolshed-bazel-v{version}.tar.gz
         source-path: bazel/
@@ -83,7 +83,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@d10938876b114aa2a001b43b43158f1bf7008f1a
+      uses: envoyproxy/toolshed/actions/jq@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
       with:
         input: ${{ inputs.artifacts }}
         input-format: text

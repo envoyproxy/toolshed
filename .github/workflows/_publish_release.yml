@@ -73,7 +73,7 @@ jobs:
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
     steps:
-    - uses: envoyproxy/toolshed/actions/appauth@d10938876b114aa2a001b43b43158f1bf7008f1a
+    - uses: envoyproxy/toolshed/actions/appauth@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
       id: appauth
       name: Appauth
       if: >-
@@ -84,7 +84,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/actions/github/checkout@d10938876b114aa2a001b43b43158f1bf7008f1a
+      uses: envoyproxy/toolshed/actions/github/checkout@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -95,7 +95,7 @@ jobs:
         token: ${{ steps.appauth.outputs.token }}
 
     - if: inputs.dry-run
-      uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8  # v6.0.1
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
       with:
         path: temprepo
     - if: inputs.dry-run
@@ -106,13 +106,13 @@ jobs:
       id: gpg
       if: >-
         inputs.artifacts
-      uses: envoyproxy/toolshed/actions/gpg@d10938876b114aa2a001b43b43158f1bf7008f1a
+      uses: envoyproxy/toolshed/actions/gpg@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
       with:
         gpg-key: ${{ ! inputs.dry-run && secrets.gpg-key || '' }}
         gpg-password: ${{ ! inputs.dry-run && secrets.gpg-password || '' }}
     - name: Release title (eg commit message)
       id: title
-      uses: envoyproxy/toolshed/actions/jq@d10938876b114aa2a001b43b43158f1bf7008f1a
+      uses: envoyproxy/toolshed/actions/jq@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
       with:
         options: -sRr
         input: |
@@ -121,7 +121,7 @@ jobs:
           split("\n") | first
 
     - name: Publish the release
-      uses: envoyproxy/toolshed/actions/github/release@d10938876b114aa2a001b43b43158f1bf7008f1a
+      uses: envoyproxy/toolshed/actions/github/release@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
         artifacts: ${{ inputs.artifacts }}
