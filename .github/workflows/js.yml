@@ -53,6 +53,9 @@ jobs:
       uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f  # v6.1.0
       with:
         node-version: ${{ matrix.node-version }}
+    # Use --legacy-peer-deps due to peer dependency conflict:
+    # @typescript-eslint/eslint-plugin@8.55.0 requires eslint ^8.57.0 || ^9.0.0
+    # but the project uses eslint@10.0.0 (not yet supported by typescript-eslint)
     - run: npm ci --legacy-peer-deps
       working-directory: js/${{ matrix.name }}
     - run: npm run lint
