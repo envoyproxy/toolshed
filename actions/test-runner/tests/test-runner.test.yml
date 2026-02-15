@@ -6,7 +6,7 @@ before:
 - shell: bash
   run: |
     mkdir -p /tmp/testfiles
-- uses: envoyproxy/toolshed/actions/jq@8d755dc03183c15e2aca684309c5e4ffaa7afb15
+- uses: envoyproxy/toolshed/actions/jq@d107d22e4398d9c0c4839d3c2de799ceb1df94d3
   id: before
   with:
     input-format: yaml
@@ -17,7 +17,7 @@ before:
         run: |
           echo "BEFORE" >> /tmp/test-output
           mkdir /tmp/DELETEME
-      uses: envoyproxy/toolshed/actions/diskspace@8d755dc03183c15e2aca684309c5e4ffaa7afb15
+      uses: envoyproxy/toolshed/actions/diskspace@d107d22e4398d9c0c4839d3c2de799ceb1df94d3
       with:
         background: false
         to_remove: |
