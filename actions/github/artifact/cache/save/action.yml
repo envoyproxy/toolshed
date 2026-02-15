@@ -8,7 +8,9 @@ inputs:
   path:
     type: string
     required: true
-
+  retention:
+    type: number
+    default: 90
 
 runs:
   using: composite
@@ -19,8 +21,9 @@ runs:
     shell: bash
     run: |
       tar cf - -I "${COMPRESSOR}" -C "${UPLOAD_PATH}" .  \
-          | gh-actions-artifact-client.js upload "${ARTIFACT_NAME}"
+          | gh-actions-artifact-client.js upload -r "${RETENTION_DAYS}" "${ARTIFACT_NAME}"
     env:
       ARTIFACT_NAME: ${{ inputs.name }}.tar.zst
       COMPRESSOR: ${{ inputs.compressor }}
+      RETENTION_DAYS: ${{ inputs.retention }}
       UPLOAD_PATH: ${{ inputs.path }}
