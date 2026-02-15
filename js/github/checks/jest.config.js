@@ -15,7 +15,24 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json',
+    }],
+    '^.+\\.(js|jsx)$': ['ts-jest', {
+      tsconfig: {
+        allowJs: true,
+        module: 'commonjs',
+      },
+    }],
   },
+  moduleNameMapper: {
+    '^@actions/core$': '<rootDir>/node_modules/@actions/core/lib/core.js',
+    '^@actions/github$': '<rootDir>/node_modules/@actions/github/lib/github.js',
+    '^@actions/exec$': '<rootDir>/node_modules/@actions/exec/lib/exec.js',
+    '^@actions/io$': '<rootDir>/node_modules/@actions/io/lib/io.js',
+    '^@actions/([^/]+)/(.*)$': '<rootDir>/node_modules/@actions/$1/$2.js',
+    '^@actions/([^/]+)$': '<rootDir>/node_modules/@actions/$1/lib/index.js',
+  },
+  transformIgnorePatterns: [],
   verbose: true,
 }

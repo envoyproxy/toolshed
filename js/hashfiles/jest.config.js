@@ -15,7 +15,26 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: 'tsconfig.test.json',
+    }],
+    '^.+\\.(js|jsx)$': ['ts-jest', {
+      tsconfig: {
+        allowJs: true,
+        module: 'commonjs',
+      },
+    }],
   },
+  moduleNameMapper: {
+    '^@actions/core$': '<rootDir>/node_modules/@actions/core/lib/core.js',
+    '^@actions/github$': '<rootDir>/node_modules/@actions/github/lib/github.js',
+    '^@actions/exec$': '<rootDir>/node_modules/@actions/exec/lib/exec.js',
+    '^@actions/io$': '<rootDir>/node_modules/@actions/io/lib/io.js',
+    '^@actions/glob$': '<rootDir>/node_modules/@actions/glob/lib/glob.js',
+    '^@actions/http-client$': '<rootDir>/node_modules/@actions/core/node_modules/@actions/http-client/lib/index.js',
+    '^@actions/http-client/(.*)$': '<rootDir>/node_modules/@actions/core/node_modules/@actions/http-client/$1.js',
+    '^@actions/([^/]+)/(.*)$': '<rootDir>/node_modules/@actions/$1/$2.js',
+  },
+  transformIgnorePatterns: [],
   verbose: true,
 }

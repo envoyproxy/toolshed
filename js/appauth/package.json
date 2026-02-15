@@ -21,7 +21,7 @@
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
     "build": "esbuild main.ts --bundle --platform=node --target=node16 --outfile=dist/index.js --minify --format=cjs",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "jest",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts",
     "lint-fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .ts --fix"
   },
