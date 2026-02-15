@@ -1603,25 +1603,25 @@ async def test_distrotest__run(
         if build_raises:
             if build_raises == aiodocker.exceptions.DockerError:
                 m_build.side_effect = build_raises(
-                    "ARG1", dict(message="AN ERROR OCCURRED"))
+                    500, "AN ERROR OCCURRED")
             else:
                 m_build.side_effect = build_raises("AN ERROR OCCURRED")
         if start_raises:
             if start_raises == aiodocker.exceptions.DockerError:
                 m_start.side_effect = start_raises(
-                    "ARG1", dict(message="AN ERROR OCCURRED"))
+                    500, "AN ERROR OCCURRED")
             else:
                 m_start.side_effect = start_raises("AN ERROR OCCURRED")
         if exec_raises:
             if exec_raises == aiodocker.exceptions.DockerError:
                 m_exec.side_effect = exec_raises(
-                    "ARG1", dict(message="AN ERROR OCCURRED"))
+                    500, "AN ERROR OCCURRED")
             else:
                 m_exec.side_effect = exec_raises("AN ERROR OCCURRED")
         if stop_raises:
             if stop_raises == aiodocker.exceptions.DockerError:
                 m_stop.side_effect = stop_raises(
-                    "ARG1", dict(message="AN ERROR OCCURRED"))
+                    500, "AN ERROR OCCURRED")
             else:
                 m_stop.side_effect = stop_raises("AN ERROR OCCURRED")
 

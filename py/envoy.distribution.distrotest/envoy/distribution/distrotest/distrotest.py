@@ -770,7 +770,7 @@ class DistroTest(object):
             return e.args
         except aiodocker.exceptions.DockerError as e:
             # If there are any other Docker errors return the error message
-            return (e.args[1]["message"],)
+            return (e.message,)
         finally:
             # Stop the container and handle success/failure
             try:
@@ -778,6 +778,6 @@ class DistroTest(object):
                 errors = None
             except aiodocker.exceptions.DockerError as e:
                 # capture Docker errors from trying to stop the container
-                errors = (e.args[1]["message"],)
+                errors = (e.message,)
         # Return errors from trying to stop the container if any
         return errors
