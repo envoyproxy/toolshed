@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "^1.0.97"
+anyhow = "^1.0.101"
 as-any = "^0.3.2"
 indexmap = { version = "^2.13.0", features = ["serde"] }
 serde = { version = "^1.0.219", features = ["derive"] }
