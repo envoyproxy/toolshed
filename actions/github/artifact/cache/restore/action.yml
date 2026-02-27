@@ -20,6 +20,14 @@ inputs:
   wf-path:
     type: string
     required: true
+  max-retries:
+    type: number
+    required: false
+    default: 3
+  retry-delay:
+    type: number
+    required: false
+    default: 10
 
 
 runs:
@@ -40,8 +48,6 @@ runs:
       || steps.cache-id.outputs.id
     shell: bash
     run: |
-      MAX_RETRIES=3
-      RETRY_DELAY=10
       for attempt in $(seq 1 "$MAX_RETRIES"); do
           echo "Attempt $attempt of $MAX_RETRIES"
           if gh api \
@@ -70,3 +76,5 @@ runs:
       ARTIFACT_ID: ${{ inputs.id || steps.cache-id.outputs.id }}
       OUTPUT_PATH: ${{ inputs.path }}
       REPOSITORY: ${{ inputs.repository }}
+      MAX_RETRIES: ${{ inputs.max-retries }}
+      RETRY_DELAY: ${{ inputs.retry-delay }}
