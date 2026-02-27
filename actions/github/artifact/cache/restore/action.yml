@@ -40,15 +40,31 @@ runs:
       || steps.cache-id.outputs.id
     shell: bash
     run: |
-      gh api \
-          -H "Accept: application/vnd.github+json" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          "/repos/${REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
-          | tar --warning=no-timestamp \
-                --keep-directory-symlink \
-                -xI unzstd \
-                -f - \
-                -C ${OUTPUT_PATH}
+      MAX_RETRIES=3
+      RETRY_DELAY=10
+      for attempt in $(seq 1 "$MAX_RETRIES"); do
+          echo "Attempt $attempt of $MAX_RETRIES"
+          if gh api \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              "/repos/${REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+              | tar --warning=no-timestamp \
+                    --keep-directory-symlink \
+                    -xI unzstd \
+                    -f - \
+                    -C ${OUTPUT_PATH}; then
+              echo "Cache restored successfully"
+              exit 0
+          fi
+          if [[ "$attempt" -lt "$MAX_RETRIES" ]]; then
+              echo "::warning::Attempt $attempt failed, retrying in ${RETRY_DELAY}s..."
+              find "${OUTPUT_PATH:?}" -mindepth 1 -delete
+              sleep "$RETRY_DELAY"
+          fi
+          RETRY_DELAY=$((RETRY_DELAY * 2))
+      done
+      echo "::error::Failed to restore artifact cache after $MAX_RETRIES attempts"
+      exit 1
     env:
       GH_TOKEN: ${{ inputs.token }}
       ARTIFACT_ID: ${{ inputs.id || steps.cache-id.outputs.id }}
