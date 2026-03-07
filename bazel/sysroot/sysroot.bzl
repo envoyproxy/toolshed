@@ -38,6 +38,20 @@ def _sysroot_impl(ctx):
         sha256 = ctx.attr.sha256,
         stripPrefix = "",
     )
+
+    # When cross-compiling for arm64 from an x86_64 host, overlay aarch64
+    # libc++/libc++abi/libunwind from the LLVM aarch64 distribution into the
+    # sysroot so that the toolchain can link with libc++ instead of libstdc++.
+    #
+    # libc++ is preferred over libstdc++ to match native x86_64 builds (which
+    # use builtin-libc++) and to avoid duplicate operator new/delete symbol
+    # conflicts with TCMalloc when statically linking libstdc++.a.
+    #
+    # On aarch64 hosts the native LLVM toolchain already provides libc++ for
+    # aarch64 targets, so the overlay is skipped.
+    if arch == "arm64" and ctx.os.arch != "aarch64":
+        _overlay_libcxx_arm64(ctx)
+
     ctx.file("BUILD.bazel", """
 package(default_visibility = ["//visibility:public"])
 
@@ -78,6 +92,70 @@ filegroup(
     srcs = [":sysroot"],
 )
 """)
+
+def _overlay_libcxx_arm64(ctx):
+    """Overlays aarch64 libc++ from the LLVM distribution into the sysroot.
+
+    Extracts libc++.a, libc++abi.a, libunwind.a and the arch-specific
+    __config_site header from the official LLVM aarch64-linux-gnu tarball
+    into usr/lib/aarch64-linux-gnu/ and usr/include/ respectively.
+    """
+    llvm_ver = VERSIONS["llvm"]
+    llvm_sha256 = VERSIONS["llvm_aarch64_sha256"][llvm_ver]
+    llvm_strip_prefix = "clang+llvm-{ver}-aarch64-linux-gnu".format(ver = llvm_ver)
+    llvm_lib_subdir = "aarch64-unknown-linux-gnu"
+    llvm_libs = ["libc++.a", "libc++abi.a", "libunwind.a"]
+    llvm_url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-{ver}/clang+llvm-{ver}-aarch64-linux-gnu.tar.xz".format(ver = llvm_ver)
+
+    ctx.download(
+        llvm_url,
+        output = "_llvm_aarch64.tar.xz",
+        sha256 = llvm_sha256,
+        executable = False,
+    )
+
+    result = ctx.execute(["mkdir", "-p", "usr/lib/aarch64-linux-gnu"])
+    if result.return_code != 0:
+        fail("mkdir failed: " + result.stderr)
+
+    # Strip prefix_components + "lib/" + "{triple}/" = prefix_parts + 2
+    num_strip = len(llvm_strip_prefix.split("/")) + 2
+    tar_args = [
+        "tar",
+        "-xf",
+        "_llvm_aarch64.tar.xz",
+        "--strip-components",
+        str(num_strip),
+        "-C",
+        "usr/lib/aarch64-linux-gnu",
+    ] + [
+        llvm_strip_prefix + "/lib/" + llvm_lib_subdir + "/" + lib
+        for lib in llvm_libs
+    ]
+    result = ctx.execute(tar_args)
+    if result.return_code != 0:
+        fail("Failed to extract LLVM libs:\n" + result.stderr)
+
+    # Extract the aarch64-specific __config_site (arch-specific libc++ config).
+    # Placed at usr/include/__config_site so clang finds it via the sysroot
+    # include path without extra -isystem flags.
+    config_site_path = (
+        llvm_strip_prefix + "/include/" + llvm_lib_subdir + "/c++/v1/__config_site"
+    )
+    result = ctx.execute([
+        "tar",
+        "-xf",
+        "_llvm_aarch64.tar.xz",
+        "--strip-components",
+        str(len(llvm_strip_prefix.split("/")) + 4),
+        "-C",
+        "usr/include",
+        config_site_path,
+    ])
+    if result.return_code != 0:
+        fail("Failed to extract __config_site:\n" + result.stderr)
+
+    ctx.execute(["rm", "_llvm_aarch64.tar.xz"])
 
 sysroot = repository_rule(
     implementation = _sysroot_impl,

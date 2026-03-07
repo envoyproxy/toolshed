@@ -13,6 +13,14 @@ VERSIONS = {
         "arm64": "a254b5e4875537b3ee945291103d0babde784608ed5fefc4c59d949ce7c50b13",
     },
 
+    # SHA256 hashes for the official LLVM aarch64-linux-gnu binary tarballs.
+    # Used to overlay aarch64 libc++/libc++abi/libunwind into the arm64 sysroot
+    # for cross-compilation from x86_64 hosts.
+    # Update this dict whenever VERSIONS["llvm"] changes.
+    "llvm_aarch64_sha256": {
+        "18.1.8": "dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999",
+    },
+
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
     # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
     # stdlib_variant is either "base" (no libstdc++) or the libstdc++ version (e.g., "13")
