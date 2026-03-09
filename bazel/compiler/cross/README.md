@@ -8,6 +8,10 @@ no local compilation required.
 This keeps the sysroot lean (glibc headers/libs only) while making the
 libc++ static libraries available as a separate Bazel repository.
 
+The sha256 values for the upstream LLVM prebuilt tarballs are sourced from
+[bazel-contrib/toolchains_llvm](https://github.com/bazel-contrib/toolchains_llvm/blob/main/toolchain/internal/llvm_distributions.bzl)
+and recorded in `versions.bzl` under `"llvm_prebuilt_sha256"`.
+
 ## Building and publishing
 
 To build the repackaged tarballs locally:
@@ -18,37 +22,40 @@ bazel build //compiler/cross:cxx_cross_aarch64
 bazel build //compiler/cross:cxx_cross_x86_64
 ```
 
-This will produce:
+This produces:
 - `bazel-bin/compiler/cross/cross-llvm18.1.8-aarch64.tar.xz`
 - `bazel-bin/compiler/cross/cross-llvm18.1.8-x86_64.tar.xz`
 
-> **Note:** Building these targets downloads the full LLVM prebuilt tarballs
-> (~500 MB for aarch64, ~900 MB for x86_64). They are cached after the first
-> download.
+Each tarball preserves the LLVM release layout under a `cross-libs-{arch}/`
+prefix:
+```
+cross-libs-aarch64/
+  lib/aarch64-unknown-linux-gnu/libc++.a
+  lib/aarch64-unknown-linux-gnu/libc++abi.a
+  lib/aarch64-unknown-linux-gnu/libunwind.a
+  include/aarch64-unknown-linux-gnu/c++/v1/__config_site
+```
 
 ## Updating published versions
 
-The cross libs tarballs are automatically packaged and published to GitHub
-releases. To update:
+The tarballs are automatically packaged and published to GitHub releases by CI.
+To update:
 
-1. **Update sha256s** in `MODULE.bazel` for `llvm_prebuilt_aarch64` and
-   `llvm_prebuilt_x86_64` if upgrading LLVM.
+1. **Create a release** with the naming format `bins-v{version}`.
 
-2. **Create a release** with the naming format `bins-v{version}`.
+2. **Wait for CI** to build and publish the tarballs.
 
-3. **Wait for CI** to build and publish the tarballs to the release.
-
-4. **Get SHA256 hashes** for the published artifacts:
+3. **Get SHA256 hashes** for the published artifacts:
    ```bash
-   curl -L https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.47/cross-llvm18.1.8-aarch64.tar.xz | sha256sum
-   curl -L https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.47/cross-llvm18.1.8-x86_64.tar.xz | sha256sum
+   curl -fsSL https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.47/cross-llvm18.1.8-aarch64.tar.xz | sha256sum
+   curl -fsSL https://github.com/envoyproxy/toolshed/releases/download/bins-v0.1.47/cross-llvm18.1.8-x86_64.tar.xz | sha256sum
    ```
 
-5. **Update `versions.bzl`** with the new SHA256 values:
+4. **Update `versions.bzl`**:
    ```python
    "libcxx_cross_sha256": {
-       "aarch64": "...",
-       "x86_64": "...",
+       "aarch64": "<sha256 from step 3>",
+       "x86_64": "<sha256 from step 3>",
    },
    ```
 

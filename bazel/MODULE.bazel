@@ -68,6 +68,42 @@ http_archive(
     url = "https://github.com/llvm/llvm-project/archive/llvmorg-18.1.8.tar.gz",
 )
 
+# LLVM prebuilt release tarballs for //compiler/cross packaging targets.
+# sha256 values sourced from bazel-contrib/toolchains_llvm llvm_distributions.bzl.
+http_archive(
+    name = "llvm_prebuilt_aarch64",
+    build_file_content = """package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "cross_libs",
+    srcs = glob(["lib/aarch64-unknown-linux-gnu/*.a"]),
+)
+filegroup(
+    name = "config_site",
+    srcs = ["include/aarch64-unknown-linux-gnu/c++/v1/__config_site"],
+)
+""",
+    sha256 = "dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999",
+    strip_prefix = "clang+llvm-18.1.8-aarch64-linux-gnu",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-aarch64-linux-gnu.tar.xz",
+)
+
+http_archive(
+    name = "llvm_prebuilt_x86_64",
+    build_file_content = """package(default_visibility = ["//visibility:public"])
+filegroup(
+    name = "cross_libs",
+    srcs = glob(["lib/x86_64-unknown-linux-gnu/*.a"]),
+)
+filegroup(
+    name = "config_site",
+    srcs = ["include/x86_64-unknown-linux-gnu/c++/v1/__config_site"],
+)
+""",
+    sha256 = "54ec30358afcc9fb8aa74307db3046f5187f9fb89fb37064cdde906e062ebf36",
+    strip_prefix = "clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04",
+    url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz",
+)
+
 # Setup sysroots for LLVM toolchain using the sysroot extension
 sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev_dependency=True)
 sysroot_ext.setup()
