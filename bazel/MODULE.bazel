@@ -111,3 +111,6 @@ llvm.sysroot(
 use_repo(llvm, "llvm_toolchain")
 
 register_toolchains("@llvm_toolchain//:all", dev_dependency = True)
+
+libcxx_ext = use_extension("//compile:extensions.bzl", "libcxx_extension", dev_dependency = True)
+use_repo(libcxx_ext, "llvm_libcxx_aarch64", "llvm_libcxx_x86_64")

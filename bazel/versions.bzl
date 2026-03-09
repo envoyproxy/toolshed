@@ -1,6 +1,28 @@
+SUPPORTED_ARCHES = ["aarch64", "x86_64"]
+
+# This is only used for cross-compilation (toolchains_llvm provides these otherwise)
+LLVM_CXX_BUILD = """
+filegroup(
+    name = "libcxx",
+    srcs = [
+        "lib/{arch}-unknown-linux-gnu/libc++.a",
+        "lib/{arch}-unknown-linux-gnu/libc++abi.a",
+        "lib/{arch}-unknown-linux-gnu/libunwind.a",
+    ],
+    visibility = ["//visibility:public"],
+)
+filegroup(
+    name = "config_site",
+    srcs = ["include/{arch}-unknown-linux-gnu/c++/v1/__config_site"],
+    visibility = ["//visibility:public"],
+)
+"""
+
+LLVM_VERSION = "18.1.8"
+
 VERSIONS = {
     "cmake": "3.23.2",
-    "llvm": "18.1.8",
+    "llvm": LLVM_VERSION,
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": "0.1.46",
@@ -38,6 +60,8 @@ VERSIONS = {
             },
         },
     },
+
+    # external archives
     "aspect_bazel_lib": {
         "type": "github_archive",
         "repo": "aspect-build/bazel-lib",
@@ -53,10 +77,32 @@ VERSIONS = {
         "sha256": "66ffd9315665bfaafc96b52278f57c7e2dd09f5ede279ea6d39b2be471e7e3aa",
         "url": "https://github.com/{repo}/releases/download/{version}/bazel-skylib-{version}.tar.gz",
     },
+    "llvm_libcxx_aarch64": {
+        "arch": "aarch64",
+        "type": "http_archive",
+        "repo": "llvm/llvm-project",
+        "download_suffix": "linux-gnu",
+        "version": LLVM_VERSION,
+        "sha256": "dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999",
+        "url": "https://github.com/{repo}/releases/download/llvmorg-{version}/clang+llvm-{version}-{arch}-{download_suffix}.tar.xz",
+        "strip_prefix": "clang+llvm-{version}-{arch}-linux-gnu/",
+        "build_file_content": LLVM_CXX_BUILD,
+    },
+    "llvm_libcxx_x86_64": {
+        "arch": "x86_64",
+        "download_suffix": "linux-gnu-ubuntu-18.04",
+        "type": "http_archive",
+        "repo": "llvm/llvm-project",
+        "version": LLVM_VERSION,
+        "sha256": "54ec30358afcc9fb8aa74307db3046f5187f9fb89fb37064cdde906e062ebf36",
+        "url": "https://github.com/{repo}/releases/download/llvmorg-{version}/clang+llvm-{version}-{arch}-{download_suffix}.tar.xz",
+        "strip_prefix": "clang+llvm-{version}-{arch}-linux-gnu-ubuntu-18.04/",
+        "build_file_content": LLVM_CXX_BUILD,
+    },
     "llvm_source": {
         "type": "github_archive",
         "repo": "llvm/llvm-project",
-        "version": "llvmorg-18.1.8",
+        "version": "llvmorg-%s" % LLVM_VERSION,
         "sha256": "09c08693a9afd6236f27a2ebae62cda656eba19021ef3f94d59e931d662d4856",
         "url": "https://github.com/{repo}/archive/{version}.tar.gz",
         "strip_prefix": "llvm-project-{version}",
