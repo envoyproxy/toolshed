@@ -7,9 +7,12 @@ VERSIONS = {
     "msan_libs_sha256": "4a98ece333b402138715a66f406670478bb425f90dbaa5d4faedb9b26e23b0ad",
     "tsan_libs_sha256": "9ed6fb48c16b77ae16edcd63a1b1356cb42f11e7044376c61c532b3a8e6b895a",
 
-    # SHA256 hashes for LLVM release tarballs used by libcxx_cross, keyed by arch
+    # SHA256 hashes for published cross-compilation lib tarballs, keyed by arch.
+    # These are set after the tarballs have been built and published to GitHub releases
+    # via //compiler/cross:cxx_cross_{arch}.  Values will be empty until first publish.
     "libcxx_cross_sha256": {
-        "aarch64": "dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999",
+        "aarch64": "",
+        "x86_64": "",
     },
 
     # Glint binary hashes by architecture

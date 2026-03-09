@@ -68,6 +68,8 @@ jobs:
       artifacts: |
           compile/msan-llvm18.1.8-x86_64.tar.xz
           compile/tsan-llvm18.1.8-x86_64.tar.xz
+          compiler/cross/cross-llvm18.1.8-aarch64.tar.xz
+          compiler/cross/cross-llvm18.1.8-x86_64.tar.xz
           sysroot/sysroot-*.tar.xz
       bazel-args: >-
         --config=ci

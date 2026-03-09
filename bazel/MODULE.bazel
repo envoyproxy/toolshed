@@ -88,9 +88,10 @@ use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 
 # Setup cross-compilation libc++ libraries - example for downstream consumers
 # Uncomment to use in your MODULE.bazel:
-# libcxx_cross_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "libcxx_cross_extension")
-# libcxx_cross_ext.setup()
-# use_repo(libcxx_cross_ext, "libcxx_cross")
+# libcxx_cross_ext = use_extension("@envoy_toolshed//compiler/cross:extensions.bzl", "libcxx_cross_extension")
+# libcxx_cross_ext.setup(target_arch = "aarch64")
+# libcxx_cross_ext.setup(target_arch = "x86_64")
+# use_repo(libcxx_cross_ext, "libcxx_cross_aarch64", "libcxx_cross_x86_64")
 
 # Setup grcov for code coverage - example for downstream consumers
 # Uncomment to use in your MODULE.bazel:

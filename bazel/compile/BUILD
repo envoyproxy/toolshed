@@ -6,7 +6,7 @@ load("//:versions.bzl", "VERSIONS")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["sanitizer_libs.bzl", "libcxx_cross.bzl", "extensions.bzl"])
+exports_files(["sanitizer_libs.bzl", "extensions.bzl"])
 
 # Build setting to control which toolchain to use
 # This can be set with --//compile:use_gcc_toolchain=true
