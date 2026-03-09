@@ -29,6 +29,12 @@ VERSIONS = {
     "msan_libs_sha256": "4a98ece333b402138715a66f406670478bb425f90dbaa5d4faedb9b26e23b0ad",
     "tsan_libs_sha256": "9ed6fb48c16b77ae16edcd63a1b1356cb42f11e7044376c61c532b3a8e6b895a",
 
+    # libcxx bundle hashes by architecture (for cross-compilation with toolchains_llvm)
+    "libcxx_libs_sha256": {
+        "aarch64": "",
+        "x86_64": "",
+    },
+
     # Glint binary hashes by architecture
     "glint_sha256": {
         "amd64": "9074199d4da1ebc112dc407b212006d0080afdc0364243af15e9bb60a2508b23",

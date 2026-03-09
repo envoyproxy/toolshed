@@ -86,6 +86,12 @@ use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 # # )
 # use_repo(sanitizer_ext, "msan_libs", "tsan_libs")
 
+# Setup prebuilt libcxx for cross-compilation - example for downstream consumers
+# Uncomment to use in your MODULE.bazel:
+# libcxx_libs_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "libcxx_libs_extension")
+# libcxx_libs_ext.setup()
+# use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
+
 # Setup grcov for code coverage - example for downstream consumers
 # Uncomment to use in your MODULE.bazel:
 # grcov_ext = use_extension("@envoy_toolshed//coverage/grcov:extensions.bzl", "grcov_extension")
