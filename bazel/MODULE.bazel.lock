@@ -187,10 +187,42 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//compile:extensions.bzl%libcxx_extension": {
+      "general": {
+        "bzlTransitiveDigest": "J+69lztOXQhzKKhr4UQ8b3ZHHF9HgNAOrWli2g2QN+s=",
+        "usagesDigest": "AbuQ5Of2OfShUbjeKn0sjhmzT/CRwh/MjUnWUa4uRto=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "llvm_libcxx_aarch64": {
+            "bzlFile": "@@//compile:llvm_prebuilt.bzl",
+            "ruleClassName": "llvm_prebuilt",
+            "attributes": {
+              "build_file_content": "\nfilegroup(\n    name = \"libcxx\",\n    srcs = [\n        \"lib/aarch64-unknown-linux-gnu/libc++.a\",\n        \"lib/aarch64-unknown-linux-gnu/libc++abi.a\",\n        \"lib/aarch64-unknown-linux-gnu/libunwind.a\",\n    ],\n    visibility = [\"//visibility:public\"],\n)\nfilegroup(\n    name = \"config_site\",\n    srcs = [\"include/aarch64-unknown-linux-gnu/c++/v1/__config_site\"],\n    visibility = [\"//visibility:public\"],\n)\n",
+              "sha256": "dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999",
+              "strip_prefix": "clang+llvm-18.1.8-aarch64-linux-gnu/",
+              "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-aarch64-linux-gnu.tar.xz"
+            }
+          },
+          "llvm_libcxx_x86_64": {
+            "bzlFile": "@@//compile:llvm_prebuilt.bzl",
+            "ruleClassName": "llvm_prebuilt",
+            "attributes": {
+              "build_file_content": "\nfilegroup(\n    name = \"libcxx\",\n    srcs = [\n        \"lib/x86_64-unknown-linux-gnu/libc++.a\",\n        \"lib/x86_64-unknown-linux-gnu/libc++abi.a\",\n        \"lib/x86_64-unknown-linux-gnu/libunwind.a\",\n    ],\n    visibility = [\"//visibility:public\"],\n)\nfilegroup(\n    name = \"config_site\",\n    srcs = [\"include/x86_64-unknown-linux-gnu/c++/v1/__config_site\"],\n    visibility = [\"//visibility:public\"],\n)\n",
+              "sha256": "54ec30358afcc9fb8aa74307db3046f5187f9fb89fb37064cdde906e062ebf36",
+              "strip_prefix": "clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04/",
+              "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
-        "bzlTransitiveDigest": "A8YpcvoFnaOaXB3M23VhYBBV+2UI5iYs+aozIMuRJQU=",
-        "usagesDigest": "fd4AN2mcPqzNnr01G/zQvAfWBgY+jPTrWBMQzVIp32k=",
+        "bzlTransitiveDigest": "/cahwZ74XySbtsnWCmv9OjiYjN6cgPEdA8+idePosWc=",
+        "usagesDigest": "ixWU9XBHZdyUf3Y8y2GyOIr131lyVtIl5oQzHwXacCY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -199,8 +231,8 @@
             "bzlFile": "@@//sysroot:sysroot.bzl",
             "ruleClassName": "sysroot",
             "attributes": {
-              "version": "0.1.45",
-              "sha256": "183baed6a57747c76750fbeb8eedb149a9a3f7d87df9c4bd06351b5048a9f58f",
+              "version": "0.1.46",
+              "sha256": "5d20d3ed6b573b6600e338ba9946d93de7d881b80c093af205eebff7c271bc68",
               "arch": "amd64",
               "glibc_version": "2.31",
               "stdcc_version": "13"
@@ -210,8 +242,8 @@
             "bzlFile": "@@//sysroot:sysroot.bzl",
             "ruleClassName": "sysroot",
             "attributes": {
-              "version": "0.1.45",
-              "sha256": "b69a1459a0e8fa170700b166cd8239a54c806524055ae1e1d4451df72e839d73",
+              "version": "0.1.46",
+              "sha256": "d31f008798ccd55bd0556c68c5e0ff14dda9c26573d627f33d9ae778cc6f39f2",
               "arch": "arm64",
               "glibc_version": "2.31",
               "stdcc_version": "13"

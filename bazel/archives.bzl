@@ -10,7 +10,7 @@ def load_github_archives():
         # Format string values, but not lists
         formatted_kwargs = {}
         for arg_k, arg_v in kwargs.items():
-            if arg_k in ["repo", "type", "version"]:
+            if arg_k in ["arch", "download_suffix", "repo", "type", "version"]:
                 continue
             if type(arg_v) == type(""):
                 formatted_kwargs[arg_k] = arg_v.format(**kwargs)
@@ -27,7 +27,7 @@ def load_http_archives():
         # Format string values, but not lists
         formatted_kwargs = {}
         for arg_k, arg_v in kwargs.items():
-            if arg_k in ["type", "version"]:
+            if arg_k in ["arch", "download_suffix", "repo", "type", "version"]:
                 continue
             if type(arg_v) == type(""):
                 formatted_kwargs[arg_k] = arg_v.format(**kwargs)
