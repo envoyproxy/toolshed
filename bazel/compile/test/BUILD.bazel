@@ -1,0 +1,47 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+
+package(default_visibility = ["//visibility:public"])
+
+# Simple C++ hello world binary for cross-compilation testing.
+# Build for aarch64:
+#   bazel build //compile/test:hello_world --platforms=@toolchains_llvm//platforms:linux-aarch64
+# Build for x86_64:
+#   bazel build //compile/test:hello_world --platforms=@toolchains_llvm//platforms:linux-x86_64
+cc_binary(
+    name = "hello_world",
+    srcs = ["hello_world.cc"],
+)
+
+# Cross-compilation architecture check tests.
+# These tests verify that the hello_world binary is compiled for the correct
+# architecture when using the cross-compilation toolchain.
+#
+# Run with:
+#   bazel test //compile/test:cross_compile_aarch64_test \
+#     --platforms=@toolchains_llvm//platforms:linux-aarch64
+sh_test(
+    name = "cross_compile_aarch64_test",
+    size = "small",
+    srcs = ["check_arch.sh"],
+    data = [":hello_world"],
+    env = {
+        "BINARY": "$(rootpath :hello_world)",
+        "EXPECTED_ARCH": "aarch64",
+    },
+    tags = ["manual"],
+)
+
+# Run with:
+#   bazel test //compile/test:cross_compile_x86_64_test \
+#     --platforms=@toolchains_llvm//platforms:linux-x86_64
+sh_test(
+    name = "cross_compile_x86_64_test",
+    size = "small",
+    srcs = ["check_arch.sh"],
+    data = [":hello_world"],
+    env = {
+        "BINARY": "$(rootpath :hello_world)",
+        "EXPECTED_ARCH": "x86-64",
+    },
+    tags = ["manual"],
+)

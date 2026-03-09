@@ -10,6 +10,9 @@ build --color=yes
 common --noenable_bzlmod
 common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
+common --registry=https://bcr.bazel.build/
+common --registry=https://raw.githubusercontent.com/envoyproxy/toolshed/662020165c0c7e12c457f336f3197db378f9461e/bazel-registry
+
 
 #############################################################################
 # ci
