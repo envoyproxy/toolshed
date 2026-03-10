@@ -64,7 +64,7 @@ jobs:
         inputs.action == 'build'
         && inputs.bazel-path == 'bazel'
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/source@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
+      uses: envoyproxy/toolshed/actions/source@cbcf980ebd531e58e71ac2fc6625f8b35f693908
       with:
         output-name: toolshed-bazel-v{version}.tar.gz
         source-path: bazel/
@@ -72,7 +72,7 @@ jobs:
         version-file: bazel/VERSION.txt
     - name: Bazel source
       if: ${{ steps.source-tarball.outputs.tarball }}
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
       with:
         name: bazel-source
         path: ${{ steps.source-tarball.outputs.tarball }}
@@ -83,7 +83,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
+      uses: envoyproxy/toolshed/actions/jq@cbcf980ebd531e58e71ac2fc6625f8b35f693908
       with:
         input: ${{ inputs.artifacts }}
         input-format: text
@@ -93,7 +93,7 @@ jobs:
           | "${{ inputs.bazel-path }}/bazel-bin/\(.)"
     - name: Bazel artifacts
       if: ${{ inputs.upload && (steps.artifact-paths.outputs.value || steps.source-tarball.outputs.tarball) }}
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
       with:
         name: bazel-artifacts
         path: |

@@ -20,12 +20,12 @@ runs:
   steps:
   - name: Import GPG key
     id: import
-    uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec  # v6
+    uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd  # v7.0.0
     with:
       gpg_private_key: ${{ inputs.key }}
       passphrase: ${{ inputs.passphrase }}
 
-  - uses: envoyproxy/toolshed/actions/github/script/run@8b0c0f9ec9dacf86f092bdfe6c917c48e51286c2
+  - uses: envoyproxy/toolshed/actions/github/script/run@cbcf980ebd531e58e71ac2fc6625f8b35f693908
     if: ${{ inputs.passphrase && inputs.passphrase-path }}
     with:
       run: |

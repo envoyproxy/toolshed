@@ -36,7 +36,7 @@ runs:
   using: composite
   steps:
   - id: latest
-    uses: envoyproxy/toolshed/actions/bson@8b0c0f9ec9dacf86f092bdfe6c917c48e51286c2
+    uses: envoyproxy/toolshed/actions/bson@cbcf980ebd531e58e71ac2fc6625f8b35f693908
     with:
       input: |
         repo: ${{ inputs.repository }}

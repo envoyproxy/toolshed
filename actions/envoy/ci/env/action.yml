@@ -52,7 +52,7 @@ runs:
   steps:
 
   # Check current/requested config (currently only build-images can be overridden)
-  - uses: envoyproxy/toolshed/actions/bson@8b0c0f9ec9dacf86f092bdfe6c917c48e51286c2
+  - uses: envoyproxy/toolshed/actions/bson@cbcf980ebd531e58e71ac2fc6625f8b35f693908
     id: config
     with:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
@@ -70,7 +70,7 @@ runs:
       result-filter: .
 
   - id: build-images
-    uses: envoyproxy/toolshed/actions/jq@8b0c0f9ec9dacf86f092bdfe6c917c48e51286c2
+    uses: envoyproxy/toolshed/actions/jq@cbcf980ebd531e58e71ac2fc6625f8b35f693908
     with:
       input-format: yaml-path
       input: ${{ inputs.config-file }}
@@ -86,7 +86,7 @@ runs:
         | {$requested}
 
   # Check request version
-  - uses: envoyproxy/toolshed/actions/jq@8b0c0f9ec9dacf86f092bdfe6c917c48e51286c2
+  - uses: envoyproxy/toolshed/actions/jq@cbcf980ebd531e58e71ac2fc6625f8b35f693908
     name: Validate given version string
     id: version
     with:
@@ -105,7 +105,7 @@ runs:
         | {requested: .}
 
   - id: request
-    uses: envoyproxy/toolshed/actions/jq@8b0c0f9ec9dacf86f092bdfe6c917c48e51286c2
+    uses: envoyproxy/toolshed/actions/jq@cbcf980ebd531e58e71ac2fc6625f8b35f693908
     with:
       input: |
         actor: ${{ toJSON(github.actor) }}
@@ -138,12 +138,12 @@ runs:
 
   - name: Run config
     id: run-config
-    uses: envoyproxy/toolshed/actions/jq@8b0c0f9ec9dacf86f092bdfe6c917c48e51286c2
+    uses: envoyproxy/toolshed/actions/jq@cbcf980ebd531e58e71ac2fc6625f8b35f693908
     with:
       input-format: yaml
       input: ${{ toJSON(fromJSON(steps.config.outputs.output).run) }}
 
-  - uses: envoyproxy/toolshed/actions/jq@8b0c0f9ec9dacf86f092bdfe6c917c48e51286c2
+  - uses: envoyproxy/toolshed/actions/jq@cbcf980ebd531e58e71ac2fc6625f8b35f693908
     name: Create data
     id: data
     with:

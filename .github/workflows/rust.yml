@@ -21,7 +21,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/actions/github/should-run@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
+    - uses: envoyproxy/toolshed/actions/github/should-run@cbcf980ebd531e58e71ac2fc6625f8b35f693908
       id: filter
       with:
         config: |
@@ -48,7 +48,7 @@ jobs:
     name: test (${{ matrix.toolchain }}, ${{ matrix.test-type }})
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-    - uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c  # v1
+    - uses: actions-rust-lang/setup-rust-toolchain@a0b538fa0b742a6aa35d6e2c169b4bd06d225a98  # v1
       with:
         toolchain: ${{ matrix.toolchain }}
     - name: Install cargo-tarpaulin
@@ -84,7 +84,7 @@ jobs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
     - name: Install Rust toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@1780873c7b576612439a134613cc4cc74ce5538c  # v1
+      uses: actions-rust-lang/setup-rust-toolchain@a0b538fa0b742a6aa35d6e2c169b4bd06d225a98  # v1
       with:
         toolchain: stable
 
@@ -107,7 +107,7 @@ jobs:
         cp rust/target/release/glint glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
 
     - name: Upload glint binary
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
       with:
         name: rust-artifacts-glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
         path: glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
@@ -132,7 +132,7 @@ jobs:
         cp rust/target/release/toolshed-echo echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
 
     - name: Upload echo binary
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
       with:
         name: rust-artifacts-echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
         path: echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
