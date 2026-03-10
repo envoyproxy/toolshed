@@ -29,6 +29,11 @@ VERSIONS = {
     "msan_libs_sha256": "338ef29c4df19f122401126bf48f92e0d273dc78a29ca2c32fb5149aa2028475",
     "tsan_libs_sha256": "dad265214c416b294a7f9fea371ab18681d7f489aac1598efd4bfde2a9e033e8",
 
+    "libcxx_libs_sha256": {
+        "aarch64": "b4d598c338e7b9f4af38cf09ef52ae5758f69980f68320602b2a214e3d6c944e",
+        "x86_64": "d5e95a23e964c521a8fde618eb46de5c7e4c182f544e367e19fe1a9482002dfb",
+    },
+
     # Glint binary hashes by architecture
     "glint_sha256": {
         "amd64": "ba28c9ac53eed586ac2cb6bc72e3aeeaf47f3bd0652ade09af6e2b74cc324840",
@@ -172,6 +177,8 @@ VERSIONS = {
     },
     "toolchains_llvm": {
         "type": "github_archive",
+        "patch_args": ["-p1"],
+        "patches": ["@envoy_toolshed//:patches/toolchains_llvm.patch"],
         "repo": "bazel-contrib/toolchains_llvm",
         "version": "1.6.0",
         "sha256": "2b298a1d7ea99679f5edf8af09367363e64cb9fbc46e0b7c1b1ba2b1b1b51058",

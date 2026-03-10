@@ -1,8 +1,13 @@
-# Sanitizer libraries
+# Sanitizer and libcxx libraries
 
-This directory contains build rules for creating hermetic LLVM sanitizer libraries (MSAN, TSAN) that can be used with Envoy.
+This directory contains build rules for creating and downloading prebuilt LLVM libraries for use with Envoy, including:
 
-## Building
+- **Sanitizer libraries** (MSAN, TSAN) for use with sanitizer builds
+- **libcxx bundles** for cross-compilation with `toolchains_llvm`
+
+## Sanitizer libraries (MSAN, TSAN)
+
+### Building
 
 To build the libraries locally:
 
@@ -16,7 +21,7 @@ This will produce:
 - `bazel-bin/compile/msan-libs-x86_64.tar.gz`
 - `bazel-bin/compile/tsan-libs-x86_64.tar.gz`
 
-## Updating prebuilt versions
+### Updating prebuilt versions
 
 The sanitizer libraries are automatically built and published to GitHub releases. To update:
 
@@ -39,7 +44,7 @@ The sanitizer libraries are automatically built and published to GitHub releases
    "tsan_libs_sha256": "...",  # Add actual SHA256
    ```
 
-## Using with WORKSPACE
+### Using with WORKSPACE
 
 In your WORKSPACE file:
 
@@ -51,7 +56,7 @@ setup_sanitizer_libs()
 
 This will create `@msan_libs` and `@tsan_libs` repositories you can use in your builds.
 
-## Using with bzlmod (MODULE.bazel)
+### Using with bzlmod (MODULE.bazel)
 
 In your MODULE.bazel file:
 
@@ -75,4 +80,91 @@ sanitizer_ext.setup(
     tsan_sha256 = "2cd571a07014972ff9bc0f189c5725c2ea121aeab0daa4c27ef171842ea13985",
 )
 use_repo(sanitizer_ext, "msan_libs", "tsan_libs")
+```
+
+## libcxx bundles (for cross-compilation)
+
+Prebuilt libcxx bundles provide the `libc++.a`, `libc++abi.a`, and `libunwind.a` static
+libraries for each target architecture. These are intended for use with `toolchains_llvm`
+when cross-compiling (e.g., building aarch64 binaries on an x86_64 host).
+
+The bundles are downloaded from GitHub releases and expose the following Bazel targets:
+
+- `@libcxx_libs_aarch64//:libs` — filegroup of all `.a` files for aarch64
+- `@libcxx_libs_aarch64//:libcxx_libs` — `cc_library` wrapping all libs (alwayslink)
+- `@libcxx_libs_aarch64//:headers` — filegroup of the `__config_site` header
+- Same targets available in `@libcxx_libs_x86_64`
+
+### Updating prebuilt versions
+
+1. **Build the bundles** by triggering the CI workflow (see `compile/BUILD` for `libcxx_{arch}` targets)
+
+2. **Create a release** with the naming format `bins-v{version}`
+
+3. **Wait for CI** to publish the binaries to the release
+
+4. **Get SHA256 hashes** for the published artifacts:
+   ```bash
+   curl -L https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/libcxx-llvm{llvm_version}-aarch64.tar.xz | sha256sum
+   curl -L https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/libcxx-llvm{llvm_version}-x86_64.tar.xz | sha256sum
+   ```
+
+5. **Update versions.bzl** with the SHA256 values:
+   ```python
+   "libcxx_libs_sha256": {
+       "aarch64": "...",  # Add actual SHA256
+       "x86_64": "...",   # Add actual SHA256
+   },
+   ```
+
+### Using with WORKSPACE
+
+In your WORKSPACE file:
+
+```starlark
+load("@envoy_toolshed//compile:libcxx_libs.bzl", "setup_libcxx_libs")
+
+setup_libcxx_libs()
+```
+
+This will create `@libcxx_libs_aarch64` and `@libcxx_libs_x86_64` repositories.
+
+### Using with bzlmod (MODULE.bazel)
+
+In your MODULE.bazel file:
+
+```starlark
+bazel_dep(name = "envoy_toolshed", version = "0.3.29")
+
+# Setup prebuilt libcxx for cross-compilation
+libcxx_libs_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "libcxx_libs_extension")
+libcxx_libs_ext.setup()
+use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
+```
+
+Or with custom versions:
+
+```starlark
+libcxx_libs_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "libcxx_libs_extension")
+libcxx_libs_ext.setup(
+    aarch64_sha256 = "...",
+    x86_64_sha256 = "...",
+)
+use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
+```
+
+### Cross-compilation test
+
+A minimal cross-compilation test is provided in `compile/test/`. It builds a simple C++ hello world program and verifies the compiled binary is of the correct ELF architecture.
+
+To run the tests (requires the cross-compilation toolchain to be configured):
+
+```bash
+# Test aarch64 cross-compilation
+bazel test //compile/test:cross_compile_aarch64_test \
+  --platforms=@toolchains_llvm//platforms:linux-aarch64
+
+# Test x86_64 cross-compilation
+bazel test //compile/test:cross_compile_x86_64_test \
+  --platforms=@toolchains_llvm//platforms:linux-x86_64
 ```

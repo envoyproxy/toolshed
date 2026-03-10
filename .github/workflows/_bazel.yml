@@ -99,3 +99,53 @@ jobs:
         path: |
           ${{ steps.artifact-paths.outputs.value }}
         retention-days: 30
+
+  xcompile-x86-to-arm:
+    if: inputs.action == 'test'
+    runs-on: ubuntu-24.04
+    name: Bazel (x-compile x86 -> arm)
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+    - name: Install libtinfo5
+      run: |
+        # Workaround for https://github.com/llvm/llvm-project/issues/75490
+        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y --no-install-recommends \
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+    - name: Cross-compile test (x86_64 -> aarch64/${{ inputs.bazel-mode }})
+      run: |
+        exec bazel test ${{ inputs.bazel-args }} \
+          --platforms=@toolchains_llvm//platforms:linux-aarch64 \
+          //compile/test:cross_compile_aarch64_test
+      working-directory: ${{ inputs.bazel-path }}
+
+  xcompile-arm-to-x86:
+    if: inputs.action == 'test'
+    runs-on: ubuntu-24.04-arm
+    name: Bazel (x-compile arm -> x86)
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+    - name: Install libtinfo5
+      run: |
+        # Workaround for https://github.com/llvm/llvm-project/issues/75490
+        curl -LO "http://ports.ubuntu.com/ubuntu-ports/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_arm64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_arm64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.1_arm64.deb"
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y --no-install-recommends \
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+    - name: Cross-compile test (aarch64 -> x86_64/${{ inputs.bazel-mode }})
+      run: |
+        exec bazel test ${{ inputs.bazel-args }} \
+          --platforms=@toolchains_llvm//platforms:linux-x86_64 \
+          //compile/test:cross_compile_x86_64_test
+      working-directory: ${{ inputs.bazel-path }}

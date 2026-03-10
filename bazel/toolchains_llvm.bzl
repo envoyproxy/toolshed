@@ -7,6 +7,10 @@ def setup_llvm_toolchain(llvm_version = None):
     llvm_toolchain(
         name = "llvm_toolchain",
         llvm_version = llvm_version or VERSIONS["llvm"],
+        cxx_lib = {
+            "linux-aarch64": "@libcxx_libs_aarch64",
+            "linux-x86_64": "@libcxx_libs_x86_64",
+        },
         sysroot = {
             "linux-x86_64": "@sysroot_linux_amd64//:sysroot",
             "linux-aarch64": "@sysroot_linux_arm64//:sysroot",
