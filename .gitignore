@@ -194,4 +194,4 @@ user.bazelrc
 # Docker build artifacts
 docker/build/oci-output/
 
-bazel/bazel-
+bazel/bazel-*
