@@ -1,7 +1,7 @@
 {
-    "url": "https://github.com/adrian-thurston/colm/archive/2d8ba76ddaf6634f285d0a81ee42d5ee77d084cf.tar.gz",
-    "integrity": "sha256-A5npvvdgOo89lKzQsK9rWUTMMQPlhnNHGTedPsCWIMA=",
-    "strip_prefix": "colm-2d8ba76ddaf6634f285d0a81ee42d5ee77d084cf",
+    "url": "https://github.com/adrian-thurston/colm-suite/archive/2d8ba76ddaf6634f285d0a81ee42d5ee77d084cf.tar.gz",
+    "integrity": "sha256-8R5i8Of9iyb3WpA0r0P9RiKggpspp8+3DAdClZvZz+w=",
+    "strip_prefix": "colm-suite-2d8ba76ddaf6634f285d0a81ee42d5ee77d084cf",
     "overlay": {
         "BUILD.bazel": "sha256-d3VRP2MaF/M1lzCrBDQ8xo30zegg81IA9pGHjlzlczk=",
         "MODULE.bazel": "sha256-PiL4GYCSOochCFeAW84XFK9FspzGELBA1/Bahc9ZQQY="
