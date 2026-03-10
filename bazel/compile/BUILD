@@ -168,15 +168,27 @@ pkg_tar(
 [
     (
         pkg_files(
-            name = "libcxx_%s_files" % arch,
+            name = "libcxx_%s_lib_files" % arch,
             srcs = [
                 "@llvm_libcxx_%s//:libcxx" % arch,
+            ],
+            prefix = "lib",
+            strip_prefix = ".",
+        ),
+        pkg_files(
+            name = "libcxx_%s_include_files" % arch,
+            srcs = [
                 "@llvm_libcxx_%s//:config_site" % arch,
             ],
+            prefix = "include",
+            strip_prefix = ".",
         ),
         pkg_tar(
             name = "libcxx_%s" % arch,
-            srcs = [":libcxx_%s_files" % arch],
+            srcs = [
+                ":libcxx_%s_lib_files" % arch,
+                ":libcxx_%s_include_files" % arch,
+            ],
             extension = "tar.xz",
             package_file_name = "libcxx-llvm%s-%s.tar.xz" % (VERSIONS["llvm"], arch),
         ),
