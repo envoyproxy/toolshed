@@ -70,6 +70,14 @@ VERSIONS = {
         "strip_prefix": "bazel-lib-{version}",
         "url": "https://github.com/{repo}/archive/v{version}.tar.gz",
     },
+    "bazel_features": {
+        "type": "github_archive",
+        "repo": "bazel-contrib/bazel_features",
+        "strip_prefix": "bazel_features-{version}",
+        "version": "1.43.0",
+        "sha256": "c26b4e69cf02fea24511a108d158188b9d8174426311aac59ce803a78d107648",
+        "url": "https://github.com/{repo}/releases/download/v{version}/bazel_features-v{version}.tar.gz",
+    },
     "bazel_skylib": {
         "type": "github_archive",
         "repo": "bazelbuild/bazel-skylib",
@@ -116,6 +124,14 @@ VERSIONS = {
         "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
         "strip_prefix": "{name}-{version}",
     },
+    "rules_cc": {
+        "type": "github_archive",
+        "repo": "bazelbuild/rules_cc",
+        "version": "0.2.17",
+        "sha256": "283fa1cdaaf172337898749cf4b9b1ef5ea269da59540954e51fba0e7b8f277a",
+        "url": "https://github.com/{repo}/releases/download/{version}/{name}-{version}.tar.gz",
+        "strip_prefix": "{name}-{version}",
+    },
     "rules_foreign_cc": {
         "type": "github_archive",
         "repo": "bazelbuild/rules_foreign_cc",
@@ -157,8 +173,8 @@ VERSIONS = {
     "toolchains_llvm": {
         "type": "github_archive",
         "repo": "bazel-contrib/toolchains_llvm",
-        "version": "1.4.0",
-        "sha256": "fded02569617d24551a0ad09c0750dc53a3097237157b828a245681f0ae739f8",
+        "version": "1.6.0",
+        "sha256": "2b298a1d7ea99679f5edf8af09367363e64cb9fbc46e0b7c1b1ba2b1b1b51058",
         "url": "https://github.com/{repo}/releases/download/v{version}/{name}-v{version}.tar.gz",
         "strip_prefix": "{name}-v{version}",
     },

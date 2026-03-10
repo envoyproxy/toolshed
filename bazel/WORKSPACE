@@ -6,6 +6,9 @@ load_archives()
 load(":deps.bzl", "resolve_dependencies")
 resolve_dependencies()
 
+load(":toolchains_llvm.bzl", "setup_llvm_toolchain")
+setup_llvm_toolchain()
+
 load(":toolchains.bzl", "load_toolchains")
 load_toolchains()
 

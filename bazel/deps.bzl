@@ -1,19 +1,17 @@
 load("@aspect_bazel_lib//lib:repositories.bzl", "register_jq_toolchains", "register_yq_toolchains")
+load("@bazel_features//:deps.bzl", "bazel_features_deps")
 load("@rules_foreign_cc//foreign_cc:repositories.bzl", "rules_foreign_cc_dependencies")
 load("@rules_perl//perl:deps.bzl", "perl_register_toolchains", "perl_rules_dependencies")
 load("@rules_pkg//pkg:deps.bzl", "rules_pkg_dependencies")
 load("@rules_python//python:repositories.bzl", "py_repositories")
 load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
-load("@toolchains_llvm//toolchain:rules.bzl", "llvm_toolchain")
-load("//:versions.bzl", "VERSIONS")
 load("//sysroot:sysroot.bzl", "setup_sysroots")
+load("//:versions.bzl", "VERSIONS")
 
 def resolve_dependencies(
         cmake_version = None,
-        llvm_version = None,
         ninja_version = None):
     py_repositories()
-    bazel_toolchain_dependencies()
     register_jq_toolchains()
     register_yq_toolchains()
     rules_foreign_cc_dependencies(
@@ -25,12 +23,6 @@ def resolve_dependencies(
     rules_pkg_dependencies()
     perl_rules_dependencies()
     perl_register_toolchains()
+    bazel_features_deps()
+    bazel_toolchain_dependencies()
     setup_sysroots()
-    llvm_toolchain(
-        name = "llvm_toolchain",
-        llvm_version = llvm_version or VERSIONS["llvm"],
-        sysroot = {
-            "linux-x86_64": "@sysroot_linux_amd64//:sysroot",
-            "linux-aarch64": "@sysroot_linux_arm64//:sysroot",
-        },
-    )
