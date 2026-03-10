@@ -57,10 +57,10 @@ index a84844b..b2b227a 100644
      },
  )
 diff --git a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
-index 45d2055..076e9ee 100644
+index 45d2055..4d27df8 100644
 --- a/toolchain/internal/configure.bzl
 +++ b/toolchain/internal/configure.bzl
-@@ -150,6 +150,57 @@ def llvm_config_impl(rctx):
+@@ -150,6 +150,60 @@ def llvm_config_impl(rctx):
          use_absolute_paths_sysroot,
      )
  
@@ -68,7 +68,10 @@ index 45d2055..076e9ee 100644
 +    cxx_lib_include_dirs = {}
 +    cxx_lib_link_flags = {}
 +    cxx_lib_cxx_flags = {}
++    exec_pair = _os_arch_pair(os, arch)
 +    for target_pair, cxx_lib_label_str in rctx.attr.cxx_lib.items():
++        if target_pair == exec_pair:
++            continue
 +        cxx_lib_label = Label(cxx_lib_label_str)
 +        cxx_lib_path = _pkg_path_from_label(cxx_lib_label)
 +        cxx_lib_rel_path = _canonical_dir_path("../../" + cxx_lib_path)
@@ -118,7 +121,7 @@ index 45d2055..076e9ee 100644
      workspace_name = rctx.name
      toolchain_info = struct(
          os = os,
-@@ -161,8 +212,8 @@ def llvm_config_impl(rctx):
+@@ -161,8 +215,8 @@ def llvm_config_impl(rctx):
          sysroot_paths_dict = sysroot_paths_dict,
          sysroot_labels_dict = sysroot_labels_dict,
          target_settings_dict = rctx.attr.target_settings,
@@ -129,7 +132,7 @@ index 45d2055..076e9ee 100644
          cxx_standard_dict = rctx.attr.cxx_standard,
          compile_flags_dict = rctx.attr.compile_flags,
          conly_flags_dict = rctx.attr.conly_flags,
-@@ -178,12 +229,13 @@ def llvm_config_impl(rctx):
+@@ -178,12 +232,13 @@ def llvm_config_impl(rctx):
          coverage_link_flags_dict = rctx.attr.coverage_link_flags,
          unfiltered_compile_flags_dict = rctx.attr.unfiltered_compile_flags,
          llvm_version = llvm_version,
@@ -145,12 +148,12 @@ index 45d2055..076e9ee 100644
          extra_archive_flags_dict = rctx.attr.extra_archive_flags,
          extra_link_libs_dict = rctx.attr.extra_link_libs,
          extra_opt_compile_flags_dict = rctx.attr.extra_opt_compile_flags,
-@@ -356,6 +408,12 @@ def _cc_toolchain_str(
+@@ -356,6 +411,12 @@ def _cc_toolchain_str(
          "wasip1-wasm64": "wasm64-wasip1",
      }[target_pair]
  
 +    cxx_lib_label = toolchain_info.cxx_lib_dict.get(target_pair)
-+    if cxx_lib_label:
++    if cxx_lib_label and not (exec_os == target_os and exec_arch == target_arch):
 +        cxx_lib_label_str = "\"%s\"," % cxx_lib_label
 +    else:
 +        cxx_lib_label_str = ""
@@ -158,7 +161,7 @@ index 45d2055..076e9ee 100644
      cxx_builtin_include_directories = [
          toolchain_path_prefix + "include/c++/v1",
          toolchain_path_prefix + "lib/clang/{}/include".format(
-@@ -477,6 +535,7 @@ filegroup(
+@@ -477,6 +538,7 @@ filegroup(
      name = "compiler-components-{suffix}",
      srcs = [
          ":sysroot-components-{suffix}",
@@ -166,7 +169,7 @@ index 45d2055..076e9ee 100644
          {extra_compiler_files}
      ],
  )
-@@ -517,6 +576,7 @@ filegroup(
+@@ -517,6 +579,7 @@ filegroup(
          ":sysroot-components-{suffix}",
          "{llvm_dist_label_prefix}extra_config_site",
          "{llvm_dist_label_prefix}clang",
@@ -174,7 +177,7 @@ index 45d2055..076e9ee 100644
          {extra_compiler_files}
      ],
  )
-@@ -529,6 +589,7 @@ filegroup(
+@@ -529,6 +592,7 @@ filegroup(
          "{llvm_dist_label_prefix}ar",
          "{llvm_dist_label_prefix}{lib_label}",
          ":sysroot-components-{suffix}",
@@ -182,7 +185,7 @@ index 45d2055..076e9ee 100644
      ],
  )
  
-@@ -603,6 +664,7 @@ cc_toolchain(
+@@ -603,6 +667,7 @@ cc_toolchain(
          sysroot_label_str = sysroot_label_str,
          sysroot_path = sysroot_path,
          stdlib = _dict_value(toolchain_info.stdlib_dict, target_pair, "builtin-libc++"),
