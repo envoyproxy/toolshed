@@ -1,2 +1,2 @@
 envoy.code.check>=0.5.14
-uvloop==0.22.1
+uvloop==0.21.0
