@@ -21,7 +21,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/actions/github/should-run@8bcc8dc6d3fc28d318e66e1121162cd8bc1d3197
+    - uses: envoyproxy/toolshed/actions/github/should-run@ca5d7999627d63d2901ebf8f1da69a7fb6095483
       id: filter
       with:
         config: |
@@ -46,7 +46,7 @@ jobs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3.12.0
+      uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd  # v4.0.0
 
     - name: Get docker SHA
       id: docker-sha
@@ -72,7 +72,7 @@ jobs:
       shell: bash
 
     - name: Upload OCI artifacts
-      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
       with:
         name: oci-debian-${{ matrix.arch }}
         path: docker/build/oci-output/*.tar
