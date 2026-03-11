@@ -64,7 +64,7 @@ jobs:
         inputs.action == 'build'
         && inputs.bazel-path == 'bazel'
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/source@cd3b5dba31694fdaf285093ef2addcab4021f3aa
+      uses: envoyproxy/toolshed/actions/source@92aeed2115bd09e695737561138640140f2ea2a9
       with:
         output-name: toolshed-bazel-v{version}.tar.gz
         source-path: bazel/
@@ -83,7 +83,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@cd3b5dba31694fdaf285093ef2addcab4021f3aa
+      uses: envoyproxy/toolshed/actions/jq@92aeed2115bd09e695737561138640140f2ea2a9
       with:
         input: ${{ inputs.artifacts }}
         input-format: text
