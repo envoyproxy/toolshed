@@ -108,12 +108,16 @@ index e0ad59e..e3b8e71 100644
 +    for k, v in cxx_lib_cxx_flags.items():
 +        merged_extra_cxx_flags[k] = merged_extra_cxx_flags.get(k, []) + v
 +
-+    # Auto-set stdlib to "libc++" for target pairs that have cxx_lib configured
-+    # but no explicit stdlib override. This prevents the builtin-libc++ ->
-+    # stdc++ cross-compile fallback in cc_toolchain_config.bzl from kicking in,
-+    # since the user has provided the actual libc++ libraries via cxx_lib.
++    # Auto-set stdlib to "libc++" only for the exec/native platform pair when
++    # cxx_lib is configured. Cross-compile targets are intentionally skipped:
++    # they already have -nostdinc++ in extra_cxx_flags (from the loop above),
++    # and adding -stdlib=libc++ would be unused/conflicting, causing -Werror
++    # failures. The exec/native target does not get -nostdinc++, so libc++ works
++    # normally there.
 +    merged_stdlib = dict(rctx.attr.stdlib)
 +    for target_pair in rctx.attr.cxx_lib.keys():
++        if target_pair != exec_pair:
++            continue
 +        if target_pair not in merged_stdlib:
 +            merged_stdlib[target_pair] = "libc++"
 +
