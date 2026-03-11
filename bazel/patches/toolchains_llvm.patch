@@ -59,7 +59,7 @@ diff --git a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
 index e0ad59e..e3b8e71 100644
 --- a/toolchain/internal/configure.bzl
 +++ b/toolchain/internal/configure.bzl
-@@ -150,6 +150,60 @@ def llvm_config_impl(rctx):
+@@ -150,6 +150,65 @@ def llvm_config_impl(rctx):
          use_absolute_paths_sysroot,
      )
  
@@ -86,6 +86,8 @@ index e0ad59e..e3b8e71 100644
 +        ]
 +        cxx_lib_link_flags[target_pair] = [
 +            "-L" + cxx_lib_path + "/lib",
++            "-l:libc++.a",
++            "-l:libc++abi.a",
 +        ]
 +        cxx_lib_cxx_flags[target_pair] = [
 +            "-nostdinc++",
@@ -115,7 +117,10 @@ index e0ad59e..e3b8e71 100644
 +    merged_stdlib = dict(rctx.attr.stdlib)
 +    for target_pair in rctx.attr.cxx_lib.keys():
 +        if target_pair not in merged_stdlib:
-+            merged_stdlib[target_pair] = "libc++"
++            if target_pair == exec_pair:
++                merged_stdlib[target_pair] = "libc++"
++            else:
++                merged_stdlib[target_pair] = "libc"
 +
      workspace_name = rctx.name
      toolchain_info = struct(
