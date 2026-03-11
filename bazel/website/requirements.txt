@@ -18,7 +18,9 @@ cssmin==0.2.0 \
 docutils==0.21.2 \
     --hash=sha256:3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f \
     --hash=sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2
-    # via pelican
+    # via
+    #   -r requirements.in
+    #   pelican
 feedgenerator==2.1.0 \
     --hash=sha256:93b7ce1c5a86195cafd6a8e9baf6a2a863ebd6d9905e840ce5778f73efd9a8d5 \
     --hash=sha256:f075f23f28fd227f097c36b212161c6cf012e1c6caaf7ff53d5d6bb02cd42b9d
@@ -41,10 +43,12 @@ libsass==0.23.0 \
     --hash=sha256:a2ec85d819f353cbe807432d7275d653710d12b08ec7ef61c124a580a8352f3c \
     --hash=sha256:ea97d1b45cdc2fc3590cb9d7b60f1d8915d3ce17a98c1f2d4dd47ee0d9c68ce6
     # via -r requirements.in
-markdown==3.7 \
-    --hash=sha256:2ae2471477cfd02dbbf038d5d9bc226d40def84b4fe2986e49b59b6b472bbed2 \
-    --hash=sha256:7eb6df5690b81a1d7942992c97fad2938e956e79df20cbc6186e9c3a77b1c803
-    # via pelican
+markdown==3.10.2 \
+    --hash=sha256:994d51325d25ad8aa7ce4ebaec003febcce822c3f8c911e3b17c52f7f589f950 \
+    --hash=sha256:e91464b71ae3ee7afd3017d9f358ef0baf158fd9a298db92f1d4761133824c36
+    # via
+    #   -r requirements.in
+    #   pelican
 markdown-it-py==3.0.0 \
     --hash=sha256:355216845c60bd96232cd8d8c40e8f9765cc86f46880e43a8fd22dc1a1a8cab1 \
     --hash=sha256:e3f60a94fa066dc52ec76661e37c851cb232d92f9886b15cb560aaada2df8feb
@@ -122,7 +126,7 @@ ordered-set==4.1.0 \
 packaging==26.0 \
     --hash=sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529
     # via -r requirements.in
-pelican[Markdown,markdown]==4.10.1 \
+pelican[markdown]==4.10.1 \
     --hash=sha256:5fb59933fd9eaff83a5e4e093a9a6249ec59ae0d8e5da63710d965acd6f5d3f7 \
     --hash=sha256:dfcd468ddb823c70df52545ca413b44505ff2d33132284d2f5a31d217cde6cb8
     # via
