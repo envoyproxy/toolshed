@@ -51,7 +51,7 @@ runs:
   using: composite
   steps:
   - name: Download OCI artifacts
-    uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3  # v8.0.0
+    uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
     with:
       pattern: ${{ inputs.artifacts-pattern }}
       path: ${{ inputs.artifacts-path }}
@@ -80,7 +80,7 @@ runs:
       ls -la ${{ inputs.oci-tmp-path }}
       echo "::endgroup::"
   - name: Buildah operations
-    uses: envoyproxy/toolshed/actions/jq@ca5d7999627d63d2901ebf8f1da69a7fb6095483
+    uses: envoyproxy/toolshed/actions/jq@cd3b5dba31694fdaf285093ef2addcab4021f3aa
     id: operations
     with:
       input: |
@@ -117,7 +117,7 @@ runs:
                args: ["push", "--all", $manifest_name, "docker://\($additional_tag)"],
                metadata: {tag: $additional_tag}})]
   - name: Execute buildah operations
-    uses: envoyproxy/toolshed/actions/buildah@ca5d7999627d63d2901ebf8f1da69a7fb6095483
+    uses: envoyproxy/toolshed/actions/buildah@cd3b5dba31694fdaf285093ef2addcab4021f3aa
     id: buildah
     with:
       operations: ${{ steps.operations.outputs.value }}
