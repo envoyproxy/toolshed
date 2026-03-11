@@ -55,6 +55,7 @@ sphinxext-rediraffe
 trycast>=0.7.3
 types-orjson
 types-setuptools
+urllib3>=2.6.3
 uvloop
 verboselogs
 wheel-inspect
