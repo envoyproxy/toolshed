@@ -176,6 +176,14 @@ pkg_tar(
             strip_prefix = ".",
         ),
         pkg_files(
+            name = "libcxx_%s_compiler_rt_files" % arch,
+            srcs = [
+                "@llvm_libcxx_%s//:compiler_rt" % arch,
+            ],
+            prefix = "lib",
+            strip_prefix = ".",
+        ),
+        pkg_files(
             name = "libcxx_%s_include_files" % arch,
             srcs = [
                 "@llvm_libcxx_%s//:config_site" % arch,
@@ -187,6 +195,7 @@ pkg_tar(
             name = "libcxx_%s" % arch,
             srcs = [
                 ":libcxx_%s_lib_files" % arch,
+                ":libcxx_%s_compiler_rt_files" % arch,
                 ":libcxx_%s_include_files" % arch,
             ],
             extension = "tar.xz",

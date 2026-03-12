@@ -12,6 +12,11 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 filegroup(
+    name = "compiler_rt",
+    srcs = glob(["lib/clang/*/lib/linux/libclang_rt.builtins-{arch}.a"]),
+    visibility = ["//visibility:public"],
+)
+filegroup(
     name = "config_site",
     srcs = ["include/{arch}-unknown-linux-gnu/c++/v1/__config_site"],
     visibility = ["//visibility:public"],
