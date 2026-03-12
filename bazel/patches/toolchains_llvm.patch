@@ -88,6 +88,9 @@ index e0ad59e..e3b8e71 100644
 +            "-L" + cxx_lib_path + "/lib",
 +            "-l:libc++.a",
 +            "-l:libc++abi.a",
++            "-l:libunwind.a",
++            "-lpthread",
++            "-ldl",
 +        ]
 +        cxx_lib_cxx_flags[target_pair] = [
 +            "-nostdinc++",
