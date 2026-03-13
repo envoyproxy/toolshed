@@ -13,7 +13,7 @@ filegroup(
 )
 filegroup(
     name = "compiler_rt",
-    srcs = glob(["lib/clang/*/lib/linux/libclang_rt.builtins-{arch}.a"]),
+    srcs = glob(["lib/clang/*/lib/{arch}-unknown-linux-gnu/libclang_rt.builtins.a"]),
     visibility = ["//visibility:public"],
 )
 filegroup(
