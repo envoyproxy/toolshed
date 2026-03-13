@@ -26,6 +26,7 @@ jobs:
         config: |
           paths:
           - BINS_VERSION.txt
+          - bazel/*
           - bazel/**
           - .github/workflows/bazel.yml
           - .github/workflows/_bazel.yml
