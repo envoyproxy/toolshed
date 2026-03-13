@@ -41,6 +41,15 @@ jobs:
     runs-on: ubuntu-24.04
     name: Bazel (${{ inputs.action }})
     steps:
+    - uses: envoyproxy/toolshed/actions/bind-mounts@cd3b5dba31694fdaf285093ef2addcab4021f3aa
+      with:
+        mounts: |
+          - src: /mnt/workspace
+            target: ${{ github.workspace }}
+            chown: "runner:runner"
+          - src: /mnt/cache
+            target: /home/runner/.cache
+            chown: "runner:runner"
     - name: Checkout Repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
     - name: Setup Bazel
