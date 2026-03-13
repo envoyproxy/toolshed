@@ -217,3 +217,18 @@ index 4ab592b..979e21f 100644
      "cxx_builtin_include_directories": attr.string_list_dict(
          mandatory = False,
          doc = ("Additional builtin include directories to be added to the default system " +
+diff --git a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.bzl
+--- a/toolchain/cc_toolchain_config.bzl
++++ b/toolchain/cc_toolchain_config.bzl
+@@ -340,5 +340,11 @@
+     elif stdlib == "libc":
+         cxx_flags = [
+             "-std=" + cxx_standard,
+         ]
++        libunwind_link_flags = [
++            "-l:libunwind.a",
++            # To support libunwind.
++            "-lpthread",
++            "-ldl",
++        ]
+     elif stdlib == "none":

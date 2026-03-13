@@ -122,7 +122,15 @@ jobs:
       run: |
         exec bazel test ${{ inputs.bazel-args }} \
           --platforms=@toolchains_llvm//platforms:linux-aarch64 \
-          //compile/test:cross_compile_aarch64_test
+          //compile/test:cross_compile_aarch64_test \
+          //compile/test:cross_compile_aarch64_unwind_test
+      working-directory: ${{ inputs.bazel-path }}
+    - name: Cross-compile test (x86_64 -> aarch64/${{ inputs.bazel-mode }})
+      run: |
+        exec bazel test ${{ inputs.bazel-args }} \
+          --platforms=@toolchains_llvm//platforms:linux-aarch64 \
+          --@toolchains_llvm//toolchain/config:libunwind=False \
+          //compile/test:cross_compile_aarch64_no_unwind_test
       working-directory: ${{ inputs.bazel-path }}
 
   xcompile-arm-to-x86:
@@ -147,5 +155,13 @@ jobs:
       run: |
         exec bazel test ${{ inputs.bazel-args }} \
           --platforms=@toolchains_llvm//platforms:linux-x86_64 \
-          //compile/test:cross_compile_x86_64_test
+          //compile/test:cross_compile_x86_64_test \
+          //compile/test:cross_compile_x86_64_unwind_test
+      working-directory: ${{ inputs.bazel-path }}
+    - name: Cross-compile test (x86_64 -> x86_64/${{ inputs.bazel-mode }})
+      run: |
+        exec bazel test ${{ inputs.bazel-args }} \
+          --platforms=@toolchains_llvm//platforms:linux-x86_64 \
+          --@toolchains_llvm//toolchain/config:libunwind=False \
+          //compile/test:cross_compile_x86_64_no_unwind_test
       working-directory: ${{ inputs.bazel-path }}
