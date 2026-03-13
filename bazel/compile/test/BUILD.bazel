@@ -63,8 +63,9 @@ cc_binary(
 )
 
 # Cross-compilation unwind tests.
-# These tests verify that the test_unwind binary (which uses C++ exceptions
-# requiring libunwind) links and runs correctly for the target architecture.
+# These tests verify that the test_unwind binary has libunwind.a statically
+# linked by checking for defined _Unwind_RaiseException symbols (via llvm-nm)
+# and the absence of libgcc_s in dynamic NEEDED entries (via llvm-readelf).
 #
 # Run with:
 #   bazel test //compile/test:cross_compile_aarch64_unwind_test \
@@ -72,11 +73,18 @@ cc_binary(
 sh_test(
     name = "cross_compile_aarch64_unwind_test",
     size = "small",
-    srcs = ["check_arch.sh"],
-    data = [":test_unwind"],
+    srcs = ["check_unwind.sh"],
+    data = [
+        ":test_unwind",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
     env = {
         "BINARY": "$(rootpath :test_unwind)",
+        "EXPECT_LIBUNWIND": "true",
         "EXPECTED_ARCH": "aarch64",
+        "LLVM_NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
     },
     tags = ["manual"],
 )
@@ -87,11 +95,65 @@ sh_test(
 sh_test(
     name = "cross_compile_x86_64_unwind_test",
     size = "small",
-    srcs = ["check_arch.sh"],
-    data = [":test_unwind"],
+    srcs = ["check_unwind.sh"],
+    data = [
+        ":test_unwind",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
     env = {
         "BINARY": "$(rootpath :test_unwind)",
+        "EXPECT_LIBUNWIND": "true",
         "EXPECTED_ARCH": "x86-64",
+        "LLVM_NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+    },
+    tags = ["manual"],
+)
+
+# Negative unwind tests — verify that libunwind.a is NOT statically linked
+# when the flag is disabled. Run with:
+#   bazel test //compile/test:cross_compile_aarch64_no_unwind_test \
+#     --platforms=@toolchains_llvm//platforms:linux-aarch64 \
+#     --@toolchains_llvm//toolchain/config:libunwind=False
+sh_test(
+    name = "cross_compile_aarch64_no_unwind_test",
+    size = "small",
+    srcs = ["check_unwind.sh"],
+    data = [
+        ":test_unwind",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
+    env = {
+        "BINARY": "$(rootpath :test_unwind)",
+        "EXPECT_LIBUNWIND": "false",
+        "EXPECTED_ARCH": "aarch64",
+        "LLVM_NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+    },
+    tags = ["manual"],
+)
+
+# Run with:
+#   bazel test //compile/test:cross_compile_x86_64_no_unwind_test \
+#     --platforms=@toolchains_llvm//platforms:linux-x86_64 \
+#     --@toolchains_llvm//toolchain/config:libunwind=False
+sh_test(
+    name = "cross_compile_x86_64_no_unwind_test",
+    size = "small",
+    srcs = ["check_unwind.sh"],
+    data = [
+        ":test_unwind",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
+    env = {
+        "BINARY": "$(rootpath :test_unwind)",
+        "EXPECT_LIBUNWIND": "false",
+        "EXPECTED_ARCH": "x86-64",
+        "LLVM_NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
     },
     tags = ["manual"],
 )
