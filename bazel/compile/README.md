@@ -155,16 +155,49 @@ use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
 
 ### Cross-compilation test
 
-A minimal cross-compilation test is provided in `compile/test/`. It builds a simple C++ hello world program and verifies the compiled binary is of the correct ELF architecture.
+Cross-compilation tests are provided in `compile/test/`. They build simple C++ programs and verify the compiled binary is of the correct ELF architecture.
 
-To run the tests (requires the cross-compilation toolchain to be configured):
+To run the architecture tests (requires the cross-compilation toolchain to be configured):
 
 ```bash
-# Test aarch64 cross-compilation
+# Test aarch64 cross-compilation (hello world)
 bazel test //compile/test:cross_compile_aarch64_test \
   --platforms=@toolchains_llvm//platforms:linux-aarch64
 
-# Test x86_64 cross-compilation
+# Test x86_64 cross-compilation (hello world)
 bazel test //compile/test:cross_compile_x86_64_test \
   --platforms=@toolchains_llvm//platforms:linux-x86_64
+```
+
+### Unwind tests
+
+The unwind tests verify that `libunwind.a` is **statically linked** into the `test_unwind` binary,
+rather than just checking the ELF architecture. They use `llvm-nm` to check for a defined
+`_Unwind_RaiseException` symbol (indicating `libunwind.a` was linked in) and `llvm-readelf`
+to confirm there is no `libgcc_s` dynamic dependency (which would indicate a fallback to the
+system unwinder).
+
+```bash
+# Test aarch64 cross-compilation with libunwind statically linked
+bazel test //compile/test:cross_compile_aarch64_unwind_test \
+  --platforms=@toolchains_llvm//platforms:linux-aarch64
+
+# Test x86_64 cross-compilation with libunwind statically linked
+bazel test //compile/test:cross_compile_x86_64_unwind_test \
+  --platforms=@toolchains_llvm//platforms:linux-x86_64
+```
+
+**Negative unwind tests** verify that libunwind is *not* statically linked when
+`--@toolchains_llvm//toolchain/config:libunwind=False` is passed:
+
+```bash
+# Verify libunwind is NOT linked for aarch64 when disabled
+bazel test //compile/test:cross_compile_aarch64_no_unwind_test \
+  --platforms=@toolchains_llvm//platforms:linux-aarch64 \
+  --@toolchains_llvm//toolchain/config:libunwind=False
+
+# Verify libunwind is NOT linked for x86_64 when disabled
+bazel test //compile/test:cross_compile_x86_64_no_unwind_test \
+  --platforms=@toolchains_llvm//platforms:linux-x86_64 \
+  --@toolchains_llvm//toolchain/config:libunwind=False
 ```
