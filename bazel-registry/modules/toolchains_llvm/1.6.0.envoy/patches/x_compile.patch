@@ -1,3 +1,18 @@
+diff --git a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.bzl
+--- a/toolchain/cc_toolchain_config.bzl
++++ b/toolchain/cc_toolchain_config.bzl
+@@ -340,5 +340,11 @@
+     elif stdlib == "libc":
+         cxx_flags = [
+             "-std=" + cxx_standard,
+         ]
++        libunwind_link_flags = [
++            "-l:libunwind.a",
++            # To support libunwind.
++            "-lpthread",
++            "-ldl",
++        ]
+     elif stdlib == "none":
 diff --git a/toolchain/extensions/llvm.bzl b/toolchain/extensions/llvm.bzl
 index a84844b..b2b227a 100644
 --- a/toolchain/extensions/llvm.bzl
