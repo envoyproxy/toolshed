@@ -183,9 +183,9 @@
     "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.3/MODULE.bazel": "af322bc08976524477c79d1e45e241b6efbeb918c497e8840b8ab116802dda79",
     "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.3/source.json": "2be409ac3c7601245958cd4fcdff4288be79ed23bd690b4b951f500d54ee6e7d",
     "https://bcr.bazel.build/modules/zlib/1.3.1/MODULE.bazel": "751c9940dcfe869f5f7274e1295422a34623555916eb98c174c1e945594bf198",
-    "https://raw.githubusercontent.com/envoyproxy/toolshed/2f73c6cf7c446d27e8204789536c86cc1dd103d9/bazel-registry/bazel_registry.json": "not found",
-    "https://raw.githubusercontent.com/envoyproxy/toolshed/2f73c6cf7c446d27e8204789536c86cc1dd103d9/bazel-registry/modules/toolchains_llvm/1.6.0.envoy/MODULE.bazel": "17fb2d1e490e53697fffa85d80de2f00714a934e5e10efbc730f9bc8deaeac22",
-    "https://raw.githubusercontent.com/envoyproxy/toolshed/2f73c6cf7c446d27e8204789536c86cc1dd103d9/bazel-registry/modules/toolchains_llvm/1.6.0.envoy/source.json": "d8fffd4b096fc9e0a895d1b5185281ec9ef5d48fc50b09ba18fa09afc058f7be"
+    "https://raw.githubusercontent.com/envoyproxy/toolshed/259a54f046643cfdb2eff2cb3c7a744394805bcb/bazel-registry/bazel_registry.json": "not found",
+    "https://raw.githubusercontent.com/envoyproxy/toolshed/259a54f046643cfdb2eff2cb3c7a744394805bcb/bazel-registry/modules/toolchains_llvm/1.6.0.envoy/MODULE.bazel": "17fb2d1e490e53697fffa85d80de2f00714a934e5e10efbc730f9bc8deaeac22",
+    "https://raw.githubusercontent.com/envoyproxy/toolshed/259a54f046643cfdb2eff2cb3c7a744394805bcb/bazel-registry/modules/toolchains_llvm/1.6.0.envoy/source.json": "e67c5ba7b5afacaf8359a766e72306c60cbe0213731898db70e77448bdbb38ba"
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
@@ -223,8 +223,8 @@
     },
     "//compile:extensions.bzl%libcxx_libs_extension": {
       "general": {
-        "bzlTransitiveDigest": "CU/uJvZPWW6wzPSV8vd6yVOYEKR+RUVEqC1lRLVmrDQ=",
-        "usagesDigest": "yMac+OxzQVHE+kxZ+Rgzs6Z1i6CiU5/gOcn+Hw2VjQg=",
+        "bzlTransitiveDigest": "i3YI3ISEqmq00gfgRXxr4k63EovPniIu+bsNdlrteq8=",
+        "usagesDigest": "snFX0b8vme8HIt3A5/Hd54CBs14YAIaaoU8/Az2DFZU=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -233,7 +233,7 @@
             "bzlFile": "@@//compile:libcxx_libs.bzl",
             "ruleClassName": "libcxx_libs",
             "attributes": {
-              "version": "0.1.49",
+              "version": "0.1.50",
               "sha256": "b4d598c338e7b9f4af38cf09ef52ae5758f69980f68320602b2a214e3d6c944e",
               "arch": "aarch64"
             }
@@ -242,7 +242,7 @@
             "bzlFile": "@@//compile:libcxx_libs.bzl",
             "ruleClassName": "libcxx_libs",
             "attributes": {
-              "version": "0.1.49",
+              "version": "0.1.50",
               "sha256": "d5e95a23e964c521a8fde618eb46de5c7e4c182f544e367e19fe1a9482002dfb",
               "arch": "x86_64"
             }
@@ -253,8 +253,8 @@
     },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
-        "bzlTransitiveDigest": "a0dPDcYjlasuzSOkDVj5DrhLdp0DDX9E3G8VbkIRR4U=",
-        "usagesDigest": "gVu56XCzllJ5RX7Si3aB1sOtGZpXWFcq5GEUfmYvelc=",
+        "bzlTransitiveDigest": "vHxestBgMx4Ra2ZOgUkBG6wzY5p5xjccsVjy7/qBA74=",
+        "usagesDigest": "RZ2ShSymJNCC4VyW2cckwVGhOXpn2r3fcc6r9Y2ym5Y=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -263,8 +263,8 @@
             "bzlFile": "@@//sysroot:sysroot.bzl",
             "ruleClassName": "sysroot",
             "attributes": {
-              "version": "0.1.49",
-              "sha256": "89c85ad747aef69e8a0dba5839fef9139bc46dc7701661ba1d5028c6626a6b62",
+              "version": "0.1.50",
+              "sha256": "fb1cc19db235e9843bb27adf270912849ed9d87708585163faebec397b65f3ec",
               "arch": "amd64",
               "glibc_version": "2.31",
               "stdcc_version": "13"
@@ -274,8 +274,8 @@
             "bzlFile": "@@//sysroot:sysroot.bzl",
             "ruleClassName": "sysroot",
             "attributes": {
-              "version": "0.1.49",
-              "sha256": "75b99331d8ca1baf2cd4e2b3aaa82f16ca221efc0b83e78c6ae5600b7b32d036",
+              "version": "0.1.50",
+              "sha256": "43f4d409a1a2ef305e06e327b2226f39778f2369d40b0acea20c11dd37ec4983",
               "arch": "arm64",
               "glibc_version": "2.31",
               "stdcc_version": "13"
