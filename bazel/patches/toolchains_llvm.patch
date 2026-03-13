@@ -6,31 +6,31 @@ index 1cb01ec..e7c28cc 100644
                  name,
              )
  
-+            cxx_lib = {}
-+            for cl in mod.tags.cxx_lib:
++            cxx_cross_lib = {}
++            for cl in mod.tags.cxx_cross_lib:
 +                if cl.name != name:
 +                    continue
 +                for target in cl.targets:
-+                    if cxx_lib.get(target):
-+                        fail("duplicate target '%s' for cxx_lib with name '%s'" % (target, name))
-+                    cxx_lib[target] = str(cl.label)
-+            attrs["cxx_lib"] = cxx_lib
++                    if cxx_cross_lib.get(target):
++                        fail("duplicate target '%s' for cxx_cross_lib with name '%s'" % (target, name))
++                    cxx_cross_lib[target] = str(cl.label)
++            attrs["cxx_cross_lib"] = cxx_cross_lib
 +
              llvm_toolchain(
                  **attrs
              )
  
 -        # Check that every defined toolchain_root or sysroot has a corresponding toolchain.
-+        # Check that every defined toolchain_root, sysroot, or cxx_lib has a corresponding toolchain.
++        # Check that every defined toolchain_root, sysroot, or cxx_cross_lib has a corresponding toolchain.
          for root in mod.tags.toolchain_root:
              if root.name not in toolchain_names:
                  fail("toolchain_root '%s' does not have a corresponding toolchain" % root.name)
          for root in mod.tags.sysroot:
              if root.name not in toolchain_names:
                  fail("sysroot '%s' does not have a corresponding toolchain" % root.name)
-+        for cl in mod.tags.cxx_lib:
++        for cl in mod.tags.cxx_cross_lib:
 +            if cl.name not in toolchain_names:
-+                fail("cxx_lib '%s' does not have a corresponding toolchain" % cl.name)
++                fail("cxx_cross_lib '%s' does not have a corresponding toolchain" % cl.name)
  
      if bazel_features.external_deps.extension_metadata_has_reproducible:
          return module_ctx.extension_metadata(reproducible = True)
@@ -38,7 +38,7 @@ index 1cb01ec..e7c28cc 100644
  
  _attrs.pop("toolchain_roots", None)
  _attrs.pop("sysroot", None)
-+_attrs.pop("cxx_lib", None)
++_attrs.pop("cxx_cross_lib", None)
  
  llvm = module_extension(
      implementation = _llvm_impl_,
@@ -46,9 +46,9 @@ index 1cb01ec..e7c28cc 100644
                  "constraints": attr.label_list(doc = "List of extra constraints to add to target_compatible_with for the generated toolchains."),
              },
          ),
-+        "cxx_lib": tag_class(
++        "cxx_cross_lib": tag_class(
 +            attrs = {
-+                "name": attr.string(doc = "Name of the toolchain this cxx_lib applies to; must match a toolchain tag name.", default = "llvm_toolchain"),
++                "name": attr.string(doc = "Name of the toolchain this cxx_cross_lib applies to; must match a toolchain tag name.", default = "llvm_toolchain"),
 +                "targets": attr.string_list(doc = "Target pairs, e.g. linux-aarch64, linux-x86_64."),
 +                "label": attr.label(doc = "Label of a repo containing include/ and lib/ for the C++ standard library."),
 +            },
@@ -59,63 +59,55 @@ diff --git a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
 index e0ad59e..e3b8e71 100644
 --- a/toolchain/internal/configure.bzl
 +++ b/toolchain/internal/configure.bzl
-@@ -150,6 +150,65 @@ def llvm_config_impl(rctx):
+@@ -150,6 +150,57 @@ def llvm_config_impl(rctx):
          use_absolute_paths_sysroot,
      )
  
 +    # Resolve cross-compile C++ standard library paths.
-+    cxx_lib_include_dirs = {}
-+    cxx_lib_link_flags = {}
-+    cxx_lib_cxx_flags = {}
++    cxx_cross_lib_include_dirs = {}
++    cxx_cross_lib_link_flags = {}
++    cxx_cross_lib_cxx_flags = {}
 +    exec_pair = _os_arch_pair(os, arch)
-+    for target_pair, cxx_lib_label_str in rctx.attr.cxx_lib.items():
++    for target_pair, cxx_cross_lib_label_str in rctx.attr.cxx_cross_lib.items():
 +        if target_pair == exec_pair:
 +            continue
-+        cxx_lib_label = Label(cxx_lib_label_str)
-+        cxx_lib_path = _pkg_path_from_label(cxx_lib_label)
-+        cxx_lib_rel_path = _canonical_dir_path("../../" + cxx_lib_path)
-+
-+        # Symlink the cxx_lib include/ and lib/ into the config repo
-+        # so they are accessible without ../ paths.
-+        local_include = "libcxx_libs_{}/include".format(target_pair.split("-")[1])
-+        local_lib = "libcxx_libs_{}/lib".format(target_pair.split("-")[1])
-+        rctx.symlink(cxx_lib_rel_path + "include", local_include)
-+        rctx.symlink(cxx_lib_rel_path + "lib", local_lib)
-+        cxx_lib_include_dirs[target_pair] = [
-+            "%workspace%/" + cxx_lib_path + "/include",
++        cxx_cross_lib_label = Label(cxx_cross_lib_label_str)
++        cxx_cross_lib_path = _pkg_path_from_label(cxx_cross_lib_label)
++        cxx_cross_lib_include_dirs[target_pair] = [
++            "%workspace%/" + cxx_cross_lib_path + "/include",
 +        ]
-+        cxx_lib_link_flags[target_pair] = [
-+            "-L" + cxx_lib_path + "/lib",
++        cxx_cross_lib_link_flags[target_pair] = [
++            "-L" + cxx_cross_lib_path + "/lib",
 +            "-l:libc++.a",
 +            "-l:libc++abi.a",
 +        ]
-+        cxx_lib_cxx_flags[target_pair] = [
++        cxx_cross_lib_cxx_flags[target_pair] = [
 +            "-nostdinc++",
 +            "-isystem",
 +            llvm_dist_path_prefix + "include/c++/v1",
 +            "-isystem",
-+            cxx_lib_path + "/include",
++            cxx_cross_lib_path + "/include",
 +        ]
 +
-+    # Merge cxx_lib paths into include dirs, link flags, and cxx flags.
++    # Merge cxx_cross_lib paths into include dirs, link flags, and cxx flags.
 +    merged_include_dirs = dict(rctx.attr.cxx_builtin_include_directories)
-+    for k, v in cxx_lib_include_dirs.items():
++    for k, v in cxx_cross_lib_include_dirs.items():
 +        merged_include_dirs[k] = merged_include_dirs.get(k, []) + v
 +
 +    merged_extra_link_flags = dict(rctx.attr.extra_link_flags)
-+    for k, v in cxx_lib_link_flags.items():
++    for k, v in cxx_cross_lib_link_flags.items():
 +        merged_extra_link_flags[k] = merged_extra_link_flags.get(k, []) + v
 +
 +    merged_extra_cxx_flags = dict(rctx.attr.extra_cxx_flags)
-+    for k, v in cxx_lib_cxx_flags.items():
++    for k, v in cxx_cross_lib_cxx_flags.items():
 +        merged_extra_cxx_flags[k] = merged_extra_cxx_flags.get(k, []) + v
 +
-+    # Auto-set stdlib to "libc++" for target pairs that have cxx_lib configured
++    # Auto-set stdlib to "libc++" for target pairs that have cxx_cross_lib configured
 +    # but no explicit stdlib override. This prevents the builtin-libc++ ->
 +    # stdc++ cross-compile fallback in cc_toolchain_config.bzl from kicking in,
-+    # since the user has provided the actual libc++ libraries via cxx_lib.
++    # since the user has provided the actual libc++ libraries via cxx_cross_lib.
 +    merged_stdlib = dict(rctx.attr.stdlib)
-+    for target_pair in rctx.attr.cxx_lib.keys():
++    for target_pair in rctx.attr.cxx_cross_lib.keys():
 +        if target_pair not in merged_stdlib:
 +            if target_pair == exec_pair:
 +                merged_stdlib[target_pair] = "libc++"
@@ -140,7 +132,7 @@ index e0ad59e..e3b8e71 100644
          coverage_link_flags_dict = rctx.attr.coverage_link_flags,
          unfiltered_compile_flags_dict = rctx.attr.unfiltered_compile_flags,
          llvm_version = llvm_version,
-+        cxx_lib_dict = rctx.attr.cxx_lib,
++        cxx_cross_lib_dict = rctx.attr.cxx_cross_lib,
          extra_compiler_files = rctx.attr.extra_compiler_files,
          extra_exec_compatible_with = rctx.attr.extra_exec_compatible_with,
          extra_target_compatible_with = rctx.attr.extra_target_compatible_with,
@@ -156,11 +148,11 @@ index e0ad59e..e3b8e71 100644
          "wasip1-wasm64": "wasm64-wasip1",
      }[target_pair]
  
-+    cxx_lib_label = toolchain_info.cxx_lib_dict.get(target_pair)
-+    if cxx_lib_label and not (exec_os == target_os and exec_arch == target_arch):
-+        cxx_lib_label_str = "\"%s\"," % cxx_lib_label
++    cxx_cross_lib_label = toolchain_info.cxx_cross_lib_dict.get(target_pair)
++    if cxx_cross_lib_label and not (exec_os == target_os and exec_arch == target_arch):
++        cxx_cross_lib_label_str = "\"%s\"," % cxx_cross_lib_label
 +    else:
-+        cxx_lib_label_str = ""
++        cxx_cross_lib_label_str = ""
 +
      cxx_builtin_include_directories = [
          toolchain_path_prefix + "include/c++/v1",
@@ -169,7 +161,7 @@ index e0ad59e..e3b8e71 100644
      name = "compiler-components-{suffix}",
      srcs = [
          ":sysroot-components-{suffix}",
-+        {cxx_lib_label_str}
++        {cxx_cross_lib_label_str}
          {extra_compiler_files}
      ],
  )
@@ -177,7 +169,7 @@ index e0ad59e..e3b8e71 100644
          ":sysroot-components-{suffix}",
          "{llvm_dist_label_prefix}extra_config_site",
          "{llvm_dist_label_prefix}clang",
-+        {cxx_lib_label_str}
++        {cxx_cross_lib_label_str}
          {extra_compiler_files}
      ],
  )
@@ -185,7 +177,7 @@ index e0ad59e..e3b8e71 100644
          "{llvm_dist_label_prefix}ar",
          "{llvm_dist_label_prefix}{lib_label}",
          ":sysroot-components-{suffix}",
-+        {cxx_lib_label_str}
++        {cxx_cross_lib_label_str}
      ],
  )
  
@@ -193,7 +185,7 @@ index e0ad59e..e3b8e71 100644
          sysroot_label_str = sysroot_label_str,
          sysroot_path = sysroot_path,
          stdlib = _dict_value(toolchain_info.stdlib_dict, target_pair, "builtin-libc++"),
-+        cxx_lib_label_str = cxx_lib_label_str,
++        cxx_cross_lib_label_str = cxx_cross_lib_label_str,
          cxx_standard = _dict_value(toolchain_info.cxx_standard_dict, target_pair, "c++17"),
          compile_flags = _list_to_string(_dict_value(toolchain_info.compile_flags_dict, target_pair)),
          conly_flags = _list_to_string(toolchain_info.conly_flags_dict.get(target_pair, [])),
@@ -205,7 +197,7 @@ index 4ab592b..979e21f 100644
                 "containing the files and the sysroot path will be taken as the path to the " +
                 "package of this label."),
      ),
-+    "cxx_lib": attr.string_dict(
++    "cxx_cross_lib": attr.string_dict(
 +        mandatory = False,
 +        doc = ("Cross-compile C++ standard library paths, keyed by target pair " +
 +               "({}). ".format(_target_pairs) +
