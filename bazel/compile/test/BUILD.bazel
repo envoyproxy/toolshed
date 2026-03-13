@@ -46,3 +46,52 @@ sh_test(
     },
     tags = ["manual"],
 )
+
+# C++ exception unwinding binary — exercises libunwind during cross-compilation.
+# Build for aarch64:
+#   bazel build //compile/test:test_unwind --platforms=@toolchains_llvm//platforms:linux-aarch64
+# Build for x86_64:
+#   bazel build //compile/test:test_unwind --platforms=@toolchains_llvm//platforms:linux-x86_64
+cc_binary(
+    name = "test_unwind",
+    srcs = ["test_unwind.cc"],
+    copts = [
+        "-Werror",
+        "-fexceptions",
+    ],
+    features = ["exceptions"],
+)
+
+# Cross-compilation unwind tests.
+# These tests verify that the test_unwind binary (which uses C++ exceptions
+# requiring libunwind) links and runs correctly for the target architecture.
+#
+# Run with:
+#   bazel test //compile/test:cross_compile_aarch64_unwind_test \
+#     --platforms=@toolchains_llvm//platforms:linux-aarch64
+sh_test(
+    name = "cross_compile_aarch64_unwind_test",
+    size = "small",
+    srcs = ["check_arch.sh"],
+    data = [":test_unwind"],
+    env = {
+        "BINARY": "$(rootpath :test_unwind)",
+        "EXPECTED_ARCH": "aarch64",
+    },
+    tags = ["manual"],
+)
+
+# Run with:
+#   bazel test //compile/test:cross_compile_x86_64_unwind_test \
+#     --platforms=@toolchains_llvm//platforms:linux-x86_64
+sh_test(
+    name = "cross_compile_x86_64_unwind_test",
+    size = "small",
+    srcs = ["check_arch.sh"],
+    data = [":test_unwind"],
+    env = {
+        "BINARY": "$(rootpath :test_unwind)",
+        "EXPECTED_ARCH": "x86-64",
+    },
+    tags = ["manual"],
+)

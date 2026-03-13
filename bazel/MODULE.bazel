@@ -1,6 +1,6 @@
 module(
     name = "envoy_toolshed",
-    version = "0.3.32",
+    version = "0.3.32-dev",
     bazel_compatibility = [">=7.2.1"],
 )
 

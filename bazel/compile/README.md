@@ -155,16 +155,26 @@ use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
 
 ### Cross-compilation test
 
-A minimal cross-compilation test is provided in `compile/test/`. It builds a simple C++ hello world program and verifies the compiled binary is of the correct ELF architecture.
+Cross-compilation tests are provided in `compile/test/`. They build simple C++ programs and verify the compiled binary is of the correct ELF architecture.
 
 To run the tests (requires the cross-compilation toolchain to be configured):
 
 ```bash
-# Test aarch64 cross-compilation
+# Test aarch64 cross-compilation (hello world)
 bazel test //compile/test:cross_compile_aarch64_test \
   --platforms=@toolchains_llvm//platforms:linux-aarch64
 
-# Test x86_64 cross-compilation
+# Test x86_64 cross-compilation (hello world)
 bazel test //compile/test:cross_compile_x86_64_test \
   --platforms=@toolchains_llvm//platforms:linux-x86_64
+
+# Test aarch64 cross-compilation with libunwind (C++ exceptions)
+bazel test //compile/test:cross_compile_aarch64_unwind_test \
+  --platforms=@toolchains_llvm//platforms:linux-aarch64
+
+# Test x86_64 cross-compilation with libunwind (C++ exceptions)
+bazel test //compile/test:cross_compile_x86_64_unwind_test \
+  --platforms=@toolchains_llvm//platforms:linux-x86_64
 ```
+
+The `test_unwind` binary exercises C++ exception handling (`try`/`throw`/`catch`), which requires libunwind to be linked. This validates that `-l:libunwind.a` is correctly included in the cross-compile link flags.
