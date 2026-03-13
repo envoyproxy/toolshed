@@ -101,12 +101,12 @@ use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 # Configure LLVM toolchain
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency=True)
-llvm.cxx_lib(
+llvm.cxx_cross_lib(
     name = "llvm_toolchain",
     label = "@libcxx_libs_aarch64",
     targets = ["linux-aarch64"],
 )
-llvm.cxx_lib(
+llvm.cxx_cross_lib(
     name = "llvm_toolchain",
     label = "@libcxx_libs_x86_64",
     targets = ["linux-x86_64"],

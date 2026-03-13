@@ -11,7 +11,7 @@ common --noenable_bzlmod
 common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 
 common --registry=https://bcr.bazel.build/
-common --registry=https://raw.githubusercontent.com/envoyproxy/toolshed/259a54f046643cfdb2eff2cb3c7a744394805bcb/bazel-registry
+common --registry=https://raw.githubusercontent.com/envoyproxy/toolshed/1296ec77aaabb68289c2588840592b481696f760/bazel-registry
 
 
 #############################################################################
