@@ -21,7 +21,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/actions/github/should-run@cd3b5dba31694fdaf285093ef2addcab4021f3aa
+    - uses: envoyproxy/toolshed/actions/github/should-run@5e0c5734ee7fc8a30629bd3f54fc910f92285bbe
       id: filter
       with:
         config: |
@@ -48,7 +48,7 @@ jobs:
     name: test (${{ matrix.toolchain }}, ${{ matrix.test-type }})
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-    - uses: actions-rust-lang/setup-rust-toolchain@a0b538fa0b742a6aa35d6e2c169b4bd06d225a98  # v1
+    - uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606  # v1
       with:
         toolchain: ${{ matrix.toolchain }}
     - name: Install cargo-tarpaulin
@@ -84,7 +84,7 @@ jobs:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
     - name: Install Rust toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@a0b538fa0b742a6aa35d6e2c169b4bd06d225a98  # v1
+      uses: actions-rust-lang/setup-rust-toolchain@150fca883cd4034361b621bd4e6a9d34e5143606  # v1
       with:
         toolchain: stable
 
