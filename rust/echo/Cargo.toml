@@ -42,7 +42,7 @@ toolshed-test = { path = "../test", optional = true }
 
 [dev-dependencies]
 libc = "^0.2.183"
-mio = "^1.0.3"
+mio = "^1.2.0"
 mockall = "^0.14.0"
 scopeguard = "^1.2.0"
 serial_test = "^3.4.0"
