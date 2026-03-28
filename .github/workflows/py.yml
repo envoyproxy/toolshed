@@ -22,7 +22,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/actions/github/should-run@cd3b5dba31694fdaf285093ef2addcab4021f3aa
+    - uses: envoyproxy/toolshed/actions/github/should-run@5e0c5734ee7fc8a30629bd3f54fc910f92285bbe
       id: filter
       with:
         config: |
@@ -50,7 +50,7 @@ jobs:
       with:
         python-version: "3.12"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
+      uses: pantsbuild/actions/init-pants@0aaef864bd133c4055feb6adad0bfdce0de1c2e4  # v11
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
@@ -73,7 +73,7 @@ jobs:
       with:
         python-version: "3.12"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
+      uses: pantsbuild/actions/init-pants@0aaef864bd133c4055feb6adad0bfdce0de1c2e4  # v11
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
@@ -91,7 +91,7 @@ jobs:
       with:
         python-version: "3.12"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
+      uses: pantsbuild/actions/init-pants@0aaef864bd133c4055feb6adad0bfdce0de1c2e4  # v11
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
@@ -107,7 +107,7 @@ jobs:
       with:
         python-version: "3.12"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
+      uses: pantsbuild/actions/init-pants@0aaef864bd133c4055feb6adad0bfdce0de1c2e4  # v11
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
@@ -130,7 +130,7 @@ jobs:
       with:
         python-version: "3.12"
     - name: Initialize Pants
-      uses: pantsbuild/actions/init-pants@ab362158088bb31685015e7f5728a4c1df3c0e6e  # v10
+      uses: pantsbuild/actions/init-pants@0aaef864bd133c4055feb6adad0bfdce0de1c2e4  # v11
       with:
         gha-cache-key: "v0-${{ runner.os }}"
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
