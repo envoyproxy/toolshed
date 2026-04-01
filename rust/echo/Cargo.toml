@@ -41,7 +41,7 @@ once_cell = { version = "^1.21.4", optional = true }
 toolshed-test = { path = "../test", optional = true }
 
 [dev-dependencies]
-libc = "^0.2.183"
+libc = "^0.2.184"
 mio = "^1.2.0"
 mockall = "^0.14.0"
 scopeguard = "^1.2.0"
