@@ -23,7 +23,7 @@ runs:
   - name: Save GCS cache
     run: |
       tar cf - -I "${{ inputs.compressor }}" -C ${{ inputs.path }} .  \
-          | gsutil cp - "gs://${BUCKET}/${BLOB}"
+          | gcloud storage cp - "gs://${BUCKET}/${BLOB}"
     shell: bash
     env:
       BUCKET: ${{ inputs.bucket }}
