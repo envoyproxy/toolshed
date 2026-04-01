@@ -26,7 +26,7 @@ frozendict
 gidgethub
 jinja2>=3.1.6
 multidict>=6.0.2
-mypy==1.19.1
+mypy==1.20.0
 mypy-abstracts
 orjson>=3.9.15
 packaging>=23.0
