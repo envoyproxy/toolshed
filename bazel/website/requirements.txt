@@ -15,9 +15,9 @@ blinker==1.8.2 \
 cssmin==0.2.0 \
     --hash=sha256:e012f0cc8401efcf2620332339011564738ae32be8c84b2e43ce8beaec1067b6
     # via -r requirements.in
-docutils==0.21.2 \
-    --hash=sha256:3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f \
-    --hash=sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2
+docutils==0.22.4 \
+    --hash=sha256:4db53b1fde9abecbb74d91230d32ab626d94f6badfc575d6db9194a49df29968 \
+    --hash=sha256:d0013f540772d1420576855455d050a2180186c91c15779301ac2ccb3eeb68de
     # via
     #   -r requirements.in
     #   pelican
@@ -126,9 +126,9 @@ ordered-set==4.1.0 \
 packaging==26.0 \
     --hash=sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529
     # via -r requirements.in
-pelican[markdown]==4.10.1 \
-    --hash=sha256:5fb59933fd9eaff83a5e4e093a9a6249ec59ae0d8e5da63710d965acd6f5d3f7 \
-    --hash=sha256:dfcd468ddb823c70df52545ca413b44505ff2d33132284d2f5a31d217cde6cb8
+pelican[markdown]==4.11.0.post0 \
+    --hash=sha256:0d5e9c0cc9c6713ab6c25b2c4b64844f34d9be8c8c8cc7f42c3a8aa6b3bbbe33 \
+    --hash=sha256:522a26598d3555a48b8392a582843f96bc9dafd5efe16b8f6a0b292441290620
     # via
     #   -r requirements.in
     #   pelican-webassets
@@ -136,8 +136,9 @@ pelican-webassets==2.1.0 \
     --hash=sha256:0a418b88ebd6d96efae4d666394552bcacc8d30d2f0abb5bb4db26064e8cfed0 \
     --hash=sha256:9df6659ecb565af88df55df4aac27cafc948299ef3d4fc743f7385db2e274475
     # via -r requirements.in
-pygments==2.19.2 \
-    --hash=sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b
+pygments==2.18.0 \
+    --hash=sha256:786ff802f32e91311bff3889f6e9a86e81505fe99f2735bb6d60ae0c5004f199 \
+    --hash=sha256:b8e6aca0523f3ab76fee51799c488e38782ac06eafcf95e7ba832985c8e7b13a
     # via
     #   pelican
     #   rich
@@ -145,8 +146,9 @@ python-dateutil==2.9.0.post0 \
     --hash=sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3 \
     --hash=sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427
     # via pelican
-pytz==2025.2 \
-    --hash=sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00
+pytz==2026.1.post1 \
+    --hash=sha256:3378dde6a0c3d26719182142c56e60c7f9af7e968076f31aae569d72a0358ee1 \
+    --hash=sha256:f2fd16142fda348286a75e1a524be810bb05d444e5a081f37f7affc635035f7a
     # via feedgenerator
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
