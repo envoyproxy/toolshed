@@ -1,2 +1,3 @@
 envoy.code.check>=0.5.14
+pyjwt[crypto]>=2.12.1
 uvloop==0.21.0
