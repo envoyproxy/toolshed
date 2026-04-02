@@ -21,8 +21,8 @@ runs:
   - name: Check GCS bucket cache
     id: gcs-object
     run: |
-      if ! output=$(gsutil ls "gs://${BUCKET}/${BLOB}" 2>&1); then
-          if [[ $output != *"CommandException: One or more URLs matched no objects"* ]]; then
+      if ! output=$(gcloud storage ls "gs://${BUCKET}/${BLOB}" 2>&1); then
+          if [[ $output != *"matched no objects or files"* ]]; then
               echo "$output"
               exit 1
           fi

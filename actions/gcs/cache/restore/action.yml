@@ -22,7 +22,7 @@ runs:
     shell: bash
   - name: Restore GCS cache
     run: |
-      gsutil cp gs://${BUCKET}/${BLOB} - \
+      gcloud storage cp gs://${BUCKET}/${BLOB} - \
           | tar --warning=no-timestamp \
                 --keep-directory-symlink \
                 -xI unzstd \

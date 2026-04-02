@@ -126,7 +126,6 @@ updates:
   - /bazel
   - /bazel/website
   - /ci
-  - /actions/gcp/setup
   - /py/deps
   - /py/deps/docformatter
   - /py/deps/flake8

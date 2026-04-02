@@ -3,23 +3,11 @@ inputs:
     type: string
     required: true
 
-  boto:
-    type: boolean
-    default: true
-  boto-rm:
-    type: boolean
-    default: false
   key-copy:
     type: string
     default:
     description: |
       Path to copy key to. Must exist and be a directory.
-  python-version:
-    type: string
-    default: 3.12
-  force-install:
-    type: boolean
-    default: false
 
 outputs:
   key-path:
@@ -31,39 +19,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - run: |
-      if [[ -e "~/.boto" ]]; then
-          echo "Remove existing boto config ~/.boto"
-          rm ~/.boto
-      fi
-    if: ${{ inputs.key && inputs.boto-rm }}
-    shell: bash
-
-  # Install gsutil if necessary
-  - run: |
-      if ! which gsutil >& /dev/null; then
-          echo "installed=false" >> $GITHUB_OUTPUT
-      else
-          echo "installed=true" >> $GITHUB_OUTPUT
-      fi
-    id: gsutil
-    if: ${{ inputs.key && ! fromJSON(inputs.force-install) }}
-    shell: bash
-  - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
-    if: ${{ inputs.key && steps.gsutil.outputs.installed != 'true' }}
-    with:
-      python-version: ${{ inputs.python-version }}
-  - if: ${{ inputs.key && steps.gsutil.outputs.installed != 'true' }}
-    run: |
-      pip install -r "${{ github.action_path }}/requirements.txt"
-      UTIL_PATH="$(dirname $(which gsutil))"
-      echo "PATH=$PATH:$UTIL_PATH" >> $GITHUB_ENV
-    shell: bash
-  - run: |
-      gsutil --version
-    if: ${{ inputs.key }}
-    shell: bash
-
   - uses: envoyproxy/toolshed/actions/github/script/run@5e0c5734ee7fc8a30629bd3f54fc910f92285bbe
     id: key
     if: ${{ inputs.key }}
@@ -84,13 +39,7 @@ runs:
             echo "GCP_KEY_COPY_PATH=${GCP_KEY_COPY_PATH}" >> $GITHUB_ENV
             echo "copy-path=${GCP_KEY_COPY_PATH}" >> $GITHUB_OUTPUT
         fi
-        if [[ ${{ inputs.boto }} != "true" ]]; then
-            exit 0
-        fi
-        {
-            echo "[Credentials]"
-            echo "gs_service_key_file=${GCP_KEY_PATH}"
-        } > ~/.boto
+        gcloud auth activate-service-account --key-file="${GCP_KEY_PATH}"
       post: |
         if [[ -e "${GCP_KEY_PATH}" ]]; then
             echo "Remove key ${GCP_KEY_PATH}"
@@ -100,7 +49,7 @@ runs:
             echo "Remove key ${GCP_KEY_COPY_PATH}"
             rm -rf "${GCP_KEY_COPY_PATH}"
         fi
-        if [[ -e "~/.boto" ]]; then
-            echo "Remove boto config ~/.boto"
-            rm ~/.boto
-        fi
+  - run: |
+      gcloud --version
+    if: ${{ inputs.key }}
+    shell: bash
