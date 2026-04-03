@@ -24,6 +24,7 @@ def _run_tidy(
         additional_deps,
         config,
         flags,
+        cc_toolchain,
         compilation_context,
         infile,
         discriminator):
@@ -34,7 +35,7 @@ def _run_tidy(
         direct_deps.append(additional_deps.files)
     inputs = depset(
         direct = direct_deps,
-        transitive = [compilation_context.headers],
+        transitive = [compilation_context.headers, cc_toolchain.all_files],
     )
 
     args = ctx.actions.args()
@@ -68,6 +69,10 @@ def _run_tidy(
     args.add_all(compilation_context.includes, before_each = "-I")
     args.add_all(compilation_context.quote_includes, before_each = "-iquote")
     args.add_all(compilation_context.system_includes, before_each = "-isystem")
+
+    # Add the toolchain's builtin include directories (e.g. libc++ headers,
+    # clang builtins) which are implicit for the compiler but not for clang-tidy.
+    args.add_all(cc_toolchain.built_in_include_directories, before_each = "-isystem")
 
     ctx.actions.run(
         inputs = inputs,
@@ -126,6 +131,7 @@ def _clang_tidy_aspect_impl(target, ctx):
     config = ctx.attr._clang_tidy_config.files.to_list()[0]
     compilation_context = target[CcInfo].compilation_context
 
+    cc_toolchain = find_cpp_toolchain(ctx)
     rule_flags = ctx.rule.attr.copts if hasattr(ctx.rule.attr, "copts") else []
     safe_flags = {
         ACTION_NAMES.cpp_compile: _safe_flags(_toolchain_flags(ctx, ACTION_NAMES.cpp_compile) + rule_flags),
@@ -139,6 +145,7 @@ def _clang_tidy_aspect_impl(target, ctx):
             additional_deps,
             config,
             safe_flags[ACTION_NAMES.c_compile if src.extension == "c" else ACTION_NAMES.cpp_compile],
+            cc_toolchain,
             compilation_context,
             src,
             target.label.name,
