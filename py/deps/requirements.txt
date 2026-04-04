@@ -1757,19 +1757,19 @@ types-orjson==3.6.2 \
     # via
     #   -r requirements.in
     #   aio-core
-types-protobuf==6.32.1.20260221 \
-    --hash=sha256:6d5fb060a616bfb076cbb61b4b3c3969f5fc8bec5810f9a2f7e648ee5cbcbf6e \
-    --hash=sha256:da7cdd947975964a93c30bfbcc2c6841ee646b318d3816b033adc2c4eb6448e4
+types-protobuf==7.34.1.20260403 \
+    --hash=sha256:16d9bbca52ab0f306279958878567df2520f3f5579059419b0ce149a0ad1e332 \
+    --hash=sha256:8d7881867888e667eb9563c08a916fccdc12bdb5f9f34c31d217cce876e36765
     # via
     #   -r requirements.in
     #   envoy-base-utils
-types-pygments==2.19.0.20251121 \
-    --hash=sha256:cb3bfde34eb75b984c98fb733ce4f795213bd3378f855c32e75b49318371bb25 \
-    --hash=sha256:eef114fde2ef6265365522045eac0f8354978a566852f69e75c531f0553822b1
+types-pygments==2.19.0.20260402 \
+    --hash=sha256:5b0d863cec1c43ba38c946fb6e89d389c1cf287806f72360336fba4482f8daeb \
+    --hash=sha256:bd26e1f662c9a3b8ea56668ddc099b809ffd54931bee97b15853bc4a8e5d4250
     # via -r requirements.in
-types-pytz==2026.1.1.20260304 \
-    --hash=sha256:0c3542d8e9b0160b424233440c52b83d6f58cae4b85333d54e4f961cf013e117 \
-    --hash=sha256:175332c1cf7bd6b1cc56b877f70bf02def1a3f75e5adcc05385ce2c3c70e6500
+types-pytz==2026.1.1.20260402 \
+    --hash=sha256:0d9a60ed1c6ad4fce7c6395b5bd2d9827db41d4b83de7c0322cf85869c2bfda3 \
+    --hash=sha256:79209aa51dc003a4a6a764234d92b14e5c09a1b7f24e0f00c493929fd33618e8
     # via
     #   -r requirements.in
     #   aio-core
@@ -1780,9 +1780,9 @@ types-pyyaml==6.0.12.20250915 \
     # via
     #   -r requirements.in
     #   aio-core
-types-setuptools==82.0.0.20260210 \
-    --hash=sha256:5124a7daf67f195c6054e0f00f1d97c69caad12fdcf9113eba33eff0bce8cd2b \
-    --hash=sha256:d9719fbbeb185254480ade1f25327c4654f8c00efda3fec36823379cebcdee58
+types-setuptools==82.0.0.20260402 \
+    --hash=sha256:4b9a9f6c3c4c65107a3956ad6a6acbccec38e398ff6d5f78d5df7f103dadb8d6 \
+    --hash=sha256:63d2b10ba7958396ad79bbc24d2f6311484e452daad4637ffd40407983a27069
     # via -r requirements.in
 typing-extensions==4.15.0 \
     --hash=sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466 \
