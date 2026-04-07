@@ -1050,13 +1050,13 @@ types-orjson==3.6.2 \
     --hash=sha256:22ee9a79236b6b0bfb35a0684eded62ad930a88a56797fa3c449b026cf7dbfe4 \
     --hash=sha256:cf9afcc79a86325c7aff251790338109ed6f6b1bab09d2d4262dd18c85a3c638
     # via aio-core
-types-protobuf==6.32.1.20260221 \
-    --hash=sha256:6d5fb060a616bfb076cbb61b4b3c3969f5fc8bec5810f9a2f7e648ee5cbcbf6e \
-    --hash=sha256:da7cdd947975964a93c30bfbcc2c6841ee646b318d3816b033adc2c4eb6448e4
+types-protobuf==7.34.1.20260403 \
+    --hash=sha256:16d9bbca52ab0f306279958878567df2520f3f5579059419b0ce149a0ad1e332 \
+    --hash=sha256:8d7881867888e667eb9563c08a916fccdc12bdb5f9f34c31d217cce876e36765
     # via envoy-base-utils
-types-pytz==2026.1.1.20260304 \
-    --hash=sha256:0c3542d8e9b0160b424233440c52b83d6f58cae4b85333d54e4f961cf013e117 \
-    --hash=sha256:175332c1cf7bd6b1cc56b877f70bf02def1a3f75e5adcc05385ce2c3c70e6500
+types-pytz==2026.1.1.20260402 \
+    --hash=sha256:0d9a60ed1c6ad4fce7c6395b5bd2d9827db41d4b83de7c0322cf85869c2bfda3 \
+    --hash=sha256:79209aa51dc003a4a6a764234d92b14e5c09a1b7f24e0f00c493929fd33618e8
     # via
     #   aio-core
     #   envoy-base-utils
