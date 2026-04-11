@@ -20,7 +20,7 @@ runs:
       # Create temporary directory
       OUTPUT_DIR=$(mktemp -d)
       echo "directory=${OUTPUT_DIR}" >> $GITHUB_OUTPUT
-  - uses: envoyproxy/toolshed/actions/jq@80c3e8fccbda9aa39bd359c650e9822a741865bc
+  - uses: envoyproxy/toolshed/actions/jq@58c7e89423b142174718999595f7c3dc7d65f33c
     name: Check proxy data
     id: env
     with:
@@ -32,7 +32,7 @@ runs:
       output-path: ${{ steps.path.outputs.directory }}/${{ inputs.name }}.json
 
   - name: Upload environment data
-    uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+    uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
     with:
       name: ${{ inputs.name }}
       path: ${{ steps.path.outputs.directory }}

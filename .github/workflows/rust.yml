@@ -21,7 +21,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/actions/github/should-run@80c3e8fccbda9aa39bd359c650e9822a741865bc
+    - uses: envoyproxy/toolshed/actions/github/should-run@58c7e89423b142174718999595f7c3dc7d65f33c
       id: filter
       with:
         config: |
@@ -107,7 +107,7 @@ jobs:
         cp rust/target/release/glint glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
 
     - name: Upload glint binary
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: rust-artifacts-glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
         path: glint-${{ steps.version.outputs.version }}-${{ matrix.arch }}
@@ -132,7 +132,7 @@ jobs:
         cp rust/target/release/toolshed-echo echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
 
     - name: Upload echo binary
-      uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: rust-artifacts-echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
         path: echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
