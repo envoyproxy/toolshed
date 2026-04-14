@@ -6,9 +6,9 @@ edition = "2021"
 [dependencies]
 anyhow = "^1.0.102"
 as-any = "^0.3.2"
-indexmap = { version = "^2.13.1", features = ["serde"] }
+indexmap = { version = "^2.14.0", features = ["serde"] }
 serde = { version = "^1.0.219", features = ["derive"] }
-tokio = "1.51.0"
+tokio = "1.52.0"
 
 [dev-dependencies]
 serial_test = "^3.4.0"
