@@ -27,7 +27,7 @@ runs:
   using: composite
   steps:
   - id: version
-    uses: envoyproxy/toolshed/actions/bson@c87886dff98763457f9ded0b43799bbc1bf5c896
+    uses: envoyproxy/toolshed/actions/bson@095d2d50c5b7e393a19fef2003d537734ff99ce7
     env:
       VERSION: ${{ inputs.version }}
       VERSION_FILE: ${{ inputs.version-file }}

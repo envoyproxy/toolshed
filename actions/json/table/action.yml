@@ -90,7 +90,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/jq@c87886dff98763457f9ded0b43799bbc1bf5c896
+  - uses: envoyproxy/toolshed/actions/jq@095d2d50c5b7e393a19fef2003d537734ff99ce7
     name: Generate table
     id: table
     with:
@@ -109,7 +109,7 @@ runs:
                      ${{ inputs.mutate-cells || '.cell' }};
                      ${{ inputs.sanitize-filter || '.' }})
 
-  - uses: envoyproxy/toolshed/actions/jq@c87886dff98763457f9ded0b43799bbc1bf5c896
+  - uses: envoyproxy/toolshed/actions/jq@095d2d50c5b7e393a19fef2003d537734ff99ce7
     id: summary
     if: ${{ steps.table.outputs.value }}
     with:
