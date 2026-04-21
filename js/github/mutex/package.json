@@ -27,8 +27,8 @@
     "@eslint/js": "^10.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.2",
-    "@typescript-eslint/eslint-plugin": "^8.55.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.0",
+    "@typescript-eslint/parser": "^8.59.0",
     "@vercel/ncc": "^0.38.1",
     "eslint": "^10.0.0",
     "eslint-config-prettier": "^10.0.0",
@@ -36,10 +36,10 @@
     "globals": "^17.0.0",
     "jest": "^30.0.0",
     "jest-circus": "^30.0.0",
-    "nock": "^14.0.0",
+    "nock": "^14.0.13",
     "prettier": "^3.2.5",
     "ts-jest": "^29.0.0",
-    "typescript": "^5.4.2",
-    "typescript-eslint": "^8.0.0"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.0"
   }
 }
