@@ -29,6 +29,7 @@ These packages are specific to Envoy or work to Envoy's specific requirements:
 - [envoy.distribution.repo](envoy.distribution.repo) - Repository management
 - [envoy.distribution.verify](envoy.distribution.verify) - Distribution verification
 - [envoy.docker.utils](envoy.docker.utils) - Docker utilities
+- [envoy.docs.literalinclude](envoy.docs.literalinclude) - Tool to check and fix literalinclude line numbers in RST documentation
 - [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner) - Sphinx documentation runner
 - [envoy.github.abstract](envoy.github.abstract) - GitHub abstractions
 - [envoy.github.release](envoy.github.release) - GitHub release management
