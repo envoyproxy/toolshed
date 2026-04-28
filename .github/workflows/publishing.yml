@@ -30,6 +30,7 @@ jobs:
           - .github/workflows/bazel.yml
           - .github/workflows/rust.yml
           - .github/workflows/publishing.yml
+          - actions/python/release/publish/action.yml
           - bazel/VERSION.txt
           - BINS_VERSION.txt
           - actions/VERSION.txt
@@ -56,6 +57,7 @@ jobs:
     if: fromJSON(needs.request.outputs.run || 'false')
     permissions:
       actions: read
+      id-token: write
     # secrets.ENVOY_GPG_SNAKEOIL_KEY_PASSWORD
     # secrets.ENVOY_GPG_SNAKEOIL_KEY
     uses: ./.github/workflows/_publish.yml
@@ -70,6 +72,7 @@ jobs:
       event: ${{ matrix.event }}
       python-filter-artifacts: ${{ matrix.python-filter-artifacts }}
       python-version: ${{ matrix.python-version }}
+      pypi-repository-url: ${{ matrix.pypi-repository-url || '' }}
       sha: ${{ matrix.sha || needs.request.outputs.sha }}
       skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
       title: ${{ needs.request.outputs.message }}
@@ -91,6 +94,9 @@ jobs:
         - event: push
           python-version: 0.0.23
           python-filter-artifacts: .
+        - event: push
+          python-version: 0.0.23
+          pypi-repository-url: https://test.pypi.org/legacy/
         - event: push
           actions-version: 0.0.123
           bazel-version: 0.2.17

@@ -62,8 +62,12 @@ inputs:
     required: true
 
 outputs:
+  continue:
+    value: ${{ steps.status.outputs.continue }}
   result:
     value: ${{ steps.release.outputs.output }}
+  version:
+    value: ${{ steps.status.outputs.version }}
 
 
 runs:
