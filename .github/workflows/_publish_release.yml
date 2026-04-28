@@ -27,6 +27,9 @@ on:
       dry-run:
         default: false
         type: boolean
+      environment:
+        default:
+        type: string
       event:
         default: ${{ github.event.workflow_run.event }}
         type: string
@@ -36,11 +39,23 @@ on:
       filter-artifacts:
         default: .
         type: string
+      id-token-write:
+        default: false
+        type: boolean
       name:
         required: true
         type: string
       prepare-dev:
         required: false
+        type: string
+      pypi-dry-run:
+        default: true
+        type: boolean
+      pypi-publish:
+        default: false
+        type: boolean
+      pypi-repository-url:
+        default:
         type: string
       repository:
         default: ${{ github.repository }}
@@ -68,8 +83,14 @@ on:
 
 jobs:
   release:
+    environment: ${{ inputs.environment != '' && inputs.environment || null }}
     permissions:
       actions: read
+      # id-token: write is required for PyPI Trusted Publishing (OIDC).
+      # GitHub Actions does not support conditional permissions on a job,
+      # so this is set unconditionally; it is only exercised when the
+      # Publish python wheels to PyPI step actually runs.
+      id-token: write
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
     steps:
@@ -121,7 +142,8 @@ jobs:
           split("\n") | first
 
     - name: Publish the release
-      uses: envoyproxy/toolshed/actions/github/release@5ad2e9bddabad409b4afb5501d266292c9e88d40
+      id: status
+      uses: ./actions/github/release
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
         artifacts: ${{ inputs.artifacts }}
@@ -142,3 +164,16 @@ jobs:
         version: ${{ inputs.version }}
         version-file: ${{ inputs.version-file }}
         workflows: ${{ inputs.workflows }}
+    - name: Publish python wheels to PyPI
+      if: >-
+        inputs.name == 'python'
+        && fromJSON(inputs.pypi-publish)
+        && fromJSON(inputs.artifacts)
+        && steps.status.outputs.version != ''
+        && ! fromJSON(steps.status.outputs.version).is_dev
+        && fromJSON(steps.status.outputs.continue)
+      uses: ./actions/python/release/publish
+      with:
+        dry-run: ${{ inputs.dry-run || inputs.pypi-dry-run }}
+        packages-dir: artifacts/publish
+        repository-url: ${{ inputs.pypi-repository-url }}
