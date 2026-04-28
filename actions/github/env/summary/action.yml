@@ -61,7 +61,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/jq@c87886dff98763457f9ded0b43799bbc1bf5c896
+  - uses: envoyproxy/toolshed/actions/jq@444b7d08e6a5d81780c458c9ad9bb0305939f7ba
     id: linked-title
     with:
       input: |
@@ -76,7 +76,7 @@ runs:
       options: -r
       filter: gfm::event_title
 
-  - uses: envoyproxy/toolshed/actions/jq@c87886dff98763457f9ded0b43799bbc1bf5c896
+  - uses: envoyproxy/toolshed/actions/jq@444b7d08e6a5d81780c458c9ad9bb0305939f7ba
     id: title
     with:
       input: |
@@ -92,7 +92,7 @@ runs:
       filter: gfm::event_title
 
   # This generates a filter from configuration
-  - uses: envoyproxy/toolshed/actions/jq@c87886dff98763457f9ded0b43799bbc1bf5c896
+  - uses: envoyproxy/toolshed/actions/jq@444b7d08e6a5d81780c458c9ad9bb0305939f7ba
     name: Table filter
     id: table-filter
     with:
@@ -103,7 +103,7 @@ runs:
       filter: |
         with_entries({key: .key, value: .value.filter})
         | utils::filters
-  - uses: envoyproxy/toolshed/actions/jq@c87886dff98763457f9ded0b43799bbc1bf5c896
+  - uses: envoyproxy/toolshed/actions/jq@444b7d08e6a5d81780c458c9ad9bb0305939f7ba
     name: Tables
     id: tables
     with:
@@ -121,7 +121,7 @@ runs:
               | select(.value.data | type != "null"))
         | gfm::tables
 
-  - uses: envoyproxy/toolshed/actions/jq@c87886dff98763457f9ded0b43799bbc1bf5c896
+  - uses: envoyproxy/toolshed/actions/jq@444b7d08e6a5d81780c458c9ad9bb0305939f7ba
     id: output
     with:
       input: ${{ toJSON(inputs) }}
@@ -160,7 +160,7 @@ runs:
         "
         | str::indent($inputs.indent // "0" | fromjson)
 
-  - uses: envoyproxy/toolshed/actions/jq@c87886dff98763457f9ded0b43799bbc1bf5c896
+  - uses: envoyproxy/toolshed/actions/jq@444b7d08e6a5d81780c458c9ad9bb0305939f7ba
     if: ${{ inputs.output-path }}
     with:
       input: ${{ steps.output.outputs.value }}
