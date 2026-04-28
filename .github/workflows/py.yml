@@ -136,11 +136,18 @@ jobs:
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
     - name: Run pants package
       run: "pants --colors package ::"
-    - name: Archive created packages
+    - name: Archive wheels
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: python-artifacts
-        path: dist/*whl
+        path: dist/*.whl
+        if-no-files-found: error
+    - name: Archive sdists
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: python-source
+        path: dist/*.tar.gz
+        if-no-files-found: error
 
   status:
     runs-on: ubuntu-24.04

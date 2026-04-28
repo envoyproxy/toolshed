@@ -57,6 +57,12 @@ on:
       python-version-file:
         default: py/VERSION.txt
         type: string
+      pypi-dry-run:
+        default: false
+        type: boolean
+      pypi-repository-url:
+        default:
+        type: string
       repository:
         default: ${{ github.repository }}
         type: string
@@ -75,6 +81,7 @@ jobs:
   publish:
     permissions:
       actions: read
+      id-token: write
     secrets:
       app-id: ${{ secrets.app-id }}
       app-key: ${{ secrets.app-key }}
@@ -91,13 +98,18 @@ jobs:
       committer-email: ${{ inputs.committer-email }}
       committer-name: ${{ inputs.committer-name }}
       dry-run: ${{ inputs.dry-run }}
+      environment: ${{ matrix.environment || '' }}
       event: ${{ inputs.event }}
       fail-if-exists: ${{ inputs.fail-if-exists }}
       filter-artifacts: >-
         ${{ matrix.filter-artifacts
             || '.' }}
+      id-token-write: ${{ matrix.id-token-write || false }}
       name: ${{ matrix.name }}
       prepare-dev: ${{ matrix.prepare-dev }}
+      pypi-dry-run: ${{ inputs.pypi-dry-run || inputs.dry-run }}
+      pypi-publish: ${{ matrix.pypi-publish || false }}
+      pypi-repository-url: ${{ inputs.pypi-repository-url }}
       sha: ${{ inputs.sha }}
       template-artifacts: ${{ matrix.template-artifacts }}
       title: ${{ inputs.title }}
@@ -144,8 +156,11 @@ jobs:
           artifact-workflows: |
             Python CI
           artifacts: true
+          environment: pypi
           filter-artifacts: >-
             ${{ inputs.python-filter-artifacts
                 || 'select($key | contains(".dev") | not)' }}
+          id-token-write: true
+          pypi-publish: true
           version: ${{ inputs.python-version }}
           version-file: ${{ inputs.python-version-file }}
