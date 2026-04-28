@@ -27,5 +27,5 @@ inputs:
       Run action in directory.
     default:
 runs:
-  using: node20
+  using: node24
   main: '../../js/hashfiles/dist/index.js'
