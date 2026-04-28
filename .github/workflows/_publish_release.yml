@@ -83,9 +83,13 @@ on:
 
 jobs:
   release:
-    environment: ${{ inputs.environment }}
+    environment: ${{ inputs.environment != '' && inputs.environment || null }}
     permissions:
       actions: read
+      # id-token: write is required for PyPI Trusted Publishing (OIDC).
+      # GitHub Actions does not support conditional permissions on a job,
+      # so this is set unconditionally; it is only exercised when the
+      # Publish python wheels to PyPI step actually runs.
       id-token: write
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
@@ -165,7 +169,7 @@ jobs:
         inputs.name == 'python'
         && fromJSON(inputs.pypi-publish)
         && fromJSON(inputs.artifacts)
-        && steps.status.outputs.version
+        && steps.status.outputs.version != ''
         && ! fromJSON(steps.status.outputs.version).is_dev
         && fromJSON(steps.status.outputs.continue)
       uses: ./actions/python/release/publish

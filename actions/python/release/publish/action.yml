@@ -1,3 +1,8 @@
+name: Publish Python packages to PyPI
+description: >-
+  Stages *.whl and *.tar.gz files (excluding GPG .asc files) and uploads
+  them to PyPI via Trusted Publishing (OIDC). Supports dry-run mode.
+
 inputs:
   attestations:
     type: boolean
