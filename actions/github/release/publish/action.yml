@@ -67,7 +67,7 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/jq@1ea9136641b2851728e11925cedf9471d6de7173
+  - uses: envoyproxy/toolshed/actions/jq@7d1eb428421a731049e498e93e2a438dd8fc2297
     if: >-
       inputs.assets
     id: assets
@@ -79,7 +79,7 @@ runs:
         .
         | split("\n")
         | join(" ")
-  - uses: envoyproxy/toolshed/actions/bson@1ea9136641b2851728e11925cedf9471d6de7173
+  - uses: envoyproxy/toolshed/actions/bson@7d1eb428421a731049e498e93e2a438dd8fc2297
     id: release
     env:
       GH_TOKEN: ${{ inputs.token }}
@@ -118,7 +118,7 @@ runs:
           && '(dry-run)'
           || ''  }}
     if: fromJSON(inputs.summary)
-    uses: envoyproxy/toolshed/actions/jq@1ea9136641b2851728e11925cedf9471d6de7173
+    uses: envoyproxy/toolshed/actions/jq@7d1eb428421a731049e498e93e2a438dd8fc2297
     with:
       input: |
         result: ${{ steps.release.outputs.output || '[]' }}
