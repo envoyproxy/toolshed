@@ -20,6 +20,7 @@ jobs:
       github.event.workflow_run.event == 'push'
     permissions:
       actions: read
+      id-token: write
     secrets:
       app-id: ${{ secrets.ENVOY_CI_PUBLISH_APP_ID }}
       app-key: ${{ secrets.ENVOY_CI_PUBLISH_APP_KEY }}
