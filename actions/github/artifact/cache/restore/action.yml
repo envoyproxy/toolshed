@@ -40,15 +40,32 @@ runs:
       || steps.cache-id.outputs.id
     shell: bash
     run: |
-      gh api \
-          -H "Accept: application/vnd.github+json" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          "/repos/${REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
-          | tar --warning=no-timestamp \
-                --keep-directory-symlink \
-                -xI unzstd \
-                -f - \
-                -C ${OUTPUT_PATH}
+      set -o pipefail
+      attempt=0
+      max=3
+      while :; do
+          attempt=$((attempt + 1))
+          if gh api \
+                -H "Accept: application/vnd.github+json" \
+                -H "X-GitHub-Api-Version: 2022-11-28" \
+                "/repos/${REPOSITORY}/actions/artifacts/${ARTIFACT_ID}/zip" \
+              | tar --warning=no-timestamp \
+                    --keep-directory-symlink \
+                    -xI unzstd \
+                    -f - \
+                    -C "${OUTPUT_PATH}"; then
+              break
+          fi
+          if [[ "$attempt" -ge "$max" ]]; then
+              echo "::error::Artifact restore failed after ${attempt} attempts" >&2
+              exit 2
+          fi
+          failed="${OUTPUT_PATH}.failed.$$.${attempt}"
+          mv "${OUTPUT_PATH}" "${failed}"
+          mkdir -p "${OUTPUT_PATH}"
+          rm -rf "${failed}" &
+          sleep $((2 ** attempt))
+      done
     env:
       GH_TOKEN: ${{ inputs.token }}
       ARTIFACT_ID: ${{ inputs.id || steps.cache-id.outputs.id }}
