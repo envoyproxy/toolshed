@@ -31,5 +31,5 @@ inputs:
     default:
 
 runs:
-  using: node20
+  using: node24
   main: '../../../js/github/checks/dist/index.js'

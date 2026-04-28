@@ -39,5 +39,5 @@ inputs:
       Args passed to command (not currently used)
 
 runs:
-  using: node20
+  using: node24
   main: '../../js/retest/dist/index.js'

@@ -14,6 +14,6 @@ inputs:
     default: /bin/bash
 
 runs:
-  using: node20
+  using: node24
   main: '../../../../js/github/script/run/dist/index.js'
   post: '../../../../js/github/script/run/dist/index.js'
