@@ -1,0 +1,73 @@
+name: Publish Python packages to PyPI
+description: >-
+  Stages *.whl and *.tar.gz files (excluding GPG .asc files) and uploads
+  them to PyPI via Trusted Publishing (OIDC). Supports dry-run mode.
+
+inputs:
+  attestations:
+    type: boolean
+    default: true
+  dry-run:
+    type: boolean
+    default: true
+  packages-dir:
+    type: string
+    default: artifacts/publish
+  repository-url:
+    type: string
+    default:
+  skip-existing:
+    type: boolean
+    default: true
+
+
+runs:
+  using: composite
+  steps:
+  - name: Stage packages for PyPI
+    id: stage
+    shell: bash
+    env:
+      DRY_RUN: ${{ inputs.dry-run }}
+      PACKAGES_DIR: ${{ inputs.packages-dir }}
+      STAGE_DIR: ${{ runner.temp }}/pypi-dist
+    run: |
+      mkdir -p "${STAGE_DIR}"
+      if [[ -d "${PACKAGES_DIR}" ]]; then
+          find "${PACKAGES_DIR}" -maxdepth 1 \( -name '*.whl' -o -name '*.tar.gz' \) \
+              -exec cp {} "${STAGE_DIR}/" \;
+      fi
+      count=$(find "${STAGE_DIR}" -maxdepth 1 \( -name '*.whl' -o -name '*.tar.gz' \) | wc -l | tr -d ' ')
+      echo "count=${count}" >> "${GITHUB_OUTPUT}"
+      echo "stage-dir=${STAGE_DIR}" >> "${GITHUB_OUTPUT}"
+      if [[ "${count}" -eq 0 ]]; then
+          if [[ "${DRY_RUN}" == "true" ]]; then
+              echo "::warning::No packages found in ${PACKAGES_DIR} to stage for PyPI upload"
+          else
+              echo "::error::No packages found in ${PACKAGES_DIR} to stage for PyPI upload"
+              exit 1
+          fi
+      fi
+
+  - name: Dry-run summary
+    if: fromJSON(inputs.dry-run)
+    shell: bash
+    env:
+      STAGE_DIR: ${{ steps.stage.outputs.stage-dir }}
+    run: |
+      {
+        echo "### PyPI Dry-Run: packages staged for upload"
+        echo '```'
+        ls -la "${STAGE_DIR}"
+        echo '```'
+      } >> "${GITHUB_STEP_SUMMARY}"
+
+  - name: Publish to PyPI
+    if: >-
+      ! fromJSON(inputs.dry-run)
+    uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0
+    with:
+      attestations: ${{ inputs.attestations }}
+      packages-dir: ${{ steps.stage.outputs.stage-dir }}
+      repository-url: ${{ inputs.repository-url }}
+      skip-existing: ${{ inputs.skip-existing }}
