@@ -47,6 +47,9 @@ inputs:
   run-as-sudo:
     type: boolean
     default: true
+  sudo-preserve-env:
+    type: string
+    default:
 
 outputs:
   cached:
@@ -183,7 +186,7 @@ runs:
       fi
 
       if [[ "${{ inputs.run-as-sudo }}" == 'true' ]]; then
-          sudo "${{ inputs.path-script }}"
+          sudo ${PRESERVE:+--preserve-env=$PRESERVE} "${{ inputs.path-script }}"
           if [[ -n "${{ inputs.owner }}" ]]; then
               sudo chown -R  "${{ inputs.owner }}" "${{ inputs.path || inputs.path-tmp }}"
           fi
@@ -197,6 +200,7 @@ runs:
     shell: bash
     env:
       CACHE_PATH: ${{ inputs.path || inputs.path-tmp }}
+      PRESERVE: ${{ inputs.sudo-preserve-env }}
 
   - if: >-
       steps.restore.outputs.save == 'true'
