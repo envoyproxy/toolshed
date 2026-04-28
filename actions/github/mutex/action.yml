@@ -19,7 +19,7 @@ inputs:
     default: 'actions-mutex-lock/'
 
 runs:
-  using: node20
+  using: node24
   main: "../../../js/github/mutex/dist/main/index.js"
   post: "../../../js/github/mutex/dist/cleanup/index.js"
   post-if: "always()"

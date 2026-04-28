@@ -54,5 +54,5 @@ inputs:
     type: string
     default: json
 runs:
-  using: node20
+  using: node24
   main: '../../js/jq/dist/index.js'
