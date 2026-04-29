@@ -137,9 +137,9 @@ pelican-webassets==2.1.0 \
     --hash=sha256:0a418b88ebd6d96efae4d666394552bcacc8d30d2f0abb5bb4db26064e8cfed0 \
     --hash=sha256:9df6659ecb565af88df55df4aac27cafc948299ef3d4fc743f7385db2e274475
     # via -r requirements.in
-pygments==2.18.0 \
-    --hash=sha256:786ff802f32e91311bff3889f6e9a86e81505fe99f2735bb6d60ae0c5004f199 \
-    --hash=sha256:b8e6aca0523f3ab76fee51799c488e38782ac06eafcf95e7ba832985c8e7b13a
+pygments==2.19.2 \
+    --hash=sha256:636cb2477cec7f8952536970bc533bc43743542f70392ae026374600add5b887 \
+    --hash=sha256:86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b
     # via
     #   pelican
     #   rich
