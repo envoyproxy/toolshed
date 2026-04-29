@@ -1,1 +1,1 @@
-docformatter>=1.7.5
+docformatter>=1.7.8
