@@ -249,10 +249,25 @@ install_libstdcc () {
     fi
     echo ""
     echo "Step 4: Installing libstdc++..."
-    echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
+    # Fetch the ubuntu-toolchain-r PPA signing key using a temporary GNUPGHOME
+    # so we don't pollute the host keyring, then install it into the sysroot's
+    # trusted.gpg.d directory for apt's signed-by mechanism.
+    local ppa_key_id='1E9377A2BA9EF27F'
+    local tmp_gnupghome
+    tmp_gnupghome=$(mktemp -d)
+    # shellcheck disable=SC2064
+    trap "rm -rf '$tmp_gnupghome'" EXIT
+    sudo mkdir -p "$WORK_DIR/etc/apt/trusted.gpg.d"
+    GNUPGHOME="$tmp_gnupghome" retry 3 10 gpg \
+        --keyserver keyserver.ubuntu.com \
+        --recv-keys "$ppa_key_id"
+    GNUPGHOME="$tmp_gnupghome" gpg --export "$ppa_key_id" \
+        | sudo install -m 0644 -o root -g root /dev/stdin \
+            "$WORK_DIR/etc/apt/trusted.gpg.d/ubuntu-toolchain-r.gpg"
+    rm -rf "$tmp_gnupghome"
+    trap - EXIT
+    echo "deb [signed-by=/etc/apt/trusted.gpg.d/ubuntu-toolchain-r.gpg] http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
         | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-    retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
-        --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
 }
@@ -295,9 +310,10 @@ cleanup_sysroot () {
                 sudo rm -rf "$WORK_DIR/$dir"
             fi
         done
-        # Clean up apt sources (unless etc is in keep list)
+        # Clean up apt sources and PPA keyring (unless etc is in keep list)
         if [[ -z "${KEEP_SET[etc]}" ]]; then
             sudo rm -rf "$WORK_DIR/etc/apt/sources.list.d/"*
+            sudo rm -f "$WORK_DIR/etc/apt/trusted.gpg.d/ubuntu-toolchain-r.gpg"
         fi
     fi
 }
