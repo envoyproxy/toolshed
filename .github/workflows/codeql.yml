@@ -38,6 +38,16 @@ jobs:
         - rust
 
     steps:
+
+
+    - uses: envoyproxy/toolshed/actions/bind-mounts@3c6fada5be38699cba49c9883d731ebe503d0b9d
+      if: runner.os == 'Linux'
+      with:
+        mounts: |
+          - src: /mnt/workspace
+            target: GITHUB_WORKSPACE
+            chown: "runner:runner"
+
     - name: Checkout repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
