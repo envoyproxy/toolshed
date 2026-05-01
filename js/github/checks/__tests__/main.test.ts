@@ -204,7 +204,7 @@ describe('update action', () => {
     expect(warnCalls.some((w) => w.includes('attempt 1 failed'))).toBe(true)
   })
 
-  it('empty check_runs from listForRef → graceful path, no throw, warning emitted', async () => {
+  it('empty check_runs from listForRef → check appears in failed output, no PATCH made', async () => {
     // No id supplied (id=0 is falsy) → will call listForRef
     const checksNoId: Record<string, {name: string; head_sha: string; id: number}> = {
       'check-a': {name: 'MyCheck', head_sha: 'sha1', id: 0},
@@ -219,17 +219,22 @@ describe('update action', () => {
       .query(true)
       .reply(200, {total_count: 0, check_runs: []})
 
-    // update is called with check_run_id=0 (unchanged after empty list)
-    nock(GITHUB_API).patch('/repos/example/repository/check-runs/0').reply(200, {id: 0})
+    // No PATCH should be made - if one is attempted nock will fail the test
 
-    const warningMock = jest.spyOn(core, 'warning')
+    const setOutputMock = jest.spyOn(core, 'setOutput')
     const setFailedMock = jest.spyOn(core, 'setFailed')
 
     await run()
 
-    expect(setFailedMock).not.toHaveBeenCalled()
-    const warnCalls = warningMock.mock.calls.map((c) => String(c[0]))
-    expect(warnCalls.some((w) => w.includes('No existing check run found'))).toBe(true)
+    // The check should appear in the failed output
+    const failedCall = setOutputMock.mock.calls.find((c) => c[0] === 'failed')
+    expect(failedCall).toBeDefined()
+    const failedObj = JSON.parse(failedCall![1] as string)
+    expect(Object.keys(failedObj)).toContain('MyCheck')
+    expect(String(failedObj['MyCheck'])).toMatch(/No existing check run found/)
+
+    // All checks failed → setFailed called
+    expect(setFailedMock).toHaveBeenCalledWith(expect.stringContaining('All checks failed'))
   })
 
   it('caller provides id → no listForRef call is made', async () => {
