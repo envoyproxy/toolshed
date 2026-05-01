@@ -108,7 +108,10 @@ DEFAULT_REMOVE_DIRS=(
 # Pool base URL (ppa.launchpadcontent.net is the canonical pool mirror):
 LIBSTDCXX_POOL="https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu/pool/main/g/gcc-13"
 #
-# To recompute a checksum:
+# To recompute all checksums (requires internet access to launchpad):
+#   bash bazel/sysroot/compute_libstdcxx_sha256s.sh
+#
+# To recompute a single checksum manually:
 #   curl -fSL "${LIBSTDCXX_POOL}/<filename>" | sha256sum
 #
 # Date selected: 2026-05-01

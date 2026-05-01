@@ -18,6 +18,7 @@ load(":fs.bzl", "sysroots")
 
 exports_files([
     "build_sysroot.sh",
+    "compute_libstdcxx_sha256s.sh",
     "config.yaml",
     "extensions.bzl",
     "fs.bzl",
