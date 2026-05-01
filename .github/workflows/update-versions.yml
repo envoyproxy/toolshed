@@ -95,6 +95,13 @@ jobs:
         for glibc in "2.31" "2.28"; do
             for variant in "base" "13"; do
                 for arch in "amd64" "arm64"; do
+                    # bionic (glibc 2.28) + libstdc++13 arm64 is not available:
+                    # the ubuntu-toolchain-r/test PPA never published a bionic
+                    # arm64 build for GCC 13. Skip this combination.
+                    if [[ "$glibc" == "2.28" && "$variant" == "13" && "$arch" == "arm64" ]]; then
+                        continue
+                    fi
+
                     if [[ "$variant" == "base" ]]; then
                         file=$(ls sysroot-glibc${glibc}-${arch}.tar.xz 2>/dev/null || true)
                     else
@@ -181,7 +188,8 @@ jobs:
         update_sysroot "2.28" "base" "amd64" "${{ steps.hashes.outputs.sysroot_2_28_base_amd64 }}"
         update_sysroot "2.28" "base" "arm64" "${{ steps.hashes.outputs.sysroot_2_28_base_arm64 }}"
         update_sysroot "2.28" "13" "amd64" "${{ steps.hashes.outputs.sysroot_2_28_13_amd64 }}"
-        update_sysroot "2.28" "13" "arm64" "${{ steps.hashes.outputs.sysroot_2_28_13_arm64 }}"
+        # Note: glibc 2.28 + libstdc++13 + arm64 is not supported (bionic arm64
+        # was never published for GCC 13 in the ubuntu-toolchain-r/test PPA).
 
         # Update legacy sysroot hashes for backward compatibility
         HASH="${{ steps.hashes.outputs.sysroot_amd64_sha256 }}"

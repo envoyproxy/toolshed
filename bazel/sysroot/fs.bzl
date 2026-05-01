@@ -101,6 +101,11 @@ def sysroots(arches, glibc, stdcc):
                     stdcc_version = cc_ver
                     ppa_toolchain = "focal" if debian_version == "bullseye" else "bionic"
                     name_suffix = "_libstdcxx"
+
+                    # bionic arm64 + gcc-13 was never published in the
+                    # ubuntu-toolchain-r/test PPA; skip this matrix cell.
+                    if ppa_toolchain == "bionic" and arch == "arm64":
+                        continue
                 else:
                     variant = "base"
                     stdcc_version = None

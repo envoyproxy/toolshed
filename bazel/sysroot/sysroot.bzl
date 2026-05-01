@@ -116,6 +116,17 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
         SHA256 hash string
     """
 
+    # bionic (glibc 2.28) arm64 + libstdc++ 13 is not available in the
+    # ubuntu-toolchain-r/test PPA; the PPA never published a bionic arm64
+    # build for GCC 13. Use the focal (glibc 2.31) sysroot for arm64
+    # libstdc++ support instead.
+    if glibc_version == "2.28" and stdcc_version == "13" and arch == "arm64":
+        fail(
+            "sysroot glibc 2.28 + libstdc++ 13 + arm64 is not available: " +
+            "the ubuntu-toolchain-r/test PPA never published a bionic arm64 " +
+            "build for GCC 13. Use glibc_version='2.31' for arm64 libstdc++ support.",
+        )
+
     # Validate glibc version
     if glibc_version not in VERSIONS["sysroot_hashes"]:
         fail("Unsupported glibc version: {}. Supported versions: {}".format(

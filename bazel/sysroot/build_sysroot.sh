@@ -34,6 +34,36 @@ retry() {
     done
 }
 
+verify_sha256 () {
+    # Verify the SHA256 checksum of a file.
+    # If the expected value is "TBD", print the computed value and instructions,
+    # then fail so the table can be updated.
+    local file="$1"
+    local expected="$2"
+    local actual
+    actual=$(sha256sum "$file" | awk '{print $1}')
+
+    if [[ "$expected" == "TBD" ]]; then
+        echo ""
+        echo "ERROR: SHA256 not yet populated for: $(basename "$file")"
+        echo "  Computed SHA256: ${actual}"
+        echo ""
+        echo "Please update LIBSTDCXX_SHA256 in build_sysroot.sh:"
+        echo "  Run: curl -fSL \"${LIBSTDCXX_POOL}/$(basename "$file")\" | sha256sum"
+        return 1
+    fi
+
+    if [[ "$actual" != "$expected" ]]; then
+        echo ""
+        echo "ERROR: SHA256 mismatch for $(basename "$file")"
+        echo "  Expected: ${expected}"
+        echo "  Actual:   ${actual}"
+        return 1
+    fi
+
+    echo "  SHA256 OK: $(basename "$file")"
+}
+
 DEFAULT_REMOVE_DIRS=(
     bin
     boot
@@ -64,6 +94,47 @@ DEFAULT_REMOVE_DIRS=(
     usr/share/zoneinfo
     var
 )
+
+# =============================================================================
+# libstdc++ versions and SHA256 checksums for direct pool download.
+#
+# WHY: We fetch .deb files directly from the launchpad pool URL rather than
+# using apt + the PPA Packages index, because:
+#   1. The PPA's bionic Packages index no longer lists libstdc++-13-dev after
+#      2023-07-13; pool retention is indefinite, so direct fetch is stable.
+#   2. Using apt-key to trust the PPA is fragile (keyserver timeouts, apt-key
+#      removal in newer apt, silent "untrusted repo => invisible packages").
+#
+# Pool base URL (ppa.launchpadcontent.net is the canonical pool mirror):
+LIBSTDCXX_POOL="https://ppa.launchpadcontent.net/ubuntu-toolchain-r/test/ubuntu/pool/main/g/gcc-13"
+#
+# To recompute a checksum:
+#   curl -fSL "${LIBSTDCXX_POOL}/<filename>" | sha256sum
+#
+# Date selected: 2026-05-01
+# =============================================================================
+
+# Pinned package versions, keyed by "<ppa_toolchain>,<stdcc_version>"
+declare -A LIBSTDCXX_VERSIONS
+LIBSTDCXX_VERSIONS["bionic,13"]="13.1.0-8ubuntu1~18.04"   # last bionic upload 2023-07-13
+LIBSTDCXX_VERSIONS["focal,13"]="13.3.0-6ubuntu2~20.04"    # latest focal upload 2026-05-01
+
+# SHA256 checksums, keyed by "<ppa_toolchain>,<stdcc_version>,<arch>,<pkg_type>"
+# pkg_type is: base (gcc-N-base), libstdcpp6 (libstdc++6), dev (libstdc++-N-dev)
+# NOTE: bionic arm64 gcc-13 was never published in the ubuntu-toolchain-r/test PPA.
+declare -A LIBSTDCXX_SHA256
+# (bionic, gcc-13, amd64) — last bionic upload 2023-07-13
+LIBSTDCXX_SHA256["bionic,13,amd64,base"]="TBD"
+LIBSTDCXX_SHA256["bionic,13,amd64,libstdcpp6"]="TBD"
+LIBSTDCXX_SHA256["bionic,13,amd64,dev"]="TBD"
+# (focal, gcc-13, amd64) — 2026-05-01
+LIBSTDCXX_SHA256["focal,13,amd64,base"]="TBD"
+LIBSTDCXX_SHA256["focal,13,amd64,libstdcpp6"]="TBD"
+LIBSTDCXX_SHA256["focal,13,amd64,dev"]="TBD"
+# (focal, gcc-13, arm64) — 2026-05-01
+LIBSTDCXX_SHA256["focal,13,arm64,base"]="TBD"
+LIBSTDCXX_SHA256["focal,13,arm64,libstdcpp6"]="TBD"
+LIBSTDCXX_SHA256["focal,13,arm64,dev"]="TBD"
 
 ARCH=""
 GLIBC_VERSION=""
@@ -247,14 +318,57 @@ install_libstdcc () {
     if [[ "$VARIANT" != "libstdcxx" ]]; then
         return
     fi
+
+    # bionic arm64 + gcc-13 was never published in the ubuntu-toolchain-r/test PPA.
+    # The sysroot_glibc228_libstdcxx_arm64 target is excluded from the build matrix.
+    if [[ "$PPA_TOOLCHAIN" == "bionic" && "$ARCH" == "arm64" ]]; then
+        echo ""
+        echo "ERROR: libstdc++-${STDCC_VERSION}-dev for bionic (Ubuntu 18.04) arm64 is not"
+        echo "available in the ubuntu-toolchain-r/test PPA. The PPA never published a"
+        echo "bionic arm64 build for GCC 13. Use the amd64 variant, or switch to the"
+        echo "focal (glibc 2.31) sysroot for arm64 libstdc++ support."
+        return 1
+    fi
+
     echo ""
-    echo "Step 4: Installing libstdc++..."
-    echo "deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
-        | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-    retry 3 10 sudo apt-key --keyring "$WORK_DIR/etc/apt/trusted.gpg" adv \
-        --keyserver keyserver.ubuntu.com --recv-keys 1E9377A2BA9EF27F
-    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
-    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
+    echo "Step 4: Installing libstdc++ ${STDCC_VERSION} (${PPA_TOOLCHAIN}) from launchpad pool..."
+    # Download .deb files directly from the launchpad pool instead of using apt.
+    # The PPA's bionic Packages index no longer lists libstdc++-13-dev after
+    # 2023-07-13; pool retention is indefinite, so this approach is stable.
+    echo "  Pool: ${LIBSTDCXX_POOL}"
+
+    local ver_key="${PPA_TOOLCHAIN},${STDCC_VERSION}"
+    local ver="${LIBSTDCXX_VERSIONS[$ver_key]:-}"
+    if [[ -z "$ver" ]]; then
+        echo "Error: No pinned version for PPA_TOOLCHAIN=${PPA_TOOLCHAIN}, STDCC_VERSION=${STDCC_VERSION}"
+        return 1
+    fi
+    echo "  Version: ${ver}"
+
+    local tmp
+    tmp=$(mktemp -d)
+
+    local deb pkgtype url dest sha_key sha256 entry
+    local debs=()
+    debs+=("gcc-${STDCC_VERSION}-base_${ver}_${ARCH}.deb|base")
+    debs+=("libstdc++6_${ver}_${ARCH}.deb|libstdcpp6")
+    debs+=("libstdc++-${STDCC_VERSION}-dev_${ver}_${ARCH}.deb|dev")
+
+    for entry in "${debs[@]}"; do
+        deb="${entry%%|*}"
+        pkgtype="${entry##*|}"
+        url="${LIBSTDCXX_POOL}/${deb}"
+        dest="${tmp}/${deb}"
+        sha_key="${PPA_TOOLCHAIN},${STDCC_VERSION},${ARCH},${pkgtype}"
+        sha256="${LIBSTDCXX_SHA256[$sha_key]:-TBD}"
+
+        echo "  Downloading: ${deb}"
+        retry 3 10 curl -fsSL -o "$dest" "$url"
+        verify_sha256 "$dest" "$sha256"
+        sudo dpkg-deb -x "$dest" "$WORK_DIR"
+    done
+
+    sudo rm -rf "$tmp"
 }
 
 cleanup_sysroot () {

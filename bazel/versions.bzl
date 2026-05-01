@@ -65,8 +65,9 @@ VERSIONS = {
                 "arm64": "6525146364f9dbdcd3dc0e95dbfe4094597d9e757b7ed6907d01611c5d909f88",
             },
             "13": {
+                # bionic arm64 + gcc-13 was never published in the
+                # ubuntu-toolchain-r/test PPA; arm64 is not supported here.
                 "amd64": "3abe9e8986c3e815166769b2c4c25b7a6aed1db253637e2e6ec188796d1794c8",
-                "arm64": "ec5eaac9db93aa626c8fd92d3b6ad5d72786052ce5305c51a524f6dff9e2e01c",
             },
         },
     },
