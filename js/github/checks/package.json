@@ -45,7 +45,6 @@
   "dependencies": {
     "@actions/core": "^3.0.0",
     "@actions/github": "^9.0.0",
-    "@octokit/plugin-retry": "^8.1.0",
     "@octokit/rest": "^22.0.0",
     "@octokit/types": "^16.0.0",
     "eslint": "^10.0.0"
