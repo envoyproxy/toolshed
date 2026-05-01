@@ -24,6 +24,25 @@ inputs:
     description: |
       Dont warn if token used.
 
+  retries:
+    type: number
+    default: 5
+    description: |
+      Maximum number of retry attempts for transient errors (in addition to the initial attempt).
+      Set to 0 to disable retries.
+
+  retry-base-delay-ms:
+    type: number
+    default: 1000
+    description: |
+      Base delay in milliseconds for exponential backoff between retries.
+
+  retry-max-delay-ms:
+    type: number
+    default: 15000
+    description: |
+      Maximum delay in milliseconds for a single backoff interval.
+
 runs:
   using: node24
   main: '../../js/appauth/dist/index.js'

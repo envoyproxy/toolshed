@@ -29,6 +29,7 @@ module.exports = {
   moduleNameMapper: {
     '^@octokit/auth-app$': '<rootDir>/__mocks__/@octokit/auth-app.js',
     '^@octokit/rest$': '<rootDir>/__mocks__/@octokit/rest.js',
+    '^@octokit/plugin-retry$': '<rootDir>/__mocks__/@octokit/plugin-retry.js',
     '^@actions/core$': '<rootDir>/node_modules/@actions/core/lib/core.js',
     '^@actions/github$': '<rootDir>/node_modules/@actions/github/lib/github.js',
     '^@actions/exec$': '<rootDir>/node_modules/@actions/exec/lib/exec.js',
