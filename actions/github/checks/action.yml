@@ -29,6 +29,35 @@ inputs:
       Additional text to append to every check text
     type: string
     default:
+  retries:
+    description: >
+      Maximum number of retry attempts for transient API failures (0 disables retries).
+    type: number
+    default: 5
+  retry-base-delay-ms:
+    description: >
+      Base delay in milliseconds for exponential backoff.
+    type: number
+    default: 1000
+  retry-max-delay-ms:
+    description: >
+      Maximum delay cap in milliseconds for a single backoff interval.
+    type: number
+    default: 15000
+  fail-on-partial:
+    description: >
+      When true, a partial failure (some checks succeed, some fail) causes the action to fail.
+      Defaults to false so callers can inspect the `failed` output and react accordingly.
+    type: boolean
+    default: false
+outputs:
+  checks:
+    description: >
+      JSON map of {checkId: runId} for successfully created/updated check runs.
+  failed:
+    description: >
+      JSON map of {checkId: errorMessage} for check runs that could not be created/updated.
+      Empty object ({}) when all checks succeed.
 
 runs:
   using: node24
