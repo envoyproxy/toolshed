@@ -56,7 +56,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/jq@3c6fada5be38699cba49c9883d731ebe503d0b9d
+  - uses: envoyproxy/toolshed/actions/jq@caa228fa17d3c543c384eadebbac7e60eddc426a
     id: workflows
     with:
       options: -sRc
@@ -65,7 +65,7 @@ runs:
         .
         | split("\n")
         | map(select(length > 0))
-  - uses: envoyproxy/toolshed/actions/bson@3c6fada5be38699cba49c9883d731ebe503d0b9d
+  - uses: envoyproxy/toolshed/actions/bson@caa228fa17d3c543c384eadebbac7e60eddc426a
     id: check-workflows
     env:
       GH_TOKEN: ${{ inputs.token }}
