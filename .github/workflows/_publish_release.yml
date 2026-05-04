@@ -27,9 +27,6 @@ on:
       dry-run:
         default: false
         type: boolean
-      environment:
-        default:
-        type: string
       event:
         default: ${{ github.event.workflow_run.event }}
         type: string
@@ -39,9 +36,6 @@ on:
       filter-artifacts:
         default: .
         type: string
-      id-token-write:
-        default: false
-        type: boolean
       name:
         required: true
         type: string
@@ -83,16 +77,14 @@ on:
 
 jobs:
   release:
-    environment: ${{ inputs.environment != '' && inputs.environment || null }}
     permissions:
       actions: read
-      # id-token: write is required for PyPI Trusted Publishing (OIDC).
-      # GitHub Actions does not support conditional permissions on a job,
-      # so this is set unconditionally; it is only exercised when the
-      # Publish python wheels to PyPI step actually runs.
-      id-token: write
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
+    outputs:
+      continue: ${{ steps.status.outputs.continue }}
+      run-ids: ${{ steps.status.outputs.run-ids }}
+      version: ${{ steps.status.outputs.version }}
     steps:
     - uses: envoyproxy/toolshed/actions/appauth@caa228fa17d3c543c384eadebbac7e60eddc426a
       id: appauth
@@ -164,16 +156,43 @@ jobs:
         version: ${{ inputs.version }}
         version-file: ${{ inputs.version-file }}
         workflows: ${{ inputs.workflows }}
+
+  # Publishes Python wheels to PyPI using OIDC Trusted Publishing.
+  # Runs as a separate job so that:
+  #   - The `pypi` environment is only triggered for real (non-dry-run) publishes.
+  #   - id-token: write is scoped to this job only, not all release jobs.
+  pypi_publish:
+    needs: release
+    name: PyPI publish (${{ inputs.name }})
+    # Only run when this is a Python release with all required conditions met.
+    if: >-
+      inputs.name == 'python'
+      && fromJSON(inputs.pypi-publish)
+      && fromJSON(inputs.artifacts)
+      && needs.release.outputs.version != ''
+      && ! fromJSON(needs.release.outputs.version).is_dev
+      && fromJSON(needs.release.outputs.continue)
+    # Use the `pypi` environment only for real (non-dry-run) publishes.
+    # For dry-runs, no environment is set to avoid triggering deployment events.
+    # i.e. set `pypi` when neither dry-run nor pypi-dry-run is set.
+    environment: ${{ (!fromJSON(inputs.dry-run) && !fromJSON(inputs.pypi-dry-run)) && 'pypi' || null }}
+    permissions:
+      actions: read
+      id-token: write
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Download Python artifacts
+      uses: envoyproxy/toolshed/actions/github/release/artifacts@e09fde876d33eacd9a81c960bc152ca5e3e7cddc
+      with:
+        dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
+        filter-artifacts: ${{ inputs.filter-artifacts }}
+        run-ids: ${{ needs.release.outputs.run-ids }}
+        publish-directory: artifacts/publish
+        template-artifacts: ${{ inputs.template-artifacts }}
+        workflows: ${{ inputs.artifact-workflows }}
     - name: Publish python wheels to PyPI
-      if: >-
-        inputs.name == 'python'
-        && fromJSON(inputs.pypi-publish)
-        && fromJSON(inputs.artifacts)
-        && steps.status.outputs.version != ''
-        && ! fromJSON(steps.status.outputs.version).is_dev
-        && fromJSON(steps.status.outputs.continue)
       uses: envoyproxy/toolshed/actions/python/release/publish@e09fde876d33eacd9a81c960bc152ca5e3e7cddc
       with:
-        dry-run: ${{ inputs.dry-run || inputs.pypi-dry-run }}
+        dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
         packages-dir: artifacts/publish
         repository-url: ${{ inputs.pypi-repository-url }}

@@ -66,6 +66,8 @@ outputs:
     value: ${{ steps.status.outputs.continue }}
   result:
     value: ${{ steps.release.outputs.output }}
+  run-ids:
+    value: ${{ steps.status.outputs.run-ids }}
   version:
     value: ${{ steps.status.outputs.version }}
 
