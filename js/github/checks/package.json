@@ -45,8 +45,8 @@
     "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
-    "@actions/core": "^3.0.0",
-    "@actions/github": "^9.0.0",
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
     "@envoy-toolshed/utils": "file:../../utils",
     "@octokit/rest": "^22.0.0",
     "@octokit/types": "^16.0.0",
