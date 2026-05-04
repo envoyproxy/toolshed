@@ -142,7 +142,7 @@ jobs:
           split("\n") | first
 
     - name: Publish the release
-      uses: actions/github/release
+      uses: ./actions/github/release
       id: status
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
