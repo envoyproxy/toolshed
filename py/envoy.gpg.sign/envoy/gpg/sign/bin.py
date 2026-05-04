@@ -17,8 +17,8 @@ class BinarySigningUtil(DirectorySigningUtil):
     distribution, with only one distribution listed.
 
     this extracts the `.changes` files to -> per-distro
-    `filename.distro.changes`, and removes the original, before signing the
-    files.
+    `filename.distro.changes`, and removes the original, before signing
+    the files.
     """
 
     _package_type = "bin"

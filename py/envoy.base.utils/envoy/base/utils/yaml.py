@@ -6,6 +6,7 @@ import yaml as _yaml
 
 class IgnoredKey(_yaml.YAMLObject):
     """Python support type for Envoy's config !ignore tag."""
+
     yaml_tag = '!ignore'
 
     @classmethod

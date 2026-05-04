@@ -45,6 +45,7 @@ UPSTREAM_EXTENSION_CATEGORY = "envoy.filters.http.upstream"
 @abstracts.implementer(interface.IExtensionsCheck)
 class AExtensionsCheck(abstract.ACodeCheck, metaclass=abstracts.Abstraction):
     """Extensions check."""
+
     _owners_min_default: int = OWNERS_MIN_DEFAULT
 
     def __init__(

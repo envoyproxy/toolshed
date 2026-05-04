@@ -37,6 +37,7 @@ AssetTypesDict = Dict[str, Pattern[str]]
 
 class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
     """Base class for Github release assets pusher/fetcher."""
+
     _concurrency = 4
 
     def __init__(

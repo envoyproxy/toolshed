@@ -35,7 +35,6 @@ def maybe_awaitable(result: Any) -> Awaitable:
 
     ```
     """
-
     return (
         result
         if inspect.iscoroutine(result)

@@ -19,6 +19,7 @@ class Checker(runner.Runner):
     Check methods should call the `self.warn`, `self.error` or
     `self.succeed` depending upon the outcome of the checks.
     """
+
     _active_check = ""
     checks: tuple[str, ...] = ()
     _preloader: asyncio.Task | None = None

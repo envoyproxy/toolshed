@@ -2,7 +2,6 @@
 
 def test_patches_fixture(testdir):
     """Make sure that pytest accepts our fixture."""
-
     # create a temporary pytest test module
     testdir.makepyfile("""
         def test_sth(patches):

@@ -86,6 +86,7 @@ class AGithubRelease(GithubRepoEntity, metaclass=abstracts.Abstraction):
 @abstracts.implementer(interface.IGithubReleaseAssets)
 class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
     """Base class for Github release assets pusher/fetcher."""
+
     _concurrency = 4
 
     def __init__(

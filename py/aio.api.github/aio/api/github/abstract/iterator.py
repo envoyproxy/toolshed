@@ -83,7 +83,6 @@ class AGithubIterator(AsyncIterable[T], metaclass=abstracts.Abstraction):
             self,
             response: tuple[int, Mapping[str, str], bytes]) -> int:
         """Get total count from the headers or data."""
-
         (data,
          self.api.rate_limit,
          more) = gidgethub.sansio.decipher_response(*response)

@@ -123,17 +123,17 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
     """A filesystem directory, with an associated fileset, and tools for
     finding files.
 
-    The required `path` argument should be the path to an existing filesystem
-    directory.
+    The required `path` argument should be the path to an existing
+    filesystem directory.
 
     The `exclude` and `exclude_dirs` parameters are passed to the `grep`
     command as `--exclude` and `--exclude-dir` args respectively.
 
-    You can specify inclusive and exclusive regex matchers with `path_matcher`
-    and `exclude_matcher`.
+    You can specify inclusive and exclusive regex matchers with
+    `path_matcher` and `exclude_matcher`.
 
-    By default, only text files (from grep/git grep pov) will be searched,
-    you can override this by setting `text_only` to `False`.
+    By default, only text files (from grep/git grep pov) will be
+    searched, you can override this by setting `text_only` to `False`.
     """
 
     def __init__(

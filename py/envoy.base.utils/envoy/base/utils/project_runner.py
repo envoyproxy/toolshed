@@ -22,19 +22,19 @@ ENVOY_DOCKER_IMAGE = (
     "https://hub.docker.com/r/envoyproxy/envoy/tags?page=1&name=")
 ENVOY_DOCS = "https://www.envoyproxy.io/docs/envoy"
 ENVOY_REPO = "https://github.com/envoyproxy/envoy"
+_NOTIFY_PUBLISH = """
+Repo published{change[publish][dry_run]}: {change[publish][url]}\n
+{change[publish][body]}
+"""
 NOTIFY_MSGS: frozendict = frozendict(
     release=(
         "Release created ({change[release][version]}): "
         "{change[release][date]}"),
     dev="Repo set to dev ({change[dev][version]})",
     sync="Repo synced",
-    publish="""
-Repo published{change[publish][dry_run]}: {change[publish][url]}\n
-{change[publish][body]}
-""",
+    publish=_NOTIFY_PUBLISH,
     trigger="Workflow ({change[trigger][workflow]}) triggered")
-COMMIT_MSGS: frozendict = frozendict(
-    release="""
+_COMMIT_RELEASE = """
 repo: Release {version_string}
 
 {change[release][message]}
@@ -47,7 +47,9 @@ repo: Release {version_string}
 **Full changelog**:
     {envoy_repo}/compare/{previous_release_version}...{version_string}
 
-""",
+"""
+COMMIT_MSGS: frozendict = frozendict(
+    release=_COMMIT_RELEASE,
     dev="repo: Dev {version_string}",
     sync="repo: Sync version histories")
 
