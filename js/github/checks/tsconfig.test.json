@@ -4,6 +4,7 @@
     "ignoreDeprecations": "6.0",
     "module": "commonjs",
     "moduleResolution": "node",
+    "rootDir": ".",
     "types": ["node", "jest"]
   },
   "references": [{"path": "../../utils"}]

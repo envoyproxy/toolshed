@@ -18,6 +18,7 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
+      diagnostics: {ignoreCodes: [5011, 5107]},
     }],
     '^.+\\.(js|jsx)$': ['ts-jest', {
       tsconfig: {
