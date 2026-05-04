@@ -182,6 +182,16 @@ $RECYCLE.BIN/
 !js/**/dist
 !actions/github/mutex/lib
 
+# TypeScript composite-build artifacts
+*.tsbuildinfo
+*.d.ts.map
+
+# Generated output from js/utils (built on demand by consumers)
+js/utils/**/*.js
+js/utils/**/*.d.ts
+!js/utils/**/*.config.js
+!js/utils/**/jest.config.js
+
 # Bazel
 /bazel-*
 !/bazel-registry/
