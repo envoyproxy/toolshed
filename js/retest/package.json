@@ -20,8 +20,8 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit --skipLibCheck && ncc build retest.ts -o dist -m",
-    "test": "tsc --noEmit --skipLibCheck --project tsconfig.test.json && jest",
+    "build": "tsc --noEmit && ncc build retest.ts -o dist -m",
+    "test": "tsc --noEmit --project tsconfig.test.json && jest",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix"
   },

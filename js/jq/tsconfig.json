@@ -20,5 +20,5 @@
       "**/*.ts",
       "**/modules/*.jq"
   ],
-  "exclude": ["node_modules", "**/__tests__/**", "**/*.test.ts"]
+  "exclude": ["node_modules", "**/*.test.ts"]
 }
