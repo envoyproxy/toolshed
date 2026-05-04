@@ -1,9 +1,13 @@
 {
   "compilerOptions": {
-    "module": "ES2022",
+    "composite": true,
+    "declaration": true,
+    "module": "commonjs",
     "target": "ES2022",
-    "lib": ["ES2022"],
-    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "moduleResolution": "node",
+    "rootDir": ".",
+    "outDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -16,6 +20,5 @@
     "resolveJsonModule": true
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules"],
-  "references": [{"path": "../../utils"}]
+  "exclude": ["node_modules"]
 }

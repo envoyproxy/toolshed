@@ -1,0 +1,21 @@
+{
+  "name": "@envoy-toolshed/utils",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared utilities for envoyproxy/toolshed JS actions",
+  "license": "Apache-2.0",
+  "main": "retry/index.js",
+  "types": "retry/index.d.ts",
+  "exports": {
+    "./retry": {
+      "types": "./retry/index.d.ts",
+      "default": "./retry/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.2"
+  }
+}
