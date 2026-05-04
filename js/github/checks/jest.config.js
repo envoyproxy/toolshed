@@ -16,15 +16,8 @@ module.exports = {
   testMatch: ['**/*.test.ts'],
   setupFiles: ['<rootDir>/jest.setup.js'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
+    '^.+\\.[tj]sx?$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
-      diagnostics: {ignoreCodes: [5011, 5107]},
-    }],
-    '^.+\\.(js|jsx)$': ['ts-jest', {
-      tsconfig: {
-        allowJs: true,
-        module: 'commonjs',
-      },
     }],
   },
   moduleNameMapper: {
