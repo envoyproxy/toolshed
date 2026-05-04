@@ -15,14 +15,8 @@ module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
+    '^.+\\.[tj]sx?$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
-    }],
-    '^.+\\.(js|jsx)$': ['ts-jest', {
-      tsconfig: {
-        allowJs: true,
-        module: 'commonjs',
-      },
     }],
   },
   verbose: true,

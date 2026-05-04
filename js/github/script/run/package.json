@@ -19,8 +19,8 @@
   },
   "homepage": "https://github.com/envoyproxy/toolshed",
   "scripts": {
-    "build": "tsc --noEmit && ncc build main.ts -o dist -m",
-    "test": "tsc --noEmit && jest",
+    "build": "tsc --noEmit --skipLibCheck && ncc build main.ts -o dist -m",
+    "test": "tsc --noEmit --skipLibCheck --project tsconfig.test.json && jest",
     "lint": "eslint .",
     "lint-fix": "eslint . --fix"
   },
@@ -40,7 +40,7 @@
     "nock": "^14.0.0",
     "prettier": "^3.2.5",
     "ts-jest": "^29.0.0",
-    "typescript": "^5.4.2",
+    "typescript": "^6.0.0",
     "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
