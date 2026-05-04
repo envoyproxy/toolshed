@@ -22,6 +22,7 @@ class ValidatingCodeBlock(CodeBlock):
     will be skipped if SPHINX_SKIP_CONFIG_VALIDATION environment
     variable is set.
     """
+
     has_content = True
     required_arguments = CodeBlock.required_arguments
     optional_arguments = CodeBlock.optional_arguments

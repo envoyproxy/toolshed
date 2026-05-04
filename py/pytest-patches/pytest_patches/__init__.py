@@ -20,7 +20,6 @@ def _patches(*args: str, prefix: str = "") -> ContextManager[tuple]:
 
     The yields (mocks) are yielded as a tuple.
     """
-
     patched = []
     prefix = f"{prefix}." if prefix else ""
     for arg in args:

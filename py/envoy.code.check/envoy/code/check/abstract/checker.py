@@ -360,6 +360,7 @@ class ACodeChecker(
 
     async def check_runtime_guards(self) -> None:
         """Check for shellcheck issues."""
+
         async for guard, status in self.runtime_guards.status:
             if status is None:
                 self.log.info(f"Ignoring runtime guard: {guard}")

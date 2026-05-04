@@ -11,16 +11,15 @@ from .base import AsyncStream
 class Reader(AsyncStream):
     """This wraps an `AsyncBufferedReader` with a `__len__`
 
-    This is useful if you want to a pass an `AsyncBufferedReader`
-    as the body data to an `HTTP` stream, but the `HTTP` client
-    wants to send a `Content-Length` header, based on the `len()`
-    of the data.
+    This is useful if you want to a pass an `AsyncBufferedReader` as the
+    body data to an `HTTP` stream, but the `HTTP` client wants to send a
+    `Content-Length` header, based on the `len()` of the data.
 
-    As the file's size can be gleaned from the OS `stat_size`,
-    this can be set ahead of reading chunks from the file.
+    As the file's size can be gleaned from the OS `stat_size`, this can
+    be set ahead of reading chunks from the file.
 
-    This allows large file uploads to use little or no additional
-    memory while uploading with aiohttp.
+    This allows large file uploads to use little or no additional memory
+    while uploading with aiohttp.
     """
 
     def __init__(self, *args, size: Optional[int] = None, **kwargs):

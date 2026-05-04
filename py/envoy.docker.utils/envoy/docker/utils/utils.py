@@ -103,7 +103,6 @@ async def docker_client(
     asyncio.run(docker_images())
     ```
     """
-
     docker = aiodocker.Docker(url)
     try:
         yield docker

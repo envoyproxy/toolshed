@@ -89,6 +89,7 @@ class ANISTDownloader(event.AExecutive, metaclass=abstracts.Abstraction):
     @async_property
     async def downloads(self) -> AsyncIterator[str]:
         """CVE data derived from parsing NIST CVE data."""
+
         async for download in concurrent(self.downloaders):
             yield download.url
 

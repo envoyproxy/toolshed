@@ -391,8 +391,8 @@ class DistroTestImage(object):
         """Creates a dictionary of environment variables that are injected when
         the test is `exec`ed.
 
-        Defaults are added from the global test configuration
-        (ie `distrotest.yaml`), the package `ext` can be overridden by the
+        Defaults are added from the global test configuration (ie
+        `distrotest.yaml`), the package `ext` can be overridden by the
         passed in `yaml` test config file.
 
         Each var is formatted with the existing env dict, so you can
@@ -413,8 +413,8 @@ class DistroTestImage(object):
     def get_install_binary(self, package: str) -> str:
         """Get the name of the installation binary from the installable file.
 
-        For debian this will be the `.deb` file associated with the installable
-        `.changes` file.
+        For debian this will be the `.deb` file associated with the
+        installable `.changes` file.
 
         For redhat its just the `.rpm`
         """
@@ -649,14 +649,15 @@ class DistroTest(object):
     def handle_test_output(self, msg: str) -> None:
         """Handle and log stream from test container.
 
-        If the message startswith eg `[debian_buster/envoy-19` then treat the
-        message as a control message, otherwise log directly to stdout.
+        If the message startswith eg `[debian_buster/envoy-19` then
+        treat the message as a control message, otherwise log directly
+        to stdout.
 
-        If a control message contains `ERROR` then its treated as an error,
-        and the test is marked as failed
+        If a control message contains `ERROR` then its treated as an
+        error, and the test is marked as failed
 
-        If a non-control message contains `\n` then the first line is split
-        and output, and the method recurses with the remainder.
+        If a non-control message contains `\n` then the first line is
+        split and output, and the method recurses with the remainder.
         """
         if not msg.startswith(f"[{self.distro}"):
             if "\n" not in msg:

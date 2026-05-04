@@ -14,6 +14,7 @@ class PytoolingSetupKwargsRequest(SetupKwargsRequest):
 
 class PytoolingDistribution(Target):
     """Pytooling distribution."""
+
     help = "Pytooling distribution"
     alias = "toolshed_distribution"
     core_fields = PythonDistribution.core_fields
