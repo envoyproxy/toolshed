@@ -307,10 +307,8 @@ install_docker () {
     fi
     lsb_release="$(lsb_release -cs)"
     docker_key=$(add_apt_key "${APT_KEY_DOCKER}" docker)
-    k8s_key=$(add_apt_key "${APT_KEY_K8S}" k8s)
     apt_repos=(
-        "[arch=${DEB_ARCH} signed-by=${docker_key}] https://download.docker.com/linux/debian ${lsb_release} stable"
-        "[signed-by=${k8s_key}] https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/Debian_Testing/ /")
+        "[arch=${DEB_ARCH} signed-by=${docker_key}] https://download.docker.com/linux/debian ${lsb_release} stable")
     add_apt_repos "${apt_repos[@]}"
     apt-get -qq update
     apt-get -qq install -y --no-install-recommends "${DOCKER_PACKAGES[@]}"

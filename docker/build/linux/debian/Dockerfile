@@ -50,8 +50,7 @@ RUN --mount=type=tmpfs,target=/var/cache/apt \
 
 
 FROM ci-base AS docker-base
-ARG APT_KEY_K8S=https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable/Debian_Testing/Release.key \
-    APT_KEY_DOCKER=https://download.docker.com/linux/debian/gpg
+ARG APT_KEY_DOCKER=https://download.docker.com/linux/debian/gpg
 RUN --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt/lists \
     --mount=type=bind,source=/debian/fun.sh,target=/fun.sh \
