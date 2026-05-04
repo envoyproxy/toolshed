@@ -22,7 +22,6 @@ def implementer(implements):
 
     ```
     """
-
     if not isinstance(implements, (tuple, list, set)):
         implements = (implements,)
 

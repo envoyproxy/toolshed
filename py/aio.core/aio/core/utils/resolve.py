@@ -5,10 +5,12 @@ def dottedname(name, module=None):
 
     Lifted from `zope.dottedname.resolve`.
 
-    If ``module`` is None, ``name`` must be "absolute" (no leading dots).
+    If ``module`` is None, ``name`` must be "absolute" (no leading
+    dots).
 
-    If ``module`` is not None, and ``name`` is "relative" (has leading dots),
-    the object will be found by navigating relative to ``module``.
+    If ``module`` is not None, and ``name`` is "relative" (has leading
+    dots), the object will be found by navigating relative to
+    ``module``.
 
     Returns the object, if found.  If not, propagates the error.
     """

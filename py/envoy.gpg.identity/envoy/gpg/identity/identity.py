@@ -160,8 +160,8 @@ class GPGIdentity(object):
     def match(self, key: dict) -> Optional[dict]:
         """Match a signing key.
 
-        The key is found either by matching provided name/email
-        or the first available private key
+        The key is found either by matching provided name/email or the
+        first available private key
 
         the matching `uid` (or first) is added as `uid` to the dict
         """

@@ -40,14 +40,13 @@ class Gofmt(_subprocess.ASubprocessHandler):
         """Handle response for `gofmt -d`.
 
         As `gofmt` is called with multiple files, we need to parse the
-        diff line-by-line to match the diff content with the file that has
-        generated it.
+        diff line-by-line to match the diff content with the file that
+        has generated it.
 
         Returns the parsed or provided `filename`. If this is empty, or
-        doesnt match the files that we called `gofmt` with then something has
-        gone wrong.
+        doesnt match the files that we called `gofmt` with then
+        something has gone wrong.
         """
-
         result: typing.ProblemDict = dict()
         if not response.stdout:
             return result
