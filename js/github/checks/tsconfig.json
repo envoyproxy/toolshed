@@ -17,6 +17,6 @@
     "types": ["node"]
   },
   "include": ["**/*.ts"],
-  "exclude": ["node_modules", "**/__tests__/**", "**/*.test.ts"],
+  "exclude": ["node_modules", "**/*.test.ts"],
   "references": [{"path": "../../utils"}]
 }
