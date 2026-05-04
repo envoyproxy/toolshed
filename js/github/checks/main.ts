@@ -2,7 +2,7 @@ import * as core from '@actions/core'
 import * as github from '@actions/github'
 import type {GitHub} from '@actions/github/lib/utils'
 import type {RestEndpointMethodTypes} from '@octokit/rest'
-import {withRetry, parseIntInput, type RetryOptions} from '../../_shared/retry'
+import {withRetry, parseIntInput, type RetryOptions} from '@envoy-toolshed/utils/retry'
 
 type ChecksCreateParams = RestEndpointMethodTypes['checks']['create']['parameters']
 type ChecksCreateResponse = RestEndpointMethodTypes['checks']['create']['response']
