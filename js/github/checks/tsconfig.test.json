@@ -1,8 +1,12 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "allowJs": true,
+    "ignoreDeprecations": "6.0",
+    "isolatedModules": true,
     "module": "commonjs",
     "moduleResolution": "node",
+    "rootDir": ".",
     "types": ["node", "jest"]
   },
   "references": [{"path": "../../utils"}]
