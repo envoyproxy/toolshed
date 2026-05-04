@@ -41,11 +41,11 @@
     "nock": "^14.0.0",
     "prettier": "^3.2.5",
     "ts-jest": "^29.0.0",
-    "typescript": "^5.4.2",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.0.0"
   },
   "dependencies": {
-    "@actions/core": "^3.0.0",
+    "@actions/core": "^3.0.1",
     "@await/spawn": "^9.0.0",
     "js-yaml": "^4.1.1",
     "tmp": "^0.2.4"
