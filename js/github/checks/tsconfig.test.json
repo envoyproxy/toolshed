@@ -3,6 +3,8 @@
   "compilerOptions": {
     "module": "commonjs",
     "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "types": ["node", "jest"]
-  }
+  },
+  "references": [{ "path": "../../_shared" }]
 }

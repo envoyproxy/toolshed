@@ -1,8 +1,12 @@
 {
   "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
     "module": "ES2022",
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
@@ -13,9 +17,7 @@
     "noImplicitAny": true,
     "removeComments": false,
     "preserveConstEnums": true,
-    "resolveJsonModule": true,
-    "types": ["node", "jest"]
+    "resolveJsonModule": true
   },
-  "include": ["**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["**/*.ts"]
 }

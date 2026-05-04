@@ -4,6 +4,14 @@ module.exports = {
     testEnvironment: 'node',
     testMatch: ['**/*.test.ts'],
     testRunner: 'jest-circus/runner',
+    globals: {
+      'ts-jest': {
+        tsconfig: 'tsconfig.test.json',
+        diagnostics: {
+          ignoreCodes: [5107],
+        },
+      },
+    },
     transform: {
       '^.+\\.(ts|tsx)$': ['ts-jest', {
         tsconfig: 'tsconfig.test.json',

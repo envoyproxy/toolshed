@@ -14,6 +14,14 @@ module.exports = {
   moduleFileExtensions: ['js', 'ts'],
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts'],
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.test.json',
+      diagnostics: {
+        ignoreCodes: [5011, 5107],
+      },
+    },
+  },
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',

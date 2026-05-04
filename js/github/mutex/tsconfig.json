@@ -14,7 +14,8 @@
     "noImplicitAny": true,
     "removeComments": false,
     "preserveConstEnums": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["node", "jest"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules", "**/*.test.ts"]
