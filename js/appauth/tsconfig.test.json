@@ -7,5 +7,5 @@
     "rootDir": ".",
     "types": ["node", "jest"]
   },
-  "references": [{ "path": "../_shared" }]
+  "references": [{ "path": "../utils" }]
 }

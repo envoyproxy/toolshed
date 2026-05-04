@@ -2,7 +2,7 @@ import {Octokit} from '@octokit/rest'
 import * as core from '@actions/core'
 import type {Endpoints} from '@octokit/types'
 import {createAppAuth} from '@octokit/auth-app'
-import {withRetry, parseIntInput, type RetryOptions} from '../_shared/retry'
+import {withRetry, parseIntInput, type RetryOptions} from '../utils/retry'
 
 type listInstallationsResponse = Endpoints['GET /app/installations']['response']
 

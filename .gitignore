@@ -182,6 +182,11 @@ $RECYCLE.BIN/
 !js/**/dist
 !actions/github/mutex/lib
 
+# TypeScript composite-build artifacts
+*.tsbuildinfo
+*.d.ts.map
+js/utils/**/*.d.ts
+
 # Bazel
 /bazel-*
 !/bazel-registry/

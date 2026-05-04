@@ -18,5 +18,5 @@
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"],
-  "references": [{ "path": "../_shared" }]
+  "references": [{ "path": "../utils" }]
 }

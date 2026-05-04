@@ -14,9 +14,10 @@
     "removeComments": false,
     "preserveConstEnums": true,
     "resolveJsonModule": true,
+    "rootDir": "../../",
     "types": ["node", "jest"]
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"],
-  "references": [{ "path": "../../_shared" }]
+  "references": [{ "path": "../../utils" }]
 }

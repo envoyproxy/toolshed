@@ -6,5 +6,5 @@
     "ignoreDeprecations": "6.0",
     "types": ["node", "jest"]
   },
-  "references": [{ "path": "../../_shared" }]
+  "references": [{ "path": "../../utils" }]
 }
