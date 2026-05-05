@@ -134,7 +134,7 @@ jobs:
           split("\n") | first
 
     - name: Publish the release
-      uses: envoyproxy/toolshed/actions/github/release@e09fde876d33eacd9a81c960bc152ca5e3e7cddc
+      uses: envoyproxy/toolshed/actions/github/release@caa228fa17d3c543c384eadebbac7e60eddc426a
       id: status
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
@@ -182,7 +182,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Download Python artifacts
-      uses: envoyproxy/toolshed/actions/github/release/artifacts@e09fde876d33eacd9a81c960bc152ca5e3e7cddc
+      uses: envoyproxy/toolshed/actions/github/release/artifacts@caa228fa17d3c543c384eadebbac7e60eddc426a
       with:
         dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
         filter-artifacts: ${{ inputs.filter-artifacts }}
@@ -191,7 +191,7 @@ jobs:
         template-artifacts: ${{ inputs.template-artifacts }}
         workflows: ${{ inputs.artifact-workflows }}
     - name: Publish python wheels to PyPI
-      uses: envoyproxy/toolshed/actions/python/release/publish@e09fde876d33eacd9a81c960bc152ca5e3e7cddc
+      uses: envoyproxy/toolshed/actions/python/release/publish@caa228fa17d3c543c384eadebbac7e60eddc426a
       with:
         dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
         packages-dir: artifacts/publish
