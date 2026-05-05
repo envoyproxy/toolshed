@@ -31,8 +31,8 @@
     "@eslint/js": "^10.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.2",
-    "@typescript-eslint/eslint-plugin": "^8.55.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
     "@vercel/ncc": "^0.38.1",
     "esbuild": "^0.28.0",
     "eslint": "^10.0.0",
@@ -44,7 +44,7 @@
     "prettier": "^3.2.5",
     "ts-jest": "^29.0.0",
     "typescript": "^6.0.0",
-    "typescript-eslint": "^8.0.0"
+    "typescript-eslint": "^8.59.2"
   },
   "dependencies": {
     "@actions/core": "^3.0.0",
