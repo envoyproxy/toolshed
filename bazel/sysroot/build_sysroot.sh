@@ -249,27 +249,80 @@ install_libstdcc () {
     fi
     echo ""
     echo "Step 4: Installing libstdc++..."
-    # Fetch the ubuntu-toolchain-r PPA signing key using a temporary GNUPGHOME
-    # so we don't pollute the host keyring, then install it into the sysroot's
-    # trusted.gpg.d directory for apt's signed-by mechanism.
-    local ppa_key_id='1E9377A2BA9EF27F'
-    local tmp_gnupghome
-    tmp_gnupghome=$(mktemp -d)
+
+    local ppa_url="https://api.launchpad.net/1.0/~ubuntu-toolchain-r/+archive/ubuntu/test"
+    local distro_arch_series="https://api.launchpad.net/1.0/ubuntu/${PPA_TOOLCHAIN}/${ARCH}"
+    local tmp_dir
+    tmp_dir=$(mktemp -d)
     # shellcheck disable=SC2064
-    trap "rm -rf '$tmp_gnupghome'" EXIT
-    sudo mkdir -p "$WORK_DIR/etc/apt/trusted.gpg.d"
-    GNUPGHOME="$tmp_gnupghome" retry 3 10 gpg \
-        --keyserver keyserver.ubuntu.com \
-        --recv-keys "$ppa_key_id"
-    GNUPGHOME="$tmp_gnupghome" gpg --export "$ppa_key_id" \
-        | sudo install -m 0644 -o root -g root /dev/stdin \
-            "$WORK_DIR/etc/apt/trusted.gpg.d/ubuntu-toolchain-r.gpg"
-    rm -rf "$tmp_gnupghome"
+    trap "rm -rf '$tmp_dir'" EXIT
+
+    # Install the full dep closure in dependency order:
+    # gcc-N-base (base runtime), libstdc++6 (runtime), libstdc++-N-dev (dev headers+static libs)
+    local packages=(
+        "gcc-${STDCC_VERSION}-base"
+        "libstdc++6"
+        "libstdc++-${STDCC_VERSION}-dev"
+    )
+
+    for pkg in "${packages[@]}"; do
+        echo "  Resolving ${pkg} from ubuntu-toolchain-r/test (${PPA_TOOLCHAIN}/${ARCH})..."
+        local meta_file="${tmp_dir}/${pkg}.json"
+        # String params must be JSON-quoted (the Launchpad API requires it; without
+        # quotes the API silently returns total_size:0). Booleans are not quoted.
+        # --data-urlencode URL-encodes the quotes as part of the value; the server
+        # decodes them back, so the API receives e.g. binary_name="libstdc++-13-dev".
+        retry 5 10 curl -sG "$ppa_url" \
+            --data-urlencode "ws.op=getPublishedBinaries" \
+            --data-urlencode "binary_name=\"${pkg}\"" \
+            --data-urlencode "distro_arch_series=${distro_arch_series}" \
+            --data-urlencode "exact_match=true" \
+            --data-urlencode "status=\"Published\"" \
+            --data-urlencode "order_by_date=true" \
+            -o "$meta_file"
+
+        local self_link pkg_version
+        self_link=$(jq -r '.entries[0].self_link' "$meta_file")
+        pkg_version=$(jq -r '.entries[0].binary_package_version' "$meta_file")
+
+        if [[ -z "$self_link" ]] || [[ "$self_link" == "null" ]]; then
+            echo "Error: Could not find published binary for ${pkg}"
+            echo "API response:"
+            cat "$meta_file"
+            exit 1
+        fi
+
+        echo "  Found ${pkg} ${pkg_version}"
+
+        # Resolve the direct download URL via the Launchpad librarian API
+        local url_file="${tmp_dir}/${pkg}.url"
+        retry 5 10 curl -sG "${self_link}" \
+            --data-urlencode "ws.op=getDownloadUrl" \
+            -o "$url_file"
+        local download_url
+        download_url=$(jq -r '.' "$url_file")
+
+        if [[ -z "$download_url" ]] || [[ "$download_url" == "null" ]]; then
+            echo "Error: Could not get download URL for ${pkg}"
+            exit 1
+        fi
+
+        echo "  Downloading ${download_url}"
+        local deb_file="${tmp_dir}/${pkg}_${pkg_version}_${ARCH}.deb"
+        retry 5 10 curl -sL -o "$deb_file" "$download_url"
+
+        # Log the Depends field of the -dev package so dep-closure changes are visible
+        if [[ "$pkg" == "libstdc++-${STDCC_VERSION}-dev" ]]; then
+            echo "  Depends: $(dpkg-deb -f "$deb_file" Depends)"
+        fi
+
+        # Extract .deb contents directly into the sysroot (no apt/chroot needed)
+        sudo dpkg -x "$deb_file" "$WORK_DIR"
+        echo "  Installed ${pkg} ${pkg_version}"
+    done
+
+    rm -rf "$tmp_dir"
     trap - EXIT
-    echo "deb [signed-by=/etc/apt/trusted.gpg.d/ubuntu-toolchain-r.gpg] http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
-        | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
-    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
 }
 
 cleanup_sysroot () {
