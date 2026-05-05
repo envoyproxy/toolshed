@@ -21,7 +21,7 @@ jobs:
       run: ${{ steps.filter.outputs.run }}
       modules: ${{ steps.modules.outputs.output }}
     steps:
-    - uses: envoyproxy/toolshed/actions/github/should-run@caa228fa17d3c543c384eadebbac7e60eddc426a
+    - uses: envoyproxy/toolshed/actions/github/should-run@094549c1d217c1d0b28b0570431c71e8602dc0f0
       id: filter
       with:
         config: |
@@ -31,7 +31,7 @@ jobs:
           - .github/workflows/_bazel_registry.yml
           - .github/workflows/registry_integrity.sh
     - name: Find modules
-      uses: envoyproxy/toolshed/actions/bson@caa228fa17d3c543c384eadebbac7e60eddc426a
+      uses: envoyproxy/toolshed/actions/bson@094549c1d217c1d0b28b0570431c71e8602dc0f0
       id: modules
       with:
         input: |
