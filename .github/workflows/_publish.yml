@@ -159,6 +159,7 @@ jobs:
           filter-artifacts: >-
             ${{ inputs.python-filter-artifacts
                 || 'select(($key | contains(".dev") | not) and ($key | test("\\.whl$|\\.tar\\.gz$")))' }}
+          prepare-dev: .github/workflows/prepare_python_dev.sh
           pypi-publish: true
           template-artifacts: |
             \($name)-{artifacts,source}*

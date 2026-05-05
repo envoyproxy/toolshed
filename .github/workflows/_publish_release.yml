@@ -114,6 +114,7 @@ jobs:
     - if: inputs.dry-run
       run: |
         cp -a temprepo/.github/workflows/prepare_bazel_dev.sh .github/workflows
+        cp -a temprepo/.github/workflows/prepare_python_dev.sh .github/workflows
         rm -rf temprepo
     - name: Initialize GPG
       id: gpg
