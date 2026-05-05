@@ -62,10 +62,21 @@ runs:
         echo '```'
       } >> "${GITHUB_STEP_SUMMARY}"
 
+  # Bypass pypa/gh-action-pypi-publish's composite-action trampoline, which
+  # uses `github.action_repository`/`github.action_ref` to compute the Docker
+  # image to run. Those context values are not reliably populated when the
+  # action is invoked from inside another composite action (see
+  # actions/runner#2473 and pypa/gh-action-pypi-publish's create-docker-action.py),
+  # which causes it to fall back to `ghcr.io/${{ github.repository }}:${{ github.ref_name }}`
+  # and fail with "denied" from ghcr.io.
+  #
+  # Instead, reference the upstream pre-built image directly. The tag below
+  # is the commit SHA of pypa/gh-action-pypi-publish v1.14.0
+  # (https://github.com/pypa/gh-action-pypi-publish/releases/tag/v1.14.0).
   - name: Publish to PyPI
     if: >-
       ! fromJSON(inputs.dry-run)
-    uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b  # v1.14.0
+    uses: docker://ghcr.io/pypa/gh-action-pypi-publish:cef221092ed1bacb1cc03d23a2d87d1d172e277b
     with:
       attestations: ${{ inputs.attestations }}
       packages-dir: ${{ steps.stage.outputs.stage-dir }}
