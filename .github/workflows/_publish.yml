@@ -109,7 +109,9 @@ jobs:
       pypi-publish: ${{ matrix.pypi-publish || false }}
       pypi-repository-url: ${{ inputs.pypi-repository-url }}
       sha: ${{ inputs.sha }}
-      template-artifacts: ${{ matrix.template-artifacts }}
+      template-artifacts: >-
+        ${{ matrix.template-artifacts
+            || '\($name)-{artifacts,source}*' }}
       title: ${{ inputs.title }}
       version: ${{ matrix.version }}
       version-file: ${{ matrix.version-file }}
@@ -156,7 +158,9 @@ jobs:
           artifacts: true
           filter-artifacts: >-
             ${{ inputs.python-filter-artifacts
-                || 'select($key | contains(".dev") | not)' }}
+                || 'select(($key | contains(".dev") | not) and ($key | test("\\.whl$|\\.tar\\.gz$")))' }}
           pypi-publish: true
+          template-artifacts: |
+            \($name)-{artifacts,source}*
           version: ${{ inputs.python-version }}
           version-file: ${{ inputs.python-version-file }}
