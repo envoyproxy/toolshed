@@ -259,9 +259,11 @@ install_libstdcc () {
     trap "rm -rf '$tmp_dir'" EXIT
 
     # Install the full dep closure in dependency order:
-    # gcc-N-base (base runtime), libstdc++6 (runtime), libstdc++-N-dev (dev headers+static libs)
+    # gcc-N-base (base runtime), libgcc-N-dev (crt objects, libgcc.a, libgcc_s.so),
+    # libstdc++6 (runtime), libstdc++-N-dev (dev headers+static libs)
     local packages=(
         "gcc-${STDCC_VERSION}-base"
+        "libgcc-${STDCC_VERSION}-dev"
         "libstdc++6"
         "libstdc++-${STDCC_VERSION}-dev"
     )
