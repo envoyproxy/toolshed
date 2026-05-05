@@ -251,7 +251,6 @@ install_libstdcc () {
     echo "Step 4: Installing libstdc++..."
 
     local ppa_url="https://api.launchpad.net/1.0/~ubuntu-toolchain-r/+archive/ubuntu/test"
-    local ppa_web_url="https://launchpad.net/~ubuntu-toolchain-r/+archive/ubuntu/test"
     local distro_arch_series="https://api.launchpad.net/1.0/ubuntu/${PPA_TOOLCHAIN}/${ARCH}"
     local tmp_dir
     tmp_dir=$(mktemp -d)
@@ -309,16 +308,21 @@ install_libstdcc () {
 
         echo "  Found ${pkg} ${pkg_version}"
 
-        # Resolve the librarian URL via the +files/<filename> HTTP redirect.
-        # getDownloadUrl is not a public op on BinaryPackagePublishingHistory;
-        # the correct approach is the +files/<filename> redirect on the archive URL.
-        # -I does HEAD (no body), -L follows the redirect, -w prints the final URL.
-        local deb_filename="${pkg}_${pkg_version}_${ARCH}.deb"
+        # Resolve the librarian URL via binaryFileUrls (public Launchpad API op).
+        # This returns a JSON array of direct librarian URLs — no redirects needed.
+        local urls_file="${tmp_dir}/${pkg}.urls.json"
+        retry 5 10 curl -fsSG "$self_link" \
+            --data-urlencode "ws.op=binaryFileUrls" \
+            -o "$urls_file"
+
         local download_url
-        download_url=$(retry 5 10 curl -fsSIL \
-            -w '%{url_effective}' \
-            -o /dev/null \
-            "${ppa_web_url}/+files/${deb_filename}")
+        download_url=$(jq -r '.[0] // empty' "$urls_file")
+
+        if [[ -z "$download_url" ]]; then
+            echo "Error: binaryFileUrls returned no URL for ${pkg}" >&2
+            head -c 2048 "$urls_file" >&2
+            exit 1
+        fi
 
         if [[ "$download_url" != https://launchpadlibrarian.net/* ]]; then
             echo "Error: Unexpected librarian URL for ${pkg}: ${download_url}" >&2
@@ -326,6 +330,7 @@ install_libstdcc () {
         fi
 
         echo "  Downloading ${download_url}"
+        local deb_filename="${pkg}_${pkg_version}_${ARCH}.deb"
         local deb_file="${tmp_dir}/${deb_filename}"
         retry 5 10 curl -fsSL -o "$deb_file" "$download_url"
 
