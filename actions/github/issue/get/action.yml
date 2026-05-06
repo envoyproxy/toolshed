@@ -60,7 +60,7 @@ runs:
     shell: bash
     env:
       GH_TOKEN: "${{ inputs.GITHUB_TOKEN }}"
-  - uses: envoyproxy/toolshed/actions/jq@cd7e33766ba4cd8df671400b790846012ba8b30a
+  - uses: envoyproxy/toolshed/actions/jq@7516130038dd57150c2f041d59143bd8c06cd4a5
     id: issue-id
     with:
       input: ${{ steps.issue-query.outputs.result }}
