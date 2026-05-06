@@ -76,8 +76,16 @@ runs:
   - name: Publish to PyPI
     if: >-
       ! fromJSON(inputs.dry-run)
-    uses: docker://ghcr.io/pypa/gh-action-pypi-publish:cef221092ed1bacb1cc03d23a2d87d1d172e277b
+    uses: >-
+      docker://ghcr.io/pypa/gh-action-pypi-publish:cef221092ed1bacb1cc03d23a2d87d1d172e277b@sha256:72bce99a396e7ed0635f3fcc0f0a7052314a68c00c1999f5d0f9454b18cd2e40
     with:
+      # user=__token__ + empty password activates OIDC Trusted Publishing in
+      # twine-upload.sh (line 77). These match pypa/gh-action-pypi-publish's
+      # action.yml defaults but must be explicit here because we bypass the
+      # composite wrapper via docker://, which skips input defaulting.
+      user: __token__
+      password: ""
+      verbose: "true"
       attestations: ${{ inputs.attestations }}
       packages-dir: ${{ steps.stage.outputs.stage-dir }}
       repository-url: ${{ inputs.repository-url }}
