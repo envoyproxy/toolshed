@@ -86,7 +86,7 @@ jobs:
       run-ids: ${{ steps.status.outputs.run-ids }}
       version: ${{ steps.status.outputs.version }}
     steps:
-    - uses: envoyproxy/toolshed/actions/appauth@8bcd3364cc18d074528965b5222af75095dedeba
+    - uses: envoyproxy/toolshed/actions/appauth@60efe9e2e808db117d50ad5753b0ed663e5a9d8e
       id: appauth
       name: Appauth
       if: >-
@@ -97,7 +97,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/actions/github/checkout@8bcd3364cc18d074528965b5222af75095dedeba
+      uses: envoyproxy/toolshed/actions/github/checkout@60efe9e2e808db117d50ad5753b0ed663e5a9d8e
       with:
         branch: main
         committer-name: ${{ inputs.committer-name }}
@@ -120,13 +120,13 @@ jobs:
       id: gpg
       if: >-
         inputs.artifacts
-      uses: envoyproxy/toolshed/actions/gpg@8bcd3364cc18d074528965b5222af75095dedeba
+      uses: envoyproxy/toolshed/actions/gpg@60efe9e2e808db117d50ad5753b0ed663e5a9d8e
       with:
         gpg-key: ${{ ! inputs.dry-run && secrets.gpg-key || '' }}
         gpg-password: ${{ ! inputs.dry-run && secrets.gpg-password || '' }}
     - name: Release title (eg commit message)
       id: title
-      uses: envoyproxy/toolshed/actions/jq@8bcd3364cc18d074528965b5222af75095dedeba
+      uses: envoyproxy/toolshed/actions/jq@60efe9e2e808db117d50ad5753b0ed663e5a9d8e
       with:
         options: -sRr
         input: |
@@ -135,7 +135,7 @@ jobs:
           split("\n") | first
 
     - name: Publish the release
-      uses: envoyproxy/toolshed/actions/github/release@8bcd3364cc18d074528965b5222af75095dedeba
+      uses: envoyproxy/toolshed/actions/github/release@60efe9e2e808db117d50ad5753b0ed663e5a9d8e
       id: status
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
@@ -183,7 +183,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Download Python artifacts
-      uses: envoyproxy/toolshed/actions/github/release/artifacts@8bcd3364cc18d074528965b5222af75095dedeba
+      uses: envoyproxy/toolshed/actions/github/release/artifacts@60efe9e2e808db117d50ad5753b0ed663e5a9d8e
       with:
         dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
         filter-artifacts: ${{ inputs.filter-artifacts }}
@@ -192,7 +192,7 @@ jobs:
         template-artifacts: ${{ inputs.template-artifacts }}
         workflows: ${{ inputs.artifact-workflows }}
     - name: Publish python wheels to PyPI
-      uses: envoyproxy/toolshed/actions/python/release/publish@8bcd3364cc18d074528965b5222af75095dedeba
+      uses: envoyproxy/toolshed/actions/python/release/publish@60efe9e2e808db117d50ad5753b0ed663e5a9d8e
       with:
         dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
         packages-dir: artifacts/publish
