@@ -1,0 +1,56 @@
+manifests:
+# worker
+- name: envoy-build
+  tag: worker-{sha}
+  registry: docker.io/envoyproxy
+  architectures:
+  - amd64
+  - arm64
+  artifact-pattern: oci-debian-{arch}/debian-worker-{sha}-{arch}.tar
+# ci
+- name: envoy-build
+  tag: ci-{sha}
+  registry: docker.io/envoyproxy
+  architectures:
+  - amd64
+  - arm64
+  artifact-pattern: oci-debian-{arch}/debian-ci-{sha}-{arch}.tar
+# gcc
+- name: envoy-build
+  tag: gcc-{sha}
+  registry: docker.io/envoyproxy
+  architectures:
+  - amd64
+  - arm64
+  artifact-pattern: oci-debian-{arch}/debian-gcc-{sha}-{arch}.tar
+# devtools
+- name: envoy-build
+  tag: devtools-{sha}
+  registry: docker.io/envoyproxy
+  architectures:
+  - amd64
+  - arm64
+  artifact-pattern: oci-debian-{arch}/debian-devtools-{sha}-{arch}.tar
+# docker
+- name: envoy-build
+  tag: docker-{sha}
+  registry: docker.io/envoyproxy
+  architectures:
+  - amd64
+  - arm64
+  artifact-pattern: oci-debian-{arch}/debian-docker-{sha}-{arch}.tar
+# test
+- name: envoy-build
+  tag: test-{sha}
+  registry: docker.io/envoyproxy
+  architectures:
+  - amd64
+  - arm64
+  artifact-pattern: oci-debian-{arch}/debian-test-{sha}-{arch}.tar
+# mobile (amd64 only)
+- name: envoy-build
+  tag: mobile-{sha}
+  registry: docker.io/envoyproxy
+  architectures:
+  - amd64
+  artifact-pattern: oci-debian-{arch}/debian-mobile-{sha}-{arch}.tar

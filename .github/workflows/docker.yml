@@ -28,6 +28,7 @@ jobs:
           paths:
           - 'docker/build/**'
           - '.github/workflows/docker.yml'
+          - '.github/docker-manifests.yml'
 
   build:
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
@@ -104,6 +105,53 @@ jobs:
         fi
       shell: bash
 
+  push-manifests:
+    name: Push manifests (${{ github.event_name == 'pull_request' && 'dry run' || 'push' }})
+    runs-on: ubuntu-24.04
+    needs:
+    - request
+    - build
+    if: >-
+      always()
+      && github.repository_owner == 'envoyproxy'
+      && fromJSON(needs.request.outputs.run || 'false')
+      && needs.build.result == 'success'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+    - name: Get docker SHA
+      id: docker-sha
+      shell: bash
+      run: |
+        TAG_SHA=$(git log -1 --pretty=format:"%H" ./docker/build)
+        echo "sha=${TAG_SHA}" >> $GITHUB_OUTPUT
+
+    - name: Generate manifest configuration
+      id: manifest-config
+      uses: envoyproxy/toolshed/actions/jq@094549c1d217c1d0b28b0570431c71e8602dc0f0
+      with:
+        input: .github/docker-manifests.yml
+        input-format: yaml-path
+        filter: >-
+          .manifests
+          | map(. + {
+              tag: (.tag | gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}")),
+              "artifact-pattern": (.["artifact-pattern"] | gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}")),
+              "additional-tags": (if .["additional-tags"] then .["additional-tags"] | map(gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}")) else null end)
+            })
+          | {manifests: .}
+
+    - name: Collect and push OCI artifacts
+      uses: envoyproxy/toolshed/actions/oci/collector@094549c1d217c1d0b28b0570431c71e8602dc0f0
+      with:
+        manifest-config: ${{ steps.manifest-config.outputs.value }}
+        dry-run: ${{ github.event_name == 'pull_request' }}
+        dockerhub-username: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.DOCKERHUB_USERNAME || '' }}
+        dockerhub-password: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.DOCKERHUB_PASSWORD || '' }}
+
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -113,6 +161,7 @@ jobs:
     needs:
     - request
     - build
+    - push-manifests
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
