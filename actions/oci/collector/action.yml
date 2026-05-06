@@ -14,6 +14,24 @@ inputs:
     description: Path to download artifacts to
     required: false
     default: /tmp/oci
+  run-id:
+    description: |
+      Workflow run ID to download artifacts from. When unset (default),
+      artifacts are downloaded from the current workflow run.
+    required: false
+    default: ''
+  github-token:
+    description: |
+      Token for downloading artifacts from another workflow run.
+      Required when `run-id` is set.
+    required: false
+    default: ''
+  repository:
+    description: |
+      Repository the workflow run belongs to (e.g. owner/name).
+      Used together with `run-id`. Defaults to the current repository.
+    required: false
+    default: ${{ github.repository }}
   manifest-config:
     description: |
       JSON configuration for manifests to create. Format:
@@ -50,11 +68,22 @@ inputs:
 runs:
   using: composite
   steps:
-  - name: Download OCI artifacts
+  - name: Download OCI artifacts (current run)
+    if: ${{ inputs.run-id == '' }}
     uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
     with:
       pattern: ${{ inputs.artifacts-pattern }}
       path: ${{ inputs.artifacts-path }}
+
+  - name: Download OCI artifacts (cross-run)
+    if: ${{ inputs.run-id != '' }}
+    uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+    with:
+      pattern: ${{ inputs.artifacts-pattern }}
+      path: ${{ inputs.artifacts-path }}
+      run-id: ${{ inputs.run-id }}
+      github-token: ${{ inputs.github-token }}
+      repository: ${{ inputs.repository }}
 
   - name: Extract OCI archives
     shell: bash
