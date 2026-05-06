@@ -28,6 +28,8 @@ jobs:
           paths:
           - 'docker/build/**'
           - '.github/workflows/docker.yml'
+          - '.github/docker-manifests.yml'
+          - 'docker/build/VERSION.txt'
 
   build:
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}

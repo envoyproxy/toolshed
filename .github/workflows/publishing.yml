@@ -1,7 +1,7 @@
 name: Publishing CI
 
 permissions:
-  actions: read
+  contents: read
 
 on:
   pull_request:
@@ -28,12 +28,14 @@ jobs:
           - .github/workflows/_publish_release.yml
           - .github/workflows/actions.yml
           - .github/workflows/bazel.yml
+          - .github/workflows/docker.yml
           - .github/workflows/rust.yml
           - .github/workflows/publishing.yml
           - actions/python/release/publish/action.yml
           - bazel/VERSION.txt
           - BINS_VERSION.txt
           - actions/VERSION.txt
+          - docker/build/VERSION.txt
           - python/VERSION.txt
     - name: Get latest commit from main
       id: commit
@@ -57,6 +59,7 @@ jobs:
     if: fromJSON(needs.request.outputs.run || 'false')
     permissions:
       actions: read
+      contents: read
       id-token: write
     # secrets.ENVOY_GPG_SNAKEOIL_KEY_PASSWORD
     # secrets.ENVOY_GPG_SNAKEOIL_KEY
@@ -68,6 +71,7 @@ jobs:
       actions-version: ${{ matrix.actions-version }}
       bazel-version: ${{ matrix.bazel-version }}
       bins-version: ${{ matrix.bins-version }}
+      docker-version: ${{ matrix.docker-version }}
       dry-run: true
       event: ${{ matrix.event }}
       python-filter-artifacts: ${{ matrix.python-filter-artifacts }}
@@ -90,6 +94,8 @@ jobs:
         - event: push
           bins-version: 0.1.23
         - event: push
+          docker-version: 0.0.1
+        - event: push
           python-version: 0.0.23
         - event: push
           python-version: 0.0.23
@@ -101,12 +107,14 @@ jobs:
           actions-version: 0.0.123
           bazel-version: 0.2.17
           bins-version: 0.1.23
+          docker-version: 0.0.1
           python-version: 0.0.23
         # existing versions
         - event: push
           actions-version: 0.3.33
           bazel-version: 0.3.11
           bins-version: 0.1.27
+          docker-version: 0.0.1
           # not pre-existing version
           python-version: 0.0.23
         - event: push

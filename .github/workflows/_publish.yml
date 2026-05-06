@@ -1,13 +1,16 @@
 name: _publish
 
 permissions:
-  actions: read
+  contents: read
 
 on:
   workflow_call:
     secrets:
       app-id:
       app-key:
+      dockerhub-username:
+      dockerhub-password:
+      gcr-key:
       gpg-key:
       gpg-password:
 
@@ -29,6 +32,12 @@ on:
         type: string
       bins-version-file:
         default: BINS_VERSION.txt
+        type: string
+      docker-version:
+        default:
+        type: string
+      docker-version-file:
+        default: docker/build/VERSION.txt
         type: string
       committer-email:
         required: true
@@ -81,10 +90,14 @@ jobs:
   publish:
     permissions:
       actions: read
+      contents: read
       id-token: write
     secrets:
       app-id: ${{ secrets.app-id }}
       app-key: ${{ secrets.app-key }}
+      dockerhub-username: ${{ secrets.dockerhub-username }}
+      dockerhub-password: ${{ secrets.dockerhub-password }}
+      gcr-key: ${{ secrets.gcr-key }}
       gpg-key: ${{ secrets.gpg-key }}
       gpg-password: ${{ secrets.gpg-password }}
     if: >-
@@ -119,6 +132,7 @@ jobs:
       # is repeatedly triggered
       workflows: |
         Bazel CI
+        Docker CI
         Github/actions CI
         Python CI
         Rust CI
@@ -152,6 +166,14 @@ jobs:
             \($name)-artifacts*
           version: ${{ inputs.bins-version }}
           version-file: ${{ inputs.bins-version-file }}
+        - name: docker
+          artifact-workflows: |
+            Docker CI
+          artifacts: true
+          template-artifacts: |
+            oci-debian-*
+          version: ${{ inputs.docker-version }}
+          version-file: ${{ inputs.docker-version-file }}
         - name: python
           artifact-workflows: |
             Python CI
