@@ -105,6 +105,7 @@ jobs:
           actions: actions/VERSION.txt
           bins: BINS_VERSION.txt
           bazel: bazel/VERSION.txt
+          docker: docker/build/VERSION.txt
           python: py/VERSION.txt
         input-format: yaml
         options: -r
