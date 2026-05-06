@@ -1,13 +1,16 @@
 name: _publish_release
 
 permissions:
-  actions: read
+  contents: read
 
 on:
   workflow_call:
     secrets:
       app-id:
       app-key:
+      dockerhub-username:
+      dockerhub-password:
+      gcr-key:
       gpg-key:
       gpg-password:
 
@@ -197,3 +200,54 @@ jobs:
         dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
         packages-dir: artifacts/publish
         repository-url: ${{ inputs.pypi-repository-url }}
+
+  # Pushes multi-arch Docker manifests to docker.io/envoyproxy and gcr.io/envoy-ci.
+  # Runs as a separate job so that docker registry credentials are scoped to this job only.
+  docker_publish:
+    permissions:
+      actions: read
+      contents: read
+    needs: release
+    name: Docker publish (${{ inputs.name }})
+    if: >-
+      inputs.name == 'docker'
+      && fromJSON(needs.release.outputs.continue)
+      && needs.release.outputs.version != ''
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+
+    - name: Get docker SHA
+      id: docker-sha
+      shell: bash
+      run: |
+        TAG_SHA=$(git log -1 --pretty=format:"%H" ./docker/build)
+        echo "sha=${TAG_SHA}" >> $GITHUB_OUTPUT
+
+    - name: Generate manifest configuration
+      id: manifest-config
+      uses: envoyproxy/toolshed/actions/jq@e8b420485101d318335fb04472c9ed867ebd1f08
+      with:
+        input: .github/docker-manifests.yml
+        input-format: yaml-path
+        filter: >-
+          .manifests
+          | map(. + {
+              tag: (.tag | gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}")),
+              "artifact-pattern": (.["artifact-pattern"] | gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}")),
+              "additional-tags": (if .["additional-tags"] then
+              .["additional-tags"] | map(gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}"))
+              else null end)
+            })
+          | {manifests: .}
+
+    - name: Collect and push OCI artifacts
+      uses: envoyproxy/toolshed/actions/oci/collector@e8b420485101d318335fb04472c9ed867ebd1f08
+      with:
+        manifest-config: ${{ steps.manifest-config.outputs.value }}
+        run-id: ${{ fromJSON(needs.release.outputs.run-ids)['Docker CI'] }}
+        github-token: ${{ github.token }}
+        dry-run: ${{ inputs.dry-run }}
+        dockerhub-username: ${{ ! fromJSON(inputs.dry-run) && secrets.dockerhub-username || '' }}
+        dockerhub-password: ${{ ! fromJSON(inputs.dry-run) && secrets.dockerhub-password || '' }}
+        gcr-key: ${{ ! fromJSON(inputs.dry-run) && secrets.gcr-key || '' }}
