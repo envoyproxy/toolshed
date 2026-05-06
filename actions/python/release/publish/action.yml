@@ -6,7 +6,7 @@ description: >-
 inputs:
   attestations:
     type: boolean
-    default: true
+    default: false
   dry-run:
     type: boolean
     default: true
