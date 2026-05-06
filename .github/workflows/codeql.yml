@@ -40,7 +40,7 @@ jobs:
     steps:
 
 
-    - uses: envoyproxy/toolshed/actions/bind-mounts@60efe9e2e808db117d50ad5753b0ed663e5a9d8e
+    - uses: envoyproxy/toolshed/actions/bind-mounts@8f8505d33ac04eb33112f2f6ed2068aad255833a
       if: runner.os == 'Linux'
       with:
         mounts: |
