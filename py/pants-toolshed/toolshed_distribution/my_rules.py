@@ -13,6 +13,13 @@ from pants.engine.unions import UnionRule
 
 
 from . import PytoolingSetupKwargsRequest
+from toolshed_setup_cfg import (
+    parse_entry_points,
+    parse_extras_require,
+    parse_metadata,
+    parse_options,
+    parse_package_data,
+)
 
 
 class PytoolingSetupKwargsResponse:
@@ -41,23 +48,25 @@ class PytoolingSetupKwargsResponse:
     @property
     def setup_kwargs(self) -> Dict:
         kwargs = self.request.explicit_kwargs.copy()
-        for option in self.config["metadata"]:
-            if option == "long_description":
-                if self.config["metadata"][option].startswith("file:"):
-                    filepath = self.config['metadata'][
-                        option].split(':')[1].strip()
-                    kwargs[option] = pathlib.Path(
-                        f"{self.namespace}/"
-                        f"{filepath}").read_text()
-            elif option != "classifiers":
-                kwargs[option] = self.config["metadata"][option]
+        kwargs.update(parse_metadata(self.config, self.namespace))
         kwargs["version"] = self.version
-        if self.config.has_section("options.entry_points"):
-            for entry_point in self.config["options.entry_points"]:
-                kwargs["entry_points"] = kwargs.get("entry_points", {})
-                kwargs["entry_points"][entry_point] = self.config[
-                    "options.entry_points"][
-                        entry_point].strip().replace(" ", "").split("\n")
+
+        entry_points = parse_entry_points(self.config)
+        if entry_points is not None:
+            merged = kwargs.get("entry_points", {})
+            merged.update(entry_points)
+            kwargs["entry_points"] = merged
+
+        kwargs.update(parse_options(self.config, self.namespace))
+
+        extras_require = parse_extras_require(self.config)
+        if extras_require is not None:
+            kwargs["extras_require"] = extras_require
+
+        package_data = parse_package_data(self.config)
+        if package_data is not None:
+            kwargs["package_data"] = package_data
+
         return kwargs
 
     @property
