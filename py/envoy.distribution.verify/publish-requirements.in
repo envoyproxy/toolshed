@@ -1,0 +1,3 @@
+aio.run.checker>=0.5.8
+envoy.base.utils>=0.5.10
+envoy.distribution.distrotest>=0.0.12

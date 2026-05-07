@@ -1,0 +1,4 @@
+abstracts>=0.0.12
+aio.api.github>=0.2.10
+aio.core>=0.10.5
+aio.run.runner>=0.3.4

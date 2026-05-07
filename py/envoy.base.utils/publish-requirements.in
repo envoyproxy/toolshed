@@ -1,0 +1,17 @@
+abstracts>=0.0.12
+aio.core>=0.10.5
+aio.api.github>=0.2.10
+aio.run.runner>=0.3.4
+aiohttp>=3.8.1
+frozendict
+jinja2
+multidict>=6.0.2
+orjson
+packaging>=23.0
+protobuf
+python-gnupg
+pytz
+pyyaml
+trycast>=0.7.3
+yarl>=1.7.2
+zstandard

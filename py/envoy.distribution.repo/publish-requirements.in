@@ -1,0 +1,6 @@
+abstracts>=0.0.12
+aio.core>=0.10.5
+aio.run.runner>=0.3.4
+envoy.base.utils>=0.5.10
+envoy.github.abstract>=0.0.22
+envoy.github.release>=0.0.14

@@ -1,0 +1,10 @@
+abstracts>=0.0.12
+aio.core>=0.10.5
+aio.run.runner>=0.3.4
+aiofiles
+aiohttp
+envoy.base.utils>=0.5.10
+envoy.github.abstract>=0.0.22
+gidgethub
+packaging>=23.0
+verboselogs

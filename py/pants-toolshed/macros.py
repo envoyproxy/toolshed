@@ -30,25 +30,55 @@ def toolshed_package(
         setup_kwargs=None,  # Optional[Dict] = None,
         **kwargs) -> None:
     """Namespaced distribution package"""
-    dependencies = (
+
+    # Per-package, range-only requirements. These are what pants will
+    # walk transitively from the `python_distribution` and embed as the
+    # wheel's install_requires. They mirror setup.cfg's install_requires.
+    python_requirements(
+        name="publish_reqs",
+        source="publish-requirements.in",
+        resolve="publish",
+    )
+
+    # Source target deps remain whatever was passed in (tests / dev use
+    # the pinned //py/deps:reqs#* set as before).
+    library_dependencies = (
         _dep_on_myself(namespace)
         + (dependencies or []))
+
     resources(
         name="build_artefacts",
-        sources=["VERSION", "setup.cfg"])
+        sources=["VERSION", "setup.cfg", "publish-requirements.in"])
+
     python_sources(
         skip_mypy=True,
-        dependencies=dependencies,
-        **library_kwargs or {})
+        dependencies=library_dependencies,
+        **(library_kwargs or {}))
+
+    # The python_distribution depends ONLY on:
+    #   - the in-repo source target for this package (so its .py files
+    #     are bundled), AND
+    #   - the per-package publish_reqs (which become install_requires
+    #     in the wheel).
+    # It does NOT depend on the pinned //py/deps:reqs#* targets.
+    # The !{inner}:dev_deps exclusion prevents pants from walking the
+    # inner library's pinned python_requirement deps (== versions from
+    # requirements.txt) into the wheel's install_requires.
+    _inner = _dep_on_myself(namespace)[0]
     toolshed_distribution(
         name="package",
-        dependencies=dependencies,
+        dependencies=[
+            _inner,
+            f"!{_inner}:dev_deps",
+            ":publish_reqs",
+        ],
         provides=setup_py(
             name=namespace,
-            **setup_kwargs or {}),
+            **(setup_kwargs or {})),
         wheel=True,
         sdist=True,
         **kwargs)
+
     readme_snippet(
         name="package_snippet",
         artefacts=[

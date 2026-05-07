@@ -1,0 +1,7 @@
+abstracts>=0.0.12
+aio.core>=0.10.5
+aiohttp>=3.8.1
+gidgethub
+multidict>=6.0.2
+packaging>=23.0
+yarl>=1.7.2

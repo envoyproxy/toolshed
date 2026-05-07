@@ -1,0 +1,6 @@
+abstracts>=0.0.12
+aio.core>=0.10.5
+aio.run.runner>=0.2.1
+aiohttp
+gidgethub
+verboselogs

@@ -25,6 +25,7 @@ flake8 = "py/deps/flake8/flake8.lock"
 pytest = "py/deps/pytest/pytest.lock"
 mypy = "py/deps/mypy/mypy.lock"
 docformatter = "py/deps/docformatter/docformatter.lock"
+publish = "py/deps/publish/publish.lock"
 
 [test]
 use_coverage = true
