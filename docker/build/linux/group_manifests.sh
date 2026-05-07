@@ -5,7 +5,7 @@ set -eo pipefail
 IMAGE_REPOS=("envoyproxy/envoy-build" "envoyproxy/envoy-build-ubuntu")
 
 if [[ -z "$TAG_SHA" ]]; then
-    TAG_SHA="$(git log -1 --pretty=format:"%H" .)"
+    TAG_SHA="$(cat "$(dirname "$0")/../VERSION.txt")"
 fi
 
 VARIANTS=(ci worker gcc devtools docker llvm mobile test)

@@ -7,7 +7,7 @@ set -e
 IMAGE_PREFIX="${IMAGE_PREFIX:-envoyproxy/envoy-build-}"
 # Enable docker experimental
 export DOCKER_CLI_EXPERIMENTAL=enabled
-CONTAINER_SHA="${CONTAINER_SHA:-$(git log -1 --pretty=format:"%H" .)}"
+CONTAINER_SHA="${CONTAINER_SHA:-$(cat VERSION.txt)}"
 export CONTAINER_TAG="${CONTAINER_SHA}"
 IMAGE_TAGS=()
 OCI_OUTPUT_DIR="oci-output"
