@@ -1,0 +1,12 @@
+python_sources(skip_mypy=True)
+python_tests(
+    name="tests",
+    skip_mypy=True,
+    dependencies=[
+        "//py/pants-toolshed/toolshed_publish_reqs",
+        "//py/pants-toolshed/toolshed_setup_cfg",
+        "//py/deps:reqs#packaging",
+        "//py/deps:reqs#pytest",
+        "//py/deps:reqs#pytest-asyncio",
+    ],
+)
