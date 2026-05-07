@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Tuple, Type, Union
+from __future__ import annotations
 
 import abstracts
 
@@ -42,11 +42,10 @@ class Implementer(type):
         'Do something'
     """
 
-    @classmethod
+    @staticmethod
     def abstract_info(
-            cls,
-            abstract: "abstracts.Abstraction") -> Tuple[
-                str, Union[str, None], List[str]]:
+            abstract: abstracts.Abstraction) -> tuple[
+                str, str | None, list[str]]:
         """Information for a specific abstract implementation class.
 
         For given abstract class, returns:
@@ -59,7 +58,7 @@ class Implementer(type):
             raise TypeError(
                 "Implementers can only implement subclasses of "
                 f"`abstracts.Abstraction`, unrecognized: '{abstract}'")
-        methods: List[str] = []
+        methods: list[str] = []
         for method in getattr(abstract, "__abstractmethods__", []):
             methods.append(method)
         return (
@@ -68,7 +67,7 @@ class Implementer(type):
             methods)
 
     @classmethod
-    def add_docs(cls, clsdict: Dict, klass: "Implementer") -> None:
+    def add_docs(cls, clsdict: dict, klass: Implementer) -> None:
         """Add docs to the implementation class.
 
         If the implementation class has no docstring, then a docstring is
@@ -93,7 +92,8 @@ class Implementer(type):
         for abstract_method, abstract_klass in abstract_methods.items():
             method = getattr(klass, abstract_method, None)
             if not method:
-                # this will not instantiate, so bail now
+                # Method missing entirely: ABCMeta will raise on
+                # instantiation; nothing more to do here.
                 return
             # Only set the doc for the method if its not already set.
             # `@classmethod` `__doc__`s are immutable, so skip them.
@@ -101,11 +101,10 @@ class Implementer(type):
                 method.__doc__ = getattr(
                     abstract_klass, abstract_method).__doc__
 
-    @classmethod
+    @staticmethod
     def add_interfaces(
-            cls,
-            ifaces: Tuple,
-            klass: "Implementer") -> None:
+            ifaces: tuple,
+            klass: Implementer) -> None:
         for iface in ifaces:
             if issubclass(klass, iface):
                 continue
@@ -128,11 +127,10 @@ class Implementer(type):
                 "Interfaces can only contain methods decorated with "
                 f"`@interfacemethod`: got {extra}")
 
-    @classmethod
+    @staticmethod
     def get_bases(
-            cls,
-            bases: Tuple[Type, ...],
-            clsdict: Dict) -> Tuple[Type["abstracts.Abstraction"], ...]:
+            bases: tuple[type, ...],
+            clsdict: dict) -> tuple[type[abstracts.Abstraction], ...]:
         """Returns a tuple of base classes, with `__implements__` classes
         included."""
         return (
@@ -142,18 +140,16 @@ class Implementer(type):
                 if x not in bases
                 and isinstance(x, abstracts.Abstraction)))
 
-    @classmethod
+    @staticmethod
     def get_class_attrs(
-            cls,
-            clsdict: dict) -> Set[str]:
+            clsdict: dict) -> set[str]:
         return set(
             x for x in clsdict
             if not x.startswith("__"))
 
-    @classmethod
+    @staticmethod
     def get_interface_methods(
-            cls,
-            clsdict: Dict) -> Set[str]:
+            clsdict: dict) -> set[str]:
         return set(
             k for k, v in clsdict.items()
             if (isinstance(v, property)
@@ -165,8 +161,8 @@ class Implementer(type):
     @classmethod
     def get_interfaces(
             cls,
-            bases: Tuple[Type, ...],
-            clsdict: Dict) -> Tuple[Type["abstracts.Interface"], ...]:
+            bases: tuple[type, ...],
+            clsdict: dict) -> tuple[type[abstracts.Interface], ...]:
         return tuple(
             x for x in clsdict["__implements__"]
             if (x not in bases and cls.is_interface(x)))
@@ -174,14 +170,14 @@ class Implementer(type):
     @classmethod
     def implementation_info(
             cls,
-            clsdict: Dict) -> Tuple[Dict[str, str], Dict[str, Type]]:
+            clsdict: dict) -> tuple[dict[str, str], dict[str, type]]:
         """Returns 2 dictionaries.
 
         - abstract_docs: abstract docs for all abstract classes
         - abstract_methods: resolved abstract methods -> abstract class
         """
-        abstract_docs: Dict[str, str] = {}
-        abstract_methods: Dict[str, Type] = {}
+        abstract_docs: dict[str, str] = {}
+        abstract_methods: dict[str, type] = {}
         for abstract in reversed(clsdict["__implements__"]):
             name, docs, methods = cls.abstract_info(abstract)
             for method in methods:
@@ -190,10 +186,9 @@ class Implementer(type):
                 abstract_docs[name] = docs
         return abstract_docs, abstract_methods
 
-    @classmethod
+    @staticmethod
     def is_interface(
-            cls,
-            klass: Union["abstracts.Interface", "Implementer"]) -> bool:
+            klass: abstracts.Interface | Implementer) -> bool:
         return (
             isinstance(klass, abstracts.Interface)
             and not isinstance(klass, abstracts.Abstraction))
@@ -201,8 +196,8 @@ class Implementer(type):
     def __new__(
             cls,
             clsname: str,
-            bases: Tuple[Type, ...],
-            clsdict: Dict) -> "Implementer":
+            bases: tuple[type, ...],
+            clsdict: dict) -> Implementer:
         """Create a new Implementer class."""
         if "__implements__" not in clsdict:
             klass = super().__new__(cls, clsname, bases, clsdict)

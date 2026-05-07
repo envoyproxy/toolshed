@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from random import random
 from unittest.mock import MagicMock
 
@@ -217,7 +219,7 @@ def test_implementer_check_interface(patches, attrs, methods):
 @pytest.mark.parametrize("bases", [(), ("A", "B", "C"), ("A", "C")])
 @pytest.mark.parametrize("implements", [(), ("A", "B", "C"), ("A", "C")])
 @pytest.mark.parametrize("abstraction", [None, "A", "B", "C"])
-def test_implementer_get_bases(patches, bases, implements, abstraction):
+def test_implementer_get_interfaces(patches, bases, implements, abstraction):
     clsdict = dict(__implements__=implements)
     patched = patches(
         "Implementer.is_interface",
@@ -321,7 +323,7 @@ def test_implementer_get_interface_methods(patches):
 @pytest.mark.parametrize("bases", [(), ("A", "B", "C"), ("A", "C")])
 @pytest.mark.parametrize("implements", [(), ("A", "B", "C"), ("A", "C")])
 @pytest.mark.parametrize("abstraction", [None, "A", "B", "C"])
-def test_implementer_get_interfaces(patches, bases, implements, abstraction):
+def test_implementer_get_bases(patches, bases, implements, abstraction):
     clsdict = dict(__implements__=implements)
     patched = patches(
         "isinstance",

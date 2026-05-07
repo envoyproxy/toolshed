@@ -1,11 +1,18 @@
-from abc import abstractmethod
+from __future__ import annotations
+
+from collections.abc import Callable
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 from abstracts.implements import Implementer
 
 
-def implementer(implements):
+type Implements = type | tuple[type, ...] | list[type] | set[type]
+
+
+def implementer[T](
+        implements: Implements,
+) -> Callable[[type[T]], type[T]]:
     """Decorator for implementers.
 
     Assuming you have an abstract class `AFoo` which has a `metaclass` of
@@ -25,29 +32,29 @@ def implementer(implements):
     if not isinstance(implements, (tuple, list, set)):
         implements = (implements,)
 
-    def wrapper(klass: Any) -> Implementer:
-        # This is a v annoying workaround for mypy, see:
-        #   https://github.com/python/mypy/issues/9183
-        _klass: Any = klass
+    def wrapper(klass: type[T]) -> type[T]:
+        dynamic_base: type[Any] = cast(type[Any], klass)
 
-        class Implementation(_klass, metaclass=Implementer):
+        class Implementation(dynamic_base, metaclass=Implementer):
             __implements__ = implements
-            __doc__ = _klass.__doc__
+            __doc__ = klass.__doc__
 
+        # Make the resulting class look like the user-defined class in
+        # tracebacks/repr/pickling.
         Implementation.__module__ = klass.__module__
         Implementation.__qualname__ = klass.__name__
         Implementation.__name__ = klass.__name__
-        return Implementation
+        return cast(type[T], Implementation)
 
     return wrapper
 
 
-def interfacemethod(fun):
+def interfacemethod[F: Callable[..., object]](fun: F) -> F:
 
-    @wraps(fun)
-    @abstractmethod
     def wrapped(*args, **kwargs):
         raise NotImplementedError
 
-    wrapped.__isinterfacemethod__ = True
-    return wrapped
+    wrapped = wraps(fun)(wrapped)
+    setattr(wrapped, "__isabstractmethod__", True)
+    setattr(wrapped, "__isinterfacemethod__", True)
+    return cast(F, wrapped)
