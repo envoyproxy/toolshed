@@ -8,10 +8,11 @@ resolved version and assert it satisfies the range. Toolshed packages
 requirements.txt with a single canonical dev version.
 """
 
+from __future__ import annotations
+
 import configparser
 import pathlib
 import re
-from typing import Dict, List, Tuple
 
 import pytest
 from packaging.requirements import Requirement
@@ -23,13 +24,16 @@ from packaging.utils import canonicalize_name
 # Helpers
 # ---------------------------------------------------------------------------
 
-_REPO_ROOT = pathlib.Path(__file__).parent.parent.parent.parent
+# Keep this anchored to the test module path until we have a repo-local
+# Pants-backed example confirming that cwd-relative resource access is stable in
+# this target's sandbox setup.
+_REPO_ROOT: pathlib.Path = pathlib.Path(__file__).parent.parent.parent.parent
 
 
-def _find_publishable_packages() -> List[pathlib.Path]:
+def _find_publishable_packages() -> list[pathlib.Path]:
     """Return package dirs under py/ with install_requires in setup.cfg."""
     py_dir = _REPO_ROOT / "py"
-    publishable = []
+    publishable: list[pathlib.Path] = []
     for pkg_dir in sorted(p for p in py_dir.glob("*") if p.is_dir()):
         if _read_setup_cfg_install_requires(pkg_dir):
             publishable.append(pkg_dir)
@@ -37,7 +41,7 @@ def _find_publishable_packages() -> List[pathlib.Path]:
 
 
 def _read_setup_cfg_install_requires(
-        pkg_dir: pathlib.Path) -> List[str]:
+        pkg_dir: pathlib.Path) -> list[str]:
     """Return install_requires from setup.cfg, or [] if absent."""
     cfg = configparser.ConfigParser()
     cfg.read(pkg_dir / "setup.cfg")
@@ -51,9 +55,9 @@ def _read_setup_cfg_install_requires(
 
 
 def _parse_dev_resolve(
-        requirements_txt: pathlib.Path) -> Dict[str, Version]:
+        requirements_txt: pathlib.Path) -> dict[str, Version]:
     """Parse py/deps/requirements.txt into {canonical_name: Version}."""
-    result: Dict[str, Version] = {}
+    result: dict[str, Version] = {}
     pattern = re.compile(r"^([A-Za-z0-9._-]+)==([0-9][^\s]*)", re.MULTILINE)
     for name, ver in pattern.findall(requirements_txt.read_text()):
         result[canonicalize_name(name)] = Version(ver)
@@ -64,13 +68,13 @@ def _parse_dev_resolve(
 # Build parametrized test data
 # ---------------------------------------------------------------------------
 
-_PUBLISHABLE_PACKAGES = _find_publishable_packages()
+_PUBLISHABLE_PACKAGES: list[pathlib.Path] = _find_publishable_packages()
 
-_DEV_RESOLVE: Dict[str, Version] = _parse_dev_resolve(
+_DEV_RESOLVE: dict[str, Version] = _parse_dev_resolve(
     _REPO_ROOT / "py" / "deps" / "requirements.txt")
 
 # Canonical names of toolshed packages (skip in Check B).
-_TOOLSHED_CANONICAL_NAMES = frozenset(
+_TOOLSHED_CANONICAL_NAMES: frozenset[str] = frozenset(
     canonicalize_name(p.name)
     for p in _PUBLISHABLE_PACKAGES)
 
@@ -79,9 +83,9 @@ _TOOLSHED_CANONICAL_NAMES = frozenset(
 # Check B: dev resolve ⊆ setup.cfg published ranges
 # ---------------------------------------------------------------------------
 
-def _check_b_cases() -> List[Tuple[pathlib.Path, str]]:
+def _check_b_cases() -> list[tuple[pathlib.Path, str]]:
     """Collect (pkg_dir, req_str) pairs to parametrize Check B."""
-    cases = []
+    cases: list[tuple[pathlib.Path, str]] = []
     for pkg_dir in _PUBLISHABLE_PACKAGES:
         for req_str in _read_setup_cfg_install_requires(pkg_dir):
             req = Requirement(req_str)
@@ -90,14 +94,14 @@ def _check_b_cases() -> List[Tuple[pathlib.Path, str]]:
     return cases
 
 
-def _case_id(case: Tuple[pathlib.Path, str]) -> str:
+def _case_id(case: tuple[pathlib.Path, str]) -> str:
     pkg_dir, req_str = case
     return f"{pkg_dir.name}::{req_str}"
 
 
 @pytest.mark.parametrize("case", _check_b_cases(), ids=_case_id)
 def test_dev_resolve_satisfies_publish_range(
-        case: Tuple[pathlib.Path, str]) -> None:
+        case: tuple[pathlib.Path, str]) -> None:
     """The dev-pinned version must satisfy the publish range."""
     pkg_dir, req_str = case
     req = Requirement(req_str)

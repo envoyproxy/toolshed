@@ -2,7 +2,6 @@
 python_tests(
     name="publish_check",
     sources=["test_publish_requirements.py"],
-    skip_mypy=True,
     dependencies=[
         "//py/deps:reqs#packaging",
         "//py/deps:reqs#pytest",
