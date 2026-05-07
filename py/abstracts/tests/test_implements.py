@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from random import random
 from unittest.mock import MagicMock
 

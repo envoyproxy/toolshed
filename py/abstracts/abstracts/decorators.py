@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+from abc import abstractmethod
 from collections.abc import Callable
 from functools import wraps
 from typing import Any, cast
@@ -51,10 +50,10 @@ def implementer[T](
 
 def interfacemethod[F: Callable[..., object]](fun: F) -> F:
 
+    @wraps(fun)  # type: ignore[misc]
+    @abstractmethod
     def wrapped(*args, **kwargs):
         raise NotImplementedError
 
-    wrapped = wraps(fun)(wrapped)
-    setattr(wrapped, "__isabstractmethod__", True)
-    setattr(wrapped, "__isinterfacemethod__", True)
+    wrapped.__isinterfacemethod__ = True  # type: ignore[attr-defined]
     return cast(F, wrapped)

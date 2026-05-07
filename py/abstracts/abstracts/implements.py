@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import abstracts
 
 
@@ -67,7 +65,7 @@ class Implementer(type):
             methods)
 
     @classmethod
-    def add_docs(cls, clsdict: dict, klass: Implementer) -> None:
+    def add_docs(cls, clsdict: dict, klass: "Implementer") -> None:
         """Add docs to the implementation class.
 
         If the implementation class has no docstring, then a docstring is
@@ -104,7 +102,7 @@ class Implementer(type):
     @staticmethod
     def add_interfaces(
             ifaces: tuple,
-            klass: Implementer) -> None:
+            klass: "Implementer") -> None:
         for iface in ifaces:
             if issubclass(klass, iface):
                 continue
@@ -188,7 +186,7 @@ class Implementer(type):
 
     @staticmethod
     def is_interface(
-            klass: abstracts.Interface | Implementer) -> bool:
+            klass: "abstracts.Interface | Implementer") -> bool:
         return (
             isinstance(klass, abstracts.Interface)
             and not isinstance(klass, abstracts.Abstraction))
@@ -197,7 +195,7 @@ class Implementer(type):
             cls,
             clsname: str,
             bases: tuple[type, ...],
-            clsdict: dict) -> Implementer:
+            clsdict: dict) -> "Implementer":
         """Create a new Implementer class."""
         if "__implements__" not in clsdict:
             klass = super().__new__(cls, clsname, bases, clsdict)

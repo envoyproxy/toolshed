@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 """Interface metaclass.
 
 `Abstraction` subclasses `Interface` so abstractions can be treated as
-interfaces by metaclass checks, while `Implementer.is_interface` intentionally
-filters abstractions out for strict interface-only flows.
+interfaces by metaclass checks, while `Implementer.is_interface`
+intentionally filters abstractions out for strict interface-only flows.
 """
 
 from abc import ABCMeta
