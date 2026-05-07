@@ -5,7 +5,10 @@ from typing import Any
 from abstracts.implements import Implementer
 
 
-def implementer(implements):
+type Implements = type | tuple[type, ...] | list[type] | set[type]
+
+
+def implementer(implements: Implements):
     """Decorator for implementers.
 
     Assuming you have an abstract class `AFoo` which has a `metaclass` of
@@ -26,14 +29,12 @@ def implementer(implements):
         implements = (implements,)
 
     def wrapper(klass: Any) -> Implementer:
-        # This is a v annoying workaround for mypy, see:
-        #   https://github.com/python/mypy/issues/9183
-        _klass: Any = klass
-
-        class Implementation(_klass, metaclass=Implementer):
+        class Implementation(klass, metaclass=Implementer):
             __implements__ = implements
-            __doc__ = _klass.__doc__
+            __doc__ = klass.__doc__
 
+        # Make the resulting class look like the user-defined class in
+        # tracebacks/repr/pickling.
         Implementation.__module__ = klass.__module__
         Implementation.__qualname__ = klass.__name__
         Implementation.__name__ = klass.__name__
