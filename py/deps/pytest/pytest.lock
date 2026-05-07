@@ -42,21 +42,19 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "acc01ff56c8a05fb88150dff62e295f9071fc33388c42f1dfc2787a8d1c755ff",
-              "url": "https://files.pythonhosted.org/packages/93/4f/158ded37e69172bba7987774885629afa9b482857edde5e87399c89e7d66/abstracts-0.0.12-py3-none-any.whl"
+              "hash": "4aa61cbd0dd7420ba50b5bdba007bc22d291084b155dafe98674cbe408920aa3",
+              "url": "https://files.pythonhosted.org/packages/e8/13/71684fea3e0412bc466f5188380736abb0eac6ded0f2274d181401b44058/abstracts-0.1.0-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "501eba1341561e5743beeab30d7cfa54d4b009d15760687e5e1cf91b084675b4",
+              "url": "https://files.pythonhosted.org/packages/27/85/05b7f973b2ede110c3a57810941f563f820cb9e7ef07db1d60b85aeef5f1/abstracts-0.1.0.tar.gz"
             }
           ],
           "project_name": "abstracts",
-          "requires_dists": [
-            "flake8; extra == \"lint\"",
-            "mypy; extra == \"types\"",
-            "pytest-coverage; extra == \"test\"",
-            "pytest-patches; extra == \"test\"",
-            "pytest; extra == \"test\"",
-            "wheel; extra == \"publish\""
-          ],
-          "requires_python": ">=3.5",
-          "version": "0.0.12"
+          "requires_dists": [],
+          "requires_python": "<3.13,>=3.12",
+          "version": "0.1.0"
         },
         {
           "artifacts": [
