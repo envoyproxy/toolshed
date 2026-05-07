@@ -13,7 +13,11 @@ build_file_prelude_globs = [
   "py/pants-toolshed/macros.py",
 ]
 [python]
-interpreter_constraints = [">=3.12,<3.13"]
+# Floor only, no ceiling. This becomes wheel Requires-Python via pants'
+# distribution metadata synthesis. Tests still run deterministically on
+# the single interpreter pants picks at build time (currently 3.12) but
+# wheels remain installable on any 3.12+ runtime.
+interpreter_constraints = [">=3.12"]
 enable_resolves = true
 default_resolve = "deps"
 
