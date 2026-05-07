@@ -49,12 +49,6 @@ def toolshed_package(
         wheel=True,
         sdist=True,
         **kwargs)
-    readme_snippet(
-        name="package_snippet",
-        artefacts=[
-            f"{namespace}:build_artefacts",
-            "//py/templates:README.package.md.tmpl"],
-        text=["//py/tools/readme:summarize"])
 
 
 def toolshed_tests(

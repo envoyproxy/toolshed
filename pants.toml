@@ -6,14 +6,11 @@ backend_packages = [
     "pants.backend.python.lint.docformatter",
     "pants.backend.python.lint.flake8",
     "pants.backend.python.typecheck.mypy",
-    "toolshed_distribution",
-    "toolshed_readme"]
+    "toolshed_distribution"]
 pants_ignore = ["not", "/bazel/", "/bazel-registry/"]
 build_file_prelude_globs = [
   "py/pants-toolshed/macros.py",
 ]
-plugins = ["jinja2"]
-
 [python]
 interpreter_constraints = [">=3.12,<3.13"]
 enable_resolves = true
