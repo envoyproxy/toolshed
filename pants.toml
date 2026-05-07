@@ -13,7 +13,7 @@ build_file_prelude_globs = [
   "py/pants-toolshed/macros.py",
 ]
 [python]
-interpreter_constraints = [">=3.12,<3.13"]
+interpreter_constraints = [">=3.12"]
 enable_resolves = true
 default_resolve = "deps"
 
