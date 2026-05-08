@@ -119,6 +119,20 @@ impl<'a> Test<'a> {
     pub fn spy(&self) -> &Lazy<Spy> {
         self.tests.spy
     }
+
+    /// Drop hook. Kept as a separate `#[inline(never)]` method so that test
+    /// instrumentation can patch a single, stable symbol instead of patching
+    /// the compiler-synthesized `drop_in_place::<Test>` glue (which may be
+    /// inlined at the call site by recent rustc versions and is UB to
+    /// transmute to `fn(&mut Test)`).
+    #[inline(never)]
+    pub fn on_drop(&mut self) {
+        ::log::trace!("Test complete: {:?}", &self.name);
+        let calls = self.spy().get(&self.name);
+        self.patches().clear(&self.name);
+        self.spy().clear(&self.name);
+        assert_eq!(*calls, self.expectations);
+    }
 }
 
 pub struct TestRef<'a> {
@@ -157,12 +171,9 @@ impl<'a> TestRef<'a> {
 }
 
 impl Drop for Test<'_> {
+    #[inline(never)]
     fn drop(&mut self) {
-        ::log::trace!("Test complete: {:?}", &self.name);
-        let calls = self.spy().get(&self.name);
-        self.patches().clear(&self.name);
-        self.spy().clear(&self.name);
-        assert_eq!(*calls, self.expectations);
+        self.on_drop();
     }
 }
 
@@ -203,12 +214,7 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("tests_clear", &SPY, _self)
         })];
         defer! {
@@ -238,12 +244,7 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("tests_get", &SPY, _self)
         })];
         defer! {
@@ -277,12 +278,7 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("tests_get_bad", &SPY, _self)
         })];
         defer! {
@@ -370,12 +366,7 @@ mod tests {
     #[test]
     #[serial(toolshed_lock)]
     fn test_tests_push() {
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("tests_push", &SPY, _self)
         })];
         defer! {
@@ -421,13 +412,8 @@ mod tests {
     #[serial(toolshed_lock)]
     fn test_tests_test() {
         let tests = Box::leak(Box::new(Tests::new(&TEST_SPY, &TEST_PATCHES)));
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
         let guards = [
-            patch1(drop_ptr, |_self| {
+            patch1(Test::on_drop, |_self| {
                 Patch::drop_test("tests_test", &SPY, _self)
             }),
             patch2(Test::testref, |_self, key| {
@@ -496,13 +482,8 @@ mod tests {
             fails: false,
             patch_index: Some(23),
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
         let guards = [
-            patch1(drop_ptr, |_self| {
+            patch1(Test::on_drop, |_self| {
                 Patch::drop_test("test_get_patch", &SPY, _self)
             }),
             patch3(Tests::get_patch, |_self, name, idx| {
@@ -531,13 +512,8 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
         let guards = [
-            patch1(drop_ptr, |_self| {
+            patch1(Test::on_drop, |_self| {
                 Patch::drop_test("test_get_patch_bad", &SPY, _self)
             }),
             patch3(Tests::get_patch, |_self, name, idx| {
@@ -577,15 +553,9 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-
         let mut guards: Vec<Arc<Mutex<PatchGuard>>> = Vec::new();
 
-        guards.push(Arc::new(Mutex::new(patch1(drop_ptr, |_self| {
+        guards.push(Arc::new(Mutex::new(patch1(Test::on_drop, |_self| {
             Patch::drop_test("test_notify", &SPY, _self)
         }))));
 
@@ -613,12 +583,7 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("test_patch_index", &SPY, _self)
         })];
         defer! {
@@ -645,12 +610,7 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("test_fail", &SPY, _self)
         })];
         defer! {
@@ -679,12 +639,7 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("test_patches", &SPY, _self)
         })];
         defer! {
@@ -711,12 +666,7 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("test_spy", &SPY, _self)
         })];
         defer! {
@@ -764,13 +714,8 @@ mod tests {
     fn test_testref_drop() {
         let tests = Box::leak(Box::new(Tests::new(&TEST_SPY, &TEST_PATCHES)));
         let name = "SOMETEST".to_string();
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
         let guards = [
-            patch1(drop_ptr, |_self| {
+            patch1(Test::on_drop, |_self| {
                 Patch::drop_test("testref_drop", &SPY, _self)
             }),
             patch2(Tests::clear, |_self, name| {
@@ -800,12 +745,7 @@ mod tests {
     fn test_testref_expecting() {
         let tests = Box::leak(Box::new(Tests::new(&TEST_SPY, &TEST_PATCHES)));
         let name = "TESTREF_EXPECTING".to_string();
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("testref_expecting", &SPY, _self)
         })];
         defer! {
@@ -850,11 +790,6 @@ mod tests {
     fn test_testref_with_patches() {
         let tests = Box::leak(Box::new(Tests::new(&TEST_SPY, &TEST_PATCHES)));
         let name = "ANOTHERTEST".to_string();
-        let drop_ptr = unsafe {
-            std::mem::transmute::<*const (), for<'a, 'b> fn(&'a mut Test<'b>)>(
-                core::ptr::drop_in_place::<Test> as *const (),
-            )
-        };
         let test = Test {
             name,
             tests,
@@ -862,7 +797,7 @@ mod tests {
             fails: false,
             patch_index: None,
         };
-        let guards = [patch1(drop_ptr, |_self| {
+        let guards = [patch1(Test::on_drop, |_self| {
             Patch::drop_test("testref_with_patches", &SPY, _self)
         })];
         defer! {
