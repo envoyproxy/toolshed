@@ -108,6 +108,8 @@ def static_website(
         """ % (name_sources, decompressor_args, generator, content_path, output_path, mapping_commands, exclude_args, url),
         outs = [name_website_tarball],
         srcs = extra_srcs,
+        # Uses host tar/gtar (undeclared tool); must not run on remote executors.
+        tags = ["no-remote-exec"],
         tools = tools,
     )
 
