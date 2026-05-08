@@ -1,10 +1,10 @@
-name: validate::build_image_tag rejects invalid tag
+name: validate::sha_or_semver rejects invalid tag
 
 input: "not-a-valid-tag"
 
 imports:
 - validate
 
-expression: (try validate::build_image_tag catch "invalid") == "invalid"
+expression: (try validate::sha_or_semver(40) catch "invalid") == "invalid"
 
 expected: true

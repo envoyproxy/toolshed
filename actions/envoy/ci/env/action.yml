@@ -29,12 +29,12 @@ inputs:
     type: string
     default: |
       git fetch \($remote) \($ref)
-      OUTPUT=\"$(git show \($remote)/\($ref):\($filename))\"
+      OUTPUT="$(git show \($remote)/\($ref):\($filename))"
   template-script-diff:
     type: string
     default: |
       git fetch \($remote) \($ref)
-      OUTPUT=\"$(git diff --name-only \($diff) \($remote)/\($ref))\"
+      OUTPUT="$(git diff --name-only \($diff) \($remote)/\($ref))"
   vars:
     type: string
     required: true
@@ -77,9 +77,9 @@ runs:
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
         .["build-image"].repo as $repo
-        | (.["build-image"].tag | validate::build_image_tag) as $tag
-        | (.["build-image"].sha | validate::sha(64)) as $sha
-        | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
+        | (. ["build-image"].tag | validate::sha_or_semver(40)) as $tag
+        | (. ["build-image"].sha | validate::sha(64)) as $sha
+        | (. ["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
         | {"default": "\($repo):\($tag)@sha256:\($sha)",
            "mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
         | . as $requested

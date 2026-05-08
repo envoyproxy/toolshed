@@ -1,7 +1,10 @@
-name: validate::build_image_tag accepts semver tag with leading v
+name: validate::sha_or_semver accepts semver tag with leading v
 
 input: "v1.2.3"
 
-module: validate::build_image_tag
+imports:
+- validate
 
-expected: "v1.2.3"
+expression: (. | validate::sha_or_semver(40)) == "v1.2.3"
+
+expected: true
