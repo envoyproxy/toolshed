@@ -1,0 +1,10 @@
+name: validate::sha_or_semver accepts semver tag with leading v
+
+input: "v1.2.3"
+
+imports:
+- validate
+
+expression: (. | validate::sha_or_semver(40)) == "v1.2.3"
+
+expected: true
