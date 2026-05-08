@@ -39,6 +39,9 @@ label_flag(
 sh_binary(
     name = "clang_tidy",
     srcs = ["run_clang_tidy.sh"],
-    data = [":config"],
+    data = [
+        ":config",
+        ":executable",
+    ],
     visibility = ["//visibility:public"],
 )
