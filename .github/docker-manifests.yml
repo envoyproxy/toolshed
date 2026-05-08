@@ -6,7 +6,7 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/debian-worker-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-worker-{version}-{arch}.tar
 # worker (gcr)
 - name: envoy-build
   tag: worker-{version}
@@ -14,7 +14,7 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/debian-worker-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-worker-{version}-{arch}.tar
 # ci
 - name: envoy-build
   tag: ci-{version}
@@ -22,7 +22,7 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/debian-ci-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-ci-{version}-{arch}.tar
 # gcc
 - name: envoy-build
   tag: gcc-{version}
@@ -30,7 +30,7 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/debian-gcc-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-gcc-{version}-{arch}.tar
 # gcc (gcr)
 - name: envoy-build
   tag: gcc-{version}
@@ -38,7 +38,7 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/debian-gcc-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-gcc-{version}-{arch}.tar
 # devtools
 - name: envoy-build
   tag: devtools-{version}
@@ -46,7 +46,7 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/debian-devtools-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-devtools-{version}-{arch}.tar
 # docker
 - name: envoy-build
   tag: docker-{version}
@@ -54,7 +54,7 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/debian-docker-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-docker-{version}-{arch}.tar
 # test
 - name: envoy-build
   tag: test-{version}
@@ -62,11 +62,11 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/debian-test-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-test-{version}-{arch}.tar
 # mobile (amd64 only)
 - name: envoy-build
   tag: mobile-{version}
   registry: docker.io/envoyproxy
   architectures:
   - amd64
-  artifact-pattern: oci-debian-{arch}/debian-mobile-{version}-{arch}.tar
+  artifact-pattern: oci-debian-{arch}/envoy-build-mobile-{version}-{arch}.tar

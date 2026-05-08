@@ -50,7 +50,7 @@ build_and_push_variants () {
         push_arg=()
         if [[ "${SAVE_OCI}" == "true" ]]; then
             # Save to OCI format
-            push_arg+=(--output "type=oci,dest=${OCI_OUTPUT_DIR}/${OS_DISTRO}-${variant}-${CONTAINER_TAG}${ARCH_SUFFIX}.tar")
+            push_arg+=(--output "type=oci,dest=${OCI_OUTPUT_DIR}/envoy-build-${variant}-${CONTAINER_TAG}${ARCH_SUFFIX}.tar")
         elif [[ -n "${IMAGE_TAGS}" && "$variant" != "test" ]]; then
             # Variants are only pushed to dockerhub currently, so if we are pushing images
             # just push the variants immediately.
