@@ -1,0 +1,48 @@
+uses: ./actions/envoy/ci/request
+id: request
+with:
+  branch-name: main
+  started: 1
+  token: ${{ github.token }}
+  vars: '{}'
+  working-directory: /tmp/request-action/requested
+
+before:
+- shell: bash
+  run: |
+    set -euo pipefail
+
+    rm -rf /tmp/request-action
+    mkdir -p /tmp/request-action
+    git init --bare /tmp/request-action/origin.git
+    git clone /tmp/request-action/origin.git /tmp/request-action/requested
+    git -C /tmp/request-action/requested config user.name "Toolshed Tests"
+    git -C /tmp/request-action/requested config user.email "toolshed-tests@example.com"
+    mkdir -p /tmp/request-action/requested/.github
+    cat <<'EOF' > /tmp/request-action/requested/.github/config.yml
+    config:
+      envoy: {}
+    run: {}
+    checks: {}
+    agent-ubuntu:
+      default: ubuntu-24.04
+    build-image:
+      repo: envoyproxy/envoy-build-ubuntu
+      tag: 1111111111111111111111111111111111111111
+      sha: 1111111111111111111111111111111111111111111111111111111111111111
+      mobile-sha: 2222222222222222222222222222222222222222222222222222222222222222
+    EOF
+    echo "1.2.3-dev" > /tmp/request-action/requested/VERSION.txt
+    git -C /tmp/request-action/requested add .
+    git -C /tmp/request-action/requested commit -m "initial request test commit"
+    git -C /tmp/request-action/requested push origin HEAD:main
+
+after:
+- shell: bash
+  run: |
+    set -euo pipefail
+
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    DATA='${{ steps.request.outputs.data }}'
+    test_output_not_empty "$DATA"
+    test_request_data "$DATA"

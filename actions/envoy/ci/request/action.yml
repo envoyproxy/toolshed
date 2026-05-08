@@ -87,25 +87,33 @@ runs:
         | (. and ($input.event_name | startswith("pull_request") | not))
 
   # Check requested changes
-  - uses: envoyproxy/toolshed/actions/bson@51bcf12a6b4531e72177b8455c5f788498515323
-    id: changed
-    with:
-      title: git diff changes from ${{ inputs.merge-commit || 'HEAD^1' }}
-      input: |
-        diff: ${{ inputs.merge-commit || 'HEAD^1' }}
-        remote: origin
-        ref: ${{ inputs.branch-name }}
-        working_directory: ${{ inputs.working-directory }}
-      input-format: yaml
-      filter: |
-        .diff as $diff
-        | .remote as $remote
-        | .ref as $ref
-        | .working_directory as $working_directory
-        | ("${{ inputs.template-script-diff }}" | bash::output)
-      result-filter: |
-        rtrimstr("\n")
-        | split("\n")
+  - id: changed
+    shell: bash
+    run: |
+      set -euo pipefail
+
+      DIFF_BASE="${{ inputs.merge-commit || 'HEAD^1' }}"
+      REMOTE="origin"
+      REF="${{ inputs.branch-name }}"
+      TARGET_REF="${REMOTE}/${REF}"
+      WORKING_DIRECTORY="${{ inputs.working-directory }}"
+
+      git -C "${WORKING_DIRECTORY}" fetch "${REMOTE}" "${REF}"
+
+      if ! git -C "${WORKING_DIRECTORY}" rev-parse --verify --quiet "${DIFF_BASE}^{commit}" > /dev/null; then
+          if MERGE_BASE="$(git -C "${WORKING_DIRECTORY}" merge-base HEAD "${TARGET_REF}" 2>/dev/null)"; then
+              DIFF_BASE="${MERGE_BASE}"
+          else
+              DIFF_BASE="${TARGET_REF}"
+          fi
+      fi
+
+      OUTPUT="$(git -C "${WORKING_DIRECTORY}" diff --name-only "${DIFF_BASE}" "${TARGET_REF}")"
+      CHANGED_FILES_JSON="$(
+        printf '%s\n' "${OUTPUT}" \
+          | python3 -c 'import json, sys; print(json.dumps([line for line in sys.stdin.read().splitlines() if line]))'
+      )"
+      echo "output=${CHANGED_FILES_JSON}" >> "$GITHUB_OUTPUT"
 
   # Check current/requested config (currently only build-images can be overridden)
   - uses: envoyproxy/toolshed/actions/bson@51bcf12a6b4531e72177b8455c5f788498515323
