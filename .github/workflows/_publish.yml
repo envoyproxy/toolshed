@@ -178,9 +178,23 @@ jobs:
           artifact-workflows: |
             Python CI
           artifacts: true
-          filter-artifacts: >-
+          # Exclude non-publishable test fixtures.
+          #
+          # The toolshed[_-]test prefix is reserved for in-repo test
+          # fixtures (see py/_test_publish_pkg/) that are *built* through
+          # the publish pipeline so py/tools/publish_check can introspect
+          # their wheel METADATA, but must NEVER reach PyPI or be attached
+          # to a GitHub release. Matching `toolshed[_-]test` covers both
+          # wheel (`toolshed_test_*.whl`) and sdist
+          # (`toolshed-test-*.tar.gz`) filename forms, and any future
+          # test-only fixture sharing this prefix.
+          filter-artifacts: |
             ${{ inputs.python-filter-artifacts
-                || 'select(($key | contains(".dev") | not) and ($key | test("\\.whl$|\\.tar\\.gz$")))' }}
+                || 'select(
+                      ($key | contains(".dev") | not)
+                      and ($key | test("\\.whl$|\\.tar\\.gz$"))
+                      and ($key | test("^python:toolshed[_-]test") | not)
+                    )' }}
           prepare-dev: .github/workflows/prepare_python_dev.sh
           pypi-publish: true
           template-artifacts: |
