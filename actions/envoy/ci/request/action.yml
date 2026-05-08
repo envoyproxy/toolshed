@@ -44,7 +44,16 @@ inputs:
     type: string
     default: |
       git -C \($working_directory)  fetch \($remote) \($ref)
-      OUTPUT="$(git -C \($working_directory) diff --name-only \($diff) \($remote)/\($ref))"
+      if OUTPUT="$(git -C \($working_directory) diff --name-only \($diff) \($remote)/\($ref) 2>/dev/null)"; then
+        true
+      else
+        DIFF_BASE="$(git -C \($working_directory) merge-base HEAD \($remote)/\($ref) 2>/dev/null || true)"
+        if [[ -n "$DIFF_BASE" ]]; then
+          OUTPUT="$(git -C \($working_directory) diff --name-only "$DIFF_BASE" \($remote)/\($ref))"
+        else
+          OUTPUT=""
+        fi
+      fi
   vars:
     type: string
     required: true

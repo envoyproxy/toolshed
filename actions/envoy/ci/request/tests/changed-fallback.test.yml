@@ -1,0 +1,50 @@
+uses: ./actions/envoy/ci/request
+id: request
+with:
+  branch-name: main
+  config-file: ./.github/request-action-test-config.yml
+  started: 1
+  token: VERYSECRET
+  vars: '{}'
+  version-file: ./.github/request-action-test-version.txt
+  working-directory: .
+  template-script-ref-file: |
+    OUTPUT="$(cat \($working_directory)/\($filename))"
+
+before:
+- shell: bash
+  run: |
+    cat << 'EOF' > .github/request-action-test-config.yml
+    checks:
+      test-check:
+        name: Test check
+        required: false
+        on-run:
+        - test-run
+    config:
+      envoy:
+        branch: main
+    run:
+      test-run: true
+    build-image:
+      repo: envoyproxy/envoy-build-ubuntu
+      tag: 0123456789abcdef0123456789abcdef01234567
+      sha: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      mobile-sha: fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+    agent-ubuntu: ubuntu-24.04
+    EOF
+    echo "1.2.3-dev" > .github/request-action-test-version.txt
+
+after:
+- shell: bash
+  run: |
+    OUTPUT='${{ steps.request.outputs.data }}'
+    if [[ -z "$OUTPUT" ]]; then
+        echo "fail:Request action output is empty" >> "$TEST_OUTPUT"
+        exit 0
+    fi
+    if ! echo "$OUTPUT" | jq -e '.request and .checks and .config and .run' >/dev/null; then
+        echo "fail:Request action output is missing expected keys" >> "$TEST_OUTPUT"
+        exit 0
+    fi
+    echo "success:Request action completed and produced structured output" >> "$TEST_OUTPUT"
