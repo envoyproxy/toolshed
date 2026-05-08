@@ -52,6 +52,9 @@ on:
               if [[ -f "$version_file" ]]; then
                   package_dir=$(dirname "$version_file")
                   package_name=$(basename "$package_dir")
+                  if [[ "${package_name}" == _* ]]; then
+                      continue
+                  fi
                   version=$(cat "$version_file")
                   _OUTPUT+=("$package_name $version")
               fi
