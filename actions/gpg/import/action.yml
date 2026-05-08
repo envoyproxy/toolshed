@@ -25,7 +25,7 @@ runs:
       gpg_private_key: ${{ inputs.key }}
       passphrase: ${{ inputs.passphrase }}
 
-  - uses: envoyproxy/toolshed/actions/github/script/run@80de94866d4deb08c8a52e6bd44855fc1fab73ba
+  - uses: envoyproxy/toolshed/actions/github/script/run@0bf10677eae72ba996d64da0d769d0916c358e49
     if: ${{ inputs.passphrase && inputs.passphrase-path }}
     with:
       run: |
