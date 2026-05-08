@@ -1,0 +1,7 @@
+name: validate::build_image_tag accepts semver tag with prerelease and build metadata
+
+input: "1.2.3-rc1+build.456"
+
+module: validate::build_image_tag
+
+expected: "1.2.3-rc1+build.456"

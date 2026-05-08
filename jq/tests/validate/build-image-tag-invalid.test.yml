@@ -1,0 +1,10 @@
+name: validate::build_image_tag rejects invalid tag
+
+input: "not-a-valid-tag"
+
+imports:
+- validate
+
+expression: (try validate::build_image_tag catch "invalid") == "invalid"
+
+expected: true

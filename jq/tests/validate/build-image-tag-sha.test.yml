@@ -1,0 +1,7 @@
+name: validate::build_image_tag accepts 40-char git SHA
+
+input: "99bbf423a0d1ff5a7332fb1e23bd62b90754fcd2"
+
+module: validate::build_image_tag
+
+expected: "99bbf423a0d1ff5a7332fb1e23bd62b90754fcd2"

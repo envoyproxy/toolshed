@@ -77,7 +77,7 @@ runs:
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
         .["build-image"].repo as $repo
-        | (.["build-image"].tag | validate::sha(40)) as $tag
+        | (.["build-image"].tag | validate::build_image_tag) as $tag
         | (.["build-image"].sha | validate::sha(64)) as $sha
         | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
         | {"default": "\($repo):\($tag)@sha256:\($sha)",

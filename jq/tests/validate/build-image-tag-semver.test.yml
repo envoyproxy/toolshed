@@ -1,0 +1,7 @@
+name: validate::build_image_tag accepts semver tag with leading v
+
+input: "v1.2.3"
+
+module: validate::build_image_tag
+
+expected: "v1.2.3"
