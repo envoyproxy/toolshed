@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-24.04
     name: Bazel (${{ inputs.action }})
     steps:
-    - uses: envoyproxy/toolshed/actions/bind-mounts@2ed4461f62fe3cf80196c05bea0d7dc39f15cf26  # actions-v0.4.12
+    - uses: envoyproxy/toolshed/actions/bind-mounts@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       with:
         mounts: |
           - src: /mnt/workspace
@@ -73,7 +73,7 @@ jobs:
         inputs.action == 'build'
         && inputs.bazel-path == 'bazel'
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/source@2ed4461f62fe3cf80196c05bea0d7dc39f15cf26  # actions-v0.4.12
+      uses: envoyproxy/toolshed/actions/source@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       with:
         output-name: toolshed-bazel-v{version}.tar.gz
         source-path: bazel/
@@ -92,7 +92,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@2ed4461f62fe3cf80196c05bea0d7dc39f15cf26  # actions-v0.4.12
+      uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       with:
         input: ${{ inputs.artifacts }}
         input-format: text
