@@ -62,8 +62,8 @@ jobs:
         cd docker/build
         export OS_FAMILY=linux
         export OS_DISTRO=debian
-        export CONTAINER_SHA=${{ steps.docker-version.outputs.version }}
-        export CONTAINER_TAG=${{ steps.docker-version.outputs.version }}
+        export CONTAINER_SHA=v${{ steps.docker-version.outputs.version }}
+        export CONTAINER_TAG=v${{ steps.docker-version.outputs.version }}
         export BUILD_TOOLS_PLATFORMS=${{ matrix.arch == 'amd64' && 'linux/amd64' || 'linux/arm64' }}
         export SAVE_OCI=true
         export LOAD_IMAGE=true
@@ -83,12 +83,12 @@ jobs:
 
     - name: Test Docker image
       run: |
-        IMAGE_TAG="envoyproxy/envoy-build:ci-${{ steps.docker-version.outputs.version }}-${{ matrix.arch }}"
+        IMAGE_TAG="envoyproxy/envoy-build:ci-v${{ steps.docker-version.outputs.version }}-${{ matrix.arch }}"
         echo "Testing main image: $IMAGE_TAG"
         echo "Attempting to run container and read build-id..."
         if BUILD_ID=$(docker run --rm --entrypoint /bin/cat "$IMAGE_TAG" /.build-id 2>&1); then
           echo "Build ID: $BUILD_ID"
-          EXPECTED_ID="ci-${{ steps.docker-version.outputs.version }}"
+          EXPECTED_ID="ci-v${{ steps.docker-version.outputs.version }}"
           if [[ "$BUILD_ID" == "$EXPECTED_ID" ]]; then
             echo "✓ Build ID is correct"
           else
@@ -99,7 +99,7 @@ jobs:
           echo "ERROR: Failed to run container or read build-id"
           echo "Docker run output: $BUILD_ID"
           echo "Checking if image exists:"
-          docker images | grep -E "(REPOSITORY|envoy-build.*ci-)"
+          docker images | grep -E "(REPOSITORY|envoy-build.*ci-v)"
           echo "Trying docker inspect:"
           docker image inspect "$IMAGE_TAG" 2>&1 | head -20 || echo "Inspect failed"
           exit 1
