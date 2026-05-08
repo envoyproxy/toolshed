@@ -4,6 +4,10 @@ set -e -o pipefail
 
 
 for version_file in py/*/VERSION; do
+    package_name=$(basename "$(dirname "$version_file")")
+    if [[ "${package_name}" == _* ]]; then
+        continue
+    fi
     current="$(tr -d '[:space:]' < "${version_file}")"
     if [[ "${current}" == *-dev ]]; then
         continue
