@@ -59,7 +59,25 @@ RUN --mount=type=tmpfs,target=/var/cache/apt \
 COPY debian/docker-entrypoint.sh /entrypoint.sh
 
 
+FROM worker-base AS llvm
+ARG LLVM_DISTRO=x86_64-linux-gnu-ubuntu-18.04 \
+    LLVM_DISTRO_ARM64=aarch64-linux-gnu \
+    LLVM_DOWNLOAD_PREFIX=https://github.com/llvm/llvm-project/releases/download/llvmorg- \
+    LLVM_SHA256SUM=54ec30358afcc9fb8aa74307db3046f5187f9fb89fb37064cdde906e062ebf36 \
+    LLVM_SHA256SUM_ARM64=dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999 \
+    LLVM_VERSION=18.1.8
+RUN --mount=type=tmpfs,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/var/lib/apt/lists \
+    --mount=type=bind,source=/debian/fun.sh,target=/fun.sh \
+    apt-get -qq update -y \
+    && apt-get -qq install -y --no-install-recommends wget xz-utils \
+    && . /fun.sh \
+    && install_llvm_bins
+
+
 FROM docker-base AS devtools-base
+COPY --from=llvm /opt/llvm /opt/llvm
+ENV PATH=/opt/llvm/bin:$PATH
 RUN --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt/lists \
     --mount=type=bind,source=/debian/fun.sh,target=/fun.sh \

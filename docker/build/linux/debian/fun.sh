@@ -261,7 +261,7 @@ mobile_install () {
 }
 
 install_devel () {
-    # Install development tools (no system compilers - toolchains will provide these)
+    # Install development tools
     echo "Installing development tools..."
     apt-get -qq update -y
     apt-get -qq install -y --no-install-recommends "${DEBIAN_PACKAGES[@]}"
@@ -272,12 +272,17 @@ install_devel () {
     apt-get -qq dist-upgrade -y
     install_gcc
 
+    # Configure LLVM shared library paths (LLVM installed from separate llvm stage via COPY)
+    LLVM_HOST_TARGET="$(/opt/llvm/bin/llvm-config --host-target)"
+    echo "/opt/llvm/lib/${LLVM_HOST_TARGET}" > /etc/ld.so.conf.d/llvm.conf
+    ldconfig
+
     # not sure if this is necessary
     export NO_INSTALL_BUILDTOOLS=1
     export NO_INSTALL_CLANGTOOLS=1
     install_build
 
-    echo "Development tools installation completed - compilers provided by toolchains"
+    echo "Development tools installation completed - clangd available at /opt/llvm/bin/clangd"
 }
 
 install () {
