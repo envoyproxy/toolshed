@@ -102,6 +102,8 @@ updates:
     dependencies:
       patterns:
       - "*"
+  ignore:
+  - dependency-name: "envoyproxy/toolshed/*"
 
 - package-ecosystem: npm
   directories:
