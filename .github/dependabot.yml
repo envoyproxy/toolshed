@@ -22,7 +22,7 @@ updates:
 
 - package-ecosystem: github-actions
   directories:
-  - /.github/workflows
+  - /
   schedule:
     interval: daily
   groups:
@@ -112,7 +112,7 @@ updates:
       patterns:
       - "*"
   ignore:
-  - dependency-name: "envoyproxy/toolshed/*"
+  - dependency-name: "envoyproxy/toolshed/**"
 
 - package-ecosystem: npm
   directories:
