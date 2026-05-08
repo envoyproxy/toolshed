@@ -44,16 +44,37 @@ inputs:
     type: string
     default: |
       git -C \($working_directory)  fetch \($remote) \($ref)
-      if OUTPUT="$(git -C \($working_directory) diff --name-only \($diff) \($remote)/\($ref) 2>/dev/null)"; then
-        true
-      else
-        DIFF_BASE="$(git -C \($working_directory) merge-base HEAD \($remote)/\($ref) 2>/dev/null || true)"
-        if [[ -n "$DIFF_BASE" ]]; then
-          OUTPUT="$(git -C \($working_directory) diff --name-only "$DIFF_BASE" \($remote)/\($ref))"
+      TARGET_REF="FETCH_HEAD"
+      DIFF_ERROR_FILE="$(mktemp)"
+      if ! OUTPUT="$(git -C \($working_directory) diff --name-only \($diff) "$TARGET_REF" 2>"$DIFF_ERROR_FILE")"; then
+        DIFF_ERROR="$(cat "$DIFF_ERROR_FILE")"
+        MERGE_BASE_ERROR=""
+        if git -C \($working_directory) rev-parse --verify --quiet HEAD >/dev/null; then
+          MERGE_BASE_ERROR_FILE="$(mktemp)"
+          if ! DIFF_BASE="$(git -C \($working_directory) merge-base HEAD "$TARGET_REF" 2>"$MERGE_BASE_ERROR_FILE")"; then
+            MERGE_BASE_ERROR="$(cat "$MERGE_BASE_ERROR_FILE")"
+            DIFF_BASE=""
+          fi
+          rm -f "$MERGE_BASE_ERROR_FILE"
         else
+          DIFF_BASE=""
+          MERGE_BASE_ERROR="HEAD is not resolvable"
+        fi
+        if [[ -n "$DIFF_BASE" ]]; then
+          OUTPUT="$(git -C \($working_directory) diff --name-only "$DIFF_BASE" "$TARGET_REF")"
+        else
+          echo "Warning: changed-file detection failed using direct diff and merge-base fallback." >&2
+          if [[ -n "$DIFF_ERROR" ]]; then
+            echo "direct diff error: $DIFF_ERROR" >&2
+          fi
+          if [[ -n "$MERGE_BASE_ERROR" ]]; then
+            echo "merge-base error: $MERGE_BASE_ERROR" >&2
+          fi
+          echo "No changed files will be detected for request scheduling." >&2
           OUTPUT=""
         fi
       fi
+      rm -f "$DIFF_ERROR_FILE"
   vars:
     type: string
     required: true

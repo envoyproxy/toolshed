@@ -4,17 +4,29 @@ with:
   branch-name: main
   config-file: ./.github/request-action-test-config.yml
   started: 1
-  token: VERYSECRET
+  token: test-token
   vars: '{}'
   version-file: ./.github/request-action-test-version.txt
-  working-directory: .
+  working-directory: ${{ runner.temp }}/request-action-clone
   template-script-ref-file: |
     OUTPUT="$(cat \($working_directory)/\($filename))"
 
 before:
 - shell: bash
   run: |
-    cat << 'EOF' > .github/request-action-test-config.yml
+    ORIGIN="${{ runner.temp }}/request-action-origin"
+    WORKDIR="${{ runner.temp }}/request-action-clone"
+    rm -rf "${ORIGIN}" "${WORKDIR}"
+    mkdir -p "${ORIGIN}"
+    git -C "${ORIGIN}" init --initial-branch main
+    git -C "${ORIGIN}" config user.email "test@example.com"
+    git -C "${ORIGIN}" config user.name "Request Test"
+    echo "seed" > "${ORIGIN}/README.md"
+    git -C "${ORIGIN}" add README.md
+    git -C "${ORIGIN}" commit -m "seed"
+    git clone --depth 1 "file://${ORIGIN}" "${WORKDIR}"
+    mkdir -p "${WORKDIR}/.github"
+    cat << 'EOF' > "${WORKDIR}/.github/request-action-test-config.yml"
     checks:
       test-check:
         name: Test check
@@ -25,7 +37,9 @@ before:
       envoy:
         branch: main
     run:
-      test-run: true
+      test-run:
+        paths:
+        - CHANGED.txt
     build-image:
       repo: envoyproxy/envoy-build-ubuntu
       tag: 0123456789abcdef0123456789abcdef01234567
@@ -33,7 +47,11 @@ before:
       mobile-sha: fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
     agent-ubuntu: ubuntu-24.04
     EOF
-    echo "1.2.3-dev" > .github/request-action-test-version.txt
+    echo "changed" > "${ORIGIN}/CHANGED.txt"
+    git -C "${ORIGIN}" add CHANGED.txt
+    git -C "${ORIGIN}" commit -m "changed" >/dev/null
+    git -C "${WORKDIR}" fetch origin main
+    echo "1.2.3-dev" > "${WORKDIR}/.github/request-action-test-version.txt"
 
 after:
 - shell: bash
@@ -45,6 +63,10 @@ after:
     fi
     if ! echo "$OUTPUT" | jq -e '.request and .checks and .config and .run' >/dev/null; then
         echo "fail:Request action output is missing expected keys" >> "$TEST_OUTPUT"
+        exit 0
+    fi
+    if ! echo "$OUTPUT" | jq -e '.checks["test-check"].action == "RUN"' >/dev/null; then
+        echo "fail:Expected changed file detection to schedule test-check via fallback diff" >> "$TEST_OUTPUT"
         exit 0
     fi
     echo "success:Request action completed and produced structured output" >> "$TEST_OUTPUT"
