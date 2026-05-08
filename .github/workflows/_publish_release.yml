@@ -218,12 +218,12 @@ jobs:
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
 
-    - name: Get docker SHA
-      id: docker-sha
+    - name: Get docker version
+      id: docker-version
       shell: bash
       run: |
-        TAG_SHA=$(git log -1 --pretty=format:"%H" ./docker/build)
-        echo "sha=${TAG_SHA}" >> $GITHUB_OUTPUT
+        TAG_VERSION=$(cat ./docker/build/VERSION.txt)
+        echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
     - name: Generate manifest configuration
       id: manifest-config
@@ -234,10 +234,10 @@ jobs:
         filter: >-
           .manifests
           | map(. + {
-              tag: (.tag | gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}")),
-              "artifact-pattern": (.["artifact-pattern"] | gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}")),
+              tag: (.tag | gsub("{version}"; "${{ steps.docker-version.outputs.version }}")),
+              "artifact-pattern": (.["artifact-pattern"] | gsub("{version}"; "${{ steps.docker-version.outputs.version }}")),
               "additional-tags": (if .["additional-tags"] then
-              .["additional-tags"] | map(gsub("{sha}"; "${{ steps.docker-sha.outputs.sha }}"))
+              .["additional-tags"] | map(gsub("{version}"; "${{ steps.docker-version.outputs.version }}"))
               else null end)
             })
           | {manifests: .}
