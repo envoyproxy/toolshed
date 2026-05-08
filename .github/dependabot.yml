@@ -111,8 +111,17 @@ updates:
     dependencies:
       patterns:
       - "*"
+  # Toolshed self-references in /actions/* are intentionally bumped by
+  # .github/workflows/_release.yml, not by dependabot.
+  # `ignore.dependency-name` uses dependabot's anchored wildcard matcher
+  # (`*` => `.*`), not fnmatch semantics:
+  # https://github.com/dependabot/dependabot-core/blob/31dccdedd93747d3acba6b9bd38d63ead693bf30/common/lib/dependabot/config/update_config.rb#L66-L74
+  # For action subpath refs (e.g. envoyproxy/toolshed/actions/jq@<sha>),
+  # dependabot's dependency name is the bare `owner/repo`; path is only
+  # included for reusable workflow refs:
+  # https://github.com/dependabot/dependabot-core/blob/31dccdedd93747d3acba6b9bd38d63ead693bf30/github_actions/lib/dependabot/github_actions/file_parser.rb#L114-L124
   ignore:
-  - dependency-name: "envoyproxy/toolshed/**"
+  - dependency-name: "envoyproxy/toolshed*"
 
 - package-ecosystem: npm
   directories:
