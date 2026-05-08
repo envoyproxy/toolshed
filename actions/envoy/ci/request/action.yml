@@ -104,7 +104,7 @@ runs:
           if MERGE_BASE="$(git -C "${WORKING_DIRECTORY}" merge-base HEAD "${TARGET_REF}" 2>/dev/null)"; then
               DIFF_BASE="${MERGE_BASE}"
           else
-              DIFF_BASE="${TARGET_REF}"
+              DIFF_BASE="HEAD"
           fi
       fi
 
