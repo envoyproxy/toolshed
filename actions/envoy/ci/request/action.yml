@@ -39,12 +39,12 @@ inputs:
     type: string
     default: |
       git -C \($working_directory) fetch \($remote) \($ref)
-      OUTPUT="$(git -C \($working_directory) show \($remote)/\($ref):\($filename))"
+      OUTPUT=\"$(git -C \($working_directory) show \($remote)/\($ref):\($filename))\"
   template-script-diff:
     type: string
     default: |
       git -C \($working_directory)  fetch \($remote) \($ref)
-      OUTPUT="$(git -C \($working_directory) diff --name-only \($diff) \($remote)/\($ref))"
+      OUTPUT=\"$(git -C \($working_directory) diff --name-only \($diff) \($remote)/\($ref))\"
   vars:
     type: string
     required: true
