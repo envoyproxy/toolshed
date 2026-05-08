@@ -1,0 +1,10 @@
+name: validate::sha_or_semver accepts semver tag with prerelease and build metadata
+
+input: "1.2.3-rc1+build.456"
+
+imports:
+- validate
+
+expression: (. | validate::sha_or_semver(40)) == "1.2.3-rc1+build.456"
+
+expected: true

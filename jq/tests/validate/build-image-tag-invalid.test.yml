@@ -1,0 +1,10 @@
+name: validate::sha_or_semver rejects invalid tag
+
+input: "not-a-valid-tag"
+
+imports:
+- validate
+
+expression: (try validate::sha_or_semver(40) catch "invalid") == "invalid"
+
+expected: true
