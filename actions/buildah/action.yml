@@ -65,7 +65,7 @@ runs:
       echo '${{ inputs.gcr-key }}' | base64 -d | buildah login --username _json_key --password-stdin gcr.io
       echo "::endgroup::"
   - name: Execute buildah operations
-    uses: envoyproxy/toolshed/actions/bson@c79d3010c60c452b66ea224a270fc2c51d2e309f
+    uses: envoyproxy/toolshed/actions/bson@2cf56f2fad062b458f2daf11af3fe41f3f038044
     id: execute
     with:
       title: Execute buildah operations
