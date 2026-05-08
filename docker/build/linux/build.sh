@@ -54,7 +54,7 @@ build_and_push_variants () {
         push_arg=()
         if [[ "${SAVE_OCI}" == "true" ]]; then
             # Save to OCI format
-            push_arg+=(--output "type=oci,dest=${OCI_OUTPUT_DIR}/${OS_DISTRO}-${variant}-${CONTAINER_TAG}${ARCH_SUFFIX}.tar")
+            push_arg+=(--output "type=oci,dest=${OCI_OUTPUT_DIR}/envoy-build-${variant}-${CONTAINER_TAG}${ARCH_SUFFIX}.tar")
         elif [[ -n "${IMAGE_TAGS}" && "$variant" != "test" ]]; then
             # Variants are only pushed to dockerhub currently, so if we are pushing images
             # just push the variants immediately.
@@ -82,9 +82,9 @@ ci_log_run config_env
 
 # Build the full/main image first
 if [[ "${SAVE_OCI}" == "true" ]]; then
-    echo "Building OCI artifact to: ${OCI_OUTPUT_DIR}/${OS_DISTRO}-full-${CONTAINER_TAG}${ARCH_SUFFIX}.tar"
+    echo "Building OCI artifact to: ${OCI_OUTPUT_DIR}/envoy-build-full-${CONTAINER_TAG}${ARCH_SUFFIX}.tar"
     ci_log_run docker buildx build . -f "${OS_DISTRO}/Dockerfile" -t "${IMAGE_NAME}:${CONTAINER_TAG}${ARCH_SUFFIX}" --target full --platform "${BUILD_TOOLS_PLATFORMS}" \
-        --output "type=oci,dest=${OCI_OUTPUT_DIR}/${OS_DISTRO}-full-${CONTAINER_TAG}${ARCH_SUFFIX}.tar"
+        --output "type=oci,dest=${OCI_OUTPUT_DIR}/envoy-build-full-${CONTAINER_TAG}${ARCH_SUFFIX}.tar"
 else
     ci_log_run docker buildx build . -f "${OS_DISTRO}/Dockerfile" -t "${IMAGE_NAME}:${CONTAINER_TAG}${ARCH_SUFFIX}" --target full --platform "${BUILD_TOOLS_PLATFORMS}"
 fi
