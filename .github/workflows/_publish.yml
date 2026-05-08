@@ -178,9 +178,14 @@ jobs:
           artifact-workflows: |
             Python CI
           artifacts: true
-          filter-artifacts: >-
+          # Exclude non-publishable test fixture package built in CI.
+          filter-artifacts: |
             ${{ inputs.python-filter-artifacts
-                || 'select(($key | contains(".dev") | not) and ($key | test("\\.whl$|\\.tar\\.gz$")))' }}
+                || 'select(
+                      ($key | contains(".dev") | not)
+                      and ($key | test("\\.whl$|\\.tar\\.gz$"))
+                      and ($key | startswith("python:toolshed_test_publish_pkg-") | not)
+                    )' }}
           prepare-dev: .github/workflows/prepare_python_dev.sh
           pypi-publish: true
           template-artifacts: |
