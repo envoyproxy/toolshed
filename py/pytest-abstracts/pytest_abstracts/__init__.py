@@ -1,7 +1,7 @@
 
 import inspect
+from collections.abc import Callable
 from functools import cached_property
-from typing import Callable
 from unittest.mock import MagicMock
 
 import pytest  # type:ignore

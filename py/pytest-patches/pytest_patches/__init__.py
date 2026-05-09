@@ -1,5 +1,5 @@
-from contextlib import contextmanager, ExitStack
-from typing import Callable, ContextManager, Iterator
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager, ExitStack
 from unittest.mock import patch
 
 import pytest  # type:ignore
@@ -11,7 +11,7 @@ def nested(*contexts) -> Iterator[tuple]:
         yield tuple(stack.enter_context(context) for context in contexts)
 
 
-def _patches(*args: str, prefix: str = "") -> ContextManager[tuple]:
+def _patches(*args: str, prefix: str = "") -> AbstractContextManager[tuple]:
     """Takes a list of module/class paths to patch and an optional prefix.
 
     The prefix is used to prefix all of the paths
@@ -32,5 +32,5 @@ def _patches(*args: str, prefix: str = "") -> ContextManager[tuple]:
 
 
 @pytest.fixture
-def patches() -> Callable[..., ContextManager[tuple]]:
+def patches() -> Callable[..., AbstractContextManager[tuple]]:
     return _patches
