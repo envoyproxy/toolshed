@@ -70,6 +70,14 @@ jobs:
         sudo apt-get -qq update
         sudo apt-get -qq install -y --no-install-recommends \
             debian-archive-keyring debootstrap qemu-user-static binfmt-support
+    - name: Configure repo Bazel settings
+      if: ${{ vars.TOOLSHED_CI_BAZELRC }}
+      shell: bash
+      run: |
+        echo "${BAZELRC_CONTENT}" > repo.bazelrc
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
     - name: RBE auth check
       id: rbe
       if: inputs.rbe == 'true'
@@ -146,6 +154,14 @@ jobs:
         sudo apt-get -qq update
         sudo apt-get -qq install -y --no-install-recommends \
             debian-archive-keyring debootstrap qemu-user-static binfmt-support
+    - name: Configure repo Bazel settings
+      if: ${{ vars.TOOLSHED_CI_BAZELRC }}
+      shell: bash
+      run: |
+        echo "${BAZELRC_CONTENT}" > repo.bazelrc
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
     - name: Cross-compile test (x86_64 -> aarch64/${{ inputs.bazel-mode }})
       run: |
         exec bazel test ${{ inputs.bazel-args }} \
@@ -179,6 +195,14 @@ jobs:
         sudo apt-get -qq update
         sudo apt-get -qq install -y --no-install-recommends \
             debian-archive-keyring debootstrap qemu-user-static binfmt-support
+    - name: Configure repo Bazel settings
+      if: ${{ vars.TOOLSHED_CI_BAZELRC }}
+      shell: bash
+      run: |
+        echo "${BAZELRC_CONTENT}" > repo.bazelrc
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
     - name: Cross-compile test (aarch64 -> x86_64/${{ inputs.bazel-mode }})
       run: |
         exec bazel test ${{ inputs.bazel-args }} \

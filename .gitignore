@@ -200,6 +200,8 @@ js/utils/**/*.d.ts
 rust/tarpaulin-report.html
 
 user.bazelrc
+repo.bazelrc
+bazel/repo.bazelrc
 
 # Docker build artifacts
 docker/build/oci-output/
