@@ -1,7 +1,7 @@
-
 import contextlib
 import warnings as _warnings
-from typing import Any, Iterable, Iterator
+from typing import Any
+from collections.abc import Iterable, Iterator
 
 
 class Captured:

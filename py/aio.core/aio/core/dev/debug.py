@@ -1,10 +1,10 @@
-
 import inspect
 import logging as _logging
 import os
 import time
 from functools import cached_property, partial
-from typing import Any, Callable, Iterator
+from typing import Any
+from collections.abc import Callable, Iterator
 
 
 logger = _logging.getLogger(__name__)

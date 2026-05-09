@@ -1,7 +1,7 @@
-
 import asyncio
 from functools import cached_property
-from typing import Any, Generator
+from typing import Any
+from collections.abc import Generator
 
 import abstracts
 

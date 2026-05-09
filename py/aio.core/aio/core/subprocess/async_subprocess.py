@@ -3,7 +3,7 @@ import subprocess
 from concurrent.futures import (
     Executor, ProcessPoolExecutor, ThreadPoolExecutor)
 from functools import partial
-from typing import AsyncGenerator, Iterable
+from collections.abc import AsyncGenerator, Iterable
 
 
 from aio.core import functional

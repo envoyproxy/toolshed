@@ -5,7 +5,8 @@
 import inspect
 import logging
 from functools import cached_property
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from aio.core import event
 from aio.core.dev import debug

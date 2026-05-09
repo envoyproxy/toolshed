@@ -1,7 +1,7 @@
-
-from typing import (
-    Any, AsyncGenerator, AsyncIterable, Awaitable, Callable,
-    Iterator, Mapping, Type)
+from typing import Any
+from collections.abc import (
+    AsyncGenerator, AsyncIterable, Awaitable,
+    Callable, Iterator, Mapping)
 
 from aio.core.functional import exceptions
 from .utils import maybe_coro, typed
@@ -161,7 +161,7 @@ class QueryDict:
         return self.query_class(_SearchableCollection(data))(self.query)
 
     @property
-    def query_class(self) -> Type[CollectionQuery]:
+    def query_class(self) -> type[CollectionQuery]:
         return CollectionQuery
 
 
