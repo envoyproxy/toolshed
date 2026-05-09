@@ -1,12 +1,12 @@
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, Type
 
 
 def catches(
         errors: (
-            Type[BaseException]
-            | tuple[Type[BaseException], ...])) -> Callable:
+            type[BaseException]
+            | tuple[type[BaseException], ...])) -> Callable:
     """Method decorator to catch specified errors.
 
     logs and returns 1 for sys.exit if error/s are caught
