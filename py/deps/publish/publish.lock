@@ -9,7 +9,6 @@
 //     "CPython>=3.12"
 //   ],
 //   "generated_with_requirements": [
-//     "abstracts",
 //     "abstracts>=0.2.0",
 //     "aio.api.github>=0.2.10",
 //     "aio.api.nist>=0.0.4",
@@ -164,27 +163,36 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "d8486a0115ade8e0362783b8e7cd988368766d0d911c62cb73b716bfe1f50a92",
-              "url": "https://files.pythonhosted.org/packages/47/a7/29a9c0a0c7a18e1a50299677eb51b60052bfd2bd78d1f0ff2183af959151/aio.core-0.10.5-py3-none-any.whl"
+              "hash": "88c0646f6360472963d80143cfb23026fb910cfa5bcd724593ffb88b9be454ad",
+              "url": "https://files.pythonhosted.org/packages/e3/af/8eb8de183cb34bfdc61e542451acae11ec54ace1c061049d706aa9142aef/aio_core-0.11.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "ba512132df47514a15930b89835ba1ef13522b7e31ec83a3b0622b7431f3f42e",
-              "url": "https://files.pythonhosted.org/packages/3e/8b/d6b265e01fd667c879bea21f94d170591ccb67d5db76bac2a3d2f440e60e/aio.core-0.10.5.tar.gz"
+              "hash": "2b7e49ca221052f84eddf32424c76093a32569fc0802cc41da7e683457241fd0",
+              "url": "https://files.pythonhosted.org/packages/58/9b/b995dfca1960bc3d4d35387f9afc3b2b50daa4da2f61f57586b811dbb2fb/aio_core-0.11.0.tar.gz"
             }
           ],
           "project_name": "aio-core",
           "requires_dists": [
-            "abstracts>=0.0.12",
-            "pytz",
+            "abstracts==0.2.0",
+            "abstracts>=0.2.0",
+            "flake8; extra == \"lint\"",
+            "mypy; extra == \"types\"",
+            "pytest-asyncio; extra == \"test\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest-iters>=0.1.0; extra == \"test\"",
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest; extra == \"test\"",
             "pyyaml",
+            "pyyaml==6.0.3",
+            "trycast==1.3.0",
             "trycast>=0.7.3",
-            "types-orjson",
-            "types-pytz",
-            "types-pyyaml"
+            "types-orjson==3.6.2",
+            "types-pyyaml==6.0.12.20260508",
+            "wheel; extra == \"publish\""
           ],
-          "requires_python": ">=3.10.0",
-          "version": "0.10.5"
+          "requires_python": ">=3.12",
+          "version": "0.11.0"
         },
         {
           "artifacts": [
@@ -5622,7 +5630,6 @@
   "pip_version": "24.2",
   "prefer_older_binary": false,
   "requirements": [
-    "abstracts",
     "abstracts>=0.2.0",
     "aio.api.github>=0.2.10",
     "aio.api.nist>=0.0.4",

@@ -33,9 +33,9 @@ aio-api-nist==0.0.4 \
     --hash=sha256:1f2909d60ed4fdb3a3ffc37ad6012666f34078b71648394be91f5e67bbf8b6ca \
     --hash=sha256:c948ee597b9e7cda7982e17bc4aca509b8aa68510899b42e2d382c10fb0d6f89
     # via -r requirements.in
-aio-core==0.10.5 \
-    --hash=sha256:ba512132df47514a15930b89835ba1ef13522b7e31ec83a3b0622b7431f3f42e \
-    --hash=sha256:d8486a0115ade8e0362783b8e7cd988368766d0d911c62cb73b716bfe1f50a92
+aio-core==0.11.0 \
+    --hash=sha256:2b7e49ca221052f84eddf32424c76093a32569fc0802cc41da7e683457241fd0 \
+    --hash=sha256:88c0646f6360472963d80143cfb23026fb910cfa5bcd724593ffb88b9be454ad
     # via
     #   -r requirements.in
     #   aio-api-bazel
@@ -1605,7 +1605,6 @@ pytz==2026.2 \
     --hash=sha256:0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a
     # via
     #   -r requirements.in
-    #   aio-core
     #   envoy-base-utils
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
@@ -1810,7 +1809,6 @@ types-pytz==2026.2.0.20260506 \
     --hash=sha256:fc6a0de6a1b7da82a748fb4065e152372dac3016559cb1eef5e8af1e338eb627
     # via
     #   -r requirements.in
-    #   aio-core
     #   envoy-base-utils
 types-pyyaml==6.0.12.20260508 \
     --hash=sha256:5ae42149c3ebf7aaaf6c65ee49af590c80f0ba52e9e3f75a75c5564b33556fa6 \
