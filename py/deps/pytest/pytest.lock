@@ -500,21 +500,27 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "0ea2fbcf7ef810fbfc6fca9f6f42fdb26e945eab092a76278995800afc41e4f9",
-              "url": "https://files.pythonhosted.org/packages/1a/76/e0b47275ffb96b5957613baa88fc95e3b379f82cd2e468e60dcb83ebd5c7/pytest_abstracts-0.0.4-py3-none-any.whl"
+              "hash": "f71cc21856d67518e60aa3c12258e7b1882d84c339eab0b1a60f1d7776fdd506",
+              "url": "https://files.pythonhosted.org/packages/9f/16/e031b4745a090df6aca8fd3ed0a0db9de88a01033024375e56b0eba760d7/pytest_abstracts-0.0.5-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "5188213747eb7a9d64838047b55017eb8019e751486f12ed58a3ea7326b22a59",
-              "url": "https://files.pythonhosted.org/packages/97/eb/42547e33d4b5448fd3a0b42611f426ab119a1122a20bc571ac358094f75e/pytest-abstracts-0.0.4.tar.gz"
+              "hash": "beaf8ce9ca59aa7acad888083b7630c31f986bfa4a6f142c3e0617c2023da9ad",
+              "url": "https://files.pythonhosted.org/packages/28/ec/447eb0f07c76966610bf1dc959c6a22c2d7acdf847a17554a65a702c1216/pytest_abstracts-0.0.5.tar.gz"
             }
           ],
           "project_name": "pytest-abstracts",
           "requires_dists": [
-            "abstracts>=0.0.12"
+            "abstracts",
+            "abstracts==0.2.0",
+            "flake8; extra == \"lint\"",
+            "mypy; extra == \"types\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest>=3.5.0",
+            "wheel; extra == \"publish\""
           ],
-          "requires_python": null,
-          "version": "0.0.4"
+          "requires_python": ">=3.12",
+          "version": "0.0.5"
         },
         {
           "artifacts": [
@@ -545,26 +551,37 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "945ed337e85f00c18d7c38d207e3953eed6629e8170f92b1c342ae68825b1bbb",
-              "url": "https://files.pythonhosted.org/packages/c5/06/07353a0b46636d6507c5cd62abb5870054fcb4d359cea768f11ec300d918/pytest_iters-0.0.3-py3-none-any.whl"
+              "hash": "002cef2c335e43f9bcc29762c015d2503cc6ba52d520094e0431a18a5b2da220",
+              "url": "https://files.pythonhosted.org/packages/c3/02/13876b429e3f02089f817de0c2da3aa23f869b2f2c51cb3abc353b371e8a/pytest_iters-0.0.4-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "79ba994c1d3c37e7c0ac02f0a9b7e1ac3891541e5d88b8b387d6a7b38fc96375",
-              "url": "https://files.pythonhosted.org/packages/98/24/b1d025e672ed4cf6e22f3342543dc67fc9d81c382a144723e7b0e55a1c94/pytest-iters-0.0.3.tar.gz"
+              "hash": "66280d4fdaec22f7658c644922bc3a604f5f41dd9c262101ff2dc9bc53e456fe",
+              "url": "https://files.pythonhosted.org/packages/09/03/9aa2db2bcb97de4d202ebe0c7e417d9497c6e63725cc94e67fcff0d65a08/pytest_iters-0.0.4.tar.gz"
             }
           ],
           "project_name": "pytest-iters",
-          "requires_dists": [],
-          "requires_python": null,
-          "version": "0.0.3"
+          "requires_dists": [
+            "flake8; extra == \"lint\"",
+            "mypy; extra == \"types\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest>=3.5.0",
+            "wheel; extra == \"publish\""
+          ],
+          "requires_python": ">=3.12",
+          "version": "0.0.4"
         },
         {
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "6f8cdc8641c708c4812f58ae48d410f373a6fd16cd6cc4dc4d3fb8951df9c92a",
-              "url": "https://files.pythonhosted.org/packages/b8/87/4705cb62a5fde412969b4ef2556c41c5131b8e8d4fa9265170b648a07298/pytest_patches-0.0.3-py3-none-any.whl"
+              "hash": "7692baa0e6e0ff96949ce54c1b15a3d50a6e32a0b3bddebfcfa7b2a18fb70856",
+              "url": "https://files.pythonhosted.org/packages/4c/48/e26417825844e70a0dd9d8c30d7916619f8dad1a00df156072b817c1e06b/pytest_patches-0.0.4-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "ad5c38db220bfae8463f44a2a677db164d8c383b6e0d0875f1e841becec96a0b",
+              "url": "https://files.pythonhosted.org/packages/9e/62/d03ecbe91ccb793339f3f55cc99a0066a119be652d3072c7ae8aa945f6df/pytest_patches-0.0.4.tar.gz"
             }
           ],
           "project_name": "pytest-patches",
@@ -575,8 +592,8 @@
             "pytest>=3.5.0",
             "wheel; extra == \"publish\""
           ],
-          "requires_python": ">=3.5",
-          "version": "0.0.3"
+          "requires_python": ">=3.12",
+          "version": "0.0.4"
         }
       ],
       "marker": null,
