@@ -87,7 +87,7 @@ def test_event_reactive_loop_creates(patches):
 
     with patched as (m_aio, ):
         m_aio.get_event_loop_policy.return_value.get_event_loop.side_effect = (
-            RuntimeError)
+            RuntimeError())
         assert reactive.loop == m_aio.new_event_loop.return_value
 
     assert (
