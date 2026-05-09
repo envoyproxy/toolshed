@@ -14,6 +14,10 @@ sh_binary(
         "parse_clang_tidy.jq",
         "@jq_toolchains//:resolved_toolchain",
     ],
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+    env = {
+        "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
+    },
     visibility = ["//visibility:public"],
 )
 
@@ -29,4 +33,8 @@ sh_test(
         "tests/*.txt",
         "tests/*.json",
     ]),
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+    env = {
+        "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
+    },
 )
