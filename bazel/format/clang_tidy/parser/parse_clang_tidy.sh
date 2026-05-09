@@ -6,7 +6,7 @@ PARSER="${SCRIPT_DIR}/parse_clang_tidy.jq"
 
 if [[ -n "${JQ_BIN:-}" && "${JQ_BIN}" != /* ]]; then
     f=bazel_tools/tools/bash/runfiles/runfiles.bash
-    runfiles_bash_path="${RUNFILES_DIR:-/dev/null}/$f"
+    runfiles_bash_path="${RUNFILES_DIR:-${TEST_SRCDIR:-/dev/null}}/$f"
     # shellcheck disable=SC1090
     source "${runfiles_bash_path}" 2>/dev/null || \
         source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2 -d' ')" 2>/dev/null || \
