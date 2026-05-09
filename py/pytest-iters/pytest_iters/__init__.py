@@ -1,19 +1,18 @@
-from typing import (
-    Any, Callable, Dict, Iterable, List,
-    Optional, Set, Tuple, Type, Union)
+from collections.abc import Callable, Iterable
+from typing import Any
 
 import pytest  # type:ignore
 
 
-def _dict_item(x: int) -> Tuple[str, str]:
+def _dict_item(x: int) -> tuple[str, str]:
     return f"K{x}", f"V{x}"
 
 
 def _iters_mapping(
-        sequence: Type[Dict],
+        sequence: type[dict],
         count: int,
         start: int,
-        cb: Optional[Callable[[int], Any]] = None) -> Iterable:
+        cb: Callable[[int], Any] | None = None) -> Iterable:
     return sequence(
         (cb or _dict_item)(x)
         for x
@@ -25,11 +24,11 @@ def _item(x: int) -> str:
 
 
 def _iters(
-        sequence: Type[Union[Dict, List, Tuple, Set]] = list,
+        sequence: type[dict | list | tuple | set] = list,
         count: int = 5,
         start: int = 0,
-        cb: Optional[Callable[[int], Any]] = None) -> Iterable:
-    if issubclass(sequence, Dict):
+        cb: Callable[[int], Any] | None = None) -> Iterable:
+    if issubclass(sequence, dict):
         return _iters_mapping(sequence, count, start, cb)
     return sequence(
         (cb or _item)(x)
