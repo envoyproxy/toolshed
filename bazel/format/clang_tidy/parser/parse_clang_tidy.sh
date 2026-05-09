@@ -3,6 +3,19 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARSER="${SCRIPT_DIR}/parse_clang_tidy.jq"
+
+if [[ -n "${JQ_BIN:-}" && "${JQ_BIN}" != /* ]]; then
+    f=bazel_tools/tools/bash/runfiles/runfiles.bash
+    if [[ -z "${RUNFILES_DIR:-}" && -n "${TEST_SRCDIR:-}" ]]; then
+        RUNFILES_DIR="${TEST_SRCDIR}"
+    fi
+    runfiles_bash_path="${RUNFILES_DIR:-/dev/null}/$f"
+    # shellcheck disable=SC1090
+    source "${runfiles_bash_path}" 2>/dev/null || \
+        source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2 -d' ')" 2>/dev/null || \
+        { echo >&2 "ERROR: cannot find runfiles.bash"; exit 1; }
+    JQ_BIN="$(rlocation "${JQ_BIN}")"
+fi
 JQ="${JQ_BIN:-jq}"
 
 if ! command -v "$JQ" &> /dev/null; then
