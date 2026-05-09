@@ -45,10 +45,12 @@ class AExecutive(metaclass=abstracts.Abstraction):
             executable: Callable,
             *args,
             **kwargs) -> Any:
+        if kwargs:
+            executable = partial(executable, **kwargs)
         return await self.loop.run_in_executor(
             self.pool,
-            *(executable, *args),
-            **kwargs)
+            executable,
+            *args)
 
     def execute_in_batches(
             self,

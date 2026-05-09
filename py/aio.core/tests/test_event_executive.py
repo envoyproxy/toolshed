@@ -1,5 +1,7 @@
 
 import types
+from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
@@ -58,6 +60,7 @@ def test_event_executive_constructor():
     "kwargs", [{}, {f"K{i}": f"V{i}" for i in range(0, 5)}])
 async def test_event_executive_execute(patches, args, kwargs):
     executive = DummyExecutive()
+    executable = MagicMock()
     patched = patches(
         ("AExecutive.loop",
          dict(new_callable=PropertyMock)),
@@ -70,12 +73,38 @@ async def test_event_executive_execute(patches, args, kwargs):
         m_loop.return_value.run_in_executor = execute
         assert (
             await DummyExecutive.execute.__wrapped__(
-                executive, "EXECUTABLE", *args, **kwargs)
+                executive, executable, *args, **kwargs)
             == m_loop.return_value.run_in_executor.return_value)
 
-    assert (
-        m_loop.return_value.run_in_executor.call_args
-        == [(m_pool.return_value, "EXECUTABLE", *args), kwargs])
+    (called_args, called_kwargs) = (
+        m_loop.return_value.run_in_executor.call_args)
+    assert called_kwargs == {}
+    assert called_args[0] == m_pool.return_value
+    assert called_args[2:] == tuple(args)
+
+    if kwargs:
+        assert type(called_args[1]) is partial
+        assert called_args[1].func == executable
+        assert called_args[1].keywords == kwargs
+    else:
+        assert called_args[1] == executable
+
+
+async def test_event_executive_execute_forwards_kwargs():
+    executive = DummyExecutive()
+    calls = []
+
+    def executable(*args, **kwargs):
+        calls.append((args, kwargs))
+        return (args, kwargs)
+
+    with ThreadPoolExecutor() as pool:
+        executive._pool = pool
+        result = await executive.execute(
+            executable, 1, 2, foo="bar")
+
+    assert result == ((1, 2), {"foo": "bar"})
+    assert calls == [((1, 2), {"foo": "bar"})]
 
 
 @pytest.mark.parametrize(
