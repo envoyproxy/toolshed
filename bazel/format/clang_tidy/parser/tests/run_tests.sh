@@ -20,7 +20,6 @@ fi
 
 if [[ -n "${JQ_BIN:-}" && "${JQ_BIN}" != /* ]]; then
     f=bazel_tools/tools/bash/runfiles/runfiles.bash
-    # RUNFILES_DIR is the Bazel-provided runfiles root for runfiles.bash.
     runfiles_bash_path="${RUNFILES_DIR:-/dev/null}/$f"
     # shellcheck disable=SC1090
     source "${runfiles_bash_path}" 2>/dev/null || \
