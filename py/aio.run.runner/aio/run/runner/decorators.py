@@ -44,9 +44,24 @@ def catches(
 
 
 def cleansup(fun) -> Callable:
-    """Method decorator to call `.cleanup()` after run.
+    """Async method decorator to call `await self.cleanup()` after run.
 
-    Can work with `sync` and `async` methods.
+    Wraps an `async` method so that `await self.cleanup()` is always
+    invoked in a `finally` block, regardless of whether the wrapped
+    method returns normally or raises.
+
+    Only `async` methods are supported.
+
+    Example:
+
+    ```python
+
+    class MyRunner(runner.Runner):
+
+        @runner.cleansup
+        async def run(self):
+            ...
+    ```
     """
 
     @wraps(fun)

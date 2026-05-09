@@ -19,7 +19,7 @@ try:
     import uvloop
 except ImportError:
     uvloop = None  # type:ignore
-    logging.warn("Unsupported platform, Cannot import uvloop...")
+    logging.warning("Unsupported platform, Cannot import uvloop...")
 
 import verboselogs  # type:ignore
 
