@@ -89,4 +89,5 @@ common:macos --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=0
 # imports
 #############################################################################
 
+try-import %workspace%/repo.bazelrc
 try-import %workspace%/user.bazelrc
