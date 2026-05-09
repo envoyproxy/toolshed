@@ -30,10 +30,20 @@ class AReactive(IReactive, metaclass=abstracts.Abstraction):
     def loop(self) -> asyncio.AbstractEventLoop:
         """Event loop.
 
-        Does not expect an existing loop to be running if it is not
-        passed a loop.
+        Returns the injected loop if one was passed; otherwise returns
+        the existing event loop for this thread, creating and setting a
+        new one if none exists.
+
+        Does not expect an existing loop to be running.
         """
-        return self._loop or asyncio.get_event_loop()
+        if self._loop:
+            return self._loop
+        try:
+            return asyncio.get_event_loop_policy().get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return loop
 
     @cached_property
     def pool(self) -> futures.Executor:
