@@ -1,0 +1,36 @@
+inputs:
+  container:
+    type: string
+    required: true
+  organisation:
+    type: string
+    required: true
+    default: ${{ github.repository_owner }}
+
+outputs:
+  authorized:
+    value: ${{ steps.container.outputs.authorized }}
+
+
+runs:
+  using: composite
+  steps:
+  - name: Detect container auth
+    id: container
+    shell: bash
+    env:
+      CONTAINER_NAME: ${{ inputs.container }}
+      GH_ORG: ${{ inputs.organisation }}
+      GH_TOKEN: ${{ github.token }}
+    run: |
+      if gh api \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "/orgs/${GH_ORG}/packages/container/${CONTAINER_NAME}" \
+          --silent 2>/dev/null; then
+          echo "Container auth probe: OK"
+          echo "authorized=true" >> "$GITHUB_OUTPUT"
+      else
+          echo "::warning::Container auth probe failed for ${GH_ORG}/${CONTAINER_NAME}"
+          echo "authorized=false" >> "$GITHUB_OUTPUT"
+      fi
