@@ -1,0 +1,27 @@
+uses: ./actions/github/container/auth
+id: auth
+with:
+  container: mock-container
+  organisation: mock-org
+
+before:
+- shell: bash
+  run: |
+    mkdir -p /tmp/auth-shim-ok
+    cat > /tmp/auth-shim-ok/gh <<'EOF'
+    #!/usr/bin/env bash
+    exit 0
+    EOF
+    chmod +x /tmp/auth-shim-ok/gh
+    echo "/tmp/auth-shim-ok" >> "$GITHUB_PATH"
+
+after:
+- shell: bash
+  run: |
+    AUTHORIZED='${{ steps.auth.outputs.authorized }}'
+    if [[ "$AUTHORIZED" != "true" ]]; then
+        echo "fail:Expected authorized=true on gh exit 0, got '$AUTHORIZED'" >> "$TEST_OUTPUT"
+    else
+        echo "success:authorized=true on gh exit 0" >> "$TEST_OUTPUT"
+    fi
+    rm -rf /tmp/auth-shim-ok

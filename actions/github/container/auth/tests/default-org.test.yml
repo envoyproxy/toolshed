@@ -1,0 +1,35 @@
+uses: ./actions/github/container/auth
+id: auth
+with:
+  container: mock-container
+# organisation omitted -> defaults to ${{ github.repository_owner }}
+
+before:
+- shell: bash
+  run: |
+    mkdir -p /tmp/auth-shim-default
+    cat > /tmp/auth-shim-default/gh <<EOF
+    #!/usr/bin/env bash
+    # Record args so we can assert default org was passed through.
+    echo "\$@" > /tmp/auth-shim-default/args
+    exit 0
+    EOF
+    chmod +x /tmp/auth-shim-default/gh
+    echo "/tmp/auth-shim-default" >> "$GITHUB_PATH"
+
+after:
+- shell: bash
+  run: |
+    AUTHORIZED='${{ steps.auth.outputs.authorized }}'
+    EXPECTED_ORG='${{ github.repository_owner }}'
+    if [[ "$AUTHORIZED" != "true" ]]; then
+        echo "fail:Expected authorized=true, got '$AUTHORIZED'" >> "$TEST_OUTPUT"
+    else
+        echo "success:authorized=true with default org" >> "$TEST_OUTPUT"
+    fi
+    if ! grep -q "/orgs/${EXPECTED_ORG}/packages/container/mock-container" /tmp/auth-shim-default/args; then
+        echo "fail:Default org '${EXPECTED_ORG}' not propagated to gh args: $(cat /tmp/auth-shim-default/args)" >> "$TEST_OUTPUT"
+    else
+        echo "success:Default org '${EXPECTED_ORG}' propagated to gh args" >> "$TEST_OUTPUT"
+    fi
+    rm -rf /tmp/auth-shim-default
