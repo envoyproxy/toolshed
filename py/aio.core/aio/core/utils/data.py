@@ -1,8 +1,7 @@
-
 import json
 import pathlib
 import tarfile
-from typing import Any, Type
+from typing import Any
 
 import yaml
 
@@ -41,7 +40,7 @@ def extract(
 
 def from_json(
         path: pathlib.Path | str,
-        type: Type | None = None) -> Any:
+        type: type | None = None) -> Any:
     """Returns the loaded python object from a JSON file given by `path`"""
     data = json.loads(pathlib.Path(path).read_text())
     return (
@@ -52,7 +51,7 @@ def from_json(
 
 def from_yaml(
         path: pathlib.Path | str,
-        type: Type | None = None) -> Any:
+        type: type | None = None) -> Any:
     """Returns the loaded python object from a yaml file given by `path`"""
     data = yaml.safe_load(pathlib.Path(path).read_text())
     return (

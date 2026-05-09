@@ -1,10 +1,10 @@
-
 import abc
 import logging
 import os
 import subprocess
 from functools import cached_property
-from typing import Any, Mapping, Sequence
+from typing import Any
+from collections.abc import Mapping, Sequence
 
 import abstracts
 

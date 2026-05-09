@@ -4,8 +4,10 @@ import os
 import types
 from functools import cached_property
 from typing import (
-    Any, AsyncIterable, AsyncIterator, Awaitable, Callable,
-    Iterable, Iterator)
+    Any)
+from collections.abc import (
+    AsyncIterable, AsyncIterator, Awaitable,
+    Callable, Iterable, Iterator)
 
 from aio.core.functional import async_property, AwaitableGenerator
 

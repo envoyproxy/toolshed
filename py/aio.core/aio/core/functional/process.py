@@ -1,6 +1,5 @@
-
 from concurrent import futures
-from typing import AsyncIterator, Callable, Iterable
+from collections.abc import AsyncIterator, Callable, Iterable
 
 
 async def async_map(

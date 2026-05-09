@@ -1,7 +1,8 @@
-
 from typing import (
-    Any, AsyncIterable, AsyncIterator, Awaitable,
-    Callable, cast, Generator, TypeVar)
+    Any, cast, TypeVar)
+from collections.abc import (
+    AsyncIterable, AsyncIterator, Awaitable,
+    Callable, Generator)
 
 from aio.core import functional
 

@@ -1,9 +1,9 @@
-
 import argparse
 import asyncio
 import sys
 from functools import cached_property
-from typing import Any, Awaitable, Callable, TextIO
+from typing import Any, TextIO
+from collections.abc import Awaitable, Callable
 
 import abstracts
 
