@@ -1,7 +1,6 @@
 
 import abc
 import argparse
-from typing import Type
 
 import abstracts
 
@@ -43,14 +42,14 @@ class ACommand(ICommand, metaclass=abstracts.Abstraction):
         raise NotImplementedError
 
 
-CommandDict = dict[str, Type[ACommand]]
+CommandDict = dict[str, type[ACommand]]
 
 
 class ARunnerWithCommands(Runner, metaclass=abstracts.Abstraction):
-    _commands: tuple[tuple[str, Type[ACommand]], ...] = ()
+    _commands: tuple[tuple[str, type[ACommand]], ...] = ()
 
     @classmethod
-    def register_command(cls, name: str, command: Type[ACommand]) -> None:
+    def register_command(cls, name: str, command: type[ACommand]) -> None:
         """Register a repo type."""
         cls._commands = getattr(cls, "_commands") + ((name, command),)
 
