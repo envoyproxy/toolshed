@@ -91,9 +91,13 @@ BASE_CMAKE_CACHE = BASE_CMAKE_CACHE_COMMON | select({
     "//conditions:default": LLVM_LINKER_FLAGS,
 })
 
+PYTHON_CMAKE_CACHE = {
+    "Python3_EXECUTABLE": "$$EXT_BUILD_ROOT/$(PYTHON3)",
+}
+
 cmake(
     name = "libcxx_msan",
-    cache_entries = BASE_CMAKE_CACHE | {
+    cache_entries = BASE_CMAKE_CACHE | PYTHON_CMAKE_CACHE | {
         "LLVM_USE_SANITIZER": "MemoryWithOrigins",
     },
     env = SANITIZER_ENV,
@@ -107,12 +111,13 @@ cmake(
         ":macos_build": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+    toolchains = ["@rules_python//python:current_py_toolchain"],
     working_directory = "runtimes",
 )
 
 cmake(
     name = "libcxx_tsan",
-    cache_entries = BASE_CMAKE_CACHE | {
+    cache_entries = BASE_CMAKE_CACHE | PYTHON_CMAKE_CACHE | {
         "LLVM_USE_SANITIZER": "Thread",
     },
     env = SANITIZER_ENV,
@@ -126,6 +131,7 @@ cmake(
         ":macos_build": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+    toolchains = ["@rules_python//python:current_py_toolchain"],
     working_directory = "runtimes",
 )
 
