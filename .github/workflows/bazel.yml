@@ -150,6 +150,14 @@ jobs:
       uses: envoyproxy/toolshed/actions/github/container/auth@f3c0acc8c3799305101f5669042b388edfb070c7
       with:
         container: hello-world
+    - name: Configure repo Bazel settings
+      if: vars.TOOLSHED_CI_BAZELRC
+      shell: bash
+      run: |
+        echo "${BAZELRC_CONTENT}" > repo.bazelrc
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
     - name: Bazel targets (build/${{ matrix.mode }}-macos)
       run: >-
         exec bazel build
