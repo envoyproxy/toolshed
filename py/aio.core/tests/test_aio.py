@@ -36,14 +36,14 @@ async def test_subprocess_parallel(patches):
     assert (
         m_asyncio.as_completed.call_args
         == [(tuple(
-            m_asyncio.ensure_future.return_value
+            m_asyncio.create_task.return_value
             for i in range(0, len(procs))), ), {}])
     kwargs["executor"] = m_future.return_value.__enter__.return_value
     assert (
         m_run.call_args_list
         == [[(proc,), kwargs] for proc in procs])
     assert (
-        m_asyncio.ensure_future.call_args_list
+        m_asyncio.create_task.call_args_list
         == [[(m_run.return_value,), {}] for proc in procs])
 
 

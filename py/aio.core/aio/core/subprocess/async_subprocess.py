@@ -54,7 +54,7 @@ class AsyncSubprocess:
         with executor() as pool:
             futures = asyncio.as_completed(
                 tuple(
-                    asyncio.ensure_future(
+                    asyncio.create_task(
                         cls.run(command, executor=pool, **kwargs))
                     for command in commands))
             for result in futures:
