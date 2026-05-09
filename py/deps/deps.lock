@@ -9,7 +9,7 @@
 //     "CPython>=3.12"
 //   ],
 //   "generated_with_requirements": [
-//     "abstracts==0.0.12",
+//     "abstracts==0.2.0",
 //     "aio-api-bazel==0.0.4",
 //     "aio-api-github==0.2.10",
 //     "aio-api-nist==0.0.4",
@@ -148,8 +148,13 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "acc01ff56c8a05fb88150dff62e295f9071fc33388c42f1dfc2787a8d1c755ff",
-              "url": "https://files.pythonhosted.org/packages/93/4f/158ded37e69172bba7987774885629afa9b482857edde5e87399c89e7d66/abstracts-0.0.12-py3-none-any.whl"
+              "hash": "995f326ab4408a6652a346439cb33169f48e66f25515c6baf9fc47f1a3e4652a",
+              "url": "https://files.pythonhosted.org/packages/1f/6a/e115e8fbf5fd3912c12ce80f8ba21a112b2a8d1630ac38fb098fef6d04c4/abstracts-0.2.0-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "1dd6df509a67cae1722c0dd9f58cdd6dee6e42f45bf0d7197e159b2e4c5e98e9",
+              "url": "https://files.pythonhosted.org/packages/33/03/943f19f811619438044f53b959893c303e3add3fbcc90e5d9a8a1bb7aebd/abstracts-0.2.0.tar.gz"
             }
           ],
           "project_name": "abstracts",
@@ -161,8 +166,8 @@
             "pytest; extra == \"test\"",
             "wheel; extra == \"publish\""
           ],
-          "requires_python": ">=3.5",
-          "version": "0.0.12"
+          "requires_python": ">=3.12",
+          "version": "0.2.0"
         },
         {
           "artifacts": [
@@ -6333,7 +6338,7 @@
   "pip_version": "24.2",
   "prefer_older_binary": false,
   "requirements": [
-    "abstracts==0.0.12",
+    "abstracts==0.2.0",
     "aio-api-bazel==0.0.4",
     "aio-api-github==0.2.10",
     "aio-api-nist==0.0.4",
