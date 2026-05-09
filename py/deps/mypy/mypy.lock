@@ -9,7 +9,7 @@
 //     "CPython>=3.12"
 //   ],
 //   "generated_with_requirements": [
-//     "mypy-abstracts",
+//     "mypy-abstracts>=0.1.0",
 //     "mypy==2.0.0"
 //   ],
 //   "manylinux": "manylinux2014",
@@ -516,13 +516,13 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "b0c7b52f13b6399810e3ffaa1360f006defa6f96a4bdc904440d8bfa518e4b98",
-              "url": "https://files.pythonhosted.org/packages/f4/1c/62844d3f841ca903302c10ae5bfbc891b89c023ac1f2a7abf06d8973a3d2/mypy_abstracts-0.0.8-py3-none-any.whl"
+              "hash": "5801d7f7644e46c471680e6c2e577394c5db40b31f066d3cf0fb734939502fcc",
+              "url": "https://files.pythonhosted.org/packages/a5/fd/e61ff9e0db4211e68c4da05046c2b18c830133a9d1fc2917cbb5eba2c9b6/mypy_abstracts-0.1.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "2a746126fdc3947a8f84bbe065cb635b7d8952e75baf0e495acf487e2e366476",
-              "url": "https://files.pythonhosted.org/packages/9a/75/1d4d8e9cb7b64e55ef1adfbde00b86584b26868ba835d874f617cc77bd3a/mypy_abstracts-0.0.8.tar.gz"
+              "hash": "8196a9431271e0a1e7c16b313667032af7c4b4848a7b203e1a28f3b25903c6ac",
+              "url": "https://files.pythonhosted.org/packages/77/19/b1df1b64b04565944c9f315ae00f3af1a0dc06785e7f92bdbe9e0957ddc0/mypy_abstracts-0.1.0.tar.gz"
             }
           ],
           "project_name": "mypy-abstracts",
@@ -537,7 +537,7 @@
             "wheel; extra == \"publish\""
           ],
           "requires_python": ">=3.12",
-          "version": "0.0.8"
+          "version": "0.1.0"
         },
         {
           "artifacts": [
@@ -610,7 +610,7 @@
   "pip_version": "24.2",
   "prefer_older_binary": false,
   "requirements": [
-    "mypy-abstracts",
+    "mypy-abstracts>=0.1.0",
     "mypy==2.0.0"
   ],
   "requires_python": [
