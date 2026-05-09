@@ -709,18 +709,50 @@ def test_runner__on_runner_error(patches):
     with patched as (m_asyncio, m_exit, m_on_error):
         assert (
             run._on_runner_error(e)
-            == (m_asyncio.get_event_loop.return_value
+            == (m_asyncio.new_event_loop.return_value
                          .run_until_complete.return_value))
 
     assert (
         m_exit.call_args
         == [(), {}])
     assert (
-        m_asyncio.get_event_loop.call_args
+        m_asyncio.new_event_loop.call_args
         == [(), {}])
     assert (
-        m_asyncio.get_event_loop.return_value.run_until_complete.call_args
+        m_asyncio.set_event_loop.call_args
+        == [(m_asyncio.new_event_loop.return_value, ), {}])
+    assert (
+        m_asyncio.new_event_loop.return_value.run_until_complete.call_args
         == [(m_on_error.return_value, ), {}])
     assert (
         m_on_error.call_args
         == [(e, ), {}])
+    assert (
+        m_asyncio.new_event_loop.return_value.close.call_args
+        == [(), {}])
+
+
+def test_runner__on_runner_error_raises(patches):
+    run = DummyRunner()
+    patched = patches(
+        "asyncio",
+        "Runner.exit",
+        ("Runner.on_runner_error",
+         dict(new_callable=MagicMock)),
+        prefix="aio.run.runner.runner")
+    e = MagicMock()
+    error = Exception("CLEANUP FAILED")
+
+    with patched as (m_asyncio, m_exit, m_on_error):
+        m_loop = m_asyncio.new_event_loop.return_value
+        m_loop.run_until_complete.side_effect = error
+        with pytest.raises(Exception) as exc_info:
+            run._on_runner_error(e)
+
+    assert exc_info.value is error
+    assert (
+        m_exit.call_args
+        == [(), {}])
+    assert (
+        m_loop.close.call_args
+        == [(), {}])
