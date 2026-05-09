@@ -2,6 +2,7 @@ name: Bazel CI
 
 permissions:
   contents: read
+  packages: read
 
 on:
   pull_request:
@@ -41,6 +42,7 @@ jobs:
       action: test
       bazel-args: >-
         --config=ci
+        --config=rbe
         ${{ matrix.mode == 'bzlmod'
             && '--enable_bzlmod'
             || '' }}
@@ -59,6 +61,7 @@ jobs:
   build:
     permissions:
       contents: write
+      packages: read
     needs: request
     if: >-
       always()
@@ -74,6 +77,7 @@ jobs:
           sysroot/sysroot-*.tar.xz
       bazel-args: >-
         --config=ci
+        --config=rbe
         ${{ matrix.mode == 'bzlmod'
             && '--enable_bzlmod'
             || '' }}

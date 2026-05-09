@@ -24,6 +24,38 @@ common:ci --test_output=errors
 
 
 #############################################################################
+# rbe (engflow)
+#############################################################################
+
+common:bes --bes_backend=grpcs://mordenite.cluster.engflow.com/
+common:bes --bes_results_url=https://mordenite.cluster.engflow.com/invocation/
+common:bes --bes_timeout=3600s
+common:bes --bes_upload_mode=fully_async
+common:bes --nolegacy_important_outputs
+
+common:engflow-common --google_default_credentials=false
+common:engflow-common --credential_helper=*.engflow.com=%workspace%/engflow-bazel-credential-helper.sh
+common:engflow-common --grpc_keepalive_time=60s
+common:engflow-common --grpc_keepalive_timeout=30s
+common:engflow-common --remote_cache_compression
+common:engflow-common --remote_retries=10
+common:engflow-common --remote_retry_max_delay=60s
+common:engflow-common --experimental_remote_cache_eviction_retries=5
+
+common:rbe --config=remote-cache
+common:rbe --config=remote-exec
+
+common:remote-cache --config=engflow-common
+common:remote-cache --remote_cache=grpcs://mordenite.cluster.engflow.com
+common:remote-cache --experimental_remote_downloader=grpcs://mordenite.cluster.engflow.com
+common:remote-cache --remote_timeout=3600s
+
+common:remote-exec --remote_executor=grpcs://mordenite.cluster.engflow.com
+common:remote-exec --jobs=200
+common:remote-exec --define=engflow_rbe=true
+
+
+#############################################################################
 # gcc
 #############################################################################
 
