@@ -516,8 +516,13 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "89db73e4c9a82f05c00e5659597f57e8dc63c401f94e07065a319bf32065ee74",
-              "url": "https://files.pythonhosted.org/packages/62/0f/f41d746d4d02379d6ce82eea4d6fc444646577a78f8d9957b2a088d21a22/mypy_abstracts-0.0.6-py3-none-any.whl"
+              "hash": "b0c7b52f13b6399810e3ffaa1360f006defa6f96a4bdc904440d8bfa518e4b98",
+              "url": "https://files.pythonhosted.org/packages/f4/1c/62844d3f841ca903302c10ae5bfbc891b89c023ac1f2a7abf06d8973a3d2/mypy_abstracts-0.0.8-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "2a746126fdc3947a8f84bbe065cb635b7d8952e75baf0e495acf487e2e366476",
+              "url": "https://files.pythonhosted.org/packages/9a/75/1d4d8e9cb7b64e55ef1adfbde00b86584b26868ba835d874f617cc77bd3a/mypy_abstracts-0.0.8.tar.gz"
             }
           ],
           "project_name": "mypy-abstracts",
@@ -525,13 +530,14 @@
             "flake8; extra == \"lint\"",
             "mypy",
             "mypy; extra == \"types\"",
+            "mypy==2.0.0",
             "pytest-coverage; extra == \"test\"",
             "pytest-patches; extra == \"test\"",
             "pytest; extra == \"test\"",
             "wheel; extra == \"publish\""
           ],
-          "requires_python": ">=3.5",
-          "version": "0.0.6"
+          "requires_python": ">=3.12",
+          "version": "0.0.8"
         },
         {
           "artifacts": [
