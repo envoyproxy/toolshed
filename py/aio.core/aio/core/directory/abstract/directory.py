@@ -1,4 +1,3 @@
-
 import asyncio
 import pathlib
 import re
@@ -6,9 +5,8 @@ import shutil
 import subprocess as subprocess
 from concurrent import futures
 from functools import cached_property, partial
-from typing import (
-    AsyncIterator, Iterable, Mapping,
-    Pattern, Type)
+from collections.abc import AsyncIterator, Iterable, Mapping
+from re import Pattern
 
 import abstracts
 
@@ -178,7 +176,7 @@ class ADirectory(event.AExecutive, metaclass=abstracts.Abstraction):
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def finder_class(self) -> Type[ADirectoryFileFinder]:
+    def finder_class(self) -> type[ADirectoryFileFinder]:
         raise NotImplementedError
 
     @cached_property

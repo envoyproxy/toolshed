@@ -2,7 +2,7 @@ import abc
 import contextlib
 import math
 import types
-from typing import Iterable
+from collections.abc import Iterable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest

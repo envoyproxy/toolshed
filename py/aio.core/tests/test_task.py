@@ -1,9 +1,8 @@
-
 import asyncio
 import gc
 import inspect
 import types
-from typing import AsyncIterator, AsyncIterable
+from collections.abc import AsyncIterator, AsyncIterable
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest

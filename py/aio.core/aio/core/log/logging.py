@@ -1,11 +1,9 @@
-
 import asyncio
 import atexit
 import logging
 import logging.handlers
 from functools import cached_property
 from queue import SimpleQueue
-from typing import List, Type
 
 
 class QueueHandler(logging.handlers.QueueHandler):
@@ -43,13 +41,13 @@ class QueueLogger:
         return self.handler_class(self.queue)
 
     @property
-    def handler_class(self) -> Type[QueueHandler]:
+    def handler_class(self) -> type[QueueHandler]:
         return QueueHandler
 
     @cached_property
-    def handlers(self) -> List[logging.Handler]:
+    def handlers(self) -> list[logging.Handler]:
         """Logging handlers removed from the original logger."""
-        handlers: List[logging.Handler] = []
+        handlers: list[logging.Handler] = []
         for h in self.logger.handlers[:]:
             if h is not self.handler:
                 self.logger.removeHandler(h)
@@ -57,7 +55,7 @@ class QueueLogger:
         return handlers
 
     @property
-    def listener_class(self) -> Type[logging.handlers.QueueListener]:
+    def listener_class(self) -> type[logging.handlers.QueueListener]:
         return logging.handlers.QueueListener
 
     @cached_property
@@ -65,7 +63,7 @@ class QueueLogger:
         return self.queue_class()
 
     @property
-    def queue_class(self) -> Type[SimpleQueue]:
+    def queue_class(self) -> type[SimpleQueue]:
         return SimpleQueue
 
     @cached_property
