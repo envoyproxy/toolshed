@@ -29,7 +29,6 @@ __all__ = (
     "AwaitableGenerator",
     "batches",
     "batch_jobs",
-    "buffered",
     "CollectionQuery",
     "collections",
     "exceptions",
