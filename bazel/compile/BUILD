@@ -91,9 +91,21 @@ BASE_CMAKE_CACHE = BASE_CMAKE_CACHE_COMMON | select({
     "//conditions:default": LLVM_LINKER_FLAGS,
 })
 
+# Hermetic Python interpreter for CMake's find_package(Python3 ...).
+# rules_foreign_cc's cmake() rule runs in a restricted sandbox where the host
+# PATH does not include a Python interpreter. We inject the hermetic interpreter
+# registered via rules_python so that CMake's FindPython3 module can locate it
+# without falling back to the host PATH.
+PYTHON_BUILD_DATA = ["@rules_python//python/private:current_interpreter_executable"]
+
+PYTHON_CMAKE_CACHE = {
+    "Python3_EXECUTABLE": "$(execpath @rules_python//python/private:current_interpreter_executable)",
+}
+
 cmake(
     name = "libcxx_msan",
-    cache_entries = BASE_CMAKE_CACHE | {
+    build_data = PYTHON_BUILD_DATA,
+    cache_entries = BASE_CMAKE_CACHE | PYTHON_CMAKE_CACHE | {
         "LLVM_USE_SANITIZER": "MemoryWithOrigins",
     },
     env = SANITIZER_ENV,
@@ -112,7 +124,8 @@ cmake(
 
 cmake(
     name = "libcxx_tsan",
-    cache_entries = BASE_CMAKE_CACHE | {
+    build_data = PYTHON_BUILD_DATA,
+    cache_entries = BASE_CMAKE_CACHE | PYTHON_CMAKE_CACHE | {
         "LLVM_USE_SANITIZER": "Thread",
     },
     env = SANITIZER_ENV,
