@@ -32,6 +32,9 @@ jobs:
           - .github/workflows/_bazel.yml
 
   test:
+    permissions:
+      contents: read
+      packages: read
     needs: request
     if: >-
       always()
@@ -46,6 +49,7 @@ jobs:
             || '' }}
       bazel-mode: ${{ matrix.mode }}
       bazel-path: bazel
+      rbe: true
       targets: >-
         //...
         //sysroot:sysroots
@@ -58,7 +62,8 @@ jobs:
 
   build:
     permissions:
-      contents: write
+      contents: read
+      packages: read
     needs: request
     if: >-
       always()
@@ -79,6 +84,7 @@ jobs:
             || '' }}
       bazel-path: bazel
       bazel-mode: ${{ matrix.mode }}
+      rbe: true
       targets: >-
         //...
         //sysroot:sysroots
@@ -91,6 +97,9 @@ jobs:
         - bzlmod
 
   test-gcc:
+    permissions:
+      contents: read
+      packages: read
     needs: request
     if: >-
       always()
@@ -106,6 +115,7 @@ jobs:
             || '' }}
       bazel-mode: ${{ matrix.mode }}-gcc
       bazel-path: bazel
+      rbe: true
       targets: >-
         //...
     strategy:
@@ -116,6 +126,9 @@ jobs:
         - bzlmod
 
   test-macos:
+    permissions:
+      contents: read
+      packages: read
     runs-on: macos-14
     needs: request
     if: >-
@@ -132,14 +145,22 @@ jobs:
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
     - name: Setup Bazel
       uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+    - name: RBE auth check
+      id: rbe
+      uses: envoyproxy/toolshed/actions/github/container/auth@f3c0acc8c3799305101f5669042b388edfb070c7
+      with:
+        container: hello-world
     - name: Bazel targets (build/${{ matrix.mode }}-macos)
-      run: |
-        exec bazel build \
-          --config=ci \
-          --config=macos \
-          ${{ matrix.mode == 'bzlmod' && '--enable_bzlmod' || '' }} \
-          //...
+      run: >-
+        exec bazel build
+        --config=ci
+        --config=macos
+        ${{ steps.rbe.outputs.authorized == 'true' && '--config=rbe-cache-only' || '' }}
+        ${{ matrix.mode == 'bzlmod' && '--enable_bzlmod' || '' }}
+        //...
       working-directory: bazel
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
 
   status:
     runs-on: ubuntu-24.04

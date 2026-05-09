@@ -25,6 +25,52 @@ common:ci --test_output=errors
 
 
 #############################################################################
+# rbe (engflow)
+#############################################################################
+
+common:bes --bes_backend=grpcs://mordenite.cluster.engflow.com/
+common:bes --bes_results_url=https://mordenite.cluster.engflow.com/invocation/
+common:bes --bes_timeout=3600s
+common:bes --bes_upload_mode=fully_async
+common:bes --nolegacy_important_outputs
+
+common:engflow-common --google_default_credentials=false
+common:engflow-common --credential_helper=*.engflow.com=%workspace%/engflow-bazel-credential-helper.sh
+common:engflow-common --grpc_keepalive_time=60s
+common:engflow-common --grpc_keepalive_timeout=30s
+common:engflow-common --remote_cache_compression
+common:engflow-common --remote_retries=10
+common:engflow-common --remote_retry_max_delay=60s
+common:engflow-common --experimental_remote_cache_eviction_retries=5
+
+common:rbe --config=remote-cache
+common:rbe --config=remote-exec
+
+# Override the default RBE platforms to use the gcc worker container.
+# Use alongside --config=rbe and --config=gcc for gcc RBE builds.
+common:rbe-gcc --host_platform=//platforms/rbe:linux_x64_gcc
+common:rbe-gcc --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//platforms/rbe:linux_arm64_gcc
+
+# Remote cache + BES only (no remote execution); suitable for macOS builds.
+common:rbe-cache-only --config=remote-cache
+common:rbe-cache-only --config=bes
+
+common:remote-cache --config=engflow-common
+common:remote-cache --remote_cache=grpcs://mordenite.cluster.engflow.com
+common:remote-cache --experimental_remote_downloader=grpcs://mordenite.cluster.engflow.com
+common:remote-cache --remote_timeout=3600s
+
+common:remote-exec --remote_executor=grpcs://mordenite.cluster.engflow.com
+common:remote-exec --jobs=200
+common:remote-exec --define=engflow_rbe=true
+# Platforms carry the `container-image` exec property that EngFlow's
+# WorkerInDockerActionRunner matches on; without these registered, dispatched
+# actions fail with `No matching action runner found`.
+common:remote-exec --host_platform=//platforms/rbe:linux_x64
+common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64,//platforms/rbe:linux_arm64
+
+
+#############################################################################
 # gcc
 #############################################################################
 

@@ -1,5 +1,8 @@
 name: _bazel
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
@@ -15,6 +18,10 @@ on:
         description: Bazel args
         default:
         type: string
+      rbe:
+        description: Enable EngFlow RBE (appends --config=rbe when auth passes)
+        type: boolean
+        default: false
       bazel-mode:
         description: Bazel mode (workspace or bzlmod)
         required: true
@@ -33,13 +40,13 @@ on:
         default: false
 
 
-permissions:
-  contents: read
-
 jobs:
   bazel:
     runs-on: ubuntu-24.04
     name: Bazel (${{ inputs.action }})
+    permissions:
+      contents: read
+      packages: read
     steps:
     - uses: envoyproxy/toolshed/actions/bind-mounts@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       with:
@@ -63,10 +70,22 @@ jobs:
         sudo apt-get -qq update
         sudo apt-get -qq install -y --no-install-recommends \
             debian-archive-keyring debootstrap qemu-user-static binfmt-support
+    - name: RBE auth check
+      id: rbe
+      if: inputs.rbe == 'true'
+      uses: envoyproxy/toolshed/actions/github/container/auth@f3c0acc8c3799305101f5669042b388edfb070c7
+      with:
+        container: hello-world
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
-      run: |
-        exec bazel ${{ inputs.action }} ${{ inputs.bazel-args }} ${{ inputs.targets }}
+      shell: bash
+      run: >-
+        exec bazel ${{ inputs.action }}
+        ${{ inputs.bazel-args }}
+        ${{ steps.rbe.outputs.authorized == 'true' && '--config=rbe' || '' }}
+        ${{ inputs.targets }}
       working-directory: ${{ inputs.bazel-path }}
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
     - name: Create source tarball
       id: source-tarball
       if: >-
