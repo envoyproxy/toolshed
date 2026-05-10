@@ -1,6 +1,5 @@
 
 from functools import cached_property
-from typing import Dict, Optional, Type
 
 import abstracts
 
@@ -12,7 +11,7 @@ from envoy.dependency import check
 class Dependency(check.ADependency):
 
     @property
-    def release_class(self) -> Type[check.ADependencyGithubRelease]:
+    def release_class(self) -> type[check.ADependencyGithubRelease]:
         return DependencyGithubRelease
 
 
@@ -28,7 +27,7 @@ class GithubDependencyReleaseIssue(check.AGithubDependencyReleaseIssue):
 class GithubDependencyReleaseIssues(check.AGithubDependencyReleaseIssues):
 
     @property
-    def issue_class(self) -> Type[GithubDependencyReleaseIssue]:
+    def issue_class(self) -> type[GithubDependencyReleaseIssue]:
         return GithubDependencyReleaseIssue
 
 
@@ -36,7 +35,7 @@ class GithubDependencyReleaseIssues(check.AGithubDependencyReleaseIssues):
 class GithubDependencyIssuesTracker(github.AGithubIssuesTracker):
 
     @cached_property
-    def tracked_issues(self) -> Dict:
+    def tracked_issues(self) -> dict:
         return dict(
             releases=GithubDependencyReleaseIssues(self.github))
 
@@ -44,11 +43,11 @@ class GithubDependencyIssuesTracker(github.AGithubIssuesTracker):
 class DependencyChecker(check.ADependencyChecker):
 
     @property
-    def access_token(self) -> Optional[str]:
+    def access_token(self) -> str | None:
         return super().access_token
 
     @property
-    def dependency_class(self) -> Type[check.ADependency]:
+    def dependency_class(self) -> type[check.ADependency]:
         return Dependency
 
     @cached_property
@@ -56,5 +55,5 @@ class DependencyChecker(check.ADependencyChecker):
         return super().dependency_metadata
 
     @property
-    def issues_class(self) -> Type[github.IGithubIssuesTracker]:
+    def issues_class(self) -> type[github.IGithubIssuesTracker]:
         return GithubDependencyIssuesTracker
