@@ -75,7 +75,12 @@ ChangelogSectionsDict = dict[str, ChangelogSectionDict]
 VersionConfigDict = dict[str, str]
 
 
-ProjectDevResultDict = dict
+class ProjectDevResultDict(TypedDict):
+    date: str
+    version: str
+    old_version: _version.Version
+
+
 SyncResultDict = dict[_version.Version, bool]
 
 

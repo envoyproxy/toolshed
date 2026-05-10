@@ -10,7 +10,6 @@ from .tar import (
     tar_mode,
     untar)
 from .utils import (
-    async_list,
     cd_and_return,
     dt_to_utc_isoformat,
     ellipsize,
@@ -21,7 +20,6 @@ from .utils import (
     minor_version_for,
     typed,
     to_yaml,
-    to_bytes,
     is_sha,
     last_n_bytes_of,
     tuple_pair,
@@ -44,7 +42,6 @@ from .jinja_env_cmd import jinja_env_cmd
 
 
 __all__ = (
-    "async_list",
     "cd_and_return",
     "Changelog",
     "ChangelogEntry",
@@ -85,7 +82,6 @@ __all__ = (
     "untar",
     "TAR_EXTS",
     "tar_mode",
-    "to_bytes",
     "to_yaml",
     "tuple_pair",
     "TuplePairError",

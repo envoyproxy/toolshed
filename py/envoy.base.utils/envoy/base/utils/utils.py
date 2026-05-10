@@ -6,7 +6,7 @@ import contextlib
 import os
 import pathlib
 import tempfile
-from collections.abc import AsyncGenerator, Callable, Generator, Iterator
+from collections.abc import Generator, Iterator
 from configparser import ConfigParser
 from datetime import datetime, timezone
 from typing import (
@@ -106,19 +106,6 @@ def typed(tocast: type[T] | None, value: Any) -> T:
         value=value)
 
 
-async def async_list(
-        gen: AsyncGenerator,
-        filter: Callable | None = None) -> list:
-    """Turn an async generator into a here and now list, with optional
-    filter."""
-    results = []
-    async for x in gen:
-        if filter and not filter(x):
-            continue
-        results.append(x)
-    return results
-
-
 @contextlib.contextmanager
 def cd_and_return(
         path: pathlib.Path | str) -> Generator[None, None, None]:
@@ -130,13 +117,6 @@ def cd_and_return(
         yield
     finally:
         os.chdir(prev_cwd)
-
-
-def to_bytes(data: str | bytes) -> bytes:
-    return (
-        bytes(data, encoding="utf-8")
-        if not isinstance(data, bytes)
-        else data)
 
 
 def is_sha(text: str) -> bool:
