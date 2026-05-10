@@ -1,8 +1,8 @@
 
 import os
 import re
+from collections.abc import Iterable
 from functools import cached_property
-from typing import Iterable, Pattern
 
 import abstracts
 
@@ -38,7 +38,7 @@ class ADependatoolGomodCheck(object):
             if self.dir_matches(f))
 
     @property
-    def gomodfile_filename(self) -> Pattern[str]:
+    def gomodfile_filename(self) -> re.Pattern[str]:
         return re.compile(self._gomodfile_filename)
 
     async def check(self, files=None):
