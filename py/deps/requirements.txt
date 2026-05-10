@@ -55,9 +55,9 @@ aio-run-checker==0.5.8 \
     #   -r requirements.in
     #   envoy-distribution-distrotest
     #   envoy-distribution-verify
-aio-run-runner==0.3.4 \
-    --hash=sha256:3f7bdb91c9a7a60d547d18c620ce2444b4e81d6e6a64a2e1ef465e54db8708bf \
-    --hash=sha256:ffa5693d6452b9fc07674cbea665825959d3ea5adca4e492998d242dadf3a773
+aio-run-runner==0.4.0 \
+    --hash=sha256:6ca926a9a5eb435707a88d03031c27c71fd1402434cfafbbf1bed170de6bd760 \
+    --hash=sha256:d89efce2f80627cf00f99e1dcc878ace9a272f56abfa579a32c57515a36c8803
     # via
     #   -r requirements.in
     #   aio-api-bazel
