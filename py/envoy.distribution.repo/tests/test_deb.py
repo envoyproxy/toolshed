@@ -1,4 +1,5 @@
 
+import warnings
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
@@ -7,7 +8,12 @@ import abstracts
 
 from aio.core.functional import async_property
 
-from envoy.distribution import repo
+warnings.filterwarnings(
+    "ignore",
+    message="envoy\\.distribution\\.repo is deprecated.*",
+    category=DeprecationWarning)
+
+from envoy.distribution import repo  # noqa: E402
 
 
 @abstracts.implementer(repo.AAptly)

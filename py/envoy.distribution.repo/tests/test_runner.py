@@ -1,9 +1,48 @@
 
+import importlib
+import warnings
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
-from envoy.distribution import repo
+warnings.filterwarnings(
+    "ignore",
+    message="envoy\\.distribution\\.repo is deprecated.*",
+    category=DeprecationWarning)
+
+from envoy.distribution import repo  # noqa: E402
+
+
+def test_repo_deprecation_warning_on_import():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
+        importlib.reload(repo)
+    cmd_module = importlib.reload(
+        importlib.import_module("envoy.distribution.repo.cmd"))
+    assert any(
+        warning.category is DeprecationWarning
+        and str(warning.message)
+        == cmd_module.DEPRECATION_MESSAGE
+        for warning in caught)
+
+
+def test_cmd_prints_deprecation_notice(patches):
+    cmd_module = importlib.import_module("envoy.distribution.repo.cmd")
+    patched = patches("main", "sys", prefix="envoy.distribution.repo.cmd")
+
+    with patched as (m_main, m_sys):
+        m_main.return_value = 7
+        m_sys.argv = ["envoy.distribution.repo", "ARG1"]
+        repo.cmd()
+
+    assert m_sys.exit.call_args == [(7,), {}]
+    assert m_sys.stderr.write.call_count == 1
+    assert (
+        m_sys.stderr.write.call_args
+        == [(f"{cmd_module.DEPRECATION_NOTICE}\n",), {}])
+    assert (
+        m_main.call_args
+        == [("ARG1",), {}])
 
 
 def test_runner_constructor():
