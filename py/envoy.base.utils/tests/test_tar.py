@@ -247,7 +247,7 @@ def test_util__extract(patches, tarballs, mappings, matching, iters):
     assert (
         tar.extract.call_args_list
         == [[(member, ),
-             dict(path=path.joinpath.return_value)]
+             dict(path=path.joinpath.return_value, filter="data")]
             for member in members if member() % 2])
     assert (
         m_logger.debug.call_args_list

@@ -127,7 +127,8 @@ def _extract(
                 f"Extracting: {member.name} -> {member_path}")
             tar.extract(
                 member,
-                path=member_path)
+                path=member_path,
+                filter="data")
 
 
 def _mv_paths(path: pathlib.Path, mappings: dict[str, str] | None) -> None:

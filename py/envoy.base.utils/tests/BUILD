@@ -8,7 +8,6 @@ toolshed_tests(
         "//py/deps:reqs#aio-core",
         "//py/deps:reqs#aio-run-runner",
         "//py/deps:reqs#pyyaml",
-        "//py/deps:reqs#pytz",
         "//py/deps:reqs#trycast",
     ],
 )

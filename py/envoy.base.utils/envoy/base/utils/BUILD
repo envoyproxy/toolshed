@@ -11,13 +11,11 @@ toolshed_library(
         "//py/deps:reqs#jinja2",
         "//py/deps:reqs#orjson",
         "//py/deps:reqs#packaging",
-        "//py/deps:reqs#pytz",
         "//py/deps:reqs#protobuf",
         "//py/deps:reqs#python-gnupg",
         "//py/deps:reqs#pyyaml",
         "//py/deps:reqs#trycast",
         "//py/deps:reqs#types-protobuf",
-        "//py/deps:reqs#types-pytz",
         "//py/deps:reqs#zstandard",
     ],
     sources=[
