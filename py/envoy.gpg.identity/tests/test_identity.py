@@ -1,8 +1,25 @@
+import importlib
+import warnings
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
 
-from envoy.gpg import identity
+warnings.filterwarnings(
+    "ignore",
+    message="envoy\\.gpg\\.identity is deprecated.*",
+    category=DeprecationWarning)
+
+from envoy.gpg import identity  # noqa: E402
+
+
+def test_identity_deprecation_warning_on_import():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
+        importlib.reload(identity)
+    assert any(
+        warning.category is DeprecationWarning
+        and str(warning.message) == identity.DEPRECATION_MESSAGE
+        for warning in caught)
 
 
 @pytest.mark.parametrize("name", ["NAME", None])
