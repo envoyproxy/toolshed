@@ -2,9 +2,8 @@ import argparse
 import asyncio
 import pathlib
 import time
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from functools import cached_property
-from typing import (
-    Awaitable, Callable, Iterable, Sequence, Type)
 
 from aio.run import runner
 from aio.run.checker import abstract
@@ -141,7 +140,7 @@ class Checker(runner.Runner):
         return self.summary_class(self)
 
     @property
-    def summary_class(self) -> Type["CheckerSummary"]:
+    def summary_class(self) -> type["CheckerSummary"]:
         """Checker's summary class."""
         return CheckerSummary
 
@@ -468,7 +467,7 @@ class Checker(runner.Runner):
             if proceed:
                 await self.on_preload(task)
 
-    def preloader_catches(self, task: str) -> tuple[Type[BaseException], ...]:
+    def preloader_catches(self, task: str) -> tuple[type[BaseException], ...]:
         return tuple(self.preload_checks_data[task].get("catches", ()))
 
     @runner.cleansup
