@@ -83,8 +83,12 @@ def test_abstract_iterator_count_request_headers(patches):
         == [("content-length", "0"), {}])
 
 
-def test_abstract_iterator_count_url(patches):
-    iterator = DummyGithubIterator(MagicMock(), "QUERY")
+@pytest.mark.parametrize(
+    ("query", "url"),
+    [("QUERY", "QUERY?per_page=1"),
+     ("/search/issues?q=QUERY", "/search/issues?q=QUERY&per_page=1")])
+def test_abstract_iterator_count_url(patches, query, url):
+    iterator = DummyGithubIterator(MagicMock(), query)
     patched = patches(
         "gidgethub",
         prefix="aio.api.github.abstract.iterator")
@@ -96,7 +100,7 @@ def test_abstract_iterator_count_url(patches):
 
     assert (
         m_gidget.sansio.format_url.call_args
-        == [("QUERY&per_page=1", {}),
+        == [(url, {}),
             dict(base_url=iterator.api.base_url)])
 
     assert "count_url" not in iterator.__dict__
@@ -159,66 +163,23 @@ def test_abstract_iterator_count_from_data(patches, data):
 
 
 @pytest.mark.parametrize(
-    "headers",
-    [{}, dict(foo="bar"), dict(bar="baz", Link=MagicMock())])
-def test_abstract_iterator_count_from_headers(patches, headers):
+    ("headers", "count"),
+    [({}, 0),
+     (dict(foo="bar"), 0),
+     (dict(Link=(
+         '<https://api.github.com/resource?page=1>; rel="first", '
+         '<https://api.github.com/resource?page=2>; rel="next", '
+         '<https://api.github.com/resource?page=4>; rel="last"')), 4),
+     (dict(Link=(
+         '<https://api.github.com/resource?page=2>; rel="next", '
+         '<https://api.github.com/resource?page=1>; rel="first"')), 0),
+     (dict(Link='<https://api.github.com/resource?page=7>; rel="last"'), 7),
+     (dict(Link='<https://api.github.com/resource>; rel="last"'), 0),
+     (dict(Link=(
+         '<https://api.github.com/resource?page=foo>; rel="last"')), 0)])
+def test_abstract_iterator_count_from_headers(headers, count):
     iterator = DummyGithubIterator(MagicMock(), "QUERY")
-    patched = patches(
-        "int",
-        prefix="aio.api.github.abstract.iterator")
-
-    with patched as (m_int, ):
-        assert (
-            iterator.count_from_headers(headers)
-            == (m_int.return_value
-                if "Link" in headers
-                else 0))
-
-    if "Link" not in headers:
-        assert not m_int.called
-        return
-    assert (
-        m_int.call_args
-        == [(headers["Link"].split.return_value
-                            .__getitem__.return_value
-                            .split.return_value
-                            .__getitem__.return_value
-                            .split.return_value
-                            .__getitem__.return_value, ), {}])
-
-    assert (
-        headers["Link"].split.call_args
-        == [(",", ), {}])
-    assert (
-        (headers["Link"].split.return_value
-                        .__getitem__.call_args)
-        == [(1, ), {}])
-    assert (
-        (headers["Link"].split.return_value
-                        .__getitem__.return_value
-                        .split.call_args)
-        == [(">", ), {}])
-    assert (
-        (headers["Link"].split.return_value
-                        .__getitem__.return_value
-                        .split.return_value
-                        .__getitem__.call_args)
-        == [(0, ), {}])
-    assert (
-        (headers["Link"].split.return_value
-                        .__getitem__.return_value
-                        .split.return_value
-                        .__getitem__.return_value
-                        .split.call_args)
-        == [("=", ), {}])
-    assert (
-        (headers["Link"].split.return_value
-                        .__getitem__.return_value
-                        .split.return_value
-                        .__getitem__.return_value
-                        .split.return_value
-                        .__getitem__.call_args)
-        == [(-1, ), {}])
+    assert iterator.count_from_headers(headers) == count
 
 
 @pytest.mark.parametrize("header", [None, True])

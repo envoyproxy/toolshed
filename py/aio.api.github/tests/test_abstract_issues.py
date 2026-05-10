@@ -269,7 +269,8 @@ async def test_abstract_issues_create(iters, repo1, repo2, raises):
             assert (
                 e.value.args[0]
                 == ("Failed to create issue 'ISSUE_TITLE' in "
-                    f"{repo.name}\nRecieved: BOOM!"))
+                    f"{repo.name}\nReceived: BOOM!"))
+            assert isinstance(e.value.__cause__, gidgethub.GitHubException)
         assert not github.issue_class.called
         assert (
             repo.post.call_args
