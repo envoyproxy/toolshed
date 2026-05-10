@@ -57,7 +57,7 @@ Verdict labels:
 
 ### New findings in this audit
 
-- New export surface bug: package `__all__` includes a missing symbol name (`"Parallel"`) with no corresponding class/function/constant export.
+- New export surface issue: package `__all__` includes a missing symbol name (`"Parallel"`) with no corresponding class/function/constant export.
 - Tar extraction hardening is only partial: selective extraction now uses `filter="data"`, but `extractall()` path still uses default filter behavior.
 
 ---
