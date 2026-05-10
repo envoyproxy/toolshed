@@ -6,12 +6,12 @@ from typing import Any
 
 from envoy.base import utils
 
+from .descriptors import classproperty
+
 
 class DataEnvironment:
 
-    # TODO(phlax): classproperty is deprecated from 3.11
-    @classmethod  # type: ignore
-    @property
+    @classproperty
     def parser_create(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
         parser.add_argument("data")
@@ -19,9 +19,7 @@ class DataEnvironment:
         parser.add_argument("-f", "--format", default="json")
         return parser
 
-    # TODO(phlax): classproperty is deprecated from 3.11
-    @classmethod  # type: ignore
-    @property
+    @classproperty
     def parser_load(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
         parser.add_argument("pickle")
@@ -29,7 +27,7 @@ class DataEnvironment:
 
     @classmethod
     def create(cls, *args: str) -> None:
-        parsed = cls.parser_create.parse_args(args)  # type:ignore
+        parsed = cls.parser_create.parse_args(args)
         with open(parsed.outpath, "wb") as f:
             pickle.dump(
                 cls._data(parsed.data, parsed.format),
@@ -38,7 +36,7 @@ class DataEnvironment:
 
     @classmethod
     def load(cls, *args: str) -> Any:
-        parsed = cls.parser_load.parse_args(args)  # type:ignore
+        parsed = cls.parser_load.parse_args(args)
         with open(parsed.pickle, 'rb') as f:
             return pickle.load(f)
 
