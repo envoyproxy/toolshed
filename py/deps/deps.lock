@@ -79,7 +79,6 @@
 //     "pytest-patches==0.1.0",
 //     "pytest==9.0.3",
 //     "python-gnupg==0.5.6",
-//     "pytz==2026.2",
 //     "pyyaml==6.0.3",
 //     "readme-renderer==44.0",
 //     "requests==2.33.0",
@@ -105,7 +104,6 @@
 //     "types-orjson==3.6.2",
 //     "types-protobuf==7.34.1.20260508",
 //     "types-pygments==2.20.0.20260508",
-//     "types-pytz==2026.2.0.20260506",
 //     "types-pyyaml==6.0.12.20260508",
 //     "types-setuptools==82.0.0.20260508",
 //     "typing-extensions==4.15.0",
@@ -4535,24 +4533,6 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "04156e608bee23d3792fd45c94ae47fae1036688e75032eea2e3bf0323d1f126",
-              "url": "https://files.pythonhosted.org/packages/ec/dd/96da98f892250475bdf2328112d7468abdd4acc7b902b6af23f4ed958ea0/pytz-2026.2-py2.py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a",
-              "url": "https://files.pythonhosted.org/packages/ff/46/dd499ec9038423421951e4fad73051febaa13d2df82b4064f87af8b8c0c3/pytz-2026.2.tar.gz"
-            }
-          ],
-          "project_name": "pytz",
-          "requires_dists": [],
-          "requires_python": null,
-          "version": "2026.2"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
               "hash": "16249ee61e95f858e83976573de0f5b2893b3677ba71c9dd36b9cf8be9ac6d65",
               "url": "https://files.pythonhosted.org/packages/da/92/1446574745d74df0c92e6aa4a7b0b3130706a4142b2d1a5869f2eaa423c6/pyyaml-6.0.3-cp314-cp314t-musllinux_1_2_x86_64.whl"
             },
@@ -5306,24 +5286,6 @@
           ],
           "requires_python": ">=3.10",
           "version": "2.20.0.20260508"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
-              "hash": "58ab5307c20885f9bcd42ff106616eb0e32710791f8cbdc770aee2ea0c4f01fb",
-              "url": "https://files.pythonhosted.org/packages/4f/cd/df3e4ccccb2a5a0b7e59c9fb2baafb6dac0817e80799e4c9854fe4d2eba3/types_pytz-2026.2.0.20260506-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "fc6a0de6a1b7da82a748fb4065e152372dac3016559cb1eef5e8af1e338eb627",
-              "url": "https://files.pythonhosted.org/packages/ba/2e/a545aae2c4d2af7e3b7b967049c2f271b2f5338d96a58224fe1ee53a54f3/types_pytz-2026.2.0.20260506.tar.gz"
-            }
-          ],
-          "project_name": "types-pytz",
-          "requires_dists": [],
-          "requires_python": ">=3.10",
-          "version": "2026.2.0.20260506"
         },
         {
           "artifacts": [
@@ -6617,7 +6579,6 @@
     "pytest-patches==0.1.0",
     "pytest==9.0.3",
     "python-gnupg==0.5.6",
-    "pytz==2026.2",
     "pyyaml==6.0.3",
     "readme-renderer==44.0",
     "requests==2.33.0",
@@ -6643,7 +6604,6 @@
     "types-orjson==3.6.2",
     "types-protobuf==7.34.1.20260508",
     "types-pygments==2.20.0.20260508",
-    "types-pytz==2026.2.0.20260506",
     "types-pyyaml==6.0.12.20260508",
     "types-setuptools==82.0.0.20260508",
     "typing-extensions==4.15.0",

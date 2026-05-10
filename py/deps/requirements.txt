@@ -1589,10 +1589,6 @@ python-gnupg==0.5.6 \
     #   -r py/deps/requirements.in
     #   envoy-base-utils
     #   envoy-gpg-identity
-pytz==2026.2 \
-    --hash=sha256:04156e608bee23d3792fd45c94ae47fae1036688e75032eea2e3bf0323d1f126 \
-    --hash=sha256:0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a
-    # via -r py/deps/requirements.in
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
     --hash=sha256:0150219816b6a1fa26fb4699fb7daa9caf09eb1999f3b70fb6e786805e80375a \
@@ -1790,10 +1786,6 @@ types-protobuf==7.34.1.20260508 \
 types-pygments==2.20.0.20260508 \
     --hash=sha256:42d9c45f3397a46bdb7bf718d9fe9c2d001c842ffa5afe748a4d7a5b5f0708fe \
     --hash=sha256:6ec4e232784e427eea12e798fe28d5a28321023937795527a94582d5f56feed7
-    # via -r py/deps/requirements.in
-types-pytz==2026.2.0.20260506 \
-    --hash=sha256:58ab5307c20885f9bcd42ff106616eb0e32710791f8cbdc770aee2ea0c4f01fb \
-    --hash=sha256:fc6a0de6a1b7da82a748fb4065e152372dac3016559cb1eef5e8af1e338eb627
     # via -r py/deps/requirements.in
 types-pyyaml==6.0.12.20260508 \
     --hash=sha256:5ae42149c3ebf7aaaf6c65ee49af590c80f0ba52e9e3f75a75c5564b33556fa6 \
