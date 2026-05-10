@@ -64,6 +64,7 @@
 //     "orjson==3.11.9",
 //     "packaging==26.2",
 //     "pathspec==1.0.4",
+//     "pep8-naming==0.15.1",
 //     "platformdirs==4.5.1",
 //     "pluggy==1.6.0",
 //     "propcache==0.4.1",
@@ -3866,6 +3867,26 @@
           "artifacts": [
             {
               "algorithm": "sha256",
+              "hash": "eb63925e7fd9e028c7f7ee7b1e413ec03d1ee5de0e627012102ee0222c273c86",
+              "url": "https://files.pythonhosted.org/packages/a6/78/25281540f1121acaa78926f599a17ce102b8971bc20b096fa7fb6b5b59c1/pep8_naming-0.15.1-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "f6f4a499aba2deeda93c1f26ccc02f3da32b035c8b2db9696b730ef2c9639d29",
+              "url": "https://files.pythonhosted.org/packages/8d/59/c32862134635ba231d45f1711035550dc38246396c27269a4cde4bfe18d2/pep8_naming-0.15.1.tar.gz"
+            }
+          ],
+          "project_name": "pep8-naming",
+          "requires_dists": [
+            "flake8>=5.0.0"
+          ],
+          "requires_python": ">=3.9",
+          "version": "0.15.1"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
               "hash": "d03afa3963c806a9bed9d5125c8f4cb2fdaf74a55ab60e5d59b3fde758104d31",
               "url": "https://files.pythonhosted.org/packages/cb/28/3bfe2fa5a7b9c46fe7e13c97bda14c895fb10fa2ebf1d0abb90e0cea7ee1/platformdirs-4.5.1-py3-none-any.whl"
             },
@@ -6564,6 +6585,7 @@
     "orjson==3.11.9",
     "packaging==26.2",
     "pathspec==1.0.4",
+    "pep8-naming==0.15.1",
     "platformdirs==4.5.1",
     "pluggy==1.6.0",
     "propcache==0.4.1",
