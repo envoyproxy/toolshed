@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pathlib
-from typing import (
+from collections.abc import (
     AsyncGenerator, ItemsView, Iterator, KeysView,
     ValuesView)
 

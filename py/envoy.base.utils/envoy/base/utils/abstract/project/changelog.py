@@ -3,11 +3,10 @@ import logging
 import pathlib
 import re
 import types
+from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from datetime import datetime
 from functools import cached_property
-from typing import (
-    cast, ItemsView, Iterator, KeysView,
-    Pattern, ValuesView)
+from typing import cast, Pattern
 
 from frozendict import frozendict
 import jinja2

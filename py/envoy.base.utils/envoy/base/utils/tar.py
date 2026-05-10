@@ -15,7 +15,8 @@ import pathlib
 import shutil
 import tarfile
 import tempfile
-from typing import cast, ContextManager, Literal, Iterator, Pattern
+from collections.abc import Iterator
+from typing import cast, ContextManager, Literal, Pattern
 
 import zstandard
 

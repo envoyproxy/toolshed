@@ -2,9 +2,9 @@
 import asyncio
 import json
 import pathlib
+from collections.abc import AsyncGenerator, AsyncIterator, Mapping
 from concurrent import futures
 from functools import cached_property
-from typing import AsyncGenerator, AsyncIterator, Mapping
 
 import aiohttp
 from packaging import version as _version
