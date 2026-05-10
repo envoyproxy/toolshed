@@ -16,11 +16,9 @@ abstracts==0.2.0 \
     #   aio-run-runner
     #   envoy-base-utils
     #   envoy-distribution-release
-    #   envoy-distribution-repo
     #   envoy-github-abstract
     #   envoy-github-release
-    #   pytest-abstracts
-aio-api-bazel==0.0.4 \
+    #   pytest-abstracts==0.0.4 \
     --hash=sha256:33ba61ac41c6ee8a13ed3e831ab808590fe074cc9703de6d2401d2f200f3c10a
     # via -r requirements.in
 aio-api-github==0.2.10 \
@@ -44,7 +42,6 @@ aio-core==0.11.0 \
     #   aio-run-runner
     #   envoy-base-utils
     #   envoy-distribution-release
-    #   envoy-distribution-repo
     #   envoy-github-abstract
     #   envoy-github-release
     #   envoy-gpg-identity
@@ -64,7 +61,6 @@ aio-run-runner==0.4.0 \
     #   aio-run-checker
     #   envoy-base-utils
     #   envoy-distribution-release
-    #   envoy-distribution-repo
     #   envoy-github-abstract
     #   envoy-github-release
     #   envoy-gpg-sign
@@ -555,7 +551,6 @@ envoy-base-utils==0.5.11 \
     #   -r requirements.in
     #   envoy-distribution-distrotest
     #   envoy-distribution-release
-    #   envoy-distribution-repo
     #   envoy-distribution-verify
     #   envoy-github-release
     #   envoy-gpg-sign
@@ -568,10 +563,6 @@ envoy-distribution-distrotest==0.0.12 \
 envoy-distribution-release==0.0.9 \
     --hash=sha256:592bdc8bc6847daa7e677011d72163b507e3fee821f5ea13a944e27c2fda334f \
     --hash=sha256:974308468be49d034e5b174745bd6a5671364d090a9a810f0f6f36e81afbcb5d
-    # via -r requirements.in
-envoy-distribution-repo==0.0.8 \
-    --hash=sha256:84151ae1c77e63a6967404b5e4fd1130138010b540d3081a0c016c28a657a170 \
-    --hash=sha256:c264232b666964696dbbc0ced1a82a4aefcf8f0af89ffd88c05ca8428f2557b5
     # via -r requirements.in
 envoy-distribution-verify==0.0.11 \
     --hash=sha256:7a560cd283321ec00e206c3d6938751836e16ba686fe9585af2383fb11499b38 \
@@ -1896,7 +1887,6 @@ verboselogs==1.7 \
     # via
     #   -r requirements.in
     #   aio-run-runner
-    #   envoy-distribution-repo
     #   envoy-github-abstract
     #   envoy-github-release
 wheel-filename==2.1.0 \

@@ -37,7 +37,6 @@
 //     "envoy-base-utils==0.5.11",
 //     "envoy-distribution-distrotest==0.0.12",
 //     "envoy-distribution-release==0.0.9",
-//     "envoy-distribution-repo==0.0.8",
 //     "envoy-distribution-verify==0.0.11",
 //     "envoy-docker-utils==0.0.2",
 //     "envoy-github-abstract==0.0.22",
@@ -1767,30 +1766,6 @@
           ],
           "requires_python": null,
           "version": "0.0.9"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
-              "hash": "84151ae1c77e63a6967404b5e4fd1130138010b540d3081a0c016c28a657a170",
-              "url": "https://files.pythonhosted.org/packages/ab/43/66f67a74112a1db78b984cfa74fc57066726fa79f03003d82a2dc9853484/envoy.distribution.repo-0.0.8-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "c264232b666964696dbbc0ced1a82a4aefcf8f0af89ffd88c05ca8428f2557b5",
-              "url": "https://files.pythonhosted.org/packages/0c/f9/0d4820e246a29559087cf71d5f53378f1b2c063d1649afbbc098a650b0bc/envoy.distribution.repo-0.0.8.tar.gz"
-            }
-          ],
-          "project_name": "envoy-distribution-repo",
-          "requires_dists": [
-            "abstracts>=0.0.12",
-            "aio.core>=0.9.1",
-            "aio.run.runner>=0.3.3",
-            "envoy.base.utils>=0.3.9",
-            "verboselogs"
-          ],
-          "requires_python": null,
-          "version": "0.0.8"
         },
         {
           "artifacts": [
@@ -6548,7 +6523,6 @@
     "envoy-base-utils==0.5.11",
     "envoy-distribution-distrotest==0.0.12",
     "envoy-distribution-release==0.0.9",
-    "envoy-distribution-repo==0.0.8",
     "envoy-distribution-verify==0.0.11",
     "envoy-docker-utils==0.0.2",
     "envoy-github-abstract==0.0.22",
