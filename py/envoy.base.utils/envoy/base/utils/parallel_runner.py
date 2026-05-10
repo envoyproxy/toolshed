@@ -14,7 +14,7 @@ class ParallelRunner(runner.Runner):
 
     @cached_property
     def batch_size(self) -> int:
-        # Distribute items across cpu_count workers, rounded up.
+        # Distribute items across cpu_count workers, rounded up via -(-x // y).
         return -(-len(self.items) // self.cpu_count) or 1
 
     @property
@@ -37,10 +37,10 @@ class ParallelRunner(runner.Runner):
     def command(self, batch: Iterable[str]) -> tuple[str, ...]:
         return tuple([*shlex.split(self.args.command), *batch])
 
-    def handle_result(self, cmd: str, lines: Iterable[str]) -> None:
+    def handle_result(self, command: str, lines: Iterable[str]) -> None:
         result = "\n > ".join(lines)
         result = f"\n > {result}" if result else ""
-        self.log.success(f"{cmd}{result}")
+        self.log.success(f"{command}{result}")
 
     async def run(self) -> None:
         results = await asyncio.gather(
