@@ -1,8 +1,8 @@
 import pathlib
+import re
 from abc import abstractmethod
-from typing import (
-    Dict, Iterable, List,
-    Optional, Pattern, Set, Type, TypedDict, Union)
+from collections.abc import Iterable
+from typing import TypedDict
 
 import aiohttp
 
@@ -18,9 +18,9 @@ from envoy.github import abstract
 
 
 class ReleaseDict(TypedDict, total=False):
-    release: Dict
-    assets: List[Dict[str, Union[str, pathlib.Path]]]
-    errors: List[Dict[str, Union[str, pathlib.Path]]]
+    release: dict
+    assets: list[dict[str, str | pathlib.Path]]
+    errors: list[dict[str, str | pathlib.Path]]
 
 
 class AGithubRelease(metaclass=abstracts.Abstraction):
@@ -39,18 +39,18 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     @abstractmethod
-    async def asset_names(self) -> Set[str]:
+    async def asset_names(self) -> set[str]:
         """Set of the names of assets for this release version."""
         raise NotImplementedError
 
     @async_property(cache=True)
     @abstractmethod
-    async def assets(self) -> Dict:
+    async def assets(self) -> dict:
         raise NotImplementedError
 
     @property
     @abstractmethod
-    def fetcher(self) -> Type[AGithubReleaseAssetsFetcher]:
+    def fetcher(self) -> type[AGithubReleaseAssetsFetcher]:
         """An instance of `AGithubReleaseAssetsFetcher` for fetching release
         assets."""
         raise NotImplementedError
@@ -62,14 +62,14 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
 
     @property
     @abstractmethod
-    def pusher(self) -> Type[AGithubReleaseAssetsPusher]:
+    def pusher(self) -> type[AGithubReleaseAssetsPusher]:
         """An instance of `AGithubReleaseAssetsPusher` for pushing release
         assets."""
         raise NotImplementedError
 
     @async_property(cache=True)
     @abstractmethod
-    async def release(self) -> Dict:
+    async def release(self) -> dict:
         raise NotImplementedError
 
     @property
@@ -85,7 +85,7 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
     @abstractmethod
     async def create(
             self,
-            assets: Optional[Iterable[pathlib.Path]] = None) -> ReleaseDict:
+            assets: Iterable[pathlib.Path] | None = None) -> ReleaseDict:
         """Create this release version and optionally upload provided
         assets."""
         raise NotImplementedError
@@ -103,14 +103,14 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
     async def fetch(
             self,
             path: pathlib.Path,
-            asset_types: Optional[Dict[str, Pattern[str]]] = None,
-            append: Optional[bool] = False) -> ReleaseDict:
+            asset_types: dict[str, re.Pattern[str]] | None = None,
+            append: bool | None = False) -> ReleaseDict:
         """Fetch assets for this version, saving either to a directory or
         tarball."""
         raise NotImplementedError
 
     @abstractmethod
-    async def get(self) -> Dict:
+    async def get(self) -> dict:
         """Get the release information for this Github release."""
         raise NotImplementedError
 
