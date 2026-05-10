@@ -212,25 +212,26 @@ def test_abstract_project_datestamp(patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "datetime",
+        "timezone",
         ("AChangelogs.date_format",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
 
-    with patched as (m_dt, m_fmt):
+    with patched as (m_dt, m_tz, m_fmt):
         assert (
             changelogs.datestamp
-            == (m_dt.utcnow.return_value
+            == (m_dt.now.return_value
                     .date.return_value
                     .strftime.return_value))
 
     assert (
-        m_dt.utcnow.call_args
+        m_dt.now.call_args
+        == [(), dict(tz=m_tz.utc)])
+    assert (
+        m_dt.now.return_value.date.call_args
         == [(), {}])
     assert (
-        m_dt.utcnow.return_value.date.call_args
-        == [(), {}])
-    assert (
-        m_dt.utcnow.return_value.date.return_value.strftime.call_args
+        m_dt.now.return_value.date.return_value.strftime.call_args
         == [(m_fmt.return_value, ), {}])
     assert "datestamp" not in changelogs.__dict__
 

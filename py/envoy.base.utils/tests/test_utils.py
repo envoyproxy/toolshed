@@ -255,11 +255,11 @@ def test_is_sha(patches, length, raises):
 
 def test_dt_to_utc_isoformat(patches):
     patched = patches(
-        "pytz",
+        "timezone",
         prefix="envoy.base.utils.utils")
     dt = MagicMock()
 
-    with patched as (m_pytz, ):
+    with patched as (m_timezone, ):
         assert (
             utils.dt_to_utc_isoformat(dt)
             == (dt.replace.return_value.date
@@ -267,7 +267,7 @@ def test_dt_to_utc_isoformat(patches):
 
     assert (
         dt.replace.call_args
-        == [(), dict(tzinfo=m_pytz.UTC)])
+        == [(), dict(tzinfo=m_timezone.utc)])
     assert (
         dt.replace.return_value.date.call_args
         == [(), {}])

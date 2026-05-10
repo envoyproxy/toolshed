@@ -4,7 +4,7 @@ import pathlib
 import re
 import types
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import cached_property
 from typing import cast, Pattern
 
@@ -245,7 +245,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @property
     def datestamp(self) -> str:
-        return datetime.utcnow().date().strftime(self.date_format)
+        return datetime.now(tz=timezone.utc).date().strftime(self.date_format)
 
     @async_property
     async def is_pending(self) -> bool:

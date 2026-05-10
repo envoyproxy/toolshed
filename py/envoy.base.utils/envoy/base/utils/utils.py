@@ -3,18 +3,16 @@
 #
 
 import contextlib
-import datetime
 import os
 import pathlib
 import tempfile
 from collections.abc import AsyncGenerator, Callable, Generator, Iterator
 from configparser import ConfigParser
+from datetime import datetime, timezone
 from typing import (
     Any, TypeVar)
 
 from packaging import version as _version
-
-import pytz
 
 import yaml
 
@@ -151,9 +149,9 @@ def is_sha(text: str) -> bool:
     return True
 
 
-def dt_to_utc_isoformat(dt: datetime.datetime) -> str:
+def dt_to_utc_isoformat(dt: datetime) -> str:
     """Convert a `datetime` -> UTC `date.isoformat`"""
-    date = dt.replace(tzinfo=pytz.UTC)
+    date = dt.replace(tzinfo=timezone.utc)
     return date.date().isoformat()
 
 
