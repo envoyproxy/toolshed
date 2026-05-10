@@ -14,6 +14,7 @@ class ParallelRunner(runner.Runner):
 
     @cached_property
     def batch_size(self) -> int:
+        # Distribute items across cpu_count workers, rounded up.
         return -(-len(self.items) // self.cpu_count) or 1
 
     @property
