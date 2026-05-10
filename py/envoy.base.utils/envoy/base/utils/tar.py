@@ -119,7 +119,7 @@ def _extract(
         matching: re.Pattern[str] | None,
         mappings: dict[str, str] | None) -> None:
     if not matching:
-        tar.extractall(path=path.joinpath(prefix))
+        tar.extractall(path=path.joinpath(prefix), filter="data")
         return
     for member in tar.getmembers():
         if _should_extract(member, matching, mappings):
