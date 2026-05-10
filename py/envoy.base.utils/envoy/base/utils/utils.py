@@ -148,7 +148,7 @@ def to_bytes(data: str | bytes) -> bytes:
         DeprecationWarning,
         stacklevel=2)
     return (
-        bytes(data, encoding="utf-8")
+        data.encode("utf-8")
         if not isinstance(data, bytes)
         else data)
 
