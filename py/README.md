@@ -29,8 +29,7 @@ These packages are specific to Envoy or work to Envoy's specific requirements:
 - [envoy.docker.utils](envoy.docker.utils) - Docker utilities
 - [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner) - Sphinx documentation runner
 - [envoy.github.release](envoy.github.release) - GitHub release management (includes abstract interfaces, formerly published as `envoy.github.abstract`)
-- [envoy.gpg.identity](envoy.gpg.identity) - GPG identity management
-- [envoy.gpg.sign](envoy.gpg.sign) - GPG signing utilities
+- [envoy.gpg.sign](envoy.gpg.sign) - GPG signing utilities (includes identity helpers, formerly published as `envoy.gpg.identity`)
 
 ### Other Packages
 
