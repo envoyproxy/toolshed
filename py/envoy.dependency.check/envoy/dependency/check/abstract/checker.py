@@ -16,7 +16,7 @@ import gidgethub
 
 import abstracts
 
-from aio.api import github as _github, nist
+from aio.api import github as _github
 from aio.run import checker
 from aio.core.tasks import ConcurrentError, inflate
 
@@ -36,7 +36,6 @@ class ADependencyChecker(
     """Dependency checker."""
 
     checks = (
-        "cves",
         "release_dates",
         "release_issues",
         "releases")
@@ -48,26 +47,6 @@ class ADependencyChecker(
         if self.args.github_token:
             return pathlib.Path(self.args.github_token).read_text().strip()
         return os.getenv('GITHUB_TOKEN')
-
-    @property
-    def cve_config(self):
-        return self.args.cve_config
-
-    @cached_property
-    def cves(self) -> "abstract.ADependencyCVEs":
-        return self.cves_class(
-            self.dependencies,
-            config_path=self.cve_config,
-            preloaded_cve_data=self.preloaded_cve_data,
-            session=self.session,
-            loop=self.loop,
-            pool=self.pool)
-
-    @property  # type:ignore
-    @abstracts.interfacemethod
-    def cves_class(self) -> Type["abstract.ADependencyCVEs"]:
-        """CVEs class."""
-        raise NotImplementedError
 
     @cached_property
     def dep_ids(self) -> Tuple[str, ...]:
@@ -109,10 +88,6 @@ class ADependencyChecker(
             disabled["releases"] = NO_GITHUB_TOKEN_ERROR_MSG
         return disabled
 
-    @property
-    def download_cves(self) -> str:
-        return self.args.download_cves
-
     @cached_property
     def github(self) -> _github.IGithubAPI:
         """Github API."""
@@ -149,10 +124,6 @@ class ADependencyChecker(
         raise NotImplementedError
 
     @property
-    def preloaded_cve_data(self) -> str:
-        return self.args.cve_data
-
-    @property
     def repository_locations_path(self) -> pathlib.Path:
         return pathlib.Path(self.args.repository_locations)
 
@@ -170,14 +141,6 @@ class ADependencyChecker(
         super().add_arguments(parser)
         parser.add_argument('--github_token')
         parser.add_argument('--repository_locations')
-        parser.add_argument('--cve_config')
-        parser.add_argument('--cve_data')
-        parser.add_argument('--download_cves')
-
-    async def check_cves(self) -> None:
-        """Scan for CVEs in a parsed NIST CVE database."""
-        for dep in self.dependencies:
-            await self.dep_cve_check(dep)
 
     async def check_release_dates(self) -> None:
         """Check recorded dates match for dependencies."""
@@ -206,25 +169,6 @@ class ADependencyChecker(
         """Check shas for new releases."""
         for dep in self.github_dependencies:
             await self.dep_release_sha_check(dep)
-
-    async def dep_cve_check(
-            self,
-            dep: "abstract.ADependency") -> None:
-        if not dep.cpe:
-            self.log.info(f"No CPE listed for: {dep.id}")
-            return
-        warnings = []
-        async for failing_cve in self.cves.dependency_check(dep):
-            warnings.append(
-                f'{failing_cve.format_failure(dep)}')
-        if warnings:
-            self.warn(
-                self.active_check,
-                warnings)
-        else:
-            self.succeed(
-                self.active_check,
-                [f"No CVE vulnerabilities found: {dep.id}"])
 
     async def dep_date_check(
             self,
@@ -396,13 +340,6 @@ class ADependencyChecker(
         return await super().on_checks_complete()
 
     @checker.preload(
-        when=["cves"],
-        catches=[exceptions.CVECheckError, nist.exceptions.NISTError])
-    async def preload_cves(self) -> None:
-        async for download in self.cves.downloads:
-            self.log.debug(f"Preloaded cve data: {download}")
-
-    @checker.preload(
         when=["release_dates"],
         unless=["releases", "release_issues"],
         catches=[ConcurrentError, gidgethub.GitHubException])
@@ -447,10 +384,6 @@ class ADependencyChecker(
             self.log.debug(f"Preloaded release data: {dep.id}")
 
     async def run(self) -> Optional[int]:
-        # TODO: figure out a better way for preloading data and saving it
-        if self.download_cves:
-            await self.cves.download_cves(self.download_cves)
-            return 0
         return await super().run()
 
     @cached_property

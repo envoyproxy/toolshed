@@ -1,8 +1,6 @@
 from unittest.mock import PropertyMock
 
-import pytest
-
-from aio.api import github, nist
+from aio.api import github
 
 from envoy.dependency import check
 
@@ -21,8 +19,6 @@ def test_checker_checker_constructor(patches):
         m_super.call_args
         == [(), {}])
 
-    assert checker.cves_class == check.DependencyCVEs
-    assert "cves_class" not in checker.__dict__
     assert checker.dependency_class == check.Dependency
     assert "dependency_class" not in checker.__dict__
     assert checker.issues_class == check.GithubDependencyIssuesTracker
@@ -147,57 +143,3 @@ def test_checker_issues_tracker_tracked_issues(patches):
             == dict(releases=m_release.return_value))
 
     assert "tracked_issues" in tracker.__dict__
-
-
-@pytest.mark.parametrize("config", [None, "CONFIG"])
-def test_checker_cves_constructor(patches, config):
-    patched = patches(
-        "check.ADependencyCVEs.__init__",
-        prefix="envoy.dependency.check.checker")
-    kwargs = (
-        dict(config_path=config)
-        if config
-        else {})
-
-    with patched as (m_super, ):
-        m_super.return_value = None
-        cves = check.DependencyCVEs("DEPENDENCIES", **kwargs)
-
-    assert isinstance(cves, check.ADependencyCVEs)
-    assert (
-        m_super.call_args
-        == [("DEPENDENCIES", ), kwargs])
-    assert cves.cpe_class == nist.CPE
-    assert "cpe_class" not in cves.__dict__
-    assert cves.cve_class == check.DependencyCVE
-    assert "cve_class" not in cves.__dict__
-    assert cves.nist_downloader_class == nist.NISTDownloader
-    assert "nist_downloader_class" not in cves.__dict__
-
-
-def test_checker_cves_ignored_cves(patches):
-    cves = check.DependencyCVEs("DEPENDENCIES")
-    patched = patches(
-        ("check.ADependencyCVEs.ignored_cves",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.check.checker")
-
-    with patched as (m_super, ):
-        assert cves.ignored_cves == m_super.return_value
-
-    assert "ignored_cves" in cves.__dict__
-
-
-def test_checker_cve_constructor(patches):
-    patched = patches(
-        "check.ADependencyCVE.__init__",
-        prefix="envoy.dependency.check.checker")
-
-    with patched as (m_super, ):
-        m_super.return_value = None
-        cve = check.DependencyCVE("CVE_DATA", "TRACKED CPES")
-
-    assert isinstance(cve, check.ADependencyCVE)
-    assert (
-        m_super.call_args
-        == [("CVE_DATA", "TRACKED CPES"), {}])
