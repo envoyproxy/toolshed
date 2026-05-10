@@ -26,7 +26,6 @@ These packages are specific to Envoy or work to Envoy's specific requirements:
 - [envoy.dependency.check](envoy.dependency.check) - Dependency integrity checking
 - [envoy.distribution.distrotest](envoy.distribution.distrotest) - Distribution testing
 - [envoy.distribution.release](envoy.distribution.release) - Release management
-- [envoy.distribution.repo](envoy.distribution.repo) - Repository management
 - [envoy.distribution.verify](envoy.distribution.verify) - Distribution verification
 - [envoy.docker.utils](envoy.docker.utils) - Docker utilities
 - [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner) - Sphinx documentation runner
