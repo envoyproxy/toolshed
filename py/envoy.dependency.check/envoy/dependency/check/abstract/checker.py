@@ -8,7 +8,6 @@ import os
 import pathlib
 import re
 from functools import cached_property
-from typing import Optional, Tuple, Type
 
 import aiohttp
 
@@ -42,19 +41,19 @@ class ADependencyChecker(
 
     @property
     @abc.abstractmethod
-    def access_token(self) -> Optional[str]:
+    def access_token(self) -> str | None:
         """Github access token."""
         if self.args.github_token:
             return pathlib.Path(self.args.github_token).read_text().strip()
         return os.getenv('GITHUB_TOKEN')
 
     @cached_property
-    def dep_ids(self) -> Tuple[str, ...]:
+    def dep_ids(self) -> tuple[str, ...]:
         """Tuple of dependency ids."""
         return tuple(dep.id for dep in self.dependencies)
 
     @cached_property
-    def dependencies(self) -> Tuple["abstract.ADependency", ...]:
+    def dependencies(self) -> tuple["abstract.ADependency", ...]:
         """Tuple of dependencies."""
         deps = []
         for k, v in self.dependency_metadata.items():
@@ -68,7 +67,7 @@ class ADependencyChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def dependency_class(self) -> Type["abstract.ADependency"]:
+    def dependency_class(self) -> type["abstract.ADependency"]:
         """Dependency class."""
         raise NotImplementedError
 
@@ -96,7 +95,7 @@ class ADependencyChecker(
             oauth_token=self.access_token)
 
     @cached_property
-    def github_dependencies(self) -> Tuple["abstract.ADependency", ...]:
+    def github_dependencies(self) -> tuple["abstract.ADependency", ...]:
         """Tuple of dependencies."""
         deps = []
         for dep in self.dependencies:
@@ -119,7 +118,7 @@ class ADependencyChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def issues_class(self) -> Type[_github.IGithubIssuesTracker]:
+    def issues_class(self) -> type[_github.IGithubIssuesTracker]:
         """Dependency issues class."""
         raise NotImplementedError
 
@@ -383,7 +382,7 @@ class ADependencyChecker(
         async for dep in preloader:
             self.log.debug(f"Preloaded release data: {dep.id}")
 
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         return await super().run()
 
     @cached_property

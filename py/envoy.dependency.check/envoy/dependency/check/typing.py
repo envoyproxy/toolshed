@@ -1,6 +1,6 @@
 
 
-from typing import Dict, List, Optional, TypedDict
+from typing import TypedDict
 
 
 # Package defined types
@@ -11,9 +11,9 @@ class BaseDependencyMetadataDict(TypedDict):
 
 
 class DependencyMetadataDict(BaseDependencyMetadataDict, total=False):
-    cpe: Optional[str]
-    urls: List[str]
+    cpe: str | None
+    urls: list[str]
     sha256: str
 
 
-DependenciesDict = Dict[str, DependencyMetadataDict]
+DependenciesDict = dict[str, DependencyMetadataDict]
