@@ -24,10 +24,9 @@ These packages are specific to Envoy or work to Envoy's specific requirements:
 - [envoy.ci.report](envoy.ci.report) - CI reporting tools
 - [envoy.code.check](envoy.code.check) - Code checking and linting
 - [envoy.dependency.check](envoy.dependency.check) - Dependency integrity checking
-- [envoy.distribution.distrotest](envoy.distribution.distrotest) - Distribution testing
 - [envoy.distribution.release](envoy.distribution.release) - Release management
 - [envoy.distribution.repo](envoy.distribution.repo) - Repository management
-- [envoy.distribution.verify](envoy.distribution.verify) - Distribution verification
+- [envoy.distribution.verify](envoy.distribution.verify) - Distribution verification (includes the distrotest library, formerly published as `envoy.distribution.distrotest`)
 - [envoy.docker.utils](envoy.docker.utils) - Docker utilities
 - [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner) - Sphinx documentation runner
 - [envoy.github.abstract](envoy.github.abstract) - GitHub abstractions
