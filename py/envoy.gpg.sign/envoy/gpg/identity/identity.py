@@ -14,7 +14,7 @@ class GPGError(Exception):
     pass
 
 
-class GPGIdentity(object):
+class GPGIdentity:
     """A GPG identity with a signing key.
 
     The signing key is found either by matching provided name/email, or

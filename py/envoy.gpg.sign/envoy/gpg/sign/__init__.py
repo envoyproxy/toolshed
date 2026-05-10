@@ -1,6 +1,7 @@
 
 from .exceptions import SigningError
 from .util import DirectorySigningUtil
+from .bin import BinarySigningUtil
 from .deb import DebChangesFiles, DebSigningUtil
 from .rpm import RPMMacro, RPMSigningUtil
 from .runner import PackageSigningRunner
@@ -8,6 +9,7 @@ from .cmd import cmd, main
 
 
 __all__ = (
+    "BinarySigningUtil",
     "cmd",
     "DebChangesFiles",
     "DebSigningUtil",

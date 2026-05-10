@@ -8,7 +8,7 @@ from .exceptions import SigningError
 from .util import DirectorySigningUtil
 
 
-class DebChangesFiles(object):
+class DebChangesFiles:
     """Creates a set of `changes` files for specific distros from a src
     `changes` file.
 
