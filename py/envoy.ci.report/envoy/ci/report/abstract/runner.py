@@ -3,8 +3,8 @@ import abstracts
 import argparse
 import os
 import pathlib
+from collections.abc import Callable
 from functools import cached_property
-from typing import Callable
 
 import aiohttp
 

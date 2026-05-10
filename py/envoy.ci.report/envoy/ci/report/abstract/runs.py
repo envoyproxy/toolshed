@@ -3,7 +3,7 @@ import io
 import json
 import logging
 import zipfile
-from typing import Awaitable, AsyncIterator
+from collections.abc import AsyncIterator, Awaitable
 
 import aiohttp
 
