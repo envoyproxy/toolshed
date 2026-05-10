@@ -1,8 +1,7 @@
 #
 import re
+from collections.abc import AsyncIterator, Awaitable, Iterable
 from functools import cached_property
-from typing import (
-    AsyncIterator, Awaitable, Iterable, Pattern)
 
 import abstracts
 
@@ -56,7 +55,7 @@ class ARuntimeGuardsCheck(
             - self.expected_missing)
 
     @cached_property
-    def reloadable_match_re(self) -> Pattern:
+    def reloadable_match_re(self) -> re.Pattern:
         return re.compile(RELOADABLE_MATCH_RE)
 
     @async_property

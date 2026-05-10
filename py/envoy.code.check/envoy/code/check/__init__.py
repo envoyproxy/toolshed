@@ -69,8 +69,6 @@ __all__ = (
     "interface",
     "main",
     "run",
-    "main",
-    "run",
     "RuntimeGuardsCheck",
     "ShellcheckCheck",
     "typing",
