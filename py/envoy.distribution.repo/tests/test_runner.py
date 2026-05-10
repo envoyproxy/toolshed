@@ -14,14 +14,14 @@ from envoy.distribution import repo  # noqa: E402
 
 
 def test_repo_deprecation_warning_on_import():
+    cmd_module = importlib.import_module("envoy.distribution.repo.cmd")
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always", DeprecationWarning)
         importlib.reload(repo)
     assert any(
         warning.category is DeprecationWarning
         and str(warning.message)
-        == ("envoy.distribution.repo is deprecated and no longer maintained. "
-            "Do not use.")
+        == cmd_module.DEPRECATION_MESSAGE
         for warning in caught)
 
 
@@ -33,10 +33,12 @@ def test_cmd_prints_deprecation_notice(patches):
         m_sys.argv = ["envoy.distribution.repo", "ARG1"]
         repo.cmd()
 
+    cmd_module = importlib.import_module("envoy.distribution.repo.cmd")
     assert m_sys.exit.call_args == [(7,), {}]
     assert m_sys.stderr.write.call_count == 1
-    assert "DEPRECATED" in m_sys.stderr.write.call_args.args[0]
-    assert "Do not use." in m_sys.stderr.write.call_args.args[0]
+    assert (
+        m_sys.stderr.write.call_args
+        == [(f"{cmd_module.DEPRECATION_NOTICE}\n",), {}])
     assert (
         m_main.call_args
         == [("ARG1",), {}])

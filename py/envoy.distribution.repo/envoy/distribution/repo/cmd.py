@@ -6,9 +6,11 @@ from .deb import DebRepoManager
 from .runner import RepoBuildingRunner
 
 
-DEPRECATION_NOTICE = (
-    "DEPRECATED: envoy.distribution.repo is inactive "
-    "and no longer maintained. Do not use.")
+DEPRECATION_MESSAGE = (
+    "envoy.distribution.repo is deprecated and no longer maintained. "
+    "Do not use.")
+
+DEPRECATION_NOTICE = f"DEPRECATED: {DEPRECATION_MESSAGE}"
 
 
 def _register_repo_types() -> None:
