@@ -87,11 +87,6 @@ class PackageSigningRunner(runner.Runner):
         return self.args.out
 
     @property
-    def package_type(self) -> str:
-        """Package type - eg deb/rpm"""
-        return self.args.package_type
-
-    @property
     def repack(self):
         return utils.repack(
             self.outfile,
