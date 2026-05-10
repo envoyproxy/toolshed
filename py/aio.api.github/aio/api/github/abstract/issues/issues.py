@@ -1,7 +1,8 @@
 
 import urllib
+from collections.abc import Callable
 from functools import cached_property, partial
-from typing import Any, Callable
+from typing import Any
 
 import gidgethub
 

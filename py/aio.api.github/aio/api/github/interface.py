@@ -1,8 +1,9 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Any, AsyncGenerator, Pattern
+from typing import Any, Pattern
 
 from packaging import version as _version
 
