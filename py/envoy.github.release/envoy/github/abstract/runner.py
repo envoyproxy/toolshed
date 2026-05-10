@@ -68,7 +68,7 @@ class AGithubReleaseRunner(
         parser.add_argument(
             "--continue",
             action="store_true",
-            help="Continue if an indidividual github action fails")
+            help="Continue if an individual github action fails")
         parser.add_argument(
             "command",
             choices=self.commands.keys(),

@@ -11,5 +11,7 @@ python_sources(
         "//py/deps:reqs#aio-run-runner",
         "//py/deps:reqs#aiohttp",
         "//py/deps:reqs#gidgethub",
+        "//py/deps:reqs#packaging",
+        "//py/deps:reqs#verboselogs",
     ],
 )

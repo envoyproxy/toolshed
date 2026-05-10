@@ -1,4 +1,4 @@
-"""aio.core.stream."""
+"""envoy.github.release.stream."""
 
 from .base import AsyncStream
 from ._reader import reader, Reader
