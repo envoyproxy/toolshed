@@ -144,7 +144,7 @@ def to_bytes(data: str | bytes) -> bytes:
     warnings.warn(
         "envoy.base.utils.to_bytes is deprecated and will be removed "
         "in a future release. Use the inline form: "
-        "`data if isinstance(data, bytes) else data.encode()`.",
+        "`data.encode() if not isinstance(data, bytes) else data`.",
         DeprecationWarning,
         stacklevel=2)
     return (
