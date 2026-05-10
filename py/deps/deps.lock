@@ -38,11 +38,10 @@
 //     "envoy-distribution-distrotest==0.0.12",
 //     "envoy-distribution-release==0.0.9",
 //     "envoy-distribution-verify==0.0.11",
-//     "envoy-docker-utils==0.0.2",
+//     "envoy-docker-utils==0.1.0",
 //     "envoy-github-abstract==0.0.22",
-//     "envoy-github-release==0.0.15",
-//     "envoy-gpg-identity==0.1.1",
-//     "envoy-gpg-sign==0.2.0",
+//     "envoy-github-release==0.1.0",
+//     "envoy-gpg-sign==0.3.0",
 //     "flake8==7.3.0",
 //     "frozendict==2.4.7",
 //     "frozenlist==1.8.0",
@@ -1845,23 +1844,29 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "a12cb57f0b6e204d646cbf94f927b3a8f5a27ed15f60d0576176584ec16a4b76",
-              "url": "https://files.pythonhosted.org/packages/f0/f7/6ab16548db22c9fb58b80e8f6bab00178bb42979bb8946ae3ee4e272e7ff/envoy.docker.utils-0.0.2-py3-none-any.whl"
+              "hash": "c4d9b366059afc146301bed0e463ba5ce40def4201a2872cd4cca309e1276fe0",
+              "url": "https://files.pythonhosted.org/packages/69/14/42cbc58973768eee1f2fd1fd53b39f04d82fd36e35563837ea0f6c675d73/envoy_docker_utils-0.1.0-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "5ab22736f371c762bc7462e0fcd12fcf2e6cacfc070fd9b76a12bd1f3e3b5314",
+              "url": "https://files.pythonhosted.org/packages/f2/0d/f705c3d55fc3870f6804ea41971530612653d7ce88d103be748a1e786c59/envoy_docker_utils-0.1.0.tar.gz"
             }
           ],
           "project_name": "envoy-docker-utils",
           "requires_dists": [
-            "aiodocker",
-            "flake8; extra == \"lint\"",
-            "mypy; extra == \"types\"",
-            "pytest-asyncio; extra == \"test\"",
+            "aiodocker==0.26.0",
+            "aiodocker>=0.25.0",
+            "flake8>=6.1.0; extra == \"lint\"",
+            "mypy>=1.6.0; extra == \"types\"",
+            "pytest-asyncio>=0.23.3; extra == \"test\"",
             "pytest-coverage; extra == \"test\"",
-            "pytest-patches; extra == \"test\"",
-            "pytest; extra == \"test\"",
-            "wheel; extra == \"publish\""
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest>=7.4.0; extra == \"test\"",
+            "wheel>=0.41.0; extra == \"publish\""
           ],
-          "requires_python": ">=3.5",
-          "version": "0.0.2"
+          "requires_python": ">=3.12",
+          "version": "0.1.0"
         },
         {
           "artifacts": [
@@ -1893,73 +1898,81 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "d571422a79e535ec36130dae5a3c56b429040fb20ca60cd3b8cf8588c52b546c",
-              "url": "https://files.pythonhosted.org/packages/61/5e/a91fede76d91f40a86b9112984e2704a95449942dae814cc2f403676ecb6/envoy.github.release-0.0.15-py3-none-any.whl"
+              "hash": "ac2af86d45e5eae28f4a4ae6c2b2cadd4a0ab6081e5d22fbe762ffab2df17de1",
+              "url": "https://files.pythonhosted.org/packages/79/9d/8332d3731178d22bdf1482af837bfb7eef49d942bf3a6f558ec713c17ceb/envoy_github_release-0.1.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "955671aa0c664ade3d8dbcd60bc9c72284139b81aeaa3fe72157c4e8383fd35b",
-              "url": "https://files.pythonhosted.org/packages/3e/aa/788f223cc9a002d0e85dcdef57e02040bd79dc10e1279d91546de024411b/envoy.github.release-0.0.15.tar.gz"
+              "hash": "b9a80f08d2cd5e67d5045ac191c6ff236e75d6f9345306383cf6944cf314aebf",
+              "url": "https://files.pythonhosted.org/packages/e3/4e/d70797979cd2e8a2624b953e8af86eb4ffb3c9db9435a6350528b4261c58/envoy_github_release-0.1.0.tar.gz"
             }
           ],
           "project_name": "envoy-github-release",
           "requires_dists": [
-            "abstracts>=0.0.12",
-            "aio.core>=0.9.1",
-            "aio.run.runner>=0.3.3",
-            "aiofiles",
-            "aiohttp>=3.8.1",
-            "envoy.base.utils>=0.3.9",
-            "envoy.github.abstract>=0.0.21",
-            "gidgethub",
+            "abstracts==0.2.0",
+            "abstracts>=0.2.0",
+            "aio-core==0.11.0",
+            "aio-run-runner==0.4.0",
+            "aio.core>=0.11.0",
+            "aio.run.runner>=0.4.0",
+            "aiofiles==25.1.0",
+            "aiofiles>=23.2.1",
+            "aiohttp==3.13.5",
+            "aiohttp>=3.9.0",
+            "envoy-base-utils==0.6.0",
+            "envoy.base.utils>=0.6.0",
+            "flake8>=6.1.0; extra == \"lint\"",
+            "gidgethub==5.4.0",
+            "gidgethub>=5.4.0",
+            "mypy-abstracts>=0.1.0; extra == \"types\"",
+            "mypy>=1.6.0; extra == \"types\"",
+            "packaging==26.2",
             "packaging>=23.0",
-            "verboselogs"
+            "pytest-asyncio>=0.23.3; extra == \"test\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest>=7.4.0; extra == \"test\"",
+            "types-aiofiles==25.1.0.20260508",
+            "verboselogs==1.7",
+            "verboselogs>=1.7",
+            "wheel>=0.41.0; extra == \"publish\""
           ],
-          "requires_python": null,
-          "version": "0.0.15"
+          "requires_python": ">=3.12",
+          "version": "0.1.0"
         },
         {
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "c41505491f906bd5ab22504b0ae2f9e76430ae492c9f59278a306225ed19c785",
-              "url": "https://files.pythonhosted.org/packages/a6/a2/c702c41466cd9fc2267e107bf95eef309d686088c3078c87237e03304c10/envoy.gpg.identity-0.1.1-py3-none-any.whl"
+              "hash": "22745ac13a087ed4425f2f1c897ca59b67a7b3ba67a3af405273713fabbb24e4",
+              "url": "https://files.pythonhosted.org/packages/03/18/1a338980880aa1b86ce38282db793ce7887a561479357a6c5f852a02ba65/envoy_gpg_sign-0.3.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "03f615278b2ca0de652be9d9e3a45faffae74f85f483347c1e0d690edd4019f3",
-              "url": "https://files.pythonhosted.org/packages/ed/38/8cef329d10086539a978d88792406516b762d475eee646889fcb6341c383/envoy.gpg.identity-0.1.1.tar.gz"
-            }
-          ],
-          "project_name": "envoy-gpg-identity",
-          "requires_dists": [
-            "aio.core>=0.10.0",
-            "python-gnupg"
-          ],
-          "requires_python": ">=3.10.0",
-          "version": "0.1.1"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
-              "hash": "8bca326766a2b82864ec6274c51d99c9924f2ec773316c2f13034925ddf50772",
-              "url": "https://files.pythonhosted.org/packages/ed/0f/33cccb8af703d6a4f5238bb12d55d59e67ee820081df61914625b21f788f/envoy.gpg.sign-0.2.0-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "53ef217a05555d725d467ceb70fbf7bc623eeb973a41996e8bbe1f295d8c9aab",
-              "url": "https://files.pythonhosted.org/packages/92/4b/b27257d708e13136e2d3e8ad635c32a414c927376ba3df3cab6ee8204a1c/envoy.gpg.sign-0.2.0.tar.gz"
+              "hash": "149c00b471c13884df43b1d3eb30b4092ead44a8b4d6eb07e6d12c65d5f18a2e",
+              "url": "https://files.pythonhosted.org/packages/0b/e6/e52a0bda118fcd08c29768961119ef52f4df544524bf54985916761e199f/envoy_gpg_sign-0.3.0.tar.gz"
             }
           ],
           "project_name": "envoy-gpg-sign",
           "requires_dists": [
-            "aio.run.runner>=0.3.3",
-            "envoy.base.utils>=0.4.7",
-            "envoy.gpg.identity>=0.1.1"
+            "aio-core==0.11.0",
+            "aio-run-runner==0.4.0",
+            "aio.run.runner>=0.4.0",
+            "envoy-base-utils==0.6.0",
+            "envoy.base.utils>=0.6.0",
+            "flake8>=6.1.0; extra == \"lint\"",
+            "mypy>=1.6.0; extra == \"types\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest>=7.4.0; extra == \"test\"",
+            "python-gnupg==0.5.6",
+            "python-gnupg>=0.5.0",
+            "verboselogs==1.7",
+            "verboselogs>=1.7",
+            "wheel>=0.41.0; extra == \"publish\""
           ],
-          "requires_python": ">=3.10.0",
-          "version": "0.2.0"
+          "requires_python": ">=3.12",
+          "version": "0.3.0"
         },
         {
           "artifacts": [
@@ -6559,11 +6572,10 @@
     "envoy-distribution-distrotest==0.0.12",
     "envoy-distribution-release==0.0.9",
     "envoy-distribution-verify==0.0.11",
-    "envoy-docker-utils==0.0.2",
+    "envoy-docker-utils==0.1.0",
     "envoy-github-abstract==0.0.22",
-    "envoy-github-release==0.0.15",
-    "envoy-gpg-identity==0.1.1",
-    "envoy-gpg-sign==0.2.0",
+    "envoy-github-release==0.1.0",
+    "envoy-gpg-sign==0.3.0",
     "flake8==7.3.0",
     "frozendict==2.4.7",
     "frozenlist==1.8.0",
