@@ -2,8 +2,8 @@
 import importlib
 import json
 import pathlib
+from collections.abc import Callable
 from functools import cached_property, lru_cache
-from typing import Callable
 
 from google.protobuf import descriptor, descriptor_pb2
 from google.protobuf import descriptor_pool as _descriptor_pool

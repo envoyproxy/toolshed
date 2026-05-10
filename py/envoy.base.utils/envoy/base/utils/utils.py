@@ -7,10 +7,10 @@ import datetime
 import os
 import pathlib
 import tempfile
+from collections.abc import AsyncGenerator, Callable, Generator, Iterator
 from configparser import ConfigParser
 from typing import (
-    Any, AsyncGenerator, Callable, Generator,
-    Iterator, TypeVar)
+    Any, TypeVar)
 
 from packaging import version as _version
 
