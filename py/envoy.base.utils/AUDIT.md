@@ -36,7 +36,7 @@ Verdict labels:
 
 ## Changes since previous audit
 
-### Fixed since PR #4340
+### Fixed since the previous audit (including PR #4353)
 
 - ✅ **Resolved (PR #4353): shell-string git execution hardening**
   - `AProject._exec()` now uses `create_subprocess_exec(*command)`.
@@ -71,7 +71,7 @@ Verdict labels:
 | Symbol(s) | Description | LOC | Verdict |
 |---|---:|---:|---|
 | Re-exported API (`extract`, `typed`, `Project`, `ProtobufValidator`, runners, commands, etc.) | Public facade for package consumers. | ~89 | **KEEP** |
-| `Parallel` (in `__all__` only) | Listed in `__all__` but not defined/imported. | 1 | **DROP** |
+| `Parallel` (in `__all__` only) | Listed in `__all__` but not defined/imported; remove this broken export entry. | 1 | **DROP** |
 
 ### `utils.py`
 
