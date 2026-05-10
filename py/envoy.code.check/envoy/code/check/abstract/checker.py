@@ -4,8 +4,8 @@ import abc
 import argparse
 import pathlib
 import re
+from collections.abc import Mapping
 from functools import cached_property
-from typing import Mapping, Pattern
 
 import yaml
 
@@ -207,11 +207,11 @@ class ACodeChecker(
         raise NotImplementedError
 
     @property
-    def grep_excluding_re(self) -> Pattern[str] | None:
+    def grep_excluding_re(self) -> re.Pattern[str] | None:
         return self._grep_re(self.args.excluding)
 
     @property
-    def grep_matching_re(self) -> Pattern[str] | None:
+    def grep_matching_re(self) -> re.Pattern[str] | None:
         return self._grep_re(self.args.matching)
 
     @property
@@ -230,7 +230,7 @@ class ACodeChecker(
 
     @cached_property
     def runtime_guards(self) -> "interface.IRuntimeGuardsCheck":
-        """Shellcheck checker."""
+        """Runtime guards checker."""
         return self.runtime_guards_class(
             self.project,
             **self.check_kwargs)
@@ -302,7 +302,7 @@ class ACodeChecker(
                     [f"{changelog.version}"])
 
     async def check_extensions_fuzzed(self) -> None:
-        """Check for glint issues."""
+        """Check that all fuzzed extensions are accounted for."""
         if await self.extensions.all_fuzzed:
             self.succeed(
                 "extensions_fuzzed",
@@ -315,7 +315,7 @@ class ACodeChecker(
                  f"in {self.extensions.fuzz_test_path}"])
 
     async def check_extensions_metadata(self) -> None:
-        """Check for glint issues."""
+        """Check extensions metadata."""
         errors = await self.extensions.metadata_errors
         for extension, errors in errors.items():
             if errors:
@@ -324,7 +324,7 @@ class ACodeChecker(
                 self.succeed("extensions_metadata", [f"{extension}"])
 
     async def check_extensions_owners(self) -> None:
-        """Check for glint issues."""
+        """Check extensions owners."""
         checks = await self.extensions.owners_errors
         for extension, errors in sorted(checks.items()):
             if errors:
@@ -333,7 +333,7 @@ class ACodeChecker(
                 self.succeed("extensions_owners", [f"{extension}"])
 
     async def check_extensions_registered(self) -> None:
-        """Check for glint issues."""
+        """Check extensions are registered."""
         if errors := await self.extensions.registration_errors:
             self.error("extensions_registered", errors)
         else:
@@ -359,7 +359,7 @@ class ACodeChecker(
         await self._code_check(self.yapf)
 
     async def check_runtime_guards(self) -> None:
-        """Check for shellcheck issues."""
+        """Check runtime guards."""
 
         async for guard, status in self.runtime_guards.status:
             if status is None:
@@ -478,7 +478,7 @@ class ACodeChecker(
             await check.files,
             await check.problem_files)
 
-    def _grep_re(self, arg: str | None) -> Pattern[str] | None:
+    def _grep_re(self, arg: str | None) -> re.Pattern[str] | None:
         # When using system `grep` we want to filter out at least some
         # of the files that .gitignore would.
         # TODO: use globs on cli and covert to re here

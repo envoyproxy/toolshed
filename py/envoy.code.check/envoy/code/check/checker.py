@@ -98,27 +98,27 @@ class ChangelogCheck(abstract.AChangelogCheck):
 class CodeChecker(abstract.ACodeChecker):
 
     @property
-    def extensions_class(self):
+    def extensions_class(self) -> type[ExtensionsCheck]:
         return ExtensionsCheck
 
     @property
-    def flake8_class(self):
+    def flake8_class(self) -> type[Flake8Check]:
         return Flake8Check
 
     @property
-    def fs_directory_class(self):
+    def fs_directory_class(self) -> type[directory.Directory]:
         return directory.Directory
 
     @property
-    def git_directory_class(self):
+    def git_directory_class(self) -> type[directory.GitDirectory]:
         return directory.GitDirectory
 
     @property
-    def glint_class(self):
+    def glint_class(self) -> type[GlintCheck]:
         return GlintCheck
 
     @property
-    def gofmt_class(self):
+    def gofmt_class(self) -> type[GofmtCheck]:
         return GofmtCheck
 
     @cached_property
@@ -130,21 +130,21 @@ class CodeChecker(abstract.ACodeChecker):
         return Project
 
     @property
-    def runtime_guards_class(self):
+    def runtime_guards_class(self) -> type[RuntimeGuardsCheck]:
         return RuntimeGuardsCheck
 
     @property
-    def shellcheck_class(self):
+    def shellcheck_class(self) -> type[ShellcheckCheck]:
         return ShellcheckCheck
 
     @property
-    def changelog_class(self):
+    def changelog_class(self) -> type[ChangelogCheck]:
         return ChangelogCheck
 
     @property
-    def yapf_class(self):
+    def yapf_class(self) -> type[YapfCheck]:
         return YapfCheck
 
     @property
-    def yamllint_class(self):
+    def yamllint_class(self) -> type[YamllintCheck]:
         return YamllintCheck
