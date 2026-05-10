@@ -8,8 +8,15 @@ import aiodocker
 
 from aio.run import checker
 
-from envoy.distribution import distrotest
-from envoy.docker import utils as docker_utils
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="envoy\\.distribution\\.distrotest is deprecated.*",
+    category=DeprecationWarning)
+
+from envoy.distribution import distrotest  # noqa: E402
+from envoy.docker import utils as docker_utils  # noqa: E402
 
 
 # # DistroTestConfig
