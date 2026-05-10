@@ -1,9 +1,8 @@
 
 import io
 import pathlib
+from collections.abc import AsyncIterator, Generator, Iterator
 from functools import cached_property, partial
-from typing import (
-    AsyncIterator, Generator, Iterator)
 
 import yaml
 from yamllint import linter  # type:ignore

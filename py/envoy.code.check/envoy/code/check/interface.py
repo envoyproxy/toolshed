@@ -2,7 +2,7 @@
 import asyncio
 import pathlib
 from concurrent import futures
-from typing import AsyncIterator, Iterator
+from collections.abc import AsyncIterator, Iterator
 
 from packaging import version as _version
 

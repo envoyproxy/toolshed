@@ -1,8 +1,8 @@
 
 import os
 import pathlib
+from collections.abc import AsyncIterator, Iterable, Iterator
 from functools import partial
-from typing import AsyncIterator, Iterable, Iterator
 
 import yapf  # type:ignore
 
