@@ -28,8 +28,7 @@ These packages are specific to Envoy or work to Envoy's specific requirements:
 - [envoy.distribution.verify](envoy.distribution.verify) - Distribution verification (includes the distrotest library, formerly published as `envoy.distribution.distrotest`)
 - [envoy.docker.utils](envoy.docker.utils) - Docker utilities
 - [envoy.docs.sphinx_runner](envoy.docs.sphinx_runner) - Sphinx documentation runner
-- [envoy.github.abstract](envoy.github.abstract) - GitHub abstractions
-- [envoy.github.release](envoy.github.release) - GitHub release management
+- [envoy.github.release](envoy.github.release) - GitHub release management (includes abstract interfaces, formerly published as `envoy.github.abstract`)
 - [envoy.gpg.identity](envoy.gpg.identity) - GPG identity management
 - [envoy.gpg.sign](envoy.gpg.sign) - GPG signing utilities
 
