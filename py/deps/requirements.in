@@ -27,6 +27,7 @@ mypy==2.0.0
 mypy-abstracts>=0.1.0
 orjson>=3.11.9
 packaging>=26.2
+pep8-naming
 protobuf>=5.29.5
 pygments>=2.20.0
 pytest>=7.2
