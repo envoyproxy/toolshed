@@ -14,8 +14,8 @@
 //     "aio.api.nist>=0.0.4",
 //     "aio.core>=0.11.0",
 //     "aio.run.checker>=0.5.8",
-//     "aio.run.runner>=0.2.1",
 //     "aio.run.runner>=0.3.4",
+//     "aio.run.runner>=0.4.0",
 //     "aiodocker>=0.25.0",
 //     "aiofiles",
 //     "aiohttp",
@@ -28,7 +28,6 @@
 //     "envoy.docker.utils>=0.0.2",
 //     "envoy.github.abstract>=0.0.22",
 //     "envoy.github.release>=0.0.14",
-//     "envoy.gpg.identity>=0.1.1",
 //     "flake8>=6",
 //     "frozendict",
 //     "gidgethub",
@@ -1743,27 +1742,6 @@
           ],
           "requires_python": null,
           "version": "0.0.15"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
-              "hash": "c41505491f906bd5ab22504b0ae2f9e76430ae492c9f59278a306225ed19c785",
-              "url": "https://files.pythonhosted.org/packages/a6/a2/c702c41466cd9fc2267e107bf95eef309d686088c3078c87237e03304c10/envoy.gpg.identity-0.1.1-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "03f615278b2ca0de652be9d9e3a45faffae74f85f483347c1e0d690edd4019f3",
-              "url": "https://files.pythonhosted.org/packages/ed/38/8cef329d10086539a978d88792406516b762d475eee646889fcb6341c383/envoy.gpg.identity-0.1.1.tar.gz"
-            }
-          ],
-          "project_name": "envoy-gpg-identity",
-          "requires_dists": [
-            "aio.core>=0.10.0",
-            "python-gnupg"
-          ],
-          "requires_python": ">=3.10.0",
-          "version": "0.1.1"
         },
         {
           "artifacts": [
@@ -5650,8 +5628,8 @@
     "aio.api.nist>=0.0.4",
     "aio.core>=0.11.0",
     "aio.run.checker>=0.5.8",
-    "aio.run.runner>=0.2.1",
     "aio.run.runner>=0.3.4",
+    "aio.run.runner>=0.4.0",
     "aiodocker>=0.25.0",
     "aiofiles",
     "aiohttp",
@@ -5664,7 +5642,6 @@
     "envoy.docker.utils>=0.0.2",
     "envoy.github.abstract>=0.0.22",
     "envoy.github.release>=0.0.14",
-    "envoy.gpg.identity>=0.1.1",
     "flake8>=6",
     "frozendict",
     "gidgethub",
