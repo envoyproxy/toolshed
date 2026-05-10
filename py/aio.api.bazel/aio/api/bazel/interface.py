@@ -1,6 +1,7 @@
 
 import sys
-from typing import Any, Awaitable, Callable, TextIO
+from collections.abc import Awaitable, Callable
+from typing import Any, TextIO
 
 import abstracts
 
