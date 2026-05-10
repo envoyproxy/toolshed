@@ -6,12 +6,12 @@ from collections.abc import Callable, Iterable
 
 import jinja2
 
+from .descriptors import classproperty
+
 
 class JinjaEnvironment:
 
-    # TODO(phlax): classproperty is deprecated from 3.11
-    @classmethod  # type:ignore
-    @property
+    @classproperty
     def parser_create(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
         parser.add_argument("outpath")
@@ -19,9 +19,7 @@ class JinjaEnvironment:
         parser.add_argument("-f", "--filter", action="append")
         return parser
 
-    # TODO(phlax): classproperty is deprecated from 3.11
-    @classmethod  # type:ignore
-    @property
+    @classproperty
     def parser_load(cls) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser()
         parser.add_argument("template_py")
@@ -30,7 +28,7 @@ class JinjaEnvironment:
 
     @classmethod
     def create(cls, *args: str) -> None:
-        parsed = cls.parser_create.parse_args(args)  # type:ignore
+        parsed = cls.parser_create.parse_args(args)
         env = cls._env(
             jinja2.FileSystemLoader(
                 list(set(
@@ -42,7 +40,7 @@ class JinjaEnvironment:
 
     @classmethod
     def load(cls, *args: str, **kwargs) -> jinja2.Environment:
-        parsed = cls.parser_load.parse_args(args)  # type:ignore
+        parsed = cls.parser_load.parse_args(args)
         return cls._env(
             jinja2.ModuleLoader(parsed.template_py),
             parsed.filter,
