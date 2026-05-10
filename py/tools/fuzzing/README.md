@@ -19,7 +19,7 @@ runnable harness against the toolshed YAML-loading layer.
 
 | File | Target |
 |---|---|
-| `fuzz_yaml.py` | `envoy.base.utils.yaml.EnvoyYaml` — the custom YAML loader that registers the `!ignore` tag used throughout Envoy configs |
+| `fuzz_yaml.py` | `envoy.base.utils.yaml.EnvoyLoader` — the custom YAML loader subclass that registers the `!ignore` tag used throughout Envoy configs |
 
 ## Running locally
 

@@ -16,24 +16,6 @@ class DummyProtobufValidator(utils.abstract.AProtobufValidator):
         return super().protobuf_set_class
 
 
-def test_protobuf__yaml(patches):
-    patched = patches(
-        "importlib",
-        prefix="envoy.base.utils.abstract.protobuf")
-
-    with patched as (m_import, ):
-        assert (
-            utils.abstract.protobuf._yaml()
-            == m_import.import_module.return_value.envoy_yaml)
-
-    assert (
-        utils.abstract.protobuf._envoy_yaml
-        == m_import.import_module.return_value.envoy_yaml)
-    assert (
-        m_import.import_module.call_args
-        == [("envoy.base.utils.yaml", ), {}])
-
-
 def test_protobufset_constructor():
     proto_set = utils.abstract.AProtobufSet("DESCRIPTOR_PATH")
     assert proto_set._descriptor_path == "DESCRIPTOR_PATH"
@@ -149,23 +131,6 @@ def test_protobufvalidator_protobuf_set(patches):
     assert "protobuf_set" in proto_validator.__dict__
 
 
-def test_protobufvalidator_yaml(patches):
-    proto_validator = DummyProtobufValidator("DESCRIPTOR_PATH")
-    patched = patches(
-        "_yaml",
-        prefix="envoy.base.utils.abstract.protobuf")
-
-    with patched as (m_yaml, ):
-        assert (
-            proto_validator.yaml
-            == m_yaml.return_value)
-
-    assert (
-        m_yaml.call_args
-        == [(), {}])
-    assert "yaml" in proto_validator.__dict__
-
-
 def test_protobufvalidator_find_message(patches):
     proto_validator = DummyProtobufValidator("DESCRIPTOR_PATH")
     patched = patches(
@@ -265,8 +230,8 @@ def test_protobufvalidator_validate_fragment(patches, type_name):
 def test_protobufvalidator_validate_yaml(patches, type_name):
     proto_validator = DummyProtobufValidator("DESCRIPTOR_PATH")
     patched = patches(
-        ("AProtobufValidator.yaml",
-         dict(new_callable=PropertyMock)),
+        "_yaml",
+        "EnvoyLoader",
         "AProtobufValidator.validate_fragment",
         prefix="envoy.base.utils.abstract.protobuf")
     fragment = MagicMock()
@@ -276,15 +241,15 @@ def test_protobufvalidator_validate_yaml(patches, type_name):
         if type_name
         else ())
 
-    with patched as (m_yaml, m_valid):
+    with patched as (m_yaml, m_loader, m_valid):
         assert not proto_validator.validate_yaml(fragment, *args)
 
     assert (
         m_valid.call_args
-        == [(m_yaml.return_value.safe_load.return_value,
+        == [(m_yaml.load.return_value,
              _type_name
              if type_name
              else utils.abstract.protobuf.BOOTSTRAP_PROTO), {}])
     assert (
-        m_yaml.return_value.safe_load.call_args
-        == [(fragment, ), {}])
+        m_yaml.load.call_args
+        == [(fragment, ), dict(Loader=m_loader)])
