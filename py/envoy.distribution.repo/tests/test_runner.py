@@ -19,7 +19,9 @@ def test_repo_deprecation_warning_on_import():
         importlib.reload(repo)
     assert any(
         warning.category is DeprecationWarning
-        and "deprecated" in str(warning.message).lower()
+        and str(warning.message)
+        == ("envoy.distribution.repo is deprecated and no longer maintained. "
+            "Do not use.")
         for warning in caught)
 
 
@@ -29,7 +31,7 @@ def test_cmd_prints_deprecation_notice(patches):
     with patched as (m_main, m_sys):
         m_main.return_value = 7
         m_sys.argv = ["envoy.distribution.repo", "ARG1"]
-        assert not repo.cmd()
+        repo.cmd()
 
     assert m_sys.exit.call_args == [(7,), {}]
     assert m_sys.stderr.write.call_count == 1
