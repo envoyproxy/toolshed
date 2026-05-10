@@ -546,9 +546,9 @@ entry-points-txt==0.3.0 \
     --hash=sha256:690a9335a17ded03ed221c2019c28094e74a9ea734931bd6ee6d853e58caa90a \
     --hash=sha256:957f508508a761671f18870edd9deb83b36844c66251e9c8a0df55ee8ae0bf52
     # via wheel-inspect
-envoy-base-utils==0.5.11 \
-    --hash=sha256:008ebe43ecbde736e8033a34242659ff784caf50cc3301b1d3214899e31fa83d \
-    --hash=sha256:be942364a42d92439281700486cf5040bdbcf3786a4e1dbcc9ea0af033a7e47e
+envoy-base-utils==0.6.0 \
+    --hash=sha256:1354ad0198b0282fa1e2072324aa9e479eb45d368cc9d84e5f196a277ee631d0 \
+    --hash=sha256:e56c9810cbc8b0db988ba4223f6c90281e9f1a16aa5a7bdb781d1062d8b3f8a4
     # via
     #   -r py/deps/requirements.in
     #   envoy-distribution-distrotest
@@ -1592,9 +1592,7 @@ python-gnupg==0.5.6 \
 pytz==2026.2 \
     --hash=sha256:04156e608bee23d3792fd45c94ae47fae1036688e75032eea2e3bf0323d1f126 \
     --hash=sha256:0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a
-    # via
-    #   -r py/deps/requirements.in
-    #   envoy-base-utils
+    # via -r py/deps/requirements.in
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
     --hash=sha256:0150219816b6a1fa26fb4699fb7daa9caf09eb1999f3b70fb6e786805e80375a \
@@ -1796,9 +1794,7 @@ types-pygments==2.20.0.20260508 \
 types-pytz==2026.2.0.20260506 \
     --hash=sha256:58ab5307c20885f9bcd42ff106616eb0e32710791f8cbdc770aee2ea0c4f01fb \
     --hash=sha256:fc6a0de6a1b7da82a748fb4065e152372dac3016559cb1eef5e8af1e338eb627
-    # via
-    #   -r py/deps/requirements.in
-    #   envoy-base-utils
+    # via -r py/deps/requirements.in
 types-pyyaml==6.0.12.20260508 \
     --hash=sha256:5ae42149c3ebf7aaaf6c65ee49af590c80f0ba52e9e3f75a75c5564b33556fa6 \
     --hash=sha256:edc094ed3a918b0c6232f71a5b67fdf38e76e17517b7d87bfbb9fc27d442fb51
