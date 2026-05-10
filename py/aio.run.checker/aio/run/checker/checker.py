@@ -84,8 +84,10 @@ class Checker(runner.Runner):
 
     @cached_property
     def path(self) -> pathlib.Path:
-        """The "path" - usually Envoy src dir. This is used for finding "
-        configs for the tooling and should be a dir
+        """The "path" - usually Envoy src dir.
+
+        This is used for finding configs for the tooling and should be
+        a dir.
         """
         try:
             path = pathlib.Path(self.args.path or self.args.paths[0])
@@ -330,7 +332,7 @@ class Checker(runner.Runner):
 
     @cached_property
     def completed_checks(self) -> set[str]:
-        """Checks that have succesfully completed."""
+        """Checks that have successfully completed."""
         return set()
 
     @cached_property
@@ -363,7 +365,7 @@ class Checker(runner.Runner):
 
     @cached_property
     def preloaded_checks(self) -> set[str]:
-        """Checks for wich all preload tasks are complete."""
+        """Checks for which all preload tasks are complete."""
         return set()
 
     @property
