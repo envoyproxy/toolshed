@@ -140,7 +140,7 @@ class AGithubReleaseAssetsFetcher(
             release: "abstract.manager.AGithubRelease",
             path: pathlib.Path,
             asset_types: AssetTypesDict | None = None,
-            append: bool | None = False) -> None:
+            append: bool = False) -> None:
         super().__init__(release, path)
         self._asset_types = asset_types
         self._append = append

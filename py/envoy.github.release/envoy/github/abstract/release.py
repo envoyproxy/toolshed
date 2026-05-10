@@ -104,7 +104,7 @@ class AGithubRelease(metaclass=abstracts.Abstraction):
             self,
             path: pathlib.Path,
             asset_types: dict[str, re.Pattern[str]] | None = None,
-            append: bool | None = False) -> ReleaseDict:
+            append: bool = False) -> ReleaseDict:
         """Fetch assets for this version, saving either to a directory or
         tarball."""
         raise NotImplementedError
