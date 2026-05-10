@@ -15,7 +15,7 @@ class ParallelRunner(runner.Runner):
     @cached_property
     def batch_size(self) -> int:
         # Distribute items across cpu_count workers, rounded up via -(-x // y).
-        return -(-len(self.items) // self.cpu_count) or 1
+        return max(1, -(-len(self.items) // self.cpu_count))
 
     @property
     def batches(self) -> Iterator[tuple[str, ...]]:
