@@ -2,7 +2,6 @@
 import argparse
 import pathlib
 from functools import cached_property
-from typing import Dict, Optional, List, Tuple
 
 import abstracts
 
@@ -18,7 +17,7 @@ class AGithubReleaseCommand(
         metaclass=abstracts.Abstraction):
 
     @cached_property
-    def artefacts(self) -> Tuple[pathlib.Path, ...]:
+    def artefacts(self) -> tuple[pathlib.Path, ...]:
         return tuple(
             pathlib.Path(asset)
             for asset
@@ -49,9 +48,9 @@ class AGithubReleaseCommand(
 
     def format_response(
             self,
-            release: Optional[Dict] = None,
-            assets: Optional[List[Dict]] = None,
-            errors: Optional[List[Dict]] = None) -> Optional[int]:
+            release: dict | None = None,
+            assets: list[dict] | None = None,
+            errors: list[dict] | None = None) -> int | None:
         for k, v in (release or {}).items():
             if isinstance(v, dict):
                 print(k)

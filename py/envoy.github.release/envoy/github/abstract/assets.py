@@ -2,10 +2,10 @@ import pathlib
 import re
 import tempfile
 from abc import abstractmethod
+from collections.abc import AsyncGenerator, Awaitable, Coroutine, Iterator
 from functools import cached_property
 from typing import (
-    Any, AsyncGenerator, Awaitable, Coroutine, Dict, Iterator,
-    Literal, Optional, Pattern, Set, Union)
+    Any, Literal)
 
 import aiohttp
 
@@ -22,17 +22,17 @@ from .exceptions import GithubReleaseError
 
 TarWriteMode = Literal["w", "a"]
 
-AssetsResultDict = Dict[str, Union[str, pathlib.Path]]
+AssetsResultDict = dict[str, str | pathlib.Path]
 AssetsAwaitableGenerator = AsyncGenerator[
     Coroutine[
         Any,
         Any,
         AssetsResultDict],
-    Dict]
+    dict]
 AssetsGenerator = AsyncGenerator[
     AssetsResultDict,
     Awaitable]
-AssetTypesDict = Dict[str, Pattern[str]]
+AssetTypesDict = dict[str, re.Pattern[str]]
 
 
 class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
@@ -62,7 +62,7 @@ class AGithubReleaseAssets(metaclass=abstracts.Abstraction):
         self.cleanup()
 
     @async_property
-    async def assets(self) -> Dict:
+    async def assets(self) -> dict:
         """Github release asset dictionaries."""
         return await self.release.assets
 
@@ -139,8 +139,8 @@ class AGithubReleaseAssetsFetcher(
             self,
             release: "abstract.manager.AGithubRelease",
             path: pathlib.Path,
-            asset_types: Optional[AssetTypesDict] = None,
-            append: Optional[bool] = False) -> None:
+            asset_types: AssetTypesDict | None = None,
+            append: bool | None = False) -> None:
         super().__init__(release, path)
         self._asset_types = asset_types
         self._append = append
@@ -151,7 +151,7 @@ class AGithubReleaseAssetsFetcher(
         return self._append or False
 
     @cached_property
-    def asset_types(self) -> Dict[str, Pattern[str]]:
+    def asset_types(self) -> dict[str, re.Pattern[str]]:
         """Patterns for grouping assets."""
         return self._asset_types or dict(assets=re.compile(".*"))
 
@@ -169,7 +169,7 @@ class AGithubReleaseAssetsFetcher(
     def write_mode(self) -> TarWriteMode:
         return "a" if self.append else "w"
 
-    def asset_type(self, asset: Dict) -> Optional[str]:
+    def asset_type(self, asset: dict) -> str | None:
         """Categorization of an asset into an asset type.
 
         The default `asset_types` matcher will just match all files.
@@ -189,7 +189,7 @@ class AGithubReleaseAssetsFetcher(
     @abstracts.interfacemethod
     async def download(
             self,
-            asset: Dict) -> AssetsResultDict:
+            asset: dict) -> AssetsResultDict:
         """Download an asset."""
         raise NotImplementedError
 
@@ -215,7 +215,7 @@ class AGithubReleaseAssetsPusher(
         raise NotImplementedError
 
     @async_property
-    async def asset_names(self) -> Set[str]:
+    async def asset_names(self) -> set[str]:
         return await self.release.asset_names
 
     @async_property

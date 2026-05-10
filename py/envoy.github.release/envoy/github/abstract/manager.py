@@ -1,8 +1,6 @@
 import pathlib
+import re
 from abc import abstractmethod
-from typing import (
-    Dict, List,
-    Optional, Pattern, Union)
 
 import verboselogs  # type:ignore
 
@@ -47,17 +45,17 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
-            path: Union[str, pathlib.Path],
+            path: str | pathlib.Path,
             repository: str,
-            continues: Optional[bool] = False,
-            create: Optional[bool] = True,
-            user: Optional[str] = None,
-            oauth_token: Optional[str] = None,
-            version: Optional[str] = None,
-            log: Optional[verboselogs.VerboseLogger] = None,
-            asset_types: Optional[Dict[str, Pattern[str]]] = None,
-            github: Optional[gidgethub.abc.GitHubAPI] = None,
-            session: Optional[aiohttp.ClientSession] = None) -> None:
+            continues: bool | None = False,
+            create: bool | None = True,
+            user: str | None = None,
+            oauth_token: str | None = None,
+            version: str | None = None,
+            log: verboselogs.VerboseLogger | None = None,
+            asset_types: dict[str, re.Pattern[str]] | None = None,
+            github: gidgethub.abc.GitHubAPI | None = None,
+            session: aiohttp.ClientSession | None = None) -> None:
         self.version = version
         self._path = path
         self.repository = repository
@@ -91,7 +89,7 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
 
     @async_property
     @abstractmethod
-    async def latest(self) -> Dict[str, packaging.version.Version]:
+    async def latest(self) -> dict[str, packaging.version.Version]:
         """Returns a dictionary of latest minor and patch versions.
 
         For example, given the following versions:
@@ -116,7 +114,7 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
 
     @async_property
     @abstractmethod
-    async def releases(self) -> List[Dict]:
+    async def releases(self) -> list[dict]:
         """List of dictionaries containing information about available
         releases, as returned by the Github API."""
         raise NotImplementedError
@@ -148,13 +146,13 @@ class AGithubReleaseManager(metaclass=abstracts.Abstraction):
     @abstractmethod
     def format_version(
             self,
-            version: Union[str, packaging.version.Version]) -> str:
+            version: str | packaging.version.Version) -> str:
         """Formatted version name - eg `1.19.0` -> `v1.19.0`"""
         raise NotImplementedError
 
     @abstractmethod
     def parse_version(
-            self, version: str) -> Optional[packaging.version.Version]:
+            self, version: str) -> packaging.version.Version | None:
         """Parsed version - eg `v1.19.0` -> `Version(1.19.0)`"""
         raise NotImplementedError
 

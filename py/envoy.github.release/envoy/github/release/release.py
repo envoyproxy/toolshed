@@ -1,8 +1,7 @@
 import pathlib
+import re
 from functools import cached_property
-from typing import (
-    Dict, Iterable,
-    Optional, Pattern, Set, Tuple, Type)
+from collections.abc import Iterable
 
 import verboselogs  # type:ignore
 
@@ -33,12 +32,12 @@ class GithubRelease:
         self._version = version
 
     @async_property(cache=True)
-    async def asset_names(self) -> Set[str]:
+    async def asset_names(self) -> set[str]:
         """Set of the names of assets for this release version."""
         return set(asset["name"] for asset in await self.assets)
 
     @async_property(cache=True)
-    async def assets(self) -> Dict:
+    async def assets(self) -> dict:
         """Assets dictionary as returned by Github Release API."""
         try:
             return await self.github.getitem(await self.assets_url)
@@ -60,7 +59,7 @@ class GithubRelease:
         return self.version_name in await self.release_names
 
     @property
-    def fetcher(self) -> Type[AGithubReleaseAssetsFetcher]:
+    def fetcher(self) -> type[AGithubReleaseAssetsFetcher]:
         return GithubReleaseAssetsFetcher
 
     @property
@@ -72,11 +71,11 @@ class GithubRelease:
         return self.manager.log
 
     @property
-    def pusher(self) -> Type[AGithubReleaseAssetsPusher]:
+    def pusher(self) -> type[AGithubReleaseAssetsPusher]:
         return GithubReleaseAssetsPusher
 
     @async_property(cache=True)
-    async def release(self) -> Dict:
+    async def release(self) -> dict:
         """Dictionary of release version information as returned by the Github
         Release API."""
         return await self.get()
@@ -87,7 +86,7 @@ class GithubRelease:
         return (await self.release)["id"]
 
     @async_property
-    async def release_names(self) -> Tuple[str, ...]:
+    async def release_names(self) -> tuple[str, ...]:
         """Tuple of release tag names as returned by the Github Release API.
 
         This is used to check whether the release exists already.
@@ -126,7 +125,7 @@ class GithubRelease:
 
     async def create(
             self,
-            assets: Optional[Iterable[pathlib.Path]] = None) -> ReleaseDict:
+            assets: Iterable[pathlib.Path] | None = None) -> ReleaseDict:
         results = ReleaseDict()
         if await self.exists:
             self.fail(f"Release {self.version_name} already exists")
@@ -158,8 +157,8 @@ class GithubRelease:
     async def fetch(
             self,
             path: pathlib.Path,
-            asset_types: Optional[Dict[str, Pattern[str]]] = None,
-            append: Optional[bool] = False) -> ReleaseDict:
+            asset_types: dict[str, re.Pattern[str]] | None = None,
+            append: bool | None = False) -> ReleaseDict:
         self.log.notice(
             "Downloading assets for release version: "
             f"{self.version_name} -> {path}")
@@ -181,7 +180,7 @@ class GithubRelease:
     def fail(self, message: str) -> str:
         return self.manager.fail(message)
 
-    async def get(self) -> Dict:
+    async def get(self) -> dict:
         try:
             return await self.github.getitem(str(self.version_url))
         except gidgethub.GitHubException as e:
