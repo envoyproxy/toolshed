@@ -2,4 +2,7 @@
 envoy.distribution.repo
 =======================
 
-Repo publishing tool used in Envoy proxy's CI
+Deprecated: do not use
+----------------------
+
+This package is no longer maintained and is now inactive.
