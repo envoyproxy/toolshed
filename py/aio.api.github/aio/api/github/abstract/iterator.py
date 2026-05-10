@@ -1,5 +1,6 @@
 
-from typing import Any, AsyncGenerator, AsyncIterable, Mapping, TypeVar
+from collections.abc import AsyncGenerator, AsyncIterable, Mapping
+from typing import Any, TypeVar
 
 import gidgethub.abc
 import gidgethub.sansio

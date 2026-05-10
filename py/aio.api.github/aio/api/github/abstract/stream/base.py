@@ -1,6 +1,4 @@
 
-from typing import Optional
-
 from aiofiles.threadpool.binary import AsyncBufferedIOBase
 
 
@@ -11,7 +9,7 @@ class AsyncStream:
     def __init__(
             self,
             buffer: AsyncBufferedIOBase,
-            chunk_size: Optional[int] = None):
+            chunk_size: int | None = None):
         self._buffer = buffer
         self._chunk_size = chunk_size
 

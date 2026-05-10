@@ -1,9 +1,9 @@
 
 import logging
 import pathlib
+from collections.abc import AsyncIterator, Callable
 from datetime import datetime
 from functools import cached_property
-from typing import AsyncIterator, Callable
 
 from packaging import version
 
