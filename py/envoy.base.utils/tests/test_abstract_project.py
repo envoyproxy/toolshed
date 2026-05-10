@@ -1061,57 +1061,51 @@ def test_abstract_project_write_version(patches, dev):
             dict(dev=dev)])
 
 
-async def test_abstract_project__git_commit(iters, patches):
+@pytest.mark.parametrize("author", [None, "Foo O'Bar <foo@example.com>"])
+async def test_abstract_project__git_commit(patches, author):
     project = DummyProject()
     patched = patches(
         "AProject._exec",
         prefix="envoy.base.utils.abstract.project.project")
-    changed = iters(tuple)
-    msg = MagicMock()
+    changed = (
+        "path with space.txt",
+        "path$(echo 1);`echo 2`.txt")
+    msg = "foo $(echo bar)\nSigned-off-by: someone"
+    kwargs = dict(author=author) if author else {}
+    author_args = ["--author", author] if author else []
 
     with patched as (m_exec, ):
-        assert not await project._git_commit(changed, msg)
+        assert not await project._git_commit(changed, msg, **kwargs)
 
     assert (
         m_exec.call_args_list
-        == [[(" ".join(["git", "add", *changed]), ),
+        == [[(("git", "add", *changed), ),
              {}],
-            [(" ".join([
-                "git",
-                "commit",
-                *changed,
-                "-m",
-                f"\"{msg.replace.return_value.replace.return_value}\""]), ),
+            [(("git", "commit", *author_args, *changed, "-m", msg), ),
              {}]])
-    assert (
-        msg.replace.call_args
-        == [("`", r"\`"), {}])
-    assert (
-        msg.replace.return_value.replace.call_args
-        == [('"', r"\""), {}])
 
 
 @pytest.mark.parametrize("returns", [None, 0, 23, "cabbage"])
-async def test_abstract_project__exec(patches, returns):
+async def test_abstract_project__exec(iters, patches, returns):
     project = DummyProject()
     patched = patches(
         "asyncio",
         ("AProject.path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.project")
-    command = MagicMock()
+    command = iters(tuple)
 
     with patched as (m_aio, m_path):
-        shell = AsyncMock()
+        exc = AsyncMock()
         comm = AsyncMock()
         stdout = MagicMock()
         stdout.decode.return_value = "STDOUT"
         stderr = MagicMock()
         stderr.decode.return_value = "STDERR"
         comm.return_value = [stdout, stderr]
-        shell.return_value.communicate = comm
-        shell.return_value.returncode = returns
-        m_aio.subprocess.create_subprocess_shell = shell
+        exc.return_value.communicate = comm
+        exc.return_value.returncode = returns
+        m_aio.subprocess.create_subprocess_exec = exc
         if returns != 0:
             with pytest.raises(exceptions.CommitError) as e:
                 await project._exec(command)
@@ -1119,8 +1113,8 @@ async def test_abstract_project__exec(patches, returns):
             assert not await project._exec(command)
 
     assert (
-        shell.call_args
-        == [(command, ),
+        exc.call_args
+        == [tuple(command),
             dict(stdout=m_aio.subprocess.PIPE,
                  stderr=m_aio.subprocess.PIPE,
                  cwd=m_path.return_value)])

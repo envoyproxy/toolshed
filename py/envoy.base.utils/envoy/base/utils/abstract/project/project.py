@@ -327,9 +327,9 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
         self.version_path.write_text(
             f"{self.version_string(version, dev=dev)}\n")
 
-    async def _exec(self, command: str) -> None:
-        result = await asyncio.subprocess.create_subprocess_shell(
-            command,
+    async def _exec(self, command: tuple[str, ...]) -> None:
+        result = await asyncio.subprocess.create_subprocess_exec(
+            *command,
             cwd=self.path,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
@@ -346,16 +346,13 @@ class AProject(event.AExecutive, metaclass=abstracts.Abstraction):
             msg: str,
             author: str | None = None) -> None:
         author_args = (
-            ["--author", f"'{author}'"]
+            ["--author", author]
             if author
             else [])
         await self._exec(
-            " ".join(("git", "add", *changed)))
-        msg = msg.replace("`", r"\`").replace('"', r"\"")
+            ("git", "add", *changed))
         await self._exec(
-            " ".join((
-                "git", "commit", *author_args, *changed,
-                "-m", f"\"{msg}\"")))
+            ("git", "commit", *author_args, *changed, "-m", msg))
 
     def _patch_versions(
             self,
