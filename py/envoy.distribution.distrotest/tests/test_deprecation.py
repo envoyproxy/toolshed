@@ -1,4 +1,5 @@
 
+import importlib
 import warnings
 
 warnings.filterwarnings(
@@ -10,11 +11,8 @@ import envoy.distribution.distrotest as distrotest_mod  # noqa: E402
 
 
 def test_distrotest_deprecation_warning_on_import():
-    import importlib
-    import warnings as w
-
-    with w.catch_warnings(record=True) as caught:
-        w.simplefilter("always", DeprecationWarning)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DeprecationWarning)
         importlib.reload(distrotest_mod)
 
     assert any(
