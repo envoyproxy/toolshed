@@ -24,9 +24,9 @@ class preload:
         self._fun = fun
         return self
 
-    def __set_name__(self, cls: type, name: str) -> None:
+    def __set_name__(self, cls: Any, name: str) -> None:
         self.name = name
-        setattr(cls, "_preload_checks_data", self.get_preload_checks_data(cls))
+        cls._preload_checks_data = self.get_preload_checks_data(cls)
 
     def __get__(self, instance: Any, cls: type | None = None) -> Any:
         if instance is None:
