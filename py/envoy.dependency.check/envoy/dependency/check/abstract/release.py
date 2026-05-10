@@ -6,7 +6,6 @@ import time
 from concurrent import futures
 from datetime import datetime
 from functools import cached_property
-from typing import Optional
 
 from packaging import version
 
@@ -45,10 +44,10 @@ class ADependencyGithubRelease(
             self,
             repo: _github.IGithubRepo,
             version: str,
-            asset_url: Optional[str] = None,
-            release: Optional[_github.IGithubRelease] = None,
-            loop: Optional[asyncio.AbstractEventLoop] = None,
-            pool: Optional[futures.Executor] = None) -> None:
+            asset_url: str | None = None,
+            release: _github.IGithubRelease | None = None,
+            loop: asyncio.AbstractEventLoop | None = None,
+            pool: futures.Executor | None = None) -> None:
         self.repo = repo
         self.asset_url = asset_url
         self._version = version
@@ -57,7 +56,7 @@ class ADependencyGithubRelease(
         self._loop = loop
 
     @async_property(cache=True)
-    async def commit(self) -> Optional[_github.IGithubCommit]:
+    async def commit(self) -> _github.IGithubCommit | None:
         """Github commit for this release."""
         try:
             return await self.repo.commit(self.tag_name)  # type:ignore
@@ -67,7 +66,7 @@ class ADependencyGithubRelease(
             raise e
 
     @async_property(cache=True)
-    async def date(self) -> Optional[str]:
+    async def date(self) -> str | None:
         """UTC date of this release."""
         # TODO(phlax): add tests for this and related fun
         return (
@@ -84,7 +83,7 @@ class ADependencyGithubRelease(
         return MIN_DATA_SIZE_TO_HASH_IN_PROC
 
     @async_property(cache=True)
-    async def release(self) -> Optional[_github.IGithubRelease]:
+    async def release(self) -> _github.IGithubRelease | None:
         """Github release."""
         if self._release:
             return self._release
@@ -111,7 +110,7 @@ class ADependencyGithubRelease(
         return await self._hash_file_data(await response.read())
 
     @async_property(cache=True)
-    async def tag(self) -> Optional[_github.IGithubTag]:
+    async def tag(self) -> _github.IGithubTag | None:
         """Github tag."""
         try:
             return await self.repo.tag(self.tag_name)  # type:ignore
@@ -134,7 +133,7 @@ class ADependencyGithubRelease(
         return not utils.is_sha(self.tag_name)
 
     @async_property(cache=True)
-    async def timestamp(self) -> Optional[datetime]:
+    async def timestamp(self) -> datetime | None:
         """Timestamp of this release."""
         return (
             await self.timestamp_tag
@@ -142,7 +141,7 @@ class ADependencyGithubRelease(
             else await self.timestamp_commit)
 
     @async_property(cache=True)
-    async def timestamp_commit(self) -> Optional[datetime]:
+    async def timestamp_commit(self) -> datetime | None:
         """Timestamp of the commit of this release."""
         return (
             commit.timestamp
@@ -150,7 +149,7 @@ class ADependencyGithubRelease(
             else None)
 
     @async_property(cache=True)
-    async def timestamp_tag(self) -> Optional[datetime]:
+    async def timestamp_tag(self) -> datetime | None:
         """Timestamp of this release, resolved from the release, tag, or
         commit, in that order."""
         if release := await self.release:
@@ -162,7 +161,7 @@ class ADependencyGithubRelease(
         return await self.timestamp_commit
 
     @cached_property
-    def version(self) -> Optional[version.Version]:
+    def version(self) -> version.Version | None:
         """Semantic version of this release."""
         try:
             return version.parse(self.tag_name)

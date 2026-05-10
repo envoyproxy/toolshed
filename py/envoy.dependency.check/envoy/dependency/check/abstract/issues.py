@@ -1,6 +1,5 @@
 
 from functools import cached_property
-from typing import Dict, Optional, Tuple
 
 from packaging import version
 
@@ -37,11 +36,11 @@ class AGithubDependencyReleaseIssue(
     """Github issue associated with a dependency."""
 
     @property
-    def parse_vars(self) -> Tuple[str, ...]:
+    def parse_vars(self) -> tuple[str, ...]:
         return ("key", "version")
 
     @cached_property
-    def version(self) -> Optional[version.Version]:
+    def version(self) -> version.Version | None:
         """Parsed dependency version of an issue."""
         try:
             return (
@@ -90,7 +89,7 @@ class AGithubDependencyReleaseIssues(
         return super().issues_search_tpl
 
     @property
-    def labels(self) -> Tuple[str, ...]:
+    def labels(self) -> tuple[str, ...]:
         return LABELS
 
     @property
@@ -125,7 +124,7 @@ class AGithubDependencyReleaseIssues(
 
     def track_issue(  # type:ignore[override]
             self,
-            issues: Dict[str, AGithubDependencyReleaseIssue],
+            issues: dict[str, AGithubDependencyReleaseIssue],
             issue: AGithubDependencyReleaseIssue) -> bool:
         if issue.key not in issues:
             return True
