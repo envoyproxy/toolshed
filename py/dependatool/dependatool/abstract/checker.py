@@ -2,8 +2,8 @@
 import abc
 import pathlib
 import re
+from collections.abc import Mapping
 from functools import cached_property
-from typing import Mapping, Type
 
 import abstracts
 
@@ -70,7 +70,7 @@ class ADependatoolChecker(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def directory_class(self) -> Type[_directory.ADirectory]:
+    def directory_class(self) -> type[_directory.ADirectory]:
         raise NotImplementedError
 
     @cached_property
