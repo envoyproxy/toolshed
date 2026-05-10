@@ -57,7 +57,7 @@ Verdict labels:
 
 ### New findings in this audit
 
-- New export-surface bug: `__all__` includes `"Parallel"` but no such symbol exists.
+- New export surface bug: `__all__` includes `"Parallel"` but no such symbol exists.
 - Tar extraction hardening is only partial: selective extraction now uses `filter="data"`, but `extractall()` path still uses default filter behavior.
 
 ---
@@ -310,7 +310,7 @@ No direct in-repo hits for `envoy.fetch` or `envoy.parallel` script names in `en
 1. **Harden remaining tar extraction path**
    - Apply explicit safe filter semantics to the `extractall()` branch in `tar.py`.
 
-2. **Fix export-surface inconsistency**
+2. **Fix export surface inconsistency**
    - Remove `"Parallel"` from `__all__` or add the intended symbol.
 
 ### Resolved from previous plan
@@ -336,4 +336,3 @@ No direct in-repo hits for `envoy.fetch` or `envoy.parallel` script names in `en
 
 7. **Move `coverage_with_data_file` out of `envoy.base.utils`**
    - Relocate to a test-focused utility package.
-
