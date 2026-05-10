@@ -73,7 +73,8 @@ async def test_reader(patches):
         prefix="envoy.github.release.stream._reader")
 
     with patched as (m_aiofiles, m_pathlib, m_reader):
-        m_aiofiles.open.return_value.__aenter__ = AsyncMock(return_value="BUFFER")
+        m_aiofiles.open.return_value.__aenter__ = AsyncMock(
+            return_value="BUFFER")
         m_aiofiles.open.return_value.__aexit__ = AsyncMock(return_value=None)
         m_pathlib.Path.return_value.stat.return_value.st_size = 456
         async with _reader.reader("PATH", chunk_size=4096) as stream:
@@ -125,7 +126,8 @@ async def test_writer(patches):
         prefix="envoy.github.release.stream._writer")
 
     with patched as (m_aiofiles, m_writer):
-        m_aiofiles.open.return_value.__aenter__ = AsyncMock(return_value="BUFFER")
+        m_aiofiles.open.return_value.__aenter__ = AsyncMock(
+            return_value="BUFFER")
         m_aiofiles.open.return_value.__aexit__ = AsyncMock(return_value=None)
         async with _writer.writer("PATH", chunk_size=4096) as stream:
             assert stream == m_writer.return_value
