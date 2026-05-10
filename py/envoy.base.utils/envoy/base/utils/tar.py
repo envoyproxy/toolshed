@@ -12,11 +12,12 @@ import contextlib
 import io
 import logging
 import pathlib
+import re
 import shutil
 import tarfile
 import tempfile
 from collections.abc import Iterator
-from typing import cast, ContextManager, Literal, Pattern
+from typing import cast, ContextManager, Literal
 
 import zstandard
 
@@ -65,7 +66,7 @@ def tar_mode(path: pathlib.Path | str, mode="r") -> TarMode:
 def extract(
         path: pathlib.Path | str,
         *tarballs: pathlib.Path | str,
-        matching: Pattern[str] | None = None,
+        matching: re.Pattern[str] | None = None,
         mappings: dict[str, str] | None = None,
         inmem: bool = True) -> pathlib.Path:
     if not tarballs:
@@ -82,7 +83,7 @@ def extract(
 @contextlib.contextmanager
 def untar(
         *tarballs: pathlib.Path | str,
-        matching: Pattern[str] | None = None,
+        matching: re.Pattern[str] | None = None,
         mappings: dict[str, str] | None = None,
         inmem: bool = True) -> Iterator[pathlib.Path]:
     """Untar a tarball into a temporary directory.
@@ -115,7 +116,7 @@ def _extract(
         path: pathlib.Path,
         prefix: str,
         tar: tarfile.TarFile,
-        matching: Pattern[str] | None,
+        matching: re.Pattern[str] | None,
         mappings: dict[str, str] | None) -> None:
     if not matching:
         tar.extractall(path=path.joinpath(prefix))
@@ -188,7 +189,7 @@ def _opener(
             t.__dict__["fileobj"].close()
 
 
-def _rm_paths(path: pathlib.Path, matching: Pattern[str] | None):
+def _rm_paths(path: pathlib.Path, matching: re.Pattern[str] | None):
     if not matching:
         return
     for sub in path.glob("*"):
@@ -198,7 +199,7 @@ def _rm_paths(path: pathlib.Path, matching: Pattern[str] | None):
 
 def _should_extract(
         member: tarfile.TarInfo,
-        matching: Pattern[str] | None = None,
+        matching: re.Pattern[str] | None = None,
         mappings: dict[str, str] | None = None) -> bool:
     return bool(
         (matching and matching.match(member.name))
@@ -210,7 +211,7 @@ def _should_extract(
 def pack(
         path: str | pathlib.Path,
         out: str | pathlib.Path,
-        include: Pattern[str] | None = None) -> None:
+        include: re.Pattern[str] | None = None) -> None:
     (_pack_zst(path, out, include=include)
      if str(out).endswith(".zst")
      else _pack(path, out, include=include))
@@ -219,7 +220,7 @@ def pack(
 def _pack(
         path: str | pathlib.Path,
         out: str | pathlib.Path,
-        include: Pattern[str] | None = None) -> None:
+        include: re.Pattern[str] | None = None) -> None:
     with tarfile.open(out, mode=tar_mode(out, mode="w")) as tar:
         tar.add(_prune(path, include), arcname=".")
 
@@ -227,7 +228,7 @@ def _pack(
 def _pack_zst(
         path: str | pathlib.Path,
         out: str | pathlib.Path,
-        include: Pattern[str] | None = None) -> None:
+        include: re.Pattern[str] | None = None) -> None:
     tarout = io.BytesIO()
     cctx = zstandard.ZstdCompressor(threads=-1)
     with tarfile.open(fileobj=tarout, mode="w") as tar:
@@ -239,7 +240,7 @@ def _pack_zst(
 
 def _prune(
         path: str | pathlib.Path,
-        include: Pattern[str] | None = None) -> pathlib.Path:
+        include: re.Pattern[str] | None = None) -> pathlib.Path:
     path = pathlib.Path(path)
     if not include:
         return path
@@ -257,9 +258,9 @@ def _prune(
 def repack(
         out: str | pathlib.Path,
         *paths: str | pathlib.Path,
-        matching: Pattern[str] | None = None,
+        matching: re.Pattern[str] | None = None,
         mappings: dict[str, str] | None = None,
-        include: Pattern[str] | None = None,
+        include: re.Pattern[str] | None = None,
         inmem: bool = True) -> Iterator[pathlib.Path]:
     extracted = untar(
         *paths, matching=matching, mappings=mappings, inmem=inmem)

@@ -1,4 +1,5 @@
 
+import shlex
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 import types
 
@@ -72,19 +73,16 @@ def test_parallelrunner_batches(iters, patches):
     patched = patches(
         ("ParallelRunner.batch_size",
          dict(new_callable=PropertyMock)),
-        ("ParallelRunner.cpu_count",
-         dict(new_callable=PropertyMock)),
         ("ParallelRunner.items",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.parallel_runner")
     items = iters(count=7)
     expected = [
-        items[:3],
-        items[3:6],
-        items[6:7]]
+        tuple(items[:3]),
+        tuple(items[3:6]),
+        tuple(items[6:7])]
 
-    with patched as (m_batch, m_cpu_count, m_items):
-        m_cpu_count.return_value = 4
+    with patched as (m_batch, m_items):
         m_batch.return_value = 3
         m_items.return_value = items
         resultgen = runner.batches
@@ -134,15 +132,14 @@ def test_parallelrunner_command(iters, patches):
         ("ParallelRunner.args",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.parallel_runner")
-    command = "FOO BAR BAZ"
+    command = "FOO BAR \"BAZ BING\""
     batch = iters()
-    extra = " ".join(batch)
 
     with patched as (m_args, ):
         m_args.return_value.command = command
         assert (
             runner.command(batch)
-            == f"{command} {extra}")
+            == ("FOO", "BAR", "BAZ BING", *batch))
 
 
 @pytest.mark.parametrize("lines", [0, 3, 7])
@@ -177,7 +174,7 @@ async def test_parallelrunner_run(iters, patches):
          dict(new_callable=MagicMock)),
         prefix="envoy.base.utils.parallel_runner")
     batches = iters()
-    results = iters(cb=lambda i: (f"CMD{i}", f"LINES{i}"))
+    results = iters(cb=lambda i: ((f"CMD{i}", ), f"LINES{i}"))
 
     with patched as (m_asyncio, m_batches, m_command, m_handle, m_run):
         m_batches.return_value = batches
@@ -196,7 +193,7 @@ async def test_parallelrunner_run(iters, patches):
             in batches])
     assert (
         m_handle.call_args_list
-        == [[result, {}]
+        == [[(result[0][0], result[1]), {}]
             for result
             in results])
 
@@ -213,27 +210,27 @@ async def test_parallelrunner__run(iters, patches, stderr):
     stdout = MagicMock()
     stdout.decode.return_value.split.return_value = _stdout + ["", None]
     stderr = MagicMock() if stderr else None
-    cmd = MagicMock()
+    cmd = tuple(iters())
 
     with patched as (m_asyncio, m_log):
-        shell = AsyncMock()
-        m_asyncio.create_subprocess_shell.side_effect = shell
-        shell.return_value.communicate.side_effect = AsyncMock(
+        exec = AsyncMock()
+        m_asyncio.create_subprocess_exec.side_effect = exec
+        exec.return_value.communicate.side_effect = AsyncMock(
             return_value=[stdout, stderr])
         assert (
             await runner._run(cmd)
             == (cmd, _stdout))
 
     assert (
-        shell.call_args
-        == [(cmd, ),
-            dict(stdout=m_asyncio.subprocess.PIPE,
-                 stderr=m_asyncio.subprocess.PIPE)])
+        exec.call_args
+        == [(*cmd, ), {
+            "stdout": m_asyncio.subprocess.PIPE,
+            "stderr": m_asyncio.subprocess.PIPE}])
 
     if stderr:
         assert (
             m_log.return_value.warning.call_args
-            == [(f'({cmd})\n{stderr.decode.return_value}', ), {}])
+            == [(f'({shlex.join(cmd)})\n{stderr.decode.return_value}', ), {}])
     else:
         assert not m_log.called
     assert (
