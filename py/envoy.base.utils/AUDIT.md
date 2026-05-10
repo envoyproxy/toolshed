@@ -57,7 +57,7 @@ Verdict labels:
 
 ### New findings in this audit
 
-- New export surface bug: `__all__` includes `"Parallel"` but no such symbol exists.
+- New export surface bug: package `__all__` includes a missing symbol name (`"Parallel"`) with no corresponding class/function/constant export.
 - Tar extraction hardening is only partial: selective extraction now uses `filter="data"`, but `extractall()` path still uses default filter behavior.
 
 ---
@@ -244,7 +244,7 @@ Re-export modules for abstract API (`AProject`, `AChangelog*`, `AInventories`, `
 
 ## Consumer map
 
-## `envoyproxy/toolshed` (`py/` outside `envoy.base.utils`)
+### `envoyproxy/toolshed` (`py/` outside `envoy.base.utils`)
 
 | Consumer package | Symbols consumed |
 |---|---|
@@ -258,7 +258,7 @@ Re-export modules for abstract API (`AProject`, `AChangelog*`, `AInventories`, `
 
 Low/zero in-repo consumers among exported surface include: `coverage_with_data_file`, `fetch_cmd`, `parallel_cmd`, `ProjectRunner`, `ProjectDataRunner`, `DataEnvironment`, `JinjaEnvironment`, `TAR_EXTS`, `tar_mode`, and most command-wrapper `main` functions.
 
-## `envoyproxy/envoy`
+### `envoyproxy/envoy`
 
 Direct consumers identified by lexical + semantic search:
 
