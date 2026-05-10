@@ -1,4 +1,3 @@
-from typing import Dict
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
@@ -115,7 +114,7 @@ def test_sphinx_runner_config_file(patches):
         == [(m_utils.typed.return_value, m_fpath.return_value), {}])
     assert (
         m_utils.typed.call_args
-        == [(Dict, m_configs.return_value), {}])
+        == [(dict, m_configs.return_value), {}])
     assert "config_file" in runner.__dict__
 
 
@@ -295,7 +294,7 @@ def test_sphinx_runner_intersphinx_mapping(patches, versions_exists):
     if versions_exists:
         assert (
             m_utils.from_yaml.call_args
-            == [(m_versions.return_value, Dict[str, str]), {}])
+            == [(m_versions.return_value, dict[str, str]), {}])
     else:
         assert not m_utils.from_yaml.called
 

@@ -7,7 +7,7 @@ import shutil
 import sys
 import time
 from functools import cached_property
-from typing import Dict, List, Optional, TypedDict
+from typing import TypedDict
 
 from packaging.version import Version
 
@@ -48,7 +48,7 @@ class ConfigDict(BaseConfigDict, total=False):
     validator_path: str
     descriptor_path: str
     skip_validation: str
-    intersphinx_mapping: Dict[str, List[str]]
+    intersphinx_mapping: dict[str, list[str]]
 
 
 class SphinxRunner(runner.Runner):
@@ -88,7 +88,7 @@ class SphinxRunner(runner.Runner):
         """Populates a config file with self.configs and returns the file
         path."""
         return utils.to_yaml(
-            utils.typed(Dict, self.configs),
+            utils.typed(dict, self.configs),
             self.config_file_path)
 
     @property
@@ -116,7 +116,7 @@ class SphinxRunner(runner.Runner):
         return _configs
 
     @property
-    def descriptor_path(self) -> Optional[pathlib.Path]:
+    def descriptor_path(self) -> pathlib.Path | None:
         """Path to a descriptor file for config validation."""
         return (
             pathlib.Path(self.args.descriptor_path)
@@ -150,13 +150,13 @@ class SphinxRunner(runner.Runner):
         return self.build_dir.joinpath("generated", "html")
 
     @property
-    def intersphinx_mapping(self) -> Dict[str, List[str]]:
+    def intersphinx_mapping(self) -> dict[str, list[str]]:
         return (
             {f"v{k}": [
                 f"https://www.envoyproxy.io/docs/envoy/v{v}",
                 f"inventories/v{k}/objects.inv"]
              for k, v
-             in utils.from_yaml(self.versions_path, Dict[str, str]).items()}
+             in utils.from_yaml(self.versions_path, dict[str, str]).items()}
             if self.versions_path.exists()
             else {})
 
@@ -202,7 +202,7 @@ class SphinxRunner(runner.Runner):
         return pathlib.Path(self.args.rst_tar)
 
     @property
-    def sphinx_args(self) -> List[str]:
+    def sphinx_args(self) -> list[str]:
         """Command args for sphinx."""
         sphinx_args = (
             []
@@ -232,7 +232,7 @@ class SphinxRunner(runner.Runner):
             or self.args.validate_fragments)
 
     @property
-    def validator_path(self) -> Optional[pathlib.Path]:
+    def validator_path(self) -> pathlib.Path | None:
         """Path to validator utility for validating snippets."""
         return (
             pathlib.Path(self.args.validator_path)
