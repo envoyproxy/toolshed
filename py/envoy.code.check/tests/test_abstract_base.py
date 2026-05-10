@@ -47,7 +47,7 @@ async def test_code_check_constructor(fix, binaries, pool, loop, config):
     assert code_check.fix == code_check._fix
     assert "fix" not in code_check.__dict__
     assert code_check._binaries == binaries
-    assert code_check.binaries == binaries
+    assert code_check.binaries == (binaries or {})
     assert "binaries" not in code_check.__dict__
     assert code_check.config == config
     assert code_check._loop == loop

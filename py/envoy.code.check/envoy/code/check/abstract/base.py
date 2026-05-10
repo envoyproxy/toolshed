@@ -31,8 +31,8 @@ class ACodeCheck(event.AExecutive, metaclass=abstracts.Abstraction):
         self._binaries = binaries
 
     @property
-    def binaries(self):
-        return self._binaries
+    def binaries(self) -> dict[str, str]:
+        return self._binaries or {}
 
 
 @abstracts.implementer(interface.IFileCodeCheck)
@@ -58,12 +58,12 @@ class AFileCodeCheck(ACodeCheck, metaclass=abstracts.Abstraction):
     @async_property
     @abstracts.interfacemethod
     async def problem_files(self) -> dict[str, list[str]]:
-        """Discovered files with flake8 errors."""
+        """Discovered files with errors."""
         raise NotImplementedError
 
 
 @abstracts.implementer(interface.IProjectCodeCheck)
-class AProjectCodeCheck(ACodeCheck,  metaclass=abstracts.Abstraction):
+class AProjectCodeCheck(ACodeCheck, metaclass=abstracts.Abstraction):
 
     def __init__(
             self,
