@@ -6,6 +6,7 @@ import contextlib
 import os
 import pathlib
 import tempfile
+import warnings
 from collections.abc import AsyncGenerator, Callable, Generator, Iterator
 from configparser import ConfigParser
 from datetime import datetime, timezone
@@ -111,6 +112,13 @@ async def async_list(
         filter: Callable | None = None) -> list:
     """Turn an async generator into a here and now list, with optional
     filter."""
+    warnings.warn(
+        "envoy.base.utils.async_list is deprecated and will be removed "
+        "in a future release. Use a list-comprehension instead: "
+        "`[x async for x in gen]` (or with a filter: "
+        "`[x async for x in gen if filter(x)]`).",
+        DeprecationWarning,
+        stacklevel=2)
     results = []
     async for x in gen:
         if filter and not filter(x):
@@ -133,6 +141,12 @@ def cd_and_return(
 
 
 def to_bytes(data: str | bytes) -> bytes:
+    warnings.warn(
+        "envoy.base.utils.to_bytes is deprecated and will be removed "
+        "in a future release. Use the inline form: "
+        "`data if isinstance(data, bytes) else data.encode()`.",
+        DeprecationWarning,
+        stacklevel=2)
     return (
         bytes(data, encoding="utf-8")
         if not isinstance(data, bytes)

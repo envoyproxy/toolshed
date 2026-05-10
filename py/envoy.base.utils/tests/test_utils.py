@@ -195,9 +195,10 @@ async def test_async_list(filter):
         [x for x in range(0, 20) if (x % 2)]
         if filter
         else list(range(0, 20)))
-    assert (
-        await utils.async_list(async_generator(), **kwargs)
-        == expected)
+    with pytest.warns(DeprecationWarning, match="async_list is deprecated"):
+        assert (
+            await utils.async_list(async_generator(), **kwargs)
+            == expected)
 
 
 @pytest.mark.parametrize("path", ["/tmp", pathlib.Path("/tmp")])
@@ -213,11 +214,12 @@ def test_cd_and_return(path):
 
 @pytest.mark.parametrize("data", [b"BYTES", "STRING"])
 def test_to_bytes(data):
-    assert (
-        utils.to_bytes(data)
-        == (data.encode("utf-8")
-            if not isinstance(data, bytes)
-            else data))
+    with pytest.warns(DeprecationWarning, match="to_bytes is deprecated"):
+        assert (
+            utils.to_bytes(data)
+            == (data.encode("utf-8")
+                if not isinstance(data, bytes)
+                else data))
 
 
 @pytest.mark.parametrize("length", [0, 10, 20, 30, 40, 50])
