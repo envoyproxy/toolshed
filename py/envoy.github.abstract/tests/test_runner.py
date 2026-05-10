@@ -5,7 +5,14 @@ import pytest
 
 import abstracts
 
-from envoy.github.abstract.runner import AGithubReleaseRunner
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="envoy\\.github\\.abstract is deprecated.*",
+    category=DeprecationWarning)
+
+from envoy.github.abstract.runner import AGithubReleaseRunner  # noqa: E402
 
 
 @abstracts.implementer(AGithubReleaseRunner)
