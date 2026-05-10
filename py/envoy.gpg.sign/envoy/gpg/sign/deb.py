@@ -1,8 +1,8 @@
 
 import pathlib
+from collections.abc import Iterator
 from functools import cached_property
 from itertools import chain
-from typing import Iterator, Type
 
 from .exceptions import SigningError
 from .util import DirectorySigningUtil
@@ -92,7 +92,7 @@ class DebSigningUtil(DirectorySigningUtil):
         return ("-k", self.maintainer.fingerprint)
 
     @property
-    def changes_files(self) -> Type[DebChangesFiles]:
+    def changes_files(self) -> type[DebChangesFiles]:
         return DebChangesFiles
 
     @cached_property

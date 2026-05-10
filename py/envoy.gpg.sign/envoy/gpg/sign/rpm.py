@@ -1,7 +1,6 @@
 
 import pathlib
 from functools import cached_property
-from typing import Type, Union
 
 from .exceptions import SigningError
 from .util import DirectorySigningUtil
@@ -14,7 +13,7 @@ class RPMMacro:
 
     def __init__(
             self,
-            home: Union[pathlib.Path, str],
+            home: pathlib.Path | str,
             overwrite: bool = False, **kwargs):
         self._home = home
         self.overwrite = bool(overwrite)
@@ -71,7 +70,7 @@ class RPMSigningUtil(DirectorySigningUtil):
         return ("--key-id", self.maintainer.fingerprint, "--addsign")
 
     @property
-    def rpmmacro(self) -> Type[RPMMacro]:
+    def rpmmacro(self) -> type[RPMMacro]:
         return RPMMacro
 
     def setup(self) -> None:

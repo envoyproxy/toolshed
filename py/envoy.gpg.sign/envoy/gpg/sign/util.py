@@ -2,8 +2,8 @@
 import pathlib
 import shutil
 import subprocess
+from collections.abc import Iterable
 from functools import cached_property
-from typing import Iterable, Optional
 
 import verboselogs  # type:ignore
 
@@ -24,7 +24,7 @@ class DirectorySigningUtil:
             path: pathlib.Path | str,
             maintainer: identity.GPGIdentity,
             log: verboselogs.VerboseLogger,
-            command: Optional[str] = ""):
+            command: str = ""):
         self._path = path
         self.maintainer = maintainer
         self.log = log

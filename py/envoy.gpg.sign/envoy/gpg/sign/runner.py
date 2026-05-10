@@ -4,7 +4,6 @@ import pathlib
 import re
 import tempfile
 from functools import cached_property
-from typing import Optional, Type
 
 from aio.run import runner
 
@@ -28,7 +27,7 @@ class PackageSigningRunner(runner.Runner):
     def register_util(
             cls,
             name: str,
-            util: Type[DirectorySigningUtil]) -> None:
+            util: type[DirectorySigningUtil]) -> None:
         """Register util for signing a package type."""
         cls._signing_utils = getattr(cls, "_signing_utils") + ((name, util),)
 
@@ -37,7 +36,7 @@ class PackageSigningRunner(runner.Runner):
         return self.args.gen_key
 
     @property
-    def gnupg_home(self) -> Optional[pathlib.Path]:
+    def gnupg_home(self) -> pathlib.Path | None:
         return (
             pathlib.Path(self.gnupg_tempdir.name)
             if self.gen_key
@@ -63,7 +62,7 @@ class PackageSigningRunner(runner.Runner):
             gen_key=self.gen_key)
 
     @property
-    def maintainer_class(self) -> Type[identity.GPGIdentity]:
+    def maintainer_class(self) -> type[identity.GPGIdentity]:
         return identity.GPGIdentity
 
     @property
