@@ -6,7 +6,7 @@ toolshed_library(
         "//py/deps:reqs#aio-core",
         "//py/deps:reqs#aio-run-runner",
         "//py/deps:reqs#aiofiles",
-        "//py/deps:reqs#envoy-github-abstract",
+        "//py/envoy.github.release/envoy/github/abstract",
         "//py/deps:reqs#envoy-base-utils",
         "//py/deps:reqs#types-aiofiles",
     ],

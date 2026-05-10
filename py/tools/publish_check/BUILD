@@ -26,7 +26,6 @@ python_tests(
         "//py/envoy.distribution.verify:build_artefacts",
         "//py/envoy.docker.utils:build_artefacts",
         "//py/envoy.docs.sphinx_runner:build_artefacts",
-        "//py/envoy.github.abstract:build_artefacts",
         "//py/envoy.github.release:build_artefacts",
         "//py/envoy.gpg.identity:build_artefacts",
         "//py/envoy.gpg.sign:build_artefacts",
