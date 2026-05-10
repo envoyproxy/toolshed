@@ -22,7 +22,6 @@ python_tests(
         "//py/envoy.ci.report:build_artefacts",
         "//py/envoy.code.check:build_artefacts",
         "//py/envoy.dependency.check:build_artefacts",
-        "//py/envoy.distribution.distrotest:build_artefacts",
         "//py/envoy.distribution.release:build_artefacts",
         "//py/envoy.distribution.verify:build_artefacts",
         "//py/envoy.docker.utils:build_artefacts",

@@ -12,7 +12,6 @@ colorama
 coloredlogs
 docutils~=0.21
 envoy.base.utils>=0.5.10
-envoy.distribution.distrotest>=0.0.12
 envoy.distribution.release>=0.0.8
 envoy.distribution.verify>=0.0.8
 envoy.docker.utils>=0.0.2
