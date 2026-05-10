@@ -2,7 +2,6 @@
 import abc
 import argparse
 import pathlib
-from typing import Optional, Type
 
 import abstracts
 
@@ -29,7 +28,7 @@ class AGithubReleaseRunner(
         return self.oauth_token_file.read_text().strip()  # type:ignore
 
     @property
-    def oauth_token_file(self) -> Optional[pathlib.Path]:
+    def oauth_token_file(self) -> pathlib.Path | None:
         if not getattr(self.args, "oauth_token_file", None):
             return None
         return pathlib.Path(self.args.oauth_token_file)
@@ -50,7 +49,7 @@ class AGithubReleaseRunner(
 
     @property  # type:ignore
     @abstracts.interfacemethod
-    def release_manager_class(self) -> Type[AGithubReleaseManager]:
+    def release_manager_class(self) -> type[AGithubReleaseManager]:
         raise NotImplementedError
 
     @property

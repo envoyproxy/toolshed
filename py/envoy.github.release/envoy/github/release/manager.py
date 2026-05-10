@@ -1,7 +1,6 @@
 import pathlib
 import re
 from functools import cached_property
-from typing import Dict, List, Optional, Pattern, Type, Union
 
 import verboselogs  # type:ignore
 
@@ -36,7 +35,7 @@ class GithubReleaseManager:
         return self.release_class(self, version)
 
     @property
-    def release_class(self) -> Type[AGithubRelease]:
+    def release_class(self) -> type[AGithubRelease]:
         return GithubRelease
 
     @cached_property
@@ -57,7 +56,7 @@ class GithubReleaseManager:
         return pathlib.Path(self._path)
 
     @async_property
-    async def latest(self) -> Dict[str, packaging.version.Version]:
+    async def latest(self) -> dict[str, packaging.version.Version]:
         latest = {}
         for release in await self.releases:
             version = self.parse_version(release["tag_name"])
@@ -70,7 +69,7 @@ class GithubReleaseManager:
         return latest
 
     @async_property
-    async def releases(self) -> List[Dict]:
+    async def releases(self) -> list[dict]:
         results = []
         async for result in self.github.getiter(str(self.releases_url)):
             results.append(result)
@@ -85,7 +84,7 @@ class GithubReleaseManager:
         return self._session or aiohttp.ClientSession()
 
     @cached_property
-    def version_re(self) -> Pattern[str]:
+    def version_re(self) -> re.Pattern[str]:
         return re.compile(self._version_re)
 
     def fail(self, message: str) -> str:
@@ -96,12 +95,12 @@ class GithubReleaseManager:
 
     def format_version(
             self,
-            version: Union[str, packaging.version.Version]) -> str:
+            version: str | packaging.version.Version) -> str:
         return self._version_format.format(version=version)
 
     def parse_version(
             self,
-            version: str) -> Optional[packaging.version.Version]:
+            version: str) -> packaging.version.Version | None:
         _version = self.version_re.sub(r"\1", version)
         if _version:
             try:

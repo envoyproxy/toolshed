@@ -1,7 +1,7 @@
 import pathlib
 import tarfile
+from collections.abc import Iterator
 from functools import cached_property
-from typing import Dict, Iterator, Union
 
 import aiohttp
 
@@ -47,7 +47,7 @@ class GithubReleaseAssetsFetcher(AGithubReleaseAssetsFetcher):
 
     async def download(
             self,
-            asset: Dict) -> Dict[str, Union[str, pathlib.Path]]:
+            asset: dict) -> dict[str, str | pathlib.Path]:
         return await self.save(
             asset["asset_type"], asset["name"],
             await self.session.get(asset["browser_download_url"]))
@@ -56,13 +56,13 @@ class GithubReleaseAssetsFetcher(AGithubReleaseAssetsFetcher):
             self,
             asset_type: str,
             name: str,
-            download: aiohttp.ClientResponse) -> Dict[
-                str, Union[str, pathlib.Path]]:
+            download: aiohttp.ClientResponse) -> dict[
+                str, str | pathlib.Path]:
         outfile = self.path.joinpath(asset_type, name)
         outfile.parent.mkdir(exist_ok=True)
         async with stream.writer(outfile) as f:
             await f.stream_bytes(download)
-        result: Dict[str, Union[str, pathlib.Path]] = dict(
+        result: dict[str, str | pathlib.Path] = dict(
             name=name,
             outfile=outfile)
         if download.status != 200:
@@ -110,7 +110,7 @@ class GithubReleaseAssetsPusher(AGithubReleaseAssetsPusher):
     async def upload(
             self,
             artefact: pathlib.Path,
-            url: str) -> Dict[str, Union[str, pathlib.Path]]:
+            url: str) -> dict[str, str | pathlib.Path]:
         if artefact.name in await self.asset_names:
             return dict(
                 name=artefact.name,
