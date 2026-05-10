@@ -1,7 +1,7 @@
 
 from functools import partial
-from typing import (
-    Any, Callable, Sequence, Type)
+from collections.abc import Callable, Sequence
+from typing import Any
 
 
 class preload:
@@ -10,7 +10,7 @@ class preload:
             self,
             when: Sequence[str],
             blocks: Sequence[str] | None = None,
-            catches: Sequence[Type[BaseException]] | None = None,
+            catches: Sequence[type[BaseException]] | None = None,
             name: str | None = None,
             unless: Sequence[str] | None = None) -> None:
         self._when = when
@@ -24,11 +24,11 @@ class preload:
         self._fun = fun
         return self
 
-    def __set_name__(self, cls: Type, name: str) -> None:
+    def __set_name__(self, cls: type, name: str) -> None:
         self.name = name
-        cls._preload_checks_data = self.get_preload_checks_data(cls)
+        setattr(cls, "_preload_checks_data", self.get_preload_checks_data(cls))
 
-    def __get__(self, instance: Any, cls: Type | None = None) -> Any:
+    def __get__(self, instance: Any, cls: type | None = None) -> Any:
         if instance is None:
             return self
         return partial(self.fun, instance)
@@ -38,7 +38,7 @@ class preload:
         return self.when + tuple(self._blocks or ())
 
     @property
-    def catches(self) -> tuple[Type[BaseException], ...]:
+    def catches(self) -> tuple[type[BaseException], ...]:
         return tuple(self._catches or ())
 
     @property
@@ -59,7 +59,7 @@ class preload:
 
     def get_preload_checks_data(
             self,
-            cls: Type) -> tuple[tuple[str, dict], ...]:
+            cls: type) -> tuple[tuple[str, dict], ...]:
         preload_checks_data = dict(getattr(cls, "_preload_checks_data", ()))
         preload_checks_data[self.tag_name] = dict(
             name=self.tag_name,
