@@ -4,6 +4,6 @@ toolshed_library(
     dependencies=[
         "//py/deps:reqs#aio-run-checker",
         "//py/deps:reqs#envoy-base-utils",
-        "//py/deps:reqs#envoy-distribution-distrotest",
+        "//py/envoy.distribution.verify/envoy/distribution/distrotest",
     ],
 )
