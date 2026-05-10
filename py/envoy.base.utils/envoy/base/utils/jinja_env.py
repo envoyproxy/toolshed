@@ -2,7 +2,7 @@
 import argparse
 import importlib
 import pathlib
-from typing import Callable, Iterable
+from collections.abc import Callable, Iterable
 
 import jinja2
 

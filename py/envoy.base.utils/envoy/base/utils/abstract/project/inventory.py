@@ -1,8 +1,8 @@
 
 import pathlib
 import types
+from collections.abc import Iterator
 from functools import cached_property
-from typing import Iterator
 
 from packaging import version as _version
 import yaml as _yaml

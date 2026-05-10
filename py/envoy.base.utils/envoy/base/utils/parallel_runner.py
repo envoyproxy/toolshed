@@ -3,8 +3,8 @@ import asyncio
 import argparse
 import math
 import os
+from collections.abc import Iterable, Iterator
 from functools import cached_property
-from typing import Iterable, Iterator
 
 from aio.run import runner
 
