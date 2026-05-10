@@ -1,7 +1,7 @@
 import tarfile
 import tempfile
+from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Callable, Optional
 
 import aiodocker
 
@@ -15,8 +15,8 @@ async def _build_image(
         docker: aiodocker.Docker,
         context: str,
         tag: str,
-        buildargs: Optional[dict] = None,
-        stream: Optional[Callable] = None,
+        buildargs: dict | None = None,
+        stream: Callable | None = None,
         **kwargs) -> None:
     """Docker image builder.
 
@@ -84,7 +84,7 @@ async def build_image(*args, **kwargs) -> None:
 
 @asynccontextmanager
 async def docker_client(
-        url: Optional[str] = None) -> AsyncIterator[aiodocker.Docker]:
+        url: str | None = None) -> AsyncIterator[aiodocker.Docker]:
     """Aiodocker client.
 
     For example to dump the docker image data:
