@@ -9,7 +9,7 @@ import gidgethub
 
 import abstracts
 
-from aio.api import github, nist
+from aio.api import github
 from aio.core.functional import async_property
 from aio.core.tasks import ConcurrentError
 from aio.run.checker import Checker
@@ -24,10 +24,6 @@ class DummyDependencyChecker:
     @property
     def access_token(self):
         return super().access_token
-
-    @property
-    def cves_class(self):
-        return super().cves_class
 
     @property
     def dependency_class(self):
@@ -51,8 +47,7 @@ def test_checker_constructor():
     assert isinstance(checker, Checker)
     assert (
         checker.checks
-        == ("cves",
-            "release_dates",
+        == ("release_dates",
             "release_issues",
             "releases"))
 
@@ -104,54 +99,6 @@ def test_checker_access_token(patches, arg):
             m_os.getenv.call_args
             == [("GITHUB_TOKEN", ), {}])
     assert "access_token" not in checker.__dict__
-
-
-def test_checker_cve_config(patches):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        ("ADependencyChecker.args",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.check.abstract.checker")
-
-    with patched as (m_args, ):
-        assert checker.cve_config == m_args.return_value.cve_config
-
-    assert "cve_config" not in checker.__dict__
-
-
-def test_checker_cves(patches):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        ("ADependencyChecker.dependencies",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.cve_config",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.cves_class",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.loop",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.pool",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.preloaded_cve_data",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.session",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.check.abstract.checker")
-
-    with patched as patchy:
-        (m_deps, m_config, m_class,
-         m_loop, m_pool, m_pre, m_session) = patchy
-        assert checker.cves == m_class.return_value.return_value
-
-    assert (
-        m_class.return_value.call_args
-        == [(m_deps.return_value, ),
-            dict(config_path=m_config.return_value,
-                 loop=m_loop.return_value,
-                 pool=m_pool.return_value,
-                 preloaded_cve_data=m_pre.return_value,
-                 session=m_session.return_value)])
-    assert "cves" in checker.__dict__
 
 
 def test_checker_dep_ids(patches):
@@ -451,28 +398,7 @@ def test_checker_add_arguments(patches):
     assert (
         parser.add_argument.call_args_list
         == [[('--github_token',), {}],
-            [('--repository_locations',), {}],
-            [('--cve_config',), {}],
-            [('--cve_data',), {}],
-            [('--download_cves',), {}]])
-
-
-async def test_checker_check_cves(iters, patches):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        ("ADependencyChecker.dependencies",
-         dict(new_callable=PropertyMock)),
-        "ADependencyChecker.dep_cve_check",
-        prefix="envoy.dependency.check.abstract.checker")
-    deps = iters(cb=lambda i: MagicMock())
-
-    with patched as (m_deps, m_check):
-        m_deps.return_value = deps
-        assert not await checker.check_cves()
-
-    assert (
-        m_check.call_args_list
-        == [[(mock,), {}] for mock in deps])
+            [('--repository_locations',), {}]])
 
 
 async def test_checker_check_release_dates(iters, patches):
@@ -591,61 +517,6 @@ async def test_checker_check_release_sha(iters, patches):
     assert (
         m_check.call_args_list
         == [[(mock,), {}] for mock in deps])
-
-
-@pytest.mark.parametrize("cpe", [True, False])
-@pytest.mark.parametrize("failed", [0, 1, 3])
-async def test_checker_dep_cve_check(iters, patches, cpe, failed):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        ("ADependencyChecker.active_check",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.cves",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.log",
-         dict(new_callable=PropertyMock)),
-        "ADependencyChecker.succeed",
-        "ADependencyChecker.warn",
-        prefix="envoy.dependency.check.abstract.checker")
-    dep = MagicMock()
-    dep.cpe = cpe
-    failures = iters(cb=lambda i: MagicMock(), count=failed)
-
-    async def iter_failure(dep):
-        for fail in failures:
-            yield fail
-
-    with patched as (m_active, m_cves, m_log, m_succeed, m_warn):
-        m_cves.return_value.dependency_check.side_effect = iter_failure
-        assert not await checker.dep_cve_check(dep)
-
-    if not cpe:
-        assert not m_cves.called
-        assert not m_warn.called
-        assert not m_succeed.called
-        assert (
-            m_log.return_value.info.call_args
-            == [(f"No CPE listed for: {dep.id}", ), {}])
-        return
-    assert not m_log.called
-    if not failures:
-        assert not m_warn.called
-        assert (
-            m_succeed.call_args
-            == [(m_active.return_value,
-                 [f"No CVE vulnerabilities found: {dep.id}"]),
-                {}])
-        return
-    assert (
-        m_warn.call_args
-        == [(m_active.return_value,
-             [f"{cve.format_failure.return_value}"
-              for cve in failures]),
-            {}])
-    for failure in failures:
-        assert (
-            failure.format_failure.call_args
-            == [(dep, ), {}])
 
 
 @pytest.mark.parametrize("gh_date", [None, "GH_DATE"])
@@ -1166,49 +1037,6 @@ async def test_checker_preload_release_sha(patches, deps):
 
 
 @pytest.mark.parametrize(
-    "downloads",
-    [[],
-     [f"D{i}" for i in range(0, 5)]])
-async def test_checker_preload_cves(patches, downloads):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        ("ADependencyChecker.cves",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.log",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.check.abstract.checker")
-
-    async def iter_downloads():
-        for download in downloads:
-            yield download
-
-    with patched as (m_cves, m_log):
-        m_cves.return_value.downloads = iter_downloads()
-        assert not await checker.preload_cves()
-
-    if downloads:
-        assert (
-            m_log.return_value.debug.call_args_list
-            == [[(f"Preloaded cve data: {download}", ), {}]
-                for download in downloads])
-    else:
-        assert not m_log.called
-
-    assert (
-        ADependencyChecker.preload_cves.when
-        == ('cves',))
-    assert (
-        ADependencyChecker.preload_cves.blocks
-        == ('cves',))
-    assert (
-        ADependencyChecker.preload_cves.unless
-        == ())
-    assert (
-        ADependencyChecker.preload_cves.catches
-        == (exceptions.CVECheckError, nist.exceptions.NISTError))
-
-
-@pytest.mark.parametrize(
     "deps",
     [[],
      [f"DEP{i}" for i in range(0, 5)]])
@@ -1356,34 +1184,15 @@ async def test_checker_release_issues_missing_dep_check(
         assert not m_succeed.called
 
 
-@pytest.mark.parametrize("download_cves", [True, False])
-async def test_checker_run(patches, download_cves):
+async def test_checker_run(patches):
     checker = DummyDependencyChecker()
     patched = patches(
         "checker.Checker.run",
-        ("ADependencyChecker.cves",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.download_cves",
-         dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
-    cves_download = AsyncMock()
 
-    with patched as (m_super, m_cves, m_download):
-        m_download.return_value = download_cves
-        m_cves.return_value.download_cves = cves_download
-        assert (
-            await checker.run()
-            == (m_super.return_value
-                if not download_cves
-                else 0))
+    with patched as (m_super, ):
+        assert await checker.run() == m_super.return_value
 
-    if download_cves:
-        assert not m_super.called
-        assert (
-            cves_download.call_args
-            == [(download_cves, ), {}])
-        return
-    assert not cves_download.called
     assert (
         m_super.call_args
         == [(), {}])

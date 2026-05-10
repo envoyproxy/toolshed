@@ -19,15 +19,3 @@ class NotGithubDependency(Exception):
 
 class NoReleaseAssetError(Exception):
     pass
-
-
-class CPEError(Exception):
-    pass
-
-
-class CVEError(Exception):
-    pass
-
-
-class CVECheckError(Exception):
-    pass
