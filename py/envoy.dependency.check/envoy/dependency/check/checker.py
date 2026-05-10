@@ -1,35 +1,12 @@
 
 from functools import cached_property
-from typing import Dict, List, Optional, Type
+from typing import Dict, Optional, Type
 
 import abstracts
 
-from aio.api import github, nist
+from aio.api import github
 
 from envoy.dependency import check
-
-
-class DependencyCVE(check.ADependencyCVE):
-    pass
-
-
-class DependencyCVEs(check.ADependencyCVEs):
-
-    @property
-    def cpe_class(self) -> Type[nist.ACPE]:
-        return nist.CPE
-
-    @property
-    def cve_class(self) -> Type[check.ADependencyCVE]:
-        return DependencyCVE
-
-    @cached_property
-    def ignored_cves(self) -> List[str]:
-        return super().ignored_cves
-
-    @property
-    def nist_downloader_class(self) -> Type[nist.NISTDownloader]:
-        return nist.NISTDownloader
 
 
 class Dependency(check.ADependency):
@@ -69,10 +46,6 @@ class DependencyChecker(check.ADependencyChecker):
     @property
     def access_token(self) -> Optional[str]:
         return super().access_token
-
-    @property
-    def cves_class(self) -> Type[check.ADependencyCVEs]:
-        return DependencyCVEs
 
     @property
     def dependency_class(self) -> Type[check.ADependency]:

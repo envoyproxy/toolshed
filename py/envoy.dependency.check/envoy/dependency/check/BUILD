@@ -4,7 +4,6 @@ toolshed_library(
     dependencies=[
         "//py/deps:reqs#abstracts",
         "//py/deps:reqs#aio-api-github",
-        "//py/deps:reqs#aio-api-nist",
         "//py/deps:reqs#aio-core",
         "//py/deps:reqs#aio-run-checker",
         "//py/deps:reqs#envoy-base-utils",
@@ -16,9 +15,6 @@ toolshed_library(
     sources=[
         "abstract/__init__.py",
         "abstract/checker.py",
-        "abstract/cves/__init__.py",
-        "abstract/cves/cve.py",
-        "abstract/cves/cves.py",
         "abstract/dependency.py",
         "abstract/issues.py",
         "abstract/release.py",

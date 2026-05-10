@@ -56,14 +56,6 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         return count and count - 1 or count
 
     @cached_property
-    def cpe(self) -> Optional[str]:
-        """Configured CPE for this dependency."""
-        return (
-            str(self.metadata["cpe"])
-            if self.metadata.get("cpe", "N/A") != "N/A"
-            else None)
-
-    @cached_property
     def display_sha(self) -> str:
         """Truncated release sha of this dependency, may/not be the same as the
         `display_version`."""

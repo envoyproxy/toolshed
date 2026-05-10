@@ -111,18 +111,6 @@ async def test_dependency_commits_since_current(patches, count):
         == result)
 
 
-@pytest.mark.parametrize(
-    "metadata", [dict(), dict(cpe="N/A"), dict(cpe="CPE")])
-def test_dependency_cpe(metadata):
-    dependency = DummyDependency2("ID", metadata, "GITHUB")
-    expected = (
-        metadata["cpe"]
-        if "cpe" in metadata and not metadata["cpe"] == "N/A"
-        else None)
-    assert dependency.cpe == expected
-    assert "cpe" in dependency.__dict__
-
-
 def test_dependency_display_sha(patches):
     dependency = DummyDependency2("ID", "METADATA", "GITHUB")
     patched = patches(
