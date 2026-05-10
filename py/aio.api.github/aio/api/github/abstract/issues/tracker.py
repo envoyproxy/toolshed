@@ -1,8 +1,9 @@
 
 import abc
 import re
+from collections.abc import AsyncGenerator
 from functools import cached_property
-from typing import Any, AsyncGenerator, Pattern
+from typing import Any, Pattern
 
 import abstracts
 
