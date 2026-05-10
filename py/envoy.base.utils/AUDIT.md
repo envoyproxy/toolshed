@@ -82,7 +82,7 @@ the ecosystem.
 
 - `to_yaml` — `pathlib.Path.write_text(yaml.dump(data))` is one line. The helper saves nothing.
 - `async_list` — `[x async for x in gen]` / `[x async for x in gen if filter(x)]` does this inline since Python 3.6+.
-- `cd_and_return` — `contextlib.chdir` was added in **Python 3.11**. The package already requires `>= 3.11`, so this helper is redundant today.
+- `cd_and_return` — `contextlib.chdir` was added in **Python 3.11**. The package's `setup.cfg` specifies `python_requires >= 3.11` (which is also the baseline assumed throughout this audit), so this helper is redundant on every supported interpreter version.
 - `to_bytes` — inline `data if isinstance(data, bytes) else data.encode()` is universally understood; the helper pre-dates f-strings and adds import overhead.
 - `dt_to_utc_isoformat` — replaces `pytz.UTC` with `datetime.timezone.utc` (stdlib since 3.2). The function itself is still useful as a single-call API, but the internal `pytz` dependency can be eliminated.
 - `coverage_with_data_file` — the inline comment already says *"consider moving to tools.testing.utils"*. It is a testing concern, not a general utility.
@@ -121,7 +121,7 @@ non-trivial enhancements that stdlib doesn't offer.
 `DeprecationWarning` and Python 3.14 will remove the unsafe default. The call should be
 updated to `tar.extract(member, path=…, filter="data")` or at minimum `filter="tar"`.
 
-**Note on the old TODO:** The comment `# remove zst when https://bugs.python.org/issue37095 is resolved` refers to the stdlib tarfile zstd proposal. That issue is resolved as accepted (PEP 783) but is only available in Python 3.14+. The TODO should be updated to track that version gate.
+**Note on the old TODO:** The comment `# remove zst when https://bugs.python.org/issue37095 is resolved` refers to the stdlib tarfile zstd proposal. That issue was resolved as accepted (PEP 783) and landed in **Python 3.14** (released April 2025). As of the audit date (May 2026) Python 3.14 is the current release, but dropping the `zstandard` dependency requires the project to raise `python_requires >= 3.14` — a significant version gate that should be a deliberate policy decision. Until that gate is raised, `zstandard` remains a required dependency. The TODO should be updated to note the version gate rather than the upstream issue status.
 
 **Module verdict:** Entirely `KEEP`. The zstd support and pattern extraction are genuinely non-trivial. Fix the `TarFile.extract` deprecation warning.
 
@@ -652,9 +652,8 @@ no dedicated test coverage:
 ### `DEPRECATE` items
 
 10. **Deprecate and remove `cd_and_return`**
-    `contextlib.chdir` (3.11+) is a direct stdlib replacement. Migrate the one known
-    in-repo caller if any (currently zero consumers outside `envoy.base.utils` itself),
-    then remove.
+    `contextlib.chdir` (3.11+) is a direct stdlib replacement. There are zero consumers
+    outside `envoy.base.utils` itself, so no migration is needed in other packages.
     *One PR: emit `DeprecationWarning` in current version; remove in next minor.*
 
 11. **Deprecate and remove `async_list`**
