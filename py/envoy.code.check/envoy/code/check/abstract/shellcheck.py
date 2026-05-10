@@ -4,8 +4,9 @@ import pathlib
 import re
 import shutil
 import subprocess
+from collections.abc import Iterator
 from functools import cached_property, partial
-from typing import Iterator, Pattern, TypedDict
+from typing import TypedDict
 
 import abstracts
 
@@ -39,7 +40,7 @@ class ShellcheckErrorDict(TypedDict):
 class Shellcheck(_subprocess.ASubprocessHandler):
 
     @cached_property
-    def error_line_re(self) -> Pattern[str]:
+    def error_line_re(self) -> re.Pattern[str]:
         """Regex for matching a shellcheck error line.
 
         This demarcates the beginning of a specific error for a file.
@@ -145,12 +146,12 @@ class AShellcheckCheck(
             | await self.shebang_files)
 
     @cached_property
-    def path_match_exclude_re(self) -> Pattern[str]:
+    def path_match_exclude_re(self) -> re.Pattern[str]:
         """Regex to match files not to check."""
         return re.compile("|".join(SHELLCHECK_NOMATCH_RE))
 
     @cached_property
-    def path_match_re(self) -> Pattern[str]:
+    def path_match_re(self) -> re.Pattern[str]:
         """Regex to match files to check."""
         return re.compile("|".join(SHELLCHECK_MATCH_RE))
 

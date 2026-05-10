@@ -1,7 +1,6 @@
 
 import re
 from functools import cached_property
-from typing import Pattern
 
 import abstracts
 
@@ -31,15 +30,15 @@ class ABackticksCheck(metaclass=abstracts.Abstraction):
             else None)
 
     @cached_property
-    def link_ticks_re(self) -> Pattern[str]:
+    def link_ticks_re(self) -> re.Pattern[str]:
         return re.compile(LINK_TICKS_RE)
 
     @cached_property
-    def ref_ticks_re(self) -> Pattern[str]:
+    def ref_ticks_re(self) -> re.Pattern[str]:
         return re.compile(REF_TICKS_RE)
 
     @cached_property
-    def single_tick_re(self) -> Pattern[str]:
+    def single_tick_re(self) -> re.Pattern[str]:
         return re.compile(SINGLE_TICK_RE)
 
     def _find_single_ticks(
@@ -70,7 +69,7 @@ class AReflinksCheck(metaclass=abstracts.Abstraction):
             else None)
 
     @cached_property
-    def invalid_reflink_re(self) -> Pattern[str]:
+    def invalid_reflink_re(self) -> re.Pattern[str]:
         return re.compile(INVALID_REFLINK_RE)
 
 
@@ -85,7 +84,7 @@ class APunctuationCheck(metaclass=abstracts.Abstraction):
             else None)
 
     @cached_property
-    def punctuation_re(self) -> Pattern[str]:
+    def punctuation_re(self) -> re.Pattern[str]:
         return re.compile(PUNCTUATION_RE, re.DOTALL)
 
     def _check_punctuation(

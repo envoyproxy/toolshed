@@ -5,7 +5,6 @@ import re
 import shutil
 import subprocess
 from functools import cached_property, partial
-from typing import Pattern
 
 import abstracts
 
@@ -104,7 +103,7 @@ class AGofmtCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
     def filter_files(
             cls,
             files: set[str],
-            exclude: Pattern[str] | None) -> set[str]:
+            exclude: re.Pattern[str] | None) -> set[str]:
         """Filter files for `gofmt` checking."""
         return set(
             path
@@ -186,7 +185,7 @@ class AGofmtCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
         return self._gofmt("-l")
 
     @cached_property
-    def nogofmt_re(self) -> Pattern[str] | None:
+    def nogofmt_re(self) -> re.Pattern[str] | None:
         """Regex for matching files that should not be checked."""
         # TODO(phlax): merge e.c.c config
         if not NOGOFMT_RE:
