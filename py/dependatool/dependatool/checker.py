@@ -2,7 +2,6 @@
 
 import pathlib
 from functools import cached_property
-from typing import Type
 
 import abstracts
 
@@ -31,5 +30,5 @@ class DependatoolChecker:
             pip=DependatoolPipCheck(self))
 
     @property
-    def directory_class(self) -> Type[directory.ADirectory]:
+    def directory_class(self) -> type[directory.ADirectory]:
         return directory.GitDirectory

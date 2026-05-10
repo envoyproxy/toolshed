@@ -1,8 +1,8 @@
 
 import os
 import re
+from collections.abc import Iterable
 from functools import cached_property
-from typing import Iterable, Pattern
 
 import abstracts
 
@@ -38,7 +38,7 @@ class ADependatoolNPMCheck(object):
             if self.dir_matches(f))
 
     @property
-    def npmfile_filename(self) -> Pattern[str]:
+    def npmfile_filename(self) -> re.Pattern[str]:
         return re.compile(self._npmfile_filename)
 
     async def check(self, files=None):
