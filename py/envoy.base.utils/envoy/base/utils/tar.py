@@ -12,11 +12,12 @@ import contextlib
 import io
 import logging
 import pathlib
+from re import Pattern
 import shutil
 import tarfile
 import tempfile
 from collections.abc import Iterator
-from typing import cast, ContextManager, Literal, Pattern
+from typing import cast, ContextManager, Literal
 
 import zstandard
 

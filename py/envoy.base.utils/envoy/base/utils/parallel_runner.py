@@ -1,10 +1,11 @@
 
 import asyncio
 import argparse
-import math
 import os
+import shlex
 from collections.abc import Iterable, Iterator
 from functools import cached_property
+from itertools import batched
 
 from aio.run import runner
 
@@ -13,16 +14,11 @@ class ParallelRunner(runner.Runner):
 
     @cached_property
     def batch_size(self) -> int:
-        return math.ceil(len(self.items) / self.cpu_count)
+        return -(-len(self.items) // self.cpu_count) or 1
 
     @property
-    def batches(self) -> Iterator[Iterable[str]]:
-        for i in range(0, self.cpu_count):
-            start, stop = (
-                i * self.batch_size,
-                (i + 1) * self.batch_size)
-            if items := self.items[start: stop]:
-                yield items
+    def batches(self) -> Iterator[tuple[str, ...]]:
+        yield from batched(self.items, self.batch_size)
 
     @cached_property
     def cpu_count(self) -> int:
@@ -37,8 +33,8 @@ class ParallelRunner(runner.Runner):
         parser.add_argument("items", nargs="+")
         super().add_arguments(parser)
 
-    def command(self, batch: Iterable[str]) -> str:
-        return " ".join([*self.args.command.split(" "), *batch])
+    def command(self, batch: Iterable[str]) -> tuple[str, ...]:
+        return tuple([*shlex.split(self.args.command), *batch])
 
     def handle_result(self, cmd: str, lines: Iterable[str]) -> None:
         result = "\n > ".join(lines)
@@ -50,15 +46,17 @@ class ParallelRunner(runner.Runner):
             *[self._run(self.command(batch))
               for batch
               in self.batches])
-        for cmd, lines in results:
-            self.handle_result(cmd, lines)
+        for argv, lines in results:
+            self.handle_result(shlex.join(argv), lines)
 
-    async def _run(self, cmd: str) -> tuple[str, list[str]]:
-        proc = await asyncio.create_subprocess_shell(
-            cmd,
+    async def _run(
+            self,
+            argv: tuple[str, ...]) -> tuple[tuple[str, ...], list[str]]:
+        proc = await asyncio.create_subprocess_exec(
+            *argv,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE)
         stdout, stderr = await proc.communicate()
         if stderr:
-            self.log.warning(f'({cmd})\n{stderr.decode()}')
-        return cmd, [line for line in stdout.decode().split("\n") if line]
+            self.log.warning(f'({shlex.join(argv)})\n{stderr.decode()}')
+        return argv, [line for line in stdout.decode().split("\n") if line]

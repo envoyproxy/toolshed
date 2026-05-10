@@ -6,7 +6,7 @@ import types
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from datetime import datetime
 from functools import cached_property
-from typing import cast, Pattern
+from typing import cast
 
 from frozendict import frozendict
 import jinja2
@@ -264,7 +264,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         return pathlib.Path(CHANGELOG_CURRENT_PATH)
 
     @cached_property
-    def section_re(self) -> Pattern:
+    def section_re(self) -> re.Pattern[str]:
         return re.compile(r"\n[a-z_]*:")
 
     @cached_property
