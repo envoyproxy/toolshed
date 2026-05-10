@@ -11,10 +11,10 @@
 //   "generated_with_requirements": [
 //     "abstracts==0.2.0",
 //     "aio-api-bazel==0.0.4",
-//     "aio-api-github==0.2.10",
+//     "aio-api-github==0.3.0",
 //     "aio-api-nist==0.0.4",
 //     "aio-core==0.11.0",
-//     "aio-run-checker==0.5.8",
+//     "aio-run-checker==0.6.0",
 //     "aio-run-runner==0.4.0",
 //     "aiodocker==0.26.0",
 //     "aiofiles==25.1.0",
@@ -190,25 +190,41 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "75e17073e9e03386d719d1af355f599c16d68345992eaa97aebfa6159b07ad02",
-              "url": "https://files.pythonhosted.org/packages/38/24/d79b14bd30a1e52379c20bbe68cbc774468963ddd91ac69ca4c3815f4cc1/aio.api.github-0.2.10-py3-none-any.whl"
+              "hash": "502dde7cbcdd20ce24dfad44a3b29430387a29815aaf071db64ab8c338e755a9",
+              "url": "https://files.pythonhosted.org/packages/ea/79/b9827eef141bf3a0363ca2a684fcdeca1a388121a3f61a682d2ed147923f/aio_api_github-0.3.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "2563ad2cd219352a7933b78190c17ab460b503b437bec348a738c0f804adf45f",
-              "url": "https://files.pythonhosted.org/packages/7a/fc/5da404a37422896541dc5cf01cf15335414e9f8c51f9b3ef6b97c181ce53/aio.api.github-0.2.10.tar.gz"
+              "hash": "5844bf9015fcfe23c6d1000cad70e60a8e874440cdd107974d13441395e47bab",
+              "url": "https://files.pythonhosted.org/packages/2a/78/769fb3f188071cb59d991f15fd077be08d1f4476f9ba9dcd88728176470d/aio_api_github-0.3.0.tar.gz"
             }
           ],
           "project_name": "aio-api-github",
           "requires_dists": [
-            "abstracts>=0.0.12",
-            "aio.core>=0.10.5",
+            "abstracts==0.2.0",
+            "abstracts>=0.2.0",
+            "aio-core==0.11.0",
+            "aio.core>=0.11.0",
+            "aiohttp==3.13.5",
             "aiohttp>=3.8.1",
+            "flake8; extra == \"lint\"",
             "gidgethub",
-            "packaging>=23.0"
+            "gidgethub==5.4.0",
+            "multidict>=6.0.2",
+            "mypy; extra == \"types\"",
+            "packaging==26.2",
+            "packaging>=23.0",
+            "pytest-abstracts>=0.1.0; extra == \"test\"",
+            "pytest-asyncio; extra == \"test\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest-iters>=0.1.0; extra == \"test\"",
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest; extra == \"test\"",
+            "wheel; extra == \"publish\"",
+            "yarl>=1.7.2"
           ],
-          "requires_python": ">=3.10.0",
-          "version": "0.2.10"
+          "requires_python": ">=3.12",
+          "version": "0.3.0"
         },
         {
           "artifacts": [
@@ -272,21 +288,32 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "9bf5e20773f83113b2eee39277f0ec3e014aeecfd33deb44103b0ed2482d3ff5",
-              "url": "https://files.pythonhosted.org/packages/70/ee/09043c64078cb79a5abcf8ceacf094568f00ac8db161314ff0ee9c1a7986/aio.run.checker-0.5.8-py3-none-any.whl"
+              "hash": "ff63df32360b17c6c6e3edd250d33f4a2cb328b3fb8967d7a40bbfc6497da162",
+              "url": "https://files.pythonhosted.org/packages/92/7f/170fa975a767af5bb6922cb5d93aa361d923a76172cf846b8b423902d1ab/aio_run_checker-0.6.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "b5fcb91651da986b13eefd340a45b402100a2967e1eb1a1b941ccfbc36fe0eda",
-              "url": "https://files.pythonhosted.org/packages/61/10/2362da825f4bf18827b1744aa32050e3da10ce130a99bc15b9de0babdc7d/aio.run.checker-0.5.8.tar.gz"
+              "hash": "6e3be38072506c9b7d30ce79d762e5accf6ff6f3dcc0084370cb490945b7826f",
+              "url": "https://files.pythonhosted.org/packages/f2/ca/92128a6db8f83b0049a6602508b4f5dbe0671a1ce912099888e73718bc4c/aio_run_checker-0.6.0.tar.gz"
             }
           ],
           "project_name": "aio-run-checker",
           "requires_dists": [
-            "aio.run.runner>=0.3.4"
+            "abstracts>=0.2.0",
+            "aio-run-runner==0.4.0",
+            "aio.run.runner>=0.4.0",
+            "flake8; extra == \"lint\"",
+            "mypy; extra == \"types\"",
+            "pytest-asyncio; extra == \"test\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest-iters>=0.1.0; extra == \"test\"",
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest; extra == \"test\"",
+            "types-frozendict; extra == \"types\"",
+            "wheel; extra == \"publish\""
           ],
-          "requires_python": ">=3.10.0",
-          "version": "0.5.8"
+          "requires_python": ">=3.12",
+          "version": "0.6.0"
         },
         {
           "artifacts": [
@@ -6497,10 +6524,10 @@
   "requirements": [
     "abstracts==0.2.0",
     "aio-api-bazel==0.0.4",
-    "aio-api-github==0.2.10",
+    "aio-api-github==0.3.0",
     "aio-api-nist==0.0.4",
     "aio-core==0.11.0",
-    "aio-run-checker==0.5.8",
+    "aio-run-checker==0.6.0",
     "aio-run-runner==0.4.0",
     "aiodocker==0.26.0",
     "aiofiles==25.1.0",

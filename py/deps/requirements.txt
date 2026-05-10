@@ -13,6 +13,7 @@ abstracts==0.2.0 \
     #   aio-api-github
     #   aio-api-nist
     #   aio-core
+    #   aio-run-checker
     #   aio-run-runner
     #   envoy-base-utils
     #   envoy-distribution-release
@@ -22,9 +23,9 @@ abstracts==0.2.0 \
 aio-api-bazel==0.0.4 \
     --hash=sha256:33ba61ac41c6ee8a13ed3e831ab808590fe074cc9703de6d2401d2f200f3c10a
     # via -r py/deps/requirements.in
-aio-api-github==0.2.10 \
-    --hash=sha256:2563ad2cd219352a7933b78190c17ab460b503b437bec348a738c0f804adf45f \
-    --hash=sha256:75e17073e9e03386d719d1af355f599c16d68345992eaa97aebfa6159b07ad02
+aio-api-github==0.3.0 \
+    --hash=sha256:502dde7cbcdd20ce24dfad44a3b29430387a29815aaf071db64ab8c338e755a9 \
+    --hash=sha256:5844bf9015fcfe23c6d1000cad70e60a8e874440cdd107974d13441395e47bab
     # via
     #   -r py/deps/requirements.in
     #   envoy-base-utils
@@ -46,9 +47,9 @@ aio-core==0.11.0 \
     #   envoy-github-abstract
     #   envoy-github-release
     #   envoy-gpg-identity
-aio-run-checker==0.5.8 \
-    --hash=sha256:9bf5e20773f83113b2eee39277f0ec3e014aeecfd33deb44103b0ed2482d3ff5 \
-    --hash=sha256:b5fcb91651da986b13eefd340a45b402100a2967e1eb1a1b941ccfbc36fe0eda
+aio-run-checker==0.6.0 \
+    --hash=sha256:6e3be38072506c9b7d30ce79d762e5accf6ff6f3dcc0084370cb490945b7826f \
+    --hash=sha256:ff63df32360b17c6c6e3edd250d33f4a2cb328b3fb8967d7a40bbfc6497da162
     # via
     #   -r py/deps/requirements.in
     #   envoy-distribution-distrotest
@@ -1200,6 +1201,7 @@ multidict==6.7.1 \
     --hash=sha256:fcee94dfbd638784645b066074b338bc9cc155d4b4bffa4adce1615c5a426c19
     # via
     #   -r py/deps/requirements.in
+    #   aio-api-github
     #   aiohttp
     #   yarl
 mypy==2.0.0 \
@@ -2141,6 +2143,7 @@ yarl==1.23.0 \
     --hash=sha256:fffc45637bcd6538de8b85f51e3df3223e4ad89bccbfca0481c08c7fc8b7ed7d
     # via
     #   -r py/deps/requirements.in
+    #   aio-api-github
     #   aiohttp
 zstandard==0.25.0 \
     --hash=sha256:011d388c76b11a0c165374ce660ce2c8efa8e5d87f34996aa80f9c0816698b64 \

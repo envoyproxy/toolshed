@@ -10,10 +10,10 @@
 //   ],
 //   "generated_with_requirements": [
 //     "abstracts>=0.2.0",
-//     "aio.api.github>=0.2.10",
+//     "aio.api.github>=0.3.0",
 //     "aio.api.nist>=0.0.4",
 //     "aio.core>=0.11.0",
-//     "aio.run.checker>=0.5.8",
+//     "aio.run.checker>=0.6.0",
 //     "aio.run.runner>=0.3.4",
 //     "aio.run.runner>=0.4.0",
 //     "aiodocker>=0.25.0",
@@ -24,7 +24,6 @@
 //     "coloredlogs",
 //     "docutils~=0.21.0",
 //     "envoy.base.utils>=0.5.10",
-//     "envoy.distribution.distrotest>=0.0.12",
 //     "envoy.docker.utils>=0.0.2",
 //     "envoy.github.release>=0.0.14",
 //     "flake8>=6",
@@ -212,21 +211,32 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "9bf5e20773f83113b2eee39277f0ec3e014aeecfd33deb44103b0ed2482d3ff5",
-              "url": "https://files.pythonhosted.org/packages/70/ee/09043c64078cb79a5abcf8ceacf094568f00ac8db161314ff0ee9c1a7986/aio.run.checker-0.5.8-py3-none-any.whl"
+              "hash": "ff63df32360b17c6c6e3edd250d33f4a2cb328b3fb8967d7a40bbfc6497da162",
+              "url": "https://files.pythonhosted.org/packages/92/7f/170fa975a767af5bb6922cb5d93aa361d923a76172cf846b8b423902d1ab/aio_run_checker-0.6.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "b5fcb91651da986b13eefd340a45b402100a2967e1eb1a1b941ccfbc36fe0eda",
-              "url": "https://files.pythonhosted.org/packages/61/10/2362da825f4bf18827b1744aa32050e3da10ce130a99bc15b9de0babdc7d/aio.run.checker-0.5.8.tar.gz"
+              "hash": "6e3be38072506c9b7d30ce79d762e5accf6ff6f3dcc0084370cb490945b7826f",
+              "url": "https://files.pythonhosted.org/packages/f2/ca/92128a6db8f83b0049a6602508b4f5dbe0671a1ce912099888e73718bc4c/aio_run_checker-0.6.0.tar.gz"
             }
           ],
           "project_name": "aio-run-checker",
           "requires_dists": [
-            "aio.run.runner>=0.3.4"
+            "abstracts>=0.2.0",
+            "aio-run-runner==0.4.0",
+            "aio.run.runner>=0.4.0",
+            "flake8; extra == \"lint\"",
+            "mypy; extra == \"types\"",
+            "pytest-asyncio; extra == \"test\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest-iters>=0.1.0; extra == \"test\"",
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest; extra == \"test\"",
+            "types-frozendict; extra == \"types\"",
+            "wheel; extra == \"publish\""
           ],
-          "requires_python": ">=3.10.0",
-          "version": "0.5.8"
+          "requires_python": ">=3.12",
+          "version": "0.6.0"
         },
         {
           "artifacts": [
@@ -1658,39 +1668,6 @@
           ],
           "requires_python": ">=3.11.0",
           "version": "0.5.11"
-        },
-        {
-          "artifacts": [
-            {
-              "algorithm": "sha256",
-              "hash": "b07aa9819040a4d8cbf0a85ab8c899c2601b3db348286a464d04e5630b56810d",
-              "url": "https://files.pythonhosted.org/packages/e2/d1/ee4b1864a6e851daf4f43ce3781f879d210915866df0691425a35c685bba/envoy_distribution_distrotest-0.0.13-py3-none-any.whl"
-            },
-            {
-              "algorithm": "sha256",
-              "hash": "cdc8f860e1bef7a0c92d227456e9095fd9b1565f3d77fa22e4bb84a20a6c391d",
-              "url": "https://files.pythonhosted.org/packages/81/8a/3767e27dc721880ec3395817ed40e28047e8e29a3ff5cedfe9d825383368/envoy_distribution_distrotest-0.0.13.tar.gz"
-            }
-          ],
-          "project_name": "envoy-distribution-distrotest",
-          "requires_dists": [
-            "aio-run-checker==0.5.8",
-            "aio.run.checker>=0.5.8",
-            "aiodocker>=0.25.0",
-            "envoy-base-utils==0.5.11",
-            "envoy-docker-utils==0.0.2",
-            "envoy.base.utils>=0.5.10",
-            "envoy.docker.utils>=0.0.2",
-            "flake8; extra == \"lint\"",
-            "mypy; extra == \"types\"",
-            "pytest-asyncio; extra == \"test\"",
-            "pytest-coverage; extra == \"test\"",
-            "pytest-patches>=0.1.0; extra == \"test\"",
-            "pytest; extra == \"test\"",
-            "wheel; extra == \"publish\""
-          ],
-          "requires_python": ">=3.5",
-          "version": "0.0.13"
         },
         {
           "artifacts": [
@@ -5661,10 +5638,10 @@
   "prefer_older_binary": false,
   "requirements": [
     "abstracts>=0.2.0",
-    "aio.api.github>=0.2.10",
+    "aio.api.github>=0.3.0",
     "aio.api.nist>=0.0.4",
     "aio.core>=0.11.0",
-    "aio.run.checker>=0.5.8",
+    "aio.run.checker>=0.6.0",
     "aio.run.runner>=0.3.4",
     "aio.run.runner>=0.4.0",
     "aiodocker>=0.25.0",
@@ -5675,7 +5652,6 @@
     "coloredlogs",
     "docutils~=0.21.0",
     "envoy.base.utils>=0.5.10",
-    "envoy.distribution.distrotest>=0.0.12",
     "envoy.docker.utils>=0.0.2",
     "envoy.github.release>=0.0.14",
     "flake8>=6",
