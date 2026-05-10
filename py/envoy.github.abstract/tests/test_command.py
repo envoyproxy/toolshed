@@ -6,7 +6,15 @@ import pytest
 import abstracts
 
 from aio.run.runner import ACommand
-from envoy.github.abstract.command import AGithubReleaseCommand
+
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="envoy\\.github\\.abstract is deprecated.*",
+    category=DeprecationWarning)
+
+from envoy.github.abstract.command import AGithubReleaseCommand  # noqa: E402
 
 
 @abstracts.implementer(AGithubReleaseCommand)

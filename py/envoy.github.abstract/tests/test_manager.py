@@ -8,7 +8,15 @@ import packaging.version
 import abstracts
 
 from aio.core.functional import async_property
-from envoy.github.abstract import manager
+
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="envoy\\.github\\.abstract is deprecated.*",
+    category=DeprecationWarning)
+
+from envoy.github.abstract import manager  # noqa: E402
 
 
 @abstracts.implementer(manager.AGithubReleaseManager)

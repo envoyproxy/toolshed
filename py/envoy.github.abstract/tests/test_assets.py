@@ -7,7 +7,14 @@ import pytest
 from aio.core import tasks
 from aio.core.functional import async_property
 
-from envoy.github.abstract import assets, exceptions
+import warnings
+
+warnings.filterwarnings(
+    "ignore",
+    message="envoy\\.github\\.abstract is deprecated.*",
+    category=DeprecationWarning)
+
+from envoy.github.abstract import assets, exceptions  # noqa: E402
 
 
 class DummyGithubReleaseAssets(assets.AGithubReleaseAssets):
