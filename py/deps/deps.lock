@@ -15,7 +15,7 @@
 //     "aio-api-nist==0.0.4",
 //     "aio-core==0.11.0",
 //     "aio-run-checker==0.5.8",
-//     "aio-run-runner==0.3.4",
+//     "aio-run-runner==0.4.0",
 //     "aiodocker==0.26.0",
 //     "aiofiles==25.1.0",
 //     "aiohappyeyeballs==2.6.1",
@@ -293,26 +293,41 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "ffa5693d6452b9fc07674cbea665825959d3ea5adca4e492998d242dadf3a773",
-              "url": "https://files.pythonhosted.org/packages/1e/35/215b336dd17703bf65faf8b8a9ef2331c02988d3628789302e76fa3f2ad5/aio.run.runner-0.3.4-py3-none-any.whl"
+              "hash": "d89efce2f80627cf00f99e1dcc878ace9a272f56abfa579a32c57515a36c8803",
+              "url": "https://files.pythonhosted.org/packages/04/0c/1af7186a919e19a8b2f44f6b549e7377dd2282dd3b373d58f7f213c23281/aio_run_runner-0.4.0-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "3f7bdb91c9a7a60d547d18c620ce2444b4e81d6e6a64a2e1ef465e54db8708bf",
-              "url": "https://files.pythonhosted.org/packages/3c/e0/2ce49f26c39e767bdf37ef47b06e8f83f0ac53c4fad08b4bdb9109b19d7e/aio.run.runner-0.3.4.tar.gz"
+              "hash": "6ca926a9a5eb435707a88d03031c27c71fd1402434cfafbbf1bed170de6bd760",
+              "url": "https://files.pythonhosted.org/packages/51/af/b77882506adba0996f52b78bf1d2a847bd44810795e5418e436315639b0d/aio_run_runner-0.4.0.tar.gz"
             }
           ],
           "project_name": "aio-run-runner",
           "requires_dists": [
-            "abstracts>=0.0.12",
-            "aio.core>=0.10.5",
+            "abstracts==0.2.0",
+            "abstracts>=0.2.0",
+            "aio-core==0.11.0",
+            "aio.core>=0.11.0",
             "coloredlogs",
+            "coloredlogs==15.0.1",
+            "flake8; extra == \"lint\"",
             "frozendict",
+            "frozendict==2.4.7",
+            "mypy; extra == \"types\"",
+            "pytest-asyncio; extra == \"test\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest-iters>=0.1.0; extra == \"test\"",
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest; extra == \"test\"",
+            "types-frozendict; extra == \"types\"",
             "uvloop",
-            "verboselogs"
+            "uvloop==0.22.1",
+            "verboselogs",
+            "verboselogs==1.7",
+            "wheel; extra == \"publish\""
           ],
-          "requires_python": ">=3.10.0",
-          "version": "0.3.4"
+          "requires_python": ">=3.12",
+          "version": "0.4.0"
         },
         {
           "artifacts": [
@@ -6511,7 +6526,7 @@
     "aio-api-nist==0.0.4",
     "aio-core==0.11.0",
     "aio-run-checker==0.5.8",
-    "aio-run-runner==0.3.4",
+    "aio-run-runner==0.4.0",
     "aiodocker==0.26.0",
     "aiofiles==25.1.0",
     "aiohappyeyeballs==2.6.1",
