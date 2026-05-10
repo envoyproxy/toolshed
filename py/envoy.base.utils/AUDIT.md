@@ -1,6 +1,6 @@
 # `envoy.base.utils` post-hardening audit against Python 3.12+
 
-Audit target: `py/envoy.base.utils/envoy/base/utils/` at `main` SHA `f96c450`
+Audit target: `py/envoy.base.utils/envoy/base/utils/` at `main` SHA `f96c4504a65d7609fb294c13b48e1c752c437af7`
 (contains merged PR #4353).
 
 ---
@@ -101,7 +101,7 @@ Verdict labels:
 | `ExtractError`, `is_tarlike`, `tar_mode` | Validation and mode helpers. | ~16 | **KEEP** |
 | `extract`, `untar`, `pack`, `repack` | Archive operations including `.zst` path. | ~63 | **KEEP** |
 
-Stdlib note: stdlib tar support still does not remove the value of this module while `.zst` compatibility and path remap/filter features are required.
+Stdlib note: this module remains valuable alongside stdlib tar support while `.zst` compatibility and path remap/filter features are required.
 
 ### `yaml.py`
 
