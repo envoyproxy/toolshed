@@ -16,6 +16,28 @@ def test_yaml_envoy_yaml():
     assert _yaml.envoy_yaml.YAMLError is base_yaml.YAMLError
 
 
+def test_yaml_envoy_yaml_safe_load_all():
+    assert list(
+        _yaml.envoy_yaml.safe_load_all("a: 1\n---\nk: !ignore foo\n")) == [
+        {"a": 1},
+        {"k": _yaml.IgnoredKey("foo")},
+    ]
+
+
+def test_yaml_envoy_yaml_safe_dump():
+    dumped = _yaml.envoy_yaml.safe_dump({"k": _yaml.IgnoredKey("foo")})
+    assert _yaml.envoy_yaml.safe_load(dumped) == {"k": _yaml.IgnoredKey("foo")}
+
+
+def test_yaml_envoy_yaml_safe_dump_all():
+    dumped = _yaml.envoy_yaml.safe_dump_all(
+        [{"a": 1}, {"k": _yaml.IgnoredKey("foo")}])
+    assert list(_yaml.envoy_yaml.safe_load_all(dumped)) == [
+        {"a": 1},
+        {"k": _yaml.IgnoredKey("foo")},
+    ]
+
+
 def test_yaml_envoyloader_subclass():
     assert issubclass(_yaml.EnvoyLoader, base_yaml.SafeLoader)
 

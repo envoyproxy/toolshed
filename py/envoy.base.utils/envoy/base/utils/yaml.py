@@ -60,6 +60,7 @@ class _EnvoyYamlShim:
     """
 
     def safe_load(self, stream):
+        # EnvoyLoader subclasses SafeLoader, so this remains safe.
         return _yaml.load(stream, Loader=EnvoyLoader)
 
     def safe_load_all(self, stream):
