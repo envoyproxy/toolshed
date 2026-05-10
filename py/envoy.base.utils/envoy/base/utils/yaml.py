@@ -1,6 +1,4 @@
 
-from functools import cached_property
-
 import yaml as _yaml
 
 
@@ -32,13 +30,49 @@ class IgnoredKey(_yaml.YAMLObject):
         return f'IgnoredKey({str})'
 
 
-class EnvoyYaml:
+class EnvoyLoader(_yaml.SafeLoader):
+    """SafeLoader subclass with envoy-specific YAML extensions registered.
 
-    @cached_property
-    def yaml(self):
-        _yaml.SafeLoader.add_constructor('!ignore', IgnoredKey.from_yaml)
-        _yaml.SafeDumper.add_multi_representer(IgnoredKey, IgnoredKey.to_yaml)
-        return _yaml
+    Registrations happen on this subclass only, leaving
+    `yaml.SafeLoader` unmodified. This avoids polluting global PyYAML
+    registries and is thread-safe by construction.
+    """
 
 
-envoy_yaml = EnvoyYaml().yaml
+class EnvoyDumper(_yaml.SafeDumper):
+    """SafeDumper subclass with envoy-specific YAML extensions registered.
+
+    Registrations happen on this subclass only, leaving
+    `yaml.SafeDumper` unmodified. This avoids polluting global PyYAML
+    registries and is thread-safe by construction.
+    """
+
+
+EnvoyLoader.add_constructor(IgnoredKey.yaml_tag, IgnoredKey.from_yaml)
+EnvoyDumper.add_multi_representer(IgnoredKey, IgnoredKey.to_yaml)
+
+
+class _EnvoyYamlShim:
+    """Back-compat shim around PyYAML with Envoy loader/dumper defaults.
+
+    Prefer using `EnvoyLoader`/`EnvoyDumper` directly with `yaml.load`
+    and `yaml.dump`.
+    """
+
+    def safe_load(self, stream):
+        return _yaml.load(stream, Loader=EnvoyLoader)
+
+    def safe_load_all(self, stream):
+        return _yaml.load_all(stream, Loader=EnvoyLoader)
+
+    def safe_dump(self, data, stream=None, **kwargs):
+        return _yaml.dump(data, stream, Dumper=EnvoyDumper, **kwargs)
+
+    def safe_dump_all(self, documents, stream=None, **kwargs):
+        return _yaml.dump_all(documents, stream, Dumper=EnvoyDumper, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(_yaml, name)
+
+
+envoy_yaml = _EnvoyYamlShim()
