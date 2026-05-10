@@ -67,7 +67,6 @@ __all__ = (
     "coverage_with_data_file",
     "minor_version_for",
     "pack",
-    "Parallel",
     "ParallelRunner",
     "parallel_cmd",
     "Project",

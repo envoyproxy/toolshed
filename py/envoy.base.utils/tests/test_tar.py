@@ -232,7 +232,7 @@ def test_util__extract(patches, tarballs, mappings, matching, iters):
             == [(prefix, ), {}])
         assert (
             tar.extractall.call_args
-            == [(), dict(path=path.joinpath.return_value)])
+            == [(), dict(path=path.joinpath.return_value, filter="data")])
         assert not tar.getmembers.called
         assert not tar.extract.called
         assert not m_should.called
