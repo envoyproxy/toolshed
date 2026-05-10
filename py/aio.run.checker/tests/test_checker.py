@@ -1857,3 +1857,15 @@ def test_checker__task_should_preload(iters, patches, pending, when, unless):
 
 def test_checker_problems():
     assert isinstance(Problems(), abstract.AProblems)
+
+
+def test_problems_init_kwargs():
+    problems = Problems(errors=["e1", "e2"], warnings=["w1"])
+    assert problems.errors == ["e1", "e2"]
+    assert problems.warnings == ["w1"]
+
+
+def test_problems_init_defaults():
+    problems = Problems()
+    assert problems.errors == []
+    assert problems.warnings == []
