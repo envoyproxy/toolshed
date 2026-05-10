@@ -24,7 +24,6 @@ python_tests(
         "//py/envoy.dependency.check:build_artefacts",
         "//py/envoy.distribution.distrotest:build_artefacts",
         "//py/envoy.distribution.release:build_artefacts",
-        "//py/envoy.distribution.repo:build_artefacts",
         "//py/envoy.distribution.verify:build_artefacts",
         "//py/envoy.docker.utils:build_artefacts",
         "//py/envoy.docs.sphinx_runner:build_artefacts",
