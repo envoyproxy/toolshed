@@ -20,22 +20,26 @@ def test_packager_constructor():
 def test_packager_cls_register_util():
     assert sign.PackageSigningRunner._signing_utils == ()
 
+    class DummyPackageSigningRunner(sign.PackageSigningRunner):
+        pass
+
     class Util1(object):
         pass
 
     class Util2(object):
         pass
 
-    sign.PackageSigningRunner.register_util("util1", Util1)
+    DummyPackageSigningRunner.register_util("util1", Util1)
     assert (
-        sign.PackageSigningRunner._signing_utils
+        DummyPackageSigningRunner._signing_utils
         == (('util1', Util1),))
 
-    sign.PackageSigningRunner.register_util("util2", Util2)
+    DummyPackageSigningRunner.register_util("util2", Util2)
     assert (
-        sign.PackageSigningRunner._signing_utils
+        DummyPackageSigningRunner._signing_utils
         == (('util1', Util1),
             ('util2', Util2),))
+    assert sign.PackageSigningRunner._signing_utils == ()
 
 
 def test_packager_gen_key(patches):
@@ -202,19 +206,6 @@ def test_packager_outfile(patches):
     assert "outfile" not in packager.__dict__
 
 
-def test_packager_package_type(patches):
-    packager = sign.PackageSigningRunner("x", "y", "z")
-
-    patched = patches(
-        ("PackageSigningRunner.args", dict(new_callable=PropertyMock)),
-        prefix="envoy.gpg.sign.runner")
-
-    with patched as (m_args, ):
-        assert packager.package_type == m_args.return_value.package_type
-
-    assert "package_type" not in packager.__dict__
-
-
 def test_packager_repack(patches, iters):
     packager = sign.PackageSigningRunner("x", "y", "z")
     patched = patches(
@@ -263,7 +254,18 @@ def test_packager_signing_utils():
 
 
 def test_packager_add_arguments():
-    packager = sign.PackageSigningRunner("x", "y", "z")
+    class DummyPackageSigningRunner(sign.PackageSigningRunner):
+        pass
+
+    class Util1(object):
+        pass
+
+    class Util2(object):
+        pass
+
+    DummyPackageSigningRunner.register_util("util1", Util1)
+    DummyPackageSigningRunner.register_util("util2", Util2)
+    packager = DummyPackageSigningRunner("x", "y", "z")
     parser = MagicMock()
     packager.add_arguments(parser)
     assert (
@@ -299,8 +301,13 @@ def test_packager_add_arguments():
             {'action': 'store_true',
              'help': 'If set, create the signing key (requires '
                      '`--maintainer-name` and `--maintainer-email`) '}],
-           [('-m', '--mapping'),
-            {'action': 'append'}]])
+            [('-m', '--mapping'),
+             {'action': 'append'}]])
+    assert (
+        DummyPackageSigningRunner._signing_utils
+        == (('util1', Util1),
+            ('util2', Util2),))
+    assert sign.PackageSigningRunner._signing_utils == ()
 
 
 def test_packager_add_key(patches):
