@@ -8,8 +8,27 @@ import yaml as base_yaml
 from envoy.base.utils import yaml as _yaml
 
 
-def test_yaml_envoy_yaml():
-    assert _yaml.envoy_yaml == base_yaml
+def test_yaml_envoyloader_subclass():
+    assert issubclass(_yaml.EnvoyLoader, base_yaml.SafeLoader)
+
+
+def test_yaml_envoydumper_subclass():
+    assert issubclass(_yaml.EnvoyDumper, base_yaml.SafeDumper)
+
+
+def test_yaml_envoyloader_roundtrip():
+    assert base_yaml.load("a: 1", Loader=_yaml.EnvoyLoader) == {"a": 1}
+    assert (
+        base_yaml.load("k: !ignore foo", Loader=_yaml.EnvoyLoader)["k"]
+        == _yaml.IgnoredKey("foo"))
+
+
+def test_yaml_envoydumper_roundtrip():
+    dumped = base_yaml.dump(
+        {"k": _yaml.IgnoredKey("foo")}, Dumper=_yaml.EnvoyDumper)
+    assert (
+        base_yaml.load(dumped, Loader=_yaml.EnvoyLoader)
+        == {"k": _yaml.IgnoredKey("foo")})
 
 
 def test_yaml_ignoredkey_from_yaml():
@@ -31,29 +50,26 @@ def test_yaml_ignoredkey_to_yaml():
         == [(_yaml.IgnoredKey.yaml_tag, data.strval), {}])
 
 
-def test_yaml_envoyyaml_constructor():
-    assert _yaml.EnvoyYaml()
-
-
-def test_yaml_envoyyaml_yaml(patches):
-    envoy_yaml = _yaml.EnvoyYaml()
-    patched = patches(
-        "IgnoredKey",
-        "_yaml",
-        prefix="envoy.base.utils.yaml")
-
-    with patched as (m_ignore, m_yaml):
-        assert (
-            envoy_yaml.yaml
-            == m_yaml)
-
+def test_yaml_envoyloader_constructor_registration():
     assert (
-        m_yaml.SafeLoader.add_constructor.call_args
-        == [('!ignore', m_ignore.from_yaml), {}])
+        _yaml.EnvoyLoader.yaml_constructors[_yaml.IgnoredKey.yaml_tag]
+        == _yaml.IgnoredKey.from_yaml)
     assert (
-        m_yaml.SafeDumper.add_multi_representer.call_args
-        == [(m_ignore, m_ignore.to_yaml), {}])
-    assert "yaml" in envoy_yaml.__dict__
+        _yaml.EnvoyLoader.yaml_constructors
+        is not base_yaml.SafeLoader.yaml_constructors)
+    assert (
+        _yaml.IgnoredKey.yaml_tag
+        not in base_yaml.SafeLoader.yaml_constructors)
+
+
+def test_yaml_envoydumper_representer_registration():
+    assert (
+        _yaml.EnvoyDumper.yaml_multi_representers[_yaml.IgnoredKey]
+        == _yaml.IgnoredKey.to_yaml)
+    assert (
+        _yaml.EnvoyDumper.yaml_multi_representers
+        is not base_yaml.SafeDumper.yaml_multi_representers)
+    assert _yaml.IgnoredKey not in base_yaml.SafeDumper.yaml_multi_representers
 
 
 def test_yaml_ignoredkey_constructor():

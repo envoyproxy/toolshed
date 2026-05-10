@@ -1,4 +1,4 @@
-"""Fuzz the EnvoyYaml YAML loader (envoy.base.utils.yaml).
+"""Fuzz the EnvoyLoader YAML loader (envoy.base.utils.yaml).
 
 Atheris harness — not part of any published package.
 
@@ -14,22 +14,18 @@ import atheris
 with atheris.instrument_imports():
     import yaml
 
-    from envoy.base.utils.yaml import EnvoyYaml
-
-# Build the YAML module augmented with the Envoy !ignore tag exactly once, so
-# each TestOneInput call does not re-register constructors.
-_envoy_yaml = EnvoyYaml().yaml
+    from envoy.base.utils.yaml import EnvoyLoader
 
 
 def TestOneInput(data: bytes) -> None:
-    """Feed raw bytes to the EnvoyYaml safe-loader.
+    """Feed raw bytes to the EnvoyLoader.
 
     Expected / benign exceptions are caught so the fuzzer only stops for
     truly unexpected failures.
     """
     try:
         text = data.decode("utf-8", errors="replace")
-        _envoy_yaml.safe_load(text)
+        yaml.load(text, Loader=EnvoyLoader)
     except yaml.YAMLError:
         # Malformed YAML — expected; not a bug.
         pass

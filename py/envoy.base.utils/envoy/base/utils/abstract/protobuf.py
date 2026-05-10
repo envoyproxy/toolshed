@@ -1,9 +1,10 @@
 
-import importlib
 import json
 import pathlib
 from collections.abc import Callable
 from functools import cached_property, lru_cache
+
+import yaml as _yaml
 
 from google.protobuf import descriptor, descriptor_pb2
 from google.protobuf import descriptor_pool as _descriptor_pool
@@ -15,21 +16,10 @@ from google.protobuf import (
 import abstracts
 
 from envoy.base.utils import interface
+from envoy.base.utils.yaml import EnvoyLoader
 
 
 BOOTSTRAP_PROTO = "envoy.config.bootstrap.v3.Bootstrap"
-
-_envoy_yaml = None
-
-
-def _yaml():
-    # Load this lazily so we dont change the environment unless necessary.
-    global _envoy_yaml
-
-    if not _envoy_yaml:
-        _envoy_yaml = importlib.import_module(
-            "envoy.base.utils.yaml").envoy_yaml
-    return _envoy_yaml
 
 
 class AProtobufSet(metaclass=abstracts.Abstraction):
@@ -73,10 +63,6 @@ class AProtobufValidator(metaclass=abstracts.Abstraction):
     def protobuf_set_class(self) -> type[interface.IProtobufSet]:
         raise NotImplementedError
 
-    @cached_property
-    def yaml(self):
-        return _yaml()
-
     def find_message(self, type_name: str) -> descriptor.Descriptor:
         return self.descriptor_pool.FindMessageTypeByName(type_name)
 
@@ -108,4 +94,5 @@ class AProtobufValidator(metaclass=abstracts.Abstraction):
             self,
             fragment: str,
             type_name: str = BOOTSTRAP_PROTO) -> None:
-        self.validate_fragment(self.yaml.safe_load(fragment), type_name)
+        self.validate_fragment(
+            _yaml.load(fragment, Loader=EnvoyLoader), type_name)
