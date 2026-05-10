@@ -4,6 +4,6 @@ toolshed_tests(
     dependencies=[
         "//py/deps:reqs#aio-run-runner",
         "//py/deps:reqs#envoy-base-utils",
-        "//py/envoy.gpg.sign/envoy/gpg/identity:envoy.gpg.identity",
+        "//py/deps:reqs#envoy-gpg-identity",
     ],
 )

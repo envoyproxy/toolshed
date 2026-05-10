@@ -158,7 +158,7 @@ def test_util_package_type(ext, package_type):
     util = sign.DirectorySigningUtil("PATH", maintainer, "LOG")
     util.ext = ext
     util._package_type = package_type
-    assert util.package_type == package_type or ext
+    assert util.package_type == (package_type or ext)
 
 
 def test_util_path(patches):
