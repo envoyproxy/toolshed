@@ -2,9 +2,8 @@
 import asyncio
 import pathlib
 import re
+from collections.abc import Callable, Iterable, Iterator
 from functools import cached_property, partial
-from typing import (
-    Callable, Iterable, Iterator, Pattern)
 
 import abstracts
 
@@ -109,7 +108,7 @@ class AGlintCheck(abstract.AFileCodeCheck, metaclass=abstracts.Abstraction):
             target=await self.files)
 
     @cached_property
-    def noglint_re(self) -> Pattern[str]:
+    def noglint_re(self) -> re.Pattern[str]:
         """Regex for matching files that should not be checked."""
         return re.compile(r"|".join(NOGLINT_RE))
 
