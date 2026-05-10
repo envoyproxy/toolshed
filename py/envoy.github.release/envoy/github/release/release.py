@@ -25,8 +25,6 @@ from envoy.github.release.assets import (
 
 @abstracts.implementer(AGithubRelease)
 class GithubRelease:
-    file_exts = {"deb", "changes", "rpm"}
-
     def __init__(self, manager: AGithubReleaseManager, version: str):
         self.manager = manager
         self._version = version
@@ -158,7 +156,7 @@ class GithubRelease:
             self,
             path: pathlib.Path,
             asset_types: dict[str, re.Pattern[str]] | None = None,
-            append: bool | None = False) -> ReleaseDict:
+            append: bool = False) -> ReleaseDict:
         self.log.notice(
             "Downloading assets for release version: "
             f"{self.version_name} -> {path}")

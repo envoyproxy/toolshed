@@ -187,7 +187,7 @@ def test_runner_add_arguments(patches):
              {'help': 'Path to an OAuth token credentials file'}],
             [('--continue',),
              {'action': 'store_true',
-              'help': 'Continue if an indidividual github action fails'}],
+              'help': 'Continue if an individual github action fails'}],
             [('command',), {'choices': {}.keys(), 'help': 'Command to run'}]])
 
 
