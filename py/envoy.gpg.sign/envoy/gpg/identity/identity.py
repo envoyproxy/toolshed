@@ -3,9 +3,9 @@ import os
 import pathlib
 import pwd
 import shutil
+from collections.abc import Iterable
 from functools import cached_property
 from email.utils import formataddr, parseaddr
-from typing import Iterable, Optional, Union
 
 import gnupg  # type:ignore
 
@@ -23,10 +23,10 @@ class GPGIdentity(object):
 
     def __init__(
             self,
-            name: Optional[str] = None,
-            email: Optional[str] = None,
-            log: Optional[logging.Logger] = None,
-            gnupg_home: Optional[pathlib.Path] = None,
+            name: str | None = None,
+            email: str | None = None,
+            log: logging.Logger | None = None,
+            gnupg_home: pathlib.Path | None = None,
             gen_key: bool = False):
         self._provided_name = name
         self._provided_email = email
@@ -74,7 +74,7 @@ class GPGIdentity(object):
         return gnupg.GPG(gnupghome=self.gnupg_home)
 
     @cached_property
-    def gpg_bin(self) -> Optional[pathlib.Path]:
+    def gpg_bin(self) -> pathlib.Path | None:
         gpg_bin = shutil.which("gpg2") or shutil.which("gpg")
         return pathlib.Path(gpg_bin) if gpg_bin else None
 
@@ -97,7 +97,7 @@ class GPGIdentity(object):
         return pathlib.Path(home_dir)
 
     @cached_property
-    def log(self) -> Union[logging.Logger]:
+    def log(self) -> logging.Logger:
         return self._log or logging.getLogger(self.__class__.__name__)
 
     @property
@@ -106,7 +106,7 @@ class GPGIdentity(object):
         return self._provided_email or ""
 
     @cached_property
-    def provided_id(self) -> Optional[str]:
+    def provided_id(self) -> str | None:
         """Provided name and/or email for the identity."""
         if not (self.provided_name or self.provided_email):
             return None
@@ -118,7 +118,7 @@ class GPGIdentity(object):
             else (self.provided_name or self.provided_email))
 
     @property
-    def provided_name(self) -> Optional[str]:
+    def provided_name(self) -> str | None:
         """Provided name for the identity."""
         return self._provided_name
 
@@ -157,7 +157,7 @@ class GPGIdentity(object):
             if not key.fingerprint:
                 raise GPGError("Failed to generate key")
 
-    def match(self, key: dict) -> Optional[dict]:
+    def match(self, key: dict) -> dict | None:
         """Match a signing key.
 
         The key is found either by matching provided name/email or the
@@ -176,13 +176,13 @@ class GPGIdentity(object):
         key["uid"] = key["uids"][0]
         return key
 
-    def _match_email(self, uids: Iterable) -> Optional[str]:
+    def _match_email(self, uids: Iterable) -> str | None:
         """Match only the email."""
         for uid in uids:
             if parseaddr(uid)[1] == self.provided_email:
                 return uid
 
-    def _match_key(self, uids: Iterable) -> Optional[str]:
+    def _match_key(self, uids: Iterable) -> str | None:
         """If either/both name or email are supplied it tries to match
         either/both."""
         if self.provided_name and self.provided_email:
@@ -192,12 +192,12 @@ class GPGIdentity(object):
         elif self.provided_email:
             return self._match_email(uids)
 
-    def _match_name(self, uids: Iterable) -> Optional[str]:
+    def _match_name(self, uids: Iterable) -> str | None:
         """Match only the name."""
         for uid in uids:
             if parseaddr(uid)[0] == self.provided_name:
                 return uid
 
-    def _match_uid(self, uids: Iterable) -> Optional[str]:
+    def _match_uid(self, uids: Iterable) -> str | None:
         """Match the whole uid - ie `Name <ema.il>`"""
         return self.provided_id if self.provided_id in uids else None

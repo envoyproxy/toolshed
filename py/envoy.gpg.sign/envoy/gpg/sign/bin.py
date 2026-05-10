@@ -1,8 +1,8 @@
 
 import hashlib
 import pathlib
+from collections.abc import Iterator
 from functools import cached_property
-from typing import Iterator
 
 from .util import DirectorySigningUtil
 
