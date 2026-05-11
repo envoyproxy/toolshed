@@ -24,7 +24,6 @@ __all__ = (
     "ADependencyGithubRelease",
     "AGithubDependencyReleaseIssue",
     "AGithubDependencyReleaseIssues",
-    "AGithubIssueManager",
     "checker",
     "Dependency",
     "DependencyChecker",
