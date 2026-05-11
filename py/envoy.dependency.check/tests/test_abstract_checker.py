@@ -160,11 +160,12 @@ def test_checker_dependency_metadata(patches):
     checker = DummyDependencyChecker()
     patched = patches(
         "json",
+        "ADependencyChecker._validate_dependency_metadata",
         ("ADependencyChecker.repository_locations_path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
 
-    with patched as (m_json, m_path):
+    with patched as (m_json, m_validate, m_path):
         assert (
             checker.dependency_metadata
             == m_json.loads.return_value)
@@ -175,6 +176,9 @@ def test_checker_dependency_metadata(patches):
     assert (
         m_path.return_value.read_text.call_args
         == [(), {}])
+    assert (
+        m_validate.call_args
+        == [(m_json.loads.return_value, ), {}])
     assert "dependency_metadata" not in checker.__dict__
 
 
@@ -739,7 +743,7 @@ def test_checker_run_catches():
     checker = DummyDependencyChecker()
     assert (
         checker.run.__wrapped__.__catches__
-        == (exceptions.GithubTokenError,))
+        == (exceptions.GithubTokenError, exceptions.DependencyMetadataError))
 
 
 async def test_checker_run_catches_github_token_error(patches):
@@ -1207,3 +1211,49 @@ async def test_checker__release_issue_close_missing_dep(patches):
         m_log.return_value.notice.call_args
         == [(f"Closed issue with no current dependency (#{issue.number})", ),
             {}])
+
+
+@pytest.mark.parametrize(
+    "data,raises,expected_msg",
+    [
+        # Valid metadata: no exception raised
+        ({"dep1": {"release_date": "2024-01-01", "version": "1.0",
+                   "urls": ["https://example.com"], "sha256": "abc"}},
+         False, None),
+        # Missing one required key
+        ({"dep2": {"release_date": "2024-01-01", "version": "1.0",
+                   "urls": ["https://example.com"]}},
+         True, "dep2: missing required keys: sha256"),
+        # Multiple deps with multiple errors
+        ({"dep3": {"release_date": "2024-01-01"},
+          "dep4": {"version": "1.0"}},
+         True, None),
+        # Non-dict metadata value
+        ({"dep5": "not-a-dict"},
+         True, "dep5: metadata must be a mapping, got str"),
+    ])
+def test_checker__validate_dependency_metadata(data, raises, expected_msg):
+    checker = DummyDependencyChecker()
+    if not raises:
+        checker._validate_dependency_metadata(data)
+    else:
+        with pytest.raises(exceptions.DependencyMetadataError) as exc_info:
+            checker._validate_dependency_metadata(data)
+        if expected_msg:
+            assert expected_msg in str(exc_info.value)
+
+
+async def test_checker_run_catches_dependency_metadata_error(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        "checker.Checker.run",
+        ("ADependencyChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_run, m_log):
+        m_run.side_effect = exceptions.DependencyMetadataError("BAD METADATA")
+        assert await checker.run() == 1
+
+    assert m_run.call_args == [(), {}]
+    assert m_log.return_value.error.call_args == [("BAD METADATA", ), {}]

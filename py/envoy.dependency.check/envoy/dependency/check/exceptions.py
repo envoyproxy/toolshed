@@ -17,6 +17,10 @@ class GithubTokenError(Exception):
     pass
 
 
+class DependencyMetadataError(Exception):
+    """Raised when the loaded dependency metadata fails validation."""
+
+
 class NotGithubDependency(Exception):
     pass
 

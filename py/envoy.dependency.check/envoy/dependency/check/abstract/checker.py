@@ -28,6 +28,8 @@ NO_GITHUB_TOKEN_ERROR_MSG = (
 NO_ISSUE_DEPENDENCIES = r"com_google_protobuf_protoc_[a-zA-Z0-9_]+$"
 HTTP_SESSION_TIMEOUT_SECONDS = 300
 PACKAGE_NAME = "envoy.dependency.check"
+REQUIRED_DEPENDENCY_METADATA_KEYS = (
+    "release_date", "version", "urls", "sha256")
 
 
 def _http_user_agent() -> str:
@@ -54,6 +56,8 @@ class ADependencyChecker(
         "release_dates",
         "release_issues",
         "releases")
+
+    REQUIRED_DEPENDENCY_METADATA_KEYS = REQUIRED_DEPENDENCY_METADATA_KEYS
 
     @property
     @abc.abstractmethod
@@ -94,7 +98,9 @@ class ADependencyChecker(
     def dependency_metadata(self) -> typing.DependenciesDict:
         """Dependency metadata (derived in Envoy's case from
         `repository_locations.bzl`)."""
-        return json.loads(self.repository_locations_path.read_text())
+        data = json.loads(self.repository_locations_path.read_text())
+        self._validate_dependency_metadata(data)
+        return data
 
     @cached_property
     def github(self) -> _github.IGithubAPI:
@@ -352,13 +358,34 @@ class ADependencyChecker(
         async for dep in preloader:
             self.log.debug(f"Preloaded release data: {dep.id}")
 
-    @runner.catches((exceptions.GithubTokenError,))
+    @runner.catches(
+        (exceptions.GithubTokenError, exceptions.DependencyMetadataError))
     async def run(self) -> int | None:
         return await super().run()
 
     @cached_property
     def _no_dep_issues(self):
         return re.compile(NO_ISSUE_DEPENDENCIES)
+
+    def _validate_dependency_metadata(self, data: dict) -> None:
+        errors: list[str] = []
+        for dep_id, meta in data.items():
+            if not isinstance(meta, dict):
+                errors.append(
+                    f"{dep_id}: metadata must be a mapping, "
+                    f"got {type(meta).__name__}")
+                continue
+            missing = [
+                k for k in self.REQUIRED_DEPENDENCY_METADATA_KEYS
+                if k not in meta]
+            if missing:
+                errors.append(
+                    f"{dep_id}: missing required keys: "
+                    f"{', '.join(missing)}")
+        if errors:
+            raise exceptions.DependencyMetadataError(
+                "Invalid dependency metadata:\n  "
+                + "\n  ".join(errors))
 
     async def _dep_release_issue_close_stale(
             self,
