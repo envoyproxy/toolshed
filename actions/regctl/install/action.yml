@@ -19,7 +19,7 @@ runs:
   using: 'composite'
   steps:
   - name: Fetch regctl
-    uses: envoyproxy/toolshed/actions/fetch@3346a770680fd7e626cec01608eb3fe40e38e53a
+    uses: envoyproxy/toolshed/actions/fetch@5e6745311e36482192ad34d2b8df9c2c374fe2bd
     with:
       url: https://github.com/regclient/regclient/releases/download/${{ inputs.version }}/regctl-linux-${{ inputs.arch }}
       path: /tmp/regctl

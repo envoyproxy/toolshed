@@ -41,7 +41,7 @@ runs:
     if: inputs.checkout-repo
     with:
       fetch-depth: 0
-  - uses: envoyproxy/toolshed/actions/bson@3346a770680fd7e626cec01608eb3fe40e38e53a
+  - uses: envoyproxy/toolshed/actions/bson@5e6745311e36482192ad34d2b8df9c2c374fe2bd
     id: changed
     with:
       input: |
@@ -59,20 +59,20 @@ runs:
       result-filter: |
         rtrimstr("\n")
         | split("\n")
-  - uses: envoyproxy/toolshed/actions/jq@3346a770680fd7e626cec01608eb3fe40e38e53a
+  - uses: envoyproxy/toolshed/actions/jq@5e6745311e36482192ad34d2b8df9c2c374fe2bd
     id: config
     with:
       input: ${{ inputs.config }}
       input-format: yaml
       filter: |
         {"check": .}
-  - uses: envoyproxy/toolshed/actions/torun@3346a770680fd7e626cec01608eb3fe40e38e53a
+  - uses: envoyproxy/toolshed/actions/torun@5e6745311e36482192ad34d2b8df9c2c374fe2bd
     id: torun
     with:
       event: ${{ inputs.event }}
       paths: ${{ steps.changed.outputs.output }}
       config: ${{ steps.config.outputs.value }}
-  - uses: envoyproxy/toolshed/actions/jq@3346a770680fd7e626cec01608eb3fe40e38e53a
+  - uses: envoyproxy/toolshed/actions/jq@5e6745311e36482192ad34d2b8df9c2c374fe2bd
     id: check
     with:
       input: ${{ steps.torun.outputs.runs }}
