@@ -1,11 +1,7 @@
 import argparse
-import contextlib
 import os
 import pathlib
-import platform
 import shutil
-import sys
-import time
 from functools import cached_property
 from typing import TypedDict
 
@@ -20,20 +16,6 @@ from aio.run import runner
 from envoy.base import utils
 
 from .exceptions import SphinxBuildError, SphinxEnvError
-
-
-# TODO: remove this once build perf work is complete
-@contextlib.contextmanager
-def debug(jobs):
-    total_cores = os.cpu_count()
-    used_cores = total_cores if jobs == "auto" else jobs
-    start = time.time()
-    try:
-        yield
-    finally:
-        print(
-            f"Sphinx ran ({used_cores}/{total_cores} cores) "
-            f"in {time.time() - start}s")
 
 
 class BaseConfigDict(TypedDict):
@@ -52,7 +34,6 @@ class ConfigDict(BaseConfigDict, total=False):
 
 
 class SphinxRunner(runner.Runner):
-    _build_dir = "."
     _build_sha = "UNKNOWN"
 
     @property
@@ -176,15 +157,11 @@ class SphinxRunner(runner.Runner):
         return self.args.overwrite
 
     @property
-    def py_compatible(self) -> bool:
-        """Current python version is compatible."""
-        return bool(
-            sys.version_info.major == 3
-            and sys.version_info.minor >= 8)
-
-    @property
     def release_level(self) -> str:
-        """Current python version is compatible."""
+        """Release level.
+
+        `tagged` for versioned releases, `pre-release` otherwise.
+        """
         return "tagged" if self.docs_tag else "pre-release"
 
     @cached_property
@@ -247,7 +224,6 @@ class SphinxRunner(runner.Runner):
     @cached_property
     def version_number(self) -> str:
         """Semantic version."""
-        # TODO: Use `packaging.version.Version`
         return (
             self.args.version
             if self.args.version
@@ -283,9 +259,8 @@ class SphinxRunner(runner.Runner):
         parser.add_argument("output_path")
 
     def build_html(self) -> None:
-        with debug(self.jobs):
-            if sphinx_build(self.sphinx_args):
-                raise SphinxBuildError("BUILD FAILED")
+        if sphinx_build(self.sphinx_args):
+            raise SphinxBuildError("BUILD FAILED")
 
     def build_summary(self) -> None:
         print()
@@ -300,10 +275,6 @@ class SphinxRunner(runner.Runner):
         print()
 
     def check_env(self) -> None:
-        if not self.py_compatible:
-            raise SphinxEnvError(
-                "ERROR: python version must be >= 3.8, "
-                f"you have {platform.python_version()}")
         if not self.configs["release_level"] == "tagged":
             return
         if f"v{self.version_number}" != self.docs_tag:
@@ -311,7 +282,6 @@ class SphinxRunner(runner.Runner):
                 "Given git tag does not match the VERSION file content:"
                 f"{self.docs_tag} vs v{self.version_number}")
         minor_version = ".".join(self.docs_tag.split(".")[:-1])
-        # this should probs only check the first line
         version_current = self.rst_dir.joinpath(
             "version_history",
             f"{minor_version}",
@@ -319,7 +289,7 @@ class SphinxRunner(runner.Runner):
         if self.version_number not in version_current:
             raise SphinxEnvError(
                 f"Git tag ({self.version_number}) not found in "
-                "version_history/current.rst")
+                f"version_history/{minor_version}/{self.docs_tag}.rst")
 
     def save_html(self) -> None:
         if self.output_path.exists():

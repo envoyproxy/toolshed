@@ -14,7 +14,6 @@ class DummySphinxRunner(sphinx_runner.SphinxRunner):
 def test_sphinx_runner_constructor():
     runner = DummySphinxRunner()
     assert runner._build_sha == "UNKNOWN"
-    assert runner._build_dir == "."
 
 
 @pytest.mark.parametrize("docs_tag", [None, "", "SOME_DOCS_TAG"])
@@ -339,29 +338,6 @@ def test_sphinx_runner_overwrite(patches):
     assert "overwrite" not in runner.__dict__
 
 
-@pytest.mark.parametrize("major", [2, 3, 4])
-@pytest.mark.parametrize("minor", [5, 6, 7, 8, 9])
-def test_sphinx_runner_py_compatible(patches, major, minor):
-    runner = DummySphinxRunner()
-    patched = patches(
-        "bool",
-        "sys",
-        prefix="envoy.docs.sphinx_runner.runner")
-
-    with patched as (m_bool, m_sys):
-        m_sys.version_info.major = major
-        m_sys.version_info.minor = minor
-        assert runner.py_compatible == m_bool.return_value
-    expected = (
-        True
-        if major == 3 and minor >= 8
-        else False)
-    assert (
-        m_bool.call_args
-        == [(expected,), {}])
-    assert "py_compatible" not in runner.__dict__
-
-
 @pytest.mark.parametrize("docs_tag", [None, "", "SOME_DOCS_TAG"])
 def test_sphinx_runner_release_level(patches, docs_tag):
     runner = DummySphinxRunner()
@@ -624,13 +600,11 @@ def test_sphinx_runner_add_arguments(patches):
 def test_sphinx_runner_build_html(patches, fails):
     runner = DummySphinxRunner()
     patched = patches(
-        "debug",
         "sphinx_build",
-        ("SphinxRunner.jobs", dict(new_callable=PropertyMock)),
         ("SphinxRunner.sphinx_args", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_debug, m_sphinx, m_jobs, m_args):
+    with patched as (m_sphinx, m_args):
         m_sphinx.side_effect = lambda s: fails
         e = None
         if fails:
@@ -639,9 +613,6 @@ def test_sphinx_runner_build_html(patches, fails):
         else:
             runner.build_html()
 
-    assert (
-        m_debug.call_args
-        == [(m_jobs.return_value,), {}])
     assert (
         m_sphinx.call_args
         == [(m_args.return_value,), {}])
@@ -690,32 +661,27 @@ def test_sphinx_runner_build_summary(patches):
             [('###############################################',), {}]])
 
 
-@pytest.mark.parametrize("py_compat", [True, False])
 @pytest.mark.parametrize("release_level", ["pre-release", "tagged"])
 @pytest.mark.parametrize("version_number", ["1.17.0", "1.23.1", "1.43.7"])
 @pytest.mark.parametrize("docs_tag", ["v1.17.0", "v1.23.1", "v1.73.3"])
 @pytest.mark.parametrize(
     "current", ["XXX v1.17 ZZZ", "AAA v1.23 VVV", "BBB v1.73 EEE"])
 def test_sphinx_runner_check_env(
-        patches, py_compat, release_level, version_number, docs_tag, current):
+        patches, release_level, version_number, docs_tag, current):
     runner = DummySphinxRunner()
     patched = patches(
-        "platform",
         ("SphinxRunner.configs", dict(new_callable=PropertyMock)),
         ("SphinxRunner.version_number", dict(new_callable=PropertyMock)),
         ("SphinxRunner.docs_tag", dict(new_callable=PropertyMock)),
-        ("SphinxRunner.py_compatible", dict(new_callable=PropertyMock)),
         ("SphinxRunner.rst_dir", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
     fails = (
-        not py_compat
-        or (release_level == "tagged"
-            and (f"v{version_number}" != docs_tag
-                 or version_number not in current)))
+        release_level == "tagged"
+        and (f"v{version_number}" != docs_tag
+             or version_number not in current))
 
-    with patched as (m_platform, m_configs, m_version, m_tag, m_py, m_rst):
-        m_py.return_value = py_compat
+    with patched as (m_configs, m_version, m_tag, m_rst):
         m_configs.return_value.__getitem__.return_value = release_level
         m_version.return_value = version_number
         m_tag.return_value = docs_tag
@@ -727,13 +693,6 @@ def test_sphinx_runner_check_env(
                 runner.check_env()
         else:
             runner.check_env()
-
-    if not py_compat:
-        assert (
-            e.value.args
-            == ("ERROR: python version must be >= 3.8, "
-                f"you have {m_platform.python_version.return_value}", ))
-        return
 
     if release_level != "tagged":
         return
@@ -754,7 +713,7 @@ def test_sphinx_runner_check_env(
         assert (
             e.value.args
             == (f"Git tag ({version_number}) not found "
-                "in version_history/current.rst", ))
+                f"in version_history/{minor_version}/{docs_tag}.rst", ))
 
 
 @pytest.mark.parametrize("tarlike", [True, False])
