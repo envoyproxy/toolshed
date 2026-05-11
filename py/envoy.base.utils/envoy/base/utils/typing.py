@@ -1,6 +1,6 @@
 
 import pathlib
-from typing import TypedDict
+from typing import Any, TypedDict
 
 from packaging import version as _version
 
@@ -31,30 +31,13 @@ class BaseChangelogDict(TypedDict):
     date: str
 
 
-class ChangelogSourceDict(BaseChangelogDict, total=False):
-    # This should match envoy:changelogs/sections.yaml
-    changes: SourceChangeList | None
-    behavior_changes: SourceChangeList | None
-    minor_behavior_changes: SourceChangeList | None
-    bug_fixes: SourceChangeList | None
-    removed_config_or_runtime: SourceChangeList | None
-    new_features: SourceChangeList | None
-    deprecated: SourceChangeList | None
+ChangelogSourceDict = dict[str, Any]
 
 
-class ChangelogChangeSectionsDict(TypedDict, total=False):
-    # This should match envoy:changelogs/sections.yaml
-    changes: ChangeList | None
-    behavior_changes: ChangeList | None
-    minor_behavior_changes: ChangeList | None
-    bug_fixes: ChangeList | None
-    removed_config_or_runtime: ChangeList | None
-    new_features: ChangeList | None
-    deprecated: ChangeList | None
+ChangelogChangeSectionsDict = dict[str, ChangeList]
 
 
-class ChangelogDict(BaseChangelogDict, ChangelogChangeSectionsDict):
-    pass
+ChangelogDict = dict[str, Any]
 
 
 ChangelogPathsDict = dict[_version.Version, pathlib.Path]
