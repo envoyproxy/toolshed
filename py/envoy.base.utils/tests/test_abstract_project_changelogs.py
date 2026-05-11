@@ -1092,6 +1092,351 @@ def test_abstract_changelog_get_data(iters, patches, raises):
         == [(m_typing.ChangelogDict, expected), {}])
 
 
+def test_abstract_changelog_get_data_from_entries_happy_path(patches):
+    patched = patches(
+        "cast",
+        "sorted",
+        "utils.from_yaml",
+        "typing",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    yaml_path = MagicMock()
+    entry_dir = MagicMock()
+    bug_1 = MagicMock()
+    bug_1.parent.name = "bug_fixes"
+    bug_1.stem = "oauth2__foo_fix"
+    bug_1.read_text.return_value = "Fixed oauth2.\n"
+    bug_2 = MagicMock()
+    bug_2.parent.name = "bug_fixes"
+    bug_2.stem = "jwt__bar_fix"
+    bug_2.read_text.return_value = "Fixed jwt.\n"
+    feature = MagicMock()
+    feature.parent.name = "new_features"
+    feature.stem = "grpc__cool"
+    feature.read_text.return_value = "New feature.\n"
+    entry_paths = [bug_1, bug_2, feature]
+    sorted_paths = [bug_2, bug_1, feature]
+
+    with patched as (m_cast, m_sorted, m_yaml, m_typing):
+        m_yaml.return_value.__getitem__.return_value = "Pending"
+        entry_dir.glob.return_value = entry_paths
+        m_sorted.return_value = sorted_paths
+        assert (
+            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            == m_cast.return_value)
+
+    assert (
+        m_yaml.call_args
+        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
+    assert (
+        m_yaml.return_value.__getitem__.call_args
+        == [("date", ), {}])
+    assert (
+        entry_dir.glob.call_args
+        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
+    assert (
+        m_sorted.call_args
+        == [(entry_paths, ), {}])
+    assert (
+        bug_1.read_text.call_args
+        == [(), {}])
+    assert (
+        bug_2.read_text.call_args
+        == [(), {}])
+    assert (
+        feature.read_text.call_args
+        == [(), {}])
+    assert (
+        m_typing.Change.call_args_list
+        == [[(bug_2.read_text.return_value, ), {}],
+            [(bug_1.read_text.return_value, ), {}],
+            [(feature.read_text.return_value, ), {}]])
+    assert (
+        m_cast.call_args
+        == [(m_typing.ChangelogDict,
+             dict(
+                 date="Pending",
+                 bug_fixes=[
+                     dict(area="jwt", change=m_typing.Change.return_value),
+                     dict(area="oauth2", change=m_typing.Change.return_value)],
+                 new_features=[
+                     dict(area="grpc", change=m_typing.Change.return_value)])),
+            {}])
+
+
+def test_abstract_changelog_get_data_from_entries_arbitrary_section(patches):
+    patched = patches(
+        "cast",
+        "sorted",
+        "utils.from_yaml",
+        "typing",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    yaml_path = MagicMock()
+    entry_dir = MagicMock()
+    path = MagicMock()
+    path.parent.name = "weird_section"
+    path.stem = "foo__bar"
+    path.read_text.return_value = "content\n"
+
+    with patched as (m_cast, m_sorted, m_yaml, m_typing):
+        m_yaml.return_value.__getitem__.return_value = "Pending"
+        entry_dir.glob.return_value = [path]
+        m_sorted.return_value = [path]
+        assert (
+            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            == m_cast.return_value)
+
+    assert (
+        m_yaml.call_args
+        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
+    assert (
+        m_yaml.return_value.__getitem__.call_args
+        == [("date", ), {}])
+    assert (
+        entry_dir.glob.call_args
+        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
+    assert (
+        m_sorted.call_args
+        == [([path], ), {}])
+    assert (
+        path.read_text.call_args
+        == [(), {}])
+    assert (
+        m_typing.Change.call_args
+        == [(path.read_text.return_value, ), {}])
+    assert (
+        m_cast.call_args
+        == [(m_typing.ChangelogDict,
+             dict(
+                 date="Pending",
+                 weird_section=[
+                     dict(area="foo", change=m_typing.Change.return_value)])),
+            {}])
+
+
+def test_abstract_changelog_get_data_from_entries_missing_separator(patches):
+    patched = patches(
+        "cast",
+        "sorted",
+        "utils.from_yaml",
+        "typing",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    yaml_path = MagicMock()
+    entry_dir = MagicMock()
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "no_separator"
+
+    with patched as (m_cast, m_sorted, m_yaml, m_typing):
+        m_yaml.return_value.__getitem__.return_value = "Pending"
+        entry_dir.glob.return_value = [path]
+        m_sorted.return_value = [path]
+        with pytest.raises(exceptions.ChangelogParseError) as e:
+            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert (
+        m_yaml.call_args
+        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
+    assert (
+        m_yaml.return_value.__getitem__.call_args
+        == [("date", ), {}])
+    assert (
+        entry_dir.glob.call_args
+        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
+    assert (
+        m_sorted.call_args
+        == [([path], ), {}])
+    assert (
+        e.value.args[0]
+        == ("Invalid entry filename "
+            "(expected exactly one '__'): "
+            f"{path}"))
+    assert not path.read_text.called
+    assert not m_typing.Change.called
+    assert not m_cast.called
+
+
+def test_abstract_changelog_get_data_from_entries_multiple_separators(patches):
+    patched = patches(
+        "cast",
+        "sorted",
+        "utils.from_yaml",
+        "typing",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    yaml_path = MagicMock()
+    entry_dir = MagicMock()
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "a__b__c"
+
+    with patched as (m_cast, m_sorted, m_yaml, m_typing):
+        m_yaml.return_value.__getitem__.return_value = "Pending"
+        entry_dir.glob.return_value = [path]
+        m_sorted.return_value = [path]
+        with pytest.raises(exceptions.ChangelogParseError) as e:
+            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert (
+        m_yaml.call_args
+        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
+    assert (
+        m_yaml.return_value.__getitem__.call_args
+        == [("date", ), {}])
+    assert (
+        entry_dir.glob.call_args
+        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
+    assert (
+        m_sorted.call_args
+        == [([path], ), {}])
+    assert (
+        e.value.args[0]
+        == ("Invalid entry filename "
+            "(expected exactly one '__'): "
+            f"{path}"))
+    assert not path.read_text.called
+    assert not m_typing.Change.called
+    assert not m_cast.called
+
+
+@pytest.mark.parametrize(
+    "raises",
+    [
+        Exception,
+        FileNotFoundError,
+        yaml.reader.ReaderError,
+        exceptions.TypeCastingError])
+def test_abstract_changelog_get_data_from_entries_missing_yaml(
+        patches, raises):
+    patched = patches(
+        "utils.from_yaml",
+        "typing",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    yaml_path = MagicMock()
+    entry_dir = MagicMock()
+
+    with patched as (m_yaml, m_typing):
+        if raises == FileNotFoundError:
+            error = raises("AN ERROR OCCURRED")
+        else:
+            error = raises("AN ERROR OCCURRED", 7, 23, "Y", "Z")
+        m_yaml.side_effect = error
+
+        if raises in (yaml.reader.ReaderError, exceptions.TypeCastingError):
+            with pytest.raises(exceptions.ChangelogParseError) as e:
+                abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+        else:
+            with pytest.raises(raises):
+                abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert (
+        m_yaml.call_args
+        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
+    assert not entry_dir.glob.called
+    if raises in (yaml.reader.ReaderError, exceptions.TypeCastingError):
+        assert (
+            e.value.args[0]
+            == ("Failed to parse: "
+                f"{yaml_path}\n{str(error)}"))
+
+
+def test_abstract_changelog_get_data_from_entries_empty_dir(patches):
+    patched = patches(
+        "cast",
+        "sorted",
+        "utils.from_yaml",
+        "typing",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    yaml_path = MagicMock()
+    entry_dir = MagicMock()
+
+    with patched as (m_cast, m_sorted, m_yaml, m_typing):
+        m_yaml.return_value.__getitem__.return_value = "Pending"
+        entry_dir.glob.return_value = []
+        m_sorted.return_value = []
+        assert (
+            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            == m_cast.return_value)
+
+    assert (
+        m_yaml.call_args
+        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
+    assert (
+        m_yaml.return_value.__getitem__.call_args
+        == [("date", ), {}])
+    assert (
+        entry_dir.glob.call_args
+        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
+    assert (
+        m_sorted.call_args
+        == [([], ), {}])
+    assert not m_typing.Change.called
+    assert (
+        m_cast.call_args
+        == [(m_typing.ChangelogDict,
+             dict(date="Pending")),
+            {}])
+
+
+def test_abstract_changelog_get_data_from_entries_stable_ordering(patches):
+    patched = patches(
+        "cast",
+        "sorted",
+        "utils.from_yaml",
+        "typing",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    yaml_path = MagicMock()
+    entry_dir = MagicMock()
+    first = MagicMock()
+    first.parent.name = "bug_fixes"
+    first.stem = "a__first"
+    first.read_text.return_value = "First\n"
+    middle = MagicMock()
+    middle.parent.name = "bug_fixes"
+    middle.stem = "m__middle"
+    middle.read_text.return_value = "Middle\n"
+    last = MagicMock()
+    last.parent.name = "bug_fixes"
+    last.stem = "z__last"
+    last.read_text.return_value = "Last\n"
+    unsorted_paths = [last, first, middle]
+    sorted_paths = [first, middle, last]
+
+    with patched as (m_cast, m_sorted, m_yaml, m_typing):
+        m_yaml.return_value.__getitem__.return_value = "Pending"
+        entry_dir.glob.return_value = unsorted_paths
+        m_sorted.return_value = sorted_paths
+        assert (
+            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            == m_cast.return_value)
+
+    assert (
+        m_yaml.call_args
+        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
+    assert (
+        m_yaml.return_value.__getitem__.call_args
+        == [("date", ), {}])
+    assert (
+        entry_dir.glob.call_args
+        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
+    assert (
+        m_sorted.call_args
+        == [(unsorted_paths, ), {}])
+    assert (
+        m_typing.Change.call_args_list
+        == [[(first.read_text.return_value, ), {}],
+            [(middle.read_text.return_value, ), {}],
+            [(last.read_text.return_value, ), {}]])
+    assert (
+        m_cast.call_args
+        == [(m_typing.ChangelogDict,
+             dict(
+                 date="Pending",
+                 bug_fixes=[
+                     dict(area="a", change=m_typing.Change.return_value),
+                     dict(area="m", change=m_typing.Change.return_value),
+                     dict(area="z", change=m_typing.Change.return_value)])),
+            {}])
+
+
 def test_abstract_changelog_constructor():
 
     with pytest.raises(TypeError):
