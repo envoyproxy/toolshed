@@ -35,7 +35,7 @@ class GithubDependencyReleaseIssues(check.AGithubDependencyReleaseIssues):
 class GithubDependencyIssuesTracker(github.AGithubIssuesTracker):
 
     @cached_property
-    def tracked_issues(self) -> dict:
+    def tracked_issues(self) -> dict[str, GithubDependencyReleaseIssues]:
         return dict(
             releases=GithubDependencyReleaseIssues(self.github))
 

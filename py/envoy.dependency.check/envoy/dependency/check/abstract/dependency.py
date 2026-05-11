@@ -107,7 +107,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             if not self.release.tagged
             else self.github_version)
 
-    @async_property
+    @async_property(cache=True)
     async def has_recent_commits(self) -> bool:
         """Flag indicating whether there are more recent commits than the
         current pinned commit."""
@@ -115,8 +115,11 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             return await self.recent_commits > 1
         except (ConcurrentError, gidgethub.GitHubException) as e:
             logger.debug(
-                f"Fetching recent commits failed ({self}): {type(e)} {e}")
-            raise e
+                "Fetching recent commits failed (%s): %s %s",
+                self,
+                type(e),
+                e)
+            raise
 
     @async_property(cache=True)
     async def newer_release(
@@ -130,13 +133,16 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
                 since=await self.release.timestamp)
         except (ConcurrentError, gidgethub.GitHubException) as e:
             logger.debug(
-                f"Fetching newer release failed ({self}): {type(e)} {e}")
-            raise e
+                "Fetching newer release failed (%s): %s %s",
+                self,
+                type(e),
+                e)
+            raise
         return (
             self.release_class(
                 self.repo,
                 newer_release.tag_version,
-                release=newer_release)  # type:ignore
+                release=newer_release)
             if (newer_release
                 and (version.parse(newer_release.tag_version)
                      != self.release.version))
@@ -170,7 +176,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
             loop=self.loop,
             pool=self.pool)
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def release_class(self) -> type["abstract.ADependencyGithubRelease"]:
         """Github release class."""
@@ -181,7 +187,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         """Release (or published) date of this dependency."""
         return self.metadata["release_date"]
 
-    @async_property
+    @async_property(cache=True)
     async def release_date_mismatch(self) -> bool:
         """Flag indicating the metadata date doesnt match the Github date."""
         return (
@@ -193,7 +199,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         """Release (or published) sha of this dependency."""
         return self.metadata["sha256"]
 
-    @async_property
+    @async_property(cache=True)
     async def release_sha_mismatch(self) -> bool:
         """Flag indicating the metadata sha doesnt match the Github sha."""
         return (
@@ -212,7 +218,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
     def repo(self) -> github.IGithubRepo:
         """Github repo for this dependency."""
         return self.github[
-            f"{self.organization}/{self.project}"]  # type: ignore
+            f"{self.organization}/{self.project}"]
 
     @cached_property
     def url_components(self) -> list[str]:
