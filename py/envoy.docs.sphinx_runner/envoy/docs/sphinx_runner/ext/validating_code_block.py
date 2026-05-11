@@ -1,4 +1,3 @@
-
 """Validated code-block directive for Envoy docs configuration snippets."""
 
 import os

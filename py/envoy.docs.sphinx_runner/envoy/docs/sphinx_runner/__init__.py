@@ -1,4 +1,3 @@
-
 """Envoy Sphinx runner package."""
 
 from .exceptions import SphinxBuildError, SphinxEnvError

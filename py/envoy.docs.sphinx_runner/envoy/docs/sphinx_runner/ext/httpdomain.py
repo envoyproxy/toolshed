@@ -1,4 +1,3 @@
-
 """Sphinx HTTP domain customization for Envoy docs."""
 
 import logging
