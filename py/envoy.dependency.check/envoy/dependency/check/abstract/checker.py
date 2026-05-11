@@ -197,7 +197,7 @@ class ADependencyChecker(
         # TODO: move the exclusion logic to tracker
         if self._no_dep_issues.match(dep.id):
             if issue:
-                # There is an open issue, but the dep shoudl be ignored.
+                # There is an open issue, but the dep should be ignored.
                 self.warn(
                     self.active_check,
                     [f"Incorrect issue: {dep.id} #{issue.number}"])
@@ -206,7 +206,7 @@ class ADependencyChecker(
             else:
                 # No issue required
                 self.log.info(
-                    f"Ignored by depdendency issue tracker: {dep.id}")
+                    f"Ignored by dependency issue tracker: {dep.id}")
             return
 
         if not (newer_release := await dep.newer_release):
