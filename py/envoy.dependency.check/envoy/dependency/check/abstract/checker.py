@@ -311,9 +311,11 @@ class ADependencyChecker(
                 continue
             try:
                 await release_issues.create_label(label)
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except Exception as e:
+            except (
+                    ConnectionError,
+                    OSError,
+                    PermissionError,
+                    gidgethub.GitHubException) as e:
                 self.error(
                     self.active_check,
                     [f"Missing label: {label} "

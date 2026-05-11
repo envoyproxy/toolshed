@@ -954,9 +954,13 @@ async def test_checker_release_issues_labels_check_fix_true(
     assert not m_succeed.called
 
 
+@pytest.mark.parametrize(
+    ("error_type", "error_message"),
+    [(PermissionError, "no perms"),
+     (ConnectionError, "network issue")])
 @pytest.mark.parametrize("missing_labels", [["LABEL0"]])
 async def test_checker_release_issues_labels_check_fix_true_create_error(
-        patches, missing_labels):
+        patches, missing_labels, error_type, error_message):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.active_check",
@@ -975,7 +979,7 @@ async def test_checker_release_issues_labels_check_fix_true_create_error(
         issues_tracker.missing_labels = AsyncMock(
             return_value=missing_labels)()
         issues_tracker.create_label = AsyncMock(
-            side_effect=PermissionError("no perms"))
+            side_effect=error_type(error_message))
         m_fix.return_value = True
         assert not await checker.release_issues_labels_check()
 
@@ -983,7 +987,7 @@ async def test_checker_release_issues_labels_check_fix_true_create_error(
         m_error.call_args_list
         == [[(m_active.return_value,
               ["Missing label: LABEL0 "
-               "(create failed: PermissionError: no perms)"]),
+               f"(create failed: {error_type.__name__}: {error_message})"]),
              {}]])
     assert not m_warn.called
     assert not m_succeed.called
