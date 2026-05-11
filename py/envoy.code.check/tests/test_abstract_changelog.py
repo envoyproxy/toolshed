@@ -1,4 +1,5 @@
 
+import pathlib
 import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
@@ -257,18 +258,21 @@ async def test_changelogstatus_errors(iters, patches, raises):
         ("AChangelogStatus.version",
          dict(new_callable=PropertyMock)),
         "AChangelogStatus.check_date",
+        "AChangelogStatus.check_entry_files",
         "AChangelogStatus.check_sections",
         "AChangelogStatus.check_version",
         prefix="envoy.code.check.abstract.changelog")
     version_errors = iters(cb=lambda i: f"V{i}")
     date_errors = iters(cb=lambda i: f"D{i}")
     sections_errors = iters(cb=lambda i: f"S{i}")
+    entry_files_errors = iters(cb=lambda i: f"E{i}")
 
-    with patched as (m_version, m_date, m_sections, m_versions):
+    with patched as (m_version, m_date, m_entry_files, m_sections, m_versions):
         if raises:
             error = raises("AN ERROR OCCURRED")
             m_date.side_effect = error
         m_date.return_value = date_errors
+        m_entry_files.return_value = entry_files_errors
         m_sections.return_value = sections_errors
         m_versions.return_value = version_errors
         if raises == BaseException:
@@ -277,7 +281,8 @@ async def test_changelogstatus_errors(iters, patches, raises):
             return
         assert (
             await status.errors
-            == ((*version_errors, *date_errors, *sections_errors)
+            == ((*version_errors, *date_errors, *sections_errors,
+                 *entry_files_errors)
                 if not raises
                 else (f"{m_version.return_value}: {error}", ))
             == getattr(
@@ -292,8 +297,12 @@ async def test_changelogstatus_errors(iters, patches, raises):
         assert (
             m_sections.call_args
             == [(), {}])
+        assert (
+            m_entry_files.call_args
+            == [(), {}])
     else:
         assert not m_sections.called
+        assert not m_entry_files.called
 
 
 @pytest.mark.parametrize("raises", [None, Exception, ValueError])
@@ -758,3 +767,201 @@ def test_changeschecker_check_section_name(
                 else (
                     f"{version}/changes: Invalid `changes` section "
                     "(this is no longer used)")))
+
+
+def test_changeschecker_check_entry_filename_valid():
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    path = pathlib.Path("changelogs/current/bug_fixes/myarea__myslug.rst")
+    assert changelog.check_entry_filename(path) is None
+
+
+def test_changeschecker_check_entry_filename_invalid_section():
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    path = pathlib.Path("changelogs/current/weird_section/area__slug.rst")
+    result = changelog.check_entry_filename(path)
+    assert result is not None
+    assert "weird_section" in result
+    assert "Invalid section" in result
+
+
+def test_changeschecker_check_entry_filename_wrong_extension():
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    path = pathlib.Path("changelogs/current/bug_fixes/area__slug.txt")
+    result = changelog.check_entry_filename(path)
+    assert result is not None
+    assert ".txt" in result
+    assert ".rst" in result
+
+
+def test_changeschecker_check_entry_filename_no_separator():
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    path = pathlib.Path("changelogs/current/bug_fixes/areaslug.rst")
+    result = changelog.check_entry_filename(path)
+    assert result is not None
+    assert "__" in result
+
+
+def test_changeschecker_check_entry_filename_multiple_separators():
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    path = pathlib.Path("changelogs/current/bug_fixes/area__slug__extra.rst")
+    result = changelog.check_entry_filename(path)
+    assert result is not None
+    assert "__" in result
+
+
+def test_changeschecker_check_entry_filename_empty_area():
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    path = pathlib.Path("changelogs/current/bug_fixes/__slug.rst")
+    result = changelog.check_entry_filename(path)
+    assert result is not None
+    assert "Area" in result
+    assert "empty" in result
+
+
+def test_changeschecker_check_entry_filename_empty_slug():
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    path = pathlib.Path("changelogs/current/bug_fixes/area__.rst")
+    result = changelog.check_entry_filename(path)
+    assert result is not None
+    assert "Slug" in result
+    assert "empty" in result
+
+
+def test_changeschecker_check_entry_content_empty():
+    changelog = DummyChangelogChangesChecker("SECTIONS")
+    path = MagicMock()
+    path.read_text.return_value = ""
+    result = changelog.check_entry_content(path)
+    assert result is not None
+    assert "empty" in result
+
+
+def test_changeschecker_check_entry_content_whitespace_only():
+    changelog = DummyChangelogChangesChecker("SECTIONS")
+    path = MagicMock()
+    path.read_text.return_value = "   \n  \t  "
+    result = changelog.check_entry_content(path)
+    assert result is not None
+    assert "empty" in result
+
+
+def test_changeschecker_check_entry_content_valid():
+    changelog = DummyChangelogChangesChecker("SECTIONS")
+    path = MagicMock()
+    path.read_text.return_value = "Some RST content."
+    result = changelog.check_entry_content(path)
+    assert result is None
+
+
+def test_changeschecker_check_entry_files(patches):
+    changelog = DummyChangelogChangesChecker("SECTIONS")
+    patched = patches(
+        "AChangelogChangesChecker.check_entry_content",
+        "AChangelogChangesChecker.check_entry_filename",
+        prefix="envoy.code.check.abstract.changelog")
+    paths = [MagicMock(), MagicMock(), MagicMock()]
+    # path 0: filename error + content error
+    # path 1: no errors
+    # path 2: content error only
+    filename_returns = ["FILENAME_ERR", None, None]
+    content_returns = ["CONTENT_ERR", None, "CONTENT_ERR2"]
+
+    with patched as (m_content, m_filename):
+        m_filename.side_effect = filename_returns
+        m_content.side_effect = content_returns
+        result = changelog.check_entry_files(paths)
+
+    assert result == ("FILENAME_ERR", "CONTENT_ERR", "CONTENT_ERR2")
+    assert (
+        m_filename.call_args_list
+        == [[(p, ), {}] for p in paths])
+    assert (
+        m_content.call_args_list
+        == [[(p, ), {}] for p in paths])
+
+
+@pytest.mark.parametrize("is_current", [True, False])
+def test_changelogstatus_entry_dir(patches, is_current):
+    status = check.AChangelogStatus(MagicMock(), MagicMock())
+    patched = patches(
+        ("AChangelogStatus.is_current",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.version",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.changelog")
+
+    with patched as (m_current, m_project, m_version):
+        m_current.return_value = is_current
+        result = status.entry_dir
+
+    if not is_current:
+        assert result is None
+        assert not m_project.called
+        assert not m_version.called
+        return
+    assert (
+        result
+        == (m_project.return_value.changelogs
+                     .changelog_path.return_value
+                     .with_suffix.return_value))
+    assert (
+        m_project.return_value.changelogs.changelog_path.call_args
+        == [(m_version.return_value, ), {}])
+    assert (
+        (m_project.return_value.changelogs
+                  .changelog_path.return_value
+                  .with_suffix.call_args)
+        == [("", ), {}])
+    assert "entry_dir" not in status.__dict__
+
+
+@pytest.mark.parametrize("entry_dir_exists", [None, False, True])
+@pytest.mark.parametrize("has_paths", [True, False])
+async def test_changelogstatus_check_entry_files(
+        patches, entry_dir_exists, has_paths):
+    checker = MagicMock()
+    status = check.AChangelogStatus(checker, MagicMock())
+    patched = patches(
+        "sorted",
+        ("AChangelogStatus.entry_dir",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.changelog")
+    sorted_paths = [MagicMock(), MagicMock()] if has_paths else []
+
+    with patched as (m_sorted, m_entry_dir, m_project):
+        if entry_dir_exists is None:
+            m_entry_dir.return_value = None
+        else:
+            m_entry_dir.return_value = MagicMock()
+            m_entry_dir.return_value.exists.return_value = bool(
+                entry_dir_exists)
+        m_sorted.return_value = sorted_paths
+        m_project.return_value.execute = AsyncMock()
+        result = await status.check_entry_files()
+
+    if entry_dir_exists is None or not entry_dir_exists:
+        assert result == ()
+        assert not m_project.return_value.execute.called
+        return
+
+    assert (
+        m_entry_dir.return_value.glob.call_args
+        == [("*/*.rst", ), {}])
+    assert (
+        m_sorted.call_args
+        == [(m_entry_dir.return_value.glob.return_value, ), {}])
+
+    if not has_paths:
+        assert result == ()
+        assert not m_project.return_value.execute.called
+        return
+
+    assert result == m_project.return_value.execute.return_value
+    assert (
+        m_project.return_value.execute.call_args
+        == [(status.checker.check_entry_files,
+             sorted_paths), {}])
