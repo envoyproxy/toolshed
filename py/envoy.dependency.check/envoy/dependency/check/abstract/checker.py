@@ -26,6 +26,23 @@ NO_GITHUB_TOKEN_ERROR_MSG = (
     "via environment variable `GITHUB_TOKEN` "
     "or argument `--github_token`")
 NO_ISSUE_DEPENDENCIES = r"com_google_protobuf_protoc_[a-zA-Z0-9_]+$"
+HTTP_SESSION_TIMEOUT_SECONDS = 300
+PACKAGE_NAME = "envoy.dependency.check"
+
+
+def _http_user_agent() -> str:
+    for parent in pathlib.Path(__file__).resolve().parents:
+        version_path = parent.joinpath("VERSION")
+        if not version_path.is_file():
+            continue
+        try:
+            return f"{PACKAGE_NAME}/{version_path.read_text().strip()}"
+        except OSError:
+            break
+    return PACKAGE_NAME
+
+
+HTTP_USER_AGENT = _http_user_agent()
 
 
 class ADependencyChecker(
