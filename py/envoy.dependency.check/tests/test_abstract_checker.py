@@ -3,8 +3,6 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
 
-import aiohttp
-
 import gidgethub
 
 import abstracts
@@ -347,28 +345,6 @@ def test_checker_session(patches):
     assert "session" in checker.__dict__
 
 
-@pytest.mark.parametrize("cpu_count", [None, 0, 1, 23])
-def test_checker_sha_preload_limit(patches, cpu_count):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        "math.ceil",
-        "os",
-        prefix="envoy.dependency.check.abstract.checker")
-
-    with patched as (m_math, m_os):
-        m_os.cpu_count.return_value = cpu_count
-        assert (
-            checker.sha_preload_limit
-            == m_math.return_value)
-    assert (
-        m_math.call_args
-        == [((cpu_count or 1)*1.5, ), {}])
-    assert (
-        m_os.cpu_count.call_args
-        == [(), {}])
-    assert "sha_preload_limit" in checker.__dict__
-
-
 def test_checker_fix(patches):
     checker = DummyDependencyChecker()
     patched = patches(
@@ -495,24 +471,6 @@ async def test_checker_check_releases(iters, patches):
     with patched as (m_deps, m_check):
         m_deps.return_value = deps
         assert not await checker.check_releases()
-
-    assert (
-        m_check.call_args_list
-        == [[(mock,), {}] for mock in deps])
-
-
-async def test_checker_check_release_sha(iters, patches):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        ("ADependencyChecker.dependencies",
-         dict(new_callable=PropertyMock)),
-        "ADependencyChecker.dep_release_sha_check",
-        prefix="envoy.dependency.check.abstract.checker")
-    deps = iters(cb=lambda i: MagicMock())
-
-    with patched as (m_deps, m_check):
-        m_deps.return_value = deps
-        assert not await checker.check_release_sha()
 
     assert (
         m_check.call_args_list
@@ -755,65 +713,6 @@ async def test_checker_dep_release_check(
             {}])
 
 
-@pytest.mark.parametrize("sha", [None, "SHA"])
-@pytest.mark.parametrize("mismatch", [True, False])
-async def test_checker_dep_release_sha_check(patches, sha, mismatch):
-    checker = DummyDependencyChecker()
-    checker._active_check = "ACTIVE CHECK"
-    patched = patches(
-        "ADependencyChecker.error",
-        "ADependencyChecker.succeed",
-        prefix="envoy.dependency.check.abstract.checker")
-
-    class DummyDepRelease:
-
-        @async_property
-        async def sha(self):
-            return sha
-
-    class DummyDep:
-        id = "DUMMY_DEP"
-        release_sha = "DUMMY_RELEASE_SHA"
-        display_sha = "DUMMY_DISPLAY_SHA"
-
-        @property
-        def release(self):
-            return DummyDepRelease()
-
-        @async_property
-        async def release_sha_mismatch(self):
-            return mismatch
-
-    dep = DummyDep()
-
-    with patched as (m_error, m_succeed):
-        assert not await checker.dep_release_sha_check(dep)
-
-    if not sha:
-        assert (
-            m_error.call_args
-            == [("ACTIVE CHECK",
-                 ["Unable to generate release SHA: DUMMY_DEP"]),
-                {}])
-        assert not m_succeed.called
-        return
-    if mismatch:
-        assert (
-            m_error.call_args
-            == [("ACTIVE CHECK",
-                 ["Mismatch: DUMMY_DEP "
-                  f"DUMMY_RELEASE_SHA != {sha}"]),
-                {}])
-        assert not m_succeed.called
-        return
-    assert not m_error.called
-    assert (
-        m_succeed.call_args
-        == [("ACTIVE CHECK",
-             ["Match (DUMMY_DISPLAY_SHA): DUMMY_DEP"]),
-            {}])
-
-
 async def test_checker_on_checks_complete(patches):
     checker = DummyDependencyChecker()
     patched = patches(
@@ -980,60 +879,6 @@ async def test_checker_preload_releases(patches, deps):
     assert (
         ADependencyChecker.preload_releases.catches
         == (ConcurrentError, gidgethub.GitHubException))
-
-
-@pytest.mark.parametrize(
-    "deps",
-    [[],
-     [f"DEP{i}" for i in range(0, 5)]])
-async def test_checker_preload_release_sha(patches, deps):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        "inflate",
-        ("ADependencyChecker.log",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.github_dependencies",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.sha_preload_limit",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.dependency.check.abstract.checker")
-
-    async def iter_deps(iterable, cb, **kwargs):
-        for dep in deps:
-            mock_dep = MagicMock()
-            mock_dep.id = dep
-            yield mock_dep
-
-    with patched as (m_inflate, m_log, m_gh_deps, m_limit):
-        m_inflate.side_effect = iter_deps
-        assert not await checker.preload_release_sha()
-
-    cb = m_inflate.call_args[0][1]
-    item = MagicMock()
-    assert cb(item) == (item.release.sha, )
-    assert (
-        m_inflate.call_args
-        == [(m_gh_deps.return_value, cb),
-            dict(limit=m_limit.return_value)])
-    if deps:
-        assert (
-            m_log.return_value.debug.call_args_list
-            == [[(f"Preloaded release sha: {dep}", ), {}]
-                for dep in deps])
-    else:
-        assert not m_log.called
-    assert (
-        ADependencyChecker.preload_release_sha.when
-        == ('release_sha',))
-    assert (
-        ADependencyChecker.preload_release_sha.blocks
-        == ('release_sha',))
-    assert (
-        ADependencyChecker.preload_release_sha.unless
-        == ())
-    assert (
-        ADependencyChecker.preload_release_sha.catches
-        == (ConcurrentError, aiohttp.ClientError))
 
 
 @pytest.mark.parametrize(

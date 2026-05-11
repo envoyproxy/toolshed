@@ -3,7 +3,6 @@
 import abc
 import argparse
 import json
-import math
 import os
 import pathlib
 import re
@@ -131,11 +130,6 @@ class ADependencyChecker(
         """HTTP client session."""
         return aiohttp.ClientSession()
 
-    @cached_property
-    def sha_preload_limit(self) -> int:
-        proc_count = os.cpu_count() or 1
-        return math.ceil(proc_count * 1.5)
-
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
         parser.add_argument('--github_token')
@@ -163,11 +157,6 @@ class ADependencyChecker(
         """Check dependencies for new releases."""
         for dep in self.github_dependencies:
             await self.dep_release_check(dep)
-
-    async def check_release_sha(self) -> None:
-        """Check shas for new releases."""
-        for dep in self.github_dependencies:
-            await self.dep_release_sha_check(dep)
 
     async def dep_date_check(
             self,
@@ -268,24 +257,6 @@ class ADependencyChecker(
                 self.active_check,
                 [f"Up-to-date ({dep.github_version_name}): {dep.id}"])
 
-    async def dep_release_sha_check(
-            self,
-            dep: "abstract.ADependency") -> None:
-        """Check sha for dependency."""
-        if not await dep.release.sha:
-            self.error(
-                self.active_check,
-                [f"Unable to generate release SHA: {dep.id}"])
-        elif await dep.release_sha_mismatch:
-            self.error(
-                self.active_check,
-                [f"Mismatch: {dep.id} "
-                 f"{dep.release_sha} != {await dep.release.sha}"])
-        else:
-            self.succeed(
-                self.active_check,
-                [f"Match ({dep.display_sha}): {dep.id}"])
-
     async def release_issues_duplicate_check(self) -> None:
         """Check for duplicate issues for dependencies."""
         duplicates = False
@@ -357,17 +328,6 @@ class ADependencyChecker(
     async def preload_release_issues(self) -> None:
         await self.issues["releases"].missing_labels
         await self.issues["releases"].issues
-
-    @checker.preload(
-        when=["release_sha"],
-        catches=[ConcurrentError, aiohttp.ClientError])
-    async def preload_release_sha(self) -> None:
-        preloader = inflate(
-            self.github_dependencies,
-            lambda d: (
-                d.release.sha, ), limit=self.sha_preload_limit)
-        async for dep in preloader:
-            self.log.debug(f"Preloaded release sha: {dep.id}")
 
     @checker.preload(
         when=["releases", "release_issues"],
