@@ -27,7 +27,6 @@ NO_GITHUB_TOKEN_ERROR_MSG = (
     "No Github access token supplied "
     "via environment variable `GITHUB_TOKEN` "
     "or argument `--github_token`")
-NO_ISSUE_DEPENDENCIES = r"com_google_protobuf_protoc_[a-zA-Z0-9_]+$"
 HTTP_SESSION_TIMEOUT_SECONDS = 300
 PACKAGE_NAME = "envoy.dependency.check"
 REQUIRED_DEPENDENCY_METADATA_KEYS = (
@@ -389,9 +388,15 @@ class ADependencyChecker(
     async def run(self) -> int | None:
         return await super().run()
 
+    @property  # type: ignore[misc]
+    @abstracts.interfacemethod
+    def no_dep_issues_re(self) -> str:
+        """Regex pattern matching dep ids excluded from issue tracking."""
+        raise NotImplementedError
+
     @cached_property
     def _no_dep_issues(self) -> re.Pattern[str]:
-        return re.compile(NO_ISSUE_DEPENDENCIES)
+        return re.compile(self.no_dep_issues_re)
 
     def _validate_dependency_metadata(self, data: dict[str, Any]) -> None:
         errors: list[str] = []
