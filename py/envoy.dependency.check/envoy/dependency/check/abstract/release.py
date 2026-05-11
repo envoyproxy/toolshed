@@ -105,9 +105,10 @@ class ADependencyGithubRelease(
             raise exceptions.NoReleaseAssetError(
                 f"Cannot check sha for {self.__class__.__name__} "
                 "with no `asset_url`")
-        response = await self.session.get(self.asset_url)
-        logger.debug(f"SHA download: {self.asset_url}")
-        return await self._hash_file_data(await response.read())
+        async with self.session.get(self.asset_url) as response:
+            response.raise_for_status()
+            logger.debug("SHA download: %s", self.asset_url)
+            return await self._hash_file_data(await response.read())
 
     @async_property(cache=True)
     async def tag(self) -> _github.IGithubTag | None:

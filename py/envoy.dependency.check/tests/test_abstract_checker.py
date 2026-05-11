@@ -99,6 +99,27 @@ def test_checker_access_token(patches, arg):
     assert "access_token" not in checker.__dict__
 
 
+def test_checker_access_token_oserror(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        "pathlib",
+        ("ADependencyChecker.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_plib, m_args):
+        m_plib.Path.return_value.read_text.side_effect = (
+            OSError("no such file"))
+        with pytest.raises(exceptions.GithubTokenError) as e:
+            checker.access_token
+
+    assert (
+        str(m_args.return_value.github_token)
+        in e.value.args[0])
+    assert "Cannot read GitHub token from" in e.value.args[0]
+    assert "access_token" not in checker.__dict__
+
+
 def test_checker_dep_ids(patches):
     checker = DummyDependencyChecker()
     patched = patches(
@@ -219,7 +240,7 @@ def test_checker_github(patches):
 
     assert (
         m_github.GithubAPI.call_args
-        == [(m_session.return_value, ""),
+        == [(m_session.return_value, abstract.checker.GITHUB_API_URL),
             dict(oauth_token=m_token.return_value)])
     assert "github" in checker.__dict__
 
@@ -346,7 +367,14 @@ def test_checker_session(patches):
 
     assert (
         m_aiohttp.ClientSession.call_args
-        == [(), {}])
+        == [(),
+            dict(
+                timeout=m_aiohttp.ClientTimeout.return_value,
+                headers={"User-Agent": abstract.checker.HTTP_USER_AGENT})])
+    assert (
+        m_aiohttp.ClientTimeout.call_args
+        == [(),
+            dict(total=abstract.checker.HTTP_SESSION_TIMEOUT_SECONDS)])
     assert "session" in checker.__dict__
 
 

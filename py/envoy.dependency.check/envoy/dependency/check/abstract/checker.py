@@ -21,6 +21,7 @@ from aio.core.tasks import ConcurrentError, inflate
 from envoy.dependency.check import abstract, exceptions, typing
 
 
+GITHUB_API_URL = "https://api.github.com"
 NO_GITHUB_TOKEN_ERROR_MSG = (
     "No Github access token supplied "
     "via environment variable `GITHUB_TOKEN` "
@@ -60,7 +61,12 @@ class ADependencyChecker(
     def access_token(self) -> str | None:
         """Github access token."""
         if self.args.github_token:
-            return pathlib.Path(self.args.github_token).read_text().strip()
+            try:
+                return pathlib.Path(self.args.github_token).read_text().strip()
+            except OSError as e:
+                raise exceptions.GithubTokenError(
+                    f"Cannot read GitHub token from "
+                    f"{self.args.github_token}: {e}")
         if token := os.getenv('GITHUB_TOKEN'):
             return token
         raise exceptions.GithubTokenError(NO_GITHUB_TOKEN_ERROR_MSG)
@@ -100,7 +106,7 @@ class ADependencyChecker(
     def github(self) -> _github.IGithubAPI:
         """Github API."""
         return _github.GithubAPI(
-            self.session, "",
+            self.session, GITHUB_API_URL,
             oauth_token=self.access_token)
 
     @cached_property
@@ -138,7 +144,9 @@ class ADependencyChecker(
     @cached_property
     def session(self) -> aiohttp.ClientSession:
         """HTTP client session."""
-        return aiohttp.ClientSession()
+        return aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=HTTP_SESSION_TIMEOUT_SECONDS),
+            headers={"User-Agent": HTTP_USER_AGENT})
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
