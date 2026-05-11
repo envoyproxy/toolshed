@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, PropertyMock
 import pytest
 
 from envoy.docs import sphinx_runner
+from envoy.docs.sphinx_runner.runner import ENVOY_DOCS_BASE_URL
 
 
 class DummySphinxRunner(sphinx_runner.SphinxRunner):
@@ -276,7 +277,7 @@ def test_sphinx_runner_intersphinx_mapping(patches, versions_exists):
     versions = {f"K{i}": f"V{i}" for i in range(0, 5)}
     mangled = {
         f"v{k}": [
-            f"https://www.envoyproxy.io/docs/envoy/v{v}",
+            f"{ENVOY_DOCS_BASE_URL}/v{v}",
             f"inventories/v{k}/objects.inv"]
         for k, v
         in versions.items()}
@@ -373,7 +374,7 @@ def test_sphinx_runner_rst_dir(patches, rst_tar):
         m_dir.return_value.joinpath.call_args
         == [('generated', 'rst'), {}])
 
-    if rst_tar:
+    if rst_tar is not None:
         assert (
             m_utils.extract.call_args
             == [(m_dir.return_value.joinpath.return_value, rst_tar), {}])
@@ -382,7 +383,8 @@ def test_sphinx_runner_rst_dir(patches, rst_tar):
     assert "rst_dir" in runner.__dict__
 
 
-def test_sphinx_runner_rst_tar(patches):
+@pytest.mark.parametrize("rst_tar", [None, "", "SOME_DOCS_TAG"])
+def test_sphinx_runner_rst_tar(patches, rst_tar):
     runner = DummySphinxRunner()
     patched = patches(
         "pathlib",
@@ -390,11 +392,17 @@ def test_sphinx_runner_rst_tar(patches):
         prefix="envoy.docs.sphinx_runner.runner")
 
     with patched as (m_plib, m_args):
-        assert runner.rst_tar == m_plib.Path.return_value
+        m_args.return_value.rst_tar = rst_tar
+        assert (
+            runner.rst_tar
+            == (m_plib.Path.return_value if rst_tar else None))
 
-    assert (
-        m_plib.Path.call_args
-        == [(m_args.return_value.rst_tar, ), {}])
+    if rst_tar:
+        assert (
+            m_plib.Path.call_args
+            == [(m_args.return_value.rst_tar, ), {}])
+    else:
+        assert not m_plib.Path.called
     assert "rst_tar" in runner.__dict__
 
 
@@ -907,7 +915,7 @@ def test_sphinx_runner_validate_args(patches, exists, overwrite):
         m_out.return_value.exists.return_value = exists
         m_overwrite.return_value = overwrite
         if exists and not overwrite:
-            with pytest.raises(sphinx_runner.SphinxBuildError) as e:
+            with pytest.raises(sphinx_runner.SphinxEnvError) as e:
                 runner.validate_args()
             assert (
                 e.value.args[0]
