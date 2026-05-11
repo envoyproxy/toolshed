@@ -35,6 +35,10 @@ class DummyDependencyChecker:
     def issues_class(self):
         return super().issues_class
 
+    @property
+    def no_dep_issues_re(self):
+        return super().no_dep_issues_re
+
 
 def test_checker_constructor():
 
@@ -50,7 +54,7 @@ def test_checker_constructor():
             "releases"))
 
     iface_props = [
-        "dependency_class", "issues_class"]
+        "dependency_class", "issues_class", "no_dep_issues_re"]
 
     for prop in iface_props:
         with pytest.raises(NotImplementedError):
@@ -592,6 +596,8 @@ async def test_checker_dep_issue_check(
          dict(new_callable=PropertyMock)),
         ("ADependencyChecker.fix",
          dict(new_callable=PropertyMock)),
+        ("ADependencyChecker._no_dep_issues",
+         dict(new_callable=PropertyMock)),
         "ADependencyChecker.succeed",
         "ADependencyChecker.warn",
         "ADependencyChecker._dep_release_issue_close_stale",
@@ -621,8 +627,9 @@ async def test_checker_dep_issue_check(
         issues_dict.get.return_value = None
 
     with patched as patchy:
-        (m_active, m_issue, m_manage,
+        (m_active, m_issue, m_manage, m_no_dep_issues,
          m_succeed, m_warn, m_close, m_create) = patchy
+        m_no_dep_issues.return_value.match.return_value = None
         dep_issues = AsyncMock(return_value=issues_dict)
         m_issue.return_value.__getitem__.return_value.issues = dep_issues()
         m_manage.return_value = fix
@@ -1391,3 +1398,22 @@ async def test_checker_run_catches_dependency_metadata_error(patches):
 
     assert m_run.call_args == [(), {}]
     assert m_log.return_value.error.call_args == [("BAD METADATA", ), {}]
+
+
+def test_checker__no_dep_issues(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        "re",
+        ("ADependencyChecker.no_dep_issues_re",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_re, m_pattern):
+        assert (
+            checker._no_dep_issues
+            == m_re.compile.return_value)
+
+    assert (
+        m_re.compile.call_args
+        == [(m_pattern.return_value, ), {}])
+    assert "_no_dep_issues" in checker.__dict__

@@ -25,6 +25,14 @@ class DummyGithubDependencyReleaseIssues:
     def issue_class(self):
         return super().issue_class
 
+    @property
+    def labels(self):
+        return super().labels
+
+    @property
+    def repo_name(self):
+        return super().repo_name
+
 
 def test_issue_constructor():
     issue = DummyGithubDependencyReleaseIssue("ISSUES", "ISSUE")
@@ -128,12 +136,13 @@ def test_issues_constructor():
     assert (
         issues.closing_tpl
         == abstract.issues.CLOSING_TPL)
-    assert (
+
+    with pytest.raises(NotImplementedError):
         issues.labels
-        == abstract.issues.LABELS)
-    assert (
+
+    with pytest.raises(NotImplementedError):
         issues.repo_name
-        == abstract.issues.GITHUB_REPO_LOCATION)
+
     assert (
         issues.title_prefix
         == abstract.issues.TITLE_PREFIX)
@@ -144,8 +153,8 @@ def test_issues_constructor():
         issues.title_tpl
         == abstract.issues.TITLE_TPL)
     props = [
-        "body_tpl", "closing_tpl", "labels",
-        "repo_name", "title_prefix", "title_re_tpl", "title_tpl"]
+        "body_tpl", "closing_tpl",
+        "title_prefix", "title_re_tpl", "title_tpl"]
     for prop in props:
         assert prop not in issues.__dict__
 
