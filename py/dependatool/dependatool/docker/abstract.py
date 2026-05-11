@@ -31,7 +31,8 @@ class ADependatoolDockerCheck(object):
 
     @async_property(cache=True)
     async def dockerfile_dirs(self) -> set[str]:
-        """Set of found directories in the repo containing dockerfile.txt."""
+        """Set of found directories in the repo containing Dockerfile*
+        files."""
         return set(
             os.path.dirname(f"/{f}")
             for f in await self.checker.directory.files
@@ -41,8 +42,8 @@ class ADependatoolDockerCheck(object):
     def dockerfile_filename(self) -> re.Pattern[str]:
         return re.compile(self._dockerfile_filename)
 
-    async def check(self, files=None):
-        """Check that dependabot config matches dockerfile.txt files found in
+    async def check(self):
+        """Check that dependabot config matches Dockerfile* files found in
         repo."""
         missing_dirs = self.config.difference(
             await self.dockerfile_dirs)
