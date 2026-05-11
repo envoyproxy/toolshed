@@ -101,6 +101,26 @@ def test_checker_access_token(patches, arg):
     assert "access_token" not in checker.__dict__
 
 
+def test_checker_access_token_read_error(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        "pathlib",
+        ("ADependencyChecker.args",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_plib, m_args):
+        m_args.return_value.github_token = "TOKEN_PATH"
+        m_plib.Path.return_value.read_text.side_effect = OSError("NOT FOUND")
+        with pytest.raises(exceptions.GithubTokenError) as e:
+            checker.access_token
+
+    assert (
+        e.value.args[0]
+        == ("Cannot read GitHub token from "
+            f"{m_plib.Path.return_value}: NOT FOUND"))
+
+
 def test_checker_dep_ids(patches):
     checker = DummyDependencyChecker()
     patched = patches(
@@ -343,7 +363,13 @@ def test_checker_session(patches):
 
     assert (
         m_aiohttp.ClientSession.call_args
-        == [(), {}])
+        == [(),
+            dict(
+                timeout=m_aiohttp.ClientTimeout.return_value,
+                headers={"User-Agent": abstract.checker.HTTP_USER_AGENT})])
+    assert (
+        m_aiohttp.ClientTimeout.call_args
+        == [(), dict(total=abstract.checker.HTTP_SESSION_TIMEOUT_SECONDS)])
     assert "session" in checker.__dict__
 
 
@@ -890,37 +916,39 @@ async def test_checker_release_issues_duplicate_check(patches, fix, dupes):
         assert not m_succeed.called
 
 
+@pytest.mark.parametrize("fix", [True, False])
 @pytest.mark.parametrize(
     "missing_labels",
     [[],
      [f"LABEL{i}" for i in range(0, 5)]])
-async def test_checker_release_issues_labels_check(patches, missing_labels):
+async def test_checker_release_issues_labels_check(
+        patches, missing_labels, fix):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.active_check",
          dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.fix",
+         dict(new_callable=PropertyMock)),
         ("ADependencyChecker.issues",
          dict(new_callable=PropertyMock)),
         "ADependencyChecker.error",
+        "ADependencyChecker.warn",
         "ADependencyChecker.succeed",
         prefix="envoy.dependency.check.abstract.checker")
 
-    with patched as (m_active, m_issues, m_error, m_succeed):
+    with patched as (m_active, m_fix, m_issues, m_error, m_warn, m_succeed):
+        m_fix.return_value = fix
         (m_issues.return_value.__getitem__
                  .return_value.missing_labels) = AsyncMock(
-                     return_value=missing_labels)()
+                      return_value=missing_labels)()
         assert not await checker.release_issues_labels_check()
 
     assert (
         m_issues.return_value.__getitem__.call_args
         == [("releases", ), {}])
-    assert (
-        m_error.call_args_list
-        == [[(m_active.return_value,
-              [f"Missing label: {label}"]), {}]
-            for label in missing_labels])
     if not missing_labels:
         assert not m_error.called
+        assert not m_warn.called
         assert (
             m_succeed.call_args_list
             == [[(m_active.return_value,
@@ -928,6 +956,22 @@ async def test_checker_release_issues_labels_check(patches, missing_labels):
                  "required labels are available."]),
                 {}]])
     else:
+        if fix:
+            assert (
+                m_warn.call_args_list
+                == [[(m_active.return_value,
+                      [f"Missing label: {label} "
+                       "(would be created automatically with --fix "
+                       "if aio.api.github supported label creation)"]), {}]
+                    for label in missing_labels])
+            assert not m_error.called
+        else:
+            assert (
+                m_error.call_args_list
+                == [[(m_active.return_value,
+                      [f"Missing label: {label}"]), {}]
+                    for label in missing_labels])
+            assert not m_warn.called
         assert not m_succeed.called
 
 
@@ -1196,6 +1240,29 @@ async def test_checker_run(patches):
     assert (
         m_super.call_args
         == [(), {}])
+
+
+def test_checker_run_catches():
+    assert (
+        DummyDependencyChecker.run.__wrapped__.__catches__
+        == exceptions.GithubTokenError)
+
+
+async def test_checker_run_catches_github_token_error(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        "checker.Checker.run",
+        ("ADependencyChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_super, m_log):
+        m_super.side_effect = exceptions.GithubTokenError("TOKEN ERROR")
+        assert await checker.run() == 1
+
+    assert (
+        m_log.return_value.error.call_args
+        == [("TOKEN ERROR", ), {}])
 
 
 async def test_checker__dep_release_issue_close_stale(patches):

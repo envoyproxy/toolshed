@@ -181,7 +181,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         """Release (or published) date of this dependency."""
         return self.metadata["release_date"]
 
-    @async_property
+    @async_property(cache=True)
     async def release_date_mismatch(self) -> bool:
         """Flag indicating the metadata date doesnt match the Github date."""
         return (
@@ -193,7 +193,7 @@ class ADependency(event.AReactive, metaclass=abstracts.Abstraction):
         """Release (or published) sha of this dependency."""
         return self.metadata["sha256"]
 
-    @async_property
+    @async_property(cache=True)
     async def release_sha_mismatch(self) -> bool:
         """Flag indicating the metadata sha doesnt match the Github sha."""
         return (

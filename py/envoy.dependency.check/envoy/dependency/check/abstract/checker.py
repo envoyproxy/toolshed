@@ -16,7 +16,7 @@ import gidgethub
 import abstracts
 
 from aio.api import github as _github
-from aio.run import checker
+from aio.run import checker, runner
 from aio.core.tasks import ConcurrentError, inflate
 
 from envoy.dependency.check import abstract, exceptions, typing
@@ -27,6 +27,18 @@ NO_GITHUB_TOKEN_ERROR_MSG = (
     "via environment variable `GITHUB_TOKEN` "
     "or argument `--github_token`")
 NO_ISSUE_DEPENDENCIES = r"com_google_protobuf_protoc_[a-zA-Z0-9_]+$"
+HTTP_SESSION_TIMEOUT_SECONDS = 300
+PACKAGE_NAME = "envoy.dependency.check"
+try:
+    PACKAGE_VERSION = pathlib.Path(__file__).parents[4].joinpath("VERSION")
+except IndexError:
+    HTTP_USER_AGENT = PACKAGE_NAME
+else:
+    try:
+        HTTP_USER_AGENT = (
+            f"{PACKAGE_NAME}/{PACKAGE_VERSION.read_text().strip()}")
+    except OSError:
+        HTTP_USER_AGENT = PACKAGE_NAME
 
 
 class ADependencyChecker(
@@ -44,7 +56,12 @@ class ADependencyChecker(
     def access_token(self) -> str | None:
         """Github access token."""
         if self.args.github_token:
-            return pathlib.Path(self.args.github_token).read_text().strip()
+            path = pathlib.Path(self.args.github_token)
+            try:
+                return path.read_text().strip()
+            except OSError as e:
+                raise exceptions.GithubTokenError(
+                    f"Cannot read GitHub token from {path}: {e}") from e
         return os.getenv('GITHUB_TOKEN')
 
     @cached_property
@@ -129,7 +146,9 @@ class ADependencyChecker(
     @cached_property
     def session(self) -> aiohttp.ClientSession:
         """HTTP client session."""
-        return aiohttp.ClientSession()
+        return aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=HTTP_SESSION_TIMEOUT_SECONDS),
+            headers={"User-Agent": HTTP_USER_AGENT})
 
     @cached_property
     def sha_preload_limit(self) -> int:
@@ -225,7 +244,7 @@ class ADependencyChecker(
                     [f"No issue required: {dep.id}"])
             return
         if issue:
-            if issue.version == (await dep.newer_release).version:
+            if issue.version == newer_release.version:
                 # Required issue exists
                 self.succeed(
                     self.active_check,
@@ -307,10 +326,17 @@ class ADependencyChecker(
         missing = False
         for label in await self.issues["releases"].missing_labels:
             missing = True
-            # TODO: make this a warning if `fix` and fix it
-            self.error(
-                self.active_check,
-                [f"Missing label: {label}"])
+            if self.fix:
+                # TODO: create missing labels when aio.api.github supports this
+                self.warn(
+                    self.active_check,
+                    [f"Missing label: {label} "
+                     "(would be created automatically with --fix "
+                     "if aio.api.github supported label creation)"])
+            else:
+                self.error(
+                    self.active_check,
+                    [f"Missing label: {label}"])
         if not missing:
             self.succeed(
                 self.active_check,
@@ -382,6 +408,7 @@ class ADependencyChecker(
         async for dep in preloader:
             self.log.debug(f"Preloaded release data: {dep.id}")
 
+    @runner.catches(exceptions.GithubTokenError)
     async def run(self) -> int | None:
         return await super().run()
 
