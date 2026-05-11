@@ -130,7 +130,8 @@ class ADependencyGithubRelease(
 
     @cached_property
     def tagged(self) -> bool:
-        """Flag to indicate whether this release has a name."""
+        """True if the release is pinned to a named tag (not a raw commit
+        SHA)."""
         return not utils.is_sha(self.tag_name)
 
     @async_property(cache=True)
