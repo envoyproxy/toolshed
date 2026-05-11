@@ -22,7 +22,7 @@ from envoy.github.release.release import GithubRelease
 @abstracts.implementer(AGithubReleaseManager)
 class GithubReleaseManager:
 
-    _version_re = r"v(\w+)"
+    _version_re = r"^v(\d+\.\d+\.\d+.*)$"
     _version_format = "v{version}"
 
     async def __aenter__(self) -> AGithubReleaseManager:
@@ -101,10 +101,10 @@ class GithubReleaseManager:
     def parse_version(
             self,
             version: str) -> packaging.version.Version | None:
-        _version = self.version_re.sub(r"\1", version)
-        if _version:
+        m = self.version_re.fullmatch(version)
+        if m:
             try:
-                return packaging.version.Version(_version)
+                return packaging.version.Version(m.group(1))
             except packaging.version.InvalidVersion:
                 pass
         self.log.warning(f"Unable to parse version: {version}")
