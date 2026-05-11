@@ -194,7 +194,7 @@ def test_checker_access_token_missing_token(patches):
         with pytest.raises(exceptions.GithubTokenError) as e:
             checker.access_token
 
-    assert e.value.args == (abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG, )
+    assert e.value.args[0] == abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG
     assert m_os.getenv.call_args == [("GITHUB_TOKEN", ), {}]
     assert "access_token" not in checker.__dict__
 
