@@ -784,6 +784,8 @@ class DistroTest(object):
             # If there are any other Docker errors return the error message
             errors = (e.message,)
         except Exception as e:
+            # Capture unexpected non-Docker exceptions from build/start/exec
+            # and surface them through the existing error-reporting path.
             errors = e.args
         finally:
             # Stop the container and handle success/failure
