@@ -283,8 +283,12 @@ async def test_release_sha(patches, asset_url):
     e = None
 
     with patched as (m_log, m_session, m_hash):
-        get = AsyncMock()
-        m_session.return_value.get = get
+        response = AsyncMock()
+        response.raise_for_status = MagicMock()
+        cm = AsyncMock()
+        cm.__aenter__.return_value = response
+        cm.__aexit__.return_value = False
+        m_session.return_value.get.return_value = cm
         if not asset_url:
             with pytest.raises(check.exceptions.NoReleaseAssetError) as e:
                 await release.sha
@@ -292,7 +296,7 @@ async def test_release_sha(patches, asset_url):
             result = await release.sha
 
     if not asset_url:
-        assert not get.called
+        assert not m_session.return_value.get.called
         assert not m_log.called
         assert not m_hash.called
         assert (
@@ -304,18 +308,19 @@ async def test_release_sha(patches, asset_url):
         result
         == m_hash.return_value)
     assert (
-        get.call_args
+        m_session.return_value.get.call_args
         == [(kwargs["asset_url"], ), {}])
+    assert response.raise_for_status.called
     assert (
         m_log.debug.call_args
-        == [(f"SHA download: {kwargs['asset_url']}", ),
+        == [("SHA download: %s", kwargs["asset_url"]),
             {}])
     assert (
-        get.return_value.read.call_args
+        response.read.call_args
         == [(), {}])
     assert (
         m_hash.call_args
-        == [(get.return_value.read.return_value, ), {}])
+        == [(response.read.return_value, ), {}])
     assert (
         getattr(
             release,
