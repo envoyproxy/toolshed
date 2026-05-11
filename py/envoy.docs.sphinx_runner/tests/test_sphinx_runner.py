@@ -136,6 +136,23 @@ def test_sphinx_runner_config_file_path(patches):
     assert "config_file_path" not in runner.__dict__
 
 
+def test_sphinx_runner_warnings_file(patches):
+    runner = DummySphinxRunner()
+    patched = patches(
+        ("SphinxRunner.build_dir", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+
+    with patched as (m_build, ):
+        assert (
+            runner.warnings_file
+            == m_build.return_value.joinpath.return_value)
+
+    assert (
+        m_build.return_value.joinpath.call_args
+        == [('sphinx-warnings.txt',), {}])
+    assert "warnings_file" not in runner.__dict__
+
+
 @pytest.mark.parametrize("validate", [True, False])
 def test_sphinx_runner_configs(patches, validate):
     runner = DummySphinxRunner()
@@ -415,18 +432,20 @@ def test_sphinx_runner_sphinx_args(patches, verbosity):
         ("SphinxRunner.jobs", dict(new_callable=PropertyMock)),
         ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
         ("SphinxRunner.rst_dir", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.warnings_file", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
     sphinx_args = (
         []
         if verbosity == "info"
         else ["-q"])
 
-    with patched as (m_args, m_target, m_jobs, m_html, m_rst):
+    with patched as (m_args, m_target, m_jobs, m_html, m_rst, m_warn):
         m_args.return_value.verbosity = verbosity
         assert (
             runner.sphinx_args
             == sphinx_args + [
-                '-W', "-j", m_jobs.return_value,
+                '-W', "-w", str(m_warn.return_value),
+                "-j", m_jobs.return_value,
                 '--keep-going', '--color', '-b', m_target.return_value,
                 str(m_rst.return_value),
                 str(m_html.return_value)])
@@ -605,16 +624,21 @@ def test_sphinx_runner_add_arguments(patches):
             [('output_path',), {}]])
 
 
+@pytest.mark.parametrize("warnings", ["", "SOME WARNING"])
 @pytest.mark.parametrize("rc", [0, 7])
-def test_sphinx_runner_build_html(patches, rc):
+def test_sphinx_runner_build_html(patches, rc, warnings):
     runner = DummySphinxRunner()
     patched = patches(
         "sphinx_build",
+        ("SphinxRunner.log", dict(new_callable=PropertyMock)),
+        "SphinxRunner._read_warnings",
+        ("SphinxRunner.warnings_file", dict(new_callable=PropertyMock)),
         ("SphinxRunner.sphinx_args", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_sphinx, m_args):
+    with patched as (m_sphinx, m_log, m_warn, m_file, m_args):
         m_sphinx.side_effect = lambda s: rc
+        m_warn.return_value = warnings
         e = None
         if rc:
             with pytest.raises(sphinx_runner.SphinxBuildError) as e:
@@ -625,11 +649,52 @@ def test_sphinx_runner_build_html(patches, rc):
     assert (
         m_sphinx.call_args
         == [(m_args.return_value,), {}])
+    assert (
+        m_warn.call_args
+        == [(), {}])
 
     if rc:
-        assert e.value.args == (f"BUILD FAILED (sphinx exit code {rc})",)
+        expected = f"BUILD FAILED (sphinx exit code {rc})"
+        if warnings:
+            expected = f"{expected}\n\nSphinx warnings:\n{warnings}"
+        assert e.value.args == (expected,)
+        assert not m_log.return_value.warning.called
     else:
         assert not e
+        if warnings:
+            assert (
+                m_log.return_value.warning.call_args
+                == [(("Sphinx emitted warnings despite successful build "
+                      f"(see {m_file.return_value})"),), {}])
+        else:
+            assert not m_log.return_value.warning.called
+
+
+def test_sphinx_runner__read_warnings(patches, tmp_path):
+    runner = DummySphinxRunner()
+    warnings_file = tmp_path.joinpath("sphinx-warnings.txt")
+    patched = patches(
+        ("SphinxRunner.warnings_file", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+
+    with patched as (m_warnings, ):
+        m_warnings.return_value = warnings_file
+        assert runner._read_warnings() == ""
+
+        warnings_file.write_text("")
+        assert runner._read_warnings() == ""
+
+        warnings_file.write_text("line 1\nline 2\n")
+        assert runner._read_warnings() == "line 1\nline 2"
+
+        warnings_lines = [f"line {n}" for n in range(55)]
+        warnings_file.write_text("\n".join(warnings_lines))
+        warnings_tail = "\n".join(warnings_lines[-50:])
+        assert (
+            runner._read_warnings()
+            == ("...(truncated, full warnings in "
+                f"{warnings_file})\n"
+                f"{warnings_tail}"))
 
 
 def test_sphinx_runner_build_summary(patches):

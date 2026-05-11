@@ -24,6 +24,7 @@ from .exceptions import SphinxBuildError, SphinxEnvError
 
 ENVOY_DOCS_BASE_URL = (
     "https://www.envoyproxy.io/docs/envoy")
+SPHINX_WARNINGS_TAIL_LINES = 50
 
 
 class BaseConfigDict(TypedDict):
@@ -155,6 +156,11 @@ class SphinxRunner(runner.Runner):
         return self.args.jobs
 
     @property
+    def warnings_file(self) -> pathlib.Path:
+        """Path to file Sphinx writes warnings (and errors) to."""
+        return self.build_dir.joinpath("sphinx-warnings.txt")
+
+    @property
     def output_path(self) -> pathlib.Path:
         """Path to tar file or directory for saving generated html docs."""
         return pathlib.Path(self.args.output_path)
@@ -195,6 +201,7 @@ class SphinxRunner(runner.Runner):
             else ["-q"])
         return sphinx_args + [
             "-W",
+            "-w", str(self.warnings_file),
             "-j", self.jobs,
             "--keep-going",
             "--color",
@@ -269,7 +276,15 @@ class SphinxRunner(runner.Runner):
 
     def build_html(self) -> None:
         if rc := sphinx_build(self.sphinx_args):
-            raise SphinxBuildError(f"BUILD FAILED (sphinx exit code {rc})")
+            warnings = self._read_warnings()
+            message = f"BUILD FAILED (sphinx exit code {rc})"
+            if warnings:
+                message = f"{message}\n\nSphinx warnings:\n{warnings}"
+            raise SphinxBuildError(message)
+        if warnings := self._read_warnings():
+            self.log.warning(
+                f"Sphinx emitted warnings despite successful build "
+                f"(see {self.warnings_file})")
 
     def build_summary(self) -> None:
         self.log.info("")
@@ -378,3 +393,19 @@ class SphinxRunner(runner.Runner):
 
     def _color(self, msg: str, name: str | None = None) -> str:
         return f"{self.colors[name or 'chrome']}{msg}{Style.RESET_ALL}"
+
+    def _read_warnings(self) -> str:
+        """Read tail of Sphinx warning file, if present and non-empty."""
+        warnings_file = self.warnings_file
+        if not warnings_file.exists():
+            return ""
+        warnings = warnings_file.read_text()
+        if not warnings.strip():
+            return ""
+        warnings_lines = warnings.splitlines()
+        warnings_tail = "\n".join(warnings_lines[-SPHINX_WARNINGS_TAIL_LINES:])
+        if len(warnings_lines) <= SPHINX_WARNINGS_TAIL_LINES:
+            return warnings_tail
+        return (
+            f"...(truncated, full warnings in {warnings_file})\n"
+            + warnings_tail)
