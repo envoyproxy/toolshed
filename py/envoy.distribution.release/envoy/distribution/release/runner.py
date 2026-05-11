@@ -1,7 +1,6 @@
 
 import argparse
 from functools import cached_property
-from typing import Optional, Type
 
 import gidgethub
 import gidgethub.abc
@@ -30,7 +29,7 @@ class ReleaseRunner(AGithubReleaseRunner):
         return super().release_manager
 
     @property
-    def release_manager_class(self) -> Type[AGithubReleaseManager]:
+    def release_manager_class(self) -> type[AGithubReleaseManager]:
         return manager.GithubReleaseManager
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -41,5 +40,5 @@ class ReleaseRunner(AGithubReleaseRunner):
         (gidgethub.GitHubException,
          GithubReleaseError,
          KeyboardInterrupt))
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         return await super().run()
