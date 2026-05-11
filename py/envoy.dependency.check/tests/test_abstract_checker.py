@@ -680,6 +680,87 @@ async def test_checker_dep_issue_check(
         assert not m_create.called
 
 
+@pytest.mark.parametrize(
+    "issue,fix",
+    [(True, False),
+     (True, True),
+     (False, False),
+     (False, True)])
+async def test_checker_dep_issue_check_no_dep_issues(
+        patches, issue, fix):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.active_check",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.fix",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.log",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker._no_dep_issues",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.succeed",
+        "ADependencyChecker.warn",
+        "ADependencyChecker._dep_release_issue_close_stale",
+        "ADependencyChecker._dep_release_issue_create",
+        prefix="envoy.dependency.check.abstract.checker")
+    dep = MagicMock()
+    dep.id = "DUMMY_DEP"
+    dep.newer_release = AsyncMock()
+    issues_dict = MagicMock()
+
+    if issue:
+        mock_issue = MagicMock()
+        issues_dict.get.return_value = mock_issue
+    else:
+        mock_issue = None
+        issues_dict.get.return_value = None
+
+    with patched as patchy:
+        (m_active, m_issues, m_fix, m_log, m_no_dep_issues,
+         m_succeed, m_warn, m_close, m_create) = patchy
+        matcher = MagicMock()
+        matcher.match.return_value = MagicMock()
+        m_no_dep_issues.return_value = matcher
+        dep_issues = AsyncMock(return_value=issues_dict)
+        m_issues.return_value.__getitem__.return_value.issues = dep_issues()
+        m_fix.return_value = fix
+        assert not await checker.dep_release_issue_check(dep)
+
+    assert (
+        m_issues.return_value.__getitem__.call_args
+        == [("releases", ), {}])
+    assert (
+        issues_dict.get.call_args
+        == [("DUMMY_DEP", ), {}])
+    assert (
+        matcher.match.call_args
+        == [("DUMMY_DEP", ), {}])
+    assert dep.newer_release.await_count == 0
+    assert not m_succeed.called
+    assert not m_create.called
+    if issue:
+        assert (
+            m_warn.call_args_list
+            == [[(m_active.return_value,
+                  [f"Incorrect issue: DUMMY_DEP #{mock_issue.number}"]),
+                 {}]])
+        if fix:
+            assert (
+                m_close.call_args
+                == [(mock_issue, dep), {}])
+        else:
+            assert not m_close.called
+        assert not m_log.called
+    else:
+        assert not m_warn.called
+        assert not m_close.called
+        assert (
+            m_log.return_value.info.call_args
+            == [("Ignored by dependency issue tracker: DUMMY_DEP", ), {}])
+
+
 @pytest.mark.parametrize("newer_release", [True, False])
 @pytest.mark.parametrize("recent_commits", [True, False])
 async def test_checker_dep_release_check(
@@ -865,9 +946,10 @@ async def test_checker_release_issues_labels_check(patches, missing_labels):
         prefix="envoy.dependency.check.abstract.checker")
 
     with patched as (m_active, m_issues, m_error, m_succeed):
-        (m_issues.return_value.__getitem__
-                 .return_value.missing_labels) = AsyncMock(
-                     return_value=missing_labels)()
+        issues_tracker = m_issues.return_value.__getitem__.return_value
+        issues_tracker.missing_labels = AsyncMock(
+            return_value=missing_labels)()
+        issues_tracker.labels = ["label-a", "label-b", "label-c"]
         assert not await checker.release_issues_labels_check()
 
     assert (
@@ -883,8 +965,7 @@ async def test_checker_release_issues_labels_check(patches, missing_labels):
         assert (
             m_succeed.call_args_list
             == [[(m_active.return_value,
-                [f"All ({m_issues.return_value.labels.__len__.return_value}) "
-                 "required labels are available."]),
+                ["All (3) required labels are available."]),
                 {}]])
     else:
         assert not m_succeed.called
