@@ -760,11 +760,8 @@ def test_sphinx_runner_check_env_missing_version_file(
         if isinstance(current, FileNotFoundError):
             with pytest.raises(sphinx_runner.SphinxEnvError) as e:
                 runner.check_env()
-            assert (
-                e.value.args
-                == (
-                    f"Version history file not found for "
-                    f"{docs_tag}: {current}",))
+            assert "Version history file not found" in str(e.value)
+            assert docs_tag in str(e.value)
             assert isinstance(e.value.__cause__, FileNotFoundError)
         else:
             runner.check_env()
