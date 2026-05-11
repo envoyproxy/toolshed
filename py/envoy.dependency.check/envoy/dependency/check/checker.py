@@ -9,6 +9,7 @@ from envoy.dependency import check
 
 
 class Dependency(check.ADependency):
+    """Envoy-specific dependency."""
 
     @property
     def release_class(self) -> type[check.ADependencyGithubRelease]:
@@ -16,15 +17,20 @@ class Dependency(check.ADependency):
 
 
 class DependencyGithubRelease(check.ADependencyGithubRelease):
+    """Envoy-specific dependency release."""
+
     pass
 
 
 class GithubDependencyReleaseIssue(check.AGithubDependencyReleaseIssue):
+    """Envoy-specific dependency release issue."""
+
     pass
 
 
 @abstracts.implementer(github.IGithubTrackedIssues)
 class GithubDependencyReleaseIssues(check.AGithubDependencyReleaseIssues):
+    """Envoy-specific dependency release issue tracker."""
 
     @property
     def issue_class(self) -> type[GithubDependencyReleaseIssue]:
@@ -33,6 +39,7 @@ class GithubDependencyReleaseIssues(check.AGithubDependencyReleaseIssues):
 
 @abstracts.implementer(github.IGithubIssuesTracker)
 class GithubDependencyIssuesTracker(github.AGithubIssuesTracker):
+    """Envoy-specific dependency issues tracker."""
 
     @cached_property
     def tracked_issues(self) -> dict[str, GithubDependencyReleaseIssues]:
@@ -41,6 +48,7 @@ class GithubDependencyIssuesTracker(github.AGithubIssuesTracker):
 
 
 class DependencyChecker(check.ADependencyChecker):
+    """Envoy-specific dependency checker."""
 
     @property
     def access_token(self) -> str | None:

@@ -122,6 +122,11 @@ class AGithubDependencyReleaseIssues(
             title_prefix=self.title_prefix,
             newer_release=await kwargs["dep"].newer_release)
 
+    async def create_label(self, name: str) -> None:
+        await self.repo.post(
+            "labels",
+            data=dict(name=name))
+
     def track_issue(  # type: ignore[override]  # narrow concrete issue types
             self,
             issues: dict[str, AGithubDependencyReleaseIssue],
