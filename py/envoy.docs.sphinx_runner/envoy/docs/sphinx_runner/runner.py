@@ -1,9 +1,11 @@
 """Sphinx build orchestration for Envoy docs."""
 
 import argparse
+import contextlib
 import os
 import pathlib
 import shutil
+from collections.abc import Iterator
 from functools import cached_property
 from typing import TypedDict
 
@@ -34,6 +36,29 @@ def _remove_path(path: pathlib.Path) -> None:
         path.unlink()
     else:
         shutil.rmtree(path)
+
+
+@contextlib.contextmanager
+def _atomic_backup(
+        output_path: pathlib.Path,
+        backup_path: pathlib.Path,
+        *,
+        output_exists: bool) -> Iterator[bool]:
+    moved = False
+    if output_exists:
+        _remove_path(backup_path)
+        output_path.replace(backup_path)
+        moved = True
+    try:
+        yield moved
+    except Exception:
+        if moved and backup_path.exists():
+            with contextlib.suppress(Exception):
+                backup_path.replace(output_path)
+        raise
+    else:
+        if moved:
+            _remove_path(backup_path)
 
 
 class BaseConfigDict(TypedDict):
@@ -337,7 +362,6 @@ class SphinxRunner(runner.Runner):
         backup_path = output_path.with_name(f"{output_path.name}.old")
         tarlike = utils.is_tarlike(output_path)
 
-        moved_old_output = False
         try:
             _remove_path(staging_path)
             if not tarlike:
@@ -353,22 +377,13 @@ class SphinxRunner(runner.Runner):
                         f"Output path ({output_path}) exists, replacing")
                 return
 
-            if output_exists:
-                _remove_path(backup_path)
-                output_path.replace(backup_path)
-                moved_old_output = True
-            try:
+            with _atomic_backup(
+                    output_path,
+                    backup_path,
+                    output_exists=output_exists) as moved_old_output:
                 staging_path.replace(output_path)
-            except Exception:
-                if moved_old_output and backup_path.exists():
-                    try:
-                        backup_path.replace(output_path)
-                    except Exception:
-                        pass
-                raise
 
             if moved_old_output:
-                _remove_path(backup_path)
                 self.log.warning(
                     f"Output path ({output_path}) exists, replacing")
         except Exception:
