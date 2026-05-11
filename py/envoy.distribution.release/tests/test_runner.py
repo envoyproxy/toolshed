@@ -16,7 +16,7 @@ class DummyReleaseRunner(runner.ReleaseRunner):
 
 def test_runner_constructor():
     run = DummyReleaseRunner()
-    isinstance(run, AGithubReleaseRunner)
+    assert isinstance(run, AGithubReleaseRunner)
     assert run.release_manager_class == GithubReleaseManager
 
 

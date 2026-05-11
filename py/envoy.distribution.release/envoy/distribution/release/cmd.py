@@ -22,9 +22,6 @@ def _register_commands():
     ReleaseRunner.register_command("fetch", FetchCommand)
 
 
-# from memory_profiler import profile
-
-# @profile
 def main(*args: str) -> int | None:
     _register_commands()
     result = ReleaseRunner(*args)()
