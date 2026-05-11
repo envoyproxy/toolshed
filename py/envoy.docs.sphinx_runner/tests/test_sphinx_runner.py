@@ -1,3 +1,4 @@
+import errno
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
@@ -759,7 +760,12 @@ def test_sphinx_runner_check_env(
 
 @pytest.mark.parametrize(
     "docs_tag,version_number,current",
-    [("v1.17.0", "1.17.0", FileNotFoundError("MISSING FILE")),
+    [("v1.17.0",
+      "1.17.0",
+      FileNotFoundError(
+          errno.ENOENT,
+          "No such file or directory",
+          "version_history/v1.17/v1.17.0.rst")),
      ("v1.23.1", "1.23.1", "XXX v1.23.1 ZZZ")])
 def test_sphinx_runner_check_env_missing_version_file(
         patches, docs_tag, version_number, current):
