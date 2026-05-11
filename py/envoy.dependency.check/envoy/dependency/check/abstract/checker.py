@@ -29,16 +29,21 @@ NO_GITHUB_TOKEN_ERROR_MSG = (
 NO_ISSUE_DEPENDENCIES = r"com_google_protobuf_protoc_[a-zA-Z0-9_]+$"
 HTTP_SESSION_TIMEOUT_SECONDS = 300
 PACKAGE_NAME = "envoy.dependency.check"
-try:
-    PACKAGE_VERSION = pathlib.Path(__file__).parents[4].joinpath("VERSION")
-except IndexError:
-    HTTP_USER_AGENT = PACKAGE_NAME
-else:
-    try:
-        HTTP_USER_AGENT = (
-            f"{PACKAGE_NAME}/{PACKAGE_VERSION.read_text().strip()}")
-    except OSError:
-        HTTP_USER_AGENT = PACKAGE_NAME
+
+
+def _http_user_agent() -> str:
+    for parent in pathlib.Path(__file__).resolve().parents:
+        version_path = parent.joinpath("VERSION")
+        if not version_path.is_file():
+            continue
+        try:
+            return f"{PACKAGE_NAME}/{version_path.read_text().strip()}"
+        except OSError:
+            break
+    return PACKAGE_NAME
+
+
+HTTP_USER_AGENT = _http_user_agent()
 
 
 class ADependencyChecker(
