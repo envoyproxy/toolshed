@@ -301,12 +301,29 @@ class ADependencyChecker(
     async def release_issues_labels_check(self) -> None:
         """Check expected labels are present."""
         missing = False
-        for label in await self.issues["releases"].missing_labels:
+        release_issues = self.issues["releases"]
+        for label in await release_issues.missing_labels:
             missing = True
-            # TODO: make this a warning if `fix` and fix it
-            self.error(
-                self.active_check,
-                [f"Missing label: {label}"])
+            if not self.fix:
+                self.error(
+                    self.active_check,
+                    [f"Missing label: {label}"])
+                continue
+            try:
+                await release_issues.create_label(label)
+            except (
+                    ConnectionError,
+                    OSError,
+                    PermissionError,
+                    gidgethub.GitHubException) as e:
+                self.error(
+                    self.active_check,
+                    [f"Missing label: {label} "
+                     f"(create failed: {type(e).__name__}: {e})"])
+            else:
+                self.warn(
+                    self.active_check,
+                    [f"Missing label created: {label}"])
         if not missing:
             self.succeed(
                 self.active_check,

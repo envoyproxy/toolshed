@@ -680,87 +680,6 @@ async def test_checker_dep_issue_check(
         assert not m_create.called
 
 
-@pytest.mark.parametrize(
-    "issue,fix",
-    [(True, False),
-     (True, True),
-     (False, False),
-     (False, True)])
-async def test_checker_dep_issue_check_no_dep_issues(
-        patches, issue, fix):
-    checker = DummyDependencyChecker()
-    patched = patches(
-        ("ADependencyChecker.active_check",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.issues",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.fix",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker.log",
-         dict(new_callable=PropertyMock)),
-        ("ADependencyChecker._no_dep_issues",
-         dict(new_callable=PropertyMock)),
-        "ADependencyChecker.succeed",
-        "ADependencyChecker.warn",
-        "ADependencyChecker._dep_release_issue_close_stale",
-        "ADependencyChecker._dep_release_issue_create",
-        prefix="envoy.dependency.check.abstract.checker")
-    dep = MagicMock()
-    dep.id = "DUMMY_DEP"
-    dep.newer_release = AsyncMock()
-    issues_dict = MagicMock()
-
-    if issue:
-        mock_issue = MagicMock()
-        issues_dict.get.return_value = mock_issue
-    else:
-        mock_issue = None
-        issues_dict.get.return_value = None
-
-    with patched as patchy:
-        (m_active, m_issues, m_fix, m_log, m_no_dep_issues,
-         m_succeed, m_warn, m_close, m_create) = patchy
-        matcher = MagicMock()
-        matcher.match.return_value = MagicMock()
-        m_no_dep_issues.return_value = matcher
-        dep_issues = AsyncMock(return_value=issues_dict)
-        m_issues.return_value.__getitem__.return_value.issues = dep_issues()
-        m_fix.return_value = fix
-        assert not await checker.dep_release_issue_check(dep)
-
-    assert (
-        m_issues.return_value.__getitem__.call_args
-        == [("releases", ), {}])
-    assert (
-        issues_dict.get.call_args
-        == [("DUMMY_DEP", ), {}])
-    assert (
-        matcher.match.call_args
-        == [("DUMMY_DEP", ), {}])
-    assert dep.newer_release.await_count == 0
-    assert not m_succeed.called
-    assert not m_create.called
-    if issue:
-        assert (
-            m_warn.call_args_list
-            == [[(m_active.return_value,
-                  [f"Incorrect issue: DUMMY_DEP #{mock_issue.number}"]),
-                 {}]])
-        if fix:
-            assert (
-                m_close.call_args
-                == [(mock_issue, dep), {}])
-        else:
-            assert not m_close.called
-        assert not m_log.called
-    else:
-        assert not m_warn.called
-        assert not m_close.called
-        assert (
-            m_log.return_value.info.call_args
-            == [("Ignored by dependency issue tracker: DUMMY_DEP", ), {}])
-
-
 @pytest.mark.parametrize("newer_release", [True, False])
 @pytest.mark.parametrize("recent_commits", [True, False])
 async def test_checker_dep_release_check(
@@ -930,45 +849,151 @@ async def test_checker_release_issues_duplicate_check(patches, fix, dupes):
         assert not m_succeed.called
 
 
-@pytest.mark.parametrize(
-    "missing_labels",
-    [[],
-     [f"LABEL{i}" for i in range(0, 5)]])
-async def test_checker_release_issues_labels_check(patches, missing_labels):
+async def test_checker_release_issues_labels_check_no_missing(patches):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.active_check",
          dict(new_callable=PropertyMock)),
         ("ADependencyChecker.issues",
          dict(new_callable=PropertyMock)),
+        "ADependencyChecker.warn",
         "ADependencyChecker.error",
         "ADependencyChecker.succeed",
         prefix="envoy.dependency.check.abstract.checker")
 
-    with patched as (m_active, m_issues, m_error, m_succeed):
-        issues_tracker = m_issues.return_value.__getitem__.return_value
-        issues_tracker.missing_labels = AsyncMock(
-            return_value=missing_labels)()
-        issues_tracker.labels = ["label-a", "label-b", "label-c"]
+    with patched as (m_active, m_issues, m_warn, m_error, m_succeed):
+        (m_issues.return_value.__getitem__
+                 .return_value.missing_labels) = AsyncMock(
+                     return_value=[])()
         assert not await checker.release_issues_labels_check()
 
     assert (
         m_issues.return_value.__getitem__.call_args
         == [("releases", ), {}])
+    assert not m_warn.called
+    assert not m_error.called
+    assert (
+        m_succeed.call_args_list
+        == [[(m_active.return_value,
+            [f"All ({m_issues.return_value.labels.__len__.return_value}) "
+             "required labels are available."]),
+            {}]])
+
+
+@pytest.mark.parametrize(
+    "missing_labels",
+    [[f"LABEL{i}" for i in range(0, 5)]])
+async def test_checker_release_issues_labels_check_fix_false(
+        patches, missing_labels):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.active_check",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.fix",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.warn",
+        "ADependencyChecker.error",
+        "ADependencyChecker.succeed",
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_active, m_issues, m_fix, m_warn, m_error, m_succeed):
+        issues_tracker = m_issues.return_value.__getitem__.return_value
+        issues_tracker.missing_labels = AsyncMock(
+            return_value=missing_labels)()
+        issues_tracker.create_label = AsyncMock()
+        m_fix.return_value = False
+        assert not await checker.release_issues_labels_check()
+
     assert (
         m_error.call_args_list
         == [[(m_active.return_value,
               [f"Missing label: {label}"]), {}]
             for label in missing_labels])
-    if not missing_labels:
-        assert not m_error.called
-        assert (
-            m_succeed.call_args_list
-            == [[(m_active.return_value,
-                ["All (3) required labels are available."]),
-                {}]])
-    else:
-        assert not m_succeed.called
+    assert not issues_tracker.create_label.called
+    assert not m_warn.called
+    assert not m_succeed.called
+
+
+@pytest.mark.parametrize(
+    "missing_labels",
+    [[f"LABEL{i}" for i in range(0, 5)]])
+async def test_checker_release_issues_labels_check_fix_true(
+        patches, missing_labels):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.active_check",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.fix",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.warn",
+        "ADependencyChecker.error",
+        "ADependencyChecker.succeed",
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_active, m_issues, m_fix, m_warn, m_error, m_succeed):
+        issues_tracker = m_issues.return_value.__getitem__.return_value
+        issues_tracker.missing_labels = AsyncMock(
+            return_value=missing_labels)()
+        issues_tracker.create_label = AsyncMock()
+        m_fix.return_value = True
+        assert not await checker.release_issues_labels_check()
+
+    assert (
+        issues_tracker.create_label.call_args_list
+        == [[(label, ), {}] for label in missing_labels])
+    assert (
+        m_warn.call_args_list
+        == [[(m_active.return_value,
+              [f"Missing label created: {label}"]), {}]
+            for label in missing_labels])
+    assert not m_error.called
+    assert not m_succeed.called
+
+
+@pytest.mark.parametrize(
+    "error_factory",
+    [lambda: PermissionError("no perms"),
+     lambda: ConnectionError("network issue"),
+     lambda: OSError("io issue"),
+     lambda: gidgethub.BadRequest(MagicMock(phrase="forbidden"))])
+@pytest.mark.parametrize("missing_labels", [["LABEL0"]])
+async def test_checker_release_issues_labels_check_fix_true_create_error(
+        patches, missing_labels, error_factory):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        ("ADependencyChecker.active_check",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.issues",
+         dict(new_callable=PropertyMock)),
+        ("ADependencyChecker.fix",
+         dict(new_callable=PropertyMock)),
+        "ADependencyChecker.warn",
+        "ADependencyChecker.error",
+        "ADependencyChecker.succeed",
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_active, m_issues, m_fix, m_warn, m_error, m_succeed):
+        issues_tracker = m_issues.return_value.__getitem__.return_value
+        issues_tracker.missing_labels = AsyncMock(
+            return_value=missing_labels)()
+        error = error_factory()
+        issues_tracker.create_label = AsyncMock(
+            side_effect=error)
+        m_fix.return_value = True
+        assert not await checker.release_issues_labels_check()
+
+    assert (
+        m_error.call_args_list
+        == [[(m_active.return_value,
+              ["Missing label: LABEL0 "
+               f"(create failed: {type(error).__name__}: {error})"]),
+             {}]])
+    assert not m_warn.called
+    assert not m_succeed.called
 
 
 @pytest.mark.parametrize(
