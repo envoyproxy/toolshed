@@ -1,6 +1,5 @@
 
 import sys
-from typing import Optional
 
 from .runner import ReleaseRunner
 from .commands import (
@@ -26,7 +25,7 @@ def _register_commands():
 # from memory_profiler import profile
 
 # @profile
-def main(*args: str) -> Optional[int]:
+def main(*args: str) -> int | None:
     _register_commands()
     result = ReleaseRunner(*args)()
     return result

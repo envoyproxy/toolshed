@@ -2,7 +2,6 @@
 import argparse
 import pathlib
 import re
-from typing import Dict, List, Optional, Pattern
 
 from aio.core.functional import async_property
 
@@ -11,7 +10,7 @@ from envoy.github.abstract import AGithubRelease, AGithubReleaseCommand
 
 class AssetsCommand(AGithubReleaseCommand):
 
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         assets = await self.release.assets
         if not assets:
             self.runner.log.warning(f"Version {self.version} has no assets")
@@ -31,27 +30,27 @@ class CreateCommand(AGithubReleaseCommand):
                 "Path to push assets from, can either be a directory "
                 "or a tarball"))
 
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         return self.format_response(
             **await self.release.create(assets=self.artefacts))
 
 
 class DeleteCommand(AGithubReleaseCommand):
 
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         await self.release.delete()
         return 0
 
 
 class InfoCommand(AGithubReleaseCommand):
 
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         return self.format_response(await self.release.release)
 
 
 class ListCommand(AGithubReleaseCommand):
 
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         for release in await self.runner.release_manager.releases:
             self.runner.stdout.info(release["tag_name"])
 
@@ -59,7 +58,7 @@ class ListCommand(AGithubReleaseCommand):
 class FetchCommand(AGithubReleaseCommand):
 
     @property
-    def asset_types(self) -> Dict[str, Pattern]:
+    def asset_types(self) -> dict[str, re.Pattern]:
         return {
             t.split(":", 1)[0]: re.compile(t.split(":", 1)[1])
             for t in self.args.asset_type or []}
@@ -73,7 +72,7 @@ class FetchCommand(AGithubReleaseCommand):
         return any(release.count(".") < 2 for release in self.versions)
 
     @async_property(cache=True)
-    async def releases(self) -> Dict[str, AGithubRelease]:
+    async def releases(self) -> dict[str, AGithubRelease]:
         if self.find_latest:
             latest = await self.manager.latest
             return {
@@ -84,7 +83,7 @@ class FetchCommand(AGithubReleaseCommand):
             for version in self.versions}
 
     @property
-    def versions(self) -> List[str]:
+    def versions(self) -> list[str]:
         return self.args.version
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -104,7 +103,7 @@ class FetchCommand(AGithubReleaseCommand):
             nargs="*",
             help="Regex to match asset type and folder to fetch assets into")
 
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         for i, release in enumerate((await self.releases).values()):
             await release.fetch(self.path, self.asset_types, append=(i != 0))
 
@@ -120,5 +119,5 @@ class PushCommand(AGithubReleaseCommand):
                 "Path to push assets from, can either be a directory "
                 "or a tarball"))
 
-    async def run(self) -> Optional[int]:
+    async def run(self) -> int | None:
         await self.release.push(self.artefacts)
