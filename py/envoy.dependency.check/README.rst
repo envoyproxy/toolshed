@@ -32,5 +32,6 @@ Input format
 ------------
 
 The input JSON maps dependency name to
-``typing.DependencyMetadataDict``-compatible metadata. Each entry must include
-``release_date``, ``version``, ``urls``, and ``sha256``.
+``envoy.dependency.check.typing.DependencyMetadataDict``-compatible metadata.
+Each entry must include ``release_date``, ``version``, ``urls``, and
+``sha256``.
