@@ -30,7 +30,7 @@ class ABazelEnv(ABazel, metaclass=abstracts.Abstraction):
     def bazel_run_class(self) -> type["abstract.ABazelRun"]:
         raise NotImplementedError
 
-    async def query(self, query: str, **kwargs) -> list:
+    async def query(self, query: str, **kwargs) -> list[str]:
         """Run a bazel query and return stdout as list of lines."""
         return await self.bazel_query(query, **kwargs)
 
@@ -39,5 +39,5 @@ class ABazelEnv(ABazel, metaclass=abstracts.Abstraction):
             command: str,
             *args,
             **kwargs) -> subprocess.CompletedProcess:
-        """Run a bazel query and return stdout as list of lines."""
+        """Run a bazel target and return the subprocess result."""
         return await self.bazel_run(command, *args, **kwargs)

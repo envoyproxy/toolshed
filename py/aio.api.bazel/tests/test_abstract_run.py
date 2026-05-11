@@ -75,9 +75,12 @@ def test_base_bazel_run_super(patches):
 @pytest.mark.parametrize("raises", [None, True, False])
 @pytest.mark.parametrize("cwd", [None, "", "CWD"])
 @pytest.mark.parametrize("returncode", [0, 1, 2])
+@pytest.mark.parametrize(
+    "startup_options", [[], ["--opt1"], ["--opt1", "--opt2"]])
 async def test_base_bazel_run_run(
-        patches, args, capture, raises, cwd, returncode):
+        patches, args, capture, raises, cwd, returncode, startup_options):
     run = DummyBazelRun("PATH")
+    run.bazel_startup_options = startup_options
     patched = patches(
         ("ABazelRun.bazel_path",
          dict(new_callable=PropertyMock)),
@@ -106,11 +109,15 @@ async def test_base_bazel_run_run(
                 await run.run("TARGET", *args, **kwargs)
                 == m_run.return_value)
 
-    args = (
+    run_args = (
         ("--", ) + tuple(args)
         if args
         else ())
+    expected_kwargs = dict(capture_output=capture or False)
+    if cwd:
+        expected_kwargs["cwd"] = cwd
     assert (
         m_run.call_args
-        == [((m_bazel.return_value, "run", "TARGET") + args, ),
-            dict(capture_output=capture or False)])
+        == [((m_bazel.return_value, *startup_options, "run", "TARGET")
+             + run_args, ),
+            expected_kwargs])

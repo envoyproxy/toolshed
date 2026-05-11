@@ -88,4 +88,6 @@ class ABazelWorker(runner.Runner, metaclass=abstracts.Abstraction):
     async def run(self) -> None:
         if self.persistent:
             await self.processor_class(self.protocol)()
-        # TODO: implement one-shot op
+        else:
+            raise NotImplementedError(
+                "one-shot worker mode is not implemented")
