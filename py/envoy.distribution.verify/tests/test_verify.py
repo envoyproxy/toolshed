@@ -1,3 +1,4 @@
+import argparse
 from itertools import chain
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
@@ -347,7 +348,8 @@ def test_checker_add_arguments():
             [('packages',),
              {'help': 'Path to a tarball containing packages to test'}],
             [('--distribution', '-d'),
-             {'nargs': '?',
+             {'action': 'append',
+              'default': [],
               'help': (
                   'Specify distribution to test. '
                   'Can be specified multiple times.')}],
@@ -359,6 +361,23 @@ def test_checker_add_arguments():
             [('--rebuild',),
              {'action': 'store_true',
               'help': 'Rebuild test images before running the tests.'}]])
+
+
+@pytest.mark.parametrize(
+    ("distribution_args", "expected"),
+    [
+        ([], []),
+        (["--distribution", "DISTRO1"], ["DISTRO1"]),
+        (["-d", "DISTRO1", "-d", "DISTRO3"], ["DISTRO1", "DISTRO3"]),
+    ])
+def test_checker_distribution_argument_values(distribution_args, expected):
+    checker = DummyDistroChecker("x", "y", "z")
+    parser = argparse.ArgumentParser()
+    checker.add_arguments(parser)
+    parsed = parser.parse_args(
+        ["testfile", "version", "config", "packages", *distribution_args])
+
+    assert parsed.distribution == expected
 
 
 @pytest.mark.parametrize(
