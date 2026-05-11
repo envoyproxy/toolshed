@@ -62,11 +62,11 @@ class ValidatingCodeBlock(CodeBlock):
             self.proto_validator.validate_yaml(
                 '\n'.join(self.content),
                 self.options.get('type-name'))
-        except (ParseError, KeyError):
+        except (ParseError, KeyError) as e:
             raise ExtensionError(
                 "Failed config validation for type: "
                 f"'{self.options.get('type-name')}' in: {source} line: "
-                f"{line}")
+                f"{line}") from e
 
 
 def setup(app: Sphinx) -> dict:
