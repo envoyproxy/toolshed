@@ -2,7 +2,7 @@
 """Sphinx HTTP domain customization for Envoy docs."""
 
 import logging
-from typing import Any, cast
+from typing import Protocol, cast
 
 from pygments.lexers import get_lexer_by_name  # type:ignore[import-untyped]
 from pygments.util import ClassNotFound  # type:ignore[import-untyped]
@@ -15,6 +15,21 @@ from sphinxcontrib.httpdomain import (  # type:ignore[import-untyped]
 
 
 logger = logging.getLogger(__name__)
+
+
+class _SphinxHTTPDomainApp(Protocol):
+
+    def add_domain(self, domain: type[_HTTPDomain]) -> None: ...
+
+    def connect(self, event: str, callback: object) -> None: ...
+
+    def add_lexer(self, alias: str, lexer: object) -> None: ...
+
+    def add_config_value(
+            self,
+            name: str,
+            default: object,
+            rebuild: object) -> None: ...
 
 
 class HTTPDomain(_HTTPDomain):
@@ -44,7 +59,7 @@ class HTTPDomain(_HTTPDomain):
 
 
 def setup(app: Sphinx) -> dict[str, bool]:
-    sphinx_app = cast(Any, app)
+    sphinx_app = cast(_SphinxHTTPDomainApp, app)
     sphinx_app.add_domain(HTTPDomain)
     sphinx_app.connect('doctree-read', register_routingtable_as_label)
 
