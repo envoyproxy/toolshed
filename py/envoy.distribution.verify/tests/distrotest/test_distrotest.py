@@ -1,3 +1,4 @@
+import asyncio
 import collections
 import contextlib
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
@@ -7,13 +8,6 @@ import pytest
 import aiodocker
 
 from aio.run import checker
-
-import warnings
-
-warnings.filterwarnings(
-    "ignore",
-    message="envoy\\.distribution\\.distrotest is deprecated.*",
-    category=DeprecationWarning)
 
 from envoy.distribution import distrotest  # noqa: E402
 from envoy.docker import utils as docker_utils  # noqa: E402
@@ -683,14 +677,16 @@ async def test_image_build(patches, raises):
 
     with patched as (m_build, m_add, m_stream, m_docker, m_path, m_tag):
         if raises:
-            m_build.side_effect = docker_utils.BuildError("AN ERROR OCCURRED")
+            build_error = docker_utils.BuildError("AN ERROR OCCURRED", "X")
+            m_build.side_effect = build_error
 
             with pytest.raises(distrotest.BuildError) as e:
                 await image.build()
 
             assert (
                 e.value.args
-                == ('AN ERROR OCCURRED',))
+                == build_error.args)
+            assert e.value.__cause__ is build_error
         else:
             assert not await image.build()
 
@@ -1082,8 +1078,7 @@ async def test_distrotest_build(patches, exists):
             [('Image built',), {}]])
 
 
-@pytest.mark.parametrize("raises", [True, False])
-async def test_distrotest_cleanup(patches, raises):
+async def test_distrotest_cleanup(patches):
     check = checker.Checker()
     dtest = distrotest.DistroTest(
         check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
@@ -1093,12 +1088,7 @@ async def test_distrotest_cleanup(patches, raises):
         ("DistroTest.name", dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.distrotest.distrotest")
 
-    class SomeError(Exception):
-        pass
-
     with patched as (m_docker, m_stop, m_name):
-        if raises:
-            m_stop.side_effect = SomeError("AN ERROR OCCURRED")
         assert not await dtest.cleanup()
 
     assert (
@@ -1230,7 +1220,9 @@ def test_distrotest_error():
 
 @pytest.mark.parametrize(
     "msg",
-    ["MESSAGE", "MESSAGE\nEXTRA", "MESSAGE\nEXTRA\nMORE"])
+    ["[TESTRUN:TESTNAME] MESSAGE",
+     "[TESTRUN:TESTNAME] MESSAGE\nEXTRA",
+     "[TESTRUN:TESTNAME] MESSAGE\nEXTRA\nMORE"])
 def test_distrotest_handle_test_error(patches, msg):
     check = checker.Checker()
     dtest = distrotest.DistroTest(
@@ -1239,34 +1231,8 @@ def test_distrotest_handle_test_error(patches, msg):
         "DistroTest.error",
         ("DistroTest.stdout", dict(new_callable=PropertyMock)),
         prefix="envoy.distribution.distrotest.distrotest")
-    _msg = MagicMock()
-    _splitter = MagicMock()
-
-    def _split(splitter, *args):
-        if splitter == "\n":
-            return msg.split("\n", *args)
-        return _splitter
-
     with patched as (m_error, m_stdout):
-        _msg.split.side_effect = _split
-        (_splitter.__getitem__.return_value
-         .strip.return_value.split.return_value) = (
-             "TESTRUN", "TESTNAME")
-        assert not dtest.handle_test_error(_msg)
-
-    assert (
-        _msg.split.call_args_list
-        == [[(']',), {}], [('\n', 1), {}]])
-    assert (
-        _splitter.__getitem__.call_args
-        == [(0,), {}])
-    strip = _splitter.__getitem__.return_value.strip
-    assert (
-        strip.call_args
-        == [('[',), {}])
-    assert (
-        strip.return_value.split.call_args
-        == [(':',), {}])
+        assert not dtest.handle_test_error(msg)
 
     assert dtest._failures == ['TESTNAME']
     assert (
@@ -1280,6 +1246,32 @@ def test_distrotest_handle_test_error(patches, msg):
         return
 
     assert not m_stdout.called
+
+
+@pytest.mark.parametrize(
+    "msg, raw_line",
+    [("MESSAGE", "MESSAGE"),
+     ("[TESTRUN] MESSAGE", "[TESTRUN] MESSAGE"),
+     ("[TESTRUNTESTNAME", "[TESTRUNTESTNAME"),
+     ("", "")])
+def test_distrotest_handle_test_error_malformed(patches, msg, raw_line):
+    check = checker.Checker()
+    dtest = distrotest.DistroTest(
+        check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
+    patched = patches(
+        "DistroTest.error",
+        ("DistroTest.stdout", dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.distrotest.distrotest")
+
+    with patched as (m_error, m_stdout):
+        assert not dtest.handle_test_error(msg)
+
+    assert dtest._failures == ['malformed-test-output']
+    assert m_stdout.return_value.error.call_count == 0
+    assert m_error.call_count == 1
+    error_msg = m_error.call_args[0][0][0]
+    assert "malformed control line" in error_msg
+    assert repr(raw_line) in error_msg
 
 
 @pytest.mark.parametrize(
@@ -1575,6 +1567,65 @@ async def test_distrotest_stop(patches, container):
         == [('Container stopped',), {'test': m_pkg.return_value}])
 
 
+async def test_distrotest_cleanup_cancelled_error(patches):
+    check = checker.Checker()
+    dtest = distrotest.DistroTest(
+        check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
+    patched = patches(
+        ("DistroTest.docker", dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.distrotest.distrotest")
+
+    with patched as (m_docker, ):
+        m_docker.return_value.containers.get.side_effect = (
+            asyncio.CancelledError)
+        with pytest.raises(asyncio.CancelledError):
+            await dtest.cleanup()
+
+
+async def test_distrotest_cleanup_swallows_docker_error(patches):
+    check = checker.Checker()
+    dtest = distrotest.DistroTest(
+        check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
+    patched = patches(
+        ("DistroTest.docker", dict(new_callable=PropertyMock)),
+        ("DistroTest.log", dict(new_callable=PropertyMock)),
+        ("DistroTest.name", dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.distrotest.distrotest")
+
+    with patched as (m_docker, m_log, m_name):
+        m_docker.return_value.containers.get.side_effect = (
+            aiodocker.exceptions.DockerError(500, "AN ERROR OCCURRED"))
+        assert not await dtest.cleanup()
+
+    assert (
+        m_log.return_value.warning.call_args
+        == [(f"Cleanup failed for {m_name.return_value}: "
+             f"{aiodocker.exceptions.DockerError(500, 'AN ERROR OCCURRED')}",),
+            {}])
+
+
+async def test_distrotest_cleanup_swallows_non_docker_error(patches):
+    check = checker.Checker()
+    dtest = distrotest.DistroTest(
+        check, "CONFIG", "NAME", "IMAGE", "INSTALLABLE")
+    patched = patches(
+        ("DistroTest.docker", dict(new_callable=PropertyMock)),
+        ("DistroTest.log", dict(new_callable=PropertyMock)),
+        ("DistroTest.name", dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.distrotest.distrotest")
+
+    with patched as (m_docker, m_log, m_name):
+        m_docker.return_value.containers.get.side_effect = OSError(
+            "AN ERROR OCCURRED")
+        assert not await dtest.cleanup()
+
+    assert (
+        m_log.return_value.warning.call_args
+        == [(f"Cleanup failed for {m_name.return_value}: "
+             f"{OSError('AN ERROR OCCURRED')}",),
+            {}])
+
+
 @pytest.mark.parametrize(
     "build_raises",
     [None,
@@ -1632,10 +1683,13 @@ async def test_distrotest__run(
             else:
                 m_stop.side_effect = stop_raises("AN ERROR OCCURRED")
 
+        # Unexpected (non-Docker) exceptions from build/start/exec/stop
+        # propagate; only known Docker/build errors are captured as `errors`.
         should_fail = (
             build_raises == Exception
-            or not build_raises and start_raises == Exception
-            or not (build_raises or start_raises) and exec_raises == Exception
+            or (not build_raises and start_raises == Exception)
+            or (not build_raises and not start_raises
+                and exec_raises == Exception)
             or stop_raises == Exception)
 
         if should_fail:
