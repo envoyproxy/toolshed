@@ -7,6 +7,7 @@ import os
 import pathlib
 import re
 from functools import cached_property
+from typing import Any
 
 import aiohttp
 
@@ -367,7 +368,7 @@ class ADependencyChecker(
     def _no_dep_issues(self):
         return re.compile(NO_ISSUE_DEPENDENCIES)
 
-    def _validate_dependency_metadata(self, data: dict) -> None:
+    def _validate_dependency_metadata(self, data: dict[str, Any]) -> None:
         errors: list[str] = []
         for dep_id, meta in data.items():
             if not isinstance(meta, dict):
