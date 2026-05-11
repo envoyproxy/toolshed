@@ -33,6 +33,7 @@ CMD ["tail", "-f", "/dev/null"]
 """
 
 SIGNING_KEY_PATH = "signing.key"
+TEST_ERROR_PREFIX_RE = re.compile(r"^\[(?P<run>[^:\]]+):(?P<name>[^\]]+)\]")
 
 
 class BuildError(Exception):
@@ -377,7 +378,7 @@ class DistroTestImage(object):
                 stream=self.stream,
                 forcerm=True)
         except docker_utils.BuildError as e:
-            raise BuildError(e.args[0])
+            raise BuildError(*e.args) from e
 
     async def exists(self) -> bool:
         """Check if the Docker image exists already for the distribution."""
@@ -582,8 +583,8 @@ class DistroTest(object):
         """
         try:
             await self.stop(await self.docker.containers.get(self.name))
-        finally:
-            return
+        except Exception:
+            pass
 
     async def create(self) -> aiodocker.containers.DockerContainer:
         """Create a Docker container for the test."""
@@ -632,16 +633,25 @@ class DistroTest(object):
         Any "control" lines in the test that contain `ERROR` will cause
         the test to fail and any additional lines are output to stderr.
         """
-        # testrun is eg `debian_buster/envoy-1.19`
-        # testname is eg `proxy-responds`
-        testrun, testname = msg.split("]")[0].strip("[").split(":")
+        match = TEST_ERROR_PREFIX_RE.match(msg)
+        if match:
+            # testrun is eg `debian_buster/envoy-1.19`
+            # testname is eg `proxy-responds`
+            testrun, testname = match.group("run"), match.group("name")
+            error_message = f"[{testrun}:{testname}] Test failed"
+        else:
+            testname = "malformed-test-output"
+            raw_line = msg.split("\n", 1)[0]
+            error_message = (
+                f"[{self.distro}:{testname}] "
+                f"Test failed (malformed control line): {raw_line!r}")
 
         # Record the failure for summarizing
         self._failures.append(testname)
 
         # Fail the test, log an error, and output any extra `msg` content as
         # raw logs
-        self.error([f"[{testrun}:{testname}] Test failed"])
+        self.error([error_message])
         _msg = msg.split("\n", 1)
         if len(_msg) > 1:
             self.stdout.error(_msg[1])
@@ -760,6 +770,7 @@ class DistroTest(object):
         # complete without raising an error.
         # actual test failures are recorded separately
         failed = True
+        errors = None
         try:
             # build, start and exec the container
             await self.build()
@@ -768,15 +779,16 @@ class DistroTest(object):
             failed = False
         except (BuildError, ConfigurationError, ContainerError) as e:
             # Catch build/start/exec Docker errors and return
-            return e.args
+            errors = e.args
         except aiodocker.exceptions.DockerError as e:
             # If there are any other Docker errors return the error message
-            return (e.message,)
+            errors = (e.message,)
+        except Exception as e:
+            errors = e.args
         finally:
             # Stop the container and handle success/failure
             try:
                 await self.on_test_complete(container, failed)
-                errors = None
             except aiodocker.exceptions.DockerError as e:
                 # capture Docker errors from trying to stop the container
                 errors = (e.message,)
