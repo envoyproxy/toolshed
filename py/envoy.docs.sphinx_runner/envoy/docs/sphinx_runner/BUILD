@@ -12,12 +12,12 @@ toolshed_library(
         "//py/deps:reqs#sphinx",
         "//py/deps:reqs#sphinx-copybutton",
         "//py/deps:reqs#sphinx-rtd-theme",
+        "//py/deps:reqs#sphinx-tabs",
         "//py/deps:reqs#sphinxcontrib-jquery",
         "//py/deps:reqs#sphinxcontrib-httpdomain",
         "//py/deps:reqs#sphinxcontrib-serializinghtml",
         "//py/deps:reqs#sphinxext-rediraffe",
         "//py/deps:reqs#types-pygments",
-        "./sphinx_tabs",
     ],
     sources=[
         "__init__.py",
