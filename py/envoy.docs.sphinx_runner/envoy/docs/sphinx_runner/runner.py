@@ -24,6 +24,7 @@ from .exceptions import SphinxBuildError, SphinxEnvError
 
 ENVOY_DOCS_BASE_URL = (
     "https://www.envoyproxy.io/docs/envoy")
+SPHINX_WARNINGS_TAIL_LINES = 50
 
 
 class BaseConfigDict(TypedDict):
@@ -363,8 +364,9 @@ class SphinxRunner(runner.Runner):
         if not warnings.strip():
             return ""
         warnings_lines = warnings.splitlines()
-        if len(warnings_lines) <= 50:
-            return "\n".join(warnings_lines)
+        warnings_tail = "\n".join(warnings_lines[-SPHINX_WARNINGS_TAIL_LINES:])
+        if len(warnings_lines) <= SPHINX_WARNINGS_TAIL_LINES:
+            return warnings_tail
         return (
             f"...(truncated, full warnings in {warnings_file})\n"
-            + "\n".join(warnings_lines[-50:]))
+            + warnings_tail)
