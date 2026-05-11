@@ -13,6 +13,10 @@ class BadGithubURL(Exception):
     pass
 
 
+class GithubTokenError(Exception):
+    pass
+
+
 class NotGithubDependency(Exception):
     pass
 
