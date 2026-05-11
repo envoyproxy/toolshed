@@ -1645,6 +1645,9 @@ async def test_distrotest__run(
             else:
                 m_stop.side_effect = stop_raises("AN ERROR OCCURRED")
 
+        # `_run` now handles build/start/exec `Exception` branches and returns
+        # error tuples. The only case that should still raise here is an
+        # unexpected non-Docker exception from completion handling itself.
         should_fail = stop_raises == Exception
 
         if should_fail:
