@@ -26,6 +26,15 @@ ENVOY_DOCS_BASE_URL = (
     "https://www.envoyproxy.io/docs/envoy")
 
 
+def _remove_path(path: pathlib.Path) -> None:
+    if not path.exists():
+        return
+    if path.is_file():
+        path.unlink()
+    else:
+        shutil.rmtree(path)
+
+
 class BaseConfigDict(TypedDict):
     version_string: str
     release_level: str
@@ -308,14 +317,6 @@ class SphinxRunner(runner.Runner):
                 f"version_history/{minor_version}/{self.docs_tag}.rst")
 
     def save_html(self) -> None:
-        def _remove(path: pathlib.Path) -> None:
-            if not path.exists():
-                return
-            if path.is_file():
-                path.unlink()
-            else:
-                shutil.rmtree(path)
-
         output_path = self.output_path
         staging_path = output_path.with_name(f"{output_path.name}.new")
         backup_path = output_path.with_name(f"{output_path.name}.old")
@@ -323,7 +324,7 @@ class SphinxRunner(runner.Runner):
 
         moved_old_output = False
         try:
-            _remove(staging_path)
+            _remove_path(staging_path)
             if not tarlike:
                 shutil.copytree(self.html_dir, staging_path)
             else:
@@ -338,7 +339,7 @@ class SphinxRunner(runner.Runner):
                 return
 
             if output_exists:
-                _remove(backup_path)
+                _remove_path(backup_path)
                 output_path.replace(backup_path)
                 moved_old_output = True
             try:
@@ -352,11 +353,11 @@ class SphinxRunner(runner.Runner):
                 raise
 
             if moved_old_output:
-                _remove(backup_path)
+                _remove_path(backup_path)
                 self.log.warning(
                     f"Output path ({output_path}) exists, replacing")
         except Exception:
-            _remove(staging_path)
+            _remove_path(staging_path)
             raise
 
     @runner.cleansup
