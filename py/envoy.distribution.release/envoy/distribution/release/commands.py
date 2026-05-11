@@ -104,8 +104,14 @@ class FetchCommand(AGithubReleaseCommand):
             help="Regex to match asset type and folder to fetch assets into")
 
     async def run(self) -> int | None:
+        assets: list[dict] = []
+        errors: list[dict] = []
         for i, release in enumerate((await self.releases).values()):
-            await release.fetch(self.path, self.asset_types, append=(i != 0))
+            result = await release.fetch(
+                self.path, self.asset_types, append=(i != 0))
+            assets.extend(result.get("assets", []))
+            errors.extend(result.get("errors", []))
+        return self.format_response(assets=assets, errors=errors)
 
 
 class PushCommand(AGithubReleaseCommand):
@@ -120,4 +126,4 @@ class PushCommand(AGithubReleaseCommand):
                 "or a tarball"))
 
     async def run(self) -> int | None:
-        await self.release.push(self.artefacts)
+        return self.format_response(**await self.release.push(self.artefacts))
