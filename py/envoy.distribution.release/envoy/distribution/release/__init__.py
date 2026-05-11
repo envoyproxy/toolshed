@@ -1,6 +1,4 @@
 
-# from .exceptions import PackagesConfigurationError
-
 from .runner import ReleaseRunner
 from .commands import (
     AssetsCommand,
