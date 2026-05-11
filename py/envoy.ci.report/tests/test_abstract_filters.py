@@ -1,4 +1,5 @@
 
+from datetime import timezone
 from unittest.mock import MagicMock, PropertyMock
 
 import pytest
@@ -90,12 +91,12 @@ def test_creationtimefilter_now(patches):
     with patched as (m_dt, ):
         assert (
             filter.now
-            == m_dt.utcnow.return_value)
+            == m_dt.now.return_value)
 
     assert "now" in filter.__dict__
     assert (
-        m_dt.utcnow.call_args
-        == [(), {}])
+        m_dt.now.call_args
+        == [(timezone.utc, ), {}])
 
 
 def test_creationtimefilter_start_day(patches):

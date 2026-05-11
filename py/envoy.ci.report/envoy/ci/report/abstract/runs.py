@@ -137,6 +137,7 @@ class ACIRuns(metaclass=abstracts.Abstraction):
             or int(check_run["external_id"]) not in await self.workflows)
         if not_found:
             return None
+        info = dict(info)
         del info["action"]
         info.pop("advice", None)
         info["external_id"] = check_run["external_id"]
@@ -195,8 +196,7 @@ class ACIRuns(metaclass=abstracts.Abstraction):
         for sha, events in (await self.workflow_requests).items():
             for event, wfids in events.items():
                 for wf in wfids:
-                    if fetch_request := self.fetch_request_env(wf, sha, event):
-                        yield fetch_request
+                    yield self.fetch_request_env(wf, sha, event)
 
     async def _fetch_env_artifact(
             self, wfid: int) -> aiohttp.ClientResponse | None:
@@ -211,7 +211,7 @@ class ACIRuns(metaclass=abstracts.Abstraction):
                 await self.repo.getitem(
                     URL_GH_REPO_ACTION_ENV_ARTIFACT.format(
                         wfid=wfid)))["artifacts"][0]["archive_download_url"]
-        except IndexError:
+        except (IndexError, KeyError):
             log.warning(f"Unable to find request artifact: {wfid}")
 
     def _sorted(self, runs: typing.CIRunsDict) -> typing.CIRunsDict:
@@ -223,9 +223,10 @@ class ACIRuns(metaclass=abstracts.Abstraction):
             sorted(
                 runs.items(),
                 key=lambda item: max_or_min(
-                    request["started"]
-                    for request
-                    in item[1]["requests"].values()),
+                    (request["started"]
+                     for request
+                     in item[1]["requests"].values()),
+                    default=0),
                 reverse=not self.sort_ascending))
 
     async def _to_dict(self) -> typing.CIRunsDict:

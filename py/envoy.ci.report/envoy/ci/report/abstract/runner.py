@@ -104,8 +104,6 @@ class AReportRunner(
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
         super().add_arguments(parser)
-        # parser.add_argument("--end")
-        # parser.add_argument("--start")
         parser.add_argument("--github_token")
         parser.add_argument("--repo", default=ENVOY_REPO)
         group = parser.add_mutually_exclusive_group()
@@ -139,6 +137,7 @@ class AReportRunner(
     @runner.cleansup
     @runner.catches(
         (gidgethub.GitHubException,
-         KeyboardInterrupt))
+         KeyboardInterrupt,
+         aiohttp.ClientError))
     async def run(self) -> int | None:
         self.format(await self.runs.as_dict)
