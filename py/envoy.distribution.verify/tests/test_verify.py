@@ -1,5 +1,5 @@
-import argparse
 from itertools import chain
+import argparse
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
