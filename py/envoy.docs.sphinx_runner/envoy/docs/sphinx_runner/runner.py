@@ -169,9 +169,14 @@ class SphinxRunner(runner.Runner):
             else f"v{self.version_number}")
 
     @cached_property
-    def html_dir(self) -> pathlib.Path:
-        """Path to (temporary) directory for outputting html."""
-        return self.build_dir.joinpath("generated", "html")
+    def output_dir(self) -> pathlib.Path:
+        """Path to (temporary) directory Sphinx writes build output to.
+
+        The leaf is derived from `--build_target` so different build
+        targets do not collide and the path reflects the actual output
+        type (e.g. `html`, `dirhtml`, `singlehtml`, `latex`).
+        """
+        return self.build_dir.joinpath("generated", self.build_target)
 
     @property
     def intersphinx_mapping(self) -> dict[str, list[str]]:
@@ -240,7 +245,7 @@ class SphinxRunner(runner.Runner):
             "--keep-going",
             "--color",
             "-b", self.build_target,
-            str(self.rst_dir), str(self.html_dir)]
+            str(self.rst_dir), str(self.output_dir)]
 
     @property
     def tarmode(self) -> str:
@@ -365,9 +370,9 @@ class SphinxRunner(runner.Runner):
         try:
             _remove_path(staging_path)
             if not tarlike:
-                shutil.copytree(self.html_dir, staging_path)
+                shutil.copytree(self.output_dir, staging_path)
             else:
-                utils.pack(self.html_dir, staging_path)
+                utils.pack(self.output_dir, staging_path)
 
             output_exists = output_path.exists()
             if tarlike:

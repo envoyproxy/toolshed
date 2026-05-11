@@ -269,19 +269,22 @@ def test_sphinx_runner_docs_tag(patches, docs_tag, version_dev):
         == [("-dev", ), {}])
 
 
-def test_sphinx_runner_html_dir(patches):
+@pytest.mark.parametrize("build_target", ["html", "dirhtml"])
+def test_sphinx_runner_output_dir(patches, build_target):
     runner = DummySphinxRunner()
     patched = patches(
         ("SphinxRunner.build_dir", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.build_target", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_build, ):
-        assert runner.html_dir == m_build.return_value.joinpath.return_value
+    with patched as (m_build, m_target):
+        m_target.return_value = build_target
+        assert runner.output_dir == m_build.return_value.joinpath.return_value
 
     assert (
         m_build.return_value.joinpath.call_args
-        == [('generated', 'html'), {}])
-    assert "html_dir" in runner.__dict__
+        == [('generated', build_target), {}])
+    assert "output_dir" in runner.__dict__
 
 
 @pytest.mark.parametrize("versions_exists", [True, False])
@@ -430,7 +433,7 @@ def test_sphinx_runner_sphinx_args(patches, verbosity):
         ("SphinxRunner.args", dict(new_callable=PropertyMock)),
         ("SphinxRunner.build_target", dict(new_callable=PropertyMock)),
         ("SphinxRunner.jobs", dict(new_callable=PropertyMock)),
-        ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.output_dir", dict(new_callable=PropertyMock)),
         ("SphinxRunner.rst_dir", dict(new_callable=PropertyMock)),
         ("SphinxRunner.warnings_file", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
@@ -439,7 +442,7 @@ def test_sphinx_runner_sphinx_args(patches, verbosity):
         if verbosity == "info"
         else ["-q"])
 
-    with patched as (m_args, m_target, m_jobs, m_html, m_rst, m_warn):
+    with patched as (m_args, m_target, m_jobs, m_output, m_rst, m_warn):
         m_args.return_value.verbosity = verbosity
         assert (
             runner.sphinx_args
@@ -448,7 +451,7 @@ def test_sphinx_runner_sphinx_args(patches, verbosity):
                 "-j", m_jobs.return_value,
                 '--keep-going', '--color', '-b', m_target.return_value,
                 str(m_rst.return_value),
-                str(m_html.return_value)])
+                str(m_output.return_value)])
 
     assert "sphinx_args" not in runner.__dict__
 
@@ -839,7 +842,7 @@ def test_sphinx_runner_save_html(patches, tarlike, exists):
         "shutil",
         ("SphinxRunner.log", dict(new_callable=PropertyMock)),
         ("SphinxRunner.output_path", dict(new_callable=PropertyMock)),
-        ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.output_dir", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
     with patched as (m_utils, m_shutil, m_log, m_out, m_html):
@@ -909,7 +912,7 @@ def test_sphinx_runner_save_html_write_preserves_existing_output(
         "shutil",
         ("SphinxRunner.log", dict(new_callable=PropertyMock)),
         ("SphinxRunner.output_path", dict(new_callable=PropertyMock)),
-        ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.output_dir", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
     with patched as (m_utils, m_shutil, m_log, m_out, m_html):
