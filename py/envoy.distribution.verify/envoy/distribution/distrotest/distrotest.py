@@ -2,9 +2,9 @@ import logging
 import pathlib
 import re
 import shutil
+from collections.abc import Callable, Iterable
 from functools import cached_property
 from itertools import chain
-from typing import Callable, Iterable, List, Optional, Tuple, Type
 
 import verboselogs  # type:ignore
 
@@ -77,7 +77,7 @@ class DistroTestConfig(object):
             testfile: pathlib.Path,
             maintainer: str,
             version: str,
-            config_path: Optional[pathlib.Path] = None):
+            config_path: pathlib.Path | None = None):
         self.docker = docker
         self.path = path
         self.tarball = tarball
@@ -225,7 +225,7 @@ class DistroTestConfig(object):
                 return k
         raise ConfigurationError(f"Unrecognized image: {image}")
 
-    def get_packages(self, type: str, ext: str) -> List[pathlib.Path]:
+    def get_packages(self, type: str, ext: str) -> list[pathlib.Path]:
         """List of packages of a given type/ext found for testing."""
         return list(self.packages_dir.joinpath(type).glob(f"*.{ext}"))
 
@@ -262,7 +262,7 @@ class DistroTestImage(object):
             test_config: DistroTestConfig,
             build_image: str,
             name: str,
-            stream: Optional[Callable] = None):
+            stream: Callable | None = None):
         self.test_config = test_config
         self.build_image = build_image
         self.name = name
@@ -473,7 +473,7 @@ class DistroTest(object):
         self.distro = name
         self.build_image = image
         self.rebuild = rebuild
-        self._failures: List[str] = []
+        self._failures: list[str] = []
 
     @property
     def config(self) -> dict:
@@ -526,7 +526,7 @@ class DistroTest(object):
             stream=self.stdout.info)
 
     @property
-    def image_class(self) -> Type[DistroTestImage]:
+    def image_class(self) -> type[DistroTestImage]:
         return DistroTestImage
 
     @property
@@ -622,7 +622,7 @@ class DistroTest(object):
         elif _out:
             self.handle_test_output(_out)
 
-    def error(self, errors: Optional[Iterable[str]]) -> int:
+    def error(self, errors: Iterable[str] | None) -> int:
         """Fail a test and log the errors."""
         return self.checker.error(self.checker.active_check, errors)
 
@@ -695,8 +695,8 @@ class DistroTest(object):
         return ''.join(await container.log(stdout=True, stderr=True))
 
     async def on_test_complete(
-            self, container: Optional[aiodocker.containers.DockerContainer],
-            failed: bool) -> Optional[Tuple[str]]:
+            self, container: aiodocker.containers.DockerContainer | None,
+            failed: bool) -> tuple[str] | None:
         """Stop the container and record the results."""
         self.log_failures()
         await self.stop(container)
@@ -717,11 +717,11 @@ class DistroTest(object):
             self,
             message: str,
             msg_type: str = "info",
-            test: Optional[str] = None) -> None:
+            test: str | None = None) -> None:
         """Log a message with test prefix."""
         getattr(self.log, msg_type)(self.run_message(message, test=test))
 
-    def run_message(self, message: str, test: Optional[str] = None) -> str:
+    def run_message(self, message: str, test: str | None = None) -> str:
         """A log message with relevant test prefix."""
         return (
             f"[{self.distro}/{test}] {message}"
@@ -744,8 +744,8 @@ class DistroTest(object):
 
     async def stop(
             self,
-            container: Optional[
-                aiodocker.containers.DockerContainer] = None) -> None:
+            container: aiodocker.containers.DockerContainer | None = None
+    ) -> None:
         """Stop the test container."""
         if not container:
             return
@@ -753,7 +753,7 @@ class DistroTest(object):
         await container.delete()
         self.run_log("Container stopped", test=self.package_name)
 
-    async def _run(self) -> Optional[Tuple[str, ...]]:
+    async def _run(self) -> tuple[str, ...] | None:
         container = None
         # As `finally` is always called, regardless of any errors being
         # raised, we assume that something failed, unless build/start/exec
