@@ -10,5 +10,5 @@ class ADependatoolCheck(metaclass=abstracts.Abstraction):
     async def files(self):
         pass
 
-    async def check(self, files=None):
+    async def check(self):
         pass

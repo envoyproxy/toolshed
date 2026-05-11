@@ -2,4 +2,4 @@
 dependatool
 ==========================
 
-Pip dependabot checker used in Envoy proxy's CI
+Dependabot configuration checker (pip, docker, gomod, npm) used in Envoy proxy's CI

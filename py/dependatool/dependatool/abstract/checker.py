@@ -22,10 +22,6 @@ IGNORED_DIRS = (
     "^/examples/wasm",
     "^/examples/win")
 
-# TODO(phlax): add checks for:
-#      - requirements can be installed together
-#      - pip-compile formatting
-
 
 @abstracts.implementer(event.AExecutive)
 class ADependatoolChecker(
@@ -68,7 +64,7 @@ class ADependatoolChecker(
             loop=self.loop,
             text_only=False)
 
-    @property  # type:ignore
+    @property  # type: ignore[misc]  # abstract property override
     @abstracts.interfacemethod
     def directory_class(self) -> type[_directory.ADirectory]:
         raise NotImplementedError
@@ -82,6 +78,5 @@ class ADependatoolChecker(
     def path(self) -> pathlib.Path:
         return super().path
 
-    # TODO: make this public
     async def _run_check(self, check):
         await self.check_tools[check].check()
