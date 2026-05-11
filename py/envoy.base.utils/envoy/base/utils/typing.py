@@ -31,30 +31,12 @@ class BaseChangelogDict(TypedDict):
     date: str
 
 
-class ChangelogSourceDict(BaseChangelogDict, total=False):
-    # This should match envoy:changelogs/sections.yaml
-    changes: SourceChangeList | None
-    behavior_changes: SourceChangeList | None
-    minor_behavior_changes: SourceChangeList | None
-    bug_fixes: SourceChangeList | None
-    removed_config_or_runtime: SourceChangeList | None
-    new_features: SourceChangeList | None
-    deprecated: SourceChangeList | None
+ChangelogChangeSectionsDict = dict[str, ChangeList]
+SourceChangelogChangeSectionsDict = dict[str, SourceChangeList]
 
 
-class ChangelogChangeSectionsDict(TypedDict, total=False):
-    # This should match envoy:changelogs/sections.yaml
-    changes: ChangeList | None
-    behavior_changes: ChangeList | None
-    minor_behavior_changes: ChangeList | None
-    bug_fixes: ChangeList | None
-    removed_config_or_runtime: ChangeList | None
-    new_features: ChangeList | None
-    deprecated: ChangeList | None
-
-
-class ChangelogDict(BaseChangelogDict, ChangelogChangeSectionsDict):
-    pass
+ChangelogSourceDict = dict[str, SourceChangeList | str | None]
+ChangelogDict = dict[str, ChangeList | str]
 
 
 ChangelogPathsDict = dict[_version.Version, pathlib.Path]

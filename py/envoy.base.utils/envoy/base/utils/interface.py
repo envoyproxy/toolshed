@@ -240,6 +240,14 @@ class IChangelogs(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
+    def validate_sections(
+            self,
+            data: typing.ChangelogDict,
+            path: pathlib.Path | None = None) -> typing.ChangelogDict:
+        """Validate parsed changelog data against configured sections."""
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
     def blank_summary(self) -> None:
         """Make the changelog summary empty."""
         raise NotImplementedError
