@@ -207,7 +207,7 @@ _Generated 2026-05-10. Follow-up to the initial packaging cleanup pass._
 - **Risk**: low
 
 #### 11.2 Copy-paste docstrings are stale/inaccurate
-- **Where**: e.g. `docker/abstract.py:L34-L46` (“dockerfile.txt”), `gomod/abstract.py:L34-L46` (“gomodfile.txt”) despite actual patterns `Dockerfile*` and `go.mod` ([docker](https://github.com/envoyproxy/toolshed/blob/b18f135755dedb4a50e6309c88bfdd3b6f616931/py/dependatool/dependatool/docker/abstract.py#L34-L46), [gomod](https://github.com/envoyproxy/toolshed/blob/b18f135755dedb4a50e6309c88bfdd3b6f616931/py/dependatool/dependatool/gomod/abstract.py#L34-L46))
+- **Where**: e.g. `docker/abstract.py:L34-L46` and `gomod/abstract.py:L34-L46`; the current docstrings literally say `dockerfile.txt`/`gomodfile.txt` while runtime matching uses `Dockerfile*` and `go.mod` file names ([docker](https://github.com/envoyproxy/toolshed/blob/b18f135755dedb4a50e6309c88bfdd3b6f616931/py/dependatool/dependatool/docker/abstract.py#L34-L46), [gomod](https://github.com/envoyproxy/toolshed/blob/b18f135755dedb4a50e6309c88bfdd3b6f616931/py/dependatool/dependatool/gomod/abstract.py#L34-L46))
 - **What**: Comments/docstrings no longer match behavior.
 - **Why it matters**: Increases reviewer/operator confusion.
 - **Suggested fix**: Refresh docstrings as part of the next cleanup PR.
