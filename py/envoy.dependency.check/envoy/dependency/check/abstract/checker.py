@@ -15,7 +15,7 @@ import gidgethub
 import abstracts
 
 from aio.api import github as _github
-from aio.run import checker
+from aio.run import checker, runner
 from aio.core.tasks import ConcurrentError, inflate
 
 from envoy.dependency.check import abstract, exceptions, typing
@@ -61,7 +61,9 @@ class ADependencyChecker(
         """Github access token."""
         if self.args.github_token:
             return pathlib.Path(self.args.github_token).read_text().strip()
-        return os.getenv('GITHUB_TOKEN')
+        if token := os.getenv('GITHUB_TOKEN'):
+            return token
+        raise exceptions.GithubTokenError(NO_GITHUB_TOKEN_ERROR_MSG)
 
     @cached_property
     def dep_ids(self) -> tuple[str, ...]:
@@ -93,15 +95,6 @@ class ADependencyChecker(
         """Dependency metadata (derived in Envoy's case from
         `repository_locations.bzl`)."""
         return json.loads(self.repository_locations_path.read_text())
-
-    @cached_property
-    def disabled_checks(self):
-        disabled = {}
-        if not self.access_token:
-            disabled["release_dates"] = NO_GITHUB_TOKEN_ERROR_MSG
-            disabled["release_issues"] = NO_GITHUB_TOKEN_ERROR_MSG
-            disabled["releases"] = NO_GITHUB_TOKEN_ERROR_MSG
-        return disabled
 
     @cached_property
     def github(self) -> _github.IGithubAPI:
@@ -359,6 +352,7 @@ class ADependencyChecker(
         async for dep in preloader:
             self.log.debug(f"Preloaded release data: {dep.id}")
 
+    @runner.catches((exceptions.GithubTokenError,))
     async def run(self) -> int | None:
         return await super().run()
 
