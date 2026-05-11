@@ -22,10 +22,14 @@ class ABazelRun(ABazelCommand, metaclass=abstracts.Abstraction):
             raises: bool = True) -> subprocess.CompletedProcess:
         """Run a bazel target and return the subprocess response."""
         args = (("--",) + args) if args else args
-        bazel_args = (self.bazel_path, "run", target) + args
+        bazel_args = (
+            self.bazel_path, *self.bazel_startup_options, "run", target) + args
+        run_kwargs: dict = dict(capture_output=capture_output)
+        if cwd:
+            run_kwargs["cwd"] = cwd
         resp = await self.subproc_run(
             bazel_args,
-            capture_output=capture_output)
+            **run_kwargs)
         if resp.returncode and raises:
             raise exceptions.BazelRunError(f"Bazel run failed: {resp}")
         return resp
