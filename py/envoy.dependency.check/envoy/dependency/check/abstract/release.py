@@ -59,7 +59,7 @@ class ADependencyGithubRelease(
     async def commit(self) -> _github.IGithubCommit | None:
         """Github commit for this release."""
         try:
-            return await self.repo.commit(self.tag_name)  # type:ignore
+            return await self.repo.commit(self.tag_name)
         except gidgethub.BadRequest as e:
             if e.args[0] == "Not Found":
                 return None
@@ -88,7 +88,7 @@ class ADependencyGithubRelease(
         if self._release:
             return self._release
         try:
-            return await self.repo.release(self.tag_name)  # type:ignore
+            return await self.repo.release(self.tag_name)
         except gidgethub.BadRequest as e:
             if e.args[0] == "Not Found":
                 return None
@@ -114,7 +114,7 @@ class ADependencyGithubRelease(
     async def tag(self) -> _github.IGithubTag | None:
         """Github tag."""
         try:
-            return await self.repo.tag(self.tag_name)  # type:ignore
+            return await self.repo.tag(self.tag_name)
         except (gidgethub.BadRequest, _github.exceptions.TagNotFound) as e:
             do_raise = (
                 isinstance(e, gidgethub.BadRequest)

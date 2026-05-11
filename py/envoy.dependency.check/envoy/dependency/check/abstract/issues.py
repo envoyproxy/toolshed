@@ -122,7 +122,7 @@ class AGithubDependencyReleaseIssues(
             title_prefix=self.title_prefix,
             newer_release=await kwargs["dep"].newer_release)
 
-    def track_issue(  # type:ignore[override]
+    def track_issue(  # type: ignore[override]  # narrow concrete issue types
             self,
             issues: dict[str, AGithubDependencyReleaseIssue],
             issue: AGithubDependencyReleaseIssue) -> bool:
