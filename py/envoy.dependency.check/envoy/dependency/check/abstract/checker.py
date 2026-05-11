@@ -94,7 +94,7 @@ class ADependencyChecker(
                     loop=self.loop))
         return tuple(sorted(deps))
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def dependency_class(self) -> type["abstract.ADependency"]:
         """Dependency class."""
@@ -138,7 +138,7 @@ class ADependencyChecker(
         """Dependency issues."""
         return self.issues_class(self.github)
 
-    @property  # type:ignore
+    @property
     @abstracts.interfacemethod
     def issues_class(self) -> type[_github.IGithubIssuesTracker]:
         """Dependency issues class."""
@@ -239,7 +239,7 @@ class ADependencyChecker(
                     [f"No issue required: {dep.id}"])
             return
         if issue:
-            if issue.version == (await dep.newer_release).version:
+            if issue.version == newer_release.version:
                 # Required issue exists
                 self.succeed(
                     self.active_check,
@@ -373,7 +373,7 @@ class ADependencyChecker(
         return await super().run()
 
     @cached_property
-    def _no_dep_issues(self):
+    def _no_dep_issues(self) -> re.Pattern[str]:
         return re.compile(NO_ISSUE_DEPENDENCIES)
 
     def _validate_dependency_metadata(self, data: dict[str, Any]) -> None:
