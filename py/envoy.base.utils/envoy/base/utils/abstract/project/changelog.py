@@ -27,7 +27,10 @@ logger = logging.getLogger(__name__)
 CHANGELOG_PATH_GLOB = "changelogs/*.*.*.yaml"
 CHANGELOG_PATH_FMT = "changelogs/{version}.yaml"
 CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
+CHANGELOG_CURRENT_DIR_PATH = "changelogs/current"
+CHANGELOG_ENTRY_GLOB = "*/*.rst"
 CHANGELOG_SECTIONS_PATH = "changelogs/sections.yaml"
+ENTRY_SEPARATOR = "__"
 CHANGELOG_SUMMARY_PATH = "changelogs/summary.md"
 CHANGELOG_URL_TPL = (
     "https://raw.githubusercontent.com/envoyproxy/envoy/"
@@ -147,6 +150,32 @@ class AChangelog(metaclass=abstracts.Abstraction):
              for k, v
              in data.items()
              if v})
+
+    @classmethod
+    def get_data_from_entries(
+            cls,
+            yaml_path: pathlib.Path,
+            entry_dir: pathlib.Path) -> "typing.ChangelogDict":
+        try:
+            yaml_data = utils.from_yaml(yaml_path, typing.ChangelogSourceDict)
+        except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
+            raise exceptions.ChangelogParseError(
+                f"Failed to parse: {yaml_path}\n{e}")
+        date = yaml_data["date"]
+        sections: dict[str, list[typing.ChangeDict]] = {}
+        for path in sorted(entry_dir.glob(CHANGELOG_ENTRY_GLOB)):
+            section = path.parent.name
+            if path.stem.count(ENTRY_SEPARATOR) != 1:
+                raise exceptions.ChangelogParseError(
+                    f"Invalid entry filename "
+                    f"(expected exactly one '{ENTRY_SEPARATOR}'): {path}")
+            area, _slug = path.stem.split(ENTRY_SEPARATOR, 1)
+            change = typing.Change(path.read_text())
+            entry: typing.ChangeDict = dict(area=area, change=change)
+            sections.setdefault(section, []).append(entry)
+        return cast(
+            typing.ChangelogDict,
+            dict(date=date, **sections))
 
     def __init__(
             self,

@@ -1092,6 +1092,108 @@ def test_abstract_changelog_get_data(iters, patches, raises):
         == [(m_typing.ChangelogDict, expected), {}])
 
 
+def test_abstract_changelog_get_data_from_entries_happy_path(tmp_path):
+    yaml_path = tmp_path / "current.yaml"
+    yaml_path.write_text("date: Pending\n")
+    entry_dir = tmp_path / "entries"
+    (entry_dir / "bug_fixes").mkdir(parents=True)
+    (entry_dir / "new_features").mkdir(parents=True)
+    bug1 = entry_dir / "bug_fixes" / "oauth2__foo_fix.rst"
+    bug1.write_text("Fixed oauth2.\n")
+    bug2 = entry_dir / "bug_fixes" / "jwt__bar_fix.rst"
+    bug2.write_text("Fixed jwt.\n")
+    feat1 = entry_dir / "new_features" / "grpc__cool.rst"
+    feat1.write_text("New feature.\n")
+
+    result = abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert result["date"] == "Pending"
+    assert set(result.keys()) == {"date", "bug_fixes", "new_features"}
+    assert len(result["bug_fixes"]) == 2
+    assert len(result["new_features"]) == 1
+    assert result["bug_fixes"][0]["area"] == "jwt"
+    assert result["bug_fixes"][1]["area"] == "oauth2"
+    assert result["new_features"][0]["area"] == "grpc"
+
+
+def test_abstract_changelog_get_data_from_entries_arbitrary_section(tmp_path):
+    yaml_path = tmp_path / "current.yaml"
+    yaml_path.write_text("date: Pending\n")
+    entry_dir = tmp_path / "entries"
+    (entry_dir / "weird_section").mkdir(parents=True)
+    (entry_dir / "weird_section" / "foo__bar.rst").write_text("content\n")
+
+    result = abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert "weird_section" in result
+    assert result["weird_section"][0]["area"] == "foo"
+
+
+def test_abstract_changelog_get_data_from_entries_missing_separator(tmp_path):
+    yaml_path = tmp_path / "current.yaml"
+    yaml_path.write_text("date: Pending\n")
+    entry_dir = tmp_path / "entries"
+    (entry_dir / "bug_fixes").mkdir(parents=True)
+    (entry_dir / "bug_fixes" / "no_separator.rst").write_text("content\n")
+
+    with pytest.raises(exceptions.ChangelogParseError) as exc_info:
+        abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert "no_separator.rst" in str(exc_info.value)
+
+
+def test_abstract_changelog_get_data_from_entries_multiple_separators(
+        tmp_path):
+    yaml_path = tmp_path / "current.yaml"
+    yaml_path.write_text("date: Pending\n")
+    entry_dir = tmp_path / "entries"
+    (entry_dir / "bug_fixes").mkdir(parents=True)
+    (entry_dir / "bug_fixes" / "a__b__c.rst").write_text("content\n")
+
+    with pytest.raises(exceptions.ChangelogParseError) as exc_info:
+        abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert "a__b__c.rst" in str(exc_info.value)
+
+
+def test_abstract_changelog_get_data_from_entries_missing_yaml(tmp_path):
+    yaml_path = tmp_path / "nonexistent.yaml"
+    entry_dir = tmp_path / "entries"
+    entry_dir.mkdir()
+
+    with pytest.raises(FileNotFoundError):
+        abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+
+def test_abstract_changelog_get_data_from_entries_empty_dir(tmp_path):
+    yaml_path = tmp_path / "current.yaml"
+    yaml_path.write_text("date: Pending\n")
+    entry_dir = tmp_path / "entries"
+    entry_dir.mkdir()
+
+    result = abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert result["date"] == "Pending"
+    assert list(result.keys()) == ["date"]
+
+
+def test_abstract_changelog_get_data_from_entries_stable_ordering(tmp_path):
+    yaml_path = tmp_path / "current.yaml"
+    yaml_path.write_text("date: Pending\n")
+    entry_dir = tmp_path / "entries"
+    (entry_dir / "bug_fixes").mkdir(parents=True)
+    (entry_dir / "bug_fixes" / "z__last.rst").write_text("Last\n")
+    (entry_dir / "bug_fixes" / "a__first.rst").write_text("First\n")
+    (entry_dir / "bug_fixes" / "m__middle.rst").write_text("Middle\n")
+
+    result1 = abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+    result2 = abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+
+    assert result1 == result2
+    areas = [e["area"] for e in result1["bug_fixes"]]
+    assert areas == ["a", "m", "z"]
+
+
 def test_abstract_changelog_constructor():
 
     with pytest.raises(TypeError):
