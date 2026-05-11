@@ -77,6 +77,7 @@
 //     "snowballstemmer==3.0.1",
 //     "sphinx-copybutton==0.5.2",
 //     "sphinx-rtd-theme==3.1.0",
+//     "sphinx-tabs==3.5.0",
 //     "sphinx==8.2.3",
 //     "sphinxcontrib-applehelp==2.0.0",
 //     "sphinxcontrib-devhelp==2.0.0",
@@ -4652,6 +4653,36 @@
           "artifacts": [
             {
               "algorithm": "sha256",
+              "hash": "154be49de4d5c8249ea08c5d9bf88ca8f9c31e00a178305a93cbc33e000339e5",
+              "url": "https://files.pythonhosted.org/packages/2e/45/6adc5efeb19fd5fed4027e520b5c668ce58236a2b271ade5533c4c116276/sphinx_tabs-3.5.0-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "91dba1187e4c35fd37380a56ac228bbd54c6c649b2351829f3bf033718277537",
+              "url": "https://files.pythonhosted.org/packages/ce/30/ca5b0de830f369968d8e3483dd45a8908fd10169c05cd9837f0bd075982e/sphinx_tabs-3.5.0.tar.gz"
+            }
+          ],
+          "project_name": "sphinx-tabs",
+          "requires_dists": [
+            "bs4; extra == \"testing\"",
+            "coverage; extra == \"testing\"",
+            "docutils",
+            "pre-commit==2.13.0; extra == \"code-style\"",
+            "pygments",
+            "pygments; extra == \"testing\"",
+            "pytest-cov; extra == \"testing\"",
+            "pytest-regressions; extra == \"testing\"",
+            "pytest>=7.1; extra == \"testing\"",
+            "rinohtype; extra == \"testing\"",
+            "sphinx>=7"
+          ],
+          "requires_python": ">=3.10",
+          "version": "3.5.0"
+        },
+        {
+          "artifacts": [
+            {
+              "algorithm": "sha256",
               "hash": "4cd3f0ec4ac5dd9c17ec65e9ab272c9b867ea77425228e68ecf08d6b28ddbdb5",
               "url": "https://files.pythonhosted.org/packages/5d/85/9ebeae2f76e9e77b952f4b274c27238156eae7979c5421fba91a28f4970d/sphinxcontrib_applehelp-2.0.0-py3-none-any.whl"
             },
@@ -5963,6 +5994,7 @@
     "snowballstemmer==3.0.1",
     "sphinx-copybutton==0.5.2",
     "sphinx-rtd-theme==3.1.0",
+    "sphinx-tabs==3.5.0",
     "sphinx==8.2.3",
     "sphinxcontrib-applehelp==2.0.0",
     "sphinxcontrib-devhelp==2.0.0",

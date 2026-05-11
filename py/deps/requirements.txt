@@ -521,6 +521,7 @@ docutils==0.21.2 \
     #   -r py/deps/requirements.in
     #   sphinx
     #   sphinx-rtd-theme
+    #   sphinx-tabs
 envoy-base-utils==0.6.0 \
     --hash=sha256:1354ad0198b0282fa1e2072324aa9e479eb45d368cc9d84e5f196a277ee631d0 \
     --hash=sha256:e56c9810cbc8b0db988ba4223f6c90281e9f1a16aa5a7bdb781d1062d8b3f8a4
@@ -1461,6 +1462,7 @@ pygments==2.20.0 \
     #   -r py/deps/requirements.in
     #   pytest
     #   sphinx
+    #   sphinx-tabs
 pyjwt==2.12.1 \
     --hash=sha256:28ca37c070cad8ba8cd9790cd940535d40274d22f80ab87f3ac6a713e6e8454c \
     --hash=sha256:c74a7a2adf861c04d002db713dd85f84beb242228e671280bf709d765b03672b
@@ -1596,6 +1598,7 @@ sphinx==8.2.3 \
     #   -r py/deps/requirements.in
     #   sphinx-copybutton
     #   sphinx-rtd-theme
+    #   sphinx-tabs
     #   sphinxcontrib-httpdomain
     #   sphinxcontrib-jquery
     #   sphinxext-rediraffe
@@ -1606,6 +1609,10 @@ sphinx-copybutton==0.5.2 \
 sphinx-rtd-theme==3.1.0 \
     --hash=sha256:1785824ae8e6632060490f67cf3a72d404a85d2d9fc26bce3619944de5682b89 \
     --hash=sha256:b44276f2c276e909239a4f6c955aa667aaafeb78597923b1c60babc76db78e4c
+    # via -r py/deps/requirements.in
+sphinx-tabs==3.5.0 \
+    --hash=sha256:154be49de4d5c8249ea08c5d9bf88ca8f9c31e00a178305a93cbc33e000339e5 \
+    --hash=sha256:91dba1187e4c35fd37380a56ac228bbd54c6c649b2351829f3bf033718277537
     # via -r py/deps/requirements.in
 sphinxcontrib-applehelp==2.0.0 \
     --hash=sha256:2f29ef331735ce958efa4734873f084941970894c6090408b079c61b2e1c06d1 \
