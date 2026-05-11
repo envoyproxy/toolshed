@@ -308,17 +308,56 @@ class SphinxRunner(runner.Runner):
                 f"version_history/{minor_version}/{self.docs_tag}.rst")
 
     def save_html(self) -> None:
-        if self.output_path.exists():
-            self.log.warning(
-                f"Output path ({self.output_path}) exists, removing")
-            if self.output_path.is_file():
-                self.output_path.unlink()
+        def _remove(path: pathlib.Path) -> None:
+            if not path.exists():
+                return
+            if path.is_file():
+                path.unlink()
             else:
-                shutil.rmtree(self.output_path)
-        if not utils.is_tarlike(self.output_path):
-            shutil.copytree(self.html_dir, self.output_path)
-            return
-        utils.pack(self.html_dir, self.output_path)
+                shutil.rmtree(path)
+
+        output_path = self.output_path
+        staging_path = output_path.with_name(f"{output_path.name}.new")
+        backup_path = output_path.with_name(f"{output_path.name}.old")
+        tarlike = utils.is_tarlike(output_path)
+
+        moved_old_output = False
+        try:
+            _remove(staging_path)
+            if not tarlike:
+                shutil.copytree(self.html_dir, staging_path)
+            else:
+                utils.pack(self.html_dir, staging_path)
+
+            output_exists = output_path.exists()
+            if tarlike:
+                staging_path.replace(output_path)
+                if output_exists:
+                    self.log.warning(
+                        f"Output path ({output_path}) exists, replacing")
+                return
+
+            if output_exists:
+                _remove(backup_path)
+                output_path.replace(backup_path)
+                moved_old_output = True
+            try:
+                staging_path.replace(output_path)
+            except Exception:
+                if moved_old_output and backup_path.exists():
+                    try:
+                        backup_path.replace(output_path)
+                    except Exception:
+                        pass
+                raise
+
+            if moved_old_output:
+                _remove(backup_path)
+                self.log.warning(
+                    f"Output path ({output_path}) exists, replacing")
+        except Exception:
+            _remove(staging_path)
+            raise
 
     @runner.cleansup
     @runner.catches((SphinxBuildError, SphinxEnvError))
