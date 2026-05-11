@@ -2,7 +2,6 @@
 import argparse
 import pathlib
 from functools import cached_property
-from typing import Optional, Type
 
 import aiodocker
 
@@ -22,7 +21,7 @@ class PackagesDistroChecker(checker.Checker):
     checks = ("distros",)
 
     @property
-    def active_distrotest(self) -> Optional[distrotest.DistroTest]:
+    def active_distrotest(self) -> distrotest.DistroTest | None:
         """Currently active test."""
         return self._active_distrotest
 
@@ -87,7 +86,7 @@ class PackagesDistroChecker(checker.Checker):
         return self.args.rebuild
 
     @property
-    def test_class(self) -> Type[distrotest.DistroTest]:
+    def test_class(self) -> type[distrotest.DistroTest]:
         """The test class to run the tests with."""
         return distrotest.DistroTest
 
@@ -110,7 +109,7 @@ class PackagesDistroChecker(checker.Checker):
             version=str(self.version))
 
     @property
-    def test_config_class(self) -> Type[distrotest.DistroTestConfig]:
+    def test_config_class(self) -> type[distrotest.DistroTestConfig]:
         """The test config class."""
         return distrotest.DistroTestConfig
 
