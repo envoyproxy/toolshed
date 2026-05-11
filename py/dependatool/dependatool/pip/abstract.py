@@ -40,7 +40,7 @@ class ADependatoolPipCheck(object):
     def requirements_filename(self) -> str:
         return self._requirements_filename
 
-    async def check(self, files=None):
+    async def check(self):
         """Check that dependabot config matches requirements.txt files found in
         repo."""
         missing_dirs = self.config.difference(

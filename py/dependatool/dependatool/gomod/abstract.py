@@ -31,7 +31,7 @@ class ADependatoolGomodCheck(object):
 
     @async_property(cache=True)
     async def gomodfile_dirs(self) -> set[str]:
-        """Set of found directories in the repo containing gomodfile.txt."""
+        """Set of found directories in the repo containing go.mod."""
         return set(
             os.path.dirname(f"/{f}")
             for f in await self.checker.directory.files
@@ -41,9 +41,8 @@ class ADependatoolGomodCheck(object):
     def gomodfile_filename(self) -> re.Pattern[str]:
         return re.compile(self._gomodfile_filename)
 
-    async def check(self, files=None):
-        """Check that dependabot config matches gomodfile.txt files found in
-        repo."""
+    async def check(self):
+        """Check that dependabot config matches go.mod files found in repo."""
         missing_dirs = self.config.difference(
             await self.gomodfile_dirs)
         missing_config = (await self.gomodfile_dirs).difference(
