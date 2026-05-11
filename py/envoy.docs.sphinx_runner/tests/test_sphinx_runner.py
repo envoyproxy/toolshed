@@ -620,8 +620,8 @@ def test_sphinx_runner_add_arguments(patches):
             [('output_path',), {}]])
 
 
-@pytest.mark.parametrize("fails", [True, False])
-def test_sphinx_runner_build_html(patches, fails):
+@pytest.mark.parametrize("rc", [0, 7])
+def test_sphinx_runner_build_html(patches, rc):
     runner = DummySphinxRunner()
     patched = patches(
         "debug",
@@ -631,9 +631,9 @@ def test_sphinx_runner_build_html(patches, fails):
         prefix="envoy.docs.sphinx_runner.runner")
 
     with patched as (m_debug, m_sphinx, m_jobs, m_args):
-        m_sphinx.side_effect = lambda s: fails
+        m_sphinx.side_effect = lambda s: rc
         e = None
-        if fails:
+        if rc:
             with pytest.raises(sphinx_runner.SphinxBuildError) as e:
                 runner.build_html()
         else:
@@ -646,8 +646,8 @@ def test_sphinx_runner_build_html(patches, fails):
         m_sphinx.call_args
         == [(m_args.return_value,), {}])
 
-    if fails:
-        assert e.value.args == ('BUILD FAILED',)
+    if rc:
+        assert e.value.args == (f"BUILD FAILED (sphinx exit code {rc})",)
     else:
         assert not e
 
@@ -655,18 +655,18 @@ def test_sphinx_runner_build_html(patches, fails):
 def test_sphinx_runner_build_summary(patches):
     runner = DummySphinxRunner()
     patched = patches(
-        "print",
+        ("SphinxRunner.log", dict(new_callable=PropertyMock)),
         "SphinxRunner._color",
         ("SphinxRunner.configs", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_print, m_color, m_configs):
+    with patched as (m_log, m_color, m_configs):
         m_configs.return_value.items.return_value = (("a", "A"), ("b", "B"))
         runner.build_summary()
 
     assert (
-        m_print.call_args_list
-        == [[(), {}],
+        m_log.return_value.info.call_args_list
+        == [[("",), {}],
             [(m_color.return_value,), {}],
             [(m_color.return_value,), {}],
             [(f"{m_color.return_value} {m_color.return_value}: "
@@ -675,7 +675,7 @@ def test_sphinx_runner_build_summary(patches):
               f"{m_color.return_value}",), {}],
             [(m_color.return_value,), {}],
             [(m_color.return_value,), {}],
-            [(), {}]])
+            [("",), {}]])
     assert (
         m_color.call_args_list
         == [[('#### Sphinx build configs #####################',), {}],
@@ -757,6 +757,46 @@ def test_sphinx_runner_check_env(
                 "in version_history/current.rst", ))
 
 
+@pytest.mark.parametrize(
+    "docs_tag,version_number,current",
+    [("v1.17.0", "1.17.0", FileNotFoundError("MISSING FILE")),
+     ("v1.23.1", "1.23.1", "XXX v1.23.1 ZZZ")])
+def test_sphinx_runner_check_env_missing_version_file(
+        patches, docs_tag, version_number, current):
+    runner = DummySphinxRunner()
+    patched = patches(
+        ("SphinxRunner.configs", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.version_number", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.docs_tag", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.py_compatible", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.rst_dir", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+
+    with patched as (m_configs, m_version, m_tag, m_py, m_rst):
+        m_py.return_value = True
+        m_configs.return_value.__getitem__.return_value = "tagged"
+        m_version.return_value = version_number
+        m_tag.return_value = docs_tag
+        if isinstance(current, FileNotFoundError):
+            (m_rst.return_value.joinpath
+             .return_value.read_text.side_effect) = current
+        else:
+            (m_rst.return_value.joinpath
+             .return_value.read_text.return_value) = current
+
+        if isinstance(current, FileNotFoundError):
+            with pytest.raises(sphinx_runner.SphinxEnvError) as e:
+                runner.check_env()
+            assert (
+                e.value.args
+                == (
+                    f"Version history file not found for "
+                    f"{docs_tag}: {current}",))
+            assert isinstance(e.value.__cause__, FileNotFoundError)
+        else:
+            runner.check_env()
+
+
 @pytest.mark.parametrize("tarlike", [True, False])
 @pytest.mark.parametrize("exists", [True, False])
 @pytest.mark.parametrize("is_file", [True, False])
@@ -824,13 +864,13 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
 async def test_sphinx_runner_run(patches, check_fails, build_fails):
     runner = DummySphinxRunner()
     patched = patches(
-        "print",
         "os",
         "SphinxRunner.build_summary",
         "SphinxRunner.check_env",
         "SphinxRunner.build_html",
         "SphinxRunner.save_html",
         "SphinxRunner.validate_args",
+        ("SphinxRunner.log", dict(new_callable=PropertyMock)),
         ("SphinxRunner.config_file", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
@@ -840,8 +880,8 @@ async def test_sphinx_runner_run(patches, check_fails, build_fails):
     assert runner.run.__wrapped__.__cleansup__
 
     with patched as patchy:
-        (m_print, m_os, m_summary,
-         m_check, m_build, m_save, m_validate, m_config) = patchy
+        (m_os, m_summary, m_check, m_build, m_save,
+         m_validate, m_log, m_config) = patchy
         if check_fails:
             _check_error = sphinx_runner.SphinxEnvError("CHECK FAILED")
             m_check.side_effect = lambda: _raise(_check_error)
@@ -864,8 +904,8 @@ async def test_sphinx_runner_run(patches, check_fails, build_fails):
 
     if check_fails:
         assert (
-            m_print.call_args
-            == [(_check_error,), {}])
+            m_log.return_value.error.call_args
+            == [("CHECK FAILED",), {}])
         assert not m_summary.called
         assert not m_build.called
         assert not m_save.called
@@ -880,12 +920,12 @@ async def test_sphinx_runner_run(patches, check_fails, build_fails):
 
     if build_fails:
         assert (
-            m_print.call_args
-            == [(_build_error,), {}])
+            m_log.return_value.error.call_args
+            == [("BUILD FAILED",), {}])
         assert not m_save.called
         return
 
-    assert not m_print.called
+    assert not m_log.return_value.error.called
     assert (
         m_save.call_args
         == [(), {}])

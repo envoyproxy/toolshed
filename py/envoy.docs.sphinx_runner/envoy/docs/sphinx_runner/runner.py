@@ -284,20 +284,22 @@ class SphinxRunner(runner.Runner):
 
     def build_html(self) -> None:
         with debug(self.jobs):
-            if sphinx_build(self.sphinx_args):
-                raise SphinxBuildError("BUILD FAILED")
+            if rc := sphinx_build(self.sphinx_args):
+                raise SphinxBuildError(f"BUILD FAILED (sphinx exit code {rc})")
 
     def build_summary(self) -> None:
-        print()
-        print(self._color("#### Sphinx build configs #####################"))
-        print(self._color("###"))
+        self.log.info("")
+        self.log.info(
+            self._color("#### Sphinx build configs #####################"))
+        self.log.info(self._color("###"))
         for k, v in self.configs.items():
-            print(
+            self.log.info(
                 f"{self._color('###')} {self._color(k, 'key')}: "
                 f"{self._color(v, 'value')}")
-        print(self._color("###"))
-        print(self._color("###############################################"))
-        print()
+        self.log.info(self._color("###"))
+        self.log.info(
+            self._color("###############################################"))
+        self.log.info("")
 
     def check_env(self) -> None:
         if not self.py_compatible:
@@ -312,10 +314,15 @@ class SphinxRunner(runner.Runner):
                 f"{self.docs_tag} vs v{self.version_number}")
         minor_version = ".".join(self.docs_tag.split(".")[:-1])
         # this should probs only check the first line
-        version_current = self.rst_dir.joinpath(
-            "version_history",
-            f"{minor_version}",
-            f"{self.docs_tag}.rst").read_text()
+        try:
+            version_current = self.rst_dir.joinpath(
+                "version_history",
+                minor_version,
+                f"{self.docs_tag}.rst").read_text()
+        except FileNotFoundError as e:
+            raise SphinxEnvError(
+                f"Version history file not found for {self.docs_tag}: {e}"
+            ) from e
         if self.version_number not in version_current:
             raise SphinxEnvError(
                 f"Git tag ({self.version_number}) not found in "
@@ -339,17 +346,9 @@ class SphinxRunner(runner.Runner):
     async def run(self):
         self.validate_args()
         os.environ["ENVOY_DOCS_BUILD_CONFIG"] = str(self.config_file)
-        try:
-            self.check_env()
-        except SphinxEnvError as e:
-            print(e)
-            return 1
+        self.check_env()
         self.build_summary()
-        try:
-            self.build_html()
-        except SphinxBuildError as e:
-            print(e)
-            return 1
+        self.build_html()
         self.save_html()
 
     def validate_args(self):

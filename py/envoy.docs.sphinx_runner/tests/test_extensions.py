@@ -249,3 +249,4 @@ def test_ext_validating_code_block_vbc__validate(iters, patches, raises):
             == ("Failed config validation for type: "
                 f"'{vbc.options.get.return_value}' in: {source} line: "
                 f"{line}"))
+        assert isinstance(e.value.__cause__, raises)
