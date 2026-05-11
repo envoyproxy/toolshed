@@ -8,12 +8,12 @@ from typing import TypedDict
 class BaseDependencyMetadataDict(TypedDict):
     release_date: str
     version: str
+    urls: list[str]
+    sha256: str
 
 
 class DependencyMetadataDict(BaseDependencyMetadataDict, total=False):
     cpe: str | None
-    urls: list[str]
-    sha256: str
 
 
 DependenciesDict = dict[str, DependencyMetadataDict]
