@@ -6,6 +6,8 @@ import pytest
 from envoy.docs import sphinx_runner
 from envoy.docs.sphinx_runner.runner import ENVOY_DOCS_BASE_URL
 
+# Async tests here rely on root pytest.ini `asyncio_mode = auto`.
+
 
 class DummySphinxRunner(sphinx_runner.SphinxRunner):
 
