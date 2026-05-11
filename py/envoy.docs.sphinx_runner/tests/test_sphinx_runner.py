@@ -356,7 +356,7 @@ def test_sphinx_runner_release_level(patches, docs_tag):
     assert "release_level" not in runner.__dict__
 
 
-@pytest.mark.parametrize("rst_tar", [None, "SOME_DOCS_TAG"])
+@pytest.mark.parametrize("rst_tar", [None, "", "SOME_DOCS_TAG"])
 def test_sphinx_runner_rst_dir(patches, rst_tar):
     runner = DummySphinxRunner()
     patched = patches(
@@ -374,7 +374,7 @@ def test_sphinx_runner_rst_dir(patches, rst_tar):
         m_dir.return_value.joinpath.call_args
         == [('generated', 'rst'), {}])
 
-    if rst_tar:
+    if rst_tar is not None:
         assert (
             m_utils.extract.call_args
             == [(m_dir.return_value.joinpath.return_value, rst_tar), {}])
