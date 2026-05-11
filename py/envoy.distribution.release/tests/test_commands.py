@@ -272,17 +272,80 @@ async def test_release_command_fetch_run(patches, releases):
         prefix="envoy.distribution.release.commands")
 
     releases = {r: AsyncMock() for r in releases}
+    for release in releases.values():
+        release.fetch = AsyncMock(return_value={"assets": [], "errors": []})
 
     with patched as (m_types, m_path, m_releases):
         mock_releases = AsyncMock(return_value=releases)
         m_releases.side_effect = mock_releases
-        assert not await command.run()
+        assert await command.run() == 0
 
     for i, release in enumerate(releases.values()):
         assert (
             release.fetch.call_args
             == [(m_path.return_value, m_types.return_value),
                 {'append': i > 0}])
+
+
+async def test_release_command_fetch_run_errors(patches):
+    command = commands.FetchCommand("CONTEXT")
+    assert isinstance(command, AGithubReleaseCommand)
+    patched = patches(
+        ("FetchCommand.asset_types",
+         dict(new_callable=PropertyMock)),
+        ("FetchCommand.path",
+         dict(new_callable=PropertyMock)),
+        ("FetchCommand.releases",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.release.commands")
+    release = AsyncMock()
+    release.fetch = AsyncMock(
+        return_value={
+            "assets": [],
+            "errors": [{"name": "foo.deb", "error": "boom"}]})
+    releases = {"RELEASE0": release}
+
+    with patched as (m_types, m_path, m_releases):
+        mock_releases = AsyncMock(return_value=releases)
+        m_releases.side_effect = mock_releases
+        assert await command.run() == 1
+
+    assert (
+        release.fetch.call_args
+        == [(m_path.return_value, m_types.return_value), {"append": False}])
+
+
+async def test_release_command_fetch_run_mixed_errors(patches):
+    command = commands.FetchCommand("CONTEXT")
+    assert isinstance(command, AGithubReleaseCommand)
+    patched = patches(
+        ("FetchCommand.asset_types",
+         dict(new_callable=PropertyMock)),
+        ("FetchCommand.path",
+         dict(new_callable=PropertyMock)),
+        ("FetchCommand.releases",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.release.commands")
+    release0 = AsyncMock()
+    release0.fetch = AsyncMock(return_value={"assets": [], "errors": []})
+    release1 = AsyncMock()
+    release1.fetch = AsyncMock(
+        return_value={
+            "assets": [],
+            "errors": [{"name": "foo.deb", "error": "boom"}]})
+    releases = {"RELEASE0": release0, "RELEASE1": release1}
+
+    with patched as (m_types, m_path, m_releases):
+        mock_releases = AsyncMock(return_value=releases)
+        m_releases.side_effect = mock_releases
+        assert await command.run() == 1
+
+    assert (
+        release0.fetch.call_args
+        == [(m_path.return_value, m_types.return_value), {"append": False}])
+    assert (
+        release1.fetch.call_args
+        == [(m_path.return_value, m_types.return_value), {"append": True}])
 
 
 async def test_release_command_info(patches):
@@ -361,9 +424,32 @@ async def test_release_command_push_run(patches):
         prefix="envoy.distribution.release.commands")
 
     with patched as (m_artefacts, m_release):
-        mock_push = AsyncMock()
+        mock_push = AsyncMock(return_value={"assets": [], "errors": []})
         m_release.return_value.push = mock_push
-        assert not await command.run()
+        assert await command.run() == 0
+
+    assert (
+        mock_push.call_args
+        == [(m_artefacts.return_value, ), {}])
+
+
+async def test_release_command_push_run_errors(patches):
+    command = commands.PushCommand("CONTEXT")
+    assert isinstance(command, AGithubReleaseCommand)
+    patched = patches(
+        ("PushCommand.artefacts",
+         dict(new_callable=PropertyMock)),
+        ("PushCommand.release",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.distribution.release.commands")
+
+    with patched as (m_artefacts, m_release):
+        mock_push = AsyncMock(
+            return_value={
+                "assets": [],
+                "errors": [{"name": "foo.deb", "error": "boom"}]})
+        m_release.return_value.push = mock_push
+        assert await command.run() == 1
 
     assert (
         mock_push.call_args
