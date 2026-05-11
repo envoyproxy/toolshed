@@ -1,9 +1,7 @@
 
-import argparse
-from functools import cached_property
-
 import gidgethub
 import gidgethub.abc
+from typing import TYPE_CHECKING
 
 from aio.run import runner
 
@@ -16,24 +14,25 @@ class ReleaseRunner(AGithubReleaseRunner):
     """This runner interacts with the Github release API to create, push, and
     fetch releases and release assets."""
 
-    @cached_property
-    def command(self) -> runner.ACommand:
-        return super().command
+    if TYPE_CHECKING:
+        @property
+        def command(self) -> runner.ACommand:
+            return super().command
 
-    @cached_property
-    def commands(self) -> runner.abstract.CommandDict:
-        return super().commands
+        @property
+        def commands(self) -> runner.abstract.CommandDict:
+            return super().commands
 
-    @cached_property
-    def release_manager(self) -> AGithubReleaseManager:
-        return super().release_manager
+        @property
+        def release_manager(self) -> AGithubReleaseManager:
+            return super().release_manager
+
+        def add_arguments(self, parser) -> None:
+            super().add_arguments(parser)
 
     @property
     def release_manager_class(self) -> type[AGithubReleaseManager]:
         return manager.GithubReleaseManager
-
-    def add_arguments(self, parser: argparse.ArgumentParser) -> None:
-        super().add_arguments(parser)
 
     @runner.cleansup
     @runner.catches(
@@ -42,3 +41,6 @@ class ReleaseRunner(AGithubReleaseRunner):
          KeyboardInterrupt))
     async def run(self) -> int | None:
         return await super().run()
+
+
+ReleaseRunner.__abstractmethods__ = frozenset()

@@ -16,7 +16,7 @@ class DummyReleaseRunner(runner.ReleaseRunner):
 
 def test_runner_constructor():
     run = DummyReleaseRunner()
-    isinstance(run, AGithubReleaseRunner)
+    assert isinstance(run, AGithubReleaseRunner)
     assert run.release_manager_class == GithubReleaseManager
 
 
@@ -31,8 +31,6 @@ def test_runner_super_props(patches, prop):
     with patched as (m_prop, ):
         assert getattr(run, prop) == m_prop.return_value
 
-    assert prop in run.__dict__
-
 
 def test_runner_add_arguments(patches):
     run = DummyReleaseRunner()
@@ -41,7 +39,7 @@ def test_runner_add_arguments(patches):
         prefix="envoy.distribution.release.runner")
 
     with patched as (m_args, ):
-        assert not run.add_arguments("PARSER")
+        assert run.add_arguments("PARSER") == m_args.return_value
 
     assert (
         m_args.call_args

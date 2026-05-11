@@ -228,7 +228,7 @@ async def test_release_upload_url(patches):
 def test_release_version_name(patches):
     _manager = MagicMock()
     release = GithubRelease(_manager, "VERSION")
-    release.version_name == _manager.format_version.return_value
+    assert release.version_name == _manager.format_version.return_value
     assert (
         _manager.format_version.call_args
         == [("VERSION",), {}])
