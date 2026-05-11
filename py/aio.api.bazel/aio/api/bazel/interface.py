@@ -12,7 +12,6 @@ class IBazelProcessProtocol(
         pipe.IProcessProtocol,
         metaclass=abstracts.Interface):
 
-    # TODO: copy this to aio.core.pipe.interface and fix type
     @abstracts.interfacemethod
     async def process(self, request: Any) -> Any:
         """Process incoming items."""
@@ -36,7 +35,6 @@ class IBazelWorkerProcessor(
         pipe.IStdinStdoutProcessor,
         metaclass=abstracts.Interface):
 
-    # TODO: copy this to aio.core.pipe.interface and fix type
     @abstracts.interfacemethod
     def __init__(
             self,
@@ -48,7 +46,6 @@ class IBazelWorkerProcessor(
             log: Callable[[str], None] | None = None) -> None:
         raise NotImplementedError
 
-    # TODO: copy this to aio.core.pipe.interface and fix type
     @abstracts.interfacemethod
     def __call__(self, *args) -> Any:
         raise NotImplementedError

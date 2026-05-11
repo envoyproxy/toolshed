@@ -38,8 +38,11 @@ class ABazelQuery(ABazelCommand, metaclass=abstracts.Abstraction):
         """Handle the subprocess response from running the query."""
         if self.query_failed(response):
             raise exceptions.BazelQueryError(
-                f"\n{response.stdout.strip()}{response.stderr.strip()}")
-        return response.stdout.strip().split("\n")
+                f"\nstdout:\n{response.stdout.strip()}"
+                f"\nstderr:\n{response.stderr.strip()}")
+        return [
+            line for line in response.stdout.strip().split("\n")
+            if line]
 
     def query_command(
             self,

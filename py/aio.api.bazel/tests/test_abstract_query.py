@@ -131,12 +131,16 @@ def test_base_bazel_query_handle_query_response(patches, failed):
                 query.handle_query_response(response)
             assert (
                 e.value.args[0]
-                == (f"\n{response.stdout.strip.return_value}"
-                    f"{response.stderr.strip.return_value}"))
+                == (f"\nstdout:\n{response.stdout.strip.return_value}"
+                    f"\nstderr:\n{response.stderr.strip.return_value}"))
+            assert "stdout:" in e.value.args[0]
+            assert "stderr:" in e.value.args[0]
         else:
+            response.stdout.strip.return_value.split.return_value = [
+                "LINE1", "", "LINE2"]
             assert (
                 query.handle_query_response(response)
-                == response.stdout.strip.return_value.split.return_value)
+                == ["LINE1", "LINE2"])
 
     assert (
         m_failed.call_args
@@ -154,6 +158,27 @@ def test_base_bazel_query_handle_query_response(patches, failed):
     assert (
         response.stdout.strip.return_value.split.call_args
         == [("\n", ), {}])
+
+
+@pytest.mark.parametrize(
+    "stdout,expected",
+    [("", []),
+     ("//a\n//b", ["//a", "//b"]),
+     ("//a\n\n//b", ["//a", "//b"])])
+def test_base_bazel_query_handle_query_response_output(
+        patches, stdout, expected):
+    query = DummyBazelQuery("PATH")
+    patched = patches(
+        "ABazelQuery.query_failed",
+        prefix="aio.api.bazel.abstract.query")
+    response = MagicMock()
+    response.stdout = stdout
+
+    with patched as (m_failed, ):
+        m_failed.return_value = False
+        assert (
+            query.handle_query_response(response)
+            == expected)
 
 
 @pytest.mark.parametrize(

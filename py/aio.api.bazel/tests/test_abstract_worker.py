@@ -314,7 +314,11 @@ async def test_bazelworker_run(patches, persistent):
     with patched as (m_persistent, m_class, m_protocol):
         m_persistent.return_value = persistent
         m_class.return_value.return_value.side_effect = AsyncMock()
-        assert not await worker.run()
+        if not persistent:
+            with pytest.raises(NotImplementedError):
+                await worker.run()
+        else:
+            assert not await worker.run()
 
     if not persistent:
         assert not m_class.called
