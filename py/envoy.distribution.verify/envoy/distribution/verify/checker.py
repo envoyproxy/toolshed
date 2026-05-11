@@ -161,7 +161,8 @@ class PackagesDistroChecker(checker.Checker):
         parser.add_argument(
             "--distribution",
             "-d",
-            nargs="?",
+            action="append",
+            default=[],
             help=(
                 "Specify distribution to test. "
                 "Can be specified multiple times."))
