@@ -180,23 +180,28 @@ def test_checker_dependency_metadata(patches):
     assert "dependency_metadata" not in checker.__dict__
 
 
-@pytest.mark.parametrize("token", [True, False])
-def test_checker_disabled_checks(patches, token):
+def test_checker_access_token_missing_token(patches):
     checker = DummyDependencyChecker()
     patched = patches(
-        ("ADependencyChecker.access_token",
+        "os",
+        ("ADependencyChecker.args",
          dict(new_callable=PropertyMock)),
         prefix="envoy.dependency.check.abstract.checker")
-    expected = (
-        dict(release_dates=abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG,
-             release_issues=abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG,
-             releases=abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG)
-        if not token
-        else {})
 
-    with patched as (m_token, ):
-        m_token.return_value = token
-        assert checker.disabled_checks == expected
+    with patched as (m_os, m_args):
+        m_args.return_value.github_token = None
+        m_os.getenv.return_value = None
+        with pytest.raises(exceptions.GithubTokenError) as e:
+            checker.access_token
+
+    assert e.value.args == (abstract.checker.NO_GITHUB_TOKEN_ERROR_MSG, )
+    assert m_os.getenv.call_args == [("GITHUB_TOKEN", ), {}]
+    assert "access_token" not in checker.__dict__
+
+
+def test_checker_disabled_checks():
+    checker = DummyDependencyChecker()
+    assert checker.disabled_checks == {}
 
     assert "disabled_checks" in checker.__dict__
 
@@ -829,6 +834,29 @@ async def test_checker_on_checks_complete(patches):
     assert (
         m_session.return_value.close.call_args
         == [(), {}])
+
+
+def test_checker_run_catches():
+    checker = DummyDependencyChecker()
+    assert (
+        checker.run.__wrapped__.__catches__
+        == (exceptions.GithubTokenError,))
+
+
+async def test_checker_run_catches_github_token_error(patches):
+    checker = DummyDependencyChecker()
+    patched = patches(
+        "checker.Checker.run",
+        ("ADependencyChecker.log",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.dependency.check.abstract.checker")
+
+    with patched as (m_run, m_log):
+        m_run.side_effect = exceptions.GithubTokenError("NO TOKEN")
+        assert await checker.run() == 1
+
+    assert m_run.call_args == [(), {}]
+    assert m_log.return_value.error.call_args == [("NO TOKEN", ), {}]
 
 
 @pytest.mark.parametrize("fix", [True, False])
