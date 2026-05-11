@@ -123,6 +123,7 @@ class AGithubDependencyReleaseIssues(
             newer_release=await kwargs["dep"].newer_release)
 
     async def create_label(self, name: str) -> None:
+        """Create a tracked issue label in the configured repository."""
         await self.repo.post(
             "labels",
             data=dict(name=name))

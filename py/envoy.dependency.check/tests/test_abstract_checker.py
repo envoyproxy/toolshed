@@ -955,12 +955,14 @@ async def test_checker_release_issues_labels_check_fix_true(
 
 
 @pytest.mark.parametrize(
-    ("error_type", "error_message"),
-    [(PermissionError, "no perms"),
-     (ConnectionError, "network issue")])
+    "error_factory",
+    [lambda: PermissionError("no perms"),
+     lambda: ConnectionError("network issue"),
+     lambda: OSError("io issue"),
+     lambda: gidgethub.BadRequest(MagicMock(phrase="forbidden"))])
 @pytest.mark.parametrize("missing_labels", [["LABEL0"]])
 async def test_checker_release_issues_labels_check_fix_true_create_error(
-        patches, missing_labels, error_type, error_message):
+        patches, missing_labels, error_factory):
     checker = DummyDependencyChecker()
     patched = patches(
         ("ADependencyChecker.active_check",
@@ -978,8 +980,9 @@ async def test_checker_release_issues_labels_check_fix_true_create_error(
         issues_tracker = m_issues.return_value.__getitem__.return_value
         issues_tracker.missing_labels = AsyncMock(
             return_value=missing_labels)()
+        error = error_factory()
         issues_tracker.create_label = AsyncMock(
-            side_effect=error_type(error_message))
+            side_effect=error)
         m_fix.return_value = True
         assert not await checker.release_issues_labels_check()
 
@@ -987,7 +990,7 @@ async def test_checker_release_issues_labels_check_fix_true_create_error(
         m_error.call_args_list
         == [[(m_active.return_value,
               ["Missing label: LABEL0 "
-               f"(create failed: {error_type.__name__}: {error_message})"]),
+               f"(create failed: {type(error).__name__}: {error})"]),
              {}]])
     assert not m_warn.called
     assert not m_succeed.called
