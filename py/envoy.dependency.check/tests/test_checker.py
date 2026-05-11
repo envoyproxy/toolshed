@@ -115,6 +115,18 @@ def test_checker_issues_constructor(patches):
     assert "issue_class" not in issues.__dict__
 
 
+def test_checker_issues_labels():
+    issues = check.GithubDependencyReleaseIssues("GITHUB")
+    assert issues.labels == check.checker.LABELS
+    assert "labels" not in issues.__dict__
+
+
+def test_checker_issues_repo_name():
+    issues = check.GithubDependencyReleaseIssues("GITHUB")
+    assert issues.repo_name == check.checker.GITHUB_REPO_LOCATION
+    assert "repo_name" not in issues.__dict__
+
+
 def test_checker_issues_tracker_constructor(patches):
     patched = patches(
         "github.AGithubIssuesTracker.__init__",
@@ -143,3 +155,9 @@ def test_checker_issues_tracker_tracked_issues(patches):
             == dict(releases=m_release.return_value))
 
     assert "tracked_issues" in tracker.__dict__
+
+
+def test_checker_checker_no_dep_issues_re():
+    checker = check.DependencyChecker()
+    assert checker.no_dep_issues_re == check.checker.NO_ISSUE_DEPENDENCIES
+    assert "no_dep_issues_re" not in checker.__dict__

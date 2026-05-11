@@ -8,8 +8,6 @@ import abstracts
 from aio.api import github as _github
 
 
-GITHUB_REPO_LOCATION = "envoyproxy/envoy"
-LABELS = ("dependencies", "area/build", "no stalebot")
 BODY_TPL = """
 Package Name: {dep}
 Current Version: {dep.github_version_name}@{release_date}
@@ -88,13 +86,17 @@ class AGithubDependencyReleaseIssues(
     def issues_search_tpl(self) -> str:
         return super().issues_search_tpl
 
-    @property
+    @property  # type: ignore[misc]
+    @abstracts.interfacemethod
     def labels(self) -> tuple[str, ...]:
-        return LABELS
+        """Required GitHub labels for tracked issues."""
+        raise NotImplementedError
 
-    @property
+    @property  # type: ignore[misc]
+    @abstracts.interfacemethod
     def repo_name(self) -> str:
-        return GITHUB_REPO_LOCATION
+        """`owner/repo` to manage tracked issues against."""
+        raise NotImplementedError
 
     @property
     def title_prefix(self) -> str:
