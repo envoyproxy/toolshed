@@ -684,7 +684,8 @@ async def test_checker_dep_issue_check(
     "issue,fix",
     [(True, False),
      (True, True),
-     (False, False)])
+     (False, False),
+     (False, True)])
 async def test_checker_dep_issue_check_no_dep_issues(
         patches, issue, fix):
     checker = DummyDependencyChecker()
@@ -752,12 +753,12 @@ async def test_checker_dep_issue_check_no_dep_issues(
         else:
             assert not m_close.called
         assert not m_log.called
-        return
-    assert not m_warn.called
-    assert not m_close.called
-    assert (
-        m_log.return_value.info.call_args
-        == [("Ignored by dependency issue tracker: DUMMY_DEP", ), {}])
+    else:
+        assert not m_warn.called
+        assert not m_close.called
+        assert (
+            m_log.return_value.info.call_args
+            == [("Ignored by dependency issue tracker: DUMMY_DEP", ), {}])
 
 
 @pytest.mark.parametrize("newer_release", [True, False])
