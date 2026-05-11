@@ -767,8 +767,7 @@ def test_sphinx_runner_check_env_missing_version_file(
 
 @pytest.mark.parametrize("tarlike", [True, False])
 @pytest.mark.parametrize("exists", [True, False])
-@pytest.mark.parametrize("is_file", [True, False])
-def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
+def test_sphinx_runner_save_html(patches, tarlike, exists):
     runner = DummySphinxRunner()
     patched = patches(
         "utils",
@@ -776,55 +775,136 @@ def test_sphinx_runner_save_html(patches, tarlike, exists, is_file):
         ("SphinxRunner.log", dict(new_callable=PropertyMock)),
         ("SphinxRunner.output_path", dict(new_callable=PropertyMock)),
         ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
-        ("SphinxRunner.tarmode", dict(new_callable=PropertyMock)),
         prefix="envoy.docs.sphinx_runner.runner")
 
-    with patched as (m_utils, m_shutil, m_log, m_out, m_html, m_mode):
+    with patched as (m_utils, m_shutil, m_log, m_out, m_html):
+        output_path = m_out.return_value
+        staging_path = MagicMock()
+        backup_path = MagicMock()
+        output_path.name = "OUTPUT"
+        output_path.with_name.side_effect = [staging_path, backup_path]
         m_utils.is_tarlike.return_value = tarlike
-        m_out.return_value.exists.return_value = exists
-        m_out.return_value.is_file.return_value = is_file
+        output_path.exists.return_value = exists
+        staging_path.exists.return_value = False
+        backup_path.exists.side_effect = [False, True]
+        backup_path.is_file.return_value = False
         runner.save_html()
+
+    assert (
+        output_path.with_name.call_args_list
+        == [(("OUTPUT.new",), {}), (("OUTPUT.old",), {})])
+    assert (
+        m_utils.is_tarlike.call_args
+        == [(output_path,), {}])
+
+    if not tarlike:
+        assert (
+            m_shutil.copytree.call_args
+            == [(m_html.return_value, staging_path), {}])
+        assert not m_utils.pack.called
+        assert (
+            staging_path.replace.call_args
+            == [(output_path,), {}])
+        if exists:
+            assert (
+                output_path.replace.call_args
+                == [(backup_path,), {}])
+            assert (
+                m_shutil.rmtree.call_args
+                == [(backup_path,), {}])
+        else:
+            assert not output_path.replace.called
+            assert not m_shutil.rmtree.called
+    else:
+        assert not m_shutil.copytree.called
+        assert (
+            m_utils.pack.call_args
+            == [(m_html.return_value, staging_path), {}])
+        assert (
+            staging_path.replace.call_args
+            == [(output_path,), {}])
+        assert not output_path.replace.called
+        assert not m_shutil.rmtree.called
 
     if exists:
         assert (
             m_log.return_value.warning.call_args
-            == [(f"Output path ({m_out.return_value}) exists, "
-                 "removing", ), {}])
-        assert (
-            m_out.return_value.is_file.call_args
-            == [(), {}])
-        if is_file:
+            == [(f"Output path ({output_path}) exists, replacing",), {}])
+    else:
+        assert not m_log.return_value.warning.called
+
+
+@pytest.mark.parametrize("tarlike", [True, False])
+@pytest.mark.parametrize("write_fails", [True, False])
+def test_sphinx_runner_save_html_write_preserves_existing_output(
+        patches, tarlike, write_fails):
+    runner = DummySphinxRunner()
+    patched = patches(
+        "utils",
+        "shutil",
+        ("SphinxRunner.log", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.output_path", dict(new_callable=PropertyMock)),
+        ("SphinxRunner.html_dir", dict(new_callable=PropertyMock)),
+        prefix="envoy.docs.sphinx_runner.runner")
+
+    with patched as (m_utils, m_shutil, m_log, m_out, m_html):
+        output_path = m_out.return_value
+        staging_path = MagicMock()
+        backup_path = MagicMock()
+        output_path.name = "OUTPUT"
+        output_path.with_name.side_effect = [staging_path, backup_path]
+        output_path.exists.return_value = True
+        m_utils.is_tarlike.return_value = tarlike
+        if write_fails:
+            staging_path.exists.side_effect = [False, True]
+            if tarlike:
+                staging_path.is_file.return_value = True
+                m_utils.pack.side_effect = RuntimeError("PACK FAILED")
+            else:
+                staging_path.is_file.return_value = False
+                m_shutil.copytree.side_effect = RuntimeError("COPY FAILED")
+            with pytest.raises(RuntimeError):
+                runner.save_html()
+        else:
+            staging_path.exists.return_value = False
+            backup_path.exists.side_effect = [False, True]
+            backup_path.is_file.return_value = False
+            runner.save_html()
+
+    if write_fails:
+        assert not output_path.replace.called
+        assert not staging_path.replace.called
+        assert not m_log.return_value.warning.called
+        if tarlike:
             assert (
-                m_out.return_value.unlink.call_args
+                staging_path.unlink.call_args
                 == [(), {}])
             assert not m_shutil.rmtree.called
         else:
-            assert not m_out.return_value.unlink.called
+            assert not staging_path.unlink.called
             assert (
                 m_shutil.rmtree.call_args
-                == [(m_out.return_value, ), {}])
-
-    else:
-        assert not m_log.called
-        assert not m_out.return_value.is_file.called
-        assert not m_out.return_value.unlink.called
-        assert not m_shutil.rmtree.called
-
-    assert (
-        m_utils.is_tarlike.call_args
-        == [(m_out.return_value, ), {}])
-
-    if not tarlike:
-        assert not m_utils.pack.called
-        assert (
-            m_shutil.copytree.call_args
-            == [(m_html.return_value, m_out.return_value, ), {}])
+                == [(staging_path,), {}])
         return
 
-    assert not m_shutil.copytree.called
+    if tarlike:
+        assert (
+            m_utils.pack.call_args
+            == [(m_html.return_value, staging_path), {}])
+        assert not output_path.replace.called
+    else:
+        assert (
+            m_shutil.copytree.call_args
+            == [(m_html.return_value, staging_path), {}])
+        assert (
+            output_path.replace.call_args
+            == [(backup_path,), {}])
     assert (
-        m_utils.pack.call_args
-        == [(m_html.return_value, m_out.return_value), {}])
+        staging_path.replace.call_args
+        == [(output_path,), {}])
+    assert (
+        m_log.return_value.warning.call_args
+        == [(f"Output path ({output_path}) exists, replacing",), {}])
 
 
 @pytest.mark.parametrize("check_fails", [True, False])
