@@ -1,6 +1,9 @@
 
+"""Validated code-block directive for Envoy docs configuration snippets."""
+
 import os
 from functools import cached_property
+from typing import cast
 
 from docutils.parsers.rst import directives
 
@@ -30,10 +33,10 @@ class ValidatingCodeBlock(CodeBlock):
     option_spec.update(CodeBlock.option_spec)
 
     @cached_property
-    def configs(self) -> dict:
-        _configs = dict(skip_validation=False)
+    def configs(self) -> dict[str, str | bool]:
+        _configs: dict[str, str | bool] = dict(skip_validation=False)
         if config_path := os.environ.get("ENVOY_DOCS_BUILD_CONFIG"):
-            _configs.update(from_yaml(config_path))
+            _configs.update(cast(dict[str, str], from_yaml(config_path)))
         return _configs
 
     @property
@@ -42,7 +45,7 @@ class ValidatingCodeBlock(CodeBlock):
 
     @cached_property
     def proto_validator(self) -> interface.IProtobufValidator:
-        return ProtobufValidator(self.configs["descriptor_path"])
+        return ProtobufValidator(cast(str, self.configs["descriptor_path"]))
 
     def run(self) -> list:
         source, line = self.state_machine.get_source_and_line(self.lineno)

@@ -1,3 +1,5 @@
+"""Sphinx build orchestration for Envoy docs."""
+
 import argparse
 import os
 import pathlib
@@ -7,9 +9,11 @@ from typing import TypedDict
 
 from packaging.version import Version
 
-from colorama import Fore, Style  # type:ignore
+from colorama import Fore, Style  # type:ignore[import-untyped]
 
-from sphinx.cmd.build import main as sphinx_build  # type:ignore
+from sphinx.cmd.build import (  # type:ignore[import-untyped]
+    main as sphinx_build,
+)
 
 from aio.run import runner
 
@@ -18,19 +22,23 @@ from envoy.base import utils
 from .exceptions import SphinxBuildError, SphinxEnvError
 
 
+ENVOY_DOCS_BASE_URL = (
+    "https://www.envoyproxy.io/docs/envoy")
+
+
 class BaseConfigDict(TypedDict):
     version_string: str
     release_level: str
     blob_sha: str
     version_number: str
     docker_image_tag_name: str
+    intersphinx_mapping: dict[str, list[str]]
 
 
 class ConfigDict(BaseConfigDict, total=False):
     validator_path: str
     descriptor_path: str
     skip_validation: str
-    intersphinx_mapping: dict[str, list[str]]
 
 
 class SphinxRunner(runner.Runner):
@@ -57,7 +65,7 @@ class SphinxRunner(runner.Runner):
         return self.args.build_target
 
     @cached_property
-    def colors(self) -> dict:
+    def colors(self) -> dict[str, str]:
         """Color scheme for build summary."""
         return dict(
             chrome=Fore.LIGHTYELLOW_EX,
@@ -85,7 +93,8 @@ class SphinxRunner(runner.Runner):
             release_level=self.release_level,
             blob_sha=self.blob_sha,
             version_number=self.version_number,
-            docker_image_tag_name=self.docker_image_tag_name)
+            docker_image_tag_name=self.docker_image_tag_name,
+            intersphinx_mapping=self.intersphinx_mapping)
         if self.validate_fragments:
             if self.validator_path:
                 _configs["validator_path"] = str(self.validator_path)
@@ -93,7 +102,6 @@ class SphinxRunner(runner.Runner):
                 _configs["descriptor_path"] = str(self.descriptor_path)
         else:
             _configs["skip_validation"] = "true"
-        _configs["intersphinx_mapping"] = self.intersphinx_mapping
         return _configs
 
     @property
@@ -134,7 +142,7 @@ class SphinxRunner(runner.Runner):
     def intersphinx_mapping(self) -> dict[str, list[str]]:
         return (
             {f"v{k}": [
-                f"https://www.envoyproxy.io/docs/envoy/v{v}",
+                f"{ENVOY_DOCS_BASE_URL}/v{v}",
                 f"inventories/v{k}/objects.inv"]
              for k, v
              in utils.from_yaml(self.versions_path, dict[str, str]).items()}
@@ -169,14 +177,14 @@ class SphinxRunner(runner.Runner):
         """Populates an rst directory with contents of given rst tar, and
         returns the path to the directory."""
         rst_dir = self.build_dir.joinpath("generated", "rst")
-        if self.rst_tar:
+        if self.rst_tar is not None:
             utils.extract(rst_dir, self.rst_tar)
         return rst_dir
 
     @cached_property
-    def rst_tar(self) -> pathlib.Path:
-        """Path to the rst tarball."""
-        return pathlib.Path(self.args.rst_tar)
+    def rst_tar(self) -> pathlib.Path | None:
+        """Path to the rst tarball, or None if not provided."""
+        return pathlib.Path(self.args.rst_tar) if self.args.rst_tar else None
 
     @property
     def sphinx_args(self) -> list[str]:
@@ -238,7 +246,8 @@ class SphinxRunner(runner.Runner):
             else f"{self.version_number}-{self.build_sha[:6]}")
 
     @cached_property
-    def versions_path(self):
+    def versions_path(self) -> pathlib.Path:
+        """Path to versions.yaml within the extracted RST directory."""
         return self.rst_dir.joinpath("versions.yaml")
 
     def add_arguments(self, parser: argparse.ArgumentParser) -> None:
@@ -269,8 +278,8 @@ class SphinxRunner(runner.Runner):
         self.log.info(self._color("###"))
         for k, v in self.configs.items():
             self.log.info(
-                f"{self._color('###')} {self._color(k, 'key')}: "
-                f"{self._color(v, 'value')}")
+                f"{self._color('###')} {self._color(str(k), 'key')}: "
+                f"{self._color(str(v), 'value')}")
         self.log.info(self._color("###"))
         self.log.info(
             self._color("###############################################"))
@@ -284,7 +293,6 @@ class SphinxRunner(runner.Runner):
                 "Given git tag does not match the VERSION file content:"
                 f"{self.docs_tag} vs v{self.version_number}")
         minor_version = ".".join(self.docs_tag.split(".")[:-1])
-        # this should probs only check the first line
         try:
             version_current = self.rst_dir.joinpath(
                 "version_history",
@@ -314,7 +322,7 @@ class SphinxRunner(runner.Runner):
 
     @runner.cleansup
     @runner.catches((SphinxBuildError, SphinxEnvError))
-    async def run(self):
+    async def run(self) -> int | None:
         self.validate_args()
         os.environ["ENVOY_DOCS_BUILD_CONFIG"] = str(self.config_file)
         self.check_env()
@@ -322,12 +330,12 @@ class SphinxRunner(runner.Runner):
         self.build_html()
         self.save_html()
 
-    def validate_args(self):
+    def validate_args(self) -> None:
         if self.output_path.exists():
             if not self.overwrite:
-                raise SphinxBuildError(
+                raise SphinxEnvError(
                     f"Output path ({self.output_path}) exists and "
                     "`--overwrite` is not set`")
 
-    def _color(self, msg, name=None):
+    def _color(self, msg: str, name: str | None = None) -> str:
         return f"{self.colors[name or 'chrome']}{msg}{Style.RESET_ALL}"

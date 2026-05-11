@@ -1,4 +1,6 @@
 
+"""PowerShell lexer registration for Envoy docs Sphinx builds."""
+
 from pygments.lexers import PowerShellLexer
 
 from sphinx.application import Sphinx

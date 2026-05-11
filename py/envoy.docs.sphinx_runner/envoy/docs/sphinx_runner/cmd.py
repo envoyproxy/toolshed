@@ -1,4 +1,6 @@
 
+"""CLI entrypoints for the Envoy Sphinx runner."""
+
 import sys
 
 from .runner import SphinxRunner
