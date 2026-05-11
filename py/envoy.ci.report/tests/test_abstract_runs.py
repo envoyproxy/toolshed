@@ -316,6 +316,7 @@ async def test_runs_fetch_check(patches, include_workflow, has_external_id):
         return_value=has_external_id)
     runs = report.abstract.ACIRuns(repo)
     patched = patches(
+        "dict",
         "int",
         ("ACIRuns.workflows",
          dict(new_callable=PropertyMock)),
@@ -326,11 +327,11 @@ async def test_runs_fetch_check(patches, include_workflow, has_external_id):
     _workflows = AsyncMock()
     _workflows.return_value.__contains__.return_value = include_workflow
 
-    with patched as (m_int, m_wfs):
+    with patched as (m_dict, m_int, m_wfs):
         m_wfs.side_effect = _workflows
         assert (
             await runs.fetch_check(commit, event, info)
-            == ((commit, event, info)
+            == ((commit, event, m_dict.return_value)
                 if (has_external_id and include_workflow)
                 else None))
 
@@ -346,8 +347,9 @@ async def test_runs_fetch_check(patches, include_workflow, has_external_id):
     if not has_external_id:
         assert not m_int.called
         assert not repo.getitem.return_value.__getitem__.called
-        assert not info.pop.called
-        assert not info.__setitem__.called
+        assert not m_dict.called
+        assert not m_dict.return_value.pop.called
+        assert not m_dict.return_value.__setitem__.called
         return
     assert (
         m_int.call_args
@@ -359,20 +361,24 @@ async def test_runs_fetch_check(patches, include_workflow, has_external_id):
         _workflows.return_value.__contains__.call_args
         == [(m_int.return_value, ), {}])
     if not include_workflow:
-        assert not info.pop.called
-        assert not info.__setitem__.called
+        assert not m_dict.called
+        assert not m_dict.return_value.pop.called
+        assert not m_dict.return_value.__setitem__.called
         assert (
             len(repo.getitem.return_value.__getitem__.call_args_list)
             == 1)
         return
     assert (
-        info.__delitem__.call_args
+        m_dict.call_args
+        == [(info, ), {}])
+    assert (
+        m_dict.return_value.__delitem__.call_args
         == [("action", ), {}])
     assert (
-        info.pop.call_args
+        m_dict.return_value.pop.call_args
         == [("advice", None), {}])
     assert (
-        info.__setitem__.call_args
+        m_dict.return_value.__setitem__.call_args
         == [("external_id",
              repo.getitem.return_value.__getitem__.return_value), {}])
     assert (
@@ -648,6 +654,34 @@ async def test_runs__env_fetches(patches, iters):
             for expect in expected])
 
 
+async def test_runs__env_fetches_none_result(patches):
+    runs = report.abstract.ACIRuns("REPO")
+    patched = patches(
+        ("ACIRuns.fetch_request_env",
+         dict(new_callable=AsyncMock)),
+        ("ACIRuns.workflow_requests",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.ci.report.abstract.runs")
+    _workflows = AsyncMock()
+    mock_events = MagicMock()
+    mock_events.items.return_value = [("event1", ["WF1", "WF2"])]
+    _workflows.return_value.items = MagicMock(
+        return_value=[("SHA1", mock_events)])
+    results = []
+
+    with patched as (m_fetch, m_wfs):
+        m_fetch.return_value = None
+        m_wfs.side_effect = _workflows
+
+        async for fetch_coro in runs._env_fetches:
+            results.append(fetch_coro)
+
+    assert len(results) == 2
+    assert m_fetch.call_count == 2
+    assert await results[0] is None
+    assert await results[1] is None
+
+
 async def test_runs__fetch_env_artifact(patches):
     repo = MagicMock()
     runs = report.abstract.ACIRuns(repo)
@@ -733,6 +767,31 @@ async def test_runs__resolve_env_artifact_url(patches, iters, raises):
         == [("archive_download_url", ), {}])
 
 
+async def test_runs__resolve_env_artifact_url_key_error(patches):
+    repo = AsyncMock()
+    runs = report.abstract.ACIRuns(repo)
+    wfid = MagicMock()
+    patched = patches(
+        "log",
+        prefix="envoy.ci.report.abstract.runs")
+    repo.getitem.return_value.__getitem__.side_effect = KeyError
+
+    with patched as (m_log, ):
+        assert not await runs._resolve_env_artifact_url(wfid)
+
+    assert (
+        repo.getitem.call_args
+        == [((report.abstract.runs
+                    .URL_GH_REPO_ACTION_ENV_ARTIFACT.format(wfid=wfid)), ),
+            {}])
+    assert (
+        repo.getitem.return_value.__getitem__.call_args
+        == [("artifacts", ), {}])
+    assert (
+        m_log.warning.call_args
+        == [(f"Unable to find request artifact: {wfid}", ), {}])
+
+
 @pytest.mark.parametrize("ascending", [True, False])
 async def test_runs__sorted(patches, iters, ascending):
     runs = report.abstract.ACIRuns("REPO")
@@ -783,7 +842,7 @@ async def test_runs__sorted(patches, iters, ascending):
             dict(key=sortlambda, reverse=not ascending)])
     assert (
         m_sorter.call_args
-        == [(boundaryiter, ), {}])
+        == [(boundaryiter, ), {"default": 0}])
     assert (
         item.__getitem__.call_args
         == [(1, ), {}])
@@ -798,6 +857,15 @@ async def test_runs__sorted(patches, iters, ascending):
         assert (
             _item.__getitem__.call_args
             == [("started", ), {}])
+
+
+@pytest.mark.parametrize("ascending", [True, False])
+async def test_runs__sorted_empty_requests(ascending):
+    runs = report.abstract.ACIRuns("REPO", sort_ascending=ascending)
+    commit_data = {"head": {}, "requests": {}}
+    runs_dict = {"abc123": commit_data}
+    result = runs._sorted(runs_dict)
+    assert list(result.keys()) == ["abc123"]
 
 
 async def test_runs__to_dict(patches, iters):

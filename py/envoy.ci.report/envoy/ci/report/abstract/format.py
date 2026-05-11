@@ -1,7 +1,7 @@
 
 import json
 import textwrap
-from datetime import datetime
+from datetime import datetime, timezone
 
 import abstracts
 
@@ -60,8 +60,8 @@ class AMarkdownFormat(AFormat):
 
     def _handle_event(self, request_id, request) -> None:
         event_type = request["event"]
-        request_started = datetime.utcfromtimestamp(
-            int(request["started"])).isoformat()
+        request_started = datetime.fromtimestamp(
+            request["started"], tz=timezone.utc).isoformat()
         request_url = (
             "https://github.com/envoyproxy/envoy/"
             f"actions/runs/{request_id}")

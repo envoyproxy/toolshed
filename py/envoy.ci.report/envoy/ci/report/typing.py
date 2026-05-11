@@ -17,7 +17,7 @@ class CICommitHeadDict(TypedDict):
 class CIRequestDict(TypedDict):
     event: str
     started: float
-    workflows: list[dict[str, CIWorkflowDict]]
+    workflows: dict[int, CIWorkflowDict]
 
 
 class CIRunsCommitDict(TypedDict):

@@ -1,6 +1,8 @@
 
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
+import aiohttp
+import gidgethub
 import pytest
 
 from aio.run import runner as _runner
@@ -378,3 +380,12 @@ async def test_runner_run(patches):
     assert (
         m_format.call_args
         == [(runs.return_value, ), {}])
+
+
+def test_runner_run_catches():
+    runner = DummyRunner()
+    assert (
+        runner.run.__wrapped__.__wrapped__.__catches__
+        == (gidgethub.GitHubException,
+            KeyboardInterrupt,
+            aiohttp.ClientError))

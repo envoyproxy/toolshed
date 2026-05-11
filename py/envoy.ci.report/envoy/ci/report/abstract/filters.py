@@ -1,6 +1,6 @@
 
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import cached_property
 
 import abstracts
@@ -45,7 +45,7 @@ class ACreationTimeFilter(AWorkflowFilter):
 
     @cached_property
     def now(self) -> datetime:
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
 
     @cached_property
     def start_day(self) -> datetime:
@@ -108,7 +108,6 @@ class ACreationTimeFilter(AWorkflowFilter):
                 return self.start_hour - timedelta(hours=1)
             case _:
                 # default max is 1 week
-                # TODO: allow start/end times to be set directly
                 return self.now - timedelta(hours=(24 * 7))
 
     @property

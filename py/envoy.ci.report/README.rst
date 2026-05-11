@@ -2,4 +2,4 @@
 envoy.ci.report
 ==========================
 
-Release publishing tool used in Envoy proxy's CI
+CI report tool that summarises GitHub Actions workflow runs for envoyproxy/envoy
