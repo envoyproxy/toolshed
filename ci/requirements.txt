@@ -13,13 +13,13 @@ abstracts==0.2.0 \
     #   aio-run-runner
     #   envoy-base-utils
     #   envoy-code-check
-aio-api-github==0.2.10 \
-    --hash=sha256:2563ad2cd219352a7933b78190c17ab460b503b437bec348a738c0f804adf45f \
-    --hash=sha256:75e17073e9e03386d719d1af355f599c16d68345992eaa97aebfa6159b07ad02
+aio-api-github==0.3.0 \
+    --hash=sha256:502dde7cbcdd20ce24dfad44a3b29430387a29815aaf071db64ab8c338e755a9 \
+    --hash=sha256:5844bf9015fcfe23c6d1000cad70e60a8e874440cdd107974d13441395e47bab
     # via envoy-base-utils
-aio-core==0.10.5 \
-    --hash=sha256:ba512132df47514a15930b89835ba1ef13522b7e31ec83a3b0622b7431f3f42e \
-    --hash=sha256:d8486a0115ade8e0362783b8e7cd988368766d0d911c62cb73b716bfe1f50a92
+aio-core==0.11.0 \
+    --hash=sha256:2b7e49ca221052f84eddf32424c76093a32569fc0802cc41da7e683457241fd0 \
+    --hash=sha256:88c0646f6360472963d80143cfb23026fb910cfa5bcd724593ffb88b9be454ad
     # via
     #   aio-api-github
     #   aio-run-runner
@@ -746,6 +746,7 @@ multidict==6.7.1 \
     --hash=sha256:fc5907494fccf3e7d3f94f95c91d6336b092b5fc83811720fae5e2765890dfba \
     --hash=sha256:fcee94dfbd638784645b066074b338bc9cc155d4b4bffa4adce1615c5a426c19
     # via
+    #   aio-api-github
     #   aiohttp
     #   yarl
 orjson==3.11.9 \
@@ -1257,7 +1258,9 @@ yarl==1.23.0 \
     --hash=sha256:fda207c815b253e34f7e1909840fd14299567b1c0eb4908f8c2ce01a41265401 \
     --hash=sha256:fe8f8f5e70e6dbdfca9882cd9deaac058729bcf323cf7a58660901e55c9c94f6 \
     --hash=sha256:fffc45637bcd6538de8b85f51e3df3223e4ad89bccbfca0481c08c7fc8b7ed7d
-    # via aiohttp
+    # via
+    #   aio-api-github
+    #   aiohttp
 zstandard==0.25.0 \
     --hash=sha256:011d388c76b11a0c165374ce660ce2c8efa8e5d87f34996aa80f9c0816698b64 \
     --hash=sha256:01582723b3ccd6939ab7b3a78622c573799d5d8737b534b86d0e06ac18dbde4a \
