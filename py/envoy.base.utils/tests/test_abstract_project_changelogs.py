@@ -191,6 +191,24 @@ def test_abstract_changelogs_current_path(patches):
     assert "current_path" not in changelogs.__dict__
 
 
+def test_abstract_changelogs_current_dir_path(patches):
+    project = MagicMock()
+    changelogs = DummyChangelogs(project)
+    patched = patches(
+        ("AChangelogs.rel_current_dir_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_rel, ):
+        assert (
+            changelogs.current_dir_path
+            == project.path.joinpath.return_value)
+    assert (
+        project.path.joinpath.call_args
+        == [(m_rel.return_value, ), {}])
+    assert "current_dir_path" not in changelogs.__dict__
+
+
 def test_abstract_changelogs_current_tpl(patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
@@ -293,6 +311,24 @@ def test_abstract_changelogs_rel_current_path(patches):
     assert (
         m_plib.Path.call_args
         == [(m_path, ), {}])
+
+
+def test_abstract_changelogs_rel_current_dir_path(patches):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        "pathlib",
+        "CHANGELOG_CURRENT_DIR_PATH",
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_plib, m_path):
+        assert (
+            changelogs.rel_current_dir_path
+            == m_plib.Path.return_value)
+
+    assert (
+        m_plib.Path.call_args
+        == [(m_path, ), {}])
+    assert "rel_current_dir_path" not in changelogs.__dict__
 
 
 @pytest.mark.parametrize(
@@ -1006,6 +1042,27 @@ def test_abstract_changelogs_changelogs_methods(patches, method):
         == [(), {}])
 
 
+@pytest.mark.parametrize("is_dir", [True, False])
+def test_abstract_changelogs_entries_layout(patches, is_dir):
+    project = MagicMock()
+    changelogs = DummyChangelogs(project)
+    patched = patches(
+        "CHANGELOG_CURRENT_DIR_PATH",
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_dir_path, ):
+        project.path.joinpath.return_value.is_dir.return_value = is_dir
+        assert changelogs._entries_layout == is_dir
+
+    assert (
+        project.path.joinpath.call_args
+        == [(m_dir_path, ), {}])
+    assert (
+        project.path.joinpath.return_value.is_dir.call_args
+        == [(), {}])
+    assert "_entries_layout" not in changelogs.__dict__
+
+
 def test_abstract_changelogs__yaml_changelogs_version(patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
@@ -1509,18 +1566,35 @@ def test_abstract_changelog_base_version(patches):
     assert "base_version" not in changelog.__dict__
 
 
-async def test_abstract_changelog_data(patches):
+@pytest.mark.parametrize("match", [True, False])
+def test_abstract_changelog__is_current(match):
+    project = MagicMock()
+    version = "VERSION"
+    changelog = DummyChangelog(project, version, "PATH")
+    project.changelogs.current = version if match else MagicMock()
+    assert changelog._is_current == match
+    assert "_is_current" not in changelog.__dict__
+
+
+@pytest.mark.parametrize("entries_layout", [True, False])
+@pytest.mark.parametrize("is_current", [True, False])
+async def test_abstract_changelog_data(patches, entries_layout, is_current):
     project = MagicMock()
     project.execute = AsyncMock()
     project.changelogs.validate_sections.return_value = "VALIDATED"
+    project.changelogs._entries_layout = entries_layout
     changelog = DummyChangelog(project, "VERSION", "PATH")
     patched = patches(
+        ("AChangelog._is_current",
+         dict(new_callable=PropertyMock)),
         "AChangelog.get_data",
+        "AChangelog.get_data_from_entries",
         ("AChangelog.path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
 
-    with patched as (m_get, m_path):
+    with patched as (m_is_current, m_get, m_get_entries, m_path):
+        m_is_current.return_value = is_current
         assert (
             await changelog.data
             == project.changelogs.validate_sections.return_value
@@ -1528,9 +1602,19 @@ async def test_abstract_changelog_data(patches):
                 changelog,
                 abstract.AChangelog.data.cache_name)["data"])
 
-    assert (
-        project.execute.call_args
-        == [(m_get, m_path.return_value), {}])
+    use_entries = is_current and entries_layout
+    if use_entries:
+        assert (
+            project.execute.call_args
+            == [(m_get_entries,
+                 m_path.return_value,
+                 project.changelogs.current_dir_path), {}])
+        assert not m_get.called
+    else:
+        assert (
+            project.execute.call_args
+            == [(m_get, m_path.return_value), {}])
+        assert not m_get_entries.called
     assert (
         project.changelogs.validate_sections.call_args
         == [(project.execute.return_value, m_path.return_value), {}])
