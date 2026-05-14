@@ -363,6 +363,48 @@ def test_abstract_changelogs_sections_path():
     assert "sections_path" not in changelogs.__dict__
 
 
+def test_abstract_changelogs_validate_sections():
+    changelogs = DummyChangelogs("PROJECT")
+    changelogs.sections = {"known": {"title": "Known"}}
+    valid = {
+        "date": "Pending",
+        "known": [{"area": "api", "change": "updated"}]}
+    date_only = {"date": "Pending"}
+    assert changelogs.validate_sections(valid) is valid
+    assert changelogs.validate_sections(date_only) is date_only
+
+
+@pytest.mark.parametrize(
+    "path",
+    [None, pathlib.Path("changelogs/current.yaml")])
+def test_abstract_changelogs_validate_sections_unknown(path):
+    changelogs = DummyChangelogs("PROJECT")
+    changelogs.sections = {"known": {"title": "Known"}}
+    with pytest.raises(exceptions.ChangelogParseError) as e:
+        changelogs.validate_sections(
+            {"date": "Pending", "unknown": []},
+            path)
+
+    message = e.value.args[0]
+    assert "unknown" in message
+    assert abstract.project.changelog.CHANGELOG_SECTIONS_PATH in message
+    if path is None:
+        assert "changelogs/current.yaml" not in message
+        assert "(None)" not in message
+    else:
+        assert f"({path})" in message
+
+
+def test_abstract_changelogs_validate_sections_unknown_sorted():
+    changelogs = DummyChangelogs("PROJECT")
+    changelogs.sections = {"known": {"title": "Known"}}
+    with pytest.raises(exceptions.ChangelogParseError) as e:
+        changelogs.validate_sections(
+            {"date": "Pending", "zeta": [], "alpha": [], "beta": []})
+
+    assert "alpha, beta, zeta" in e.value.args[0]
+
+
 def test_abstract_changelogs_summary_path():
     project = MagicMock()
     changelogs = DummyChangelogs(project)
@@ -1470,6 +1512,7 @@ def test_abstract_changelog_base_version(patches):
 async def test_abstract_changelog_data(patches):
     project = MagicMock()
     project.execute = AsyncMock()
+    project.changelogs.validate_sections.return_value = "VALIDATED"
     changelog = DummyChangelog(project, "VERSION", "PATH")
     patched = patches(
         "AChangelog.get_data",
@@ -1480,7 +1523,7 @@ async def test_abstract_changelog_data(patches):
     with patched as (m_get, m_path):
         assert (
             await changelog.data
-            == project.execute.return_value
+            == project.changelogs.validate_sections.return_value
             == getattr(
                 changelog,
                 abstract.AChangelog.data.cache_name)["data"])
@@ -1488,6 +1531,38 @@ async def test_abstract_changelog_data(patches):
     assert (
         project.execute.call_args
         == [(m_get, m_path.return_value), {}])
+    assert (
+        project.changelogs.validate_sections.call_args
+        == [(project.execute.return_value, m_path.return_value), {}])
+
+
+async def test_abstract_changelog_data_unknown_section(tmp_path):
+    changelog_path = tmp_path.joinpath("changelogs/current.yaml")
+    changelog_path.parent.mkdir()
+    changelog_path.write_text(
+        "date: Pending\n"
+        "unknown:\n"
+        "  - area: api\n"
+        "    change: changed\n")
+    tmp_path.joinpath("changelogs/sections.yaml").write_text(
+        "known:\n"
+        "  title: Known\n")
+
+    project = MagicMock()
+    project.path = tmp_path
+
+    async def execute(func, path):
+        return func(path)
+
+    project.execute = AsyncMock(side_effect=execute)
+    project.changelogs = DummyChangelogs(project)
+    changelog = DummyChangelog(project, "VERSION", changelog_path)
+
+    with pytest.raises(exceptions.ChangelogParseError) as e:
+        await changelog.data
+
+    assert "unknown" in e.value.args[0]
+    assert f"({changelog_path})" in e.value.args[0]
 
 
 async def test_abstract_changelog_release_date(patches):

@@ -192,9 +192,9 @@ class AChangelog(metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def data(self) -> typing.ChangelogDict:
-        # parse changelog data in executor
-        # return self.get_data(self.path)
-        return await self.project.execute(self.get_data, self.path)
+        return self.project.changelogs.validate_sections(
+            await self.project.execute(self.get_data, self.path),
+            self.path)
 
     @property
     @abstracts.interfacemethod
@@ -207,7 +207,7 @@ class AChangelog(metaclass=abstracts.Abstraction):
 
     @async_property
     async def release_date(self) -> str:
-        return (await self.data)["date"]
+        return cast(str, (await self.data)["date"])
 
     @property
     def version(self) -> _version.Version:
@@ -311,6 +311,31 @@ class AChangelogs(metaclass=abstracts.Abstraction):
                 "Changelog section parsing error: "
                 f"({self.sections_path})\n{e}")
             return cast(typing.ChangelogSectionsDict, e.value)
+
+    def validate_sections(
+            self,
+            data: typing.ChangelogDict,
+            path: pathlib.Path | None = None) -> typing.ChangelogDict:
+        """Validate changelog sections loaded from any parse source.
+
+        This should be called for every parsed `ChangelogDict`, whether
+        parsed from a YAML changelog file or assembled from per-entry
+        changelog data.
+
+        :param data: Parsed changelog data to validate.
+        :param path: Optional source path for error context.
+        :returns: The input data, unchanged.
+        :raises ChangelogParseError: If any section key is unknown.
+        """
+        allowed = set(self.sections) | {"date"}
+        unknown = sorted(k for k in data if k not in allowed)
+        if unknown:
+            where = f" ({path})" if path is not None else ""
+            raise exceptions.ChangelogParseError(
+                f"Unknown changelog section(s){where}: "
+                f"{', '.join(unknown)}. "
+                f"Valid sections come from {CHANGELOG_SECTIONS_PATH}.")
+        return data
 
     @property
     def sections_path(self) -> pathlib.Path:
