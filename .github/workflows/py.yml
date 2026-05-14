@@ -136,6 +136,10 @@ jobs:
         named-caches-hash: "${{ hashFiles('pants*toml') }}"
     - name: Run pants package
       run: "pants --colors package ::"
+    - name: Verify wheel METADATA matches setup.cfg
+      run: |
+        python -m pip install --quiet packaging
+        python py/tools/publish_check/check_wheel_metadata.py
     - name: Archive wheels
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
