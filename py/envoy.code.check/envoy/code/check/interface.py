@@ -138,6 +138,24 @@ class IChangelogChangesChecker(metaclass=abstracts.Interface):
                 tuple[str, ...]):
         raise NotImplementedError
 
+    @abstracts.interfacemethod
+    def check_entry_filename(
+            self,
+            path: pathlib.Path) -> str | None:
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
+    def check_entry_content(
+            self,
+            path: pathlib.Path) -> str | None:
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
+    def check_entry_files(
+            self,
+            paths: list[pathlib.Path]) -> tuple[str, ...]:
+        raise NotImplementedError
+
 
 class IChangelogStatus(metaclass=abstracts.Interface):
     pass

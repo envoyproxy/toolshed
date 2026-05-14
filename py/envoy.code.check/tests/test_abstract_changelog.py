@@ -257,42 +257,49 @@ async def test_changelogstatus_errors(iters, patches, raises):
         ("AChangelogStatus.version",
          dict(new_callable=PropertyMock)),
         "AChangelogStatus.check_date",
+        "AChangelogStatus.check_entry_files",
         "AChangelogStatus.check_sections",
         "AChangelogStatus.check_version",
         prefix="envoy.code.check.abstract.changelog")
     version_errors = iters(cb=lambda i: f"V{i}")
     date_errors = iters(cb=lambda i: f"D{i}")
     sections_errors = iters(cb=lambda i: f"S{i}")
+    entry_files_errors = iters(cb=lambda i: f"E{i}")
 
-    with patched as (m_version, m_date, m_sections, m_versions):
+    with patched as (m_version, m_date, m_entry_files, m_sections, m_versions):
         if raises:
             error = raises("AN ERROR OCCURRED")
             m_date.side_effect = error
         m_date.return_value = date_errors
+        m_entry_files.return_value = entry_files_errors
         m_sections.return_value = sections_errors
         m_versions.return_value = version_errors
         if raises == BaseException:
             with pytest.raises(raises):
                 await status.errors
             return
+        expected_errors = (
+            (*version_errors, *date_errors, *sections_errors,
+             *entry_files_errors)
+            if not raises
+            else (
+                *entry_files_errors,
+                f"{m_version.return_value}: {error}"))
         assert (
             await status.errors
-            == ((*version_errors, *date_errors, *sections_errors)
-                if not raises
-                else (f"{m_version.return_value}: {error}", ))
+            == expected_errors
             == getattr(
                 status,
                 check.AChangelogStatus.errors.cache_name)["errors"])
 
-    for provider in [m_versions, m_date]:
+    providers = [m_versions, m_date, m_entry_files]
+    if not raises:
+        providers.append(m_sections)
+    for provider in providers:
         assert (
             provider.call_args
             == [(), {}])
-    if not raises:
-        assert (
-            m_sections.call_args
-            == [(), {}])
-    else:
+    if raises:
         assert not m_sections.called
 
 
@@ -758,3 +765,178 @@ def test_changeschecker_check_section_name(
                 else (
                     f"{version}/changes: Invalid `changes` section "
                     "(this is no longer used)")))
+
+
+@pytest.mark.parametrize(
+    "section,stem,suffix,expected",
+    [(  # valid
+        "bug_fixes", "myarea__myslug", ".rst",
+        None),
+     (  # invalid section
+        "weird_section", "area__slug", ".rst",
+        ("weird_section", "Invalid section")),
+     (  # wrong extension
+        "bug_fixes", "area__slug", ".txt",
+        (".txt", ".rst")),
+     (  # no separator
+        "bug_fixes", "areaslug", ".rst",
+        ("__", )),
+     (  # multiple separators
+        "bug_fixes", "area__slug__extra", ".rst",
+        ("__", )),
+     (  # empty area
+        "bug_fixes", "__slug", ".rst",
+        ("Area", "empty")),
+     (  # empty slug
+        "bug_fixes", "area__", ".rst",
+        ("Slug", "empty"))])
+def test_changeschecker_check_entry_filename(
+        section, stem, suffix, expected):
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    path = MagicMock()
+    path.parent.name = section
+    path.stem = stem
+    path.suffix = suffix
+
+    result = changelog.check_entry_filename(path)
+
+    if expected is None:
+        assert result is None
+        return
+    assert result is not None
+    for substring in expected:
+        assert substring in result
+
+
+@pytest.mark.parametrize(
+    "content,expected",
+    [("", ("empty", )),
+     ("   \n  \t  ", ("empty", )),
+     ("Some RST content.", None)])
+def test_changeschecker_check_entry_content(content, expected):
+    changelog = DummyChangelogChangesChecker("SECTIONS")
+    path = MagicMock()
+    path.read_text.return_value = content
+
+    result = changelog.check_entry_content(path)
+
+    if expected is None:
+        assert result is None
+        return
+    assert result is not None
+    for substring in expected:
+        assert substring in result
+
+
+def test_changeschecker_check_entry_files(patches):
+    changelog = DummyChangelogChangesChecker("SECTIONS")
+    patched = patches(
+        "AChangelogChangesChecker.check_entry_content",
+        "AChangelogChangesChecker.check_entry_filename",
+        prefix="envoy.code.check.abstract.changelog")
+    paths = [MagicMock(), MagicMock(), MagicMock()]
+    # path 0: filename error + content error
+    # path 1: no errors
+    # path 2: content error only
+    filename_returns = ["FILENAME_ERR", None, None]
+    content_returns = ["CONTENT_ERR", None, "CONTENT_ERR2"]
+
+    with patched as (m_content, m_filename):
+        m_filename.side_effect = filename_returns
+        m_content.side_effect = content_returns
+        result = changelog.check_entry_files(paths)
+
+    assert result == ("FILENAME_ERR", "CONTENT_ERR", "CONTENT_ERR2")
+    assert (
+        m_filename.call_args_list
+        == [[(p, ), {}] for p in paths])
+    assert (
+        m_content.call_args_list
+        == [[(p, ), {}] for p in paths])
+
+
+@pytest.mark.parametrize("is_current", [True, False])
+def test_changelogstatus_entry_dir(patches, is_current):
+    status = check.AChangelogStatus(MagicMock(), MagicMock())
+    patched = patches(
+        ("AChangelogStatus.is_current",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.version",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.changelog")
+
+    with patched as (m_current, m_project, m_version):
+        m_current.return_value = is_current
+        result = status.entry_dir
+
+    if not is_current:
+        assert result is None
+        assert not m_project.called
+        assert not m_version.called
+        return
+    assert (
+        result
+        == (m_project.return_value.changelogs
+                     .changelog_path.return_value
+                     .with_suffix.return_value))
+    assert (
+        m_project.return_value.changelogs.changelog_path.call_args
+        == [(m_version.return_value, ), {}])
+    assert (
+        (m_project.return_value.changelogs
+                  .changelog_path.return_value
+                  .with_suffix.call_args)
+        == [("", ), {}])
+    assert "entry_dir" not in status.__dict__
+
+
+@pytest.mark.parametrize("entry_dir_exists", [None, False, True])
+@pytest.mark.parametrize("has_paths", [True, False])
+async def test_changelogstatus_check_entry_files(
+        patches, entry_dir_exists, has_paths):
+    checker = MagicMock()
+    status = check.AChangelogStatus(checker, MagicMock())
+    patched = patches(
+        "sorted",
+        ("AChangelogStatus.entry_dir",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.changelog")
+    sorted_paths = [MagicMock(), MagicMock()] if has_paths else []
+
+    with patched as (m_sorted, m_entry_dir, m_project):
+        if entry_dir_exists is None:
+            m_entry_dir.return_value = None
+        else:
+            m_entry_dir.return_value = MagicMock()
+            m_entry_dir.return_value.exists.return_value = bool(
+                entry_dir_exists)
+        m_sorted.return_value = sorted_paths
+        m_project.return_value.execute = AsyncMock()
+        result = await status.check_entry_files()
+
+    if entry_dir_exists is None or not entry_dir_exists:
+        assert result == ()
+        assert not m_project.return_value.execute.called
+        return
+
+    assert (
+        m_entry_dir.return_value.glob.call_args
+        == [("*/*.rst", ), {}])
+    assert (
+        m_sorted.call_args
+        == [(m_entry_dir.return_value.glob.return_value, ), {}])
+
+    if not has_paths:
+        assert result == ()
+        assert not m_project.return_value.execute.called
+        return
+
+    assert result == m_project.return_value.execute.return_value
+    assert (
+        m_project.return_value.execute.call_args
+        == [(status.checker.check_entry_files,
+             sorted_paths), {}])

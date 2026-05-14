@@ -1,5 +1,6 @@
 
 import itertools
+import pathlib
 from datetime import datetime
 from functools import cached_property
 from collections.abc import Iterator
@@ -11,6 +12,10 @@ import abstracts
 from aio.core.functional import async_property
 
 from envoy.base import utils
+from envoy.base.utils.abstract.project.changelog import (
+    CHANGELOG_ENTRY_GLOB,
+    ENTRY_SEPARATOR,
+)
 from envoy.code.check import abstract, interface
 
 
@@ -95,6 +100,50 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
                 f"{version}/changes: Invalid `changes` section "
                 "(this is no longer used)")
 
+    def check_entry_filename(
+            self,
+            path: pathlib.Path) -> str | None:
+        section = path.parent.name
+        if section not in self.sections:
+            return (
+                f"{path}: Invalid section `{section}`. "
+                f"Valid sections: {sorted(self.sections)}")
+        if path.suffix != ".rst":
+            return (
+                f"{path}: Invalid file extension `{path.suffix}` "
+                "(expected `.rst`)")
+        if path.stem.count(ENTRY_SEPARATOR) != 1:
+            return (
+                f"{path}: Filename stem must contain exactly one "
+                f"`{ENTRY_SEPARATOR}` separator "
+                f"(expected `<area>{ENTRY_SEPARATOR}<slug>`)")
+        area, slug = path.stem.split(ENTRY_SEPARATOR, 1)
+        if not area:
+            return f"{path}: Area part of filename is empty"
+        if not slug:
+            return f"{path}: Slug part of filename is empty"
+        return None
+
+    def check_entry_content(
+            self,
+            path: pathlib.Path) -> str | None:
+        content = path.read_text()
+        if not content.strip():
+            return (
+                f"{path}: Entry file is empty or contains only whitespace")
+        return None
+
+    def check_entry_files(
+            self,
+            paths: list[pathlib.Path]) -> tuple[str, ...]:
+        errors = []
+        for path in paths:
+            if err := self.check_entry_filename(path):
+                errors.append(err)
+            if err := self.check_entry_content(path):
+                errors.append(err)
+        return tuple(errors)
+
 
 @abstracts.implementer(interface.IChangelogStatus)
 class AChangelogStatus(metaclass=abstracts.Abstraction):
@@ -136,15 +185,26 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             and self.project.changelogs.changelog_path(
                 self.version).exists())
 
+    @property
+    def entry_dir(self) -> pathlib.Path | None:
+        if not self.is_current:
+            return None
+        return (
+            self.project.changelogs
+                        .changelog_path(self.version)
+                        .with_suffix(""))
+
     @async_property(cache=True)
     async def errors(self) -> tuple[str, ...]:
+        entry_errors = await self.check_entry_files()
         try:
             return (
                 *self.check_version(),
                 *await self.check_date(),
-                *await self.check_sections())
+                *await self.check_sections(),
+                *entry_errors)
         except utils.exceptions.ChangelogParseError as e:
-            return (f"{self.version}: {e}", )
+            return (*entry_errors, f"{self.version}: {e}")
 
     @async_property
     async def invalid_date(self) -> str | None:
@@ -214,6 +274,17 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             self.checker.check_sections,
             self.version,
             await self.sections)
+
+    async def check_entry_files(self) -> tuple[str, ...]:
+        entry_dir = self.entry_dir
+        if entry_dir is None or not entry_dir.exists():
+            return ()
+        paths = sorted(entry_dir.glob(CHANGELOG_ENTRY_GLOB))
+        if not paths:
+            return ()
+        return await self.project.execute(
+            self.checker.check_entry_files,
+            paths)
 
     def check_version(self) -> tuple[str, ...]:
         errors = []
