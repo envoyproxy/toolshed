@@ -2,6 +2,7 @@
 import logging
 import pathlib
 import re
+import shutil
 import types
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from datetime import datetime, timezone
@@ -391,6 +392,8 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         for version, sync in changelog.items():
             if sync:
                 changed.add(self.rel_changelog_path(version))
+        if self._entries_layout:
+            changed.add(CHANGELOG_CURRENT_DIR_PATH)
         return changed
 
     def dump_yaml(self, data: typing.ChangelogDict) -> str:
@@ -455,28 +458,43 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             self.normalize_changelog(version, text))
 
     def write_current(self) -> None:
-        sections = {
-            k: v.get("description")
-            for k, v
-            in self.sections.items()
-            if k != "changes"}
-        self.current_path.write_text(
-            self.current_tpl.render(sections=sections).lstrip())
+        if self._entries_layout:
+            self.current_path.write_text("date: Pending\n")
+            self.current_dir_path.mkdir(parents=True, exist_ok=True)
+        else:
+            sections = {
+                k: v.get("description")
+                for k, v
+                in self.sections.items()
+                if k != "changes"}
+            self.current_path.write_text(
+                self.current_tpl.render(sections=sections).lstrip())
 
     async def write_date(self, date: str) -> None:
         if not await self.is_pending:
             raise exceptions.ReleaseError(
                 "Current changelog date is not set to `Pending`")
-        data = (await self[self.current].data).copy()
-        data["date"] = date
-        self.current_path.write_text(self.dump_yaml(data))
+        if self._entries_layout:
+            self.current_path.write_text(f"date: {date}\n")
+        else:
+            data = (await self[self.current].data).copy()
+            data["date"] = date
+            self.current_path.write_text(self.dump_yaml(data))
 
     def write_version(self, version: _version.Version) -> None:
         if (version_file := self.changelog_path(version)).exists():
             raise exceptions.DevError(
                 f"Version file ({version_file}) already exists")
-        version_file.write_text(
-            self.current_path.read_text())
+        if self._entries_layout:
+            data = self.changelog_class.get_data_from_entries(
+                self.current_path, self.current_dir_path)
+            version_file.write_text(self.dump_yaml(data))
+            self.current_path.write_text("date: Pending\n")
+            shutil.rmtree(self.current_dir_path)
+            self.current_dir_path.mkdir()
+        else:
+            version_file.write_text(
+                self.current_path.read_text())
 
     def yaml_change_presenter(
             self,

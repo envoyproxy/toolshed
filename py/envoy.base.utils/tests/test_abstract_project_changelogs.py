@@ -557,6 +557,7 @@ def test_abstract_changelogs_blank_summary(patches):
         == [("", ), {}])
 
 
+@pytest.mark.parametrize("entries_layout", [True, False])
 @pytest.mark.parametrize("current", [True, False])
 @pytest.mark.parametrize("dev", [True, False])
 @pytest.mark.parametrize(
@@ -565,13 +566,17 @@ def test_abstract_changelogs_blank_summary(patches):
      {i: True for i in range(0, 10)},
      {i: False for i in range(0, 10)},
      {i: (i % 2) for i in range(0, 10)}])
-def test_abstract_changelogs_changes_for_commit(patches, current, dev, items):
+def test_abstract_changelogs_changes_for_commit(
+        patches, current, dev, items, entries_layout):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "any",
         "set",
         "str",
+        "CHANGELOG_CURRENT_DIR_PATH",
         "CHANGELOG_CURRENT_PATH",
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
         "AChangelogs.rel_changelog_path",
         ("AChangelogs.summary_path",
          dict(new_callable=PropertyMock)),
@@ -586,8 +591,10 @@ def test_abstract_changelogs_changes_for_commit(patches, current, dev, items):
 
     change.__contains__.side_effect = contains
 
-    with patched as (m_any, m_set, m_str, m_path, m_rel, m_summary):
+    with patched as (m_any, m_set, m_str, m_dir_path, m_path,
+                     m_entries, m_rel, m_summary):
         m_any.return_value = current
+        m_entries.return_value = entries_layout
         assert (
             changelogs.changes_for_commit(change)
             == m_set.return_value)
@@ -624,6 +631,8 @@ def test_abstract_changelogs_changes_for_commit(patches, current, dev, items):
         if v:
             expected_add.append(m_rel.return_value)
             expected_rel.append(k)
+    if entries_layout:
+        expected_add.append(m_dir_path)
     assert (
         m_set.return_value.add.call_args_list
         == [[(add, ), {}]
@@ -876,9 +885,14 @@ def test_abstract_changelogs_write_changelog(patches):
         == [(version, text), {}])
 
 
-def test_abstract_changelogs_write_current(iters, patches):
+@pytest.mark.parametrize("entries_layout", [True, False])
+def test_abstract_changelogs_write_current(iters, patches, entries_layout):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_dir_path",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.current_path",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current_tpl",
@@ -889,39 +903,55 @@ def test_abstract_changelogs_write_current(iters, patches):
     sections = iters(dict, cb=lambda x: (f"K{x}", MagicMock()), count=10)
     sections["changes"] = MagicMock()
 
-    with patched as (m_path, m_tpl, m_sections):
+    with patched as (m_entries, m_dir_path, m_path, m_tpl, m_sections):
+        m_entries.return_value = entries_layout
         m_sections.return_value.items.return_value = sections.items()
         assert not changelogs.write_current()
 
-    assert (
-        m_path.return_value.write_text.call_args
-        == [(m_tpl.return_value.render.return_value.lstrip.return_value, ),
-            {}])
-    assert (
-        m_tpl.return_value.render.call_args
-        == [(),
-            dict(sections={
-                k: v.get.return_value
-                for k, v
-                in sections.items()
-                if k != "changes"})])
-    assert (
-        m_tpl.return_value.render.return_value.lstrip.call_args
-        == [(), {}])
-    for k, v in sections.items():
-        if k == "changes":
-            assert not v.get.called
-        else:
-            assert (
-                v.get.call_args
-                == [("description", ), {}])
+    if entries_layout:
+        assert (
+            m_path.return_value.write_text.call_args
+            == [("date: Pending\n", ), {}])
+        assert (
+            m_dir_path.return_value.mkdir.call_args
+            == [(), dict(parents=True, exist_ok=True)])
+        assert not m_dir_path.return_value.__truediv__.called
+        assert not m_tpl.called
+        assert not m_sections.called
+    else:
+        assert (
+            m_path.return_value.write_text.call_args
+            == [(m_tpl.return_value.render.return_value.lstrip.return_value, ),
+                {}])
+        assert (
+            m_tpl.return_value.render.call_args
+            == [(),
+                dict(sections={
+                    k: v.get.return_value
+                    for k, v
+                    in sections.items()
+                    if k != "changes"})])
+        assert (
+            m_tpl.return_value.render.return_value.lstrip.call_args
+            == [(), {}])
+        for k, v in sections.items():
+            if k == "changes":
+                assert not v.get.called
+            else:
+                assert (
+                    v.get.call_args
+                    == [("description", ), {}])
 
 
+@pytest.mark.parametrize("entries_layout", [True, False])
 @pytest.mark.parametrize("pending", [True, False])
-async def test_abstract_changelogs_write_date(patches, pending):
+async def test_abstract_changelogs_write_date(
+        patches, pending, entries_layout):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "AChangelogs.__getitem__",
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.current",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current_path",
@@ -932,11 +962,16 @@ async def test_abstract_changelogs_write_date(patches, pending):
         prefix="envoy.base.utils.abstract.project.changelog")
     date = MagicMock()
 
-    with patched as (m_get, m_current, m_path, m_pending, m_yaml):
-        data = AsyncMock()
-        data.return_value.copy = MagicMock()
-        m_get.return_value.data = data()
+    with patched as (m_get, m_entries, m_current, m_path, m_pending, m_yaml):
         m_pending.side_effect = AsyncMock(return_value=pending)
+        m_entries.return_value = entries_layout
+        if not entries_layout:
+            # Only set up the async data mock for the legacy branch; creating
+            # an unawaited coroutine on the entries branch causes
+            # PytestUnraisableExceptionWarning on the next test.
+            data = AsyncMock()
+            data.return_value.copy = MagicMock()
+            m_get.return_value.data = data()
         if not pending:
             with pytest.raises(exceptions.ReleaseError) as e:
                 await changelogs.write_date(date)
@@ -951,34 +986,53 @@ async def test_abstract_changelogs_write_date(patches, pending):
         assert not m_get.called
         assert not m_path.called
         assert not m_yaml.called
-        await m_get.return_value.data
+        if not entries_layout:
+            await m_get.return_value.data
         return
 
-    assert (
-        m_get.call_args
-        == [(m_current.return_value, ), {}])
-    assert (
-        data.return_value.copy.call_args
-        == [(), {}])
-    assert (
-        m_path.return_value.write_text.call_args
-        == [(m_yaml.return_value, ), {}])
-    assert (
-        m_yaml.call_args
-        == [(data.return_value.copy.return_value, ), {}])
+    if entries_layout:
+        assert (
+            m_path.return_value.write_text.call_args
+            == [(f"date: {date}\n", ), {}])
+        assert not m_get.called
+        assert not m_yaml.called
+    else:
+        assert (
+            m_get.call_args
+            == [(m_current.return_value, ), {}])
+        assert (
+            data.return_value.copy.call_args
+            == [(), {}])
+        assert (
+            m_path.return_value.write_text.call_args
+            == [(m_yaml.return_value, ), {}])
+        assert (
+            m_yaml.call_args
+            == [(data.return_value.copy.return_value, ), {}])
 
 
+@pytest.mark.parametrize("entries_layout", [True, False])
 @pytest.mark.parametrize("exists", [True, False])
-def test_abstract_changelogs_write_version(patches, exists):
+def test_abstract_changelogs_write_version(patches, exists, entries_layout):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
+        "shutil",
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.changelog_class",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_dir_path",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.current_path",
          dict(new_callable=PropertyMock)),
         "AChangelogs.changelog_path",
+        "AChangelogs.dump_yaml",
         prefix="envoy.base.utils.abstract.project.changelog")
     version = MagicMock()
 
-    with patched as (m_path, m_clog_path):
+    with patched as (m_shutil, m_entries, m_clogclass, m_dir_path,
+                     m_path, m_clog_path, m_dump):
+        m_entries.return_value = entries_layout
         m_clog_path.return_value.exists.return_value = exists
         if exists:
             with pytest.raises(exceptions.DevError) as e:
@@ -999,12 +1053,67 @@ def test_abstract_changelogs_write_version(patches, exists):
         assert not m_clog_path.return_value.write_text.called
         assert not m_path.called
         return
-    assert (
-        m_clog_path.return_value.write_text.call_args
-        == [(m_path.return_value.read_text.return_value, ), {}])
-    assert (
-        m_path.return_value.read_text.call_args
-        == [(), {}])
+    if entries_layout:
+        assert (
+            m_clogclass.return_value.get_data_from_entries.call_args
+            == [(m_path.return_value, m_dir_path.return_value), {}])
+        entries_rv = (
+            m_clogclass.return_value.get_data_from_entries.return_value)
+        assert (
+            m_dump.call_args
+            == [(entries_rv, ), {}])
+        assert (
+            m_clog_path.return_value.write_text.call_args
+            == [(m_dump.return_value, ), {}])
+        assert (
+            m_path.return_value.write_text.call_args
+            == [("date: Pending\n", ), {}])
+        assert (
+            m_shutil.rmtree.call_args
+            == [(m_dir_path.return_value, ), {}])
+        assert (
+            m_dir_path.return_value.mkdir.call_args
+            == [(), {}])
+    else:
+        assert (
+            m_clog_path.return_value.write_text.call_args
+            == [(m_path.return_value.read_text.return_value, ), {}])
+        assert (
+            m_path.return_value.read_text.call_args
+            == [(), {}])
+        assert not m_shutil.rmtree.called
+
+
+def test_abstract_changelogs_write_version_entries_parse_error(patches):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        "shutil",
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.changelog_class",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_dir_path",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_path",
+         dict(new_callable=PropertyMock)),
+        "AChangelogs.changelog_path",
+        "AChangelogs.dump_yaml",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    version = MagicMock()
+
+    with patched as (m_shutil, m_entries, m_clogclass, m_dir_path,
+                     m_path, m_clog_path, m_dump):
+        m_entries.return_value = True
+        m_clog_path.return_value.exists.return_value = False
+        m_clogclass.return_value.get_data_from_entries.side_effect = (
+            exceptions.ChangelogParseError("parse error"))
+        with pytest.raises(exceptions.ChangelogParseError):
+            changelogs.write_version(version)
+
+    assert not m_clog_path.return_value.write_text.called
+    assert not m_path.return_value.write_text.called
+    assert not m_shutil.rmtree.called
+    assert not m_dir_path.return_value.mkdir.called
 
 
 def test_abstract_changelogs_yaml_change_presenter():
