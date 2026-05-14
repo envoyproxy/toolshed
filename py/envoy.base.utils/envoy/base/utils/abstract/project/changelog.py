@@ -2,6 +2,7 @@
 import logging
 import pathlib
 import re
+import shutil
 import types
 from collections.abc import ItemsView, Iterator, KeysView, ValuesView
 from datetime import datetime, timezone
@@ -292,6 +293,8 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @async_property
     async def is_pending(self) -> bool:
+        # Dispatches through self[self.current].data which already handles
+        # both entries-layout and legacy layouts -- no change needed here.
         return (
             await self[self.current].release_date
             == "Pending")
@@ -391,6 +394,14 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         for version, sync in changelog.items():
             if sync:
                 changed.add(self.rel_changelog_path(version))
+        if self._entries_layout:
+            # changes_for_commit is invoked after write_version has already
+            # rmtree'd changelogs/current/, so globbing for *.rst would
+            # return nothing.  Include the directory path instead; git-add(1)
+            # with a directory path also stages deletions of tracked files
+            # removed from the working tree ("specifying dir will record …
+            # a file dir/file3 removed from the working tree").
+            changed.add(CHANGELOG_CURRENT_DIR_PATH)
         return changed
 
     def dump_yaml(self, data: typing.ChangelogDict) -> str:
@@ -455,28 +466,63 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             self.normalize_changelog(version, text))
 
     def write_current(self) -> None:
-        sections = {
-            k: v.get("description")
-            for k, v
-            in self.sections.items()
-            if k != "changes"}
-        self.current_path.write_text(
-            self.current_tpl.render(sections=sections).lstrip())
+        if self._entries_layout:
+            # Entries layout: write the slim current.yaml and ensure the
+            # current/ placeholder directory exists with a .gitkeep so that
+            # _entries_layout stays True across dev cycles.
+            # Contributors create section subdirectories on demand when
+            # adding the first entry for a new cycle.
+            self.current_path.write_text("date: Pending\n")
+            self.current_dir_path.mkdir(parents=True, exist_ok=True)
+            (self.current_dir_path / ".gitkeep").write_text("")
+        else:
+            sections = {
+                k: v.get("description")
+                for k, v
+                in self.sections.items()
+                if k != "changes"}
+            self.current_path.write_text(
+                self.current_tpl.render(sections=sections).lstrip())
 
     async def write_date(self, date: str) -> None:
         if not await self.is_pending:
             raise exceptions.ReleaseError(
                 "Current changelog date is not set to `Pending`")
-        data = (await self[self.current].data).copy()
-        data["date"] = date
-        self.current_path.write_text(self.dump_yaml(data))
+        if self._entries_layout:
+            # Entries layout: slim current.yaml contains only the date key;
+            # a literal write is deterministic and avoids loading the YAML.
+            self.current_path.write_text(f"date: {date}\n")
+        else:
+            data = (await self[self.current].data).copy()
+            data["date"] = date
+            self.current_path.write_text(self.dump_yaml(data))
 
     def write_version(self, version: _version.Version) -> None:
         if (version_file := self.changelog_path(version)).exists():
             raise exceptions.DevError(
                 f"Version file ({version_file}) already exists")
-        version_file.write_text(
-            self.current_path.read_text())
+        if self._entries_layout:
+            # Entries layout: aggregate per-entry RST files, write the
+            # versioned YAML, reset the slim current.yaml, then drop and
+            # recreate the entries directory.
+            # get_data_from_entries may raise ChangelogParseError; propagate
+            # it -- do NOT write the version file or rmtree on failure.
+            data = self.changelog_class.get_data_from_entries(
+                self.current_path, self.current_dir_path)
+            version_file.write_text(self.dump_yaml(data))
+            # Write slim current.yaml before rmtree so the file is correct
+            # even if rmtree fails.
+            self.current_path.write_text("date: Pending\n")
+            # Defensive re-check: guard against the (unlikely) race where the
+            # directory disappeared between the outer dispatch and here.
+            if self._entries_layout:
+                shutil.rmtree(self.current_dir_path)
+            # Recreate the placeholder directory so _entries_layout stays
+            # True when write_current() is called next by dev().
+            self.current_dir_path.mkdir()
+        else:
+            version_file.write_text(
+                self.current_path.read_text())
 
     def yaml_change_presenter(
             self,
