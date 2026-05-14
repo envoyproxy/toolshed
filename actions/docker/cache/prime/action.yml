@@ -21,7 +21,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/actions/cache/prime@5e6745311e36482192ad34d2b8df9c2c374fe2bd
+  - uses: envoyproxy/toolshed/actions/cache/prime@cc7e3d65fdf5fe9a3e1d748d752958512621f401
     id: prime
     with:
       key: ${{ inputs.image-tag }}${{ inputs.key-suffix }}
