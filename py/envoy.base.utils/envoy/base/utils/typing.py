@@ -31,12 +31,17 @@ class BaseChangelogDict(TypedDict):
     date: str
 
 
-ChangelogSourceDict = dict[str, Any]
-
-
+# Section-name -> entries. Section names are arbitrary at the type level
+# and validated at runtime against the project's `changelogs/sections.yaml`
+# (see AChangelogs.sections / AChangelogs.validate_sections).
 ChangelogChangeSectionsDict = dict[str, ChangeList]
+SourceChangelogChangeSectionsDict = dict[str, SourceChangeList]
 
 
+# `date` is always typed via `BaseChangelogDict`; section keys live
+# alongside it but are runtime-validated in
+# `AChangelogs.validate_sections`.
+ChangelogSourceDict = dict[str, Any]
 ChangelogDict = dict[str, Any]
 
 
