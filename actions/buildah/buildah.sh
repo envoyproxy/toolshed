@@ -7,6 +7,7 @@ set -o pipefail
 : "${BUILDAH_RETRY_MAX:=3}"          # total attempts for retryable subcommands
 : "${BUILDAH_RETRY_DELAY:=5}"        # base delay (seconds), doubled each attempt
 : "${BUILDAH_LOG_LEVEL:=warn}"       # buildah --log-level; bump to info/debug for triage
+: "${BUILDAH_ERROR_TAIL_LINES:=40}"  # max lines of buildah output in annotation tail
 
 # Subcommands we are willing to retry. `create`/`add` are local and not worth
 # retrying; `push` talks to a registry and is the one that flakes.
@@ -75,7 +76,7 @@ _buildah_command () {
     shift 2
 
     local logfile
-    logfile="$(mktemp)"
+    logfile="$(mktemp -t buildah.XXXXXX)"
 
     local attempt=1
     local max=1
@@ -115,7 +116,7 @@ _buildah_command () {
     # Emit a multi-line GH annotation. The %0A escape preserves newlines in
     # the rendered annotation; the raw log is also already visible in-group.
     local tail
-    tail="$(tail -n 40 "${logfile}" | sed 's/%/%25/g; s/\r/%0D/g; s/$/%0A/' | tr -d '\n')"
+    tail="$(tail -n "${BUILDAH_ERROR_TAIL_LINES}" "${logfile}" | sed 's/%/%25/g; s/\r/%0D/g; s/$/%0A/' | tr -d '\n')"
     echo "::error title=Buildah ${buildah_command} ${subcommand} failed::${buildah_command} ${subcommand} $* :: $(_describe_exit "${rc}")%0A----- buildah output (tail) -----%0A${tail}"
     rm -f "${logfile}"
     _end_command
@@ -134,7 +135,9 @@ handle_manifest () {
 
 # Useful one-off diagnostic; cheap, and pinpoints runner-image bumps.
 _print_command buildah version
-buildah version || true
+if ! buildah version; then
+    echo "::warning::Unable to run 'buildah version'" >&2
+fi
 _end_command
 
 export -f handle_manifest
