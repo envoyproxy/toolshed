@@ -1,0 +1,37 @@
+uses: ./actions/buildah
+id: buildah
+with:
+  operations: |
+    [
+      {"command": "manifest", "args": ["create", "foo"]}
+    ]
+  bash-prefix: |
+    #!/bin/bash
+    set -uo pipefail
+
+    export DRY_RUN=\($dry_run)
+    source \($action_path)/buildah.sh
+    _step_rc=0
+    source /tmp/buildah-wrapper.sh
+  bash-postfix: |
+    echo ${_step_rc} > /tmp/buildah-test-rc
+
+before:
+- shell: bash
+  run: |
+    rm -f /tmp/buildah-mock.state
+    echo "BUILDAH_MOCK_EXIT_CODES=1" >> "$GITHUB_ENV"
+    cat > /tmp/buildah-wrapper.sh << 'EOF'
+    eval "$(declare -f handle_manifest | sed '1s/handle_manifest/orig_handle_manifest/')"
+    _step_rc=0
+    handle_manifest() {
+        orig_handle_manifest "$@" || _step_rc=$?
+    }
+    EOF
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_call_count 2
+    test_step_outcome "failure"

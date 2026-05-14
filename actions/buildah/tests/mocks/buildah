@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+# Mock buildah binary for testing the buildah action.
+# Logs every invocation to $MOCK_LOG and responds based on env vars.
+
+MOCK_LOG="${MOCK_LOG:-/tmp/buildah-mock.log}"
+BUILDAH_MOCK_STATE="${BUILDAH_MOCK_STATE:-/tmp/buildah-mock.state}"
+
+print_cmd() {
+    local arg
+    for arg in "$@"; do
+        if [[ "$arg" =~ [[:space:]] ]]; then
+            printf '"%s" ' "$arg"
+        else
+            printf '%s ' "$arg"
+        fi
+    done | sed 's/ $//'
+    echo
+}
+
+print_cmd buildah "$@" >> "$MOCK_LOG"
+
+case "$1" in
+    version)
+        echo "buildah version 1.99.0 (image-spec 1.0.2-dev, runtime-spec 1.0.2-dev)"
+        exit 0
+        ;;
+    login)
+        # Succeed silently — used by the auth steps in action.yml
+        exit 0
+        ;;
+    --log-level)
+        # buildah --log-level <lvl> manifest <subcmd> [args...]
+        shift  # remove --log-level
+        shift  # remove level value (e.g. "warn", "debug")
+        if [[ "$1" != "manifest" ]]; then
+            echo "buildah mock: unexpected command after --log-level: $*" >&2
+            exit 1
+        fi
+        shift  # remove "manifest"
+        subcmd="$1"
+
+        # Read call index from counter file
+        idx=0
+        [[ -f "${BUILDAH_MOCK_STATE}" ]] && idx=$(cat "${BUILDAH_MOCK_STATE}")
+
+        # Parse BUILDAH_MOCK_EXIT_CODES (colon-separated list, default "0")
+        IFS=':' read -ra _CODES <<< "${BUILDAH_MOCK_EXIT_CODES:-0}"
+        _max=$(( ${#_CODES[@]} - 1 ))
+        _actual=$(( idx > _max ? _max : idx ))
+        code="${_CODES[$_actual]}"
+
+        # Increment counter
+        echo $(( idx + 1 )) > "${BUILDAH_MOCK_STATE}"
+
+        if [[ "${code}" -ne 0 ]]; then
+            if [[ -n "${BUILDAH_MOCK_STDERR:-}" ]]; then
+                echo "${BUILDAH_MOCK_STDERR}" >&2
+            elif [[ -n "${BUILDAH_MOCK_STDERR_LINES:-}" ]]; then
+                for i in $(seq 1 "${BUILDAH_MOCK_STDERR_LINES}"); do
+                    echo "line ${i}" >&2
+                done
+            fi
+            exit "${code}"
+        fi
+
+        echo "buildah manifest ${subcmd}: ok"
+        exit 0
+        ;;
+    *)
+        echo "buildah mock: unhandled command '$1'" >&2
+        exit 1
+        ;;
+esac

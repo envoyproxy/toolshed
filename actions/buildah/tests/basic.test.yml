@@ -1,0 +1,24 @@
+uses: ./actions/buildah
+id: buildah
+with:
+  operations: |
+    [
+      {"command": "manifest", "args": ["create", "foo"]},
+      {"command": "manifest", "args": ["add", "foo", "oci:/tmp/a"]},
+      {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:bar"]}
+    ]
+
+before:
+- shell: bash
+  run: |
+    rm -f /tmp/buildah-mock.state
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_call_count 4
+    test_mock_log_contains "buildah version"
+    test_mock_log_contains "buildah --log-level warn manifest create foo"
+    test_mock_log_contains "buildah --log-level warn manifest add foo oci:/tmp/a"
+    test_mock_log_contains "buildah --log-level warn manifest push --all foo docker://example.com/foo:bar"
