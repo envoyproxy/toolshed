@@ -8,11 +8,6 @@
 
 target(
     name="dev_deps",
-    dependencies=[
-        "//py/deps:reqs#aiohttp",
-        "//py/deps:reqs#packaging",
-        "//py/deps:reqs#pyyaml",
-    ],
 )
 
 toolshed_library(

@@ -1,10 +1,5 @@
 
-toolshed_tests(
-    "pytest-abstracts",
-    dependencies=[
-        "//py/deps:reqs#abstracts",
-    ],
-)
+toolshed_tests("pytest-abstracts")
 
 python_test_utils(
     name="utils",

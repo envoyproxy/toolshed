@@ -87,11 +87,38 @@ def _publish_req_dependencies(namespace: str) -> list:
     ]
 
 
+def _runtime_req_canonical_name(req_str: str) -> str:
+    """Extract canonical requirement name from a PEP 508 requirement string."""
+    requirement_name_chars = []
+    for char in req_str.strip():
+        if char in " <>=!~[;":
+            break
+        requirement_name_chars.append(char)
+    return _canonical_name("".join(requirement_name_chars))
+
+
+def _runtime_req_deps(namespace: str) -> list:
+    """Map setup.cfg install_requires entries to deps-resolve req targets."""
+    return [
+        f"//py/deps:reqs#{_runtime_req_canonical_name(req_str)}"
+        for req_str in _setup_cfg_install_requires(namespace)
+    ]
+
+
 def toolshed_library(
         namespace: str,
         dependencies=None,  # Optional[List]
         **kwargs) -> None:
     """Library of namespaced code that can be packaged"""
+    for dep in (dependencies or []):
+        if dep.startswith("//py/deps:reqs#"):
+            raise ValueError(
+                f"toolshed_library({namespace!r}): runtime dependencies must be "
+                f"declared in py/{namespace}/setup.cfg [options] install_requires, "
+                f"not on the library BUILD target. Offending dep: {dep!r}. "
+                f"This prevents pinned lockfile versions from leaking into the "
+                f"published wheel's Requires-Dist metadata."
+            )
     resources(
         name="package_data",
         sources=["py.typed"])
@@ -169,6 +196,7 @@ def toolshed_tests(
     """Test library for a namespaced package"""
     dependencies = (
         _dep_on_myself(namespace)
+        + _runtime_req_deps(namespace)
         + (dependencies or []))
 
     # TODO: remove this if we add separate per-package
