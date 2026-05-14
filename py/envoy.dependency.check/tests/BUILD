@@ -8,6 +8,8 @@ toolshed_tests(
         "//py/deps:reqs#aio-run-checker",
         "//py/deps:reqs#envoy-base-utils",
         "//py/deps:reqs#aiohttp",
+        "//py/deps:reqs#gidgethub",
+        "//py/deps:reqs#jinja2",
         "//py/deps:reqs#packaging",
     ],
 )

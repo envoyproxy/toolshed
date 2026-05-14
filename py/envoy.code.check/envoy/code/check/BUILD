@@ -1,17 +1,6 @@
 
 toolshed_library(
     "envoy.code.check",
-    dependencies=[
-        "//py/deps:reqs#abstracts",
-        "//py/deps:reqs#aio-core",
-        "//py/deps:reqs#aio-run-checker",
-        "//py/envoy.base.utils/envoy/base/utils",
-        "//py/deps:reqs#flake8",
-        "//py/deps:reqs#packaging",
-        "//py/deps:reqs#yamllint",
-        "//py/deps:reqs#yapf",
-        "//py/deps:reqs#types-pyyaml",
-    ],
     sources=[
         "__init__.py",
         "abstract/__init__.py",
