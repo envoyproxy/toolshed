@@ -48,7 +48,7 @@ runs:
       chmod +x $TMPFILE
       echo "path=$TMPFILE" >> $GITHUB_OUTPUT
     shell: bash
-  - uses: envoyproxy/toolshed/actions/jq@cc7e3d65fdf5fe9a3e1d748d752958512621f401
+  - uses: envoyproxy/toolshed/actions/jq@7f2aff965c314c8a80a09a48f61552b1a3337af1
     id: command
     with:
       input: ${{ inputs.input }}
@@ -76,7 +76,7 @@ runs:
       TMPFILE: ${{ steps.script.outputs.path }}
     shell: bash
   - id: output
-    uses: envoyproxy/toolshed/actions/jq@cc7e3d65fdf5fe9a3e1d748d752958512621f401
+    uses: envoyproxy/toolshed/actions/jq@7f2aff965c314c8a80a09a48f61552b1a3337af1
     if: ${{ inputs.result-filter }}
     with:
       input: ${{ steps.run.outputs.output }}
