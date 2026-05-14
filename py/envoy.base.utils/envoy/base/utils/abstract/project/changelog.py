@@ -292,6 +292,11 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         This should be called for every parsed `ChangelogDict`, whether
         parsed from a YAML changelog file or assembled from per-entry
         changelog data.
+
+        :param data: Parsed changelog data to validate.
+        :param path: Optional source path for error context.
+        :returns: The input data, unchanged.
+        :raises ChangelogParseError: If any section key is unknown.
         """
         allowed = set(self.sections) | {"date"}
         unknown = sorted(k for k in data if k not in allowed)

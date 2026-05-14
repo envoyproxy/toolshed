@@ -389,7 +389,7 @@ def test_abstract_changelogs_validate_sections_unknown(path):
     assert "unknown" in message
     assert abstract.project.changelog.CHANGELOG_SECTIONS_PATH in message
     if path is None:
-        assert "changelog/current.yaml" not in message
+        assert "changelogs/current.yaml" not in message
         assert "(None)" not in message
     else:
         assert f"({path})" in message
@@ -1191,7 +1191,7 @@ async def test_abstract_changelog_data(patches):
         == [(project.execute.return_value, m_path.return_value), {}])
 
 
-async def test_abstract_changelog_data_integration_unknown_section(tmp_path):
+async def test_abstract_changelog_data_unknown_section(tmp_path):
     changelog_path = tmp_path.joinpath("changelogs/current.yaml")
     changelog_path.parent.mkdir()
     changelog_path.write_text(
