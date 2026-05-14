@@ -292,15 +292,14 @@ async def test_changelogstatus_errors(iters, patches, raises):
                 status,
                 check.AChangelogStatus.errors.cache_name)["errors"])
 
-    for provider in [m_versions, m_date, m_entry_files]:
+    providers = [m_versions, m_date, m_entry_files]
+    if not raises:
+        providers.append(m_sections)
+    for provider in providers:
         assert (
             provider.call_args
             == [(), {}])
-    if not raises:
-        assert (
-            m_sections.call_args
-            == [(), {}])
-    else:
+    if raises:
         assert not m_sections.called
 
 
