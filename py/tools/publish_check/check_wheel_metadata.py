@@ -54,7 +54,10 @@ def _setup_cfg_install_requires(path: pathlib.Path) -> list[str]:
 
 def _wheel_runtime_requires(whl: pathlib.Path) -> list[str]:
     with zipfile.ZipFile(whl) as zf:
-        meta = next(n for n in zf.namelist() if n.endswith(".dist-info/METADATA"))
+        metadata_files = [n for n in zf.namelist() if n.endswith(".dist-info/METADATA")]
+        if not metadata_files:
+            raise ValueError(f"no .dist-info/METADATA found in wheel {whl.name}")
+        meta = metadata_files[0]
         msg = Parser().parsestr(zf.read(meta).decode())
     out = []
     for rd in msg.get_all("Requires-Dist") or []:
@@ -68,32 +71,43 @@ def _pkg_name_from_wheel(whl: pathlib.Path) -> str:
     return whl.name.split("-")[0]
 
 
-def _setup_cfg_for(dist_name: str) -> pathlib.Path | None:
+def _setup_cfg_for(dist_name: str, cfg_index: dict[str, pathlib.Path]) -> pathlib.Path | None:
+    return cfg_index.get(canonicalize_name(dist_name))
+
+
+def _setup_cfg_index() -> dict[str, pathlib.Path]:
+    index: dict[str, pathlib.Path] = {}
     for cfg in pathlib.Path("py").glob("*/setup.cfg"):
         for line in cfg.read_text().splitlines():
             m = re.match(r"\s*name\s*=\s*(\S+)", line)
-            if m and canonicalize_name(m.group(1)) == canonicalize_name(dist_name):
-                return cfg
-    return None
+            if m:
+                index[canonicalize_name(m.group(1))] = cfg
+                break
+    return index
 
 
 def main() -> int:
     failures: dict[str, list[str]] = defaultdict(list)
     wheels = sorted(pathlib.Path(p) for p in glob.glob("dist/*.whl"))
+    cfg_index = _setup_cfg_index()
     if not wheels:
         print("ERROR: no wheels found in dist/", file=sys.stderr)
         return 2
 
     for whl in wheels:
         dist_name = _pkg_name_from_wheel(whl)
-        cfg = _setup_cfg_for(dist_name)
+        cfg = _setup_cfg_for(dist_name, cfg_index)
         if cfg is None:
             failures[whl.name].append(
                 f"no matching py/*/setup.cfg for dist name {dist_name!r}"
             )
             continue
         expected = {_norm(r) for r in _setup_cfg_install_requires(cfg)}
-        actual = {_norm(r) for r in _wheel_runtime_requires(whl)}
+        try:
+            actual = {_norm(r) for r in _wheel_runtime_requires(whl)}
+        except ValueError as e:
+            failures[whl.name].append(str(e))
+            continue
         if expected == actual:
             print(f"OK  {whl.name}")
             continue
