@@ -1,5 +1,4 @@
 
-import pathlib
 import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
@@ -279,17 +278,21 @@ async def test_changelogstatus_errors(iters, patches, raises):
             with pytest.raises(raises):
                 await status.errors
             return
+        expected_errors = (
+            (*version_errors, *date_errors, *sections_errors,
+             *entry_files_errors)
+            if not raises
+            else (
+                *entry_files_errors,
+                f"{m_version.return_value}: {error}"))
         assert (
             await status.errors
-            == ((*version_errors, *date_errors, *sections_errors,
-                 *entry_files_errors)
-                if not raises
-                else (f"{m_version.return_value}: {error}", ))
+            == expected_errors
             == getattr(
                 status,
                 check.AChangelogStatus.errors.cache_name)["errors"])
 
-    for provider in [m_versions, m_date]:
+    for provider in [m_versions, m_date, m_entry_files]:
         assert (
             provider.call_args
             == [(), {}])
@@ -297,12 +300,8 @@ async def test_changelogstatus_errors(iters, patches, raises):
         assert (
             m_sections.call_args
             == [(), {}])
-        assert (
-            m_entry_files.call_args
-            == [(), {}])
     else:
         assert not m_sections.called
-        assert not m_entry_files.called
 
 
 @pytest.mark.parametrize("raises", [None, Exception, ValueError])
@@ -771,13 +770,19 @@ def test_changeschecker_check_section_name(
 
 def test_changeschecker_check_entry_filename_valid():
     changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
-    path = pathlib.Path("changelogs/current/bug_fixes/myarea__myslug.rst")
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "myarea__myslug"
+    path.suffix = ".rst"
     assert changelog.check_entry_filename(path) is None
 
 
 def test_changeschecker_check_entry_filename_invalid_section():
     changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
-    path = pathlib.Path("changelogs/current/weird_section/area__slug.rst")
+    path = MagicMock()
+    path.parent.name = "weird_section"
+    path.stem = "area__slug"
+    path.suffix = ".rst"
     result = changelog.check_entry_filename(path)
     assert result is not None
     assert "weird_section" in result
@@ -786,7 +791,10 @@ def test_changeschecker_check_entry_filename_invalid_section():
 
 def test_changeschecker_check_entry_filename_wrong_extension():
     changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
-    path = pathlib.Path("changelogs/current/bug_fixes/area__slug.txt")
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "area__slug"
+    path.suffix = ".txt"
     result = changelog.check_entry_filename(path)
     assert result is not None
     assert ".txt" in result
@@ -795,7 +803,10 @@ def test_changeschecker_check_entry_filename_wrong_extension():
 
 def test_changeschecker_check_entry_filename_no_separator():
     changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
-    path = pathlib.Path("changelogs/current/bug_fixes/areaslug.rst")
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "areaslug"
+    path.suffix = ".rst"
     result = changelog.check_entry_filename(path)
     assert result is not None
     assert "__" in result
@@ -803,7 +814,10 @@ def test_changeschecker_check_entry_filename_no_separator():
 
 def test_changeschecker_check_entry_filename_multiple_separators():
     changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
-    path = pathlib.Path("changelogs/current/bug_fixes/area__slug__extra.rst")
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "area__slug__extra"
+    path.suffix = ".rst"
     result = changelog.check_entry_filename(path)
     assert result is not None
     assert "__" in result
@@ -811,7 +825,10 @@ def test_changeschecker_check_entry_filename_multiple_separators():
 
 def test_changeschecker_check_entry_filename_empty_area():
     changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
-    path = pathlib.Path("changelogs/current/bug_fixes/__slug.rst")
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "__slug"
+    path.suffix = ".rst"
     result = changelog.check_entry_filename(path)
     assert result is not None
     assert "Area" in result
@@ -820,7 +837,10 @@ def test_changeschecker_check_entry_filename_empty_area():
 
 def test_changeschecker_check_entry_filename_empty_slug():
     changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
-    path = pathlib.Path("changelogs/current/bug_fixes/area__.rst")
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "area__"
+    path.suffix = ".rst"
     result = changelog.check_entry_filename(path)
     assert result is not None
     assert "Slug" in result

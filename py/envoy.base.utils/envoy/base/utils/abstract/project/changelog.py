@@ -27,7 +27,9 @@ logger = logging.getLogger(__name__)
 CHANGELOG_PATH_GLOB = "changelogs/*.*.*.yaml"
 CHANGELOG_PATH_FMT = "changelogs/{version}.yaml"
 CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
+CHANGELOG_ENTRY_GLOB = "*/*.rst"
 CHANGELOG_SECTIONS_PATH = "changelogs/sections.yaml"
+ENTRY_SEPARATOR = "__"
 CHANGELOG_SUMMARY_PATH = "changelogs/summary.md"
 CHANGELOG_URL_TPL = (
     "https://raw.githubusercontent.com/envoyproxy/envoy/"

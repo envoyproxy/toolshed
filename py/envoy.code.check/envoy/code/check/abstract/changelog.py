@@ -12,14 +12,14 @@ import abstracts
 from aio.core.functional import async_property
 
 from envoy.base import utils
+from envoy.base.utils.abstract.project.changelog import (
+    CHANGELOG_ENTRY_GLOB,
+    ENTRY_SEPARATOR,
+)
 from envoy.code.check import abstract, interface
 
 
 MAX_VERSION_FOR_CHANGES_SECTION = "1.16"
-
-# TODO: Replace with imports from envoy.base.utils once PR 2 lands
-ENTRY_SEPARATOR = "__"
-CHANGELOG_ENTRY_GLOB = "*/*.rst"
 
 
 @abstracts.implementer(interface.IChangelogChangesChecker)
@@ -196,14 +196,15 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def errors(self) -> tuple[str, ...]:
+        entry_errors = await self.check_entry_files()
         try:
             return (
                 *self.check_version(),
                 *await self.check_date(),
                 *await self.check_sections(),
-                *await self.check_entry_files())
+                *entry_errors)
         except utils.exceptions.ChangelogParseError as e:
-            return (f"{self.version}: {e}", )
+            return (*entry_errors, f"{self.version}: {e}")
 
     @async_property
     async def invalid_date(self) -> str | None:
