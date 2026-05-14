@@ -1,17 +1,6 @@
 
 toolshed_library(
     "envoy.dependency.check",
-    dependencies=[
-        "//py/deps:reqs#abstracts",
-        "//py/deps:reqs#aio-api-github",
-        "//py/deps:reqs#aio-core",
-        "//py/deps:reqs#aio-run-checker",
-        "//py/deps:reqs#envoy-base-utils",
-        "//py/deps:reqs#gidgethub",
-        "//py/deps:reqs#jinja2",
-        "//py/deps:reqs#aiohttp",
-        "//py/deps:reqs#packaging",
-    ],
     sources=[
         "abstract/__init__.py",
         "abstract/checker.py",
