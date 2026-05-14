@@ -1,0 +1,21 @@
+uses: ./actions/buildah
+id: buildah
+with:
+  operations: |
+    [
+      {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:bar"]}
+    ]
+
+before:
+- shell: bash
+  run: |
+    rm -f /tmp/buildah-mock.state
+    echo "BUILDAH_MOCK_EXIT_CODES=1:0" >> "$GITHUB_ENV"
+    echo "BUILDAH_RETRY_DELAY=0" >> "$GITHUB_ENV"
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_call_count 3
+    test_mock_log_contains "buildah --log-level warn manifest push --all foo docker://example.com/foo:bar"
