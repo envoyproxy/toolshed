@@ -192,9 +192,15 @@ class AChangelog(metaclass=abstracts.Abstraction):
 
     @async_property(cache=True)
     async def data(self) -> typing.ChangelogDict:
-        return self.project.changelogs.validate_sections(
-            await self.project.execute(self.get_data, self.path),
-            self.path)
+        changelogs = self.project.changelogs
+        if changelogs._entries_layout and self._is_current:
+            parsed = await self.project.execute(
+                self.get_data_from_entries,
+                self.path,
+                changelogs.current_dir_path)
+        else:
+            parsed = await self.project.execute(self.get_data, self.path)
+        return changelogs.validate_sections(parsed, self.path)
 
     @property
     @abstracts.interfacemethod
@@ -212,6 +218,10 @@ class AChangelog(metaclass=abstracts.Abstraction):
     @property
     def version(self) -> _version.Version:
         return self._version
+
+    @property
+    def _is_current(self) -> bool:
+        return self.version == self.project.changelogs.current
 
     async def entries(self, section: str) -> list[interface.IChangelogEntry]:
         return sorted(
@@ -264,6 +274,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def current_path(self) -> pathlib.Path:
         return self.project.path.joinpath(self.rel_current_path)
 
+    @property
+    def current_dir_path(self) -> pathlib.Path:
+        return self.project.path.joinpath(self.rel_current_dir_path)
+
     @cached_property
     def current_tpl(self) -> jinja2.Template:
         return jinja2.Template(CHANGELOG_CURRENT_TPL)
@@ -291,6 +305,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     @property
     def rel_current_path(self) -> pathlib.Path:
         return pathlib.Path(CHANGELOG_CURRENT_PATH)
+
+    @property
+    def rel_current_dir_path(self) -> pathlib.Path:
+        return pathlib.Path(CHANGELOG_CURRENT_DIR_PATH)
 
     @cached_property
     def section_re(self) -> re.Pattern[str]:
@@ -473,6 +491,11 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     @cached_property
     def _yaml_changelogs_version(self) -> _version.Version:
         return _version.Version(YAML_CHANGELOGS_VERSION)
+
+    @property
+    def _entries_layout(self) -> bool:
+        return (
+            self.project.path.joinpath(CHANGELOG_CURRENT_DIR_PATH).is_dir())
 
     def _is_rst_changelog(self, version: _version.Version) -> bool:
         return version < self._yaml_changelogs_version
