@@ -36,21 +36,32 @@ jobs:
       if: github.event_name == 'push'
       shell: bash
       run: |
-        changed="$(git diff --name-only HEAD^1 HEAD)"
-        self_changed=false
-        others_changed=false
-        while IFS= read -r f; do
-          case "$f" in
-            docker/build/VERSION.txt) self_changed=true ;;
-            actions/VERSION.txt|bazel/VERSION.txt|BINS_VERSION.txt|py/VERSION.txt)
-              others_changed=true ;;
-          esac
-        done <<< "$changed"
-        if [[ "$others_changed" == "true" && "$self_changed" == "false" ]]; then
-          echo "skip=true" >> "$GITHUB_OUTPUT"
-          echo "Other stack(s) publishing - skipping heavy jobs"
+        is_non_dev() {
+            local file="$1"
+            local version
+            version="$(tr -d '[:space:]' < "$file")"
+            [[ "$version" != *-dev ]]
+        }
+
+        self_publishing=false
+        others_publishing=false
+
+        if is_non_dev docker/build/VERSION.txt; then
+            self_publishing=true
+        fi
+
+        for file in actions/VERSION.txt bazel/VERSION.txt BINS_VERSION.txt py/VERSION.txt; do
+            if is_non_dev "$file"; then
+                others_publishing=true
+                break
+            fi
+        done
+
+        if [[ "$others_publishing" == "true" && "$self_publishing" == "false" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Other stack(s) publishing - skipping heavy jobs"
         else
-          echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
         fi
 
   build:
