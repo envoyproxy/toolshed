@@ -1479,9 +1479,9 @@ pytest==9.0.3 \
     #   pytest-asyncio
     #   pytest-iters
     #   pytest-patches
-pytest-abstracts==0.1.0 \
-    --hash=sha256:4955d9e6406af6e1a5cfa3f752024bd4c3867e6de1639576672d3e262a517df1 \
-    --hash=sha256:b927d453c73842bebce4959c1ef88d4680aeb4bd843be34bee0d37704faefc4a
+pytest-abstracts==0.1.1 \
+    --hash=sha256:96d7f3f997b85068fec65a0088f59cea932343cc94038f8f1d676d6d3d85bb8f \
+    --hash=sha256:fc5362bfd8e345f362b38945ddd8077ddf29e69c3ba654ff7cae29f594575ad6
     # via -r requirements.in
 pytest-asyncio==1.3.0 \
     --hash=sha256:611e26147c7f77640e6d0a92a38ed17c3e9848063698d5c93d5aa7aa11cebff5 \
