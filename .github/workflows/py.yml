@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       run: ${{ steps.filter.outputs.run }}
+      skip-publishing: ${{ steps.publishing.outputs.skip }}
     steps:
     - uses: envoyproxy/toolshed/actions/github/should-run@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       id: filter
@@ -37,6 +38,27 @@ jobs:
           - 'mypy.ini'
           - 'pytest.ini'
           - 'py/**'
+    - name: Detect cross-stack publish
+      id: publishing
+      if: github.event_name == 'push'
+      shell: bash
+      run: |
+        changed="$(git diff --name-only HEAD^1 HEAD)"
+        self_changed=false
+        others_changed=false
+        while IFS= read -r f; do
+          case "$f" in
+            py/VERSION.txt) self_changed=true ;;
+            actions/VERSION.txt|bazel/VERSION.txt|BINS_VERSION.txt|docker/build/VERSION.txt)
+              others_changed=true ;;
+          esac
+        done <<< "$changed"
+        if [[ "$others_changed" == "true" && "$self_changed" == "false" ]]; then
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+          echo "Other stack(s) publishing - skipping heavy jobs"
+        else
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+        fi
 
   test:
     runs-on: ubuntu-24.04
@@ -44,6 +66,7 @@ jobs:
     if: >-
       github.repository_owner == 'envoyproxy'
       && fromJSON(needs.request.outputs.run)
+      && needs.request.outputs.skip-publishing != 'true'
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
     - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
@@ -67,6 +90,7 @@ jobs:
     needs: request
     if: >-
       fromJSON(needs.request.outputs.run)
+      && needs.request.outputs.skip-publishing != 'true'
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
     - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
@@ -85,6 +109,7 @@ jobs:
     needs: request
     if: >-
       fromJSON(needs.request.outputs.run)
+      && needs.request.outputs.skip-publishing != 'true'
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
     - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
@@ -124,6 +149,7 @@ jobs:
     # - docs
     if: >-
       fromJSON(needs.request.outputs.run)
+      && needs.request.outputs.skip-publishing != 'true'
     steps:
     - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
     - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
