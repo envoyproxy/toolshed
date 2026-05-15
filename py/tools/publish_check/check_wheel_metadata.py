@@ -79,7 +79,7 @@ def _setup_cfg_for(dist_name: str) -> pathlib.Path | None:
 
 def main() -> int:
     failures: dict[str, list[str]] = defaultdict(list)
-    wheels = sorted(pathlib.Path(p) for p in glob.glob("dist/*.whl"))
+    wheels = sorted(pathlib.Path(p) for p in glob.glob("dist/mypy*.whl"))
     if not wheels:
         print("ERROR: no wheels found in dist/", file=sys.stderr)
         return 2

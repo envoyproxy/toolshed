@@ -49,6 +49,15 @@ def _publish_req_target_name(req_str: str) -> str:
     return f"_publish__{''.join(collapsed)}"
 
 
+def _req_bare_name(req_str: str) -> str:
+    chars = []
+    for ch in req_str.strip():
+        if ch in " <>=!~[;":
+            break
+        chars.append(ch)
+    return _canonical_name("".join(chars))
+
+
 def _setup_cfg_install_requires(namespace: str) -> list:
     # Keep this parser aligned with toolshed_setup_cfg.parse_options().
     # BUILD macros cannot import modules, so parsing is inlined here.
@@ -147,12 +156,16 @@ def toolshed_package(
     # //py/deps:reqs#* deps to the inner python_sources and put them on
     # the test target only.
     _inner = _dep_on_myself(namespace)[0]
+    excluded_reqs = [
+        f"!!//py/deps:reqs#{_canonical_name(_req_bare_name(r))}"
+        for r in _setup_cfg_install_requires(namespace)]
     publish_req_deps = _publish_req_dependencies(namespace)
     toolshed_distribution(
         name="package",
         dependencies=[
             _inner,
             *publish_req_deps,
+            *excluded_reqs,
         ],
         provides=setup_py(
             name=namespace,
