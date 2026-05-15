@@ -20,7 +20,7 @@ gidgethub
 pyjwt[crypto]>=2.12.1
 jinja2>=3.1.6
 mypy==2.0.0
-mypy-abstracts>=0.1.0
+mypy-abstracts>=0.1.1
 orjson>=3.11.9
 packaging>=26.2
 pep8-naming

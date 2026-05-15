@@ -10,7 +10,7 @@
 //   ],
 //   "generated_with_requirements": [
 //     "abstracts==0.2.0",
-//     "aio-api-bazel==0.0.4",
+//     "aio-api-bazel==0.1.0",
 //     "aio-api-github==0.3.0",
 //     "aio-api-nist==0.0.4",
 //     "aio-core==0.11.0",
@@ -48,7 +48,7 @@
 //     "markupsafe==3.0.3",
 //     "mccabe==0.7.0",
 //     "multidict==6.7.1",
-//     "mypy-abstracts==0.1.0",
+//     "mypy-abstracts==0.1.1",
 //     "mypy-extensions==1.1.0",
 //     "mypy==2.0.0",
 //     "orjson==3.11.9",
@@ -63,7 +63,7 @@
 //     "pycparser==2.23",
 //     "pyflakes==3.4.0",
 //     "pygments==2.20.0",
-//     "pyjwt==2.12.1",
+//     "pyjwt[crypto]==2.12.1",
 //     "pytest-abstracts==0.1.0",
 //     "pytest-asyncio==1.3.0",
 //     "pytest-iters==0.1.0",
@@ -158,18 +158,33 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "33ba61ac41c6ee8a13ed3e831ab808590fe074cc9703de6d2401d2f200f3c10a",
-              "url": "https://files.pythonhosted.org/packages/fc/f3/df594c755c233d90c5ff8d33b7febd44db570b232b4115d584625c047996/aio_api_bazel-0.0.4-py3-none-any.whl"
+              "hash": "995fda8552e66f3124d4b11c04c07dd068f64b248a5aa8afd1c1c406c008c836",
+              "url": "https://files.pythonhosted.org/packages/c1/32/38dd87658a46a0069d89e50d7e6cd9ecde19bd8b4ed9b4d9e4f4c9508199/aio_api_bazel-0.1.0-py3-none-any.whl"
+            },
+            {
+              "algorithm": "sha256",
+              "hash": "4fafbae68311190b78fb0a7a921beb37f2a6f80b299678204c8041c4921c6553",
+              "url": "https://files.pythonhosted.org/packages/6a/0b/d9599e20ed6a3c99ba69300a38a17644cb8637a59ae0e39c278ca59c1bcd/aio_api_bazel-0.1.0.tar.gz"
             }
           ],
           "project_name": "aio-api-bazel",
           "requires_dists": [
-            "abstracts>=0.0.12",
-            "aio.core>=0.10.5",
-            "aio.run.runner>=0.3.4"
+            "abstracts==0.2.0",
+            "abstracts>=0.2.0",
+            "aio-core==0.11.0",
+            "aio-run-runner==0.4.0",
+            "aio.core>=0.11.0",
+            "aio.run.runner>=0.4.0",
+            "flake8>=6.1.0; extra == \"lint\"",
+            "mypy>=1.6.0; extra == \"types\"",
+            "pytest-asyncio>=0.23.3; extra == \"test\"",
+            "pytest-coverage; extra == \"test\"",
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest>=7.4.0; extra == \"test\"",
+            "wheel>=0.41.0; extra == \"publish\""
           ],
-          "requires_python": ">=3.11.0",
-          "version": "0.0.4"
+          "requires_python": ">=3.12",
+          "version": "0.1.0"
         },
         {
           "artifacts": [
@@ -3283,28 +3298,27 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "5801d7f7644e46c471680e6c2e577394c5db40b31f066d3cf0fb734939502fcc",
-              "url": "https://files.pythonhosted.org/packages/a5/fd/e61ff9e0db4211e68c4da05046c2b18c830133a9d1fc2917cbb5eba2c9b6/mypy_abstracts-0.1.0-py3-none-any.whl"
+              "hash": "2cf066da730f052ab5199cc014a88bdaefba6d86814a01111eebb3062f8cbd1b",
+              "url": "https://files.pythonhosted.org/packages/47/55/ce3ff4e2fb125e3c9897661b9da1599442961a92c0d3b2cf47b5af471482/mypy_abstracts-0.1.1-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "8196a9431271e0a1e7c16b313667032af7c4b4848a7b203e1a28f3b25903c6ac",
-              "url": "https://files.pythonhosted.org/packages/77/19/b1df1b64b04565944c9f315ae00f3af1a0dc06785e7f92bdbe9e0957ddc0/mypy_abstracts-0.1.0.tar.gz"
+              "hash": "962b43e92053c581eff622939c7dee86b10f4265a0a2d8205542bcb40e1b1103",
+              "url": "https://files.pythonhosted.org/packages/c2/89/a71515dd1b270c6444eda1ff60c85432316b8d66ba6535718299a2670d56/mypy_abstracts-0.1.1.tar.gz"
             }
           ],
           "project_name": "mypy-abstracts",
           "requires_dists": [
-            "flake8; extra == \"lint\"",
-            "mypy",
-            "mypy; extra == \"types\"",
-            "mypy==2.0.0",
+            "flake8>=6.1.0; extra == \"lint\"",
+            "mypy>=1.6.0",
+            "mypy>=1.6.0; extra == \"types\"",
             "pytest-coverage; extra == \"test\"",
-            "pytest-patches; extra == \"test\"",
-            "pytest; extra == \"test\"",
-            "wheel; extra == \"publish\""
+            "pytest-patches>=0.1.0; extra == \"test\"",
+            "pytest>=7.4.0; extra == \"test\"",
+            "wheel>=0.41.0; extra == \"publish\""
           ],
           "requires_python": ">=3.12",
-          "version": "0.1.0"
+          "version": "0.1.1"
         },
         {
           "artifacts": [
@@ -5927,7 +5941,7 @@
   "prefer_older_binary": false,
   "requirements": [
     "abstracts==0.2.0",
-    "aio-api-bazel==0.0.4",
+    "aio-api-bazel==0.1.0",
     "aio-api-github==0.3.0",
     "aio-api-nist==0.0.4",
     "aio-core==0.11.0",
@@ -5965,7 +5979,7 @@
     "markupsafe==3.0.3",
     "mccabe==0.7.0",
     "multidict==6.7.1",
-    "mypy-abstracts==0.1.0",
+    "mypy-abstracts==0.1.1",
     "mypy-extensions==1.1.0",
     "mypy==2.0.0",
     "orjson==3.11.9",
@@ -5980,7 +5994,7 @@
     "pycparser==2.23",
     "pyflakes==3.4.0",
     "pygments==2.20.0",
-    "pyjwt==2.12.1",
+    "pyjwt[crypto]==2.12.1",
     "pytest-abstracts==0.1.0",
     "pytest-asyncio==1.3.0",
     "pytest-iters==0.1.0",
