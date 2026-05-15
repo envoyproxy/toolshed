@@ -1,13 +1,6 @@
 
 toolshed_library(
     "aio.api.github",
-    dependencies=[
-        "//py/deps:reqs#abstracts",
-        "//py/deps:reqs#aio-core",
-        "//py/deps:reqs#aiohttp",
-        "//py/deps:reqs#gidgethub",
-        "//py/deps:reqs#packaging",
-    ],
     sources=[
         "abstract/__init__.py",
         "abstract/actions/__init__.py",

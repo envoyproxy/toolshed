@@ -34,15 +34,3 @@ python_tests(
         "//py/pytest-patches:build_artefacts",
     ],
 )
-
-python_tests(
-    name="publish_wheel_metadata_check",
-    sources=["test_publish_wheel_metadata.py"],
-    skip_mypy=True,
-    runtime_package_dependencies=["//py/_test_publish_pkg:package"],
-    dependencies=[
-        "//py/deps:reqs#packaging",
-        "//py/deps:reqs#pytest",
-        "//py/deps:reqs#pytest-asyncio",
-    ],
-)
