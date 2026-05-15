@@ -1,2 +1,2 @@
 mypy==2.1.0
-mypy-abstracts>=0.1.0
+mypy-abstracts>=0.1.1

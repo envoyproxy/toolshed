@@ -9,7 +9,7 @@
 //     "CPython>=3.12"
 //   ],
 //   "generated_with_requirements": [
-//     "mypy-abstracts>=0.1.0",
+//     "mypy-abstracts>=0.1.1",
 //     "mypy==2.1.0"
 //   ],
 //   "manylinux": "manylinux2014",
@@ -609,7 +609,7 @@
   "pip_version": "24.2",
   "prefer_older_binary": false,
   "requirements": [
-    "mypy-abstracts>=0.1.0",
+    "mypy-abstracts>=0.1.1",
     "mypy==2.1.0"
   ],
   "requires_python": [
