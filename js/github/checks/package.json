@@ -29,7 +29,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.7.0",
+    "@types/node": "^25.8.0",
     "@types/tmp": "^0.2.5",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
@@ -50,6 +50,6 @@
     "@envoy-toolshed/utils": "file:../../utils",
     "@octokit/rest": "^22.0.0",
     "@octokit/types": "^16.0.0",
-    "eslint": "^10.0.0"
+    "eslint": "^10.4.0"
   }
 }
