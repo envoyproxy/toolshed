@@ -53,7 +53,13 @@ class ChangelogSectionDict(BaseChangelogSectionDict, total=False):
 
 
 ChangelogSectionsDict = dict[str, ChangelogSectionDict]
-ChangelogAreasDict = dict[str, BaseChangelogSectionDict]
+
+
+class ChangelogAreaDict(BaseChangelogSectionDict):
+    pass
+
+
+ChangelogAreasDict = dict[str, ChangelogAreaDict]
 
 VersionConfigDict = dict[str, str]
 

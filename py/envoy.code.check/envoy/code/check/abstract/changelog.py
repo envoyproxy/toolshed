@@ -21,7 +21,12 @@ from envoy.code.check import abstract, interface
 
 
 MAX_VERSION_FOR_CHANGES_SECTION = "1.16"
-CHANGELOG_AREAS_PATH = "changelogs/areas.yaml"
+try:
+    from envoy.base.utils.abstract.project.changelog import (
+        CHANGELOG_AREAS_PATH,
+    )
+except ImportError:
+    CHANGELOG_AREAS_PATH = "changelogs/areas.yaml"
 VALID_CHANGELOG_AREA_RE = re.compile(r"^[a-z0-9_\-/]+$")
 VALID_CHANGELOG_AREA_PATTERN = r"[a-z0-9_\-/]+"
 CHANGELOG_AREAS_FILE = pathlib.Path(CHANGELOG_AREAS_PATH)
@@ -36,9 +41,9 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
     def __init__(
             self,
             sections: utils.typing.ChangelogSectionsDict,
-            areas: dict[str, dict[str, str]] | None = None) -> None:
+            areas: "utils.typing.ChangelogAreasDict") -> None:
         self.sections = sections
-        self.areas = areas or {}
+        self.areas = areas
 
     @property  # type:ignore
     @abstracts.interfacemethod
@@ -327,7 +332,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             paths)
 
     async def check_areas_file(self) -> tuple[str, ...]:
-        areas = getattr(self.project.changelogs, "areas", {})
+        areas = self.project.changelogs.areas
         if not self.is_current or not areas:
             return ()
         return await self.project.execute(self.checker.check_areas_file)
@@ -367,10 +372,9 @@ class AChangelogCheck(
 
     @cached_property
     def changes_checker(self) -> interface.IChangelogChangesChecker:
-        areas = getattr(self.project.changelogs, "areas", {})
         return self.changes_checker_class(
             self.project.changelogs.sections,
-            areas)
+            self.project.changelogs.areas)
 
     @property  # type:ignore
     @abstracts.interfacemethod
