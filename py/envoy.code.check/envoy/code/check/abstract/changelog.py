@@ -23,13 +23,13 @@ from envoy.code.check import abstract, interface
 MAX_VERSION_FOR_CHANGES_SECTION = "1.16"
 try:
     from envoy.base.utils.abstract.project.changelog import (
-        CHANGELOG_AREAS_PATH,
+        CHANGELOG_CONFIG_PATH,
     )
 except ImportError:
-    CHANGELOG_AREAS_PATH = "changelogs/areas.yaml"
+    CHANGELOG_CONFIG_PATH = "changelogs/changelogs.yaml"
 VALID_CHANGELOG_AREA_RE = re.compile(r"^[a-z0-9_\-/]+$")
 VALID_CHANGELOG_AREA_PATTERN = r"[a-z0-9_\-/]+"
-CHANGELOG_AREAS_FILE = pathlib.Path(CHANGELOG_AREAS_PATH)
+CHANGELOG_CONFIG_FILE = pathlib.Path(CHANGELOG_CONFIG_PATH)
 
 
 @abstracts.implementer(interface.IChangelogChangesChecker)
@@ -135,7 +135,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
         if self.areas and area not in self.areas:
             return (
                 f"{path}: Invalid area '{area}'. "
-                f"Valid areas come from {CHANGELOG_AREAS_PATH}")
+                f"Valid areas come from {CHANGELOG_CONFIG_PATH}")
         if not slug:
             return f"{path}: Slug part of filename is empty"
         return None
@@ -150,19 +150,19 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
             title_areas.setdefault(title, []).append(area)
             if not VALID_CHANGELOG_AREA_RE.match(area):
                 errors.append(
-                    f"{CHANGELOG_AREAS_FILE}: "
+                    f"{CHANGELOG_CONFIG_FILE}: "
                     f"Invalid area key '{area}' "
                     f"(must match {VALID_CHANGELOG_AREA_PATTERN})")
             if not VALID_CHANGELOG_AREA_RE.match(title):
                 errors.append(
-                    f"{CHANGELOG_AREAS_FILE}: "
+                    f"{CHANGELOG_CONFIG_FILE}: "
                     f"Invalid title '{title}' for area '{area}' "
                     f"(must match {VALID_CHANGELOG_AREA_PATTERN})")
         for title, areas in sorted(title_areas.items()):
             if len(areas) < 2:
                 continue
             errors.append(
-                f"{CHANGELOG_AREAS_FILE}: "
+                f"{CHANGELOG_CONFIG_FILE}: "
                 f"Duplicate title '{title}' used by areas: "
                 f"{', '.join(sorted(areas))}")
         return tuple(errors)

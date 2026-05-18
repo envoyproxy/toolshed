@@ -30,8 +30,7 @@ CHANGELOG_PATH_FMT = "changelogs/{version}.yaml"
 CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
 CHANGELOG_CURRENT_DIR_PATH = "changelogs/current"
 CHANGELOG_ENTRY_GLOB = "*/*.rst"
-CHANGELOG_SECTIONS_PATH = "changelogs/sections.yaml"
-CHANGELOG_AREAS_PATH = "changelogs/areas.yaml"
+CHANGELOG_CONFIG_PATH = "changelogs/changelogs.yaml"
 ENTRY_SEPARATOR = "__"
 CHANGELOG_SUMMARY_PATH = "changelogs/summary.md"
 CHANGELOG_URL_TPL = (
@@ -317,33 +316,30 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         return re.compile(r"\n[a-z_]*:")
 
     @cached_property
-    def sections(self) -> typing.ChangelogSectionsDict:
+    def config(self) -> typing.ChangelogConfigDict:
         try:
             return utils.from_yaml(
-                self.sections_path,
-                typing.ChangelogSectionsDict)
+                self.config_path,
+                typing.ChangelogConfigDict)
         except _yaml.reader.ReaderError as e:
             raise exceptions.ChangelogError(
-                "Failed to parse changelog sections "
-                f"({self.sections_path}): {e}")
+                "Failed to parse changelog config "
+                f"({self.config_path}): {e}")
         except utils.TypeCastingError as e:
             logger.warning(
-                "Changelog section parsing error: "
-                f"({self.sections_path})\n{e}")
-            return cast(typing.ChangelogSectionsDict, e.value)
+                "Changelog config parsing error: "
+                f"({self.config_path})\n{e}")
+            return cast(typing.ChangelogConfigDict, e.value)
+
+    @cached_property
+    def sections(self) -> typing.ChangelogSectionsDict:
+        return self.config["sections"]
 
     @cached_property
     def areas(self) -> typing.ChangelogAreasDict:
-        if not self.areas_path.exists():
-            return cast(typing.ChangelogAreasDict, {})
-        try:
-            return utils.from_yaml(
-                self.areas_path,
-                typing.ChangelogAreasDict)
-        except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
-            raise exceptions.ChangelogError(
-                "Failed to parse changelog areas "
-                f"({self.areas_path}): {e}")
+        return cast(
+            typing.ChangelogAreasDict,
+            self.config.get("areas", {}))
 
     def validate_sections(
             self,
@@ -367,16 +363,12 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             raise exceptions.ChangelogParseError(
                 f"Unknown changelog section(s){where}: "
                 f"{', '.join(unknown)}. "
-                f"Valid sections come from {CHANGELOG_SECTIONS_PATH}.")
+                f"Valid sections come from {CHANGELOG_CONFIG_PATH}.")
         return data
 
     @property
-    def sections_path(self) -> pathlib.Path:
-        return self.project.path.joinpath(CHANGELOG_SECTIONS_PATH)
-
-    @property
-    def areas_path(self) -> pathlib.Path:
-        return self.project.path.joinpath(CHANGELOG_AREAS_PATH)
+    def config_path(self) -> pathlib.Path:
+        return self.project.path.joinpath(CHANGELOG_CONFIG_PATH)
 
     @property
     def summary_path(self) -> pathlib.Path:

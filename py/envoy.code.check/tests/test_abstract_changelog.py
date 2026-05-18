@@ -873,7 +873,7 @@ def test_changeschecker_check_entry_filename_invalid_area():
 
     assert result is not None
     assert "Invalid area" in result
-    assert "areas.yaml" in result
+    assert "changelogs.yaml" in result
 
 
 def test_changeschecker_check_entry_filename_without_areas():
@@ -899,7 +899,7 @@ def test_changeschecker_check_areas_file_duplicate_titles():
     assert (
         changelog.check_areas_file()
         == (
-            "changelogs/areas.yaml: Duplicate title "
+            "changelogs/changelogs.yaml: Duplicate title "
             "'dup' used by areas: bar, baz",
         ))
 
@@ -912,9 +912,9 @@ def test_changeschecker_check_areas_file_invalid_titles():
     assert (
         changelog.check_areas_file()
         == (
-            "changelogs/areas.yaml: Invalid title 'BAD' "
+            "changelogs/changelogs.yaml: Invalid title 'BAD' "
             "for area 'a' (must match [a-z0-9_\\-/]+)",
-            "changelogs/areas.yaml: Invalid title 'bad.dot' "
+            "changelogs/changelogs.yaml: Invalid title 'bad.dot' "
             "for area 'b' (must match [a-z0-9_\\-/]+)",
         ))
 
@@ -927,9 +927,9 @@ def test_changeschecker_check_areas_file_invalid_keys():
     assert (
         changelog.check_areas_file()
         == (
-            "changelogs/areas.yaml: Invalid area key 'Bad' "
+            "changelogs/changelogs.yaml: Invalid area key 'Bad' "
             "(must match [a-z0-9_\\-/]+)",
-            "changelogs/areas.yaml: Invalid area key 'bad.dot' "
+            "changelogs/changelogs.yaml: Invalid area key 'bad.dot' "
             "(must match [a-z0-9_\\-/]+)",
         ))
 
