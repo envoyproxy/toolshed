@@ -151,6 +151,10 @@ class IChangelogChangesChecker(metaclass=abstracts.Interface):
         raise NotImplementedError
 
     @abstracts.interfacemethod
+    def check_areas_file(self) -> tuple[str, ...]:
+        raise NotImplementedError
+
+    @abstracts.interfacemethod
     def check_entry_files(
             self,
             paths: list[pathlib.Path]) -> tuple[str, ...]:
