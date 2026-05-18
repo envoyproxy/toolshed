@@ -115,7 +115,7 @@ def test_changelog_check_constructor(patches):
 
 
 def test_changeschecker_checkers(patches):
-    checker = check.ChangelogChangesChecker("SECTIONS")
+    checker = check.ChangelogChangesChecker("SECTIONS", {})
     patched = patches(
         "BackticksCheck",
         "PunctuationCheck",
