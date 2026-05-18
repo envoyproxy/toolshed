@@ -53,6 +53,7 @@ class ChangelogSectionDict(BaseChangelogSectionDict, total=False):
 
 
 ChangelogSectionsDict = dict[str, ChangelogSectionDict]
+ChangelogAreasDict = dict[str, BaseChangelogSectionDict]
 
 VersionConfigDict = dict[str, str]
 

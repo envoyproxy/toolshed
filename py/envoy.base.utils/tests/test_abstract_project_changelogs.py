@@ -387,6 +387,51 @@ def test_abstract_changelogs_sections(patches, raises):
             f"({m_path.return_value}): {str(error)}"))
 
 
+@pytest.mark.parametrize("exists", [True, False])
+@pytest.mark.parametrize(
+    "raises",
+    [None, Exception, yaml.reader.ReaderError, exceptions.TypeCastingError])
+def test_abstract_changelogs_areas(patches, exists, raises):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        "utils.from_yaml",
+        ("AChangelogs.areas_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_yaml, m_path):
+        m_path.return_value.exists.return_value = exists
+        if exists and raises:
+            error = raises("AN ERROR OCCURRED", 7, 23, "Y", "Z")
+            m_yaml.side_effect = error
+        if not exists:
+            assert changelogs.areas == {}
+        elif raises == Exception:
+            with pytest.raises(Exception):
+                changelogs.areas
+        elif raises in (yaml.reader.ReaderError, exceptions.TypeCastingError):
+            with pytest.raises(exceptions.ChangelogError) as e:
+                changelogs.areas
+        else:
+            assert changelogs.areas == m_yaml.return_value
+
+    assert (
+        ("areas" in changelogs.__dict__)
+        == (not raises or not exists))
+    if not exists:
+        assert not m_yaml.called
+        return
+    assert (
+        m_yaml.call_args
+        == [(m_path.return_value, typing.ChangelogAreasDict), {}])
+    if raises not in (yaml.reader.ReaderError, exceptions.TypeCastingError):
+        return
+    assert (
+        e.value.args[0]
+        == ("Failed to parse changelog areas "
+            f"({m_path.return_value}): {str(error)}"))
+
+
 def test_abstract_changelogs_sections_path():
     project = MagicMock()
     changelogs = DummyChangelogs(project)
@@ -397,6 +442,18 @@ def test_abstract_changelogs_sections_path():
         project.path.joinpath.call_args
         == [(abstract.project.changelog.CHANGELOG_SECTIONS_PATH, ), {}])
     assert "sections_path" not in changelogs.__dict__
+
+
+def test_abstract_changelogs_areas_path():
+    project = MagicMock()
+    changelogs = DummyChangelogs(project)
+    assert (
+        changelogs.areas_path
+        == project.path.joinpath.return_value)
+    assert (
+        project.path.joinpath.call_args
+        == [(abstract.project.changelog.CHANGELOG_AREAS_PATH, ), {}])
+    assert "areas_path" not in changelogs.__dict__
 
 
 def test_abstract_changelogs_validate_sections():

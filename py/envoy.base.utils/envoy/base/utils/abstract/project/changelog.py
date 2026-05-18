@@ -31,6 +31,7 @@ CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
 CHANGELOG_CURRENT_DIR_PATH = "changelogs/current"
 CHANGELOG_ENTRY_GLOB = "*/*.rst"
 CHANGELOG_SECTIONS_PATH = "changelogs/sections.yaml"
+CHANGELOG_AREAS_PATH = "changelogs/areas.yaml"
 ENTRY_SEPARATOR = "__"
 CHANGELOG_SUMMARY_PATH = "changelogs/summary.md"
 CHANGELOG_URL_TPL = (
@@ -331,6 +332,19 @@ class AChangelogs(metaclass=abstracts.Abstraction):
                 f"({self.sections_path})\n{e}")
             return cast(typing.ChangelogSectionsDict, e.value)
 
+    @cached_property
+    def areas(self) -> typing.ChangelogAreasDict:
+        if not self.areas_path.exists():
+            return cast(typing.ChangelogAreasDict, {})
+        try:
+            return utils.from_yaml(
+                self.areas_path,
+                typing.ChangelogAreasDict)
+        except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
+            raise exceptions.ChangelogError(
+                "Failed to parse changelog areas "
+                f"({self.areas_path}): {e}")
+
     def validate_sections(
             self,
             data: typing.ChangelogDict,
@@ -359,6 +373,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     @property
     def sections_path(self) -> pathlib.Path:
         return self.project.path.joinpath(CHANGELOG_SECTIONS_PATH)
+
+    @property
+    def areas_path(self) -> pathlib.Path:
+        return self.project.path.joinpath(CHANGELOG_AREAS_PATH)
 
     @property
     def summary_path(self) -> pathlib.Path:

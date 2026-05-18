@@ -81,7 +81,8 @@ def test_changelogcheck_changes_checker(patches):
 
     assert (
         m_class.return_value.call_args
-        == [(project.changelogs.sections, ), {}])
+        == [(project.changelogs.sections,
+             project.changelogs.areas), {}])
     assert "changes_checker" in changelog.__dict__
 
 
@@ -257,20 +258,29 @@ async def test_changelogstatus_errors(iters, patches, raises):
         ("AChangelogStatus.version",
          dict(new_callable=PropertyMock)),
         "AChangelogStatus.check_date",
+        "AChangelogStatus.check_areas_file",
         "AChangelogStatus.check_entry_files",
         "AChangelogStatus.check_sections",
         "AChangelogStatus.check_version",
         prefix="envoy.code.check.abstract.changelog")
     version_errors = iters(cb=lambda i: f"V{i}")
     date_errors = iters(cb=lambda i: f"D{i}")
+    areas_errors = iters(cb=lambda i: f"A{i}")
     sections_errors = iters(cb=lambda i: f"S{i}")
     entry_files_errors = iters(cb=lambda i: f"E{i}")
 
-    with patched as (m_version, m_date, m_entry_files, m_sections, m_versions):
+    with patched as (
+            m_version,
+            m_date,
+            m_areas,
+            m_entry_files,
+            m_sections,
+            m_versions):
         if raises:
             error = raises("AN ERROR OCCURRED")
             m_date.side_effect = error
         m_date.return_value = date_errors
+        m_areas.return_value = areas_errors
         m_entry_files.return_value = entry_files_errors
         m_sections.return_value = sections_errors
         m_versions.return_value = version_errors
@@ -280,9 +290,11 @@ async def test_changelogstatus_errors(iters, patches, raises):
             return
         expected_errors = (
             (*version_errors, *date_errors, *sections_errors,
+             *areas_errors,
              *entry_files_errors)
             if not raises
             else (
+                *areas_errors,
                 *entry_files_errors,
                 f"{m_version.return_value}: {error}"))
         assert (
@@ -292,7 +304,7 @@ async def test_changelogstatus_errors(iters, patches, raises):
                 status,
                 check.AChangelogStatus.errors.cache_name)["errors"])
 
-    providers = [m_versions, m_date, m_entry_files]
+    providers = [m_versions, m_date, m_areas, m_entry_files]
     if not raises:
         providers.append(m_sections)
     for provider in providers:
@@ -585,7 +597,43 @@ async def test_changelogstatus_check_sections(patches):
              sections.return_value), {}])
 
 
+@pytest.mark.parametrize("is_current", [True, False])
+@pytest.mark.parametrize("has_areas", [True, False])
+async def test_changelogstatus_check_areas_file(
+        patches, is_current, has_areas):
+    checker = MagicMock()
+    status = check.AChangelogStatus(checker, MagicMock())
+    patched = patches(
+        ("AChangelogStatus.is_current",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.changelog")
+
+    with patched as (m_current, m_project):
+        m_current.return_value = is_current
+        m_project.return_value.changelogs.areas = (
+            {"known": {"title": "known"}}
+            if has_areas
+            else {})
+        m_project.return_value.execute = AsyncMock()
+        result = await status.check_areas_file()
+
+    if not is_current or not has_areas:
+        assert result == ()
+        assert not m_project.return_value.execute.called
+        return
+
+    assert result == m_project.return_value.execute.return_value
+    assert (
+        m_project.return_value.execute.call_args
+        == [(status.checker.check_areas_file, ), {}])
+
+
 class DummyChangelogChangesChecker(check.AChangelogChangesChecker):
+
+    def __init__(self, sections, areas=None):
+        super().__init__(sections, {} if areas is None else areas)
 
     @property
     def change_checkers(self):
@@ -598,6 +646,7 @@ def test_changeschecker_constructor():
 
     changelog = DummyChangelogChangesChecker("SECTIONS")
     assert changelog.sections == "SECTIONS"
+    assert changelog.areas == {}
     with pytest.raises(NotImplementedError):
         changelog.change_checkers
 
@@ -792,7 +841,10 @@ def test_changeschecker_check_section_name(
         ("Slug", "empty"))])
 def test_changeschecker_check_entry_filename(
         section, stem, suffix, expected):
-    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()})
+    changelog = DummyChangelogChangesChecker(
+        {"bug_fixes": MagicMock()},
+        {"myarea": {"title": "myarea"},
+         "area": {"title": "area"}})
     path = MagicMock()
     path.parent.name = section
     path.stem = stem
@@ -806,6 +858,88 @@ def test_changeschecker_check_entry_filename(
     assert result is not None
     for substring in expected:
         assert substring in result
+
+
+def test_changeschecker_check_entry_filename_invalid_area():
+    changelog = DummyChangelogChangesChecker(
+        {"bug_fixes": MagicMock()},
+        {"some_other_area": {"title": "some_other_area"}})
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "myarea__myslug"
+    path.suffix = ".rst"
+
+    result = changelog.check_entry_filename(path)
+
+    assert result is not None
+    assert "Invalid area" in result
+    assert "areas.yaml" in result
+
+
+def test_changeschecker_check_entry_filename_without_areas():
+    changelog = DummyChangelogChangesChecker({"bug_fixes": MagicMock()}, {})
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "myarea__myslug"
+    path.suffix = ".rst"
+
+    assert changelog.check_entry_filename(path) is None
+
+
+def test_changeschecker_check_areas_file_empty():
+    changelog = DummyChangelogChangesChecker("SECTIONS", {})
+    assert changelog.check_areas_file() == ()
+
+
+def test_changeschecker_check_areas_file_duplicate_titles():
+    changelog = DummyChangelogChangesChecker(
+        "SECTIONS",
+        {"baz": {"title": "dup"},
+         "bar": {"title": "dup"}})
+    assert (
+        changelog.check_areas_file()
+        == (
+            "changelogs/areas.yaml: Duplicate title "
+            "'dup' used by areas: bar, baz",
+        ))
+
+
+def test_changeschecker_check_areas_file_invalid_titles():
+    changelog = DummyChangelogChangesChecker(
+        "SECTIONS",
+        {"a": {"title": "BAD"},
+         "b": {"title": "bad.dot"}})
+    assert (
+        changelog.check_areas_file()
+        == (
+            "changelogs/areas.yaml: Invalid title 'BAD' "
+            "for area 'a' (must match [a-z0-9_\\-/]+)",
+            "changelogs/areas.yaml: Invalid title 'bad.dot' "
+            "for area 'b' (must match [a-z0-9_\\-/]+)",
+        ))
+
+
+def test_changeschecker_check_areas_file_invalid_keys():
+    changelog = DummyChangelogChangesChecker(
+        "SECTIONS",
+        {"Bad": {"title": "bad"},
+         "bad.dot": {"title": "also_bad"}})
+    assert (
+        changelog.check_areas_file()
+        == (
+            "changelogs/areas.yaml: Invalid area key 'Bad' "
+            "(must match [a-z0-9_\\-/]+)",
+            "changelogs/areas.yaml: Invalid area key 'bad.dot' "
+            "(must match [a-z0-9_\\-/]+)",
+        ))
+
+
+def test_changeschecker_check_areas_file_valid():
+    changelog = DummyChangelogChangesChecker(
+        "SECTIONS",
+        {"my_area-1/sub": {"title": "my_area-1/sub"},
+         "other": {"title": "other"}})
+    assert changelog.check_areas_file() == ()
 
 
 @pytest.mark.parametrize(
