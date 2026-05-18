@@ -334,13 +334,13 @@ def test_abstract_changelogs_rel_current_dir_path(patches):
 @pytest.mark.parametrize(
     "raises",
     [None, Exception, yaml.reader.ReaderError, exceptions.TypeCastingError])
-def test_abstract_changelogs_sections(patches, raises):
+def test_abstract_changelogs_config(patches, raises):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "cast",
         "utils.from_yaml",
         "logger",
-        ("AChangelogs.sections_path",
+        ("AChangelogs.config_path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
 
@@ -350,13 +350,13 @@ def test_abstract_changelogs_sections(patches, raises):
             m_yaml.side_effect = error
         if raises == Exception:
             with pytest.raises(Exception):
-                changelogs.sections
+                changelogs.config
         elif raises == yaml.reader.ReaderError:
             with pytest.raises(exceptions.ChangelogError) as e:
-                changelogs.sections
+                changelogs.config
         else:
             assert (
-                changelogs.sections
+                changelogs.config
                 == (m_yaml.return_value
                     if not raises
                     else m_cast.return_value))
@@ -364,10 +364,10 @@ def test_abstract_changelogs_sections(patches, raises):
     if raises == exceptions.TypeCastingError:
         assert (
             m_cast.call_args
-            == [(typing.ChangelogSectionsDict, error.value), {}])
+            == [(typing.ChangelogConfigDict, error.value), {}])
         assert (
             m_logger.warning.call_args
-            == [("Changelog section parsing error: "
+            == [("Changelog config parsing error: "
                 f"({m_path.return_value})\n{error}", ), {}])
     else:
         assert not m_logger.called
@@ -375,28 +375,64 @@ def test_abstract_changelogs_sections(patches, raises):
 
     assert (
         m_yaml.call_args
-        == [(m_path.return_value, typing.ChangelogSectionsDict), {}])
+        == [(m_path.return_value, typing.ChangelogConfigDict), {}])
     assert (
-        ("sections" in changelogs.__dict__)
+        ("config" in changelogs.__dict__)
         == (not raises or raises == exceptions.TypeCastingError))
     if raises != yaml.reader.ReaderError:
         return
     assert (
         e.value.args[0]
-        == ("Failed to parse changelog sections "
+        == ("Failed to parse changelog config "
             f"({m_path.return_value}): {str(error)}"))
 
 
-def test_abstract_changelogs_sections_path():
+def test_abstract_changelogs_sections(patches):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        ("AChangelogs.config",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_config, ):
+        assert (
+            changelogs.sections
+            == m_config.return_value.__getitem__.return_value)
+
+    assert (
+        m_config.return_value.__getitem__.call_args
+        == [("sections", ), {}])
+    assert "sections" in changelogs.__dict__
+
+
+def test_abstract_changelogs_areas(patches):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        ("AChangelogs.config",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_config, ):
+        assert (
+            changelogs.areas
+            == m_config.return_value.__getitem__.return_value)
+
+    assert (
+        m_config.return_value.__getitem__.call_args
+        == [("areas", ), {}])
+    assert "areas" in changelogs.__dict__
+
+
+def test_abstract_changelogs_config_path():
     project = MagicMock()
     changelogs = DummyChangelogs(project)
     assert (
-        changelogs.sections_path
+        changelogs.config_path
         == project.path.joinpath.return_value)
     assert (
         project.path.joinpath.call_args
-        == [(abstract.project.changelog.CHANGELOG_SECTIONS_PATH, ), {}])
-    assert "sections_path" not in changelogs.__dict__
+        == [(abstract.project.changelog.CHANGELOG_CONFIG_PATH, ), {}])
+    assert "config_path" not in changelogs.__dict__
 
 
 def test_abstract_changelogs_validate_sections():
@@ -423,7 +459,7 @@ def test_abstract_changelogs_validate_sections_unknown(path):
 
     message = e.value.args[0]
     assert "unknown" in message
-    assert abstract.project.changelog.CHANGELOG_SECTIONS_PATH in message
+    assert abstract.project.changelog.CHANGELOG_CONFIG_PATH in message
     if path is None:
         assert "changelogs/current.yaml" not in message
         assert "(None)" not in message
@@ -1737,9 +1773,10 @@ async def test_abstract_changelog_data_unknown_section(tmp_path):
         "unknown:\n"
         "  - area: api\n"
         "    change: changed\n")
-    tmp_path.joinpath("changelogs/sections.yaml").write_text(
-        "known:\n"
-        "  title: Known\n")
+    tmp_path.joinpath("changelogs/changelogs.yaml").write_text(
+        "sections:\n"
+        "  known:\n"
+        "    title: Known\n")
 
     project = MagicMock()
     project.path = tmp_path

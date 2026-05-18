@@ -235,6 +235,12 @@ class IChangelogs(metaclass=abstracts.Interface):
 
     @property
     @abstracts.interfacemethod
+    def areas(self) -> typing.ChangelogAreasDict:
+        """Changelog areas."""
+        raise NotImplementedError
+
+    @property
+    @abstracts.interfacemethod
     def sections(self) -> typing.ChangelogSectionsDict:
         """Changelog groupings/sections."""
         raise NotImplementedError
