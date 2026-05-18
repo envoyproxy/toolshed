@@ -32,7 +32,7 @@
 //     "coloredlogs==15.0.1",
 //     "cryptography==46.0.7",
 //     "docutils==0.21.2",
-//     "envoy-base-utils==0.6.3",
+//     "envoy-base-utils==0.6.4",
 //     "envoy-docker-utils==0.1.1",
 //     "envoy-github-release==0.1.2",
 //     "flake8==7.3.0",
@@ -1650,13 +1650,13 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "b7a7ccd51948e5feb903dd42b4dab56ab28309c0e1a6b6dfb7840c99cd0eccd8",
-              "url": "https://files.pythonhosted.org/packages/21/c0/c4907a449a3f8cf4de7d3c01b33b790c5c32ad13c423bb6a78e5d7f383c2/envoy_base_utils-0.6.3-py3-none-any.whl"
+              "hash": "dcc33a8a1d2d4db2bf90514cb2db256c0c25666aa2619de2cfac0a710dc3dd3b",
+              "url": "https://files.pythonhosted.org/packages/84/9f/ba0e624b6e584ba53b3f31beecdbcd80d6a164882159fc0ec6f0c903563a/envoy_base_utils-0.6.4-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "d16caa01af0a9edb03db1e1fc998daace543636b2cd33e6bb769b9d56f8d880f",
-              "url": "https://files.pythonhosted.org/packages/d2/57/475da08e1434ba89126b4689e631990c748eb0289afb5d1737309a0962fa/envoy_base_utils-0.6.3.tar.gz"
+              "hash": "5c576437d658ec84f04ff1f587b758208ca1544afc86ac1889c0931ac231a85b",
+              "url": "https://files.pythonhosted.org/packages/b9/a7/4c792baa2a2ccd8df63099c80166fe25e99c87c3de14575821ae18bb2812/envoy_base_utils-0.6.4.tar.gz"
             }
           ],
           "project_name": "envoy-base-utils",
@@ -1690,7 +1690,7 @@
             "zstandard>=0.22.0"
           ],
           "requires_python": ">=3.12",
-          "version": "0.6.3"
+          "version": "0.6.4"
         },
         {
           "artifacts": [
@@ -5917,7 +5917,7 @@
     "coloredlogs==15.0.1",
     "cryptography==46.0.7",
     "docutils==0.21.2",
-    "envoy-base-utils==0.6.3",
+    "envoy-base-utils==0.6.4",
     "envoy-docker-utils==0.1.1",
     "envoy-github-release==0.1.2",
     "flake8==7.3.0",
