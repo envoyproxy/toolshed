@@ -88,22 +88,48 @@ def test_abstract_changelogs_dunder_iter(iters, patches):
             == clogs)
 
 
-def test_abstract_changelogs_changelog_paths(iters, patches):
-    changelogs = DummyChangelogs("PROJECT")
+@pytest.mark.parametrize("entries_layout", [True, False])
+def test_abstract_changelogs_changelog_paths(iters, patches, entries_layout):
+    project = MagicMock()
+    project.version.base_version = "1.2.3"
+    changelogs = DummyChangelogs(project)
     patched = patches(
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_dir_path",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.paths",
          dict(new_callable=PropertyMock)),
         "AChangelogs._version_from_path",
         prefix="envoy.base.utils.abstract.project.changelog")
     paths = iters(cb=lambda x: f"P{x}")
 
-    with patched as (m_paths, m_version):
-        m_paths.return_value = paths
+    with patched as (m_entries, m_current_dir_path, m_paths, m_version):
+        m_entries.return_value = entries_layout
         m_version.side_effect = lambda x: f"P{x}"
-        assert (
-            changelogs.changelog_paths
-            == {f"P{p}": p
-                for p in paths})
+        if entries_layout:
+            project.path.glob.return_value = paths
+            assert (
+                changelogs.changelog_paths
+                == {
+                    **{
+                        f"P{p}": p
+                        for p
+                        in paths},
+                    abstract.project.changelog._version.Version(
+                        project.version.base_version):
+                    m_current_dir_path.return_value})
+            assert not m_paths.called
+            assert (
+                project.path.glob.call_args
+                == [(abstract.project.changelog.CHANGELOG_PATH_GLOB, ), {}])
+        else:
+            m_paths.return_value = paths
+            assert (
+                changelogs.changelog_paths
+                == {f"P{p}": p
+                    for p in paths})
+            assert not project.path.glob.called
 
     assert (
         m_version.call_args_list
@@ -116,6 +142,8 @@ def test_abstract_changelogs_changelogs(iters, patches):
     patched = patches(
         "reversed",
         "sorted",
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.changelog_class",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.changelog_paths",
@@ -123,8 +151,9 @@ def test_abstract_changelogs_changelogs(iters, patches):
         prefix="envoy.base.utils.abstract.project.changelog")
     paths = iters(cb=lambda x: f"P{x}")
 
-    with patched as (m_rev, m_sort, m_class, m_paths):
+    with patched as (m_rev, m_sort, m_entries, m_class, m_paths):
         m_rev.return_value = paths
+        m_entries.return_value = False
         assert (
             changelogs.changelogs
             == {p: m_class.return_value.return_value
@@ -148,6 +177,58 @@ def test_abstract_changelogs_changelogs(iters, patches):
         m_paths.return_value.keys.call_args
         == [(), {}])
     assert "changelogs" in changelogs.__dict__
+
+
+def test_abstract_changelogs_changelogs_entries_layout_current_path(patches):
+    project = MagicMock()
+    changelogs = DummyChangelogs(project)
+    current_version = abstract.project.changelog._version.Version("1.2.3")
+    historical_version = abstract.project.changelog._version.Version("1.2.2")
+    patched = patches(
+        "reversed",
+        "sorted",
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.changelog_class",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.changelog_paths",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (
+            m_reversed, m_sorted, m_entries, m_class, m_paths,
+            m_current_path):
+        m_entries.return_value = True
+        project.is_current.side_effect = (
+            lambda version: version == current_version)
+        m_paths.return_value = {
+            current_version: MagicMock(name="CURRENT_DIR_PATH"),
+            historical_version: MagicMock(name="HISTORICAL_PATH")}
+        m_reversed.return_value = [current_version, historical_version]
+        assert (
+            changelogs.changelogs
+            == {
+                current_version: m_class.return_value.return_value,
+                historical_version: m_class.return_value.return_value})
+
+    assert (
+        m_class.return_value.call_args_list
+        == [[(project, current_version, m_current_path.return_value), {}],
+            [(project,
+              historical_version,
+              m_paths.return_value[historical_version]), {}]])
+    assert (
+        project.is_current.call_args_list
+        == [[(current_version, ), {}],
+            [(historical_version, ), {}]])
+    assert (
+        m_sorted.call_args
+        == [(m_paths.return_value.keys(), ), {}])
+    assert (
+        m_reversed.call_args
+        == [(m_sorted.return_value, ), {}])
 
 
 def test_abstract_changelogs_current(patches):
@@ -276,20 +357,29 @@ async def test_abstract_changelogs_is_pending(patches, pending):
     assert "is_pending" not in changelogs.__dict__
 
 
-def test_abstract_changelogs_paths(iters, patches):
+@pytest.mark.parametrize("entries_layout", [True, False])
+def test_abstract_changelogs_paths(iters, patches, entries_layout):
     project = MagicMock()
     changelogs = DummyChangelogs(project)
     patched = patches(
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_dir_path",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.current_path",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
     paths = iters()
     project.path.glob.return_value = paths
 
-    with patched as (m_path, ):
+    with patched as (m_entries, m_dir_path, m_path):
+        m_entries.return_value = entries_layout
         assert (
             changelogs.paths
-            == (*paths, m_path.return_value))
+            == (*paths, (
+                m_dir_path.return_value
+                if entries_layout
+                else m_path.return_value)))
     assert (
         project.path.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_PATH_GLOB, ), {}])

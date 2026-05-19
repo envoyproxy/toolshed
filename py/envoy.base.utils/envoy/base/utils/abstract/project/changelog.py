@@ -254,6 +254,16 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @cached_property
     def changelog_paths(self) -> typing.ChangelogPathsDict:
+        if self._entries_layout:
+            historical_paths = self.project.path.glob(CHANGELOG_PATH_GLOB)
+            current_version = _version.Version(
+                self.project.version.base_version)
+            return {
+                **{
+                    self._version_from_path(path): path
+                    for path
+                    in historical_paths},
+                current_version: self.current_dir_path}
         return {
             self._version_from_path(path): path
             for path
@@ -263,7 +273,11 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def changelogs(self) -> typing.ChangelogsDict:
         return {
             k: self.changelog_class(
-                self.project, k, self.changelog_paths[k],)
+                self.project,
+                k,
+                (self.current_path
+                 if self._entries_layout and self.project.is_current(k)
+                 else self.changelog_paths[k]),)
             for k
             in reversed(sorted(self.changelog_paths.keys()))}
 
@@ -299,9 +313,11 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @property
     def paths(self) -> tuple[pathlib.Path, ...]:
+        paths = self.project.path.glob(CHANGELOG_PATH_GLOB)
         return (
-            *self.project.path.glob(CHANGELOG_PATH_GLOB),
-            self.current_path)
+            (*paths, self.current_dir_path)
+            if self._entries_layout
+            else (*paths, self.current_path))
 
     @property
     def rel_current_path(self) -> pathlib.Path:
