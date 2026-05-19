@@ -552,7 +552,9 @@ def test_changelogstatus_check_version(
     if duplicate_current:
         expected.append(
             "Duplicate current version file. "
-            "A `changelogs/{version}.yaml` exists alongside the "
+            "A `changelogs/"
+            f"{m_project.return_value.version.base_version}.yaml` exists "
+            "alongside the "
             "in-flight current changelog "
             f"({m_project.return_value.version.base_version})")
     elif version_higher_than_current:
