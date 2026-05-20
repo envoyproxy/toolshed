@@ -340,7 +340,9 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
         if self.duplicate_current:
             errors.append(
                 "Duplicate current version file. "
-                "Only `current.yaml` should exist for the current version "
+                "A `changelogs/"
+                f"{self.project.version.base_version}.yaml` exists alongside "
+                "`changelogs/current/` for the in-flight changelog "
                 f"({self.project.version.base_version})")
         elif self.version_higher_than_current:
             errors.append(
