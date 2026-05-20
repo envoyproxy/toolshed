@@ -29,6 +29,7 @@ CHANGELOG_PATH_GLOB = "changelogs/*.*.*.yaml"
 CHANGELOG_PATH_FMT = "changelogs/{version}.yaml"
 CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
 CHANGELOG_CURRENT_DIR_PATH = "changelogs/current"
+CHANGELOG_CURRENT_DATE_PATH = "changelogs/current/.date"
 CHANGELOG_ENTRY_GLOB = "*/*.rst"
 CHANGELOG_CONFIG_PATH = "changelogs/changelogs.yaml"
 ENTRY_SEPARATOR = "__"
@@ -157,12 +158,23 @@ class AChangelog(metaclass=abstracts.Abstraction):
             cls,
             yaml_path: pathlib.Path,
             entry_dir: pathlib.Path) -> "typing.ChangelogDict":
-        try:
-            yaml_data = utils.from_yaml(yaml_path, typing.ChangelogSourceDict)
-        except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
+        current_date_path = entry_dir.joinpath(
+            pathlib.Path(CHANGELOG_CURRENT_DATE_PATH).name)
+        if current_date_path.exists():
+            date = current_date_path.read_text().strip()
+        elif yaml_path.exists():
+            try:
+                yaml_data = utils.from_yaml(
+                    yaml_path,
+                    typing.ChangelogSourceDict)
+            except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
+                raise exceptions.ChangelogParseError(
+                    f"Failed to parse: {yaml_path}\n{e}")
+            date = yaml_data["date"]
+        else:
             raise exceptions.ChangelogParseError(
-                f"Failed to parse: {yaml_path}\n{e}")
-        date = yaml_data["date"]
+                "Failed to parse changelog entries: "
+                f"neither {current_date_path} nor {yaml_path} exists")
         sections: dict[str, list[typing.ChangeDict]] = {}
         for path in sorted(entry_dir.glob(CHANGELOG_ENTRY_GLOB)):
             section = path.parent.name
@@ -279,6 +291,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def current_dir_path(self) -> pathlib.Path:
         return self.project.path.joinpath(self.rel_current_dir_path)
 
+    @property
+    def current_date_path(self) -> pathlib.Path:
+        return self.project.path.joinpath(self.rel_current_date_path)
+
     @cached_property
     def current_tpl(self) -> jinja2.Template:
         return jinja2.Template(CHANGELOG_CURRENT_TPL)
@@ -310,6 +326,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     @property
     def rel_current_dir_path(self) -> pathlib.Path:
         return pathlib.Path(CHANGELOG_CURRENT_DIR_PATH)
+
+    @property
+    def rel_current_date_path(self) -> pathlib.Path:
+        return pathlib.Path(CHANGELOG_CURRENT_DATE_PATH)
 
     @cached_property
     def section_re(self) -> re.Pattern[str]:
@@ -392,7 +412,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         changed = set()
         if any(k in change for k in ["release", "dev"]):
-            changed.add(CHANGELOG_CURRENT_PATH)
+            if self._entries_layout:
+                changed.add(CHANGELOG_CURRENT_DATE_PATH)
+            else:
+                changed.add(CHANGELOG_CURRENT_PATH)
         if "dev" in change:
             changed.add(self.rel_changelog_path(change["dev"]["old_version"]))
             changed.add(str(self.summary_path))
@@ -467,8 +490,8 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     def write_current(self) -> None:
         if self._entries_layout:
-            self.current_path.write_text("date: Pending\n")
             self.current_dir_path.mkdir(parents=True, exist_ok=True)
+            self.current_date_path.write_text("Pending\n")
         else:
             sections = {
                 k: v.get("description")
@@ -483,7 +506,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             raise exceptions.ReleaseError(
                 "Current changelog date is not set to `Pending`")
         if self._entries_layout:
-            self.current_path.write_text(f"date: {date}\n")
+            self.current_date_path.write_text(f"{date}\n")
         else:
             data = (await self[self.current].data).copy()
             data["date"] = date
@@ -497,9 +520,9 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             data = self.changelog_class.get_data_from_entries(
                 self.current_path, self.current_dir_path)
             version_file.write_text(self.dump_yaml(data))
-            self.current_path.write_text("date: Pending\n")
             shutil.rmtree(self.current_dir_path)
             self.current_dir_path.mkdir()
+            self.current_date_path.write_text("Pending\n")
         else:
             version_file.write_text(
                 self.current_path.read_text())
