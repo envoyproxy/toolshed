@@ -117,6 +117,8 @@ WORKER_PACKAGES=(
     autoconf-archive
     automake
     libtool
+    # Ideally remove this if its ever fixed in llvm
+    libxml2
     m4
     # This is for mobile/android which seems to be able to
     # build hermetically with just the worker
