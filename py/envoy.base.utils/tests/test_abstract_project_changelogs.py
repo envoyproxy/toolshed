@@ -259,11 +259,14 @@ async def test_abstract_changelogs_is_pending(patches, pending):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "AChangelogs.__getitem__",
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.current",
          dict(new_callable=PropertyMock)),
         prefix="envoy.base.utils.abstract.project.changelog")
 
-    with patched as (m_get, m_current):
+    with patched as (m_get, m_entries, m_current):
+        m_entries.return_value = False
         m_get.return_value.release_date = AsyncMock(
             return_value=pending)()
         assert (
@@ -273,6 +276,28 @@ async def test_abstract_changelogs_is_pending(patches, pending):
     assert (
         m_get.call_args
         == [(m_current.return_value, ), {}])
+    assert "is_pending" not in changelogs.__dict__
+
+
+@pytest.mark.parametrize("is_dev", [True, False])
+async def test_abstract_changelogs_is_pending_entries_layout(patches, is_dev):
+    project = MagicMock()
+    project.is_dev = is_dev
+    changelogs = DummyChangelogs(project)
+    patched = patches(
+        "AChangelogs.__getitem__",
+        ("AChangelogs._entries_layout",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_get, m_entries, m_current):
+        m_entries.return_value = True
+        assert await changelogs.is_pending == is_dev
+
+    assert not m_current.called
+    assert not m_get.called
     assert "is_pending" not in changelogs.__dict__
 
 
@@ -641,7 +666,7 @@ def test_abstract_changelogs_changes_for_commit(
     assert anylist == [True, dev]
     expected_add = []
     expected_rel = []
-    if current:
+    if current and not entries_layout:
         expected_add.append(m_path)
     if dev:
         expected_add.append(m_rel.return_value)
@@ -946,11 +971,9 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
 
     if entries_layout:
         assert (
-            m_path.return_value.write_text.call_args
-            == [("date: Pending\n", ), {}])
-        assert (
             m_dir_path.return_value.mkdir.call_args
             == [(), dict(parents=True, exist_ok=True)])
+        assert not m_path.return_value.write_text.called
         assert not m_dir_path.return_value.__truediv__.called
         assert not m_tpl.called
         assert not m_sections.called
@@ -1027,9 +1050,7 @@ async def test_abstract_changelogs_write_date(
         return
 
     if entries_layout:
-        assert (
-            m_path.return_value.write_text.call_args
-            == [(f"date: {date}\n", ), {}])
+        assert not m_path.called
         assert not m_get.called
         assert not m_yaml.called
     else:
@@ -1059,6 +1080,8 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current_dir_path",
          dict(new_callable=PropertyMock)),
+        ("AChangelogs.datestamp",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.current_path",
          dict(new_callable=PropertyMock)),
         "AChangelogs.changelog_path",
@@ -1067,9 +1090,12 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
     version = MagicMock()
 
     with patched as (m_shutil, m_entries, m_clogclass, m_dir_path,
-                     m_path, m_clog_path, m_dump):
+                     m_datestamp, m_path, m_clog_path, m_dump):
         m_entries.return_value = entries_layout
         m_clog_path.return_value.exists.return_value = exists
+        entries_data = {}
+        m_clogclass.return_value.get_data_from_entries.return_value = (
+            entries_data)
         if exists:
             with pytest.raises(exceptions.DevError) as e:
                 changelogs.write_version(version)
@@ -1092,18 +1118,15 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
     if entries_layout:
         assert (
             m_clogclass.return_value.get_data_from_entries.call_args
-            == [(m_path.return_value, m_dir_path.return_value), {}])
-        entries_rv = (
-            m_clogclass.return_value.get_data_from_entries.return_value)
+            == [(m_dir_path.return_value, ), {}])
+        assert entries_data == {"date": m_datestamp.return_value}
         assert (
             m_dump.call_args
-            == [(entries_rv, ), {}])
+            == [(entries_data, ), {}])
         assert (
             m_clog_path.return_value.write_text.call_args
             == [(m_dump.return_value, ), {}])
-        assert (
-            m_path.return_value.write_text.call_args
-            == [("date: Pending\n", ), {}])
+        assert not m_path.called
         assert (
             m_shutil.rmtree.call_args
             == [(m_dir_path.return_value, ), {}])
@@ -1340,10 +1363,8 @@ def test_abstract_changelog_get_data_from_entries_happy_path(patches):
     patched = patches(
         "cast",
         "sorted",
-        "utils.from_yaml",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
-    yaml_path = MagicMock()
     entry_dir = MagicMock()
     bug_1 = MagicMock()
     bug_1.parent.name = "bug_fixes"
@@ -1360,20 +1381,13 @@ def test_abstract_changelog_get_data_from_entries_happy_path(patches):
     entry_paths = [bug_1, bug_2, feature]
     sorted_paths = [bug_2, bug_1, feature]
 
-    with patched as (m_cast, m_sorted, m_yaml, m_typing):
-        m_yaml.return_value.__getitem__.return_value = "Pending"
+    with patched as (m_cast, m_sorted, m_typing):
         entry_dir.glob.return_value = entry_paths
         m_sorted.return_value = sorted_paths
         assert (
-            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            abstract.AChangelog.get_data_from_entries(entry_dir)
             == m_cast.return_value)
 
-    assert (
-        m_yaml.call_args
-        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
-    assert (
-        m_yaml.return_value.__getitem__.call_args
-        == [("date", ), {}])
     assert (
         entry_dir.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
@@ -1411,30 +1425,21 @@ def test_abstract_changelog_get_data_from_entries_arbitrary_section(patches):
     patched = patches(
         "cast",
         "sorted",
-        "utils.from_yaml",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
-    yaml_path = MagicMock()
     entry_dir = MagicMock()
     path = MagicMock()
     path.parent.name = "weird_section"
     path.stem = "foo__bar"
     path.read_text.return_value = "content\n"
 
-    with patched as (m_cast, m_sorted, m_yaml, m_typing):
-        m_yaml.return_value.__getitem__.return_value = "Pending"
+    with patched as (m_cast, m_sorted, m_typing):
         entry_dir.glob.return_value = [path]
         m_sorted.return_value = [path]
         assert (
-            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            abstract.AChangelog.get_data_from_entries(entry_dir)
             == m_cast.return_value)
 
-    assert (
-        m_yaml.call_args
-        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
-    assert (
-        m_yaml.return_value.__getitem__.call_args
-        == [("date", ), {}])
     assert (
         entry_dir.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
@@ -1461,28 +1466,19 @@ def test_abstract_changelog_get_data_from_entries_missing_separator(patches):
     patched = patches(
         "cast",
         "sorted",
-        "utils.from_yaml",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
-    yaml_path = MagicMock()
     entry_dir = MagicMock()
     path = MagicMock()
     path.parent.name = "bug_fixes"
     path.stem = "no_separator"
 
-    with patched as (m_cast, m_sorted, m_yaml, m_typing):
-        m_yaml.return_value.__getitem__.return_value = "Pending"
+    with patched as (m_cast, m_sorted, m_typing):
         entry_dir.glob.return_value = [path]
         m_sorted.return_value = [path]
         with pytest.raises(exceptions.ChangelogParseError) as e:
-            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            abstract.AChangelog.get_data_from_entries(entry_dir)
 
-    assert (
-        m_yaml.call_args
-        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
-    assert (
-        m_yaml.return_value.__getitem__.call_args
-        == [("date", ), {}])
     assert (
         entry_dir.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
@@ -1503,28 +1499,19 @@ def test_abstract_changelog_get_data_from_entries_multiple_separators(patches):
     patched = patches(
         "cast",
         "sorted",
-        "utils.from_yaml",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
-    yaml_path = MagicMock()
     entry_dir = MagicMock()
     path = MagicMock()
     path.parent.name = "bug_fixes"
     path.stem = "a__b__c"
 
-    with patched as (m_cast, m_sorted, m_yaml, m_typing):
-        m_yaml.return_value.__getitem__.return_value = "Pending"
+    with patched as (m_cast, m_sorted, m_typing):
         entry_dir.glob.return_value = [path]
         m_sorted.return_value = [path]
         with pytest.raises(exceptions.ChangelogParseError) as e:
-            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            abstract.AChangelog.get_data_from_entries(entry_dir)
 
-    assert (
-        m_yaml.call_args
-        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
-    assert (
-        m_yaml.return_value.__getitem__.call_args
-        == [("date", ), {}])
     assert (
         entry_dir.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
@@ -1541,71 +1528,21 @@ def test_abstract_changelog_get_data_from_entries_multiple_separators(patches):
     assert not m_cast.called
 
 
-@pytest.mark.parametrize(
-    "raises",
-    [
-        Exception,
-        FileNotFoundError,
-        yaml.reader.ReaderError,
-        exceptions.TypeCastingError])
-def test_abstract_changelog_get_data_from_entries_missing_yaml(
-        patches, raises):
-    patched = patches(
-        "utils.from_yaml",
-        "typing",
-        prefix="envoy.base.utils.abstract.project.changelog")
-    yaml_path = MagicMock()
-    entry_dir = MagicMock()
-
-    with patched as (m_yaml, m_typing):
-        if raises == FileNotFoundError:
-            error = raises("AN ERROR OCCURRED")
-        else:
-            error = raises("AN ERROR OCCURRED", 7, 23, "Y", "Z")
-        m_yaml.side_effect = error
-
-        if raises in (yaml.reader.ReaderError, exceptions.TypeCastingError):
-            with pytest.raises(exceptions.ChangelogParseError) as e:
-                abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
-        else:
-            with pytest.raises(raises):
-                abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
-
-    assert (
-        m_yaml.call_args
-        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
-    assert not entry_dir.glob.called
-    if raises in (yaml.reader.ReaderError, exceptions.TypeCastingError):
-        assert (
-            e.value.args[0]
-            == ("Failed to parse: "
-                f"{yaml_path}\n{str(error)}"))
-
-
 def test_abstract_changelog_get_data_from_entries_empty_dir(patches):
     patched = patches(
         "cast",
         "sorted",
-        "utils.from_yaml",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
-    yaml_path = MagicMock()
     entry_dir = MagicMock()
 
-    with patched as (m_cast, m_sorted, m_yaml, m_typing):
-        m_yaml.return_value.__getitem__.return_value = "Pending"
+    with patched as (m_cast, m_sorted, m_typing):
         entry_dir.glob.return_value = []
         m_sorted.return_value = []
         assert (
-            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            abstract.AChangelog.get_data_from_entries(entry_dir)
             == m_cast.return_value)
 
-    assert (
-        m_yaml.call_args
-        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
-    assert (
-        m_yaml.return_value.__getitem__.call_args
-        == [("date", ), {}])
     assert (
         entry_dir.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
@@ -1624,10 +1561,8 @@ def test_abstract_changelog_get_data_from_entries_stable_ordering(patches):
     patched = patches(
         "cast",
         "sorted",
-        "utils.from_yaml",
         "typing",
         prefix="envoy.base.utils.abstract.project.changelog")
-    yaml_path = MagicMock()
     entry_dir = MagicMock()
     first = MagicMock()
     first.parent.name = "bug_fixes"
@@ -1644,20 +1579,13 @@ def test_abstract_changelog_get_data_from_entries_stable_ordering(patches):
     unsorted_paths = [last, first, middle]
     sorted_paths = [first, middle, last]
 
-    with patched as (m_cast, m_sorted, m_yaml, m_typing):
-        m_yaml.return_value.__getitem__.return_value = "Pending"
+    with patched as (m_cast, m_sorted, m_typing):
         entry_dir.glob.return_value = unsorted_paths
         m_sorted.return_value = sorted_paths
         assert (
-            abstract.AChangelog.get_data_from_entries(yaml_path, entry_dir)
+            abstract.AChangelog.get_data_from_entries(entry_dir)
             == m_cast.return_value)
 
-    assert (
-        m_yaml.call_args
-        == [(yaml_path, m_typing.ChangelogSourceDict), {}])
-    assert (
-        m_yaml.return_value.__getitem__.call_args
-        == [("date", ), {}])
     assert (
         entry_dir.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
@@ -1752,7 +1680,6 @@ async def test_abstract_changelog_data(patches, entries_layout, is_current):
         assert (
             project.execute.call_args
             == [(m_get_entries,
-                 m_path.return_value,
                  project.changelogs.current_dir_path), {}])
         assert not m_get.called
     else:
@@ -1793,6 +1720,56 @@ async def test_abstract_changelog_data_unknown_section(tmp_path):
 
     assert "unknown" in e.value.args[0]
     assert f"({changelog_path})" in e.value.args[0]
+
+
+async def test_abstract_changelog_entries_layout_no_current_yaml(tmp_path):
+
+    class ConcreteChangelogs(DummyChangelogs):
+
+        @property
+        def changelog_class(self):
+            return DummyChangelog
+
+    current_dir = tmp_path.joinpath("changelogs/current/bug_fixes")
+    current_dir.mkdir(parents=True)
+    current_dir.joinpath("jwt__foo_fix.rst").write_text("Fixed jwt.\n")
+    tmp_path.joinpath("changelogs/changelogs.yaml").write_text(
+        "sections:\n"
+        "  bug_fixes:\n"
+        "    title: Bug fixes\n"
+        "areas:\n"
+        "  jwt:\n"
+        "    title: JWT\n")
+
+    project = MagicMock()
+    project.path = tmp_path
+    project.is_dev = True
+    project.version = abstract.project.changelog._version.Version("1.2.4-dev")
+
+    async def execute(func, *args):
+        return func(*args)
+
+    project.execute = AsyncMock(side_effect=execute)
+    changelogs = ConcreteChangelogs(project)
+    project.changelogs = changelogs
+    current_changelog = changelogs[changelogs.current]
+
+    assert not changelogs.current_path.exists()
+    assert (await current_changelog.data)["date"] == "Pending"
+    assert await changelogs.is_pending
+    assert not await changelogs.write_date("June 1, 2026")
+    assert not changelogs.current_path.exists()
+
+    version = abstract.project.changelog._version.Version("1.2.3")
+    changelogs.write_version(version)
+    version_data = yaml.safe_load(
+        tmp_path.joinpath("changelogs/1.2.3.yaml").read_text())
+    assert version_data["date"] == changelogs.datestamp
+    assert (
+        version_data["bug_fixes"]
+        == [{"area": "jwt", "change": "Fixed jwt.\n"}])
+    assert changelogs.current_dir_path.exists()
+    assert not list(changelogs.current_dir_path.rglob("*.rst"))
 
 
 async def test_abstract_changelog_release_date(patches):
