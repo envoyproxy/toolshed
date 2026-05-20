@@ -155,14 +155,7 @@ class AChangelog(metaclass=abstracts.Abstraction):
     @classmethod
     def get_data_from_entries(
             cls,
-            yaml_path: pathlib.Path,
             entry_dir: pathlib.Path) -> "typing.ChangelogDict":
-        try:
-            yaml_data = utils.from_yaml(yaml_path, typing.ChangelogSourceDict)
-        except (_yaml.reader.ReaderError, utils.TypeCastingError) as e:
-            raise exceptions.ChangelogParseError(
-                f"Failed to parse: {yaml_path}\n{e}")
-        date = yaml_data["date"]
         sections: dict[str, list[typing.ChangeDict]] = {}
         for path in sorted(entry_dir.glob(CHANGELOG_ENTRY_GLOB)):
             section = path.parent.name
@@ -176,7 +169,7 @@ class AChangelog(metaclass=abstracts.Abstraction):
             sections.setdefault(section, []).append(entry)
         return cast(
             typing.ChangelogDict,
-            dict(date=date, **sections))
+            dict(date="Pending", **sections))
 
     def __init__(
             self,
@@ -197,7 +190,6 @@ class AChangelog(metaclass=abstracts.Abstraction):
         if changelogs._entries_layout and self._is_current:
             parsed = await self.project.execute(
                 self.get_data_from_entries,
-                self.path,
                 changelogs.current_dir_path)
         else:
             parsed = await self.project.execute(self.get_data, self.path)
@@ -293,6 +285,8 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @async_property
     async def is_pending(self) -> bool:
+        if self._entries_layout:
+            return self.project.is_dev
         return (
             await self[self.current].release_date
             == "Pending")
@@ -392,7 +386,8 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         changed = set()
         if any(k in change for k in ["release", "dev"]):
-            changed.add(CHANGELOG_CURRENT_PATH)
+            if not self._entries_layout:
+                changed.add(CHANGELOG_CURRENT_PATH)
         if "dev" in change:
             changed.add(self.rel_changelog_path(change["dev"]["old_version"]))
             changed.add(str(self.summary_path))
@@ -467,7 +462,6 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     def write_current(self) -> None:
         if self._entries_layout:
-            self.current_path.write_text("date: Pending\n")
             self.current_dir_path.mkdir(parents=True, exist_ok=True)
         else:
             sections = {
@@ -483,7 +477,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             raise exceptions.ReleaseError(
                 "Current changelog date is not set to `Pending`")
         if self._entries_layout:
-            self.current_path.write_text(f"date: {date}\n")
+            return
         else:
             data = (await self[self.current].data).copy()
             data["date"] = date
@@ -495,9 +489,9 @@ class AChangelogs(metaclass=abstracts.Abstraction):
                 f"Version file ({version_file}) already exists")
         if self._entries_layout:
             data = self.changelog_class.get_data_from_entries(
-                self.current_path, self.current_dir_path)
+                self.current_dir_path)
+            data["date"] = self.datestamp
             version_file.write_text(self.dump_yaml(data))
-            self.current_path.write_text("date: Pending\n")
             shutil.rmtree(self.current_dir_path)
             self.current_dir_path.mkdir()
         else:
