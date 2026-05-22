@@ -45,7 +45,7 @@ jobs:
       bazel-args: >-
         --config=ci
         ${{ matrix.mode == 'bzlmod'
-            && '--enable_bzlmod'
+            && '--enable_bzlmod --noenable_workspace'
             || '' }}
       bazel-mode: ${{ matrix.mode }}
       bazel-path: bazel
@@ -80,7 +80,7 @@ jobs:
       bazel-args: >-
         --config=ci
         ${{ matrix.mode == 'bzlmod'
-            && '--enable_bzlmod'
+            && '--enable_bzlmod --noenable_workspace'
             || '' }}
       bazel-path: bazel
       bazel-mode: ${{ matrix.mode }}
@@ -111,7 +111,7 @@ jobs:
         --config=ci
         --config=gcc
         ${{ matrix.mode == 'bzlmod'
-            && '--enable_bzlmod'
+            && '--enable_bzlmod --noenable_workspace'
             || '' }}
       bazel-mode: ${{ matrix.mode }}-gcc
       bazel-path: bazel
@@ -165,7 +165,7 @@ jobs:
         --config=ci
         --config=macos
         ${{ (steps.rbe.outputs.authorized == 'true' || github.event_name != 'pull_request') && '--config=rbe-cache-only' || '' }}
-        ${{ matrix.mode == 'bzlmod' && '--enable_bzlmod' || '' }}
+        ${{ matrix.mode == 'bzlmod' && '--enable_bzlmod --noenable_workspace' || '' }}
         //...
       working-directory: bazel
       env:
