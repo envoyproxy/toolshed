@@ -195,6 +195,7 @@ js/utils/**/*.d.ts
 # Bazel
 /bazel-*
 !/bazel-registry/
+bazel/bazel-*
 
 # Rust coverage reports
 rust/tarpaulin-report.html
