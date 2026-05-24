@@ -1,0 +1,17 @@
+--- rules_rs-0.0.27-orig/rs/BUILD.bazel	2026-02-08 08:12:24.672823148 +0000
++++ rules_rs-0.0.27/rs/BUILD.bazel	2026-02-08 08:12:30.999810298 +0000
+@@ -15,7 +15,6 @@
+         "//rs/private:resolver",
+         "//rs/private:semver",
+         "//rs/private:toml2json",
+-        "@aspect_tools_telemetry_report//:defs.bzl",
+         "@bazel_skylib//lib:paths",
+     ],
+ )
+--- rules_rs-0.0.27-orig/rs/extensions.bzl	2026-02-08 08:12:24.672823148 +0000
++++ rules_rs-0.0.27/rs/extensions.bzl	2026-02-08 08:12:30.897810498 +0000
+@@ -1,4 +1,3 @@
+-load("@aspect_tools_telemetry_report//:defs.bzl", "TELEMETRY")  # buildifier: disable=load
+ load("@bazel_lib//lib:repo_utils.bzl", "repo_utils")
+ load("@bazel_skylib//lib:paths.bzl", "paths")
+ load("//rs/private:annotations.bzl", "WELL_KNOWN_ANNOTATIONS", "annotation_for", "build_annotation_map", "format_well_known_annotation")
