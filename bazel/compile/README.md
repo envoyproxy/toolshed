@@ -201,3 +201,36 @@ bazel test //compile/test:cross_compile_x86_64_no_unwind_test \
   --platforms=@toolchains_llvm//platforms:linux-x86_64 \
   --@toolchains_llvm//toolchain/config:libunwind=False
 ```
+
+### Compiler-rt tests
+
+The compiler-rt tests verify that `libclang_rt.builtins.a` (compiler-rt) is **statically
+linked** into the `test_compiler_rt` binary. They use `llvm-nm` to check for a defined
+`__divti3` symbol (a 128-bit integer division function that is provided by compiler-rt
+builtins and referenced by `__int128` division) and `llvm-readelf` to confirm there is no
+`libgcc_s` dynamic dependency.
+
+```bash
+# Test aarch64 cross-compilation with compiler-rt statically linked
+bazel test //compile/test:cross_compile_aarch64_compiler_rt_test \
+  --platforms=@toolchains_llvm//platforms:linux-aarch64
+
+# Test x86_64 cross-compilation with compiler-rt statically linked
+bazel test //compile/test:cross_compile_x86_64_compiler_rt_test \
+  --platforms=@toolchains_llvm//platforms:linux-x86_64
+```
+
+**Negative compiler-rt tests** verify that compiler-rt builtins are *not* statically
+linked when `--@toolchains_llvm//toolchain/config:compiler-rt=False` is passed:
+
+```bash
+# Verify compiler-rt is NOT linked for aarch64 when disabled
+bazel test //compile/test:cross_compile_aarch64_no_compiler_rt_test \
+  --platforms=@toolchains_llvm//platforms:linux-aarch64 \
+  --@toolchains_llvm//toolchain/config:compiler-rt=False
+
+# Verify compiler-rt is NOT linked for x86_64 when disabled
+bazel test //compile/test:cross_compile_x86_64_no_compiler_rt_test \
+  --platforms=@toolchains_llvm//platforms:linux-x86_64 \
+  --@toolchains_llvm//toolchain/config:compiler-rt=False
+```

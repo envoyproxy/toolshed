@@ -157,3 +157,111 @@ sh_test(
     },
     tags = ["manual"],
 )
+
+# C++ compiler-rt builtins binary — exercises __int128 division to reference
+# the __divti3 symbol provided by libclang_rt.builtins.a (compiler-rt).
+# Build for aarch64:
+#   bazel build //compile/test:test_compiler_rt --platforms=@toolchains_llvm//platforms:linux-aarch64
+# Build for x86_64:
+#   bazel build //compile/test:test_compiler_rt --platforms=@toolchains_llvm//platforms:linux-x86_64
+cc_binary(
+    name = "test_compiler_rt",
+    srcs = ["test_compiler_rt.cc"],
+    copts = ["-Werror"],
+)
+
+# Cross-compilation compiler-rt tests.
+# These tests verify that the test_compiler_rt binary has libclang_rt.builtins.a
+# statically linked by checking for the defined __divti3 symbol (via llvm-nm)
+# and the absence of libgcc_s in dynamic NEEDED entries (via llvm-readelf).
+#
+# Run with:
+#   bazel test //compile/test:cross_compile_aarch64_compiler_rt_test \
+#     --platforms=@toolchains_llvm//platforms:linux-aarch64
+sh_test(
+    name = "cross_compile_aarch64_compiler_rt_test",
+    size = "small",
+    srcs = ["check_compiler_rt.sh"],
+    data = [
+        ":test_compiler_rt",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
+    env = {
+        "BINARY": "$(rootpath :test_compiler_rt)",
+        "EXPECT_COMPILER_RT": "true",
+        "EXPECTED_ARCH": "AArch64",
+        "LLVM_NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+    },
+    tags = ["manual"],
+)
+
+# Run with:
+#   bazel test //compile/test:cross_compile_x86_64_compiler_rt_test \
+#     --platforms=@toolchains_llvm//platforms:linux-x86_64
+sh_test(
+    name = "cross_compile_x86_64_compiler_rt_test",
+    size = "small",
+    srcs = ["check_compiler_rt.sh"],
+    data = [
+        ":test_compiler_rt",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
+    env = {
+        "BINARY": "$(rootpath :test_compiler_rt)",
+        "EXPECT_COMPILER_RT": "true",
+        "EXPECTED_ARCH": "X86-64",
+        "LLVM_NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+    },
+    tags = ["manual"],
+)
+
+# Negative compiler-rt tests — verify that compiler-rt builtins are NOT
+# statically linked when the flag is disabled. Run with:
+#   bazel test //compile/test:cross_compile_aarch64_no_compiler_rt_test \
+#     --platforms=@toolchains_llvm//platforms:linux-aarch64 \
+#     --@toolchains_llvm//toolchain/config:compiler-rt=False
+sh_test(
+    name = "cross_compile_aarch64_no_compiler_rt_test",
+    size = "small",
+    srcs = ["check_compiler_rt.sh"],
+    data = [
+        ":test_compiler_rt",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
+    env = {
+        "BINARY": "$(rootpath :test_compiler_rt)",
+        "EXPECT_COMPILER_RT": "false",
+        "EXPECTED_ARCH": "AArch64",
+        "LLVM_NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+    },
+    tags = ["manual"],
+)
+
+# Run with:
+#   bazel test //compile/test:cross_compile_x86_64_no_compiler_rt_test \
+#     --platforms=@toolchains_llvm//platforms:linux-x86_64 \
+#     --@toolchains_llvm//toolchain/config:compiler-rt=False
+sh_test(
+    name = "cross_compile_x86_64_no_compiler_rt_test",
+    size = "small",
+    srcs = ["check_compiler_rt.sh"],
+    data = [
+        ":test_compiler_rt",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
+    env = {
+        "BINARY": "$(rootpath :test_compiler_rt)",
+        "EXPECT_COMPILER_RT": "false",
+        "EXPECTED_ARCH": "X86-64",
+        "LLVM_NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+    },
+    tags = ["manual"],
+)
