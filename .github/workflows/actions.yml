@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       run: ${{ steps.filter.outputs.run }}
+      skip-publishing: ${{ steps.publishing.outputs.skip }}
       tests: ${{ steps.tests.outputs.output }}
     steps:
     - uses: envoyproxy/toolshed/actions/github/should-run@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
@@ -29,6 +30,38 @@ jobs:
           - 'actions/**'
           - 'js/**'
           - '.github/workflows/actions.yml'
+    - name: Detect cross-stack publish
+      id: publishing
+      if: github.event_name == 'push'
+      shell: bash
+      run: |
+        is_non_dev() {
+            local file="$1"
+            local version
+            version="$(tr -d '[:space:]' < "$file")"
+            [[ "$version" != *-dev ]]
+        }
+
+        self_publishing=false
+        others_publishing=false
+
+        if is_non_dev actions/VERSION.txt; then
+            self_publishing=true
+        fi
+
+        for file in bazel/VERSION.txt BINS_VERSION.txt docker/build/VERSION.txt py/VERSION.txt; do
+            if is_non_dev "$file"; then
+                others_publishing=true
+                break
+            fi
+        done
+
+        if [[ "$others_publishing" == "true" && "$self_publishing" == "false" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Other stack(s) publishing - skipping heavy jobs"
+        else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+        fi
     - id: tests
       uses: envoyproxy/toolshed/actions/bson@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       with:
@@ -45,6 +78,7 @@ jobs:
     needs: request
     if: >-
       fromJSON(needs.request.outputs.run)
+      && needs.request.outputs.skip-publishing != 'true'
       && needs.request.outputs.tests != '[]'
     strategy:
       fail-fast: false
