@@ -52,7 +52,7 @@ def test_release_manager_constructor(
     assert releaser._github == github
     assert releaser._session == session
 
-    assert releaser._version_re == r"v(\w+)"
+    assert releaser._version_re == r"^v(\d+\.\d+\.\d+.*)$"
 
 
 async def test_release_manager_async_contextmanager(patches):
@@ -335,11 +335,11 @@ def test_release_manager_format_version():
         == [(), dict(version="VERSION")])
 
 
-@pytest.mark.parametrize("version", [None, 0, "", "1.2.3"])
+@pytest.mark.parametrize("matched", [None, "1.2.3"])
 @pytest.mark.parametrize(
     "raises",
     [None, BaseException, packaging.version.InvalidVersion])
-def test_release_manager_parse_version(patches, version, raises):
+def test_release_manager_parse_version(patches, matched, raises):
     releaser = GithubReleaseManager("PATH", "REPOSITORY")
     patched = patches(
         "packaging.version.Version",
@@ -348,33 +348,94 @@ def test_release_manager_parse_version(patches, version, raises):
         prefix="envoy.github.release.manager")
 
     with patched as (m_packaging, m_log, m_version):
-        m_version.return_value.sub.return_value = version
+        if matched:
+            m_match = MagicMock()
+            m_match.group.return_value = matched
+            m_version.return_value.fullmatch.return_value = m_match
+        else:
+            m_version.return_value.fullmatch.return_value = None
         if raises:
             m_packaging.side_effect = raises()
 
-        if version and raises == BaseException:
+        if matched and raises == BaseException:
             with pytest.raises(BaseException):
                 releaser.parse_version("VERSION")
         else:
             assert (
                 releaser.parse_version("VERSION")
                 == (None
-                    if not version or raises
+                    if not matched or raises
                     else m_packaging.return_value))
 
     assert (
-        m_version.return_value.sub.call_args
-        == [(r"\1", "VERSION"), {}])
-    if version:
+        m_version.return_value.fullmatch.call_args
+        == [("VERSION", ), {}])
+    if matched:
+        assert (
+            m_match.group.call_args
+            == [(1, ), {}])
         assert (
             m_packaging.call_args
-            == [(m_version.return_value.sub.return_value, ), {}])
+            == [(m_match.group.return_value, ), {}])
     else:
         assert not m_packaging.called
 
-    if not version or raises and raises != BaseException:
+    if not matched or raises and raises != BaseException:
         assert (
             m_log.return_value.warning.call_args
             == [("Unable to parse version: VERSION", ), {}])
     else:
         assert not m_log.called
+
+
+@pytest.mark.parametrize(
+    "version,expected",
+    [("v1.19.0", packaging.version.Version("1.19.0")),
+     ("v0.0.1", packaging.version.Version("0.0.1")),
+     ("v1.2.3-rc1", packaging.version.Version("1.2.3rc1")),
+     ("v1.2.3.dev0", packaging.version.Version("1.2.3.dev0")),
+     ("v1", None),
+     ("notaversion", None)])
+def test_release_manager_parse_version_regex(patches, version, expected):
+    """Integration test: parse_version with the real version_re regex."""
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
+    patched = patches(
+        ("GithubReleaseManager.log", dict(new_callable=PropertyMock)),
+        prefix="envoy.github.release.manager")
+
+    with patched as (m_log, ):
+        result = releaser.parse_version(version)
+
+    assert result == expected
+    if expected is None:
+        assert (
+            m_log.return_value.warning.call_args
+            == [(f"Unable to parse version: {version}", ), {}])
+    else:
+        assert not m_log.called
+
+
+async def test_release_manager_latest_minors(patches):
+    """Integration test: latest dict uses correct per-minor bucketing."""
+    releaser = GithubReleaseManager("PATH", "REPOSITORY")
+    patched = patches(
+        ("GithubReleaseManager.releases", dict(new_callable=PropertyMock)),
+        prefix="envoy.github.release.manager")
+
+    _versions = [
+        dict(tag_name=v)
+        for v in ("v1.18.0", "v1.19.0", "v1.19.1", "v2.0.0")]
+
+    with patched as (m_releases, ):
+        m_releases.side_effect = AsyncMock(return_value=_versions)
+        result = await releaser.latest
+
+    assert result == {
+        "1.18.0": packaging.version.Version("1.18.0"),
+        "1.18": packaging.version.Version("1.18.0"),
+        "1.19.0": packaging.version.Version("1.19.0"),
+        "1.19.1": packaging.version.Version("1.19.1"),
+        "1.19": packaging.version.Version("1.19.1"),
+        "2.0.0": packaging.version.Version("2.0.0"),
+        "2.0": packaging.version.Version("2.0.0"),
+    }
