@@ -29,10 +29,10 @@
   "devDependencies": {
     "@eslint/js": "^10.0.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.7.0",
+    "@types/node": "^25.9.1",
     "@types/tmp": "^0.2.5",
-    "@typescript-eslint/eslint-plugin": "^8.59.3",
-    "@typescript-eslint/parser": "^8.59.3",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
     "@vercel/ncc": "^0.38.1",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-prettier": "^5.1.3",
@@ -40,9 +40,9 @@
     "jest": "^30.4.1",
     "nock": "^14.0.15",
     "prettier": "^3.2.5",
-    "ts-jest": "^29.0.0",
+    "ts-jest": "^29.4.11",
     "typescript": "^6.0.0",
-    "typescript-eslint": "^8.59.3"
+    "typescript-eslint": "^8.60.0"
   },
   "dependencies": {
     "@actions/core": "^3.0.0",
@@ -50,6 +50,6 @@
     "@envoy-toolshed/utils": "file:../../utils",
     "@octokit/rest": "^22.0.0",
     "@octokit/types": "^16.0.0",
-    "eslint": "^10.0.0"
+    "eslint": "^10.4.0"
   }
 }
