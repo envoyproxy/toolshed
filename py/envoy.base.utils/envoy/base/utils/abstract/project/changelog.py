@@ -533,9 +533,13 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         return _version.Version(YAML_CHANGELOGS_VERSION)
 
     @property
-    def _entries_layout(self) -> bool:
+    def entries_layout(self) -> bool:
         return (
             self.project.path.joinpath(CHANGELOG_CURRENT_DIR_PATH).is_dir())
+
+    @property
+    def _entries_layout(self) -> bool:
+        return self.entries_layout
 
     def _is_rst_changelog(self, version: _version.Version) -> bool:
         return version < self._yaml_changelogs_version

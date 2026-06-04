@@ -1441,8 +1441,9 @@ def test_abstract_changelogs_changelogs_methods(patches, method):
         == [(), {}])
 
 
+@pytest.mark.parametrize("accessor", ["entries_layout", "_entries_layout"])
 @pytest.mark.parametrize("is_dir", [True, False])
-def test_abstract_changelogs_entries_layout(patches, is_dir):
+def test_abstract_changelogs_entries_layout(patches, accessor, is_dir):
     project = MagicMock()
     changelogs = DummyChangelogs(project)
     patched = patches(
@@ -1451,7 +1452,7 @@ def test_abstract_changelogs_entries_layout(patches, is_dir):
 
     with patched as (m_dir_path, ):
         project.path.joinpath.return_value.is_dir.return_value = is_dir
-        assert changelogs._entries_layout == is_dir
+        assert getattr(changelogs, accessor) == is_dir
 
     assert (
         project.path.joinpath.call_args
@@ -1459,7 +1460,7 @@ def test_abstract_changelogs_entries_layout(patches, is_dir):
     assert (
         project.path.joinpath.return_value.is_dir.call_args
         == [(), {}])
-    assert "_entries_layout" not in changelogs.__dict__
+    assert accessor not in changelogs.__dict__
 
 
 def test_abstract_changelogs__yaml_changelogs_version(patches):
