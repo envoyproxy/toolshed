@@ -11,7 +11,7 @@ aiohttp>=3.14.0
 colorama
 coloredlogs
 docutils~=0.21
-envoy.base.utils>=0.6.4
+envoy.base.utils>=0.6.7
 envoy.docker.utils>=0.1.1
 envoy.github.release>=0.1.1
 flake8>=6
