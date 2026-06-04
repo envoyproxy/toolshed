@@ -7,6 +7,18 @@ DEP_DATA="$2"
 DEP="$3"
 VERSION="$4"
 
+if [[ -n "${JQ_BIN:-}" && "${JQ_BIN}" != /* ]]; then
+    f=bazel_tools/tools/bash/runfiles/runfiles.bash
+    if [[ -z "${RUNFILES_DIR:-}" && -n "${TEST_SRCDIR:-}" ]]; then
+        RUNFILES_DIR="${TEST_SRCDIR}"
+    fi
+    runfiles_bash_path="${RUNFILES_DIR:-/dev/null}/$f"
+    # shellcheck disable=SC1090
+    source "${runfiles_bash_path}" 2>/dev/null || \
+        source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2 -d' ')" 2>/dev/null || \
+        { echo >&2 "ERROR: cannot find runfiles.bash"; exit 1; }
+    JQ_BIN="$(rlocation "${JQ_BIN}")"
+fi
 JQ="${JQ_BIN:-jq}"
 if [[ -z "$JQ" || ! -x "$JQ" ]]; then
     echo "jq binary not found: ${JQ}" >&2
