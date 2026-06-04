@@ -95,7 +95,7 @@ def test_abstract_changelogs_changelog_paths(iters, patches, entries_layout):
     project.version.base_version = "1.2.3"
     changelogs = DummyChangelogs(project)
     patched = patches(
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current_dir_path",
          dict(new_callable=PropertyMock)),
@@ -143,7 +143,7 @@ def test_abstract_changelogs_changelogs(iters, patches):
     patched = patches(
         "reversed",
         "sorted",
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.changelog_class",
          dict(new_callable=PropertyMock)),
@@ -180,7 +180,7 @@ def test_abstract_changelogs_changelogs(iters, patches):
     assert "changelogs" in changelogs.__dict__
 
 
-def test_abstract_changelogs_changelogs_entries_layout_current_path(patches):
+def test_abstract_changelogs_entries_layout_current_path(patches):
     project = MagicMock()
     changelogs = DummyChangelogs(project)
     current_version = abstract.project.changelog._version.Version("1.2.3")
@@ -188,7 +188,7 @@ def test_abstract_changelogs_changelogs_entries_layout_current_path(patches):
     patched = patches(
         "reversed",
         "sorted",
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.changelog_class",
          dict(new_callable=PropertyMock)),
@@ -341,7 +341,7 @@ async def test_abstract_changelogs_is_pending(patches, pending):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "AChangelogs.__getitem__",
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current",
          dict(new_callable=PropertyMock)),
@@ -368,7 +368,7 @@ async def test_abstract_changelogs_is_pending_entries_layout(patches, is_dev):
     changelogs = DummyChangelogs(project)
     patched = patches(
         "AChangelogs.__getitem__",
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current",
          dict(new_callable=PropertyMock)),
@@ -388,7 +388,7 @@ def test_abstract_changelogs_paths(iters, patches, entries_layout):
     project = MagicMock()
     changelogs = DummyChangelogs(project)
     patched = patches(
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current_dir_path",
          dict(new_callable=PropertyMock)),
@@ -697,7 +697,7 @@ def test_abstract_changelogs_changes_for_commit(
         "str",
         "CHANGELOG_CURRENT_DIR_PATH",
         "CHANGELOG_CURRENT_PATH",
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         "AChangelogs.rel_changelog_path",
         ("AChangelogs.summary_path",
@@ -1181,7 +1181,7 @@ def test_abstract_changelogs_write_changelog(patches):
 def test_abstract_changelogs_write_current(iters, patches, entries_layout):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current_dir_path",
          dict(new_callable=PropertyMock)),
@@ -1240,7 +1240,7 @@ async def test_abstract_changelogs_write_date(
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "AChangelogs.__getitem__",
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current",
          dict(new_callable=PropertyMock)),
@@ -1305,7 +1305,7 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "shutil",
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.changelog_class",
          dict(new_callable=PropertyMock)),
@@ -1378,7 +1378,7 @@ def test_abstract_changelogs_write_version_entries_parse_error(patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "shutil",
-        ("AChangelogs._entries_layout",
+        ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.changelog_class",
          dict(new_callable=PropertyMock)),
@@ -1451,7 +1451,7 @@ def test_abstract_changelogs_entries_layout(patches, is_dir):
 
     with patched as (m_dir_path, ):
         project.path.joinpath.return_value.is_dir.return_value = is_dir
-        assert changelogs._entries_layout == is_dir
+        assert changelogs.entries_layout == is_dir
 
     assert (
         project.path.joinpath.call_args
@@ -1459,7 +1459,7 @@ def test_abstract_changelogs_entries_layout(patches, is_dir):
     assert (
         project.path.joinpath.return_value.is_dir.call_args
         == [(), {}])
-    assert "_entries_layout" not in changelogs.__dict__
+    assert "entries_layout" not in changelogs.__dict__
 
 
 def test_abstract_changelogs__yaml_changelogs_version(patches):
@@ -1712,7 +1712,7 @@ async def test_abstract_changelog_data(patches, entries_layout, is_current):
     project = MagicMock()
     project.execute = AsyncMock()
     project.changelogs.validate_sections.return_value = "VALIDATED"
-    project.changelogs._entries_layout = entries_layout
+    project.changelogs.entries_layout = entries_layout
     changelog = DummyChangelog(project, "VERSION", "PATH")
     patched = patches(
         ("AChangelog._is_current",

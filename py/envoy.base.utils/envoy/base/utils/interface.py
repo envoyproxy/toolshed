@@ -228,6 +228,12 @@ class IChangelogs(metaclass=abstracts.Interface):
 
     @property
     @abstracts.interfacemethod
+    def entries_layout(self) -> bool:
+        """Whether changelogs use per-entry current changelog layout."""
+        raise NotImplementedError
+
+    @property
+    @abstracts.interfacemethod
     async def is_pending(self) -> bool:
         """Flag indicating whether the current changelog is set to
         `Pending`."""
