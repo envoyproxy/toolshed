@@ -590,6 +590,7 @@ async def test_changelogstatus_check_date_entries_layout_historical_pending(
             == (f"{m_version.return_value}/date: "
                 "Should not be set to `Pending`", ))
 
+
 @pytest.mark.parametrize("duplicate_current", [True, False])
 @pytest.mark.parametrize("version_higher_than_current", [True, False])
 def test_changelogstatus_check_version(
