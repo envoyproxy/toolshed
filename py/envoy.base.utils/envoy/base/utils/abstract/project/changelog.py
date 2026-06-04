@@ -198,7 +198,7 @@ class AChangelog(metaclass=abstracts.Abstraction):
     @async_property(cache=True)
     async def data(self) -> typing.ChangelogDict:
         changelogs = self.project.changelogs
-        if changelogs._entries_layout and self._is_current:
+        if changelogs.entries_layout and self._is_current:
             parsed = await self.project.execute(
                 self.get_data_from_entries,
                 changelogs.current_dir_path)
@@ -257,7 +257,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @cached_property
     def changelog_paths(self) -> typing.ChangelogPathsDict:
-        if self._entries_layout:
+        if self.entries_layout:
             historical_paths = self.project.path.glob(CHANGELOG_PATH_GLOB)
             current_version = _version.Version(
                 self.project.version.base_version)
@@ -279,7 +279,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
                 self.project,
                 k,
                 (self.current_path
-                 if self._entries_layout and self.project.is_current(k)
+                 if self.entries_layout and self.project.is_current(k)
                  else self.changelog_paths[k]),)
             for k
             in reversed(sorted(self.changelog_paths.keys()))}
@@ -310,7 +310,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @async_property
     async def is_pending(self) -> bool:
-        if self._entries_layout:
+        if self.entries_layout:
             return self.project.is_dev
         return (
             await self[self.current].release_date
@@ -321,7 +321,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         paths = self.project.path.glob(CHANGELOG_PATH_GLOB)
         return (
             (*paths, self.current_dir_path)
-            if self._entries_layout
+            if self.entries_layout
             else (*paths, self.current_path))
 
     @property
@@ -407,7 +407,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         changed = set()
         if any(k in change for k in ["release", "dev"]):
-            if not self._entries_layout:
+            if not self.entries_layout:
                 changed.add(CHANGELOG_CURRENT_PATH)
         if "dev" in change:
             changed.add(self.rel_changelog_path(change["dev"]["old_version"]))
@@ -416,7 +416,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         for version, sync in changelog.items():
             if sync:
                 changed.add(self.rel_changelog_path(version))
-        if self._entries_layout:
+        if self.entries_layout:
             changed.add(CHANGELOG_CURRENT_DIR_PATH)
         return changed
 
@@ -481,7 +481,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         self.changelog_path(version).write_text(text)
 
     def write_current(self) -> None:
-        if self._entries_layout:
+        if self.entries_layout:
             self.current_dir_path.mkdir(parents=True, exist_ok=True)
         else:
             sections = {
@@ -496,7 +496,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         if not await self.is_pending:
             raise exceptions.ReleaseError(
                 "Current changelog date is not set to `Pending`")
-        if self._entries_layout:
+        if self.entries_layout:
             return
         else:
             data = (await self[self.current].data).copy()
@@ -507,7 +507,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         if (version_file := self.changelog_path(version)).exists():
             raise exceptions.DevError(
                 f"Version file ({version_file}) already exists")
-        if self._entries_layout:
+        if self.entries_layout:
             data = self.changelog_class.get_data_from_entries(
                 self.current_dir_path)
             data["date"] = self.datestamp
@@ -533,7 +533,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         return _version.Version(YAML_CHANGELOGS_VERSION)
 
     @property
-    def _entries_layout(self) -> bool:
+    def entries_layout(self) -> bool:
         return (
             self.project.path.joinpath(CHANGELOG_CURRENT_DIR_PATH).is_dir())
 
