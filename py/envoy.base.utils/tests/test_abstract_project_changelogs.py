@@ -2,6 +2,7 @@
 import json
 import pathlib
 import types
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 import pytest
@@ -663,36 +664,6 @@ def test_abstract_changelogs_changelog_path(patches):
         == [(version, ), {}])
 
 
-@pytest.mark.parametrize("is_rst", [True, False])
-def test_abstract_changelogs_changelog_url(patches, is_rst):
-    changelogs = DummyChangelogs("PROJECT")
-    patched = patches(
-        "CHANGELOG_URL_TPL",
-        "RST_CHANGELOG_URL_TPL",
-        "AChangelogs._is_rst_changelog",
-        prefix="envoy.base.utils.abstract.project.changelog")
-    version = MagicMock()
-
-    with patched as (m_tpl, m_rst_tpl, m_is_rst):
-        m_is_rst.return_value = is_rst
-        tpl = (
-            m_tpl
-            if not is_rst
-            else m_rst_tpl)
-        not_tpl = (
-            m_tpl
-            if is_rst
-            else m_rst_tpl)
-        assert (
-            changelogs.changelog_url(version)
-            == tpl.format.return_value)
-
-    assert (
-        tpl.format.call_args
-        == [(), dict(version=version.base_version)])
-    assert not not_tpl.called
-
-
 def test_abstract_changelogs_blank_summary(patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
@@ -850,57 +821,149 @@ async def test_abstract_changelogs_fetch(patches):
     project.session.get.return_value.text = AsyncMock()
     changelogs = DummyChangelogs(project)
     patched = patches(
-        "AChangelogs.changelog_url",
+        "LegacyChangelog",
+        "RST_CHANGELOG_URL_TPL",
+        "AChangelogs._is_rst_changelog",
+        "AChangelogs.dump_yaml",
         prefix="envoy.base.utils.abstract.project.changelog")
-    version = MagicMock()
+    release = MagicMock()
+    release.version = MagicMock()
 
-    with patched as (m_url, ):
+    with patched as (m_legacy, m_tpl, m_is_rst, m_dump):
+        m_is_rst.return_value = True
         assert (
-            await changelogs.fetch(version)
-            == project.session.get.return_value.text.return_value)
+            await changelogs.fetch(release)
+            == m_dump.return_value)
 
     assert (
         project.session.get.call_args
-        == [(m_url.return_value, ), {}])
+        == [(m_tpl.format.return_value, ), {}])
     assert (
-        m_url.call_args
-        == [(version, ), {}])
+        m_tpl.format.call_args
+        == [(), dict(version=release.version.base_version)])
     assert (
         project.session.get.return_value.text.call_args
         == [(), {}])
-
-
-@pytest.mark.parametrize("is_rst", [True, False])
-def test_abstract_changelogs_normalize_changelog(patches, is_rst):
-    changelogs = DummyChangelogs("PROJECT")
-    patched = patches(
-        "LegacyChangelog",
-        "AChangelogs.dump_yaml",
-        "AChangelogs._is_rst_changelog",
-        prefix="envoy.base.utils.abstract.project.changelog")
-    version = MagicMock()
-    changelog = MagicMock()
-
-    with patched as (m_legacy, m_dump, m_is_rst):
-        m_is_rst.return_value = is_rst
-        assert (
-            changelogs.normalize_changelog(version, changelog)
-            == (changelog
-                if not is_rst
-                else m_dump.return_value))
-
     assert (
-        m_is_rst.call_args
-        == [(version, ), {}])
-    if not is_rst:
-        assert not m_dump.called
-        return
+        m_legacy.call_args
+        == [(project.session.get.return_value.text.return_value, ), {}])
     assert (
         m_dump.call_args
         == [(m_legacy.return_value.data, ), {}])
+
+
+async def test_abstract_changelogs_fetch_entries_layout(patches):
+    project = MagicMock()
+    project.session.get = AsyncMock()
+    changelogs = DummyChangelogs(project)
+    patched = patches(
+        ("AChangelogs.changelog_class",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.date_format",
+         dict(new_callable=PropertyMock)),
+        "AChangelogs._is_rst_changelog",
+        "AChangelogs._fetch_entries",
+        "AChangelogs.dump_yaml",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    release = MagicMock()
+    release.version = MagicMock()
+    release.published_at = datetime(2026, 6, 3, tzinfo=timezone.utc)
+
+    with patched as (m_class, m_date, m_is_rst, m_entries, m_dump):
+        m_is_rst.return_value = False
+        m_date.return_value = "%B %-d, %Y"
+        m_class.return_value.data_from_entry_map.return_value = dict(
+            date="Pending")
+        assert (
+            await changelogs.fetch(release)
+            == m_dump.return_value)
+
     assert (
-        m_legacy.call_args
-        == [(changelog, ), {}])
+        m_entries.call_args
+        == [(release.version, ), {}])
+    assert (
+        m_class.return_value.data_from_entry_map.call_args
+        == [(m_entries.return_value, ), {}])
+    assert not project.session.get.called
+    assert (
+        m_dump.call_args
+        == [(dict(
+            date=release.published_at.date().strftime(m_date.return_value)),
+            ), {}])
+
+
+async def test_abstract_changelogs_fetch_entries_layout_empty_entries(patches):
+    changelogs = DummyChangelogs(MagicMock())
+    patched = patches(
+        ("AChangelogs.changelog_class",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.date_format",
+         dict(new_callable=PropertyMock)),
+        "AChangelogs._is_rst_changelog",
+        "AChangelogs._fetch_entries",
+        "AChangelogs.dump_yaml",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    release = MagicMock()
+    release.version = MagicMock()
+    release.published_at = datetime(2026, 6, 3, tzinfo=timezone.utc)
+
+    with patched as (m_class, m_date, m_is_rst, m_entries, m_dump):
+        m_is_rst.return_value = False
+        m_date.return_value = "%B %-d, %Y"
+        m_entries.return_value = {}
+        m_class.return_value.data_from_entry_map.return_value = dict(
+            date="Pending")
+        assert (
+            await changelogs.fetch(release)
+            == m_dump.return_value)
+
+    assert (
+        m_dump.call_args
+        == [(dict(
+            date=release.published_at.date().strftime(m_date.return_value)),
+            ), {}])
+
+
+async def test_abstract_changelogs__fetch_entries():
+    project = MagicMock()
+    project.repo.getitem = AsyncMock(return_value={
+        "tree": [
+            {"type": "blob", "path": "bug_fixes/jwt__foo.rst"},
+            {"type": "blob", "path": "new_features/grpc__cool.rst"},
+            {"type": "blob", "path": "new_features/ignore.txt"},
+            {"type": "tree", "path": "bug_fixes"}]})
+    response_0 = MagicMock()
+    response_0.text = AsyncMock(return_value="Fixed jwt.\n")
+    response_1 = MagicMock()
+    response_1.text = AsyncMock(return_value="New feature.\n")
+    project.session.get = AsyncMock(side_effect=[response_0, response_1])
+    changelogs = DummyChangelogs(project)
+    version = abstract.project.changelog._version.Version("1.35.11")
+
+    assert (
+        await changelogs._fetch_entries(version)
+        == {
+            "bug_fixes/jwt__foo.rst": "Fixed jwt.\n",
+            "new_features/grpc__cool.rst": "New feature.\n"})
+    assert (
+        project.repo.getitem.call_args
+        == [(
+            f"git/trees/v{version.base_version}:"
+            f"{abstract.project.changelog.CHANGELOG_CURRENT_DIR_PATH}"
+            "?recursive=1",
+            ), {}])
+    assert (
+        project.session.get.call_args_list
+        == [[(
+            abstract.project.changelog.CHANGELOG_ENTRY_URL_TPL.format(
+                version=version.base_version,
+                path="bug_fixes/jwt__foo.rst"),
+            ), {}],
+            [(
+                abstract.project.changelog.CHANGELOG_ENTRY_URL_TPL.format(
+                    version=version.base_version,
+                    path="new_features/grpc__cool.rst"),
+                ), {}]])
 
 
 def test_abstract_changelogs_rel_changelog_path(patches):
@@ -1007,22 +1070,103 @@ async def test_abstract_changelogs_sync(iters, patches):
             if release.version % 2])
     assert (
         m_fetch.call_args_list
-        == [[(release.version, ), {}]
+        == [[(release, ), {}]
             for release
             in releases
             if release.version % 2])
+
+
+async def test_abstract_changelogs_sync_entries_layout_regression(
+        tmp_path, patches):
+    class ConcreteChangelogs(DummyChangelogs):
+
+        @property
+        def changelog_class(self):
+            return DummyChangelog
+
+    changelog_dir = tmp_path.joinpath("changelogs")
+    changelog_dir.mkdir()
+    project = MagicMock()
+    project.path = tmp_path
+    project.repo.getitem = AsyncMock(return_value={
+        "tree": [
+            {"type": "blob", "path": "bug_fixes/jwt__foo.rst"},
+            {"type": "blob", "path": "new_features/grpc__cool.rst"}]})
+    response_0 = MagicMock()
+    response_0.text = AsyncMock(return_value="Fixed jwt.\n")
+    response_1 = MagicMock()
+    response_1.text = AsyncMock(return_value="New feature.\n")
+    project.session.get = AsyncMock(side_effect=[response_0, response_1])
+    release = MagicMock()
+    release.version = abstract.project.changelog._version.Version("1.35.11")
+    release.published_at = datetime(2026, 6, 3, tzinfo=timezone.utc)
+
+    async def repo_releases():
+        yield release
+
+    project.repo.releases.side_effect = repo_releases
+    changelogs = ConcreteChangelogs(project)
+    patched = patches(
+        "AChangelogs.should_sync",
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_should, ):
+        m_should.return_value = True
+        assert await changelogs.sync() == {release.version: True}
+
+    assert (
+        yaml.safe_load(changelog_dir.joinpath("1.35.11.yaml").read_text())
+        == dict(
+            date="June 3, 2026",
+            bug_fixes=[dict(area="jwt", change="Fixed jwt.\n")],
+            new_features=[dict(area="grpc", change="New feature.\n")]))
+
+
+async def test_abstract_changelogs_sync_entries_layout_zero_entries(
+        tmp_path, patches):
+    class ConcreteChangelogs(DummyChangelogs):
+
+        @property
+        def changelog_class(self):
+            return DummyChangelog
+
+    changelog_dir = tmp_path.joinpath("changelogs")
+    changelog_dir.mkdir()
+    project = MagicMock()
+    project.path = tmp_path
+    project.repo.getitem = AsyncMock(return_value={"tree": []})
+    project.session.get = AsyncMock()
+    release = MagicMock()
+    release.version = abstract.project.changelog._version.Version("1.35.11")
+    release.published_at = datetime(2026, 6, 3, tzinfo=timezone.utc)
+
+    async def repo_releases():
+        yield release
+
+    project.repo.releases.side_effect = repo_releases
+    changelogs = ConcreteChangelogs(project)
+    patched = patches(
+        "AChangelogs.should_sync",
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_should, ):
+        m_should.return_value = True
+        assert await changelogs.sync() == {release.version: True}
+
+    assert (
+        yaml.safe_load(changelog_dir.joinpath("1.35.11.yaml").read_text())
+        == dict(date="June 3, 2026"))
 
 
 def test_abstract_changelogs_write_changelog(patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "AChangelogs.changelog_path",
-        "AChangelogs.normalize_changelog",
         prefix="envoy.base.utils.abstract.project.changelog")
     version = MagicMock()
     text = MagicMock()
 
-    with patched as (m_path, m_norm):
+    with patched as (m_path, ):
         assert not changelogs.write_changelog(version, text)
 
     assert (
@@ -1030,10 +1174,7 @@ def test_abstract_changelogs_write_changelog(patches):
         == [(version, ), {}])
     assert (
         m_path.return_value.write_text.call_args
-        == [(m_norm.return_value, ), {}])
-    assert (
-        m_norm.call_args
-        == [(version, text), {}])
+        == [(text, ), {}])
 
 
 @pytest.mark.parametrize("entries_layout", [True, False])
@@ -1449,254 +1590,80 @@ def test_abstract_changelog_get_data(iters, patches, raises):
         == [(m_typing.ChangelogDict, expected), {}])
 
 
-def test_abstract_changelog_get_data_from_entries_happy_path(patches):
-    patched = patches(
-        "cast",
-        "sorted",
-        "typing",
-        prefix="envoy.base.utils.abstract.project.changelog")
-    entry_dir = MagicMock()
-    bug_1 = MagicMock()
-    bug_1.parent.name = "bug_fixes"
-    bug_1.stem = "oauth2__foo_fix"
-    bug_1.read_text.return_value = "Fixed oauth2.\n"
-    bug_2 = MagicMock()
-    bug_2.parent.name = "bug_fixes"
-    bug_2.stem = "jwt__bar_fix"
-    bug_2.read_text.return_value = "Fixed jwt.\n"
-    feature = MagicMock()
-    feature.parent.name = "new_features"
-    feature.stem = "grpc__cool"
-    feature.read_text.return_value = "New feature.\n"
-    entry_paths = [bug_1, bug_2, feature]
-    sorted_paths = [bug_2, bug_1, feature]
-
-    with patched as (m_cast, m_sorted, m_typing):
-        entry_dir.glob.return_value = entry_paths
-        m_sorted.return_value = sorted_paths
-        assert (
-            abstract.AChangelog.get_data_from_entries(entry_dir)
-            == m_cast.return_value)
+def test_abstract_changelog_data_from_entry_map_happy_path():
+    entries = {
+        "new_features/grpc__cool.rst": "New feature.\n",
+        "bug_fixes/oauth2__foo_fix.rst": "Fixed oauth2.\n",
+        "bug_fixes/jwt__bar_fix.rst": "Fixed jwt.\n"}
 
     assert (
-        entry_dir.glob.call_args
-        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
-    assert (
-        m_sorted.call_args
-        == [(entry_paths, ), {}])
-    assert (
-        bug_1.read_text.call_args
-        == [(), {}])
-    assert (
-        bug_2.read_text.call_args
-        == [(), {}])
-    assert (
-        feature.read_text.call_args
-        == [(), {}])
-    assert (
-        m_typing.Change.call_args_list
-        == [[(bug_2.read_text.return_value, ), {}],
-            [(bug_1.read_text.return_value, ), {}],
-            [(feature.read_text.return_value, ), {}]])
-    assert (
-        m_cast.call_args
-        == [(m_typing.ChangelogDict,
-             dict(
-                 date="Pending",
-                 bug_fixes=[
-                     dict(area="jwt", change=m_typing.Change.return_value),
-                     dict(area="oauth2", change=m_typing.Change.return_value)],
-                 new_features=[
-                     dict(area="grpc", change=m_typing.Change.return_value)])),
-            {}])
+        abstract.AChangelog.data_from_entry_map(entries)
+        == dict(
+            date="Pending",
+            bug_fixes=[
+                dict(area="jwt", change="Fixed jwt.\n"),
+                dict(area="oauth2", change="Fixed oauth2.\n")],
+            new_features=[
+                dict(area="grpc", change="New feature.\n")]))
 
 
-def test_abstract_changelog_get_data_from_entries_arbitrary_section(patches):
-    patched = patches(
-        "cast",
-        "sorted",
-        "typing",
-        prefix="envoy.base.utils.abstract.project.changelog")
-    entry_dir = MagicMock()
-    path = MagicMock()
-    path.parent.name = "weird_section"
-    path.stem = "foo__bar"
-    path.read_text.return_value = "content\n"
-
-    with patched as (m_cast, m_sorted, m_typing):
-        entry_dir.glob.return_value = [path]
-        m_sorted.return_value = [path]
-        assert (
-            abstract.AChangelog.get_data_from_entries(entry_dir)
-            == m_cast.return_value)
-
-    assert (
-        entry_dir.glob.call_args
-        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
-    assert (
-        m_sorted.call_args
-        == [([path], ), {}])
-    assert (
-        path.read_text.call_args
-        == [(), {}])
-    assert (
-        m_typing.Change.call_args
-        == [(path.read_text.return_value, ), {}])
-    assert (
-        m_cast.call_args
-        == [(m_typing.ChangelogDict,
-             dict(
-                 date="Pending",
-                 weird_section=[
-                     dict(area="foo", change=m_typing.Change.return_value)])),
-            {}])
-
-
-def test_abstract_changelog_get_data_from_entries_missing_separator(patches):
-    patched = patches(
-        "cast",
-        "sorted",
-        "typing",
-        prefix="envoy.base.utils.abstract.project.changelog")
-    entry_dir = MagicMock()
-    path = MagicMock()
-    path.parent.name = "bug_fixes"
-    path.stem = "no_separator"
-
-    with patched as (m_cast, m_sorted, m_typing):
-        entry_dir.glob.return_value = [path]
-        m_sorted.return_value = [path]
-        with pytest.raises(exceptions.ChangelogParseError) as e:
-            abstract.AChangelog.get_data_from_entries(entry_dir)
-
-    assert (
-        entry_dir.glob.call_args
-        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
-    assert (
-        m_sorted.call_args
-        == [([path], ), {}])
+@pytest.mark.parametrize(
+    "entry",
+    ["bug_fixes/no_separator.rst",
+     "bug_fixes/a__b__c.rst"])
+def test_abstract_changelog_data_from_entry_map_separator_validation(entry):
+    with pytest.raises(exceptions.ChangelogParseError) as e:
+        abstract.AChangelog.data_from_entry_map({entry: "content\n"})
     assert (
         e.value.args[0]
         == ("Invalid entry filename "
             "(expected exactly one '__'): "
-            f"{path}"))
-    assert not path.read_text.called
-    assert not m_typing.Change.called
-    assert not m_cast.called
+            f"{entry}"))
 
 
-def test_abstract_changelog_get_data_from_entries_multiple_separators(patches):
+def test_abstract_changelog_get_data_from_entries(patches):
     patched = patches(
-        "cast",
         "sorted",
-        "typing",
-        prefix="envoy.base.utils.abstract.project.changelog")
-    entry_dir = MagicMock()
-    path = MagicMock()
-    path.parent.name = "bug_fixes"
-    path.stem = "a__b__c"
-
-    with patched as (m_cast, m_sorted, m_typing):
-        entry_dir.glob.return_value = [path]
-        m_sorted.return_value = [path]
-        with pytest.raises(exceptions.ChangelogParseError) as e:
-            abstract.AChangelog.get_data_from_entries(entry_dir)
-
-    assert (
-        entry_dir.glob.call_args
-        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
-    assert (
-        m_sorted.call_args
-        == [([path], ), {}])
-    assert (
-        e.value.args[0]
-        == ("Invalid entry filename "
-            "(expected exactly one '__'): "
-            f"{path}"))
-    assert not path.read_text.called
-    assert not m_typing.Change.called
-    assert not m_cast.called
-
-
-def test_abstract_changelog_get_data_from_entries_empty_dir(patches):
-    patched = patches(
-        "cast",
-        "sorted",
-        "typing",
-        prefix="envoy.base.utils.abstract.project.changelog")
-    entry_dir = MagicMock()
-
-    with patched as (m_cast, m_sorted, m_typing):
-        entry_dir.glob.return_value = []
-        m_sorted.return_value = []
-        assert (
-            abstract.AChangelog.get_data_from_entries(entry_dir)
-            == m_cast.return_value)
-
-    assert (
-        entry_dir.glob.call_args
-        == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
-    assert (
-        m_sorted.call_args
-        == [([], ), {}])
-    assert not m_typing.Change.called
-    assert (
-        m_cast.call_args
-        == [(m_typing.ChangelogDict,
-             dict(date="Pending")),
-            {}])
-
-
-def test_abstract_changelog_get_data_from_entries_stable_ordering(patches):
-    patched = patches(
-        "cast",
-        "sorted",
-        "typing",
+        "AChangelog.data_from_entry_map",
         prefix="envoy.base.utils.abstract.project.changelog")
     entry_dir = MagicMock()
     first = MagicMock()
     first.parent.name = "bug_fixes"
-    first.stem = "a__first"
-    first.read_text.return_value = "First\n"
-    middle = MagicMock()
-    middle.parent.name = "bug_fixes"
-    middle.stem = "m__middle"
-    middle.read_text.return_value = "Middle\n"
-    last = MagicMock()
-    last.parent.name = "bug_fixes"
-    last.stem = "z__last"
-    last.read_text.return_value = "Last\n"
-    unsorted_paths = [last, first, middle]
-    sorted_paths = [first, middle, last]
+    first.name = "jwt__foo.rst"
+    first.read_text.return_value = "Fixed jwt.\n"
+    second = MagicMock()
+    second.parent.name = "new_features"
+    second.name = "grpc__cool.rst"
+    second.read_text.return_value = "New feature.\n"
+    paths = [second, first]
 
-    with patched as (m_cast, m_sorted, m_typing):
-        entry_dir.glob.return_value = unsorted_paths
-        m_sorted.return_value = sorted_paths
+    with patched as (m_sorted, m_data):
+        entry_dir.glob.return_value = paths
+        m_sorted.return_value = [first, second]
         assert (
             abstract.AChangelog.get_data_from_entries(entry_dir)
-            == m_cast.return_value)
+            == m_data.return_value)
 
     assert (
         entry_dir.glob.call_args
         == [(abstract.project.changelog.CHANGELOG_ENTRY_GLOB, ), {}])
     assert (
         m_sorted.call_args
-        == [(unsorted_paths, ), {}])
+        == [(paths, ), {}])
     assert (
-        m_typing.Change.call_args_list
-        == [[(first.read_text.return_value, ), {}],
-            [(middle.read_text.return_value, ), {}],
-            [(last.read_text.return_value, ), {}]])
+        m_data.call_args
+        == [({
+            "bug_fixes/jwt__foo.rst": first.read_text.return_value,
+            "new_features/grpc__cool.rst": second.read_text.return_value},
+            ), {}])
+
+
+def test_abstract_changelog_get_data_from_entries_empty_dir():
+    entry_dir = MagicMock()
+    entry_dir.glob.return_value = []
     assert (
-        m_cast.call_args
-        == [(m_typing.ChangelogDict,
-             dict(
-                 date="Pending",
-                 bug_fixes=[
-                     dict(area="a", change=m_typing.Change.return_value),
-                     dict(area="m", change=m_typing.Change.return_value),
-                     dict(area="z", change=m_typing.Change.return_value)])),
-            {}])
+        abstract.AChangelog.get_data_from_entries(entry_dir)
+        == dict(date="Pending"))
 
 
 def test_abstract_changelog_constructor():

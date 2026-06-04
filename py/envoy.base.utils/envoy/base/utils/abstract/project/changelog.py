@@ -1,4 +1,5 @@
 
+import asyncio
 import logging
 import pathlib
 import re
@@ -33,9 +34,9 @@ CHANGELOG_ENTRY_GLOB = "*/*.rst"
 CHANGELOG_CONFIG_PATH = "changelogs/changelogs.yaml"
 ENTRY_SEPARATOR = "__"
 CHANGELOG_SUMMARY_PATH = "changelogs/summary.md"
-CHANGELOG_URL_TPL = (
+CHANGELOG_ENTRY_URL_TPL = (
     "https://raw.githubusercontent.com/envoyproxy/envoy/"
-    "v{version}/changelogs/current.yaml")
+    f"v{{version}}/{CHANGELOG_CURRENT_DIR_PATH}/{{path}}")
 CHANGELOG_CURRENT_TPL = """
 date: Pending
 {% for section, description in sections.items() %}
@@ -134,6 +135,26 @@ class AChangelogEntry(metaclass=abstracts.Abstraction):
 class AChangelog(metaclass=abstracts.Abstraction):
 
     @classmethod
+    def data_from_entry_map(
+            cls,
+            entries: dict[str, str]) -> "typing.ChangelogDict":
+        sections: dict[str, list[typing.ChangeDict]] = {}
+        for entry_path, text in sorted(entries.items()):
+            path = pathlib.Path(entry_path)
+            if path.stem.count(ENTRY_SEPARATOR) != 1:
+                raise exceptions.ChangelogParseError(
+                    f"Invalid entry filename "
+                    f"(expected exactly one '{ENTRY_SEPARATOR}'): "
+                    f"{entry_path}")
+            area, _slug = path.stem.split(ENTRY_SEPARATOR, 1)
+            change = typing.Change(text)
+            entry: typing.ChangeDict = dict(area=area, change=change)
+            sections.setdefault(path.parent.name, []).append(entry)
+        return cast(
+            typing.ChangelogDict,
+            dict(date="Pending", **sections))
+
+    @classmethod
     def get_data(cls, path) -> typing.ChangelogDict:
         try:
             data = utils.from_yaml(path, typing.ChangelogSourceDict)
@@ -156,20 +177,10 @@ class AChangelog(metaclass=abstracts.Abstraction):
     def get_data_from_entries(
             cls,
             entry_dir: pathlib.Path) -> "typing.ChangelogDict":
-        sections: dict[str, list[typing.ChangeDict]] = {}
-        for path in sorted(entry_dir.glob(CHANGELOG_ENTRY_GLOB)):
-            section = path.parent.name
-            if path.stem.count(ENTRY_SEPARATOR) != 1:
-                raise exceptions.ChangelogParseError(
-                    f"Invalid entry filename "
-                    f"(expected exactly one '{ENTRY_SEPARATOR}'): {path}")
-            area, _slug = path.stem.split(ENTRY_SEPARATOR, 1)
-            change = typing.Change(path.read_text())
-            entry: typing.ChangeDict = dict(area=area, change=change)
-            sections.setdefault(section, []).append(entry)
-        return cast(
-            typing.ChangelogDict,
-            dict(date="Pending", **sections))
+        return cls.data_from_entry_map({
+            f"{path.parent.name}/{path.name}": path.read_text()
+            for path
+            in sorted(entry_dir.glob(CHANGELOG_ENTRY_GLOB))})
 
     def __init__(
             self,
@@ -393,12 +404,6 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def changelog_path(self, version: _version.Version) -> pathlib.Path:
         return self.project.path.joinpath(self.rel_changelog_path(version))
 
-    def changelog_url(self, version: _version.Version) -> str:
-        return (
-            RST_CHANGELOG_URL_TPL
-            if self._is_rst_changelog(version)
-            else CHANGELOG_URL_TPL).format(version=version.base_version)
-
     def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         changed = set()
         if any(k in change for k in ["release", "dev"]):
@@ -431,24 +436,24 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             if not output.endswith("\n")
             else output)
 
-    async def fetch(self, version: _version.Version) -> str:
-        return await (
-            await self.project.session.get(self.changelog_url(version))).text()
+    async def fetch(self, release) -> str:
+        version = release.version
+        if self._is_rst_changelog(version):
+            return self.dump_yaml(LegacyChangelog(
+                await (
+                    await self.project.session.get(
+                        RST_CHANGELOG_URL_TPL.format(
+                            version=version.base_version))).text()).data)
+        data = self.changelog_class.data_from_entry_map(
+            await self._fetch_entries(version))
+        data["date"] = release.published_at.date().strftime(self.date_format)
+        return self.dump_yaml(data)
 
     def items(self) -> ItemsView[_version.Version, interface.IChangelog]:
         return self.changelogs.items()
 
     def keys(self) -> KeysView[_version.Version]:
         return self.changelogs.keys()
-
-    def normalize_changelog(
-            self,
-            version: _version.Version,
-            changelog: str) -> str:
-        return (
-            self.dump_yaml(LegacyChangelog(changelog).data)
-            if self._is_rst_changelog(version)
-            else changelog)
 
     def rel_changelog_path(self, version) -> str:
         return CHANGELOG_PATH_FMT.format(version=version.base_version)
@@ -465,7 +470,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             if self.should_sync(release.version):
                 self.write_changelog(
                     release.version,
-                    await self.fetch(release.version))
+                    await self.fetch(release))
                 change[release.version] = True
         return change
 
@@ -473,8 +478,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         return self.changelogs.values()
 
     def write_changelog(self, version: _version.Version, text: str) -> None:
-        self.changelog_path(version).write_text(
-            self.normalize_changelog(version, text))
+        self.changelog_path(version).write_text(text)
 
     def write_current(self) -> None:
         if self._entries_layout:
@@ -535,6 +539,33 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     def _is_rst_changelog(self, version: _version.Version) -> bool:
         return version < self._yaml_changelogs_version
+
+    async def _fetch_entries(
+            self,
+            version: _version.Version) -> dict[str, str]:
+        tree = await self.project.repo.getitem(
+            f"git/trees/v{version.base_version}:{CHANGELOG_CURRENT_DIR_PATH}"
+            "?recursive=1")
+        entry_paths = [
+            item["path"]
+            for item
+            in tree.get("tree", [])
+            if item["type"] == "blob" and item["path"].endswith(".rst")]
+
+        async def _fetch_entry(path: str) -> tuple[str, str]:
+            return (
+                path,
+                await (
+                    await self.project.session.get(
+                        CHANGELOG_ENTRY_URL_TPL.format(
+                            version=version.base_version,
+                            path=path))).text())
+
+        return dict(
+            await asyncio.gather(
+                *(_fetch_entry(path)
+                  for path
+                  in entry_paths)))
 
     def _version_from_path(self, path: pathlib.Path) -> _version.Version:
         return _version.Version(
