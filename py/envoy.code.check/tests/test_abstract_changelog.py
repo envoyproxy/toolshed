@@ -496,7 +496,11 @@ async def test_changelogstatus_check_date(
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.invalid_date",
          dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.is_current",
+         dict(new_callable=PropertyMock)),
         ("AChangelogStatus.pending_not_dev",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.version",
          dict(new_callable=PropertyMock)),
@@ -509,7 +513,11 @@ async def test_changelogstatus_check_date(
     elif pending_not_dev:
         expected.append("Should not be set to `Pending`")
 
-    with patched as (m_tuple, m_dev, m_invalid, m_pending, m_version):
+    with patched as (
+            m_tuple, m_dev, m_invalid, m_current, m_pending, m_project,
+            m_version):
+        m_current.return_value = True
+        m_project.return_value.changelogs.entries_layout = False
         m_invalid.side_effect = AsyncMock(return_value=invalid_date)
         m_dev.side_effect = AsyncMock(return_value=dev_not_pending)
         m_pending.side_effect = AsyncMock(return_value=pending_not_dev)
@@ -525,6 +533,62 @@ async def test_changelogstatus_check_date(
         == [f"{m_version.return_value}/date: {e}"
             for e
             in expected])
+
+
+async def test_changelogstatus_check_date_entries_layout_current(patches):
+    status = check.AChangelogStatus(MagicMock(), MagicMock())
+    patched = patches(
+        ("AChangelogStatus.dev_not_pending",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.invalid_date",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.is_current",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.pending_not_dev",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.changelog")
+
+    with patched as (m_dev, m_invalid, m_current, m_pending, m_project):
+        m_current.return_value = True
+        m_project.return_value.changelogs.entries_layout = True
+        assert await status.check_date() == ()
+
+    assert not m_invalid.called
+    assert not m_dev.called
+    assert not m_pending.called
+
+
+async def test_changelogstatus_check_date_entries_layout_historical_pending(
+        patches):
+    status = check.AChangelogStatus(MagicMock(), MagicMock())
+    patched = patches(
+        ("AChangelogStatus.dev_not_pending",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.invalid_date",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.is_current",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.pending_not_dev",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.version",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.code.check.abstract.changelog")
+
+    with patched as (
+            m_dev, m_invalid, m_current, m_pending, m_project, m_version):
+        m_current.return_value = False
+        m_project.return_value.changelogs.entries_layout = True
+        m_invalid.side_effect = AsyncMock(return_value=None)
+        m_dev.side_effect = AsyncMock(return_value=False)
+        m_pending.side_effect = AsyncMock(return_value=True)
+        assert (
+            await status.check_date()
+            == (f"{m_version.return_value}/date: "
+                "Should not be set to `Pending`", ))
 
 
 @pytest.mark.parametrize("duplicate_current", [True, False])

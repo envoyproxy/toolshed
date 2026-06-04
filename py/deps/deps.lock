@@ -32,7 +32,7 @@
 //     "coloredlogs==15.0.1",
 //     "cryptography==46.0.7",
 //     "docutils==0.21.2",
-//     "envoy-base-utils==0.6.4",
+//     "envoy-base-utils==0.6.7",
 //     "envoy-docker-utils==0.1.1",
 //     "envoy-github-release==0.1.2",
 //     "flake8==7.3.0",
@@ -40,7 +40,7 @@
 //     "frozenlist==1.8.0",
 //     "gidgethub==5.4.0",
 //     "humanfriendly==10.0",
-//     "idna==3.11",
+//     "idna==3.15",
 //     "imagesize==1.4.1",
 //     "iniconfig==2.3.0",
 //     "jinja2==3.1.6",
@@ -1651,13 +1651,13 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "dcc33a8a1d2d4db2bf90514cb2db256c0c25666aa2619de2cfac0a710dc3dd3b",
-              "url": "https://files.pythonhosted.org/packages/84/9f/ba0e624b6e584ba53b3f31beecdbcd80d6a164882159fc0ec6f0c903563a/envoy_base_utils-0.6.4-py3-none-any.whl"
+              "hash": "f1f9f9dffddc232f23f5d46c94d45a903ba2123b372b0b051e7264954a346ed9",
+              "url": "https://files.pythonhosted.org/packages/11/98/337156f35043430257f7422683bae40a8c6d2a5819fa84189aa4fcf78346/envoy_base_utils-0.6.7-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "5c576437d658ec84f04ff1f587b758208ca1544afc86ac1889c0931ac231a85b",
-              "url": "https://files.pythonhosted.org/packages/b9/a7/4c792baa2a2ccd8df63099c80166fe25e99c87c3de14575821ae18bb2812/envoy_base_utils-0.6.4.tar.gz"
+              "hash": "cebe9b389bb0e6e924f8daddeb02306f3d9f2612ee3cd9cf6f87dba1ec57286a",
+              "url": "https://files.pythonhosted.org/packages/c4/a6/8b98cb4b3d52f54924562564509b54033a9af7ca078af30d26a37fa48910/envoy_base_utils-0.6.7.tar.gz"
             }
           ],
           "project_name": "envoy-base-utils",
@@ -1691,7 +1691,7 @@
             "zstandard>=0.22.0"
           ],
           "requires_python": ">=3.12",
-          "version": "0.6.4"
+          "version": "0.6.7"
         },
         {
           "artifacts": [
@@ -2204,24 +2204,23 @@
           "artifacts": [
             {
               "algorithm": "sha256",
-              "hash": "771a87f49d9defaf64091e6e6fe9c18d4833f140bd19464795bc32d966ca37ea",
-              "url": "https://files.pythonhosted.org/packages/0e/61/66938bbb5fc52dbdf84594873d5b51fb1f7c7794e9c0f5bd885f30bc507b/idna-3.11-py3-none-any.whl"
+              "hash": "048adeaf8c2d788c40fee287673ccaa74c24ffd8dcf09ffa555a2fbb59f10ac8",
+              "url": "https://files.pythonhosted.org/packages/d2/23/408243171aa9aaba178d3e2559159c24c1171a641aa83b67bdd3394ead8e/idna-3.15-py3-none-any.whl"
             },
             {
               "algorithm": "sha256",
-              "hash": "795dafcc9c04ed0c1fb032c2aa73654d8e8c5023a7df64a53f39190ada629902",
-              "url": "https://files.pythonhosted.org/packages/6f/6d/0703ccc57f3a7233505399edb88de3cbd678da106337b9fcde432b65ed60/idna-3.11.tar.gz"
+              "hash": "ca962446ea538f7092a95e057da437618e886f4d349216d2b1e294abfdb65fdc",
+              "url": "https://files.pythonhosted.org/packages/82/77/7b3966d0b9d1d31a36ddf1746926a11dface89a83409bf1483f0237aa758/idna-3.15.tar.gz"
             }
           ],
           "project_name": "idna",
           "requires_dists": [
-            "flake8>=7.1.1; extra == \"all\"",
             "mypy>=1.11.2; extra == \"all\"",
             "pytest>=8.3.2; extra == \"all\"",
             "ruff>=0.6.2; extra == \"all\""
           ],
           "requires_python": ">=3.8",
-          "version": "3.11"
+          "version": "3.15"
         },
         {
           "artifacts": [
@@ -5918,7 +5917,7 @@
     "coloredlogs==15.0.1",
     "cryptography==46.0.7",
     "docutils==0.21.2",
-    "envoy-base-utils==0.6.4",
+    "envoy-base-utils==0.6.7",
     "envoy-docker-utils==0.1.1",
     "envoy-github-release==0.1.2",
     "flake8==7.3.0",
@@ -5926,7 +5925,7 @@
     "frozenlist==1.8.0",
     "gidgethub==5.4.0",
     "humanfriendly==10.0",
-    "idna==3.11",
+    "idna==3.15",
     "imagesize==1.4.1",
     "iniconfig==2.3.0",
     "jinja2==3.1.6",
