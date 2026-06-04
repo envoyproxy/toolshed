@@ -28,7 +28,7 @@ libc = "^0.2.186"
 mockall = { version = "^0.14.0" }
 mockall_double = "^0.3"
 scopeguard = "^1.2"
-serial_test = "^3.4.0"
+serial_test = "^3.5.0"
 tokio-test = "^0.4"
 
 [lib]
