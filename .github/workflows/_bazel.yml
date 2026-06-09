@@ -106,6 +106,9 @@ jobs:
         source-path: bazel/
         transform: s,^bazel,toolshed-bazel-v{version},
         version-file: bazel/VERSION.txt
+        exclude-patterns: |
+          .git*
+          bazel/bazel-*
     - name: Bazel source
       if: ${{ steps.source-tarball.outputs.tarball }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
