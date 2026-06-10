@@ -30,9 +30,9 @@ VERSIONS = {
     "llvm": LLVM_VERSION,
     "ninja": "1.12.0",
     "python": "3.12",
-    "bins_release": "0.1.56",
-    "msan_libs_sha256": "93fc48b001c029f8fecd31d5c11cb48b42852da42ebe5584767ce5dac79af7f1",
-    "tsan_libs_sha256": "dad265214c416b294a7f9fea371ab18681d7f489aac1598efd4bfde2a9e033e8",
+    "bins_release": "0.1.57",
+    "msan_libs_sha256": "d4e9d018af22d30ca4d7dd8feeea1c3d3912ab8c50db90f62140ab47bf4843e1",
+    "tsan_libs_sha256": "8730c906a234646cbb22c145c80ea59b832c59f108b5545ecec750f378bba880",
 
     "libcxx_libs_sha256": {
         "aarch64": "9c900495dac5c214d135caab02cfcf01806916a8eeb994687b2815ed38a79831",
@@ -41,8 +41,8 @@ VERSIONS = {
 
     # Glint binary hashes by architecture
     "glint_sha256": {
-        "amd64": "dc0ea010bffec5081daa288fe0e5ee12ada4ce338350ab535c7ece84d963e80a",
-        "arm64": "ff81a716777f916f7a7b09503b15c6f327de1161283989469cedf39c8a84e36e",
+        "amd64": "a9389398ba5719197f7c81e6a8127262095a1a5f1ea3a509f16c32bf4ee65719",
+        "arm64": "4c54995d0015b446b1d4fb086bc53c8dad088b2d633179d3b5ba5f19ce965a23",
     },
 
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
@@ -51,22 +51,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "8bc360a704d9e23bec8f70174c7a84ce28a696ef561e7024885f12ff129e6813",
-                "arm64": "b9761ae1e585f2cc70bbf52a6c8fc05ce2672dac17235cfe0b98c3bdc7ce2002",
+                "amd64": "3db4a6da412f3fa68a882f5972b2b5ec246157d53beeec96758aa3a5c8bdde25",
+                "arm64": "e9357635998cb3ffa2016840b7199bd75bd50e5ed641b856a456fa9123ca3e18",
             },
             "13": {
-                "amd64": "edde51f04081d3cae0d3ce873089250b27cb470196c153c4bdeda27fd856b82f",
-                "arm64": "f8b6856f3500e89afc2f37bef342bb78695b4c5f302ef673df8067dd155e370d",
+                "amd64": "4701eabc64431142a6e126f403727b0a745ddf3266050d4d7b3f41a2cb90c1de",
+                "arm64": "35bf533c5ccd27ebfeca5c4e5a8aa8fc077b1c30cac50af077168179acd2df87",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "6ef50f2ab2012202e42bf483d08d99295b7ad089d2413d1e0a59a42fac3f7c3f",
-                "arm64": "53a803d2a0df6afd63129780d20c85a575d8c4a38b5ece64b084750f0030becb",
+                "amd64": "c7ca56e79181a8236b14bc750f8fbf84ec2fe71ed4a3964972341f6e2e83be96",
+                "arm64": "541c2c2adc37d6d3e3622b2eafd1016bbc394efdcdfa7d412f318fb2b02f381d",
             },
             "13": {
-                "amd64": "da5bfe6eb0d829e9f2e4ec381bed138569c8effc535462228e0c367f29e7111a",
-                "arm64": "a359e9c555526ba098a2ffc7ee231275a8b5288dffd988212820691680cd6508",
+                "amd64": "7be43ae94046d55fbea91529f3e524214634c567366053eebdd0bd6927181b40",
+                "arm64": "f4019ba6d2a4d549a1a7825e60b911bc7cad9503b4f99e25be2ed3c8fd6735fe",
             },
         },
     },
