@@ -15,7 +15,7 @@ git config --global user.email ${committer_email}
 git commit . -m "${commit_message}" --signoff
 git log -1 --pretty=%B
 git push --no-verify --set-upstream origin ${branch}
-gh pr create -B main -H ${branch} --title "${title}" --body "${body}
+gh pr create -B main -H ${branch} --delete-branch --title "${title}" --body "${body}
 
 
 Signed-off-by: Mock User <mock@example.com>"
@@ -40,7 +40,7 @@ git checkout -b ${branch}
 git commit . -m "${commit_message}" --signoff
 git log -1 --pretty=%B
 git push --no-verify --set-upstream origin ${branch}
-gh pr create -B main -H ${branch} --title "${title}" --body "${body}
+gh pr create -B main -H ${branch} --delete-branch --title "${title}" --body "${body}
 
 
 Signed-off-by: Mock User <mock@example.com>"
@@ -62,6 +62,33 @@ test_nocommit_output_log () {
     local body="$6"
     cat << EOF > /tmp/output.log
 git checkout -b ${branch}
+git log -1 --pretty=%B
+git push --no-verify --set-upstream origin ${branch}
+gh pr create -B main -H ${branch} --delete-branch --title "${title}" --body "${body}
+
+
+Signed-off-by: Mock User <mock@example.com>"
+EOF
+    cmp -s /tmp/output.log "$MOCK_LOG" || {
+        echo "fail:Output does not match" >> "$TEST_OUTPUT"
+        diff -u /tmp/output.log "$MOCK_LOG"
+        return
+    }
+    echo "success:Output matches" >> "$TEST_OUTPUT"
+}
+
+test_no_delete_branch_output_log () {
+    local committer_name="$1"
+    local committer_email="$2"
+    local commit_message="$3"
+    local branch="$4"
+    local title="$5"
+    local body="$6"
+    cat << EOF > /tmp/output.log
+git checkout -b ${branch}
+git config --global user.name "${committer_name}"
+git config --global user.email ${committer_email}
+git commit . -m "${commit_message}" --signoff
 git log -1 --pretty=%B
 git push --no-verify --set-upstream origin ${branch}
 gh pr create -B main -H ${branch} --title "${title}" --body "${body}

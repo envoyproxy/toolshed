@@ -32,6 +32,9 @@ inputs:
   diff-show:
     type: boolean
     default: false
+  delete-branch:
+    type: boolean
+    default: true
   dry-run:
     type: boolean
     default: false
@@ -47,6 +50,7 @@ inputs:
       export PR_COMMITTER_EMAIL='\($committer_email)'
       export PR_COMMITTER_NAME='\($committer_name)'
       export PR_COMMIT_MESSAGE='\($commit_message)'
+      export PR_DELETE_BRANCH='\(.delete_branch)'
       cd \(.working_directory)
       ${PR_ACTION_PATH}/create.sh
   wip:
@@ -73,6 +77,7 @@ runs:
         committer_name: ${{ inputs.committer-name }}
         committer_email: ${{ inputs.committer-email }}
         commit_message: ${{ toJSON(inputs.commit-message) }}
+        delete_branch: ${{ inputs.delete-branch }}
         dry_run: ${{ inputs.dry-run }}
         title: ${{ toJSON(inputs.title) }}
         working_directory: ${{ inputs.working-directory }}
