@@ -1,0 +1,39 @@
+uses: ./actions/github/pr
+id: pr
+with:
+  base: main
+  branch: ${{ env.TEST_BRANCH }}
+  title: ${{ env.TEST_TITLE }}
+  body: ${{ env.TEST_BODY }}
+  commit: true
+  committer-name: ${{ env.TEST_COMMITTER_NAME }}
+  committer-email: ${{ env.TEST_COMMITTER_EMAIL }}
+  commit-message: ${{ env.TEST_COMMIT_MESSAGE }}
+  delete-branch: false
+  GITHUB_TOKEN: "VERYSECRET"
+
+before:
+- shell: bash
+  env:
+    TEST_BODY: This PR tests no delete-branch functionality
+    TEST_BRANCH: test/pr-action-no-delete-branch
+    TEST_COMMIT_MESSAGE: >-
+      chore: Test no-delete-branch from action
+    TEST_COMMITTER_EMAIL: bot@example.com
+    TEST_COMMITTER_NAME: PR Bot
+    TEST_TITLE: Test PR without delete-branch
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    setup_test
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_no_delete_branch_output_log \
+        "${TEST_COMMITTER_NAME}" \
+        "${TEST_COMMITTER_EMAIL}" \
+        "${TEST_COMMIT_MESSAGE}" \
+        "${TEST_BRANCH}" \
+        "${TEST_TITLE}" \
+        "${TEST_BODY}"

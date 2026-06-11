@@ -25,8 +25,15 @@ PR_BODY="${PR_BODY}
 ${SIGNOFF}"
 
 git push --no-verify --set-upstream origin "$PR_BRANCH"
+
+DELETE_BRANCH_FLAG=()
+if [[ "$PR_DELETE_BRANCH" == "true" ]]; then
+    DELETE_BRANCH_FLAG=(--delete-branch)
+fi
+
 gh pr create \
   -B "$PR_BASE" \
   -H  "$PR_BRANCH" \
+  "${DELETE_BRANCH_FLAG[@]}" \
   --title "$PR_TITLE" \
   --body "$PR_BODY"
