@@ -30,6 +30,7 @@ CHANGELOG_PATH_GLOB = "changelogs/*.*.*.yaml"
 CHANGELOG_PATH_FMT = "changelogs/{version}.yaml"
 CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
 CHANGELOG_CURRENT_DIR_PATH = "changelogs/current"
+CHANGELOG_CURRENT_PLACEHOLDER = "PLACEHOLDER.txt"
 CHANGELOG_ENTRY_GLOB = "*/*.rst"
 CHANGELOG_CONFIG_PATH = "changelogs/changelogs.yaml"
 ENTRY_SEPARATOR = "__"
@@ -296,6 +297,10 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def current_dir_path(self) -> pathlib.Path:
         return self.project.path.joinpath(self.rel_current_dir_path)
 
+    @property
+    def current_placeholder_path(self) -> pathlib.Path:
+        return self.current_dir_path.joinpath(CHANGELOG_CURRENT_PLACEHOLDER)
+
     @cached_property
     def current_tpl(self) -> jinja2.Template:
         return jinja2.Template(CHANGELOG_CURRENT_TPL)
@@ -483,6 +488,9 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def write_current(self) -> None:
         if self.entries_layout:
             self.current_dir_path.mkdir(parents=True, exist_ok=True)
+            # Keep the directory tracked by version control when it
+            # otherwise contains no entries.
+            self.current_placeholder_path.touch()
         else:
             sections = {
                 k: v.get("description")
@@ -514,6 +522,9 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             version_file.write_text(self.dump_yaml(data))
             shutil.rmtree(self.current_dir_path)
             self.current_dir_path.mkdir()
+            # Keep the directory tracked by version control when it
+            # otherwise contains no entries.
+            self.current_placeholder_path.touch()
         else:
             version_file.write_text(
                 self.current_path.read_text())
