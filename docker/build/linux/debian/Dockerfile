@@ -83,8 +83,8 @@ FROM devtools-base AS mobile-base
 ARG ANDROID_CLI_TOOLS=https://dl.google.com/android/repository/commandlinetools-linux-7583922_latest.zip \
     ZULU_INSTALL_DEB=https://cdn.azul.com/zulu/bin/zulu-repo_1.0.0-3_all.deb
 ENV ANDROID_HOME=/.android/sdk \
-    ANDROID_NDK_HOME=/.android/sdk/ndk/26.3.11579264 \
-    ANDROID_NDK_VERSION=26.3.11579264 \
+    ANDROID_NDK_HOME=/.android/sdk/ndk/29.0.14206865 \
+    ANDROID_NDK_VERSION=29.0.14206865 \
     ANDROID_SDK_INSTALL_TARGET=/.android \
     ANDROID_SDK_ROOT=/.android/sdk
 RUN --mount=type=tmpfs,target=/var/cache/apt \
