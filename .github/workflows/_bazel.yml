@@ -251,12 +251,11 @@ jobs:
         cp "${LLVM_PREFIX}/include/c++/v1/__config_site" libcxx-darwin/include/
         cp -a "${LLVM_PREFIX}/lib/libc++"*.dylib libcxx-darwin/lib/
 
-        # Patch install names: @rpath/ -> /usr/lib/ so binaries use system libc++ at runtime
-        # llvm-install-name-tool is a Mach-O tool but works on Linux (it's in the LLVM distribution)
-        tar -xf llvm-macos.tar.xz "${LLVM_PREFIX}/bin/llvm-install-name-tool"
-        chmod +x "${LLVM_PREFIX}/bin/llvm-install-name-tool"
-        "${LLVM_PREFIX}/bin/llvm-install-name-tool" -id /usr/lib/libc++.1.dylib libcxx-darwin/lib/libc++.1.dylib
-        "${LLVM_PREFIX}/bin/llvm-install-name-tool" -id /usr/lib/libc++abi.dylib libcxx-darwin/lib/libc++abi.1.dylib
+        # Patch install names: @rpath/ -> /usr/lib/ so binaries use system libc++ at runtime.
+        # Use the Linux LLVM's llvm-install-name-tool (can edit Mach-O files cross-platform).
+        sudo apt-get -qq install -y llvm
+        llvm-install-name-tool -id /usr/lib/libc++.1.dylib libcxx-darwin/lib/libc++.1.dylib
+        llvm-install-name-tool -id /usr/lib/libc++abi.dylib libcxx-darwin/lib/libc++abi.1.dylib
 
         tar -cJf "libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz" -C libcxx-darwin .
 
