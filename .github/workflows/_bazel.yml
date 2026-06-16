@@ -180,6 +180,60 @@ jobs:
           //compile/test:cross_compile_aarch64_no_unwind_test
       working-directory: ${{ inputs.bazel-path }}
 
+  build-macos-sysroot:
+    if: inputs.action == 'build' && inputs.upload
+    runs-on: macos-14
+    name: Build macOS sysroot
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+    - name: Build macOS arm64 sysroot
+      run: bash bazel/sysroot/build_macos_sysroot_ci.sh
+    - name: Build darwin libcxx
+      run: |
+        LLVM_VERSION=18.1.8
+        SYSROOT=$(xcrun --show-sdk-path --sdk macosx)
+
+        # Download LLVM source
+        curl -L -o /tmp/llvm-source.tar.xz \
+          "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz"
+        mkdir -p /tmp/llvm-source
+        tar -xf /tmp/llvm-source.tar.xz -C /tmp/llvm-source --strip-components=1
+
+        # Build libc++ for darwin arm64
+        cmake -G Ninja -S /tmp/llvm-source/runtimes -B /tmp/libcxx-build \
+          -DCMAKE_C_COMPILER=$(xcrun -f clang) \
+          -DCMAKE_CXX_COMPILER=$(xcrun -f clang++) \
+          -DCMAKE_OSX_ARCHITECTURES=arm64 \
+          -DCMAKE_SYSROOT="$SYSROOT" \
+          -DCMAKE_INSTALL_PREFIX=/tmp/libcxx-install \
+          -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
+          -DLIBCXX_ENABLE_SHARED=ON \
+          -DLIBCXX_ENABLE_STATIC=OFF \
+          -DLIBCXXABI_ENABLE_SHARED=ON \
+          -DLIBCXXABI_ENABLE_STATIC=OFF \
+          -DLIBCXX_CXX_ABI=libcxxabi \
+          -DCMAKE_BUILD_TYPE=Release
+
+        ninja -C /tmp/libcxx-build install-cxx install-cxxabi
+
+        # Package
+        mkdir -p /tmp/libcxx-darwin/{include,lib}
+        cp /tmp/libcxx-install/include/c++/v1/__config_site /tmp/libcxx-darwin/include/
+        cp -a /tmp/libcxx-install/lib/libc++*.dylib /tmp/libcxx-darwin/lib/
+        tar -cJf libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz -C /tmp/libcxx-darwin .
+
+        SHA=$(shasum -a 256 libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz | cut -d' ' -f1)
+        echo "SHA256: $SHA"
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: macos-sysroot-artifacts
+        path: |
+          sysroot-macos-arm64.tar.xz
+          libcxx-llvm*-darwin-aarch64.tar.xz
+        retention-days: 30
+
   xcompile-arm-to-x86:
     if: inputs.action == 'test'
     runs-on: ubuntu-24.04-arm
