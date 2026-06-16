@@ -187,10 +187,9 @@ jobs:
     env:
       LLVM_VERSION: "18.1.8"
       LLVM_MAJOR: "18"
-      # Apple CLTools SDK package URL (from Apple's public software update catalog)
+      # yamllint disable-line rule:line-length
       SDK_PKG_URL: "https://swcdn.apple.com/content/downloads/52/01/082-41241-A_0747ZN8FHV/dectd075r63pppkkzsb75qk61s0lfee22j/CLTools_macOSNMOS_SDK.pkg"
       SDK_PKG_SHA256: "ba3453d62b3d2babf67f3a4a44e8073d6555c85f114856f4390a1f53bd76e24a"
-      # pkgutil: extracts macOS .pkg files on Linux
       PKGUTIL_URL: "https://github.com/cerisier/pkgutil/releases/download/v1.2.0/pkgutil_linux_amd64"
       PKGUTIL_SHA256: "3bcf79dbec6b7858ca0c1b6db03952ac122501a74073bac186c8080fcfb391fd"
       SDK_PREFIX: "Payload/Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk"
