@@ -180,10 +180,10 @@ jobs:
           //compile/test:cross_compile_aarch64_no_unwind_test
       working-directory: ${{ inputs.bazel-path }}
 
-  build-macos-artifacts:
+  package-macos-cross-libs:
     if: inputs.action == 'build' && inputs.upload
     runs-on: ubuntu-24.04
-    name: Build macOS cross-compilation artifacts
+    name: Package macOS cross-compilation libs
     env:
       LLVM_VERSION: "18.1.8"
       LLVM_MAJOR: "18"
@@ -196,7 +196,7 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
-    - name: Build macOS arm64 sysroot
+    - name: Extract macOS arm64 sysroot
       run: |
         set -euo pipefail
 
@@ -224,7 +224,7 @@ jobs:
 
         echo "Sysroot size: $(du -sh sysroot-macos-arm64.tar.xz | cut -f1)"
         sha256sum sysroot-macos-arm64.tar.xz
-    - name: Build darwin libcxx cross-compilation libs
+    - name: Extract darwin libcxx from LLVM release
       run: |
         set -euo pipefail
 
