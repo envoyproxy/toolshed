@@ -61,6 +61,15 @@ for f in SDKSettings.json SDKSettings.plist; do
     [[ -f "$SDK_PATH/$f" ]] && cp -a "$SDK_PATH/$f" "$SYSROOT/"
 done
 
+# Remove circular symlinks (e.g., Ruby.framework/Versions/2.6/Headers/ruby/ruby -> .)
+echo "Removing circular symlinks..."
+find "$SYSROOT" -type l | while read -r link; do
+    target=$(readlink "$link")
+    if [[ "$target" == "." || "$target" == ".." ]]; then
+        rm "$link"
+    fi
+done
+
 echo "Packaging sysroot..."
 tar -cJf "$OUTPUT" -C "$SYSROOT" .
 
