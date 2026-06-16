@@ -207,12 +207,13 @@ jobs:
           -DCMAKE_OSX_ARCHITECTURES=arm64 \
           -DCMAKE_SYSROOT="$SYSROOT" \
           -DCMAKE_INSTALL_PREFIX=/tmp/libcxx-install \
-          -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
+          -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
           -DLIBCXX_ENABLE_SHARED=ON \
           -DLIBCXX_ENABLE_STATIC=OFF \
           -DLIBCXXABI_ENABLE_SHARED=ON \
           -DLIBCXXABI_ENABLE_STATIC=OFF \
           -DLIBCXX_CXX_ABI=libcxxabi \
+          -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
           -DCMAKE_BUILD_TYPE=Release
 
         ninja -C /tmp/libcxx-build install-cxx install-cxxabi

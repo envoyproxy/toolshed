@@ -25,7 +25,6 @@ LLVM_SOURCE=""
 SYSROOT=""
 CLANG=""
 OUTPUT="libcxx-darwin-arm64.tar.xz"
-ARCH="arm64"
 
 usage() {
     echo "Usage: $0 [options]"
@@ -78,12 +77,13 @@ cmake -G Ninja -S "$LLVM_SOURCE/runtimes" -B "$BUILD_DIR" \
     -DCMAKE_OSX_ARCHITECTURES=arm64 \
     -DCMAKE_SYSROOT="$SYSROOT" \
     -DCMAKE_INSTALL_PREFIX="$INSTALL_DIR" \
-    -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi" \
+    -DLLVM_ENABLE_RUNTIMES="libcxx;libcxxabi;libunwind" \
     -DLIBCXX_ENABLE_SHARED=ON \
     -DLIBCXX_ENABLE_STATIC=OFF \
     -DLIBCXXABI_ENABLE_SHARED=ON \
     -DLIBCXXABI_ENABLE_STATIC=OFF \
     -DLIBCXX_CXX_ABI=libcxxabi \
+    -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
     -DLIBCXX_USE_COMPILER_RT=ON \
     -DLIBCXXABI_USE_COMPILER_RT=ON \
     -DCMAKE_BUILD_TYPE=Release

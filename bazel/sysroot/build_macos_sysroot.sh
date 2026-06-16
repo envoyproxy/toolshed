@@ -94,7 +94,7 @@ if [[ -d "$SDK_PATH/usr/lib" ]]; then
     mkdir -p "$SYSROOT/usr/lib"
     find "$SDK_PATH/usr/lib" -name "*.tbd" -exec cp --parents -a {} "$SYSROOT/" \; 2>/dev/null || \
     find "$SDK_PATH/usr/lib" -name "*.tbd" | while read -r f; do
-        rel="${f#$SDK_PATH/}"
+        rel="${f#"$SDK_PATH"/}"
         mkdir -p "$SYSROOT/$(dirname "$rel")"
         cp -a "$f" "$SYSROOT/$rel"
     done
@@ -121,7 +121,7 @@ if [[ -d "$FRAMEWORKS_DIR" ]]; then
         # Copy versioned .tbd files
         if [[ -d "$fw/Versions" ]]; then
             find "$fw/Versions" -name "*.tbd" | while read -r f; do
-                rel="${f#$SDK_PATH/}"
+                rel="${f#"$SDK_PATH"/}"
                 mkdir -p "$SYSROOT/$(dirname "$rel")"
                 cp -a "$f" "$SYSROOT/$rel"
             done
