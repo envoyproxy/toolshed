@@ -39,15 +39,14 @@ VERSIONS = {
         "x86_64": "50c7385dd1c17fd3606fa8850cfb1c7d0166ab109e404964f55abd6b508560eb",
     },
 
-    # Darwin libc++ cross-compilation libraries (built from LLVM source for macOS arm64)
-    # Contains include/__config_site and lib/libc++.dylib, lib/libc++abi.dylib
+    # Darwin libc++ for cross-compilation (extracted from LLVM macOS release)
     "libcxx_libs_darwin_sha256": {
-        "aarch64": "",  # TODO: populate after building and uploading tarball
+        "aarch64": "",
     },
 
-    # macOS SDK sysroot for cross-compilation (headers, frameworks, .tbd stubs)
+    # macOS SDK sysroot for cross-compilation (extracted from Apple CLTools)
     "macos_sysroot_sha256": {
-        "arm64": "",  # TODO: populate after building and uploading tarball
+        "arm64": "",
     },
 
     # Glint binary hashes by architecture
