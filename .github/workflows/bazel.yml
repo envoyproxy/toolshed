@@ -78,7 +78,7 @@ jobs:
           compile/tsan-llvm18.1.8-x86_64.tar.xz
           sysroot/sysroot-*.tar.xz
       # Note: macOS sysroot + darwin libcxx are built separately
-      # in the build-macos-sysroot job (runs on macos-14)
+      # in the build-macos-artifacts job (runs on Linux)
       bazel-args: >-
         --config=ci
         ${{ matrix.mode == 'bzlmod'

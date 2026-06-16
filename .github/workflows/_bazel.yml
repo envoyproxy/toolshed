@@ -202,12 +202,12 @@ jobs:
         set -euo pipefail
 
         # Download pkgutil (extracts macOS .pkg on Linux)
-        wget -q "$PKGUTIL_URL" -O pkgutil
+        wget "$PKGUTIL_URL" -O pkgutil
         echo "${PKGUTIL_SHA256}  pkgutil" | sha256sum -c -
         chmod +x pkgutil
 
         # Download Apple CLTools SDK package
-        wget -q "$SDK_PKG_URL" -O CLTools_macOSNMOS_SDK.pkg
+        wget --user-agent="Mozilla/5.0" "$SDK_PKG_URL" -O CLTools_macOSNMOS_SDK.pkg
         echo "${SDK_PKG_SHA256}  CLTools_macOSNMOS_SDK.pkg" | sha256sum -c -
 
         # Extract only the files we need from the SDK package
