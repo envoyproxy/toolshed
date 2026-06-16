@@ -252,12 +252,14 @@ jobs:
         cp -a "${LLVM_PREFIX}/lib/libc++"*.dylib libcxx-darwin/lib/
 
         # Patch install names: @rpath/ -> /usr/lib/ so binaries use system libc++ at runtime.
-        # Extract llvm-install-name-tool from the Linux LLVM release (works cross-platform on Mach-O).
+        # Extract llvm-objcopy from the Linux LLVM release — llvm-install-name-tool is a
+        # symlink to llvm-objcopy, which handles Mach-O files cross-platform.
         LINUX_LLVM_TARBALL="clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
         LINUX_LLVM_PREFIX="clang+llvm-${LLVM_VERSION}-x86_64-linux-gnu-ubuntu-18.04"
         wget -q "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LINUX_LLVM_TARBALL}" \
           -O llvm-linux.tar.xz
-        tar -xf llvm-linux.tar.xz "${LINUX_LLVM_PREFIX}/bin/llvm-install-name-tool"
+        tar -xf llvm-linux.tar.xz "${LINUX_LLVM_PREFIX}/bin/llvm-objcopy"
+        ln -s llvm-objcopy "${LINUX_LLVM_PREFIX}/bin/llvm-install-name-tool"
         "${LINUX_LLVM_PREFIX}/bin/llvm-install-name-tool" -id /usr/lib/libc++.1.dylib libcxx-darwin/lib/libc++.1.dylib
         "${LINUX_LLVM_PREFIX}/bin/llvm-install-name-tool" -id /usr/lib/libc++abi.dylib libcxx-darwin/lib/libc++abi.1.dylib
 
