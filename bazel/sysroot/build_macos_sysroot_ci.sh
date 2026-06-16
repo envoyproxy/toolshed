@@ -39,21 +39,13 @@ if [[ -d "$SDK_PATH/usr/lib" ]]; then
     done
 fi
 
-# Frameworks (headers + .tbd stubs)
-FRAMEWORKS_DIR="$SDK_PATH/System/Library/Frameworks"
-if [[ -d "$FRAMEWORKS_DIR" ]]; then
-    mkdir -p "$SYSROOT/System/Library/Frameworks"
-    for fw in "$FRAMEWORKS_DIR"/*.framework; do
-        fw_name=$(basename "$fw")
-        mkdir -p "$SYSROOT/System/Library/Frameworks/$fw_name"
-        # Copy the entire framework structure (Headers, Modules, .tbd, Versions/)
-        # preserving the layout so clang can find versioned headers.
-        find "$fw" \( -name "Headers" -type d -o -name "Modules" -type d -o -name "*.tbd" \) | while IFS= read -r item; do
-            rel="${item#"$SDK_PATH"/}"
-            mkdir -p "$(dirname "$SYSROOT/$rel")"
-            cp -a "$item" "$SYSROOT/$rel"
-        done
-    done
+# Frameworks — copy entire directory. SDK frameworks contain only headers,
+# modules, .tbd stubs, and symlinks (no large binaries). Preserving the
+# complete structure is essential because clang's framework header lookup
+# depends on symlinks like Headers -> Versions/Current/Headers.
+if [[ -d "$SDK_PATH/System/Library/Frameworks" ]]; then
+    mkdir -p "$SYSROOT/System/Library"
+    cp -a "$SDK_PATH/System/Library/Frameworks" "$SYSROOT/System/Library/"
 fi
 
 # SDK settings
