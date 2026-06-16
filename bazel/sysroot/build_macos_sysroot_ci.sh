@@ -48,14 +48,10 @@ if [[ -d "$FRAMEWORKS_DIR" ]]; then
         mkdir -p "$SYSROOT/System/Library/Frameworks/$fw_name"
         # Copy the entire framework structure (Headers, Modules, .tbd, Versions/)
         # preserving the layout so clang can find versioned headers.
-        find "$fw" \( -name "Headers" -type d -o -name "Modules" -type d -o -name "*.tbd" \) -print0 | while IFS= read -r -d '' item; do
+        find "$fw" \( -name "Headers" -type d -o -name "Modules" -type d -o -name "*.tbd" \) | while IFS= read -r item; do
             rel="${item#"$SDK_PATH"/}"
-            if [[ -d "$item" ]]; then
-                cp -a "$item" "$SYSROOT/$rel"
-            else
-                mkdir -p "$SYSROOT/$(dirname "$rel")"
-                cp -a "$item" "$SYSROOT/$rel"
-            fi
+            mkdir -p "$(dirname "$SYSROOT/$rel")"
+            cp -a "$item" "$SYSROOT/$rel"
         done
     done
 fi
