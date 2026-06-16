@@ -46,16 +46,17 @@ if [[ -d "$FRAMEWORKS_DIR" ]]; then
     for fw in "$FRAMEWORKS_DIR"/*.framework; do
         fw_name=$(basename "$fw")
         mkdir -p "$SYSROOT/System/Library/Frameworks/$fw_name"
-        [[ -d "$fw/Headers" ]] && cp -a "$fw/Headers" "$SYSROOT/System/Library/Frameworks/$fw_name/"
-        [[ -d "$fw/Modules" ]] && cp -a "$fw/Modules" "$SYSROOT/System/Library/Frameworks/$fw_name/"
-        find "$fw" -maxdepth 1 -name "*.tbd" -exec cp -a {} "$SYSROOT/System/Library/Frameworks/$fw_name/" \; 2>/dev/null || true
-        if [[ -d "$fw/Versions" ]]; then
-            find "$fw/Versions" -name "*.tbd" | while read -r f; do
-                rel="${f#"$SDK_PATH"/}"
+        # Copy the entire framework structure (Headers, Modules, .tbd, Versions/)
+        # preserving the layout so clang can find versioned headers.
+        find "$fw" \( -name "Headers" -type d -o -name "Modules" -type d -o -name "*.tbd" \) -print0 | while IFS= read -r -d '' item; do
+            rel="${item#"$SDK_PATH"/}"
+            if [[ -d "$item" ]]; then
+                cp -a "$item" "$SYSROOT/$rel"
+            else
                 mkdir -p "$SYSROOT/$(dirname "$rel")"
-                cp -a "$f" "$SYSROOT/$rel"
-            done
-        fi
+                cp -a "$item" "$SYSROOT/$rel"
+            fi
+        done
     done
 fi
 
