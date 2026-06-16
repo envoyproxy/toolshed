@@ -222,6 +222,12 @@ jobs:
         mkdir -p /tmp/libcxx-darwin/{include,lib}
         cp /tmp/libcxx-install/include/c++/v1/__config_site /tmp/libcxx-darwin/include/
         cp -a /tmp/libcxx-install/lib/libc++*.dylib /tmp/libcxx-darwin/lib/
+
+        # Patch install names so binaries link against /usr/lib/ (system libc++)
+        # instead of @rpath/ which requires LC_RPATH entries at runtime.
+        install_name_tool -id /usr/lib/libc++.1.dylib /tmp/libcxx-darwin/lib/libc++.1.dylib
+        install_name_tool -id /usr/lib/libc++abi.dylib /tmp/libcxx-darwin/lib/libc++abi.1.dylib
+
         tar -cJf libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz -C /tmp/libcxx-darwin .
 
         SHA=$(shasum -a 256 libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz | cut -d' ' -f1)
