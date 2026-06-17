@@ -180,6 +180,95 @@ jobs:
           //compile/test:cross_compile_aarch64_no_unwind_test
       working-directory: ${{ inputs.bazel-path }}
 
+  package-macos-cross-libs:
+    if: inputs.action == 'build' && inputs.upload
+    runs-on: ubuntu-24.04
+    name: Package macOS cross-compilation libs
+    env:
+      LLVM_VERSION: "18.1.8"
+      LLVM_MAJOR: "18"
+      SDK_PKG_URL: >-
+        https://swcdn.apple.com/content/downloads/52/01/082-41241-A_0747ZN8FHV/dectd075r63pppkkzsb75qk61s0lfee22j/CLTools_macOSNMOS_SDK.pkg
+      SDK_PKG_SHA256: "ba3453d62b3d2babf67f3a4a44e8073d6555c85f114856f4390a1f53bd76e24a"
+      PKGUTIL_URL: "https://github.com/cerisier/pkgutil/releases/download/v1.2.0/pkgutil_linux_amd64"
+      PKGUTIL_SHA256: "3bcf79dbec6b7858ca0c1b6db03952ac122501a74073bac186c8080fcfb391fd"
+      SDK_PREFIX: "Payload/Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk"
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+    - name: Extract macOS arm64 sysroot
+      run: |
+        set -euo pipefail
+
+        # Download pkgutil (extracts macOS .pkg on Linux)
+        wget "$PKGUTIL_URL" -O pkgutil
+        echo "${PKGUTIL_SHA256}  pkgutil" | sha256sum -c -
+        chmod +x pkgutil
+
+        # Download Apple CLTools SDK package
+        wget --user-agent="Mozilla/5.0" "$SDK_PKG_URL" -O CLTools_macOSNMOS_SDK.pkg
+        echo "${SDK_PKG_SHA256}  CLTools_macOSNMOS_SDK.pkg" | sha256sum -c -
+
+        # Extract only the files we need from the SDK package
+        mkdir -p out/macos_arm64
+        includes=()
+        while IFS=$'\n' read -r line; do
+          includes+=("--include" "${SDK_PREFIX}/${line}")
+        done < bazel/sysroot/manifests/sysroot-macos.txt
+        ./pkgutil "${includes[@]}" --strip-components 6 --expand-full CLTools_macOSNMOS_SDK.pkg out/macos_arm64
+
+        tar -cf sysroot-macos-arm64.tar -C out/ macos_arm64
+        zstd -T0 --long -10 --rm sysroot-macos-arm64.tar
+        # Also create .tar.xz for compatibility with existing toolshed patterns
+        tar -cJf sysroot-macos-arm64.tar.xz -C out/ macos_arm64
+
+        echo "Sysroot size: $(du -sh sysroot-macos-arm64.tar.xz | cut -f1)"
+        sha256sum sysroot-macos-arm64.tar.xz
+    - name: Extract darwin libcxx from LLVM release
+      run: |
+        set -euo pipefail
+
+        # Extract cxx-cross-libs from official LLVM macOS release (no cmake build needed)
+        # LLVM 18.x uses "clang+llvm-VER-arm64-apple-macosNN" naming
+        LLVM_TARBALL="clang+llvm-${LLVM_VERSION}-arm64-apple-macos11.tar.xz"
+        LLVM_PREFIX="clang+llvm-${LLVM_VERSION}-arm64-apple-macos11"
+
+        wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVM_TARBALL}" \
+          -O llvm-macos.tar.xz
+
+        # Extract only the files we need
+        tar -xf llvm-macos.tar.xz \
+          "${LLVM_PREFIX}/include/c++/v1/__config_site" \
+          "${LLVM_PREFIX}/lib/libc++.1.0.dylib" \
+          "${LLVM_PREFIX}/lib/libc++.1.dylib" \
+          "${LLVM_PREFIX}/lib/libc++.dylib" \
+          "${LLVM_PREFIX}/lib/libc++abi.1.0.dylib" \
+          "${LLVM_PREFIX}/lib/libc++abi.1.dylib" \
+          "${LLVM_PREFIX}/lib/libc++abi.dylib"
+
+        mkdir -p libcxx-darwin/{include,lib}
+        cp "${LLVM_PREFIX}/include/c++/v1/__config_site" libcxx-darwin/include/
+        cp -a "${LLVM_PREFIX}/lib/libc++"*.dylib libcxx-darwin/lib/
+
+        # Patch install names: @rpath/ -> /usr/lib/ so binaries use system libc++ at runtime.
+        # Use llvm-objcopy from the system (Ubuntu 24.04 has llvm-18 available).
+        sudo apt-get -qq update && sudo apt-get -qq install -y llvm-18
+        llvm-install-name-tool-18 -id /usr/lib/libc++.1.dylib libcxx-darwin/lib/libc++.1.dylib
+        llvm-install-name-tool-18 -id /usr/lib/libc++abi.dylib libcxx-darwin/lib/libc++abi.1.dylib
+
+        tar -cJf "libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz" -C libcxx-darwin .
+
+        echo "Libcxx size: $(du -sh "libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz" | cut -f1)"
+        sha256sum "libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz"
+    - name: Upload artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: macos-sysroot-artifacts
+        path: |
+          sysroot-macos-arm64.tar.xz
+          libcxx-llvm*-darwin-aarch64.tar.xz
+        retention-days: 30
+
   xcompile-arm-to-x86:
     if: inputs.action == 'test'
     runs-on: ubuntu-24.04-arm

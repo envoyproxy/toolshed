@@ -246,7 +246,33 @@ jobs:
                     "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
                   else "" end] as $sysroot_updates
               | $glint_updates + $sysroot_updates] as $arch_updates
-          | $bins_update + $san_updates + $arch_updates
+          | [
+             # macOS sysroot hash
+             ($shas["sysroot-macos-arm64.tar.xz"] // null) as $sha_entry
+             | if $sha_entry then
+                 ($sha_entry | split(":") | .[1]) as $new_sha
+                 | $current.macos_sysroot_sha256.arm64 as $cur
+                 | if $cur == $new_sha then ""
+                   elif ($cur | length) > 0 then
+                     "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+                   else
+                     "sed -i '0,/\"arm64\": \"\"/s//\"arm64\": \"\($new_sha)\"/' \($versions_file)"
+                   end
+               else "" end,
+             # darwin libcxx hash
+             ($shas["libcxx-llvm18.1.8-darwin-aarch64.tar.xz"] // null) as $sha_entry
+             | if $sha_entry then
+                 ($sha_entry | split(":") | .[1]) as $new_sha
+                 | $current.libcxx_libs_darwin_sha256.aarch64 as $cur
+                 | if $cur == $new_sha then ""
+                   elif ($cur | length) > 0 then
+                     "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+                   else
+                     "sed -i '0,/\"aarch64\": \"\"/s//\"aarch64\": \"\($new_sha)\"/' \($versions_file)"
+                   end
+               else "" end
+            ] as $macos_updates
+          | $bins_update + $san_updates + $arch_updates + $macos_updates
           | [flatten[]
              | select(. != "")]
           | join("\n")

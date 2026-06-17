@@ -156,6 +156,74 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
 
     return sha256
 
+_MACOS_SYSROOT_BUILD = """\
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "sysroot",
+    srcs = glob(
+        ["**"],
+        exclude = ["**/*:*"],
+    ),
+)
+"""
+
+def _macos_sysroot_impl(ctx):
+    """Implementation for macOS SDK sysroot repository rule."""
+    if ctx.os.name.startswith("mac"):
+        # On macOS, no cross-compilation sysroot needed.
+        ctx.file("BUILD.bazel", _MACOS_SYSROOT_BUILD)
+        return
+
+    sha256 = ctx.attr.sha256
+    if sha256:
+        url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-macos-{arch}.tar.xz".format(
+            version = ctx.attr.version,
+            arch = ctx.attr.arch,
+        )
+        ctx.download_and_extract(
+            url,
+            sha256 = sha256,
+        )
+    else:
+        # No hash available yet — create an empty sysroot.
+        ctx.execute(["mkdir", "-p", "usr/include"])
+
+    ctx.file("BUILD.bazel", _MACOS_SYSROOT_BUILD)
+
+macos_sysroot = repository_rule(
+    implementation = _macos_sysroot_impl,
+    attrs = {
+        "version": attr.string(
+            mandatory = True,
+            doc = "Release version to download",
+        ),
+        "sha256": attr.string(
+            default = "",
+            doc = "SHA256 hash of the macOS sysroot archive. Empty string skips download.",
+        ),
+        "arch": attr.string(
+            default = "arm64",
+            doc = "Architecture (arm64)",
+        ),
+    },
+    doc = "Downloads macOS SDK sysroot for cross-compilation from Linux",
+)
+
+def setup_macos_sysroot(version = None):
+    """Set up macOS arm64 sysroot for cross-compilation.
+
+    Creates @sysroot_macos_arm64 repository.
+    """
+    sha256 = VERSIONS.get("macos_sysroot_sha256", {}).get("arm64", "")
+    if "sysroot_macos_arm64" not in native.existing_rules():
+        macos_sysroot(
+            name = "sysroot_macos_arm64",
+            version = version or VERSIONS["bins_release"],
+            sha256 = sha256,
+            arch = "arm64",
+        )
+
 def setup_sysroots(
         version = None,
         glibc_version = "2.31",

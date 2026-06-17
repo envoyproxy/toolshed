@@ -39,6 +39,16 @@ VERSIONS = {
         "x86_64": "50c7385dd1c17fd3606fa8850cfb1c7d0166ab109e404964f55abd6b508560eb",
     },
 
+    # Darwin libc++ for cross-compilation (extracted from LLVM macOS release)
+    "libcxx_libs_darwin_sha256": {
+        "aarch64": "",
+    },
+
+    # macOS SDK sysroot for cross-compilation (extracted from Apple CLTools)
+    "macos_sysroot_sha256": {
+        "arm64": "",
+    },
+
     # Glint binary hashes by architecture
     "glint_sha256": {
         "amd64": "a9389398ba5719197f7c81e6a8127262095a1a5f1ea3a509f16c32bf4ee65719",
