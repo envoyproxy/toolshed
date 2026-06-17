@@ -47,7 +47,7 @@
   "dependencies": {
     "@actions/core": "^3.0.0",
     "@await/spawn": "^9.0.0",
-    "js-yaml": "^4.1.1",
+    "js-yaml": "^4.2.0",
     "tmp": "^0.2.6"
   }
 }
