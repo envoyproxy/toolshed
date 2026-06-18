@@ -361,10 +361,10 @@ async def test_abstract_changelogs_is_pending(patches, pending):
     assert "is_pending" not in changelogs.__dict__
 
 
-@pytest.mark.parametrize("is_dev", [True, False])
-async def test_abstract_changelogs_is_pending_entries_layout(patches, is_dev):
+@pytest.mark.parametrize("yaml_exists", [True, False])
+async def test_abstract_changelogs_is_pending_entries_layout(
+        patches, yaml_exists):
     project = MagicMock()
-    project.is_dev = is_dev
     changelogs = DummyChangelogs(project)
     patched = patches(
         "AChangelogs.__getitem__",
@@ -372,14 +372,22 @@ async def test_abstract_changelogs_is_pending_entries_layout(patches, is_dev):
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current",
          dict(new_callable=PropertyMock)),
+        "AChangelogs.changelog_path",
         prefix="envoy.base.utils.abstract.project.changelog")
 
-    with patched as (m_get, m_entries, m_current):
+    with patched as (m_get, m_entries, m_current, m_clog_path):
         m_entries.return_value = True
-        assert await changelogs.is_pending == is_dev
+        m_clog_path.return_value.exists.return_value = yaml_exists
+        assert await changelogs.is_pending == (not yaml_exists)
 
     assert not m_current.called
     assert not m_get.called
+    assert (
+        m_clog_path.call_args
+        == [(project.version, ), {}])
+    assert (
+        m_clog_path.return_value.exists.call_args
+        == [(), {}])
     assert "is_pending" not in changelogs.__dict__
 
 
@@ -690,7 +698,8 @@ def test_abstract_changelogs_blank_summary(patches):
      {i: (i % 2) for i in range(0, 10)}])
 def test_abstract_changelogs_changes_for_commit(
         patches, current, dev, items, entries_layout):
-    changelogs = DummyChangelogs("PROJECT")
+    project = MagicMock()
+    changelogs = DummyChangelogs(project)
     patched = patches(
         "any",
         "set",
@@ -743,6 +752,10 @@ def test_abstract_changelogs_changes_for_commit(
         assert (
             m_str.call_args
             == [(m_summary.return_value, ), {}])
+    if entries_layout:
+        # release is always in change (contains returns True for non-dev keys)
+        expected_add.append(m_rel.return_value)
+        expected_rel.append(project.version)
     assert (
         change.get.call_args
         == [("sync", {}), {}])
@@ -1237,22 +1250,30 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
 @pytest.mark.parametrize("pending", [True, False])
 async def test_abstract_changelogs_write_date(
         patches, pending, entries_layout):
-    changelogs = DummyChangelogs("PROJECT")
+    project = MagicMock()
+    changelogs = DummyChangelogs(project)
     patched = patches(
         "AChangelogs.__getitem__",
+        ("AChangelogs.changelog_class",
+         dict(new_callable=PropertyMock)),
         ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_dir_path",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current_path",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.is_pending",
          dict(new_callable=PropertyMock)),
+        "AChangelogs.changelog_path",
         "AChangelogs.dump_yaml",
+        "AChangelogs.validate_sections",
         prefix="envoy.base.utils.abstract.project.changelog")
     date = MagicMock()
 
-    with patched as (m_get, m_entries, m_current, m_path, m_pending, m_yaml):
+    with patched as (m_get, m_clogclass, m_entries, m_current, m_dir_path,
+                     m_path, m_pending, m_clog_path, m_yaml, m_validate):
         m_pending.side_effect = AsyncMock(return_value=pending)
         m_entries.return_value = entries_layout
         if not entries_layout:
@@ -1276,6 +1297,8 @@ async def test_abstract_changelogs_write_date(
         assert not m_get.called
         assert not m_path.called
         assert not m_yaml.called
+        assert not m_clog_path.called
+        assert not m_validate.called
         if not entries_layout:
             await m_get.return_value.data
         return
@@ -1283,7 +1306,26 @@ async def test_abstract_changelogs_write_date(
     if entries_layout:
         assert not m_path.called
         assert not m_get.called
-        assert not m_yaml.called
+        entries_data = (
+            m_clogclass.return_value.get_data_from_entries.return_value)
+        assert (
+            m_clogclass.return_value.get_data_from_entries.call_args
+            == [(m_dir_path.return_value, ), {}])
+        assert (
+            entries_data.__setitem__.call_args
+            == [("date", date), {}])
+        assert (
+            m_validate.call_args
+            == [(entries_data, ), {}])
+        assert (
+            m_clog_path.call_args
+            == [(project.version, ), {}])
+        assert (
+            m_clog_path.return_value.write_text.call_args
+            == [(m_yaml.return_value, ), {}])
+        assert (
+            m_yaml.call_args
+            == [(entries_data, ), {}])
     else:
         assert (
             m_get.call_args
@@ -1327,6 +1369,10 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
         entries_data = {}
         m_clogclass.return_value.get_data_from_entries.return_value = (
             entries_data)
+        if entries_layout and exists:
+            # Simulate yaml exists but with Pending date (DevError path)
+            m_clogclass.return_value.get_data.return_value = {
+                "date": "Pending"}
         if exists:
             with pytest.raises(exceptions.DevError) as e:
                 changelogs.write_version(version)
@@ -1345,6 +1391,12 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
             == f"Version file ({m_clog_path.return_value}) already exists")
         assert not m_clog_path.return_value.write_text.called
         assert not m_path.called
+        if entries_layout:
+            assert (
+                m_clogclass.return_value.get_data.call_args
+                == [(m_clog_path.return_value, ), {}])
+        else:
+            assert not m_clogclass.return_value.get_data.called
         return
     if entries_layout:
         assert (
@@ -1372,6 +1424,47 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
             m_path.return_value.read_text.call_args
             == [(), {}])
         assert not m_shutil.rmtree.called
+
+
+def test_abstract_changelogs_write_version_entries_layout_predated(patches):
+    """write_version tolerates a pre-existing dated yaml from write_date."""
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        "shutil",
+        ("AChangelogs.entries_layout",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.changelog_class",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_dir_path",
+         dict(new_callable=PropertyMock)),
+        ("AChangelogs.current_path",
+         dict(new_callable=PropertyMock)),
+        "AChangelogs.changelog_path",
+        prefix="envoy.base.utils.abstract.project.changelog")
+    version = MagicMock()
+
+    with patched as (m_shutil, m_entries, m_clogclass, m_dir_path,
+                     m_path, m_clog_path):
+        m_entries.return_value = True
+        m_clog_path.return_value.exists.return_value = True
+        m_clogclass.return_value.get_data.return_value = {
+            "date": "June 10, 2026"}
+        assert not changelogs.write_version(version)
+
+    assert (
+        m_clog_path.call_args
+        == [(version, ), {}])
+    assert (
+        m_clogclass.return_value.get_data.call_args
+        == [(m_clog_path.return_value, ), {}])
+    assert not m_clogclass.return_value.get_data_from_entries.called
+    assert not m_clog_path.return_value.write_text.called
+    assert (
+        m_shutil.rmtree.call_args
+        == [(m_dir_path.return_value, ), {}])
+    assert (
+        m_dir_path.return_value.mkdir.call_args
+        == [(), {}])
 
 
 def test_abstract_changelogs_write_version_entries_parse_error(patches):
@@ -1706,13 +1799,17 @@ def test_abstract_changelog__is_current(match):
     assert "_is_current" not in changelog.__dict__
 
 
+@pytest.mark.parametrize("yaml_exists", [True, False])
 @pytest.mark.parametrize("entries_layout", [True, False])
 @pytest.mark.parametrize("is_current", [True, False])
-async def test_abstract_changelog_data(patches, entries_layout, is_current):
+async def test_abstract_changelog_data(
+        patches, entries_layout, is_current, yaml_exists):
     project = MagicMock()
     project.execute = AsyncMock()
     project.changelogs.validate_sections.return_value = "VALIDATED"
     project.changelogs.entries_layout = entries_layout
+    project.changelogs.changelog_path.return_value.is_file.return_value = (
+        yaml_exists)
     changelog = DummyChangelog(project, "VERSION", "PATH")
     patched = patches(
         ("AChangelog._is_current",
@@ -1733,12 +1830,21 @@ async def test_abstract_changelog_data(patches, entries_layout, is_current):
                 abstract.AChangelog.data.cache_name)["data"])
 
     use_entries = is_current and entries_layout
-    if use_entries:
+    if use_entries and not yaml_exists:
         assert (
             project.execute.call_args
             == [(m_get_entries,
                  project.changelogs.current_dir_path), {}])
         assert not m_get.called
+    elif use_entries and yaml_exists:
+        assert (
+            project.execute.call_args
+            == [(m_get,
+                 project.changelogs.changelog_path.return_value), {}])
+        assert not m_get_entries.called
+        assert (
+            project.changelogs.changelog_path.call_args
+            == [("VERSION", ), {}])
     else:
         assert (
             project.execute.call_args
@@ -1814,17 +1920,103 @@ async def test_abstract_changelog_entries_layout_no_current_yaml(tmp_path):
     assert not changelogs.current_path.exists()
     assert (await current_changelog.data)["date"] == "Pending"
     assert await changelogs.is_pending
+
+    # write_date now freezes entries into changelogs/1.2.4.yaml
     assert not await changelogs.write_date("June 1, 2026")
     assert not changelogs.current_path.exists()
 
-    version = abstract.project.changelog._version.Version("1.2.3")
-    changelogs.write_version(version)
-    version_data = yaml.safe_load(
-        tmp_path.joinpath("changelogs/1.2.3.yaml").read_text())
-    assert version_data["date"] == changelogs.datestamp
+    version_yaml = tmp_path.joinpath("changelogs/1.2.4.yaml")
+    assert version_yaml.exists()
+    version_data = yaml.safe_load(version_yaml.read_text())
+    assert version_data["date"] == "June 1, 2026"
     assert (
         version_data["bug_fixes"]
         == [{"area": "jwt", "change": "Fixed jwt.\n"}])
+
+    # current/ entries are NOT removed by write_date
+    assert changelogs.current_dir_path.exists()
+    assert list(changelogs.current_dir_path.rglob("*.rst"))
+
+    # write_version for the old previous version (dev-flow path): creates yaml
+    # from entries and cleans up current/
+    version = abstract.project.changelog._version.Version("1.2.3")
+    changelogs.write_version(version)
+    old_version_data = yaml.safe_load(
+        tmp_path.joinpath("changelogs/1.2.3.yaml").read_text())
+    assert old_version_data["date"] == changelogs.datestamp
+    assert (
+        old_version_data["bug_fixes"]
+        == [{"area": "jwt", "change": "Fixed jwt.\n"}])
+    assert changelogs.current_dir_path.exists()
+    assert not list(changelogs.current_dir_path.rglob("*.rst"))
+
+
+async def test_abstract_changelog_release_flow_regression(tmp_path):
+    """write_version tolerates the dated yaml created by write_date.
+
+    Simulates the full release → dev cycle:
+    1.  write_date writes changelogs/{version}.yaml with the release date.
+    2.  write_version (next dev cycle) cleans up current/ without error.
+    """
+
+    class ConcreteChangelogs(DummyChangelogs):
+
+        @property
+        def changelog_class(self):
+            return DummyChangelog
+
+    current_dir = tmp_path.joinpath("changelogs/current/bug_fixes")
+    current_dir.mkdir(parents=True)
+    current_dir.joinpath("runtime__rtds_fix.rst").write_text(
+        "Fixed RTDS.\n")
+    tmp_path.joinpath("changelogs/changelogs.yaml").write_text(
+        "sections:\n"
+        "  bug_fixes:\n"
+        "    title: Bug fixes\n"
+        "areas:\n"
+        "  runtime:\n"
+        "    title: Runtime\n")
+
+    project = MagicMock()
+    project.path = tmp_path
+    project.version = abstract.project.changelog._version.Version("1.38.2-dev")
+
+    async def execute(func, *args):
+        return func(*args)
+
+    project.execute = AsyncMock(side_effect=execute)
+    changelogs = ConcreteChangelogs(project)
+    project.changelogs = changelogs
+
+    # Release flow: write_date creates changelogs/1.38.2.yaml with date
+    assert await changelogs.is_pending
+    await changelogs.write_date("June 10, 2026")
+
+    version_yaml = tmp_path.joinpath("changelogs/1.38.2.yaml")
+    assert version_yaml.exists()
+    version_data = yaml.safe_load(version_yaml.read_text())
+    assert version_data["date"] == "June 10, 2026"
+    assert (
+        version_data["bug_fixes"]
+        == [{"area": "runtime", "change": "Fixed RTDS.\n"}])
+
+    # current/ entries are still present (not cleaned up by write_date)
+    assert changelogs.current_dir_path.exists()
+    assert list(changelogs.current_dir_path.rglob("*.rst"))
+
+    # Docs build reads the correct date from the version yaml (not "Pending")
+    current_changelog = changelogs[changelogs.current]
+    assert (await current_changelog.data)["date"] == "June 10, 2026"
+
+    # Dev cycle: write_version tolerates existing yaml and cleans current/
+    release_version = abstract.project.changelog._version.Version("1.38.2")
+    changelogs.write_version(release_version)
+
+    # version yaml unchanged
+    assert version_yaml.exists()
+    assert yaml.safe_load(version_yaml.read_text())["date"] == "June 10, 2026"
+
+    # current/ wiped
     assert changelogs.current_dir_path.exists()
     assert not list(changelogs.current_dir_path.rglob("*.rst"))
 
