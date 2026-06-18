@@ -199,9 +199,16 @@ class AChangelog(metaclass=abstracts.Abstraction):
     async def data(self) -> typing.ChangelogDict:
         changelogs = self.project.changelogs
         if changelogs.entries_layout and self._is_current:
-            parsed = await self.project.execute(
-                self.get_data_from_entries,
-                changelogs.current_dir_path)
+            # Prefer the version yaml if write_date already froze the entries
+            # (release flow); fall back to reading live per-entry files.
+            version_yaml = changelogs.changelog_path(self.version)
+            if version_yaml.is_file():
+                parsed = await self.project.execute(
+                    self.get_data, version_yaml)
+            else:
+                parsed = await self.project.execute(
+                    self.get_data_from_entries,
+                    changelogs.current_dir_path)
         else:
             parsed = await self.project.execute(self.get_data, self.path)
         return changelogs.validate_sections(parsed, self.path)
@@ -311,7 +318,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     @async_property
     async def is_pending(self) -> bool:
         if self.entries_layout:
-            return self.project.is_dev
+            return not self.changelog_path(self.project.version).exists()
         return (
             await self[self.current].release_date
             == "Pending")
@@ -412,6 +419,8 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         if "dev" in change:
             changed.add(self.rel_changelog_path(change["dev"]["old_version"]))
             changed.add(str(self.summary_path))
+        if "release" in change and self.entries_layout:
+            changed.add(self.rel_changelog_path(self.project.version))
         changelog = change.get("sync", {}).get("changelog", {})
         for version, sync in changelog.items():
             if sync:
@@ -493,18 +502,46 @@ class AChangelogs(metaclass=abstracts.Abstraction):
                 self.current_tpl.render(sections=sections).lstrip())
 
     async def write_date(self, date: str) -> None:
+        """Write the release date to the current changelog.
+
+        For the legacy (non-entries) layout, updates the date field in
+        ``changelogs/current.yaml``.
+
+        For the entries layout, freezes the current per-entry files into
+        ``changelogs/{version}.yaml`` with the correct release date. The
+        per-entry directory is **not** removed here; that cleanup
+        happens in :meth:`write_version` during the following *dev*
+        cycle.  Writing the version file in the release commit ensures
+        that the git tag and any docs build from it see the correct date
+        rather than ``Pending``.
+        """
         if not await self.is_pending:
             raise exceptions.ReleaseError(
                 "Current changelog date is not set to `Pending`")
         if self.entries_layout:
-            return
+            data = self.changelog_class.get_data_from_entries(
+                self.current_dir_path)
+            data["date"] = date
+            self.validate_sections(data)
+            self.changelog_path(self.project.version).write_text(
+                self.dump_yaml(data))
         else:
             data = (await self[self.current].data).copy()
             data["date"] = date
             self.current_path.write_text(self.dump_yaml(data))
 
     def write_version(self, version: _version.Version) -> None:
-        if (version_file := self.changelog_path(version)).exists():
+        version_file = self.changelog_path(version)
+        if version_file.exists():
+            if self.entries_layout:
+                # write_date in the release flow already froze the entries
+                # into version_file with the correct date; just clean up
+                # the current entries dir here.
+                data = self.changelog_class.get_data(version_file)
+                if data.get("date", "Pending") != "Pending":
+                    shutil.rmtree(self.current_dir_path)
+                    self.current_dir_path.mkdir()
+                    return
             raise exceptions.DevError(
                 f"Version file ({version_file}) already exists")
         if self.entries_layout:
