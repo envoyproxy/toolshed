@@ -214,8 +214,10 @@ async def test_changelogstatus_dev_not_pending(
 
 
 @pytest.mark.parametrize("is_current", [True, False])
+@pytest.mark.parametrize("is_dev", [True, False])
 @pytest.mark.parametrize("exists", [True, False])
-def test_changelogstatus_duplicate_current(patches, is_current, exists):
+def test_changelogstatus_duplicate_current(
+        patches, is_current, is_dev, exists):
     status = check.AChangelogStatus(MagicMock(), MagicMock())
     patched = patches(
         ("AChangelogStatus.is_current",
@@ -228,15 +230,20 @@ def test_changelogstatus_duplicate_current(patches, is_current, exists):
 
     with patched as (m_current, m_project, m_version):
         m_current.return_value = is_current
+        m_project.return_value.is_dev = is_dev
         (m_project.return_value.changelogs
                   .changelog_path.return_value
                   .exists.return_value) = exists
         assert (
             status.duplicate_current
-            == (is_current and exists))
+            == (is_current and is_dev and exists))
 
     if not is_current:
         assert not m_project.called
+        assert not m_version.called
+        return
+    if not is_dev:
+        assert not m_project.return_value.changelogs.changelog_path.called
         assert not m_version.called
         return
     assert (
