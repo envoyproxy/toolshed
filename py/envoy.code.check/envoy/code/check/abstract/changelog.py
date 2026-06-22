@@ -224,6 +224,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
     def duplicate_current(self) -> bool:
         return (
             self.is_current
+            and self.project.is_dev
             and self.project.changelogs.changelog_path(
                 self.version).exists())
 
