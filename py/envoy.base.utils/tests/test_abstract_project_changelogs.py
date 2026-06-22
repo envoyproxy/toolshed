@@ -1194,6 +1194,7 @@ def test_abstract_changelogs_write_changelog(patches):
 def test_abstract_changelogs_write_current(iters, patches, entries_layout):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
+        "AChangelogs._write_current_placeholder",
         ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.current_dir_path",
@@ -1208,7 +1209,9 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
     sections = iters(dict, cb=lambda x: (f"K{x}", MagicMock()), count=10)
     sections["changes"] = MagicMock()
 
-    with patched as (m_entries, m_dir_path, m_path, m_tpl, m_sections):
+    with patched as patchy:
+        (m_placeholder, m_entries,
+         m_dir_path, m_path, m_tpl, m_sections) = patchy
         m_entries.return_value = entries_layout
         m_sections.return_value.items.return_value = sections.items()
         assert not changelogs.write_current()
@@ -1217,6 +1220,9 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
         assert (
             m_dir_path.return_value.mkdir.call_args
             == [(), dict(parents=True, exist_ok=True)])
+        assert (
+            m_placeholder.call_args
+            == [(), {}])
         assert not m_path.return_value.write_text.called
         assert not m_dir_path.return_value.__truediv__.called
         assert not m_tpl.called
@@ -1237,6 +1243,7 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
         assert (
             m_tpl.return_value.render.return_value.lstrip.call_args
             == [(), {}])
+        assert not m_placeholder.called
         for k, v in sections.items():
             if k == "changes":
                 assert not v.get.called
@@ -1244,6 +1251,26 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
                 assert (
                     v.get.call_args
                     == [("description", ), {}])
+
+
+def test_abstract_changelogs__write_current_placeholder(patches):
+    changelogs = DummyChangelogs("PROJECT")
+    patched = patches(
+        ("AChangelogs.current_dir_path",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.changelog")
+
+    with patched as (m_dir_path, ):
+        assert not changelogs._write_current_placeholder()
+
+    assert (
+        m_dir_path.return_value.joinpath.call_args
+        == [(
+            abstract.project.changelog.CHANGELOG_CURRENT_PLACEHOLDER, ),
+            {}])
+    assert (
+        m_dir_path.return_value.joinpath.return_value.write_text.call_args
+        == [("", ), {}])
 
 
 @pytest.mark.parametrize("entries_layout", [True, False])
@@ -1347,6 +1374,7 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "shutil",
+        "AChangelogs._write_current_placeholder",
         ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.changelog_class",
@@ -1362,8 +1390,9 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
         prefix="envoy.base.utils.abstract.project.changelog")
     version = MagicMock()
 
-    with patched as (m_shutil, m_entries, m_clogclass, m_dir_path,
-                     m_datestamp, m_path, m_clog_path, m_dump):
+    with patched as (
+            m_shutil, m_placeholder, m_entries, m_clogclass, m_dir_path,
+            m_datestamp, m_path, m_clog_path, m_dump):
         m_entries.return_value = entries_layout
         m_clog_path.return_value.exists.return_value = exists
         entries_data = {}
@@ -1397,6 +1426,7 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
                 == [(m_clog_path.return_value, ), {}])
         else:
             assert not m_clogclass.return_value.get_data.called
+        assert not m_placeholder.called
         return
     if entries_layout:
         assert (
@@ -1416,7 +1446,11 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
         assert (
             m_dir_path.return_value.mkdir.call_args
             == [(), {}])
+        assert (
+            m_placeholder.call_args
+            == [(), {}])
     else:
+        assert not m_placeholder.called
         assert (
             m_clog_path.return_value.write_text.call_args
             == [(m_path.return_value.read_text.return_value, ), {}])
@@ -1431,6 +1465,7 @@ def test_abstract_changelogs_write_version_entries_layout_predated(patches):
     changelogs = DummyChangelogs("PROJECT")
     patched = patches(
         "shutil",
+        "AChangelogs._write_current_placeholder",
         ("AChangelogs.entries_layout",
          dict(new_callable=PropertyMock)),
         ("AChangelogs.changelog_class",
@@ -1443,8 +1478,9 @@ def test_abstract_changelogs_write_version_entries_layout_predated(patches):
         prefix="envoy.base.utils.abstract.project.changelog")
     version = MagicMock()
 
-    with patched as (m_shutil, m_entries, m_clogclass, m_dir_path,
-                     m_path, m_clog_path):
+    with patched as (
+            m_shutil, m_placeholder, m_entries, m_clogclass, m_dir_path,
+            m_path, m_clog_path):
         m_entries.return_value = True
         m_clog_path.return_value.exists.return_value = True
         m_clogclass.return_value.get_data.return_value = {
@@ -1464,6 +1500,9 @@ def test_abstract_changelogs_write_version_entries_layout_predated(patches):
         == [(m_dir_path.return_value, ), {}])
     assert (
         m_dir_path.return_value.mkdir.call_args
+        == [(), {}])
+    assert (
+        m_placeholder.call_args
         == [(), {}])
 
 
@@ -1949,6 +1988,7 @@ async def test_abstract_changelog_entries_layout_no_current_yaml(tmp_path):
         == [{"area": "jwt", "change": "Fixed jwt.\n"}])
     assert changelogs.current_dir_path.exists()
     assert not list(changelogs.current_dir_path.rglob("*.rst"))
+    assert changelogs.current_dir_path.joinpath("PLACEHOLDER").is_file()
 
 
 async def test_abstract_changelog_release_flow_regression(tmp_path):
@@ -2019,6 +2059,7 @@ async def test_abstract_changelog_release_flow_regression(tmp_path):
     # current/ wiped
     assert changelogs.current_dir_path.exists()
     assert not list(changelogs.current_dir_path.rglob("*.rst"))
+    assert changelogs.current_dir_path.joinpath("PLACEHOLDER").is_file()
 
 
 async def test_abstract_changelog_release_date(patches):
