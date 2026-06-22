@@ -11,10 +11,10 @@ const run = async (): Promise<void> => {
     }
     const files = core.getInput('files')
     if (!files || files === '') return
-    const failEmpty = core.getInput('failEmpty')
+    const failEmpty = core.getBooleanInput('failEmpty')
     const format = core.getInput('format')
     const delimiter = core.getInput('delimiter')
-    const verbose = core.getInput('verbose')
+    const verbose = core.getBooleanInput('verbose')
     let parsedFiles
     if (format == 'json') {
       parsedFiles = JSON.parse(`${files}`)
@@ -28,15 +28,17 @@ const run = async (): Promise<void> => {
     )
     const stdout = await hashFiles(parsedFiles.join('\n'))
     if (!stdout && failEmpty) {
-      throw new Error(`hashfiles failure: No files matched ${parsedFiles.join(',')}`)
+      throw new Error(`No files matched ${parsedFiles.join(',')}`)
     }
     console.log(`Generated hash: ${stdout}`)
     core.setOutput('value', stdout)
   } catch (error) {
     if (error instanceof Error) {
       console.error(error.message)
+      core.setFailed(`hashfiles failure: ${error.message}`)
+      return
     }
-    core.setFailed(`hashfiles failure: ${error}`)
+    core.setFailed(`hashfiles failure: ${String(error)}`)
   }
 }
 
