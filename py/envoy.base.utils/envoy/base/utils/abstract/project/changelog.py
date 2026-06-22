@@ -30,6 +30,7 @@ CHANGELOG_PATH_GLOB = "changelogs/*.*.*.yaml"
 CHANGELOG_PATH_FMT = "changelogs/{version}.yaml"
 CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
 CHANGELOG_CURRENT_DIR_PATH = "changelogs/current"
+CHANGELOG_CURRENT_PLACEHOLDER = "PLACEHOLDER"
 CHANGELOG_ENTRY_GLOB = "*/*.rst"
 CHANGELOG_CONFIG_PATH = "changelogs/changelogs.yaml"
 ENTRY_SEPARATOR = "__"
@@ -489,9 +490,14 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     def write_changelog(self, version: _version.Version, text: str) -> None:
         self.changelog_path(version).write_text(text)
 
+    def _write_current_placeholder(self) -> None:
+        self.current_dir_path.joinpath(
+            CHANGELOG_CURRENT_PLACEHOLDER).write_text("")
+
     def write_current(self) -> None:
         if self.entries_layout:
             self.current_dir_path.mkdir(parents=True, exist_ok=True)
+            self._write_current_placeholder()
         else:
             sections = {
                 k: v.get("description")
@@ -541,6 +547,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
                 if data.get("date", "Pending") != "Pending":
                     shutil.rmtree(self.current_dir_path)
                     self.current_dir_path.mkdir()
+                    self._write_current_placeholder()
                     return
             raise exceptions.DevError(
                 f"Version file ({version_file}) already exists")
@@ -551,6 +558,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             version_file.write_text(self.dump_yaml(data))
             shutil.rmtree(self.current_dir_path)
             self.current_dir_path.mkdir()
+            self._write_current_placeholder()
         else:
             version_file.write_text(
                 self.current_path.read_text())
