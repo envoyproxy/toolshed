@@ -1209,8 +1209,8 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
     sections = iters(dict, cb=lambda x: (f"K{x}", MagicMock()), count=10)
     sections["changes"] = MagicMock()
 
-    with patched as (m_placeholder, m_entries, m_dir_path, m_path, m_tpl,
-                    m_sections):
+    with patched as (
+            m_placeholder, m_entries, m_dir_path, m_path, m_tpl, m_sections):
         m_entries.return_value = entries_layout
         m_sections.return_value.items.return_value = sections.items()
         assert not changelogs.write_current()
@@ -1389,8 +1389,9 @@ def test_abstract_changelogs_write_version(patches, exists, entries_layout):
         prefix="envoy.base.utils.abstract.project.changelog")
     version = MagicMock()
 
-    with patched as (m_shutil, m_placeholder, m_entries, m_clogclass, m_dir_path,
-                     m_datestamp, m_path, m_clog_path, m_dump):
+    with patched as (
+            m_shutil, m_placeholder, m_entries, m_clogclass, m_dir_path,
+            m_datestamp, m_path, m_clog_path, m_dump):
         m_entries.return_value = entries_layout
         m_clog_path.return_value.exists.return_value = exists
         entries_data = {}
@@ -1476,8 +1477,9 @@ def test_abstract_changelogs_write_version_entries_layout_predated(patches):
         prefix="envoy.base.utils.abstract.project.changelog")
     version = MagicMock()
 
-    with patched as (m_shutil, m_placeholder, m_entries, m_clogclass, m_dir_path,
-                     m_path, m_clog_path):
+    with patched as (
+            m_shutil, m_placeholder, m_entries, m_clogclass, m_dir_path,
+            m_path, m_clog_path):
         m_entries.return_value = True
         m_clog_path.return_value.exists.return_value = True
         m_clogclass.return_value.get_data.return_value = {
