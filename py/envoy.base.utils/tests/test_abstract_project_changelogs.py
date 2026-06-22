@@ -1227,7 +1227,6 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
         assert not m_tpl.called
         assert not m_sections.called
     else:
-        assert not m_placeholder.called
         assert (
             m_path.return_value.write_text.call_args
             == [(m_tpl.return_value.render.return_value.lstrip.return_value, ),
@@ -1243,6 +1242,7 @@ def test_abstract_changelogs_write_current(iters, patches, entries_layout):
         assert (
             m_tpl.return_value.render.return_value.lstrip.call_args
             == [(), {}])
+        assert not m_placeholder.called
         for k, v in sections.items():
             if k == "changes":
                 assert not v.get.called
