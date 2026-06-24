@@ -144,13 +144,13 @@ jobs:
         - bzlmod
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
     - name: Setup Bazel
       uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
     - name: RBE auth check
       id: rbe
       if: github.event_name == 'pull_request'
-      uses: envoyproxy/toolshed/actions/github/container/auth@f3c0acc8c3799305101f5669042b388edfb070c7
+      uses: envoyproxy/toolshed/actions/github/container/auth@5171ddd579f53dcef432bc54e16e2d2c90864968
       with:
         container: hello-world
     - name: Configure repo Bazel settings

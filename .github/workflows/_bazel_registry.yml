@@ -39,7 +39,7 @@ jobs:
     outputs:
       versions: ${{ steps.versions.outputs.value }}
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
     - uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       id: versions
       with:
@@ -61,7 +61,7 @@ jobs:
       matrix:
         version: ${{ fromJSON(needs.module.outputs.versions) }}
     steps:
-    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+    - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
     - uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       with:
         input: ${{ inputs.modules-root }}/modules/${{ inputs.module }}/${{ matrix.version }}/${{ inputs.source }}
