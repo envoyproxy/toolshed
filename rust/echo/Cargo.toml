@@ -16,7 +16,7 @@ async-trait = "^0.1.88"
 axum = { version = "=0.8.9", features = ["macros"] }
 axum-core = "^0.5.6"
 axum-server = { version = "^0.8.0", features = ["tls-rustls"] }
-bytes = "=1.11.1"
+bytes = "=1.12.0"
 clap = "^4.6.1"
 futures = "^0.3.32"
 futures-util = "^0.3.31"
@@ -43,7 +43,7 @@ toolshed-test = { path = "../test", optional = true }
 [dev-dependencies]
 libc = "^0.2.186"
 mio = "^1.2.1"
-mockall = "^0.14.0"
+mockall = "^0.15.0"
 scopeguard = "^1.2.0"
 serial_test = "^3.5.0"
 toolshed_runner = { path = "../runner", features = ["test"] }
