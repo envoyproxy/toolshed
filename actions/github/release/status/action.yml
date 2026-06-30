@@ -176,14 +176,13 @@ runs:
         if gh workflow run "$wf" --ref main --repo "$REPOSITORY"; then
           echo "::notice::Dispatched workflow '$wf' — publish will retry when it completes"
         else
-          echo "::warning::Could not dispatch workflow '$wf'" \
-            "(token may lack workflow:write, or no workflow_dispatch trigger)" \
-            "— manual retry required"
+          MSG_WARN="Could not dispatch workflow '$wf'"
+          MSG_WARN+=" (token may lack workflow:write, or no workflow_dispatch trigger)"
+          MSG_WARN+=" — manual retry required"
+          echo "::warning::${MSG_WARN}"
         fi
       done
 
-      DETAIL="${PROBLEMS[*]}"
-      # Join with ', ' using parameter expansion
       DETAIL=$(printf '%s, ' "${PROBLEMS[@]}")
       DETAIL="${DETAIL%, }"
       MSG="Cannot publish non-dev release ${RELEASE_NAME}-v${VERSION}"
