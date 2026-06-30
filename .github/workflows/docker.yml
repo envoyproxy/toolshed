@@ -153,6 +153,20 @@ jobs:
             exit 1
             ;;
         esac
+        case "${DEST}" in
+          (docker/echo/*)
+            case "${DEST}" in
+              (*..*|*//*)
+                echo "Invalid destination: ${DEST}"
+                exit 1
+                ;;
+            esac
+            ;;
+          (*)
+            echo "Invalid destination: ${DEST}"
+            exit 1
+            ;;
+        esac
         mkdir -p "$(dirname "${DEST}")"
         curl -fsSL "${ASSET_URL}" -o "${DEST}"
         curl -fsSL "${CHECKSUM_URL}" -o "${RUNNER_TEMP}/checksums.txt.asc"
