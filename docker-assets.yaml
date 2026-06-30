@@ -1,0 +1,21 @@
+# docker-assets.yaml
+#
+# Declares files that docker image builds pull from this repo's GitHub releases.
+# The docker CI workflow reads this file to download + verify assets instead of
+# rebuilding them from source.
+#
+# Template variables in `release-tag` and `asset` are substituted at workflow time:
+#   {bins-version}  - contents of BINS_VERSION.txt (without leading "v")
+#   {echo-version}  - version of the toolshed-echo binary (from rust/echo/Cargo.toml)
+#   {arch}          - the target docker architecture, e.g. amd64, arm64
+
+assets:
+  toolshed-echo:
+    release-tag: bins-v{bins-version}
+    repository: envoyproxy/toolshed
+    files:
+      - asset: echo-{echo-version}-{arch}
+        checksum-asset: checksums.txt.asc
+        dest: docker/echo/toolshed-echo
+        mode: "0755"
+        architectures: [amd64, arm64]

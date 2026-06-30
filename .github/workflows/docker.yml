@@ -32,7 +32,7 @@ jobs:
           - '.github/docker-manifests.yml'
           - 'docker/build/VERSION.txt'
           - 'BINS_VERSION.txt'
-          - 'rust/echo/**'
+          - 'docker-assets.yaml'
 
   build:
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
@@ -67,29 +67,6 @@ jobs:
         BINS_VERSION=$(cat ./BINS_VERSION.txt)
         echo "version=${BINS_VERSION}" >> $GITHUB_OUTPUT
 
-    - name: Install Rust toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6  # v1
-      with:
-        toolchain: stable
-
-    - name: Build echo binary
-      run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        sudo apt-get install -y musl-tools
-        rustup target add "${RUST_TARGET}"
-        # Set musl linker explicitly for both arches (native builds, musl-gcc wraps the host gcc)
-        CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
-        cargo build --release --target "${RUST_TARGET}" -p toolshed-echo
-      working-directory: rust
-      shell: bash
-
-    - name: Strip echo binary
-      run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        strip "rust/target/${RUST_TARGET}/release/toolshed-echo"
-      shell: bash
-
     - name: Build Docker image (debian-${{ matrix.arch }})
       run: |
         cd docker/build
@@ -106,16 +83,76 @@ jobs:
         echo "::endgroup::"
       shell: bash
 
-    - name: Build echo Docker image (${{ matrix.arch }})
+    - name: Get echo version
+      id: echo-version
+      shell: bash
       run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        ECHO_BIN="rust/target/${RUST_TARGET}/release/toolshed-echo"
+        ECHO_VER=$(grep '^version' rust/echo/Cargo.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+        echo "version=${ECHO_VER}" >> $GITHUB_OUTPUT
+
+    - name: Download and verify echo binary (${{ matrix.arch }})
+      env:
+        GH_TOKEN: ${{ github.token }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        ARCH=${{ matrix.arch }}
+        BINS_VER=${{ steps.bins-version.outputs.version }}
+        ECHO_VER=${{ steps.echo-version.outputs.version }}
+
+        # Resolve release tag — if BINS_VER ends in -dev, fall back to the latest
+        # published bins-v* release (not a pre-release) so PR CI remains verifiable.
+        RELEASE_TAG="bins-v${BINS_VER}"
+        if [[ "${BINS_VER}" == *-dev ]]; then
+          echo "NOTE: bins-version is a dev version (${BINS_VER}); resolving latest stable bins-v* release for CI verification..."
+          RELEASE_TAG=$(gh api /repos/envoyproxy/toolshed/releases \
+            --jq '[.[] | select(.prerelease == false) | select(.tag_name | startswith("bins-v"))] | sort_by(.tag_name) | last | .tag_name')
+          echo "Dev-version fallback: using release tag '${RELEASE_TAG}'"
+        fi
+
+        REPO="envoyproxy/toolshed"
+        ASSET="echo-${ECHO_VER}-${ARCH}"
+        CHECKSUM_ASSET="checksums.txt.asc"
+        DEST="docker/echo/toolshed-echo"
+        BASE_URL="https://github.com/${REPO}/releases/download/${RELEASE_TAG}"
+
+        echo "Downloading ${ASSET} from ${BASE_URL}..."
+        curl -fsSL "${BASE_URL}/${ASSET}" -o "${DEST}"
+        curl -fsSL "${BASE_URL}/${CHECKSUM_ASSET}" -o /tmp/checksums.txt.asc
+
+        # Extract sha256 checksums from the file (strip GPG armor if present)
+        if gpg --version &>/dev/null && gpg --list-keys &>/dev/null; then
+          CHECKSUMS=$(gpg --decrypt --output - /tmp/checksums.txt.asc 2>/dev/null || \
+            awk '/^-----BEGIN/,/^-----END/{next} /^$/{next} {print}' /tmp/checksums.txt.asc)
+        else
+          CHECKSUMS=$(awk '/^-----BEGIN/,/^-----END/{next} /^$/{next} {print}' /tmp/checksums.txt.asc)
+        fi
+
+        # Verify sha256 checksum
+        EXPECTED=$(echo "${CHECKSUMS}" | grep " ${ASSET}$" | awk '{print $1}')
+        if [[ -z "${EXPECTED}" ]]; then
+          echo "ERROR: No checksum entry found for '${ASSET}' in checksums file"
+          echo "Available entries:"
+          echo "${CHECKSUMS}" | grep -v '^$' || true
+          exit 1
+        fi
+        ACTUAL=$(sha256sum "${DEST}" | awk '{print $1}')
+        if [[ "${ACTUAL}" != "${EXPECTED}" ]]; then
+          echo "ERROR: sha256 mismatch for ${ASSET}"
+          echo "  expected: ${EXPECTED}"
+          echo "  actual:   ${ACTUAL}"
+          exit 1
+        fi
+        echo "✓ sha256 verified for ${ASSET}: ${ACTUAL}"
+        chmod 0755 "${DEST}"
+
+    - name: Build echo Docker image (${{ matrix.arch }})
+      shell: bash
+      run: |
         BINS_VER=v${{ steps.bins-version.outputs.version }}
         ARCH=${{ matrix.arch }}
         OCI_OUTPUT=docker/build/oci-output
         IMAGE_TAG=envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}
-        # Copy binary into build context
-        cp "${ECHO_BIN}" docker/echo/toolshed-echo
         # Save OCI tarball for publishing
         docker buildx build docker/echo \
           --build-arg ECHO_BIN=toolshed-echo \
@@ -131,7 +168,6 @@ jobs:
         echo "::group::Echo image"
         docker images | grep toolshed-echo || echo "No toolshed-echo image found"
         echo "::endgroup::"
-      shell: bash
 
     - name: Upload OCI artifacts
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
