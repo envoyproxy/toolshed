@@ -87,7 +87,7 @@ jobs:
       id: echo-version
       shell: bash
       run: |
-        ECHO_VER=$(grep '^version' rust/echo/Cargo.toml | head -1 | sed 's/.*= *"\(.*\)"/\1/')
+        ECHO_VER=$(grep -oP '(?<=^version = ")[^"]+' rust/echo/Cargo.toml | head -1)
         echo "version=${ECHO_VER}" >> $GITHUB_OUTPUT
 
     - name: Download and verify echo binary (${{ matrix.arch }})
@@ -106,7 +106,7 @@ jobs:
         if [[ "${BINS_VER}" == *-dev ]]; then
           echo "NOTE: bins-version is a dev version (${BINS_VER}); resolving latest stable bins-v* release for CI verification..."
           RELEASE_TAG=$(gh api /repos/envoyproxy/toolshed/releases \
-            --jq '[.[] | select(.prerelease == false) | select(.tag_name | startswith("bins-v"))] | sort_by(.tag_name) | last | .tag_name')
+            --jq '[.[] | select(.prerelease == false) | select(.tag_name | startswith("bins-v"))] | sort_by(.published_at) | last | .tag_name')
           echo "Dev-version fallback: using release tag '${RELEASE_TAG}'"
         fi
 
@@ -120,11 +120,15 @@ jobs:
         curl -fsSL "${BASE_URL}/${ASSET}" -o "${DEST}"
         curl -fsSL "${BASE_URL}/${CHECKSUM_ASSET}" -o /tmp/checksums.txt.asc
 
-        # Extract sha256 checksums from the file (strip GPG armor if present)
+        # Extract sha256 checksums from the file.
+        # NOTE: This verifies the sha256 checksum for integrity only.
+        # GPG signature validation (authenticity) is attempted first, but the primary
+        # gate is sha256sum. A missing or non-functional gpg does not bypass the check.
         if gpg --version &>/dev/null && gpg --list-keys &>/dev/null; then
           CHECKSUMS=$(gpg --decrypt --output - /tmp/checksums.txt.asc 2>/dev/null || \
             awk '/^-----BEGIN/,/^-----END/{next} /^$/{next} {print}' /tmp/checksums.txt.asc)
         else
+          # Strip PGP armor to get the raw sha256 lines (integrity check only, no GPG)
           CHECKSUMS=$(awk '/^-----BEGIN/,/^-----END/{next} /^$/{next} {print}' /tmp/checksums.txt.asc)
         fi
 
