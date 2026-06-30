@@ -31,8 +31,8 @@ jobs:
           - '.github/workflows/docker.yml'
           - '.github/docker-manifests.yml'
           - 'docker/build/VERSION.txt'
+          - 'docker-assets.yaml'
           - 'BINS_VERSION.txt'
-          - 'rust/echo/**'
 
   build:
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
@@ -62,33 +62,106 @@ jobs:
 
     - name: Get bins version
       id: bins-version
-      shell: bash
-      run: |
-        BINS_VERSION=$(cat ./BINS_VERSION.txt)
-        echo "version=${BINS_VERSION}" >> $GITHUB_OUTPUT
-
-    - name: Install Rust toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6  # v1
+      uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       with:
-        toolchain: stable
+        input: BINS_VERSION.txt
+        input-format: yaml-path
+        filter: |
+          . as $bins_version
+          | {
+              bins_version: $bins_version,
+              is_dev: (if ($bins_version | endswith("-dev")) then "true" else "false" end),
+              candidate_tag: "bins-v\($bins_version)"
+            }
 
-    - name: Build echo binary
-      run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        sudo apt-get install -y musl-tools
-        rustup target add "${RUST_TARGET}"
-        # Set musl linker explicitly for both arches (native builds, musl-gcc wraps the host gcc)
-        CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
-        cargo build --release --target "${RUST_TARGET}" -p toolshed-echo
-      working-directory: rust
-      shell: bash
+    - name: Get latest bins release
+      uses: envoyproxy/toolshed/actions/github/release/latest@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      id: latest-bins-release
+      if: ${{ fromJSON(steps.bins-version.outputs.value).is_dev == 'true' }}
+      with:
+        pattern: ^bins-
 
-    - name: Strip echo binary
-      run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        strip "rust/target/${RUST_TARGET}/release/toolshed-echo"
+    - name: Select echo release tag
+      id: release-tag
       shell: bash
+      env:
+        BINS_VER: ${{ fromJSON(steps.bins-version.outputs.value).bins_version }}
+        IS_DEV: ${{ fromJSON(steps.bins-version.outputs.value).is_dev }}
+        CANDIDATE_TAG: ${{ fromJSON(steps.bins-version.outputs.value).candidate_tag }}
+        LATEST_BINS_TAG: ${{ steps.latest-bins-release.outputs.tag }}
+      run: |
+        if [[ "${IS_DEV}" == "true" ]]; then
+          RELEASE_TAG="${LATEST_BINS_TAG}"
+          echo "NOTE: bins-version is dev (${BINS_VER}); using fallback release '${RELEASE_TAG}'"
+        else
+          RELEASE_TAG="${CANDIDATE_TAG}"
+        fi
+        echo "tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+
+    - name: Get cargo metadata for echo
+      id: cargo-meta
+      shell: bash
+      working-directory: rust/echo
+      run: |
+        cargo metadata --no-deps --format-version=1 > "${RUNNER_TEMP}/echo-cargo-metadata.json"
+        echo "path=${RUNNER_TEMP}/echo-cargo-metadata.json" >> $GITHUB_OUTPUT
+
+    - name: Get echo version
+      id: echo-version
+      uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      with:
+        input: ${{ steps.cargo-meta.outputs.path }}
+        input-format: json-path
+        options: -r
+        filter: .packages[0].version
+
+    - name: Get echo asset information (${{ matrix.arch }})
+      id: echo-asset
+      uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      with:
+        input: docker-assets.yaml
+        input-format: yaml-path
+        filter: |
+          .assets["toolshed-echo"]
+          | .repository as $repo
+          | .files[]
+          | select(.architectures | index("${{ matrix.arch }}"))
+          | (.asset
+             | gsub("\\{echo-version\\}"; "${{ steps.echo-version.outputs.value }}")
+             | gsub("\\{arch\\}"; "${{ matrix.arch }}")) as $asset_name
+          | {
+              url: "https://github.com/\($repo)/releases/download/${{ steps.release-tag.outputs.tag }}/\($asset_name)",
+              checksum_url: "https://github.com/\($repo)/releases/download/${{ steps.release-tag.outputs.tag }}/\(.["checksum-asset"])",
+              dest: .dest,
+              mode: .mode,
+              asset: $asset_name
+            }
+
+    - name: Download and verify echo binary (${{ matrix.arch }})
+      shell: bash
+      env:
+        ASSET_URL: ${{ fromJSON(steps.echo-asset.outputs.value).url }}
+        CHECKSUM_URL: ${{ fromJSON(steps.echo-asset.outputs.value).checksum_url }}
+        DEST: ${{ fromJSON(steps.echo-asset.outputs.value).dest }}
+        MODE: ${{ fromJSON(steps.echo-asset.outputs.value).mode }}
+        ASSET_NAME: ${{ fromJSON(steps.echo-asset.outputs.value).asset }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$(dirname "${DEST}")"
+        curl -fsSL "${ASSET_URL}" -o "${DEST}"
+        curl -fsSL "${CHECKSUM_URL}" -o "${RUNNER_TEMP}/checksums.txt.asc"
+        sed -n '/^-----BEGIN PGP SIGNED MESSAGE-----/,/^-----BEGIN PGP SIGNATURE-----/p' \
+          "${RUNNER_TEMP}/checksums.txt.asc" \
+          | sed '1,/^$/d' \
+          | sed '/^-----BEGIN PGP SIGNATURE-----/,$d' \
+          > "${RUNNER_TEMP}/checksums.txt"
+        (
+          cd "$(dirname "${DEST}")" && \
+          grep " ${ASSET_NAME}\$" "${RUNNER_TEMP}/checksums.txt" \
+          | sed "s| ${ASSET_NAME}\$| $(basename "${DEST}")|" \
+          | sha256sum -c -
+        )
+        chmod "${MODE}" "${DEST}"
 
     - name: Build Docker image (debian-${{ matrix.arch }})
       run: |
@@ -108,14 +181,10 @@ jobs:
 
     - name: Build echo Docker image (${{ matrix.arch }})
       run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        ECHO_BIN="rust/target/${RUST_TARGET}/release/toolshed-echo"
-        BINS_VER=v${{ steps.bins-version.outputs.version }}
+        BINS_VER=v${{ fromJSON(steps.bins-version.outputs.value).bins_version }}
         ARCH=${{ matrix.arch }}
         OCI_OUTPUT=docker/build/oci-output
         IMAGE_TAG=envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}
-        # Copy binary into build context
-        cp "${ECHO_BIN}" docker/echo/toolshed-echo
         # Save OCI tarball for publishing
         docker buildx build docker/echo \
           --build-arg ECHO_BIN=toolshed-echo \
@@ -169,7 +238,7 @@ jobs:
     - name: Test echo Docker image (HTTP)
       run: |
         ARCH=${{ matrix.arch }}
-        BINS_VER=v${{ steps.bins-version.outputs.version }}
+        BINS_VER=v${{ fromJSON(steps.bins-version.outputs.value).bins_version }}
         IMAGE_TAG="envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}"
         echo "Testing echo image: $IMAGE_TAG"
         docker run -d --name toolshed-echo-test -p 18787:8787 "${IMAGE_TAG}"
@@ -196,7 +265,7 @@ jobs:
     - name: Test echo Docker image (HTTPS)
       run: |
         ARCH=${{ matrix.arch }}
-        BINS_VER=v${{ steps.bins-version.outputs.version }}
+        BINS_VER=v${{ fromJSON(steps.bins-version.outputs.value).bins_version }}
         IMAGE_TAG="envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}"
         CERT=$(pwd)/rust/echo/snakeoil/tls.cert
         KEY=$(pwd)/rust/echo/snakeoil/tls.key

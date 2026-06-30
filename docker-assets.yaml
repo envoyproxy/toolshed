@@ -1,0 +1,12 @@
+assets:
+  toolshed-echo:
+    repository: envoyproxy/toolshed
+    release-tag: bins-v{bins-version}
+    files:
+    - asset: echo-{echo-version}-{arch}
+      checksum-asset: checksums.txt.asc
+      dest: docker/echo/toolshed-echo
+      mode: "0755"
+      architectures:
+      - amd64
+      - arm64
