@@ -288,6 +288,84 @@ jobs:
         git add bazel/MODULE.bazel
         git diff --cached bazel/MODULE.bazel
 
+    # DOCKER ONLY
+    - name: Get latest bins release (for docker)
+      uses: envoyproxy/toolshed/actions/github/release/latest@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      id: docker-bins-version
+      if: >-
+        inputs.type == 'docker'
+        && inputs.action != 'release-no-prepare'
+      with:
+        pattern: ^bins-
+    - name: Get SHAs for latest bins release (for docker)
+      uses: envoyproxy/toolshed/actions/github/release/shas@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      id: docker-bins-shas
+      if: >-
+        inputs.type == 'docker'
+        && inputs.action != 'release-no-prepare'
+      with:
+        tag: ${{ steps.docker-bins-version.outputs.tag }}
+    - name: Get echo version from Cargo.toml (for docker)
+      id: docker-echo-version
+      if: >-
+        inputs.type == 'docker'
+        && inputs.action != 'release-no-prepare'
+      shell: bash
+      run: |
+        VERSION=$(yq '.package.version' rust/echo/Cargo.toml)
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+    - name: Get current docker asset state (for docker)
+      id: docker-current
+      if: >-
+        inputs.type == 'docker'
+        && inputs.action != 'release-no-prepare'
+      uses: envoyproxy/toolshed/actions/bson@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      with:
+        input: |
+          OUTPUT=$(yq -o=json '.assets["toolshed-echo"]' docker-assets.yaml)
+        input-format: text
+        filter: bash::output
+        options: -sRr
+    - name: Update docker-assets.yaml (for docker)
+      id: docker-updates
+      if: >-
+        inputs.type == 'docker'
+        && inputs.action != 'release-no-prepare'
+      uses: envoyproxy/toolshed/actions/bson@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      with:
+        input: |
+          bins_latest: ${{ steps.docker-bins-version.outputs.tag }}
+          echo_version: ${{ steps.docker-echo-version.outputs.version }}
+          current: ${{ steps.docker-current.outputs.output }}
+          shas: ${{ steps.docker-bins-shas.outputs.shas }}
+        input-format: yaml
+        filter: |
+          .bins_latest as $bins_latest
+          | .echo_version as $echo_version
+          | .current as $current
+          | .shas as $shas
+          | (($shas["echo-\($echo_version)-amd64"]
+             // error("No SHA found for echo-\($echo_version)-amd64 in \($bins_latest)"))
+             | split(":") | .[1]) as $sha_amd64
+          | (($shas["echo-\($echo_version)-arm64"]
+             // error("No SHA found for echo-\($echo_version)-arm64 in \($bins_latest)"))
+             | split(":") | .[1]) as $sha_arm64
+          | (if $current["release-tag"] != $bins_latest then
+               ["yq -i '.assets[\"toolshed-echo\"][\"release-tag\"] = \"\($bins_latest)\"' docker-assets.yaml"]
+             else [] end) as $tag_update
+          | (if $current.version != $echo_version then
+               ["yq -i '.assets[\"toolshed-echo\"].version = \"\($echo_version)\"' docker-assets.yaml"]
+             else [] end) as $version_update
+          | (if $current.sha256.amd64 != $sha_amd64 then
+               ["yq -i '.assets[\"toolshed-echo\"].sha256.amd64 = \"\($sha_amd64)\"' docker-assets.yaml"]
+             else [] end) as $amd64_update
+          | (if $current.sha256.arm64 != $sha_arm64 then
+               ["yq -i '.assets[\"toolshed-echo\"].sha256.arm64 = \"\($sha_arm64)\"' docker-assets.yaml"]
+             else [] end) as $arm64_update
+          | $tag_update + $version_update + $amd64_update + $arm64_update
+          | [.[] | select(. != "")]
+          | join("\n")
+
     # PYTHON ONLY
     - name: Get python package versions
       id: python-versions

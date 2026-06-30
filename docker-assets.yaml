@@ -1,0 +1,7 @@
+assets:
+  toolshed-echo:
+    release-tag: bins-v0.1.57
+    version: 0.1.0
+    sha256:
+      amd64: ""
+      arm64: ""

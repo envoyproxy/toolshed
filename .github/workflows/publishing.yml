@@ -36,6 +36,7 @@ jobs:
           - BINS_VERSION.txt
           - actions/VERSION.txt
           - docker/build/VERSION.txt
+          - docker-assets.yaml
           - python/VERSION.txt
     - name: Get latest commit from main
       id: commit

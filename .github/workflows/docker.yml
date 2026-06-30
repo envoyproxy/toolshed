@@ -31,8 +31,7 @@ jobs:
           - '.github/workflows/docker.yml'
           - '.github/docker-manifests.yml'
           - 'docker/build/VERSION.txt'
-          - 'BINS_VERSION.txt'
-          - 'rust/echo/**'
+          - 'docker-assets.yaml'
 
   build:
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
@@ -60,35 +59,30 @@ jobs:
         TAG_VERSION=$(cat ./docker/build/VERSION.txt)
         echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
-    - name: Get bins version
-      id: bins-version
+    - name: Get echo asset info (${{ matrix.arch }})
+      id: echo-asset
       shell: bash
       run: |
-        BINS_VERSION=$(cat ./BINS_VERSION.txt)
-        echo "version=${BINS_VERSION}" >> $GITHUB_OUTPUT
+        RELEASE_TAG=$(yq '.assets["toolshed-echo"]["release-tag"]' docker-assets.yaml)
+        VERSION=$(yq '.assets["toolshed-echo"].version' docker-assets.yaml)
+        ARCH=${{ matrix.arch }}
+        SHA256=$(yq ".assets[\"toolshed-echo\"].sha256.${ARCH}" docker-assets.yaml)
+        echo "release-tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+        echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
 
-    - name: Install Rust toolchain
-      uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6  # v1
-      with:
-        toolchain: stable
-
-    - name: Build echo binary
-      run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        sudo apt-get install -y musl-tools
-        rustup target add "${RUST_TARGET}"
-        # Set musl linker explicitly for both arches (native builds, musl-gcc wraps the host gcc)
-        CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
-        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
-        cargo build --release --target "${RUST_TARGET}" -p toolshed-echo
-      working-directory: rust
+    - name: Download and verify echo binary (${{ matrix.arch }})
       shell: bash
-
-    - name: Strip echo binary
       run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        strip "rust/target/${RUST_TARGET}/release/toolshed-echo"
-      shell: bash
+        RELEASE_TAG="${{ steps.echo-asset.outputs.release-tag }}"
+        VERSION="${{ steps.echo-asset.outputs.version }}"
+        SHA256="${{ steps.echo-asset.outputs.sha256 }}"
+        ARCH=${{ matrix.arch }}
+        URL="https://github.com/envoyproxy/toolshed/releases/download/${RELEASE_TAG}/echo-${VERSION}-${ARCH}"
+        echo "Downloading ${URL}"
+        curl -fsSL "${URL}" -o docker/echo/toolshed-echo
+        echo "${SHA256}  docker/echo/toolshed-echo" | sha256sum -c -
+        chmod +x docker/echo/toolshed-echo
 
     - name: Build Docker image (debian-${{ matrix.arch }})
       run: |
@@ -108,19 +102,15 @@ jobs:
 
     - name: Build echo Docker image (${{ matrix.arch }})
       run: |
-        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
-        ECHO_BIN="rust/target/${RUST_TARGET}/release/toolshed-echo"
-        BINS_VER=v${{ steps.bins-version.outputs.version }}
+        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
         ARCH=${{ matrix.arch }}
         OCI_OUTPUT=docker/build/oci-output
-        IMAGE_TAG=envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}
-        # Copy binary into build context
-        cp "${ECHO_BIN}" docker/echo/toolshed-echo
+        IMAGE_TAG=envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}
         # Save OCI tarball for publishing
         docker buildx build docker/echo \
           --build-arg ECHO_BIN=toolshed-echo \
           --platform linux/${ARCH} \
-          --output "type=oci,dest=${OCI_OUTPUT}/toolshed-echo-${BINS_VER}-${ARCH}.tar"
+          --output "type=oci,dest=${OCI_OUTPUT}/toolshed-echo-v${ECHO_VER}-${ARCH}.tar"
         # Load into daemon for smoke-testing
         docker buildx build docker/echo \
           --build-arg ECHO_BIN=toolshed-echo \
@@ -169,8 +159,8 @@ jobs:
     - name: Test echo Docker image (HTTP)
       run: |
         ARCH=${{ matrix.arch }}
-        BINS_VER=v${{ steps.bins-version.outputs.version }}
-        IMAGE_TAG="envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}"
+        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
+        IMAGE_TAG="envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}"
         echo "Testing echo image: $IMAGE_TAG"
         docker run -d --name toolshed-echo-test -p 18787:8787 "${IMAGE_TAG}"
         # Wait for server to start
@@ -196,8 +186,8 @@ jobs:
     - name: Test echo Docker image (HTTPS)
       run: |
         ARCH=${{ matrix.arch }}
-        BINS_VER=v${{ steps.bins-version.outputs.version }}
-        IMAGE_TAG="envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}"
+        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
+        IMAGE_TAG="envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}"
         CERT=$(pwd)/rust/echo/snakeoil/tls.cert
         KEY=$(pwd)/rust/echo/snakeoil/tls.key
         echo "Testing echo image TLS: $IMAGE_TAG"

@@ -225,12 +225,12 @@ jobs:
         TAG_VERSION=$(cat ./docker/build/VERSION.txt)
         echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
-    - name: Get bins version
-      id: bins-version
+    - name: Get echo version
+      id: echo-version
       shell: bash
       run: |
-        BINS_VERSION=$(cat ./BINS_VERSION.txt)
-        echo "version=${BINS_VERSION}" >> $GITHUB_OUTPUT
+        ECHO_VER=$(yq '.assets["toolshed-echo"].version' docker-assets.yaml)
+        echo "version=${ECHO_VER}" >> $GITHUB_OUTPUT
 
     - name: Generate manifest configuration
       id: manifest-config
@@ -244,16 +244,16 @@ jobs:
               tag: (
                 .tag
                 | gsub("{version}"; "${{ steps.docker-version.outputs.version }}")
-                | gsub("{bins-version}"; "${{ steps.bins-version.outputs.version }}")),
+                | gsub("{echo-version}"; "${{ steps.echo-version.outputs.version }}")),
               "artifact-pattern": (
                 .["artifact-pattern"]
                 | gsub("{version}"; "${{ steps.docker-version.outputs.version }}")
-                | gsub("{bins-version}"; "${{ steps.bins-version.outputs.version }}")),
+                | gsub("{echo-version}"; "${{ steps.echo-version.outputs.version }}")),
               "additional-tags": (
                 if .["additional-tags"] then
                   .["additional-tags"]
                   | map(gsub("{version}"; "${{ steps.docker-version.outputs.version }}")
-                  | gsub("{bins-version}"; "${{ steps.bins-version.outputs.version }}"))
+                  | gsub("{echo-version}"; "${{ steps.echo-version.outputs.version }}"))
                 else null end)
             })
           | {manifests: .}
