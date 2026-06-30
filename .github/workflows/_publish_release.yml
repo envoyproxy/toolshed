@@ -225,6 +225,13 @@ jobs:
         TAG_VERSION=$(cat ./docker/build/VERSION.txt)
         echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
+    - name: Get echo version
+      id: echo-version
+      shell: bash
+      run: |
+        ECHO_VER=$(yq '.assets["toolshed-echo"].version' docker-assets.yaml)
+        echo "version=${ECHO_VER}" >> $GITHUB_OUTPUT
+
     - name: Generate manifest configuration
       id: manifest-config
       uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
@@ -234,11 +241,20 @@ jobs:
         filter: >-
           .manifests
           | map(. + {
-              tag: (.tag | gsub("{version}"; "${{ steps.docker-version.outputs.version }}")),
-              "artifact-pattern": (.["artifact-pattern"] | gsub("{version}"; "${{ steps.docker-version.outputs.version }}")),
-              "additional-tags": (if .["additional-tags"] then
-              .["additional-tags"] | map(gsub("{version}"; "${{ steps.docker-version.outputs.version }}"))
-              else null end)
+              tag: (
+                .tag
+                | gsub("{version}"; "${{ steps.docker-version.outputs.version }}")
+                | gsub("{echo-version}"; "${{ steps.echo-version.outputs.version }}")),
+              "artifact-pattern": (
+                .["artifact-pattern"]
+                | gsub("{version}"; "${{ steps.docker-version.outputs.version }}")
+                | gsub("{echo-version}"; "${{ steps.echo-version.outputs.version }}")),
+              "additional-tags": (
+                if .["additional-tags"] then
+                  .["additional-tags"]
+                  | map(gsub("{version}"; "${{ steps.docker-version.outputs.version }}")
+                  | gsub("{echo-version}"; "${{ steps.echo-version.outputs.version }}"))
+                else null end)
             })
           | {manifests: .}
 

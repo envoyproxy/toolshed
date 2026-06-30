@@ -27,9 +27,12 @@ jobs:
         config: |
           paths:
           - 'docker/build/**'
+          - 'docker/echo/**'
           - '.github/workflows/docker.yml'
           - '.github/docker-manifests.yml'
           - 'docker/build/VERSION.txt'
+          - 'docker-assets.yaml'
+          - 'BINS_VERSION.txt'
 
   build:
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
@@ -57,6 +60,154 @@ jobs:
         TAG_VERSION=$(cat ./docker/build/VERSION.txt)
         echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
+    - name: Get bins version
+      id: bins-version
+      uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      with:
+        input: BINS_VERSION.txt
+        input-format: yaml-path
+        filter: |
+          . as $bins_version
+          | {
+              bins_version: $bins_version,
+              is_dev: (if ($bins_version | endswith("-dev")) then "true" else "false" end),
+              candidate_tag: "bins-v\($bins_version)"
+            }
+
+    - name: Get latest bins release
+      uses: envoyproxy/toolshed/actions/github/release/latest@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      id: latest-bins-release
+      if: ${{ fromJSON(steps.bins-version.outputs.value).is_dev == 'true' }}
+      with:
+        pattern: ^bins-
+
+    - name: Select echo release tag
+      id: release-tag
+      shell: bash
+      env:
+        BINS_VER: ${{ fromJSON(steps.bins-version.outputs.value).bins_version }}
+        IS_DEV: ${{ fromJSON(steps.bins-version.outputs.value).is_dev }}
+        CANDIDATE_TAG: ${{ fromJSON(steps.bins-version.outputs.value).candidate_tag }}
+        LATEST_BINS_TAG: ${{ steps.latest-bins-release.outputs.tag }}
+      run: |
+        if [[ "${IS_DEV}" == "true" ]]; then
+          RELEASE_TAG="${LATEST_BINS_TAG}"
+          echo "NOTE: bins-version is dev (${BINS_VER}); using fallback release '${RELEASE_TAG}'"
+        else
+          RELEASE_TAG="${CANDIDATE_TAG}"
+        fi
+        echo "tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+
+    - name: Get cargo metadata for echo
+      id: cargo-meta
+      shell: bash
+      working-directory: rust/echo
+      run: |
+        cargo metadata --no-deps --format-version=1 > "${RUNNER_TEMP}/echo-cargo-metadata.json"
+        echo "path=${RUNNER_TEMP}/echo-cargo-metadata.json" >> $GITHUB_OUTPUT
+
+    - name: Get echo version
+      id: echo-version
+      uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      with:
+        input: ${{ steps.cargo-meta.outputs.path }}
+        input-format: json-path
+        options: -r
+        filter: .packages[0].version
+
+    - name: Get echo asset information (${{ matrix.arch }})
+      id: echo-asset
+      uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      with:
+        input: docker-assets.yaml
+        input-format: yaml-path
+        filter: |
+          .assets["toolshed-echo"]
+          | .repository as $repo
+          | .files[]
+          | select(.architectures | index("${{ matrix.arch }}"))
+          | (.asset
+             | gsub("\\{echo-version\\}"; "${{ steps.echo-version.outputs.value }}")
+             | gsub("\\{arch\\}"; "${{ matrix.arch }}")) as $asset_name
+          | {
+              url: "https://github.com/\($repo)/releases/download/${{ steps.release-tag.outputs.tag }}/\($asset_name)",
+              checksum_url: "https://github.com/\($repo)/releases/download/${{ steps.release-tag.outputs.tag }}/\(.["checksum-asset"])",
+              dest: .dest,
+              mode: .mode,
+              asset: $asset_name
+            }
+
+    - name: Download and verify echo binary (${{ matrix.arch }})
+      shell: bash
+      env:
+        ASSET_URL: ${{ fromJSON(steps.echo-asset.outputs.value).url }}
+        CHECKSUM_URL: ${{ fromJSON(steps.echo-asset.outputs.value).checksum_url }}
+        DEST: ${{ fromJSON(steps.echo-asset.outputs.value).dest }}
+        MODE: ${{ fromJSON(steps.echo-asset.outputs.value).mode }}
+        ASSET_NAME: ${{ fromJSON(steps.echo-asset.outputs.value).asset }}
+      run: |
+        set -euo pipefail
+        case "${ASSET_NAME}" in
+          (""|*[!A-Za-z0-9._-]*)
+            echo "Invalid asset name: ${ASSET_NAME}"
+            exit 1
+            ;;
+        esac
+        case "${DEST}" in
+          (docker/echo/*)
+            case "${DEST}" in
+              (*..*|*//*)
+                echo "Invalid destination: ${DEST}"
+                exit 1
+                ;;
+            esac
+            ;;
+          (*)
+            echo "Invalid destination: ${DEST}"
+            exit 1
+            ;;
+        esac
+        mkdir -p "$(dirname "${DEST}")"
+        curl -fsSL "${ASSET_URL}" -o "${DEST}"
+        curl -fsSL "${CHECKSUM_URL}" -o "${RUNNER_TEMP}/checksums.txt.asc"
+        sed -n '/^-----BEGIN PGP SIGNED MESSAGE-----/,/^-----BEGIN PGP SIGNATURE-----/p' \
+          "${RUNNER_TEMP}/checksums.txt.asc" \
+          | sed '1,/^$/d' \
+          | sed '/^-----BEGIN PGP SIGNATURE-----/,$d' \
+          > "${RUNNER_TEMP}/checksums.txt"
+        (
+          cd "$(dirname "${DEST}")" && \
+          grep " ${ASSET_NAME}"'$' "${RUNNER_TEMP}/checksums.txt" \
+          | sed "s| ${ASSET_NAME}"'$'"| $(basename "${DEST}")|" \
+          | sha256sum -c -
+        )
+        chmod "${MODE}" "${DEST}"
+
+    - name: Get echo asset info (${{ matrix.arch }})
+      id: echo-asset
+      shell: bash
+      run: |
+        RELEASE_TAG=$(yq '.assets["toolshed-echo"]["release-tag"]' docker-assets.yaml)
+        VERSION=$(yq '.assets["toolshed-echo"].version' docker-assets.yaml)
+        ARCH=${{ matrix.arch }}
+        SHA256=$(yq ".assets[\"toolshed-echo\"].sha256.${ARCH}" docker-assets.yaml)
+        echo "release-tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+        echo "sha256=${SHA256}" >> "$GITHUB_OUTPUT"
+
+    - name: Download and verify echo binary (${{ matrix.arch }})
+      shell: bash
+      run: |
+        RELEASE_TAG="${{ steps.echo-asset.outputs.release-tag }}"
+        VERSION="${{ steps.echo-asset.outputs.version }}"
+        SHA256="${{ steps.echo-asset.outputs.sha256 }}"
+        ARCH=${{ matrix.arch }}
+        URL="https://github.com/envoyproxy/toolshed/releases/download/${RELEASE_TAG}/echo-${VERSION}-${ARCH}"
+        echo "Downloading ${URL}"
+        curl -fsSL "${URL}" -o docker/echo/toolshed-echo
+        echo "${SHA256}  docker/echo/toolshed-echo" | sha256sum -c -
+        chmod +x docker/echo/toolshed-echo
+
     - name: Build Docker image (debian-${{ matrix.arch }})
       run: |
         cd docker/build
@@ -70,6 +221,29 @@ jobs:
         ./push.sh
         echo "::group::Docker images"
         docker images | grep envoy-build || echo "No envoy-build images found"
+        echo "::endgroup::"
+      shell: bash
+
+    - name: Build echo Docker image (${{ matrix.arch }})
+      run: |
+        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
+        ARCH=${{ matrix.arch }}
+        OCI_OUTPUT=docker/build/oci-output
+        IMAGE_TAG=envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}
+        # Save OCI tarball for publishing
+        docker buildx build docker/echo \
+          --build-arg ECHO_BIN=toolshed-echo \
+          --platform linux/${ARCH} \
+          --output "type=oci,dest=${OCI_OUTPUT}/toolshed-echo-v${ECHO_VER}-${ARCH}.tar"
+        # Load into daemon for smoke-testing
+        docker buildx build docker/echo \
+          --build-arg ECHO_BIN=toolshed-echo \
+          --platform linux/${ARCH} \
+          --tag "${IMAGE_TAG}" \
+          --load
+        rm docker/echo/toolshed-echo
+        echo "::group::Echo image"
+        docker images | grep toolshed-echo || echo "No toolshed-echo image found"
         echo "::endgroup::"
       shell: bash
 
@@ -104,6 +278,70 @@ jobs:
           docker image inspect "$IMAGE_TAG" 2>&1 | head -20 || echo "Inspect failed"
           exit 1
         fi
+      shell: bash
+
+    - name: Test echo Docker image (HTTP)
+      run: |
+        ARCH=${{ matrix.arch }}
+        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
+        IMAGE_TAG="envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}"
+        echo "Testing echo image: $IMAGE_TAG"
+        docker run -d --name toolshed-echo-test -p 18787:8787 "${IMAGE_TAG}"
+        # Wait for server to start
+        for i in $(seq 1 10); do
+          if curl -sf http://localhost:18787/ > /tmp/echo-http.json; then
+            break
+          fi
+          echo "Waiting for echo server... (attempt $i)"
+          sleep 1
+        done
+        echo "HTTP response:"
+        cat /tmp/echo-http.json
+        if grep -q '"method"' /tmp/echo-http.json; then
+          echo "✓ HTTP smoke test passed"
+        else
+          echo "✗ HTTP smoke test failed — unexpected response"
+          docker logs toolshed-echo-test || true
+          exit 1
+        fi
+        docker rm -f toolshed-echo-test
+      shell: bash
+
+    - name: Test echo Docker image (HTTPS)
+      run: |
+        ARCH=${{ matrix.arch }}
+        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
+        IMAGE_TAG="envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}"
+        CERT=$(pwd)/rust/echo/snakeoil/tls.cert
+        KEY=$(pwd)/rust/echo/snakeoil/tls.key
+        echo "Testing echo image TLS: $IMAGE_TAG"
+        docker run -d --name toolshed-echo-tls-test \
+          -p 18443:8443 \
+          -v "${CERT}:/etc/ssl/echo/tls.cert:ro" \
+          -v "${KEY}:/etc/ssl/echo/tls.key:ro" \
+          -e ECHO_TLS_CERT=/etc/ssl/echo/tls.cert \
+          -e ECHO_TLS_KEY=/etc/ssl/echo/tls.key \
+          -e ECHO_HTTPS_HOST=:: \
+          -e ECHO_HTTPS_PORT=8443 \
+          "${IMAGE_TAG}"
+        # Wait for server to start
+        for i in $(seq 1 10); do
+          if curl -skf https://localhost:18443/ > /tmp/echo-https.json; then
+            break
+          fi
+          echo "Waiting for echo TLS server... (attempt $i)"
+          sleep 1
+        done
+        echo "HTTPS response:"
+        cat /tmp/echo-https.json
+        if grep -q '"method"' /tmp/echo-https.json; then
+          echo "✓ HTTPS smoke test passed"
+        else
+          echo "✗ HTTPS smoke test failed — unexpected response"
+          docker logs toolshed-echo-tls-test || true
+          exit 1
+        fi
+        docker rm -f toolshed-echo-tls-test
       shell: bash
 
   status:
