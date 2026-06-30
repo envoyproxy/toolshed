@@ -147,6 +147,12 @@ jobs:
         ASSET_NAME: ${{ fromJSON(steps.echo-asset.outputs.value).asset }}
       run: |
         set -euo pipefail
+        case "${ASSET_NAME}" in
+          (""|*[!A-Za-z0-9._-]*)
+            echo "Invalid asset name: ${ASSET_NAME}"
+            exit 1
+            ;;
+        esac
         mkdir -p "$(dirname "${DEST}")"
         curl -fsSL "${ASSET_URL}" -o "${DEST}"
         curl -fsSL "${CHECKSUM_URL}" -o "${RUNNER_TEMP}/checksums.txt.asc"
