@@ -157,8 +157,8 @@ jobs:
           > "${RUNNER_TEMP}/checksums.txt"
         (
           cd "$(dirname "${DEST}")" && \
-          grep " ${ASSET_NAME}\$" "${RUNNER_TEMP}/checksums.txt" \
-          | sed "s| ${ASSET_NAME}\$| $(basename "${DEST}")|" \
+          grep " ${ASSET_NAME}"'$' "${RUNNER_TEMP}/checksums.txt" \
+          | sed "s| ${ASSET_NAME}"'$'"| $(basename "${DEST}")|" \
           | sha256sum -c -
         )
         chmod "${MODE}" "${DEST}"
