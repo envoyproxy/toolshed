@@ -70,3 +70,11 @@ manifests:
   architectures:
   - amd64
   artifact-pattern: oci-debian-{arch}/envoy-build-mobile-v{version}-{arch}.tar
+# toolshed-echo
+- name: toolshed-echo
+  tag: v{echo-version}
+  registry: docker.io/envoyproxy
+  architectures:
+  - amd64
+  - arm64
+  artifact-pattern: oci-debian-{arch}/toolshed-echo-v{echo-version}-{arch}.tar
