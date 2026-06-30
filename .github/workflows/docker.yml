@@ -77,6 +77,9 @@ jobs:
         RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
         sudo apt-get install -y musl-tools
         rustup target add "${RUST_TARGET}"
+        # Set musl linker explicitly for both arches (native builds, musl-gcc wraps the host gcc)
+        CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
         cargo build --release --target "${RUST_TARGET}" -p toolshed-echo
       working-directory: rust
       shell: bash
@@ -172,7 +175,7 @@ jobs:
         docker run -d --name toolshed-echo-test -p 18787:8787 "${IMAGE_TAG}"
         # Wait for server to start
         for i in $(seq 1 10); do
-          if curl -sf http://localhost:18787/ > /tmp/echo-http.json 2>&1; then
+          if curl -sf http://localhost:18787/ > /tmp/echo-http.json; then
             break
           fi
           echo "Waiting for echo server... (attempt $i)"
@@ -209,7 +212,7 @@ jobs:
           "${IMAGE_TAG}"
         # Wait for server to start
         for i in $(seq 1 10); do
-          if curl -skf https://localhost:18443/ > /tmp/echo-https.json 2>&1; then
+          if curl -skf https://localhost:18443/ > /tmp/echo-https.json; then
             break
           fi
           echo "Waiting for echo TLS server... (attempt $i)"
