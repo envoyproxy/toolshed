@@ -27,9 +27,12 @@ jobs:
         config: |
           paths:
           - 'docker/build/**'
+          - 'docker/echo/**'
           - '.github/workflows/docker.yml'
           - '.github/docker-manifests.yml'
           - 'docker/build/VERSION.txt'
+          - 'BINS_VERSION.txt'
+          - 'rust/echo/**'
 
   build:
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
@@ -57,6 +60,36 @@ jobs:
         TAG_VERSION=$(cat ./docker/build/VERSION.txt)
         echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
+    - name: Get bins version
+      id: bins-version
+      shell: bash
+      run: |
+        BINS_VERSION=$(cat ./BINS_VERSION.txt)
+        echo "version=${BINS_VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Install Rust toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6  # v1
+      with:
+        toolchain: stable
+
+    - name: Build echo binary
+      run: |
+        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
+        sudo apt-get install -y musl-tools
+        rustup target add "${RUST_TARGET}"
+        # Set musl linker explicitly for both arches (native builds, musl-gcc wraps the host gcc)
+        CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
+        CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc \
+        cargo build --release --target "${RUST_TARGET}" -p toolshed-echo
+      working-directory: rust
+      shell: bash
+
+    - name: Strip echo binary
+      run: |
+        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
+        strip "rust/target/${RUST_TARGET}/release/toolshed-echo"
+      shell: bash
+
     - name: Build Docker image (debian-${{ matrix.arch }})
       run: |
         cd docker/build
@@ -70,6 +103,33 @@ jobs:
         ./push.sh
         echo "::group::Docker images"
         docker images | grep envoy-build || echo "No envoy-build images found"
+        echo "::endgroup::"
+      shell: bash
+
+    - name: Build echo Docker image (${{ matrix.arch }})
+      run: |
+        RUST_TARGET=${{ matrix.arch == 'amd64' && 'x86_64-unknown-linux-musl' || 'aarch64-unknown-linux-musl' }}
+        ECHO_BIN="rust/target/${RUST_TARGET}/release/toolshed-echo"
+        BINS_VER=v${{ steps.bins-version.outputs.version }}
+        ARCH=${{ matrix.arch }}
+        OCI_OUTPUT=docker/build/oci-output
+        IMAGE_TAG=envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}
+        # Copy binary into build context
+        cp "${ECHO_BIN}" docker/echo/toolshed-echo
+        # Save OCI tarball for publishing
+        docker buildx build docker/echo \
+          --build-arg ECHO_BIN=toolshed-echo \
+          --platform linux/${ARCH} \
+          --output "type=oci,dest=${OCI_OUTPUT}/toolshed-echo-${BINS_VER}-${ARCH}.tar"
+        # Load into daemon for smoke-testing
+        docker buildx build docker/echo \
+          --build-arg ECHO_BIN=toolshed-echo \
+          --platform linux/${ARCH} \
+          --tag "${IMAGE_TAG}" \
+          --load
+        rm docker/echo/toolshed-echo
+        echo "::group::Echo image"
+        docker images | grep toolshed-echo || echo "No toolshed-echo image found"
         echo "::endgroup::"
       shell: bash
 
@@ -104,6 +164,70 @@ jobs:
           docker image inspect "$IMAGE_TAG" 2>&1 | head -20 || echo "Inspect failed"
           exit 1
         fi
+      shell: bash
+
+    - name: Test echo Docker image (HTTP)
+      run: |
+        ARCH=${{ matrix.arch }}
+        BINS_VER=v${{ steps.bins-version.outputs.version }}
+        IMAGE_TAG="envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}"
+        echo "Testing echo image: $IMAGE_TAG"
+        docker run -d --name toolshed-echo-test -p 18787:8787 "${IMAGE_TAG}"
+        # Wait for server to start
+        for i in $(seq 1 10); do
+          if curl -sf http://localhost:18787/ > /tmp/echo-http.json; then
+            break
+          fi
+          echo "Waiting for echo server... (attempt $i)"
+          sleep 1
+        done
+        echo "HTTP response:"
+        cat /tmp/echo-http.json
+        if grep -q '"method"' /tmp/echo-http.json; then
+          echo "✓ HTTP smoke test passed"
+        else
+          echo "✗ HTTP smoke test failed — unexpected response"
+          docker logs toolshed-echo-test || true
+          exit 1
+        fi
+        docker rm -f toolshed-echo-test
+      shell: bash
+
+    - name: Test echo Docker image (HTTPS)
+      run: |
+        ARCH=${{ matrix.arch }}
+        BINS_VER=v${{ steps.bins-version.outputs.version }}
+        IMAGE_TAG="envoyproxy/toolshed-echo:${BINS_VER}-${ARCH}"
+        CERT=$(pwd)/rust/echo/snakeoil/tls.cert
+        KEY=$(pwd)/rust/echo/snakeoil/tls.key
+        echo "Testing echo image TLS: $IMAGE_TAG"
+        docker run -d --name toolshed-echo-tls-test \
+          -p 18443:8443 \
+          -v "${CERT}:/etc/ssl/echo/tls.cert:ro" \
+          -v "${KEY}:/etc/ssl/echo/tls.key:ro" \
+          -e ECHO_TLS_CERT=/etc/ssl/echo/tls.cert \
+          -e ECHO_TLS_KEY=/etc/ssl/echo/tls.key \
+          -e ECHO_HTTPS_HOST=:: \
+          -e ECHO_HTTPS_PORT=8443 \
+          "${IMAGE_TAG}"
+        # Wait for server to start
+        for i in $(seq 1 10); do
+          if curl -skf https://localhost:18443/ > /tmp/echo-https.json; then
+            break
+          fi
+          echo "Waiting for echo TLS server... (attempt $i)"
+          sleep 1
+        done
+        echo "HTTPS response:"
+        cat /tmp/echo-https.json
+        if grep -q '"method"' /tmp/echo-https.json; then
+          echo "✓ HTTPS smoke test passed"
+        else
+          echo "✗ HTTPS smoke test failed — unexpected response"
+          docker logs toolshed-echo-tls-test || true
+          exit 1
+        fi
+        docker rm -f toolshed-echo-tls-test
       shell: bash
 
   status:

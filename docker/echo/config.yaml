@@ -1,0 +1,4 @@
+listeners:
+  http:
+    host: "::"
+    port: 8787
