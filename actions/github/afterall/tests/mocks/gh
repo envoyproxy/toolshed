@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+# Mock gh command for testing github/afterall action
+# Returns configured mock workflow run data for API calls
+
+set -e
+
+MOCK_LOG="${MOCK_LOG:-/tmp/gh-mock.log}"
+MOCK_RUNS="${ACTION_TEST_PATH}/mock_runs.json"
+
+print_cmd() {
+    local arg
+    for arg in "$@"; do
+        if [[ "$arg" =~ [[:space:]] ]]; then
+            printf '"%s" ' "$arg"
+        else
+            printf '%s ' "$arg"
+        fi
+    done | sed 's/ $//'
+    echo
+}
+
+print_cmd gh "$@" >> "$MOCK_LOG"
+
+command="$1"
+case "$command" in
+    api)
+        shift
+        JQ_FILTER=""
+        while [[ $# -gt 0 ]]; do
+            case "$1" in
+                --jq) JQ_FILTER="$2"; shift 2 ;;
+                *) shift ;;
+            esac
+        done
+        if [[ -n "$JQ_FILTER" ]]; then
+            jq -c "$JQ_FILTER" "$MOCK_RUNS"
+        else
+            cat "$MOCK_RUNS"
+        fi
+        ;;
+    workflow)
+        # Swallow workflow dispatch calls silently in tests
+        exit 0
+        ;;
+    *)
+        echo "Unknown gh command: $command" >&2
+        exit 1
+        ;;
+esac

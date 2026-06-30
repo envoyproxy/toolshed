@@ -1,0 +1,35 @@
+uses: ./actions/github/release/status
+id: status
+with:
+  name: docker
+  sha: abc1234def567890
+  title: "Test commit"
+  version-file: /tmp/test-version.txt
+  repository: owner/repo
+  workflows: |
+    Workflow A
+    Workflow B
+
+before:
+- shell: bash
+  run: |
+    echo "1.0.0-dev" > /tmp/test-version.txt
+    cat > "${ACTION_TEST_PATH}/mock_runs.json" <<'EOF'
+    {
+      "workflow_runs": [
+        {"name": "Workflow A", "id": 1, "status": "completed",
+         "conclusion": "success", "created_at": "2024-01-01T00:00:00Z"}
+      ]
+    }
+    EOF
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    # Dev version with continue=false must NOT fail — silent skip is correct
+    CONTINUE='%{{ steps.status.outputs.continue }}'
+    VERSION='%{{ steps.status.outputs.version }}'
+    test_continue "{\"continue\": \"$CONTINUE\"}" "false"
+    test_is_dev "$VERSION" "true"
+    echo "success:Dev version with continue=false did not fail the step" >> "$TEST_OUTPUT"

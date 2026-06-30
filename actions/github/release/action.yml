@@ -84,6 +84,7 @@ runs:
       sha: ${{ inputs.sha }}
       title: >-
         ${{ inputs.title }}
+      token: ${{ inputs.token || github.token }}
       version: ${{ inputs.version }}
       version-file: ${{ inputs.version-file }}
       workflows: ${{ inputs.workflows }}

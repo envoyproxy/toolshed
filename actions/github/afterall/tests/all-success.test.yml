@@ -1,0 +1,31 @@
+uses: ./actions/github/afterall
+id: afterall
+with:
+  sha: abc1234
+  repo: owner/repo
+  workflows: |
+    Workflow A
+    Workflow B
+
+before:
+- shell: bash
+  run: |
+    cat > "${ACTION_TEST_PATH}/mock_runs.json" <<'EOF'
+    {
+      "workflow_runs": [
+        {"name": "Workflow A", "id": 1, "status": "completed",
+         "conclusion": "success", "created_at": "2024-01-01T00:00:00Z"},
+        {"name": "Workflow B", "id": 2, "status": "completed",
+         "conclusion": "success", "created_at": "2024-01-01T00:00:00Z"}
+      ]
+    }
+    EOF
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    OUTPUT='%{{ steps.afterall.outputs.status }}'
+    test_continue "$OUTPUT" "true"
+    test_status_has "$OUTPUT" "Workflow A" "conclusion" "success"
+    test_status_has "$OUTPUT" "Workflow B" "conclusion" "success"
