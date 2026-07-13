@@ -1,0 +1,22 @@
+uses: ./actions/github/should-run
+id: should-run
+with:
+  checkout-repo: "false"
+  config: |
+    paths:
+    - some/path
+
+before:
+- shell: bash
+  run: |
+    echo "marker-content" > .should-run-untracked-marker
+
+after:
+- shell: bash
+  run: |
+    if [[ ! -f ".should-run-untracked-marker" ]]; then
+        echo "fail:Untracked marker file was removed — checkout ran despite checkout-repo: false" >> "$TEST_OUTPUT"
+    else
+        echo "success:Untracked marker file preserved — no checkout occurred with checkout-repo: false" >> "$TEST_OUTPUT"
+    fi
+    rm -f .should-run-untracked-marker
