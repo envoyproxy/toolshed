@@ -1,0 +1,29 @@
+uses: ./actions/github/should-run
+id: should-run
+with:
+  checkout-repo: "false"
+  config: |
+    paths:
+    - tmp-should-run-test/**
+
+before:
+- shell: bash
+  run: |
+    mkdir -p tmp-should-run-test
+    echo "test" > tmp-should-run-test/file.txt
+    git add tmp-should-run-test/file.txt
+    git -c user.name="Test" -c user.email="test@test.com" commit -m "tmp: add test file for should-run paths test"
+
+after:
+- shell: bash
+  run: |
+    RUN_OUTPUT='${{ steps.should-run.outputs.run }}'
+    if [[ "$RUN_OUTPUT" != "true" ]]; then
+        echo "fail:Expected run=true for matching path, got '$RUN_OUTPUT'" >> "$TEST_OUTPUT"
+    else
+        echo "success:run=true for matching path tmp-should-run-test/**" >> "$TEST_OUTPUT"
+    fi
+    # Clean up the temporary commit and file
+    git reset HEAD~1 --soft
+    git restore --staged tmp-should-run-test/file.txt || true
+    rm -rf tmp-should-run-test

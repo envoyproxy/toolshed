@@ -1,0 +1,21 @@
+uses: ./actions/github/should-run
+id: should-run
+with:
+  config: |
+    paths:
+    - some/path
+
+before:
+- shell: bash
+  run: |
+    echo "marker-content" > .should-run-default-marker
+
+after:
+- shell: bash
+  run: |
+    if [[ ! -f ".should-run-default-marker" ]]; then
+        echo "fail:Untracked marker file was removed — checkout ran with default checkout-repo" >> "$TEST_OUTPUT"
+    else
+        echo "success:Untracked marker file preserved — default checkout-repo does not checkout" >> "$TEST_OUTPUT"
+    fi
+    rm -f .should-run-default-marker
