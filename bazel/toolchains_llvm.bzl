@@ -6,6 +6,9 @@ def setup_llvm_toolchain(llvm_version = None):
     compatibility_proxy_repo()
     llvm_toolchain(
         name = "llvm_toolchain",
+        libclang_rt = {
+            "@libcxx_libs_aarch64//:lib/libclang_rt.builtins.a": "linux/libclang_rt.builtins-aarch64.a",
+        },
         llvm_version = llvm_version or VERSIONS["llvm"],
         cxx_cross_lib = {
             "linux-aarch64": "@libcxx_libs_aarch64",
