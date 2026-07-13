@@ -5,7 +5,8 @@
         "github:DataDog/dd-trace-cpp"
     ],
     "versions": [
-        "2.0.0.envoy"
+        "2.0.0.envoy",
+        "2.1.0.envoy"
     ],
     "yanked_versions": {}
 }
