@@ -64,9 +64,9 @@ jobs:
     - name: Install libtinfo5
       run: |
         # Workaround for https://github.com/llvm/llvm-project/issues/75490
-        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
-        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
-        rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.2_amd64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.2_amd64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.2_amd64.deb"
         sudo apt-get -qq update
         sudo apt-get -qq install -y --no-install-recommends \
             debian-archive-keyring debootstrap qemu-user-static binfmt-support
@@ -151,9 +151,9 @@ jobs:
     - name: Install libtinfo5
       run: |
         # Workaround for https://github.com/llvm/llvm-project/issues/75490
-        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb"
-        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
-        rm "libtinfo5_6.3-2ubuntu0.1_amd64.deb"
+        curl -LO "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.2_amd64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.2_amd64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.2_amd64.deb"
         sudo apt-get -qq update
         sudo apt-get -qq install -y --no-install-recommends \
             debian-archive-keyring debootstrap qemu-user-static binfmt-support
@@ -281,9 +281,9 @@ jobs:
     - name: Install libtinfo5
       run: |
         # Workaround for https://github.com/llvm/llvm-project/issues/75490
-        curl -LO "http://ports.ubuntu.com/ubuntu-ports/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_arm64.deb"
-        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.1_arm64.deb"
-        rm "libtinfo5_6.3-2ubuntu0.1_arm64.deb"
+        curl -LO "http://ports.ubuntu.com/ubuntu-ports/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.2_arm64.deb"
+        sudo dpkg -i "libtinfo5_6.3-2ubuntu0.2_arm64.deb"
+        rm "libtinfo5_6.3-2ubuntu0.2_arm64.deb"
         sudo apt-get -qq update
         sudo apt-get -qq install -y --no-install-recommends \
             debian-archive-keyring debootstrap qemu-user-static binfmt-support
