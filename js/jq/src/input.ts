@@ -1,8 +1,6 @@
 import fs from 'fs'
 import os from 'os'
 import * as path from 'path'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error no typing for js-yaml
 import * as yaml from 'js-yaml'
 
 declare const atob: (encodedString: string) => string
