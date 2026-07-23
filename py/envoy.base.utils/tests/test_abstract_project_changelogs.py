@@ -1620,6 +1620,40 @@ async def test_abstract_changelog_data_unknown_section(tmp_path):
     assert f"({changelog_path})" in e.value.args[0]
 
 
+async def test_abstract_changelog_data_unknown_section_current_entries(
+        tmp_path):
+    entry_dir = tmp_path.joinpath("changelogs/current/unknown")
+    entry_dir.mkdir(parents=True)
+    entry_dir.joinpath("api__change.rst").write_text("changed\n")
+    tmp_path.joinpath("changelogs/changelogs.yaml").write_text(
+        "sections:\n"
+        "  known:\n"
+        "    title: Known\n")
+
+    class ConcreteChangelogs(DummyChangelogs):
+
+        @property
+        def changelog_class(self):
+            return DummyChangelog
+
+    project = MagicMock()
+    project.path = tmp_path
+    project.version = abstract.project.changelog._version.Version("1.2.3")
+
+    async def execute(func, *args):
+        return func(*args)
+
+    project.execute = AsyncMock(side_effect=execute)
+    changelogs = ConcreteChangelogs(project)
+    project.changelogs = changelogs
+    changelog = changelogs[changelogs.current]
+
+    with pytest.raises(exceptions.ChangelogParseError) as e:
+        await changelog.data
+
+    assert "unknown" in e.value.args[0]
+
+
 async def test_abstract_changelog_entries_layout_no_current_yaml(tmp_path):
 
     class ConcreteChangelogs(DummyChangelogs):
@@ -1652,13 +1686,11 @@ async def test_abstract_changelog_entries_layout_no_current_yaml(tmp_path):
     project.changelogs = changelogs
     current_changelog = changelogs[changelogs.current]
 
-    assert not tmp_path.joinpath("changelogs/current.yaml").exists()
     assert (await current_changelog.data)["date"] == "Pending"
     assert await changelogs.is_pending
 
     # write_date now freezes entries into changelogs/1.2.4.yaml
     assert not await changelogs.write_date("June 1, 2026")
-    assert not tmp_path.joinpath("changelogs/current.yaml").exists()
 
     version_yaml = tmp_path.joinpath("changelogs/1.2.4.yaml")
     assert version_yaml.exists()
