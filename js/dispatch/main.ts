@@ -1,7 +1,5 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error no typing for js-yaml
 import * as yaml from 'js-yaml'
 
 const run = async (): Promise<void> => {
@@ -15,11 +13,13 @@ const run = async (): Promise<void> => {
     const inputs: {[key: string]: string | number | boolean} = {}
     if (providedInputs) {
       const parsedInputs = yaml.load(providedInputs)
-      for (const [key, value] of Object.entries(parsedInputs)) {
-        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-          inputs[key] = value
-        } else {
-          inputs[key] = JSON.stringify(value)
+      if (parsedInputs && typeof parsedInputs === 'object') {
+        for (const [key, value] of Object.entries(parsedInputs as Record<string, unknown>)) {
+          if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+            inputs[key] = value
+          } else {
+            inputs[key] = JSON.stringify(value)
+          }
         }
       }
     }
