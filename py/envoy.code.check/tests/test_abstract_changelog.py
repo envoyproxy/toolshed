@@ -266,7 +266,6 @@ async def test_changelogstatus_errors(iters, patches, raises):
          dict(new_callable=PropertyMock)),
         "AChangelogStatus.check_date",
         "AChangelogStatus.check_areas_file",
-        "AChangelogStatus.check_legacy_current",
         "AChangelogStatus.check_entry_files",
         "AChangelogStatus.check_sections",
         "AChangelogStatus.check_version",
@@ -274,7 +273,6 @@ async def test_changelogstatus_errors(iters, patches, raises):
     version_errors = iters(cb=lambda i: f"V{i}")
     date_errors = iters(cb=lambda i: f"D{i}")
     areas_errors = iters(cb=lambda i: f"A{i}")
-    legacy_errors = iters(cb=lambda i: f"L{i}")
     sections_errors = iters(cb=lambda i: f"S{i}")
     entry_files_errors = iters(cb=lambda i: f"E{i}")
 
@@ -282,7 +280,6 @@ async def test_changelogstatus_errors(iters, patches, raises):
             m_version,
             m_date,
             m_areas,
-            m_legacy,
             m_entry_files,
             m_sections,
             m_versions):
@@ -292,7 +289,6 @@ async def test_changelogstatus_errors(iters, patches, raises):
         m_date.side_effect = error
         m_date.return_value = date_errors
         m_areas.return_value = areas_errors
-        m_legacy.return_value = legacy_errors
         m_entry_files.return_value = entry_files_errors
         m_sections.return_value = sections_errors
         m_versions.return_value = version_errors
@@ -302,11 +298,11 @@ async def test_changelogstatus_errors(iters, patches, raises):
             return
         expected_errors = (
             (*version_errors, *date_errors, *sections_errors,
-             *areas_errors, *legacy_errors,
+             *areas_errors,
              *entry_files_errors)
             if not raises
             else (
-                *areas_errors, *legacy_errors,
+                *areas_errors,
                 *entry_files_errors,
                 f"{m_version.return_value}: {error}"))
         assert (
@@ -316,7 +312,7 @@ async def test_changelogstatus_errors(iters, patches, raises):
                 status,
                 check.AChangelogStatus.errors.cache_name)["errors"])
 
-    providers = [m_versions, m_date, m_areas, m_legacy, m_entry_files]
+    providers = [m_versions, m_date, m_areas, m_entry_files]
     if not raises:
         providers.append(m_sections)
     for provider in providers:
@@ -523,8 +519,7 @@ async def test_changelogstatus_check_date(
     with patched as (
             m_tuple, m_dev, m_invalid, m_current, m_pending, m_project,
             m_version):
-        m_current.return_value = True
-        m_project.return_value.changelogs.entries_layout = False
+        m_current.return_value = False
         m_invalid.side_effect = AsyncMock(return_value=invalid_date)
         m_dev.side_effect = AsyncMock(return_value=dev_not_pending)
         m_pending.side_effect = AsyncMock(return_value=pending_not_dev)
@@ -542,7 +537,7 @@ async def test_changelogstatus_check_date(
             in expected])
 
 
-async def test_changelogstatus_check_date_entries_layout_current(patches):
+async def test_changelogstatus_check_date_current(patches):
     status = check.AChangelogStatus(MagicMock(), MagicMock())
     patched = patches(
         ("AChangelogStatus.dev_not_pending",
@@ -553,13 +548,10 @@ async def test_changelogstatus_check_date_entries_layout_current(patches):
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.pending_not_dev",
          dict(new_callable=PropertyMock)),
-        ("AChangelogStatus.project",
-         dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.changelog")
 
-    with patched as (m_dev, m_invalid, m_current, m_pending, m_project):
+    with patched as (m_dev, m_invalid, m_current, m_pending):
         m_current.return_value = True
-        m_project.return_value.changelogs.entries_layout = True
         assert await status.check_date() == ()
 
     assert not m_invalid.called
@@ -567,7 +559,7 @@ async def test_changelogstatus_check_date_entries_layout_current(patches):
     assert not m_pending.called
 
 
-async def test_changelogstatus_check_date_entries_layout_historical_pending(
+async def test_changelogstatus_check_date_historical_pending(
         patches):
     status = check.AChangelogStatus(MagicMock(), MagicMock())
     patched = patches(
@@ -579,16 +571,13 @@ async def test_changelogstatus_check_date_entries_layout_historical_pending(
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.pending_not_dev",
          dict(new_callable=PropertyMock)),
-        ("AChangelogStatus.project",
-         dict(new_callable=PropertyMock)),
         ("AChangelogStatus.version",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.changelog")
 
     with patched as (
-            m_dev, m_invalid, m_current, m_pending, m_project, m_version):
+            m_dev, m_invalid, m_current, m_pending, m_version):
         m_current.return_value = False
-        m_project.return_value.changelogs.entries_layout = True
         m_invalid.side_effect = AsyncMock(return_value=None)
         m_dev.side_effect = AsyncMock(return_value=False)
         m_pending.side_effect = AsyncMock(return_value=True)
@@ -707,44 +696,6 @@ async def test_changelogstatus_check_areas_file(
     assert (
         m_project.return_value.execute.call_args
         == [(status.checker.check_areas_file, ), {}])
-
-
-@pytest.mark.parametrize("is_current", [True, False])
-@pytest.mark.parametrize("legacy_exists", [True, False])
-def test_changelogstatus_check_legacy_current(
-        patches, is_current, legacy_exists):
-    status = check.AChangelogStatus(MagicMock(), MagicMock())
-    patched = patches(
-        ("AChangelogStatus.is_current",
-         dict(new_callable=PropertyMock)),
-        ("AChangelogStatus.project",
-         dict(new_callable=PropertyMock)),
-        prefix="envoy.code.check.abstract.changelog")
-
-    with patched as (m_current, m_project):
-        m_current.return_value = is_current
-        (m_project.return_value.path
-                  .joinpath.return_value
-                  .is_file.return_value) = legacy_exists
-        result = status.check_legacy_current()
-
-    if not is_current or not legacy_exists:
-        assert result == ()
-    else:
-        assert result == (
-            "changelogs/current.yaml: Legacy changelog file is no longer "
-            "used; add changelog entries as individual files under "
-            "changelogs/current/<section>/<area>__<slug>.rst instead, and "
-            "remove changelogs/current.yaml.",
-        )
-
-    if not is_current:
-        assert not m_project.return_value.path.joinpath.called
-        return
-
-    assert (
-        m_project.return_value.path.joinpath.call_args
-        == [("changelogs/current.yaml", ), {}])
 
 
 class DummyChangelogChangesChecker(check.AChangelogChangesChecker):
