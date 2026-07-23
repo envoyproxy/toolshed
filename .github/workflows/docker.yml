@@ -184,7 +184,7 @@ jobs:
         chmod "${MODE}" "${DEST}"
 
     - name: Get echo asset info (${{ matrix.arch }})
-      id: echo-asset
+      id: echo-asset-info
       shell: bash
       run: |
         RELEASE_TAG=$(yq '.assets["toolshed-echo"]["release-tag"]' docker-assets.yaml)
@@ -198,9 +198,9 @@ jobs:
     - name: Download and verify echo binary (${{ matrix.arch }})
       shell: bash
       run: |
-        RELEASE_TAG="${{ steps.echo-asset.outputs.release-tag }}"
-        VERSION="${{ steps.echo-asset.outputs.version }}"
-        SHA256="${{ steps.echo-asset.outputs.sha256 }}"
+        RELEASE_TAG="${{ steps.echo-asset-info.outputs.release-tag }}"
+        VERSION="${{ steps.echo-asset-info.outputs.version }}"
+        SHA256="${{ steps.echo-asset-info.outputs.sha256 }}"
         ARCH=${{ matrix.arch }}
         URL="https://github.com/envoyproxy/toolshed/releases/download/${RELEASE_TAG}/echo-${VERSION}-${ARCH}"
         echo "Downloading ${URL}"
@@ -226,7 +226,7 @@ jobs:
 
     - name: Build echo Docker image (${{ matrix.arch }})
       run: |
-        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
+        ECHO_VER="${{ steps.echo-asset-info.outputs.version }}"
         ARCH=${{ matrix.arch }}
         OCI_OUTPUT=docker/build/oci-output
         IMAGE_TAG=envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}
@@ -283,7 +283,7 @@ jobs:
     - name: Test echo Docker image (HTTP)
       run: |
         ARCH=${{ matrix.arch }}
-        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
+        ECHO_VER="${{ steps.echo-asset-info.outputs.version }}"
         IMAGE_TAG="envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}"
         echo "Testing echo image: $IMAGE_TAG"
         docker run -d --name toolshed-echo-test -p 18787:8787 "${IMAGE_TAG}"
@@ -310,7 +310,7 @@ jobs:
     - name: Test echo Docker image (HTTPS)
       run: |
         ARCH=${{ matrix.arch }}
-        ECHO_VER="${{ steps.echo-asset.outputs.version }}"
+        ECHO_VER="${{ steps.echo-asset-info.outputs.version }}"
         IMAGE_TAG="envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}"
         CERT=$(pwd)/rust/echo/snakeoil/tls.cert
         KEY=$(pwd)/rust/echo/snakeoil/tls.key
