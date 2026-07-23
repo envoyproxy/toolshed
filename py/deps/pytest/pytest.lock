@@ -13,7 +13,7 @@
 //     "pytest-cov>=7.1.0",
 //     "pytest-iters>=0.1.0",
 //     "pytest-patches>=0.1.0",
-//     "pytest>=9.0.3"
+//     "pytest>=9.1.1"
 //   ],
 //   "manylinux": "manylinux2014",
 //   "requirement_constraints": [],
@@ -551,7 +551,7 @@
     "pytest-cov>=7.1.0",
     "pytest-iters>=0.1.0",
     "pytest-patches>=0.1.0",
-    "pytest>=9.0.3"
+    "pytest>=9.1.1"
   ],
   "requires_python": [
     "CPython>=3.12"
