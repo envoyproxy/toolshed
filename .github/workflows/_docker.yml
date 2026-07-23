@@ -1,0 +1,171 @@
+name: _docker
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      arch:
+        type: string
+        required: true
+      target:
+        type: string
+        required: true
+
+
+jobs:
+  build-image:
+    runs-on: ${{ inputs.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    if: ${{ inputs.target == 'build' }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
+    - name: Get docker version
+      id: docker-version
+      shell: bash
+      run: |
+        TAG_VERSION=$(cat ./docker/build/VERSION.txt)
+        echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
+
+    - name: Build Docker image (debian-${{ inputs.arch }})
+      run: |
+        cd docker/build
+        export OS_FAMILY=linux
+        export OS_DISTRO=debian
+        export CONTAINER_SHA=v${{ steps.docker-version.outputs.version }}
+        export CONTAINER_TAG=v${{ steps.docker-version.outputs.version }}
+        export BUILD_TOOLS_PLATFORMS=${{ inputs.arch == 'amd64' && 'linux/amd64' || 'linux/arm64' }}
+        export SAVE_OCI=true
+        export LOAD_IMAGE=true
+        ./push.sh
+        echo "::group::Docker images"
+        docker images | grep envoy-build || echo "No envoy-build images found"
+        echo "::endgroup::"
+    - name: Test Docker image
+      run: |
+        IMAGE_TAG="envoyproxy/envoy-build:ci-v${{ steps.docker-version.outputs.version }}-${{ inputs.arch }}"
+        echo "Testing main image: $IMAGE_TAG"
+        echo "Attempting to run container and read build-id..."
+        if BUILD_ID=$(docker run --rm --entrypoint /bin/cat "$IMAGE_TAG" /.build-id 2>&1); then
+          echo "Build ID: $BUILD_ID"
+          EXPECTED_ID="ci-v${{ steps.docker-version.outputs.version }}"
+          if [[ "$BUILD_ID" == "$EXPECTED_ID" ]]; then
+            echo "✓ Build ID is correct"
+          else
+            echo "✗ Build ID mismatch: expected '$EXPECTED_ID', got '$BUILD_ID'"
+            exit 1
+          fi
+        else
+          echo "ERROR: Failed to run container or read build-id"
+          echo "Docker run output: $BUILD_ID"
+          echo "Checking if image exists:"
+          docker images | grep -E "(REPOSITORY|envoy-build.*ci-v)"
+          echo "Trying docker inspect:"
+          docker image inspect "$IMAGE_TAG" 2>&1 | head -20 || echo "Inspect failed"
+          exit 1
+        fi
+      shell: bash
+
+    - name: Upload OCI artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: oci-debian-${{ inputs.arch }}
+        path: docker/build/oci-output/*.tar
+        retention-days: 1
+        if-no-files-found: error
+
+  echo:
+    runs-on: ${{ inputs.arch == 'amd64' && 'ubuntu-24.04' || 'ubuntu-24.04-arm' }}
+    if: ${{ inputs.target == 'echo' }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
+    - name: Get versions
+      run: |
+        TAG_VERSION=$(cat ./docker/build/VERSION.txt)
+        {
+          echo "VERSION=${TAG_VERSION}"
+          echo "ARCH=${ARCH}"
+          echo "OCI_OUTPUT=docker/build/oci-output"
+          echo "IMAGE_TAG=envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}"
+        } >> "$GITHUB_ENV"
+      env:
+        ARCH: ${{ inputs.arch }}
+        ECHO_VER: 0.1.0
+
+    - name: Build echo Docker image (${{ inputs.arch }})
+      run: |
+        # Save OCI tarball for publishing
+        docker buildx build . -f docker/echo/Dockerfile \
+          --platform linux/${ARCH} \
+          --output "type=oci,dest=${OCI_OUTPUT}/toolshed-echo-v${ECHO_VER}-${ARCH}.tar"
+        # Load into daemon for smoke-testing
+        docker buildx build . -f docker/echo/Dockerfile \
+          --platform linux/${ARCH} \
+          --tag "${IMAGE_TAG}" \
+          --load
+        echo "::group::Echo image"
+        docker images | grep toolshed-echo || echo "No toolshed-echo image found"
+        echo "::endgroup::"
+      shell: bash
+
+    ## TESTS
+
+    - name: Test echo Docker image (HTTP)
+      run: |
+        echo "Testing echo image: $IMAGE_TAG"
+        docker run -d --name toolshed-echo-test -p 18787:8787 "${IMAGE_TAG}"
+        # Wait for server to start
+        for i in $(seq 1 10); do
+          if curl -sf http://localhost:18787/ > /tmp/echo-http.json; then
+            break
+          fi
+          echo "Waiting for echo server... (attempt $i)"
+          sleep 1
+        done
+        echo "HTTP response:"
+        cat /tmp/echo-http.json
+        if grep -q '"method"' /tmp/echo-http.json; then
+          echo "✓ HTTP smoke test passed"
+        else
+          echo "✗ HTTP smoke test failed — unexpected response"
+          docker logs toolshed-echo-test || true
+          exit 1
+        fi
+        docker rm -f toolshed-echo-test
+
+    - name: Test echo Docker image (HTTPS)
+      run: |
+        CERT=$(pwd)/rust/echo/snakeoil/tls.cert
+        KEY=$(pwd)/rust/echo/snakeoil/tls.key
+        echo "Testing echo image TLS: $IMAGE_TAG"
+        docker run -d --name toolshed-echo-tls-test \
+          -p 18443:8443 \
+          -v "${CERT}:/etc/ssl/echo/tls.cert:ro" \
+          -v "${KEY}:/etc/ssl/echo/tls.key:ro" \
+          -e ECHO_TLS_CERT=/etc/ssl/echo/tls.cert \
+          -e ECHO_TLS_KEY=/etc/ssl/echo/tls.key \
+          -e ECHO_HTTPS_HOST=:: \
+          -e ECHO_HTTPS_PORT=8443 \
+          "${IMAGE_TAG}"
+        # Wait for server to start
+        for i in $(seq 1 10); do
+          if curl -skf https://localhost:18443/ > /tmp/echo-https.json; then
+            break
+          fi
+          echo "Waiting for echo TLS server... (attempt $i)"
+          sleep 1
+        done
+        echo "HTTPS response:"
+        cat /tmp/echo-https.json
+        if grep -q '"method"' /tmp/echo-https.json; then
+          echo "✓ HTTPS smoke test passed"
+        else
+          echo "✗ HTTPS smoke test failed — unexpected response"
+          docker logs toolshed-echo-tls-test || true
+          exit 1
+        fi
+        docker rm -f toolshed-echo-tls-test
