@@ -1,12 +1,10 @@
 uses: ./actions/buildah
 id: buildah
 with:
-  operations: |
-    [
-      {"command": "manifest", "args": ["create", "foo"]},
-      {"command": "manifest", "args": ["add", "foo", "oci:/tmp/a"]},
-      {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:bar"]}
-    ]
+  operations: >-
+    [{"command": "manifest", "args": ["create", "foo"]},
+     {"command": "manifest", "args": ["add", "foo", "oci:/tmp/a"]},
+     {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:bar"]}]
 
 before:
 - shell: bash

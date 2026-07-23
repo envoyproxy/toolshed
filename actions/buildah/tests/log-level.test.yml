@@ -1,10 +1,8 @@
 uses: ./actions/buildah
 id: buildah
 with:
-  operations: |
-    [
-      {"command": "manifest", "args": ["create", "foo"]}
-    ]
+  operations: >-
+    [{"command": "manifest", "args": ["create", "foo"]}]
 
 before:
 - shell: bash
