@@ -1,10 +1,8 @@
 uses: ./actions/buildah
 id: buildah
 with:
-  operations: |
-    [
-      {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:bar"]}
-    ]
+  operations: >-
+    [{"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:bar"]}]
   bash-prefix: |
     #!/bin/bash
     set -uo pipefail
