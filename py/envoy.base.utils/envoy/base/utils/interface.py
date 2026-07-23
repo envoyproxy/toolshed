@@ -228,12 +228,6 @@ class IChangelogs(metaclass=abstracts.Interface):
 
     @property
     @abstracts.interfacemethod
-    def entries_layout(self) -> bool:
-        """Whether changelogs use per-entry current changelog layout."""
-        raise NotImplementedError
-
-    @property
-    @abstracts.interfacemethod
     async def is_pending(self) -> bool:
         """Flag indicating whether the current changelog is set to
         `Pending`."""
@@ -291,17 +285,17 @@ class IChangelogs(metaclass=abstracts.Interface):
 
     @abstracts.interfacemethod
     def write_current(self) -> None:
-        """Create the `current.yaml` changelog file from a template."""
+        """Create the current changelog entries directory."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
     def write_date(self) -> None:
-        """Set the date in the `current.yaml` changelog file."""
+        """Freeze the current changelog entries with a release date."""
         raise NotImplementedError
 
     @abstracts.interfacemethod
     def write_version(self, version: _version.Version) -> None:
-        """Write the `current.yaml` file to the current version."""
+        """Write the current changelog entries to the current version."""
         raise NotImplementedError
 
 
