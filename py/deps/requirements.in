@@ -33,7 +33,7 @@ pytest-patches>=0.1.0
 pytest-asyncio>=0.17.0
 python-gnupg<=0.5.6
 pyyaml==6.0.3
-setuptools>=78.1.1
+setuptools>=83.0.0
 sphinx>=6.2.0,<9
 sphinx-copybutton>=0.5.1
 sphinx-rtd-theme>=2.0.0rc2
