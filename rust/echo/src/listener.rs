@@ -278,7 +278,7 @@ mod tests {
         .test("host_serve")
         .expecting(vec![
             "axum_server::Handle::new(true)",
-            "proc::shutdown_signal(true): Handle { inner: HandleInner { addr: Mutex { data: None, poisoned: false, .. }, addr_notify: Notify { state: 0, waiters: Mutex(PhantomData<std::sync::poison::mutex::Mutex<tokio::util::linked_list::LinkedList<tokio::sync::notify::Waiter, tokio::sync::notify::Waiter>>>, Mutex { data: LinkedList { head: None, tail: None } }) }, conn_count: 0, shutdown: NotifyOnce { notified: false, notify: Notify { state: 0, waiters: Mutex(PhantomData<std::sync::poison::mutex::Mutex<tokio::util::linked_list::LinkedList<tokio::sync::notify::Waiter, tokio::sync::notify::Waiter>>>, Mutex { data: LinkedList { head: None, tail: None } }) } }, graceful: NotifyOnce { notified: false, notify: Notify { state: 0, waiters: Mutex(PhantomData<std::sync::poison::mutex::Mutex<tokio::util::linked_list::LinkedList<tokio::sync::notify::Waiter, tokio::sync::notify::Waiter>>>, Mutex { data: LinkedList { head: None, tail: None } }) } }, graceful_dur: Mutex { data: None, poisoned: false, .. }, conn_end: NotifyOnce { notified: false, notify: Notify { state: 0, waiters: Mutex(PhantomData<std::sync::poison::mutex::Mutex<tokio::util::linked_list::LinkedList<tokio::sync::notify::Waiter, tokio::sync::notify::Waiter>>>, Mutex { data: LinkedList { head: None, tail: None } }) } } } }",
+            "proc::shutdown_signal(true)",
             "axum::serve(true)",
             "runner::runner::ctrl_c(true)"
         ])
@@ -289,7 +289,7 @@ mod tests {
             patch1(crate::proc::shutdown_signal, |handle| {
                 let test = TESTS.get("host_serve");
                 let mut test = test.lock().unwrap();
-                test.notify(&format!("proc::shutdown_signal({:?}): {:?}", true, handle));
+                test.notify(&format!("proc::shutdown_signal({:?})", true));
                 ttest::patch_forward!(test.patch_index(1), shutdown_signal(handle))
             }),
             patch2(axum::serve, |listener, router| {
@@ -338,7 +338,7 @@ mod tests {
         .test("host_serve_tls")
         .expecting(vec![
             "axum_server::Handle::new(true)",
-            "proc::shutdown_signal(true): Handle { inner: HandleInner { addr: Mutex { data: None, poisoned: false, .. }, addr_notify: Notify { state: 0, waiters: Mutex(PhantomData<std::sync::poison::mutex::Mutex<tokio::util::linked_list::LinkedList<tokio::sync::notify::Waiter, tokio::sync::notify::Waiter>>>, Mutex { data: LinkedList { head: None, tail: None } }) }, conn_count: 0, shutdown: NotifyOnce { notified: false, notify: Notify { state: 0, waiters: Mutex(PhantomData<std::sync::poison::mutex::Mutex<tokio::util::linked_list::LinkedList<tokio::sync::notify::Waiter, tokio::sync::notify::Waiter>>>, Mutex { data: LinkedList { head: None, tail: None } }) } }, graceful: NotifyOnce { notified: false, notify: Notify { state: 0, waiters: Mutex(PhantomData<std::sync::poison::mutex::Mutex<tokio::util::linked_list::LinkedList<tokio::sync::notify::Waiter, tokio::sync::notify::Waiter>>>, Mutex { data: LinkedList { head: None, tail: None } }) } }, graceful_dur: Mutex { data: None, poisoned: false, .. }, conn_end: NotifyOnce { notified: false, notify: Notify { state: 0, waiters: Mutex(PhantomData<std::sync::poison::mutex::Mutex<tokio::util::linked_list::LinkedList<tokio::sync::notify::Waiter, tokio::sync::notify::Waiter>>>, Mutex { data: LinkedList { head: None, tail: None } }) } } } }",
+            "proc::shutdown_signal(true)",
             "Host::tls_config(true)",
             "runner::runner::ctrl_c(true)",
             "axum_server::bind_rustls(true)"
@@ -361,7 +361,7 @@ mod tests {
             patch1(crate::proc::shutdown_signal, |handle| {
                 let test = TESTS.get("host_serve_tls");
                 let mut test = test.lock().unwrap();
-                test.notify(&format!("proc::shutdown_signal({:?}): {:?}", true, handle));
+                test.notify(&format!("proc::shutdown_signal({:?})", true));
                 ttest::patch_forward!(test.patch_index(1), shutdown_signal(handle))
             }),
             patch2(axum_server::bind_rustls, |address, config| {
