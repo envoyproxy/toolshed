@@ -15,7 +15,6 @@ from aio.core.functional import async_property
 from envoy.base import utils
 from envoy.base.utils.abstract.project.changelog import (
     CHANGELOG_CONFIG_PATH,
-    CHANGELOG_CURRENT_PATH,
     CHANGELOG_ENTRY_GLOB,
     ENTRY_SEPARATOR,
 )
@@ -240,7 +239,6 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
     @async_property(cache=True)
     async def errors(self) -> tuple[str, ...]:
         areas_errors = await self.check_areas_file()
-        legacy_errors = self.check_legacy_current()
         entry_errors = await self.check_entry_files()
         try:
             return (
@@ -248,12 +246,10 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
                 *await self.check_date(),
                 *await self.check_sections(),
                 *areas_errors,
-                *legacy_errors,
                 *entry_errors)
         except utils.exceptions.ChangelogParseError as e:
             return (
                 *areas_errors,
-                *legacy_errors,
                 *entry_errors,
                 f"{self.version}: {e}")
 
@@ -306,10 +302,10 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             > _version.Version(self.project.version.base_version))
 
     async def check_date(self) -> tuple[str, ...]:
-        # In the entries layout the current changelog has no real date; it is
-        # synthesized as `Pending` until `write_version` bakes a dated file,
-        # so there is nothing to validate here.
-        if self.is_current and self.project.changelogs.entries_layout:
+        # The current changelog has no real date; it is synthesized as
+        # `Pending` until `write_version` bakes a dated file, so there is
+        # nothing to validate here.
+        if self.is_current:
             return ()
         errors = []
         if invalid_date := await self.invalid_date:
@@ -347,18 +343,6 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
         if not self.is_current or not areas:
             return ()
         return await self.project.execute(self.checker.check_areas_file)
-
-    def check_legacy_current(self) -> tuple[str, ...]:
-        if not self.is_current:
-            return ()
-        if not self.project.path.joinpath(CHANGELOG_CURRENT_PATH).is_file():
-            return ()
-        return (
-            f"{CHANGELOG_CURRENT_PATH}: Legacy changelog file is no longer "
-            "used; add changelog entries as individual files under "
-            "changelogs/current/<section>/<area>__<slug>.rst instead, and "
-            f"remove {CHANGELOG_CURRENT_PATH}.",
-        )
 
     def check_version(self) -> tuple[str, ...]:
         errors = []

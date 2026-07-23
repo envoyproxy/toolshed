@@ -11,7 +11,6 @@ from functools import cached_property
 from typing import cast
 
 from frozendict import frozendict
-import jinja2
 from packaging import version as _version
 import yaml as _yaml
 
@@ -28,7 +27,6 @@ logger = logging.getLogger(__name__)
 
 CHANGELOG_PATH_GLOB = "changelogs/*.*.*.yaml"
 CHANGELOG_PATH_FMT = "changelogs/{version}.yaml"
-CHANGELOG_CURRENT_PATH = "changelogs/current.yaml"
 CHANGELOG_CURRENT_DIR_PATH = "changelogs/current"
 CHANGELOG_CURRENT_PLACEHOLDER = "PLACEHOLDER"
 CHANGELOG_ENTRY_GLOB = "*/*.rst"
@@ -38,13 +36,6 @@ CHANGELOG_SUMMARY_PATH = "changelogs/summary.md"
 CHANGELOG_ENTRY_URL_TPL = (
     "https://raw.githubusercontent.com/envoyproxy/envoy/"
     f"v{{version}}/{CHANGELOG_CURRENT_DIR_PATH}/{{path}}")
-CHANGELOG_CURRENT_TPL = """
-date: Pending
-{% for section, description in sections.items() %}
-{{ section }}:
-{% if description %}# {{ description }}{% endif -%}
-{% endfor %}
-"""
 DATE_FORMAT = "%B %-d, %Y"
 
 # These are for parsing pre 1.23 rst changelogs and can be removed when that is
@@ -199,7 +190,7 @@ class AChangelog(metaclass=abstracts.Abstraction):
     @async_property(cache=True)
     async def data(self) -> typing.ChangelogDict:
         changelogs = self.project.changelogs
-        if changelogs.entries_layout and self._is_current:
+        if self._is_current:
             # Prefer the version yaml if write_date already froze the entries
             # (release flow); fall back to reading live per-entry files.
             version_yaml = changelogs.changelog_path(self.version)
@@ -265,20 +256,15 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @cached_property
     def changelog_paths(self) -> typing.ChangelogPathsDict:
-        if self.entries_layout:
-            historical_paths = self.project.path.glob(CHANGELOG_PATH_GLOB)
-            current_version = _version.Version(
-                self.project.version.base_version)
-            return {
-                **{
-                    self._version_from_path(path): path
-                    for path
-                    in historical_paths},
-                current_version: self.current_dir_path}
+        historical_paths = self.project.path.glob(CHANGELOG_PATH_GLOB)
+        current_version = _version.Version(
+            self.project.version.base_version)
         return {
-            self._version_from_path(path): path
-            for path
-            in self.paths}
+            **{
+                self._version_from_path(path): path
+                for path
+                in historical_paths},
+            current_version: self.current_dir_path}
 
     @cached_property
     def changelogs(self) -> typing.ChangelogsDict:
@@ -286,9 +272,7 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             k: self.changelog_class(
                 self.project,
                 k,
-                (self.current_path
-                 if self.entries_layout and self.project.is_current(k)
-                 else self.changelog_paths[k]),)
+                self.changelog_paths[k])
             for k
             in reversed(sorted(self.changelog_paths.keys()))}
 
@@ -297,16 +281,8 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         return next(iter(self.changelogs))
 
     @property
-    def current_path(self) -> pathlib.Path:
-        return self.project.path.joinpath(self.rel_current_path)
-
-    @property
     def current_dir_path(self) -> pathlib.Path:
         return self.project.path.joinpath(self.rel_current_dir_path)
-
-    @cached_property
-    def current_tpl(self) -> jinja2.Template:
-        return jinja2.Template(CHANGELOG_CURRENT_TPL)
 
     @property
     def date_format(self) -> str:
@@ -318,23 +294,12 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     @async_property
     async def is_pending(self) -> bool:
-        if self.entries_layout:
-            return not self.changelog_path(self.project.version).exists()
-        return (
-            await self[self.current].release_date
-            == "Pending")
+        return not self.changelog_path(self.project.version).exists()
 
     @property
     def paths(self) -> tuple[pathlib.Path, ...]:
         paths = self.project.path.glob(CHANGELOG_PATH_GLOB)
-        return (
-            (*paths, self.current_dir_path)
-            if self.entries_layout
-            else (*paths, self.current_path))
-
-    @property
-    def rel_current_path(self) -> pathlib.Path:
-        return pathlib.Path(CHANGELOG_CURRENT_PATH)
+        return (*paths, self.current_dir_path)
 
     @property
     def rel_current_dir_path(self) -> pathlib.Path:
@@ -414,20 +379,16 @@ class AChangelogs(metaclass=abstracts.Abstraction):
 
     def changes_for_commit(self, change: typing.ProjectChangeDict) -> set[str]:
         changed = set()
-        if any(k in change for k in ["release", "dev"]):
-            if not self.entries_layout:
-                changed.add(CHANGELOG_CURRENT_PATH)
         if "dev" in change:
             changed.add(self.rel_changelog_path(change["dev"]["old_version"]))
             changed.add(str(self.summary_path))
-        if "release" in change and self.entries_layout:
+        if "release" in change:
             changed.add(self.rel_changelog_path(self.project.version))
         changelog = change.get("sync", {}).get("changelog", {})
         for version, sync in changelog.items():
             if sync:
                 changed.add(self.rel_changelog_path(version))
-        if self.entries_layout:
-            changed.add(CHANGELOG_CURRENT_DIR_PATH)
+        changed.add(CHANGELOG_CURRENT_DIR_PATH)
         return changed
 
     def dump_yaml(self, data: typing.ChangelogDict) -> str:
@@ -495,25 +456,13 @@ class AChangelogs(metaclass=abstracts.Abstraction):
             CHANGELOG_CURRENT_PLACEHOLDER).write_text("")
 
     def write_current(self) -> None:
-        if self.entries_layout:
-            self.current_dir_path.mkdir(parents=True, exist_ok=True)
-            self._write_current_placeholder()
-        else:
-            sections = {
-                k: v.get("description")
-                for k, v
-                in self.sections.items()
-                if k != "changes"}
-            self.current_path.write_text(
-                self.current_tpl.render(sections=sections).lstrip())
+        self.current_dir_path.mkdir(parents=True, exist_ok=True)
+        self._write_current_placeholder()
 
     async def write_date(self, date: str) -> None:
         """Write the release date to the current changelog.
 
-        For the legacy (non-entries) layout, updates the date field in
-        ``changelogs/current.yaml``.
-
-        For the entries layout, freezes the current per-entry files into
+        Freezes the current per-entry files into
         ``changelogs/{version}.yaml`` with the correct release date. The
         per-entry directory is **not** removed here; that cleanup
         happens in :meth:`write_version` during the following *dev*
@@ -524,44 +473,34 @@ class AChangelogs(metaclass=abstracts.Abstraction):
         if not await self.is_pending:
             raise exceptions.ReleaseError(
                 "Current changelog date is not set to `Pending`")
-        if self.entries_layout:
-            data = self.changelog_class.get_data_from_entries(
-                self.current_dir_path)
-            data["date"] = date
-            self.validate_sections(data)
-            self.changelog_path(self.project.version).write_text(
-                self.dump_yaml(data))
-        else:
-            data = (await self[self.current].data).copy()
-            data["date"] = date
-            self.current_path.write_text(self.dump_yaml(data))
+        data = self.changelog_class.get_data_from_entries(
+            self.current_dir_path)
+        data["date"] = date
+        self.validate_sections(data)
+        self.changelog_path(self.project.version).write_text(
+            self.dump_yaml(data))
 
     def write_version(self, version: _version.Version) -> None:
         version_file = self.changelog_path(version)
         if version_file.exists():
-            if self.entries_layout:
-                # write_date in the release flow already froze the entries
-                # into version_file with the correct date; just clean up
-                # the current entries dir here.
-                data = self.changelog_class.get_data(version_file)
-                if data.get("date", "Pending") != "Pending":
-                    shutil.rmtree(self.current_dir_path)
-                    self.current_dir_path.mkdir()
-                    self._write_current_placeholder()
-                    return
+            # write_date in the release flow already froze the entries
+            # into version_file with the correct date; just clean up
+            # the current entries dir here.
+            data = self.changelog_class.get_data(version_file)
+            if data.get("date", "Pending") != "Pending":
+                shutil.rmtree(self.current_dir_path)
+                self.current_dir_path.mkdir()
+                self._write_current_placeholder()
+                return
             raise exceptions.DevError(
                 f"Version file ({version_file}) already exists")
-        if self.entries_layout:
-            data = self.changelog_class.get_data_from_entries(
-                self.current_dir_path)
-            data["date"] = self.datestamp
-            version_file.write_text(self.dump_yaml(data))
-            shutil.rmtree(self.current_dir_path)
-            self.current_dir_path.mkdir()
-            self._write_current_placeholder()
-        else:
-            version_file.write_text(
-                self.current_path.read_text())
+        data = self.changelog_class.get_data_from_entries(
+            self.current_dir_path)
+        data["date"] = self.datestamp
+        version_file.write_text(self.dump_yaml(data))
+        shutil.rmtree(self.current_dir_path)
+        self.current_dir_path.mkdir()
+        self._write_current_placeholder()
 
     def yaml_change_presenter(
             self,
@@ -576,11 +515,6 @@ class AChangelogs(metaclass=abstracts.Abstraction):
     @cached_property
     def _yaml_changelogs_version(self) -> _version.Version:
         return _version.Version(YAML_CHANGELOGS_VERSION)
-
-    @property
-    def entries_layout(self) -> bool:
-        return (
-            self.project.path.joinpath(CHANGELOG_CURRENT_DIR_PATH).is_dir())
 
     def _is_rst_changelog(self, version: _version.Version) -> bool:
         return version < self._yaml_changelogs_version
