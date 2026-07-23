@@ -1,9 +1,9 @@
 assets:
   toolshed-echo:
-    release-tag: bins-v0.1.58
+    release-tag: bins-v0.1.59
     version: 0.1.0
     # sha256 values are populated by the release prepare step.
     # Placeholder empty strings are replaced with bare hex digests on first docker release.
     sha256:
-      amd64: "20990037ab458f74ca6b1dff3426f3adf650cfa315a4b5514dbe92b8ad9ccb28"
-      arm64: "9c24614ff527e99aeb400a39a5e5b53c720f535cfb9f62cebfd2644977d35d3a"
+      amd64: "e7102d19cdd3c737693eb309a9b01febfacb6fae1ab4ea0271d8f420fd59a072"
+      arm64: "36fd094b42520375564047c38447b388819a4b6faf16f10a032832dbffb3740e"
