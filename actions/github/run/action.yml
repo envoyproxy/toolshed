@@ -249,7 +249,7 @@ runs:
       options: -r
       filter: now
   - run: |
-      # Run the command
+      # Run the command (check here for failure)
       onerror () {
           EXIT_CODE="$?"
           if [[ -z "$SOURCED" ]]; then
