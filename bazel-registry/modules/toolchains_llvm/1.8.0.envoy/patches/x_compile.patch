@@ -1,6 +1,22 @@
---- a/toolchain/extensions/llvm.bzl	2026-06-12 05:29:59.000000000 +0000
-+++ b/toolchain/extensions/llvm.bzl	2026-07-24 08:03:41.016624279 +0000
-@@ -77,11 +77,21 @@
+--- a/toolchain/cc_toolchain_config.bzl
++++ b/toolchain/cc_toolchain_config.bzl
+@@ -586,7 +586,12 @@
+         else:
+             fail("Invalid stdlib: " + stdlib)
+     elif stdlib == "libc":
+-        pass
++        libunwind_link_flags = [
++            "-l:libunwind.a",
++            # To support libunwind.
++            "-lpthread",
++            "-ldl",
++        ]
+     elif stdlib == "none":
+         cxx_flags = [
+             "-nostdlib",
+--- a/toolchain/extensions/llvm.bzl
++++ b/toolchain/extensions/llvm.bzl
+@@ -80,11 +80,21 @@
                  name,
              )
  
@@ -18,22 +34,22 @@
                  **attrs
              )
  
--        # Check that every defined toolchain_root or sysroot has a corresponding toolchain.
-+        # Check that every defined toolchain_root, sysroot, or cxx_cross_lib has a corresponding toolchain.
+-        # Check that every defined toolchain_root or sysroot has a corresponding toolchain
++        # Check that every defined toolchain_root, sysroot or cxx_cross_lib has a corresponding toolchain
+         # Only validate for the current module's tags
+         toolchain_names_for_module = [t.name for t in mod.tags.toolchain]
          for root in mod.tags.toolchain_root:
-             if root.name not in toolchain_names:
-                 fail("toolchain_root '%s' does not have a corresponding toolchain" % root.name)
-@@ -97,6 +107,9 @@
+@@ -102,6 +112,9 @@
          for tag in mod.tags.extra_linker_files:
-             if tag.name not in toolchain_names:
-                 fail("extra_linker_files '%s' does not have a corresponding toolchain" % tag.name)
+             if tag.name not in toolchain_names_for_module:
+                 fail("extra_linker_files '%s' does not have a corresponding toolchain in module '%s'" % (tag.name, mod.name))
 +        for cl in mod.tags.cxx_cross_lib:
-+            if cl.name not in toolchain_names:
++            if cl.name not in toolchain_names_for_module:
 +                fail("cxx_cross_lib '%s' does not have a corresponding toolchain" % cl.name)
  
      if bazel_features.external_deps.extension_metadata_has_reproducible:
          return module_ctx.extension_metadata(reproducible = True)
-@@ -116,6 +129,7 @@
+@@ -121,6 +134,7 @@
  _attrs.pop("sysroot", None)
  _attrs.pop("extra_compiler_files_dict", None)
  _attrs.pop("extra_linker_files_dict", None)
@@ -41,7 +57,7 @@
  
  llvm = module_extension(
      implementation = _llvm_impl_,
-@@ -208,5 +222,12 @@
+@@ -213,5 +227,12 @@
                  "constraints": attr.label_list(doc = "List of extra constraints to add to target_compatible_with for the generated toolchains."),
              },
          ),
@@ -54,8 +70,8 @@
 +        ),
      },
  )
---- a/toolchain/internal/configure.bzl	2026-06-12 05:29:59.000000000 +0000
-+++ b/toolchain/internal/configure.bzl	2026-07-24 08:07:46.562129804 +0000
+--- a/toolchain/internal/configure.bzl
++++ b/toolchain/internal/configure.bzl
 @@ -256,6 +256,57 @@
          use_absolute_paths_sysroot,
      )
@@ -197,8 +213,8 @@
          extra_exec_compatible_with_specific = toolchain_info.extra_exec_compatible_with.get(target_pair, []),
          extra_target_compatible_with_specific = toolchain_info.extra_target_compatible_with.get(target_pair, []),
          extra_exec_compatible_with_all_targets = toolchain_info.extra_exec_compatible_with.get("", []),
---- a/toolchain/internal/repo.bzl	2026-06-12 05:29:59.000000000 +0000
-+++ b/toolchain/internal/repo.bzl	2026-07-24 08:05:26.501671743 +0000
+--- a/toolchain/internal/repo.bzl
++++ b/toolchain/internal/repo.bzl
 @@ -153,6 +153,15 @@
                 "containing the files and the sysroot path will be taken as the path to the " +
                 "package of this label."),
@@ -215,19 +231,3 @@
      "multiarch": attr.string_dict(
          mandatory = False,
          doc = ("Multiarch triple used to construct sysroot include and library paths " +
---- a/toolchain/cc_toolchain_config.bzl	2026-06-12 05:29:59.000000000 +0000
-+++ b/toolchain/cc_toolchain_config.bzl	2026-07-24 08:05:36.288769105 +0000
-@@ -586,7 +586,12 @@
-         else:
-             fail("Invalid stdlib: " + stdlib)
-     elif stdlib == "libc":
--        pass
-+        libunwind_link_flags = [
-+            "-l:libunwind.a",
-+            # To support libunwind.
-+            "-lpthread",
-+            "-ldl",
-+        ]
-     elif stdlib == "none":
-         cxx_flags = [
-             "-nostdlib",
