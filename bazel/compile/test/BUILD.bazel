@@ -74,6 +74,11 @@ sh_test(
     name = "cross_compile_aarch64_unwind_test",
     size = "small",
     srcs = ["check_unwind.sh"],
+    target_compatible_with = select({
+        "//compile:gcc_build": ["@platforms//:incompatible"],
+        "//compile:macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     data = [
         ":test_unwind",
         "@llvm_toolchain_llvm//:nm",
@@ -96,6 +101,11 @@ sh_test(
     name = "cross_compile_x86_64_unwind_test",
     size = "small",
     srcs = ["check_unwind.sh"],
+    target_compatible_with = select({
+        "//compile:gcc_build": ["@platforms//:incompatible"],
+        "//compile:macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     data = [
         ":test_unwind",
         "@llvm_toolchain_llvm//:nm",
@@ -120,6 +130,11 @@ sh_test(
     name = "cross_compile_aarch64_no_unwind_test",
     size = "small",
     srcs = ["check_unwind.sh"],
+    target_compatible_with = select({
+        "//compile:gcc_build": ["@platforms//:incompatible"],
+        "//compile:macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     data = [
         ":test_unwind",
         "@llvm_toolchain_llvm//:nm",
@@ -143,6 +158,11 @@ sh_test(
     name = "cross_compile_x86_64_no_unwind_test",
     size = "small",
     srcs = ["check_unwind.sh"],
+    target_compatible_with = select({
+        "//compile:gcc_build": ["@platforms//:incompatible"],
+        "//compile:macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     data = [
         ":test_unwind",
         "@llvm_toolchain_llvm//:nm",

@@ -138,6 +138,11 @@ cmake(
 pkg_files(
     name = "msan_libs_files",
     srcs = [":libcxx_msan"],
+    target_compatible_with = select({
+        ":gcc_build": ["@platforms//:incompatible"],
+        ":macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     excludes = [
         "**/*.h",
         "**/include/**",
@@ -148,6 +153,11 @@ pkg_files(
 
 pkg_tar(
     name = "cxx_msan",
+    target_compatible_with = select({
+        ":gcc_build": ["@platforms//:incompatible"],
+        ":macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     srcs = [":msan_libs_files"],
     extension = "tar.xz",
     package_file_name = "msan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"],
@@ -155,6 +165,11 @@ pkg_tar(
 
 pkg_files(
     name = "tsan_libs_files",
+    target_compatible_with = select({
+        ":gcc_build": ["@platforms//:incompatible"],
+        ":macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
     srcs = [":libcxx_tsan"],
     excludes = [
         "**/*.h",
@@ -169,6 +184,11 @@ pkg_tar(
     srcs = [":tsan_libs_files"],
     extension = "tar.xz",
     package_file_name = "tsan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"],
+    target_compatible_with = select({
+        ":gcc_build": ["@platforms//:incompatible"],
+        ":macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 [
@@ -180,6 +200,11 @@ pkg_tar(
             ],
             prefix = "lib",
             strip_prefix = ".",
+            target_compatible_with = select({
+                ":gcc_build": ["@platforms//:incompatible"],
+                ":macos_build": ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
         ),
         pkg_files(
             name = "libcxx_%s_compiler_rt_files" % arch,
@@ -188,6 +213,11 @@ pkg_tar(
             ],
             prefix = "lib",
             strip_prefix = ".",
+            target_compatible_with = select({
+                ":gcc_build": ["@platforms//:incompatible"],
+                ":macos_build": ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
         ),
         pkg_files(
             name = "libcxx_%s_include_files" % arch,
@@ -196,6 +226,11 @@ pkg_tar(
             ],
             prefix = "include",
             strip_prefix = ".",
+            target_compatible_with = select({
+                ":gcc_build": ["@platforms//:incompatible"],
+                ":macos_build": ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
         ),
         pkg_tar(
             name = "libcxx_%s" % arch,
@@ -206,6 +241,11 @@ pkg_tar(
             ],
             extension = "tar.xz",
             package_file_name = "libcxx-llvm%s-%s.tar.xz" % (VERSIONS["llvm"], arch),
+            target_compatible_with = select({
+                ":gcc_build": ["@platforms//:incompatible"],
+                ":macos_build": ["@platforms//:incompatible"],
+                "//conditions:default": [],
+            }),
         ),
     )
     for arch in SUPPORTED_ARCHES

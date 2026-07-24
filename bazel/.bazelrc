@@ -47,7 +47,8 @@ common:rbe --config=remote-cache
 common:rbe --config=remote-exec
 
 # Override the default RBE platforms to use the gcc worker container.
-# Use alongside --config=rbe and --config=gcc for gcc RBE builds.
+# Use alongside --config=gcc for gcc RBE builds.
+common:rbe-gcc --config=rbe
 common:rbe-gcc --host_platform=//platforms/rbe:linux_x64_gcc
 common:rbe-gcc --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//platforms/rbe:linux_arm64_gcc
 
@@ -74,8 +75,9 @@ common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64,//platf
 # gcc
 #############################################################################
 
-common:gcc --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=0
 common:gcc --//compile:use_gcc_toolchain=true
+common:gcc --extra_toolchains=//toolchains/gcc:linux_x64_toolchain
+common:gcc --extra_toolchains=//toolchains/gcc:linux_arm64_toolchain
 
 
 #############################################################################

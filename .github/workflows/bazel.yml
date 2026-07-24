@@ -118,6 +118,7 @@ jobs:
       bazel-mode: ${{ matrix.mode }}-gcc
       bazel-path: bazel
       rbe: true
+      rbe-config: rbe-gcc
       targets: >-
         //...
     strategy:

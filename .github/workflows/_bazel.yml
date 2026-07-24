@@ -19,9 +19,13 @@ on:
         default:
         type: string
       rbe:
-        description: Enable EngFlow RBE (appends --config=rbe when auth passes)
+        description: Enable EngFlow RBE (appends the selected RBE config when auth passes)
         type: boolean
         default: false
+      rbe-config:
+        description: Bazel RBE config to append when RBE is enabled and authorized
+        type: string
+        default: rbe
       bazel-mode:
         description: Bazel mode (workspace or bzlmod)
         required: true
@@ -89,8 +93,10 @@ jobs:
       run: >-
         exec bazel ${{ inputs.action }}
         ${{ inputs.bazel-args }}
-        ${{ (steps.rbe.outputs.authorized == 'true' || github.event_name != 'pull_request') && '--config=rbe' || '' }}
-        ${{ inputs.targets }}
+        ${{ (steps.rbe.outputs.authorized == 'true'
+             || github.event_name != 'pull_request')
+            && format('--config={0} --config=bes', inputs.rbe-config || 'rbe') || ''
+        }} ${{ inputs.targets }}
       working-directory: ${{ inputs.bazel-path }}
       env:
         GITHUB_TOKEN: ${{ github.token }}
