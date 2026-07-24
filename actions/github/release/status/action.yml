@@ -42,20 +42,20 @@ runs:
   steps:
   - name: Check all workflows ran
     id: afterall
-    uses: envoyproxy/toolshed/actions/github/afterall@10650c3b3837be6ca7f3679931878546e9a6c359
+    uses: envoyproxy/toolshed/actions/github/afterall@90dbeeeeb32109e6362797f48fbf232f89360d8f
     with:
       sha: ${{ inputs.sha }}
       workflows: ${{ inputs.workflows }}
       repo: ${{ inputs.repository }}
   - name: Version info
     id: version
-    uses: envoyproxy/toolshed/actions/version@10650c3b3837be6ca7f3679931878546e9a6c359
+    uses: envoyproxy/toolshed/actions/version@90dbeeeeb32109e6362797f48fbf232f89360d8f
     with:
       version: ${{ inputs.version }}
       version-file: ${{ inputs.version-file }}
   - name: Status summary title
     id: status-summary-title
-    uses: envoyproxy/toolshed/actions/jq@10650c3b3837be6ca7f3679931878546e9a6c359
+    uses: envoyproxy/toolshed/actions/jq@90dbeeeeb32109e6362797f48fbf232f89360d8f
     with:
       input: |
         name: ${{ inputs.name }}
@@ -72,7 +72,7 @@ runs:
            end) as $release_info
         | "${{ inputs.template-status }}"
   - name: Versions info
-    uses: envoyproxy/toolshed/actions/json/table@10650c3b3837be6ca7f3679931878546e9a6c359
+    uses: envoyproxy/toolshed/actions/json/table@90dbeeeeb32109e6362797f48fbf232f89360d8f
     with:
       append: true
       output-path: GITHUB_STEP_SUMMARY
@@ -97,7 +97,7 @@ runs:
             "continue": .continue,
           }
   - name: Generate workflow status table
-    uses: envoyproxy/toolshed/actions/json/table@10650c3b3837be6ca7f3679931878546e9a6c359
+    uses: envoyproxy/toolshed/actions/json/table@90dbeeeeb32109e6362797f48fbf232f89360d8f
     with:
       title: Required Workflows Status
       append: true
