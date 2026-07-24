@@ -1,0 +1,73 @@
+load("@rules_cc//cc/toolchains:cc_toolchain.bzl", "cc_toolchain")
+load(":toolchain.bzl", "gcc_linux_cc_toolchain_config")
+
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "empty",
+    srcs = [],
+)
+
+gcc_linux_cc_toolchain_config(
+    name = "linux_x64_config",
+    arch = "x86_64",
+)
+
+cc_toolchain(
+    name = "linux_x64",
+    all_files = ":empty",
+    ar_files = ":empty",
+    compiler_files = ":empty",
+    dwp_files = ":empty",
+    linker_files = ":empty",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    toolchain_config = ":linux_x64_config",
+)
+
+toolchain(
+    name = "linux_x64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    target_settings = ["//compile:gcc_build"],
+    toolchain = ":linux_x64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+gcc_linux_cc_toolchain_config(
+    name = "linux_arm64_config",
+    arch = "aarch64",
+)
+
+cc_toolchain(
+    name = "linux_arm64",
+    all_files = ":empty",
+    ar_files = ":empty",
+    compiler_files = ":empty",
+    dwp_files = ":empty",
+    linker_files = ":empty",
+    objcopy_files = ":empty",
+    strip_files = ":empty",
+    toolchain_config = ":linux_arm64_config",
+)
+
+toolchain(
+    name = "linux_arm64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+    target_settings = ["//compile:gcc_build"],
+    toolchain = ":linux_arm64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
