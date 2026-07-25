@@ -183,15 +183,15 @@
     "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.3/MODULE.bazel": "af322bc08976524477c79d1e45e241b6efbeb918c497e8840b8ab116802dda79",
     "https://bcr.bazel.build/modules/zlib/1.3.1.bcr.3/source.json": "2be409ac3c7601245958cd4fcdff4288be79ed23bd690b4b951f500d54ee6e7d",
     "https://bcr.bazel.build/modules/zlib/1.3.1/MODULE.bazel": "751c9940dcfe869f5f7274e1295422a34623555916eb98c174c1e945594bf198",
-    "https://raw.githubusercontent.com/envoyproxy/toolshed/1e4f8fe342ca211934dd98c2438e68183352411d/bazel-registry/bazel_registry.json": "not found",
-    "https://raw.githubusercontent.com/envoyproxy/toolshed/1e4f8fe342ca211934dd98c2438e68183352411d/bazel-registry/modules/toolchains_llvm/1.8.0.envoy/MODULE.bazel": "154a2544a9d24532acf88cb6c7dafd3261529835839b4c0ad4c65bb5f52ea5fa",
-    "https://raw.githubusercontent.com/envoyproxy/toolshed/1e4f8fe342ca211934dd98c2438e68183352411d/bazel-registry/modules/toolchains_llvm/1.8.0.envoy/source.json": "c39279113a1c0e1d2895ca9046f1168c0a37c0fc8c752cc242362c2f85c3653a"
+    "https://raw.githubusercontent.com/envoyproxy/toolshed/bdfdabddda94c9d4ef8ae061e8bf3630dcccb8c9/bazel-registry/bazel_registry.json": "not found",
+    "https://raw.githubusercontent.com/envoyproxy/toolshed/bdfdabddda94c9d4ef8ae061e8bf3630dcccb8c9/bazel-registry/modules/toolchains_llvm/1.8.0.envoy/MODULE.bazel": "93909b69ee77410306b1b591653f7f89ecda4c7d88d42c468dd1e5e7afc6fe65",
+    "https://raw.githubusercontent.com/envoyproxy/toolshed/bdfdabddda94c9d4ef8ae061e8bf3630dcccb8c9/bazel-registry/modules/toolchains_llvm/1.8.0.envoy/source.json": "c9c8e538dcf8b01d7e44a40f9876269216d21ab6f826319c42ef0ff10cdc4ddf"
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
     "//compile:extensions.bzl%libcxx_extension": {
       "general": {
-        "bzlTransitiveDigest": "BaDgY5eTa9bB1ifHwYvGhGwNiTfDGs2pc3g9Ew1Ath8=",
+        "bzlTransitiveDigest": "Kfd947Q8ZeWBF7prpbFMGK2x0p7Vlyf17GufsPso5Wg=",
         "usagesDigest": "abUilkGdoJv0k9+OuVWMoSkBWbeeP55Uwyf5IIR6+y8=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -223,8 +223,8 @@
     },
     "//compile:extensions.bzl%libcxx_libs_extension": {
       "general": {
-        "bzlTransitiveDigest": "i3YI3ISEqmq00gfgRXxr4k63EovPniIu+bsNdlrteq8=",
-        "usagesDigest": "snFX0b8vme8HIt3A5/Hd54CBs14YAIaaoU8/Az2DFZU=",
+        "bzlTransitiveDigest": "Kfd947Q8ZeWBF7prpbFMGK2x0p7Vlyf17GufsPso5Wg=",
+        "usagesDigest": "AdF1FMVozcFzpkutIoKPyfkiE1NN9ZHzBZbh5e7xMXw=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -233,8 +233,8 @@
             "bzlFile": "@@//compile:libcxx_libs.bzl",
             "ruleClassName": "libcxx_libs",
             "attributes": {
-              "version": "0.1.50",
-              "sha256": "b4d598c338e7b9f4af38cf09ef52ae5758f69980f68320602b2a214e3d6c944e",
+              "version": "0.1.59",
+              "sha256": "9c900495dac5c214d135caab02cfcf01806916a8eeb994687b2815ed38a79831",
               "arch": "aarch64"
             }
           },
@@ -242,8 +242,8 @@
             "bzlFile": "@@//compile:libcxx_libs.bzl",
             "ruleClassName": "libcxx_libs",
             "attributes": {
-              "version": "0.1.50",
-              "sha256": "d5e95a23e964c521a8fde618eb46de5c7e4c182f544e367e19fe1a9482002dfb",
+              "version": "0.1.59",
+              "sha256": "50c7385dd1c17fd3606fa8850cfb1c7d0166ab109e404964f55abd6b508560eb",
               "arch": "x86_64"
             }
           }
@@ -253,8 +253,8 @@
     },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
-        "bzlTransitiveDigest": "vHxestBgMx4Ra2ZOgUkBG6wzY5p5xjccsVjy7/qBA74=",
-        "usagesDigest": "RZ2ShSymJNCC4VyW2cckwVGhOXpn2r3fcc6r9Y2ym5Y=",
+        "bzlTransitiveDigest": "p6zR5GdyCcs9AIu685ivLzy0PaH5jxciu4SWxVkHs9Q=",
+        "usagesDigest": "87HHPyNPCXxrzJHnqbllhbkwVRGrYIh2FqacPCFgAYU=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -263,8 +263,8 @@
             "bzlFile": "@@//sysroot:sysroot.bzl",
             "ruleClassName": "sysroot",
             "attributes": {
-              "version": "0.1.50",
-              "sha256": "fb1cc19db235e9843bb27adf270912849ed9d87708585163faebec397b65f3ec",
+              "version": "0.1.59",
+              "sha256": "20114f2761d9e1d7de2bc20b359e6cdc118267bc155d313fd92587ca662968c7",
               "arch": "amd64",
               "glibc_version": "2.31",
               "stdcc_version": "13"
@@ -274,8 +274,8 @@
             "bzlFile": "@@//sysroot:sysroot.bzl",
             "ruleClassName": "sysroot",
             "attributes": {
-              "version": "0.1.50",
-              "sha256": "43f4d409a1a2ef305e06e327b2226f39778f2369d40b0acea20c11dd37ec4983",
+              "version": "0.1.59",
+              "sha256": "47653e4df55d6493669cee456ffb6a73c57ec8ce12442586fb43c2628d212e80",
               "arch": "arm64",
               "glibc_version": "2.31",
               "stdcc_version": "13"
@@ -795,6 +795,30 @@
             "platforms"
           ]
         ]
+      }
+    },
+    "@@toolchains_llvm~//toolchain/extensions:distributions.bzl%llvm_distributions": {
+      "general": {
+        "bzlTransitiveDigest": "gCdXpBt3HBBc280OILOFheHmO7lXWXJYnPgYiTtyapI=",
+        "usagesDigest": "TOUpqqL9mFVt/EViWyJKIWld/J/14+AhvNLaujrxDBo=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "llvm_distributions_data": {
+            "bzlFile": "@@toolchains_llvm~//toolchain/internal:distributions_repo.bzl",
+            "ruleClassName": "llvm_distributions_repo",
+            "attributes": {
+              "srcs": [
+                "@@toolchains_llvm~//toolchain/distributions:pre_github.jsonc",
+                "@@toolchains_llvm~//toolchain/distributions:github_legacy.jsonc",
+                "@@toolchains_llvm~//toolchain/distributions:github.jsonc",
+                "@@toolchains_llvm~//toolchain/distributions:extra.jsonc"
+              ]
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
       }
     }
   }
