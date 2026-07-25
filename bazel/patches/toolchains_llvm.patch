@@ -1,6 +1,6 @@
 diff -Naur a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.bzl
 --- a/toolchain/cc_toolchain_config.bzl	2026-07-25 16:35:52.121480568 +0000
-+++ b/toolchain/cc_toolchain_config.bzl	2026-07-25 16:35:52.131480762 +0000
++++ b/toolchain/cc_toolchain_config.bzl	2026-07-25 16:48:59.125550596 +0000
 @@ -586,7 +586,12 @@
          else:
              fail("Invalid stdlib: " + stdlib)
@@ -15,9 +15,18 @@ diff -Naur a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.b
      elif stdlib == "none":
          cxx_flags = [
              "-nostdlib",
+@@ -600,8 +605,6 @@
+     # On macOS the libc++ headers come from the SDK (see above), not the
+     # toolchain, so do not add the toolchain's libc++ include paths.
+     use_toolchain_libcxx_paths = stdlib in ["builtin-libc++", "libc++"] and target_os != "darwin"
+-    if use_toolchain_libcxx_paths:
+-        cpp_system_includes = toolchain_cpp_system_includes
+ 
+     if major_llvm_version >= 14:
+         # With C++20, Clang defaults to using C++ rather than Clang modules,
 diff -Naur a/toolchain/extensions/llvm.bzl b/toolchain/extensions/llvm.bzl
 --- a/toolchain/extensions/llvm.bzl	2026-07-25 16:35:52.122480588 +0000
-+++ b/toolchain/extensions/llvm.bzl	2026-07-25 16:35:52.129480723 +0000
++++ b/toolchain/extensions/llvm.bzl	2026-07-25 16:48:59.120550502 +0000
 @@ -77,6 +77,16 @@
                  name,
              )
@@ -58,7 +67,7 @@ diff -Naur a/toolchain/extensions/llvm.bzl b/toolchain/extensions/llvm.bzl
  )
 diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
 --- a/toolchain/internal/configure.bzl	2026-07-25 16:35:52.122480588 +0000
-+++ b/toolchain/internal/configure.bzl	2026-07-25 16:35:52.130480743 +0000
++++ b/toolchain/internal/configure.bzl	2026-07-25 16:48:59.124550577 +0000
 @@ -256,6 +256,57 @@
          use_absolute_paths_sysroot,
      )
@@ -202,7 +211,7 @@ diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
          extra_exec_compatible_with_all_targets = toolchain_info.extra_exec_compatible_with.get("", []),
 diff -Naur a/toolchain/internal/repo.bzl b/toolchain/internal/repo.bzl
 --- a/toolchain/internal/repo.bzl	2026-07-25 16:35:52.123480607 +0000
-+++ b/toolchain/internal/repo.bzl	2026-07-25 16:35:52.130480743 +0000
++++ b/toolchain/internal/repo.bzl	2026-07-25 16:48:59.121550521 +0000
 @@ -153,6 +153,15 @@
                 "containing the files and the sysroot path will be taken as the path to the " +
                 "package of this label."),
