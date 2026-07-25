@@ -1,8 +1,33 @@
-diff --git a/toolchain/extensions/llvm.bzl b/toolchain/extensions/llvm.bzl
-index 1cb01ec..e7c28cc 100644
---- a/toolchain/extensions/llvm.bzl
-+++ b/toolchain/extensions/llvm.bzl
-@@ -73,17 +73,30 @@ def _llvm_impl_(module_ctx):
+diff -Naur a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.bzl
+--- a/toolchain/cc_toolchain_config.bzl	2026-07-25 16:35:52.121480568 +0000
++++ b/toolchain/cc_toolchain_config.bzl	2026-07-25 16:48:59.125550596 +0000
+@@ -586,7 +586,12 @@
+         else:
+             fail("Invalid stdlib: " + stdlib)
+     elif stdlib == "libc":
+-        pass
++        libunwind_link_flags = [
++            "-l:libunwind.a",
++            # To support libunwind.
++            "-lpthread",
++            "-ldl",
++        ]
+     elif stdlib == "none":
+         cxx_flags = [
+             "-nostdlib",
+@@ -600,8 +605,6 @@
+     # On macOS the libc++ headers come from the SDK (see above), not the
+     # toolchain, so do not add the toolchain's libc++ include paths.
+     use_toolchain_libcxx_paths = stdlib in ["builtin-libc++", "libc++"] and target_os != "darwin"
+-    if use_toolchain_libcxx_paths:
+-        cpp_system_includes = toolchain_cpp_system_includes
+ 
+     if major_llvm_version >= 14:
+         # With C++20, Clang defaults to using C++ rather than Clang modules,
+diff -Naur a/toolchain/extensions/llvm.bzl b/toolchain/extensions/llvm.bzl
+--- a/toolchain/extensions/llvm.bzl	2026-07-25 16:35:52.122480588 +0000
++++ b/toolchain/extensions/llvm.bzl	2026-07-25 16:48:59.120550502 +0000
+@@ -77,6 +77,16 @@
                  name,
              )
  
@@ -19,30 +44,15 @@ index 1cb01ec..e7c28cc 100644
              llvm_toolchain(
                  **attrs
              )
- 
--        # Check that every defined toolchain_root or sysroot has a corresponding toolchain.
-+        # Check that every defined toolchain_root, sysroot, or cxx_cross_lib has a corresponding toolchain.
-         for root in mod.tags.toolchain_root:
-             if root.name not in toolchain_names:
-                 fail("toolchain_root '%s' does not have a corresponding toolchain" % root.name)
-         for root in mod.tags.sysroot:
-             if root.name not in toolchain_names:
-                 fail("sysroot '%s' does not have a corresponding toolchain" % root.name)
-+        for cl in mod.tags.cxx_cross_lib:
-+            if cl.name not in toolchain_names:
-+                fail("cxx_cross_lib '%s' does not have a corresponding toolchain" % cl.name)
- 
-     if bazel_features.external_deps.extension_metadata_has_reproducible:
-         return module_ctx.extension_metadata(reproducible = True)
-@@ -100,6 +113,7 @@ _attrs.update(_llvm_repo_attrs)
- 
- _attrs.pop("toolchain_roots", None)
+@@ -116,6 +126,7 @@
  _attrs.pop("sysroot", None)
+ _attrs.pop("extra_compiler_files_dict", None)
+ _attrs.pop("extra_linker_files_dict", None)
 +_attrs.pop("cxx_cross_lib", None)
  
  llvm = module_extension(
      implementation = _llvm_impl_,
-@@ -137,5 +151,12 @@ llvm = module_extension(
+@@ -208,5 +219,12 @@
                  "constraints": attr.label_list(doc = "List of extra constraints to add to target_compatible_with for the generated toolchains."),
              },
          ),
@@ -55,11 +65,10 @@ index 1cb01ec..e7c28cc 100644
 +        ),
      },
  )
-diff --git a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
-index e0ad59e..e3b8e71 100644
---- a/toolchain/internal/configure.bzl
-+++ b/toolchain/internal/configure.bzl
-@@ -150,6 +150,57 @@ def llvm_config_impl(rctx):
+diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
+--- a/toolchain/internal/configure.bzl	2026-07-25 16:35:52.122480588 +0000
++++ b/toolchain/internal/configure.bzl	2026-07-25 16:48:59.124550577 +0000
+@@ -256,6 +256,57 @@
          use_absolute_paths_sysroot,
      )
  
@@ -117,9 +126,9 @@ index e0ad59e..e3b8e71 100644
      workspace_name = rctx.name
      toolchain_info = struct(
          os = os,
-@@ -161,8 +215,8 @@ def llvm_config_impl(rctx):
-         sysroot_paths_dict = sysroot_paths_dict,
-         sysroot_labels_dict = sysroot_labels_dict,
+@@ -269,8 +320,8 @@
+         multiarch_dict = rctx.attr.multiarch,
+         cxx_include_layout_dict = rctx.attr.cxx_include_layout,
          target_settings_dict = rctx.attr.target_settings,
 -        additional_include_dirs_dict = rctx.attr.cxx_builtin_include_directories,
 -        stdlib_dict = rctx.attr.stdlib,
@@ -128,12 +137,15 @@ index e0ad59e..e3b8e71 100644
          cxx_standard_dict = rctx.attr.cxx_standard,
          compile_flags_dict = rctx.attr.compile_flags,
          conly_flags_dict = rctx.attr.conly_flags,
-@@ -178,12 +232,13 @@ def llvm_config_impl(rctx):
-         coverage_link_flags_dict = rctx.attr.coverage_link_flags,
+@@ -290,6 +341,7 @@
+         toolchain_root = toolchain_root,
          unfiltered_compile_flags_dict = rctx.attr.unfiltered_compile_flags,
          llvm_version = llvm_version,
 +        cxx_cross_lib_dict = rctx.attr.cxx_cross_lib,
          extra_compiler_files = rctx.attr.extra_compiler_files,
+         extra_linker_files = rctx.attr.extra_linker_files,
+         extra_compiler_files_dict = rctx.attr.extra_compiler_files_dict,
+@@ -297,8 +349,8 @@
          extra_exec_compatible_with = rctx.attr.extra_exec_compatible_with,
          extra_target_compatible_with = rctx.attr.extra_target_compatible_with,
          extra_compile_flags_dict = rctx.attr.extra_compile_flags,
@@ -144,56 +156,63 @@ index e0ad59e..e3b8e71 100644
          extra_archive_flags_dict = rctx.attr.extra_archive_flags,
          extra_link_libs_dict = rctx.attr.extra_link_libs,
          extra_opt_compile_flags_dict = rctx.attr.extra_opt_compile_flags,
-@@ -359,6 +414,12 @@ def _cc_toolchain_str(
-         "wasip1-wasm64": "wasm64-wasip1",
-     }[target_pair]
+@@ -514,6 +566,12 @@
+     if not use_absolute_paths_llvm:
+         target_toolchain_include_path_prefix = "%workspace%/" + target_toolchain_include_path_prefix
  
 +    cxx_cross_lib_label = toolchain_info.cxx_cross_lib_dict.get(target_pair)
 +    if cxx_cross_lib_label and not (exec_os == target_os and exec_arch == target_arch):
-+        cxx_cross_lib_label_str = "\"%s\"," % cxx_cross_lib_label
++        cxx_cross_lib_label_str = '"%s",' % cxx_cross_lib_label
 +    else:
 +        cxx_cross_lib_label_str = ""
 +
+     # C++ built-in include directories:
+     resource_dir_version = llvm_version if major_llvm_version < 16 else major_llvm_version
      cxx_builtin_include_directories = [
-         toolchain_path_prefix + "include/c++/v1",
-         toolchain_path_prefix + "lib/clang/{}/include".format(
-@@ -482,6 +543,7 @@ filegroup(
-     name = "compiler-components-{suffix}",
+@@ -673,6 +731,7 @@
+     srcs = [
+         ":sysroot-components-{suffix}",
+         "redacted_dates.h",
++        {cxx_cross_lib_label_str}
+         {extra_compiler_files}
+     ],
+ )
+@@ -681,6 +740,7 @@
+     name = "linker-components-{suffix}",
      srcs = [
          ":sysroot-components-{suffix}",
 +        {cxx_cross_lib_label_str}
-         {extra_compiler_files}
+         {extra_linker_files}
      ],
  )
-@@ -522,6 +584,7 @@ filegroup(
-         ":sysroot-components-{suffix}",
+@@ -720,6 +780,7 @@
          "{llvm_dist_label_prefix}extra_config_site",
-         "{llvm_dist_label_prefix}clang",
+         "{toolchain_root}:clang",
+         "redacted_dates.h",
 +        {cxx_cross_lib_label_str}
          {extra_compiler_files}
      ],
  )
-@@ -534,6 +597,7 @@ filegroup(
-         "{llvm_dist_label_prefix}ar",
-         "{llvm_dist_label_prefix}{lib_label}",
-         ":sysroot-components-{suffix}",
+@@ -732,6 +793,7 @@
+         "{toolchain_root}:ld",
+         "{toolchain_root}:ar",
+         "{target_toolchain_root}:{lib_label}",
 +        {cxx_cross_lib_label_str}
+         {extra_linker_files}
      ],
  )
- 
-@@ -608,6 +672,7 @@ cc_toolchain(
-         sysroot_label_str = sysroot_label_str,
-         sysroot_path = sysroot_path,
-         stdlib = _dict_value(toolchain_info.stdlib_dict, target_pair, "builtin-libc++"),
+@@ -878,6 +940,7 @@
+         extra_compiler_files = ("\"%s\"," % _extra_compiler_label) if _extra_compiler_label else "",
+         llvm_version = llvm_version,
+         extra_linker_files = ("\"%s\"," % _extra_linker_label) if _extra_linker_label else "",
 +        cxx_cross_lib_label_str = cxx_cross_lib_label_str,
-         cxx_standard = _dict_value(toolchain_info.cxx_standard_dict, target_pair, "c++17"),
-         compile_flags = _list_to_string(_dict_value(toolchain_info.compile_flags_dict, target_pair)),
-         conly_flags = _list_to_string(toolchain_info.conly_flags_dict.get(target_pair, [])),
-diff --git a/toolchain/internal/repo.bzl b/toolchain/internal/repo.bzl
-index 4ab592b..979e21f 100644
---- a/toolchain/internal/repo.bzl
-+++ b/toolchain/internal/repo.bzl
-@@ -141,6 +141,15 @@ _compiler_configuration_attrs = {
+         extra_exec_compatible_with_specific = toolchain_info.extra_exec_compatible_with.get(target_pair, []),
+         extra_target_compatible_with_specific = toolchain_info.extra_target_compatible_with.get(target_pair, []),
+         extra_exec_compatible_with_all_targets = toolchain_info.extra_exec_compatible_with.get("", []),
+diff -Naur a/toolchain/internal/repo.bzl b/toolchain/internal/repo.bzl
+--- a/toolchain/internal/repo.bzl	2026-07-25 16:35:52.123480607 +0000
++++ b/toolchain/internal/repo.bzl	2026-07-25 16:48:59.121550521 +0000
+@@ -153,6 +153,15 @@
                 "containing the files and the sysroot path will be taken as the path to the " +
                 "package of this label."),
      ),
@@ -206,21 +225,6 @@ index 4ab592b..979e21f 100644
 +               "will be added to cxx_builtin_include_directories and lib/ will be added to " +
 +               "the linker search path via extra_link_flags for the specified target."),
 +    ),
-     "cxx_builtin_include_directories": attr.string_list_dict(
+     "multiarch": attr.string_dict(
          mandatory = False,
-         doc = ("Additional builtin include directories to be added to the default system " +
-diff --git a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.bzl
---- a/toolchain/cc_toolchain_config.bzl
-+++ b/toolchain/cc_toolchain_config.bzl
-@@ -340,5 +340,11 @@
-     elif stdlib == "libc":
-         cxx_flags = [
-             "-std=" + cxx_standard,
-         ]
-+        libunwind_link_flags = [
-+            "-l:libunwind.a",
-+            # To support libunwind.
-+            "-lpthread",
-+            "-ldl",
-+        ]
-     elif stdlib == "none":
+         doc = ("Multiarch triple used to construct sysroot include and library paths " +
