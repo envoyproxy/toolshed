@@ -219,7 +219,7 @@ jobs:
           | [$san[]
              | . as $san_type
              | $current["\($san_type)_libs_sha256"] as $current_sha
-             | ($shas["\($san_type)-llvm18.1.8-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
+             | ($shas["\($san_type)-llvm22.1.8-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
              | if $current_sha != $new_sha then
                  "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
                else "" end] as $san_updates
@@ -260,7 +260,7 @@ jobs:
                    end
                else "" end,
              # darwin libcxx hash
-             ($shas["libcxx-llvm18.1.8-darwin-aarch64.tar.xz"] // null) as $sha_entry
+             ($shas["libcxx-llvm22.1.8-darwin-aarch64.tar.xz"] // null) as $sha_entry
              | if $sha_entry then
                  ($sha_entry | split(":") | .[1]) as $new_sha
                  | $current.libcxx_libs_darwin_sha256.aarch64 as $cur
