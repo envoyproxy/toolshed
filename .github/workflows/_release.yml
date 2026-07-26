@@ -219,10 +219,20 @@ jobs:
           | [$san[]
              | . as $san_type
              | $current["\($san_type)_libs_sha256"] as $current_sha
-             | ($shas["\($san_type)-llvm22.1.8-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
+             | ($shas["\($san_type)-llvm\($current.llvm)-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
              | if $current_sha != $new_sha then
                  "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
                else "" end] as $san_updates
+          | [["aarch64", "x86_64"][]
+             | . as $arch
+             | ($shas["libcxx-llvm\($current.llvm)-\($arch).tar.xz"] // null) as $sha_entry
+             | if $sha_entry then
+                 ($sha_entry | split(":") | .[1]) as $new_sha
+                 | $current.libcxx_libs_sha256[$arch] as $current_sha
+                 | if $current_sha != $new_sha then
+                     "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                   else "" end
+               else "" end] as $libcxx_updates
           | [$arches[]
              | . as $arch
              | [($shas["glint-\($glint_version)-\($arch)"] | split(":") | .[1]) as $new_sha
@@ -260,7 +270,7 @@ jobs:
                    end
                else "" end,
              # darwin libcxx hash
-             ($shas["libcxx-llvm22.1.8-darwin-aarch64.tar.xz"] // null) as $sha_entry
+             ($shas["libcxx-llvm\($current.llvm)-darwin-aarch64.tar.xz"] // null) as $sha_entry
              | if $sha_entry then
                  ($sha_entry | split(":") | .[1]) as $new_sha
                  | $current.libcxx_libs_darwin_sha256.aarch64 as $cur
@@ -272,7 +282,7 @@ jobs:
                    end
                else "" end
             ] as $macos_updates
-          | $bins_update + $san_updates + $arch_updates + $macos_updates
+          | $bins_update + $san_updates + $libcxx_updates + $arch_updates + $macos_updates
           | [flatten[]
              | select(. != "")]
           | join("\n")
