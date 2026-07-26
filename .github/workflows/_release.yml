@@ -219,19 +219,18 @@ jobs:
           | [$san[]
              | . as $san_type
              | $current["\($san_type)_libs_sha256"] as $current_sha
-             | ($shas["\($san_type)-llvm\($current.llvm)-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
+             | "\($san_type)-llvm\($current.llvm)-x86_64.tar.xz" as $key
+             | (($shas[$key] // error("No SHA found for \($key)")) | split(":") | .[1]) as $new_sha
              | if $current_sha != $new_sha then
                  "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
                else "" end] as $san_updates
           | [["aarch64", "x86_64"][]
              | . as $arch
-             | ($shas["libcxx-llvm\($current.llvm)-\($arch).tar.xz"] // null) as $sha_entry
-             | if $sha_entry then
-                 ($sha_entry | split(":") | .[1]) as $new_sha
-                 | $current.libcxx_libs_sha256[$arch] as $current_sha
-                 | if $current_sha != $new_sha then
-                     "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
-                   else "" end
+             | "libcxx-llvm\($current.llvm)-\($arch).tar.xz" as $key
+             | (($shas[$key] // error("No SHA found for \($key)")) | split(":") | .[1]) as $new_sha
+             | $current.libcxx_libs_sha256[$arch] as $current_sha
+             | if $current_sha != $new_sha then
+                 "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
                else "" end] as $libcxx_updates
           | [$arches[]
              | . as $arch
@@ -258,29 +257,25 @@ jobs:
               | $glint_updates + $sysroot_updates] as $arch_updates
           | [
              # macOS sysroot hash
-             ($shas["sysroot-macos-arm64.tar.xz"] // null) as $sha_entry
-             | if $sha_entry then
-                 ($sha_entry | split(":") | .[1]) as $new_sha
-                 | $current.macos_sysroot_sha256.arm64 as $cur
-                 | if $cur == $new_sha then ""
-                   elif ($cur | length) > 0 then
-                     "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
-                   else
-                     "sed -i '0,/\"arm64\": \"\"/s//\"arm64\": \"\($new_sha)\"/' \($versions_file)"
-                   end
-               else "" end,
+             "sysroot-macos-arm64.tar.xz" as $key
+             | (($shas[$key] // error("No SHA found for \($key)")) | split(":") | .[1]) as $new_sha
+             | $current.macos_sysroot_sha256.arm64 as $cur
+             | if $cur == $new_sha then ""
+               elif ($cur | length) > 0 then
+                 "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+               else
+                 "sed -i '0,/\"arm64\": \"\"/s//\"arm64\": \"\($new_sha)\"/' \($versions_file)"
+               end,
              # darwin libcxx hash
-             ($shas["libcxx-llvm\($current.llvm)-darwin-aarch64.tar.xz"] // null) as $sha_entry
-             | if $sha_entry then
-                 ($sha_entry | split(":") | .[1]) as $new_sha
-                 | $current.libcxx_libs_darwin_sha256.aarch64 as $cur
-                 | if $cur == $new_sha then ""
-                   elif ($cur | length) > 0 then
-                     "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
-                   else
-                     "sed -i '0,/\"aarch64\": \"\"/s//\"aarch64\": \"\($new_sha)\"/' \($versions_file)"
-                   end
-               else "" end
+             "libcxx-llvm\($current.llvm)-darwin-aarch64.tar.xz" as $key
+             | (($shas[$key] // error("No SHA found for \($key)")) | split(":") | .[1]) as $new_sha
+             | $current.libcxx_libs_darwin_sha256.aarch64 as $cur
+             | if $cur == $new_sha then ""
+               elif ($cur | length) > 0 then
+                 "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+               else
+                 "sed -i '0,/\"aarch64\": \"\"/s//\"aarch64\": \"\($new_sha)\"/' \($versions_file)"
+               end
             ] as $macos_updates
           | $bins_update + $san_updates + $libcxx_updates + $arch_updates + $macos_updates
           | [flatten[]
