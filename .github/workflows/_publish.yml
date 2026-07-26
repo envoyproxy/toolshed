@@ -124,7 +124,7 @@ jobs:
       sha: ${{ inputs.sha }}
       template-artifacts: >-
         ${{ matrix.template-artifacts
-            || '\($name)-{artifacts,source}*' }}
+            || '\($name)-*{artifacts,source}*' }}
       title: ${{ inputs.title }}
       version: ${{ matrix.version }}
       version-file: ${{ matrix.version-file }}
