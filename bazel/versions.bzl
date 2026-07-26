@@ -24,7 +24,6 @@ filegroup(
 """
 
 LLVM_VERSION = "22.1.8"
-CURRENT_LLVM_VERSION = "18.1.8"
 
 # Extra distributions for versions not (yet) in toolchains_llvm's version table
 LLVM_DISTRIBUTIONS = {
@@ -36,16 +35,15 @@ LLVM_DISTRIBUTIONS = {
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": LLVM_VERSION,
-    "current_llvm": CURRENT_LLVM_VERSION,
     "ninja": "1.12.0",
     "python": "3.12",
-    "bins_release": "0.1.59",
-    "msan_libs_sha256": "d4e9d018af22d30ca4d7dd8feeea1c3d3912ab8c50db90f62140ab47bf4843e1",
-    "tsan_libs_sha256": "47c6d3bd78a6314598ccb0bf9050375f7164980ce88598f0e3e020a2074e9759",
+    "bins_release": "0.1.61",
+    "msan_libs_sha256": "5475b78f295b46c578dac54934622c71b110a54ed501153271fa68bc5ab48f30",
+    "tsan_libs_sha256": "99d023e4f65d5dd1f75a4a1424571d1d54c22687245d35a4c551829e3b34d9dd",
 
     "libcxx_libs_sha256": {
-        "aarch64": "9c900495dac5c214d135caab02cfcf01806916a8eeb994687b2815ed38a79831",
-        "x86_64": "50c7385dd1c17fd3606fa8850cfb1c7d0166ab109e404964f55abd6b508560eb",
+        "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
+        "x86_64": "e40f39338ffe561dfa26541557c9e548fc7760db9d99f7b6c5de237b725482aa",
     },
 
     # Darwin libc++ for cross-compilation (extracted from LLVM macOS release)
@@ -70,22 +68,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "f51ef4be86862afaf227577783c0019945385957d7362f9adef86806ee6156ec",
-                "arm64": "be11d2835859b93d398898b0e661bc68f5cc61907c4c999c8bf043e486597e41",
+                "amd64": "bd5d08bd473c1bead183d440b478da10d8f856cc008bb511599359ed1427ef4d",
+                "arm64": "7ecbdc798d3cb4b47435b9359d64fa9c0b20e035ec228a6e5219499c0edd9a20",
             },
             "13": {
-                "amd64": "20114f2761d9e1d7de2bc20b359e6cdc118267bc155d313fd92587ca662968c7",
-                "arm64": "47653e4df55d6493669cee456ffb6a73c57ec8ce12442586fb43c2628d212e80",
+                "amd64": "d7b169676c84dbc23599b6d298682bc05b12be49b0303858e6b40f69d3b84833",
+                "arm64": "33fe2637ea2970f6869a351427d58e12dcd71983ecfc3d87688eb5e1a1558b29",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "92f4f416b2067ca95645544ac7eda92c13be5c31d17fd081a6814e96f4ec6c8f",
-                "arm64": "2c39271cf04c5f5b220ed60ca295099dec613b91f447e847a269f5455113c766",
+                "amd64": "d49b8ca88315af4f59f1ddc86db7e214a33f008b3ee80aaba1ad2365495ee5a8",
+                "arm64": "eafbd234ad99b41569ce978ed9210502021a338b5d1515d40a13b0d47973cf75",
             },
             "13": {
-                "amd64": "9507415b871592a9a6473bcb919bd5cc2f9bb67af8c6a1cf88b691e5abbdbb83",
-                "arm64": "60176c899fd5044a7d23cdd3877efedeb6f4d97090faff0d34496e2e1365380c",
+                "amd64": "6c0b4cb8b86ce750f64e04766fff6549d40b16f30b57891504fecad8f1748578",
+                "arm64": "731e31a3be1737b2e9a1e6f23c26a968132759a336c0cbc5b52a2d8a1f203023",
             },
         },
     },
