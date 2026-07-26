@@ -23,11 +23,20 @@ filegroup(
 )
 """
 
-LLVM_VERSION = "18.1.8"
+LLVM_VERSION = "22.1.8"
+CURRENT_LLVM_VERSION = "18.1.8"
+
+# Extra distributions for versions not (yet) in toolchains_llvm's version table
+LLVM_DISTRIBUTIONS = {
+    "LLVM-22.1.8-Linux-ARM64.tar.xz": "805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34",
+    "LLVM-22.1.8-Linux-X64.tar.xz": "df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384",
+    "LLVM-22.1.8-macOS-ARM64.tar.xz": "f260f4f7c0d430828a81ae8a3826a1d63fc0963ec2459489308cc23b1f7eab4f",
+}
 
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": LLVM_VERSION,
+    "current_llvm": CURRENT_LLVM_VERSION,
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": "0.1.59",
@@ -109,29 +118,29 @@ VERSIONS = {
         "arch": "aarch64",
         "type": "http_archive",
         "repo": "llvm/llvm-project",
-        "download_suffix": "linux-gnu",
+        "download_suffix": "Linux-ARM64",
         "version": LLVM_VERSION,
-        "sha256": "dcaa1bebbfbb86953fdfbdc7f938800229f75ad26c5c9375ef242edad737d999",
-        "url": "https://github.com/{repo}/releases/download/llvmorg-{version}/clang+llvm-{version}-{arch}-{download_suffix}.tar.xz",
-        "strip_prefix": "clang+llvm-{version}-{arch}-linux-gnu/",
+        "sha256": "805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34",
+        "url": "https://github.com/{repo}/releases/download/llvmorg-{version}/LLVM-{version}-{download_suffix}.tar.xz",
+        "strip_prefix": "LLVM-{version}-{download_suffix}/",
         "build_file_content": LLVM_CXX_BUILD,
     },
     "llvm_libcxx_x86_64": {
         "arch": "x86_64",
-        "download_suffix": "linux-gnu-ubuntu-18.04",
+        "download_suffix": "Linux-X64",
         "type": "http_archive",
         "repo": "llvm/llvm-project",
         "version": LLVM_VERSION,
-        "sha256": "54ec30358afcc9fb8aa74307db3046f5187f9fb89fb37064cdde906e062ebf36",
-        "url": "https://github.com/{repo}/releases/download/llvmorg-{version}/clang+llvm-{version}-{arch}-{download_suffix}.tar.xz",
-        "strip_prefix": "clang+llvm-{version}-{arch}-linux-gnu-ubuntu-18.04/",
+        "sha256": "df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384",
+        "url": "https://github.com/{repo}/releases/download/llvmorg-{version}/LLVM-{version}-{download_suffix}.tar.xz",
+        "strip_prefix": "LLVM-{version}-{download_suffix}/",
         "build_file_content": LLVM_CXX_BUILD,
     },
     "llvm_source": {
         "type": "github_archive",
         "repo": "llvm/llvm-project",
         "version": "llvmorg-%s" % LLVM_VERSION,
-        "sha256": "09c08693a9afd6236f27a2ebae62cda656eba19021ef3f94d59e931d662d4856",
+        "sha256": "ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace",
         "url": "https://github.com/{repo}/archive/{version}.tar.gz",
         "strip_prefix": "llvm-project-{version}",
         "build_file_content": """filegroup(name = \"all\", srcs = glob([\"**\"]), visibility = [\"//visibility:public\"])""",
