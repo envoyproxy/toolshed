@@ -72,10 +72,10 @@ jobs:
     with:
       action: build
       artifacts: |
-          compile/libcxx-llvm18.1.8-aarch64.tar.xz
-          compile/libcxx-llvm18.1.8-x86_64.tar.xz
-          compile/msan-llvm18.1.8-x86_64.tar.xz
-          compile/tsan-llvm18.1.8-x86_64.tar.xz
+          compile/libcxx-llvm22.1.8-aarch64.tar.xz
+          compile/libcxx-llvm22.1.8-x86_64.tar.xz
+          compile/msan-llvm22.1.8-x86_64.tar.xz
+          compile/tsan-llvm22.1.8-x86_64.tar.xz
           sysroot/sysroot-*.tar.xz
       # Note: macOS sysroot + darwin libcxx are packaged separately
       # in the package-macos-cross-libs job (runs on Linux)
