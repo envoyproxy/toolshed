@@ -32,9 +32,7 @@ def updater(
         "$(location %s)" % version_file,
         "$(location %s)" % dependencies,
     ]
-    env = {
-        "JQ_BIN": "$(JQ_BIN)",
-    }
+    env = {"JQ_BIN": "$(rootpath %s)" % jq_toolchain}
     if pydict:
         env["DEP_SEARCH"] = "__DEP__ = dict("
         env["SHA_SEARCH"] = "sha256 = \"__EXISTING_SHA__\","
