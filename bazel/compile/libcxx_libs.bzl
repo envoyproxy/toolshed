@@ -9,7 +9,7 @@ def _libcxx_libs_impl(ctx):
         url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/libcxx-llvm{llvm_version}-{arch}.tar.xz".format(
             arch = arch,
             version = ctx.attr.version,
-            llvm_version = VERSIONS["current_llvm"],
+            llvm_version = VERSIONS["llvm"],
         ),
         sha256 = ctx.attr.sha256,
     )
@@ -65,7 +65,7 @@ def _libcxx_libs_darwin_impl(ctx):
             url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/libcxx-llvm{llvm_version}-darwin-{arch}.tar.xz".format(
                 arch = arch,
                 version = ctx.attr.version,
-                llvm_version = VERSIONS["current_llvm"],
+                llvm_version = VERSIONS["llvm"],
             ),
             sha256 = sha256,
         )

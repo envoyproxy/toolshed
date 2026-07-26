@@ -195,8 +195,8 @@ jobs:
     runs-on: ubuntu-24.04
     name: Package macOS cross-compilation libs
     env:
-      LLVM_VERSION: "18.1.8"
-      LLVM_MAJOR: "18"
+      LLVM_VERSION: "22.1.8"
+      LLVM_MAJOR: "22"
       SDK_PKG_URL: >-
         https://swcdn.apple.com/content/downloads/52/01/082-41241-A_0747ZN8FHV/dectd075r63pppkkzsb75qk61s0lfee22j/CLTools_macOSNMOS_SDK.pkg
       SDK_PKG_SHA256: "ba3453d62b3d2babf67f3a4a44e8073d6555c85f114856f4390a1f53bd76e24a"
@@ -239,9 +239,8 @@ jobs:
         set -euo pipefail
 
         # Extract cxx-cross-libs from official LLVM macOS release (no cmake build needed)
-        # LLVM 18.x uses "clang+llvm-VER-arm64-apple-macosNN" naming
-        LLVM_TARBALL="clang+llvm-${LLVM_VERSION}-arm64-apple-macos11.tar.xz"
-        LLVM_PREFIX="clang+llvm-${LLVM_VERSION}-arm64-apple-macos11"
+        LLVM_TARBALL="LLVM-${LLVM_VERSION}-macOS-ARM64.tar.xz"
+        LLVM_PREFIX="LLVM-${LLVM_VERSION}-macOS-ARM64"
 
         wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVM_TARBALL}" \
           -O llvm-macos.tar.xz
