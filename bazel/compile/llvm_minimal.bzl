@@ -215,10 +215,12 @@ def _llvm_minimal_impl(ctx):
             stripPrefix = strip_prefix,
         )
     else:
-        # No hash available yet — create a stub empty repository.
-        result = ctx.execute(["mkdir", "-p", "bin", "lib", "include"])
-        if result.return_code != 0:
-            fail("Failed to create stub directories: " + result.stderr)
+        # No hash available yet — create a stub empty repository so Bazel can
+        # still load the repo without a network hit.  ctx.file() is idiomatic
+        # and works portably without relying on external commands.
+        ctx.file("bin/.gitkeep", "")
+        ctx.file("lib/.gitkeep", "")
+        ctx.file("include/.gitkeep", "")
 
     ctx.file("BUILD.bazel", _LLVM_MINIMAL_BUILD)
 

@@ -152,13 +152,17 @@ llvm_minimal_build_extension = module_extension(
 
 def _llvm_minimal_ext_impl(module_ctx):
     """Implementation of the llvm_minimal module extension."""
+
+    # Only one setup() tag is accepted across all modules (the repository names
+    # are fixed — e.g. @llvm_minimal_linux_x64).  A second tag from any module
+    # will cause an error rather than being silently dropped.
     setup_tag = None
     for mod in module_ctx.modules:
         for tag in mod.tags.setup:
             if setup_tag == None:
                 setup_tag = tag
             else:
-                fail("Multiple setup() calls found for llvm_minimal_extension. Only one configuration is allowed.")
+                fail("Multiple setup() calls found for llvm_minimal_extension. Only one configuration is allowed across all modules (repository names are fixed to @llvm_minimal_linux_x64 / @llvm_minimal_linux_arm64 / @llvm_minimal_macos_arm64).")
 
     if setup_tag:
         setup_llvm_minimal(
