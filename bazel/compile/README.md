@@ -249,9 +249,9 @@ bazel build //compile:llvm_minimal_linux_x86_64 \
 ```
 
 The outputs land in `bazel-bin/compile/`:
-- `llvm-minimal-22.1.8-Linux-X64.tar.xz`
-- `llvm-minimal-22.1.8-Linux-ARM64.tar.xz`
-- `llvm-minimal-22.1.8-macOS-ARM64.tar.xz`
+- `llvm-minimal-{llvm_version}-Linux-X64.tar.xz`
+- `llvm-minimal-{llvm_version}-Linux-ARM64.tar.xz`
+- `llvm-minimal-{llvm_version}-macOS-ARM64.tar.xz`
 
 The build targets download the full upstream LLVM tarballs via the
 `llvm_tarball_*` repository rules (set up by `setup_llvm_minimal_build()` in
