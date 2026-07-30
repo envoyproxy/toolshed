@@ -266,6 +266,40 @@ jobs:
           libcxx-llvm*-darwin-aarch64.tar.xz
         retention-days: 30
 
+  package-llvm:
+    # Builds the stripped/minimal LLVM artifacts for all three platforms.
+    # These targets are tagged `manual` and must NOT run as part of `//...`.
+    # This job builds them explicitly by label, one platform per matrix leg so
+    # the three slow extract+strip+repack runs execute in parallel.
+    # No RBE — targets are `no-remote`/`local` to avoid disk exhaustion on RBE workers.
+    needs: request
+    if: >-
+      always()
+      && fromJSON(needs.request.outputs.run || 'false')
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - target: //compile:llvm_minimal_linux_x86_64
+          artifact: compile/llvm-minimal-22.1.8-Linux-X64.tar.xz
+        - target: //compile:llvm_minimal_linux_arm64
+          artifact: compile/llvm-minimal-22.1.8-Linux-ARM64.tar.xz
+        - target: //compile:llvm_minimal_macos_arm64
+          artifact: compile/llvm-minimal-22.1.8-macOS-ARM64.tar.xz
+    uses: ./.github/workflows/_bazel.yml
+    with:
+      action: build
+      artifacts: ${{ matrix.artifact }}
+      bazel-args: --config=ci
+      bazel-mode: llvm
+      bazel-path: bazel
+      rbe: false
+      targets: ${{ matrix.target }}
+      upload: true
+
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -279,6 +313,7 @@ jobs:
     - test-gcc
     - test-macos
     - package-macos
+    - package-llvm
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then

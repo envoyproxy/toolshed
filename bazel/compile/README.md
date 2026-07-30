@@ -1,9 +1,10 @@
-# Sanitizer and libcxx libraries
+# Sanitizer, libcxx, and minimal LLVM libraries
 
 This directory contains build rules for creating and downloading prebuilt LLVM libraries for use with Envoy, including:
 
 - **Sanitizer libraries** (MSAN, TSAN) for use with sanitizer builds
 - **libcxx bundles** for cross-compilation with `toolchains_llvm`
+- **Minimal LLVM** — filtered, stripped LLVM distributions for the three supported platforms
 
 ## Sanitizer libraries (MSAN, TSAN)
 
@@ -201,3 +202,120 @@ bazel test //compile/test:cross_compile_x86_64_no_unwind_test \
   --platforms=@toolchains_llvm//platforms:linux-x86_64 \
   --@toolchains_llvm//toolchain/config:libunwind=False
 ```
+
+## Minimal LLVM artifact
+
+The minimal LLVM artifact is a filtered and stripped subset of the upstream LLVM
+release tarballs. It retains only the tools and libraries actually needed by the
+`toolchains_llvm` cc toolchain, envoy CI, and the toolshed `clang_tidy`
+integration, while discarding large unused components (bugpoint, opt, llc, lldb,
+mlir tools, dev headers, docs, examples, redundant static archives, etc.).
+
+Three platform artifacts are produced and published to the `bins-v{version}` GitHub
+release:
+
+| Artifact | Platform |
+|---|---|
+| `llvm-minimal-{llvm_version}-Linux-X64.tar.xz` | Linux x86_64 |
+| `llvm-minimal-{llvm_version}-Linux-ARM64.tar.xz` | Linux aarch64 |
+| `llvm-minimal-{llvm_version}-macOS-ARM64.tar.xz` | macOS arm64 |
+
+### Allowlist — single source of truth
+
+The exact set of tools and libraries to keep is defined in
+**`bazel/compile/llvm_minimal.bzl`** as two Starlark constants:
+
+- `LLVM_MINIMAL_BINS` — list of `bin/` tool names to keep.
+  Symlinks (e.g. `clang++` → `clang`, `ld.lld` → `lld`) are preserved as
+  symlinks rather than dereferenced, so the binary is not duplicated.
+- `LLVM_MINIMAL_LIB_GLOBS` — list of `lib/` and `include/` patterns to keep,
+  documented inline with the rationale for each entry.
+
+To change what is included, edit those two lists in `llvm_minimal.bzl` and
+rebuild/re-release. No other file needs updating.
+
+### Building locally
+
+```bash
+cd bazel
+
+# Build a single platform artifact (Linux x86_64 example)
+bazel build //compile:llvm_minimal_linux_x86_64
+
+# Build all three platform artifacts
+bazel build //compile:llvm_minimal_linux_x86_64 \
+            //compile:llvm_minimal_linux_arm64 \
+            //compile:llvm_minimal_macos_arm64
+```
+
+The outputs land in `bazel-bin/compile/`:
+- `llvm-minimal-{llvm_version}-Linux-X64.tar.xz`
+- `llvm-minimal-{llvm_version}-Linux-ARM64.tar.xz`
+- `llvm-minimal-{llvm_version}-macOS-ARM64.tar.xz`
+
+The build targets download the full upstream LLVM tarballs via the
+`llvm_tarball_*` repository rules (set up by `setup_llvm_minimal_build()` in
+`llvm_minimal.bzl`, wired via `llvm_minimal_build_extension` in
+`extensions.bzl`). The genrule then filters the tarball to the allowlist,
+strips ELF/Mach-O binaries with `strip`, and repacks with `xz`.
+
+### Publishing
+
+The `.tar.xz` artifacts are uploaded to a `bins-v{version}` GitHub release.
+The `update-versions.yml` workflow then computes their SHA256 hashes and opens
+a PR that updates `bazel/versions.bzl`.
+
+### Updating prebuilt versions
+
+1. **Rebuild** with `bazel build //compile:llvm_minimal_*`.
+
+2. **Create/publish** a `bins-v{version}` release and upload the three `.tar.xz`
+   files alongside the other artifacts.
+
+3. **Run the `update-versions.yml` workflow** (manually via `workflow_dispatch`)
+   to compute and PR the new SHA256 hashes into `bazel/versions.bzl` under
+   `llvm_minimal_sha256`.
+
+4. **Merge the hash PR** — downstream consumers can now consume the artifacts.
+
+### Using with WORKSPACE
+
+```starlark
+load("@envoy_toolshed//compile:llvm_minimal.bzl", "setup_llvm_minimal")
+
+setup_llvm_minimal()
+```
+
+This creates three repositories:
+- `@llvm_minimal_linux_x64`
+- `@llvm_minimal_linux_arm64`
+- `@llvm_minimal_macos_arm64`
+
+Each exposes `bin`, `lib`, `include`, and `all` filegroup targets.
+
+### Using with bzlmod (MODULE.bazel)
+
+```starlark
+bazel_dep(name = "envoy_toolshed", version = "...")
+
+llvm_minimal_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "llvm_minimal_extension")
+llvm_minimal_ext.setup()  # Uses default versions from VERSIONS
+use_repo(llvm_minimal_ext, "llvm_minimal_linux_x64", "llvm_minimal_linux_arm64", "llvm_minimal_macos_arm64")
+```
+
+Or with custom versions:
+
+```starlark
+llvm_minimal_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "llvm_minimal_extension")
+llvm_minimal_ext.setup(
+    linux_x64_sha256 = "...",
+    linux_arm64_sha256 = "...",
+    macos_arm64_sha256 = "...",
+)
+use_repo(llvm_minimal_ext, "llvm_minimal_linux_x64", "llvm_minimal_linux_arm64", "llvm_minimal_macos_arm64")
+```
+
+SHA256 values default to `VERSIONS["llvm_minimal_sha256"][platform]` from
+`versions.bzl`.  Empty strings (the placeholder state before first release)
+cause `setup_llvm_minimal()` to create a stub empty repository instead of
+downloading, so builds that don't reference the repo are not broken.
