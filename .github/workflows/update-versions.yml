@@ -141,7 +141,8 @@ jobs:
 
         # Minimal LLVM artifacts
         for platform in "Linux-X64" "Linux-ARM64" "macOS-ARM64"; do
-            file=$(ls llvm-minimal-*-${platform}.tar.xz 2>/dev/null || true)
+            # Use find with exact version prefix to avoid matching multiple files
+            file=$(find . -maxdepth 1 -name "llvm-minimal-*-${platform}.tar.xz" -print -quit 2>/dev/null || true)
             if [[ -n "$file" && -e "$file" ]]; then
                 hash=$(sha256sum "$file" | cut -d' ' -f1)
                 # Normalize platform key for GitHub Actions output name (no hyphens)

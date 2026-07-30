@@ -216,7 +216,9 @@ def _llvm_minimal_impl(ctx):
         )
     else:
         # No hash available yet — create a stub empty repository.
-        ctx.execute(["mkdir", "-p", "bin", "lib", "include"])
+        result = ctx.execute(["mkdir", "-p", "bin", "lib", "include"])
+        if result.return_code != 0:
+            fail("Failed to create stub directories: " + result.stderr)
 
     ctx.file("BUILD.bazel", _LLVM_MINIMAL_BUILD)
 
@@ -275,7 +277,7 @@ def setup_llvm_minimal(
         sha256 = sha if sha != None else sha256_map.get(platform, "")
         llvm_minimal(
             name = repo_name,
-            version = ver or bins_release,
+            version = ver if ver != None else bins_release,
             llvm_version = llvm_version,
             platform = platform,
             sha256 = sha256,
