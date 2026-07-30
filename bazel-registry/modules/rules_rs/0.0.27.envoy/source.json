@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/dzbarsky/rules_rs/releases/download/v0.0.27/rules_rs-v0.0.27.tar.gz",
+    "integrity": "sha256-ZKOZJxQPvJ3KJsImxertVYn+6WsZHWsODq6/P2TGrRY=",
+    "strip_prefix": "",
+    "patches": {
+        "remove_telemetry.patch": "sha256-HwgBe1DXita6BksFKYrWH0lVSuDOEI9NtFw587ZqkWA="
+    },
+    "patch_strip": 1
+}
