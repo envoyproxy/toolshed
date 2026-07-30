@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+# Mock gh command for testing
+# Records all calls and responds based on environment variables
+
+set -e
+
+MOCK_LOG="${MOCK_LOG:-/tmp/gh-mock.log}"
+echo "gh $*" >> "$MOCK_LOG"
+
+command="$1"
+subcommand="${2:-}"
+
+case "$command" in
+    release)
+        case "$subcommand" in
+            view)
+                if [[ "${MOCK_RELEASE_EXISTS}" == "true" ]]; then
+                    echo "Release exists"
+                    exit 0
+                else
+                    echo "Error: release not found" >&2
+                    exit 1
+                fi
+                ;;
+            create)
+                shift 2
+                tag=""
+                for arg in "$@"; do
+                    if [[ "$arg" != --* ]]; then
+                        tag="$arg"
+                        break
+                    fi
+                done
+                echo "https://github.com/test/repo/releases/tag/${tag}"
+                exit 0
+                ;;
+            *)
+                echo "Unknown release subcommand: $subcommand" >&2
+                exit 1
+                ;;
+        esac
+        ;;
+    *)
+        echo "Unknown gh command: $command" >&2
+        exit 1
+        ;;
+esac
