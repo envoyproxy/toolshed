@@ -276,9 +276,10 @@ def setup_llvm_minimal(
     ]
 
     for platform, repo_name, ver, sha in _configs:
-        # sha may be None (not passed), an explicit hash string, or "" (stub intent).
-        # Empty string is valid and intentional: it triggers stub mode in llvm_minimal_impl.
-        sha256 = sha if sha != None else sha256_map.get(platform, "")
+        # Use sha256_map fallback when sha is None (direct call with no argument) OR
+        # when sha is "" (via the extension with no sha256 attr set — attr.string never
+        # returns None, so we must treat empty string as "use the default" too).
+        sha256 = sha if (sha != None and sha != "") else sha256_map.get(platform, "")
         llvm_minimal(
             name = repo_name,
             version = ver if ver != None else bins_release,

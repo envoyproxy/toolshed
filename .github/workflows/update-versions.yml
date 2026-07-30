@@ -213,8 +213,9 @@ jobs:
         fi
 
         # Update llvm_minimal_sha256 hashes in nested structure.
-        # Anchor the range to the quoted key name to avoid matching a stray
-        # `    },` from an earlier block should the dict order change.
+        # The range /"llvm_minimal_sha256"/,/^    },/ works because the inner
+        # dict closes with exactly 4 spaces of indentation per Starlark style —
+        # the same approach used for glint_sha256 above.
         update_llvm_minimal() {
             local platform="$1" hash="$2"
             [[ -z "$hash" ]] && return
