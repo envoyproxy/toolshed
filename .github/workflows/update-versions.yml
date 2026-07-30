@@ -74,6 +74,9 @@ jobs:
       run: |
         cd /tmp/release-artifacts
 
+        # Read the LLVM version from versions.bzl so we can form exact artifact filenames.
+        LLVM_VERSION=$(grep '^LLVM_VERSION = ' "${GITHUB_WORKSPACE}/bazel/versions.bzl" | sed 's/.*"\(.*\)".*/\1/')
+
         # Calculate hashes for all files
         echo "## Calculating SHA256 hashes" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -138,6 +141,22 @@ jobs:
                 echo "⚠️ Warning: glint ${arch} binary not found" >> $GITHUB_STEP_SUMMARY
             fi
         done
+
+        # Minimal LLVM artifacts
+        for platform in "Linux-X64" "Linux-ARM64" "macOS-ARM64"; do
+            # Use the exact LLVM version in the filename to avoid ambiguity when
+            # multiple LLVM-version artifacts might be present in the same directory.
+            exact_name="llvm-minimal-${LLVM_VERSION}-${platform}.tar.xz"
+            if [[ -e "$exact_name" ]]; then
+                hash=$(sha256sum "$exact_name" | cut -d' ' -f1)
+                # Normalize platform key for GitHub Actions output name (no hyphens)
+                key=$(echo "$platform" | tr '-' '_' | tr '[:upper:]' '[:lower:]')
+                echo "llvm_minimal_${key}_sha256=${hash}" >> $GITHUB_OUTPUT
+                echo "- ${exact_name}: \`${hash}\`" >> $GITHUB_STEP_SUMMARY
+            else
+                echo "⚠️ Warning: llvm-minimal ${platform} artifact not found (expected ${exact_name})" >> $GITHUB_STEP_SUMMARY
+            fi
+        done
     - name: Update versions.bzl
       if: steps.release.outputs.skip != 'true'
       run: |
@@ -192,6 +211,20 @@ jobs:
         if [[ -n "$HASH" ]]; then
             sed -i "s/\"sysroot_arm64_sha256\": \"[a-f0-9]*\"/\"sysroot_arm64_sha256\": \"${HASH}\"/" "$FILE"
         fi
+
+        # Update llvm_minimal_sha256 hashes in nested structure.
+        # The range /"llvm_minimal_sha256"/,/^    },/ works because the inner
+        # dict closes with exactly 4 spaces of indentation per Starlark style —
+        # the same approach used for glint_sha256 above.
+        update_llvm_minimal() {
+            local platform="$1" hash="$2"
+            [[ -z "$hash" ]] && return
+            sed -i '/"llvm_minimal_sha256"/,/^    },/{s/"'"$platform"'": "[a-f0-9]*"/"'"$platform"'": "'"$hash"'"/}' "$FILE"
+        }
+
+        update_llvm_minimal "Linux-X64"   "${{ steps.hashes.outputs.llvm_minimal_linux_x64_sha256 }}"
+        update_llvm_minimal "Linux-ARM64"  "${{ steps.hashes.outputs.llvm_minimal_linux_arm64_sha256 }}"
+        update_llvm_minimal "macOS-ARM64"  "${{ steps.hashes.outputs.llvm_minimal_macos_arm64_sha256 }}"
 
         echo "## Updated versions.bzl" >> $GITHUB_STEP_SUMMARY
         echo "\`\`\`diff" >> $GITHUB_STEP_SUMMARY

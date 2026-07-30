@@ -2,6 +2,7 @@
 
 load("//:versions.bzl", "LLVM_CXX_BUILD", "SUPPORTED_ARCHES", "VERSIONS")
 load(":libcxx_libs.bzl", "setup_libcxx_libs")
+load(":llvm_minimal.bzl", "setup_llvm_minimal", "setup_llvm_minimal_build")
 load(":llvm_prebuilt.bzl", "llvm_prebuilt")
 load(":sanitizer_libs.bzl", "setup_sanitizer_libs")
 
@@ -128,4 +129,79 @@ def _libcxx_ext_impl(module_ctx):
 
 libcxx_extension = module_extension(
     implementation = _libcxx_ext_impl,
+)
+
+# =============================================================================
+# llvm_minimal_build_extension: sets up raw-tarball download repos needed to
+# BUILD the minimal LLVM artifacts (//compile:llvm_minimal_*).
+# Use this as a dev_dependency in MODULE.bazel.
+# =============================================================================
+
+def _llvm_minimal_build_ext_impl(module_ctx):
+    """Set up llvm_tarball_* repos for building minimal LLVM artifacts."""
+    setup_llvm_minimal_build()
+
+llvm_minimal_build_extension = module_extension(
+    implementation = _llvm_minimal_build_ext_impl,
+)
+
+# =============================================================================
+# llvm_minimal_extension: sets up llvm_minimal_* repos for CONSUMING the
+# pre-built minimal LLVM artifacts from the toolshed bins release.
+# =============================================================================
+
+def _llvm_minimal_ext_impl(module_ctx):
+    """Implementation of the llvm_minimal module extension."""
+
+    # Only one setup() tag is accepted across all modules (the repository names
+    # are fixed — e.g. @llvm_minimal_linux_x64).  A second tag from any module
+    # will cause an error rather than being silently dropped.
+    setup_tag = None
+    for mod in module_ctx.modules:
+        for tag in mod.tags.setup:
+            if setup_tag == None:
+                setup_tag = tag
+            else:
+                fail("Multiple setup() calls found for llvm_minimal_extension. Only one configuration is allowed across all modules (repository names are fixed to @llvm_minimal_linux_x64 / @llvm_minimal_linux_arm64 / @llvm_minimal_macos_arm64).")
+
+    if setup_tag:
+        setup_llvm_minimal(
+            linux_x64_version = setup_tag.linux_x64_version,
+            linux_x64_sha256 = setup_tag.linux_x64_sha256,
+            linux_arm64_version = setup_tag.linux_arm64_version,
+            linux_arm64_sha256 = setup_tag.linux_arm64_sha256,
+            macos_arm64_version = setup_tag.macos_arm64_version,
+            macos_arm64_sha256 = setup_tag.macos_arm64_sha256,
+        )
+    else:
+        setup_llvm_minimal()
+
+_llvm_minimal_setup = tag_class(
+    attrs = {
+        "linux_x64_version": attr.string(
+            doc = "Version of Linux-X64 release to use (default: VERSIONS['bins_release'])",
+        ),
+        "linux_x64_sha256": attr.string(
+            doc = "SHA256 hash of the Linux-X64 minimal LLVM artifact",
+        ),
+        "linux_arm64_version": attr.string(
+            doc = "Version of Linux-ARM64 release to use (default: VERSIONS['bins_release'])",
+        ),
+        "linux_arm64_sha256": attr.string(
+            doc = "SHA256 hash of the Linux-ARM64 minimal LLVM artifact",
+        ),
+        "macos_arm64_version": attr.string(
+            doc = "Version of macOS-ARM64 release to use (default: VERSIONS['bins_release'])",
+        ),
+        "macos_arm64_sha256": attr.string(
+            doc = "SHA256 hash of the macOS-ARM64 minimal LLVM artifact",
+        ),
+    },
+)
+
+llvm_minimal_extension = module_extension(
+    implementation = _llvm_minimal_ext_impl,
+    tag_classes = {
+        "setup": _llvm_minimal_setup,
+    },
 )

@@ -56,6 +56,15 @@ VERSIONS = {
         "arm64": "774b285de5e1d6636d08e54499fc1dff6e225ab4f510058162e50d874c3fd223",
     },
 
+    # Minimal LLVM artifact hashes by platform
+    # Keys match the platform suffix in artifact names (Linux-X64, Linux-ARM64, macOS-ARM64).
+    # Empty strings are placeholders; the update-versions workflow fills them after release.
+    "llvm_minimal_sha256": {
+        "Linux-X64": "",
+        "Linux-ARM64": "",
+        "macOS-ARM64": "",
+    },
+
     # Glint binary hashes by architecture
     "glint_sha256": {
         "amd64": "67c91213b7ae3ebf37a59ccd9272d5b940d7a8c6557f36f3a0481b8fc80a0121",

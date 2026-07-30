@@ -1,12 +1,13 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
-load("@rules_pkg//pkg:mappings.bzl", "pkg_files")
+load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
-load("//:versions.bzl", "SUPPORTED_ARCHES", "VERSIONS")
+load("//:versions.bzl", "LLVM_VERSION", "SUPPORTED_ARCHES", "VERSIONS")
+load(":llvm_minimal.bzl", "LLVM_MINIMAL_BINS", "llvm_minimal_strip_bins")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["sanitizer_libs.bzl", "libcxx_libs.bzl", "extensions.bzl"])
+exports_files(["sanitizer_libs.bzl", "libcxx_libs.bzl", "llvm_minimal.bzl", "extensions.bzl"])
 
 # Build setting to control which toolchain to use
 # This can be set with --//compile:use_gcc_toolchain=true
@@ -249,4 +250,76 @@ pkg_tar(
         ),
     )
     for arch in SUPPORTED_ARCHES
+]
+
+# =============================================================================
+# Minimal LLVM extraction targets
+# =============================================================================
+
+_LLVM_MINIMAL_MACOS_ONLY_BINS = [
+    "llvm-libtool-darwin",
+    "llvm-install-name-tool",
+]
+
+# Use the host-runnable Linux-X64 llvm-strip/llvm-readobj for all minimal artifact
+# variants.  This keeps stripping hermetic even when assembling Linux-ARM64 or
+# macOS-ARM64 trees on Linux RBE workers (their own binaries are not executable on
+# Linux x86_64 hosts).
+_LLVM_MINIMAL_HOST_STRIPPER = "@llvm_tarball_linux_x86_64//:bin/llvm-strip"
+_LLVM_MINIMAL_HOST_READOBJ = "@llvm_tarball_linux_x86_64//:bin/llvm-readobj"
+
+[
+    (
+        llvm_minimal_strip_bins(
+            name = "llvm_minimal_%s_strip_bins" % repo_suffix,
+            bin_all = "@llvm_tarball_%s//:bin_all" % repo_suffix,
+            bins = bins,
+            stripper = _LLVM_MINIMAL_HOST_STRIPPER,
+            readobj = _LLVM_MINIMAL_HOST_READOBJ,
+            repo_suffix = repo_suffix,
+            platform = platform,
+            tags = ["manual"],
+        ),
+        pkg_files(
+            name = "llvm_minimal_%s_bins_files" % repo_suffix,
+            srcs = [":llvm_minimal_%s_strip_bins" % repo_suffix],
+            prefix = "llvm-minimal-%s-%s/bin" % (LLVM_VERSION, platform),
+            strip_prefix = "llvm_minimal_%s/bin" % repo_suffix,
+            tags = ["manual"],
+        ),
+        pkg_files(
+            name = "llvm_minimal_%s_libs_files" % repo_suffix,
+            srcs = ["@llvm_tarball_%s//:minimal_libs" % repo_suffix],
+            prefix = "llvm-minimal-%s-%s" % (LLVM_VERSION, platform),
+            strip_prefix = strip_prefix.from_pkg(),
+            tags = ["manual"],
+        ),
+        pkg_tar(
+            name = "llvm_minimal_%s" % repo_suffix,
+            srcs = [
+                ":llvm_minimal_%s_bins_files" % repo_suffix,
+                ":llvm_minimal_%s_libs_files" % repo_suffix,
+            ],
+            extension = "tar.xz",
+            package_file_name = "llvm-minimal-%s-%s.tar.xz" % (LLVM_VERSION, platform),
+            tags = ["manual"],
+        ),
+    )
+    for platform, repo_suffix, bins in [
+        (
+            "Linux-X64",
+            "linux_x86_64",
+            [b for b in LLVM_MINIMAL_BINS if b not in _LLVM_MINIMAL_MACOS_ONLY_BINS],
+        ),
+        (
+            "Linux-ARM64",
+            "linux_arm64",
+            [b for b in LLVM_MINIMAL_BINS if b not in _LLVM_MINIMAL_MACOS_ONLY_BINS],
+        ),
+        (
+            "macOS-ARM64",
+            "macos_arm64",
+            LLVM_MINIMAL_BINS,
+        ),
+    ]
 ]
