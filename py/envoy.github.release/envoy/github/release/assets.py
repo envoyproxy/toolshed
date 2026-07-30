@@ -59,15 +59,16 @@ class GithubReleaseAssetsFetcher(AGithubReleaseAssetsFetcher):
             download: aiohttp.ClientResponse) -> dict[
                 str, str | pathlib.Path]:
         outfile = self.path.joinpath(asset_type, name)
-        outfile.parent.mkdir(exist_ok=True)
-        async with stream.writer(outfile) as f:
-            await f.stream_bytes(download)
         result: dict[str, str | pathlib.Path] = dict(
             name=name,
             outfile=outfile)
         if download.status != 200:
             result["error"] = self.fail(
                 f"Failed downloading, got response:\n{download}")
+            return result
+        outfile.parent.mkdir(exist_ok=True)
+        async with stream.writer(outfile) as f:
+            await f.stream_bytes(download)
         return result
 
 
