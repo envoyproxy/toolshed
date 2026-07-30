@@ -1,5 +1,42 @@
 load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup", "pkg_files")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
+load("//website:providers.bzl", "WebsiteAssetInfo", "WebsiteGeneratorInfo")
+
+def _collect_asset_info(deps):
+    """Collect WebsiteAssetInfo from dependencies.
+    
+    Args:
+        deps: List of dependency labels
+        
+    Returns:
+        Dictionary mapping asset_type to list of (files, prefix) tuples
+    """
+    assets_by_type = {}
+    
+    # This is a build-time helper, actual collection happens in rules
+    # For the macro, we'll just pass through to the rule
+    return assets_by_type
+
+def _check_asset_compatibility(assets_by_type, accepts):
+    """Check if assets are compatible with generator.
+    
+    Args:
+        assets_by_type: Dictionary of asset type to assets
+        accepts: List of accepted asset types
+        
+    Returns:
+        List of warning messages for incompatible assets
+    """
+    warnings = []
+    for asset_type in assets_by_type.keys():
+        if asset_type not in accepts:
+            warnings.append(
+                "Warning: Asset type '{}' not in generator's accepted types: {}".format(
+                    asset_type, ", ".join(accepts)
+                )
+            )
+    return warnings
+
 
 def static_website(
         name,
@@ -34,6 +71,32 @@ def static_website(
         srcs = None,
         url = "",
         visibility = ["//visibility:public"]):
+    """Build a static website.
+    
+    This macro supports both traditional generators (like Pelican) and the new
+    provider-based architecture. When deps include targets with WebsiteAssetInfo
+    providers, the macro can inspect asset types and match them against the
+    generator's accepted types.
+    
+    Args:
+        name: Name of the target
+        content: Content files target
+        theme: Theme files target
+        config: Configuration file
+        content_path: Path to content files
+        data: Additional data files
+        deps: Additional dependencies (may include WebsiteAssetInfo providers)
+        compressor: Optional compressor tool
+        compressor_args: Arguments for compressor
+        exclude: Patterns to exclude from final tarball
+        generator: Generator executable (may provide WebsiteGeneratorInfo)
+        extension: Tarball extension
+        mappings: Path mappings for theme files
+        output_path: Where generator outputs files
+        srcs: Additional source files
+        url: Optional URL configuration
+        visibility: Target visibility
+    """
     name_html = "%s_html" % name
     name_sources = "%s_sources" % name
     name_website = "%s_website" % name
