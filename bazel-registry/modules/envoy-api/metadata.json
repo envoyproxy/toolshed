@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/envoyproxy/envoy/tree/main/api",
+    "maintainers": [],
+    "repository": [
+        "github:envoyproxy/envoy"
+    ],
+    "versions": [
+        "1.38.0-dev"
+    ],
+    "yanked_versions": {}
+}
