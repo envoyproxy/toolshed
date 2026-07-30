@@ -74,6 +74,9 @@ jobs:
       run: |
         cd /tmp/release-artifacts
 
+        # Read the LLVM version from versions.bzl so we can form exact artifact filenames.
+        LLVM_VERSION=$(grep '^LLVM_VERSION = ' "${GITHUB_WORKSPACE}/bazel/versions.bzl" | sed 's/.*"\(.*\)".*/\1/')
+
         # Calculate hashes for all files
         echo "## Calculating SHA256 hashes" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
@@ -141,16 +144,17 @@ jobs:
 
         # Minimal LLVM artifacts
         for platform in "Linux-X64" "Linux-ARM64" "macOS-ARM64"; do
-            # Use find with exact version prefix to avoid matching multiple files
-            file=$(find . -maxdepth 1 -name "llvm-minimal-*-${platform}.tar.xz" -print -quit 2>/dev/null || true)
-            if [[ -n "$file" && -e "$file" ]]; then
-                hash=$(sha256sum "$file" | cut -d' ' -f1)
+            # Use the exact LLVM version in the filename to avoid ambiguity when
+            # multiple LLVM-version artifacts might be present in the same directory.
+            exact_name="llvm-minimal-${LLVM_VERSION}-${platform}.tar.xz"
+            if [[ -e "$exact_name" ]]; then
+                hash=$(sha256sum "$exact_name" | cut -d' ' -f1)
                 # Normalize platform key for GitHub Actions output name (no hyphens)
                 key=$(echo "$platform" | tr '-' '_' | tr '[:upper:]' '[:lower:]')
                 echo "llvm_minimal_${key}_sha256=${hash}" >> $GITHUB_OUTPUT
-                echo "- ${file}: \`${hash}\`" >> $GITHUB_STEP_SUMMARY
+                echo "- ${exact_name}: \`${hash}\`" >> $GITHUB_STEP_SUMMARY
             else
-                echo "⚠️ Warning: llvm-minimal ${platform} artifact not found" >> $GITHUB_STEP_SUMMARY
+                echo "⚠️ Warning: llvm-minimal ${platform} artifact not found (expected ${exact_name})" >> $GITHUB_STEP_SUMMARY
             fi
         done
     - name: Update versions.bzl
