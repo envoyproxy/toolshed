@@ -48,6 +48,8 @@ for glob_pat in [g for g in lib_globs_csv.split(",") if g]:
         continue
     if platform.startswith("macOS") and glob_pat == "include/*/c++":
         continue
+    if glob_pat == "lib/clang/*/share":
+        continue
     require_glob(f"*/{glob_pat}/**", f"allowlist glob produced no files: {glob_pat}")
 
 # Envoy/toolshed superset assertions.
@@ -73,8 +75,8 @@ else:
     require_glob("*/lib/libunwind*.dylib", "missing libunwind dylib")
     require_glob("*/lib/libclang*.dylib", "missing libclang*.dylib")
 
-# share dir is optional upstream; if present, it must contain files.
-if has_glob(f"*/lib/clang/{llvm_major}/share"):
+# share dir is optional upstream; if present, ensure it is non-empty.
+if has_glob(f"*/lib/clang/{llvm_major}/share") or has_glob(f"*/lib/clang/{llvm_major}/share/**"):
     require_glob(f"*/lib/clang/{llvm_major}/share/**", "lib/clang/<major>/share exists but has no files")
 
 print(f"PASS: llvm minimal manifest checks passed for {platform}")
