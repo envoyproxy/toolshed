@@ -10,6 +10,9 @@ on:
         description: Bazel action (build or test)
         required: true
         type: string
+      artifact-name:
+        type: string
+        default: bazel-artifacts
       artifacts:
         description: Artifacts to upload
         required: false
@@ -144,7 +147,7 @@ jobs:
       if: ${{ inputs.upload && (steps.artifact-paths.outputs.value || steps.source-tarball.outputs.tarball) }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
-        name: bazel-artifacts
+        name: ${{ inputs.artifact-name }}
         path: |
           ${{ steps.artifact-paths.outputs.value }}
         retention-days: 30
