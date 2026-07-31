@@ -122,6 +122,7 @@ def _llvm_version_major(version):
     return version.split(".")[0]
 
 def render_llvm_repo_build(llvm_major):
+    """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact."""
     return """package(default_visibility = ["//visibility:public"])
 
 exports_files(glob(["bin/*", "lib/**", "include/**", "share/clang/*"], allow_empty = True))

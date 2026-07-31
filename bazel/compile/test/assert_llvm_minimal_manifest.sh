@@ -56,7 +56,7 @@ for glob_pat in [g for g in lib_globs_csv.split(",") if g]:
 require_glob("*/BUILD.bazel", "missing root BUILD.bazel in artifact")
 require_glob(f"*/lib/clang/{llvm_major}/include/**", "missing lib/clang/<major>/include contents")
 require_glob(f"*/lib/clang/{llvm_major}/lib/**", "missing lib/clang/<major>/lib contents")
-require_glob(f"*/include/c++/**", "missing include/c++ headers")
+require_glob("*/include/c++/**", "missing include/c++ headers")
 
 if platform == "Linux-X64":
     require_glob("*/include/x86_64-unknown-linux-gnu/c++/v1/**", "missing x86_64 triple libc++ include tree")
