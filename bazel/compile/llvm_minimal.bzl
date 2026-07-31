@@ -260,10 +260,11 @@ def _llvm_minimal_strip_bins_impl(ctx):
     cannot declare undeclared extra files, but a tree artifact contains all
     files created inside it.
 
-    local = 1 keeps this action on the Bazel host: the strip pass reads and
-    writes multi-GB LLVM tarballs already present on the host; offloading to
-    RBE workers would cause large unnecessary data transfers and risk
-    exhausting remote-worker disk quota.
+    no-remote-exec keeps this action off RBE workers: the multi-GB LLVM tree
+    is already present on the Bazel host and shipping it to remote workers
+    would cause unnecessary large data transfers. The action remains
+    remote-cacheable so the ~1 hr build result is reused across CI runs until
+    the pinned LLVM version changes (roughly once a year).
     """
     out_dir = ctx.actions.declare_directory(
         "llvm_minimal_%s/bin" % ctx.attr.repo_suffix,
@@ -296,7 +297,7 @@ def _llvm_minimal_strip_bins_impl(ctx):
         arguments = [out_dir.path, stripper.path, readobj.path] + specs,
         mnemonic = "LlvmMinimalStripBins",
         progress_message = "Stripping LLVM minimal bins for " + ctx.attr.platform,
-        execution_requirements = {"local": "1"},
+        execution_requirements = {"no-remote-exec": "1"},
     )
 
     return [DefaultInfo(files = depset([out_dir]))]
@@ -317,12 +318,12 @@ llvm_minimal_strip_bins = rule(
         "stripper": attr.label(
             mandatory = True,
             allow_single_file = True,
-            doc = "Host-executable llvm-strip binary (from the Linux-X64 tarball).",
+            doc = "Host-executable llvm-strip binary.",
         ),
         "readobj": attr.label(
             mandatory = True,
             allow_single_file = True,
-            doc = "Host-executable llvm-readobj binary (from the Linux-X64 tarball).",
+            doc = "Host-executable llvm-readobj binary.",
         ),
         "repo_suffix": attr.string(
             mandatory = True,
@@ -407,7 +408,7 @@ def _llvm_minimal_impl(ctx):
             platform = platform,
         )
         ctx.download_and_extract(
-            url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/llvm-minimal-{llvm_version}-{platform}.tar.xz".format(
+            url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/llvm-minimal-{llvm_version}-{platform}.tar.zst".format(
                 version = version,
                 llvm_version = llvm_version,
                 platform = platform,
