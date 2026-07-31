@@ -285,13 +285,17 @@ jobs:
         include:
         - target: //compile:llvm_minimal_linux_x86_64
           artifact: compile/llvm-minimal-22.1.8-Linux-X64.tar.zst
+          artifact-name: bazel-llvm-x64-artifacts
         - target: //compile:llvm_minimal_linux_arm64
           artifact: compile/llvm-minimal-22.1.8-Linux-ARM64.tar.zst
+          artifact-name: bazel-llvm-arm64-artifacts
         - target: //compile:llvm_minimal_macos_arm64
           artifact: compile/llvm-minimal-22.1.8-macOS-ARM64.tar.zst
+          artifact-name: bazel-llvm-macos-artifacts
     uses: ./.github/workflows/_bazel.yml
     with:
       action: build
+      artifact-name: ${{ matrix.artifact-name }}
       artifacts: ${{ matrix.artifact }}
       bazel-args: --config=ci
       bazel-mode: llvm
