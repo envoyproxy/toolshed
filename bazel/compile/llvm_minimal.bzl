@@ -74,6 +74,8 @@ LLVM_MINIMAL_LIB_GLOBS = [
     "lib/clang/*/share",
     # libc++ headers
     "include/c++",
+    # Per-target-triple libc++ headers (e.g. include/x86_64-unknown-linux-gnu/c++/v1)
+    "include/*/c++",
     # Static libc++ and libc++abi for single-platform linking
     "lib/**/libc++*.a",
     "lib/**/libc++abi*.a",
@@ -84,6 +86,9 @@ LLVM_MINIMAL_LIB_GLOBS = [
     # libclang-cpp shared library (referenced by envoy on distro path)
     "lib/libclang-cpp.so*",
     "lib/libclang-cpp*.dylib",
+    # libclang C API shared library (referenced by envoy dynamic modules)
+    "lib/libclang.so*",
+    "lib/libclang*.dylib",
 ]
 
 # =============================================================================
@@ -104,13 +109,195 @@ LLVM_MINIMAL_PLATFORMS = {
 
 def _lib_glob_to_repo_globs(pattern):
     """Convert one allowlist entry to file-matching repo BUILD glob patterns."""
-    if "*" in pattern:
+    final_segment = pattern.rsplit("/", 1)[-1]
+    if "*" in final_segment and "." in final_segment:
         return [pattern]
     return [pattern + "/**/*"]
 
 def _quoted_list(values):
     """Render a list literal safely for generated BUILD file content."""
     return repr(values)
+
+def _llvm_version_major(version):
+    return version.split(".")[0]
+
+def render_llvm_repo_build(llvm_major):
+    return """package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["bin/*", "lib/**", "include/**", "share/clang/*"], allow_empty = True))
+
+filegroup(
+    name = "clang",
+    srcs = [
+        "bin/clang",
+        "bin/clang++",
+        "bin/clang-cpp",
+    ],
+)
+
+filegroup(
+    name = "ld",
+    srcs = [
+        "bin/ld.lld",
+        "bin/ld64.lld",
+    ] + glob(["bin/wasm-ld"], allow_empty = True),
+)
+
+filegroup(
+    name = "include",
+    srcs = glob([
+        "include/**",
+        "lib/clang/{llvm_major}/include/**",
+        "lib/clang/{llvm_major}/share/**",
+        "lib/clang/{llvm_major}/libcxx-msan/include/**",
+    ], allow_empty = True),
+)
+
+filegroup(
+    name = "all_includes",
+    srcs = [
+        ":include",
+        ":cxx_builtin_include",
+        ":extra_config_site",
+    ],
+)
+
+filegroup(
+    name = "cxx_builtin_include",
+    srcs = glob([
+        "include/c++",
+        "lib/clang/{llvm_major}/include",
+        "lib/clang/{llvm_major}/share",
+        "lib/clang/{llvm_major}/libcxx-msan/include",
+        "lib/clang/{llvm_major}/libcxx-msan/source/include",
+    ], allow_empty = True, exclude_directories = 0),
+)
+
+filegroup(
+    name = "extra_config_site",
+    srcs = glob(["include/*/c++/v1/__config_site"], allow_empty = True),
+)
+
+filegroup(
+    name = "bin",
+    srcs = glob(["bin/**"], allow_empty = True),
+)
+
+filegroup(
+    name = "lib",
+    srcs = glob([
+        "lib/clang/{llvm_major}/lib",
+        "lib/**/libc++*.a",
+        "lib/**/libunwind.a",
+        "lib/clang/{llvm_major}/libcxx-msan/lib",
+    ], allow_empty = True, exclude_directories = 0),
+)
+
+filegroup(
+    name = "lib_legacy",
+    srcs = glob([
+        "lib/clang/{llvm_major}/lib/**",
+        "lib/**/libc++*.a",
+        "lib/**/libunwind.a",
+        "lib/clang/{llvm_major}/libcxx-msan/lib/**",
+    ], allow_empty = True),
+)
+
+filegroup(
+    name = "libclang_rt-asan-darwin",
+    srcs = glob(["lib/clang/{llvm_major}/lib/darwin/libclang_rt.asan_osx_dynamic.dylib"], allow_empty = True),
+)
+
+filegroup(
+    name = "libclang_rt-tsan-darwin",
+    srcs = glob(["lib/clang/{llvm_major}/lib/darwin/libclang_rt.tsan_osx_dynamic.dylib"], allow_empty = True),
+)
+
+filegroup(
+    name = "libclang_rt-ubsan-darwin",
+    srcs = glob(["lib/clang/{llvm_major}/lib/darwin/libclang_rt.ubsan_osx_dynamic.dylib"], allow_empty = True),
+)
+
+filegroup(
+    name = "ar",
+    srcs = ["bin/llvm-ar"],
+)
+
+filegroup(
+    name = "as",
+    srcs = [
+        "bin/clang",
+        "bin/llvm-as",
+    ],
+)
+
+filegroup(
+    name = "nm",
+    srcs = ["bin/llvm-nm"],
+)
+
+filegroup(
+    name = "objcopy",
+    srcs = ["bin/llvm-objcopy"],
+)
+
+filegroup(
+    name = "objdump",
+    srcs = ["bin/llvm-objdump"],
+)
+
+filegroup(
+    name = "profdata",
+    srcs = ["bin/llvm-profdata"],
+)
+
+filegroup(
+    name = "dwp",
+    srcs = ["bin/llvm-dwp"],
+)
+
+filegroup(
+    name = "ranlib",
+    srcs = ["bin/llvm-ranlib"],
+)
+
+filegroup(
+    name = "readelf",
+    srcs = ["bin/llvm-readelf"],
+)
+
+filegroup(
+    name = "strip",
+    srcs = ["bin/llvm-strip"],
+)
+
+filegroup(
+    name = "symbolizer",
+    srcs = ["bin/llvm-symbolizer"],
+)
+
+filegroup(
+    name = "clang-tidy",
+    srcs = ["bin/clang-tidy"],
+)
+
+filegroup(
+    name = "clang-format",
+    srcs = ["bin/clang-format"],
+)
+
+filegroup(
+    name = "git-clang-format",
+    srcs = ["bin/git-clang-format"],
+)
+
+filegroup(
+    name = "libclang",
+    srcs = glob(["lib/libclang.so", "lib/libclang.dylib"], allow_empty = True),
+)
+""".format(llvm_major = llvm_major)
+
+LLVM_MINIMAL_LLVM_REPO_BUILD = render_llvm_repo_build(_llvm_version_major(LLVM_VERSION))
 
 def _llvm_tarball_impl(ctx):
     """Downloads and extracts an LLVM upstream tarball hermetically.
@@ -372,7 +559,7 @@ def setup_llvm_minimal_build():
 # Repository rule: consume pre-built minimal LLVM artifact from toolshed releases
 # =============================================================================
 
-_LLVM_MINIMAL_BUILD = """\
+_LLVM_MINIMAL_STUB_BUILD = """\
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
@@ -424,8 +611,7 @@ def _llvm_minimal_impl(ctx):
         ctx.file("bin/.gitkeep", "")
         ctx.file("lib/.gitkeep", "")
         ctx.file("include/.gitkeep", "")
-
-    ctx.file("BUILD.bazel", _LLVM_MINIMAL_BUILD)
+        ctx.file("BUILD.bazel", _LLVM_MINIMAL_STUB_BUILD)
 
 llvm_minimal = repository_rule(
     implementation = _llvm_minimal_impl,
