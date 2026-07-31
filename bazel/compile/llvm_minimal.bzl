@@ -25,13 +25,21 @@ load("//:versions.bzl", "LLVM_DISTRIBUTIONS", "LLVM_VERSION", "VERSIONS")
 # (toolchain/cc_toolchain_config.bzl), clang/ld/as filegroups
 # (toolchain/BUILD.llvm_repo.tpl), aliased_tools (toolchain/aliases.bzl),
 # and direct envoy/toolshed references.
+#
+# Symlink aliases and their real targets are BOTH listed explicitly so that
+# each allowlisted entry can be copied verbatim (preserving linkiness) without
+# any symlink-chain resolution:
+#   clang, clang++, clang-cpp        -> clang-22 (the real clang binary)
+#   ld.lld, ld64.lld, wasm-ld        -> lld      (the real linker binary)
 LLVM_MINIMAL_BINS = [
     # Compiler driver + assembler
     "clang",
     "clang++",
     "clang-cpp",
+    # Real clang binary that clang/clang++/clang-cpp symlink to.
+    "clang-22",
     "llvm-as",
-    # Linkers
+    # Linkers (ld.lld/ld64.lld/wasm-ld symlink to the real `lld`).
     "lld",
     "ld.lld",
     "ld64.lld",
@@ -42,6 +50,7 @@ LLVM_MINIMAL_BINS = [
     "llvm-nm",
     "llvm-objcopy",
     "llvm-objdump",
+    "llvm-readobj",
     "llvm-readelf",
     "llvm-strip",
     "llvm-dwp",
@@ -74,6 +83,8 @@ LLVM_MINIMAL_LIB_GLOBS = [
     "lib/clang/*/share",
     # libc++ headers
     "include/c++",
+    # Per-target-triple libc++ headers (e.g. include/x86_64-unknown-linux-gnu/c++/v1)
+    "include/*/c++",
     # Static libc++ and libc++abi for single-platform linking
     "lib/**/libc++*.a",
     "lib/**/libc++abi*.a",
@@ -84,6 +95,9 @@ LLVM_MINIMAL_LIB_GLOBS = [
     # libclang-cpp shared library (referenced by envoy on distro path)
     "lib/libclang-cpp.so*",
     "lib/libclang-cpp*.dylib",
+    # libclang C API shared library (referenced by envoy dynamic modules)
+    "lib/libclang.so*",
+    "lib/libclang*.dylib",
 ]
 
 # =============================================================================
@@ -104,13 +118,196 @@ LLVM_MINIMAL_PLATFORMS = {
 
 def _lib_glob_to_repo_globs(pattern):
     """Convert one allowlist entry to file-matching repo BUILD glob patterns."""
-    if "*" in pattern:
+    final_segment = pattern.rsplit("/", 1)[-1]
+    if "*" in final_segment and "." in final_segment:
         return [pattern]
     return [pattern + "/**/*"]
 
 def _quoted_list(values):
     """Render a list literal safely for generated BUILD file content."""
     return repr(values)
+
+def _llvm_version_major(version):
+    return version.split(".")[0]
+
+def render_llvm_repo_build(llvm_major):
+    """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact."""
+    return """package(default_visibility = ["//visibility:public"])
+
+exports_files(glob(["bin/*", "lib/**", "include/**", "share/clang/*"], allow_empty = True))
+
+filegroup(
+    name = "clang",
+    srcs = [
+        "bin/clang",
+        "bin/clang++",
+        "bin/clang-cpp",
+    ],
+)
+
+filegroup(
+    name = "ld",
+    srcs = [
+        "bin/ld.lld",
+        "bin/ld64.lld",
+    ] + glob(["bin/wasm-ld"], allow_empty = True),
+)
+
+filegroup(
+    name = "include",
+    srcs = glob([
+        "include/**",
+        "lib/clang/{llvm_major}/include/**",
+        "lib/clang/{llvm_major}/share/**",
+        "lib/clang/{llvm_major}/libcxx-msan/include/**",
+    ], allow_empty = True),
+)
+
+filegroup(
+    name = "all_includes",
+    srcs = [
+        ":include",
+        ":cxx_builtin_include",
+        ":extra_config_site",
+    ],
+)
+
+filegroup(
+    name = "cxx_builtin_include",
+    srcs = glob([
+        "include/c++",
+        "lib/clang/{llvm_major}/include",
+        "lib/clang/{llvm_major}/share",
+        "lib/clang/{llvm_major}/libcxx-msan/include",
+        "lib/clang/{llvm_major}/libcxx-msan/source/include",
+    ], allow_empty = True, exclude_directories = 0),
+)
+
+filegroup(
+    name = "extra_config_site",
+    srcs = glob(["include/*/c++/v1/__config_site"], allow_empty = True),
+)
+
+filegroup(
+    name = "bin",
+    srcs = glob(["bin/**"], allow_empty = True),
+)
+
+filegroup(
+    name = "lib",
+    srcs = glob([
+        "lib/clang/{llvm_major}/lib",
+        "lib/**/libc++*.a",
+        "lib/**/libunwind.a",
+        "lib/clang/{llvm_major}/libcxx-msan/lib",
+    ], allow_empty = True, exclude_directories = 0),
+)
+
+filegroup(
+    name = "lib_legacy",
+    srcs = glob([
+        "lib/clang/{llvm_major}/lib/**",
+        "lib/**/libc++*.a",
+        "lib/**/libunwind.a",
+        "lib/clang/{llvm_major}/libcxx-msan/lib/**",
+    ], allow_empty = True),
+)
+
+filegroup(
+    name = "libclang_rt-asan-darwin",
+    srcs = glob(["lib/clang/{llvm_major}/lib/darwin/libclang_rt.asan_osx_dynamic.dylib"], allow_empty = True),
+)
+
+filegroup(
+    name = "libclang_rt-tsan-darwin",
+    srcs = glob(["lib/clang/{llvm_major}/lib/darwin/libclang_rt.tsan_osx_dynamic.dylib"], allow_empty = True),
+)
+
+filegroup(
+    name = "libclang_rt-ubsan-darwin",
+    srcs = glob(["lib/clang/{llvm_major}/lib/darwin/libclang_rt.ubsan_osx_dynamic.dylib"], allow_empty = True),
+)
+
+filegroup(
+    name = "ar",
+    srcs = ["bin/llvm-ar"],
+)
+
+filegroup(
+    name = "as",
+    srcs = [
+        "bin/clang",
+        "bin/llvm-as",
+    ],
+)
+
+filegroup(
+    name = "nm",
+    srcs = ["bin/llvm-nm"],
+)
+
+filegroup(
+    name = "objcopy",
+    srcs = ["bin/llvm-objcopy"],
+)
+
+filegroup(
+    name = "objdump",
+    srcs = ["bin/llvm-objdump"],
+)
+
+filegroup(
+    name = "profdata",
+    srcs = ["bin/llvm-profdata"],
+)
+
+filegroup(
+    name = "dwp",
+    srcs = ["bin/llvm-dwp"],
+)
+
+filegroup(
+    name = "ranlib",
+    srcs = ["bin/llvm-ranlib"],
+)
+
+filegroup(
+    name = "readelf",
+    srcs = ["bin/llvm-readelf"],
+)
+
+filegroup(
+    name = "strip",
+    srcs = ["bin/llvm-strip"],
+)
+
+filegroup(
+    name = "symbolizer",
+    srcs = ["bin/llvm-symbolizer"],
+)
+
+filegroup(
+    name = "clang-tidy",
+    srcs = ["bin/clang-tidy"],
+)
+
+filegroup(
+    name = "clang-format",
+    srcs = ["bin/clang-format"],
+)
+
+filegroup(
+    name = "git-clang-format",
+    srcs = ["bin/git-clang-format"],
+)
+
+filegroup(
+    name = "libclang",
+    srcs = glob(["lib/libclang.so*", "lib/libclang*.dylib"], allow_empty = True),
+)
+""".format(llvm_major = llvm_major)
+
+LLVM_MINIMAL_LLVM_REPO_BUILD = render_llvm_repo_build(_llvm_version_major(LLVM_VERSION))
 
 def _llvm_tarball_impl(ctx):
     """Downloads and extracts an LLVM upstream tarball hermetically.
@@ -185,23 +382,21 @@ llvm_tarball = repository_rule(
 # Build rule: assemble and strip the minimal bin/ tree
 # =============================================================================
 
-# Two-pass script:
-#   Pass 1 — copy all allowlisted bins into DEST, preserving symlinks but also
-#             copying each symlink's real target so no symlink is dangling.
-#   Pass 2 — walk DEST, skip symlinks, probe each real file with llvm-readobj;
-#             strip ELF/Mach-O objects (fatal on strip error) and skip scripts
-#             like git-clang-format that are not valid object files.
-#
-# Portability note: readlink -f is GNU-only; use a portable loop to resolve
-# the symlink chain without depending on GNU coreutils.
+# Two-pass script implementing the intended algorithm:
+#   Pass 1 — copy EXACTLY the allowlisted files, preserving their linkiness.
+#            `cp -P` never dereferences: a real file is copied as a real file,
+#            a symlink is copied as a symlink. Because every symlink target is
+#            itself allowlisted (clang-22 for the clang* aliases, lld for the
+#            ld*/wasm-ld aliases), the copied symlinks resolve within DEST and
+#            none dangle. No symlink-chain resolution, no target materialization.
+#   Pass 2 — walk DEST, skip symlinks and anything that cannot be stripped
+#            (probed via llvm-readobj --file-headers), and strip the rest.
+#            `find -maxdepth 1 -type f` skips symlinks; the readobj probe skips
+#            scripts like git-clang-format that are not valid object files.
 #
 # Arguments: DEST STRIPPER READOBJ [name:src_path ...]
-#   name     — output filename (e.g. "clang")
+#   name     — output filename (e.g. "clang" or "clang-22")
 #   src_path — full path to the source file from bin_all inputs
-#
-# Symlink resolution is done entirely from $src (its dirname is the bin/
-# directory, so the relative target resolves correctly inside the sandbox
-# without requiring an explicit SRCDIR argument).
 _LLVM_STRIP_BINS_SCRIPT = """
 set -euo pipefail
 DEST="$1"
@@ -209,41 +404,32 @@ STRIPPER="$2"
 READOBJ="$3"
 shift 3
 
-# Pass 1: copy allowlisted bins; for symlinks also copy their real targets.
+# Pass 1: copy exactly the allowlisted files, preserving linkiness.
+# In Bazel sandboxes, file inputs are usually symlink shims to the real execroot
+# paths. Unwrap one shim hop so cp -P sees the actual upstream path (where
+# clang/ld aliases are real symlinks and clang-22/lld are real files).
 for spec in "$@"; do
     name="${spec%%:*}"
     src="${spec#*:}"
+    src_for_copy="$src"
     if [ -L "$src" ]; then
-        cp -P "$src" "$DEST/$name"
-        # Portable readlink -f: walk the chain to the real file.
-        # Cap at 40 iterations to catch circular symlinks (matches MAXSYMLINKS).
-        real="$src"
-        _depth=0
-        while [ -L "$real" ]; do
-            _depth=$((_depth + 1))
-            if [ "$_depth" -gt 40 ]; then
-                echo "symlink loop detected at $src" >&2
-                exit 1
+        shim_target="$(readlink "$src" || true)"
+        if [ -n "${shim_target:-}" ]; then
+            if [ "${shim_target#/}" = "$shim_target" ]; then
+                shim_target="$(dirname "$src")/$shim_target"
             fi
-            target="$(readlink "$real")"
-            case "$target" in
-                /*) real="$target" ;;
-                *)  real="$(dirname "$real")/$target" ;;
-            esac
-        done
-        realbase="$(basename "$real")"
-        if [ ! -f "$DEST/$realbase" ]; then
-            cp "$real" "$DEST/$realbase"
+            if [ -e "$shim_target" ]; then
+                src_for_copy="$shim_target"
+            fi
         fi
-    else
-        cp "$src" "$DEST/$name"
     fi
+    cp -P "$src_for_copy" "$DEST/$name"
 done
 
-# Pass 2: strip real (non-symlink) ELF/Mach-O files; skip non-objects.
-# find -maxdepth 1 -type f naturally skips symlinks and handles an empty DEST.
-# Piped while for portability; explicit || exit 1 ensures strip/mv failures
-# propagate regardless of whether the subshell inherits set -e.
+# Pass 2: strip real (non-symlink) ELF/Mach-O files; skip symlinks and
+# non-objects.  find -maxdepth 1 -type f skips symlinks and handles an empty
+# DEST.  Piped while for portability; explicit || exit 1 ensures strip/mv
+# failures propagate regardless of whether the subshell inherits set -e.
 find "$DEST" -maxdepth 1 -type f | while IFS= read -r f; do
     if "$READOBJ" --file-headers "$f" > /dev/null 2>&1; then
         tmpf="${f}.strip-tmp"
@@ -372,7 +558,7 @@ def setup_llvm_minimal_build():
 # Repository rule: consume pre-built minimal LLVM artifact from toolshed releases
 # =============================================================================
 
-_LLVM_MINIMAL_BUILD = """\
+_LLVM_MINIMAL_STUB_BUILD = """\
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
@@ -424,8 +610,7 @@ def _llvm_minimal_impl(ctx):
         ctx.file("bin/.gitkeep", "")
         ctx.file("lib/.gitkeep", "")
         ctx.file("include/.gitkeep", "")
-
-    ctx.file("BUILD.bazel", _LLVM_MINIMAL_BUILD)
+        ctx.file("BUILD.bazel", _LLVM_MINIMAL_STUB_BUILD)
 
 llvm_minimal = repository_rule(
     implementation = _llvm_minimal_impl,

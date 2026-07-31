@@ -2,6 +2,11 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files([
+    "assert_llvm_minimal_bins_layout.sh",
+    "assert_llvm_minimal_manifest.sh",
+])
+
 # Simple C++ hello world binary for cross-compilation testing.
 # Build for aarch64:
 #   bazel build //compile/test:hello_world --platforms=@toolchains_llvm//platforms:linux-aarch64
