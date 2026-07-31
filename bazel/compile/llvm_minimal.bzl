@@ -382,14 +382,12 @@ llvm_tarball = repository_rule(
 # Build rule: assemble and strip the minimal bin/ tree
 # =============================================================================
 
-# Two-pass script implementing the intended algorithm:
-#   Pass 1 — copy EXACTLY the allowlisted files, preserving their linkiness.
-#            `cp -P` never dereferences: a real file is copied as a real file,
-#            a symlink is copied as a symlink. Because every symlink target is
-#            itself allowlisted (clang-22 for the clang* aliases, lld for the
-#            ld*/wasm-ld aliases), the copied symlinks resolve within DEST and
-#            none dangle. No symlink-chain resolution, no target materialization.
-#   Pass 2 — walk DEST, skip symlinks and anything that cannot be stripped
+# Three-pass script implementing the intended algorithm:
+#   Pass 1 — copy EXACTLY the allowlisted files with `cp -P` and no symlink
+#            unwrapping or reconstruction. A symlink stays a symlink and a real
+#            file stays a real file.
+#   Pass 2 — fail loudly on dangling symlinks in DEST before stripping.
+#   Pass 3 — walk DEST, skip symlinks and anything that cannot be stripped
 #            (probed via llvm-readobj --file-headers), and strip the rest.
 #            `find -maxdepth 1 -type f` skips symlinks; the readobj probe skips
 #            scripts like git-clang-format that are not valid object files.
@@ -403,30 +401,26 @@ DEST="$1"
 STRIPPER="$2"
 READOBJ="$3"
 shift 3
+mkdir -p "$DEST"
 
-# Pass 1: copy exactly the allowlisted files, preserving linkiness.
-# In Bazel sandboxes, file inputs are usually symlink shims to the real execroot
-# paths. Unwrap one shim hop so cp -P sees the actual upstream path (where
-# clang/ld aliases are real symlinks and clang-22/lld are real files).
+# Pass 1: exact copy; cp -P never dereferences.
 for spec in "$@"; do
     name="${spec%%:*}"
     src="${spec#*:}"
-    src_for_copy="$src"
-    if [ -L "$src" ]; then
-        shim_target="$(readlink "$src" || true)"
-        if [ -n "${shim_target:-}" ]; then
-            if [ "${shim_target#/}" = "$shim_target" ]; then
-                shim_target="$(dirname "$src")/$shim_target"
-            fi
-            if [ -e "$shim_target" ]; then
-                src_for_copy="$shim_target"
-            fi
-        fi
-    fi
-    cp -P "$src_for_copy" "$DEST/$name"
+    cp -P "$src" "$DEST/$name"
 done
 
-# Pass 2: strip real (non-symlink) ELF/Mach-O files; skip symlinks and
+# Pass 2: fail loudly on dangling symlinks before stripping.
+dangling=0
+for l in "$DEST"/*; do
+    if [ -L "$l" ] && [ ! -e "$l" ]; then
+        echo "DANGLING SYMLINK: $l -> $(readlink "$l")" >&2
+        dangling=1
+    fi
+done
+[ "$dangling" -eq 0 ] || { echo "ERROR: dangling symlinks in $DEST" >&2; exit 1; }
+
+# Pass 3: strip real (non-symlink) ELF/Mach-O files; skip symlinks and
 # non-objects.  find -maxdepth 1 -type f skips symlinks and handles an empty
 # DEST.  Piped while for portability; explicit || exit 1 ensures strip/mv
 # failures propagate regardless of whether the subshell inherits set -e.
@@ -454,7 +448,7 @@ def _llvm_minimal_strip_bins_impl(ctx):
     the pinned LLVM version changes (roughly once a year).
     """
     out_dir = ctx.actions.declare_directory(
-        "llvm_minimal_%s/bin" % ctx.attr.repo_suffix,
+        "llvm_minimal_%s_bins_src" % ctx.attr.repo_suffix,
     )
     bin_files = ctx.files.bin_all
     stripper = ctx.file.stripper
@@ -481,10 +475,13 @@ def _llvm_minimal_strip_bins_impl(ctx):
         tools = [stripper, readobj],
         outputs = [out_dir],
         command = _LLVM_STRIP_BINS_SCRIPT,
-        arguments = [out_dir.path, stripper.path, readobj.path] + specs,
+        arguments = [out_dir.path + "/bin", stripper.path, readobj.path] + specs,
         mnemonic = "LlvmMinimalStripBins",
         progress_message = "Stripping LLVM minimal bins for " + ctx.attr.platform,
-        execution_requirements = {"no-remote-exec": "1"},
+        execution_requirements = {
+            "no-remote-exec": "1",
+            "no-sandbox": "1",
+        },
     )
 
     return [DefaultInfo(files = depset([out_dir]))]
