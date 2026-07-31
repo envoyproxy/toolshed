@@ -27,7 +27,7 @@ jobs:
       run: |
        sudo apt-get -qq update --error-on=any
        sudo apt-get -qq install --yes \
-           libtool libtinfo5 automake autoconf curl unzip mkcert libnss3-tools
+           libtool automake autoconf curl unzip mkcert libnss3-tools
     - name: Bazel setup
       run: |
         mkcert -install
