@@ -12,6 +12,11 @@ def setup_llvm_toolchain(llvm_version = None):
             "linux-aarch64": "@libcxx_libs_aarch64",
             "linux-x86_64": "@libcxx_libs_x86_64",
         },
+        toolchain_roots = {
+            "linux-x86_64": "@llvm_minimal_linux_x64//",
+            "linux-aarch64": "@llvm_minimal_linux_arm64//",
+            "darwin-aarch64": "@llvm_minimal_macos_arm64//",
+        },
         sysroot = {
             "linux-x86_64": "@sysroot_linux_amd64//:sysroot",
             "linux-aarch64": "@sysroot_linux_arm64//:sysroot",

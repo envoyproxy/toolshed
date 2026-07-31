@@ -188,7 +188,7 @@
   "moduleExtensions": {
     "//compile:extensions.bzl%libcxx_libs_extension": {
       "general": {
-        "bzlTransitiveDigest": "7C5XwBI+9zhG4CIqHJqpz7QqyEr3jgZMI1j7WaHHOEs=",
+        "bzlTransitiveDigest": "Ekmiryu7tgeuX/RMrOkqrtY+wm+jfl4XMWIBptsIC0k=",
         "usagesDigest": "1MQAQyqOL6oaYiioUUDNk0Gj24vKS2ysKTnyyi3PYkY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -214,9 +214,61 @@
         "recordedRepoMappingEntries": []
       }
     },
+    "//compile:extensions.bzl%llvm_minimal_extension": {
+      "general": {
+        "bzlTransitiveDigest": "Ekmiryu7tgeuX/RMrOkqrtY+wm+jfl4XMWIBptsIC0k=",
+        "usagesDigest": "nkFL2OM054ilugKQP6w8kIC3y0RCAox3sXkWYvzoogs=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "llvm_minimal_linux_x64": {
+            "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
+            "attributes": {
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.3/llvm-minimal-22.1.8-Linux-X64.tar.zst",
+              "sha256": "",
+              "strip_prefix": "llvm-minimal-22.1.8-Linux-X64"
+            }
+          },
+          "llvm_minimal_linux_arm64": {
+            "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
+            "attributes": {
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.3/llvm-minimal-22.1.8-Linux-ARM64.tar.zst",
+              "sha256": "",
+              "strip_prefix": "llvm-minimal-22.1.8-Linux-ARM64"
+            }
+          },
+          "llvm_minimal_macos_arm64": {
+            "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
+            "attributes": {
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.3/llvm-minimal-22.1.8-macOS-ARM64.tar.zst",
+              "sha256": "",
+              "strip_prefix": "llvm-minimal-22.1.8-macOS-ARM64"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
+    "//compile:extensions.bzl%llvm_toolchain_alias_extension": {
+      "general": {
+        "bzlTransitiveDigest": "Ekmiryu7tgeuX/RMrOkqrtY+wm+jfl4XMWIBptsIC0k=",
+        "usagesDigest": "pe3L75E/xcEXb/MsWDBj5kXbV+UiS//Ei0M3lhJVLuM=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "llvm_toolchain_llvm": {
+            "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_toolchain_alias",
+            "attributes": {}
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
-        "bzlTransitiveDigest": "MxKJXLaCxs6PO5QBxeQe2LtT7xnJxnYVtZxYjSbrssE=",
+        "bzlTransitiveDigest": "DzgZ3GrIDjCjee7Ld0TpBTTvON+PoLY9XbNcfOg9S7w=",
         "usagesDigest": "oN3Gcw2UBtE1qJtYYdev1vXmnw33Bz0wN63beHchfJU=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
