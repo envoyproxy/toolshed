@@ -105,6 +105,9 @@ LLVM_MINIMAL_PLATFORMS = {
 def _lib_glob_to_repo_globs(pattern):
     """Convert one allowlist entry to file-matching repo BUILD glob patterns."""
     if "*" in pattern:
+        basename = pattern.rsplit("/", 1)[-1]
+        if "*" not in basename:
+            return [pattern + "/**/*"]
         return [pattern]
     return [pattern + "/**/*"]
 
@@ -375,9 +378,88 @@ def setup_llvm_minimal_build():
 _LLVM_MINIMAL_BUILD = """\
 package(default_visibility = ["//visibility:public"])
 
+# Some targets may need to directly depend on these files.
+exports_files(glob(
+    [
+        "bin/*",
+        "lib/**",
+        "include/**",
+        "share/clang/*",
+    ],
+    allow_empty = True,
+))
+
+filegroup(
+    name = "clang",
+    srcs = [
+        "bin/clang",
+        "bin/clang++",
+        "bin/clang-cpp",
+    ],
+)
+
+filegroup(
+    name = "ld",
+    srcs = [
+        "bin/ld.lld",
+        "bin/ld64.lld",
+    ] + glob(
+        ["bin/wasm-ld"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "include",
+    srcs = glob([
+        "include/**",
+        "lib/clang/{LLVM_VERSION}/include/**",
+    ]) + glob(
+        [
+            "lib/clang/{LLVM_VERSION}/share/**",
+            "libcxx-msan/include/**",
+        ],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "all_includes",
+    srcs = glob(
+        ["include/**"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "cxx_builtin_include",
+    srcs = [
+        "include/c++",
+        "lib/clang/{LLVM_VERSION}/include",
+    ] + glob(
+        ["lib/clang/{LLVM_VERSION}/share"],
+        allow_empty = True,
+    ) + glob(
+        [
+            "libcxx-msan/include/c++",
+            "libcxx-msan/include/*/c++",
+        ],
+        exclude_directories = 0,
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "extra_config_site",
+    srcs = glob(
+        ["include/*/c++/v1/__config_site"],
+        allow_empty = True,
+    ),
+)
+
 filegroup(
     name = "all",
-    srcs = glob(["**"]),
+    srcs = glob(["**"], allow_empty = True),
 )
 
 filegroup(
@@ -387,13 +469,139 @@ filegroup(
 
 filegroup(
     name = "lib",
-    srcs = glob(["lib/**"]),
+    srcs = [
+        "lib/clang/{LLVM_VERSION}/lib",
+    ] + glob(
+        [
+            "lib/**/libc++*.a",
+            "lib/**/libunwind.a",
+            "libcxx-msan/lib/**/lib*.a",
+        ],
+        allow_empty = True,
+    ),
 )
 
 filegroup(
-    name = "include",
-    srcs = glob(["include/**"]),
+    name = "lib_legacy",
+    srcs = glob(
+        [
+            "lib/clang/{LLVM_VERSION}/lib/**",
+            "lib/**/libc++*.a",
+            "lib/**/libunwind.a",
+            "libcxx-msan/lib/**/lib*.a",
+        ],
+        allow_empty = True,
+    ),
 )
+
+filegroup(
+    name = "libclang_rt-asan-darwin",
+    srcs = glob(
+        ["lib/clang/{LLVM_VERSION}/lib/darwin/libclang_rt.asan_osx_dynamic.dylib"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "libclang_rt-tsan-darwin",
+    srcs = glob(
+        ["lib/clang/{LLVM_VERSION}/lib/darwin/libclang_rt.tsan_osx_dynamic.dylib"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "libclang_rt-ubsan-darwin",
+    srcs = glob(
+        ["lib/clang/{LLVM_VERSION}/lib/darwin/libclang_rt.ubsan_osx_dynamic.dylib"],
+        allow_empty = True,
+    ),
+)
+
+filegroup(
+    name = "ar",
+    srcs = ["bin/llvm-ar"],
+)
+
+filegroup(
+    name = "as",
+    srcs = [
+        "bin/clang",
+        "bin/llvm-as",
+    ],
+)
+
+filegroup(
+    name = "nm",
+    srcs = ["bin/llvm-nm"],
+)
+
+filegroup(
+    name = "objcopy",
+    srcs = ["bin/llvm-objcopy"],
+)
+
+filegroup(
+    name = "objdump",
+    srcs = ["bin/llvm-objdump"],
+)
+
+filegroup(
+    name = "profdata",
+    srcs = ["bin/llvm-profdata"],
+)
+
+filegroup(
+    name = "dwp",
+    srcs = ["bin/llvm-dwp"],
+)
+
+filegroup(
+    name = "ranlib",
+    srcs = ["bin/llvm-ranlib"],
+)
+
+filegroup(
+    name = "readelf",
+    srcs = ["bin/llvm-readelf"],
+)
+
+filegroup(
+    name = "strip",
+    srcs = ["bin/llvm-strip"],
+)
+
+filegroup(
+    name = "symbolizer",
+    srcs = ["bin/llvm-symbolizer"],
+)
+
+filegroup(
+    name = "clang-tidy",
+    srcs = ["bin/clang-tidy"],
+)
+
+filegroup(
+    name = "clang-format",
+    srcs = ["bin/clang-format"],
+)
+
+filegroup(
+    name = "git-clang-format",
+    srcs = ["bin/git-clang-format"],
+)
+
+filegroup(
+    name = "libclang",
+    srcs = glob(
+        [
+            "lib/libclang.so",
+            "lib/libclang.dylib",
+        ],
+        allow_empty = True,
+    ),
+)
+
 """
 
 def _llvm_minimal_impl(ctx):
@@ -401,6 +609,7 @@ def _llvm_minimal_impl(ctx):
     platform = ctx.attr.platform
     version = ctx.attr.version
     llvm_version = ctx.attr.llvm_version
+    llvm_major_version = llvm_version.split(".")[0]
     sha256 = ctx.attr.sha256
 
     if sha256:
@@ -421,11 +630,34 @@ def _llvm_minimal_impl(ctx):
         # No hash available yet — create a stub empty repository so Bazel can
         # still load the repo without a network hit.  ctx.file() is idiomatic
         # and works portably without relying on external commands.
-        ctx.file("bin/.gitkeep", "")
-        ctx.file("lib/.gitkeep", "")
-        ctx.file("include/.gitkeep", "")
+        _stub_files = [
+            "bin/clang",
+            "bin/clang++",
+            "bin/clang-cpp",
+            "bin/ld.lld",
+            "bin/ld64.lld",
+            "bin/llvm-ar",
+            "bin/llvm-as",
+            "bin/llvm-nm",
+            "bin/llvm-objcopy",
+            "bin/llvm-objdump",
+            "bin/llvm-profdata",
+            "bin/llvm-dwp",
+            "bin/llvm-ranlib",
+            "bin/llvm-readelf",
+            "bin/llvm-strip",
+            "bin/llvm-symbolizer",
+            "bin/clang-tidy",
+            "bin/clang-format",
+            "bin/git-clang-format",
+            "include/c++/.gitkeep",
+            "lib/clang/{version}/include/.gitkeep".format(version = llvm_major_version),
+            "lib/clang/{version}/lib/.gitkeep".format(version = llvm_major_version),
+        ]
+        for path in _stub_files:
+            ctx.file(path, "")
 
-    ctx.file("BUILD.bazel", _LLVM_MINIMAL_BUILD)
+    ctx.file("BUILD.bazel", _LLVM_MINIMAL_BUILD.format(LLVM_VERSION = llvm_major_version))
 
 llvm_minimal = repository_rule(
     implementation = _llvm_minimal_impl,
