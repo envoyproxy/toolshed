@@ -42,6 +42,7 @@ LLVM_MINIMAL_BINS = [
     "llvm-nm",
     "llvm-objcopy",
     "llvm-objdump",
+    "llvm-readelf",
     "llvm-strip",
     "llvm-dwp",
     # Coverage / debug / profiling
