@@ -293,7 +293,7 @@ filegroup(
 
 filegroup(
     name = "libclang",
-    srcs = glob(["lib/libclang.so", "lib/libclang.dylib"], allow_empty = True),
+    srcs = glob(["lib/libclang.so*", "lib/libclang*.dylib"], allow_empty = True),
 )
 """.format(llvm_major = llvm_major)
 
