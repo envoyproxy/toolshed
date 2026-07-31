@@ -216,9 +216,9 @@ release:
 
 | Artifact | Platform |
 |---|---|
-| `llvm-minimal-{llvm_version}-Linux-X64.tar.xz` | Linux x86_64 |
-| `llvm-minimal-{llvm_version}-Linux-ARM64.tar.xz` | Linux aarch64 |
-| `llvm-minimal-{llvm_version}-macOS-ARM64.tar.xz` | macOS arm64 |
+| `llvm-minimal-{llvm_version}-Linux-X64.tar.zst` | Linux x86_64 |
+| `llvm-minimal-{llvm_version}-Linux-ARM64.tar.zst` | Linux aarch64 |
+| `llvm-minimal-{llvm_version}-macOS-ARM64.tar.zst` | macOS arm64 |
 
 ### Allowlist — single source of truth
 
@@ -249,19 +249,20 @@ bazel build //compile:llvm_minimal_linux_x86_64 \
 ```
 
 The outputs land in `bazel-bin/compile/`:
-- `llvm-minimal-{llvm_version}-Linux-X64.tar.xz`
-- `llvm-minimal-{llvm_version}-Linux-ARM64.tar.xz`
-- `llvm-minimal-{llvm_version}-macOS-ARM64.tar.xz`
+- `llvm-minimal-{llvm_version}-Linux-X64.tar.zst`
+- `llvm-minimal-{llvm_version}-Linux-ARM64.tar.zst`
+- `llvm-minimal-{llvm_version}-macOS-ARM64.tar.zst`
 
 The build targets download the full upstream LLVM tarballs via the
 `llvm_tarball_*` repository rules (set up by `setup_llvm_minimal_build()` in
 `llvm_minimal.bzl`, wired via `llvm_minimal_build_extension` in
-`extensions.bzl`). The genrule then filters the tarball to the allowlist,
-strips ELF/Mach-O binaries with `strip`, and repacks with `xz`.
+`extensions.bzl`). The strip rule then filters the tarball to the allowlist,
+strips ELF/Mach-O binaries with hermetic LLVM tools, and repacks with hermetic
+`bsdtar` + `zstd`.
 
 ### Publishing
 
-The `.tar.xz` artifacts are uploaded to a `bins-v{version}` GitHub release.
+The `.tar.zst` artifacts are uploaded to a `bins-v{version}` GitHub release.
 The `update-versions.yml` workflow then computes their SHA256 hashes and opens
 a PR that updates `bazel/versions.bzl`.
 
@@ -269,7 +270,7 @@ a PR that updates `bazel/versions.bzl`.
 
 1. **Rebuild** with `bazel build //compile:llvm_minimal_*`.
 
-2. **Create/publish** a `bins-v{version}` release and upload the three `.tar.xz`
+2. **Create/publish** a `bins-v{version}` release and upload the three `.tar.zst`
    files alongside the other artifacts.
 
 3. **Run the `update-versions.yml` workflow** (manually via `workflow_dispatch`)

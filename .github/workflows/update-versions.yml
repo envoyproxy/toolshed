@@ -146,7 +146,7 @@ jobs:
         for platform in "Linux-X64" "Linux-ARM64" "macOS-ARM64"; do
             # Use the exact LLVM version in the filename to avoid ambiguity when
             # multiple LLVM-version artifacts might be present in the same directory.
-            exact_name="llvm-minimal-${LLVM_VERSION}-${platform}.tar.xz"
+            exact_name="llvm-minimal-${LLVM_VERSION}-${platform}.tar.zst"
             if [[ -e "$exact_name" ]]; then
                 hash=$(sha256sum "$exact_name" | cut -d' ' -f1)
                 # Normalize platform key for GitHub Actions output name (no hyphens)

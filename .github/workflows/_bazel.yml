@@ -18,6 +18,9 @@ on:
         description: Bazel args
         default:
         type: string
+      create-source:
+        type: boolean
+        default: false
       rbe:
         description: Enable EngFlow RBE (appends the selected RBE config when auth passes)
         type: boolean
@@ -106,6 +109,7 @@ jobs:
         inputs.action == 'build'
         && inputs.bazel-path == 'bazel'
         && inputs.upload
+        && inputs.create-source
       uses: envoyproxy/toolshed/actions/source@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
       with:
         output-name: toolshed-bazel-v{version}.tar.gz

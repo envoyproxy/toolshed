@@ -86,6 +86,7 @@ jobs:
             || '' }}
       bazel-path: bazel
       bazel-mode: ${{ matrix.mode }}
+      create-source: true
       rbe: true
       targets: >-
         //...
@@ -271,7 +272,6 @@ jobs:
     # These targets are tagged `manual` and must NOT run as part of `//...`.
     # This job builds them explicitly by label, one platform per matrix leg so
     # the three slow extract+strip+repack runs execute in parallel.
-    # No RBE — targets are `no-remote`/`local` to avoid disk exhaustion on RBE workers.
     needs: request
     if: >-
       always()
@@ -284,11 +284,11 @@ jobs:
       matrix:
         include:
         - target: //compile:llvm_minimal_linux_x86_64
-          artifact: compile/llvm-minimal-22.1.8-Linux-X64.tar.xz
+          artifact: compile/llvm-minimal-22.1.8-Linux-X64.tar.zst
         - target: //compile:llvm_minimal_linux_arm64
-          artifact: compile/llvm-minimal-22.1.8-Linux-ARM64.tar.xz
+          artifact: compile/llvm-minimal-22.1.8-Linux-ARM64.tar.zst
         - target: //compile:llvm_minimal_macos_arm64
-          artifact: compile/llvm-minimal-22.1.8-macOS-ARM64.tar.xz
+          artifact: compile/llvm-minimal-22.1.8-macOS-ARM64.tar.zst
     uses: ./.github/workflows/_bazel.yml
     with:
       action: build
@@ -296,7 +296,7 @@ jobs:
       bazel-args: --config=ci
       bazel-mode: llvm
       bazel-path: bazel
-      rbe: false
+      rbe: true
       targets: ${{ matrix.target }}
       upload: true
 

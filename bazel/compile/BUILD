@@ -1,3 +1,4 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
@@ -261,12 +262,11 @@ _LLVM_MINIMAL_MACOS_ONLY_BINS = [
     "llvm-install-name-tool",
 ]
 
-# Use the host-runnable Linux-X64 llvm-strip/llvm-readobj for all minimal artifact
-# variants.  This keeps stripping hermetic even when assembling Linux-ARM64 or
-# macOS-ARM64 trees on Linux RBE workers (their own binaries are not executable on
-# Linux x86_64 hosts).
-_LLVM_MINIMAL_HOST_STRIPPER = "@llvm_tarball_linux_x86_64//:bin/llvm-strip"
-_LLVM_MINIMAL_HOST_READOBJ = "@llvm_tarball_linux_x86_64//:bin/llvm-readobj"
+# Use the host-runnable LLVM toolchain's llvm-strip/llvm-readobj for all minimal
+# artifact variants. This keeps stripping hermetic without extracting the
+# Linux-X64 upstream tarball solely for these host tools.
+_LLVM_MINIMAL_HOST_STRIPPER = "@llvm_toolchain_llvm//:bin/llvm-strip"
+_LLVM_MINIMAL_HOST_READOBJ = "@llvm_toolchain_llvm//:bin/llvm-readobj"
 
 [
     (
@@ -280,28 +280,50 @@ _LLVM_MINIMAL_HOST_READOBJ = "@llvm_tarball_linux_x86_64//:bin/llvm-readobj"
             platform = platform,
             tags = ["manual"],
         ),
-        pkg_files(
-            name = "llvm_minimal_%s_bins_files" % repo_suffix,
+        mtree_spec(
+            name = "llvm_minimal_%s_bins_mtree_src" % repo_suffix,
             srcs = [":llvm_minimal_%s_strip_bins" % repo_suffix],
-            prefix = "llvm-minimal-%s-%s/bin" % (LLVM_VERSION, platform),
-            strip_prefix = "llvm_minimal_%s/bin" % repo_suffix,
             tags = ["manual"],
         ),
-        pkg_files(
-            name = "llvm_minimal_%s_libs_files" % repo_suffix,
+        mtree_mutate(
+            name = "llvm_minimal_%s_bins_mtree" % repo_suffix,
+            mtree = ":llvm_minimal_%s_bins_mtree_src" % repo_suffix,
+            package_dir = "llvm-minimal-%s-%s" % (LLVM_VERSION, platform),
+            strip_prefix = "compile/llvm_minimal_%s" % repo_suffix,
+            tags = ["manual"],
+        ),
+        mtree_spec(
+            name = "llvm_minimal_%s_libs_mtree_src" % repo_suffix,
             srcs = ["@llvm_tarball_%s//:minimal_libs" % repo_suffix],
-            prefix = "llvm-minimal-%s-%s" % (LLVM_VERSION, platform),
-            strip_prefix = strip_prefix.from_pkg(),
             tags = ["manual"],
         ),
-        pkg_tar(
-            name = "llvm_minimal_%s" % repo_suffix,
+        mtree_mutate(
+            name = "llvm_minimal_%s_libs_mtree" % repo_suffix,
+            mtree = ":llvm_minimal_%s_libs_mtree_src" % repo_suffix,
+            package_dir = "llvm-minimal-%s-%s" % (LLVM_VERSION, platform),
+            tags = ["manual"],
+        ),
+        genrule(
+            name = "llvm_minimal_%s_mtree" % repo_suffix,
             srcs = [
-                ":llvm_minimal_%s_bins_files" % repo_suffix,
-                ":llvm_minimal_%s_libs_files" % repo_suffix,
+                ":llvm_minimal_%s_bins_mtree" % repo_suffix,
+                ":llvm_minimal_%s_libs_mtree" % repo_suffix,
             ],
-            extension = "tar.xz",
-            package_file_name = "llvm-minimal-%s-%s.tar.xz" % (LLVM_VERSION, platform),
+            outs = ["llvm_minimal_%s.mtree" % repo_suffix],
+            cmd = "cat $(SRCS) > $@",
+            tags = ["manual"],
+        ),
+        tar(
+            name = "llvm_minimal_%s" % repo_suffix,
+            args = ["--options=zstd:compression-level=19,zstd:threads=4"],
+            compress = "zstd",
+            exec_properties = {"Pool": "linux_x64_xlarge"},
+            mtree = ":llvm_minimal_%s_mtree" % repo_suffix,
+            out = "llvm-minimal-%s-%s.tar.zst" % (LLVM_VERSION, platform),
+            srcs = [
+                ":llvm_minimal_%s_strip_bins" % repo_suffix,
+                "@llvm_tarball_%s//:minimal_libs" % repo_suffix,
+            ],
             tags = ["manual"],
         ),
     )
