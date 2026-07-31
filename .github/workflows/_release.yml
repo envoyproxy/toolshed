@@ -282,7 +282,20 @@ jobs:
                    end
                else "" end
             ] as $macos_updates
-          | $bins_update + $san_updates + $libcxx_updates + $arch_updates + $macos_updates
+          | [["Linux-X64", "Linux-ARM64", "macOS-ARM64"][]
+            | . as $platform
+            | ($shas["llvm-minimal-\($current.llvm)-\($platform).tar.zst"] // null) as $sha_entry
+            | if $sha_entry then
+                ($sha_entry | split(":") | .[1]) as $new_sha
+                | $current.llvm_minimal_sha256[$platform] as $cur
+                | if $cur == $new_sha then ""
+                  elif ($cur | length) > 0 then
+                    "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+                  else
+                    "sed -i '0,/\"\($platform)\": \"\"/s//\"\($platform)\": \"\($new_sha)\"/' \($versions_file)"
+                  end
+              else "" end] as $llvm_minimal_updates
+          | $bins_update + $san_updates + $libcxx_updates + $arch_updates + $macos_updates + $llvm_minimal_updates
           | [flatten[]
              | select(. != "")]
           | join("\n")
