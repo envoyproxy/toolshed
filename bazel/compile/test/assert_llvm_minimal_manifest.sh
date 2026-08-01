@@ -69,6 +69,7 @@ if platform.startswith("Linux"):
     require_glob("*/lib/**/libunwind.a", "missing libunwind.a")
     require_glob("*/lib/libclang.so*", "missing libclang.so* (Envoy dynamic modules)")
     require_glob("*/lib/libclang-cpp.so*", "missing libclang-cpp.so*")
+    require_glob("*/lib/libLLVM.so*", "missing libLLVM.so* (envoy openssl/prefixer LLVM_PATH build)")
     if not any(re.search(r"/lib/libclang-cpp\.so\.\d+\.\d+$", p) for p in paths):
         raise SystemExit("FAIL: missing versioned libclang-cpp.so.<major.minor>")
 else:

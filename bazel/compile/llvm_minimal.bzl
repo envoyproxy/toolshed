@@ -98,6 +98,9 @@ LLVM_MINIMAL_LIB_GLOBS = [
     # libclang C API shared library (referenced by envoy dynamic modules)
     "lib/libclang.so*",
     "lib/libclang*.dylib",
+    # libLLVM shared library (referenced by envoy openssl/prefixer on LLVM_PATH build)
+    "lib/libLLVM.so*",
+    "lib/libLLVM*.dylib",
 ]
 
 # =============================================================================
