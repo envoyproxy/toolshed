@@ -265,11 +265,12 @@ _LLVM_MINIMAL_MACOS_ONLY_BINS = [
 
 _LLVM_MINIMAL_LLVM_MAJOR = LLVM_VERSION.split(".")[0]
 
-# Use the host-runnable LLVM toolchain's llvm-strip/llvm-readobj for all minimal
-# artifact variants. This keeps stripping hermetic without extracting the
-# Linux-X64 upstream tarball solely for these host tools.
-_LLVM_MINIMAL_HOST_STRIPPER = "@llvm_toolchain_llvm//:bin/llvm-strip"
-_LLVM_MINIMAL_HOST_READOBJ = "@llvm_toolchain_llvm//:bin/llvm-readobj"
+# Use llvm-strip/llvm-readobj from the upstream Linux-X64 build tarball when
+# producing all minimal artifact variants. This preserves the intended
+# bootstrapping flow: strip the minimal artifacts with tools from the full
+# upstream tarball, not from the minimal artifact alias.
+_LLVM_MINIMAL_HOST_STRIPPER = "@llvm_tarball_linux_x86_64//:bin/llvm-strip"
+_LLVM_MINIMAL_HOST_READOBJ = "@llvm_tarball_linux_x86_64//:bin/llvm-readobj"
 
 [
     (
