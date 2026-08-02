@@ -22,6 +22,8 @@ from envoy.code.check import abstract, interface
 
 
 MAX_VERSION_FOR_CHANGES_SECTION = "1.16"
+# YAML block scalars add four spaces to Envoy's 140-character limit.
+MAX_CHANGELOG_ENTRY_LINE_LENGTH = 136
 VALID_CHANGELOG_AREA_RE = re.compile(r"^[a-z0-9_\-/]+$")
 VALID_CHANGELOG_AREA_PATTERN = r"[a-z0-9_\-/]+"
 
@@ -174,6 +176,18 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
                 f"{path}: Entry file is empty or contains only whitespace")
         return None
 
+    def check_entry_line_lengths(
+            self,
+            path: pathlib.Path) -> tuple[str, ...]:
+        return tuple(
+            f"{path}:{line_number}: Changelog entry line is "
+            f"{len(line)} characters (maximum "
+            f"{MAX_CHANGELOG_ENTRY_LINE_LENGTH})"
+            for line_number, line
+            in enumerate(path.read_text().splitlines(), start=1)
+            if (len(line) > MAX_CHANGELOG_ENTRY_LINE_LENGTH
+                and len(line.split()) > 1))
+
     def check_entry_files(
             self,
             paths: list[pathlib.Path]) -> tuple[str, ...]:
@@ -183,6 +197,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
                 errors.append(err)
             if err := self.check_entry_content(path):
                 errors.append(err)
+            errors.extend(self.check_entry_line_lengths(path))
         return tuple(errors)
 
 
