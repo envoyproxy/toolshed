@@ -231,10 +231,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
     def entry_dir(self) -> pathlib.Path | None:
         if not self.is_current:
             return None
-        return (
-            self.project.changelogs
-                        .changelog_path(self.version)
-                        .with_suffix(""))
+        return self.project.changelogs.current_dir_path
 
     @async_property(cache=True)
     async def errors(self) -> tuple[str, ...]:
@@ -305,7 +302,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
         # In the entries layout the current changelog has no real date; it is
         # synthesized as `Pending` until `write_version` bakes a dated file,
         # so there is nothing to validate here.
-        if self.is_current and self.project.changelogs.entries_layout:
+        if self.is_current:
             return ()
         errors = []
         if invalid_date := await self.invalid_date:

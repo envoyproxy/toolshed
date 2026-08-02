@@ -1065,32 +1065,19 @@ def test_changelogstatus_entry_dir(patches, is_current):
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.project",
          dict(new_callable=PropertyMock)),
-        ("AChangelogStatus.version",
-         dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.changelog")
 
-    with patched as (m_current, m_project, m_version):
+    with patched as (m_current, m_project):
         m_current.return_value = is_current
         result = status.entry_dir
 
     if not is_current:
         assert result is None
         assert not m_project.called
-        assert not m_version.called
         return
     assert (
         result
-        == (m_project.return_value.changelogs
-                     .changelog_path.return_value
-                     .with_suffix.return_value))
-    assert (
-        m_project.return_value.changelogs.changelog_path.call_args
-        == [(m_version.return_value, ), {}])
-    assert (
-        (m_project.return_value.changelogs
-                  .changelog_path.return_value
-                  .with_suffix.call_args)
-        == [("", ), {}])
+        == m_project.return_value.changelogs.current_dir_path)
     assert "entry_dir" not in status.__dict__
 
 
