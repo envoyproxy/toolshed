@@ -214,7 +214,7 @@ jobs:
           | .versions_file as $versions_file
           | (.bins_latest | split("-v") | .[1]) as $bins_latest
           | (if $current.bins_release != $bins_latest then
-               ["sed -i 's/\"bins_release\": \"\($current.bins_release)\"/\"bins_release\": \"\($bins_latest)\"/g' \($versions_file)"]
+               ["sed -i 's/^BINS_RELEASE = \"\($current.bins_release)\"/BINS_RELEASE = \"\($bins_latest)\"/g' \($versions_file)"]
              else [] end) as $bins_update
           | [$san[]
              | . as $san_type
