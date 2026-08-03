@@ -20,7 +20,7 @@ jobs:
     outputs:
       run: ${{ steps.filter.outputs.run }}
     steps:
-    - uses: envoyproxy/toolshed/actions/github/should-run@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+    - uses: envoyproxy/toolshed/actions/github/should-run@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
       id: filter
       with:
         config: |
@@ -152,7 +152,7 @@ jobs:
     - name: RBE auth check
       id: rbe
       if: github.event_name == 'pull_request'
-      uses: envoyproxy/toolshed/actions/github/container/auth@358540eca0af3a423fed5fe00ac656b73be3af2d
+      uses: envoyproxy/toolshed/actions/github/container/auth@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
       with:
         container: hello-world
     - name: Configure repo Bazel settings
