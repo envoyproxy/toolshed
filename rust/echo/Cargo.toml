@@ -45,5 +45,5 @@ libc = "^0.2.186"
 mio = "^1.2.1"
 mockall = "^0.15.0"
 scopeguard = "^1.2.0"
-serial_test = "^3.5.0"
+serial_test = "^4.0.1"
 toolshed_runner = { path = "../runner", features = ["test"] }
