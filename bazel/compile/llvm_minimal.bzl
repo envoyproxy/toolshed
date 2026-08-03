@@ -85,6 +85,13 @@ LLVM_MINIMAL_LIB_GLOBS = [
     "include/c++",
     # Per-target-triple libc++ headers (e.g. include/x86_64-unknown-linux-gnu/c++/v1)
     "include/*/c++",
+    # libclang / libTooling C++ API headers (referenced by the Envoy openssl
+    # prefixer, which #includes "clang/AST/...", "clang-c/...", and transitively
+    # "llvm/...").
+    "include/clang",
+    "include/clang-c",
+    "include/llvm",
+    "include/llvm-c",
     # Static libc++ and libc++abi for single-platform linking
     "lib/**/libc++*.a",
     "lib/**/libc++abi*.a",
