@@ -58,7 +58,7 @@ jobs:
       contents: read
       packages: read
     steps:
-    - uses: envoyproxy/toolshed/actions/bind-mounts@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+    - uses: envoyproxy/toolshed/actions/bind-mounts@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
       with:
         mounts: |
           - src: /mnt/workspace
@@ -87,7 +87,7 @@ jobs:
     - name: RBE auth check
       id: rbe
       if: inputs.rbe && github.event_name == 'pull_request'
-      uses: envoyproxy/toolshed/actions/github/container/auth@358540eca0af3a423fed5fe00ac656b73be3af2d
+      uses: envoyproxy/toolshed/actions/github/container/auth@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
       with:
         container: hello-world
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
@@ -109,7 +109,7 @@ jobs:
         && inputs.bazel-path == 'bazel'
         && inputs.upload
         && inputs.create-source
-      uses: envoyproxy/toolshed/actions/source@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      uses: envoyproxy/toolshed/actions/source@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
       with:
         output-name: toolshed-bazel-v{version}.tar.gz
         source-path: bazel/
@@ -131,7 +131,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@5171ddd579f53dcef432bc54e16e2d2c90864968  # actions-v0.4.13
+      uses: envoyproxy/toolshed/actions/jq@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
       with:
         input: ${{ inputs.artifacts }}
         input-format: text
