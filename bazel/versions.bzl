@@ -1,6 +1,6 @@
 SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 
-BINS_RELEASE = "0.2.3"
+BINS_RELEASE = "0.2.4"
 
 # This is only used for cross-compilation (toolchains_llvm provides these otherwise)
 LLVM_CXX_BUILD = """
@@ -40,8 +40,8 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": BINS_RELEASE,
-    "msan_libs_sha256": "5475b78f295b46c578dac54934622c71b110a54ed501153271fa68bc5ab48f30",
-    "tsan_libs_sha256": "2d136d0c63021b3280ec4b33a88c8381f2214a849a50ae557d7f5d9e9f9b93d0",
+    "msan_libs_sha256": "2f6f94738a00e3547a1921a0853e5b064e4d88f6918bfd885d7c0d536f59986f",
+    "tsan_libs_sha256": "99d023e4f65d5dd1f75a4a1424571d1d54c22687245d35a4c551829e3b34d9dd",
 
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
@@ -50,21 +50,21 @@ VERSIONS = {
 
     # Darwin libc++ for cross-compilation (extracted from LLVM macOS release)
     "libcxx_libs_darwin_sha256": {
-        "aarch64": "279f52886030e0825ffb39a731464630f37f6389824069657e0e9c4c4dfdc103",
+        "aarch64": "afb6f0a172c0293aef5912b96094b47cad91cf162c3c9bb96735d8d9ac951f64",
     },
 
     # macOS SDK sysroot for cross-compilation (extracted from Apple CLTools)
     "macos_sysroot_sha256": {
-        "arm64": "2e71c6330eeb4d0df9bfc6a99bbb7eab2de2ef1fe5c144242f509b8756c309a8",
+        "arm64": "3f3d55551caf166a6b66f2ff799ec85a9872fd291497baa95aa337801b5d1a87",
     },
 
     # Minimal LLVM artifact hashes by platform
     # Keys match the platform suffix in artifact names (Linux-X64, Linux-ARM64, macOS-ARM64).
     # Empty strings are placeholders; the update-versions workflow fills them after release.
     "llvm_minimal_sha256": {
-        "Linux-X64": "65d63882534001bc6c64623a042ba55a2f4a44d4a799bae72f57de76867b5e15",
-        "Linux-ARM64": "3a624bd04cbf15ee99fbf59204666c919ddf72d08f9676fa88478102a16688f8",
-        "macOS-ARM64": "a55d64e004688394d896110b6db57bdbcf58467cc3e4533e6ea5b86768ff770f",
+        "Linux-X64": "10db9add822de89b3cf930693de870c38cc118a171ff63f819b525f5deb9a1c8",
+        "Linux-ARM64": "14878d7015e4e945dc861ab1e490425abdd9075135ff9470625d602abfdb5229",
+        "macOS-ARM64": "0effb4701a3a9850012a98419a1565e08a1c07beb8ef3d50eb4297cf2f9370be",
     },
 
     # Glint binary hashes by architecture
@@ -79,22 +79,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "401490551b6bc22a196b93aaae7dabf39c54c6d5855de99fc06957ea0c7e05ca",
-                "arm64": "a9a42a19e7848a94d845cd68a6c68d80edc29140af882430166890148ad896a3",
+                "amd64": "eacfff2d6ae859d12548b9a42deeaa58ebc91d7317acee05c7be0d054ebc3cbf",
+                "arm64": "644a245f09ab415dd7ca646771660fc9bf7fb7a9873b8db75be8834c7e96b359",
             },
             "13": {
-                "amd64": "3dc07372f0f499e6323c56e3e3e9da234ad063c60c0722855d829b1f32d3db47",
-                "arm64": "ff0ad977cd0d06ae3aabf8d20aa957bf2cfc3be83e307790e28ca46cc51cab1b",
+                "amd64": "a9e16db0a4fde35fb303a2ec60a66ecb655daf06497cad4df9c246438e466a29",
+                "arm64": "667a756dcd4c69553c07e441b01990775bb7e803429e7be89462a1759041d095",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "bdbe777b96c9226d281a53ed0ea9b9d35b6470388ef2ddc423cea6df0f6b5df2",
-                "arm64": "fdcf7c470aef6c9ba5af6f7d2b85067d23f4cd135044a6d86d8f1179e827863e",
+                "amd64": "f2f3cd5151cef42a5b6f4f953727e42a048b8ce040a83f3d51fc0979bcb6d94b",
+                "arm64": "bf74b8f98948e1b6b552bfa576a897de28baad539184d48f8e7f90f5847e43c1",
             },
             "13": {
-                "amd64": "74af55648926b28e42d7946339541c7f7e35cd0d1d61651e45817767c904fae9",
-                "arm64": "29269192fa12180a8a2eab3468484315b8a13b7c1137479127aae80eaefe5194",
+                "amd64": "fe1ecde969bf278e5dea30581317fccffc64a8eb50719cae85d9bc4115411ea6",
+                "arm64": "86e8306807e3b6acd05c6d5b42dcbf5d558153774d69cedf93588867baa8680f",
             },
         },
     },
@@ -151,7 +151,7 @@ VERSIONS = {
         "download_suffix": "Linux-X64",
         "version": LLVM_VERSION,
         "bins_release": BINS_RELEASE,
-        "sha256": "65d63882534001bc6c64623a042ba55a2f4a44d4a799bae72f57de76867b5e15",
+        "sha256": "10db9add822de89b3cf930693de870c38cc118a171ff63f819b525f5deb9a1c8",
         "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/llvm-minimal-{version}-{download_suffix}.tar.zst",
         "strip_prefix": "llvm-minimal-{version}-{download_suffix}",
     },
@@ -161,7 +161,7 @@ VERSIONS = {
         "download_suffix": "Linux-ARM64",
         "version": LLVM_VERSION,
         "bins_release": BINS_RELEASE,
-        "sha256": "3a624bd04cbf15ee99fbf59204666c919ddf72d08f9676fa88478102a16688f8",
+        "sha256": "14878d7015e4e945dc861ab1e490425abdd9075135ff9470625d602abfdb5229",
         "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/llvm-minimal-{version}-{download_suffix}.tar.zst",
         "strip_prefix": "llvm-minimal-{version}-{download_suffix}",
     },
@@ -171,7 +171,7 @@ VERSIONS = {
         "download_suffix": "macOS-ARM64",
         "version": LLVM_VERSION,
         "bins_release": BINS_RELEASE,
-        "sha256": "a55d64e004688394d896110b6db57bdbcf58467cc3e4533e6ea5b86768ff770f",
+        "sha256": "0effb4701a3a9850012a98419a1565e08a1c07beb8ef3d50eb4297cf2f9370be",
         "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/llvm-minimal-{version}-{download_suffix}.tar.zst",
         "strip_prefix": "llvm-minimal-{version}-{download_suffix}",
     },
