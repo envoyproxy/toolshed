@@ -196,10 +196,20 @@ runs:
     with:
       input: |
         actor: ${{ toJSON(github.actor) }}
-        event: ${{ toJSON(github.event) }}
         event_name: ${{ github.event_name }}
         sha: ${{ github.sha }}
         build_images: ${{ steps.build-images.outputs.value }}
+        event:
+          number: ${{ toJSON(github.event.number) }}
+          head_commit:
+            message: ${{ toJSON(github.event.head_commit.message) }}
+          pull_request:
+            title: ${{ toJSON(github.event.pull_request.title) }}
+            body: ${{ toJSON(github.event.pull_request.body) }}
+            head:
+              sha: ${{ toJSON(github.event.pull_request.head.sha) }}
+          sender:
+            avatar_url: ${{ toJSON(github.event.sender.avatar_url) }}
       input-format: yaml
       filter: |
         .
