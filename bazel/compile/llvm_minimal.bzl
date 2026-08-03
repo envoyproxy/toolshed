@@ -501,21 +501,7 @@ def _llvm_toolchain_alias_impl(ctx):
     _ensure_repo_dir(ctx, minimal_root, "include")
     _ensure_repo_dir(ctx, minimal_root, "lib")
 
-    ctx.file("BUILD.bazel", """
-package(default_visibility = ["//visibility:public"])
-
-exports_files(glob(["bin/**", "include/**", "lib/**"], allow_empty = True))
-
-filegroup(
-    name = "nm",
-    srcs = ["bin/llvm-nm"],
-)
-
-filegroup(
-    name = "readelf",
-    srcs = ["bin/llvm-readelf"],
-)
-""")
+    ctx.file("BUILD.bazel", LLVM_MINIMAL_LLVM_REPO_BUILD)
 
 llvm_toolchain_alias = repository_rule(
     implementation = _llvm_toolchain_alias_impl,
