@@ -5,7 +5,8 @@
         "github:intel/qatlib"
     ],
     "versions": [
-        "25.08.0.envoy"
+        "25.08.0.envoy",
+        "26.02.0.envoy"
     ],
     "yanked_versions": {}
 }
