@@ -5,7 +5,8 @@
         "github:protocolbuffers/protobuf"
     ],
     "versions": [
-        "33.4.envoy"
+        "33.4.envoy",
+        "35.1.envoy"
     ],
     "yanked_versions": {}
 }
