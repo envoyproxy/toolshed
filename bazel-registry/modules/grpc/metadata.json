@@ -5,7 +5,8 @@
         "github:grpc/grpc"
     ],
     "versions": [
-        "1.76.0.bcr.1.envoy"
+        "1.76.0.bcr.1.envoy",
+        "1.83.0.envoy"
     ],
     "yanked_versions": {}
 }
