@@ -1,11 +1,12 @@
 {
-    "homepage": "https://github.com/DataDog/dd-trace-cpp",
-    "maintainers": [],
-    "repository": [
-        "github:DataDog/dd-trace-cpp"
-    ],
-    "versions": [
-        "2.0.0.envoy"
-    ],
-    "yanked_versions": {}
+  "homepage": "https://github.com/DataDog/dd-trace-cpp",
+  "maintainers": [],
+  "repository": [
+    "github:DataDog/dd-trace-cpp"
+  ],
+  "versions": [
+    "2.0.0.envoy",
+    "2.1.1.envoy"
+  ],
+  "yanked_versions": {}
 }
