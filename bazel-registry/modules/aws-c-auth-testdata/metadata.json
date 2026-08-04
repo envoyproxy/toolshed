@@ -11,7 +11,8 @@
         "github:awslabs/aws-c-auth"
     ],
     "versions": [
-        "0.9.5.envoy"
+        "0.9.5.envoy",
+        "0.10.4.envoy"
     ],
     "yanked_versions": {}
 }
