@@ -1,0 +1,10 @@
+{
+    "url": "https://github.com/maxmind/libmaxminddb/releases/download/1.13.3/libmaxminddb-1.13.3.tar.gz",
+    "integrity": "sha256-pmUC6nbq2+F/LNb9cIlGd3JTly0q6BV97hsjovtSgXE=",
+    "strip_prefix": "libmaxminddb-1.13.3",
+    "patches": {
+        "add_build_file.patch": "sha256-08k9nD17fh2t6HbmoQPKvYf3Lq+ZBcxZ2Etp+rNd6CA=",
+        "module_dot_bazel.patch": "sha256-PnoRJ/hIdiJBkP2+3vF8pwQG8TwYz2Ry+J6At3XcFdM="
+    },
+    "patch_strip": 0
+}
