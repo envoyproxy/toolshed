@@ -1,0 +1,213 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+label_flag(
+    name = "crypto_lib",
+    build_setting_default = "@boringssl//:crypto",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "osal",
+    srcs = glob(["quickassist/utilities/osal/src/linux/user_space/*.c"]),
+    hdrs = glob([
+        "quickassist/utilities/osal/include/*.h",
+        "quickassist/utilities/osal/src/linux/user_space/include/*.h",
+    ]),
+    includes = [
+        "quickassist/utilities/osal/include",
+        "quickassist/utilities/osal/src/linux/user_space/include",
+    ],
+    copts = ["-fPIC"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":crypto_lib",
+        "@numactl//:numa",
+    ],
+)
+
+cc_library(
+    name = "adf",
+    srcs = glob(["quickassist/utilities/adf_ctl/*.c"]),
+    hdrs = glob([
+        "quickassist/utilities/adf_ctl/*.h",
+    ]),
+    includes = [
+        "quickassist/utilities/adf_ctl",
+        "quickassist/utilities/libusdm_drv",
+    ],
+    copts = ["-fPIC"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "usdm",
+    srcs = [
+        # Exact files from Makefile.am (without ICP_THREAD_SPECIFIC_USDM)
+        "quickassist/utilities/libusdm_drv/user_space/vfio/qae_mem_utils_vfio.c",
+        "quickassist/utilities/libusdm_drv/user_space/qae_mem_utils_common.c",
+        "quickassist/utilities/libusdm_drv/user_space/vfio/qae_mem_hugepage_utils_vfio.c",
+        "quickassist/utilities/libusdm_drv/user_space/qae_mem_common.c",
+    ],
+    hdrs = glob([
+        "quickassist/utilities/libusdm_drv/*.h",
+        "quickassist/utilities/libusdm_drv/include/*.h",
+        "quickassist/utilities/libusdm_drv/user_space/*.h",
+    ]),
+    includes = [
+        "quickassist/utilities/libusdm_drv",
+        "quickassist/utilities/libusdm_drv/include",
+        "quickassist/utilities/libusdm_drv/user_space",
+    ],
+    copts = ["-fPIC"],
+    visibility = ["//visibility:public"],
+    alwayslink = True,
+    deps = [
+        ":osal",
+        "@numactl//:numa",
+    ],
+)
+
+genrule(
+    name = "qat_hdrs_gen",
+    srcs = [
+        "quickassist/include/cpa.h",
+        "quickassist/include/cpa_types.h",
+        "quickassist/include/cpa_dev.h",
+        "quickassist/include/lac/cpa_cy_rsa.h",
+        "quickassist/include/lac/cpa_cy_im.h",
+        "quickassist/include/lac/cpa_cy_common.h",
+        "quickassist/include/lac/cpa_cy_sym.h",
+        "quickassist/include/lac/cpa_cy_dh.h",
+        "quickassist/include/lac/cpa_cy_dsa.h",
+        "quickassist/include/lac/cpa_cy_ecdh.h",
+        "quickassist/include/lac/cpa_cy_ecdsa.h",
+        "quickassist/include/lac/cpa_cy_ec.h",
+        "quickassist/include/lac/cpa_cy_key.h",
+        "quickassist/include/lac/cpa_cy_ln.h",
+        "quickassist/include/lac/cpa_cy_prime.h",
+        "quickassist/include/dc/cpa_dc.h",
+        "quickassist/include/dc/cpa_dc_dp.h",
+        "quickassist/include/dc/cpa_dc_chain.h",
+        "quickassist/utilities/libusdm_drv/qae_mem.h",
+        "quickassist/lookaside/access_layer/include/icp_sal_poll.h",
+        "quickassist/lookaside/access_layer/include/icp_sal_user.h",
+        "quickassist/lookaside/access_layer/include/icp_sal.h",
+        "quickassist/lookaside/access_layer/include/icp_sal_versions.h",
+    ],
+    outs = [
+        "qat/cpa.h",
+        "qat/cpa_types.h",
+        "qat/cpa_dev.h",
+        "qat/cpa_cy_rsa.h",
+        "qat/cpa_cy_im.h",
+        "qat/cpa_cy_common.h",
+        "qat/cpa_cy_sym.h",
+        "qat/cpa_cy_dh.h",
+        "qat/cpa_cy_dsa.h",
+        "qat/cpa_cy_ecdh.h",
+        "qat/cpa_cy_ecdsa.h",
+        "qat/cpa_cy_ec.h",
+        "qat/cpa_cy_key.h",
+        "qat/cpa_cy_ln.h",
+        "qat/cpa_cy_prime.h",
+        "qat/cpa_dc.h",
+        "qat/cpa_dc_dp.h",
+        "qat/cpa_dc_chain.h",
+        "qat/qae_mem.h",
+        "qat/icp_sal_poll.h",
+        "qat/icp_sal_user.h",
+        "qat/icp_sal.h",
+        "qat/icp_sal_versions.h",
+    ],
+    cmd = """
+    mkdir -p $(@D)/qat
+    for src in $(SRCS); do
+        cp $$src $(@D)/qat/
+    done
+    """,
+)
+
+cc_library(
+    name = "qat_public_hdrs",
+    hdrs = [":qat_hdrs_gen"],
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "qat",
+    srcs = glob(
+        ["quickassist/lookaside/access_layer/src/**/*.c"],
+        exclude = ["quickassist/lookaside/access_layer/src/sample_code/**"],
+    ),
+    hdrs = glob(
+        [
+            "quickassist/include/*.h",
+            "quickassist/include/**/*.h",
+            "quickassist/lookaside/access_layer/include/*.h",
+            "quickassist/lookaside/access_layer/src/**/*.h",
+            "quickassist/lookaside/firmware/include/*.h",
+        ],
+        exclude = ["quickassist/lookaside/access_layer/src/sample_code/**"],
+    ),
+    includes = [
+        # Public includes
+        "quickassist/include",
+        "quickassist/include/lac",
+        "quickassist/include/dc",
+        "quickassist/include/rl",
+        "quickassist/lookaside/access_layer/include",
+        # Firmware includes
+        "quickassist/lookaside/firmware/include",
+        # Common
+        "quickassist/lookaside/access_layer/src/common/include",
+        "quickassist/lookaside/access_layer/src/common/compression/include",
+        "quickassist/lookaside/access_layer/src/common/crypto/include",
+        # Symmetric crypto
+        "quickassist/lookaside/access_layer/src/common/crypto/sym",
+        "quickassist/lookaside/access_layer/src/common/crypto/sym/include",
+        "quickassist/lookaside/access_layer/src/common/crypto/sym/qat",
+        # Asymmetric crypto
+        "quickassist/lookaside/access_layer/src/common/crypto/asym/include",
+        # QAT direct
+        "quickassist/lookaside/access_layer/src/qat_direct",
+        "quickassist/lookaside/access_layer/src/qat_direct/include",
+        "quickassist/lookaside/access_layer/src/qat_direct/common",
+        "quickassist/lookaside/access_layer/src/qat_direct/common/include",
+        "quickassist/lookaside/access_layer/src/qat_direct/src/include",
+        "quickassist/lookaside/access_layer/src/qat_direct/vfio",
+        "quickassist/lookaside/access_layer/src/qat_direct/adf_io",
+        "quickassist/lookaside/access_layer/src/qat_direct/adf_io/include",
+        "quickassist/lookaside/access_layer/src/qat_direct/adf_io/vfio",
+        "quickassist/lookaside/access_layer/src/qat_direct/io",
+        # User space
+        "quickassist/lookaside/access_layer/src/user",
+        # Utilities
+        "quickassist/utilities/libusdm_drv",
+        "quickassist/utilities/libusdm_drv/include",
+        "quickassist/utilities/libusdm_drv/user_space",
+        "quickassist/utilities/osal/include",
+    ],
+    copts = [
+        "-fPIC",
+        "-O3",
+        "-D_GNU_SOURCE",
+        "-DUSER_SPACE",
+        "-DLAC_BYTE_ORDER=__LITTLE_ENDIAN",
+        "-mcx16",
+    ],
+    local_defines = [
+        "USE_CCODE_CRC",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":adf",
+        ":osal",
+        ":qat_public_hdrs",
+        ":usdm",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
