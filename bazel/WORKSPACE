@@ -6,8 +6,14 @@ load_archives()
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
-load("//compile:llvm_minimal.bzl", "llvm_toolchain_alias")
-llvm_toolchain_alias(name = "llvm_toolchain_llvm")
+load("//compile:llvm_minimal.bzl", "llvm_toolchain_alias", "setup_llvm_minimal")
+setup_llvm_minimal()
+llvm_toolchain_alias(
+    name = "llvm_toolchain_llvm",
+    minimal_linux_x64 = "@llvm_minimal_linux_x64//:BUILD.bazel",
+    minimal_linux_arm64 = "@llvm_minimal_linux_arm64//:BUILD.bazel",
+    minimal_macos_arm64 = "@llvm_minimal_macos_arm64//:BUILD.bazel",
+)
 
 load(":deps.bzl", "resolve_dependencies")
 resolve_dependencies()
