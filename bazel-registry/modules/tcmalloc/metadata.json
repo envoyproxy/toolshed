@@ -11,7 +11,8 @@
     "github:google/tcmalloc"
   ],
   "versions": [
-    "0.0.0-20241022-5da4a88.envoy"
+    "0.0.0-20241022-5da4a88.envoy",
+    "0.0.0-250926-12f2552.envoy"
   ],
   "yanked_versions": {}
 }
