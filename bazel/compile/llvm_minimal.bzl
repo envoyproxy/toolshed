@@ -428,40 +428,39 @@ llvm_tarball = repository_rule(
 def _normalize_llvm_toolchain_alias_os(os_name):
     """Normalize repository_ctx.os.name for llvm_toolchain_llvm alias selection."""
     os_name = os_name.lower()
-    if os_name == "linux":
+    if os_name.startswith("linux"):
         return "linux"
-    if os_name == "mac os x" or os_name == "darwin":
+    if os_name.startswith("mac os x") or os_name.startswith("darwin"):
         return "macos"
     return None
 
 def _normalize_llvm_toolchain_alias_arch(arch):
     """Normalize repository_ctx.os.arch for llvm_toolchain_llvm alias selection."""
     arch = arch.lower()
-    if arch == "x86_64" or arch == "amd64":
+    if arch.startswith("x86_64") or arch.startswith("amd64"):
         return "x86_64"
-    if arch == "aarch64" or arch == "arm64":
+    if arch.startswith("aarch64") or arch.startswith("arm64"):
         return "aarch64"
     return None
 
-def _get_llvm_toolchain_alias_platform_info(ctx):
-    """Resolve the host platform to the matching llvm_minimal_* repo."""
+def _select_llvm_toolchain_alias_label(ctx):
+    """Resolve the host platform to the matching minimal repo BUILD.bazel label.
+
+    Selection is by canonical label attribute (populated by the extension that
+    owns the llvm_minimal_* repos) rather than a bare apparent-name Label, so
+    the repos resolve within the extension's visibility namespace.
+    """
     os_name = _normalize_llvm_toolchain_alias_os(ctx.os.name)
     arch = _normalize_llvm_toolchain_alias_arch(ctx.os.arch)
 
     if os_name == "linux":
         if arch == "x86_64":
-            return {
-                "minimal_repo": "llvm_minimal_linux_x64",
-            }
+            return ctx.attr.minimal_linux_x64
         elif arch == "aarch64":
-            return {
-                "minimal_repo": "llvm_minimal_linux_arm64",
-            }
+            return ctx.attr.minimal_linux_arm64
     # Only macOS ARM64 minimal artifacts are currently published.
     elif os_name == "macos" and arch == "aarch64":
-        return {
-            "minimal_repo": "llvm_minimal_macos_arm64",
-        }
+        return ctx.attr.minimal_macos_arm64
 
     fail("Unsupported host platform for llvm_toolchain_llvm alias: {} {}. Supported combinations are linux/x86_64, linux/aarch64, and macos/arm64.".format(ctx.os.name, ctx.os.arch))
 
@@ -500,9 +499,8 @@ def _llvm_toolchain_alias_impl(ctx):
     symlinks are required because Bazel does not follow a symlinked package
     directory when sourcing individual filegroup inputs.
     """
-    platform_info = _get_llvm_toolchain_alias_platform_info(ctx)
-    minimal_repo = platform_info["minimal_repo"]
-    minimal_root = ctx.path(Label("@{}//:BUILD.bazel".format(minimal_repo))).dirname
+    minimal_build_label = _select_llvm_toolchain_alias_label(ctx)
+    minimal_root = ctx.path(minimal_build_label).dirname
 
     _ensure_repo_dir(ctx, minimal_root, "bin")
     _ensure_repo_dir(ctx, minimal_root, "include")
@@ -512,7 +510,20 @@ def _llvm_toolchain_alias_impl(ctx):
 
 llvm_toolchain_alias = repository_rule(
     implementation = _llvm_toolchain_alias_impl,
-    attrs = {},
+    attrs = {
+        "minimal_linux_x64": attr.label(
+            mandatory = True,
+            doc = "BUILD.bazel label of the Linux-X64 minimal LLVM repo.",
+        ),
+        "minimal_linux_arm64": attr.label(
+            mandatory = True,
+            doc = "BUILD.bazel label of the Linux-ARM64 minimal LLVM repo.",
+        ),
+        "minimal_macos_arm64": attr.label(
+            mandatory = True,
+            doc = "BUILD.bazel label of the macOS-ARM64 minimal LLVM repo.",
+        ),
+    },
     doc = "Creates the host-arch llvm_toolchain_llvm alias backed by llvm_minimal_* repos.",
 )
 

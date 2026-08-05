@@ -191,8 +191,20 @@ llvm_minimal_build_extension = module_extension(
 )
 
 def _llvm_toolchain_alias_ext_impl(module_ctx):
-    """Set up the host-arch llvm_toolchain_llvm alias repo."""
-    llvm_toolchain_alias(name = "llvm_toolchain_llvm")
+    """Set up the host-arch llvm_toolchain_llvm alias repo.
+
+    This extension creates the llvm_minimal_* repos itself so they are siblings
+    of the alias repo in a single visibility namespace, then passes them to the
+    alias repo rule as canonical Label attributes. This is required because
+    repos created by a sibling extension are not visible by apparent name here.
+    """
+    setup_llvm_minimal()
+    llvm_toolchain_alias(
+        name = "llvm_toolchain_llvm",
+        minimal_linux_x64 = Label("@llvm_minimal_linux_x64//:BUILD.bazel"),
+        minimal_linux_arm64 = Label("@llvm_minimal_linux_arm64//:BUILD.bazel"),
+        minimal_macos_arm64 = Label("@llvm_minimal_macos_arm64//:BUILD.bazel"),
+    )
 
 llvm_toolchain_alias_extension = module_extension(
     implementation = _llvm_toolchain_alias_ext_impl,
