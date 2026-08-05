@@ -1,16 +1,17 @@
 {
-    "homepage": "https://github.com/envoyproxy/sql-parser",
-    "maintainers": [
-        {
-            "name": "Envoy maintainers",
-            "github": "envoyproxy"
-        }
-    ],
-    "repository": [
-        "github:envoyproxy/sql-parser"
-    ],
-    "versions": [
-        "0.0.0-200610-3b40ba2.envoy"
-    ],
-    "yanked_versions": {}
+  "homepage": "https://github.com/envoyproxy/sql-parser",
+  "maintainers": [
+    {
+      "name": "Envoy maintainers",
+      "github": "envoyproxy"
+    }
+  ],
+  "repository": [
+    "github:envoyproxy/sql-parser"
+  ],
+  "versions": [
+    "0.0.0-200610-3b40ba2.envoy",
+    "0.0.0-260715-52e5ad1.envoy"
+  ],
+  "yanked_versions": {}
 }
