@@ -5,7 +5,8 @@
         "github:simdutf/simdutf"
     ],
     "versions": [
-        "7.3.4.envoy"
+        "7.3.4.envoy",
+        "8.1.0.envoy"
     ],
     "yanked_versions": {}
 }
