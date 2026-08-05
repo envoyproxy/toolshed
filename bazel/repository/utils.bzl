@@ -42,24 +42,33 @@ alias(
 def _alias_name(name):
     """Extract the appropriate alias name from the repository context.
 
-    In bzlmod, repository names include the canonical name
-    (e.g., "module++ext+name"), but we want the alias target to use
-    just the apparent name (e.g., "name"). In WORKSPACE mode, the
-    repository name is already the apparent name.
+    In bzlmod, repository names include the canonical name in any separator
+    style (e.g., "+ext+name", "module+ext+name", "module++ext++name", or the
+    older "module~~ext~~name" / "module~ext~name"), but we want the alias
+    target to use just the apparent name (the final segment, e.g., "name").
+    In WORKSPACE mode, the repository name is already the apparent name and
+    is returned unchanged.
 
     Args:
-        ctx: The repository rule context
+        name: The repository name (ctx.name)
 
     Returns:
         The apparent name to use for the alias target
     """
-    if not "++" in name and not "~" in name:
+
+    # WORKSPACE mode: the repository name is already the apparent name.
+    if "+" not in name and "~" not in name:
         return name
-    name = name.replace("++", "+").replace("~~", "~")
-    if "+" in name:
-        return name.split("+")[-1]
-    elif "~" in name:
-        return name.split("~")[-1]
+
+    # bzlmod canonical name in any separator style
+    # (e.g. "+ext+name", "module+ext+name", "module++ext++name",
+    # or the older "module~~ext~~name" / "module~ext~name"); the
+    # apparent name is the final segment.
+    return name.replace("~", "+").split("+")[-1]
+
+# Publicly exported for unit testing. Prefer the private `_alias_name`
+# internally; this alias only exists so tests can import the logic.
+alias_name = _alias_name
 
 def _arch_alias_impl(ctx):
     arch = ctx.os.arch
