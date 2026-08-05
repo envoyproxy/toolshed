@@ -5,7 +5,8 @@
         "github:bytecodealliance/wasmtime"
     ],
     "versions": [
-        "24.0.0.envoy"
+        "24.0.0.envoy",
+        "45.0.2.envoy"
     ],
     "yanked_versions": {}
 }
