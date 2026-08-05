@@ -1,11 +1,12 @@
 {
-    "homepage": "https://perfetto.dev/",
-    "maintainers": [],
-    "repository": [
-        "github:google/perfetto"
-    ],
-    "versions": [
-        "53.0.envoy"
-    ],
-    "yanked_versions": {}
+  "homepage": "https://perfetto.dev/",
+  "maintainers": [],
+  "repository": [
+    "github:google/perfetto"
+  ],
+  "versions": [
+    "53.0.envoy",
+    "57.2.envoy"
+  ],
+  "yanked_versions": {}
 }
