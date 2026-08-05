@@ -1,0 +1,18 @@
+{
+    "homepage": "https://github.com/google/wuffs",
+    "maintainers": [
+        {
+            "email": "206078155+daemoninstitute@users.noreply.github.com",
+            "github": "daemoninstitute",
+            "github_user_id": 206078155,
+            "name": "James Wilson"
+        }
+    ],
+    "repository": [
+        "github:google/wuffs-mirror-release-c"
+    ],
+    "versions": [
+        "0.4.0-alpha.9.envoy"
+    ],
+    "yanked_versions": {}
+}
