@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/proxy-wasm/proxy-wasm-cpp-host/archive/f2db56af443571e92a31c0b877106d9ea96e19ef.tar.gz",
+    "integrity": "sha256-NNrFvOvwsVbkNb+N2b2sW+YLlflnxCDGgFeNc68oxgQ=",
+    "strip_prefix": "proxy-wasm-cpp-host-f2db56af443571e92a31c0b877106d9ea96e19ef",
+    "patch_strip": 1,
+    "patches": {
+        "proxy-wasm-cpp-host.patch": "sha256-ClDZDVDxtnrGNijnodMqywKLMmXTspXrAbTgfda4Q5Q="
+    }
+}
