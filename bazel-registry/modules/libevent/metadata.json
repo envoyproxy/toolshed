@@ -5,7 +5,8 @@
         "github:libevent/libevent"
     ],
     "versions": [
-        "2.1.12-stable.bcr.0.200728-62c152d.envoy"
+        "2.1.12-stable.bcr.0.200728-62c152d.envoy",
+        "release-2.2.2-alpha.envoy"
     ],
     "yanked_versions": {}
 }
