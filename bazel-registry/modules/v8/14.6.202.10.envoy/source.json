@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/v8/v8/archive/refs/tags/14.6.202.10.tar.gz",
+    "integrity": "sha256-CcPZ95amcfuWMMcZADLwAXHOme/9fIDHquuhSKe8vBs=",
+    "strip_prefix": "v8-14.6.202.10",
+    "patch_strip": 1,
+    "patches": {
+        "v8.patch": "sha256-k7G5jUZXzg29XhlCHqkxwR/ECgyT9tqQZPQBzyhnQww="
+    }
+}
