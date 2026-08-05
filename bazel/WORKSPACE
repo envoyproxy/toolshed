@@ -3,6 +3,9 @@ workspace(name = "envoy_toolshed")
 load(":archives.bzl", "load_archives")
 load_archives()
 
+load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
+bazel_skylib_workspace()
+
 load("//compile:llvm_minimal.bzl", "llvm_toolchain_alias")
 llvm_toolchain_alias(name = "llvm_toolchain_llvm")
 
