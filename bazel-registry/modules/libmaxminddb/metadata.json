@@ -11,7 +11,8 @@
     ],
     "versions": [
         "1.10.0",
-        "1.12.2.envoy"
+        "1.12.2.envoy",
+        "1.13.3.envoy"
     ],
     "yanked_versions": {}
 }
