@@ -1,0 +1,19 @@
+matrix:
+  platform:
+  - debian11
+  - debian10
+  - ubuntu2004
+  - ubuntu2204
+  - macos
+  bazel:
+  - 8.x
+  - 7.x
+tasks:
+  verify_targets:
+    name: Verify kafka_message protocol files
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_targets:
+    - '@kafka_message//:request_protocol_files'
+    - '@kafka_message//:response_protocol_files'
+    - '@kafka_message//:all_protocol_files'
