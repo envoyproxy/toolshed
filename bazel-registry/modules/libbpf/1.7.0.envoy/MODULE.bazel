@@ -1,0 +1,11 @@
+module(
+    name = "libbpf",
+    version = "1.7.0.envoy",
+    bazel_compatibility = [">=7.2.1"],
+    compatibility_level = 1,
+)
+
+bazel_dep(name = "elfutils", version = "0.195.envoy")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.2.16")
+bazel_dep(name = "zlib-ng", version = "2.3.2.envoy")
