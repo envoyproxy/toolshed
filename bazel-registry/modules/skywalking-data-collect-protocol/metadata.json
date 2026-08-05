@@ -5,7 +5,8 @@
         "github:apache/skywalking-data-collect-protocol"
     ],
     "versions": [
-        "10.3.0.envoy"
+        "10.3.0.envoy",
+        "10.4.0.envoy"
     ],
     "yanked_versions": {}
 }
