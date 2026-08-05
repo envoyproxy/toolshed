@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/google/wuffs-mirror-release-c/archive/refs/tags/v0.4.0-alpha.9.tar.gz",
+    "integrity": "sha256-nKT1QBp2viRDYt6LOROPAfJFbERLA1hHA6nx25BJG6Y=",
+    "strip_prefix": "wuffs-mirror-release-c-0.4.0-alpha.9",
+    "overlay": {
+        "BUILD.bazel": "sha256-8r1BtDJz1o4gPFHioyvZSxlmO+uMdlk6VO1dIoljn/I="
+    }
+}
