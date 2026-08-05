@@ -216,7 +216,7 @@
     },
     "//compile:extensions.bzl%llvm_minimal_extension": {
       "general": {
-        "bzlTransitiveDigest": "wyJb45juiZCWDtCR7deDPd2d6xn6pOUVpj9zVFBzr44=",
+        "bzlTransitiveDigest": "15HnOFWLQSRk0cVf+cyESGM8FRde460sp9gmpX1pY10=",
         "usagesDigest": "0N3jMhVQvQmlTxIg+TqbZmc0SOUdMqQHrYDKrGForKE=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -252,7 +252,7 @@
     },
     "//compile:extensions.bzl%llvm_toolchain_alias_extension": {
       "general": {
-        "bzlTransitiveDigest": "wyJb45juiZCWDtCR7deDPd2d6xn6pOUVpj9zVFBzr44=",
+        "bzlTransitiveDigest": "15HnOFWLQSRk0cVf+cyESGM8FRde460sp9gmpX1pY10=",
         "usagesDigest": "ynGA6dzSGD+xmXjZwi4Livq0gu7e1QJE0reKfXnlSBk=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -285,35 +285,19 @@
           "llvm_toolchain_llvm": {
             "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_toolchain_alias",
             "attributes": {
-              "minimal_linux_x64": "@@+llvm_minimal_extension+llvm_minimal_linux_x64//:BUILD.bazel",
-              "minimal_linux_arm64": "@@+llvm_minimal_extension+llvm_minimal_linux_arm64//:BUILD.bazel",
-              "minimal_macos_arm64": "@@+llvm_minimal_extension+llvm_minimal_macos_arm64//:BUILD.bazel"
+              "minimal_linux_x64": "@@+llvm_toolchain_alias_extension+llvm_minimal_linux_x64//:BUILD.bazel",
+              "minimal_linux_arm64": "@@+llvm_toolchain_alias_extension+llvm_minimal_linux_arm64//:BUILD.bazel",
+              "minimal_macos_arm64": "@@+llvm_toolchain_alias_extension+llvm_minimal_macos_arm64//:BUILD.bazel"
             }
           }
         },
-        "recordedRepoMappingEntries": [
-          [
-            "",
-            "llvm_minimal_linux_arm64",
-            "+llvm_minimal_extension+llvm_minimal_linux_arm64"
-          ],
-          [
-            "",
-            "llvm_minimal_linux_x64",
-            "+llvm_minimal_extension+llvm_minimal_linux_x64"
-          ],
-          [
-            "",
-            "llvm_minimal_macos_arm64",
-            "+llvm_minimal_extension+llvm_minimal_macos_arm64"
-          ]
-        ]
+        "recordedRepoMappingEntries": []
       }
     },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
-        "bzlTransitiveDigest": "DzgZ3GrIDjCjee7Ld0TpBTTvON+PoLY9XbNcfOg9S7w=",
-        "usagesDigest": "oN3Gcw2UBtE1qJtYYdev1vXmnw33Bz0wN63beHchfJU=",
+        "bzlTransitiveDigest": "Aw80iecrsGkcn16vUznbsxULs2HhAYchM6LFbIwKp3A=",
+        "usagesDigest": "XNkE8h2214XUiDMzHVr/+l8CJucs5KWjYwbTz6qUZlY=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -321,8 +305,8 @@
           "sysroot_linux_amd64": {
             "repoRuleId": "@@//sysroot:sysroot.bzl%sysroot",
             "attributes": {
-              "version": "0.2.3",
-              "sha256": "3dc07372f0f499e6323c56e3e3e9da234ad063c60c0722855d829b1f32d3db47",
+              "version": "0.2.4",
+              "sha256": "a9e16db0a4fde35fb303a2ec60a66ecb655daf06497cad4df9c246438e466a29",
               "arch": "amd64",
               "glibc_version": "2.31",
               "stdcc_version": "13"
@@ -331,8 +315,8 @@
           "sysroot_linux_arm64": {
             "repoRuleId": "@@//sysroot:sysroot.bzl%sysroot",
             "attributes": {
-              "version": "0.2.3",
-              "sha256": "ff0ad977cd0d06ae3aabf8d20aa957bf2cfc3be83e307790e28ca46cc51cab1b",
+              "version": "0.2.4",
+              "sha256": "667a756dcd4c69553c07e441b01990775bb7e803429e7be89462a1759041d095",
               "arch": "arm64",
               "glibc_version": "2.31",
               "stdcc_version": "13"

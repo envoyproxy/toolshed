@@ -195,15 +195,19 @@ def _llvm_toolchain_alias_ext_impl(module_ctx):
 
     This extension creates the llvm_minimal_* repos itself so they are siblings
     of the alias repo in a single visibility namespace, then passes them to the
-    alias repo rule as canonical Label attributes. This is required because
-    repos created by a sibling extension are not visible by apparent name here.
+    alias repo rule as apparent-name string labels. Because the minimal repos
+    are created by THIS extension, they are visible by apparent name within the
+    extension's repo mapping, so the strings resolve to canonical labels on the
+    alias repo's attributes. Passing Label() objects instead would resolve
+    against extensions.bzl's own repo mapping (which has no apparent-name entry
+    for the extension-created repos) and fail in an external consumer's build.
     """
     setup_llvm_minimal()
     llvm_toolchain_alias(
         name = "llvm_toolchain_llvm",
-        minimal_linux_x64 = Label("@llvm_minimal_linux_x64//:BUILD.bazel"),
-        minimal_linux_arm64 = Label("@llvm_minimal_linux_arm64//:BUILD.bazel"),
-        minimal_macos_arm64 = Label("@llvm_minimal_macos_arm64//:BUILD.bazel"),
+        minimal_linux_x64 = "@llvm_minimal_linux_x64//:BUILD.bazel",
+        minimal_linux_arm64 = "@llvm_minimal_linux_arm64//:BUILD.bazel",
+        minimal_macos_arm64 = "@llvm_minimal_macos_arm64//:BUILD.bazel",
     )
 
 llvm_toolchain_alias_extension = module_extension(
