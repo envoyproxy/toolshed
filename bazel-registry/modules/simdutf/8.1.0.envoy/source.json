@@ -1,0 +1,7 @@
+{
+    "url": "https://github.com/simdutf/simdutf/releases/download/v8.1.0/singleheader.zip",
+    "integrity": "sha256-w1ZahWeyHQCW0DZmVNtHNZfqblQI5GQZjc4Il75x5NA=",
+    "overlay": {
+        "BUILD.bazel": "sha256-eTbV4MiFflEBuuqi8ALMV7FyKnLXUOXrhDaIbmkEdRI="
+    }
+}
