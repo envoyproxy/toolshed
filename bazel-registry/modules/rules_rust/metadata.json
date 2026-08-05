@@ -1,11 +1,12 @@
 {
-    "homepage": "https://github.com/bazelbuild/rules_rust",
-    "maintainers": [],
-    "repository": [
-        "github:bazelbuild/rules_rust"
-    ],
-    "versions": [
-        "0.68.1.envoy"
-    ],
-    "yanked_versions": {}
+  "homepage": "https://github.com/bazelbuild/rules_rust",
+  "maintainers": [],
+  "repository": [
+    "github:bazelbuild/rules_rust"
+  ],
+  "versions": [
+    "0.68.1.envoy",
+    "0.69.0.envoy"
+  ],
+  "yanked_versions": {}
 }
