@@ -1,0 +1,8 @@
+{
+    "url": "https://github.com/intel/cryptography-primitives/archive/refs/tags/v2.2.0.tar.gz",
+    "integrity": "sha256-1DUDxHndMpIXO1WqZ3cWFGHkViHAADFp6ho7Kauol+0=",
+    "strip_prefix": "cryptography-primitives-2.2.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-2GNMWDzmzAn2ussS6xJ+oQM/xBi5ctS2rfOuDqC36aQ="
+    }
+}

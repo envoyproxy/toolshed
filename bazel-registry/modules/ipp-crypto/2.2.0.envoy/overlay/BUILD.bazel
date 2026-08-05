@@ -1,0 +1,38 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+label_flag(
+    name = "crypto_lib",
+    build_setting_default = "@boringssl//:crypto",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "crypto_mb",
+    srcs = glob(
+        ["sources/ippcp/crypto_mb/src/**/*.c"],
+        exclude = [
+            # Exclude dispatcher - it needs generated headers
+            "sources/ippcp/crypto_mb/src/dispatcher/**",
+            # Exclude fips cert code if not needed
+            "sources/ippcp/crypto_mb/src/fips_cert/**",
+        ],
+    ),
+    hdrs = glob(["sources/ippcp/crypto_mb/include/**/*.h"]),
+    textual_hdrs = glob(["sources/ippcp/crypto_mb/src/**/*.h"]),
+    includes = ["sources/ippcp/crypto_mb/include"],
+    visibility = ["//visibility:public"],
+    deps = [":crypto_lib"],
+    copts = [
+        "-O3",
+        "-fPIC",
+        "-mavx512f",
+        "-mavx512dq",
+        "-mavx512ifma",
+    ],
+    # Single-CPU build without dispatcher
+    local_defines = ["SIMD_LEN=512"],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
