@@ -1,6 +1,6 @@
 SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 
-BINS_RELEASE = "0.2.4"
+BINS_RELEASE = "0.2.5"
 
 # This is only used for cross-compilation (toolchains_llvm provides these otherwise)
 LLVM_CXX_BUILD = """
@@ -40,8 +40,8 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": BINS_RELEASE,
-    "msan_libs_sha256": "2f6f94738a00e3547a1921a0853e5b064e4d88f6918bfd885d7c0d536f59986f",
-    "tsan_libs_sha256": "99d023e4f65d5dd1f75a4a1424571d1d54c22687245d35a4c551829e3b34d9dd",
+    "msan_libs_sha256": "19412b5515af9c34ffc9fbda3a434218080b719de532419d61a296bbd2eab058",
+    "tsan_libs_sha256": "2d136d0c63021b3280ec4b33a88c8381f2214a849a50ae557d7f5d9e9f9b93d0",
 
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
@@ -50,12 +50,12 @@ VERSIONS = {
 
     # Darwin libc++ for cross-compilation (extracted from LLVM macOS release)
     "libcxx_libs_darwin_sha256": {
-        "aarch64": "afb6f0a172c0293aef5912b96094b47cad91cf162c3c9bb96735d8d9ac951f64",
+        "aarch64": "cd3a8fc803acb02baaa38470f16b99d28397d23394bf47988065fcf235d6b308",
     },
 
     # macOS SDK sysroot for cross-compilation (extracted from Apple CLTools)
     "macos_sysroot_sha256": {
-        "arm64": "3f3d55551caf166a6b66f2ff799ec85a9872fd291497baa95aa337801b5d1a87",
+        "arm64": "969886d9f659e0f1fb5a0e34e720adfd94734cec9c503cfdb53034bd329d3450",
     },
 
     # Minimal LLVM artifact hashes by platform
@@ -79,22 +79,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "eacfff2d6ae859d12548b9a42deeaa58ebc91d7317acee05c7be0d054ebc3cbf",
-                "arm64": "644a245f09ab415dd7ca646771660fc9bf7fb7a9873b8db75be8834c7e96b359",
+                "amd64": "b4be5c8a2dbcab91f761584af8e37ef55df892122e1b7bbac3cbd7d7215d404f",
+                "arm64": "8d5c05a84f0018d1a0a046af3fede4c3daae3206b5c85ec2a1c370d7c807992a",
             },
             "13": {
-                "amd64": "a9e16db0a4fde35fb303a2ec60a66ecb655daf06497cad4df9c246438e466a29",
-                "arm64": "667a756dcd4c69553c07e441b01990775bb7e803429e7be89462a1759041d095",
+                "amd64": "9ebb62aac56fcd0683f0eb29fda909aaa594d2438a61992a8c905bec82ba2b5f",
+                "arm64": "f10ad43117891c8c316b37397c6307c29f3c2e15f51eb44d71f64f358b93242b",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "f2f3cd5151cef42a5b6f4f953727e42a048b8ce040a83f3d51fc0979bcb6d94b",
-                "arm64": "bf74b8f98948e1b6b552bfa576a897de28baad539184d48f8e7f90f5847e43c1",
+                "amd64": "2459d014099567376d3e93a46ba69813d3e349d953ac993dd99e7af4214837f4",
+                "arm64": "68bedb51c9214ac2c7d3f8a95d7745569606cc8be542bc732b9db2344d80a298",
             },
             "13": {
-                "amd64": "fe1ecde969bf278e5dea30581317fccffc64a8eb50719cae85d9bc4115411ea6",
-                "arm64": "86e8306807e3b6acd05c6d5b42dcbf5d558153774d69cedf93588867baa8680f",
+                "amd64": "31afbbd97326dad073bbfb7db1beeb42eecd195f7405cfcde14f2b52a2028e3f",
+                "arm64": "c61c6820595a69b059d05d2af14ac28810893853726b12a8821653ea967e806b",
             },
         },
     },
