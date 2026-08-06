@@ -3,7 +3,7 @@
     "strip_prefix": "protobuf-35.1",
     "url": "https://github.com/protocolbuffers/protobuf/releases/download/v35.1/protobuf-35.1.tar.gz",
     "patches": {
-        "envoy.patch": "sha256-oUb5ICqJ3eAx0W3Q8KPYsnVfPWYrrlO+yES7mGfu6ZA="
+        "envoy.patch": "sha256-HYiBSmf018LD2mUM/OeNpJlqqzpu9k4J/rwWhDWonT0="
     },
     "patch_strip": 1
 }
