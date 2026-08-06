@@ -3,7 +3,7 @@
     "integrity": "sha256-hXM53ScNH7PAaOrg+RLIgU00kLf/JebvIACG/OK1dVc=",
     "strip_prefix": "uadk-2.9",
     "patches": {
-        "uadk.patch": "sha256-Ic0V11C/wtArraNCwSYjTPb4sJzYgQQywHvZa27RbVk="
+        "uadk.patch": "sha256-KLb1hQb6Kaqx3esqU4ny/C6H0RPmeq9lJ4uMSoSH59o="
     },
     "patch_strip": 1,
     "overlay": {

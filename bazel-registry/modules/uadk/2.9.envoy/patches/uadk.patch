@@ -26,3 +26,16 @@ index 9767be4..b11476c 100644
  };
  
  struct wd_ss_region {
+diff --git a/v1/wd_util.c b/v1/wd_util.c
+index 0bc9d04..1859b12 100644
+--- a/v1/wd_util.c
++++ b/v1/wd_util.c
+@@ -26,7 +26,7 @@
+ 
+ void wd_spinlock(struct wd_lock *lock)
+ {
+-	int val = 0;
++	__u8 val = 0;
+ 
+ 	if (__atomic_compare_exchange_n(&lock->lock, &val, 1, 1,
+ 					      __ATOMIC_ACQUIRE, __ATOMIC_RELAXED))
