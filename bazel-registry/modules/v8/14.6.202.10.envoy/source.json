@@ -4,6 +4,7 @@
     "strip_prefix": "v8-14.6.202.10",
     "patch_strip": 1,
     "patches": {
-        "v8.patch": "sha256-k7G5jUZXzg29XhlCHqkxwR/ECgyT9tqQZPQBzyhnQww="
+        "v8.patch": "sha256-k7G5jUZXzg29XhlCHqkxwR/ECgyT9tqQZPQBzyhnQww=",
+        "requirements.patch": "sha256-UtLB0lGmlYPQpR+bVfb8++hbiqW1kGLPOOAkAsvMXNk="
     }
 }
