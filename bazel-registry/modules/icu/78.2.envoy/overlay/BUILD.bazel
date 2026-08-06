@@ -1,28 +1,27 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-# Hermetic llvm-objcopy label from the toolchains_llvm-provided LLVM toolchain.
-# The canonical label bypasses repo mapping and is stable so long as the
-# consuming build names the toolchain repo "llvm_toolchain".
 _LLVM_OBJCOPY = "@@toolchains_llvm++llvm+llvm_toolchain//:bin/llvm-objcopy"
+
+_CMD = """
+    cp "$<" "$(RULEDIR)/icudt78_dat.bin"
+    ROOT="$$PWD"
+    cd "$(RULEDIR)"
+    "$$ROOT/$(execpath {objcopy})" \
+        -I binary -O {fmt} \
+        --rename-section .data=.rodata,alloc,load,readonly,data,contents \
+        --redefine-sym _binary_icudt78_dat_bin_start=icudt78_dat \
+        icudt78_dat.bin \
+        "$$ROOT/$@"
+"""
 
 genrule(
     name = "icudata_obj",
     srcs = ["source/data/in/icudt78l.dat"],
     outs = ["icudt78_dat.o"],
-    # Copy input to a fixed basename so the auto-generated binary symbol name is
-    # deterministic (_binary_icudt78_dat_bin_start), then rename it to the symbol
-    # ICU expects (icudt78_dat) and place the data in a .rodata section.
-    cmd = """
-        cp "$<" "$(RULEDIR)/icudt78_dat.bin"
-        ROOT="$$PWD"
-        cd "$(RULEDIR)"
-        "$$ROOT/$(execpath {objcopy})" \
-            -I binary -O elf64-x86-64 \
-            --rename-section .data=.rodata,alloc,load,readonly,data,contents \
-            --redefine-sym _binary_icudt78_dat_bin_start=icudt78_dat \
-            icudt78_dat.bin \
-            "$$ROOT/$@"
-    """.format(objcopy = _LLVM_OBJCOPY),
+    cmd = select({
+        "@platforms//cpu:aarch64": _CMD.format(objcopy = _LLVM_OBJCOPY, fmt = "elf64-littleaarch64"),
+        "//conditions:default": _CMD.format(objcopy = _LLVM_OBJCOPY, fmt = "elf64-x86-64"),
+    }),
     tools = [_LLVM_OBJCOPY],
 )
 
