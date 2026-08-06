@@ -5,7 +5,12 @@
     "patch_strip": 1,
     "patches": {
         "nghttp2.patch": "sha256-XQTQH0EJzv+6EZKfCzGeNB3JPCthlcBraERW5O7o5M8=",
-        "nghttp2_huffman.patch": "sha256-drOOnUUbMMKZOb/PSEss5wgQHPz7NxC9N3FbI2kRGsk="
+        "nghttp2_huffman.patch": "sha256-drOOnUUbMMKZOb/PSEss5wgQHPz7NxC9N3FbI2kRGsk=",
+        "nghttp2_max_hd_nv.patch": "sha256-PTK9qQ980qxv3gDTzo0ieZkLGyu/4h/kDdnpCSVTFps=",
+        "nghttp2-CVE-2026-27135_part1.patch": "sha256-uP6XDA6mDr3OD0rkSzOrC2vbTKJrypeWgt1SUo9z4w4=",
+        "nghttp2-CVE-2026-27135_part2.patch": "sha256-uqsmDjz0RqyJbiWOeYzlzOm6sQSX/8S3un+LGeHFuxU=",
+        "nghttp2-CVE-2026-27135_part3.patch": "sha256-7Qc6TW2WUmS5hLYdJTNBJzXLXB2fALRwkKPPVmZ4xc4=",
+        "nghttp2-CVE-2026-27135_part4.patch": "sha256-PH8aB8sbDFd5//xroqGJc3MaYRDwIRJKClbxtWDOl5U="
     },
     "overlay": {
         "BUILD.bazel": "sha256-6crOWZbwrSXyOuoOqUPvlMcQnfKHEhFqdJ9cGPQqSro=",
