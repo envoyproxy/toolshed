@@ -5,6 +5,7 @@
     "patch_strip": 1,
     "patches": {
         "ocp.patch": "sha256-CVmXKfLz2Ph9WJDDO46SrtUTt+ziuvrRLn4TYAtSKF4=",
-        "module_dot_bazel.patch": "sha256-4slE9hRwGZOHgMAPvfmJyF7VaXbV5WFtmXQjtLziJzY="
+        "module_dot_bazel.patch": "sha256-4slE9hRwGZOHgMAPvfmJyF7VaXbV5WFtmXQjtLziJzY=",
+        "protobuf-v35.patch": "sha256-KWU4YwHpJV8mb/HaU02/0iAkJfvW5lmtJ7G9gUaAc9Q="
     }
 }
