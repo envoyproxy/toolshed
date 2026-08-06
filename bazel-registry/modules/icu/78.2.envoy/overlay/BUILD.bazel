@@ -1,17 +1,34 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
-exports_files(["source/data/in/icudt78l.dat"])
+# Hermetic llvm-objcopy label from the toolchains_llvm-provided LLVM toolchain.
+# The canonical label bypasses repo mapping and is stable so long as the
+# consuming build names the toolchain repo "llvm_toolchain".
+_LLVM_OBJCOPY = "@@toolchains_llvm++llvm+llvm_toolchain//:bin/llvm-objcopy"
 
-filegroup(
-    name = "icudata_dat",
+genrule(
+    name = "icudata_obj",
     srcs = ["source/data/in/icudt78l.dat"],
+    outs = ["icudt78_dat.o"],
+    # Copy input to a fixed basename so the auto-generated binary symbol name is
+    # deterministic (_binary_icudt78_dat_bin_start), then rename it to the symbol
+    # ICU expects (icudt78_dat) and place the data in a .rodata section.
+    cmd = """
+        cp "$<" "$(RULEDIR)/icudt78_dat.bin"
+        ROOT="$$PWD"
+        cd "$(RULEDIR)"
+        "$$ROOT/$(execpath {objcopy})" \
+            -I binary -O elf64-x86-64 \
+            --rename-section .data=.rodata,alloc,load,readonly,data,contents \
+            --redefine-sym _binary_icudt78_dat_bin_start=icudt78_dat \
+            icudt78_dat.bin \
+            "$$ROOT/$@"
+    """.format(objcopy = _LLVM_OBJCOPY),
+    tools = [_LLVM_OBJCOPY],
 )
 
 cc_library(
     name = "icudata",
-    srcs = ["icudata.S"],
-    additional_compiler_inputs = [":icudata_dat"],
-    copts = ["-I."],
+    srcs = [":icudata_obj"],
     alwayslink = 1,
     visibility = ["//visibility:public"],
 )
