@@ -3,7 +3,8 @@
   "integrity": "sha256-xY6ps5ZRpQT5v0gLppnJ+nYCjufmNjB8UtU6tKII3bc=",
   "strip_prefix": "cel-cpp-439003a0016ed7ace068cffdf494357a3f75e3b2",
   "patches": {
-    "cel-cpp.patch": "sha256-5NNTV4ae/RP3qWkCOsfjnuKqq9PrWD7S9QRNMgdC0/0="
+    "cel-cpp.patch": "sha256-5NNTV4ae/RP3qWkCOsfjnuKqq9PrWD7S9QRNMgdC0/0=",
+    "cel-cpp-protobuf-v35.patch": "sha256-/SxUPowkElnWzVFDeZZBQLqcyAeJe53btUnWaOD86No="
   },
   "patch_strip": 1
 }
