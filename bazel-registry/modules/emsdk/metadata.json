@@ -5,7 +5,8 @@
         "github:emscripten-core/emsdk"
     ],
     "versions": [
-        "4.0.23.envoy"
+        "4.0.23.envoy",
+        "4.0.23.envoy2"
     ],
     "yanked_versions": {}
 }
