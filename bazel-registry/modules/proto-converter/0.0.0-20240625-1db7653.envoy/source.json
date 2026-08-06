@@ -4,7 +4,7 @@
     "strip_prefix": "proto-converter-1db76535b86b80aa97489a1edcc7009e18b67ab7",
     "patch_strip": 1,
     "patches": {
-        "proto-converter.patch": "sha256-43F3iBsllS4iKSGjUdVcVj2pcQyJw3As74e1qaWGW3g=",
+        "proto-converter.patch": "sha256-z0nB02XELrS0yL1GjKw/ML06kEWyh0qdIxzCOAa7OPg=",
         "module_dot_bazel.patch": "sha256-esyJZsLcvK+s1BrA9Ov/nxFO1Kfl+Gcf3q9QyER7H/I="
     }
 }
