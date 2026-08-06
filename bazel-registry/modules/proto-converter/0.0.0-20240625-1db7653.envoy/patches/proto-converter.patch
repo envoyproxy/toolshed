@@ -2613,6 +2613,15 @@ index 0770b0a..4007424 100644
  
  namespace google {
  namespace protobuf {
+@@ -84,7 +79,7 @@
+ 
+ template <typename T>
+ void ParseFromAny(const std::string& data, T* result) {
+-  result->ParseFromString(data);
++  (void)result->ParseFromString(data);
+ }
+ 
+ // Returns a boolean value contained in Any type.
 diff --git a/src/google/protobuf/util/converter/utility.h b/src/google/protobuf/util/converter/utility.h
 index a98793b..f00ad3a 100644
 --- a/src/google/protobuf/util/converter/utility.h
