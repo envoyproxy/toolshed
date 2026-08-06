@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/cncf/xds",
+    "maintainers": [],
+    "repository": [
+        "github:cncf/xds"
+    ],
+    "versions": [
+        "0.0.0-20251110-8bfbf64"
+    ],
+    "yanked_versions": {}
+}
