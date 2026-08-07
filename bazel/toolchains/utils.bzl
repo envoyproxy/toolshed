@@ -18,17 +18,15 @@ Usage in an aspect or rule:
         ctx.actions.run(executable = protoc, ...)
 
 For genrule / $(location) consumers that need a runnable target, use
-`proto_compiler_binary` instead of `use_proto_toolchain` + `get_proto_compiler`:
+`current_protoc_toolchain` instead of `use_proto_toolchain` + `get_proto_compiler`:
 
-    load("//bazel/toolchains:utils.bzl", "proto_compiler_binary")
+    load("//bazel/toolchains:utils.bzl", "current_protoc_toolchain")
 
-    proto_compiler_binary(name = "protoc", visibility = ["//visibility:public"])
+    current_protoc_toolchain(name = "protoc", visibility = ["//visibility:public"])
 """
 
-# This is a plain string label. It is resolved in the repo mapping of the
-# consumer that uses the proto toolchain (e.g. envoy/envoy_api), where protobuf
-# is already available. The toolshed bazel module must not add a protobuf
-# bazel_dep for this.
+# This label is resolved in the repo mapping of toolshed, which now has
+# protobuf as a bazel_dep (repo_name = "com_google_protobuf").
 PROTO_TOOLCHAIN_TYPE = "@com_google_protobuf//bazel/private:proto_toolchain_type"
 
 
@@ -45,7 +43,7 @@ def get_proto_compiler(ctx, toolchain_type = PROTO_TOOLCHAIN_TYPE):
     return toolchain.proto.proto_compiler
 
 
-def _proto_compiler_binary_impl(ctx):
+def _current_protoc_toolchain_impl(ctx):
     protoc = get_proto_compiler(ctx)  # FilesToRunProvider
     runfiles = ctx.runfiles()
     if protoc.default_runfiles:
@@ -57,8 +55,8 @@ def _proto_compiler_binary_impl(ctx):
     )]
 
 
-proto_compiler_binary = rule(
-    implementation = _proto_compiler_binary_impl,
+current_protoc_toolchain = rule(
+    implementation = _current_protoc_toolchain_impl,
     executable = True,
     toolchains = use_proto_toolchain(),
     doc = "Exposes protoc from the registered proto toolchain as a runnable target " +
