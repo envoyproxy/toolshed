@@ -17,18 +17,21 @@ Usage in an aspect or rule:
         protoc = get_proto_compiler(ctx)          # FilesToRunProvider
         ctx.actions.run(executable = protoc, ...)
 
-For genrule / $(location) consumers that need a runnable target, use
-`proto_compiler_binary` instead of `use_proto_toolchain` + `get_proto_compiler`:
+For genrule / $(location) consumers that need a runnable `$(location)`-able
+protoc target, instantiate `proto_compiler_binary` in your BUILD file:
 
     load("//bazel/toolchains:utils.bzl", "proto_compiler_binary")
 
     proto_compiler_binary(name = "protoc", visibility = ["//visibility:public"])
+
+Rules and aspects should use `use_proto_toolchain()` + `get_proto_compiler(ctx)`
+directly rather than depending on a `proto_compiler_binary` target.
 """
 
-# This is a plain string label. It is resolved in the repo mapping of the
-# consumer that uses the proto toolchain (e.g. envoy/envoy_api), where protobuf
-# is already available. The toolshed bazel module must not add a protobuf
-# bazel_dep for this.
+# This is a plain string label.  It is resolved in the repo mapping of the
+# consumer that uses the proto toolchain (e.g. envoy/envoy_api), where
+# protobuf is already available via a bazel_dep or http_archive named
+# com_google_protobuf.
 PROTO_TOOLCHAIN_TYPE = "@com_google_protobuf//bazel/private:proto_toolchain_type"
 
 
@@ -47,13 +50,15 @@ def get_proto_compiler(ctx, toolchain_type = PROTO_TOOLCHAIN_TYPE):
 
 def _proto_compiler_binary_impl(ctx):
     protoc = get_proto_compiler(ctx)  # FilesToRunProvider
-    runfiles = ctx.runfiles()
-    if protoc.default_runfiles:
-        runfiles = runfiles.merge(protoc.default_runfiles)
+    # Bazel requires executable rules to produce their own executable file;
+    # create a symlink so the binary is "owned" by this rule while still
+    # delegating to the toolchain-resolved protoc.
+    exe = ctx.actions.declare_file(ctx.label.name)
+    ctx.actions.symlink(output = exe, target_file = protoc.executable, is_executable = True)
     return [DefaultInfo(
-        executable = protoc.executable,
-        files = depset([protoc.executable]),
-        runfiles = runfiles,
+        executable = exe,
+        files = depset([exe]),
+        runfiles = ctx.runfiles(files = [exe, protoc.executable]),
     )]
 
 
