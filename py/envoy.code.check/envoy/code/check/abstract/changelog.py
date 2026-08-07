@@ -22,6 +22,8 @@ from envoy.code.check import abstract, interface
 
 
 MAX_VERSION_FOR_CHANGES_SECTION = "1.16"
+# YAML block scalars add four spaces to Envoy's 140-character limit.
+MAX_CHANGELOG_ENTRY_LINE_LENGTH = 136
 VALID_CHANGELOG_AREA_RE = re.compile(r"^[a-z0-9_\-/]+$")
 VALID_CHANGELOG_AREA_PATTERN = r"[a-z0-9_\-/]+"
 
@@ -174,6 +176,18 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
                 f"{path}: Entry file is empty or contains only whitespace")
         return None
 
+    def check_entry_line_lengths(
+            self,
+            path: pathlib.Path) -> tuple[str, ...]:
+        return tuple(
+            f"{path}:{line_number}: Changelog entry line is "
+            f"{len(line)} characters (maximum "
+            f"{MAX_CHANGELOG_ENTRY_LINE_LENGTH})"
+            for line_number, line
+            in enumerate(path.read_text().splitlines(), start=1)
+            if (len(line) > MAX_CHANGELOG_ENTRY_LINE_LENGTH
+                and len(line.split()) > 1))
+
     def check_entry_files(
             self,
             paths: list[pathlib.Path]) -> tuple[str, ...]:
@@ -183,6 +197,7 @@ class AChangelogChangesChecker(metaclass=abstracts.Abstraction):
                 errors.append(err)
             if err := self.check_entry_content(path):
                 errors.append(err)
+            errors.extend(self.check_entry_line_lengths(path))
         return tuple(errors)
 
 
@@ -231,10 +246,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
     def entry_dir(self) -> pathlib.Path | None:
         if not self.is_current:
             return None
-        return (
-            self.project.changelogs
-                        .changelog_path(self.version)
-                        .with_suffix(""))
+        return self.project.changelogs.current_dir_path
 
     @async_property(cache=True)
     async def errors(self) -> tuple[str, ...]:
@@ -305,7 +317,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
         # In the entries layout the current changelog has no real date; it is
         # synthesized as `Pending` until `write_version` bakes a dated file,
         # so there is nothing to validate here.
-        if self.is_current and self.project.changelogs.entries_layout:
+        if self.is_current:
             return ()
         errors = []
         if invalid_date := await self.invalid_date:
