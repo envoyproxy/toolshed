@@ -1717,9 +1717,7 @@ types-aiofiles==25.1.0.20260518 \
 types-docutils==0.21.0.20250715 \
     --hash=sha256:f254ab9aa46cfd4dce07034dc224db25a55452380ed3df156d9ce5589811c261 \
     --hash=sha256:f7beb7d136cfbbc456e4a33f45eb367c7a5338b591c57a6555c821f85238a7fb
-    # via
-    #   -r requirements.in
-    #   types-pygments
+    # via -r requirements.in
 types-frozendict==2.0.9 \
     --hash=sha256:446b5f33125566c9885c31363e065d6416f8da6c81252af1e459a4e67a15487b \
     --hash=sha256:d4292ef14f87ddec575ab1d968102dcba2c8f1e490acc67945eee1fc7de24d08
@@ -1732,13 +1730,13 @@ types-protobuf==7.34.1.20260518 \
     --hash=sha256:28cfaded25889cb83ebfb63cfb0a43628f0b6f3785767bec17287dc6468795f2 \
     --hash=sha256:a0a5337413347166439c0e07cbc26c6164d091401c6f01b1dfd8cdb966c4dd8f
     # via -r requirements.in
-types-pygments==2.20.0.20260518 \
-    --hash=sha256:bcab233d0389cb0a91146eb860e7bdcbceaa0f30bee73cefc7b367129cc4a330 \
-    --hash=sha256:e40728efd00c9da5936366648d5b3c55e72ed52bdd80495a96577b4d717c4fcb
+types-pygments==2.20.0.20260728 \
+    --hash=sha256:22974ff0b06fcf752e5d91039a2a6bfd93607f13862b6dc1320a576506144df6 \
+    --hash=sha256:dd0a49d84fd9e3f08ab3a3191779e4732a91bb1fad2e80178cf4574e8f35684d
     # via -r requirements.in
-types-pyyaml==6.0.12.20260518 \
-    --hash=sha256:d2150f75a231c9fe9c7463bd29487d93e60bac90400287351384bc2284eba7cd \
-    --hash=sha256:d917f83fb38462550338c1297faedd860b3ec83912b96b1e3d73255f7473e466
+types-pyyaml==6.0.12.20260724 \
+    --hash=sha256:3c1ce1bb73cd5ec02e90390c2b1f00e810d241d8825fd73ff359696839271b6b \
+    --hash=sha256:d57db930a4b2efbc57cf430ec8882765d246929432fa253092f383902329a453
     # via -r requirements.in
 typing-extensions==4.15.0 \
     --hash=sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466 \
