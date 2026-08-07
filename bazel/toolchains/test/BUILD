@@ -17,7 +17,7 @@ for this PR.
 
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//toolchains:utils.bzl", "proto_compiler_binary")
-load(":proto_compiler_test_rule.bzl", "proto_compiler_version_test")
+load(":proto_compiler_test_rule.bzl", "proto_version_capture")
 
 # ---------------------------------------------------------------------------
 # Shared expected protoc version.
@@ -54,23 +54,23 @@ sh_test(
     name = "genrule_protoc_version_test",
     size = "small",
     srcs = ["check_protoc_version.sh"],
-    args = [
-        "$(rootpath :protoc_version_via_genrule)",
-        EXPECTED_PROTOC_VERSION,
-    ],
     data = [":protoc_version_via_genrule"],
+    env = {
+        "EXPECTED_PROTOC_VERSION": EXPECTED_PROTOC_VERSION,
+        "VERSION_FILE": "$(rootpath :protoc_version_via_genrule)",
+    },
     tags = ["manual"],
 )
 
 # ---------------------------------------------------------------------------
 # Test 2: custom rule / use_proto_toolchain() + get_proto_compiler() path
 #
-# proto_compiler_version_test uses use_proto_toolchain() and get_proto_compiler()
+# proto_version_capture uses use_proto_toolchain() and get_proto_compiler()
 # directly (the same path used by aspects and rules), independent of the
 # proto_compiler_binary convenience target.  A sh_test asserts the version.
 # ---------------------------------------------------------------------------
 
-proto_compiler_version_test(
+proto_version_capture(
     name = "rule_version_output",
     tags = ["manual"],
 )
@@ -79,10 +79,10 @@ sh_test(
     name = "rule_protoc_version_test",
     size = "small",
     srcs = ["check_protoc_version.sh"],
-    args = [
-        "$(rootpath :rule_version_output)",
-        EXPECTED_PROTOC_VERSION,
-    ],
     data = [":rule_version_output"],
+    env = {
+        "EXPECTED_PROTOC_VERSION": EXPECTED_PROTOC_VERSION,
+        "VERSION_FILE": "$(rootpath :rule_version_output)",
+    },
     tags = ["manual"],
 )

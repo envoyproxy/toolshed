@@ -50,13 +50,15 @@ def get_proto_compiler(ctx, toolchain_type = PROTO_TOOLCHAIN_TYPE):
 
 def _proto_compiler_binary_impl(ctx):
     protoc = get_proto_compiler(ctx)  # FilesToRunProvider
-    runfiles = ctx.runfiles()
-    if protoc.default_runfiles:
-        runfiles = runfiles.merge(protoc.default_runfiles)
+    # Bazel requires executable rules to produce their own executable file;
+    # create a symlink so the binary is "owned" by this rule while still
+    # delegating to the toolchain-resolved protoc.
+    exe = ctx.actions.declare_file(ctx.label.name)
+    ctx.actions.symlink(output = exe, target_file = protoc.executable, is_executable = True)
     return [DefaultInfo(
-        executable = protoc.executable,
-        files = depset([protoc.executable]),
-        runfiles = runfiles,
+        executable = exe,
+        files = depset([exe]),
+        runfiles = ctx.runfiles(files = [exe, protoc.executable]),
     )]
 
 

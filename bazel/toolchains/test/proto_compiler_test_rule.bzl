@@ -6,7 +6,7 @@ independent of the proto_compiler_binary convenience target.
 
 load("//toolchains:utils.bzl", "get_proto_compiler", "use_proto_toolchain")
 
-def _proto_compiler_version_test_impl(ctx):
+def _proto_version_capture_impl(ctx):
     out = ctx.actions.declare_file(ctx.label.name + "_version.txt")
     protoc = get_proto_compiler(ctx)  # FilesToRunProvider
     ctx.actions.run_shell(
@@ -21,8 +21,8 @@ def _proto_compiler_version_test_impl(ctx):
     )
     return [DefaultInfo(files = depset([out]))]
 
-proto_compiler_version_test = rule(
-    implementation = _proto_compiler_version_test_impl,
+proto_version_capture = rule(
+    implementation = _proto_version_capture_impl,
     toolchains = use_proto_toolchain(),
     attrs = {},
     doc = "Runs protoc --version and captures the output to a file.",
