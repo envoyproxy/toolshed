@@ -17,18 +17,21 @@ Usage in an aspect or rule:
         protoc = get_proto_compiler(ctx)          # FilesToRunProvider
         ctx.actions.run(executable = protoc, ...)
 
-For genrule / $(location) consumers that need a runnable target, use
-`proto_compiler_binary` instead of `use_proto_toolchain` + `get_proto_compiler`:
+For genrule / $(location) consumers that need a runnable `$(location)`-able
+protoc target, instantiate `proto_compiler_binary` in your BUILD file:
 
     load("//bazel/toolchains:utils.bzl", "proto_compiler_binary")
 
     proto_compiler_binary(name = "protoc", visibility = ["//visibility:public"])
+
+Rules and aspects should use `use_proto_toolchain()` + `get_proto_compiler(ctx)`
+directly rather than depending on a `proto_compiler_binary` target.
 """
 
-# This is a plain string label. It is resolved in the repo mapping of the
-# consumer that uses the proto toolchain (e.g. envoy/envoy_api), where protobuf
-# is already available. The toolshed bazel module must not add a protobuf
-# bazel_dep for this.
+# This is a plain string label.  It is resolved in the repo mapping of the
+# consumer that uses the proto toolchain (e.g. envoy/envoy_api), where
+# protobuf is already available via a bazel_dep or http_archive named
+# com_google_protobuf.
 PROTO_TOOLCHAIN_TYPE = "@com_google_protobuf//bazel/private:proto_toolchain_type"
 
 
