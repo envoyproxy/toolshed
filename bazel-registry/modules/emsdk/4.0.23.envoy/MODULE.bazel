@@ -15,6 +15,7 @@ python.toolchain(
     python_version = "3.12",
 )
 use_repo(python, "python_3_12")
+register_toolchains("@python_3_12//:all")
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
 node.toolchain(node_version = "20.18.0")
