@@ -1,2 +1,5 @@
 # Export toolchain types and utilities
-exports_files(["BUILD"])
+exports_files([
+    "BUILD",
+    "utils.bzl",
+])
