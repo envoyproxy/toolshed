@@ -2,7 +2,7 @@ diff --git a/BUILD b/BUILD
 index 387dc66..3e399ba 100644
 --- a/BUILD
 +++ b/BUILD
-@@ -2,6 +2,18 @@ package(default_visibility = ["//visibility:public"])
+@@ -2,6 +2,18 @@
  
  filegroup(name = "empty")
  
@@ -22,10 +22,10 @@ index 387dc66..3e399ba 100644
      name = "platform_wasm",
      constraint_values = [
 diff --git a/MODULE.bazel b/MODULE.bazel
-index e5ea27d..1fcc678 100644
+index e5ea27d..4149ef6 100644
 --- a/MODULE.bazel
 +++ b/MODULE.bazel
-@@ -29,43 +29,6 @@ use_repo(emscripten_deps, "emscripten_bin_mac")
+@@ -29,44 +29,6 @@
  use_repo(emscripten_deps, "emscripten_bin_mac_arm64")
  use_repo(emscripten_deps, "emscripten_bin_win")
  
@@ -66,14 +66,15 @@ index e5ea27d..1fcc678 100644
 -    "emscripten_npm_mac_arm64",
 -    "emscripten_npm_win",
 -)
- 
+-
  emscripten_cache = use_extension("//:emscripten_cache.bzl", "emscripten_cache")
  use_repo(emscripten_cache, "emscripten_cache")
+ 
 diff --git a/emscripten_build_file.bzl b/emscripten_build_file.bzl
 index 0d7aff2..eefbe79 100644
 --- a/emscripten_build_file.bzl
 +++ b/emscripten_build_file.bzl
-@@ -90,4 +90,12 @@ filegroup(
+@@ -90,4 +90,12 @@
          ],
      ),
  )
@@ -87,7 +88,7 @@ index 0d7aff2..eefbe79 100644
 +
  """
 diff --git a/emscripten_toolchain/emar.sh b/emscripten_toolchain/emar.sh
-index b4ead6e..e54e07c 100755
+index b4ead6e..e54e07c 100644
 --- a/emscripten_toolchain/emar.sh
 +++ b/emscripten_toolchain/emar.sh
 @@ -2,4 +2,4 @@
@@ -97,7 +98,7 @@ index b4ead6e..e54e07c 100755
 -exec python3 $EMSCRIPTEN/emar.py "$@"
 +exec "$EM_PYTHON3" $EMSCRIPTEN/emar.py "$@"
 diff --git a/emscripten_toolchain/emcc.sh b/emscripten_toolchain/emcc.sh
-index 5fdaf9c..e080b4a 100755
+index 5fdaf9c..e080b4a 100644
 --- a/emscripten_toolchain/emcc.sh
 +++ b/emscripten_toolchain/emcc.sh
 @@ -2,4 +2,4 @@
@@ -107,7 +108,7 @@ index 5fdaf9c..e080b4a 100755
 -exec python3 $EMSCRIPTEN/emcc.py "$@"
 +exec "$EM_PYTHON3" $EMSCRIPTEN/emcc.py "$@"
 diff --git a/emscripten_toolchain/emcc_link.sh b/emscripten_toolchain/emcc_link.sh
-index 44f3235..3558644 100755
+index 44f3235..3558644 100644
 --- a/emscripten_toolchain/emcc_link.sh
 +++ b/emscripten_toolchain/emcc_link.sh
 @@ -2,4 +2,4 @@
@@ -117,18 +118,18 @@ index 44f3235..3558644 100755
 -exec python3 $(dirname $0)/link_wrapper.py "$@"
 +exec "$EM_PYTHON3" $(dirname $0)/link_wrapper.py "$@"
 diff --git a/emscripten_toolchain/toolchain.bzl b/emscripten_toolchain/toolchain.bzl
-index 80f55f6..a2b3183 100644
+index 80f55f6..c41745e 100644
 --- a/emscripten_toolchain/toolchain.bzl
 +++ b/emscripten_toolchain/toolchain.bzl
-@@ -73,6 +73,7 @@ def _impl(ctx):
+@@ -73,6 +73,7 @@
      emscripten_dir = ctx.attr.emscripten_binaries.label.workspace_root
  
      nodejs_path = ctx.file.nodejs_bin.path
-+    python_path = ctx.toolchains["@rules_python//python:toolchain_type"].py3_runtime.interpreter.path
++    python_path = ctx.file.python_bin.path
  
      builtin_sysroot = emscripten_dir + "/emscripten/cache/sysroot"
  
-@@ -1077,6 +1078,10 @@ def _impl(ctx):
+@@ -1077,6 +1078,10 @@
                      key = "NODE_JS_PATH",
                      value = nodejs_path,
                  ),
@@ -139,18 +140,19 @@ index 80f55f6..a2b3183 100644
              ],
          ),
          # Use llvm backend.  Off by default, enabled via --features=llvm_backend
-@@ -1154,5 +1159,6 @@ emscripten_cc_toolchain_config_rule = rule(
+@@ -1152,6 +1157,7 @@
+         "em_config": attr.label(mandatory = True, allow_single_file = True),
+         "emscripten_binaries": attr.label(mandatory = True, cfg = "exec"),
          "nodejs_bin": attr.label(mandatory = True, allow_single_file = True),
++        "python_bin": attr.label(mandatory = True, cfg = "exec", allow_single_file = True),
          "script_extension": attr.string(mandatory = True, values = ["sh", "bat"]),
      },
-+    toolchains = ["@rules_python//python:toolchain_type"],
      provides = [CcToolchainConfigInfo],
- )
 diff --git a/emscripten_toolchain/wasm_cc_binary.bzl b/emscripten_toolchain/wasm_cc_binary.bzl
 index e7bd8ef..fbe86a4 100644
 --- a/emscripten_toolchain/wasm_cc_binary.bzl
 +++ b/emscripten_toolchain/wasm_cc_binary.bzl
-@@ -151,7 +151,6 @@ def _wasm_cc_binary_legacy_impl(ctx):
+@@ -151,7 +151,6 @@
      args.add("--allow_empty_outputs")
      args.add_all("--archive", ctx.files.cc_target)
      args.add_joined("--outputs", outputs, join_with = ",")
@@ -159,14 +161,22 @@ index e7bd8ef..fbe86a4 100644
          inputs = ctx.files.cc_target,
          outputs = outputs,
 diff --git a/remote_emscripten_repository.bzl b/remote_emscripten_repository.bzl
-index 819a048..4577101 100644
+index 819a048..a999e7e 100644
 --- a/remote_emscripten_repository.bzl
 +++ b/remote_emscripten_repository.bzl
-@@ -62,6 +62,7 @@ def create_toolchains(name, repo_name, exec_compatible_with):
+@@ -62,6 +62,7 @@
              "@emsdk//emscripten_toolchain:env.sh",
              "@emsdk//emscripten_toolchain:env.bat",
              "@nodejs//:node_files",
-+            "@rules_python//python:current_py_toolchain",
++            "@python_3_12_host//:python",
          ],
      )
  
+@@ -111,6 +112,7 @@
+         em_config = "@emscripten_cache//:emscripten_config",
+         emscripten_binaries = repo_compiler_files_target,
+         nodejs_bin = "@nodejs//:node",
++        python_bin = "@python_3_12_host//:python",
+         script_extension = select({
+             "@bazel_tools//src/conditions:host_windows": "bat",
+             "//conditions:default": "sh",
