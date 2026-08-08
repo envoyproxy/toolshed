@@ -116,6 +116,8 @@ WORKER_PACKAGES=(
     autoconf
     autoconf-archive
     automake
+    # leaked into emsdk/emcc bin
+    libatomic1
     libtool
     # Ideally remove this if its ever fixed in llvm
     libxml2
