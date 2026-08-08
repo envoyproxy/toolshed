@@ -1,0 +1,1 @@
+# Website template asset rules
