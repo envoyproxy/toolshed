@@ -96,7 +96,7 @@ index b4ead6e..e54e07c 100644
  source $(dirname $0)/env.sh
  
 -exec python3 $EMSCRIPTEN/emar.py "$@"
-+exec "$EM_PYTHON3" $EMSCRIPTEN/emar.py "$@"
++exec external/rules_python~~python~python_3_12_x86_64-unknown-linux-gnu/bin/python3 $EMSCRIPTEN/emar.py "$@"
 diff --git a/emscripten_toolchain/emcc.sh b/emscripten_toolchain/emcc.sh
 index 5fdaf9c..e080b4a 100644
 --- a/emscripten_toolchain/emcc.sh
@@ -106,7 +106,7 @@ index 5fdaf9c..e080b4a 100644
  source $(dirname $0)/env.sh
  
 -exec python3 $EMSCRIPTEN/emcc.py "$@"
-+exec "$EM_PYTHON3" $EMSCRIPTEN/emcc.py "$@"
++exec external/rules_python~~python~python_3_12_x86_64-unknown-linux-gnu/bin/python3 $EMSCRIPTEN/emcc.py "$@"
 diff --git a/emscripten_toolchain/emcc_link.sh b/emscripten_toolchain/emcc_link.sh
 index 44f3235..3558644 100644
 --- a/emscripten_toolchain/emcc_link.sh
@@ -116,38 +116,7 @@ index 44f3235..3558644 100644
  source $(dirname $0)/env.sh
  
 -exec python3 $(dirname $0)/link_wrapper.py "$@"
-+exec "$EM_PYTHON3" $(dirname $0)/link_wrapper.py "$@"
-diff --git a/emscripten_toolchain/toolchain.bzl b/emscripten_toolchain/toolchain.bzl
-index 80f55f6..c41745e 100644
---- a/emscripten_toolchain/toolchain.bzl
-+++ b/emscripten_toolchain/toolchain.bzl
-@@ -73,6 +73,7 @@
-     emscripten_dir = ctx.attr.emscripten_binaries.label.workspace_root
- 
-     nodejs_path = ctx.file.nodejs_bin.path
-+    python_path = ctx.file.python_bin.path
- 
-     builtin_sysroot = emscripten_dir + "/emscripten/cache/sysroot"
- 
-@@ -1077,6 +1078,10 @@
-                     key = "NODE_JS_PATH",
-                     value = nodejs_path,
-                 ),
-+                env_entry(
-+                    key = "EM_PYTHON3",
-+                    value = python_path,
-+                ),
-             ],
-         ),
-         # Use llvm backend.  Off by default, enabled via --features=llvm_backend
-@@ -1152,6 +1157,7 @@
-         "em_config": attr.label(mandatory = True, allow_single_file = True),
-         "emscripten_binaries": attr.label(mandatory = True, cfg = "exec"),
-         "nodejs_bin": attr.label(mandatory = True, allow_single_file = True),
-+        "python_bin": attr.label(mandatory = True, cfg = "exec", allow_single_file = True),
-         "script_extension": attr.string(mandatory = True, values = ["sh", "bat"]),
-     },
-     provides = [CcToolchainConfigInfo],
++exec external/rules_python~~python~python_3_12_x86_64-unknown-linux-gnu/bin/python3 $(dirname $0)/link_wrapper.py "$@"
 diff --git a/emscripten_toolchain/wasm_cc_binary.bzl b/emscripten_toolchain/wasm_cc_binary.bzl
 index e7bd8ef..fbe86a4 100644
 --- a/emscripten_toolchain/wasm_cc_binary.bzl
@@ -168,15 +137,7 @@ index 819a048..a999e7e 100644
              "@emsdk//emscripten_toolchain:env.sh",
              "@emsdk//emscripten_toolchain:env.bat",
              "@nodejs//:node_files",
-+            "@python_3_12_host//:python",
++            "@python_3_12//:files",
          ],
      )
  
-@@ -111,6 +112,7 @@
-         em_config = "@emscripten_cache//:emscripten_config",
-         emscripten_binaries = repo_compiler_files_target,
-         nodejs_bin = "@nodejs//:node",
-+        python_bin = "@python_3_12_host//:python",
-         script_extension = select({
-             "@bazel_tools//src/conditions:host_windows": "bat",
-             "//conditions:default": "sh",
