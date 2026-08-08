@@ -3,7 +3,7 @@
     "integrity": "sha256-lnZeVTN9lX6RgiFcpy9mbYx/q9wNHZ+pgjQ0OIIIQQE=",
     "strip_prefix": "emsdk-c0bb220cb6e6f4e0fabb6f6db9efd53390ef5e56/bazel",
     "patches": {
-        "emsdk_bzlmod.patch": "sha256-JKfL/+94W+wKAyey3caYMDLXXfgdjUxyORD9mJmbpiM="
+        "emsdk_bzlmod.patch": "sha256-riNFph1meSi9A3glLpZCyQoLd9oyiJWiuvHLJIakJFo="
     },
     "patch_strip": 1
 }
