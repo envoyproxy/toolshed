@@ -117,34 +117,32 @@ index 44f3235..3558644 100644
  
 -exec python3 $(dirname $0)/link_wrapper.py "$@"
 +exec "$EM_PYTHON3" $(dirname $0)/link_wrapper.py "$@"
+diff --git a/emscripten_toolchain/env.sh b/emscripten_toolchain/env.sh
+index e5c8d9a..f1a2b3c 100755
+--- a/emscripten_toolchain/env.sh
++++ b/emscripten_toolchain/env.sh
+@@ -1,5 +1,12 @@
+ #!/bin/bash
+ 
+ export ROOT_DIR=${EXT_BUILD_ROOT:-$(pwd -P)}
++for python_dir in "$ROOT_DIR"/external/*python*3_12*/bin "$ROOT_DIR"/external/*python*3_12*; do
++    if [ -x "$python_dir/python3" ]; then
++        export PATH="$python_dir:$PATH"
++        export EM_PYTHON3="$python_dir/python3"
++        break
++    fi
++done
+ export EMSCRIPTEN=$ROOT_DIR/$EM_BIN_PATH/emscripten
+ export EM_CONFIG=$ROOT_DIR/$EM_CONFIG_PATH
 diff --git a/emscripten_toolchain/toolchain.bzl b/emscripten_toolchain/toolchain.bzl
-index 80f55f6..c41745e 100644
+index 80f55f6..a1b2c3d 100644
 --- a/emscripten_toolchain/toolchain.bzl
 +++ b/emscripten_toolchain/toolchain.bzl
-@@ -73,6 +73,7 @@
-     emscripten_dir = ctx.attr.emscripten_binaries.label.workspace_root
- 
-     nodejs_path = ctx.file.nodejs_bin.path
-+    python_path = ctx.file.python_bin.path
- 
-     builtin_sysroot = emscripten_dir + "/emscripten/cache/sysroot"
- 
-@@ -1077,6 +1078,10 @@
-                     key = "NODE_JS_PATH",
-                     value = nodejs_path,
-                 ),
-+                env_entry(
-+                    key = "EM_PYTHON3",
-+                    value = python_path,
-+                ),
-             ],
-         ),
-         # Use llvm backend.  Off by default, enabled via --features=llvm_backend
-@@ -1152,6 +1157,7 @@
+@@ -1152,6 +1152,7 @@ emscripten_cc_toolchain_config_rule = rule(
          "em_config": attr.label(mandatory = True, allow_single_file = True),
          "emscripten_binaries": attr.label(mandatory = True, cfg = "exec"),
          "nodejs_bin": attr.label(mandatory = True, allow_single_file = True),
-+        "python_bin": attr.label(mandatory = True, cfg = "exec", allow_single_file = True),
++        "python_bin": attr.label(mandatory = True, cfg = "exec"),
          "script_extension": attr.string(mandatory = True, values = ["sh", "bat"]),
      },
      provides = [CcToolchainConfigInfo],
@@ -161,22 +159,51 @@ index e7bd8ef..fbe86a4 100644
          inputs = ctx.files.cc_target,
          outputs = outputs,
 diff --git a/remote_emscripten_repository.bzl b/remote_emscripten_repository.bzl
-index 819a048..a999e7e 100644
+index 819a048..d4e5f6a 100644
 --- a/remote_emscripten_repository.bzl
 +++ b/remote_emscripten_repository.bzl
-@@ -62,6 +62,7 @@
+@@ -3,6 +3,15 @@ load(":revisions.bzl", "EMSCRIPTEN_TAGS")
+ load(":revisions.bzl", "EMSCRIPTEN_TAGS")
+ load("//emscripten_toolchain:toolchain.bzl", "emscripten_cc_toolchain_config_rule")
+ 
++def _python_exec_files_impl(ctx):
++    return [DefaultInfo(files = ctx.attr.src[DefaultInfo].files)]
++
++_python_exec_files = rule(
++    implementation = _python_exec_files_impl,
++    attrs = {"src": attr.label(cfg = "exec")},
++)
++
++
+ def remote_emscripten_repository(
+     name,
+     bin_extension,
+@@ -55,6 +64,12 @@ def create_toolchains(name, repo_name, exec_compatible_with):
+     repo_linker_files_target = remote_repo + ":linker_files"
+     repo_ar_files_target = remote_repo + ":ar_files"
+ 
++    python_exec_name = "python_exec_files_" + name
++    _python_exec_files(
++        name = python_exec_name,
++        src = "@python_3_12//:files",
++    )
++
+     native.filegroup(
+         name = common_files_name,
+         srcs = [
+@@ -62,6 +77,7 @@ def create_toolchains(name, repo_name, exec_compatible_with):
              "@emsdk//emscripten_toolchain:env.sh",
              "@emsdk//emscripten_toolchain:env.bat",
              "@nodejs//:node_files",
-+            "@python_3_12_host//:python",
++            ":" + python_exec_name,
          ],
      )
  
-@@ -111,6 +112,7 @@
+@@ -111,6 +127,7 @@ def create_toolchains(name, repo_name, exec_compatible_with):
          em_config = "@emscripten_cache//:emscripten_config",
          emscripten_binaries = repo_compiler_files_target,
          nodejs_bin = "@nodejs//:node",
-+        python_bin = "@python_3_12_host//:python",
++        python_bin = "@python_3_12//:files",
          script_extension = select({
              "@bazel_tools//src/conditions:host_windows": "bat",
              "//conditions:default": "sh",
