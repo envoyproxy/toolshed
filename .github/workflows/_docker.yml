@@ -169,3 +169,11 @@ jobs:
           exit 1
         fi
         docker rm -f toolshed-echo-tls-test
+
+    - name: Upload OCI artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: oci-debian-echo-${{ inputs.arch }}
+        path: docker/build/oci-output/*.tar
+        retention-days: 1
+        if-no-files-found: error
