@@ -117,37 +117,28 @@ index 44f3235..3558644 100644
  
 -exec python3 $(dirname $0)/link_wrapper.py "$@"
 +exec "$EM_PYTHON3" $(dirname $0)/link_wrapper.py "$@"
-diff --git a/emscripten_toolchain/toolchain.bzl b/emscripten_toolchain/toolchain.bzl
-index 80f55f6..c41745e 100644
---- a/emscripten_toolchain/toolchain.bzl
-+++ b/emscripten_toolchain/toolchain.bzl
-@@ -73,6 +73,7 @@
-     emscripten_dir = ctx.attr.emscripten_binaries.label.workspace_root
+diff --git a/emscripten_toolchain/env.sh b/emscripten_toolchain/env.sh
+index 0ec2dd5..4d4c16d 100644
+--- a/emscripten_toolchain/env.sh
++++ b/emscripten_toolchain/env.sh
+@@ -1,5 +1,15 @@
+ #!/bin/bash
  
-     nodejs_path = ctx.file.nodejs_bin.path
-+    python_path = ctx.file.python_bin.path
- 
-     builtin_sysroot = emscripten_dir + "/emscripten/cache/sysroot"
- 
-@@ -1077,6 +1078,10 @@
-                     key = "NODE_JS_PATH",
-                     value = nodejs_path,
-                 ),
-+                env_entry(
-+                    key = "EM_PYTHON3",
-+                    value = python_path,
-+                ),
-             ],
-         ),
-         # Use llvm backend.  Off by default, enabled via --features=llvm_backend
-@@ -1152,6 +1157,7 @@
-         "em_config": attr.label(mandatory = True, allow_single_file = True),
-         "emscripten_binaries": attr.label(mandatory = True, cfg = "exec"),
-         "nodejs_bin": attr.label(mandatory = True, allow_single_file = True),
-+        "python_bin": attr.label(mandatory = True, cfg = "exec", allow_single_file = True),
-         "script_extension": attr.string(mandatory = True, values = ["sh", "bat"]),
-     },
-     provides = [CcToolchainConfigInfo],
+ export ROOT_DIR=${EXT_BUILD_ROOT:-$(pwd -P)}
++
++# Find the hermetic rules_python 3.12 interpreter in the exec inputs.
++# The runtime tree lands under external/<repo> where <repo> matches *python*3_12*.
++# This glob is robust to the ++/~~ Bazel canonical separator and platform suffix.
++for python_dir in "$ROOT_DIR"/external/*python*3_12*/bin "$ROOT_DIR"/external/*python*3_12*; do
++    if [ -x "$python_dir/python3" ]; then
++        export PATH="$python_dir:$PATH"
++        export EM_PYTHON3="$python_dir/python3"
++        break
++    fi
++done
++
+ export EMSCRIPTEN=$ROOT_DIR/$EM_BIN_PATH/emscripten
+ export EM_CONFIG=$ROOT_DIR/$EM_CONFIG_PATH
 diff --git a/emscripten_toolchain/wasm_cc_binary.bzl b/emscripten_toolchain/wasm_cc_binary.bzl
 index e7bd8ef..fbe86a4 100644
 --- a/emscripten_toolchain/wasm_cc_binary.bzl
@@ -168,15 +159,15 @@ index 819a048..a999e7e 100644
              "@emsdk//emscripten_toolchain:env.sh",
              "@emsdk//emscripten_toolchain:env.bat",
              "@nodejs//:node_files",
-+            "@python_3_12_host//:python",
++            "@python_3_12//:files",
          ],
      )
  
-@@ -111,6 +112,7 @@
+@@ -111,5 +112,4 @@
          em_config = "@emscripten_cache//:emscripten_config",
          emscripten_binaries = repo_compiler_files_target,
          nodejs_bin = "@nodejs//:node",
-+        python_bin = "@python_3_12_host//:python",
+-        python_bin = "@python_3_12_host//:python",
          script_extension = select({
              "@bazel_tools//src/conditions:host_windows": "bat",
              "//conditions:default": "sh",
