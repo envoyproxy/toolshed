@@ -3,7 +3,8 @@
     "integrity": "sha256-tWCh2ieg06s3RSfpx9+k/mSTiHKZlFvidioFGM41Vw4=",
     "strip_prefix": "proxy-wasm-cpp-sdk-e5256b0c5463ea9961965ad5de3e379e00486640",
     "patches": {
-        "proxy-wasm-cpp-sdk.patch": "sha256-HX2I0ovtuofK8WmRwhIv2BoyHqTuc7WE+LzJHpKH8JU="
+        "proxy-wasm-cpp-sdk.patch": "sha256-78UJLxD2/qghN9289dnFBBhc29t/7Ld34Y6Z8vQr7bU=",
+        "proxy_wasm_cpp_sdk-protobuf-v35.patch": "sha256-CbcQCznuF2QsLa839N0Vwlhft7bwhAnvyPGxaLb1OQI="
     },
     "patch_strip": 1
 }
