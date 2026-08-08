@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/emscripten-core/emsdk/archive/c0bb220cb6e6f4e0fabb6f6db9efd53390ef5e56.tar.gz",
+    "integrity": "sha256-lnZeVTN9lX6RgiFcpy9mbYx/q9wNHZ+pgjQ0OIIIQQE=",
+    "strip_prefix": "emsdk-c0bb220cb6e6f4e0fabb6f6db9efd53390ef5e56/bazel",
+    "patches": {
+        "emsdk_bzlmod.patch": "sha256-rluEHNx6seSwnf0pd5nGCdvp6Ai9NK9x/copM4ApnV4="
+    },
+    "patch_strip": 1
+}
