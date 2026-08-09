@@ -1,8 +1,0 @@
-{
-    "url": "https://github.com/envoyproxy/examples/archive/v0.2.4.tar.gz",
-    "integrity": "sha256-VfHS49UpyOyDKjcXB1F2ov8svsV0FsrSppmaf7kRZiE=",
-    "strip_prefix": "examples-0.2.4",
-    "overlay": {
-        "bazel/extensions.bzl": "sha256-4i8cslr7VWQWEgInLuwbEkmhcftsU4KOYDiTZe52ei0="
-    }
-}
