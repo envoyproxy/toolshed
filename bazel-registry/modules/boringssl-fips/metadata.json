@@ -11,7 +11,8 @@
         "googlesource:boringssl"
     ],
     "versions": [
-        "0.20250107.0.envoy"
+        "0.20250107.0.envoy",
+        "0.20260413.0.envoy"
     ],
     "yanked_versions": {}
 }

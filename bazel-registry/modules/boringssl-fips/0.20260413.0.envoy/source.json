@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/google/boringssl/releases/download/0.20260413.0/boringssl-0.20260413.0.tar.gz",
+    "integrity": "sha256-NWD33T8I4WufhNh3pb4h7GIHFWR4MAlXGvX8xvrXNNI=",
+    "strip_prefix": "boringssl-0.20260413.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-ejOm52AktWgzkFJHYa9zGCuxx0LU5+GBKx8n86kTivA="
+    },
+    "patch_strip": 1
+}
