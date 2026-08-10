@@ -6,7 +6,6 @@
     "patches": {
         "allow_nonroot.patch": "sha256-UsaKxle4Mz5hR2K3JLdXVjBgLTGo8+73Q8zylbgsDVk=",
         "x_compile.patch": "sha256-4lFBcAsu83OuPGjQTdMjn2qQLPpZgq5LpXoPOVDndOA=",
-        "redacted_dates_compiler_files.patch": "sha256-Gh1MJ0GbGtte0SmbtiSN+exoGUKGJq8YRCHMMS10mI8=",
-        "redacted_dates_abspath.patch": "sha256-Wv8opde0Zq7XoIv1KGEn+0dPKa2o+GbOe7eBUptQips="
+        "redacted_dates_abspath.patch": "sha256-37MDMKZFG45rvmd6i+mlhMhCd2GQtJ3UIqLzu2iFqd4="
     }
 }
