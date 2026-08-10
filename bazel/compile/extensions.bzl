@@ -6,6 +6,30 @@ load(":llvm_minimal.bzl", "llvm_toolchain_alias", "setup_llvm_minimal", "setup_l
 load(":llvm_prebuilt.bzl", "llvm_prebuilt")
 load(":sanitizer_libs.bzl", "setup_sanitizer_libs")
 
+def _single_setup_tag(module_ctx, ext_name, repos, attrs):
+    """Return one setup tag from across all modules, or None.
+
+    Multiple modules in the graph (e.g. a repo and its docs sub-module) may
+    each call setup() with identical configuration. Because the generated
+    repository names are fixed and global, identical setups are safe to
+    collapse into one. Only genuinely conflicting configuration is an error.
+    """
+    chosen = None
+    for mod in module_ctx.modules:
+        for tag in mod.tags.setup:
+            if chosen == None:
+                chosen = tag
+            else:
+                for attr_name in attrs:
+                    if getattr(tag, attr_name) != getattr(chosen, attr_name):
+                        fail(
+                            ("Conflicting setup() calls found for %s. " +
+                             "Repository names are fixed to %s, so all modules " +
+                             "must request identical configuration " +
+                             "(differing attribute: %s).") % (ext_name, repos, attr_name),
+                        )
+    return chosen
+
 def _sanitizer_libs_impl(module_ctx):
     """Implementation of the sanitizer_libs module extension.
 
@@ -13,16 +37,14 @@ def _sanitizer_libs_impl(module_ctx):
     the same setup_sanitizer_libs() function used in WORKSPACE.
     """
 
-    # Collect all setup tags from all modules
-    # Only use the first tag found (sanitizer repos have fixed names)
-    setup_tag = None
-    for mod in module_ctx.modules:
-        for tag in mod.tags.setup:
-            if setup_tag == None:
-                setup_tag = tag
-            else:
-                # Fail if multiple tags are found
-                fail("Multiple setup() calls found for sanitizer_extension. Only one configuration is allowed since repository names are fixed to @msan_libs and @tsan_libs.")
+    # Collect all setup tags from all modules; multiple identical tags are
+    # collapsed into one — only conflicting configurations are rejected.
+    setup_tag = _single_setup_tag(
+        module_ctx,
+        "sanitizer_extension",
+        "@msan_libs, @tsan_libs",
+        ["msan_version", "msan_sha256", "tsan_version", "tsan_sha256"],
+    )
 
     # Call setup_sanitizer_libs once with the configuration
     if setup_tag:
@@ -67,15 +89,14 @@ def _libcxx_libs_ext_impl(module_ctx):
     in MODULE.bazel using the same setup_libcxx_libs() function used in WORKSPACE.
     """
 
-    # Collect all setup tags from all modules
-    # Only use the first tag found (libcxx_libs repos have fixed names)
-    setup_tag = None
-    for mod in module_ctx.modules:
-        for tag in mod.tags.setup:
-            if setup_tag == None:
-                setup_tag = tag
-            else:
-                fail("Multiple setup() calls found for libcxx_libs_extension. Only one configuration is allowed since repository names are fixed to @libcxx_libs_aarch64 and @libcxx_libs_x86_64.")
+    # Collect all setup tags from all modules; multiple identical tags are
+    # collapsed into one — only conflicting configurations are rejected.
+    setup_tag = _single_setup_tag(
+        module_ctx,
+        "libcxx_libs_extension",
+        "@libcxx_libs_aarch64, @libcxx_libs_x86_64",
+        ["aarch64_version", "aarch64_sha256", "x86_64_version", "x86_64_sha256"],
+    )
 
     # Call setup_libcxx_libs once with the configuration
     if setup_tag:
@@ -138,13 +159,14 @@ libcxx_extension = module_extension(
 
 def _llvm_minimal_ext_impl(module_ctx):
     """Set up llvm_minimal_* repos for consumers."""
-    setup_tag = None
-    for mod in module_ctx.modules:
-        for tag in mod.tags.setup:
-            if setup_tag == None:
-                setup_tag = tag
-            else:
-                fail("Multiple setup() calls found for llvm_minimal_extension. Only one configuration is allowed since repository names are fixed to @llvm_minimal_linux_x64, @llvm_minimal_linux_arm64, and @llvm_minimal_macos_arm64.")
+    # Collect all setup tags from all modules; multiple identical tags are
+    # collapsed into one — only conflicting configurations are rejected.
+    setup_tag = _single_setup_tag(
+        module_ctx,
+        "llvm_minimal_extension",
+        "@llvm_minimal_linux_x64, @llvm_minimal_linux_arm64, @llvm_minimal_macos_arm64",
+        ["linux_x64_sha256", "linux_arm64_sha256", "macos_arm64_sha256"],
+    )
 
     if setup_tag:
         setup_llvm_minimal(
