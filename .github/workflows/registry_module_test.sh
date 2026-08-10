@@ -41,10 +41,10 @@ else
     CANONICAL_NAME="${MODULE}"
 fi
 
-# Strip the ".envoy" suffix from the version for the bazel_dep declaration
-BAZEL_VERSION="${MODULE_VERSION%.envoy}"
-
-echo "Testing ${CANONICAL_NAME}@${BAZEL_VERSION} from registry ${REGISTRY_ROOT}" >&2
+# The registry stores the module under the full ".envoy" directory name and
+# metadata.json lists that exact string as the version — so the bazel_dep
+# version must match MODULE_VERSION verbatim (do NOT strip ".envoy").
+echo "Testing ${CANONICAL_NAME}@${MODULE_VERSION} from registry ${REGISTRY_ROOT}" >&2
 
 # ── Create a throwaway consumer workspace ────────────────────────────────────
 CONSUMER_DIR=$(mktemp -d)
@@ -52,7 +52,7 @@ trap 'rm -rf "${CONSUMER_DIR}"' EXIT
 
 cat > "${CONSUMER_DIR}/MODULE.bazel" <<EOF
 module(name = "registry_smoke_test", version = "0.0.0")
-bazel_dep(name = "${CANONICAL_NAME}", version = "${BAZEL_VERSION}")
+bazel_dep(name = "${CANONICAL_NAME}", version = "${MODULE_VERSION}")
 EOF
 
 cat > "${CONSUMER_DIR}/BUILD.bazel" <<'EOF'
@@ -78,4 +78,4 @@ bazel mod deps
 echo "Running: bazel fetch @@${CANONICAL_NAME}//..." >&2
 bazel fetch "@@${CANONICAL_NAME}//..."
 
-echo "✓ ${CANONICAL_NAME}@${BAZEL_VERSION} – patches/overlays applied successfully" >&2
+echo "✓ ${CANONICAL_NAME}@${MODULE_VERSION} – patches/overlays applied successfully" >&2
