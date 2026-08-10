@@ -50,9 +50,13 @@ echo "Testing ${CANONICAL_NAME}@${MODULE_VERSION} from registry ${REGISTRY_ROOT}
 CONSUMER_DIR=$(mktemp -d)
 trap 'rm -rf "${CONSUMER_DIR}"' EXIT
 
+# We give the module under test a fixed apparent repo name ("mod_under_test")
+# via bazel_dep(..., repo_name = ...) so we can reference it directly with a
+# single-@ apparent label, without needing to know the version-mangled
+# canonical (@@) repo name that bzlmod generates.
 cat > "${CONSUMER_DIR}/MODULE.bazel" <<EOF
 module(name = "registry_smoke_test", version = "0.0.0")
-bazel_dep(name = "${CANONICAL_NAME}", version = "${MODULE_VERSION}")
+bazel_dep(name = "${CANONICAL_NAME}", version = "${MODULE_VERSION}", repo_name = "mod_under_test")
 EOF
 
 cat > "${CONSUMER_DIR}/BUILD.bazel" <<'EOF'
@@ -72,10 +76,11 @@ echo "Running: bazel mod deps" >&2
 cd "${CONSUMER_DIR}"
 bazel mod deps
 
-# `bazel mod deps` already triggers repository fetching in Bazel 7+; run
-# `bazel fetch` as an explicit belt-and-suspenders step to materialise the
-# external repository (which applies patches/overlays).
-echo "Running: bazel fetch @@${CANONICAL_NAME}//..." >&2
-bazel fetch "@@${CANONICAL_NAME}//..."
+# `bazel mod deps` resolves the module graph but does not necessarily fetch the
+# repository (which is what applies patches/overlays). Force the fetch via the
+# apparent repo name we assigned above so we don't depend on the mangled
+# canonical (@@) name.
+echo "Running: bazel fetch @mod_under_test//..." >&2
+bazel fetch "@mod_under_test//..."
 
 echo "✓ ${CANONICAL_NAME}@${MODULE_VERSION} – patches/overlays applied successfully" >&2
