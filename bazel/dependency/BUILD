@@ -3,6 +3,7 @@ load("//dependency:macros.bzl", "updater")
 exports_files([
     "bazel-update.sh",
     "macros.bzl",
+    "reachability.bzl",
 ])
 
 updater(
