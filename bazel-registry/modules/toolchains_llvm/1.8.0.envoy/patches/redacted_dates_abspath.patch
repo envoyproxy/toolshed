@@ -1,0 +1,58 @@
+--- a/toolchain/cc_wrapper.sh.tpl	2026-08-10 10:22:02.934869167 +0000
++++ b/toolchain/cc_wrapper.sh.tpl	2026-08-10 10:22:15.114221653 +0000
+@@ -85,6 +85,15 @@
+   toolchain_path_prefix="$(dirname_shim "$(dirname_shim "${script_dir}")")/${toolchain_path_prefix#external/}"
+ fi
+ 
++# Compute the absolute exec-root so exec-root-relative paths (e.g. -imacros
++# flags injected by toolchains_llvm's unfiltered_compile_flags) resolve
++# correctly when the action's cwd is not the exec-root (e.g. rules_rust
++# CargoBuildScriptRun, which runs in the build-script's runfiles tree).
++exec_root_abs=""
++if [[ ${toolchain_path_prefix} != /* ]] && [[ "${script_dir}" == "/"* ]]; then
++  exec_root_abs="$(dirname_shim "$(dirname_shim "$(dirname_shim "${script_dir}")")")"
++fi
++
+ if [[ ! -f ${toolchain_path_prefix}bin/clang ]]; then
+   echo >&2 "ERROR: could not find clang; PWD=\"${PWD}\"; PATH=\"${PATH}\"; toolchain_path_prefix=${toolchain_path_prefix}."
+   exit 5
+@@ -111,6 +120,10 @@
+     parts=(${opt/=/ }) # Split flag name and value into array.
+     # shellcheck disable=SC2312
+     printf "%s" "${parts[0]}=$(dirname_shim "$(dirname_shim "$(dirname_shim "${script_dir}")")")/${parts[1]}"
++  elif [[ ${opt} =~ ^external/[^/]+/redacted_dates\.h$ ]] && [[ -n "${exec_root_abs}" ]]; then
++    # Rewrite the exec-root-relative -imacros path to an absolute path so it
++    # resolves correctly when the action runs with a non-execroot cwd.
++    printf "%s" "${exec_root_abs}/${opt}"
+   else
+     printf "%s" "${opt}"
+   fi
+--- a/toolchain/osx_cc_wrapper.sh.tpl	2026-08-10 10:22:02.936869225 +0000
++++ b/toolchain/osx_cc_wrapper.sh.tpl	2026-08-10 10:22:24.812498071 +0000
+@@ -122,6 +122,15 @@
+   toolchain_path_prefix_abs="${toolchain_path_prefix}"
+ fi
+ 
++# Compute the absolute exec-root so exec-root-relative paths (e.g. -imacros
++# flags injected by toolchains_llvm's unfiltered_compile_flags) resolve
++# correctly when the action's cwd is not the exec-root (e.g. rules_rust
++# CargoBuildScriptRun, which runs in the build-script's runfiles tree).
++exec_root_abs=""
++if [[ ${toolchain_path_prefix} != /* ]] && [[ "${script_dir}" == "/"* ]]; then
++  exec_root_abs="$(dirname_shim "$(dirname_shim "$(dirname_shim "${script_dir}")")")"
++fi
++
+ if [[ ! -f ${toolchain_path_prefix}bin/clang ]]; then
+   echo >&2 "ERROR: could not find clang; PWD=\"${PWD}\"; PATH=\"${PATH}\"; toolchain_path_prefix=${toolchain_path_prefix}."
+   exit 5
+@@ -139,6 +148,10 @@
+     parts=(${opt/=/ }) # Split flag name and value into array.
+     # shellcheck disable=SC2312
+     printf "%s" "${parts[0]}=$(dirname_shim "$(dirname_shim "$(dirname_shim "${script_dir}")")")/${parts[1]}"
++  elif [[ ${opt} =~ ^external/[^/]+/redacted_dates\.h$ ]] && [[ -n "${exec_root_abs}" ]]; then
++    # Rewrite the exec-root-relative -imacros path to an absolute path so it
++    # resolves correctly when the action runs with a non-execroot cwd.
++    printf "%s" "${exec_root_abs}/${opt}"
+   else
+     printf "%s" "${opt}"
+   fi
