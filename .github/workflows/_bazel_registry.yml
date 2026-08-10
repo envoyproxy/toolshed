@@ -184,3 +184,19 @@ jobs:
             else
               .
             end
+    - name: Install Bazel
+      run: |
+        # Install the latest stable Bazel release via the official installer.
+        BAZEL_VERSION=$(curl -fsSL https://api.github.com/repos/bazelbuild/bazel/releases/latest \
+          | jq -r '.tag_name')
+        curl -fsSL "https://github.com/bazelbuild/bazel/releases/download/${BAZEL_VERSION}/bazel-${BAZEL_VERSION}-installer-linux-x86_64.sh" \
+          -o /tmp/bazel-installer.sh
+        chmod +x /tmp/bazel-installer.sh
+        /tmp/bazel-installer.sh --user
+        echo "${HOME}/bin" >> "${GITHUB_PATH}"
+    - name: Bazel module test (patch/overlay apply check)
+      env:
+        MODULE: ${{ inputs.module }}
+        MODULE_VERSION: ${{ matrix.version }}
+        MODULES_ROOT: ${{ inputs.modules-root }}
+      run: $GITHUB_WORKSPACE/.github/workflows/registry_module_test.sh

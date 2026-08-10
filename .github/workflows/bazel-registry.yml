@@ -30,6 +30,7 @@ jobs:
           - .github/workflows/bazel-registry.yml
           - .github/workflows/_bazel_registry.yml
           - .github/workflows/registry_integrity.sh
+          - .github/workflows/registry_module_test.sh
     - name: Find modules
       uses: envoyproxy/toolshed/actions/bson@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
       id: modules

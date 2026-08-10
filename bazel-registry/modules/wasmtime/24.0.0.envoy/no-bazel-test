@@ -1,0 +1,1 @@
+no-bazel-test: skip expensive wasmtime fetch
