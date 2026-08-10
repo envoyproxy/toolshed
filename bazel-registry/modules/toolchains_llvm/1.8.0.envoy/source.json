@@ -5,6 +5,7 @@
     "patch_strip": 1,
     "patches": {
         "allow_nonroot.patch": "sha256-UsaKxle4Mz5hR2K3JLdXVjBgLTGo8+73Q8zylbgsDVk=",
-        "x_compile.patch": "sha256-4lFBcAsu83OuPGjQTdMjn2qQLPpZgq5LpXoPOVDndOA="
+        "x_compile.patch": "sha256-4lFBcAsu83OuPGjQTdMjn2qQLPpZgq5LpXoPOVDndOA=",
+        "redacted_dates_compiler_files.patch": "sha256-Gh1MJ0GbGtte0SmbtiSN+exoGUKGJq8YRCHMMS10mI8="
     }
 }
