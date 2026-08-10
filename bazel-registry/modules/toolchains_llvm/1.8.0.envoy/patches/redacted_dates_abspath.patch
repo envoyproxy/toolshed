@@ -1,0 +1,30 @@
+--- a/toolchain/cc_wrapper.sh.tpl
++++ b/toolchain/cc_wrapper.sh.tpl
+@@ -85,6 +85,14 @@
+   toolchain_path_prefix="$(dirname_shim "$(dirname_shim "${script_dir}")")/${toolchain_path_prefix#external/}"
+ fi
+ 
++# Absolute exec-root so that exec-root-relative toolchain paths (e.g.
++# -imacros, -resource-dir, -B) resolve correctly when the action cwd is not
++# the exec root (e.g. rules_rust CargoBuildScriptRun).
++exec_root_abs=""
++if [[ "${script_dir}" == /* ]]; then
++  exec_root_abs="$(dirname_shim "$(dirname_shim "$(dirname_shim "${script_dir}")")")"
++fi
++
+ if [[ ! -f ${toolchain_path_prefix}bin/clang ]]; then
+   echo >&2 "ERROR: could not find clang; PWD=\"${PWD}\"; PATH=\"${PATH}\"; toolchain_path_prefix=${toolchain_path_prefix}."
+   exit 5
+@@ -111,6 +119,12 @@
+     parts=(${opt/=/ }) # Split flag name and value into array.
+     # shellcheck disable=SC2312
+     printf "%s" "${parts[0]}=$(dirname_shim "$(dirname_shim "$(dirname_shim "${script_dir}")")")/${parts[1]}"
++  elif [[ ${opt} == external/* ]] && [[ -n "${exec_root_abs}" ]] && [[ -e "${exec_root_abs}/${opt}" ]]; then
++    # Standalone bare exec-root-relative path token (e.g. -resource-dir, -imacros value).
++    printf "%s" "${exec_root_abs}/${opt}"
++  elif [[ ${opt} == -Bexternal/* ]] && [[ -n "${exec_root_abs}" ]] && [[ -e "${exec_root_abs}/${opt#-B}" ]]; then
++    # Attached -B flag with bare exec-root-relative path (e.g. -Bexternal/.../bin/).
++    printf "%s" "-B${exec_root_abs}/${opt#-B}"
+   else
+     printf "%s" "${opt}"
+   fi
