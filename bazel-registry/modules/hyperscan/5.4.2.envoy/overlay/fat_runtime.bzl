@@ -153,14 +153,15 @@ def _hs_rename_symbols_impl(ctx):
     if CcInfo in ctx.attr.archive:
         for linker_input in ctx.attr.archive[CcInfo].linking_context.linker_inputs.to_list():
             for lib in linker_input.libraries:
-                if lib.static_library:
-                    input_archive = lib.static_library
+                archive = lib.static_library or lib.pic_static_library
+                if archive:
+                    input_archive = archive
                     break
             if input_archive:
                 break
 
     if not input_archive:
-        fail("Could not find static library in archive attribute")
+        fail("Could not find static library (static_library or pic_static_library) in archive attribute")
 
     output_archive = ctx.actions.declare_file(ctx.label.name + ".a")
     keep_syms = ctx.actions.declare_file(ctx.label.name + "_keep.syms")
