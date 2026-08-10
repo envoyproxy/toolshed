@@ -14,3 +14,4 @@ tasks:
     build_targets:
     - "@prometheus-metrics-model//:client_model"
     - "@prometheus-metrics-model//:client_model_cc_proto"
+    - "@prometheus-metrics-model//:client_model_go_proto"
