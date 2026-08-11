@@ -3,7 +3,9 @@
 
 #include "event2-config_common.h"
 
-#if defined(__linux__)
+#if defined(__ANDROID__)
+#include "event2-config_android.h"
+#elif defined(__linux__)
 #include "event2-config_linux.h"
 #elif defined(__APPLE__)
 #include "event2-config_apple.h"

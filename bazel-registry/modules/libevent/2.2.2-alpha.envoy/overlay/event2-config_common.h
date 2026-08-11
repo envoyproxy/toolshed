@@ -8,15 +8,15 @@
 #define EVENT2_CONFIG_COMMON_H_INCLUDED_
 
 /* Numeric representation of the version */
-#define EVENT__NUMERIC_VERSION 0x02010c00
-#define EVENT__PACKAGE_VERSION "2.1.12"
+#define EVENT__NUMERIC_VERSION 0x02020200
+#define EVENT__PACKAGE_VERSION "2.2.2"
 
 #define EVENT__VERSION_MAJOR 2
-#define EVENT__VERSION_MINOR 1
-#define EVENT__VERSION_PATCH 12
+#define EVENT__VERSION_MINOR 2
+#define EVENT__VERSION_PATCH 2
 
 /* Version number of package */
-#define EVENT__VERSION "2.1.12-stable"
+#define EVENT__VERSION "2.2.2-alpha"
 
 /* Name of package */
 #define EVENT__PACKAGE "libevent"

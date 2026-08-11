@@ -8,6 +8,7 @@ cc_library(
     name = "compat",
     hdrs = [
         "sys/queue.h",
+        "sys/tree.h",
     ],
     includes = ["."],
 )

@@ -55,9 +55,11 @@ cc_library(
         "epolltable-internal.h",
         "evbuffer-internal.h",
         "evconfig-private.h",
+        "evconfig-private_android.h",
         "evconfig-private_apple.h",
         "evconfig-private_linux.h",
         "event-internal.h",
+        "event2-config_android.h",
         "event2-config_apple.h",
         "event2-config_common.h",
         "event2-config_linux.h",
@@ -76,6 +78,7 @@ cc_library(
         "strlcpy-internal.h",
         "time-internal.h",
         "util-internal.h",
+        "wepoll.h",
     ],
     visibility = [":__subpackages__"],
 )
@@ -115,7 +118,6 @@ cc_library(
         "devpoll.c",
         "epoll.c",
         "event.c",
-        "event_tagging.c",
         "evmap.c",
         "evport.c",
         "evthread.c",
@@ -128,6 +130,7 @@ cc_library(
         "poll.c",
         "select.c",
         "signal.c",
+        "signalfd.c",
         "strlcpy.c",
         "watch.c",
     ] + select({
@@ -136,6 +139,7 @@ cc_library(
             "bufferevent_async.c",
             "event_iocp.c",
             "evthread_win32.c",
+            "wepoll.c",
             "win32select.c",
         ],
         "//conditions:default": [],
@@ -171,8 +175,10 @@ cc_library(
 cc_library(
     name = "event_extra_private_headers",
     hdrs = [
+        "evdns-internal.h",
         "evrpc-internal.h",
         "http-internal.h",
+        "sha1.h",
     ],
     visibility = [":__subpackages__"],
 )
@@ -188,6 +194,7 @@ EVENT_EXTRA_PUBLIC_HEADERS = [
     "include/event2/rpc.h",
     "include/event2/rpc_compat.h",
     "include/event2/rpc_struct.h",
+    "include/event2/ws.h",
     "include/evhttp.h",
     "include/evrpc.h",
 ]
@@ -196,8 +203,11 @@ cc_library(
     name = "event_extra",
     srcs = [
         "evdns.c",
+        "event_tagging.c",
         "evrpc.c",
         "http.c",
+        "sha1.c",
+        "ws.c",
     ],
     hdrs = EVENT_EXTRA_PUBLIC_HEADERS,
     includes = ["include"],
@@ -213,12 +223,8 @@ cc_library(
         ":event_core",
         ":event_core_private_headers",
         ":event_extra_private_headers",
-    ] + select({
-        "@platforms//os:windows": [
-            "//compat",
-        ],
-        "//conditions:default": [],
-    }),
+        "//compat",
+    ],
 )
 
 cc_library(
@@ -238,7 +244,9 @@ cc_library(
 cc_library(
     name = "event_openssl_private_headers",
     hdrs = [
+        "mbedtls-compat.h",
         "openssl-compat.h",
+        "ssl-compat.h",
     ],
     tags = [
         "requires_openssl",
@@ -256,6 +264,7 @@ cc_library(
     name = "event_openssl",
     srcs = [
         "bufferevent_openssl.c",
+        "bufferevent_ssl.c",
     ],
     includes = ["include"],
     tags = [

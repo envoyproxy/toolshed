@@ -1,6 +1,6 @@
 module(
     name = "libevent",
-    version = "release-2.2.2-alpha.envoy",
+    version = "2.2.2-alpha.envoy",
     compatibility_level = 1,
     bazel_compatibility = [">=7.2.1"],
 )
