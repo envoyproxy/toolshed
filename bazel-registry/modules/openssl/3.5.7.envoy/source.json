@@ -1,0 +1,9 @@
+{
+    "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.7/openssl-3.5.7.tar.gz",
+    "integrity": "sha256-qMDSilKcpID582z1eS4s0hmEVSo8jkqhGiSqMa6smOg=",
+    "strip_prefix": "openssl-3.5.7",
+    "overlay": {
+        "BUILD.bazel": "sha256-9QY2nnjW7WdphtUYwMfr9rVX/SmmzZIEfhJ44yYLEvs="
+    },
+    "patch_strip": 1
+}
