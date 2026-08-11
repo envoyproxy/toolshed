@@ -1,0 +1,17 @@
+{
+    "homepage": "https://www.openssl.org/",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:openssl/openssl"
+    ],
+    "versions": [
+        "3.5.7.envoy"
+    ],
+    "yanked_versions": {}
+}
