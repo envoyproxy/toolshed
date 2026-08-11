@@ -1,0 +1,25 @@
+matrix:
+  platform:
+  - debian11
+  - debian10
+  - fedora39
+  - ubuntu2004
+  - ubuntu2204
+  - ubuntu2404
+  bazel:
+  - 8.x
+  - 7.x
+tasks:
+  verify_targets:
+    name: Verify build targets
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_targets:
+    - '@boringssl-source//:test_data'
+    - '@boringssl-source//:ssl/ssl_x509.cc'
+    - '@boringssl-source//:crypto/mem.cc'
+    - '@boringssl-source//:crypto/internal.h'
+    - '@boringssl-source//:crypto/bytestring/cbb.cc'
+    - '@boringssl-source//:crypto/bytestring/cbs.cc'
+    - '@boringssl-source//:include/openssl/ssl.h'
+    - '@boringssl-source//:include/openssl/pki/certificate.h'
