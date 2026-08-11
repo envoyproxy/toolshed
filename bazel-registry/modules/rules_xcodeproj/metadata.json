@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/buildbuddy-io/rules_xcodeproj",
+    "maintainers": [],
+    "repository": [
+        "github:buildbuddy-io/rules_xcodeproj"
+    ],
+    "versions": [
+        "1.2.0.envoy"
+    ],
+    "yanked_versions": {}
+}
