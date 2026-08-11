@@ -1,0 +1,26 @@
+licenses(["notice"])  # Apache 2
+
+# This module exists ONLY to expose BoringSSL source files to Envoy's
+# compat/openssl (boringssl-source) layer, which copies and rewrites individual
+# headers and sources.
+#
+# It deliberately defines NO cc_library targets. Do not link against this.
+# For the actual crypto/ssl libraries use the BCR `boringssl` module.
+#
+# NOTE: this archive MUST stay in lockstep with the BCR boringssl version
+# that Envoy builds //:crypto and //:ssl from, or the rewritten sources will be
+# compiled against mismatched headers.
+exports_files(glob([
+    "include/**/*",
+    "crypto/**/*",
+    "ssl/**/*",
+]))
+
+filegroup(
+    name = "test_data",
+    srcs = glob([
+        "crypto/x509/test/*.pem",
+        "crypto/pkcs8/test/*.p12",
+    ]),
+    visibility = ["//visibility:public"],
+)
