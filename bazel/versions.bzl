@@ -27,6 +27,8 @@ filegroup(
 
 LLVM_VERSION = "22.1.8"
 
+V8_VERSION = "14.6.202.10"
+
 # Extra distributions for versions not (yet) in toolchains_llvm's version table
 LLVM_DISTRIBUTIONS = {
     "LLVM-22.1.8-Linux-ARM64.tar.xz": "805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34",
