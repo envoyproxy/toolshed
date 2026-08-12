@@ -1,9 +1,0 @@
-{
-    "url": "https://github.com/opencomputeproject/ocp-diag-core/archive/e965ac0ac6db6686169678e2a6c77ede904fa82c.zip",
-    "integrity": "sha256-uDuOp6k3zn9daHBCG+j5pTQ+jC3ivS4mlFKYHWfaFQk=",
-    "strip_prefix": "ocp-diag-core-e965ac0ac6db6686169678e2a6c77ede904fa82c/apis/c++",
-    "overlay": {
-        "BUILD.bazel": "sha256-pwBVkw/1kwB0j3WDH0lL+ar8wMNTejYi4yOrInrvfCQ=",
-        "MODULE.bazel": "sha256-XpkeKcCkowcDHyC8+zeezu/Lkasaynbtb9BvlGIleYc="
-    }
-}

@@ -1,5 +1,0 @@
-module(
-    name = "su-exec",
-    version = "0.3.envoy",
-    compatibility_level = 1,
-)
