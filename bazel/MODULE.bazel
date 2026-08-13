@@ -78,6 +78,10 @@ sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev
 sysroot_ext.setup()
 use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 
+wee8_prebuilt_ext = use_extension("//v8:extensions.bzl", "wee8_prebuilt_extension")
+wee8_prebuilt_ext.setup()
+use_repo(wee8_prebuilt_ext, "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx", "wee8_prebuilt_aarch64")
+
 # Setup sanitizer libraries (MSAN and TSAN) - example for downstream consumers
 # Uncomment to use in your MODULE.bazel:
 # sanitizer_ext = use_extension("@envoy_toolshed//compile:extensions.bzl", "sanitizer_extension")

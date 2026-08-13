@@ -75,10 +75,17 @@ VERSIONS = {
         "arm64": "9961efa497a7637faba50450e10c7ec783d0813a61b974c7b7c83ab86a555a3e",
     },
 
-    # Wee8 prebuilt hashes by architecture
+    # Wee8 prebuilt hashes by architecture and stdlib ABI flavour.
+    # libcxx keeps the legacy unsuffixed artifact name; libstdcxx is suffixed.
     "wee8_sha256": {
-        "x86_64": "9ca7b01b3dc0d366dc9284a983aef16a6603afc0932f0fb75b9f2963aff1854e",
-        "aarch64": "e14308ad3c3f0308a75058d2960cdb790f508ad528fd8e32291af6e6695a72a3",
+        "x86_64": {
+            "libcxx": "9ca7b01b3dc0d366dc9284a983aef16a6603afc0932f0fb75b9f2963aff1854e",
+            "libstdcxx": "",
+        },
+        "aarch64": {
+            "libcxx": "e14308ad3c3f0308a75058d2960cdb790f508ad528fd8e32291af6e6695a72a3",
+            "libstdcxx": "",
+        },
     },
 
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
