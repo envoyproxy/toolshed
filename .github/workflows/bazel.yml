@@ -317,10 +317,10 @@ jobs:
       matrix:
         include:
         - target: //v8:wee8_package_linux_x86_64
-          artifact: v8/v8-wee8-14.6.202.10-linux-x86_64.tar.xz
+          artifact: v8/v8-wee8-*-linux-x86_64.tar.xz
           artifact-name: bazel-wee8-x64-artifacts
         - target: //v8:wee8_package_linux_aarch64
-          artifact: v8/v8-wee8-14.6.202.10-linux-aarch64.tar.xz
+          artifact: v8/v8-wee8-*-linux-aarch64.tar.xz
           artifact-name: bazel-wee8-arm64-artifacts
           platforms: --platforms=@toolchains_llvm//platforms:linux-aarch64
     uses: ./.github/workflows/_bazel.yml

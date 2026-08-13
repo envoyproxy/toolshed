@@ -44,7 +44,6 @@ VERSIONS = {
     "bins_release": BINS_RELEASE,
     "msan_libs_sha256": "19412b5515af9c34ffc9fbda3a434218080b719de532419d61a296bbd2eab058",
     "tsan_libs_sha256": "2d136d0c63021b3280ec4b33a88c8381f2214a849a50ae557d7f5d9e9f9b93d0",
-
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
         "x86_64": "e40f39338ffe561dfa26541557c9e548fc7760db9d99f7b6c5de237b725482aa",
@@ -73,6 +72,12 @@ VERSIONS = {
     "glint_sha256": {
         "amd64": "67c91213b7ae3ebf37a59ccd9272d5b940d7a8c6557f36f3a0481b8fc80a0121",
         "arm64": "9961efa497a7637faba50450e10c7ec783d0813a61b974c7b7c83ab86a555a3e",
+    },
+
+    # Wee8 prebuilt hashes by architecture
+    "wee8_sha256": {
+        "x86_64": "",
+        "aarch64": "",
     },
 
     # Sysroot hashes organized by glibc version, stdlib variant, and architecture
