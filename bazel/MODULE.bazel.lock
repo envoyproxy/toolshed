@@ -512,6 +512,43 @@
         "recordedRepoMappingEntries": []
       }
     },
+    "//v8:extensions.bzl%wee8_prebuilt_extension": {
+      "general": {
+        "bzlTransitiveDigest": "+AzyAEKJ06Mz4t1+YiTvjauljtZ8tS+0I7XrV6PosDc=",
+        "usagesDigest": "G3ksytQP2i8GCDK2aPOHdeCILz9E6+K7AK5dsV7Mi3g=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "wee8_prebuilt_x86_64": {
+            "repoRuleId": "@@//v8:wee8_prebuilt.bzl%wee8_prebuilt",
+            "attributes": {
+              "version": "0.2.6",
+              "sha256": "9ca7b01b3dc0d366dc9284a983aef16a6603afc0932f0fb75b9f2963aff1854e",
+              "arch": "x86_64"
+            }
+          },
+          "wee8_prebuilt_x86_64_libstdcxx": {
+            "repoRuleId": "@@//v8:wee8_prebuilt.bzl%wee8_prebuilt",
+            "attributes": {
+              "version": "0.2.6",
+              "sha256": "",
+              "arch": "x86_64",
+              "stdlib": "libstdcxx"
+            }
+          },
+          "wee8_prebuilt_aarch64": {
+            "repoRuleId": "@@//v8:wee8_prebuilt.bzl%wee8_prebuilt",
+            "attributes": {
+              "version": "0.2.6",
+              "sha256": "e14308ad3c3f0308a75058d2960cdb790f508ad528fd8e32291af6e6695a72a3",
+              "arch": "aarch64"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
     "@@protobuf+//python/dist:system_python.bzl%system_python_extension": {
       "general": {
         "bzlTransitiveDigest": "qh0n9IrXU/xS94wxKQrG1J63zrLkA1Wy2Y3BQxptPcI=",

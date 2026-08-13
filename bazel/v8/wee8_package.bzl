@@ -4,12 +4,34 @@ Provides:
   wee8_fat_archive — rule that creates a fat libwee8.a from @v8//:wee8 and
                      its transitive PIC static deps (excluding abseil/icu).
   wee8_package     — macro that creates per-arch packaging rules producing
-                     v8-wee8-<version>-linux-<arch>.tar.xz.
+                     legacy libcxx tarballs plus stdlib-specific libstdcxx
+                     tarballs.
 """
 
 load("//:versions.bzl", "V8_VERSION")
+load(":wee8_prebuilt.bzl", "WEE8_DEFAULT_STDLIB", "WEE8_STDLIBS", "wee8_archive_filename")
 
 _V8_VERSION = V8_VERSION
+_GCC_TOOLCHAINS = [
+    "//toolchains/gcc:linux_x64_toolchain",
+    "//toolchains/gcc:linux_arm64_toolchain",
+]
+
+def _wee8_transition_impl(settings, attr):
+    use_gcc = attr.stdlib == "libstdcxx"
+    return {
+        "//compile:use_gcc_toolchain": use_gcc,
+        "//command_line_option:extra_toolchains": _GCC_TOOLCHAINS if use_gcc else [],
+    }
+
+_wee8_transition = transition(
+    implementation = _wee8_transition_impl,
+    inputs = [],
+    outputs = [
+        "//compile:use_gcc_toolchain",
+        "//command_line_option:extra_toolchains",
+    ],
+)
 
 # Shell script run as a single Bazel action:
 #   argv[1]       output tarball path
@@ -132,7 +154,7 @@ def _wee8_package_impl(ctx):
     ]
 
     out = ctx.actions.declare_file(
-        "v8-wee8-%s-linux-%s.tar.xz" % (ctx.attr.version, ctx.attr.arch),
+        wee8_archive_filename(ctx.attr.version, ctx.attr.arch, ctx.attr.stdlib),
     )
 
     ctx.actions.run_shell(
@@ -146,7 +168,7 @@ def _wee8_package_impl(ctx):
             [f.path for f in v8_headers]
         ),
         mnemonic = "V8WeeEightPackage",
-        progress_message = "Packaging V8 wee8 prebuilt for linux-%s" % ctx.attr.arch,
+        progress_message = "Packaging V8 wee8 prebuilt for linux-%s (%s)" % (ctx.attr.arch, ctx.attr.stdlib),
         # ar and tar must run on the local executor; the tarball is still
         # remote-cacheable once produced.
         execution_requirements = {"no-remote-exec": "1"},
@@ -160,11 +182,17 @@ _wee8_package = rule(
             mandatory = True,
             providers = [CcInfo],
             doc = "The @v8//:wee8 cc_library target.",
+            cfg = _wee8_transition,
         ),
         "arch": attr.string(
             mandatory = True,
             values = ["x86_64", "aarch64"],
             doc = "Target architecture string embedded in the output filename.",
+        ),
+        "stdlib": attr.string(
+            default = WEE8_DEFAULT_STDLIB,
+            values = WEE8_STDLIBS,
+            doc = "Standard library ABI flavour embedded in the output filename.",
         ),
         "version": attr.string(
             default = _V8_VERSION,
@@ -174,17 +202,23 @@ _wee8_package = rule(
             default = ["abseil-cpp+", "icu+"],
             doc = "Libs whose path contains any of these strings are excluded from the fat archive.",
         ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
     },
     doc = "Packages @v8//:wee8 as a prebuilt static library tarball for the given arch.",
 )
 
 # ── Public macro ────────────────────────────────────────────────────────────
 
-def wee8_package(arch, version = _V8_VERSION):
-    """Creates a packaging rule for the given arch.
+def wee8_package_target_name(arch, stdlib = WEE8_DEFAULT_STDLIB):
+    return "wee8_package_linux_%s_%s" % (arch, stdlib)
 
-    Produces:
-      //v8:wee8_package_linux_<arch>  →  v8/v8-wee8-<version>-linux-<arch>.tar.xz
+def wee8_package(name = None, arch = None, stdlib = WEE8_DEFAULT_STDLIB, version = _V8_VERSION):
+    """Creates a packaging rule for the given arch and stdlib.
+
+    libcxx preserves the historical unsuffixed artifact name for compatibility.
+    libstdcxx uses the explicit -libstdcxx suffix.
 
     Tarball layout:
       lib/libwee8.a        fat static archive (V8 + fast_float/simdutf/highway/fp16)
@@ -192,10 +226,13 @@ def wee8_package(arch, version = _V8_VERSION):
       third_party/         canonical third_party/wasm-api/ paths
       src/                 internal V8 headers exported via CcInfo (e.g. src/wasm/c-api.h)
     """
+    if arch == "aarch64" and stdlib == "libstdcxx":
+        fail("linux-aarch64 libstdcxx wee8 packaging is intentionally unsupported")
     _wee8_package(
-        name = "wee8_package_linux_%s" % arch,
+        name = name or wee8_package_target_name(arch, stdlib),
         wee8 = "@v8//:wee8",
         arch = arch,
+        stdlib = stdlib,
         version = version,
         tags = ["manual"],
     )
