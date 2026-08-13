@@ -39,6 +39,7 @@ LLVM_DISTRIBUTIONS = {
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": LLVM_VERSION,
+    "v8": V8_VERSION,
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": BINS_RELEASE,
