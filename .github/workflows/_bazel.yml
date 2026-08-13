@@ -10,6 +10,10 @@ on:
         description: Bazel action (build or test)
         required: true
         type: string
+      runner:
+        description: GitHub Actions runner label
+        type: string
+        default: ubuntu-24.04
       artifact-name:
         type: string
         default: bazel-artifacts
@@ -52,7 +56,7 @@ on:
 
 jobs:
   bazel:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.runner || 'ubuntu-24.04' }}
     name: Bazel (${{ inputs.action }})
     permissions:
       contents: read
@@ -71,11 +75,6 @@ jobs:
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
     - name: Setup Bazel
       uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
-    - name: Install packages
-      run: |
-        sudo apt-get -qq update
-        sudo apt-get -qq install -y --no-install-recommends \
-            debian-archive-keyring debootstrap qemu-user-static binfmt-support
     - name: Configure repo Bazel settings
       if: vars.TOOLSHED_CI_BAZELRC
       shell: bash
@@ -84,6 +83,18 @@ jobs:
       working-directory: ${{ inputs.bazel-path }}
       env:
         BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
+    - name: Install packages (arm64)
+      if: runner.arch == 'ARM64'
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y --no-install-recommends \
+            debian-archive-keyring debootstrap
+    - name: Install packages (x86_64)
+      if: runner.arch != 'ARM64'
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y --no-install-recommends \
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
     - name: RBE auth check
       id: rbe
       if: inputs.rbe && github.event_name == 'pull_request'
