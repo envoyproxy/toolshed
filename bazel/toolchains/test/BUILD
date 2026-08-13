@@ -5,7 +5,7 @@ provided via the `bazel_dep(name = "protobuf", ...)` dev dependency in
 MODULE.bazel.
 
 Run with bzlmod enabled (the default when this module is built directly):
-    bazel test --enable_bzlmod --noenable_workspace //toolchains/test/...
+    bazel test //toolchains/test/...
 
 WORKSPACE mode: protobuf and its transitive dependencies are not wired into
 the WORKSPACE build of this module; these tests are tagged 'manual' to
