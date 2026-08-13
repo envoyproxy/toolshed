@@ -61,7 +61,7 @@ VERSIONS = {
 
     # Minimal LLVM artifact hashes by platform
     # Keys match the platform suffix in artifact names (Linux-X64, Linux-ARM64, macOS-ARM64).
-    # Empty strings are placeholders; the update-versions workflow fills them after release.
+    # Empty strings are placeholders; the release (bazel/prepare) workflow fills them after release.
     "llvm_minimal_sha256": {
         "Linux-X64": "10db9add822de89b3cf930693de870c38cc118a171ff63f819b525f5deb9a1c8",
         "Linux-ARM64": "14878d7015e4e945dc861ab1e490425abdd9075135ff9470625d602abfdb5229",
