@@ -337,6 +337,59 @@ jobs:
       targets: ${{ matrix.target }}
       upload: true
 
+  wee8-smoke:
+    needs: request
+    if: >-
+      always()
+      && fromJSON(needs.request.outputs.run || 'false')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: read
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Setup Bazel
+      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+    - name: Install packages
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y --no-install-recommends \
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+    - name: Configure repo Bazel settings
+      if: vars.TOOLSHED_CI_BAZELRC
+      shell: bash
+      run: |
+        echo "${BAZELRC_CONTENT}" > repo.bazelrc
+      working-directory: bazel
+      env:
+        BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
+    - name: RBE auth check
+      id: rbe
+      if: github.event_name == 'pull_request'
+      uses: envoyproxy/toolshed/actions/github/container/auth@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
+      with:
+        container: hello-world
+    - name: Wee8 smoke test (linux x86_64)
+      run: >-
+        bazel test
+        -c opt --enable_bzlmod --noenable_workspace --config=ci
+        ${{ (steps.rbe.outputs.authorized == 'true' || github.event_name != 'pull_request') && '--config=rbe --config=bes' || '' }}
+        //v8:wee8_smoke_test
+      working-directory: bazel
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+    - name: Wee8 smoke link check (linux aarch64)
+      run: >-
+        bazel build
+        -c opt --enable_bzlmod --noenable_workspace --config=ci
+        --platforms=@toolchains_llvm//platforms:linux-aarch64
+        ${{ (steps.rbe.outputs.authorized == 'true' || github.event_name != 'pull_request') && '--config=rbe --config=bes' || '' }}
+        //v8:wee8_smoke_link_aarch64
+      working-directory: bazel
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -352,6 +405,7 @@ jobs:
     - package-macos
     - package-llvm
     - package-v8
+    - wee8-smoke
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then

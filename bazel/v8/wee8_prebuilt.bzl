@@ -11,6 +11,7 @@ filegroup(
         [
             "include/**",
             "third_party/**/*.h",
+            "third_party/**/*.hh",
             "src/**/*.h",
         ],
     ),
@@ -30,29 +31,37 @@ cc_library(
         "include",
     ],
     linkstatic = True,
+    # wee8_package excludes abseil/icu archives from libwee8.a; consumers must
+    # link those separately.
+    deps = [
+        "@abseil-cpp//absl/container:btree",
+        "@abseil-cpp//absl/container:flat_hash_map",
+        "@abseil-cpp//absl/container:flat_hash_set",
+        "@abseil-cpp//absl/functional:overload",
+        "@abseil-cpp//absl/synchronization",
+        "@icu//:icu",
+    ],
 )
 """
 
 def _wee8_prebuilt_impl(ctx):
     """Implementation for wee8 prebuilt repository rule."""
     sha256 = ctx.attr.sha256
-    if sha256:
-        ctx.download_and_extract(
-            url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/v8-wee8-{v8_version}-linux-{arch}.tar.xz".format(
-                version = ctx.attr.version,
-                v8_version = V8_VERSION,
-                arch = ctx.attr.arch,
-            ),
-            sha256 = sha256,
+    if not sha256:
+        fail(
+            "Missing wee8 SHA256 for arch '%s'. Set VERSIONS['wee8_sha256']['%s'] in //:versions.bzl " %
+            (ctx.attr.arch, ctx.attr.arch) +
+            "using the bazel/prepare workflow after publishing bins-v%s." % ctx.attr.version,
         )
-    else:
-        # No hash available yet — create a placeholder archive to keep setup non-fatal
-        # until the first release populates versions.bzl.
-        ctx.execute(["mkdir", "-p", "include", "lib", "src", "third_party"])
-        ctx.file(
-            "lib/libwee8.a",
-            "Wee8 prebuilt archive not available yet. Run release (bazel/prepare) workflow after a bins release containing wee8 artifacts.\n",
-        )
+
+    ctx.download_and_extract(
+        url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/v8-wee8-{v8_version}-linux-{arch}.tar.xz".format(
+            version = ctx.attr.version,
+            v8_version = V8_VERSION,
+            arch = ctx.attr.arch,
+        ),
+        sha256 = sha256,
+    )
 
     ctx.file("BUILD.bazel", _WEE8_BUILD)
 
