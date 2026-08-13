@@ -25,6 +25,26 @@ cc_toolchain(
     toolchain_config = ":linux_x64_config",
 )
 
+# Selection is driven by the target platform: target_compatible_with
+# //compile:libstdcxx means gcc is only a candidate for platforms that ask for
+# libstdc++ (ie //platforms:linux_x86_64_libstdcxx and the wee8 transition).
+#
+# Placement is driven by execution platform ORDER, not by an exec constraint.
+# Bazel tie-breaks between two compatible toolchains by taking the first
+# execution platform in --extra_execution_platforms that yields a toolchain, so
+# the gcc platforms are listed first in .bazelrc and gcc claims
+# //platforms/rbe:linux_x64_gcc before clang can.
+#
+# There is deliberately no //compile:gcc_worker here. Requiring it meant gcc
+# matched no exec platform when building without RBE (the only exec platform is
+# @platforms//host, which carries the //compile:worker default of
+# :llvm_worker), and it also stranded host tooling under --config=rbe-gcc.
+# //compile:llvm_worker is still required by the llvm toolchains, which is what
+# prevents clang being scheduled into the gcc container.
+#
+# NB: the cc_toolchain has empty filegroups and invokes /usr/bin/gcc from the
+# exec machine, so it only works where gcc is actually installed - on RBE that
+# is guaranteed by the ordering above rather than by a constraint.
 toolchain(
     name = "linux_x64_toolchain",
     exec_compatible_with = [
@@ -34,8 +54,8 @@ toolchain(
     target_compatible_with = [
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
+        "//compile:libstdcxx",
     ],
-    target_settings = ["//compile:gcc_build"],
     toolchain = ":linux_x64",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
@@ -66,8 +86,8 @@ toolchain(
     target_compatible_with = [
         "@platforms//os:linux",
         "@platforms//cpu:aarch64",
+        "//compile:libstdcxx",
     ],
-    target_settings = ["//compile:gcc_build"],
     toolchain = ":linux_arm64",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
