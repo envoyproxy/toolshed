@@ -1,4 +1,4 @@
-#name: _release
+name: _release
 
 permissions:
   contents: read
@@ -295,15 +295,22 @@ jobs:
                     "sed -i '0,/\"\($platform)\": \"\"/s//\"\($platform)\": \"\($new_sha)\"/' \($versions_file)"
                   end
               else "" end] as $llvm_minimal_updates
-          | [["x86_64", "aarch64"][]
-             | . as $arch
-             | ($shas["v8-wee8-\($current.v8)-linux-\($arch).tar.xz"] // null) as $sha_entry
+          | [["x86_64", "libcxx"], ["x86_64", "libstdcxx"], ["aarch64", "libcxx"], ["aarch64", "libstdcxx"]][]
+             | .[0] as $arch
+             | .[1] as $stdlib
+             | (
+                 "v8-wee8-\($current.v8)-linux-\($arch)"
+                 + (if $stdlib == "libcxx" then "" else "-\($stdlib)" end)
+                 + ".tar.xz"
+               ) as $artifact
+             | ($shas[$artifact] // null) as $sha_entry
              | if $sha_entry then
                 ($sha_entry | split(":") | .[1]) as $new_sha
-                | $current.wee8_sha256[$arch] as $cur
+                | $current.wee8_sha256[$arch][$stdlib] as $cur
+                | ("s/\"\($stdlib)\": \"[a-f0-9]*\"/\"\($stdlib)\": \"\($new_sha)\"/") as $sub
+                | ("/\"\($arch)\": {/,/    },/") as $range
                 | if $cur == $new_sha then ""
-                  else
-                    "sed -i '/\"wee8_sha256\"/,/^    },/{s/\"\($arch)\": \"[a-f0-9]*\"/\"\($arch)\": \"\($new_sha)\"/}' \($versions_file)"
+                  else "sed -i '/\"wee8_sha256\"/,/^    },/{\($range){\($sub)}}' \($versions_file)"
                   end
               else "" end] as $wee8_updates
           | $bins_update + $san_updates + $libcxx_updates + $arch_updates + $macos_updates + $llvm_minimal_updates + $wee8_updates

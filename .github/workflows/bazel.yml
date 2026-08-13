@@ -77,10 +77,13 @@ jobs:
           compile/msan-llvm22.1.8-x86_64.tar.xz
           compile/tsan-llvm22.1.8-x86_64.tar.xz
           sysroot/sysroot-*.tar.xz
+          v8/package/v8-wee8-*.tar.xz
       # Note: macOS sysroot + darwin libcxx are packaged separately
       # in the package-macos job (runs on Linux)
       bazel-args: >-
+        -c opt
         --config=ci
+        --experimental_ui_max_stdouterr_bytes=10485760
         ${{ matrix.mode == 'bzlmod'
             && '--enable_bzlmod --noenable_workspace'
             || '' }}
@@ -88,10 +91,19 @@ jobs:
       bazel-mode: ${{ matrix.mode }}
       create-source: true
       rbe: true
+      # //v8:wee8_packages is tagged `manual` so is not matched by //...
+      #
+      # It is only built under bzlmod: the packaging rules depend on @v8, which
+      # is a bazel_dep and is not defined in WORKSPACE. Making it a WORKSPACE
+      # dep would mean hand-maintaining v8 plus its transitive deps (abseil,
+      # simdutf, highway, fast_float, fp16, icu) and the module's patches, for
+      # a code path that goes away in Bazel 9. Artifacts are only uploaded from
+      # the bzlmod leg anyway.
       targets: >-
         //...
         //sysroot:sysroots
-      upload: ${{ matrix.mode == 'workspace' }}
+        ${{ matrix.mode == 'bzlmod' && '//v8:wee8_packages' || '' }}
+      upload: ${{ matrix.mode == 'bzlmod' }}
     strategy:
       fail-fast: false
       matrix:
@@ -304,39 +316,6 @@ jobs:
       targets: ${{ matrix.target }}
       upload: true
 
-  package-v8:
-    needs: request
-    if: >-
-      always()
-      && fromJSON(needs.request.outputs.run || 'false')
-    permissions:
-      contents: read
-      packages: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        - target: //v8:wee8_package_linux_x86_64
-          artifact: v8/v8-wee8-*-linux-x86_64.tar.xz
-          artifact-name: bazel-wee8-x64-artifacts
-        - target: //v8:wee8_package_linux_aarch64
-          artifact: v8/v8-wee8-*-linux-aarch64.tar.xz
-          artifact-name: bazel-wee8-arm64-artifacts
-          platforms: --platforms=@toolchains_llvm//platforms:linux-aarch64
-    uses: ./.github/workflows/_bazel.yml
-    with:
-      action: build
-      artifact-name: ${{ matrix.artifact-name }}
-      artifacts: ${{ matrix.artifact }}
-      bazel-args: >-
-        -c opt --enable_bzlmod --noenable_workspace --config=ci
-        ${{ matrix.platforms || '' }}
-      bazel-mode: bzlmod
-      bazel-path: bazel
-      rbe: true
-      targets: ${{ matrix.target }}
-      upload: true
-
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -351,7 +330,6 @@ jobs:
     - test-macos
     - package-macos
     - package-llvm
-    - package-v8
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then

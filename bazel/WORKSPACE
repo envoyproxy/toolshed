@@ -6,6 +6,9 @@ load_archives()
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
+load("//v8:wee8_prebuilt.bzl", "setup_wee8_prebuilt")
+setup_wee8_prebuilt()
+
 load("//compile:llvm_minimal.bzl", "llvm_toolchain_alias", "setup_llvm_minimal")
 setup_llvm_minimal()
 llvm_toolchain_alias(
