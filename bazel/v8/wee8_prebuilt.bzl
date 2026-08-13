@@ -51,7 +51,7 @@ def _wee8_prebuilt_impl(ctx):
         ctx.execute(["mkdir", "-p", "include", "lib", "src", "third_party"])
         ctx.file(
             "lib/libwee8.a",
-            "Wee8 prebuilt archive not available yet. Run update-versions workflow after a bins release containing wee8 artifacts.\n",
+            "Wee8 prebuilt archive not available yet. Run release (bazel/prepare) workflow after a bins release containing wee8 artifacts.\n",
         )
 
     ctx.file("BUILD.bazel", _WEE8_BUILD)

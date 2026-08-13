@@ -263,7 +263,7 @@ strips ELF/Mach-O binaries with hermetic LLVM tools, and repacks with hermetic
 ### Publishing
 
 The `.tar.zst` artifacts are uploaded to a `bins-v{version}` GitHub release.
-The `update-versions.yml` workflow then computes their SHA256 hashes and opens
+The `release.yml` workflow (bazel/prepare) then computes their SHA256 hashes and opens
 a PR that updates `bazel/versions.bzl`.
 
 ### Updating prebuilt versions
@@ -273,7 +273,7 @@ a PR that updates `bazel/versions.bzl`.
 2. **Create/publish** a `bins-v{version}` release and upload the three `.tar.zst`
    files alongside the other artifacts.
 
-3. **Run the `update-versions.yml` workflow** (manually via `workflow_dispatch`)
+3. **Run the `release.yml` workflow** (manually via `workflow_dispatch` - bazel release or prepare)
    to compute and PR the new SHA256 hashes into `bazel/versions.bzl` under
    `llvm_minimal_sha256`.
 
