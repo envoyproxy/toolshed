@@ -7,7 +7,8 @@ IMPORTANT: These are non-hermetic builds that:
   - Use debootstrap and chroot
   - Download packages from Debian mirrors
   - Are marked as 'manual' so they don't build by default
-  - Are marked as 'no-cache' and 'no-remote' to prevent caching
+  - Use 'no-remote-exec' to stay local but allow remote cache reads/writes
+  - Are keyed on a daily UTC stamp so they rebuild at most once per day
 
 These targets are intended for specific purposes and take a while to build,
 so they must be explicitly requested.
@@ -17,7 +18,7 @@ load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//:versions.bzl", "VERSIONS")
 load(":macos_sysroot.bzl", "macos_sysroot_extract")
-load(":fs.bzl", "sysroots")
+load(":fs.bzl", "sysroot_daily_stamp", "sysroots")
 
 exports_files([
     "build_sysroot.sh",
@@ -37,6 +38,8 @@ sh_binary(
     srcs = ["build_sysroot.sh"],
     visibility = ["//visibility:public"],
 )
+
+sysroot_daily_stamp()
 
 sysroots(
     arches = ARCHES,
