@@ -20,8 +20,6 @@ RUN --mount=type=tmpfs,target=/var/cache/apt \
 set -e
 apt-get update
 apt-get install -y -qq --no-install-recommends $APT_BASE_PKGS
-curl -LO http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.2_amd64.deb
-apt install ./libtinfo5_6.3-2ubuntu0.2_amd64.deb
 EOF
 RUN <<EOF
 set -e
@@ -32,6 +30,12 @@ locale-gen "$LANG"
 update-locale "$LANG"
 groupmod -g "${GROUP_ID:-${USER_ID:-1000}}" -n "${USER_NAME:-ubuntu}" ubuntu
 usermod -g "${GROUP_ID:-${USER_ID:-1000}}" -u "${USER_ID:-1000}" -m -d "/home/${USER_NAME:-ubuntu}" -l "${USER_NAME:-ubuntu}" ubuntu
+# Grant passwordless sudo, matching the GitHub runner's sudo semantics.
+# The entrypoint drops to this user, so anything invoking sudo internally
+# (e.g. the sysroot build's debootstrap/chroot calls) would otherwise
+# prompt for a password and fail with "a terminal is required".
+echo "${USER_NAME:-ubuntu} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USER_NAME:-ubuntu}"
+chmod 0440 "/etc/sudoers.d/${USER_NAME:-ubuntu}"
 EOF
 
 

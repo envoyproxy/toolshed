@@ -4,19 +4,20 @@ x-bazel-build: &bazel_build
   args: &bazel_build_args
     USER_NAME: ${USER_NAME:-ubuntu}
     USER_ID: ${UID:-1000}
+    GROUP_ID: ${GID:-${UID:-1000}}
+
+x-bazel-environment: &bazel_environment
+- DOCKER_COMMAND
+- GITHUB_TOKEN
+- USER_NAME
 
 x-bazel-entrypoint: &bazel_entrypoint
 - "/bin/bash"
 - "-c"
 - |
   set -e
-  # Run the passed command as the target user, defaulting to an interactive
-  # bash shell when no command is given (preserves the existing dev workflow).
-  if [ $# -eq 0 ]; then
-    exec sudo -EHs -u "${USER_NAME:-ubuntu}" bash
-  else
-    exec sudo -EHs -u "${USER_NAME:-ubuntu}" bash -c "$@"
-  fi
+  exec sudo -EHs -u "${USER_NAME:-ubuntu}" \
+    bash -c 'cd /source/bazel && exec ${DOCKER_COMMAND:-bash}'
 - "--"
 
 x-bazel-volumes: &bazel_volumes
@@ -25,7 +26,10 @@ x-bazel-volumes: &bazel_volumes
 
 services:
   bazel:
+    stdin_open: true
+    tty: true
     build: *bazel_build
+    environment: *bazel_environment
     entrypoint: *bazel_entrypoint
     volumes: *bazel_volumes
     working_dir: /source/bazel
@@ -43,16 +47,21 @@ services:
   # debootstrap and chroot but not for binfmt_misc registration (which requires
   # mounting the binfmt_misc filesystem). privileged: true is therefore used here.
   bazel-privileged:
+    stdin_open: true
+    tty: true
     build:
       <<: *bazel_build
       target: extra
       args:
         <<: *bazel_build_args
+        # NOTE: qemu is only here for building sysroot/chroots - its not used for compilation
         EXTRA_APT_PKGS: >-
           debian-archive-keyring
           debootstrap
           qemu-user-static
           binfmt-support
+          xz-utils
+    environment: *bazel_environment
     entrypoint: *bazel_entrypoint
     privileged: true
     volumes: *bazel_volumes
