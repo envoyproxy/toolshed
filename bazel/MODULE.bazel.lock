@@ -402,7 +402,7 @@
     },
     "//compile:extensions.bzl%llvm_minimal_extension": {
       "general": {
-        "bzlTransitiveDigest": "jZK4QIYPYf8XwH+oO8xlaWhNPxJTJmvtLO4g8iNgN60=",
+        "bzlTransitiveDigest": "EvC6fING8uq+hdy3mJg5LqnyQe7x0X33PHp6JcXN2h4=",
         "usagesDigest": "zTRetCqgCTR/JYUTsNeIov/5K+KNmJAxmPtAfB+35B4=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -411,24 +411,24 @@
           "llvm_minimal_linux_x64": {
             "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
             "attributes": {
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.6/llvm-minimal-22.1.8-Linux-X64.tar.zst",
-              "sha256": "10db9add822de89b3cf930693de870c38cc118a171ff63f819b525f5deb9a1c8",
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.7/llvm-minimal-22.1.8-Linux-X64.tar.zst",
+              "sha256": "3055f223cb27740e319412303c8298787b78062839d8809b88b13c4d6bcd82ca",
               "strip_prefix": "llvm-minimal-22.1.8-Linux-X64"
             }
           },
           "llvm_minimal_linux_arm64": {
             "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
             "attributes": {
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.6/llvm-minimal-22.1.8-Linux-ARM64.tar.zst",
-              "sha256": "14878d7015e4e945dc861ab1e490425abdd9075135ff9470625d602abfdb5229",
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.7/llvm-minimal-22.1.8-Linux-ARM64.tar.zst",
+              "sha256": "b00ea67259e613907da30cb5d8290192b54ab656f4759ace6794f3e10de1d0ed",
               "strip_prefix": "llvm-minimal-22.1.8-Linux-ARM64"
             }
           },
           "llvm_minimal_macos_arm64": {
             "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
             "attributes": {
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.6/llvm-minimal-22.1.8-macOS-ARM64.tar.zst",
-              "sha256": "0effb4701a3a9850012a98419a1565e08a1c07beb8ef3d50eb4297cf2f9370be",
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.7/llvm-minimal-22.1.8-macOS-ARM64.tar.zst",
+              "sha256": "04a2ac21e89a42dba532509ee67c246b71ec8a15c6cef0f2d63e349fb120934c",
               "strip_prefix": "llvm-minimal-22.1.8-macOS-ARM64"
             }
           }
@@ -482,7 +482,7 @@
     },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
-        "bzlTransitiveDigest": "Ejsz0xx+mQL9yyGt2Iv6stU3kMiRQ4a76Fyx5V0aNa0=",
+        "bzlTransitiveDigest": "tNISPhpbhhsEwH4tB9s5l5yI4lTF+6Rr3Y6Gw8zprGk=",
         "usagesDigest": "wKAMwdm/oEYUzhed5dKuDJChGeMSDIyTPv9j0p3ta18=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -491,8 +491,8 @@
           "sysroot_linux_amd64": {
             "repoRuleId": "@@//sysroot:sysroot.bzl%sysroot",
             "attributes": {
-              "version": "0.2.6",
-              "sha256": "33077eee9db1838bc456c6b4c65851f2b9ad59c2fc30cd64b32ad301e1d1c386",
+              "version": "0.2.7",
+              "sha256": "fe05fe5200c2854286f5d7c5680fa05d203bf9de247b6df8d4994945743c94ff",
               "arch": "amd64",
               "glibc_version": "2.31",
               "stdcc_version": "13"
@@ -501,8 +501,8 @@
           "sysroot_linux_arm64": {
             "repoRuleId": "@@//sysroot:sysroot.bzl%sysroot",
             "attributes": {
-              "version": "0.2.6",
-              "sha256": "7bb4c2f94b4b56610c98977c669d28d2c363e966bd1749804eca674963355264",
+              "version": "0.2.7",
+              "sha256": "7a2781b72d55a178f57bb637b4c1e11f2703f2c8e6af221fc48c427f044aa839",
               "arch": "arm64",
               "glibc_version": "2.31",
               "stdcc_version": "13"
