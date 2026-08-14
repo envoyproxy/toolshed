@@ -28,7 +28,7 @@ def _single_setup_tag(module_ctx, repos, attrs):
 def _wee8_prebuilt_ext_impl(module_ctx):
     setup_tag = _single_setup_tag(
         module_ctx,
-        "@wee8_prebuilt_x86_64, @wee8_prebuilt_x86_64_libstdcxx, @wee8_prebuilt_aarch64, @wee8_prebuilt_aarch64_libstdcxx",
+        "@wee8_prebuilt_x86_64, @wee8_prebuilt_x86_64_libstdcxx, @wee8_prebuilt_aarch64",
         [
             "x86_64_version",
             "x86_64_sha256",
@@ -36,8 +36,6 @@ def _wee8_prebuilt_ext_impl(module_ctx):
             "x86_64_libstdcxx_sha256",
             "aarch64_version",
             "aarch64_sha256",
-            "aarch64_libstdcxx_version",
-            "aarch64_libstdcxx_sha256",
         ],
     )
 
@@ -49,8 +47,6 @@ def _wee8_prebuilt_ext_impl(module_ctx):
             x86_64_libstdcxx_sha256 = setup_tag.x86_64_libstdcxx_sha256,
             aarch64_version = setup_tag.aarch64_version,
             aarch64_sha256 = setup_tag.aarch64_sha256,
-            aarch64_libstdcxx_version = setup_tag.aarch64_libstdcxx_version,
-            aarch64_libstdcxx_sha256 = setup_tag.aarch64_libstdcxx_sha256,
         )
     else:
         setup_wee8_prebuilt()
@@ -74,12 +70,6 @@ _setup = tag_class(
         ),
         "aarch64_sha256": attr.string(
             doc = "SHA256 of the aarch64 libcxx wee8 archive",
-        ),
-        "aarch64_libstdcxx_version": attr.string(
-            doc = "Version of the aarch64 libstdcxx wee8 release to use",
-        ),
-        "aarch64_libstdcxx_sha256": attr.string(
-            doc = "SHA256 of the aarch64 libstdcxx wee8 archive",
         ),
     },
 )
