@@ -84,26 +84,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - name: workspace
-          action: build
-          artifact_name: bazel-artifacts
-          artifacts: ''
-          bazel_args: >-
-            -c opt
-            --config=ci
-            --experimental_ui_max_stdouterr_bytes=10485760
-            --noenable_bzlmod --enable_workspace
-          bazel_mode: workspace
-          create_source: false
-          privileged: true
-          rbe: true
-          rbe_bes: true
-          rbe_config: rbe
-          runner: ubuntu-24.04
-          targets: >-
-            //...
-            //sysroot:sysroots
-          upload: false
         - name: bzlmod
           action: build
           artifact_name: bazel-artifacts
