@@ -1,5 +1,25 @@
 """Macro for creating sysroot build genrules."""
 
+def sysroot_daily_stamp(name = "sysroot_daily_stamp"):
+    """Create a genrule that outputs today's UTC date, used to key sysroot cache entries.
+
+    The output changes once per day (UTC), so sysroot targets built on the same day
+    hit the remote cache, while a new day invalidates them and triggers a fresh build.
+    The stamp is consumed only by sysroot genrules, so it does not perturb the action
+    keys of any other targets.
+
+    Args:
+        name: Name of the genrule target (default: "sysroot_daily_stamp")
+    """
+    native.genrule(
+        name = name,
+        srcs = [],
+        outs = [name + ".txt"],
+        cmd = "date -u +%F > $@",
+        tags = ["manual", "no-cache", "no-remote"],
+        local = 1,
+    )
+
 def sysrootfs(
         name,
         arch,
@@ -8,10 +28,9 @@ def sysrootfs(
         variant = "base",
         ppa_toolchain = None,
         stdcc_version = "13",
+        stamp = ":sysroot_daily_stamp",
         tags = [
             "manual",
-            "no-cache",
-            "no-remote",
         ],
         extra_tags = [],
         visibility = ["//visibility:public"],
@@ -26,6 +45,8 @@ def sysrootfs(
         variant: Sysroot variant ("base" or "libstdcxx")
         ppa_toolchain: Ubuntu PPA toolchain version (required for libstdcxx variant)
         stdcc_version: libstdc++ version (default: "13")
+        stamp: Label of a daily-stamp target whose content changes once per UTC day.
+               Pass None to disable daily cache expiry.
     """
 
     # Construct output filename
@@ -57,7 +78,7 @@ def sysrootfs(
 
     native.genrule(
         name = name,
-        srcs = [":build_sysroot.sh"],
+        srcs = [":build_sysroot.sh"] + ([stamp] if stamp else []),
         outs = [output_file],
         cmd = """
         set -e
@@ -69,9 +90,9 @@ def sysrootfs(
         # Requires sudo, can't run in sandbox
         tags = [
             "no-sandbox",
+            "no-remote-exec",
         ] + tags + extra_tags,
         visibility = visibility,
-        local = 1,
     )
 
 def sysroots(arches, glibc, stdcc):
