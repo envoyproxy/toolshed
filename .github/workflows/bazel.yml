@@ -73,14 +73,13 @@ jobs:
       action: build
       artifacts: |
           compile/libcxx-llvm22.1.8-aarch64.tar.xz
+          compile/libcxx-llvm22.1.8-darwin-aarch64.tar.xz
           compile/libcxx-llvm22.1.8-x86_64.tar.xz
           compile/llvm-minimal-*.tar.zst
           compile/msan-llvm22.1.8-x86_64.tar.xz
           compile/tsan-llvm22.1.8-x86_64.tar.xz
           sysroot/sysroot-*.tar.xz
           v8/package/v8-wee8-*.tar.xz
-      # Note: macOS sysroot + darwin libcxx are packaged separately
-      # in the package-macos job (runs on Linux)
       bazel-args: >-
         -c opt
         --config=ci
@@ -102,9 +101,7 @@ jobs:
       targets: >-
         //...
         //sysroot:sysroots
-        ${{ matrix.mode == 'bzlmod'
-            && '//v8:wee8_packages //compile:llvm_minimal_packages'
-            || '' }}
+        ${{ matrix.mode == 'bzlmod' && '//v8:wee8_packages //:macos_packages //compile:llvm_minimal_packages' || '' }}
       upload: ${{ matrix.mode == 'bzlmod' }}
     strategy:
       fail-fast: false
@@ -120,8 +117,7 @@ jobs:
     # with no cross-compiler emits host-arch objects under a target-arch name.
     # Both produce a green build and a plausible-looking tarball.
     #
-    # Only wee8 is covered so far; libcxx/msan/tsan/sysroot should get their
-    # own scripts in .github/verify/artifacts/ and be added below.
+    # Wee8, darwin libcxx, and macOS sysroot are verified below.
     runs-on: ubuntu-24.04
     needs:
     - request
@@ -140,6 +136,10 @@ jobs:
         path: artifacts
     - name: Verify wee8 artifacts
       run: bash .github/verify/artifacts/wee8.sh artifacts
+    - name: Verify darwin libcxx artifact
+      run: bash .github/verify/artifacts/libcxx.sh artifacts
+    - name: Verify macOS sysroot artifact
+      run: bash .github/verify/artifacts/sysroot-macos.sh artifacts
 
   test-gcc:
     permissions:
@@ -217,98 +217,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ github.token }}
 
-  package-macos:
-    # Intentionally Linux-hosted: downloads the Apple SDK and LLVM macOS release
-    # and repackages them on Linux — no mac runner needed.
-    runs-on: ubuntu-24.04
-    needs: request
-    if: >-
-      always()
-      && fromJSON(needs.request.outputs.run || 'false')
-    env:
-      LLVM_VERSION: "22.1.8"
-      LLVM_MAJOR: "22"
-      SDK_PKG_URL: >-
-        https://swcdn.apple.com/content/downloads/52/01/082-41241-A_0747ZN8FHV/dectd075r63pppkkzsb75qk61s0lfee22j/CLTools_macOSNMOS_SDK.pkg
-      SDK_PKG_SHA256: "ba3453d62b3d2babf67f3a4a44e8073d6555c85f114856f4390a1f53bd76e24a"
-      PKGUTIL_URL: "https://github.com/cerisier/pkgutil/releases/download/v1.2.0/pkgutil_linux_amd64"
-      PKGUTIL_SHA256: "3bcf79dbec6b7858ca0c1b6db03952ac122501a74073bac186c8080fcfb391fd"
-      SDK_PREFIX: "Payload/Library/Developer/CommandLineTools/SDKs/MacOSX15.5.sdk"
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-    - name: Extract macOS arm64 sysroot
-      run: |
-        set -euo pipefail
-
-        # Download pkgutil (extracts macOS .pkg on Linux)
-        wget "$PKGUTIL_URL" -O pkgutil
-        echo "${PKGUTIL_SHA256}  pkgutil" | sha256sum -c -
-        chmod +x pkgutil
-
-        # Download Apple CLTools SDK package
-        wget --user-agent="Mozilla/5.0" "$SDK_PKG_URL" -O CLTools_macOSNMOS_SDK.pkg
-        echo "${SDK_PKG_SHA256}  CLTools_macOSNMOS_SDK.pkg" | sha256sum -c -
-
-        # Extract only the files we need from the SDK package
-        mkdir -p out/macos_arm64
-        includes=()
-        while IFS=$'\n' read -r line; do
-          includes+=("--include" "${SDK_PREFIX}/${line}")
-        done < bazel/sysroot/manifests/sysroot-macos.txt
-        ./pkgutil "${includes[@]}" --strip-components 6 --expand-full CLTools_macOSNMOS_SDK.pkg out/macos_arm64
-
-        tar -cf sysroot-macos-arm64.tar -C out/ macos_arm64
-        zstd -T0 --long -10 --rm sysroot-macos-arm64.tar
-        # Also create .tar.xz for compatibility with existing toolshed patterns
-        tar -cJf sysroot-macos-arm64.tar.xz -C out/ macos_arm64
-
-        echo "Sysroot size: $(du -sh sysroot-macos-arm64.tar.xz | cut -f1)"
-        sha256sum sysroot-macos-arm64.tar.xz
-    - name: Extract darwin libcxx from LLVM release
-      run: |
-        set -euo pipefail
-
-        # Extract cxx-cross-libs from official LLVM macOS release (no cmake build needed)
-        LLVM_TARBALL="LLVM-${LLVM_VERSION}-macOS-ARM64.tar.xz"
-        LLVM_PREFIX="LLVM-${LLVM_VERSION}-macOS-ARM64"
-
-        wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/${LLVM_TARBALL}" \
-          -O llvm-macos.tar.xz
-
-        # Extract only the files we need
-        tar -xf llvm-macos.tar.xz \
-          "${LLVM_PREFIX}/include/c++/v1/__config_site" \
-          "${LLVM_PREFIX}/lib/libc++.1.0.dylib" \
-          "${LLVM_PREFIX}/lib/libc++.1.dylib" \
-          "${LLVM_PREFIX}/lib/libc++.dylib" \
-          "${LLVM_PREFIX}/lib/libc++abi.1.0.dylib" \
-          "${LLVM_PREFIX}/lib/libc++abi.1.dylib" \
-          "${LLVM_PREFIX}/lib/libc++abi.dylib"
-
-        mkdir -p libcxx-darwin/{include,lib}
-        cp "${LLVM_PREFIX}/include/c++/v1/__config_site" libcxx-darwin/include/
-        cp -a "${LLVM_PREFIX}/lib/libc++"*.dylib libcxx-darwin/lib/
-
-        # Patch install names: @rpath/ -> /usr/lib/ so binaries use system libc++ at runtime.
-        # Use llvm-objcopy from the system (Ubuntu 24.04 has llvm-18 available).
-        sudo apt-get -qq update && sudo apt-get -qq install -y llvm-18
-        llvm-install-name-tool-18 -id /usr/lib/libc++.1.dylib libcxx-darwin/lib/libc++.1.dylib
-        llvm-install-name-tool-18 -id /usr/lib/libc++abi.dylib libcxx-darwin/lib/libc++abi.1.dylib
-
-        tar -cJf "libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz" -C libcxx-darwin .
-
-        echo "Libcxx size: $(du -sh "libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz" | cut -f1)"
-        sha256sum "libcxx-llvm${LLVM_VERSION}-darwin-aarch64.tar.xz"
-    - name: Upload artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-      with:
-        name: bazel-macos-artifacts
-        path: |
-          sysroot-macos-arm64.tar.xz
-          libcxx-llvm*-darwin-aarch64.tar.xz
-        retention-days: 30
-
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -322,7 +230,6 @@ jobs:
     - verify-artifacts
     - test-gcc
     - test-macos
-    - package-macos
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then

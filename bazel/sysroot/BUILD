@@ -13,7 +13,10 @@ These targets are intended for specific purposes and take a while to build,
 so they must be explicitly requested.
 """
 
+load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//:versions.bzl", "VERSIONS")
+load(":macos_sysroot.bzl", "macos_sysroot_extract")
 load(":fs.bzl", "sysroots")
 
 exports_files([
@@ -21,6 +24,7 @@ exports_files([
     "config.yaml",
     "extensions.bzl",
     "fs.bzl",
+    "macos_sysroot.bzl",
     "sysroot.bzl",
 ])
 
@@ -38,4 +42,37 @@ sysroots(
     arches = ARCHES,
     glibc = GLIBC,
     stdcc = STDCC,
+)
+
+macos_sysroot_extract(
+    name = "sysroot_macos_arm64_src",
+    sdk_pkg = "@macos_sdk_pkg//:sdk_pkg",
+    pkgutil = "@pkgutil_linux_amd64//:pkgutil_bin",
+    manifest = "manifests/sysroot-macos.txt",
+    sdk_prefix = VERSIONS["macos_sdk_pkg"]["sdk_prefix"],
+    tags = ["manual"],
+)
+
+mtree_spec(
+    name = "sysroot_macos_arm64_mtree_src",
+    srcs = [":sysroot_macos_arm64_src"],
+    tags = ["manual"],
+)
+
+mtree_mutate(
+    name = "sysroot_macos_arm64_mtree",
+    mtree = ":sysroot_macos_arm64_mtree_src",
+    srcs = [":sysroot_macos_arm64_src"],
+    strip_prefix = "sysroot/sysroot_macos_arm64_src",
+    tags = ["manual"],
+)
+
+tar(
+    name = "sysroot_macos_arm64",
+    compress = "xz",
+    mtree = ":sysroot_macos_arm64_mtree",
+    out = "sysroot-macos-arm64.tar.xz",
+    srcs = [":sysroot_macos_arm64_src"],
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
 )
