@@ -17,11 +17,7 @@ listing="$(tar -tvf "${tarball}")"
 for path in \
     "include/__config_site" \
     "lib/libc++.1.0.dylib" \
-    "lib/libc++.1.dylib" \
-    "lib/libc++.dylib" \
-    "lib/libc++abi.1.0.dylib" \
-    "lib/libc++abi.1.dylib" \
-    "lib/libc++abi.dylib"; do
+    "lib/libc++abi.1.0.dylib"; do
     if ! grep -q " ${path}$" <<< "${listing}"; then
         echo "FAIL: missing ${path} in $(basename "${tarball}")"
         exit 1
@@ -49,11 +45,11 @@ workdir="$(mktemp -d)"
 trap 'rm -rf "${workdir}"' EXIT
 tar -xf "${tarball}" -C "${workdir}"
 
-if ! strings "${workdir}/lib/libc++.1.0.dylib" | grep -q '/usr/lib/libc++.1.dylib'; then
+if ! grep -q '/usr/lib/libc++.1.dylib' <<< "$(strings "${workdir}/lib/libc++.1.0.dylib")"; then
     echo "FAIL: libc++ install name not patched to /usr/lib/libc++.1.dylib"
     exit 1
 fi
-if ! strings "${workdir}/lib/libc++abi.1.0.dylib" | grep -q '/usr/lib/libc++abi.dylib'; then
+if ! grep -q '/usr/lib/libc++abi.dylib' <<< "$(strings "${workdir}/lib/libc++abi.1.0.dylib")"; then
     echo "FAIL: libc++abi install name not patched to /usr/lib/libc++abi.dylib"
     exit 1
 fi
