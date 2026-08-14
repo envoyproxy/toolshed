@@ -31,36 +31,8 @@ jobs:
           - .github/workflows/bazel.yml
           - .github/workflows/_bazel.yml
 
-  test:
-    permissions:
-      contents: read
-      packages: read
-    needs: request
-    if: >-
-      always()
-      && fromJSON(needs.request.outputs.run || 'false')
-    uses: ./.github/workflows/_bazel.yml
-    with:
-      action: test
-      bazel-args: >-
-        --config=ci
-        ${{ matrix.mode == 'workspace'
-            && '--noenable_bzlmod --enable_workspace'
-            || '' }}
-      bazel-mode: ${{ matrix.mode }}
-      bazel-path: bazel
-      rbe: true
-      targets: >-
-        //...
-        //sysroot:sysroots
-    strategy:
-      fail-fast: false
-      matrix:
-        mode:
-        - workspace
-        - bzlmod
-
   build:
+    name: build (${{ matrix.name }})
     permissions:
       contents: read
       packages: read
@@ -70,45 +42,138 @@ jobs:
       && fromJSON(needs.request.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
     with:
-      action: build
-      artifacts: |
-          compile/libcxx-llvm22.1.8-aarch64.tar.xz
-          compile/libcxx-llvm22.1.8-darwin-aarch64.tar.xz
-          compile/libcxx-llvm22.1.8-x86_64.tar.xz
-          compile/llvm-minimal-*.tar.zst
-          compile/msan-llvm22.1.8-x86_64.tar.xz
-          compile/tsan-llvm22.1.8-x86_64.tar.xz
-          sysroot/sysroot-*.tar.xz
-          v8/package/v8-wee8-*.tar.xz
-      bazel-args: >-
-        -c opt
-        --config=ci
-        --experimental_ui_max_stdouterr_bytes=10485760
-        ${{ matrix.mode == 'workspace'
-            && '--noenable_bzlmod --enable_workspace'
-            || '' }}
+      action: ${{ matrix.action }}
+      artifact-name: ${{ matrix.artifact_name }}
+      artifacts: ${{ matrix.artifacts }}
+      bazel-args: ${{ matrix.bazel_args }}
       bazel-path: bazel
-      bazel-mode: ${{ matrix.mode }}
-      create-source: true
-      rbe: true
-      # //v8:wee8_packages and //compile:llvm_minimal_packages are tagged
-      # `manual` so are not matched by //...
-      #
-      # They are only built under bzlmod: the packaging rules depend on
-      # bazel_dep/module-extension repos (@v8 and the llvm_minimal extension),
-      # which are not defined in WORKSPACE. Artifacts are only uploaded from
-      # the bzlmod leg anyway.
-      targets: >-
-        //...
-        //sysroot:sysroots
-        ${{ matrix.mode == 'bzlmod' && '//v8:wee8_packages //:macos_packages //compile:llvm_minimal_packages' || '' }}
-      upload: ${{ matrix.mode == 'bzlmod' }}
+      bazel-mode: ${{ matrix.bazel_mode }}
+      create-source: ${{ matrix.create_source }}
+      rbe: ${{ matrix.rbe }}
+      rbe-bes: ${{ matrix.rbe_bes }}
+      rbe-config: ${{ matrix.rbe_config }}
+      runner: ${{ matrix.runner }}
+      targets: ${{ matrix.targets }}
+      upload: ${{ matrix.upload }}
     strategy:
       fail-fast: false
       matrix:
-        mode:
-        - workspace
-        - bzlmod
+        include:
+        - name: workspace
+          action: build
+          artifact_name: bazel-artifacts
+          artifacts: ''
+          bazel_args: >-
+            -c opt
+            --config=ci
+            --experimental_ui_max_stdouterr_bytes=10485760
+            --noenable_bzlmod --enable_workspace
+          bazel_mode: workspace
+          create_source: false
+          rbe: true
+          rbe_bes: true
+          rbe_config: rbe
+          runner: ubuntu-24.04
+          targets: >-
+            //...
+            //sysroot:sysroots
+          upload: false
+        - name: bzlmod
+          action: build
+          artifact_name: bazel-artifacts
+          artifacts: |
+            compile/libcxx-llvm22.1.8-aarch64.tar.xz
+            compile/libcxx-llvm22.1.8-darwin-aarch64.tar.xz
+            compile/libcxx-llvm22.1.8-x86_64.tar.xz
+            compile/llvm-minimal-*.tar.zst
+            compile/msan-llvm22.1.8-x86_64.tar.xz
+            compile/tsan-llvm22.1.8-x86_64.tar.xz
+            sysroot/sysroot-*.tar.xz
+            v8/package/v8-wee8-*.tar.xz
+          bazel_args: >-
+            -c opt
+            --config=ci
+            --experimental_ui_max_stdouterr_bytes=10485760
+          bazel_mode: bzlmod
+          create_source: true
+          rbe: true
+          rbe_bes: true
+          rbe_config: rbe
+          runner: ubuntu-24.04
+          # //v8:wee8_packages and //compile:llvm_minimal_packages are tagged
+          # `manual` so are not matched by //...
+          #
+          # They are only built under bzlmod: the packaging rules depend on
+          # bazel_dep/module-extension repos (@v8 and the llvm_minimal extension),
+          # which are not defined in WORKSPACE. Artifacts are only uploaded from
+          # the bzlmod leg anyway.
+          targets: >-
+            //...
+            //sysroot:sysroots
+            //v8:wee8_packages //:macos_packages //compile:llvm_minimal_packages
+          upload: true
+        - name: workspace-gcc
+          action: build
+          artifact_name: bazel-artifacts
+          artifacts: ''
+          bazel_args: >-
+            --config=ci
+            --config=gcc
+            --noenable_bzlmod --enable_workspace
+          bazel_mode: workspace-gcc
+          create_source: false
+          rbe: true
+          rbe_bes: true
+          rbe_config: rbe-gcc
+          runner: ubuntu-24.04
+          targets: //...
+          upload: false
+        - name: bzlmod-gcc
+          action: build
+          artifact_name: bazel-artifacts
+          artifacts: ''
+          bazel_args: >-
+            --config=ci
+            --config=gcc
+          bazel_mode: bzlmod-gcc
+          create_source: false
+          rbe: true
+          rbe_bes: true
+          rbe_config: rbe-gcc
+          runner: ubuntu-24.04
+          targets: //...
+          upload: false
+        - name: workspace-macos
+          action: build
+          artifact_name: bazel-artifacts
+          artifacts: ''
+          bazel_args: >-
+            --config=ci
+            --config=macos
+            --noenable_bzlmod --enable_workspace
+          bazel_mode: workspace-macos
+          create_source: false
+          rbe: true
+          rbe_bes: false
+          rbe_config: rbe-cache-only
+          runner: macos-14
+          targets: //...
+          upload: false
+        - name: bzlmod-macos
+          action: build
+          artifact_name: bazel-artifacts
+          artifacts: ''
+          bazel_args: >-
+            --config=ci
+            --config=macos
+          bazel_mode: bzlmod-macos
+          create_source: false
+          rbe: true
+          rbe_bes: false
+          rbe_config: rbe-cache-only
+          runner: macos-14
+          targets: //...
+          upload: false
 
   verify-artifacts:
     # Asserts that uploaded artifacts actually contain what their filenames
@@ -141,7 +206,8 @@ jobs:
     - name: Verify macOS sysroot artifact
       run: bash .github/verify/artifacts/sysroot-macos.sh artifacts
 
-  test-gcc:
+  test:
+    name: test (${{ matrix.name }})
     permissions:
       contents: read
       packages: read
@@ -151,71 +217,140 @@ jobs:
       && fromJSON(needs.request.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
     with:
-      action: build
-      bazel-args: >-
-        --config=ci
-        --config=gcc
-        ${{ matrix.mode == 'workspace'
-            && '--noenable_bzlmod --enable_workspace'
-            || '' }}
-      bazel-mode: ${{ matrix.mode }}-gcc
+      action: ${{ matrix.action }}
+      bazel-args: ${{ matrix.bazel_args }}
+      bazel-mode: ${{ matrix.bazel_mode }}
       bazel-path: bazel
-      rbe: true
-      rbe-config: rbe-gcc
-      targets: >-
-        //...
+      linux-packages: ${{ matrix.linux_packages }}
+      rbe: ${{ matrix.rbe }}
+      runner: ${{ matrix.runner }}
+      targets: ${{ matrix.targets }}
     strategy:
       fail-fast: false
       matrix:
-        mode:
-        - workspace
-        - bzlmod
-
-  test-macos:
-    permissions:
-      contents: read
-      packages: read
-    runs-on: macos-14
-    needs: request
-    if: >-
-      always()
-      && fromJSON(needs.request.outputs.run || 'false')
-    strategy:
-      fail-fast: false
-      matrix:
-        mode:
-        - workspace
-        - bzlmod
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-    - name: Setup Bazel
-      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
-    - name: RBE auth check
-      id: rbe
-      if: github.event_name == 'pull_request'
-      uses: envoyproxy/toolshed/actions/github/container/auth@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
-      with:
-        container: hello-world
-    - name: Configure repo Bazel settings
-      if: vars.TOOLSHED_CI_BAZELRC
-      shell: bash
-      run: |
-        echo "${BAZELRC_CONTENT}" > repo.bazelrc
-      working-directory: ${{ inputs.bazel-path }}
-      env:
-        BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
-    - name: Bazel targets (build/${{ matrix.mode }}-macos)
-      run: >-
-        exec bazel build
-        --config=ci
-        --config=macos
-        ${{ (steps.rbe.outputs.authorized == 'true' || github.event_name != 'pull_request') && '--config=rbe-cache-only' || '' }}
-        ${{ matrix.mode == 'workspace' && '--noenable_bzlmod --enable_workspace' || '' }}
-        //...
-      working-directory: bazel
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
+        include:
+        - name: workspace
+          action: test
+          bazel_args: >-
+            --config=ci
+            --noenable_bzlmod --enable_workspace
+          bazel_mode: workspace
+          linux_packages: ''
+          rbe: true
+          runner: ubuntu-24.04
+          targets: >-
+            //...
+            //sysroot:sysroots
+        - name: bzlmod
+          action: test
+          bazel_args: --config=ci
+          bazel_mode: bzlmod
+          linux_packages: ''
+          rbe: true
+          runner: ubuntu-24.04
+          targets: >-
+            //...
+            //sysroot:sysroots
+        - name: workspace-x86-to-arm
+          action: test
+          bazel_args: >-
+            --config=ci
+            --noenable_bzlmod --enable_workspace
+            --platforms=@toolchains_llvm//platforms:linux-aarch64
+          bazel_mode: workspace-x86-to-arm
+          linux_packages: ''
+          rbe: false
+          runner: ubuntu-24.04
+          targets: >-
+            //compile/test:cross_compile_aarch64_test
+            //compile/test:cross_compile_aarch64_unwind_test
+        - name: workspace-x86-to-arm-no-unwind
+          action: test
+          bazel_args: >-
+            --config=ci
+            --noenable_bzlmod --enable_workspace
+            --platforms=@toolchains_llvm//platforms:linux-aarch64
+            --@toolchains_llvm//toolchain/config:libunwind=False
+          bazel_mode: workspace-x86-to-arm-no-unwind
+          linux_packages: ''
+          rbe: false
+          runner: ubuntu-24.04
+          targets: //compile/test:cross_compile_aarch64_no_unwind_test
+        - name: workspace-arm-to-x86
+          action: test
+          bazel_args: >-
+            --config=ci
+            --noenable_bzlmod --enable_workspace
+            --platforms=@toolchains_llvm//platforms:linux-x86_64
+          bazel_mode: workspace-arm-to-x86
+          linux_packages: >-
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+          rbe: false
+          runner: ubuntu-24.04-arm
+          targets: >-
+            //compile/test:cross_compile_x86_64_test
+            //compile/test:cross_compile_x86_64_unwind_test
+        - name: workspace-arm-to-x86-no-unwind
+          action: test
+          bazel_args: >-
+            --config=ci
+            --noenable_bzlmod --enable_workspace
+            --platforms=@toolchains_llvm//platforms:linux-x86_64
+            --@toolchains_llvm//toolchain/config:libunwind=False
+          bazel_mode: workspace-arm-to-x86-no-unwind
+          linux_packages: >-
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+          rbe: false
+          runner: ubuntu-24.04-arm
+          targets: //compile/test:cross_compile_x86_64_no_unwind_test
+        - name: bzlmod-x86-to-arm
+          action: test
+          bazel_args: >-
+            --config=ci
+            --platforms=@toolchains_llvm//platforms:linux-aarch64
+          bazel_mode: bzlmod-x86-to-arm
+          linux_packages: ''
+          rbe: false
+          runner: ubuntu-24.04
+          targets: >-
+            //compile/test:cross_compile_aarch64_test
+            //compile/test:cross_compile_aarch64_unwind_test
+        - name: bzlmod-x86-to-arm-no-unwind
+          action: test
+          bazel_args: >-
+            --config=ci
+            --platforms=@toolchains_llvm//platforms:linux-aarch64
+            --@toolchains_llvm//toolchain/config:libunwind=False
+          bazel_mode: bzlmod-x86-to-arm-no-unwind
+          linux_packages: ''
+          rbe: false
+          runner: ubuntu-24.04
+          targets: //compile/test:cross_compile_aarch64_no_unwind_test
+        - name: bzlmod-arm-to-x86
+          action: test
+          bazel_args: >-
+            --config=ci
+            --platforms=@toolchains_llvm//platforms:linux-x86_64
+          bazel_mode: bzlmod-arm-to-x86
+          linux_packages: >-
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+          rbe: false
+          runner: ubuntu-24.04-arm
+          targets: >-
+            //compile/test:cross_compile_x86_64_test
+            //compile/test:cross_compile_x86_64_unwind_test
+        - name: bzlmod-arm-to-x86-no-unwind
+          action: test
+          bazel_args: >-
+            --config=ci
+            --platforms=@toolchains_llvm//platforms:linux-x86_64
+            --@toolchains_llvm//toolchain/config:libunwind=False
+          bazel_mode: bzlmod-arm-to-x86-no-unwind
+          linux_packages: >-
+            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+          rbe: false
+          runner: ubuntu-24.04-arm
+          targets: //compile/test:cross_compile_x86_64_no_unwind_test
 
   status:
     runs-on: ubuntu-24.04
@@ -228,8 +363,6 @@ jobs:
     - test
     - build
     - verify-artifacts
-    - test-gcc
-    - test-macos
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
