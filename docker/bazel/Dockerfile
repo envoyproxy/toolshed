@@ -36,7 +36,7 @@ EOF
 
 
 FROM base AS bazel
-ARG BAZELISK_VERSION=1.10.1
+ARG BAZELISK_VERSION=1.29.0
 RUN <<EOF
 set -e
 curl -fsSL --output \
@@ -47,7 +47,11 @@ EOF
 
 
 FROM bazel AS full
-ARG APT_PKGS
+ARG APT_PKGS="\
+    debian-archive-keyring \
+    debootstrap \
+    qemu-user-static \
+    binfmt-support"
 RUN --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt/lists \
     <<EOF
@@ -97,4 +101,8 @@ EOF
 
 
 
+# The `extra` stage exists as an escape hatch for quickly building a customised
+# image from compose (via EXTRA_APT_PKGS / EXTRA_SETUP). It is intentionally not
+# the default target — `FROM full` below means a plain `docker compose build`
+# produces the `full` image without the extra layer.
 FROM full

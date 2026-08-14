@@ -1,9 +1,18 @@
 services:
   bazel:
-    build:
+    build: &bazel_build
       args:
         USER_NAME: ${USER_NAME:-ubuntu}
         USER_ID: ${UID:-1000}
+        # Bake in the packages needed for sysroot builds; the union of the
+        # arm64 and x86_64 sets is installed on both architectures because
+        # the packages are harmless on arm64 and keeping a single image
+        # simplifies the compose definition.
+        APT_PKGS: >-
+          debian-archive-keyring
+          debootstrap
+          qemu-user-static
+          binfmt-support
       context: .
       dockerfile: bazel/Dockerfile
     entrypoint:
@@ -11,8 +20,41 @@ services:
     - "-c"
     - |
       set -e
+      # Run the passed command as the target user, defaulting to an interactive
+      # bash shell when no command is given (preserves the existing dev workflow).
+      if [ $# -eq 0 ]; then
+        exec sudo -EHs -u "${USER_NAME:-ubuntu}" bash
+      else
+        exec sudo -EHs -u "${USER_NAME:-ubuntu}" bash -c "$@"
+      fi
+    - "--"
+    volumes:
+    - ${SOURCE_DIR:-..}:/source
+    - ${EXTRA_DEV:-/tmp/extra_dev}:/extra_dev
+    working_dir: /source/bazel
 
-      sudo -EHs -u ${USER_NAME:-ubuntu} bash
+  # Privileged variant for workloads that require chroot / debootstrap /
+  # binfmt registration (i.e. the sysroot build legs).
+  # Note: binfmt registration modifies host kernel state and escapes container
+  # isolation by design — this is a known wart.
+  #
+  # cap_add SYS_ADMIN + SYS_CHROOT was tried first; it is sufficient for
+  # debootstrap and chroot but not for binfmt_misc registration (which requires
+  # mounting the binfmt_misc filesystem). privileged: true is therefore used here.
+  bazel-privileged:
+    build: *bazel_build
+    entrypoint:
+    - "/bin/bash"
+    - "-c"
+    - |
+      set -e
+      if [ $# -eq 0 ]; then
+        exec sudo -EHs -u "${USER_NAME:-ubuntu}" bash
+      else
+        exec sudo -EHs -u "${USER_NAME:-ubuntu}" bash -c "$@"
+      fi
+    - "--"
+    privileged: true
     volumes:
     - ${SOURCE_DIR:-..}:/source
     - ${EXTRA_DEV:-/tmp/extra_dev}:/extra_dev
