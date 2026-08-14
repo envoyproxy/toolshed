@@ -10,6 +10,13 @@ on:
         description: Bazel action (build or test)
         required: true
         type: string
+      name:
+        description: >-
+          Unique name for this matrix leg. Used (with `action`) to scope the
+          concurrency group so that legs cancel their own previous runs
+          without cancelling each other.
+        required: true
+        type: string
       runner:
         description: GitHub Actions runner label
         type: string
@@ -52,11 +59,13 @@ on:
         description: Bazel targets
         required: true
         type: string
-      linux-packages:
-        description: Optional package list to install on Linux runners
+      privileged:
+        description: >-
+          Run in the privileged container variant (required for cross-compile
+          jobs that need debootstrap / qemu-user-static / binfmt-support).
         required: false
-        type: string
-        default: ''
+        type: boolean
+        default: false
       upload:
         description: Upload CI artifacts
         type: boolean
@@ -84,7 +93,45 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
     - name: Setup Bazel
-      uses: bazelbuild/setup-bazelisk@b39c379c82683a5f25d34f0d062761f62693e0b2  # v3
+      if: runner.os != 'Linux'
+      uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # v0.19.0
+    - name: Get runner UID/GID
+      if: runner.os == 'Linux'
+      id: runner-ids
+      run: |
+        echo "uid=$(id -u)" >> "${GITHUB_OUTPUT}"
+        echo "gid=$(id -g)" >> "${GITHUB_OUTPUT}"
+    - name: Set up Docker Buildx
+      if: runner.os == 'Linux'
+      uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
+    - name: Build Bazel container image
+      # Note: `docker buildx bake` resolves the compose file's `context: .`
+      # relative to the *invocation* directory, not the compose file (this
+      # differs from `docker compose`, which resolves relative to --file).
+      # Run from `docker/` so the context is `docker/` and the dockerfile
+      # resolves to `docker/bazel/Dockerfile`.
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: docker
+      run: |
+        docker buildx bake \
+          --file docker-compose.yml \
+          --set "*.cache-from=type=gha,scope=bazel-container" \
+          --set "*.cache-to=type=gha,scope=bazel-container,mode=max" \
+          --load \
+          "${BAZEL_SERVICE}"
+      env:
+        UID: ${{ steps.runner-ids.outputs.uid }}
+        GID: ${{ steps.runner-ids.outputs.gid }}
+        USER_NAME: runner
+        SOURCE_DIR: ${{ github.workspace }}
+        BAZEL_SERVICE: ${{ inputs.privileged && 'bazel-privileged' || 'bazel' }}
+    - name: Register binfmt handlers (host-level, cross-compile only)
+      if: runner.os == 'Linux' && inputs.privileged
+      run: |
+        sudo apt-get -qq update
+        sudo apt-get -qq install -y --no-install-recommends \
+            qemu-user-static binfmt-support
     - name: Configure repo Bazel settings
       if: vars.TOOLSHED_CI_BAZELRC
       shell: bash
@@ -93,44 +140,95 @@ jobs:
       working-directory: ${{ inputs.bazel-path }}
       env:
         BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
-    - name: Install packages
-      if: runner.os == 'Linux' && inputs.linux-packages != ''
-      run: |
-        sudo apt-get -qq update
-        sudo apt-get -qq install -y --no-install-recommends \
-            ${{ inputs.linux-packages }}
-    - name: Install packages (arm64)
-      if: runner.os == 'Linux' && inputs.linux-packages == '' && runner.arch == 'ARM64'
-      run: |
-        sudo apt-get -qq update
-        sudo apt-get -qq install -y --no-install-recommends \
-            debian-archive-keyring debootstrap
-    - name: Install packages (x86_64)
-      if: runner.os == 'Linux' && inputs.linux-packages == '' && runner.arch != 'ARM64'
-      run: |
-        sudo apt-get -qq update
-        sudo apt-get -qq install -y --no-install-recommends \
-            debian-archive-keyring debootstrap qemu-user-static binfmt-support
     - name: RBE auth check
       id: rbe
       if: inputs.rbe && github.event_name == 'pull_request'
       uses: envoyproxy/toolshed/actions/github/container/auth@5291901f6f40a2246c78b89698ead70d39a2559b  # actions-v0.4.20
       with:
         container: hello-world
-    - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }})
+    - name: Compute RBE/download flags
+      id: bazel-flags
       shell: bash
-      run: >-
-        exec bazel ${{ inputs.action }}
-        ${{ inputs.bazel-args }}
-        ${{ inputs.rbe
-            && (steps.rbe.outputs.authorized == 'true'
-                || github.event_name != 'pull_request')
-            && format('--config={0}{1}',
-                inputs.rbe-config || 'rbe',
-                inputs.rbe-bes && ' --config=bes' || '') || ''
-        }} ${{ inputs.targets }}
+      run: |
+        rbe_config_flag=""
+        bes_flag=""
+        download_toplevel=""
+        if [[ "${BAZEL_RBE}" == "true" ]]; then
+          if [[ "${RBE_AUTHORIZED}" == "true" || "${EVENT_NAME}" != "pull_request" ]]; then
+            rbe_config_flag="--config=${BAZEL_RBE_CONFIG}"
+            if [[ "${BAZEL_RBE_BES}" == "true" ]]; then
+              bes_flag="--config=bes"
+            fi
+          fi
+        fi
+        if [[ "${BAZEL_UPLOAD}" == "true" && -n "${ARTIFACT_PATTERNS}" ]]; then
+          download_toplevel="--remote_download_toplevel"
+        fi
+        echo "rbe-config-flag=${rbe_config_flag}" >> "${GITHUB_OUTPUT}"
+        echo "bes-flag=${bes_flag}" >> "${GITHUB_OUTPUT}"
+        echo "download-toplevel=${download_toplevel}" >> "${GITHUB_OUTPUT}"
+      env:
+        BAZEL_RBE: ${{ inputs.rbe }}
+        BAZEL_RBE_CONFIG: ${{ inputs.rbe-config || 'rbe' }}
+        BAZEL_RBE_BES: ${{ inputs.rbe-bes }}
+        BAZEL_UPLOAD: ${{ inputs.upload }}
+        ARTIFACT_PATTERNS: ${{ inputs.artifacts }}
+        RBE_AUTHORIZED: ${{ steps.rbe.outputs.authorized }}
+        EVENT_NAME: ${{ github.event_name }}
+    - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }}) [container]
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        exec docker compose \
+          -f docker/docker-compose.yml \
+          run \
+          --rm \
+          --volume /home/runner/.cache:/home/runner/.cache \
+          -e DOCKER_COMMAND \
+          -e BAZEL_ACTION \
+          -e BAZEL_ARGS \
+          -e BAZEL_TARGETS \
+          -e RBE_CONFIG_FLAG \
+          -e BES_FLAG \
+          -e DOWNLOAD_TOPLEVEL \
+          -e ARTIFACT_PATTERNS \
+          -e GITHUB_TOKEN \
+          -e USER_NAME \
+          "${CONTAINER_SERVICE}"
+      env:
+        BAZEL_ACTION: ${{ inputs.action }}
+        BAZEL_ARGS: ${{ inputs.bazel-args }}
+        BAZEL_TARGETS: ${{ inputs.targets }}
+        RBE_CONFIG_FLAG: ${{ steps.bazel-flags.outputs.rbe-config-flag }}
+        BES_FLAG: ${{ steps.bazel-flags.outputs.bes-flag }}
+        DOWNLOAD_TOPLEVEL: ${{ steps.bazel-flags.outputs.download-toplevel }}
+        ARTIFACT_PATTERNS: ${{ inputs.artifacts }}
+        DOCKER_COMMAND: bash /source/.github/scripts/bazel-run.sh
+        GITHUB_TOKEN: ${{ github.token }}
+        UID: ${{ steps.runner-ids.outputs.uid }}
+        GID: ${{ steps.runner-ids.outputs.gid }}
+        USER_NAME: runner
+        SOURCE_DIR: ${{ github.workspace }}
+        CONTAINER_SERVICE: ${{ inputs.privileged && 'bazel-privileged' || 'bazel' }}
+    - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }}) [host]
+      if: runner.os != 'Linux'
+      shell: bash
+      run: |
+        BAZEL_CMD=(bazel "${BAZEL_ACTION}")
+        # shellcheck disable=SC2206
+        [[ -n "${BAZEL_ARGS:-}" ]] && BAZEL_CMD+=(${BAZEL_ARGS})
+        [[ -n "${RBE_CONFIG_FLAG:-}" ]] && BAZEL_CMD+=("${RBE_CONFIG_FLAG}")
+        [[ -n "${BES_FLAG:-}"        ]] && BAZEL_CMD+=("${BES_FLAG}")
+        # shellcheck disable=SC2206
+        BAZEL_CMD+=(${BAZEL_TARGETS})
+        exec "${BAZEL_CMD[@]}"
       working-directory: ${{ inputs.bazel-path }}
       env:
+        BAZEL_ACTION: ${{ inputs.action }}
+        BAZEL_ARGS: ${{ inputs.bazel-args }}
+        BAZEL_TARGETS: ${{ inputs.targets }}
+        RBE_CONFIG_FLAG: ${{ steps.bazel-flags.outputs.rbe-config-flag }}
+        BES_FLAG: ${{ steps.bazel-flags.outputs.bes-flag }}
         GITHUB_TOKEN: ${{ github.token }}
     - name: Create source tarball
       id: source-tarball
@@ -168,7 +266,25 @@ jobs:
         options: -Rr
         filter: |
           select(length > 0)
-          | "${{ inputs.bazel-path }}/bazel-bin/\(.)"
+          | "dist/\(.)"
+    - name: Check artifact paths are non-empty
+      if: inputs.upload && inputs.artifacts
+      shell: bash
+      run: |
+        MISSING=()
+        while IFS= read -r path; do
+          [[ -z "$path" ]] && continue
+          if ! compgen -G "$path" > /dev/null 2>&1; then
+            MISSING+=("$path")
+          fi
+        done <<< "${ARTIFACT_PATH_LIST}"
+        if [[ ${#MISSING[@]} -gt 0 ]]; then
+          echo "ERROR: the following artifact paths matched no files:"
+          printf '  %s\n' "${MISSING[@]}"
+          exit 1
+        fi
+      env:
+        ARTIFACT_PATH_LIST: ${{ steps.artifact-paths.outputs.value }}
     - name: Bazel artifacts
       if: ${{ inputs.upload && (steps.artifact-paths.outputs.value || steps.source-tarball.outputs.tarball) }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1

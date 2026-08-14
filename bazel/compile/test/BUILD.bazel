@@ -29,10 +29,14 @@ sh_test(
     name = "cross_compile_aarch64_test",
     size = "small",
     srcs = ["check_arch.sh"],
-    data = [":hello_world"],
+    data = [
+        ":hello_world",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
     env = {
         "BINARY": "$(rootpath :hello_world)",
-        "EXPECTED_ARCH": "aarch64",
+        "EXPECTED_ARCH": "AArch64",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
     },
     tags = ["manual"],
 )
@@ -44,10 +48,14 @@ sh_test(
     name = "cross_compile_x86_64_test",
     size = "small",
     srcs = ["check_arch.sh"],
-    data = [":hello_world"],
+    data = [
+        ":hello_world",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
     env = {
         "BINARY": "$(rootpath :hello_world)",
-        "EXPECTED_ARCH": "x86-64",
+        "EXPECTED_ARCH": "X86-64",
+        "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
     },
     tags = ["manual"],
 )
