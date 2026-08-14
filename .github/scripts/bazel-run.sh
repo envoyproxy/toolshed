@@ -8,6 +8,7 @@
 #   RBE_CONFIG_FLAG       - "--config=<name>" to append, or empty string
 #   BES_FLAG              - "--config=bes" or empty string
 #   DOWNLOAD_TOPLEVEL     - "--remote_download_toplevel" or empty string
+#   REPOSITORY_CACHE_FLAG - "--repository_cache=<path>" or empty string
 #   ARTIFACT_PATTERNS     - newline-separated glob patterns relative to bazel-bin
 #                           (empty means skip artifact collection)
 set -euo pipefail
@@ -25,6 +26,7 @@ BAZEL_CMD=(bazel "${BAZEL_ACTION}")
 [[ -n "${RBE_CONFIG_FLAG:-}" ]] && BAZEL_CMD+=("${RBE_CONFIG_FLAG}")
 [[ -n "${BES_FLAG:-}"        ]] && BAZEL_CMD+=("${BES_FLAG}")
 [[ -n "${DOWNLOAD_TOPLEVEL:-}" ]] && BAZEL_CMD+=("${DOWNLOAD_TOPLEVEL}")
+[[ -n "${REPOSITORY_CACHE_FLAG:-}" ]] && BAZEL_CMD+=("${REPOSITORY_CACHE_FLAG}")
 
 # Append targets (split on whitespace).
 # shellcheck disable=SC2206
