@@ -36,7 +36,7 @@ EOF
 
 
 FROM base AS bazel
-ARG BAZELISK_VERSION=1.10.1
+ARG BAZELISK_VERSION=1.29.0
 RUN <<EOF
 set -e
 curl -fsSL --output \
@@ -52,8 +52,10 @@ RUN --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt/lists \
     <<EOF
 set -e
-apt-get update
-apt-get install -y -qq --no-install-recommends $APT_PKGS
+if [ -n "$APT_PKGS" ]; then
+    apt-get update
+    apt-get install -y -qq --no-install-recommends $APT_PKGS
+fi
 EOF
 ARG SETUP=:
 COPY --chmod=755 \
@@ -70,6 +72,10 @@ exit $EXIT_CODE
 EOF
 
 
+# The `extra` stage layers additional packages/setup on top of `full`. It is
+# used by the bazel-privileged compose service to install the sysroot build
+# dependencies (debootstrap and friends), and doubles as an escape hatch for
+# quickly building a customised image via EXTRA_APT_PKGS / EXTRA_SETUP.
 FROM full AS extra
 ARG EXTRA_APT_PKGS
 RUN --mount=type=tmpfs,target=/var/cache/apt \
@@ -97,4 +103,6 @@ EOF
 
 
 
+# `extra` is not the default target -- a plain `docker compose build` for the
+# unprivileged `bazel` service produces the `full` image without the extra layer.
 FROM full
