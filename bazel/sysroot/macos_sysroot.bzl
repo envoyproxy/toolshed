@@ -114,6 +114,19 @@ while IFS= read -r line; do
 done < "${manifest}"
 
 "${pkgutil}" "${includes[@]}" --strip-components 6 --expand-full "${sdk_pkg}" "${out_dir}/macos_arm64"
+
+# Remove dangling symlinks. -xtype l matches symlinks whose target does not
+# exist (GNU find semantics; resolves relative targets against the link's own
+# directory, so valid relative links inside the tree are preserved).
+echo "Scanning for dangling symlinks in ${out_dir}/macos_arm64 ..."
+dangling=$(find "${out_dir}/macos_arm64" -xtype l)
+if [[ -n "${dangling}" ]]; then
+  echo "Removing dangling symlinks:"
+  echo "${dangling}"
+  find "${out_dir}/macos_arm64" -xtype l -delete
+else
+  echo "No dangling symlinks found."
+fi
 """,
         mnemonic = "MacosSysrootExtract",
         progress_message = "Extracting macOS sysroot from SDK package",
