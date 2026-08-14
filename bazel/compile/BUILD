@@ -374,6 +374,18 @@ EOF""" % LLVM_MINIMAL_LLVM_REPO_BUILD,
     ]
 ]
 
+filegroup(
+    name = "llvm_minimal_packages",
+    srcs = [
+        ":llvm_minimal_linux_x86_64",
+        ":llvm_minimal_linux_arm64",
+        ":llvm_minimal_macos_arm64",
+    ],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
 [
     sh_test(
         name = "llvm_minimal_%s_manifest_test" % repo_suffix,
