@@ -98,26 +98,31 @@ EXECROOT="$PWD"
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
+n=0
 i=0
 for lib in "$@"; do
     i=$((i+1))
-    subdir="$TMPDIR/$i"
+    subdir="$TMPDIR/lib_${i}"
     mkdir -p "$subdir"
     (cd "$subdir" && "$AR" x "$EXECROOT/$lib")
-done
 
-n=0
-while IFS= read -r obj; do
-    n=$((n+1))
-    cp "$obj" "$TMPDIR/o_${n}.o"
-done < <(find "$TMPDIR" -mindepth 2 -name '*.o' | LC_ALL=C sort)
+    while IFS= read -r obj; do
+        [ -n "$obj" ] || continue
+        if [ ! -f "$subdir/$obj" ]; then
+            echo "ERROR: expected archive member '$obj' from '$lib' not found after extraction" >&2
+            exit 1
+        fi
+        n=$((n+1))
+        cp "$subdir/$obj" "$TMPDIR/o_${n}.o"
+    done < <("$AR" t "$EXECROOT/$lib")
+done
 
 if [ "$n" -eq 0 ]; then
     echo "ERROR: no .o files extracted from: $*" >&2
     exit 1
 fi
 
-"$AR" rcs "$OUT" "$TMPDIR"/o_*.o
+"$AR" Drcs "$OUT" "$TMPDIR"/o_*.o
 """
 
 def _wee8_fat_archive_impl(ctx):
@@ -282,8 +287,13 @@ def wee8_package(name = None, arch = None, stdlib = WEE8_DEFAULT_STDLIB, version
             ":%s_archive" % name,
             ":%s_headers" % name,
         ],
+        compression_level = -1,
         extension = "tar.xz",
+        owner = "0.0",
+        ownername = ".",
         package_file_name = wee8_archive_filename(version, arch, stdlib),
+        portable_mtime = True,
+        stamp = 0,
         tags = ["manual"],
         target_compatible_with = ["@platforms//os:linux"],
     )
