@@ -24,14 +24,19 @@ for src in "$@"; do
     */include/c++/v1/__config_site)
       cp "${src}" "${out_dir}/include/__config_site"
       ;;
-    */lib/libc++.1.0.dylib|*/lib/libc++.1.dylib|*/lib/libc++.dylib|*/lib/libc++abi.1.0.dylib|*/lib/libc++abi.1.dylib|*/lib/libc++abi.dylib)
-      cp -a "${src}" "${out_dir}/lib/"
+    */lib/libc++.1.0.dylib|*/lib/libc++abi.1.0.dylib)
+      cp -L "${src}" "${out_dir}/lib/$(basename "${src}")"
       ;;
   esac
 done
 
-"${install_name_tool}" -id /usr/lib/libc++.1.dylib "${out_dir}/lib/libc++.1.dylib"
-"${install_name_tool}" -id /usr/lib/libc++abi.dylib "${out_dir}/lib/libc++abi.1.dylib"
+"${install_name_tool}" -id /usr/lib/libc++.1.dylib "${out_dir}/lib/libc++.1.0.dylib"
+"${install_name_tool}" -id /usr/lib/libc++abi.dylib "${out_dir}/lib/libc++abi.1.0.dylib"
+
+ln -s libc++.1.0.dylib "${out_dir}/lib/libc++.1.dylib"
+ln -s libc++.1.0.dylib "${out_dir}/lib/libc++.dylib"
+ln -s libc++abi.1.0.dylib "${out_dir}/lib/libc++abi.1.dylib"
+ln -s libc++abi.1.0.dylib "${out_dir}/lib/libc++abi.dylib"
 """,
         arguments = arguments,
         mnemonic = "DarwinLibcxxExtract",
