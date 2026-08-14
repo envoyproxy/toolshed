@@ -243,6 +243,8 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
+        du -sh ${{ steps.repo-cache.outputs.path }}
+        ls -alh ${{ steps.repo-cache.outputs.path }}
         exec docker compose \
           -f docker/docker-compose.yml \
           run \
@@ -276,6 +278,9 @@ jobs:
         USER_NAME: runner
         SOURCE_DIR: ${{ github.workspace }}
         CONTAINER_SERVICE: ${{ inputs.privileged && 'bazel-privileged' || 'bazel' }}
+    - run: |
+        du -sh ${{ steps.repo-cache.outputs.path }}
+        ls -alh ${{ steps.repo-cache.outputs.path }}
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }}) [host]
       if: runner.os != 'Linux'
       shell: bash
@@ -378,6 +383,8 @@ jobs:
         !cancelled()
         && steps.repo-cache-restore-llvm-x86.outputs.cache-hit != 'true'
         && steps.repo-cache-presence.outputs.llvm_x86_present == 'true'
+        && inputs.name == 'bzlmod'
+        && inputs.action == 'build'
       continue-on-error: true
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
@@ -388,6 +395,8 @@ jobs:
         !cancelled()
         && steps.repo-cache-restore-llvm-aarch.outputs.cache-hit != 'true'
         && steps.repo-cache-presence.outputs.llvm_aarch_present == 'true'
+        && inputs.name == 'bzlmod'
+        && inputs.action == 'build'
       continue-on-error: true
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
@@ -398,6 +407,8 @@ jobs:
         !cancelled()
         && steps.repo-cache-restore-llvm-macos.outputs.cache-hit != 'true'
         && steps.repo-cache-presence.outputs.llvm_macos_present == 'true'
+        && inputs.name == 'bzlmod'
+        && inputs.action == 'build'
       continue-on-error: true
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
@@ -408,6 +419,8 @@ jobs:
         !cancelled()
         && steps.repo-cache-restore-v8-source.outputs.cache-hit != 'true'
         && steps.repo-cache-presence.outputs.v8_source_present == 'true'
+        && inputs.name == 'bzlmod'
+        && inputs.action == 'build'
       continue-on-error: true
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
@@ -418,6 +431,8 @@ jobs:
         !cancelled()
         && steps.repo-cache-restore-rest.outputs.cache-hit != 'true'
         && steps.repo-cache-presence.outputs.rest_present == 'true'
+        && inputs.name == 'bzlmod'
+        && inputs.action == 'build'
       continue-on-error: true
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
