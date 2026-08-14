@@ -4,6 +4,7 @@ x-bazel-build: &bazel_build
   args: &bazel_build_args
     USER_NAME: ${USER_NAME:-ubuntu}
     USER_ID: ${UID:-1000}
+    GROUP_ID: ${GID:-${UID:-1000}}
 
 x-bazel-entrypoint: &bazel_entrypoint
 - "/bin/bash"

@@ -221,7 +221,7 @@ jobs:
       bazel-args: ${{ matrix.bazel_args }}
       bazel-mode: ${{ matrix.bazel_mode }}
       bazel-path: bazel
-      linux-packages: ${{ matrix.linux_packages }}
+      privileged: ${{ matrix.privileged }}
       rbe: ${{ matrix.rbe }}
       runner: ${{ matrix.runner }}
       targets: ${{ matrix.targets }}
@@ -235,7 +235,7 @@ jobs:
             --config=ci
             --noenable_bzlmod --enable_workspace
           bazel_mode: workspace
-          linux_packages: ''
+          privileged: false
           rbe: true
           runner: ubuntu-24.04
           targets: >-
@@ -245,7 +245,7 @@ jobs:
           action: test
           bazel_args: --config=ci
           bazel_mode: bzlmod
-          linux_packages: ''
+          privileged: false
           rbe: true
           runner: ubuntu-24.04
           targets: >-
@@ -258,7 +258,7 @@ jobs:
             --noenable_bzlmod --enable_workspace
             --platforms=@toolchains_llvm//platforms:linux-aarch64
           bazel_mode: workspace-x86-to-arm
-          linux_packages: ''
+          privileged: false
           rbe: false
           runner: ubuntu-24.04
           targets: >-
@@ -272,7 +272,7 @@ jobs:
             --platforms=@toolchains_llvm//platforms:linux-aarch64
             --@toolchains_llvm//toolchain/config:libunwind=False
           bazel_mode: workspace-x86-to-arm-no-unwind
-          linux_packages: ''
+          privileged: false
           rbe: false
           runner: ubuntu-24.04
           targets: //compile/test:cross_compile_aarch64_no_unwind_test
@@ -283,8 +283,7 @@ jobs:
             --noenable_bzlmod --enable_workspace
             --platforms=@toolchains_llvm//platforms:linux-x86_64
           bazel_mode: workspace-arm-to-x86
-          linux_packages: >-
-            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+          privileged: true
           rbe: false
           runner: ubuntu-24.04-arm
           targets: >-
@@ -298,8 +297,7 @@ jobs:
             --platforms=@toolchains_llvm//platforms:linux-x86_64
             --@toolchains_llvm//toolchain/config:libunwind=False
           bazel_mode: workspace-arm-to-x86-no-unwind
-          linux_packages: >-
-            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+          privileged: true
           rbe: false
           runner: ubuntu-24.04-arm
           targets: //compile/test:cross_compile_x86_64_no_unwind_test
@@ -309,7 +307,7 @@ jobs:
             --config=ci
             --platforms=@toolchains_llvm//platforms:linux-aarch64
           bazel_mode: bzlmod-x86-to-arm
-          linux_packages: ''
+          privileged: false
           rbe: false
           runner: ubuntu-24.04
           targets: >-
@@ -322,7 +320,7 @@ jobs:
             --platforms=@toolchains_llvm//platforms:linux-aarch64
             --@toolchains_llvm//toolchain/config:libunwind=False
           bazel_mode: bzlmod-x86-to-arm-no-unwind
-          linux_packages: ''
+          privileged: false
           rbe: false
           runner: ubuntu-24.04
           targets: //compile/test:cross_compile_aarch64_no_unwind_test
@@ -332,8 +330,7 @@ jobs:
             --config=ci
             --platforms=@toolchains_llvm//platforms:linux-x86_64
           bazel_mode: bzlmod-arm-to-x86
-          linux_packages: >-
-            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+          privileged: true
           rbe: false
           runner: ubuntu-24.04-arm
           targets: >-
@@ -346,8 +343,7 @@ jobs:
             --platforms=@toolchains_llvm//platforms:linux-x86_64
             --@toolchains_llvm//toolchain/config:libunwind=False
           bazel_mode: bzlmod-arm-to-x86-no-unwind
-          linux_packages: >-
-            debian-archive-keyring debootstrap qemu-user-static binfmt-support
+          privileged: true
           rbe: false
           runner: ubuntu-24.04-arm
           targets: //compile/test:cross_compile_x86_64_no_unwind_test
