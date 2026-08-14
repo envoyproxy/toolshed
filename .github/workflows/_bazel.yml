@@ -122,8 +122,9 @@ jobs:
       run: >-
         exec bazel ${{ inputs.action }}
         ${{ inputs.bazel-args }}
-        ${{ (steps.rbe.outputs.authorized == 'true'
-             || github.event_name != 'pull_request')
+        ${{ inputs.rbe
+            && (steps.rbe.outputs.authorized == 'true'
+                || github.event_name != 'pull_request')
             && format('--config={0}{1}',
                 inputs.rbe-config || 'rbe',
                 inputs.rbe-bes && ' --config=bes' || '') || ''
