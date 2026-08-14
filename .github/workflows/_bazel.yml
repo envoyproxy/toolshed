@@ -92,6 +92,39 @@ jobs:
             chown: "runner:runner"
     - name: Checkout Repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Compute repository cache path
+      # On Linux this must live under /home/runner/.cache: that path is
+      # bind-mounted host-side (see the bind-mounts step above) and passed
+      # through to the Bazel container, so both `actions/cache` (host) and
+      # Bazel (container) see the same directory.
+      id: repo-cache
+      shell: bash
+      run: |
+        if [[ "${RUNNER_OS}" == "Linux" ]]; then
+          repo_cache_path="/home/runner/.cache/bazel-repository-cache"
+        else
+          repo_cache_path="${HOME}/.cache/bazel-repository-cache"
+        fi
+        mkdir -p "${repo_cache_path}"
+        echo "path=${repo_cache_path}" >> "${GITHUB_OUTPUT}"
+    - name: Restore repository cache
+      # The repository cache is content-addressed
+      # (content_addressable/sha256/<hash>/file), so restoring a stale entry
+      # is always safe: Bazel refetches anything missing and never reads a
+      # wrong archive. Keyed per leg (action + name) so each leg persists
+      # only what it actually fetches, with a prefix fallback to warm-start
+      # from older entries.
+      id: repo-cache-restore
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache.outputs.path }}
+        key: >-
+          bazel-repo-cache-${{ inputs.action }}-${{ inputs.name }}-${{
+          hashFiles(format('{0}/MODULE.bazel.lock', inputs.bazel-path),
+          format('{0}/WORKSPACE*', inputs.bazel-path),
+          format('{0}/*.bzl', inputs.bazel-path)) }}
+        restore-keys: |
+          bazel-repo-cache-${{ inputs.action }}-${{ inputs.name }}-
     - name: Setup Bazel
       if: runner.os != 'Linux'
       uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # v0.19.0
@@ -153,6 +186,7 @@ jobs:
         rbe_config_flag=""
         bes_flag=""
         download_toplevel=""
+        repository_cache_flag=""
         if [[ "${BAZEL_RBE}" == "true" ]]; then
           if [[ "${RBE_AUTHORIZED}" == "true" || "${EVENT_NAME}" != "pull_request" ]]; then
             rbe_config_flag="--config=${BAZEL_RBE_CONFIG}"
@@ -164,9 +198,13 @@ jobs:
         if [[ "${BAZEL_UPLOAD}" == "true" && -n "${ARTIFACT_PATTERNS}" ]]; then
           download_toplevel="--remote_download_toplevel"
         fi
+        if [[ -n "${REPO_CACHE_PATH}" ]]; then
+          repository_cache_flag="--repository_cache=${REPO_CACHE_PATH}"
+        fi
         echo "rbe-config-flag=${rbe_config_flag}" >> "${GITHUB_OUTPUT}"
         echo "bes-flag=${bes_flag}" >> "${GITHUB_OUTPUT}"
         echo "download-toplevel=${download_toplevel}" >> "${GITHUB_OUTPUT}"
+        echo "repository-cache-flag=${repository_cache_flag}" >> "${GITHUB_OUTPUT}"
       env:
         BAZEL_RBE: ${{ inputs.rbe }}
         BAZEL_RBE_CONFIG: ${{ inputs.rbe-config || 'rbe' }}
@@ -175,6 +213,7 @@ jobs:
         ARTIFACT_PATTERNS: ${{ inputs.artifacts }}
         RBE_AUTHORIZED: ${{ steps.rbe.outputs.authorized }}
         EVENT_NAME: ${{ github.event_name }}
+        REPO_CACHE_PATH: ${{ steps.repo-cache.outputs.path }}
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }}) [container]
       if: runner.os == 'Linux'
       shell: bash
@@ -191,6 +230,7 @@ jobs:
           -e RBE_CONFIG_FLAG \
           -e BES_FLAG \
           -e DOWNLOAD_TOPLEVEL \
+          -e REPOSITORY_CACHE_FLAG \
           -e ARTIFACT_PATTERNS \
           -e GITHUB_TOKEN \
           -e USER_NAME \
@@ -202,6 +242,7 @@ jobs:
         RBE_CONFIG_FLAG: ${{ steps.bazel-flags.outputs.rbe-config-flag }}
         BES_FLAG: ${{ steps.bazel-flags.outputs.bes-flag }}
         DOWNLOAD_TOPLEVEL: ${{ steps.bazel-flags.outputs.download-toplevel }}
+        REPOSITORY_CACHE_FLAG: ${{ steps.bazel-flags.outputs.repository-cache-flag }}
         ARTIFACT_PATTERNS: ${{ inputs.artifacts }}
         DOCKER_COMMAND: bash /source/.github/scripts/bazel-run.sh
         GITHUB_TOKEN: ${{ github.token }}
@@ -219,6 +260,7 @@ jobs:
         [[ -n "${BAZEL_ARGS:-}" ]] && BAZEL_CMD+=(${BAZEL_ARGS})
         [[ -n "${RBE_CONFIG_FLAG:-}" ]] && BAZEL_CMD+=("${RBE_CONFIG_FLAG}")
         [[ -n "${BES_FLAG:-}"        ]] && BAZEL_CMD+=("${BES_FLAG}")
+        [[ -n "${REPOSITORY_CACHE_FLAG:-}" ]] && BAZEL_CMD+=("${REPOSITORY_CACHE_FLAG}")
         # shellcheck disable=SC2206
         BAZEL_CMD+=(${BAZEL_TARGETS})
         exec "${BAZEL_CMD[@]}"
@@ -229,6 +271,7 @@ jobs:
         BAZEL_TARGETS: ${{ inputs.targets }}
         RBE_CONFIG_FLAG: ${{ steps.bazel-flags.outputs.rbe-config-flag }}
         BES_FLAG: ${{ steps.bazel-flags.outputs.bes-flag }}
+        REPOSITORY_CACHE_FLAG: ${{ steps.bazel-flags.outputs.repository-cache-flag }}
         GITHUB_TOKEN: ${{ github.token }}
     - name: Create source tarball
       id: source-tarball
@@ -293,3 +336,15 @@ jobs:
         path: |
           ${{ steps.artifact-paths.outputs.value }}
         retention-days: 30
+    - name: Save repository cache
+      # Save even when the bazel step failed: any archives fetched before
+      # the failure are still valid (content-addressed) and warm the next
+      # run. Skip when the exact key was restored, since the entry is
+      # immutable and re-saving would be rejected anyway.
+      if: >-
+        !cancelled()
+        && steps.repo-cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache.outputs.path }}
+        key: ${{ steps.repo-cache-restore.outputs.cache-primary-key }}
