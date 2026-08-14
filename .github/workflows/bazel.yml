@@ -28,15 +28,39 @@ jobs:
           - BINS_VERSION.txt
           - bazel/*
           - bazel/**
+          - .github/bazel-repository-cache-manifest.json
+          - .github/scripts/bazel-run.sh
+          - .github/scripts/bazel-repository-cache-manifest.py
           - .github/workflows/bazel.yml
           - .github/workflows/_bazel.yml
+
+  repository-cache-manifest:
+    name: repository-cache-manifest
+    permissions:
+      contents: read
+    needs: request
+    if: >-
+      fromJSON(needs.request.outputs.run || 'false')
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Validate repository cache manifest
+      shell: bash
+      run: |
+        python3 .github/scripts/bazel-repository-cache-manifest.py check \
+          --manifest-path .github/bazel-repository-cache-manifest.json \
+          --module-path bazel/MODULE.bazel \
+          --lock-path bazel/MODULE.bazel.lock
 
   build:
     name: build (${{ matrix.name }})
     permissions:
       contents: read
       packages: read
-    needs: request
+    needs:
+    - request
+    - repository-cache-manifest
     if: >-
       fromJSON(needs.request.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
@@ -217,7 +241,9 @@ jobs:
     permissions:
       contents: read
       packages: read
-    needs: request
+    needs:
+    - request
+    - repository-cache-manifest
     if: >-
       fromJSON(needs.request.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
@@ -362,6 +388,7 @@ jobs:
     name: Bazel
     needs:
     - request
+    - repository-cache-manifest
     - test
     - build
     - verify-artifacts

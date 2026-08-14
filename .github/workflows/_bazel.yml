@@ -92,6 +92,64 @@ jobs:
             chown: "runner:runner"
     - name: Checkout Repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Compute repository cache path
+      id: repo-cache
+      shell: bash
+      run: |
+        if [[ "${RUNNER_OS}" == "Linux" ]]; then
+          repo_cache_path="/home/runner/.cache/bazel-repository-cache"
+        else
+          repo_cache_path="${HOME}/.cache/bazel-repository-cache"
+        fi
+        mkdir -p "${repo_cache_path}/content_addressable/sha256"
+        echo "path=${repo_cache_path}" >> "${GITHUB_OUTPUT}"
+    - name: Repository cache metadata
+      id: repo-cache-manifest
+      shell: bash
+      run: |
+        python3 .github/scripts/bazel-repository-cache-manifest.py github-outputs \
+          --manifest-path .github/bazel-repository-cache-manifest.json \
+          --repo-cache-path "${REPO_CACHE_PATH}" \
+          --output "${GITHUB_OUTPUT}"
+      env:
+        REPO_CACHE_PATH: ${{ steps.repo-cache.outputs.path }}
+    - name: Restore repository cache (llvm-x86)
+      id: repo-cache-restore-llvm-x86
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.llvm_x86_path }}
+        key: >-
+          bazel-repo-cache-blob-${{ steps.repo-cache-manifest.outputs.llvm_x86_sha256 }}
+    - name: Restore repository cache (llvm-aarch)
+      id: repo-cache-restore-llvm-aarch
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.llvm_aarch_path }}
+        key: >-
+          bazel-repo-cache-blob-${{ steps.repo-cache-manifest.outputs.llvm_aarch_sha256 }}
+    - name: Restore repository cache (llvm-macos)
+      id: repo-cache-restore-llvm-macos
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.llvm_macos_path }}
+        key: >-
+          bazel-repo-cache-blob-${{ steps.repo-cache-manifest.outputs.llvm_macos_sha256 }}
+    - name: Restore repository cache (v8-source)
+      id: repo-cache-restore-v8-source
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.v8_source_path }}
+        key: >-
+          bazel-repo-cache-blob-${{ steps.repo-cache-manifest.outputs.v8_source_sha256 }}
+    - name: Restore repository cache (rest)
+      id: repo-cache-restore-rest
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.rest_path }}
+        key: >-
+          bazel-repo-cache-rest-${{ hashFiles(format('{0}/MODULE.bazel.lock', inputs.bazel-path)) }}
+        restore-keys: |
+          bazel-repo-cache-rest-
     - name: Setup Bazel
       if: runner.os != 'Linux'
       uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # v0.19.0
@@ -153,6 +211,7 @@ jobs:
         rbe_config_flag=""
         bes_flag=""
         download_toplevel=""
+        repository_cache_flag=""
         if [[ "${BAZEL_RBE}" == "true" ]]; then
           if [[ "${RBE_AUTHORIZED}" == "true" || "${EVENT_NAME}" != "pull_request" ]]; then
             rbe_config_flag="--config=${BAZEL_RBE_CONFIG}"
@@ -164,9 +223,13 @@ jobs:
         if [[ "${BAZEL_UPLOAD}" == "true" && -n "${ARTIFACT_PATTERNS}" ]]; then
           download_toplevel="--remote_download_toplevel"
         fi
+        if [[ -n "${REPO_CACHE_PATH}" ]]; then
+          repository_cache_flag="--repository_cache=${REPO_CACHE_PATH}"
+        fi
         echo "rbe-config-flag=${rbe_config_flag}" >> "${GITHUB_OUTPUT}"
         echo "bes-flag=${bes_flag}" >> "${GITHUB_OUTPUT}"
         echo "download-toplevel=${download_toplevel}" >> "${GITHUB_OUTPUT}"
+        echo "repository-cache-flag=${repository_cache_flag}" >> "${GITHUB_OUTPUT}"
       env:
         BAZEL_RBE: ${{ inputs.rbe }}
         BAZEL_RBE_CONFIG: ${{ inputs.rbe-config || 'rbe' }}
@@ -175,6 +238,7 @@ jobs:
         ARTIFACT_PATTERNS: ${{ inputs.artifacts }}
         RBE_AUTHORIZED: ${{ steps.rbe.outputs.authorized }}
         EVENT_NAME: ${{ github.event_name }}
+        REPO_CACHE_PATH: ${{ steps.repo-cache.outputs.path }}
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }}) [container]
       if: runner.os == 'Linux'
       shell: bash
@@ -191,6 +255,7 @@ jobs:
           -e RBE_CONFIG_FLAG \
           -e BES_FLAG \
           -e DOWNLOAD_TOPLEVEL \
+          -e REPOSITORY_CACHE_FLAG \
           -e ARTIFACT_PATTERNS \
           -e GITHUB_TOKEN \
           -e USER_NAME \
@@ -202,6 +267,7 @@ jobs:
         RBE_CONFIG_FLAG: ${{ steps.bazel-flags.outputs.rbe-config-flag }}
         BES_FLAG: ${{ steps.bazel-flags.outputs.bes-flag }}
         DOWNLOAD_TOPLEVEL: ${{ steps.bazel-flags.outputs.download-toplevel }}
+        REPOSITORY_CACHE_FLAG: ${{ steps.bazel-flags.outputs.repository-cache-flag }}
         ARTIFACT_PATTERNS: ${{ inputs.artifacts }}
         DOCKER_COMMAND: bash /source/.github/scripts/bazel-run.sh
         GITHUB_TOKEN: ${{ github.token }}
@@ -219,6 +285,7 @@ jobs:
         [[ -n "${BAZEL_ARGS:-}" ]] && BAZEL_CMD+=(${BAZEL_ARGS})
         [[ -n "${RBE_CONFIG_FLAG:-}" ]] && BAZEL_CMD+=("${RBE_CONFIG_FLAG}")
         [[ -n "${BES_FLAG:-}"        ]] && BAZEL_CMD+=("${BES_FLAG}")
+        [[ -n "${REPOSITORY_CACHE_FLAG:-}" ]] && BAZEL_CMD+=("${REPOSITORY_CACHE_FLAG}")
         # shellcheck disable=SC2206
         BAZEL_CMD+=(${BAZEL_TARGETS})
         exec "${BAZEL_CMD[@]}"
@@ -229,6 +296,7 @@ jobs:
         BAZEL_TARGETS: ${{ inputs.targets }}
         RBE_CONFIG_FLAG: ${{ steps.bazel-flags.outputs.rbe-config-flag }}
         BES_FLAG: ${{ steps.bazel-flags.outputs.bes-flag }}
+        REPOSITORY_CACHE_FLAG: ${{ steps.bazel-flags.outputs.repository-cache-flag }}
         GITHUB_TOKEN: ${{ github.token }}
     - name: Create source tarball
       id: source-tarball
@@ -293,3 +361,65 @@ jobs:
         path: |
           ${{ steps.artifact-paths.outputs.value }}
         retention-days: 30
+    - name: Repository cache presence
+      id: repo-cache-presence
+      if: >-
+        !cancelled()
+      shell: bash
+      run: |
+        python3 .github/scripts/bazel-repository-cache-manifest.py presence \
+          --manifest-path .github/bazel-repository-cache-manifest.json \
+          --repo-cache-path "${REPO_CACHE_PATH}" \
+          --output "${GITHUB_OUTPUT}"
+      env:
+        REPO_CACHE_PATH: ${{ steps.repo-cache.outputs.path }}
+    - name: Save repository cache (llvm-x86)
+      if: >-
+        !cancelled()
+        && steps.repo-cache-restore-llvm-x86.outputs.cache-hit != 'true'
+        && steps.repo-cache-presence.outputs.llvm_x86_present == 'true'
+      continue-on-error: true
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.llvm_x86_path }}
+        key: ${{ steps.repo-cache-restore-llvm-x86.outputs.cache-primary-key }}
+    - name: Save repository cache (llvm-aarch)
+      if: >-
+        !cancelled()
+        && steps.repo-cache-restore-llvm-aarch.outputs.cache-hit != 'true'
+        && steps.repo-cache-presence.outputs.llvm_aarch_present == 'true'
+      continue-on-error: true
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.llvm_aarch_path }}
+        key: ${{ steps.repo-cache-restore-llvm-aarch.outputs.cache-primary-key }}
+    - name: Save repository cache (llvm-macos)
+      if: >-
+        !cancelled()
+        && steps.repo-cache-restore-llvm-macos.outputs.cache-hit != 'true'
+        && steps.repo-cache-presence.outputs.llvm_macos_present == 'true'
+      continue-on-error: true
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.llvm_macos_path }}
+        key: ${{ steps.repo-cache-restore-llvm-macos.outputs.cache-primary-key }}
+    - name: Save repository cache (v8-source)
+      if: >-
+        !cancelled()
+        && steps.repo-cache-restore-v8-source.outputs.cache-hit != 'true'
+        && steps.repo-cache-presence.outputs.v8_source_present == 'true'
+      continue-on-error: true
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.v8_source_path }}
+        key: ${{ steps.repo-cache-restore-v8-source.outputs.cache-primary-key }}
+    - name: Save repository cache (rest)
+      if: >-
+        !cancelled()
+        && steps.repo-cache-restore-rest.outputs.cache-hit != 'true'
+        && steps.repo-cache-presence.outputs.rest_present == 'true'
+      continue-on-error: true
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: ${{ steps.repo-cache-manifest.outputs.rest_path }}
+        key: ${{ steps.repo-cache-restore-rest.outputs.cache-primary-key }}
