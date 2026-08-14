@@ -1,19 +1,59 @@
+x-bazel-build: &bazel_build
+  context: .
+  dockerfile: bazel/Dockerfile
+  args: &bazel_build_args
+    USER_NAME: ${USER_NAME:-ubuntu}
+    USER_ID: ${UID:-1000}
+
+x-bazel-entrypoint: &bazel_entrypoint
+- "/bin/bash"
+- "-c"
+- |
+  set -e
+  # Run the passed command as the target user, defaulting to an interactive
+  # bash shell when no command is given (preserves the existing dev workflow).
+  if [ $# -eq 0 ]; then
+    exec sudo -EHs -u "${USER_NAME:-ubuntu}" bash
+  else
+    exec sudo -EHs -u "${USER_NAME:-ubuntu}" bash -c "$@"
+  fi
+- "--"
+
+x-bazel-volumes: &bazel_volumes
+- ${SOURCE_DIR:-..}:/source
+- ${EXTRA_DEV:-/tmp/extra_dev}:/extra_dev
+
 services:
   bazel:
-    build:
-      args:
-        USER_NAME: ${USER_NAME:-ubuntu}
-        USER_ID: ${UID:-1000}
-      context: .
-      dockerfile: bazel/Dockerfile
-    entrypoint:
-    - "/bin/bash"
-    - "-c"
-    - |
-      set -e
+    build: *bazel_build
+    entrypoint: *bazel_entrypoint
+    volumes: *bazel_volumes
+    working_dir: /source/bazel
 
-      sudo -EHs -u ${USER_NAME:-ubuntu} bash
-    volumes:
-    - ${SOURCE_DIR:-..}:/source
-    - ${EXTRA_DEV:-/tmp/extra_dev}:/extra_dev
+  # Privileged variant for workloads that require chroot / debootstrap /
+  # binfmt registration (i.e. the sysroot build legs).
+  #
+  # This builds the `extra` stage so that debootstrap and friends are present
+  # only here -- the unprivileged `bazel` image cannot make use of them.
+  #
+  # Note: binfmt registration modifies host kernel state and escapes container
+  # isolation by design -- this is a known wart.
+  #
+  # cap_add SYS_ADMIN + SYS_CHROOT was tried first; it is sufficient for
+  # debootstrap and chroot but not for binfmt_misc registration (which requires
+  # mounting the binfmt_misc filesystem). privileged: true is therefore used here.
+  bazel-privileged:
+    build:
+      <<: *bazel_build
+      target: extra
+      args:
+        <<: *bazel_build_args
+        EXTRA_APT_PKGS: >-
+          debian-archive-keyring
+          debootstrap
+          qemu-user-static
+          binfmt-support
+    entrypoint: *bazel_entrypoint
+    privileged: true
+    volumes: *bazel_volumes
     working_dir: /source/bazel
