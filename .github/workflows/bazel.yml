@@ -74,6 +74,7 @@ jobs:
       artifacts: |
           compile/libcxx-llvm22.1.8-aarch64.tar.xz
           compile/libcxx-llvm22.1.8-x86_64.tar.xz
+          compile/llvm-minimal-*.tar.zst
           compile/msan-llvm22.1.8-x86_64.tar.xz
           compile/tsan-llvm22.1.8-x86_64.tar.xz
           sysroot/sysroot-*.tar.xz
@@ -91,18 +92,19 @@ jobs:
       bazel-mode: ${{ matrix.mode }}
       create-source: true
       rbe: true
-      # //v8:wee8_packages is tagged `manual` so is not matched by //...
+      # //v8:wee8_packages and //compile:llvm_minimal_packages are tagged
+      # `manual` so are not matched by //...
       #
-      # It is only built under bzlmod: the packaging rules depend on @v8, which
-      # is a bazel_dep and is not defined in WORKSPACE. Making it a WORKSPACE
-      # dep would mean hand-maintaining v8 plus its transitive deps (abseil,
-      # simdutf, highway, fast_float, fp16, icu) and the module's patches, for
-      # a code path that goes away in Bazel 9. Artifacts are only uploaded from
+      # They are only built under bzlmod: the packaging rules depend on
+      # bazel_dep/module-extension repos (@v8 and the llvm_minimal extension),
+      # which are not defined in WORKSPACE. Artifacts are only uploaded from
       # the bzlmod leg anyway.
       targets: >-
         //...
         //sysroot:sysroots
-        ${{ matrix.mode == 'bzlmod' && '//v8:wee8_packages' || '' }}
+        ${{ matrix.mode == 'bzlmod'
+            && '//v8:wee8_packages //compile:llvm_minimal_packages'
+            || '' }}
       upload: ${{ matrix.mode == 'bzlmod' }}
     strategy:
       fail-fast: false
@@ -307,43 +309,6 @@ jobs:
           libcxx-llvm*-darwin-aarch64.tar.xz
         retention-days: 30
 
-  package-llvm:
-    # Builds the stripped/minimal LLVM artifacts for all three platforms.
-    # These targets are tagged `manual` and must NOT run as part of `//...`.
-    # This job builds them explicitly by label, one platform per matrix leg so
-    # the three slow extract+strip+repack runs execute in parallel.
-    needs: request
-    if: >-
-      always()
-      && fromJSON(needs.request.outputs.run || 'false')
-    permissions:
-      contents: read
-      packages: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-        - target: //compile:llvm_minimal_linux_x86_64
-          artifact: compile/llvm-minimal-22.1.8-Linux-X64.tar.zst
-          artifact-name: bazel-llvm-x64-artifacts
-        - target: //compile:llvm_minimal_linux_arm64
-          artifact: compile/llvm-minimal-22.1.8-Linux-ARM64.tar.zst
-          artifact-name: bazel-llvm-arm64-artifacts
-        - target: //compile:llvm_minimal_macos_arm64
-          artifact: compile/llvm-minimal-22.1.8-macOS-ARM64.tar.zst
-          artifact-name: bazel-llvm-macos-artifacts
-    uses: ./.github/workflows/_bazel.yml
-    with:
-      action: build
-      artifact-name: ${{ matrix.artifact-name }}
-      artifacts: ${{ matrix.artifact }}
-      bazel-args: --config=ci
-      bazel-mode: llvm
-      bazel-path: bazel
-      rbe: true
-      targets: ${{ matrix.target }}
-      upload: true
-
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -358,7 +323,6 @@ jobs:
     - test-gcc
     - test-macos
     - package-macos
-    - package-llvm
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
