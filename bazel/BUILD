@@ -30,3 +30,13 @@ module_versions(
     name = "module_dependency_versions",
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "macos_packages",
+    srcs = [
+        "//compile:libcxx_darwin_aarch64",
+        "//sysroot:sysroot_macos_arm64",
+    ],
+    tags = ["manual"],
+    visibility = ["//visibility:public"],
+)

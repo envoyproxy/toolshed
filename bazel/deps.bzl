@@ -14,6 +14,7 @@ load("@rules_python//python:repositories.bzl", "py_repositories")
 load("@toolchains_llvm//toolchain:deps.bzl", "bazel_toolchain_dependencies")
 load("//compile:libcxx_libs.bzl", "setup_libcxx_libs")
 load("//compile:llvm_minimal.bzl", "setup_llvm_minimal_build")
+load("//sysroot:macos_sysroot.bzl", "setup_macos_sysroot_build")
 load("//sysroot:sysroot.bzl", "setup_sysroots")
 load("//:versions.bzl", "VERSIONS")
 
@@ -40,3 +41,4 @@ def resolve_dependencies(
     setup_libcxx_libs()
     setup_llvm_minimal_build()
     setup_sysroots()
+    setup_macos_sysroot_build()

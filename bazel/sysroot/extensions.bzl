@@ -1,5 +1,6 @@
 """Module extension for sysroot configuration in bzlmod."""
 
+load(":macos_sysroot.bzl", "setup_macos_sysroot_build")
 load(":sysroot.bzl", "sysroot", "setup_sysroots")
 
 def _sysroot_impl(module_ctx):
@@ -57,4 +58,12 @@ sysroot_extension = module_extension(
     tag_classes = {
         "setup": _setup,
     },
+)
+
+def _macos_sysroot_build_impl(module_ctx):
+    _ = module_ctx
+    setup_macos_sysroot_build()
+
+macos_sysroot_build_extension = module_extension(
+    implementation = _macos_sysroot_build_impl,
 )

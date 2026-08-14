@@ -78,6 +78,9 @@ sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev
 sysroot_ext.setup()
 use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 
+macos_sysroot_build_ext = use_extension("//sysroot:extensions.bzl", "macos_sysroot_build_extension", dev_dependency = True)
+use_repo(macos_sysroot_build_ext, "macos_sdk_pkg", "pkgutil_linux_amd64")
+
 wee8_prebuilt_ext = use_extension("//v8:extensions.bzl", "wee8_prebuilt_extension")
 wee8_prebuilt_ext.setup()
 use_repo(wee8_prebuilt_ext, "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx", "wee8_prebuilt_aarch64")
