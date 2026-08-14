@@ -2,25 +2,22 @@ load("//v8:wee8_package.bzl", "wee8_package", "wee8_package_target_name")
 
 licenses(["notice"])
 
-_ARCHES = ["x86_64", "aarch64"]
-_STDLIBS = ["libcxx", "libstdcxx"]
+WEE8_VARIANTS = [
+    ("x86_64", "libcxx"),
+    ("aarch64", "libcxx"),
+    ("x86_64", "libstdcxx"),
+]
 
 [
-    wee8_package(
-        name = wee8_package_target_name(arch, stdlib),
-        arch = arch,
-        stdlib = stdlib,
-    )
-    for arch in _ARCHES
-    for stdlib in _STDLIBS
+    wee8_package(arch = arch, stdlib = stdlib)
+    for arch, stdlib in WEE8_VARIANTS
 ]
 
 filegroup(
     name = "wee8_packages",
     srcs = [
         ":%s" % wee8_package_target_name(arch, stdlib)
-        for arch in _ARCHES
-        for stdlib in _STDLIBS
+        for arch, stdlib in WEE8_VARIANTS
     ],
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:linux"],

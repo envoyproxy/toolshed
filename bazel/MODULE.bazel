@@ -107,6 +107,12 @@ use_repo(wee8_prebuilt_ext, "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstd
 # grcov_ext.setup()
 # use_repo(grcov_ext, "grcov")
 
+# This needs to be before llvm to win in transitionsj
+register_toolchains(
+    "//toolchains/gcc:linux_x64_toolchain",
+    "//toolchains/gcc:linux_arm64_toolchain",
+)
+
 # Configure LLVM toolchain
 
 llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency=True)
@@ -153,6 +159,10 @@ llvm.sysroot(
     name = "llvm_toolchain",
     label = "@sysroot_linux_arm64//:sysroot",
     targets = ["linux-aarch64"],
+)
+llvm.extra_exec_compatible_with(
+    name = "llvm_toolchain",
+    constraints = ["//compile:llvm_worker"],
 )
 use_repo(llvm, "llvm_toolchain")
 

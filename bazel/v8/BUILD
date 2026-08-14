@@ -64,7 +64,8 @@ alias(
     actual = select({
         ":linux_x86_64_gcc": "@%s//:wee8" % wee8_prebuilt_repo_name("x86_64", "libstdcxx"),
         ":linux_x86_64": "@%s//:wee8" % wee8_prebuilt_repo_name("x86_64"),
-        ":linux_aarch64_gcc": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64", "libstdcxx"),
+        # This does not currently work as it would require x-libs similar to how we provision llvm
+        # ":linux_aarch64_gcc": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64", "libstdcxx"),
         ":linux_aarch64": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64"),
         "//conditions:default": "@v8//:wee8",
     }),

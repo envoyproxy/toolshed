@@ -111,6 +111,34 @@ jobs:
         - workspace
         - bzlmod
 
+  verify-artifacts:
+    # Asserts that uploaded artifacts actually contain what their filenames
+    # claim. The build succeeding is not evidence of this: toolchain
+    # resolution can silently fall back to LLVM, and a gcc "cross" toolchain
+    # with no cross-compiler emits host-arch objects under a target-arch name.
+    # Both produce a green build and a plausible-looking tarball.
+    #
+    # Only wee8 is covered so far; libcxx/msan/tsan/sysroot should get their
+    # own scripts in .github/verify/artifacts/ and be added below.
+    runs-on: ubuntu-24.04
+    needs:
+    - request
+    - build
+    if: >-
+      always()
+      && fromJSON(needs.request.outputs.run || 'false')
+      && needs.build.result == 'success'
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Download artifacts
+      uses: actions/download-artifact@448e3f862ab3ef47aa50ff917776823c9946035b  # v5.0.0
+      with:
+        name: bazel-artifacts
+        path: artifacts
+    - name: Verify wee8 artifacts
+      run: bash .github/verify/artifacts/wee8.sh artifacts
+
   test-gcc:
     permissions:
       contents: read
@@ -326,6 +354,7 @@ jobs:
     - request
     - test
     - build
+    - verify-artifacts
     - test-gcc
     - test-macos
     - package-macos

@@ -48,11 +48,18 @@ common:engflow-common --experimental_remote_cache_eviction_retries=5
 common:rbe --config=remote-cache
 common:rbe --config=remote-exec
 
-# Override the default RBE platforms to use the gcc worker container.
-# Use alongside --config=gcc for gcc RBE builds.
+# Retained for explicit gcc-only RBE invocations.
+#
+# This deliberately does NOT set --host_platform. Host/exec-config targets (eg
+# //website/tools/pelican) must keep building with llvm on the general purpose
+# worker; pointing --host_platform at the gcc container made it the *target*
+# platform for those targets, where gcc does not match (no //compile:libstdcxx)
+# and clang cannot be scheduled (the platform carries //compile:gcc_worker),
+# giving "Unable to find a CC toolchain".
+#
+# :remote-exec already registers the gcc worker platforms, so gcc actions reach
+# the gcc container without any override here.
 common:rbe-gcc --config=rbe
-common:rbe-gcc --host_platform=//platforms/rbe:linux_x64_gcc
-common:rbe-gcc --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//platforms/rbe:linux_arm64_gcc
 
 # Remote cache + BES only (no remote execution); suitable for macOS builds.
 common:rbe-cache-only --config=remote-cache
@@ -69,18 +76,25 @@ common:remote-exec --define=engflow_rbe=true
 # Platforms carry the `container-image` exec property that EngFlow's
 # WorkerInDockerActionRunner matches on; without these registered, dispatched
 # actions fail with `No matching action runner found`.
+#
+# ORDER IS LOAD-BEARING. When both gcc and clang are compatible with a target
+# platform, Bazel breaks the tie by taking the first execution platform in this
+# list that yields a toolchain - not by toolchain registration order. The gcc
+# platforms must therefore come first, or clang claims //platforms/rbe:linux_x64
+# and silently produces a libc++ build under a -libstdcxx name.
+#
+# This is safe for ordinary (libcxx) targets: gcc requires //compile:libstdcxx
+# on the target platform, so it is not a candidate at all, and the gcc platforms
+# yield no toolchain and are skipped.
 common:remote-exec --host_platform=//platforms/rbe:linux_x64
-common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64,//platforms/rbe:linux_arm64
-
+common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//platforms/rbe:linux_arm64_gcc,//platforms/rbe:linux_x64,//platforms/rbe:linux_arm64
 
 #############################################################################
 # gcc
 #############################################################################
 
 common:gcc --//compile:use_gcc_toolchain=true
-common:gcc --extra_toolchains=//toolchains/gcc:linux_x64_toolchain
-common:gcc --extra_toolchains=//toolchains/gcc:linux_arm64_toolchain
-
+common:gcc --platforms=//platforms:linux_x86_64_libstdcxx
 
 #############################################################################
 # macos
