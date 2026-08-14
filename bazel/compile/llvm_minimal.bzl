@@ -397,6 +397,19 @@ filegroup(
     name = "minimal_libs",
     srcs = glob({lib_globs}, allow_empty = True),
 )
+
+filegroup(
+    name = "darwin_libcxx",
+    srcs = [
+        "include/c++/v1/__config_site",
+        "lib/libc++.1.0.dylib",
+        "lib/libc++.1.dylib",
+        "lib/libc++.dylib",
+        "lib/libc++abi.1.0.dylib",
+        "lib/libc++abi.1.dylib",
+        "lib/libc++abi.dylib",
+    ],
+)
 """.format(
         bin_globs = _quoted_list(bin_globs),
         lib_globs = _quoted_list(lib_globs),

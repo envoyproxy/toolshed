@@ -5,11 +5,12 @@ load("@rules_pkg//pkg:mappings.bzl", "pkg_files", "strip_prefix")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:versions.bzl", "LLVM_VERSION", "SUPPORTED_ARCHES", "VERSIONS")
+load(":libcxx_darwin.bzl", "libcxx_darwin_extract")
 load(":llvm_minimal.bzl", "LLVM_MINIMAL_BINS", "LLVM_MINIMAL_LIB_GLOBS", "LLVM_MINIMAL_LLVM_REPO_BUILD", "llvm_minimal_strip_bins")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["sanitizer_libs.bzl", "libcxx_libs.bzl", "llvm_minimal.bzl", "extensions.bzl"])
+exports_files(["sanitizer_libs.bzl", "libcxx_libs.bzl", "libcxx_darwin.bzl", "llvm_minimal.bzl", "extensions.bzl"])
 
 # Build setting to control which toolchain to use
 # This can be set with --//compile:use_gcc_toolchain=true
@@ -253,6 +254,37 @@ pkg_tar(
     )
     for arch in SUPPORTED_ARCHES
 ]
+
+libcxx_darwin_extract(
+    name = "libcxx_darwin_aarch64_src",
+    srcs = ["@llvm_tarball_macos_arm64//:darwin_libcxx"],
+    install_name_tool = "@llvm_toolchain_llvm//:bin/llvm-install-name-tool",
+    tags = ["manual"],
+)
+
+mtree_spec(
+    name = "libcxx_darwin_aarch64_mtree_src",
+    srcs = [":libcxx_darwin_aarch64_src"],
+    tags = ["manual"],
+)
+
+mtree_mutate(
+    name = "libcxx_darwin_aarch64_mtree",
+    mtree = ":libcxx_darwin_aarch64_mtree_src",
+    preserve_symlinks = True,
+    srcs = [":libcxx_darwin_aarch64_src"],
+    strip_prefix = "compile/libcxx_darwin_aarch64_src",
+    tags = ["manual"],
+)
+
+tar(
+    name = "libcxx_darwin_aarch64",
+    compress = "xz",
+    mtree = ":libcxx_darwin_aarch64_mtree",
+    out = "libcxx-llvm%s-darwin-aarch64.tar.xz" % LLVM_VERSION,
+    srcs = [":libcxx_darwin_aarch64_src"],
+    tags = ["manual"],
+)
 
 # =============================================================================
 # Minimal LLVM extraction targets
