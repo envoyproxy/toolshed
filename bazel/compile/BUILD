@@ -445,6 +445,7 @@ _LLVM_MINIMAL_HOST_READOBJ = ":llvm_minimal_host_llvm_readobj"
             name = "llvm_minimal_%s_libs_mtree" % repo_suffix,
             mtree = ":llvm_minimal_%s_libs_mtree_src" % repo_suffix,
             package_dir = "llvm-minimal-%s-%s" % (LLVM_VERSION, platform),
+            strip_prefix = "compile/llvm_minimal_%s_libs_src" % repo_suffix,
             tags = ["manual"],
         ),
         genrule(
