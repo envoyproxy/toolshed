@@ -366,6 +366,7 @@ jobs:
         path: |
           ${{ steps.artifact-paths.outputs.value }}
         retention-days: 30
+
     - name: Repository cache presence
       id: repo-cache-presence
       if: >-
@@ -390,6 +391,8 @@ jobs:
       with:
         path: ${{ steps.repo-cache-manifest.outputs.llvm_x86_path }}
         key: ${{ steps.repo-cache-restore-llvm-x86.outputs.cache-primary-key }}
+    - run: |
+        rm -rf ${{ steps.repo-cache-manifest.outputs.llvm_x86_path }}
     - name: Save repository cache (llvm-aarch)
       if: >-
         !cancelled()
@@ -402,6 +405,8 @@ jobs:
       with:
         path: ${{ steps.repo-cache-manifest.outputs.llvm_aarch_path }}
         key: ${{ steps.repo-cache-restore-llvm-aarch.outputs.cache-primary-key }}
+    - run: |
+        rm -rf ${{ steps.repo-cache-manifest.outputs.llvm_aarch_path }}
     - name: Save repository cache (llvm-macos)
       if: >-
         !cancelled()
@@ -414,6 +419,8 @@ jobs:
       with:
         path: ${{ steps.repo-cache-manifest.outputs.llvm_macos_path }}
         key: ${{ steps.repo-cache-restore-llvm-macos.outputs.cache-primary-key }}
+    - run: |
+        rm -rf ${{ steps.repo-cache-manifest.outputs.llvm_macos_path }}
     - name: Save repository cache (v8-source)
       if: >-
         !cancelled()
@@ -426,6 +433,8 @@ jobs:
       with:
         path: ${{ steps.repo-cache-manifest.outputs.v8_source_path }}
         key: ${{ steps.repo-cache-restore-v8-source.outputs.cache-primary-key }}
+    - run: |
+        rm -rf ${{ steps.repo-cache-manifest.outputs.v8_source_path }}
     - name: Save repository cache (rest)
       if: >-
         !cancelled()
