@@ -162,28 +162,6 @@ jobs:
     - name: Set up Docker Buildx
       if: runner.os == 'Linux'
       uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
-    - name: Build Bazel container image
-      # Note: `docker buildx bake` resolves the compose file's `context: .`
-      # relative to the *invocation* directory, not the compose file (this
-      # differs from `docker compose`, which resolves relative to --file).
-      # Run from `docker/` so the context is `docker/` and the dockerfile
-      # resolves to `docker/bazel/Dockerfile`.
-      if: runner.os == 'Linux'
-      shell: bash
-      working-directory: docker
-      run: |
-        docker buildx bake \
-          --file docker-compose.yml \
-          --set "*.cache-from=type=gha,scope=bazel-container" \
-          --set "*.cache-to=type=gha,scope=bazel-container,mode=max" \
-          --load \
-          "${BAZEL_SERVICE}"
-      env:
-        UID: ${{ steps.runner-ids.outputs.uid }}
-        GID: ${{ steps.runner-ids.outputs.gid }}
-        USER_NAME: runner
-        SOURCE_DIR: ${{ github.workspace }}
-        BAZEL_SERVICE: ${{ inputs.privileged && 'bazel-privileged' || 'bazel' }}
     - name: Register binfmt handlers (host-level, cross-compile only)
       if: runner.os == 'Linux' && inputs.privileged
       run: |
@@ -260,7 +238,7 @@ jobs:
           -e REPOSITORY_CACHE_FLAG \
           -e ARTIFACT_PATTERNS \
           -e GITHUB_TOKEN \
-          -e USER_NAME \
+          -e USER_UID \
           "${CONTAINER_SERVICE}"
       env:
         BAZEL_ACTION: ${{ inputs.action }}
@@ -275,7 +253,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
         UID: ${{ steps.runner-ids.outputs.uid }}
         GID: ${{ steps.runner-ids.outputs.gid }}
-        USER_NAME: runner
+        USER_UID: ${{ steps.runner-ids.outputs.uid }}
         SOURCE_DIR: ${{ github.workspace }}
         CONTAINER_SERVICE: ${{ inputs.privileged && 'bazel-privileged' || 'bazel' }}
     - run: |
