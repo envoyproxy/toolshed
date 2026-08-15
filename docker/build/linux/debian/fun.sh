@@ -276,6 +276,12 @@ install_bazelisk () {
 
 install_qemu () {
     apt_install "${QEMU_PACKAGES[@]}"
+    # The entrypoint drops to $USER_NAME via gosu, but build_sysroot.sh shells
+    # out to sudo for its privileged steps (debootstrap, chroot, rm -rf, tee,
+    # install, mkdir). Without a sudoers rule those prompt for a password and
+    # fail with "sudo: a terminal is required to read the password".
+    echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/${USER_NAME}"
+    chmod 0440 "/etc/sudoers.d/${USER_NAME}"
 }
 
 install_docker () {
