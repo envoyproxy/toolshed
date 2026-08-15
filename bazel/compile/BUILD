@@ -6,7 +6,7 @@ load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:versions.bzl", "LLVM_VERSION", "SUPPORTED_ARCHES", "VERSIONS")
 load(":libcxx_darwin.bzl", "libcxx_darwin_extract")
-load(":llvm_minimal.bzl", "LLVM_MINIMAL_BINS", "LLVM_MINIMAL_LIB_GLOBS", "LLVM_MINIMAL_LLVM_REPO_BUILD", "llvm_minimal_strip_bins")
+load(":llvm_minimal.bzl", "LLVM_MINIMAL_BINS", "LLVM_MINIMAL_LIB_GLOBS", "LLVM_MINIMAL_LLVM_REPO_BUILD", "LLVM_TARBALL_STRIP_PREFIXES", "llvm_minimal_extract_host_tools", "llvm_minimal_extract_libs", "llvm_minimal_strip_bins")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -257,13 +257,14 @@ pkg_tar(
 
 libcxx_darwin_extract(
     name = "libcxx_darwin_aarch64_src",
-    srcs = ["@llvm_tarball_macos_arm64//:darwin_libcxx"],
+    tarball = "@llvm_tarball_macos_arm64//:llvm.tar.xz",
+    strip_prefix = LLVM_TARBALL_STRIP_PREFIXES["macOS-ARM64"],
     # @llvm_toolchain_llvm is the host-arch alias backed by the *minimal* LLVM
     # artifacts, and llvm-install-name-tool is macOS-only there (see
     # _LLVM_MINIMAL_MACOS_ONLY_BINS), so it is absent on a Linux host. Take the
     # host tool from the full upstream Linux-X64 tarball instead, matching the
     # llvm-strip/llvm-readobj bootstrapping below.
-    install_name_tool = "@llvm_tarball_linux_x86_64//:bin/llvm-install-name-tool",
+    install_name_tool = ":llvm_minimal_host_llvm_install_name_tool",
     tags = ["manual"],
 )
 
@@ -364,18 +365,47 @@ _LLVM_MINIMAL_MACOS_ONLY_BINS = [
 
 _LLVM_MINIMAL_LLVM_MAJOR = LLVM_VERSION.split(".")[0]
 
-# Use llvm-strip/llvm-readobj from the upstream Linux-X64 build tarball when
-# producing all minimal artifact variants. This preserves the intended
-# bootstrapping flow: strip the minimal artifacts with tools from the full
-# upstream tarball, not from the minimal artifact alias.
-_LLVM_MINIMAL_HOST_STRIPPER = "@llvm_tarball_linux_x86_64//:bin/llvm-strip"
-_LLVM_MINIMAL_HOST_READOBJ = "@llvm_tarball_linux_x86_64//:bin/llvm-readobj"
+# Use llvm-strip/llvm-readobj/llvm-install-name-tool from the upstream Linux-X64
+# build tarball when producing all minimal artifact variants. This preserves the
+# intended bootstrapping flow: strip the minimal artifacts with tools from the
+# full upstream tarball, not from the minimal artifact alias.
+llvm_minimal_extract_host_tools(
+    name = "llvm_minimal_host_tools",
+    tarball = "@llvm_tarball_linux_x86_64//:llvm.tar.xz",
+    strip_prefix = LLVM_TARBALL_STRIP_PREFIXES["Linux-X64"],
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "llvm_minimal_host_llvm_strip",
+    srcs = [":llvm_minimal_host_tools"],
+    output_group = "llvm_strip",
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "llvm_minimal_host_llvm_readobj",
+    srcs = [":llvm_minimal_host_tools"],
+    output_group = "llvm_readobj",
+    tags = ["manual"],
+)
+
+filegroup(
+    name = "llvm_minimal_host_llvm_install_name_tool",
+    srcs = [":llvm_minimal_host_tools"],
+    output_group = "llvm_install_name_tool",
+    tags = ["manual"],
+)
+
+_LLVM_MINIMAL_HOST_STRIPPER = ":llvm_minimal_host_llvm_strip"
+_LLVM_MINIMAL_HOST_READOBJ = ":llvm_minimal_host_llvm_readobj"
 
 [
     (
         llvm_minimal_strip_bins(
             name = "llvm_minimal_%s_strip_bins" % repo_suffix,
-            bin_all = "@llvm_tarball_%s//:bin_all" % repo_suffix,
+            tarball = "@llvm_tarball_%s//:llvm.tar.xz" % repo_suffix,
+            strip_prefix = LLVM_TARBALL_STRIP_PREFIXES[platform],
             bins = bins,
             stripper = _LLVM_MINIMAL_HOST_STRIPPER,
             readobj = _LLVM_MINIMAL_HOST_READOBJ,
@@ -391,21 +421,31 @@ _LLVM_MINIMAL_HOST_READOBJ = "@llvm_tarball_linux_x86_64//:bin/llvm-readobj"
         mtree_mutate(
             name = "llvm_minimal_%s_bins_mtree" % repo_suffix,
             mtree = ":llvm_minimal_%s_bins_mtree_src" % repo_suffix,
-            preserve_symlinks = False,
+            preserve_symlinks = True,
             srcs = [":llvm_minimal_%s_strip_bins" % repo_suffix],
             package_dir = "llvm-minimal-%s-%s" % (LLVM_VERSION, platform),
             strip_prefix = "compile/llvm_minimal_%s_bins_src" % repo_suffix,
             tags = ["manual"],
         ),
+        llvm_minimal_extract_libs(
+            name = "llvm_minimal_%s_extract_libs" % repo_suffix,
+            tarball = "@llvm_tarball_%s//:llvm.tar.xz" % repo_suffix,
+            strip_prefix = LLVM_TARBALL_STRIP_PREFIXES[platform],
+            lib_globs = LLVM_MINIMAL_LIB_GLOBS,
+            repo_suffix = repo_suffix,
+            platform = platform,
+            tags = ["manual"],
+        ),
         mtree_spec(
             name = "llvm_minimal_%s_libs_mtree_src" % repo_suffix,
-            srcs = ["@llvm_tarball_%s//:minimal_libs" % repo_suffix],
+            srcs = [":llvm_minimal_%s_extract_libs" % repo_suffix],
             tags = ["manual"],
         ),
         mtree_mutate(
             name = "llvm_minimal_%s_libs_mtree" % repo_suffix,
             mtree = ":llvm_minimal_%s_libs_mtree_src" % repo_suffix,
             package_dir = "llvm-minimal-%s-%s" % (LLVM_VERSION, platform),
+            strip_prefix = "compile/llvm_minimal_%s_libs_src" % repo_suffix,
             tags = ["manual"],
         ),
         genrule(
@@ -448,7 +488,7 @@ EOF""" % LLVM_MINIMAL_LLVM_REPO_BUILD,
             out = "llvm-minimal-%s-%s.tar.zst" % (LLVM_VERSION, platform),
             srcs = [
                 ":llvm_minimal_%s_strip_bins" % repo_suffix,
-                "@llvm_tarball_%s//:minimal_libs" % repo_suffix,
+                ":llvm_minimal_%s_extract_libs" % repo_suffix,
                 ":llvm_minimal_%s_build_bazel" % repo_suffix,
             ],
             tags = ["manual"],
