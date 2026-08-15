@@ -28,6 +28,7 @@ jobs:
           - BINS_VERSION.txt
           - bazel/*
           - bazel/**
+          - docker/bazel/**
           - .github/bazel-repository-cache-manifest.json
           - .github/scripts/bazel-run.sh
           - .github/scripts/bazel-repository-cache-manifest.py

@@ -1,24 +1,27 @@
 x-bazel-build: &bazel_build
   context: .
   dockerfile: bazel/Dockerfile
-  args: &bazel_build_args
-    USER_NAME: ${USER_NAME:-ubuntu}
-    USER_ID: ${UID:-1000}
-    GROUP_ID: ${GID:-${UID:-1000}}
 
 x-bazel-environment: &bazel_environment
 - DOCKER_COMMAND
 - GITHUB_TOKEN
-- USER_NAME
+# The published envoy-build entrypoint reads USER_UID and re-stamps the
+# baked-in `envoybuild` user to match, then drops privileges with gosu.
+# The user is always named `envoybuild` in the image -- only the uid is
+# reconciled -- so USER_NAME is not part of this contract.
+- USER_UID
+# gosu does not rewrite HOME, and the image's home is /home/envoybuild.
+# Point it at the bind-mounted runner home so bazel and the cache land in
+# the same place the host mounts.
+- HOME=/home/runner
 
-x-bazel-entrypoint: &bazel_entrypoint
-- "/bin/bash"
+x-bazel-command: &bazel_command
+- "bash"
 - "-c"
 - |
   set -e
-  exec sudo -EHs -u "${USER_NAME:-ubuntu}" \
-    bash -c 'cd /source/bazel && exec ${DOCKER_COMMAND:-bash}'
-- "--"
+  cd /source/bazel
+  exec ${DOCKER_COMMAND:-bash}
 
 x-bazel-volumes: &bazel_volumes
 - ${SOURCE_DIR:-..}:/source
@@ -30,39 +33,28 @@ services:
     tty: true
     build: *bazel_build
     environment: *bazel_environment
-    entrypoint: *bazel_entrypoint
+    command: *bazel_command
     volumes: *bazel_volumes
     working_dir: /source/bazel
 
-  # Privileged variant for workloads that require chroot / debootstrap /
-  # binfmt registration (i.e. the sysroot build legs).
+  # Variant for workloads that build chrooted cross-arch sysroots.
   #
-  # This builds the `extra` stage so that debootstrap and friends are present
-  # only here -- the unprivileged `bazel` image cannot make use of them.
+  # The image is identical to `bazel` -- the qemu tooling (debootstrap,
+  # qemu-user-static) is baked into the published envoy-build qemu variant.
+  # What differs is the runtime privilege.
   #
-  # Note: binfmt registration modifies host kernel state and escapes container
-  # isolation by design -- this is a known wart.
-  #
-  # cap_add SYS_ADMIN + SYS_CHROOT was tried first; it is sufficient for
-  # debootstrap and chroot but not for binfmt_misc registration (which requires
-  # mounting the binfmt_misc filesystem). privileged: true is therefore used here.
+  # Only chroot(2) is actually required, i.e. CAP_SYS_CHROOT, provided the
+  # sysroot build uses the two-stage `debootstrap --foreign` flow (copy
+  # qemu-$arch-static into the rootfs, then run --second-stage under chroot).
+  # binfmt_misc registration is deliberately not done here -- it mutates host
+  # kernel state and is what previously forced `privileged: true`.
   bazel-privileged:
     stdin_open: true
     tty: true
-    build:
-      <<: *bazel_build
-      target: extra
-      args:
-        <<: *bazel_build_args
-        # NOTE: qemu is only here for building sysroot/chroots - its not used for compilation
-        EXTRA_APT_PKGS: >-
-          debian-archive-keyring
-          debootstrap
-          qemu-user-static
-          binfmt-support
-          xz-utils
+    build: *bazel_build
     environment: *bazel_environment
-    entrypoint: *bazel_entrypoint
-    privileged: true
+    command: *bazel_command
+    cap_add:
+    - SYS_CHROOT
     volumes: *bazel_volumes
     working_dir: /source/bazel
