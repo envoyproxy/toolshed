@@ -49,6 +49,17 @@ RUN --mount=type=tmpfs,target=/var/cache/apt \
     && install_gcc
 
 
+# Provides debootstrap + qemu-user-static for building chrooted cross-arch sysroots.
+# Privilege is a runtime concern for consumers (--cap-add=SYS_CHROOT).
+# binfmt registration is deliberately not handled here.
+FROM ci-base AS qemu-base
+RUN --mount=type=tmpfs,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/var/lib/apt/lists \
+    --mount=type=bind,source=/debian/fun.sh,target=/fun.sh \
+    . /fun.sh \
+    && install_qemu
+
+
 FROM ci-base AS docker-base
 ARG APT_KEY_DOCKER=https://download.docker.com/linux/debian/gpg
 RUN --mount=type=tmpfs,target=/var/cache/apt \
@@ -131,5 +142,11 @@ ARG CONTAINER_TAG
 RUN --mount=type=bind,source=/debian/fun.sh,target=/fun.sh \
     . /fun.sh \
     && stamp_build ci "$CONTAINER_TAG"
+
+FROM qemu-base AS qemu
+ARG CONTAINER_TAG
+RUN --mount=type=bind,source=/debian/fun.sh,target=/fun.sh \
+    . /fun.sh \
+    && stamp_build qemu "$CONTAINER_TAG"
 
 FROM ci

@@ -3,7 +3,7 @@
 set -o pipefail
 
 # Debian-specific build configuration
-DEBIAN_DOCKER_VARIANTS=("worker" "ci" "gcc" "devtools" "docker" "mobile" "test")
+DEBIAN_DOCKER_VARIANTS=("worker" "ci" "gcc" "devtools" "docker" "mobile" "test" "qemu")
 IMAGE_TAGS=${IMAGE_TAGS:-}
 OS_DISTRO="debian"
 
@@ -58,7 +58,7 @@ build_and_push_variants () {
         fi
 
         # Platform logic: worker, ci, gcc, devtools, docker and test get multi-arch, others get amd64 only
-        if [[ "$variant" == "test" || "$variant" == "ci" || "$variant" == "gcc" || "$variant" == "docker" || "$variant" == "worker" || "$variant" == "devtools" ]]; then
+        if [[ "$variant" == "test" || "$variant" == "ci" || "$variant" == "gcc" || "$variant" == "docker" || "$variant" == "worker" || "$variant" == "devtools" || "$variant" == "qemu" ]]; then
             platform="${BUILD_TOOLS_PLATFORMS}"
         elif [[ "$BUILD_TOOLS_PLATFORMS" == *"linux/amd64"* ]]; then
             # mobile is amd64 only
@@ -106,7 +106,7 @@ fi
 if [[ "$LOAD_IMAGE" == "true" && "$BUILD_TOOLS_PLATFORMS" != *","* ]]; then
     # Load all variants for testing when building single platform
     for variant in "${DEBIAN_DOCKER_VARIANTS[@]}"; do
-        if [[ "$variant" == "test" || "$variant" == "ci" || "$variant" == "gcc" || "$variant" == "docker" || "$variant" == "worker" || "$variant" == "devtools" ]]; then
+        if [[ "$variant" == "test" || "$variant" == "ci" || "$variant" == "gcc" || "$variant" == "docker" || "$variant" == "worker" || "$variant" == "devtools" || "$variant" == "qemu" ]]; then
             platform="${BUILD_TOOLS_PLATFORMS}"
         elif [[ "$BUILD_TOOLS_PLATFORMS" == *"linux/amd64"* && "$variant" == "mobile" ]]; then
             platform="linux/amd64"
