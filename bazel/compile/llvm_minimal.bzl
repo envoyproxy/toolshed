@@ -122,8 +122,17 @@ LLVM_MINIMAL_PLATFORMS = {
     "macOS-ARM64": "LLVM-%s-macOS-ARM64.tar.xz" % LLVM_VERSION,
 }
 
+# Archive strip prefixes corresponding to each platform tarball.
+# Format: "LLVM-{version}-{platform}" (the top-level directory inside the
+# upstream release tarballs).
+LLVM_TARBALL_STRIP_PREFIXES = {
+    "Linux-X64": "LLVM-%s-Linux-X64" % LLVM_VERSION,
+    "Linux-ARM64": "LLVM-%s-Linux-ARM64" % LLVM_VERSION,
+    "macOS-ARM64": "LLVM-%s-macOS-ARM64" % LLVM_VERSION,
+}
+
 # =============================================================================
-# Repository rule: extracted LLVM tree (for building minimal artifacts)
+# Repository rule: LLVM tarball blob (for building minimal artifacts)
 # =============================================================================
 
 def _lib_glob_to_repo_globs(pattern):
@@ -132,6 +141,22 @@ def _lib_glob_to_repo_globs(pattern):
     if "*" in final_segment and "." in final_segment:
         return [pattern]
     return [pattern + "/**/*"]
+
+def _lib_glob_to_tar_wildcards(strip_prefix, pattern):
+    """Convert one LLVM_MINIMAL_LIB_GLOBS entry to a tar --wildcards pattern.
+
+    The strip prefix (e.g. "LLVM-22.1.8-Linux-X64") is prepended so the
+    pattern matches paths as they appear inside the upstream tarball.
+
+    Requires --wildcards-match-slash in tar so that ** crosses directory
+    boundaries (needed for lib/**/libc++*.a deep-glob patterns).
+    """
+    final_segment = pattern.rsplit("/", 1)[-1]
+    if "*" in final_segment and "." in final_segment:
+        # File-glob pattern like lib/**/libc++*.a — pass as-is.
+        return [strip_prefix + "/" + pattern]
+    # Directory pattern — match everything underneath at any depth.
+    return [strip_prefix + "/" + pattern + "/**/*"]
 
 def _quoted_list(values):
     """Render a list literal safely for generated BUILD file content."""
@@ -355,65 +380,20 @@ llvm_minimal_repo = repository_rule(
 )
 
 def _llvm_tarball_impl(ctx):
-    """Downloads and extracts an LLVM upstream tarball hermetically.
+    """Downloads an upstream LLVM tarball as an opaque blob.
 
-    The extracted tree is exposed via filegroups so build rules can consume it
-    directly without shelling out to tar/xz on the executor.
+    The tarball is NOT extracted here; extraction happens inside the actions
+    that consume it.  This means the action key for those actions is a single
+    blob digest (computable instantly from the sha256 attribute), so a remote
+    cache hit resolves in milliseconds with no extraction cost.
     """
-    strip_prefix = "LLVM-{version}-{platform}".format(
-        version = ctx.attr.version,
-        platform = ctx.attr.platform,
-    )
-    ctx.download_and_extract(
+    ctx.download(
         url = ctx.attr.url,
+        output = "llvm.tar.xz",
         sha256 = ctx.attr.sha256,
-        stripPrefix = strip_prefix,
     )
-    lib_globs = []
-    for pattern in LLVM_MINIMAL_LIB_GLOBS:
-        lib_globs.extend(_lib_glob_to_repo_globs(pattern))
-    bin_globs = ["bin/{}".format(tool) for tool in LLVM_MINIMAL_BINS]
-    ctx.file("BUILD.bazel", """
-package(default_visibility = ["//visibility:public"])
-
-exports_files(glob(["bin/**"], allow_empty = True))
-
-filegroup(
-    name = "all",
-    srcs = glob(["**/*"], allow_empty = True),
-)
-
-filegroup(
-    name = "minimal_bins",
-    srcs = glob({bin_globs}, allow_empty = True),
-)
-
-filegroup(
-    name = "bin_all",
-    srcs = glob(["bin/**"], allow_empty = True),
-)
-
-filegroup(
-    name = "minimal_libs",
-    srcs = glob({lib_globs}, allow_empty = True),
-)
-
-filegroup(
-    name = "darwin_libcxx",
-    srcs = [
-        "include/c++/v1/__config_site",
-        "lib/libc++.1.0.dylib",
-        "lib/libc++.1.dylib",
-        "lib/libc++.dylib",
-        "lib/libc++abi.1.0.dylib",
-        "lib/libc++abi.1.dylib",
-        "lib/libc++abi.dylib",
-    ],
-)
-""".format(
-        bin_globs = _quoted_list(bin_globs),
-        lib_globs = _quoted_list(lib_globs),
-    ))
+    ctx.file("BUILD.bazel", 'exports_files(["llvm.tar.xz"])\n')
+    return ctx.repo_metadata(reproducible = True)
 
 llvm_tarball = repository_rule(
     implementation = _llvm_tarball_impl,
@@ -428,14 +408,14 @@ llvm_tarball = repository_rule(
         ),
         "version": attr.string(
             mandatory = True,
-            doc = "LLVM version used in the upstream strip prefix",
+            doc = "LLVM version used to compute the archive strip prefix (LLVM-{version}-{platform})",
         ),
         "platform": attr.string(
             mandatory = True,
-            doc = "LLVM platform suffix used in the upstream strip prefix",
+            doc = "LLVM platform suffix used to compute the archive strip prefix",
         ),
     },
-    doc = "Downloads and extracts an upstream LLVM tarball for hermetic minimal LLVM artifact builds.",
+    doc = "Downloads an upstream LLVM tarball as an opaque blob for hermetic in-action extraction.",
 )
 
 def _normalize_llvm_toolchain_alias_os(os_name):
@@ -541,10 +521,161 @@ llvm_toolchain_alias = repository_rule(
 )
 
 # =============================================================================
-# Build rule: assemble and strip the minimal bin/ tree
+# Build rules: host tool bootstrap, minimal lib extraction, and bin strip
 # =============================================================================
 
+# Script: extract llvm-strip and llvm-readobj from the Linux-X64 tarball.
+# Arguments: TARBALL STRIP_PREFIX OUT_STRIP OUT_READOBJ OUT_INSTALL_NAME_TOOL
+_LLVM_EXTRACT_HOST_TOOLS_SCRIPT = """
+set -euo pipefail
+TARBALL="$1"
+STRIP_PREFIX="$2"
+OUT_STRIP="$3"
+OUT_READOBJ="$4"
+OUT_INSTALL_NAME_TOOL="$5"
+SCRATCH="$(mktemp -d)"
+trap 'rm -rf "$SCRATCH"' EXIT
+
+tar xf "$TARBALL" \\
+    --strip-components=1 \\
+    -C "$SCRATCH" \\
+    "$STRIP_PREFIX/bin/llvm-strip" \\
+    "$STRIP_PREFIX/bin/llvm-readobj" \\
+    "$STRIP_PREFIX/bin/llvm-install-name-tool"
+cp "$SCRATCH/bin/llvm-strip" "$OUT_STRIP"
+cp "$SCRATCH/bin/llvm-readobj" "$OUT_READOBJ"
+cp "$SCRATCH/bin/llvm-install-name-tool" "$OUT_INSTALL_NAME_TOOL"
+"""
+
+def _llvm_minimal_extract_host_tools_impl(ctx):
+    """Extracts llvm-strip, llvm-readobj, and llvm-install-name-tool from the Linux-X64 tarball."""
+    tarball = ctx.file.tarball
+    strip_prefix = ctx.attr.strip_prefix
+    out_strip = ctx.actions.declare_file("llvm_host_tools/llvm-strip")
+    out_readobj = ctx.actions.declare_file("llvm_host_tools/llvm-readobj")
+    out_install_name_tool = ctx.actions.declare_file("llvm_host_tools/llvm-install-name-tool")
+    ctx.actions.run_shell(
+        inputs = [tarball],
+        outputs = [out_strip, out_readobj, out_install_name_tool],
+        command = _LLVM_EXTRACT_HOST_TOOLS_SCRIPT,
+        arguments = [
+            tarball.path,
+            strip_prefix,
+            out_strip.path,
+            out_readobj.path,
+            out_install_name_tool.path,
+        ],
+        mnemonic = "LlvmExtractHostTools",
+        progress_message = "Extracting LLVM host tools (llvm-strip, llvm-readobj, llvm-install-name-tool)",
+    )
+    return [
+        DefaultInfo(files = depset([out_strip, out_readobj, out_install_name_tool])),
+        OutputGroupInfo(
+            llvm_strip = depset([out_strip]),
+            llvm_readobj = depset([out_readobj]),
+            llvm_install_name_tool = depset([out_install_name_tool]),
+        ),
+    ]
+
+llvm_minimal_extract_host_tools = rule(
+    implementation = _llvm_minimal_extract_host_tools_impl,
+    attrs = {
+        "tarball": attr.label(
+            mandatory = True,
+            allow_single_file = True,
+            doc = "The Linux-X64 LLVM tarball blob.",
+        ),
+        "strip_prefix": attr.string(
+            mandatory = True,
+            doc = "Archive strip prefix (e.g. 'LLVM-22.1.8-Linux-X64').",
+        ),
+    },
+    doc = "Extracts llvm-strip, llvm-readobj, and llvm-install-name-tool from the Linux-X64 LLVM tarball.",
+)
+
+# Script: extract minimal lib/include tree matching LLVM_MINIMAL_LIB_GLOBS patterns.
+# Arguments: TARBALL STRIP_PREFIX OUT_DIR [wildcard ...]
+_LLVM_EXTRACT_LIBS_SCRIPT = """
+set -euo pipefail
+TARBALL="$1"
+STRIP_PREFIX="$2"
+OUT_DIR="$3"
+shift 3
+SCRATCH="$(mktemp -d)"
+trap 'rm -rf "$SCRATCH"' EXIT
+
+# Extract only matched paths from the tarball.  --wildcards-match-slash is
+# required for ** to cross directory boundaries in GNU tar.
+tar xf "$TARBALL" \\
+    --strip-components=1 \\
+    -C "$SCRATCH" \\
+    --wildcards \\
+    --wildcards-match-slash \\
+    "$@" \\
+    2>/dev/null || true
+
+# Copy extracted lib/ and include/ subtrees into OUT_DIR.
+mkdir -p "$OUT_DIR"
+if [ -d "$SCRATCH/lib" ]; then
+    cp -r "$SCRATCH/lib" "$OUT_DIR/"
+fi
+if [ -d "$SCRATCH/include" ]; then
+    cp -r "$SCRATCH/include" "$OUT_DIR/"
+fi
+"""
+
+def _llvm_minimal_extract_libs_impl(ctx):
+    """Extracts the minimal lib/include tree from an LLVM tarball blob."""
+    tarball = ctx.file.tarball
+    strip_prefix = ctx.attr.strip_prefix
+    out_dir = ctx.actions.declare_directory(
+        "llvm_minimal_%s_libs_src" % ctx.attr.repo_suffix,
+    )
+
+    wildcards = []
+    for pattern in ctx.attr.lib_globs:
+        wildcards.extend(_lib_glob_to_tar_wildcards(strip_prefix, pattern))
+
+    ctx.actions.run_shell(
+        inputs = [tarball],
+        outputs = [out_dir],
+        command = _LLVM_EXTRACT_LIBS_SCRIPT,
+        arguments = [tarball.path, strip_prefix, out_dir.path] + wildcards,
+        mnemonic = "LlvmExtractLibs",
+        progress_message = "Extracting LLVM minimal libs for " + ctx.attr.platform,
+    )
+    return [DefaultInfo(files = depset([out_dir]))]
+
+llvm_minimal_extract_libs = rule(
+    implementation = _llvm_minimal_extract_libs_impl,
+    attrs = {
+        "tarball": attr.label(
+            mandatory = True,
+            allow_single_file = True,
+            doc = "The LLVM tarball blob.",
+        ),
+        "strip_prefix": attr.string(
+            mandatory = True,
+            doc = "Archive strip prefix (e.g. 'LLVM-22.1.8-Linux-X64').",
+        ),
+        "lib_globs": attr.string_list(
+            mandatory = True,
+            doc = "LLVM_MINIMAL_LIB_GLOBS entries to extract.",
+        ),
+        "repo_suffix": attr.string(
+            mandatory = True,
+            doc = "Suffix identifying the tarball repo (e.g. 'linux_x86_64').",
+        ),
+        "platform": attr.string(
+            mandatory = True,
+            doc = "Human-readable platform name used in progress messages.",
+        ),
+    },
+    doc = "Extracts the minimal lib/include tree from an LLVM tarball blob.",
+)
+
 # Three-pass script implementing the intended algorithm:
+#   Pass 0 — extract bin/ subtree from the tarball into a scratch directory.
 #   Pass 1 — copy EXACTLY the allowlisted files with `cp -P` and no symlink
 #            unwrapping or reconstruction. A symlink stays a symlink and a real
 #            file stays a real file.
@@ -554,22 +685,33 @@ llvm_toolchain_alias = repository_rule(
 #            `find -maxdepth 1 -type f` skips symlinks; the readobj probe skips
 #            scripts like git-clang-format that are not valid object files.
 #
-# Arguments: DEST STRIPPER READOBJ [name:src_path ...]
-#   name     — output filename (e.g. "clang" or "clang-22")
-#   src_path — full path to the source file from bin_all inputs
+# Arguments: DEST STRIPPER READOBJ TARBALL STRIP_PREFIX [name ...]
+#   name        — allowlisted tool basename (e.g. "clang" or "clang-22")
+#
+# Tools absent from the tarball's bin/ (e.g. macOS-only tools on a Linux
+# tarball) are silently skipped.
 _LLVM_STRIP_BINS_SCRIPT = """
 set -euo pipefail
 DEST="$1"
 STRIPPER="$2"
 READOBJ="$3"
-shift 3
+TARBALL="$4"
+STRIP_PREFIX="$5"
+shift 5
 mkdir -p "$DEST"
+SCRATCH="$(mktemp -d)"
+trap 'rm -rf "$SCRATCH"' EXIT
 
-# Pass 1: exact copy; cp -P never dereferences.
-for spec in "$@"; do
-    name="${spec%%:*}"
-    src="${spec#*:}"
-    cp -P "$src" "$DEST/$name"
+# Pass 0: extract bin/ subtree from the tarball.
+tar xf "$TARBALL" --strip-components=1 -C "$SCRATCH" "$STRIP_PREFIX/bin"
+
+# Pass 1: exact copy of allowlisted tools present in the tarball; cp -P never
+# dereferences symlinks.
+for name in "$@"; do
+    src="$SCRATCH/bin/$name"
+    if [ -e "$src" ] || [ -L "$src" ]; then
+        cp -P "$src" "$DEST/$name"
+    fi
 done
 
 # Pass 2: fail loudly on dangling symlinks before stripping.
@@ -595,6 +737,7 @@ find "$DEST" -maxdepth 1 -type f | while IFS= read -r f; do
 done
 """
 
+
 def _llvm_minimal_strip_bins_impl(ctx):
     """Assembles and strips the minimal LLVM bin/ tree into a directory artifact.
 
@@ -603,47 +746,33 @@ def _llvm_minimal_strip_bins_impl(ctx):
     cannot declare undeclared extra files, but a tree artifact contains all
     files created inside it.
 
-    no-remote-exec keeps this action off RBE workers: the multi-GB LLVM tree
-    is already present on the Bazel host and shipping it to remote workers
-    would cause unnecessary large data transfers. The action remains
-    remote-cacheable so the ~1 hr build result is reused across CI runs until
-    the pinned LLVM version changes (roughly once a year).
+    The input is a single tarball blob; the action key is a single blob digest
+    computable instantly without any extraction.  A remote cache hit resolves in
+    milliseconds and extraction only happens on a genuine cache miss.
     """
     out_dir = ctx.actions.declare_directory(
         "llvm_minimal_%s_bins_src" % ctx.attr.repo_suffix,
     )
-    bin_files = ctx.files.bin_all
+    tarball = ctx.file.tarball
     stripper = ctx.file.stripper
     readobj = ctx.file.readobj
 
-    if not bin_files:
-        fail("bin_all has no files for repo_suffix=" + ctx.attr.repo_suffix)
-
-    # Build a name → File map so we can pass explicit src_path per tool.
-    # Tools absent from this tarball (e.g. macOS-only tools on a Linux tarball)
-    # are simply not emitted in specs and are silently absent from the output.
-    bin_by_name = {f.basename: f for f in bin_files}
-    specs = [
-        "%s:%s" % (name, bin_by_name[name].path)
-        for name in ctx.attr.bins
-        if name in bin_by_name
-    ]
-
     ctx.actions.run_shell(
-        # bin_files provide the source tree (allowlisted tools + symlink targets).
-        inputs = bin_files,
+        inputs = [tarball],
         # stripper and readobj are declared as tools so Bazel tracks them in the
         # exec configuration and provides their runfiles automatically.
         tools = [stripper, readobj],
         outputs = [out_dir],
         command = _LLVM_STRIP_BINS_SCRIPT,
-        arguments = [out_dir.path + "/bin", stripper.path, readobj.path] + specs,
+        arguments = [
+            out_dir.path + "/bin",
+            stripper.path,
+            readobj.path,
+            tarball.path,
+            ctx.attr.strip_prefix,
+        ] + ctx.attr.bins,
         mnemonic = "LlvmMinimalStripBins",
         progress_message = "Stripping LLVM minimal bins for " + ctx.attr.platform,
-        execution_requirements = {
-            "no-remote-exec": "1",
-            "no-sandbox": "1",
-        },
     )
 
     return [DefaultInfo(files = depset([out_dir]))]
@@ -651,11 +780,14 @@ def _llvm_minimal_strip_bins_impl(ctx):
 llvm_minimal_strip_bins = rule(
     implementation = _llvm_minimal_strip_bins_impl,
     attrs = {
-        "bin_all": attr.label(
+        "tarball": attr.label(
             mandatory = True,
-            allow_files = True,
-            doc = "Filegroup containing all files under bin/ of the LLVM tarball repo, " +
-                  "including symlink targets (e.g. clang-22) not in the allowlist.",
+            allow_single_file = True,
+            doc = "The LLVM tarball blob (llvm.tar.xz from the llvm_tarball repo).",
+        ),
+        "strip_prefix": attr.string(
+            mandatory = True,
+            doc = "Archive strip prefix (e.g. 'LLVM-22.1.8-Linux-X64').",
         ),
         "bins": attr.string_list(
             mandatory = True,
@@ -686,12 +818,13 @@ llvm_minimal_strip_bins = rule(
 def setup_llvm_minimal_build():
     """Set up llvm_tarball_* repos needed to build the minimal LLVM artifacts.
 
-    Creates three repositories:
-      @llvm_tarball_linux_x86_64 — extracted Linux-X64 LLVM tree
-      @llvm_tarball_linux_arm64  — extracted Linux-ARM64 LLVM tree
-      @llvm_tarball_macos_arm64  — extracted macOS-ARM64 LLVM tree
+    Creates three repositories, each containing a single opaque tarball blob:
+      @llvm_tarball_linux_x86_64 — Linux-X64 LLVM tarball (llvm.tar.xz)
+      @llvm_tarball_linux_arm64  — Linux-ARM64 LLVM tarball (llvm.tar.xz)
+      @llvm_tarball_macos_arm64  — macOS-ARM64 LLVM tarball (llvm.tar.xz)
 
     These are consumed by the //compile:llvm_minimal_* build targets.
+    Extraction happens inside the actions that use these repos, not here.
     """
     _platform_to_repo = {
         "Linux-X64": "llvm_tarball_linux_x86_64",
