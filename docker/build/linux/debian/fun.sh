@@ -115,6 +115,7 @@ USER_NAME="${USER_NAME:-envoybuild}"
 QEMU_PACKAGES=(
     debian-archive-keyring
     debootstrap
+    gnupg
     qemu-user-static
     xz-utils)
 WORKER_PACKAGES=(
