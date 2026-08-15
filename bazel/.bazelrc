@@ -15,6 +15,7 @@ common --@rules_python//python/config_settings:bootstrap_impl=script
 
 common --registry=https://bcr.bazel.build/
 common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/5aa09470cb04646d9d416b142eab5c9569cc074e
+common --experimental_repository_cache_hardlinks
 
 
 #############################################################################
