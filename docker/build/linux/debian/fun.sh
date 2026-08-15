@@ -112,6 +112,11 @@ DOCKER_PACKAGES=(
 GROUP_ID="${GROUP_ID:-${USER_ID:-1000}}"
 USER_ID="${USER_ID:-1000}"
 USER_NAME="${USER_NAME:-envoybuild}"
+QEMU_PACKAGES=(
+    debian-archive-keyring
+    debootstrap
+    qemu-user-static
+    xz-utils)
 WORKER_PACKAGES=(
     autoconf
     autoconf-archive
@@ -267,6 +272,10 @@ install_bazelisk () {
     apt-get -qq update
     apt-get -qq install -y --no-install-recommends wget
     install_build_tools
+}
+
+install_qemu () {
+    apt_install "${QEMU_PACKAGES[@]}"
 }
 
 install_docker () {
