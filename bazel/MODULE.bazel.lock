@@ -305,7 +305,7 @@
   "moduleExtensions": {
     "//compile:extensions.bzl%libcxx_extension": {
       "general": {
-        "bzlTransitiveDigest": "jZK4QIYPYf8XwH+oO8xlaWhNPxJTJmvtLO4g8iNgN60=",
+        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
         "usagesDigest": "RN4CLPdbGThKbAP902x5jh5QAjMcWrWkUrFVQZo2yX8=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -335,7 +335,7 @@
     },
     "//compile:extensions.bzl%libcxx_libs_extension": {
       "general": {
-        "bzlTransitiveDigest": "jZK4QIYPYf8XwH+oO8xlaWhNPxJTJmvtLO4g8iNgN60=",
+        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
         "usagesDigest": "xm1WJBa3RDcHXWZqP+u1kihkP4aKA0K6N/umZp2Wd7U=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -344,7 +344,7 @@
           "libcxx_libs_aarch64": {
             "repoRuleId": "@@//compile:libcxx_libs.bzl%libcxx_libs",
             "attributes": {
-              "version": "0.2.6",
+              "version": "0.2.7",
               "sha256": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
               "arch": "aarch64"
             }
@@ -352,7 +352,7 @@
           "libcxx_libs_x86_64": {
             "repoRuleId": "@@//compile:libcxx_libs.bzl%libcxx_libs",
             "attributes": {
-              "version": "0.2.6",
+              "version": "0.2.7",
               "sha256": "e40f39338ffe561dfa26541557c9e548fc7760db9d99f7b6c5de237b725482aa",
               "arch": "x86_64"
             }
@@ -363,7 +363,7 @@
     },
     "//compile:extensions.bzl%llvm_minimal_build_extension": {
       "general": {
-        "bzlTransitiveDigest": "0pmIu1BREER6E6ZkGkRpfn9+dae9pV+LWUsFmp5Dt54=",
+        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
         "usagesDigest": "J/GulDAMOVsY4WAHN2G2r2pj5al4Kp1B7U+FYemKFmQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -402,7 +402,7 @@
     },
     "//compile:extensions.bzl%llvm_minimal_extension": {
       "general": {
-        "bzlTransitiveDigest": "0pmIu1BREER6E6ZkGkRpfn9+dae9pV+LWUsFmp5Dt54=",
+        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
         "usagesDigest": "zTRetCqgCTR/JYUTsNeIov/5K+KNmJAxmPtAfB+35B4=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -438,7 +438,7 @@
     },
     "//compile:extensions.bzl%llvm_toolchain_alias_extension": {
       "general": {
-        "bzlTransitiveDigest": "jZK4QIYPYf8XwH+oO8xlaWhNPxJTJmvtLO4g8iNgN60=",
+        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
         "usagesDigest": "REJEYfkX35dncC7j7UXGSvs9/b3F7M2GxmHTa51bVOw=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -447,24 +447,24 @@
           "llvm_minimal_linux_x64": {
             "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
             "attributes": {
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.6/llvm-minimal-22.1.8-Linux-X64.tar.zst",
-              "sha256": "10db9add822de89b3cf930693de870c38cc118a171ff63f819b525f5deb9a1c8",
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.7/llvm-minimal-22.1.8-Linux-X64.tar.zst",
+              "sha256": "3055f223cb27740e319412303c8298787b78062839d8809b88b13c4d6bcd82ca",
               "strip_prefix": "llvm-minimal-22.1.8-Linux-X64"
             }
           },
           "llvm_minimal_linux_arm64": {
             "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
             "attributes": {
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.6/llvm-minimal-22.1.8-Linux-ARM64.tar.zst",
-              "sha256": "14878d7015e4e945dc861ab1e490425abdd9075135ff9470625d602abfdb5229",
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.7/llvm-minimal-22.1.8-Linux-ARM64.tar.zst",
+              "sha256": "b00ea67259e613907da30cb5d8290192b54ab656f4759ace6794f3e10de1d0ed",
               "strip_prefix": "llvm-minimal-22.1.8-Linux-ARM64"
             }
           },
           "llvm_minimal_macos_arm64": {
             "repoRuleId": "@@//compile:llvm_minimal.bzl%llvm_minimal_repo",
             "attributes": {
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.6/llvm-minimal-22.1.8-macOS-ARM64.tar.zst",
-              "sha256": "0effb4701a3a9850012a98419a1565e08a1c07beb8ef3d50eb4297cf2f9370be",
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.7/llvm-minimal-22.1.8-macOS-ARM64.tar.zst",
+              "sha256": "04a2ac21e89a42dba532509ee67c246b71ec8a15c6cef0f2d63e349fb120934c",
               "strip_prefix": "llvm-minimal-22.1.8-macOS-ARM64"
             }
           },
@@ -474,6 +474,38 @@
               "minimal_linux_x64": "@@+llvm_toolchain_alias_extension+llvm_minimal_linux_x64//:BUILD.bazel",
               "minimal_linux_arm64": "@@+llvm_toolchain_alias_extension+llvm_minimal_linux_arm64//:BUILD.bazel",
               "minimal_macos_arm64": "@@+llvm_toolchain_alias_extension+llvm_minimal_macos_arm64//:BUILD.bazel"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
+    "//sysroot:extensions.bzl%macos_sysroot_build_extension": {
+      "general": {
+        "bzlTransitiveDigest": "19k+zU95I7Un7Wb70XufOE0ILCzGybYTCFpTrIZku8c=",
+        "usagesDigest": "upEStvIodWzxrsjRav9f31RuWmY7tAcR2XsgIoulj9k=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "pkgutil_linux_amd64": {
+            "repoRuleId": "@@//sysroot:macos_sysroot.bzl%download_file_repo",
+            "attributes": {
+              "url": "https://github.com/cerisier/pkgutil/releases/download/v1.2.0/pkgutil_linux_amd64",
+              "sha256": "3bcf79dbec6b7858ca0c1b6db03952ac122501a74073bac186c8080fcfb391fd",
+              "output": "pkgutil",
+              "filegroup": "pkgutil_bin",
+              "executable": true
+            }
+          },
+          "macos_sdk_pkg": {
+            "repoRuleId": "@@//sysroot:macos_sysroot.bzl%download_file_repo",
+            "attributes": {
+              "url": "https://swcdn.apple.com/content/downloads/52/01/082-41241-A_0747ZN8FHV/dectd075r63pppkkzsb75qk61s0lfee22j/CLTools_macOSNMOS_SDK.pkg",
+              "sha256": "ba3453d62b3d2babf67f3a4a44e8073d6555c85f114856f4390a1f53bd76e24a",
+              "output": "CLTools_macOSNMOS_SDK.pkg",
+              "filegroup": "sdk_pkg",
+              "user_agent": "Mozilla/5.0"
             }
           }
         },
@@ -514,7 +546,7 @@
     },
     "//v8:extensions.bzl%wee8_prebuilt_extension": {
       "general": {
-        "bzlTransitiveDigest": "YAwme69wIVSWs5590pxUA4fd3WBOm5mWMUNUu3QtpGs=",
+        "bzlTransitiveDigest": "xyHRbqbXmrL5XlS6bUASa25pKMPVmKP++qUnhVM2dmA=",
         "usagesDigest": "G3ksytQP2i8GCDK2aPOHdeCILz9E6+K7AK5dsV7Mi3g=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -523,8 +555,8 @@
           "wee8_prebuilt_x86_64": {
             "repoRuleId": "@@//v8:wee8_prebuilt.bzl%wee8_prebuilt",
             "attributes": {
-              "version": "0.2.6",
-              "sha256": "9ca7b01b3dc0d366dc9284a983aef16a6603afc0932f0fb75b9f2963aff1854e",
+              "version": "0.2.7",
+              "sha256": "4bb306264d85dc629e7bb03ede97064de6c2e6452044ef6e528f7e319f51d482",
               "arch": "x86_64",
               "stdlib": "libcxx"
             }
@@ -532,8 +564,8 @@
           "wee8_prebuilt_x86_64_libstdcxx": {
             "repoRuleId": "@@//v8:wee8_prebuilt.bzl%wee8_prebuilt",
             "attributes": {
-              "version": "0.2.6",
-              "sha256": "",
+              "version": "0.2.7",
+              "sha256": "9a92188a27c2b8f8ac0ff2548c259bd1ce375431af6ee7b67626d22745bd0f8a",
               "arch": "x86_64",
               "stdlib": "libstdcxx"
             }
@@ -541,19 +573,10 @@
           "wee8_prebuilt_aarch64": {
             "repoRuleId": "@@//v8:wee8_prebuilt.bzl%wee8_prebuilt",
             "attributes": {
-              "version": "0.2.6",
-              "sha256": "e14308ad3c3f0308a75058d2960cdb790f508ad528fd8e32291af6e6695a72a3",
+              "version": "0.2.7",
+              "sha256": "9c4ce19dd446f62791979e4cd03c2da4df43d035479820db5a4a35aee605c3d8",
               "arch": "aarch64",
               "stdlib": "libcxx"
-            }
-          },
-          "wee8_prebuilt_aarch64_libstdcxx": {
-            "repoRuleId": "@@//v8:wee8_prebuilt.bzl%wee8_prebuilt",
-            "attributes": {
-              "version": "0.2.6",
-              "sha256": "",
-              "arch": "aarch64",
-              "stdlib": "libstdcxx"
             }
           }
         },
