@@ -305,7 +305,7 @@
   "moduleExtensions": {
     "//compile:extensions.bzl%libcxx_extension": {
       "general": {
-        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
+        "bzlTransitiveDigest": "Je2ESdd4pL+gizdKHLX5RAXkc6BQmfgy+p97Wq/cwJo=",
         "usagesDigest": "RN4CLPdbGThKbAP902x5jh5QAjMcWrWkUrFVQZo2yX8=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -314,7 +314,6 @@
           "llvm_libcxx_aarch64": {
             "repoRuleId": "@@//compile:llvm_prebuilt.bzl%llvm_prebuilt",
             "attributes": {
-              "build_file_content": "\nfilegroup(\n    name = \"libcxx\",\n    srcs = [\n        \"lib/aarch64-unknown-linux-gnu/libc++.a\",\n        \"lib/aarch64-unknown-linux-gnu/libc++abi.a\",\n        \"lib/aarch64-unknown-linux-gnu/libunwind.a\",\n    ],\n    visibility = [\"//visibility:public\"],\n)\nfilegroup(\n    name = \"compiler_rt\",\n    srcs = glob([\"lib/clang/*/lib/aarch64-unknown-linux-gnu/libclang_rt.builtins.a\"]),\n    visibility = [\"//visibility:public\"],\n)\nfilegroup(\n    name = \"config_site\",\n    srcs = [\"include/aarch64-unknown-linux-gnu/c++/v1/__config_site\"],\n    visibility = [\"//visibility:public\"],\n)\n",
               "sha256": "805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34",
               "strip_prefix": "LLVM-22.1.8-Linux-ARM64/",
               "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-Linux-ARM64.tar.xz"
@@ -323,7 +322,6 @@
           "llvm_libcxx_x86_64": {
             "repoRuleId": "@@//compile:llvm_prebuilt.bzl%llvm_prebuilt",
             "attributes": {
-              "build_file_content": "\nfilegroup(\n    name = \"libcxx\",\n    srcs = [\n        \"lib/x86_64-unknown-linux-gnu/libc++.a\",\n        \"lib/x86_64-unknown-linux-gnu/libc++abi.a\",\n        \"lib/x86_64-unknown-linux-gnu/libunwind.a\",\n    ],\n    visibility = [\"//visibility:public\"],\n)\nfilegroup(\n    name = \"compiler_rt\",\n    srcs = glob([\"lib/clang/*/lib/x86_64-unknown-linux-gnu/libclang_rt.builtins.a\"]),\n    visibility = [\"//visibility:public\"],\n)\nfilegroup(\n    name = \"config_site\",\n    srcs = [\"include/x86_64-unknown-linux-gnu/c++/v1/__config_site\"],\n    visibility = [\"//visibility:public\"],\n)\n",
               "sha256": "df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384",
               "strip_prefix": "LLVM-22.1.8-Linux-X64/",
               "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-22.1.8/LLVM-22.1.8-Linux-X64.tar.xz"
@@ -335,7 +333,7 @@
     },
     "//compile:extensions.bzl%libcxx_libs_extension": {
       "general": {
-        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
+        "bzlTransitiveDigest": "Je2ESdd4pL+gizdKHLX5RAXkc6BQmfgy+p97Wq/cwJo=",
         "usagesDigest": "xm1WJBa3RDcHXWZqP+u1kihkP4aKA0K6N/umZp2Wd7U=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -363,7 +361,7 @@
     },
     "//compile:extensions.bzl%llvm_minimal_build_extension": {
       "general": {
-        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
+        "bzlTransitiveDigest": "Je2ESdd4pL+gizdKHLX5RAXkc6BQmfgy+p97Wq/cwJo=",
         "usagesDigest": "J/GulDAMOVsY4WAHN2G2r2pj5al4Kp1B7U+FYemKFmQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -402,7 +400,7 @@
     },
     "//compile:extensions.bzl%llvm_minimal_extension": {
       "general": {
-        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
+        "bzlTransitiveDigest": "Je2ESdd4pL+gizdKHLX5RAXkc6BQmfgy+p97Wq/cwJo=",
         "usagesDigest": "zTRetCqgCTR/JYUTsNeIov/5K+KNmJAxmPtAfB+35B4=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -438,7 +436,7 @@
     },
     "//compile:extensions.bzl%llvm_toolchain_alias_extension": {
       "general": {
-        "bzlTransitiveDigest": "qzKqDW9q+r+dOEb3L3g75ocLk1bT9FJGLwDwH/aoock=",
+        "bzlTransitiveDigest": "Je2ESdd4pL+gizdKHLX5RAXkc6BQmfgy+p97Wq/cwJo=",
         "usagesDigest": "REJEYfkX35dncC7j7UXGSvs9/b3F7M2GxmHTa51bVOw=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -482,7 +480,7 @@
     },
     "//sysroot:extensions.bzl%macos_sysroot_build_extension": {
       "general": {
-        "bzlTransitiveDigest": "19k+zU95I7Un7Wb70XufOE0ILCzGybYTCFpTrIZku8c=",
+        "bzlTransitiveDigest": "8mBbKuC9X+dVsJfKM+AgJFJoBBNzOGVJZxdCfSxLqq0=",
         "usagesDigest": "upEStvIodWzxrsjRav9f31RuWmY7tAcR2XsgIoulj9k=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -514,7 +512,7 @@
     },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
-        "bzlTransitiveDigest": "19k+zU95I7Un7Wb70XufOE0ILCzGybYTCFpTrIZku8c=",
+        "bzlTransitiveDigest": "8mBbKuC9X+dVsJfKM+AgJFJoBBNzOGVJZxdCfSxLqq0=",
         "usagesDigest": "wKAMwdm/oEYUzhed5dKuDJChGeMSDIyTPv9j0p3ta18=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
@@ -546,7 +544,7 @@
     },
     "//v8:extensions.bzl%wee8_prebuilt_extension": {
       "general": {
-        "bzlTransitiveDigest": "xyHRbqbXmrL5XlS6bUASa25pKMPVmKP++qUnhVM2dmA=",
+        "bzlTransitiveDigest": "3XVk7hxXkbm3MI5PCrruGa7H/eKm1U3zjVGWrvQLw4Q=",
         "usagesDigest": "G3ksytQP2i8GCDK2aPOHdeCILz9E6+K7AK5dsV7Mi3g=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},

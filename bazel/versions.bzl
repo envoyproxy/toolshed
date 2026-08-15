@@ -2,29 +2,6 @@ SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 
 BINS_RELEASE = "0.2.7"
 
-# This is only used for cross-compilation (toolchains_llvm provides these otherwise)
-LLVM_CXX_BUILD = """
-filegroup(
-    name = "libcxx",
-    srcs = [
-        "lib/{arch}-unknown-linux-gnu/libc++.a",
-        "lib/{arch}-unknown-linux-gnu/libc++abi.a",
-        "lib/{arch}-unknown-linux-gnu/libunwind.a",
-    ],
-    visibility = ["//visibility:public"],
-)
-filegroup(
-    name = "compiler_rt",
-    srcs = glob(["lib/clang/*/lib/{arch}-unknown-linux-gnu/libclang_rt.builtins.a"]),
-    visibility = ["//visibility:public"],
-)
-filegroup(
-    name = "config_site",
-    srcs = ["include/{arch}-unknown-linux-gnu/c++/v1/__config_site"],
-    visibility = ["//visibility:public"],
-)
-"""
-
 LLVM_VERSION = "22.1.8"
 
 V8_VERSION = "14.6.202.10"
@@ -157,7 +134,6 @@ VERSIONS = {
         "sha256": "805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34",
         "url": "https://github.com/{repo}/releases/download/llvmorg-{version}/LLVM-{version}-{download_suffix}.tar.xz",
         "strip_prefix": "LLVM-{version}-{download_suffix}/",
-        "build_file_content": LLVM_CXX_BUILD,
     },
     "llvm_libcxx_x86_64": {
         "arch": "x86_64",
@@ -168,7 +144,6 @@ VERSIONS = {
         "sha256": "df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384",
         "url": "https://github.com/{repo}/releases/download/llvmorg-{version}/LLVM-{version}-{download_suffix}.tar.xz",
         "strip_prefix": "LLVM-{version}-{download_suffix}/",
-        "build_file_content": LLVM_CXX_BUILD,
     },
     "llvm_minimal_linux_x64": {
         "type": "http_archive",
