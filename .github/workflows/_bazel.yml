@@ -33,13 +33,6 @@ on:
       cache-keys:
         type: string
         default:
-      cache-keys-default:
-        type: string
-        default: |
-          llvm-x86
-          llvm-aarch
-          llvm-macos
-          v8-source
       cache-path:
         type: string
         default: /home/runner/.cache/bazel-repository-cache
@@ -126,37 +119,6 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
-    - name: Cache keys
-      if: ${{ inputs.cache-entries != 'NONE' && inputs.cache-keys }}
-      id: cache-keys
-      uses: envoyproxy/toolshed/actions/jq@1cdb7a0116109cef13471c348171587eeca2b7d8  # actions-v0.4.20
-      with:
-        input: ${{ inputs.cache-keys }}
-        input-format: yaml
-    - name: Filtered caches
-      if: ${{ inputs.cache-entries != 'NONE' }}
-      id: cache-entries-all
-      uses: envoyproxy/toolshed/actions/jq@1cdb7a0116109cef13471c348171587eeca2b7d8  # actions-v0.4.20
-      with:
-        input: ${{ inputs.cache-entries || inputs.cache-entries-default }}
-        input-format: yaml
-        filter: .
-    - name: Filtered caches
-      if: ${{ inputs.cache-entries != 'NONE' }}
-      id: cache-entries
-      uses: envoyproxy/toolshed/actions/jq@1cdb7a0116109cef13471c348171587eeca2b7d8  # actions-v0.4.20
-      with:
-        input: |
-          entries: ${{ steps.cache-entries-all.outputs.value }}
-          keys: ${{ steps.cache-keys.outputs.value }}
-        input-format: yaml
-        filter: |
-          (.keys // []) as $keys
-          | if ($keys | length) == 0
-            then .entries
-            else .entries | with_entries(select(.key | IN($keys[])))
-            end
-
     - name: Bazel caches
       id: repo-cache-resolve
       uses: ./actions/bazel/cache/resolve
@@ -164,7 +126,8 @@ jobs:
       with:
         lock-file: bazel/MODULE.bazel.lock
         cache-path: ${{ inputs.cache-path }}
-        entries: ${{ steps.cache-entries.outputs.value }}
+        entries: ${{ inputs.cache-entries || inputs.cache-entries-default }}
+        keys: ${{ inputs.cache-keys }}
     - name: Restore caches
       if: ${{ inputs.cache-entries != 'NONE' }}
       uses: ./actions/github/caches/restore
@@ -220,7 +183,7 @@ jobs:
         if [[ "${BAZEL_UPLOAD}" == "true" && -n "${ARTIFACT_PATTERNS}" ]]; then
            download_toplevel="--remote_download_toplevel"
         fi
-        if [[ -n "${REPO_CACHE_PATH}" ]]; then
+        if [[ -n "${REPO_CACHE_PATH}" && -n "${CACHE_ENTRIES}" ]]; then
             repository_cache_flag="--repository_cache=${REPO_CACHE_PATH}"
             if [[ ! -e "${REPO_CACHE_PATH}" ]]; then
                 mkdir -p "${REPO_CACHE_PATH}"
@@ -238,6 +201,7 @@ jobs:
         ARTIFACT_PATTERNS: ${{ inputs.artifacts }}
         RBE_AUTHORIZED: ${{ steps.rbe.outputs.authorized }}
         EVENT_NAME: ${{ github.event_name }}
+        CACHE_ENTRIES: ${{ inputs.cache-entries != 'NONE' && inputs.cache-entries || '' }}
         REPO_CACHE_PATH: ${{ inputs.cache-path }}
     - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }}) [container]
       if: runner.os == 'Linux'

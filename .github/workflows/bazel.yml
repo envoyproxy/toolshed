@@ -112,6 +112,7 @@ jobs:
             --config=gcc
             --noenable_bzlmod --enable_workspace
           bazel_mode: workspace-gcc
+          cache-entries: NONE
           create_source: false
           privileged: false
           rbe: true
@@ -128,6 +129,7 @@ jobs:
             --config=ci
             --config=gcc
           bazel_mode: bzlmod-gcc
+          cache-entries: NONE
           create_source: false
           privileged: false
           rbe: true
@@ -146,7 +148,6 @@ jobs:
             --noenable_bzlmod --enable_workspace
           bazel_mode: workspace-macos
           cache-entries: NONE
-          cache-path: "${HOME}/.cache/bazel-repository-cache"
           create_source: false
           privileged: false
           rbe: true
@@ -163,7 +164,7 @@ jobs:
             --config=ci
             --config=macos
           bazel_mode: bzlmod-macos
-          cache-path: "${HOME}/.cache/bazel-repository-cache"
+          cache-entries: NONE
           create_source: false
           privileged: false
           rbe: true
