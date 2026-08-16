@@ -1,0 +1,22 @@
+uses: ./actions/bazel/cache/resolve
+id: resolve
+with:
+  cache-path: /tmp/cache
+  lock-file: ${{ env.ACTION_TEST_PATH }}/fixtures/module-bad-sha.lock.yml
+  entries: |
+    my-module:
+      module: my-module
+
+before:
+- shell: bash
+  run: |
+    mkdir -p /tmp/bcr-bad/modules/my-module/1.0.0
+    touch /tmp/bcr-bad/modules/my-module/1.0.0/source.json
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    RESOLVE_OUTPUT='${{ steps.resolve.outputs.caches }}'
+    # sha mismatch causes the entry to be dropped; caches output is empty
+    test_output_equals "$RESOLVE_OUTPUT" "{}" "Bad SHA entry is dropped from caches"

@@ -1,0 +1,92 @@
+#name: bazel/cache/resolve
+description: |
+  Parse MODULE.bazel.lock into a {cache-key: path} map for caches/restore+save
+
+inputs:
+  lock-file:
+    default: MODULE.bazel.lock
+  cache-path:
+    required: true
+  entries:
+    required: true  # yaml: name -> {extension, repo} | {module}
+
+outputs:
+  caches:
+    value: ${{ steps.caches.outputs.value }}
+
+
+runs:
+  using: composite
+  steps:
+  - id: entries
+    uses: envoyproxy/toolshed/actions/jq@81f14242f0c4d8cae0964c85ae0c830a37b38d53
+    with:
+      input-format: yaml
+      input: ${{ inputs.entries }}
+      filter: .
+
+  - id: resolved
+    uses: envoyproxy/toolshed/actions/jq@81f14242f0c4d8cae0964c85ae0c830a37b38d53
+    with:
+      input-format: yaml-path
+      input: ${{ inputs.lock-file }}
+      options: -c --argjson entries '${{ steps.entries.outputs.value }}'
+      print-result: true
+      filter: |
+        . as $lock
+        | $entries
+        | map_values(
+            . as $entry
+            | if $entry.extension then
+                {sha: $lock.moduleExtensions[$entry.extension].general.generatedRepoSpecs[$entry.repo].attributes.sha256}
+              else
+                ($lock.registryFileHashes
+                 | to_entries
+                 | map(select(.key | test("/modules/\($entry.module)/[^/]+/source\\.json$"))))[0]
+                | {source: .key, sha: .value}
+              end)
+
+  - id: modules
+    uses: envoyproxy/toolshed/actions/bson@81f14242f0c4d8cae0964c85ae0c830a37b38d53
+    with:
+      input: ${{ steps.resolved.outputs.value }}
+      input-format: json
+      options: -r
+      filter: |
+        to_entries
+        | map(select(.value.source))
+        | map(
+            .key as $k
+            | .value.source as $u
+            | .value.sha as $sha
+            | "f=$(mktemp)
+               SHA256=$(command -v sha256sum || echo 'shasum -a 256')
+               curl -fL '\($u)' -o $f && test \"$($SHA256 $f | cut -d' ' -f1)\" = '\($sha)' && echo '\($k)'
+               tr -d '\\n' < $f; echo"
+          )
+        | join("\n")
+        | "OUTPUT=$(\n\(.)\n)"
+        | bash::output
+      result-format: text
+      result-filter: |
+        split("\n")
+        | map(select(length > 0))
+        | [range(0; length; 2) as $i
+           | {key: .[$i], value: (.[$i + 1] | fromjson | .integrity | str::integrity_to_hex)}]
+        | from_entries
+      result-filter-options: -csR
+
+  # merge extension shas + module shas, shape into {cache-key: path}
+  - id: caches
+    uses: envoyproxy/toolshed/actions/jq@81f14242f0c4d8cae0964c85ae0c830a37b38d53
+    with:
+      input: ${{ steps.resolved.outputs.value }}
+      options: >-
+        -c
+        --argjson modules '${{ steps.modules.outputs.output || '{}' }}'
+        --arg path "${{ inputs.cache-path }}"
+      print-result: true
+      filter: |
+        map_values(select(.source | not) | .sha)
+        | . + $modules
+        | with_entries({key: "bazel-\(.key)-\(.value)", value: "\($path)/\(.value)"})
