@@ -1,0 +1,32 @@
+inputs:
+  caches:
+    type: string
+    required: true
+
+outputs:
+  hits:
+    value: ${{ steps.cached.outputs.value }}
+
+runs:
+  using: "composite"
+  steps:
+  - uses: envoyproxy/toolshed/actions/foreach@8e5ecb20673bc0788ebbafaadc07652f824617e6
+    id: json_actions
+    with:
+      items: ${{ inputs.caches }}
+      steps: |
+        - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+          id: $KEY
+          with:
+            key: $KEY
+            path: "%{{ fromJSON(inputs.context).items['$KEY'] }}"
+
+  - uses: envoyproxy/toolshed/actions/jq@8e5ecb20673bc0788ebbafaadc07652f824617e6
+    id: cached
+    with:
+      input: ${{ steps.json_actions.outputs.out }}
+      print-result: true
+      filter: |
+        .
+        | fromjson
+        | with_entries({key: .key, value: (.value.outputs["cache-hit"] // "false" | fromjson)})
