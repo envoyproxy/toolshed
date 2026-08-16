@@ -45,11 +45,37 @@ def trim:
 ;
 
 def b64_to_hex:
-  @base64d
-  | explode
-  | map("0123456789abcdef"[(. / 16 | floor):(. / 16 | floor) + 1]
+  def b64chars:
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+  ;
+  def b64val($c):
+    if $c == "=" then
+      null
+    else
+      b64chars
+      | explode
+      | index(($c | explode[0]))
+    end
+  ;
+  def bytes_to_hex:
+    map("0123456789abcdef"[(. / 16 | floor):(. / 16 | floor) + 1]
         + "0123456789abcdef"[. % 16:. % 16 + 1])
+    | add
+  ;
+  explode
+  | map([.] | implode)
+  | [range(0; length; 4) as $i | .[$i:$i + 4]]
+  | map(
+      map(b64val(.)) as $q
+      | [($q[0] * 4 + ($q[1] / 16 | floor))]
+        + (if $q[2] != null then
+             [((($q[1] % 16) * 16) + ($q[2] / 4 | floor))]
+           else [] end)
+        + (if $q[3] != null then
+             [((($q[2] % 4) * 64) + $q[3])]
+           else [] end))
   | add
+  | bytes_to_hex
 ;
 
 def integrity_to_hex:
