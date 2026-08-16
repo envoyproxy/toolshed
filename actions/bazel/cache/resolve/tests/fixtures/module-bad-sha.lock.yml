@@ -1,0 +1,3 @@
+moduleExtensions: {}
+registryFileHashes:
+  "file:///tmp/bcr-bad/modules/my-module/1.0.0/source.json": wrongshavalue

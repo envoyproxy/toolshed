@@ -1,0 +1,8 @@
+moduleExtensions:
+  my_extension:
+    general:
+      generatedRepoSpecs:
+        my_repo:
+          attributes:
+            sha256: abc123sha256abcd
+registryFileHashes: {}
