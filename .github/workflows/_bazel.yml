@@ -121,7 +121,7 @@ jobs:
 
     - name: Bazel caches
       id: repo-cache-resolve
-    - uses: envoyproxy/toolshed/actions/bazel/cache/resolve@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
+      uses: envoyproxy/toolshed/actions/bazel/cache/resolve@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
       if: ${{ inputs.cache-entries != 'NONE' }}
       with:
         lock-file: bazel/MODULE.bazel.lock
@@ -129,9 +129,9 @@ jobs:
         entries: ${{ inputs.cache-entries || inputs.cache-entries-default }}
         keys: ${{ inputs.cache-keys }}
     - name: Restore caches
-      if: ${{ inputs.cache-entries != 'NONE' }}
-    - uses: envoyproxy/toolshed/actions/bazel/cache/restore@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
       id: cache-restore
+      if: ${{ inputs.cache-entries != 'NONE' }}
+      uses: envoyproxy/toolshed/actions/bazel/cache/restore@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
       with:
         caches: ${{ steps.repo-cache-resolve.outputs.caches }}
 
