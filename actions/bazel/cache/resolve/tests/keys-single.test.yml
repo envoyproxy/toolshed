@@ -1,0 +1,25 @@
+uses: ./actions/bazel/cache/resolve
+id: resolve
+with:
+  cache-all: false
+  cache-path: /tmp/cache
+  lock-file: ${{ env.ACTION_TEST_PATH }}/fixtures/extension.lock.yml
+  entries: |
+    llvm:
+      extension: my_extension
+      repo: my_repo
+    llvm-other:
+      extension: my_extension
+      repo: my_other_repo
+  keys: llvm-other
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    RESOLVE_OUTPUT='${{ steps.resolve.outputs.caches }}'
+    test_output_not_empty "$RESOLVE_OUTPUT"
+    test_json_key "$RESOLVE_OUTPUT" '["bazel-llvm-other-def456sha256efgh"]' \
+      "/tmp/cache/content_addressable/sha256/def456sha256efgh"
+    HAS_LLVM=$(echo "$RESOLVE_OUTPUT" | jq 'has("bazel-llvm-abc123sha256abcd")')
+    test_output_equals "$HAS_LLVM" "false" "Unselected single-line cache key is absent"
