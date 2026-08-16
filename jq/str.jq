@@ -1,5 +1,5 @@
 def cleaned:
-  gsub("\u001b\\[[0-9;]*[a-zA-Z]"; "")
+  gsub(([27] | implode) + "\\[[0-9;]*[a-zA-Z]"; "")
 ;
 
 def indent(width):
@@ -44,9 +44,14 @@ def trim:
   | sub(" +$"; "")
 ;
 
+# NB: @base64d UTF-8-encodes bytes >= 0x80, so decode manually
 def b64_to_hex:
-  @base64d
-  | explode
+  ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/" | explode) as $chars
+  | [range(0; length; 4) as $i
+     | (.[$i:$i + 4] | explode | map(. as $c | $chars | index($c))) as $q
+     | (($q[0] * 4) + ($q[1] / 16 | floor)),
+       (if $q[2] then (($q[1] % 16) * 16) + ($q[2] / 4 | floor) else empty end),
+       (if $q[3] then (($q[2] % 4) * 64) + $q[3] else empty end)]
   | map("0123456789abcdef"[(. / 16 | floor):(. / 16 | floor) + 1]
         + "0123456789abcdef"[. % 16:. % 16 + 1])
   | add

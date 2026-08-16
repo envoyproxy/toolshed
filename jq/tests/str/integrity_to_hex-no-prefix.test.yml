@@ -1,0 +1,7 @@
+name: str::integrity_to_hex handles missing prefix
+
+input: "CcPZ95amcfuWMMcZADLwAXHOme/9fIDHquuhSKe8vBs="
+
+module: str::integrity_to_hex
+
+expected: "09c3d9f796a671fb9630c7190032f00171ce99effd7c80c7aaeba148a7bcbc1b"
