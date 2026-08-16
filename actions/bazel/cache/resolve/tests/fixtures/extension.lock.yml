@@ -5,4 +5,10 @@ moduleExtensions:
         my_repo:
           attributes:
             sha256: abc123sha256abcd
+        my_other_repo:
+          attributes:
+            sha256: def456sha256efgh
+        my_third_repo:
+          attributes:
+            sha256: 789abcsha256ijkl
 registryFileHashes: {}

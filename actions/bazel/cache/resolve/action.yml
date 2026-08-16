@@ -10,6 +10,8 @@ inputs:
     required: true
   entries:
     required: true  # yaml: name -> {extension, repo} | {module}
+  keys:
+    default:  # newline-separated list of entry names, empty selects all entries
   lock-file:
     default: MODULE.bazel.lock
 
@@ -33,12 +35,33 @@ runs:
       SHA256=$(command -v sha256sum || echo 'shasum -a 256')
       echo "value=$($SHA256 "$f" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
 
+  - id: keys
+    if: ${{ inputs.keys }}
+    uses: envoyproxy/toolshed/actions/jq@81f14242f0c4d8cae0964c85ae0c830a37b38d53
+    with:
+      input-format: text
+      input: ${{ inputs.keys }}
+      options: -cRs
+      filter: |
+        split("\n")
+        | map(sub("^\\s+"; "") | sub("\\s+$"; ""))
+        | map(select(length > 0))
+
   - id: entries
     uses: envoyproxy/toolshed/actions/jq@81f14242f0c4d8cae0964c85ae0c830a37b38d53
     with:
       input-format: yaml
       input: ${{ inputs.entries }}
-      filter: .
+      options: -c --argjson keys '${{ steps.keys.outputs.value || '[]' }}'
+      filter: |
+        . as $entries
+        | ([$keys[] | . as $key | select($entries | has($key) | not)] | unique) as $unknown
+        | if ($unknown | length) > 0
+          then error("unknown cache keys: \($unknown | join(", "))")
+          elif ($keys | length) == 0
+          then $entries
+          else $entries | with_entries(select(.key | IN($keys[])))
+          end
 
   - id: resolved
     uses: envoyproxy/toolshed/actions/jq@81f14242f0c4d8cae0964c85ae0c830a37b38d53
