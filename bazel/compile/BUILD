@@ -7,6 +7,7 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:versions.bzl", "LLVM_VERSION", "SUPPORTED_ARCHES", "VERSIONS")
 load(":libcxx_darwin.bzl", "libcxx_darwin_extract")
 load(":llvm_minimal.bzl", "LLVM_MINIMAL_BINS", "LLVM_MINIMAL_LIB_GLOBS", "LLVM_MINIMAL_LLVM_REPO_BUILD", "LLVM_TARBALL_STRIP_PREFIXES", "llvm_minimal_extract_host_tools", "llvm_minimal_extract_libs", "llvm_minimal_strip_bins")
+load(":llvm_prebuilt.bzl", "llvm_prebuilt_extract_libcxx")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -197,10 +198,31 @@ pkg_tar(
 
 [
     (
+        llvm_prebuilt_extract_libcxx(
+            name = "llvm_libcxx_%s_extract" % arch,
+            tarball = "@llvm_libcxx_%s//:llvm.tar.xz" % arch,
+            strip_prefix = "LLVM-%s-%s/" % (LLVM_VERSION, "Linux-ARM64" if arch == "aarch64" else "Linux-X64"),
+            arch = arch,
+        ),
+        filegroup(
+            name = "llvm_libcxx_%s_libcxx" % arch,
+            srcs = [":llvm_libcxx_%s_extract" % arch],
+            output_group = "libcxx",
+        ),
+        filegroup(
+            name = "llvm_libcxx_%s_compiler_rt" % arch,
+            srcs = [":llvm_libcxx_%s_extract" % arch],
+            output_group = "compiler_rt",
+        ),
+        filegroup(
+            name = "llvm_libcxx_%s_config_site" % arch,
+            srcs = [":llvm_libcxx_%s_extract" % arch],
+            output_group = "config_site",
+        ),
         pkg_files(
             name = "libcxx_%s_lib_files" % arch,
             srcs = [
-                "@llvm_libcxx_%s//:libcxx" % arch,
+                ":llvm_libcxx_%s_libcxx" % arch,
             ],
             prefix = "lib",
             strip_prefix = ".",
@@ -213,7 +235,7 @@ pkg_tar(
         pkg_files(
             name = "libcxx_%s_compiler_rt_files" % arch,
             srcs = [
-                "@llvm_libcxx_%s//:compiler_rt" % arch,
+                ":llvm_libcxx_%s_compiler_rt" % arch,
             ],
             prefix = "lib",
             strip_prefix = ".",
@@ -226,7 +248,7 @@ pkg_tar(
         pkg_files(
             name = "libcxx_%s_include_files" % arch,
             srcs = [
-                "@llvm_libcxx_%s//:config_site" % arch,
+                ":llvm_libcxx_%s_config_site" % arch,
             ],
             prefix = "include",
             strip_prefix = ".",

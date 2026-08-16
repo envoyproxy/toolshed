@@ -1,9 +1,8 @@
 """Module extension for libcxx and sanitizer libraries configuration in bzlmod."""
 
-load("//:versions.bzl", "LLVM_CXX_BUILD", "SUPPORTED_ARCHES", "VERSIONS")
 load(":libcxx_libs.bzl", "setup_libcxx_libs")
 load(":llvm_minimal.bzl", "llvm_toolchain_alias", "setup_llvm_minimal", "setup_llvm_minimal_build")
-load(":llvm_prebuilt.bzl", "llvm_prebuilt")
+load(":llvm_prebuilt.bzl", "setup_llvm_prebuilt")
 load(":sanitizer_libs.bzl", "setup_sanitizer_libs")
 
 def _single_setup_tag(module_ctx, ext_name, repos, attrs):
@@ -132,18 +131,7 @@ libcxx_libs_extension = module_extension(
 )
 
 def _libcxx_ext_impl(module_ctx):
-    for arch in SUPPORTED_ARCHES:
-        config = VERSIONS["llvm_libcxx_%s" % arch]
-        build_file_content = LLVM_CXX_BUILD.format(**config)
-        url = config["url"].format(**config)
-        strip_prefix = config["strip_prefix"].format(**config)
-        llvm_prebuilt(
-            name = "llvm_libcxx_%s" % arch,
-            build_file_content = build_file_content,
-            sha256 = config["sha256"],
-            strip_prefix = strip_prefix,
-            url = url,
-        )
+    setup_llvm_prebuilt()
 
 libcxx_extension = module_extension(
     implementation = _libcxx_ext_impl,
