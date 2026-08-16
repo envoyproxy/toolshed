@@ -1,7 +1,6 @@
 uses: ./actions/bazel/cache/resolve
 id: resolve
 with:
-  cache-all: false
   cache-path: /tmp/cache
   lock-file: ${{ env.ACTION_TEST_PATH }}/fixtures/extension.lock.yml
   entries: |
@@ -14,6 +13,7 @@ after:
   run: |
     . "${ACTION_TEST_PATH}/test_fun.sh"
     RESOLVE_OUTPUT='${{ steps.resolve.outputs.caches }}'
+    REST_HASH=$(sha256sum "${ACTION_TEST_PATH}/fixtures/extension.lock.yml" | cut -d' ' -f1)
     test_output_not_empty "$RESOLVE_OUTPUT"
-    test_json_key "$RESOLVE_OUTPUT" '["bazel-llvm-abc123sha256abcd"]' \
-      "/tmp/cache/content_addressable/sha256/abc123sha256abcd"
+    test_json_key "$RESOLVE_OUTPUT" "[\"bazel-rest-${REST_HASH}\"]" \
+      "/tmp/cache/content_addressable/sha256"

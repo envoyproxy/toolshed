@@ -1,6 +1,7 @@
 uses: ./actions/bazel/cache/resolve
 id: resolve
 with:
+  cache-all: false
   cache-path: /tmp/cache
   lock-file: ${{ env.ACTION_TEST_PATH }}/fixtures/module-success.lock.yml
   entries: |
@@ -20,4 +21,5 @@ after:
     SHA=deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef
     RESOLVE_OUTPUT='${{ steps.resolve.outputs.caches }}'
     test_output_not_empty "$RESOLVE_OUTPUT"
-    test_json_key "$RESOLVE_OUTPUT" "[\"bazel-my-module-${SHA}\"]" "/tmp/cache/${SHA}"
+    test_json_key "$RESOLVE_OUTPUT" "[\"bazel-my-module-${SHA}\"]" \
+      "/tmp/cache/content_addressable/sha256/${SHA}"

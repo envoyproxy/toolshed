@@ -15,5 +15,6 @@ after:
     . "${ACTION_TEST_PATH}/test_fun.sh"
     RESOLVE_OUTPUT='${{ steps.resolve.outputs.caches }}'
     test_output_not_empty "$RESOLVE_OUTPUT"
-    test_json_key "$RESOLVE_OUTPUT" '["bazel-llvm-abc123sha256abcd"]' \
-      "/tmp/cache/content_addressable/sha256/abc123sha256abcd"
+    # no bazel-rest- key when cache-all is false
+    REST_KEYS=$(echo "$RESOLVE_OUTPUT" | jq '[keys[] | select(startswith("bazel-rest-"))] | length')
+    test_output_equals "$REST_KEYS" "0" "No bazel-rest- key when cache-all is false"

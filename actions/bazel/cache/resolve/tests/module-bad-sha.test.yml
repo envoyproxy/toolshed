@@ -1,6 +1,7 @@
 uses: ./actions/bazel/cache/resolve
 id: resolve
 with:
+  cache-all: false
   cache-path: /tmp/cache
   lock-file: ${{ env.ACTION_TEST_PATH }}/fixtures/module-bad-sha.lock.yml
   entries: |

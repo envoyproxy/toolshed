@@ -3,12 +3,15 @@ description: |
   Parse MODULE.bazel.lock into a {cache-key: path} map for caches/restore+save
 
 inputs:
-  lock-file:
-    default: MODULE.bazel.lock
+  cache-all:
+    type: boolean
+    default: true
   cache-path:
     required: true
   entries:
     required: true  # yaml: name -> {extension, repo} | {module}
+  lock-file:
+    default: MODULE.bazel.lock
 
 outputs:
   caches:
@@ -18,6 +21,18 @@ outputs:
 runs:
   using: composite
   steps:
+  - id: lock-hash
+    shell: bash
+    if: fromJSON(inputs.cache-all)
+    run: |
+      f="${{ inputs.lock-file }}"
+      if [[ ! -f "$f" ]]; then
+          echo "Lock file is required for resolution" >&2
+          exit 1
+      fi
+      SHA256=$(command -v sha256sum || echo 'shasum -a 256')
+      echo "value=$($SHA256 "$f" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
   - id: entries
     uses: envoyproxy/toolshed/actions/jq@81f14242f0c4d8cae0964c85ae0c830a37b38d53
     with:
@@ -76,7 +91,6 @@ runs:
         | from_entries
       result-filter-options: -csR
 
-  # merge extension shas + module shas, shape into {cache-key: path}
   - id: caches
     uses: envoyproxy/toolshed/actions/jq@81f14242f0c4d8cae0964c85ae0c830a37b38d53
     with:
@@ -85,8 +99,12 @@ runs:
         -c
         --argjson modules '${{ steps.modules.outputs.output || '{}' }}'
         --arg path "${{ inputs.cache-path }}"
+        --arg rest "${{ steps.lock-hash.outputs.value }}"
       print-result: true
       filter: |
-        map_values(select(.source | not) | .sha)
-        | . + $modules
-        | with_entries({key: "bazel-\(.key)-\(.value)", value: "\($path)/\(.value)"})
+        (map_values(select(.source | not) | .sha)
+         | . + $modules
+         | with_entries({key: "bazel-\(.key)-\(.value)", value: "\($path)/content_addressable/sha256/\(.value)"}))
+        | if $rest == "" then .
+          else . + {("bazel-rest-\($rest)"): "\($path)/content_addressable/sha256"}
+          end
