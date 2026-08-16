@@ -1,0 +1,7 @@
+name: str::b64_to_hex preserves high bytes
+
+input: "//4="
+
+module: str::b64_to_hex
+
+expected: "fffe"

@@ -1,0 +1,7 @@
+name: str::b64_to_hex decodes base64 to hex
+
+input: "CcPZ95amcfuWMMcZADLwAXHOme/9fIDHquuhSKe8vBs="
+
+module: str::b64_to_hex
+
+expected: "09c3d9f796a671fb9630c7190032f00171ce99effd7c80c7aaeba148afbcbc1b"
