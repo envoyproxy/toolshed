@@ -29,30 +29,9 @@ jobs:
           - bazel/*
           - bazel/**
           - docker/bazel/**
-          - .github/bazel-repository-cache-manifest.json
           - .github/scripts/bazel-run.sh
-          - .github/scripts/bazel-repository-cache-manifest.py
           - .github/workflows/bazel.yml
           - .github/workflows/_bazel.yml
-
-  repository-cache-manifest:
-    name: repository-cache-manifest
-    permissions:
-      contents: read
-    needs: request
-    if: >-
-      fromJSON(needs.request.outputs.run || 'false')
-    runs-on: ubuntu-24.04
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-    - name: Validate repository cache manifest
-      shell: bash
-      run: |
-        python3 .github/scripts/bazel-repository-cache-manifest.py check \
-          --manifest-path .github/bazel-repository-cache-manifest.json \
-          --module-path bazel/MODULE.bazel \
-          --lock-path bazel/MODULE.bazel.lock
 
   build:
     name: build (${{ matrix.name }})
@@ -61,7 +40,6 @@ jobs:
       packages: read
     needs:
     - request
-    - repository-cache-manifest
     if: >-
       fromJSON(needs.request.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
@@ -72,6 +50,10 @@ jobs:
       bazel-args: ${{ matrix.bazel_args }}
       bazel-path: bazel
       bazel-mode: ${{ matrix.bazel_mode }}
+      cache-create: ${{ matrix.cache-create || false }}
+      cache-entries: ${{ matrix.cache-entries }}
+      cache-keys: ${{ matrix.cache-keys }}
+      cache-path: ${{ matrix.cache-path || '/home/runner/.cache/bazel-repository-cache' }}
       create-source: ${{ matrix.create_source }}
       name: ${{ matrix.name }}
       privileged: ${{ matrix.privileged }}
@@ -102,6 +84,7 @@ jobs:
             --config=ci
             --experimental_ui_max_stdouterr_bytes=10485760
           bazel_mode: bzlmod
+          cache-create: true
           create_source: true
           privileged: true
           rbe: true
@@ -162,6 +145,8 @@ jobs:
             --config=macos
             --noenable_bzlmod --enable_workspace
           bazel_mode: workspace-macos
+          cache-entries: NONE
+          cache-path: "${HOME}/.cache/bazel-repository-cache"
           create_source: false
           privileged: false
           rbe: true
@@ -178,6 +163,7 @@ jobs:
             --config=ci
             --config=macos
           bazel_mode: bzlmod-macos
+          cache-path: "${HOME}/.cache/bazel-repository-cache"
           create_source: false
           privileged: false
           rbe: true
@@ -224,7 +210,6 @@ jobs:
       packages: read
     needs:
     - request
-    - repository-cache-manifest
     if: >-
       fromJSON(needs.request.outputs.run || 'false')
     uses: ./.github/workflows/_bazel.yml
@@ -369,7 +354,6 @@ jobs:
     name: Bazel
     needs:
     - request
-    - repository-cache-manifest
     - test
     - build
     - verify-artifacts
