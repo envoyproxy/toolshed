@@ -20,7 +20,7 @@ runs:
       # Create temporary directory
       OUTPUT_DIR=$(mktemp -d)
       echo "directory=${OUTPUT_DIR}" >> $GITHUB_OUTPUT
-  - uses: envoyproxy/toolshed/actions/jq@3ad4719c01385620e710ed66b908329304238329
+  - uses: envoyproxy/toolshed/actions/jq@56cf97dd5beca6927568fe91ad5e76bc38f2cc36
     name: Check proxy data
     id: env
     with:
