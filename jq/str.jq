@@ -43,3 +43,15 @@ def trim:
   sub("^ +"; "")
   | sub(" +$"; "")
 ;
+
+def b64_to_hex:
+  @base64d
+  | explode
+  | map("0123456789abcdef"[(. / 16 | floor):(. / 16 | floor) + 1]
+        + "0123456789abcdef"[. % 16:. % 16 + 1])
+  | add
+;
+
+def integrity_to_hex:
+  ltrimstr("sha256-") | b64_to_hex
+;
