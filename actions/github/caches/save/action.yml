@@ -1,0 +1,27 @@
+inputs:
+  caches:
+    type: string
+    required: true
+  hits:
+    type: string
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+  - uses: envoyproxy/toolshed/actions/foreach@8e5ecb20673bc0788ebbafaadc07652f824617e6
+    id: json_actions
+    with:
+      items: ${{ inputs.caches }}
+      context: ${{ inputs.hits }}
+      steps: |
+        - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+          id: $KEY
+          if: "%{{ fromJSON(inputs.context)['$KEY'] != true }}"
+          with:
+            key: $KEY
+            path: "%{{ fromJSON(inputs.context).items['$KEY'] }}"
+        - shell: bash
+          if: "%{{ always() }}"
+          run: |
+            rm -rf "%{{ fromJSON(inputs.context).items['$KEY'] }}"
