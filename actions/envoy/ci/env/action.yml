@@ -109,10 +109,12 @@ runs:
     with:
       input: |
         actor: ${{ toJSON(github.actor) }}
-        event: ${{ toJSON(github.event) }}
         event_name: ${{ github.event_name }}
         sha: ${{ github.sha }}
         build_images: ${{ steps.build-images.outputs.value }}
+        event:
+          sender:
+            avatar_url: ${{ toJSON(github.event.sender.avatar_url) }}
       input-format: yaml
       filter: |
         .
@@ -127,7 +129,7 @@ runs:
         | .sha = $sha
         | . * {"actor": {
                  name: $actor,
-                 icon: $event.sender.avatar_url},
+                 icon: $event.sender.avatar_url | gsub("\\?.*$"; "") | gsub("^https://private-"; "https://")},
                "started": ${{ inputs.started }},
                "target-branch": "${{ inputs.branch-name }}",
                "trusted": ${{ inputs.trusted }},
@@ -135,13 +137,6 @@ runs:
                "version-current": ${{ toJSON(fromJSON(steps.version.outputs.value).current) }},
                "build-image": $build_image,
                "build-image-current": $build_images.current}
-
-  - name: Run config
-    id: run-config
-    uses: envoyproxy/toolshed/actions/jq@1ac5ac77787d653454e60604edb4dc46ddd8110e
-    with:
-      input-format: yaml
-      input: ${{ toJSON(fromJSON(steps.config.outputs.output).run) }}
 
   - uses: envoyproxy/toolshed/actions/jq@1ac5ac77787d653454e60604edb4dc46ddd8110e
     name: Create data
