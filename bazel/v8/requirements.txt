@@ -1,0 +1,4 @@
+# Minimal Python requirements for V8 code generation
+# V8 primarily needs jinja2 for code generation from templates
+jinja2==3.1.4
+markupsafe==2.1.5

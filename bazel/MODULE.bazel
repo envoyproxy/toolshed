@@ -9,6 +9,22 @@ bazel_dep(name = "bazel_skylib", version = "1.8.2")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "v8", version = "14.6.202.10.envoy")
+
+# Override V8 to apply Envoy-specific patches for ABI compatibility
+archive_override(
+    module_name = "v8",
+    urls = ["https://github.com/v8/v8/archive/refs/tags/14.6.202.10.tar.gz"],
+    strip_prefix = "v8-14.6.202.10",
+    integrity = "sha256-CcPZ95amcfuWMMcZADLwAXHOme/9fIDHquuhSKe8vBs=",
+    patches = [
+        "//v8/patches:v8_no_python_load.patch",
+        "//v8/patches:v8_novtune.patch",
+        "//v8/patches:v8_ppc64le.patch",
+        "//v8/patches:v8_python.patch",
+        "//v8/patches:v8_module.patch",
+    ],
+    patch_strip = 1,
+)
 bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 bazel_dep(name = "rules_python", version = "1.7.0")
@@ -61,7 +77,14 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
     for python_version in PYTHON_VERSIONS
 ]
 
-use_repo(pip, "pip3", "website_pip3")
+# V8 Python dependencies for code generation
+pip.parse(
+    hub_name = "base_pip3",
+    python_version = PYTHON_VERSION_DEFAULT,
+    requirements_lock = "//v8:requirements.txt",
+)
+
+use_repo(pip, "pip3", "website_pip3", "base_pip3")
 
 # Load llvm_source for compile targets
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
