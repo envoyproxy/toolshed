@@ -117,9 +117,22 @@ def _wee8_fat_archive_impl(ctx):
     cc_info = ctx.attr.wee8[0][CcInfo]
     excluded = ctx.attr.exclude_lib_prefixes
 
-    # Collect the actual object files from transitive linker inputs, preferring
-    # PIC objects. abseil-cpp and icu are provided by consumers — exclude them by
-    # object path. Dedup by path (an object may appear in several linker inputs).
+    # Collect the actual object files from transitive linker inputs.
+    #
+    # `exclude_lib_prefixes` is matched against each OBJECT's path. Under bzlmod
+    # an object lives at .../external/<canonical_repo>/<pkg>/_objs/.../foo.pic.o,
+    # so the defaults ("abseil-cpp+", "icu+") are the canonical repo directory
+    # components — they match every abseil/icu object, not just an archive name.
+    # (Verified: all abseil objects contain "abseil-cpp+"; the noicu build pulls
+    # in zero icu objects.) abseil/icu are excluded because consumers link their
+    # own; bundling them would bloat libwee8.a and risk ODR/duplicate symbols.
+    #
+    # pic_objects and objects are the SAME translation units compiled two ways,
+    # not a partition, so taking one list is correct (both would double every
+    # object). We prefer PIC to match the prebuilt's PIC ABI; fall back to
+    # non-PIC only when a lib was built without PIC.
+    #
+    # Dedup by path (an object may appear in several linker inputs).
     seen = {}
     objects = []
     for li in cc_info.linking_context.linker_inputs.to_list():
@@ -161,7 +174,9 @@ def _wee8_fat_archive_impl(ctx):
     )
 
     params = ctx.actions.declare_file("%s/libwee8.objects.params" % ctx.label.name)
-    ctx.actions.write(params, "\n".join([o.path for o in objects]))
+    # Trailing newline: llvm-ar and GNU ar both tolerate its absence, but it is
+    # free insurance against an archiver that expects newline-terminated entries.
+    ctx.actions.write(params, "\n".join([o.path for o in objects]) + "\n")
 
     out = ctx.actions.declare_file("%s/lib/libwee8.a" % ctx.label.name)
     ctx.actions.run_shell(
@@ -190,7 +205,10 @@ wee8_fat_archive = rule(
     attrs = _TRANSITION_ATTRS | {
         "exclude_lib_prefixes": attr.string_list(
             default = ["abseil-cpp+", "icu+"],
-            doc = "Libs whose path contains any of these strings are excluded.",
+            doc = "Objects whose path contains any of these substrings are " +
+                  "excluded. Defaults are the canonical bzlmod repo directory " +
+                  "components for abseil/icu (which appear in every object path " +
+                  "under those repos), so consumers supply their own abseil/icu.",
         ),
         "_cc_toolchain": attr.label(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
@@ -198,7 +216,12 @@ wee8_fat_archive = rule(
     },
     fragments = ["cpp"],
     toolchains = use_cpp_toolchain(),
-    doc = "Merges @v8//:wee8 and its static deps into a single libwee8.a.",
+    doc = "Merges @v8//:wee8 and its static deps into a single libwee8.a. " +
+          "The archive INTENTIONALLY contains members with duplicate basenames " +
+          "(V8 emits same-named objects from different dirs); this is required " +
+          "for correctness and matches V8's own .lo. Do not 'dedup' by basename " +
+          "or extract-and-rearchive (`ar x`) — that clobbers members and drops " +
+          "symbols. `ar t` on the output is therefore ambiguous by design.",
 )
 
 # ── Headers ──────────────────────────────────────────────────────────────────
