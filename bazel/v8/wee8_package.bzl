@@ -80,49 +80,35 @@ _TRANSITION_ATTRS = {
 
 # ── Fat archive ──────────────────────────────────────────────────────────────
 
-# argv[1]    archiver executable (from the resolved cc toolchain)
-# argv[2]    output libwee8.a path
-# argv[3..]  PIC static libraries to merge
+# argv[1]  archiver executable (from the resolved cc toolchain)
+# argv[2]  output libwee8.a path
+# argv[3]  params file listing one execroot-relative object path per line
 #
-# `ar x --output=DIR` is a GNU binutils >=2.36 extension that llvm-ar does not
-# support, so extract by cd'ing into a per-lib directory instead. Input paths
-# are execroot-relative, so they must be made absolute before the cd.
+# We archive the object files DIRECTLY rather than extracting the deps' `.a`/`.lo`
+# archives and re-archiving. V8 emits many objects that share a basename (e.g. two
+# `heap.pic.o`, two `factory.pic.o`, two `allocation.pic.o`, from same-named
+# sources in different directories). Archive members are stored by basename, so
+# extracting to the filesystem (`ar x`) makes the second `heap.pic.o` clobber the
+# first, silently dropping one object of each colliding pair and every symbol it
+# defined (Factory::NewSymbol, Heap::CollectAllGarbage, VirtualMemory::~…, PrintF,
+# …). The distinct object Files have distinct on-disk paths, so archiving them
+# straight into libwee8.a keeps both. The result carries duplicate member
+# basenames, exactly like V8's own `.lo`, which links correctly because the linker
+# reads members by content, not by filesystem name. `@file` avoids ARG_MAX with
+# ~1200 objects; both llvm-ar and GNU ar expand it.
 _ARCHIVE_SCRIPT = r"""
 set -e -o pipefail
 
 AR="$PWD/$1"
 OUT="$2"
-shift 2
+PARAMS="$3"
 
-EXECROOT="$PWD"
-TMPDIR="$(mktemp -d)"
-trap 'rm -rf "$TMPDIR"' EXIT
-
-n=0
-i=0
-for lib in "$@"; do
-    i=$((i+1))
-    subdir="$TMPDIR/lib_${i}"
-    mkdir -p "$subdir"
-    (cd "$subdir" && "$AR" x "$EXECROOT/$lib")
-
-    while IFS= read -r obj; do
-        [ -n "$obj" ] || continue
-        if [ ! -f "$subdir/$obj" ]; then
-            echo "ERROR: expected archive member '$obj' from '$lib' not found after extraction" >&2
-            exit 1
-        fi
-        n=$((n+1))
-        cp "$subdir/$obj" "$TMPDIR/o_${n}.o"
-    done < <("$AR" t "$EXECROOT/$lib")
-done
-
-if [ "$n" -eq 0 ]; then
-    echo "ERROR: no .o files extracted from: $*" >&2
+if [ ! -s "$PARAMS" ]; then
+    echo "ERROR: no object files to archive (empty params file)" >&2
     exit 1
 fi
 
-"$AR" Drcs "$OUT" "$TMPDIR"/o_*.o
+"$AR" Drcs "$OUT" "@$PARAMS"
 """
 
 def _wee8_fat_archive_impl(ctx):
@@ -131,24 +117,35 @@ def _wee8_fat_archive_impl(ctx):
     cc_info = ctx.attr.wee8[0][CcInfo]
     excluded = ctx.attr.exclude_lib_prefixes
 
-    # Collect PIC static libraries from transitive linker inputs.
-    # abseil-cpp and icu are provided by consumers — exclude them.
+    # Collect the actual object files from transitive linker inputs, preferring
+    # PIC objects. abseil-cpp and icu are provided by consumers — exclude them by
+    # object path. Dedup by path (an object may appear in several linker inputs).
     seen = {}
-    pic_libs = []
+    objects = []
     for li in cc_info.linking_context.linker_inputs.to_list():
         for lib in li.libraries:
-            f = lib.pic_static_library or lib.static_library
-            if not f or f.path in seen:
+            objs = lib.pic_objects if lib.pic_objects else lib.objects
+            if not objs:
+                # A dep exposing only a prebuilt archive with no object list.
+                # None of @v8//:wee8's current deps hit this; fail loudly rather
+                # than silently drop it if a future V8 bump introduces one.
+                f = lib.pic_static_library or lib.static_library
+                if f and not any([ex in f.path for ex in excluded]):
+                    fail(
+                        "wee8_fat_archive: library {} exposes an archive but no ".format(f.path) +
+                        "object list; extend the rule to extract it uniquely.",
+                    )
                 continue
-            seen[f.path] = True
-            if any([ex in f.path for ex in excluded]):
-                continue
-            pic_libs.append(f)
+            for o in objs:
+                if o.path in seen or any([ex in o.path for ex in excluded]):
+                    continue
+                seen[o.path] = True
+                objects.append(o)
 
-    if not pic_libs:
+    if not objects:
         fail(
-            "wee8_fat_archive: no static libraries found in @v8//:wee8 deps. " +
-            "Verify that @v8//:wee8 is a cc_library with [pic_]static_library outputs.",
+            "wee8_fat_archive: no object files found in @v8//:wee8 deps. " +
+            "Verify that @v8//:wee8 is a cc_library exposing [pic_]objects.",
         )
 
     cc_toolchain = find_cpp_toolchain(ctx)
@@ -163,14 +160,18 @@ def _wee8_fat_archive_impl(ctx):
         action_name = ACTION_NAMES.cpp_link_static_library,
     )
 
+    params = ctx.actions.declare_file("%s/libwee8.objects.params" % ctx.label.name)
+    ctx.actions.write(params, "\n".join([o.path for o in objects]))
+
     out = ctx.actions.declare_file("%s/lib/libwee8.a" % ctx.label.name)
     ctx.actions.run_shell(
-        inputs = depset(pic_libs, transitive = [cc_toolchain.all_files]),
+        inputs = depset(objects + [params], transitive = [cc_toolchain.all_files]),
         outputs = [out],
         command = _ARCHIVE_SCRIPT,
-        arguments = [ar, out.path] + [f.path for f in pic_libs],
+        arguments = [ar, out.path, params.path],
         mnemonic = "V8WeeEightArchive",
-        progress_message = "Creating fat libwee8.a for linux-%s (%s)" % (
+        progress_message = "Creating fat libwee8.a (%d objects) for linux-%s (%s)" % (
+            len(objects),
             ctx.attr.arch,
             ctx.attr.stdlib,
         ),
