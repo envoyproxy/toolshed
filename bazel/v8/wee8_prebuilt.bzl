@@ -8,6 +8,37 @@ WEE8_STDLIBS = [
     "libstdcxx",
 ]
 
+# V8 build-time defines that the source @v8//:wee8 target propagates to its
+# consumers (captured via `bazel aquery` on a V8 CppCompile action). These are
+# ABI-affecting and/or gate public V8 headers (e.g. V8_ENABLE_WEBASSEMBLY guards
+# src/wasm/c-api.h), so the prebuilt must re-expose them or consumers compiling
+# against libwee8.a (e.g. proxy_wasm_cpp_host's v8.cc) get header errors / ABI
+# skew. Arch-specific target define is appended per-repo (see _WEE8_ARCH_DEFINE).
+_WEE8_COMMON_DEFINES = [
+    "GOOGLE3",
+    "V8_ADVANCED_BIGINT_ALGORITHMS",
+    "V8_CONCURRENT_MARKING",
+    "V8_DEPRECATION_WARNINGS",
+    "V8_ENABLE_CONTINUATION_PRESERVED_EMBEDDER_DATA",
+    "V8_ENABLE_EXTENSIBLE_RO_SNAPSHOT",
+    "V8_ENABLE_LAZY_SOURCE_POSITIONS",
+    "V8_ENABLE_MAGLEV",
+    "V8_ENABLE_SPARKPLUG",
+    "V8_ENABLE_TURBOFAN",
+    "V8_ENABLE_UNDEFINED_DOUBLE",
+    "V8_ENABLE_WEBASSEMBLY",
+    "V8_HAVE_TARGET_OS",
+    "V8_IMMINENT_DEPRECATION_WARNINGS",
+    "V8_TARGET_OS_LINUX",
+    "V8_TLS_USED_IN_LIBRARY",
+    "V8_TYPED_ARRAY_MAX_SIZE_IN_HEAP=64",
+]
+
+_WEE8_ARCH_DEFINE = {
+    "x86_64": "V8_TARGET_ARCH_X64",
+    "aarch64": "V8_TARGET_ARCH_ARM64",
+}
+
 _WEE8_BUILD = """\
 package(default_visibility = ["//visibility:public"])
 
@@ -28,6 +59,20 @@ filegroup(
     srcs = ["lib/libwee8.a"],
 )
 
+# The wasm C-API public headers are #included as "wasm-api/wasm.hh", mirroring
+# the source @v8//:wee8 target's strip_include_prefix = "third_party" (scoped so
+# it does not put the rest of third_party/ on the include path).
+cc_library(
+    name = "wasm_c_api_headers",
+    hdrs = glob(
+        [
+            "third_party/wasm-api/*.h",
+            "third_party/wasm-api/*.hh",
+        ],
+    ),
+    strip_include_prefix = "third_party",
+)
+
 cc_library(
     name = "wee8",
     srcs = ["lib/libwee8.a"],
@@ -36,7 +81,18 @@ cc_library(
         ".",
         "include",
     ],
+    defines = [
+{defines}
+    ],
     linkstatic = True,
+    # abseil/icu are deliberately excluded from libwee8.a (consumers provide
+    # their own). Re-expose abseil's compile context (v8.cc #includes absl
+    # headers directly) and the wasm C-API headers so the prebuilt is a drop-in
+    # for the source @v8//:wee8.
+    deps = [
+        ":wasm_c_api_headers",
+        "@abseil-cpp//absl/strings:str_format",
+    ],
 )
 """
 
@@ -130,7 +186,12 @@ def _wee8_prebuilt_impl(ctx):
         )
         return
 
-    ctx.file("BUILD.bazel", _WEE8_BUILD)
+    defines = list(_WEE8_COMMON_DEFINES)
+    arch_define = _WEE8_ARCH_DEFINE.get(ctx.attr.arch)
+    if arch_define:
+        defines.append(arch_define)
+    defines_block = "\n".join(['        "%s",' % define for define in defines])
+    ctx.file("BUILD.bazel", _WEE8_BUILD.format(defines = defines_block))
 
 _ARCHES = ["x86_64", "aarch64"]
 
