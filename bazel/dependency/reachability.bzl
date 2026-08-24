@@ -66,6 +66,17 @@ Building the target writes `<name>.json`:
 The aspect emits raw truth: no repository is filtered. Policy (ignore lists,
 test-only exemptions, bucketing by surface/extension/contrib) belongs in the
 consumer of the JSON.
+
+Note on attribute coverage: the aspect uses `attr_aspects = ["*"]` so it
+propagates along every attribute of every rule it visits, including
+non-standard attributes on custom rules (e.g. `library` on
+`v8_lib_no_pointer_compression`). Resolved toolchain dependencies are *not*
+included because `toolchains_aspects` is not set, so `["*"]` alone does not
+reach them. Implicit/private attributes (`_`-prefixed names) are visited by
+Bazel but excluded from recorded edges and provider accumulation. Edges are
+recorded over all public attributes, including ones that carry build-time-only
+deps (e.g. `tools`-style attrs on custom rules); consumers that need to
+distinguish build-time from runtime paths should apply that policy themselves.
 """
 
 DependencyReachabilityInfo = provider(
@@ -78,22 +89,6 @@ DependencyReachabilityInfo = provider(
         ),
     },
 )
-
-# Attributes constituting "production reachability". Deliberately excludes
-# implicit/private attributes (toolchains etc) which the old query-based
-# prefilters existed to suppress.
-_EDGE_ATTRS = [
-    "actual",
-    "data",
-    "deps",
-    "exports",
-    "hdrs",
-    "implementation_deps",
-    "runtime_deps",
-    "src",
-    "srcs",
-    "textual_hdrs",
-]
 
 def apparent_name(repo_name):
     """Best-effort apparent/module name for a canonical repository name.
@@ -133,7 +128,7 @@ def _reachability_aspect_impl(target, ctx):
     edges = []
     transitive = []
     transitive_production = []
-    for attr_name in _EDGE_ATTRS:
+    for attr_name in [a for a in dir(ctx.rule.attr) if not a.startswith("_")]:
         for dep in _attr_targets(ctx.rule.attr, attr_name):
             dep_repo = dep.label.repo_name
             if dep_repo and dep_repo != consumer_repo:
@@ -160,11 +155,13 @@ def _reachability_aspect_impl(target, ctx):
 
 reachability_aspect = aspect(
     implementation = _reachability_aspect_impl,
-    attr_aspects = _EDGE_ATTRS,
+    attr_aspects = ["*"],
     doc = (
-        "Collects cross-repository dependency edges over production " +
+        "Collects cross-repository dependency edges over all public " +
         "attributes, tracking whether each edge is reachable without " +
-        "traversing a testonly target."
+        "traversing a testonly target. Implicit/private attributes " +
+        "(_-prefixed) are skipped at recording time. Resolved toolchain " +
+        "dependencies are not visited because toolchains_aspects is not set."
     ),
 )
 
