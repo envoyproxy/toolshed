@@ -27,6 +27,39 @@ sh_test(
 )
 ```
 
+For multi-configuration analysis, construct a reachability rule whose transition
+outputs are fixed up front, then pass a config matrix:
+
+```starlark
+load(
+    "@envoy_toolshed//dependency:reachability.bzl",
+    "dependency_reachability_macro",
+    "dependency_reachability_rule",
+)
+
+_envoy_dependency_reachability = dependency_reachability_rule(
+    flags = ["//bazel:wasm_runtime"],
+    defines = True,
+)
+
+envoy_dependency_reachability = dependency_reachability_macro(_envoy_dependency_reachability)
+
+envoy_dependency_reachability(
+    name = "dep-reachability",
+    roots = ["//source/exe:envoy_main_common_with_core_extensions_lib"],
+    configs = {
+        "default": {},
+        "wasmtime": {"//bazel:wasm_runtime": "wasmtime"},
+        "wamr": {"//bazel:wasm_runtime": "wamr"},
+        "legacy-define": {"wasm": "v8"},
+    },
+)
+```
+
+`flags` must be fixed at construction because transition `outputs` are static:
+they cannot vary per target instantiation. Prefer Starlark build settings where
+possible. `defines = True` is supported for legacy `--define`-based matrices.
+
 Building the target writes `<name>.json`:
 
 ```json
@@ -35,6 +68,7 @@ Building the target writes `<name>.json`:
     "<canonical repo name>": {
       "name": "<apparent/module name>",
       "production": true,
+      "configs": ["default"],
       "reached_by": [
         {"root": "//source/exe:envoy_main_common_with_core_extensions_lib", "production": true}
       ],
@@ -73,6 +107,16 @@ Building the target writes `<name>.json`:
          | "\\(.target)\\t\\(.attrs | join(","))"' dep-reachability.json
   ```
 
+- `configs` lists the analyzed config names in which the repository is reached.
+  Reachability data is only as complete as the declared matrix: if a dependency
+  is reachable in no declared config, it is absent from the emitted JSON.
+
+When a dependency is reached in multiple analyzed configs, data is merged by
+union semantics: `targets`/`configs` are unioned, `consumers[*].roots` and
+`consumers[*].attrs` are unioned, and
+`production`/`reached_by[*].production`/`consumers[*].testonly` are merged
+with logical OR.
+
 The aspect emits raw truth: no repository is filtered. Policy (ignore lists,
 test-only exemptions, bucketing by surface/extension/contrib) belongs in the
 consumer of the JSON.
@@ -92,7 +136,9 @@ Exclusion settings (`excluded_edges`, `excluded_patterns`) are transported via
 Starlark build settings rather than `--features`, so they survive Bazel's exec
 configuration transition. They therefore apply uniformly across target and exec
 configurations: edges reached through `cfg = "exec"` attributes are excluded
-just as reliably as edges in the target configuration.
+just as reliably as edges in the target configuration. The exclusion settings
+are carried through every branch of the split transition so they apply
+uniformly across all analyzed configurations.
 
 Note on exclusion semantics: an excluded repository is neither recorded nor
 descended into. Pruning descent means that repositories reachable *only through*
@@ -172,20 +218,57 @@ def _repo_is_excluded(repo_name, patterns):
             return True
     return False
 
-def _reachability_transition_impl(settings, attr):
-    return {
-        _EXCLUDED_EDGES_SETTING: attr.excluded_edges,
-        _EXCLUDED_PATTERNS_SETTING: attr.excluded_patterns,
-    }
+def _decode_configs(configs_attr):
+    configs = {}
+    for config in sorted(configs_attr.keys()):
+        values = {}
+        for assignment in configs_attr[config]:
+            if "=" not in assignment:
+                fail("Invalid config assignment '{}' in config '{}' (expected '<flag_or_define>=<value>')".format(assignment, config))
+            key, value = assignment.split("=", 1)
+            values[key] = value
+        configs[config] = values
+    if not configs:
+        return {"default": {}}
+    return configs
 
-_reachability_transition = transition(
-    implementation = _reachability_transition_impl,
-    inputs = [],
-    outputs = [
-        _EXCLUDED_EDGES_SETTING,
-        _EXCLUDED_PATTERNS_SETTING,
-    ],
-)
+def config_validation_error(configs, flags, defines):
+    allowed = {flag: True for flag in flags}
+    declared = sorted(flags)
+    for config in sorted(configs.keys()):
+        for label in sorted(configs[config].keys()):
+            if label.startswith("//"):
+                if label not in allowed:
+                    return "Config '{}' varies '{}' but it is not declared in flags. Declared flags: {}".format(
+                        config,
+                        label,
+                        declared,
+                    )
+            elif not defines:
+                return "Config '{}' varies define '{}' but this rule was constructed with defines = False".format(
+                    config,
+                    label,
+                )
+    return None
+
+def _validate_config_labels(configs, flags, defines):
+    error = config_validation_error(configs, flags, defines)
+    if error != None:
+        fail(error)
+
+def _merge_defines(existing, values):
+    merged = {}
+    for define in existing:
+        if "=" not in define:
+            continue
+        key, value = define.split("=", 1)
+        merged[key] = value
+    for key in sorted(values.keys()):
+        if not key.startswith("//"):
+            merged[key] = values[key]
+    return ["{}={}".format(key, merged[key]) for key in sorted(merged.keys())]
+
+merge_defines = _merge_defines
 
 def _reachability_aspect_impl(target, ctx):
     consumer = _label_string(target.label)
@@ -253,81 +336,142 @@ reachability_aspect = aspect(
     ),
 )
 
-def _dependency_reachability_impl(ctx):
-    deps = {}
-    for target in ctx.attr.roots:
-        root = _label_string(target.label)
-        info = target[DependencyReachabilityInfo]
-        production = {edge: True for edge in info.production_edges.to_list()}
-        for edge in info.edges.to_list():
-            entry = deps.setdefault(edge.repo, dict(
-                name = edge.name,
-                reached_by = {},
-                targets = {},
-                consumers = {},
-            ))
-            entry["targets"][edge.target] = True
-            reached = entry["reached_by"].setdefault(root, dict(
-                production = False,
-            ))
-            if edge in production:
-                reached["production"] = True
-            consumer = entry["consumers"].setdefault(edge.consumer, dict(
-                repo = edge.consumer_repo,
-                testonly = edge.testonly,
-                attrs = {},
-                roots = {},
-            ))
-            consumer["attrs"][edge.attr] = True
-            consumer["roots"][root] = True
-    dependencies = {}
-    for repo in sorted(deps.keys()):
-        entry = deps[repo]
-        reached_by = [
-            dict(
-                root = root,
-                production = entry["reached_by"][root]["production"],
-            )
-            for root in sorted(entry["reached_by"].keys())
-        ]
-        dependencies[repo] = dict(
-            name = entry["name"],
-            production = any([
-                reached["production"]
-                for reached in reached_by
-            ]),
-            reached_by = reached_by,
-            targets = sorted(entry["targets"].keys()),
-            consumers = [
-                dict(
-                    target = consumer,
-                    repo = entry["consumers"][consumer]["repo"],
-                    testonly = entry["consumers"][consumer]["testonly"],
-                    attrs = sorted(entry["consumers"][consumer]["attrs"].keys()),
-                    roots = sorted(entry["consumers"][consumer]["roots"].keys()),
-                )
-                for consumer in sorted(entry["consumers"].keys())
-            ],
-        )
-    output = ctx.actions.declare_file("%s.json" % ctx.label.name)
-    ctx.actions.write(
-        output = output,
-        content = json.encode_indent(
-            dict(dependencies = dependencies),
-            indent = "  ",
-        ) + "\n",
-    )
-    return [DefaultInfo(files = depset([output]))]
+def _record_edge(deps, config, root, edge, production):
+    entry = deps.setdefault(edge.repo, dict(
+        name = edge.name,
+        reached_by = {},
+        targets = {},
+        consumers = {},
+        configs = {},
+    ))
+    entry["configs"][config] = True
+    entry["targets"][edge.target] = True
+    reached = entry["reached_by"].setdefault(root, dict(
+        production = False,
+    ))
+    if production:
+        reached["production"] = True
+    consumer = entry["consumers"].setdefault(edge.consumer, dict(
+        repo = edge.consumer_repo,
+        testonly = False,
+        attrs = {},
+        roots = {},
+    ))
+    consumer["testonly"] = consumer["testonly"] or edge.testonly
+    consumer["attrs"][edge.attr] = True
+    consumer["roots"][root] = True
 
-def dependency_reachability_rule():
+def _dependency_reachability_impl():
+    def _impl(ctx):
+        deps = {}
+        # Split transitions fan out each root once per config, so flattening
+        # depsets here scales with the declared matrix size.
+        for config in sorted(ctx.split_attr.roots.keys()):
+            for target in ctx.split_attr.roots[config]:
+                root = _label_string(target.label)
+                info = target[DependencyReachabilityInfo]
+                production = {edge: True for edge in info.production_edges.to_list()}
+                for edge in info.edges.to_list():
+                    _record_edge(
+                        deps,
+                        config,
+                        root,
+                        edge,
+                        production = edge in production,
+                    )
+        dependencies = {}
+        for repo in sorted(deps.keys()):
+            entry = deps[repo]
+            reached_by = [
+                dict(
+                    root = root,
+                    production = entry["reached_by"][root]["production"],
+                )
+                for root in sorted(entry["reached_by"].keys())
+            ]
+            dependencies[repo] = dict(
+                name = entry["name"],
+                production = any([
+                    reached["production"]
+                    for reached in reached_by
+                ]),
+                configs = sorted(entry["configs"].keys()),
+                reached_by = reached_by,
+                targets = sorted(entry["targets"].keys()),
+                consumers = [
+                    dict(
+                        target = consumer,
+                        repo = entry["consumers"][consumer]["repo"],
+                        testonly = entry["consumers"][consumer]["testonly"],
+                        attrs = sorted(entry["consumers"][consumer]["attrs"].keys()),
+                        roots = sorted(entry["consumers"][consumer]["roots"].keys()),
+                    )
+                    for consumer in sorted(entry["consumers"].keys())
+                ],
+            )
+        output = ctx.actions.declare_file("%s.json" % ctx.label.name)
+        ctx.actions.write(
+            output = output,
+            content = json.encode_indent(
+                dict(dependencies = dependencies),
+                indent = "  ",
+            ) + "\n",
+        )
+        return [DefaultInfo(files = depset([output]))]
+
+    return _impl
+
+def _dependency_reachability_transition(flags, defines):
+    def _impl(settings, attr):
+        configs = _decode_configs(attr.configs)
+        _validate_config_labels(configs, flags, defines)
+        transitioned = {}
+        for config in sorted(configs.keys()):
+            values = configs[config]
+            output = {}
+            for flag in flags:
+                output[flag] = values.get(flag, settings[flag])
+            if defines:
+                output["//command_line_option:define"] = _merge_defines(
+                    settings["//command_line_option:define"],
+                    values,
+                )
+            # Carry exclusion settings through every branch of the split so they
+            # apply uniformly across all analyzed configurations.
+            output[_EXCLUDED_EDGES_SETTING] = attr.excluded_edges
+            output[_EXCLUDED_PATTERNS_SETTING] = attr.excluded_patterns
+            transitioned[config] = output
+        return transitioned
+
+    flag_inputs = list(flags)
+    if defines:
+        flag_inputs.append("//command_line_option:define")
+    transition_outputs = flag_inputs + [_EXCLUDED_EDGES_SETTING, _EXCLUDED_PATTERNS_SETTING]
+    return transition(
+        implementation = _impl,
+        inputs = flag_inputs,
+        outputs = transition_outputs,
+    )
+
+def _dependency_reachability_rule(flags = [], defines = False):
+    """Construct the internal dependency_reachability rule.
+
+    flags: list of build setting labels (string_flag/bool_flag/label_flag) that
+        instantiated targets may vary. Fixed at construction because transition
+        outputs must be static.
+    defines: whether --define may also be varied (adds
+        //command_line_option:define to outputs). Prefer Starlark settings;
+        this exists for legacy define-based consumers.
+    """
+    reachability_transition = _dependency_reachability_transition(flags, defines)
     return rule(
-        implementation = _dependency_reachability_impl,
+        implementation = _dependency_reachability_impl(),
         attrs = {
             "roots": attr.label_list(
                 aspects = [reachability_aspect],
                 allow_files = True,
                 mandatory = True,
-                cfg = _reachability_transition,
+                cfg = reachability_transition,
                 doc = (
                     "Concrete root targets to analyze. Each entry must be a " +
                     "resolved label — Bazel target patterns such as " +
@@ -339,6 +483,15 @@ def dependency_reachability_rule():
                     "depends on them. Per-consumer attribution still falls out " +
                     "of `consumers[].target` labels regardless of how coarse " +
                     "the root is."
+                ),
+            ),
+            "configs": attr.string_list_dict(
+                default = {"default": []},
+                doc = (
+                    "Configuration matrix keyed by config name. Each value is " +
+                    "a list of '<flag_or_define>=<value>' assignments. " +
+                    "Use the dependency_reachability macro form to pass a " +
+                    "dict of assignment maps."
                 ),
             ),
             "excluded_edges": attr.string_list(
@@ -372,4 +525,47 @@ def dependency_reachability_rule():
         ),
     )
 
-dependency_reachability = dependency_reachability_rule()
+def dependency_reachability_macro(impl):
+    def _macro(name, roots, configs = None, **kwargs):
+        impl(
+            name = name,
+            roots = roots,
+            configs = _encode_configs(configs),
+            **kwargs
+        )
+
+    return _macro
+
+def _encode_configs(configs):
+    if configs == None:
+        return {"default": []}
+    if type(configs) != "dict":
+        fail("configs must be a dict of config-name -> dict(flag_or_define -> value)")
+    if not configs:
+        return {"default": []}
+    encoded = {}
+    for config in sorted(configs.keys()):
+        assignments = configs[config]
+        if type(assignments) != "dict":
+            fail("configs['{}'] must be a dict(flag_or_define -> value)".format(config))
+        encoded[config] = [
+            "{}={}".format(key, assignments[key])
+            for key in sorted(assignments.keys())
+        ]
+    return encoded
+
+def dependency_reachability_rule(flags = [], defines = False):
+    """Construct a dependency_reachability rule varying the given build settings.
+
+    flags: list of build setting labels (string_flag/bool_flag/label_flag) that
+        instantiated targets may vary. Fixed at construction because transition
+        outputs must be static.
+    defines: whether --define may also be varied (adds
+        //command_line_option:define to outputs). Prefer Starlark settings;
+        this exists for legacy define-based consumers.
+    """
+    return _dependency_reachability_rule(flags, defines)
+
+_dependency_reachability = dependency_reachability_rule()
+
+dependency_reachability = dependency_reachability_macro(_dependency_reachability)
