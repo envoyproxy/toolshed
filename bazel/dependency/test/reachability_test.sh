@@ -15,6 +15,7 @@ if [ -n "${TEST_SRCDIR:-}" ]; then
         RUNFILES_DIR="${TEST_SRCDIR}/_main"
     fi
     REACHABILITY_JSON="${RUNFILES_DIR}/dependency/test/reachability.json"
+    REACHABILITY_MULTICONFIG_JSON="${RUNFILES_DIR}/dependency/test/reachability_multiconfig.json"
 else
     echo "This test must be run under Bazel" >&2
     exit 1
@@ -28,8 +29,9 @@ check() {
     local description="$1"
     local query="$2"
     local expected="$3"
+    local file="${4:-${REACHABILITY_JSON}}"
     local actual
-    actual="$("${JQ}" -r "${query}" "${REACHABILITY_JSON}")"
+    actual="$("${JQ}" -r "${query}" "${file}")"
     if [ "${actual}" != "${expected}" ]; then
         echo "FAIL: ${description}" >&2
         echo "  query:    ${query}" >&2
@@ -45,6 +47,7 @@ check() {
 # ("bazel_skylib") and bzlmod ("bazel_skylib+"/"bazel_skylib~") builds, so
 # select entries via the emitted apparent name.
 SKYLIB='.dependencies | to_entries[] | select(.value.name == "bazel_skylib") | .value'
+JQ_TOOLCHAINS='.dependencies | to_entries[] | select(.value.name == "jq_toolchains") | .value'
 
 check "bazel_skylib is the only reported dependency" \
     '[.dependencies[] | .name] | unique | join(",")' \
@@ -81,6 +84,51 @@ check "shared consumer is attributed to both roots" \
 check "testonly consumer is only attributed to the test root" \
     "${SKYLIB} | .consumers[] | select(.target == \"//dependency/test:test_root\") | .roots | join(\",\")" \
     "//dependency/test:test_root"
+
+check "multi-config bazel_skylib records all configs" \
+    "${SKYLIB} | .configs | sort | join(\",\")" \
+    "default,extra" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
+
+check "multi-config bazel_skylib remains production because one root is non-testonly" \
+    "${SKYLIB} | .production" \
+    "true" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
+
+check "multi-config bazel_skylib reached_by preserves both roots with unioned production" \
+    "${SKYLIB} | [.reached_by[] | \"\(.root) \(.production)\"] | sort | join(\",\")" \
+    "//dependency/test:variant_core_root true,//dependency/test:variant_test_root false" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
+
+check "multi-config bazel_skylib testonly root remains scoped to that root" \
+    "${SKYLIB} | .consumers[] | select(.target == \"//dependency/test:variant_test_root\") | .roots | sort | join(\",\")" \
+    "//dependency/test:variant_test_root" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
+
+check "config-gated jq_toolchains dependency appears in merged output" \
+    "${JQ_TOOLCHAINS} | .name" \
+    "jq_toolchains" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
+
+check "config-gated jq_toolchains dependency is attributed to extra only" \
+    "${JQ_TOOLCHAINS} | .configs | join(\",\")" \
+    "extra" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
+
+check "config-gated jq_toolchains dependency tracks only the root and consumer that reach it" \
+    "${JQ_TOOLCHAINS} | [.consumers[] | \"\(.target) \(.testonly) \(.roots | sort | join(\"|\"))\"] | sort | join(\",\")" \
+    "//dependency/test:variant_external_consumer false //dependency/test:variant_core_root|//dependency/test:variant_test_root" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
+
+check "config-gated jq_toolchains consumer attrs are recorded and unioned across configs" \
+    "${JQ_TOOLCHAINS} | .consumers[] | select(.target == \"//dependency/test:variant_external_consumer\") | .attrs | join(\",\")" \
+    "srcs" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
+
+check "multi-config bazel_skylib consumer attrs are recorded" \
+    "${SKYLIB} | .consumers[] | select(.target == \"//dependency/test:variant_external_consumer\") | .attrs | join(\",\")" \
+    "srcs" \
+    "${REACHABILITY_MULTICONFIG_JSON}"
 
 if [ "${FAILED}" -ne 0 ]; then
     exit 1
