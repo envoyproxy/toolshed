@@ -23,6 +23,12 @@ string_list_flag(
     visibility = ["//visibility:public"],
 )
 
+string_list_flag(
+    name = "_attribution_patterns",
+    build_setting_default = [],
+    visibility = ["//visibility:public"],
+)
+
 updater(
     name = "update",
     dependencies = "//:dependency_versions",

@@ -21,6 +21,8 @@ REACHABILITY_RULES_PKG_TRANSITIVE_JSON="${RUNFILES_DIR}/dependency/test/reachabi
 REACHABILITY_EXCLUDED_RULES_PKG_TRANSITIVE_JSON="${RUNFILES_DIR}/dependency/test/reachability_excluded_rules_pkg_transitive.json"
 REACHABILITY_EMPTY_EXCLUSIONS_JSON="${RUNFILES_DIR}/dependency/test/reachability_empty_exclusions.json"
 REACHABILITY_EMPTY_EXCLUSIONS_EXPLICIT_JSON="${RUNFILES_DIR}/dependency/test/reachability_empty_exclusions_explicit.json"
+REACHABILITY_ATTRIBUTION_EXCLUDED_BASELINE_JSON="${RUNFILES_DIR}/dependency/test/reachability_attribution_excluded_baseline.json"
+REACHABILITY_ATTRIBUTION_EXCLUDED_JSON="${RUNFILES_DIR}/dependency/test/reachability_attribution_excluded.json"
 
 FAILED=0
 
@@ -82,6 +84,21 @@ check "combined excluded_edges and excluded_patterns apply together" \
     '[.dependencies[] | .name] | length' \
     "0" \
     "${REACHABILITY_EDGE_AND_PATTERN_JSON}"
+
+check "baseline attribution records the unexcluded repository" \
+    '.dependencies | to_entries[] | select(.value.name == "rules_pkg") | .value.attributed_packages[0].package' \
+    "//dependency/test/transitive/ext/excluded" \
+    "${REACHABILITY_ATTRIBUTION_EXCLUDED_BASELINE_JSON}"
+
+check "excluded repository is not attributed" \
+    '[.dependencies[] | select(.name == "rules_pkg")] | length' \
+    "0" \
+    "${REACHABILITY_ATTRIBUTION_EXCLUDED_JSON}"
+
+check "nothing is attributed through an excluded repository" \
+    '[.dependencies[] | .attributed_packages[]?] | length' \
+    "0" \
+    "${REACHABILITY_ATTRIBUTION_EXCLUDED_JSON}"
 
 if ! cmp -s "${REACHABILITY_EMPTY_EXCLUSIONS_JSON}" "${REACHABILITY_EMPTY_EXCLUSIONS_EXPLICIT_JSON}"; then
     echo "FAIL: explicit empty exclusions must be byte-identical to defaults" >&2
