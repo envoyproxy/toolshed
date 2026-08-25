@@ -20,7 +20,7 @@ bytes = "=1.12.1"
 clap = "^4.6.1"
 futures = "^0.3.32"
 futures-util = "^0.3.31"
-http-body-util = "=0.1.4"
+http-body-util = "=0.1.5"
 hyper = "=1.11.0"
 hyper-util = "=0.1.20"
 indexmap = { version = "^2.14.0", features = ["serde"] }
