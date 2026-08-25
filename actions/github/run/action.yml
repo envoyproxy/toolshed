@@ -76,10 +76,7 @@ inputs:
   steps-post-name:
     type: string
     default:
-  upload-name:
-    type: string
-    default:
-  upload-path:
+  uploads:
     type: string
     default:
   warning-match:
@@ -359,7 +356,7 @@ runs:
       context: ${{ steps.context.outputs.value }}
   - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
     id: post-failed
-    if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
+    if: ${{ failure() && inputs.uploads }}
     with:
       input: ${{ steps.context.outputs.value }}
       filter: |
@@ -370,15 +367,38 @@ runs:
     with:
       steps: ${{ inputs.report-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-    name: Upload artefacts
-    if: ${{ inputs.upload-name && inputs.upload-path && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
+  - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
+    name: Generate upload config
+    id: upload-config
+    if: ${{ inputs.uploads && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
-      name: ${{ inputs.upload-name }}
-      path: ${{ startsWith(inputs.upload-path, '/') && inputs.upload-path || format('{0}/{1}', runner.temp, inputs.upload-path) }}
+      input: ${{ inputs.uploads }}
+      input-format: yaml
+      filter: |
+        with_entries(
+          .value
+          |= (if type == "string" then {path: .} else . end)
+          | .value.path
+            |= if startswith("/") then
+                 .
+               else
+                 "${{ runner.temp }}/\(.)"
+               end)
+  - uses: envoyproxy/toolshed/actions/foreach@ab31cf868faba51af4bd9f04671c30d4084d70ee
+    if: ${{ steps.upload-config.outputs.value }}
+    with:
+      items: ${{ steps.upload-config.outputs.value }}
+      steps: |
+        - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+          with:
+            name: $KEY
+            path: >-
+              %{{ fromJSON(inputs.context).items['$KEY'].path }}
+            if-no-files-found: >-
+              %{{ fromJSON(inputs.context).items['$KEY']['if-no-files-found'] || 'warn' }}
   - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
     id: upload-failed
-    if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
+    if: ${{ failure() && inputs.uploads }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
