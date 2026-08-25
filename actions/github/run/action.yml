@@ -88,6 +88,9 @@ inputs:
   upload-junit-path:
     type: string
     default:
+  uploads:
+    type: string
+    default:
   warning-match:
     type: string
     default: |
@@ -365,32 +368,82 @@ runs:
       context: ${{ steps.context.outputs.value }}
   - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
     id: post-failed
-    if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
+    if: ${{ failure() && (inputs.uploads || (inputs.upload-name && inputs.upload-path) || (inputs.upload-junit-name && inputs.upload-junit-path)) }}
     with:
       input: ${{ steps.context.outputs.value }}
       filter: |
         .run["post-steps-failed"] = true
   - uses: envoyproxy/toolshed/actions/using/steps@ab31cf868faba51af4bd9f04671c30d4084d70ee
-    name: Post report
+    name: Run post steps
+    if: ${{ inputs.steps-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
+    with:
+      name: ${{ inputs.steps-post-name }}
+      steps: ${{ inputs.steps-post }}
+      context: ${{ steps.context.outputs.value }}
+  - name: Post report
+    uses: envoyproxy/toolshed/actions/using/steps@ab31cf868faba51af4bd9f04671c30d4084d70ee
     if: ${{ inputs.report-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
       steps: ${{ inputs.report-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-    name: Upload artefacts
-    if: ${{ inputs.upload-name && inputs.upload-path && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
+  - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
+    name: Generate legacy upload config
+    if: ${{ inputs.upload-name && inputs.upload-path }}
+    id: legacy-config
     with:
-      name: ${{ inputs.upload-name }}
-      path: ${{ startsWith(inputs.upload-path, '/') && inputs.upload-path || format('{0}/{1}', runner.temp, inputs.upload-path) }}
-  - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-    name: Upload JUnit XML reports
-    if: ${{ inputs.upload-junit-name && inputs.upload-junit-path && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
+      input: |
+        "${{ inputs.upload-name }}": "${{ inputs.upload-path }}"
+      input-format: yaml
+  - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
+    name: Generate legacy junit upload config
+    if: ${{ inputs.upload-junit-name && inputs.upload-junit-path }}
+    id: legacy-junit-config
     with:
-      name: ${{ inputs.upload-junit-name }}
-      path: ${{ startsWith(inputs.upload-junit-path, '/') && inputs.upload-junit-path || format('{0}/{1}', runner.temp, inputs.upload-junit-path) }}
+      input: |
+        "${{ inputs.upload-junit-name }}": "${{ inputs.upload-junit-path }}"
+      input-format: yaml
+  - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
+    name: Generate upload config
+    if: ${{ inputs.uploads }}
+    id: upload-config
+    with:
+      input: ${{ inputs.uploads }}
+      input-format: yaml
+  - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
+    name: Merge upload configs
+    if: ${{ steps.legacy-config.outputs.value || steps.legacy-junit-config.outputs.value || steps.upload-config.outputs.value }}
+    id: merged-upload-config
+    with:
+      input: |
+        legacy: ${{ steps.legacy-config.outputs.value || '{}' }}
+        junit: ${{ steps.legacy-junit-config.outputs.value || '{}' }}
+        uploads: ${{ steps.upload-config.outputs.value || '{}' }}
+      input-format: yaml
+      filter: |
+        (.legacy + .junit + .uploads)
+        | with_entries(
+            .value
+            |= if type != "string" then
+                 "${{ runner.temp }}/"
+               elif startswith("/") then
+                 .
+               else
+                 "${{ runner.temp }}/\(.)"
+               end)
+  - uses: envoyproxy/toolshed/actions/foreach@ab31cf868faba51af4bd9f04671c30d4084d70ee
+    name: Upload artifacts
+    if: ${{ steps.merged-upload-config.outputs.value && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
+    with:
+      items: ${{ steps.merged-upload-config.outputs.value }}
+      steps: |
+        - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+          with:
+            name: $KEY
+            path: >-
+              %{{ fromJSON(inputs.context).items['$KEY'] }}
   - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
     id: upload-failed
-    if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
+    if: ${{ failure() && (inputs.uploads || (inputs.upload-name && inputs.upload-path) || (inputs.upload-junit-name && inputs.upload-junit-path)) }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
