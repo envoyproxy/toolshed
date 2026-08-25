@@ -27,7 +27,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.0",
     "@types/jest": "^30.0.0",
-    "@types/node": "^25.7.0",
+    "@types/node": "^26.2.0",
     "@types/tmp": "^0.2.5",
     "@typescript-eslint/eslint-plugin": "^8.59.3",
     "@typescript-eslint/parser": "^8.59.3",
@@ -40,11 +40,11 @@
     "nock": "^14.0.15",
     "prettier": "^3.2.5",
     "ts-jest": "^29.0.0",
-    "typescript": "^6.0.0",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.59.3"
   },
   "dependencies": {
     "@actions/core": "^3.0.0",
-    "minimatch": "^10.2.4"
+    "minimatch": "^10.2.6"
   }
 }
