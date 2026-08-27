@@ -19,10 +19,14 @@ REACHABILITY_EDGE_AND_PATTERN_JSON="${RUNFILES_DIR}/dependency/test/reachability
 REACHABILITY_EXCLUDED_PATTERN_JSON="${RUNFILES_DIR}/dependency/test/reachability_excluded_pattern.json"
 REACHABILITY_RULES_PKG_TRANSITIVE_JSON="${RUNFILES_DIR}/dependency/test/reachability_rules_pkg_transitive.json"
 REACHABILITY_EXCLUDED_RULES_PKG_TRANSITIVE_JSON="${RUNFILES_DIR}/dependency/test/reachability_excluded_rules_pkg_transitive.json"
+REACHABILITY_UNRECORDED_RULES_PKG_TRANSITIVE_JSON="${RUNFILES_DIR}/dependency/test/reachability_unrecorded_rules_pkg_transitive.json"
+REACHABILITY_EXCLUDED_OVER_UNRECORDED_RULES_PKG_TRANSITIVE_JSON="${RUNFILES_DIR}/dependency/test/reachability_excluded_over_unrecorded_rules_pkg_transitive.json"
+REACHABILITY_UNRECORDED_EDGE_AND_PATTERN_JSON="${RUNFILES_DIR}/dependency/test/reachability_unrecorded_edge_and_pattern.json"
 REACHABILITY_EMPTY_EXCLUSIONS_JSON="${RUNFILES_DIR}/dependency/test/reachability_empty_exclusions.json"
 REACHABILITY_EMPTY_EXCLUSIONS_EXPLICIT_JSON="${RUNFILES_DIR}/dependency/test/reachability_empty_exclusions_explicit.json"
 REACHABILITY_ATTRIBUTION_EXCLUDED_BASELINE_JSON="${RUNFILES_DIR}/dependency/test/reachability_attribution_excluded_baseline.json"
 REACHABILITY_ATTRIBUTION_EXCLUDED_JSON="${RUNFILES_DIR}/dependency/test/reachability_attribution_excluded.json"
+REACHABILITY_ATTRIBUTION_UNRECORDED_JSON="${RUNFILES_DIR}/dependency/test/reachability_attribution_unrecorded.json"
 
 FAILED=0
 
@@ -71,7 +75,7 @@ check "excluded_patterns can remove all matching deps from one root" \
     "${REACHABILITY_EXCLUDED_PATTERN_JSON}"
 
 check "excluded_patterns baseline includes the matched boundary repo" \
-    '[.dependencies[] | .name] | any(. == "rules_pkg")' \
+    '[.dependencies[] | .name] | any(. == "bazel_tools")' \
     "true" \
     "${REACHABILITY_RULES_PKG_TRANSITIVE_JSON}"
 
@@ -80,13 +84,44 @@ check "excluded_patterns prunes matched repos transitively" \
     "0" \
     "${REACHABILITY_EXCLUDED_RULES_PKG_TRANSITIVE_JSON}"
 
+check "unrecorded_patterns suppresses recording of the matched boundary repo" \
+    '[.dependencies[] | .name] | any(. == "bazel_tools")' \
+    "false" \
+    "${REACHABILITY_UNRECORDED_RULES_PKG_TRANSITIVE_JSON}"
+
+check "unrecorded_patterns preserves descent behind the matched boundary repo" \
+    '[.dependencies[] | .name] | length > 0' \
+    "true" \
+    "${REACHABILITY_UNRECORDED_RULES_PKG_TRANSITIVE_JSON}"
+
+BASELINE_MINUS_BOUNDARY="$("${JQ}" -r '[.dependencies[] | .name] | map(select(. != "bazel_tools")) | sort | join(",")' "${REACHABILITY_RULES_PKG_TRANSITIVE_JSON}")"
+UNRECORDED_NAMES="$("${JQ}" -r '[.dependencies[] | .name] | sort | join(",")' "${REACHABILITY_UNRECORDED_RULES_PKG_TRANSITIVE_JSON}")"
+if [ "${UNRECORDED_NAMES}" != "${BASELINE_MINUS_BOUNDARY}" ]; then
+    echo "FAIL: unrecorded_patterns keeps the baseline transitive set except the suppressed repo" >&2
+    echo "  baseline-minus-boundary: ${BASELINE_MINUS_BOUNDARY}" >&2
+    echo "  unrecorded:               ${UNRECORDED_NAMES}" >&2
+    FAILED=1
+else
+    echo "PASS: unrecorded_patterns keeps the baseline transitive set except the suppressed repo"
+fi
+
 check "combined excluded_edges and excluded_patterns apply together" \
     '[.dependencies[] | .name] | length' \
     "0" \
     "${REACHABILITY_EDGE_AND_PATTERN_JSON}"
 
+check "excluded_patterns wins over unrecorded_patterns when both match" \
+    '[.dependencies[] | .name] | length' \
+    "0" \
+    "${REACHABILITY_EXCLUDED_OVER_UNRECORDED_RULES_PKG_TRANSITIVE_JSON}"
+
+check "unrecorded_patterns composes with excluded_edges and excluded_patterns" \
+    '[.dependencies[] | .name] | length' \
+    "0" \
+    "${REACHABILITY_UNRECORDED_EDGE_AND_PATTERN_JSON}"
+
 check "baseline attribution records the unexcluded repository" \
-    '.dependencies | to_entries[] | select(.value.name == "rules_pkg") | .value.attributed_packages[0].package' \
+    '.dependencies | to_entries[] | select(.value.name == "bazel_tools") | .value.attributed_packages[0].package' \
     "//dependency/test/transitive/ext/excluded" \
     "${REACHABILITY_ATTRIBUTION_EXCLUDED_BASELINE_JSON}"
 
@@ -99,6 +134,21 @@ check "nothing is attributed through an excluded repository" \
     '[.dependencies[] | .attributed_packages[]?] | length' \
     "0" \
     "${REACHABILITY_ATTRIBUTION_EXCLUDED_JSON}"
+
+check "unrecorded repository is not attributed" \
+    '[.dependencies[] | select(.name == "bazel_tools")] | length' \
+    "0" \
+    "${REACHABILITY_ATTRIBUTION_UNRECORDED_JSON}"
+
+check "attribution still passes through an unrecorded repository" \
+    '[.dependencies[] | .attributed_packages[]?] | length > 0' \
+    "true" \
+    "${REACHABILITY_ATTRIBUTION_UNRECORDED_JSON}"
+
+check "repos behind an unrecorded repository keep their package attribution" \
+    '.dependencies | to_entries[] | select(.value.name == "platforms") | .value.attributed_packages[0].package' \
+    "//dependency/test/transitive/ext/excluded" \
+    "${REACHABILITY_ATTRIBUTION_UNRECORDED_JSON}"
 
 if ! cmp -s "${REACHABILITY_EMPTY_EXCLUSIONS_JSON}" "${REACHABILITY_EMPTY_EXCLUSIONS_EXPLICIT_JSON}"; then
     echo "FAIL: explicit empty exclusions must be byte-identical to defaults" >&2
