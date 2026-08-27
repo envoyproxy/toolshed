@@ -165,23 +165,29 @@ recorded over all public attributes, including ones that carry build-time-only
 deps (e.g. `tools`-style attrs on custom rules); consumers that need to
 distinguish build-time from runtime paths should apply that policy themselves.
 
-Exclusion settings (`excluded_edges`, `excluded_patterns`) are transported via
-Starlark build settings rather than `--features`, so they survive Bazel's exec
-configuration transition. They therefore apply uniformly across target and exec
-configurations: edges reached through `cfg = "exec"` attributes are excluded
-just as reliably as edges in the target configuration. The same transport is
-used for `attribution_patterns`, so opted-in package attribution applies
-uniformly across all analyzed configurations. All three settings are carried
-through every branch of the split transition.
+Exclusion settings (`excluded_edges`, `excluded_patterns`,
+`unrecorded_patterns`) are transported via Starlark build settings rather than
+`--features`, so they survive Bazel's exec configuration transition. They
+therefore apply uniformly across target and exec configurations: edges reached
+through `cfg = "exec"` attributes are excluded just as reliably as edges in the
+target configuration. The same transport is used for `attribution_patterns`, so
+opted-in package attribution applies uniformly across all analyzed
+configurations. All four settings are carried through every branch of the split
+transition.
 
-Note on exclusion semantics: an excluded repository is neither recorded nor
-descended into. Pruning descent means that repositories reachable *only through*
-an excluded repository also disappear from the output, even if they do not
-themselves match any exclusion pattern. This is a deliberate trade-off: it keeps
-the walk bounded but means the output can depend on which repository sits first
-on a path. The same pruning applies to `attributed_packages`: excluded
-repositories are not attributed, and packages are not attributed to repositories
-reachable only through an excluded repository.
+Repository-pattern exclusion has two modes:
+
+- `excluded_patterns`: prune. Matching repositories are neither recorded nor
+  descended into, so repositories reachable *only through* them also disappear
+  from the output.
+- `unrecorded_patterns`: record suppression only. Matching repositories are not
+  recorded (and are not attribution targets), but traversal continues through
+  them so repositories behind them still appear and are still attributed.
+
+When a repository matches both, `excluded_patterns` wins (pruning is stronger).
+Use pruning to keep the walk bounded when the entire subtree is irrelevant; use
+record suppression for boundary repositories that are uninteresting themselves
+but fan out to dependencies that still need coverage.
 
 `attribution_patterns` is opt-in and defaults to empty. When left unset, the
 emitted JSON is byte-identical to the historical output and no attribution sets
@@ -191,13 +197,14 @@ needs transitive main-repo package attribution.
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 
-# Private build settings used to transport excluded_edges and excluded_patterns
+# Private build settings used to transport exclusion/attribution settings
 # through the configuration transition. Build settings survive the exec
 # configuration transition (unlike --features, which Bazel resets to
 # --host_features when entering exec config). These settings are not intended
 # for direct use; they are an implementation detail of dependency_reachability.
 _EXCLUDED_EDGES_SETTING = "//dependency:_excluded_edges"
 _EXCLUDED_PATTERNS_SETTING = "//dependency:_excluded_patterns"
+_UNRECORDED_PATTERNS_SETTING = "//dependency:_unrecorded_patterns"
 _ATTRIBUTION_PATTERNS_SETTING = "//dependency:_attribution_patterns"
 
 DependencyReachabilityInfo = provider(
@@ -269,13 +276,7 @@ def _matches_repo_pattern(repo_name, pattern):
     return repo_name == pattern
 
 def _repo_is_excluded(repo_name, patterns):
-    """Return True if repo_name matches any exclusion pattern.
-
-    An excluded repository is neither recorded as a dependency edge nor
-    descended into during traversal. Pruning descent means that repositories
-    reachable *only through* an excluded repository also disappear from the
-    output, even if they do not themselves match any exclusion pattern.
-    """
+    """Return True if repo_name matches any repository pattern."""
     for pattern in patterns:
         if _matches_repo_pattern(repo_name, pattern):
             return True
@@ -358,6 +359,7 @@ def _reachability_aspect_impl(target, ctx):
     testonly = bool(getattr(ctx.rule.attr, "testonly", False))
     excluded_edges = {edge: True for edge in ctx.attr._excluded_edges[BuildSettingInfo].value}
     excluded_patterns = ctx.attr._excluded_patterns[BuildSettingInfo].value
+    unrecorded_patterns = ctx.attr._unrecorded_patterns[BuildSettingInfo].value
     attribution_patterns = ctx.attr._attribution_patterns[BuildSettingInfo].value
     collect_attributions = bool(attribution_patterns)
     edges = []
@@ -395,9 +397,11 @@ def _reachability_aspect_impl(target, ctx):
             continue
         for dep in _attr_targets(ctx.rule.attr, attr_name):
             dep_repo = dep.label.repo_name
-            if dep_repo and _repo_is_excluded(dep_repo, excluded_patterns):
+            excluded = dep_repo and _repo_is_excluded(dep_repo, excluded_patterns)
+            if excluded:
                 continue
-            if dep_repo and dep_repo != consumer_repo:
+            unrecorded = dep_repo and _repo_is_excluded(dep_repo, unrecorded_patterns)
+            if dep_repo and dep_repo != consumer_repo and not unrecorded:
                 edges.append(struct(
                     attr = attr_name,
                     consumer = consumer,
@@ -481,6 +485,10 @@ reachability_aspect = aspect(
         ),
         "_excluded_patterns": attr.label(
             default = _EXCLUDED_PATTERNS_SETTING,
+            providers = [BuildSettingInfo],
+        ),
+        "_unrecorded_patterns": attr.label(
+            default = _UNRECORDED_PATTERNS_SETTING,
             providers = [BuildSettingInfo],
         ),
         "_attribution_patterns": attr.label(
@@ -648,6 +656,7 @@ def _dependency_reachability_transition(flags):
             # apply uniformly across all analyzed configurations.
             output[_EXCLUDED_EDGES_SETTING] = attr.excluded_edges
             output[_EXCLUDED_PATTERNS_SETTING] = attr.excluded_patterns
+            output[_UNRECORDED_PATTERNS_SETTING] = attr.unrecorded_patterns
             output[_ATTRIBUTION_PATTERNS_SETTING] = attr.attribution_patterns
             transitioned[config] = output
         return transitioned
@@ -656,6 +665,7 @@ def _dependency_reachability_transition(flags):
     transition_outputs = flag_inputs + [
         _EXCLUDED_EDGES_SETTING,
         _EXCLUDED_PATTERNS_SETTING,
+        _UNRECORDED_PATTERNS_SETTING,
         _ATTRIBUTION_PATTERNS_SETTING,
     ]
     return transition(
@@ -720,7 +730,22 @@ def _dependency_reachability_rule(flags = []):
                     "Canonical repository-name patterns excluded from " +
                     "traversal. Supported forms are exact matches (`repo_name`) " +
                     "and a single trailing `*` wildcard (`prefix*`) for prefix " +
-                    "matching."
+                    "matching. Matching repositories are neither recorded nor " +
+                    "descended into (pruning). If a repository matches both " +
+                    "excluded_patterns and unrecorded_patterns, pruning wins."
+                ),
+            ),
+            "unrecorded_patterns": attr.string_list(
+                default = [],
+                doc = (
+                    "Canonical repository-name patterns that suppress direct " +
+                    "recording but preserve traversal. Supported forms are " +
+                    "exact matches (`repo_name`) and a single trailing `*` " +
+                    "wildcard (`prefix*`) for prefix matching. Matching " +
+                    "repositories are not recorded as dependencies and are not " +
+                    "attribution targets, but repositories reachable through " +
+                    "them are still traversed and recorded unless excluded by " +
+                    "excluded_patterns."
                 ),
             ),
             "attribution_patterns": attr.string_list(

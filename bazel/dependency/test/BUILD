@@ -167,7 +167,15 @@ dependency_reachability(
     testonly = True,
     roots = ["//dependency/test/transitive/ext/excluded:root"],
     attribution_patterns = ["//dependency/test/transitive/ext/..."],
-    excluded_patterns = ["rules_pkg*"],
+    excluded_patterns = ["bazel_tools"],
+)
+
+dependency_reachability(
+    name = "reachability_attribution_unrecorded",
+    testonly = True,
+    roots = ["//dependency/test/transitive/ext/excluded:root"],
+    attribution_patterns = ["//dependency/test/transitive/ext/..."],
+    unrecorded_patterns = ["bazel_tools"],
 )
 
 sh_test(
@@ -280,7 +288,7 @@ dependency_reachability(
 
 filegroup(
     name = "rules_pkg_root",
-    srcs = ["@rules_pkg//pkg:filter_directory"],
+    srcs = ["@bazel_tools//src/conditions:linux"],
 )
 
 dependency_reachability(
@@ -293,7 +301,31 @@ dependency_reachability(
     name = "reachability_excluded_rules_pkg_transitive",
     testonly = True,
     roots = [":rules_pkg_root"],
-    excluded_patterns = ["rules_pkg*"],
+    excluded_patterns = ["bazel_tools"],
+)
+
+dependency_reachability(
+    name = "reachability_unrecorded_rules_pkg_transitive",
+    testonly = True,
+    roots = [":rules_pkg_root"],
+    unrecorded_patterns = ["bazel_tools"],
+)
+
+dependency_reachability(
+    name = "reachability_excluded_over_unrecorded_rules_pkg_transitive",
+    testonly = True,
+    roots = [":rules_pkg_root"],
+    excluded_patterns = ["bazel_tools"],
+    unrecorded_patterns = ["bazel_tools"],
+)
+
+dependency_reachability(
+    name = "reachability_unrecorded_edge_and_pattern",
+    testonly = True,
+    roots = [":excluded_edge_root"],
+    excluded_edges = ["library"],
+    excluded_patterns = ["bazel_tools*"],
+    unrecorded_patterns = ["bazel_skylib*"],
 )
 
 dependency_reachability(
@@ -308,6 +340,7 @@ dependency_reachability(
     roots = [":core_root"],
     excluded_edges = [],
     excluded_patterns = [],
+    unrecorded_patterns = [],
 )
 
 sh_test(
@@ -320,10 +353,14 @@ sh_test(
         ":reachability_excluded_pattern",
         ":reachability_rules_pkg_transitive",
         ":reachability_excluded_rules_pkg_transitive",
+        ":reachability_unrecorded_rules_pkg_transitive",
+        ":reachability_excluded_over_unrecorded_rules_pkg_transitive",
+        ":reachability_unrecorded_edge_and_pattern",
         ":reachability_empty_exclusions",
         ":reachability_empty_exclusions_explicit",
         ":reachability_attribution_excluded_baseline",
         ":reachability_attribution_excluded",
+        ":reachability_attribution_unrecorded",
         "@jq_toolchains//:resolved_toolchain",
     ],
     env = {
