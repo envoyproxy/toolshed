@@ -85,4 +85,4 @@ manifests:
   architectures:
   - amd64
   - arm64
-  artifact-pattern: oci-debian-{arch}/toolshed-echo-v{echo-version}-{arch}.tar
+  artifact-pattern: oci-debian-echo-{arch}/toolshed-echo-v{echo-version}-{arch}.tar
