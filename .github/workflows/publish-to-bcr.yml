@@ -1,0 +1,43 @@
+name: Publish to BCR
+
+# This workflow publishes the envoy_toolshed module to the Bazel Central Registry (BCR).
+# It is triggered when a GitHub Release is published with a tag matching 'bazel-v*'.
+# The workflow creates a pull request against https://github.com/bazelbuild/bazel-central-registry
+# using the templates defined in the .bcr directory.
+
+on:
+  # Triggered when a release is published with a tag matching 'bazel-v*' pattern
+  release:
+    types:
+    - published
+  # Allow manual trigger for republishing or testing
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        required: true
+        type: string
+        description: "The git tag identifying the release to publish (e.g., bazel-v0.3.11)"
+
+jobs:
+  publish:
+    # Only run for releases with tags matching 'bazel-v*' pattern (e.g., bazel-v0.3.10, bazel-v1.2.3)
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.release.tag_name, 'bazel-v')
+    uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v6
+    with:
+      tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag_name || github.event.release.tag_name }}
+      # Open the PR directly to the upstream BCR
+      registry: bazelbuild/bazel-central-registry
+      # Use tag prefix 'bazel-v' to extract version from tags like 'bazel-v0.3.11'
+      tag_prefix: "bazel-v"
+      # Open PRs as draft by default - maintainers can mark as ready for review
+      draft: true
+      # Enable attestations for enhanced security
+      attest: true
+    permissions:
+      contents: write     # Needed to upload attestation files to the release
+      id-token: write     # Needed to generate attestations
+      attestations: write  # Needed to publish attestations
+    secrets:
+      # This PAT must be created and added as a repository secret
+      # See .bcr/README.md for instructions on creating the token
+      publish_token: ${{ secrets.BCR_PUBLISH_TOKEN }}
