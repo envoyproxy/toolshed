@@ -1,0 +1,8 @@
+module(
+    name = "prometheus-metrics-model",
+    version = "0.6.2.envoy",
+    compatibility_level = 1,
+    repo_name = "prometheus_metrics_model",
+)
+
+bazel_dep(name = "protobuf", version = "33.4.envoy")

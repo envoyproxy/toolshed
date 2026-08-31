@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/prometheus/client_model",
+    "maintainers": [],
+    "repository": [
+        "github:prometheus/client_model"
+    ],
+    "versions": [
+        "0.6.2.envoy"
+    ],
+    "yanked_versions": {}
+}
