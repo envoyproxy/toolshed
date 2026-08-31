@@ -49,5 +49,8 @@
     "@actions/glob": "^0.7.0",
     "@actions/http-client": "^4.0.0",
     "@await/spawn": "^9.0.0"
+  },
+  "overrides": {
+    "js-yaml": "^5.4.1"
   }
 }

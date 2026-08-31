@@ -46,5 +46,8 @@
   "dependencies": {
     "@actions/core": "^3.0.0",
     "minimatch": "^10.2.4"
+  },
+  "overrides": {
+    "js-yaml": "^5.4.1"
   }
 }
