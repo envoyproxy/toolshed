@@ -37,3 +37,6 @@ load_website_packages()
 
 load("@website_pip3//:requirements.bzl", website_install_deps = "install_deps")
 website_install_deps()
+
+load("//dependency/test:reachability_test_extension.bzl", "reachability_test_repos")
+reachability_test_repos()
