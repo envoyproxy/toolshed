@@ -51,5 +51,8 @@
     "@octokit/rest": "^22.0.0",
     "@octokit/types": "^17.0.0",
     "eslint": "^10.0.0"
+  },
+  "overrides": {
+    "js-yaml": "^5.4.1"
   }
 }
