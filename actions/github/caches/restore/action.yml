@@ -10,7 +10,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/actions/foreach@ab31cf868faba51af4bd9f04671c30d4084d70ee
+  - uses: envoyproxy/toolshed/actions/foreach@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
     id: json_actions
     with:
       items: ${{ inputs.caches }}
@@ -21,7 +21,7 @@ runs:
             key: $KEY
             path: "%{{ fromJSON(inputs.context).items['$KEY'] }}"
 
-  - uses: envoyproxy/toolshed/actions/jq@ab31cf868faba51af4bd9f04671c30d4084d70ee
+  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
     id: cached
     with:
       input: ${{ steps.json_actions.outputs.out }}
