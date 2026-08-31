@@ -281,6 +281,9 @@ def _repo_is_excluded(repo_name, patterns):
             return True
     return False
 
+def _repo_or_apparent_is_excluded(repo_name, patterns):
+    return _repo_is_excluded(repo_name, patterns) or _repo_is_excluded(apparent_name(repo_name), patterns)
+
 def _matches_package_pattern(package, pattern):
     if pattern == "//...":
         return True
@@ -395,7 +398,7 @@ def _reachability_aspect_impl(target, ctx):
             continue
         for dep in _attr_targets(ctx.rule.attr, attr_name):
             dep_repo = dep.label.repo_name
-            if dep_repo and _repo_is_excluded(dep_repo, excluded_patterns):
+            if dep_repo and _repo_or_apparent_is_excluded(dep_repo, excluded_patterns):
                 continue
             if dep_repo and dep_repo != consumer_repo:
                 edges.append(struct(
@@ -717,10 +720,12 @@ def _dependency_reachability_rule(flags = []):
             "excluded_patterns": attr.string_list(
                 default = [],
                 doc = (
-                    "Canonical repository-name patterns excluded from " +
-                    "traversal. Supported forms are exact matches (`repo_name`) " +
-                    "and a single trailing `*` wildcard (`prefix*`) for prefix " +
-                    "matching."
+                    "Repository-name patterns excluded from traversal. Patterns " +
+                    "are matched against both the canonical repository name and " +
+                    "the apparent/module name emitted in dependency metadata, " +
+                    "so metadata-facing patterns work under both WORKSPACE and " +
+                    "bzlmod. Supported forms are exact matches (`repo_name`) and " +
+                    "a single trailing `*` wildcard (`prefix*`) for prefix matching."
                 ),
             ),
             "attribution_patterns": attr.string_list(
