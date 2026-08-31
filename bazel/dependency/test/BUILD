@@ -279,6 +279,24 @@ dependency_reachability(
 )
 
 filegroup(
+    name = "apparent_exclusion_root",
+    srcs = ["@apparent_excluded_repo//:direct"],
+)
+
+dependency_reachability(
+    name = "reachability_apparent_exclusion_baseline",
+    testonly = True,
+    roots = [":apparent_exclusion_root"],
+)
+
+dependency_reachability(
+    name = "reachability_apparent_exclusion",
+    testonly = True,
+    roots = [":apparent_exclusion_root"],
+    excluded_patterns = ["apparent_excluded_repo"],
+)
+
+filegroup(
     name = "rules_pkg_root",
     srcs = ["@rules_pkg//pkg:filter_directory"],
 )
@@ -317,6 +335,8 @@ sh_test(
     data = [
         ":reachability_excluded_edge",
         ":reachability_edge_and_pattern",
+        ":reachability_apparent_exclusion_baseline",
+        ":reachability_apparent_exclusion",
         ":reachability_excluded_pattern",
         ":reachability_rules_pkg_transitive",
         ":reachability_excluded_rules_pkg_transitive",
@@ -338,6 +358,7 @@ bzl_library(
         "reachability_apparent_name_test.bzl",
         "reachability_config_validation_test.bzl",
         "reachability_package_pattern_test.bzl",
+        "reachability_test_extension.bzl",
         "reachability_test_rules.bzl",
     ],
     deps = [

@@ -64,6 +64,9 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 use_repo(pip, "pip3", "website_pip3")
 
+reachability_test_ext = use_extension("//dependency/test:reachability_test_extension.bzl", "reachability_test_extension", dev_dependency = True)
+use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_transitive_repo")
+
 # Load llvm_source for compile targets
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
