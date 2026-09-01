@@ -83,18 +83,27 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c  # v4.2.0
+    - name: Get echo version
+      id: echo-version
+      uses: envoyproxy/toolshed/actions/jq@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
+      with:
+        input: docker-assets.yaml
+        input-format: yaml-path
+        options: -r
+        filter: .assets["toolshed-echo"].version
     - name: Get versions
       run: |
         TAG_VERSION=$(cat ./docker/build/VERSION.txt)
         {
           echo "VERSION=${TAG_VERSION}"
           echo "ARCH=${ARCH}"
+          echo "ECHO_VER=${ECHO_VER}"
           echo "OCI_OUTPUT=docker/build/oci-output"
           echo "IMAGE_TAG=envoyproxy/toolshed-echo:v${ECHO_VER}-${ARCH}"
         } >> "$GITHUB_ENV"
       env:
         ARCH: ${{ inputs.arch }}
-        ECHO_VER: 0.1.0
+        ECHO_VER: ${{ steps.echo-version.outputs.value }}
 
     - name: Build echo Docker image (${{ inputs.arch }})
       run: |
@@ -169,3 +178,11 @@ jobs:
           exit 1
         fi
         docker rm -f toolshed-echo-tls-test
+
+    - name: Upload OCI artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: oci-echo-${{ inputs.arch }}
+        path: docker/build/oci-output/*.tar
+        retention-days: 1
+        if-no-files-found: error
