@@ -6,7 +6,8 @@ LLVM_VERSION = "22.1.8"
 
 V8_VERSION = "14.6.202.10"
 
-# Extra distributions for versions not (yet) in toolchains_llvm's version table
+# LLVM release archive checksums, used to fetch the distribution directly when
+# building the minimal LLVM toolchain repos.
 LLVM_DISTRIBUTIONS = {
     "LLVM-22.1.8-Linux-ARM64.tar.xz": "805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34",
     "LLVM-22.1.8-Linux-X64.tar.xz": "df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384",
@@ -243,8 +244,8 @@ VERSIONS = {
         "patch_args": ["-p1"],
         "patches": ["@envoy_toolshed//:patches/toolchains_llvm.patch"],
         "repo": "bazel-contrib/toolchains_llvm",
-        "version": "1.8.0",
-        "sha256": "3b05826f256040f91c24dcaad673eb1c91e4cc93f4043d0205f2512327640205",
+        "version": "1.9.0",
+        "sha256": "779b3280571647034931c7f9ce8ef3836bfc55d00d23e7dad5370151e1f7149e",
         "url": "https://github.com/{repo}/releases/download/v{version}/{name}-v{version}.tar.gz",
         "strip_prefix": "{name}-v{version}",
     },
