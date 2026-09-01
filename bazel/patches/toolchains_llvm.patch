@@ -1,7 +1,44 @@
 diff -Naur a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.bzl
---- a/toolchain/cc_toolchain_config.bzl	2026-07-25 16:35:52.121480568 +0000
-+++ b/toolchain/cc_toolchain_config.bzl	2026-07-25 16:48:59.125550596 +0000
-@@ -586,7 +586,12 @@
+--- a/toolchain/cc_toolchain_config.bzl	2026-08-29 10:21:32.000000000 -0400
++++ b/toolchain/cc_toolchain_config.bzl	2026-09-01 11:17:57.971313039 -0400
+@@ -449,12 +449,13 @@
+         stdlib = "stdc++-" + stdlib[len("dynamic-stdc++-"):]
+ 
+     if stdlib == "builtin-libc++":
+-        # NB: -stdlib=libc++ is intentionally NOT passed. It is only a
+-        # compile-time header-selection flag (cxx_flags never reach the link
+-        # action; libc++ is linked explicitly below), and the libc++ headers are
+-        # already located explicitly via -nostdinc++ + -cxx-isystem (see
+-        # cpp_system_includes / _cxx_isystem). Passing it therefore has no effect
+-        # and triggers -Wunused-command-line-argument on every object file.
++        # Unlike upstream, this configuration leaves cpp_system_includes empty
++        # for libc++ (see below), so no -nostdinc++/-cxx-isystem is emitted and
++        # Clang's own libc++ header search must be steered with -stdlib=libc++.
++        # It is not redundant here and produces no unused-argument warning.
++        cxx_flags.extend([
++            "-stdlib=libc++",
++        ])
+         system_includes.append(toolchain_builtin_include)
+         if is_darwin_exec_and_target:
+             # On macOS, use the SDK's libc++ entirely (headers + linking).
+@@ -512,10 +513,12 @@
+             ]
+ 
+     elif stdlib == "libc++":
+-        # As in the builtin-libc++ branch, -stdlib=libc++ is redundant: libc++ is
+-        # located via -nostdinc++/-cxx-isystem and linked explicitly below, and
+-        # on darwin (where -nostdinc++ is not emitted) clang already defaults to
+-        # libc++. Passing it only produces -Wunused-command-line-argument.
++        # As in the builtin-libc++ branch above, -stdlib=libc++ is required to
++        # locate the libc++ headers because cpp_system_includes is left empty.
++        cxx_flags.extend([
++            "-stdlib=libc++",
++        ])
++
+         stdlib_link_libs.extend([
+             "-l:libc++.a",
+             "-l:libc++abi.a",
+@@ -587,7 +590,12 @@
          else:
              fail("Invalid stdlib: " + stdlib)
      elif stdlib == "libc":
@@ -15,7 +52,7 @@ diff -Naur a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.b
      elif stdlib == "none":
          cxx_flags = [
              "-nostdlib",
-@@ -600,8 +605,6 @@
+@@ -601,8 +609,6 @@
      # On macOS the libc++ headers come from the SDK (see above), not the
      # toolchain, so do not add the toolchain's libc++ include paths.
      use_toolchain_libcxx_paths = stdlib in ["builtin-libc++", "libc++"] and target_os != "darwin"
@@ -25,8 +62,8 @@ diff -Naur a/toolchain/cc_toolchain_config.bzl b/toolchain/cc_toolchain_config.b
      if major_llvm_version >= 14:
          # With C++20, Clang defaults to using C++ rather than Clang modules,
 diff -Naur a/toolchain/extensions/llvm.bzl b/toolchain/extensions/llvm.bzl
---- a/toolchain/extensions/llvm.bzl	2026-07-25 16:35:52.122480588 +0000
-+++ b/toolchain/extensions/llvm.bzl	2026-07-25 16:48:59.120550502 +0000
+--- a/toolchain/extensions/llvm.bzl	2026-08-29 10:21:32.000000000 -0400
++++ b/toolchain/extensions/llvm.bzl	2026-09-01 11:17:42.028120263 -0400
 @@ -77,6 +77,16 @@
                  name,
              )
@@ -66,8 +103,8 @@ diff -Naur a/toolchain/extensions/llvm.bzl b/toolchain/extensions/llvm.bzl
      },
  )
 diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
---- a/toolchain/internal/configure.bzl	2026-07-25 16:35:52.122480588 +0000
-+++ b/toolchain/internal/configure.bzl	2026-07-25 16:48:59.124550577 +0000
+--- a/toolchain/internal/configure.bzl	2026-08-29 10:21:32.000000000 -0400
++++ b/toolchain/internal/configure.bzl	2026-09-01 11:17:42.028285853 -0400
 @@ -256,6 +256,57 @@
          use_absolute_paths_sysroot,
      )
@@ -156,7 +193,7 @@ diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
          extra_archive_flags_dict = rctx.attr.extra_archive_flags,
          extra_link_libs_dict = rctx.attr.extra_link_libs,
          extra_opt_compile_flags_dict = rctx.attr.extra_opt_compile_flags,
-@@ -514,6 +566,12 @@
+@@ -507,6 +559,12 @@
      if not use_absolute_paths_llvm:
          target_toolchain_include_path_prefix = "%workspace%/" + target_toolchain_include_path_prefix
  
@@ -169,15 +206,15 @@ diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
      # C++ built-in include directories:
      resource_dir_version = llvm_version if major_llvm_version < 16 else major_llvm_version
      cxx_builtin_include_directories = [
-@@ -673,6 +731,7 @@
+@@ -664,6 +722,7 @@
+     name = "compiler-components-{suffix}",
      srcs = [
          ":sysroot-components-{suffix}",
-         "redacted_dates.h",
 +        {cxx_cross_lib_label_str}
          {extra_compiler_files}
      ],
  )
-@@ -681,6 +740,7 @@
+@@ -672,6 +731,7 @@
      name = "linker-components-{suffix}",
      srcs = [
          ":sysroot-components-{suffix}",
@@ -185,15 +222,15 @@ diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
          {extra_linker_files}
      ],
  )
-@@ -720,6 +780,7 @@
+@@ -710,6 +770,7 @@
+         ":sysroot-components-{suffix}",
          "{llvm_dist_label_prefix}extra_config_site",
          "{toolchain_root}:clang",
-         "redacted_dates.h",
 +        {cxx_cross_lib_label_str}
          {extra_compiler_files}
      ],
  )
-@@ -732,6 +793,7 @@
+@@ -722,6 +783,7 @@
          "{toolchain_root}:ld",
          "{toolchain_root}:ar",
          "{target_toolchain_root}:{lib_label}",
@@ -201,7 +238,7 @@ diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
          {extra_linker_files}
      ],
  )
-@@ -878,6 +940,7 @@
+@@ -893,6 +955,7 @@
          extra_compiler_files = ("\"%s\"," % _extra_compiler_label) if _extra_compiler_label else "",
          llvm_version = llvm_version,
          extra_linker_files = ("\"%s\"," % _extra_linker_label) if _extra_linker_label else "",
@@ -210,9 +247,9 @@ diff -Naur a/toolchain/internal/configure.bzl b/toolchain/internal/configure.bzl
          extra_target_compatible_with_specific = toolchain_info.extra_target_compatible_with.get(target_pair, []),
          extra_exec_compatible_with_all_targets = toolchain_info.extra_exec_compatible_with.get("", []),
 diff -Naur a/toolchain/internal/repo.bzl b/toolchain/internal/repo.bzl
---- a/toolchain/internal/repo.bzl	2026-07-25 16:35:52.123480607 +0000
-+++ b/toolchain/internal/repo.bzl	2026-07-25 16:48:59.121550521 +0000
-@@ -153,6 +153,15 @@
+--- a/toolchain/internal/repo.bzl	2026-08-29 10:21:32.000000000 -0400
++++ b/toolchain/internal/repo.bzl	2026-09-01 11:17:42.028491569 -0400
+@@ -165,6 +165,15 @@
                 "containing the files and the sysroot path will be taken as the path to the " +
                 "package of this label."),
      ),
