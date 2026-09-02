@@ -66,7 +66,12 @@ alias(
         ":linux_x86_64": "@%s//:wee8" % wee8_prebuilt_repo_name("x86_64"),
         # This does not currently work as it would require x-libs similar to how we provision llvm
         # ":linux_aarch64_gcc": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64", "libstdcxx"),
-        ":linux_aarch64": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64"),
+        # The aarch64 prebuilt is currently runtime-broken: the cross-compiled
+        # libwee8.a makes wee8_compile_tool segfault when compiling .wasm fixtures
+        # (seen in Envoy arm64 release CI). Fall back to building V8 from source on
+        # aarch64 until the artifact is repaired; then restore the line below:
+        #   ":linux_aarch64": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64"),
+        ":linux_aarch64": "@v8//:wee8",
         "//conditions:default": "@v8//:wee8",
     }),
     tags = ["manual"],
