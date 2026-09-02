@@ -29,6 +29,15 @@ _ARCH_PLATFORMS = {
     # ("aarch64", "libstdcxx"): "//platforms:linux_aarch64_libstdcxx",
 }
 
+# V8's mksnapshot/torque run as exec (build-host) tools but must emit code for
+# the target ISA, which V8 resolves from @v8//bazel/config:v8_target_cpu (else
+# mapping[--cpu]). We set only --platforms, not --cpu, so on an x86_64 host the
+# aarch64 build otherwise gets an x86_64 snapshot that segfaults on real arm64.
+_V8_TARGET_CPU = {
+    "x86_64": "x64",
+    "aarch64": "arm64",
+}
+
 # The transition sets the target platform only. Execution platforms are supplied
 # by config, not here:
 #
@@ -48,12 +57,16 @@ def _wee8_transition_impl(settings, attr):
         "//command_line_option:platforms": [
             _ARCH_PLATFORMS[(attr.arch, attr.stdlib)],
         ],
+        "@v8//bazel/config:v8_target_cpu": _V8_TARGET_CPU[attr.arch],
     }
 
 _wee8_transition = transition(
     implementation = _wee8_transition_impl,
     inputs = [],
-    outputs = ["//command_line_option:platforms"],
+    outputs = [
+        "//command_line_option:platforms",
+        "@v8//bazel/config:v8_target_cpu",
+    ],
 )
 
 _TRANSITION_ATTRS = {
