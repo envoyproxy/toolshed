@@ -12,10 +12,10 @@ bazel_dep(name = "rules_cc", version = "0.2.17")
 bazel_dep(name = "v8", version = "14.6.202.10.envoy")
 bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
-bazel_dep(name = "rules_python", version = "1.7.0")
-bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "rules_python", version = "2.2.0")
+bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
-bazel_dep(name = "toolchains_llvm", version = "1.8.0.envoy", dev_dependency = True)
+bazel_dep(name = "toolchains_llvm", version = "1.9.0.envoy", dev_dependency = True)
 
 bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "toolchains")
 bazel_lib_toolchains.jq(version = "1.7")
@@ -136,11 +136,6 @@ llvm.cxx_cross_lib(
 )
 llvm.toolchain(
     name = "llvm_toolchain",
-    extra_llvm_distributions = {
-        "LLVM-22.1.8-Linux-ARM64.tar.xz": "805efad2bb91cb4967fa569e0881d10c0f69c04461cf671cccbae19f547acc34",
-        "LLVM-22.1.8-Linux-X64.tar.xz": "df0e1ecf16caf3489a272a5eea4eec9b0d82878f6477fa309504f918a0006384",
-        "LLVM-22.1.8-macOS-ARM64.tar.xz": "f260f4f7c0d430828a81ae8a3826a1d63fc0963ec2459489308cc23b1f7eab4f",
-    },
     llvm_version = "22.1.8",
 )
 llvm.toolchain_root(
