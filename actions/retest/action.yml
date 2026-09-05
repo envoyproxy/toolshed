@@ -36,7 +36,9 @@ inputs:
     required: true
   args:
     description: >-
-      Args passed to command (not currently used)
+      Args passed to command (not currently used). These are derived from the
+      body of a `/retest` comment, which anyone can create, and are validated
+      against a strict allow-list of check-name-like tokens.
 
 runs:
   using: node24

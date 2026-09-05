@@ -2,7 +2,7 @@ import fetchMock from 'fetch-mock'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
-import run from '../retest'
+import run, {parseArgs} from '../retest'
 
 beforeEach(() => {
   jest.resetModules()
@@ -45,5 +45,19 @@ describe('retest action', () => {
   it('completes a full run', async () => {
     // https://developer.github.com/v3/activity/events/types/#issuecommentevent
     await run()
+  })
+})
+
+describe('parseArgs', () => {
+  it('parses check names', () => {
+    expect(parseArgs(' all check/name-1 check.name_2 ')).toEqual(['all', 'check/name-1', 'check.name_2'])
+  })
+
+  it('parses empty args', () => {
+    expect(parseArgs('')).toEqual([])
+  })
+
+  it.each([['$(id)'], ['check;id'], ['`id`'], ['--flag'], ['check name && id']])('rejects %s', (args: string) => {
+    expect(() => parseArgs(args)).toThrow(TypeError)
   })
 })

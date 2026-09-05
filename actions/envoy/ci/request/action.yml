@@ -105,7 +105,10 @@ runs:
       input-format: yaml
       filter: |
         . as $input
-        | (env.TRUSTED_BOTS | split("\n") | map(select(length > 0))) as $trusted_bots
+        | (env.TRUSTED_BOTS
+           | split("\n")
+           | map(str::trim)
+           | map(select(length > 0))) as $trusted_bots
         | if ($input.bot | str::isempty | not) then
             $trusted_bots
             | index($input.bot) != null
