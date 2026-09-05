@@ -1,0 +1,19 @@
+uses: ./actions/github/run
+id: run
+with:
+  command: |
+    echo command-first
+    command-later
+  args: |
+    args-first
+    args-later
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    ACTUAL_COMMAND='%{{ steps.run.outputs.command }}'
+    test_output_contains "$ACTUAL_COMMAND" "command-first" "Command contains first-line token"
+    test_output_contains "$ACTUAL_COMMAND" "command-later" "Command contains later-line token"
+    test_output_contains "$ACTUAL_COMMAND" "args-first" "Args contain first-line token"
+    test_output_contains "$ACTUAL_COMMAND" "args-later" "Args contain later-line token"

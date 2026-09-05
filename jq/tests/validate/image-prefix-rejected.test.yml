@@ -1,0 +1,12 @@
+name: validate::image_prefix rejects an image from another registry
+
+input: "evil.example.com/envoyproxy/envoy-build-ubuntu:1.2.3@sha256:beef"
+
+imports:
+- validate
+
+expression: >-
+  (try validate::image_prefix(["docker.io/envoyproxy/", "gcr.io/envoy-ci/"])
+   catch "invalid") == "invalid"
+
+expected: true
