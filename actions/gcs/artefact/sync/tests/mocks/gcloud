@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Mock gcloud binary for testing the gcs/artefact/sync action.
+
+MOCK_LOG="${MOCK_LOG:-/tmp/gcloud-mock.log}"
+
+echo "gcloud $*" >> "$MOCK_LOG"

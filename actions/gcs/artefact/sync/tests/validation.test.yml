@@ -1,0 +1,29 @@
+uses: ./actions/gcs/artefact/sync
+id: sync
+with:
+  bucket: envoy-test-bucket
+  path: artefacts
+  path-upload: docs
+  sha: 0123456789abcdef0123456789abcdef01234567
+  working-directory: /tmp/gcs-sync-validation-test
+
+before:
+- shell: bash
+  run: |
+    mkdir -p /tmp/gcs-sync-validation-test/artefacts
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    SHA=0123456789abcdef0123456789abcdef01234567
+    test_validate_accepts "valid inputs" "envoy-test-bucket" "$SHA" "latest"
+    test_validate_accepts "empty redirect" "envoy-test-bucket" "$SHA" ""
+    test_validate_rejects "empty bucket" "" "$SHA" ""
+    test_validate_rejects "bucket with path traversal" "../../evil" "$SHA" ""
+    test_validate_rejects "bucket with shell metacharacters" 'foo;rm -rf /' "$SHA" ""
+    test_validate_rejects "bucket with uppercase" "Envoy-Bucket" "$SHA" ""
+    test_validate_rejects "short sha" "envoy-test-bucket" "0123456" ""
+    test_validate_rejects "non-hex sha" "envoy-test-bucket" "zzzz56789abcdef0123456789abcdef01234567z" ""
+    test_validate_rejects "redirect with path traversal" "envoy-test-bucket" "$SHA" "../../evil"
+    test_validate_rejects "redirect with shell metacharacters" "envoy-test-bucket" "$SHA" 'latest;id'

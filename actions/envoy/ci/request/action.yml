@@ -19,6 +19,15 @@ inputs:
   branch-name:
     type: string
     required: true
+  build-image-repos:
+    description: >-
+      Newline-separated list of allowed build image repository prefixes. Any
+      requested or current build image that does not start with one of these is
+      rejected.
+    type: string
+    default: |
+      docker.io/envoyproxy/
+      gcr.io/envoy-ci/
   config-file:
     type: string
     default: ./.github/config.yml
@@ -31,10 +40,18 @@ inputs:
   token:
     type: string
     required: true
-  trusted_bots:
+  trusted-bots:
+    description: >-
+      Newline-separated list of bot actors that are trusted. Pass `NOBOTS` to
+      trust no bots.
     type: string
     default: |
       trigger-release-envoy[bot]
+  trusted_bots:
+    description: >-
+      Deprecated alias for `trusted-bots`.
+    type: string
+    default:
   template-script-ref-file:
     type: string
     default: |
@@ -68,20 +85,29 @@ runs:
   # Pull request/targets are _never_ trusted.
   #
   # Only specified bots are trusted.
+  - name: Validate trusted bots
+    shell: bash
+    env:
+      TRUSTED_BOTS: ${{ inputs.trusted_bots || inputs.trusted-bots }}
+    run: |
+      if [[ -z "${TRUSTED_BOTS//[[:space:]]/}" ]]; then
+          echo "::error::No trusted bots resolved, pass \`NOBOTS\` to trust no bots" >&2
+          exit 1
+      fi
   - id: trusted
     uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    env:
+      TRUSTED_BOTS: ${{ inputs.trusted_bots || inputs.trusted-bots }}
     with:
       input: |
-        trusted_bots: |
-          ${{ inputs.trusted-bots || 'NOBOTS' }}
-        bot: ${{ contains(github.actor, '[bot]') && github.actor || '' }}
-        event_name: ${{ github.event_name }}
+        bot: ${{ toJSON(contains(github.actor, '[bot]') && github.actor || '') }}
+        event_name: ${{ toJSON(github.event_name) }}
       input-format: yaml
       filter: |
         . as $input
+        | (env.TRUSTED_BOTS | split("\n") | map(select(length > 0))) as $trusted_bots
         | if ($input.bot | str::isempty | not) then
-            .trusted_bots
-            | split("\n")
+            $trusted_bots
             | index($input.bot) != null
           else true end
         | (. and ($input.event_name | startswith("pull_request") | not))
@@ -127,21 +153,32 @@ runs:
       result-filter-options:
       result-filter: .
 
+  # NB: the requested build image comes from the PR head `.github/config.yml`
+  # and is therefore user data - the tag/shas are validated, and every resolved
+  # image must be in one of the allowed repositories.
+  #
+  # The current config (`steps.config.outputs.output`) is read from the target
+  # branch, never the PR head, but it is still passed as data rather than
+  # interpolated into the filter.
   - id: build-images
     uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    env:
+      BUILD_IMAGE_REPOS: ${{ inputs.build-image-repos }}
+      CURRENT_CONFIG: ${{ steps.config.outputs.output }}
     with:
       input-format: yaml-path
       input: ${{ inputs.working-directory }}/${{ inputs.config-file }}
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
-        .["build-image"].repo as $repo
+        (env.BUILD_IMAGE_REPOS | split("\n") | map(select(length > 0))) as $repos
+        | .["build-image"].repo as $repo
         | (. ["build-image"].tag | validate::sha_or_semver(40)) as $tag
         | (.["build-image"].sha | validate::sha(64)) as $sha
         | (.["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
         | {"default": "\($repo):\($tag)@sha256:\($sha)",
            "mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
         | . as $requested
-        | ${{ steps.config.outputs.output }}
+        | (env.CURRENT_CONFIG | fromjson)
         | .["build-image"].repo as $repo
         | .["build-image"].tag as $tag
         | .["build-image"].sha as $sha
@@ -149,6 +186,7 @@ runs:
         | {default: "\($repo):\($tag)@sha256:\($sha)",
            mobile: "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
         | {$requested, current: .}
+        | map_values(map_values(validate::image_prefix($repos)))
 
   # Check current/request versions
   - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
@@ -162,6 +200,9 @@ runs:
         validate::version
   - uses: envoyproxy/toolshed/actions/bson@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
     id: version
+    env:
+      CHANGED_FILES: ${{ steps.changed.outputs.output || '[]' }}
+      REQUESTED_VERSION: ${{ steps.version-string.outputs.value }}
     with:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.version-file }}
       filter: |
@@ -179,9 +220,9 @@ runs:
            patch: (.[2] | rtrimstr("-dev") | fromjson),
            "dev": $isdev}
         | . as $current
-        | ${{ steps.changed.outputs.output || '[]' }}
+        | (env.CHANGED_FILES | fromjson)
         | (index("VERSION.txt") != null) as $changed
-        | "${{ steps.version-string.outputs.value }}"
+        | env.REQUESTED_VERSION
         | endswith("-dev") as $isdev
         | split(".")
         | {major: (.[0] | fromjson),
@@ -191,14 +232,22 @@ runs:
            "changed": $changed}
         | {requested: ., current: $current}
 
+  # WARNING: `message` (PR title/body) and `actor` are user data - they are
+  # passed to jq as data, never interpolated into the filter.
   - id: request
     uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    env:
+      BUILD_IMAGES: ${{ steps.build-images.outputs.value }}
+      MERGE_COMMIT: ${{ inputs.merge-commit }}
+      TARGET_BRANCH: ${{ inputs.branch-name }}
+      TRUSTED: ${{ steps.trusted.outputs.value }}
+      VERSION_DATA: ${{ steps.version.outputs.output }}
     with:
       input: |
         actor: ${{ toJSON(github.actor) }}
-        event_name: ${{ github.event_name }}
-        sha: ${{ github.sha }}
-        build_images: ${{ steps.build-images.outputs.value }}
+        event_name: ${{ toJSON(github.event_name) }}
+        sha: ${{ toJSON(github.sha) }}
+        started: ${{ toJSON(inputs.started) }}
         event:
           number: ${{ toJSON(github.event.number) }}
           head_commit:
@@ -217,7 +266,9 @@ runs:
         | .event as $event
         | .event_name as $event_name
         | .sha as $sha
-        | .build_images as $build_images
+        | .started as $started
+        | (env.BUILD_IMAGES | fromjson) as $build_images
+        | (env.VERSION_DATA | fromjson) as $version
         | ($event.head_commit.message
            // "\($event.pull_request.title)\n\($event.pull_request.body)") as $message
         | ($build_images.current.default != $build_images.requested.default) as $build_image_changed
@@ -228,23 +279,23 @@ runs:
         | . as $build_image
         | {}
         | if ($event_name | startswith("pull_request")) then
-            .ref = "${{ inputs.merge-commit }}"
+            .ref = (env.MERGE_COMMIT // "")
             | .sha = $event.pull_request.head.sha
             | .pr = $event.number
             | .["base-sha"] = $sha
           else
-            .ref = "${{ inputs.branch-name }}"
+            .ref = (env.TARGET_BRANCH // "")
             | .sha = $sha
           end
         | . * {"actor": {
                  name: $actor,
                  icon: $event.sender.avatar_url | gsub("\\?.*$"; "") | gsub("^https://private-"; "https://")},
                "message": $message,
-               "started": ${{ inputs.started }},
-               "target-branch": "${{ inputs.branch-name }}",
-               "trusted": ${{ steps.trusted.outputs.value }},
-               "version": ${{ toJSON(fromJSON(steps.version.outputs.output).requested) }},
-               "version-current": ${{ toJSON(fromJSON(steps.version.outputs.output).current) }},
+               "started": ($started | tonumber),
+               "target-branch": (env.TARGET_BRANCH // ""),
+               "trusted": (env.TRUSTED | fromjson),
+               "version": $version.requested,
+               "version-current": $version.current,
                "build-image": $build_image,
                "build-image-current": $build_images.current}
 
@@ -261,14 +312,22 @@ runs:
       config: ${{ steps.run-config.outputs.value }}
       paths: ${{ steps.changed.outputs.output || '[]' }}
 
+  # NB: `config`/`changed` are read from the target branch, never the PR head,
+  # but they are passed to jq as data (`env`) rather than interpolated into the
+  # filter, so this does not depend on that invariant.
   - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
     name: Create data
     id: data
+    env:
+      CURRENT_CONFIG: ${{ steps.config.outputs.output }}
+      IS_ENVOY_REPO: ${{ github.repository == 'envoyproxy/envoy' }}
+      REQUEST: ${{ steps.request.outputs.value }}
+      RUNS: ${{ steps.torun.outputs.runs }}
     with:
       input: ${{ inputs.vars }}
       filter: |
-        ${{ steps.torun.outputs.runs }} as $runs
-        | ${{ github.repository == 'envoyproxy/envoy' }} as $isEnvoyRepo
+        (env.RUNS | fromjson) as $runs
+        | (env.IS_ENVOY_REPO | fromjson) as $isEnvoyRepo
         | . as $vars
         | ($isEnvoyRepo or $vars.ENVOY_CI) as $ci
         | ($isEnvoyRepo or $vars.ENVOY_MOBILE_CI) as $ciMobile
@@ -290,7 +349,7 @@ runs:
                 .value = false
               else . end)
         | . as $run
-        | ${{ steps.config.outputs.output }} as $config
+        | (env.CURRENT_CONFIG | fromjson) as $config
         | $config.checks as $checks
         | $checks
         | with_entries(
@@ -309,7 +368,7 @@ runs:
         | to_entries
         | sort_by(.value.action, .key)
         | from_entries as $checks
-        | ${{ steps.request.outputs.value }} as $request
+        | (env.REQUEST | fromjson) as $request
         | ($config
            | del(.checks, .config, .run, .["build-image"], .["agent-ubuntu"])
            | .envoy = $config.config.envoy
