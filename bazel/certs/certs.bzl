@@ -24,6 +24,8 @@ def generated_certs(
         year = None,
         year_status_key = "STABLE_CERT_EPOCH_YEAR",
         fallback_to_host_year = False,
+        testonly = False,
+        tags = [],
         visibility = None):
     """Generates test certificates from `spec` and bundles them into a filegroup.
 
@@ -57,12 +59,15 @@ def generated_certs(
         Defaults to false so that a missing workspace status key is caught
         immediately rather than silently producing fixtures whose validity
         window depends on when the build happened to run.
+      testonly: marks the generated targets as test-only.
+      tags: tags applied to the generated targets.
       visibility: visibility of the generated targets.
     """
     gen_label = str(Label(str(gen)))
 
     if year != None:
         year_cmd = "YEAR=\"" + str(year) + "\";"
+        year_arg = "\"" + str(year) + "\""
         stamp = 0
     else:
         fallback_cmd = (
@@ -79,6 +84,7 @@ def generated_certs(
             "< bazel-out/stable-status.txt);",
             "if [ -z \"$$YEAR\" ]; then " + fallback_cmd + " fi;",
         ])
+        year_arg = "\"$$YEAR\""
         stamp = 1
 
     native.genrule(
@@ -91,7 +97,7 @@ def generated_certs(
             "--spec $(location " + spec + ")",
             "--in-dir $$(dirname $(location " + spec + "))",
             "--out-dir $(RULEDIR)",
-            "--year \"$$YEAR\";",
+            "--year " + year_arg + ";",
             "missing=\"\";",
             "for out in $(OUTS); do",
             "  if [ ! -e \"$$out\" ]; then missing=\"$$missing $$out\"; fi;",
@@ -104,6 +110,8 @@ def generated_certs(
         # Undocumented attr to depend on the workspace status files; see
         # https://github.com/bazelbuild/bazel/issues/4942
         stamp = stamp,
+        testonly = testonly,
+        tags = tags,
         tools = [gen_label],
         visibility = visibility,
     )
@@ -111,5 +119,7 @@ def generated_certs(
     native.filegroup(
         name = name,
         srcs = outs + static_srcs,
+        testonly = testonly,
+        tags = tags,
         visibility = visibility,
     )

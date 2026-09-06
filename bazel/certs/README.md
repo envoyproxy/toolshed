@@ -122,3 +122,14 @@ and nextUpdate timestamps as constants.
 
 `domain` may repeat; each entry is `<trust domain>:<cert>[+<cert>...]:<sequence
 number>` and produces a SPIFFE trust bundle entry.
+
+## Testing
+
+Run the hermetic generator tests from the Bazel module root:
+
+```console
+$ bazel test //certs/...
+```
+
+The tests generate all supported output kinds, check their structure without
+calling the host OpenSSL binary, and exercise malformed specifications.
