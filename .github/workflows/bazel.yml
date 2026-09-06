@@ -49,7 +49,6 @@ jobs:
       artifacts: ${{ matrix.artifacts }}
       bazel-args: ${{ matrix.bazel_args }}
       bazel-path: bazel
-      bazel-mode: ${{ matrix.bazel_mode }}
       cache-create: ${{ matrix.cache-create || false }}
       cache-entries: ${{ matrix.cache-entries }}
       cache-keys: ${{ matrix.cache-keys }}
@@ -67,7 +66,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - name: bzlmod
+        - name: linux
           action: build
           artifact_name: bazel-artifacts
           artifacts: |
@@ -83,7 +82,6 @@ jobs:
             -c opt
             --config=ci
             --experimental_ui_max_stdouterr_bytes=10485760
-          bazel_mode: bzlmod
           cache-create: true
           create_source: true
           privileged: true
@@ -94,24 +92,19 @@ jobs:
           # //v8:wee8_packages and //compile:llvm_minimal_packages are tagged
           # `manual` so are not matched by //...
           #
-          # They are only built under bzlmod: the packaging rules depend on
-          # bazel_dep/module-extension repos (@v8 and the llvm_minimal extension),
-          # which are not defined in WORKSPACE. Artifacts are only uploaded from
-          # the bzlmod leg anyway.
+          # They must therefore be listed explicitly to be built/uploaded.
           targets: >-
             //...
             //sysroot:sysroots
             //v8:wee8_packages //:macos_packages //compile:llvm_minimal_packages
           upload: true
-        - name: workspace-gcc
+        - name: gcc
           action: build
           artifact_name: bazel-artifacts
           artifacts: ''
           bazel_args: >-
             --config=ci
             --config=gcc
-            --noenable_bzlmod --enable_workspace
-          bazel_mode: workspace-gcc
           cache-entries: NONE
           create_source: false
           privileged: false
@@ -121,49 +114,13 @@ jobs:
           runner: ubuntu-24.04
           targets: //...
           upload: false
-        - name: bzlmod-gcc
-          action: build
-          artifact_name: bazel-artifacts
-          artifacts: ''
-          bazel_args: >-
-            --config=ci
-            --config=gcc
-          bazel_mode: bzlmod-gcc
-          cache-entries: NONE
-          create_source: false
-          privileged: false
-          rbe: true
-          rbe_bes: true
-          rbe_config: rbe-gcc
-          runner: ubuntu-24.04
-          targets: //...
-          upload: false
-        - name: workspace-macos
+        - name: macos
           action: build
           artifact_name: bazel-artifacts
           artifacts: ''
           bazel_args: >-
             --config=ci
             --config=macos
-            --noenable_bzlmod --enable_workspace
-          bazel_mode: workspace-macos
-          cache-entries: NONE
-          create_source: false
-          privileged: false
-          rbe: true
-          rbe_bes: false
-          rbe_config: rbe-cache-only
-          runner: macos-14
-          targets: //...
-          upload: false
-        - name: bzlmod-macos
-          action: build
-          artifact_name: bazel-artifacts
-          artifacts: ''
-          bazel_args: >-
-            --config=ci
-            --config=macos
-          bazel_mode: bzlmod-macos
           cache-entries: NONE
           create_source: false
           privileged: false
@@ -217,7 +174,6 @@ jobs:
     with:
       action: ${{ matrix.action }}
       bazel-args: ${{ matrix.bazel_args }}
-      bazel-mode: ${{ matrix.bazel_mode }}
       bazel-path: bazel
       name: ${{ matrix.name }}
       privileged: ${{ matrix.privileged }}
@@ -228,120 +184,53 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - name: workspace
-          action: test
-          bazel_args: >-
-            --config=ci
-            --noenable_bzlmod --enable_workspace
-          bazel_mode: workspace
-          privileged: true
-          rbe: true
-          runner: ubuntu-24.04
-          targets: >-
-            //...
-            //sysroot:sysroots
-        - name: bzlmod
+        - name: linux
           action: test
           bazel_args: --config=ci
-          bazel_mode: bzlmod
           privileged: true
           rbe: true
           runner: ubuntu-24.04
           targets: >-
             //...
             //sysroot:sysroots
-        - name: workspace-x86-to-arm
+        - name: x86-to-arm
           action: test
           bazel_args: >-
             --config=ci
-            --noenable_bzlmod --enable_workspace
             --platforms=@toolchains_llvm//platforms:linux-aarch64
-          bazel_mode: workspace-x86-to-arm
           privileged: false
           rbe: false
           runner: ubuntu-24.04
           targets: >-
             //compile/test:cross_compile_aarch64_test
             //compile/test:cross_compile_aarch64_unwind_test
-        - name: workspace-x86-to-arm-no-unwind
+        - name: x86-to-arm-no-unwind
           action: test
           bazel_args: >-
             --config=ci
-            --noenable_bzlmod --enable_workspace
             --platforms=@toolchains_llvm//platforms:linux-aarch64
             --@toolchains_llvm//toolchain/config:libunwind=False
-          bazel_mode: workspace-x86-to-arm-no-unwind
           privileged: false
           rbe: false
           runner: ubuntu-24.04
           targets: //compile/test:cross_compile_aarch64_no_unwind_test
-        - name: workspace-arm-to-x86
+        - name: arm-to-x86
           action: test
           bazel_args: >-
             --config=ci
-            --noenable_bzlmod --enable_workspace
             --platforms=@toolchains_llvm//platforms:linux-x86_64
-          bazel_mode: workspace-arm-to-x86
           privileged: true
           rbe: false
           runner: ubuntu-24.04-arm
           targets: >-
             //compile/test:cross_compile_x86_64_test
             //compile/test:cross_compile_x86_64_unwind_test
-        - name: workspace-arm-to-x86-no-unwind
-          action: test
-          bazel_args: >-
-            --config=ci
-            --noenable_bzlmod --enable_workspace
-            --platforms=@toolchains_llvm//platforms:linux-x86_64
-            --@toolchains_llvm//toolchain/config:libunwind=False
-          bazel_mode: workspace-arm-to-x86-no-unwind
-          privileged: true
-          rbe: false
-          runner: ubuntu-24.04-arm
-          targets: //compile/test:cross_compile_x86_64_no_unwind_test
-        - name: bzlmod-x86-to-arm
-          action: test
-          bazel_args: >-
-            --config=ci
-            --platforms=@toolchains_llvm//platforms:linux-aarch64
-          bazel_mode: bzlmod-x86-to-arm
-          privileged: false
-          rbe: false
-          runner: ubuntu-24.04
-          targets: >-
-            //compile/test:cross_compile_aarch64_test
-            //compile/test:cross_compile_aarch64_unwind_test
-        - name: bzlmod-x86-to-arm-no-unwind
-          action: test
-          bazel_args: >-
-            --config=ci
-            --platforms=@toolchains_llvm//platforms:linux-aarch64
-            --@toolchains_llvm//toolchain/config:libunwind=False
-          bazel_mode: bzlmod-x86-to-arm-no-unwind
-          privileged: false
-          rbe: false
-          runner: ubuntu-24.04
-          targets: //compile/test:cross_compile_aarch64_no_unwind_test
-        - name: bzlmod-arm-to-x86
-          action: test
-          bazel_args: >-
-            --config=ci
-            --platforms=@toolchains_llvm//platforms:linux-x86_64
-          bazel_mode: bzlmod-arm-to-x86
-          privileged: true
-          rbe: false
-          runner: ubuntu-24.04-arm
-          targets: >-
-            //compile/test:cross_compile_x86_64_test
-            //compile/test:cross_compile_x86_64_unwind_test
-        - name: bzlmod-arm-to-x86-no-unwind
+        - name: arm-to-x86-no-unwind
           action: test
           bazel_args: >-
             --config=ci
             --platforms=@toolchains_llvm//platforms:linux-x86_64
             --@toolchains_llvm//toolchain/config:libunwind=False
-          bazel_mode: bzlmod-arm-to-x86-no-unwind
           privileged: true
           rbe: false
           runner: ubuntu-24.04-arm

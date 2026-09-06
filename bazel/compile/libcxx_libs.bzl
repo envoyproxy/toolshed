@@ -118,7 +118,7 @@ libcxx_libs_darwin = repository_rule(
 def setup_libcxx_libs_darwin(
         aarch64_version = None,
         aarch64_sha256 = None):
-    """Setup function for WORKSPACE.
+    """Setup function shared by module extensions and direct callers.
 
     Creates @libcxx_libs_darwin_aarch64 repository.
     """
@@ -136,7 +136,7 @@ def setup_libcxx_libs(
         aarch64_sha256 = None,
         x86_64_version = None,
         x86_64_sha256 = None):
-    """Setup function for WORKSPACE.
+    """Setup function shared by module extensions and direct callers.
 
     Creates @libcxx_libs_aarch64 and @libcxx_libs_x86_64 repositories.
     """

@@ -7,12 +7,7 @@ MODULE.bazel.
 Run with bzlmod enabled (the default when this module is built directly):
     bazel test //toolchains/test/...
 
-WORKSPACE mode: protobuf and its transitive dependencies are not wired into
-the WORKSPACE build of this module; these tests are tagged 'manual' to
-avoid failing `bazel test //...` under the workspace mode that CI also runs.
-To add WORKSPACE support, add com_google_protobuf + its transitive deps
-(abseil-cpp, zlib, …) to archives.bzl / WORKSPACE — that is out of scope
-for this PR.
+These tests are tagged 'manual' so they are not matched by `bazel test //...`.
 """
 
 load("@rules_shell//shell:sh_test.bzl", "sh_test")

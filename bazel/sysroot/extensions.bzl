@@ -7,7 +7,7 @@ def _sysroot_impl(module_ctx):
     """Implementation of the sysroot module extension.
 
     This extension allows configuring sysroots in MODULE.bazel using the same
-    setup_sysroots() function used in WORKSPACE.
+    setup_sysroots() function used by consumers directly loading the file.
     """
 
     # Collect all setup tags from all modules

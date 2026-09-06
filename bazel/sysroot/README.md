@@ -39,9 +39,9 @@ This ensures that even older glibc sysroots can compile code using modern kernel
 
 ## Usage in Bazel
 
-### WORKSPACE Mode
+### Direct `.bzl` load
 
-To use these sysroots in your Bazel WORKSPACE:
+To use these sysroots via a direct `.bzl` load:
 
 ```starlark
 load("@toolshed//bazel/sysroot:sysroot.bzl", "setup_sysroots")

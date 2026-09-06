@@ -30,7 +30,7 @@ def _sanitizer_libs_impl(module_ctx):
     """Implementation of the sanitizer_libs module extension.
 
     This extension allows configuring sanitizer libraries in MODULE.bazel using
-    the same setup_sanitizer_libs() function used in WORKSPACE.
+    the same setup_sanitizer_libs() function used when loading the file directly.
     """
 
     # Collect all setup tags from all modules; multiple identical tags are
@@ -82,7 +82,7 @@ def _libcxx_libs_ext_impl(module_ctx):
     """Implementation of the libcxx_libs module extension.
 
     This extension allows configuring prebuilt libcxx libraries for cross-compilation
-    in MODULE.bazel using the same setup_libcxx_libs() function used in WORKSPACE.
+    in MODULE.bazel using the same setup_libcxx_libs() function used when loading the file directly.
     """
 
     # Collect all setup tags from all modules; multiple identical tags are

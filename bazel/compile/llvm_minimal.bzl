@@ -447,8 +447,7 @@ def _symlink_dir_children(ctx, source_dir, relpath):
     A directory symlink (ctx.symlink on the dir itself) is NOT followed by
     Bazel when sourcing individual files for a filegroup src, so bzlmod
     reports "missing input file '...//:bin/llvm-nm'". Symlinking each child as
-    its own file/dir symlink makes every entry a real, stageable input under
-    both bzlmod and WORKSPACE.
+    its own file/dir symlink makes every entry a real, stageable input.
     """
     for child in source_dir.readdir():
         ctx.symlink(child, "{}/{}".format(relpath, child.basename))

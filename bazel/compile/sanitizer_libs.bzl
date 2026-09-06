@@ -101,7 +101,7 @@ def setup_sanitizer_libs(
         msan_sha256 = None,
         tsan_version = None,
         tsan_sha256 = None):
-    """Setup function for WORKSPACE."""
+    """Setup function shared by module extensions and direct callers."""
     msan_libs(
         name = "msan_libs",
         version = msan_version or VERSIONS["bins_release"],

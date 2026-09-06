@@ -6,7 +6,7 @@ def _grcov_impl(module_ctx):
     """Implementation of the grcov module extension.
 
     This extension allows configuring grcov in MODULE.bazel using the same
-    grcov_repository() function used in WORKSPACE.
+    grcov_repository() function used when loading the file directly.
     """
 
     # Collect all setup tags from all modules

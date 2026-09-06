@@ -11,7 +11,7 @@ _test_repo = repository_rule(
 )
 
 def reachability_test_repos():
-    """Declares the fixture repos shared by bzlmod and WORKSPACE reachability tests."""
+    """Declares the fixture repos used by reachability tests."""
     _test_repo(
         name = "apparent_excluded_transitive_repo",
         build_file_content = """\
