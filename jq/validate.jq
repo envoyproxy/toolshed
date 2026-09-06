@@ -24,3 +24,11 @@ def version:
         or error("Version string does not meet expectations")
   | $input
 ;
+
+def image_prefix($prefixes):
+  . as $image
+  | ($prefixes | map(select(length > 0))) as $allowed
+  | (any($allowed[]; . as $prefix | $image | startswith($prefix))
+     or error("Image is not in an allowed repository: \($image) (allowed prefixes: \($allowed | join(", ")))"))
+  | $image
+;

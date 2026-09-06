@@ -27,50 +27,79 @@ inputs:
 runs:
   using: "composite"
   steps:
+  # WARNING: inputs to this action may be attacker-controlled (eg they can be
+  # derived from artefact metadata created by a job that ran PR code) and they
+  # are used as the destination of a destructive `gcloud storage rsync`.
+  #
+  # Never interpolate them into the shell - pass them via `env` - and validate
+  # them before any `gcloud` invocation.
+  - name: Validate GCS inputs
+    run: |
+      "${ACTION_PATH}/validate.sh" "$BUCKET" "$SHA" "$REDIRECT"
+    shell: bash
+    env:
+      ACTION_PATH: ${{ github.action_path }}
+      BUCKET: ${{ inputs.bucket }}
+      SHA: ${{ inputs.sha }}
+      REDIRECT: ${{ inputs.redirect }}
+
   - name: Configure GCS paths
     id: paths
     run: |
-      BUCKET_PATH="${{ inputs.bucket }}/${SHA:0:7}/${{ inputs.path-upload }}"
-      echo "upload=${UPLOAD_DIRECTORY}" >> $GITHUB_OUTPUT
-      echo "bucket=${BUCKET_PATH}" >> $GITHUB_OUTPUT
-      if [[ ${{ inputs.direction }} != "up" || -z ${{ inputs.redirect }} ]]; then
+      BUCKET_PATH="${BUCKET}/${SHA:0:7}/${PATH_UPLOAD}"
+      echo "upload=${UPLOAD_DIRECTORY}" >> "$GITHUB_OUTPUT"
+      echo "bucket=${BUCKET_PATH}" >> "$GITHUB_OUTPUT"
+      if [[ "$DIRECTION" != "up" || -z "$REDIRECT" ]]; then
           exit 0
       fi
       TMP_REDIRECT=$(mktemp -d)
       TMP_REDIRECT="${TMP_REDIRECT}/${REDIRECT_PATH}"
       mkdir -p "$TMP_REDIRECT"
-      echo "redirect=${{ inputs.bucket }}/${REDIRECT_PATH}" >> $GITHUB_OUTPUT
-      echo "redirect-tmp=${TMP_REDIRECT}" >> $GITHUB_OUTPUT
+      echo "redirect=${BUCKET}/${REDIRECT_PATH}" >> "$GITHUB_OUTPUT"
+      echo "redirect-tmp=${TMP_REDIRECT}" >> "$GITHUB_OUTPUT"
     shell: bash
     env:
-      UPLOAD_DIRECTORY: ${{ inputs.working-directory }}/${{ inputs.path }}
+      BUCKET: ${{ inputs.bucket }}
+      DIRECTION: ${{ inputs.direction }}
+      PATH_UPLOAD: ${{ inputs.path-upload }}
+      REDIRECT: ${{ inputs.redirect }}
       REDIRECT_PATH: ${{ inputs.redirect }}/${{ inputs.path-upload }}
       SHA: ${{ inputs.sha }}
+      UPLOAD_DIRECTORY: ${{ inputs.working-directory }}/${{ inputs.path }}
 
   - name: Upload (sync) to GCS bucket
     if: ${{ inputs.direction == 'up' }}
     run: |
-      echo "Uploading to gs://${{ steps.paths.outputs.bucket }} ..."
+      echo "Uploading to gs://${BUCKET_PATH} ..."
       gcloud storage rsync \
           --delete-unmatched-destination-objects \
           -r \
-          "${{ steps.paths.outputs.upload }}" \
-          "gs://${{ steps.paths.outputs.bucket }}"
-      echo "Artifacts uploaded to: https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}/${{ inputs.index-file }}" >&2
+          "${UPLOAD_DIRECTORY}" \
+          "gs://${BUCKET_PATH}"
+      echo "Artifacts uploaded to: https://storage.googleapis.com/${BUCKET_PATH}/${INDEX_FILE}" >&2
     shell: bash
+    env:
+      BUCKET_PATH: ${{ steps.paths.outputs.bucket }}
+      INDEX_FILE: ${{ inputs.index-file }}
+      UPLOAD_DIRECTORY: ${{ steps.paths.outputs.upload }}
 
   - name: Add redirect
     if: ${{ steps.paths.outputs.redirect }}
     run: |
       {
           echo "<meta http-equiv=\"refresh\""
-          echo "  content=\"0; URL='https://storage.googleapis.com/${{ steps.paths.outputs.bucket }}/${{ inputs.index-file }}'\" />"
-      } >  "${{ steps.paths.outputs.redirect-tmp }}/${{ inputs.index-file }}"
-      echo "Uploading redirect to gs://${{ steps.paths.outputs.redirect }} ..."  >&2
+          echo "  content=\"0; URL='https://storage.googleapis.com/${BUCKET_PATH}/${INDEX_FILE}'\" />"
+      } >  "${REDIRECT_TMP}/${INDEX_FILE}"
+      echo "Uploading redirect to gs://${REDIRECT_PATH} ..."  >&2
       gcloud storage rsync \
           --delete-unmatched-destination-objects \
           -r \
-          "${{ steps.paths.outputs.redirect-tmp }}" \
-          "gs://${{ steps.paths.outputs.redirect }}"
-      echo "Redirect uploaded to: https://storage.googleapis.com/${{ steps.paths.outputs.redirect }}/${{ inputs.index-file }}" >&2
+          "${REDIRECT_TMP}" \
+          "gs://${REDIRECT_PATH}"
+      echo "Redirect uploaded to: https://storage.googleapis.com/${REDIRECT_PATH}/${INDEX_FILE}" >&2
     shell: bash
+    env:
+      BUCKET_PATH: ${{ steps.paths.outputs.bucket }}
+      INDEX_FILE: ${{ inputs.index-file }}
+      REDIRECT_PATH: ${{ steps.paths.outputs.redirect }}
+      REDIRECT_TMP: ${{ steps.paths.outputs.redirect-tmp }}

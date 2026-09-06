@@ -1,0 +1,47 @@
+# User data (PR title/body, actor) must be treated as data, never as jq program
+# text or markdown that can break out of the summary.
+uses: ./actions/github/env/summary
+id: summary
+with:
+  actor: |
+    {"name": "attacker", "icon": "https://example.com/attacker.png"}
+  data: |
+    {"checks": {"build": {"name": "build", "action": "RUN"}},
+     "config": {"tables": {"checks": {"title": "Checks", "filter": ".checks"}}}}
+  icon: ":rocket:"
+  message: |
+    Evil " | halt_error | " title
+    body with \(1 + 1) interpolation
+  output-path: /tmp/env-summary-injection.md
+  sha: fedcba9876543210fedcba9876543210fedcba98
+  tables: |
+    checks:
+      title: Checks
+      filter: .checks
+  title: Evil " | halt_error | " title
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    SUMMARY_PATH=/tmp/env-summary-injection.md
+    test_file_contains \
+        "$SUMMARY_PATH" \
+        'Evil " | halt_error | " title' \
+        "Summary title"
+    test_file_contains \
+        "$SUMMARY_PATH" \
+        'body with \(1 + 1) interpolation' \
+        "Summary body"
+    test_file_contains \
+        "$SUMMARY_PATH" \
+        "@attacker" \
+        "Summary actor"
+    test_file_contains \
+        "$SUMMARY_PATH" \
+        "#### Checks" \
+        "Summary tables"
+    test_file_not_contains \
+        "$SUMMARY_PATH" \
+        'body with 2 interpolation' \
+        "Summary body interpolation"

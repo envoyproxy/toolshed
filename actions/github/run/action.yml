@@ -27,6 +27,22 @@ inputs:
   entrypoint:
     type: string
     default:
+  envsubst-vars:
+    description: >-
+      Whitespace-separated list of environment variable names that are expanded
+      in `command`, `args` and `container-command`. Any other variable is left
+      untouched.
+    type: string
+    default: >-
+      GITHUB_WORKSPACE
+      HOME
+      PWD
+      RUNNER_TEMP
+      TMP_ENTRYPOINT
+      TMP_REPORT
+      TMP_SOURCE
+      TMP_STDERR
+      TMP_STDOUT
   error-match:
     type: string
     default: |
@@ -224,23 +240,42 @@ runs:
 
   - run: |
       # Put the command and args together
+      #
+      # Command inputs are passed via `env` and never interpolated into this
+      # script, and only the variables listed in `envsubst-vars` are expanded,
+      # so a crafted command cannot pull arbitrary environment (eg tokens) into
+      # the command line.
+      SHELL_FORMAT=""
+      for envsubst_var in ${ENVSUBST_VARS}; do
+          if [[ ! "$envsubst_var" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+              echo "::error::Invalid envsubst variable name: ${envsubst_var}" >&2
+              exit 1
+          fi
+          SHELL_FORMAT+="\$${envsubst_var} "
+      done
       COMMAND=()
-      read -ra ARGS <<< "${{ inputs.args }}"
+      read -ra ARGS <<< "$ARGS_INPUT"
+      read -ra COMMAND_PARTS <<< "$COMMAND_INPUT"
       ACTUAL_COMMAND=(
-          ${{ inputs.command }}
-          ${ARGS[@]})
-      CONTAINER_COMMAND="${CONTAINER_COMMAND:-${{ inputs.container-command }}}"
-      CONTAINER_COMMAND="$(echo $CONTAINER_COMMAND | envsubst)"
+          "${COMMAND_PARTS[@]}"
+          "${ARGS[@]}")
+      CONTAINER_COMMAND="${CONTAINER_COMMAND:-${CONTAINER_COMMAND_INPUT}}"
+      CONTAINER_COMMAND="$(echo "$CONTAINER_COMMAND" | envsubst "$SHELL_FORMAT")"
       read -ra ACTUAL_CONTAINER_COMMAND <<< "${CONTAINER_COMMAND}"
       COMMAND+=("${ACTUAL_CONTAINER_COMMAND[@]}")
       COMMAND+=("${ACTUAL_COMMAND[@]}")
-      echo "container=${ACTUAL_CONTAINER_COMMAND[*]}" >> $GITHUB_OUTPUT
-      echo "CONTAINER_COMMAND=${ACTUAL_CONTAINER_COMMAND[*]}" >> $GITHUB_ENV
-      ACTUAL_COMMAND="$(echo "${ACTUAL_COMMAND[*]}" | envsubst)"
-      echo "actual=${ACTUAL_COMMAND}" >> $GITHUB_OUTPUT
-      echo "command=${COMMAND[*]}" >> $GITHUB_OUTPUT
+      echo "container=${ACTUAL_CONTAINER_COMMAND[*]}" >> "$GITHUB_OUTPUT"
+      echo "CONTAINER_COMMAND=${ACTUAL_CONTAINER_COMMAND[*]}" >> "$GITHUB_ENV"
+      ACTUAL_COMMAND="$(echo "${ACTUAL_COMMAND[*]}" | envsubst "$SHELL_FORMAT")"
+      echo "actual=${ACTUAL_COMMAND}" >> "$GITHUB_OUTPUT"
+      echo "command=${COMMAND[*]}" >> "$GITHUB_OUTPUT"
     id: command
     shell: bash
+    env:
+      ARGS_INPUT: ${{ inputs.args }}
+      COMMAND_INPUT: ${{ inputs.command }}
+      CONTAINER_COMMAND_INPUT: ${{ inputs.container-command }}
+      ENVSUBST_VARS: ${{ inputs.envsubst-vars }}
 
   - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
     if: ${{ always() }}
