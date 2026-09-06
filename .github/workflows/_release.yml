@@ -496,7 +496,7 @@ jobs:
         echo "message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
         echo "changes=true" >> "$GITHUB_OUTPUT"
     - name: Create Pull Request
-      uses: envoyproxy/toolshed/actions/github/pr@98b13b6d4f551c27b406cb090d9ff7bf6877d1f6  # actions-v0.4.20 + fix
+      uses: envoyproxy/toolshed/actions/github/pr@f6cc2e99964fcec26d4e497d7e41cca502e7241e  # actions-v0.4.20 + fix
       if: fromJSON(steps.commit.outputs.changes)
       with:
         base: main
