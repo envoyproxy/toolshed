@@ -235,6 +235,17 @@ jobs:
           rbe: false
           runner: ubuntu-24.04-arm
           targets: //compile/test:cross_compile_x86_64_no_unwind_test
+        # Live counterpart of //pgp/test:audit_test - re-runs the audit
+        # against a real `bazel aquery` of //pgp/test's example targets
+        # rather than captured JSON (see bazel/pgp/README.md#auditing).
+        - name: pgp-live-audit
+          action: run
+          bazel_args: --config=ci
+          bazel_mode: bzlmod
+          privileged: false
+          rbe: false
+          runner: ubuntu-24.04
+          targets: //pgp/test:live_audit
 
   status:
     runs-on: ubuntu-24.04
