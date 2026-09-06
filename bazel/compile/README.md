@@ -45,9 +45,7 @@ The sanitizer libraries are automatically built and published to GitHub releases
    "tsan_libs_sha256": "...",  # Add actual SHA256
    ```
 
-### Using with WORKSPACE
-
-In your WORKSPACE file:
+### Direct `.bzl` load
 
 ```starlark
 load("@envoy_toolshed//compile:sanitizer_libs.bzl", "setup_sanitizer_libs")
@@ -118,9 +116,7 @@ The bundles are downloaded from GitHub releases and expose the following Bazel t
    },
    ```
 
-### Using with WORKSPACE
-
-In your WORKSPACE file:
+### Direct `.bzl` load
 
 ```starlark
 load("@envoy_toolshed//compile:libcxx_libs.bzl", "setup_libcxx_libs")
@@ -279,7 +275,7 @@ a PR that updates `bazel/versions.bzl`.
 
 4. **Merge the hash PR** — downstream consumers can now consume the artifacts.
 
-### Using with WORKSPACE
+### Direct `.bzl` load
 
 ```starlark
 load("@envoy_toolshed//compile:llvm_minimal.bzl", "setup_llvm_minimal")

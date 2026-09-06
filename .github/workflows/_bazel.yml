@@ -73,10 +73,6 @@ on:
         description: Append --config=bes with the selected RBE config
         type: boolean
         default: true
-      bazel-mode:
-        description: Bazel mode (workspace or bzlmod)
-        required: true
-        type: string
       bazel-path:
         description: Path to bazel workspace
         default: .
@@ -203,7 +199,7 @@ jobs:
         EVENT_NAME: ${{ github.event_name }}
         CACHE_ENTRIES: ${{ inputs.cache-entries != 'NONE' && inputs.cache-entries || '' }}
         REPO_CACHE_PATH: ${{ inputs.cache-path }}
-    - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }}) [container]
+    - name: Bazel targets (${{ inputs.action }}/${{ inputs.name }}) [container]
       if: runner.os == 'Linux'
       shell: bash
       run: |
@@ -240,7 +236,7 @@ jobs:
         USER_UID: ${{ steps.runner-ids.outputs.uid }}
         SOURCE_DIR: ${{ github.workspace }}
         CONTAINER_SERVICE: ${{ inputs.privileged && 'bazel-privileged' || 'bazel' }}
-    - name: Bazel targets (${{ inputs.action }}/${{ inputs.bazel-mode }}) [host]
+    - name: Bazel targets (${{ inputs.action }}/${{ inputs.name }}) [host]
       if: runner.os != 'Linux'
       shell: bash
       run: |

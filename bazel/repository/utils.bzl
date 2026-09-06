@@ -8,9 +8,11 @@ This can be useful specifically for setting the `host_platform`.
 
 Example usage:
 
-In WORKSPACE:
+In `MODULE.bazel`, via a module extension using `use_repo_rule`:
 
 ```starlark
+arch_alias = use_repo_rule("@envoy_toolshed//repository:utils.bzl", "arch_alias")
+
 arch_alias(
     name = "clang_platform",
     aliases = {
@@ -40,14 +42,14 @@ alias(
 """
 
 def _alias_name(name):
-    """Extract the appropriate alias name from the repository context.
+    """Extract the apparent name from a bzlmod-canonical repository name.
 
-    In bzlmod, repository names include the canonical name in any separator
-    style (e.g., "+ext+name", "module+ext+name", "module++ext++name", or the
+    Repository names include the canonical name in any separator style
+    (e.g., "+ext+name", "module+ext+name", "module++ext++name", or the
     older "module~~ext~~name" / "module~ext~name"), but we want the alias
     target to use just the apparent name (the final segment, e.g., "name").
-    In WORKSPACE mode, the repository name is already the apparent name and
-    is returned unchanged.
+    A name with no separators is already the apparent name and is returned
+    unchanged.
 
     Args:
         name: The repository name (ctx.name)
@@ -56,7 +58,7 @@ def _alias_name(name):
         The apparent name to use for the alias target
     """
 
-    # WORKSPACE mode: the repository name is already the apparent name.
+    # No separators: the name is already the apparent name.
     if "+" not in name and "~" not in name:
         return name
 

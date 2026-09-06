@@ -229,7 +229,7 @@ def setup_sysroots(
         glibc_version = "2.31",
         stdcc_version = "13",
         name_prefix = ""):
-    """Setup function for WORKSPACE to configure sysroots.
+    """Setup function to configure sysroots, shared by module extensions and direct callers.
 
     Args:
         version: Version of sysroot release to use (default: uses VERSIONS["bins_release"])

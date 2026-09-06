@@ -76,7 +76,7 @@ cd bazel && bazel test //...
 cd bazel && bazel clean --expunge
 ```
 
-**Note:** The repository uses WORKSPACE mode for Bazel (bzlmod is disabled via `.bazelrc`). This means dependencies are defined in WORKSPACE files rather than MODULE.bazel.
+**Note:** The repository uses bzlmod for Bazel dependency management (`bazel/MODULE.bazel`). WORKSPACE mode is not supported.
 
 ## Python Package Structure
 

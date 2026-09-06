@@ -232,7 +232,7 @@ def apparent_name(repo_name):
 
     Handles bzlmod canonical forms - `module+` / `module~` for module repos
     and `module++ext+repo` / `module~~ext~repo` for extension-generated
-    repos - as well as plain WORKSPACE repository names.
+    repos - as well as plain (unqualified) repository names.
     """
     segments = [
         segment
@@ -723,8 +723,8 @@ def _dependency_reachability_rule(flags = []):
                     "Repository-name patterns excluded from traversal. Patterns " +
                     "are matched against both the canonical repository name and " +
                     "the apparent/module name emitted in dependency metadata, " +
-                    "so metadata-facing patterns work under both WORKSPACE and " +
-                    "bzlmod. Supported forms are exact matches (`repo_name`) and " +
+                    "so metadata-facing patterns work regardless of naming style. " +
+                    "Supported forms are exact matches (`repo_name`) and " +
                     "a single trailing `*` wildcard (`prefix*`) for prefix matching."
                 ),
             ),
