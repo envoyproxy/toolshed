@@ -82,7 +82,10 @@ def gcc_linux_cc_toolchain_config(name, arch):
             "-O2",
             "-DNDEBUG",
         ],
-        supports_start_end_lib = True,
+        # `--start-lib`/`--end-lib` are gold/lld-only options. This toolchain
+        # links with GNU BFD `/usr/bin/ld`, which rejects them, so Bazel must
+        # fall back to building static archives for cc_library deps.
+        supports_start_end_lib = False,
         target_libc = "glibc",
         target_system_name = config["target_system_name"],
         tool_paths = _TOOL_PATHS,

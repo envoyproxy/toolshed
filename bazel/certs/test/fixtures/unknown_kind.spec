@@ -1,0 +1,2 @@
+[bogus thing]
+key = value
