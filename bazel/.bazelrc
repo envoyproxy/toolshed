@@ -8,7 +8,6 @@ run --color=yes
 build --color=yes
 
 common --enable_bzlmod
-common --noenable_workspace
 common --legacy_external_runfiles
 common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 common --@rules_python//python/config_settings:bootstrap_impl=script

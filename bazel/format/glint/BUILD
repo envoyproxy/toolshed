@@ -1,2 +1,5 @@
 # Export glint repository rules
-exports_files(["glint_repository.bzl"])
+exports_files([
+    "extensions.bzl",
+    "glint_repository.bzl",
+])

@@ -227,7 +227,7 @@ def setup_wee8_prebuilt(
         x86_64_libstdcxx_sha256 = None,
         aarch64_version = None,
         aarch64_sha256 = None):
-    """Setup function for WORKSPACE and bzlmod."""
+    """Setup function shared by module extensions and direct callers."""
     variants = [
         ("x86_64", WEE8_DEFAULT_STDLIB, x86_64_version, x86_64_sha256),
         ("x86_64", "libstdcxx", x86_64_libstdcxx_version or x86_64_version, x86_64_libstdcxx_sha256),

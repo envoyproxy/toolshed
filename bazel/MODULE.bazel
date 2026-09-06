@@ -115,6 +115,12 @@ use_repo(wee8_prebuilt_ext, "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstd
 # grcov_ext.setup()
 # use_repo(grcov_ext, "grcov")
 
+# Setup glint for code style linting - example for downstream consumers
+# Uncomment to use in your MODULE.bazel:
+# glint_ext = use_extension("@envoy_toolshed//format/glint:extensions.bzl", "glint_extension")
+# glint_ext.setup(bins_release_version = "0.1.21")
+# use_repo(glint_ext, "glint")
+
 # This needs to be before llvm to win in transitionsj
 register_toolchains(
     "//toolchains/gcc:linux_x64_toolchain",

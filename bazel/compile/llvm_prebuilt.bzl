@@ -23,7 +23,7 @@ llvm_prebuilt = repository_rule(
 )
 
 def setup_llvm_prebuilt():
-    """Set up llvm_libcxx_* repos used by WORKSPACE and bzlmod."""
+    """Set up llvm_libcxx_* repos shared by module extensions and direct callers."""
     for arch in SUPPORTED_ARCHES:
         repo_name = "llvm_libcxx_%s" % arch
         if repo_name in native.existing_rules():

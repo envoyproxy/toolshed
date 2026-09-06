@@ -7,7 +7,6 @@ exports_files([
     "jq.sh",
     "versions.bzl",
     "macros.bzl",
-    "packages.bzl",
 ])
 
 json_data(

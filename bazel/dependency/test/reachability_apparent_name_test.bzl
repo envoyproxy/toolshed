@@ -4,7 +4,7 @@ load("//dependency:reachability.bzl", "apparent_name")
 def _apparent_name_test_impl(ctx):
     env = unittest.begin(ctx)
 
-    # WORKSPACE mode: canonical name is already the apparent name.
+    # Unqualified name: canonical name is already the apparent name.
     asserts.equals(env, "boringssl", apparent_name("boringssl"))
 
     # bzlmod module repos (versionless canonical forms).
