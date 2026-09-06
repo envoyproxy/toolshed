@@ -7,20 +7,23 @@ fetch --color=yes
 run --color=yes
 build --color=yes
 
-common --legacy_external_runfiles
 common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 common --@rules_python//python/config_settings:bootstrap_impl=script
 common --incompatible_default_to_explicit_init_py
 
 common --registry=https://bcr.bazel.build/
-common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/a1264b53cec00abbc8399a20a3669fdffb94cc81
+common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/a279c3f73ff63ee752d172e9c9f111623742c9d0
 common --experimental_repository_cache_hardlinks
 
 common --repo_env=ANDROID_HOME=
 
 common --enable_platform_specific_config
 
-#
+# Cross-compile tests (eg //compile/test:cross_compile_*) target a foreign platform
+# but only inspect the binary, so let them run on the host exec platform.
+common --@bazel_tools//tools/test:incompatible_use_default_test_toolchain=false
+
+
 #############################################################################
 # ci
 #############################################################################
