@@ -47,9 +47,9 @@ chmod 600 "$PASSPHRASE_FILE"
 echo "some data" > "$DATA"
 
 sq key generate --own-key --without-password --no-userids \
-   --output "$UNENCRYPTED_KEY"
+   --rev-cert "${UNENCRYPTED_KEY}.rev" --output "$UNENCRYPTED_KEY" > /dev/null
 sq key generate --own-key --new-password-file "$PASSPHRASE_FILE" \
-   --no-userids --output "$KEY"
+   --no-userids --rev-cert "${KEY}.rev" --output "$KEY" > /dev/null
 failed=0
 
 check () {

@@ -15,7 +15,7 @@
 #
 # Usage:
 #
-#   audit_test.sh [--forbid STRING]... //your/targets/...
+#   audit_test.sh [--forbid STRING]... [BAZEL OPTION]... //your/targets/...
 #   audit_test.sh [--forbid STRING]... --aquery-json aquery.json
 #
 # The second form audits a previously captured
@@ -47,10 +47,12 @@ MNEMONIC=OpenPGPSign
 
 AQUERY_JSON=
 FORBIDDEN_STRINGS=()
+BAZEL_OPTS=()
 TARGETS=()
 
 usage () {
-    echo "usage: $0 [--forbid STRING]... [--aquery-json FILE] [TARGET...]" >&2
+    echo "usage: $0 [--forbid STRING]... [--aquery-json FILE]" \
+         "[BAZEL OPTION]... [TARGET...]" >&2
     exit 2
 }
 
@@ -66,6 +68,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         -h|--help)
             usage
+            ;;
+        -*)
+            # Anything else is passed through to `bazel aquery`, eg
+            # `--@envoy_toolshed//pgp:passphrase_path=...`.
+            BAZEL_OPTS+=("$1")
+            shift
             ;;
         *)
             TARGETS+=("$1")
@@ -88,6 +96,7 @@ if [[ -z "$AQUERY_JSON" ]]; then
     # shellcheck disable=SC2064
     trap "rm -f \"$AQUERY_JSON\"" EXIT
     "$BAZEL" aquery --output=jsonproto --include_artifacts=true \
+             ${BAZEL_OPTS[@]+"${BAZEL_OPTS[@]}"} \
              "${TARGETS[@]}" > "$AQUERY_JSON"
 fi
 

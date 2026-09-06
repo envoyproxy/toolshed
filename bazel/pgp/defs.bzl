@@ -101,6 +101,7 @@ def pgp_sign_checksums(
         srcs = srcs,
         algorithm = algorithm,
         out = checksums_out,
+        tags = kwargs.get("tags"),
         visibility = kwargs.get("visibility"),
     )
     pgp_sign(

@@ -153,8 +153,12 @@ asserts that:
 ```console
 $ bazel run @envoy_toolshed//pgp/test:audit -- \
       --forbid "$(cat /run/user/1000/gpg/passphrase)" \
+      --@envoy_toolshed//pgp:passphrase_path=/run/user/1000/gpg/passphrase \
       "deps(//distribution:signed)"
 ```
+
+Any other option is passed through to `bazel aquery`, so the targets can be
+audited in the configuration they are actually built in.
 
 Use `deps(...)` to audit the whole universe reachable from a target rather
 than only the actions the target itself owns.

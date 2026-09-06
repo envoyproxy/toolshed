@@ -93,6 +93,11 @@ def _sign(ctx, mode, srcs, key, out, armor):
     )
 
 def _pgp_sign_impl(ctx):
+    if len(ctx.files.srcs) != 1:
+        fail("%s: exactly one file can be signed, got %s" % (
+            ctx.label,
+            len(ctx.files.srcs),
+        ))
     out = ctx.outputs.out
     _sign(
         ctx,

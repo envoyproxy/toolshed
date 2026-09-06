@@ -1,7 +1,16 @@
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//pgp:defs.bzl", "deb_sign_changes", "pgp_sign_checksums", "pgp_sign_cleartext", "pgp_sign_detached", "pgp_toolchain")
+load(":extensions_load_check.bzl", "SQ_PLATFORM_NAMES")
 load(":sign_test.bzl", "args_test", "env_test", "execution_requirements_test", "no_passphrase_test", "relative_passphrase_test")
+
+# Nothing else loads //pgp:extensions.bzl (no `sq` platform is enabled by
+# default), so this keeps it covered by `bazel build //pgp/...`.
+genrule(
+    name = "extensions_load_check",
+    outs = ["extensions_load_check.txt"],
+    cmd = "echo '%s' > $@" % ",".join(SQ_PLATFORM_NAMES),
+)
 
 # Stub signer/toolchain for the analysis tests. Real signing requires a
 # registered `sq` toolchain, see //pgp:extensions.bzl.

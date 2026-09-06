@@ -12,7 +12,7 @@ enabled by passing a sha256 you have verified yourself:
 ```starlark
 sq = use_extension("@envoy_toolshed//pgp:extensions.bzl", "pgp_extension")
 sq.setup(
-    version = "1.3.1",
+    version = "1.4.0",
     sha256s = {
         "linux_x86_64": "<sha256 of the binary you verified>",
     },
@@ -25,13 +25,11 @@ register_toolchains("@sq_linux_x86_64//:toolchain")
 binary.
 """
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
-
 # TODO(pgp): pin verified sha256s here once upstream publishes signed,
 #   reproducible release binaries. The URLs below are the upstream release
 #   artifact locations - they are unverified, so the corresponding platforms
 #   are disabled until a sha256 is supplied by the consumer.
-SQ_VERSION = "1.3.1"
+SQ_VERSION = "1.4.0"
 
 SQ_PLATFORMS = {
     "darwin_aarch64": struct(
@@ -85,16 +83,44 @@ toolchain(
 )
 """
 
+def _sq_repository_impl(ctx):
+    ctx.download(
+        url = ctx.attr.urls,
+        sha256 = ctx.attr.sha256,
+        output = "sq",
+        executable = True,
+    )
+    ctx.file(
+        "BUILD",
+        _BUILD_FILE.format(exec_compatible_with = str(ctx.attr.exec_compatible_with)),
+        executable = False,
+    )
+
+sq_repository = repository_rule(
+    implementation = _sq_repository_impl,
+    doc = "Downloads a `sq` binary and exposes it as an OpenPGP signer toolchain.",
+    attrs = {
+        "exec_compatible_with": attr.string_list(
+            doc = "Execution platform constraints for the toolchain.",
+            mandatory = True,
+        ),
+        "sha256": attr.string(
+            doc = "Verified sha256 of the `sq` binary.",
+            mandatory = True,
+        ),
+        "urls": attr.string_list(
+            doc = "URLs to download the `sq` binary from.",
+            mandatory = True,
+        ),
+    },
+)
+
 def _sq_repo(platform, version, url, sha256):
-    http_file(
+    sq_repository(
         name = "sq_%s" % platform,
         urls = [url.format(version = version)],
         sha256 = sha256,
-        downloaded_file_path = "sq",
-        executable = True,
-        build_file_content = _BUILD_FILE.format(
-            exec_compatible_with = str(SQ_PLATFORMS[platform].exec_compatible_with),
-        ),
+        exec_compatible_with = SQ_PLATFORMS[platform].exec_compatible_with,
     )
 
 def _pgp_extension_impl(module_ctx):
