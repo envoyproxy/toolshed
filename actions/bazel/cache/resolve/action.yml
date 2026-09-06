@@ -1,4 +1,4 @@
-#name: bazel/cache/resolve
+# name: bazel/cache/resolve
 description: |
   Parse MODULE.bazel.lock into a {cache-key: path} map for caches/restore+save
 
