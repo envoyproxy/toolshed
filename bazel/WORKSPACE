@@ -40,3 +40,7 @@ website_install_deps()
 
 load("//dependency/test:reachability_test_extension.bzl", "reachability_test_repos")
 reachability_test_repos()
+
+# Stub OpenPGP signer used by //pgp/test analysis tests. Real signing requires
+# a `sq` toolchain, see //pgp:extensions.bzl.
+register_toolchains("//pgp/test:stub_toolchain")
