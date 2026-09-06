@@ -157,7 +157,7 @@ require_encrypted_key () {
 
 # `sq` uses the entire contents of the password file, including any trailing
 # newline, whereas `gpg --passphrase-file` strips it. Normalize on the `gpg`
-# behaviour by stripping a single trailing newline into a private copy.
+# behaviour by stripping trailing newlines into a private copy.
 #
 # The copy lives in the action's (sandboxed, per-action) temporary directory,
 # is created with mode 600, and is removed on exit.

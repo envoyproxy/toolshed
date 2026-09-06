@@ -28,6 +28,7 @@ pinned to the local machine.
 
 | Concern | Why it is yours |
 | --- | --- |
+| The passphrase file contents | Trailing newlines are stripped (matching `gpg --passphrase-file`); everything else is used verbatim |
 | The plaintext passphrase file on the host | It must exist in plaintext during the build. Put it somewhere dedicated - eg `${runner.temp}/gpg/passphrase`, `chmod 600`, deleted when the job ends - and **never** under the Bazel output tree, `--disk_cache`, or any artifact upload path |
 | `--sandbox_debug` | It leaves sandbox directories (including the action's inputs) on disk |
 | Visibility of the key target | Put the encrypted key behind a `package_group` so unrelated packages cannot depend on it |
