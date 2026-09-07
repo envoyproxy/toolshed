@@ -12,12 +12,14 @@ common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 common --@rules_python//python/config_settings:bootstrap_impl=script
 
 common --registry=https://bcr.bazel.build/
-common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/76440e57c1495e6e6b26e30069d42050a8ca5acb
+common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/98c753e0677502a563415ba2423244319872196c
 common --experimental_repository_cache_hardlinks
 
 common --repo_env=ANDROID_HOME=
 
+common --enable_platform_specific_config
 
+#
 #############################################################################
 # ci
 #############################################################################
@@ -89,6 +91,15 @@ common:remote-exec --define=engflow_rbe=true
 # yield no toolchain and are skipped.
 common:remote-exec --host_platform=//platforms/rbe:linux_x64
 common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//platforms/rbe:linux_arm64_gcc,//platforms/rbe:linux_x64,//platforms/rbe:linux_arm64
+
+
+#############################################################################
+# linux
+#############################################################################
+
+build:linux --@rules_rust//rust/settings:extra_rustc_flag=-Clink-self-contained=no
+build:linux --@rules_rust//rust/settings:extra_exec_rustc_flags=-Clink-self-contained=no
+
 
 #############################################################################
 # gcc

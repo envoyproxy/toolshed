@@ -507,8 +507,8 @@ llvm_toolchain_alias = repository_rule(
 # Build rules: host tool bootstrap, minimal lib extraction, and bin strip
 # =============================================================================
 
-# Script: extract llvm-strip and llvm-readobj from the Linux-X64 tarball.
-# Arguments: BSDTAR TARBALL STRIP_PREFIX OUT_STRIP OUT_READOBJ OUT_INSTALL_NAME_TOOL
+# Script: extract LLVM host tools from the Linux-X64 tarball.
+# Arguments: BSDTAR TARBALL STRIP_PREFIX OUT_STRIP OUT_READOBJ OUT_READELF OUT_INSTALL_NAME_TOOL
 _LLVM_EXTRACT_HOST_TOOLS_SCRIPT = """
 set -euo pipefail
 BSDTAR="$1"
@@ -516,7 +516,8 @@ TARBALL="$2"
 STRIP_PREFIX="$3"
 OUT_STRIP="$4"
 OUT_READOBJ="$5"
-OUT_INSTALL_NAME_TOOL="$6"
+OUT_READELF="$6"
+OUT_INSTALL_NAME_TOOL="$7"
 SCRATCH="$(mktemp -d)"
 trap 'rm -rf "$SCRATCH"' EXIT
 
@@ -526,24 +527,27 @@ trap 'rm -rf "$SCRATCH"' EXIT
     "$STRIP_PREFIX/bin/llvm-objcopy" \\
     "$STRIP_PREFIX/bin/llvm-strip" \\
     "$STRIP_PREFIX/bin/llvm-readobj" \\
+    "$STRIP_PREFIX/bin/llvm-readelf" \\
     "$STRIP_PREFIX/bin/llvm-install-name-tool"
 cp -L "$SCRATCH/bin/llvm-strip" "$OUT_STRIP"
 cp -L "$SCRATCH/bin/llvm-readobj" "$OUT_READOBJ"
+cp -L "$SCRATCH/bin/llvm-readelf" "$OUT_READELF"
 cp -L "$SCRATCH/bin/llvm-install-name-tool" "$OUT_INSTALL_NAME_TOOL"
 """
 
 def _llvm_minimal_extract_host_tools_impl(ctx):
-    """Extracts llvm-strip, llvm-readobj, and llvm-install-name-tool from the Linux-X64 tarball."""
+    """Extracts LLVM host tools from the Linux-X64 tarball."""
     bsdtar = ctx.toolchains[_TAR_TOOLCHAIN_TYPE]
     tarball = ctx.file.tarball
     strip_prefix = ctx.attr.strip_prefix
     out_strip = ctx.actions.declare_file("llvm_host_tools/llvm-strip")
     out_readobj = ctx.actions.declare_file("llvm_host_tools/llvm-readobj")
+    out_readelf = ctx.actions.declare_file("llvm_host_tools/llvm-readelf")
     out_install_name_tool = ctx.actions.declare_file("llvm_host_tools/llvm-install-name-tool")
     ctx.actions.run_shell(
         inputs = [tarball],
         tools = [bsdtar.tarinfo.binary],
-        outputs = [out_strip, out_readobj, out_install_name_tool],
+        outputs = [out_strip, out_readobj, out_readelf, out_install_name_tool],
         env = bsdtar.tarinfo.default_env,
         command = _LLVM_EXTRACT_HOST_TOOLS_SCRIPT,
         arguments = [
@@ -552,16 +556,18 @@ def _llvm_minimal_extract_host_tools_impl(ctx):
             strip_prefix,
             out_strip.path,
             out_readobj.path,
+            out_readelf.path,
             out_install_name_tool.path,
         ],
         mnemonic = "LlvmExtractHostTools",
-        progress_message = "Extracting LLVM host tools (llvm-strip, llvm-readobj, llvm-install-name-tool)",
+        progress_message = "Extracting LLVM host tools",
     )
     return [
-        DefaultInfo(files = depset([out_strip, out_readobj, out_install_name_tool])),
+        DefaultInfo(files = depset([out_strip, out_readobj, out_readelf, out_install_name_tool])),
         OutputGroupInfo(
             llvm_strip = depset([out_strip]),
             llvm_readobj = depset([out_readobj]),
+            llvm_readelf = depset([out_readelf]),
             llvm_install_name_tool = depset([out_install_name_tool]),
         ),
     ]

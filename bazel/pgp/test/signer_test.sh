@@ -6,8 +6,7 @@
 # is ever committed), signs in each mode, verifies the signatures, and asserts
 # that the signer refuses to use an unencrypted key.
 #
-# Skipped if no `sq` is available - the default toolchain binary is not
-# fetched by default (see //pgp:extensions.bzl).
+# Skipped if no `sq` is available on PATH or via SQ.
 
 set -euo pipefail
 

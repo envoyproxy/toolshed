@@ -1,23 +1,25 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("//pgp:defs.bzl", "pgp_toolchain", "sq_signer")
+load("//pgp/private:sq_package.bzl", "sq_package")
+load("//:versions.bzl", "VERSIONS")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 exports_files([
     "defs.bzl",
     "toolchain.bzl",
-    "extensions.bzl",
 ])
 
-# Ensures //pgp:extensions.bzl (not otherwise loaded - no `sq` platform is
-# enabled by default) and the rest of the public/private starlark surface
-# stay loadable and are covered by `bazel build //pgp/...`.
+# Ensures the public/private Starlark surface stays loadable and is covered by
+# `bazel build //pgp/...`.
 bzl_library(
     name = "pgp_bzl",
     srcs = [
         "defs.bzl",
-        "extensions.bzl",
         "toolchain.bzl",
         "//pgp/private:sign.bzl",
         "//pgp/private:sq.bzl",
+        "//pgp/private:sq_package.bzl",
     ],
     visibility = ["//visibility:private"],
     deps = [
@@ -28,12 +30,64 @@ bzl_library(
 
 # Toolchain type for OpenPGP signer implementations.
 #
-# The default implementation wraps Sequoia PGP's `sq` (see extensions.bzl),
-# but any binary implementing the signer CLI contract documented in
-# toolchain.bzl can be registered instead.
+# The default implementation wraps `@sq//:sq`, built from source via the Envoy
+# Bazel registry, but any binary implementing the signer CLI contract documented
+# in toolchain.bzl can be registered instead.
 toolchain_type(
     name = "toolchain_type",
     visibility = ["//visibility:public"],
+)
+
+sq_signer(
+    name = "sq_signer",
+    sq = "@sq//:sq",
+)
+
+pgp_toolchain(
+    name = "sq_signer_toolchain",
+    signer = ":sq_signer",
+)
+
+toolchain(
+    name = "sq_toolchain",
+    toolchain = ":sq_signer_toolchain",
+    toolchain_type = "//pgp:toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+sq_package(
+    name = "sq_linux_x86_64",
+    platform = "Linux-X64",
+    stripper = "//compile:llvm_minimal_host_llvm_strip",
+)
+
+sq_package(
+    name = "sq_linux_arm64",
+    platform = "Linux-ARM64",
+    stripper = "//compile:llvm_minimal_host_llvm_strip",
+)
+
+filegroup(
+    name = "sq_packages",
+    srcs = [":sq_linux_x86_64", ":sq_linux_arm64"],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "sq_linux_x86_64_manifest_test",
+    srcs = ["//pgp/test:assert_sq_manifest.sh"],
+    data = [
+        ":sq_linux_x86_64",
+        "//compile:llvm_minimal_host_llvm_readelf",
+    ],
+    env = {
+        "TARBALL": "$(rootpath :sq_linux_x86_64)",
+        "READELF": "$(rootpath //compile:llvm_minimal_host_llvm_readelf)",
+        "SQ_VERSION": VERSIONS["sq"],
+    },
+    tags = ["manual"],
 )
 
 # Absolute host path of the passphrase-encrypted secret key.

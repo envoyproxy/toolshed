@@ -413,6 +413,13 @@ filegroup(
 )
 
 filegroup(
+    name = "llvm_minimal_host_llvm_readelf",
+    srcs = [":llvm_minimal_host_tools"],
+    output_group = "llvm_readelf",
+    tags = ["manual"],
+)
+
+filegroup(
     name = "llvm_minimal_host_llvm_install_name_tool",
     srcs = [":llvm_minimal_host_tools"],
     output_group = "llvm_install_name_tool",

@@ -17,6 +17,7 @@ LLVM_DISTRIBUTIONS = {
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": LLVM_VERSION,
+    "sq": "1.4.0",
     "v8": V8_VERSION,
     "ninja": "1.12.0",
     "python": "3.12",
@@ -55,6 +56,10 @@ VERSIONS = {
         "Linux-X64": "6cb4cca6df33be00c80fa1639062c973d1cafe4e7ad98a9b4bdf21bf9dec5806",
         "Linux-ARM64": "9a6cc0a84d524342e578db739b04e8a3875adb40b38887e4e074661e925f8a9c",
         "macOS-ARM64": "928e51aa7c97fbb8c5c50075118f4b36e36363b1a2c3af2dfef9aea1ef526ade",
+    },
+    "sq_sha256": {
+        "Linux-X64": "",
+        "Linux-ARM64": "",
     },
 
     # Glint binary hashes by architecture

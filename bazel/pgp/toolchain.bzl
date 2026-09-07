@@ -15,7 +15,8 @@ signer --mode {detached|cleartext|inline} \\
 ```
 
 Any implementation of that contract can be dropped in without changing the
-rules - the default implementation wraps Sequoia PGP's `sq`.
+rules. The default implementation wraps `@sq//:sq`, built from source via the
+Envoy Bazel registry.
 """
 
 PgpSignerInfo = provider(
