@@ -74,6 +74,7 @@ jobs:
             compile/libcxx-llvm22.1.8-darwin-aarch64.tar.xz
             compile/libcxx-llvm22.1.8-x86_64.tar.xz
             compile/llvm-minimal-*.tar.zst
+            pgp/sq-*.tar.zst
             compile/msan-llvm22.1.8-x86_64.tar.xz
             compile/tsan-llvm22.1.8-x86_64.tar.xz
             sysroot/sysroot-*.tar.xz
@@ -97,6 +98,7 @@ jobs:
             //...
             //sysroot:sysroots
             //v8:wee8_packages //:macos_packages //compile:llvm_minimal_packages
+            //pgp:sq_packages
           upload: true
         - name: gcc
           action: build

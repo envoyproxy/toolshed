@@ -5,6 +5,7 @@ exports_files([
     "signer.sh",
     "sign.bzl",
     "sq.bzl",
+    "sq_package.bzl",
 ])
 
 sh_binary(

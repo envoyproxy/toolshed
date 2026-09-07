@@ -113,28 +113,18 @@ The default implementation is a thin wrapper around Sequoia PGP's
 home directory or keyring state, used as the OpenPGP backend for `rpm` on
 Fedora/RHEL and as `sqv` in apt >= 3.0.
 
-Upstream does not publish sha256-verifiable release binaries that could be
-pinned here, so **no `sq` platform is fetched by default**. Enable the
-platform(s) you need by supplying sha256s you have verified yourself:
+The default signer uses `@sq//:sq` from the Envoy Bazel registry:
 
 ```starlark
-pgp_ext = use_extension("@envoy_toolshed//pgp:extensions.bzl", "pgp_extension")
-pgp_ext.setup(
-    sha256s = {
-        "linux_x86_64": "<verified sha256 of the sq binary>",
-    },
-)
-use_repo(pgp_ext, "sq_linux_x86_64")
-
-register_toolchains("@sq_linux_x86_64//:toolchain")
+bazel_dep(name = "sq", version = "1.4.0.envoy")
 ```
 
-`urls` can be used to point at your own audited mirror of the binary.
-
-The intended toolshed approach for this is to build and publish a pinned,
-static `sq` in the `bins-v*` release, the same way `sysroot`/`llvm_minimal`
-are, so `pgp_ext.setup()` can work with no consumer-supplied sha256 - that is
-a follow-up, not part of this rule set.
+Toolshed builds and publishes `sq-<version>-<Platform>.tar.zst` in the
+`bins-v*` GitHub release. The registry `sq` module consumes that archive as
+its prebuilt toolchain and falls back to a source build when no matching
+archive is available. Registry-side wiring (adding the `bins` URL and SHA to
+`modules/sq/<version>/...` in `envoyproxy/bazel-registry`) happens after the
+first release containing `sq` and is out of scope here.
 
 Swapping in a different signer (for example a purpose-built Rust signer) is a
 matter of registering another toolchain - the rules do not change:
