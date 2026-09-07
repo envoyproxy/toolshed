@@ -5,8 +5,8 @@ load("//pgp/audit:defs.bzl", "pgp_audit_test")
 load("//pgp:defs.bzl", "pgp_sign_changes_file", "pgp_sign_checksums", "pgp_sign_cleartext", "pgp_sign_detached", "pgp_toolchain")
 load(":sign_test.bzl", "KEY_FRAGMENT_DIGEST", "args_test", "args_with_fragment_test", "bad_key_fragment_test", "env_test", "execution_requirements_test", "inputs_test", "no_key_test", "no_passphrase_test", "passphrase_fragment_test", "relative_key_test", "relative_passphrase_test")
 
-# Stub signer/toolchain for the analysis tests. Real signing requires a
-# registered `sq` toolchain, see //pgp:extensions.bzl.
+# Stub signer/toolchain for the analysis tests. Real signing uses the default
+# registered `//pgp:sq_toolchain`.
 sh_binary(
     name = "stub_signer",
     srcs = ["stub_signer.sh"],

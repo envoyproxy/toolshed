@@ -1,20 +1,18 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("//pgp:defs.bzl", "pgp_toolchain", "sq_signer")
 
 exports_files([
     "defs.bzl",
     "toolchain.bzl",
-    "extensions.bzl",
 ])
 
-# Ensures //pgp:extensions.bzl (not otherwise loaded - no `sq` platform is
-# enabled by default) and the rest of the public/private starlark surface
-# stay loadable and are covered by `bazel build //pgp/...`.
+# Ensures the public/private Starlark surface stays loadable and is covered by
+# `bazel build //pgp/...`.
 bzl_library(
     name = "pgp_bzl",
     srcs = [
         "defs.bzl",
-        "extensions.bzl",
         "toolchain.bzl",
         "//pgp/private:sign.bzl",
         "//pgp/private:sq.bzl",
@@ -28,11 +26,28 @@ bzl_library(
 
 # Toolchain type for OpenPGP signer implementations.
 #
-# The default implementation wraps Sequoia PGP's `sq` (see extensions.bzl),
-# but any binary implementing the signer CLI contract documented in
-# toolchain.bzl can be registered instead.
+# The default implementation wraps `@sq//:sq`, built from source via the Envoy
+# Bazel registry, but any binary implementing the signer CLI contract documented
+# in toolchain.bzl can be registered instead.
 toolchain_type(
     name = "toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+sq_signer(
+    name = "sq_signer",
+    sq = "@sq//:sq",
+)
+
+pgp_toolchain(
+    name = "sq_signer_toolchain",
+    signer = ":sq_signer",
+)
+
+toolchain(
+    name = "sq_toolchain",
+    toolchain = ":sq_signer_toolchain",
+    toolchain_type = "//pgp:toolchain_type",
     visibility = ["//visibility:public"],
 )
 
