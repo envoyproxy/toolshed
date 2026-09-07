@@ -28,6 +28,7 @@ generated_certs(
     static_srcs = [
         # Any checked-in fixtures that live alongside the generated ones.
     ],
+    headers_name = "certs_headers",
 )
 ```
 
@@ -37,6 +38,11 @@ $ ls bazel-bin/path/to/
 ```
 
 Consumers depend on the resulting filegroup via `data = ["//path/to:certs"]`.
+Generated or checked-in headers such as `*_cert_info.h` and `*_cert_hash.h`
+are not included in that runtime filegroup. They are compile-time inputs and
+should be referenced from `hdrs = [...]`. Generated headers can be referenced
+directly or via an opt-in `headers_name` filegroup such as `:certs_headers`;
+checked-in headers from `static_srcs` should be referenced directly.
 
 ## Year stamping
 

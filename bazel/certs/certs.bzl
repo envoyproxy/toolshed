@@ -20,6 +20,7 @@ def generated_certs(
         outs,
         srcs = [],
         static_srcs = [],
+        headers_name = None,
         gen = Label("//certs:gen"),
         year = None,
         year_status_key = "STABLE_CERT_EPOCH_YEAR",
@@ -30,15 +31,24 @@ def generated_certs(
     """Generates test certificates from `spec` and bundles them into a filegroup.
 
     Args:
-      name: name of the resulting filegroup. Consumers depend on this via
-        `data = [...]`.
+      name: name of the resulting runtime filegroup. Consumers depend on this
+        via `data = [...]`. Generated and checked-in `.h` files are excluded
+        because headers are compile-time inputs, and rules_apple buckets any
+        bundled `.h` resource as a Metal header.
       spec: the fixture spec file consumed by the generator (see README.md
         for the spec format).
       outs: every file the generator writes for this spec. The generator
-        fails if the spec asks for an output that is not declared here.
+        fails if the spec asks for an output that is not declared here. Header
+        outputs are still declared by the genrule and remain referenceable by
+        label, but are excluded from the runtime filegroup.
       srcs: generator inputs (keys, `.cfg` files, password files).
       static_srcs: checked-in fixtures that are not generated but that
-        consumers expect to find alongside the generated ones.
+        consumers expect to find alongside the generated ones. Checked-in
+        headers are excluded from the runtime filegroup for the same reason as
+        generated headers.
+      headers_name: optional name of an additional filegroup containing only
+        generated `.h` outputs, for consumers that prefer to depend on one
+        label from `hdrs = [...]` instead of listing each generated header.
       gen: label of the certificate generator binary. Defaults to the one
         provided by this package; overriding it is only useful for testing
         the macro itself. Resolved with `Label()` so the default binds to
@@ -118,8 +128,21 @@ def generated_certs(
 
     native.filegroup(
         name = name,
-        srcs = outs + static_srcs,
+        # Generated/checked-in headers are consumed via `hdrs`, not at runtime.
+        # Keep them out of the data filegroup: rules_apple buckets any bundled
+        # `.h` resource as a Metal header and then fails MetallibCompile with
+        # "no input files" when no `.metal` sources accompany them.
+        srcs = [f for f in outs + static_srcs if not f.endswith(".h")],
         testonly = testonly,
         tags = tags,
         visibility = visibility,
     )
+
+    if headers_name != None:
+        native.filegroup(
+            name = headers_name,
+            srcs = [f for f in outs if f.endswith(".h")],
+            testonly = testonly,
+            tags = tags,
+            visibility = visibility,
+        )

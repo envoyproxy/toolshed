@@ -1,11 +1,12 @@
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//certs:certs.bzl", "generated_certs")
-load(":certs_analysis_test.bzl", "command_test")
+load(":certs_analysis_test.bzl", "command_test", "files_test")
 
 generated_certs(
     name = "generated",
     spec = "fixtures/certs.spec",
     srcs = glob(["fixtures/**"], exclude = ["fixtures/*.spec"]),
+    headers_name = "generated_headers",
     outs = [
         "ca_cert_info.h",
         "ca_cert_hash.h",
@@ -97,6 +98,7 @@ sh_test(
     srcs = ["certs_test.sh"],
     data = [
         ":generated",
+        ":generated_headers",
         ":serial_a",
         ":serial_b",
         "fixtures/ca_key.pem",
@@ -147,4 +149,38 @@ command_test(
     name = "custom_status_command_test",
     target_under_test = ":custom_status_gen",
     expected = "CUSTOM_CERT_YEAR",
+)
+
+files_test(
+    name = "runtime_filegroup_test",
+    target_under_test = ":generated",
+    expected = [
+        "bundle.p12",
+        "ca_cert.pem",
+        "chain.pem",
+        "ec_responder.pem",
+        "ec_status.der",
+        "expired.pem",
+        "long.pem",
+        "revoked.crl.pem",
+        "statuses.der",
+        "trust-bundle.json",
+        "unencrypted.p12",
+        "v1.pem",
+    ],
+    forbidden_suffixes = [".h"],
+)
+
+files_test(
+    name = "headers_filegroup_test",
+    target_under_test = ":generated_headers",
+    expected = [
+        "ca_cert_hash.h",
+        "ca_cert_info.h",
+        "expired_cert_info.h",
+        "leaf_cert_hash.h",
+        "leaf_cert_info.h",
+        "long_cert_info.h",
+        "ocsp_info.h",
+    ],
 )
