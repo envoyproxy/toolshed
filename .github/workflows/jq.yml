@@ -42,6 +42,19 @@ jobs:
     - name: Run jq tests
       run: ./jq/run-tests.sh
 
+  bazel-tests:
+    runs-on: ubuntu-24.04
+    needs: request
+    if: fromJSON(needs.request.outputs.run)
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+    - name: Setup Bazel
+      uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # v0.19.0
+    - name: Run bazel tests
+      run: bazel test //...
+      working-directory: jq
+
   status:
     runs-on: ubuntu-24.04
     if: >-
@@ -51,6 +64,7 @@ jobs:
     needs:
     - request
     - tests
+    - bazel-tests
     steps:
     - run: |
         if [[ "${{ contains(needs.*.result, 'failure') }}" == "true" || "${{ contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
