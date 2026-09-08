@@ -220,11 +220,43 @@ sh_binary(
     tags = ["manual"],
 )
 
-# Signs with a real `sq`, if one is available (`SQ` or `$PATH`), and asserts
-# that unencrypted keys are rejected. Skipped when `sq` is not installed.
+# Signs with the hermetic `sq` and asserts that unencrypted keys are rejected.
 sh_test(
     name = "signer_test",
     size = "medium",
     srcs = ["signer_test.sh"],
+    data = [
+        "//pgp/private:signer.sh",
+        "@sq//:sq",
+    ],
+    env = {"SQ": "$(rootpath @sq//:sq)"},
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Regression test for the passphrase fd lifetime: runs the *built* signer
+# wrapper (`//pgp:sq_signer`) inside the test sandbox, which is where an fd
+# created by a process substitution in an array assignment showed up as
+# `Error: Reading /dev/fd/63 ... No such file or directory`.
+sh_test(
+    name = "signer_sandbox_test",
+    size = "medium",
+    srcs = ["signer_sandbox_test.sh"],
+    data = [
+        "//pgp:sq_signer",
+        "@sq//:sq",
+    ],
+    env = {
+        "SQ": "$(rootpath @sq//:sq)",
+        "SQ_SIGNER": "$(rootpath //pgp:sq_signer)",
+    },
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+# Guards the signer source against reintroducing a process substitution inside
+# an array assignment, and shellchecks it where `shellcheck` is available.
+sh_test(
+    name = "signer_source_test",
+    srcs = ["signer_source_test.sh"],
     data = ["//pgp/private:signer.sh"],
+    env = {"SIGNER": "$(rootpath //pgp/private:signer.sh)"},
 )
