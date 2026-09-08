@@ -1,0 +1,24 @@
+name: actions::log_bubble emits GitHub workflow commands
+
+input: |-
+  build emitted warning: retrying
+  build emitted error: failed
+
+before: |-
+  . as $input
+  | {
+      warning: ["warning"],
+      error: ["error"],
+      notice: [],
+      fail: []
+    } as $matching
+  | $input
+
+module: github/actions::log_bubble($matching)
+
+expected: |2
+
+  COMMANDS=('echo ::error::build emitted error: failed' 'echo ::warning::build emitted warning: retrying')
+  for command in "${COMMANDS[@]}"; do
+      $command
+  done

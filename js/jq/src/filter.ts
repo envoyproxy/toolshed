@@ -24,7 +24,7 @@ export function build_filter(
   const temp_handles: TempFileHandles = {}
   let mangled_filter = filter
   const mod_path = path.join(__dirname, '../../../jq')
-  mangled_filter = `import "args" as args; import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${mangled_filter}`
+  mangled_filter = `import "args" as args; import "bash" as bash; import "github/gfm" as gfm; import "github/actions" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${mangled_filter}`
   let filter_fun_arg = `-L ${mod_path}`
   if (filter_fun) {
     temp_handles.tmp_dir_fun = tmp.dirSync()

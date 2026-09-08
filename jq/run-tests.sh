@@ -1,12 +1,44 @@
 #!/usr/bin/env bash
 
 # Test runner for jq modules
-# Finds and runs all *.test.yaml and *.test.yml files in jq/tests/
+# Finds and runs all *.test.yaml and *.test.yml files in jq/tests/, or in a
+# single test subdirectory when one is given as an argument, eg:
+#
+#   ./jq/run-tests.sh
+#   ./jq/run-tests.sh tests/github/gfm
 
 set -euo pipefail
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Resolve rlocation-style JQ_BIN/YQ_BIN (as set eg by Bazel's aspect jq/yq
+# toolchains) to real binary paths. Left untouched (and defaulted to the
+# binary on PATH) for bare/non-Bazel invocation.
+_resolve_runfiles_bin () {
+    local var_name="$1"
+    local value="${!var_name:-}"
+
+    if [[ -n "$value" && "$value" != /* ]]; then
+        local f=bazel_tools/tools/bash/runfiles/runfiles.bash
+        local runfiles_dir="${RUNFILES_DIR:-}"
+        if [[ -z "$runfiles_dir" && -n "${TEST_SRCDIR:-}" ]]; then
+            runfiles_dir="${TEST_SRCDIR}"
+        fi
+        local runfiles_bash_path="${runfiles_dir:-/dev/null}/$f"
+        # shellcheck disable=SC1090
+        source "$runfiles_bash_path" 2>/dev/null || \
+            source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2 -d' ')" 2>/dev/null || \
+            { echo >&2 "ERROR: cannot find runfiles.bash"; exit 1; }
+        value="$(rlocation "$value")"
+    fi
+    echo "$value"
+}
+
+JQ="$(_resolve_runfiles_bin JQ_BIN)"
+JQ="${JQ:-jq}"
+YQ="$(_resolve_runfiles_bin YQ_BIN)"
+YQ="${YQ:-yq}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -24,9 +56,9 @@ parse_test_field () {
     local default="${3:-}"
 
     if [[ -n "$default" ]]; then
-        yq eval ".$field // \"$default\"" "$test_file"
+        "$YQ" eval ".$field // \"$default\"" "$test_file"
     else
-        yq eval ".$field // \"\"" "$test_file"
+        "$YQ" eval ".$field // \"\"" "$test_file"
     fi
 }
 
@@ -36,11 +68,15 @@ build_imports () {
 
     if [[ "$imports" != "[]" && "$imports" != "null" ]]; then
         local import_count
-        import_count=$(echo "$imports" | jq 'length')
+        import_count=$(echo "$imports" | "$JQ" 'length')
         for ((i=0; i<import_count; i++)); do
             local imp
-            imp=$(echo "$imports" | jq -r ".[$i]")
-            jq_filter+="import \"$imp\" as $imp; "
+            imp=$(echo "$imports" | "$JQ" -r ".[$i]")
+            # The import alias is always the last path segment, eg
+            # `import "github/gfm" as gfm;`, so scoped modules can be
+            # referred to by their short name in expressions.
+            local mod_alias="${imp##*/}"
+            jq_filter+="import \"$imp\" as $mod_alias; "
         done
     fi
     echo "$jq_filter"
@@ -51,7 +87,7 @@ build_jq_filter () {
     local jq_filter=""
 
     local imports
-    imports=$(yq eval '.imports // []' "$test_file" -o json)
+    imports=$("$YQ" eval '.imports // []' "$test_file" -o json)
     local before
     before=$(parse_test_field "$test_file" "before" ".")
     local module
@@ -63,12 +99,13 @@ build_jq_filter () {
     jq_filter+="$before | "
 
     if [[ -n "$module" && "$module" != "" ]]; then
-        local mod_name="${module%%::*}"
+        local mod_path="${module%%::*}"
         local func_name="${module#*::}"
+        local mod_alias="${mod_path##*/}"
         if [[ "$imports" == "[]" || "$imports" == "null" ]]; then
-            jq_filter="import \"$mod_name\" as $mod_name; $jq_filter"
+            jq_filter="import \"$mod_path\" as $mod_alias; $jq_filter"
         fi
-        jq_filter+="$mod_name::$func_name"
+        jq_filter+="$mod_alias::$func_name"
     elif [[ -n "$expression" && "$expression" != "" ]]; then
         jq_filter+="$expression"
     else
@@ -101,10 +138,8 @@ run_test () {
 
     local name
     name=$(parse_test_field "$test_file" "name")
-    local input
-    input=$(yq eval '.input' "$test_file" -o json)
-    local expected
-    expected=$(yq eval '.expected' "$test_file" -o json)
+    local raw
+    raw=$(parse_test_field "$test_file" "raw" "false")
 
     local jq_filter
     if ! jq_filter=$(build_jq_filter "$test_file"); then
@@ -115,10 +150,44 @@ run_test () {
     fi
 
     local result
-    if result=$(echo "$input" | jq -L "$SCRIPT_DIR" -r "$jq_filter" 2>&1); then
+
+    if [[ "$raw" == "true" ]]; then
+        # Raw mode feeds `.input` to jq as text (`-R`), one line per jq
+        # `input`/`.`, for filters that parse raw (non-JSON) text - eg
+        # `clang/tidy`.
+        local input_raw
+        input_raw=$("$YQ" eval '.input' "$test_file")
+        if ! result=$(printf '%s' "$input_raw" | "$JQ" -R -L "$SCRIPT_DIR" "$jq_filter" 2>&1); then
+            echo -e "${RED}✗${NC} $name"
+            echo "  Error running jq filter:"
+            echo "  $result"
+            test_failed "$name" "" ""
+            return 1
+        fi
+        local expected_json
+        expected_json=$("$YQ" eval '.expected' "$test_file" -o json)
+        local result_norm
+        result_norm=$(echo "$result" | "$JQ" -S .)
+        local expected_norm
+        expected_norm=$(echo "$expected_json" | "$JQ" -S .)
+        if [[ "$result_norm" == "$expected_norm" ]]; then
+            test_passed "$name"
+            return 0
+        else
+            test_failed "$name" "$expected_norm" "$result_norm"
+            return 1
+        fi
+    fi
+
+    local input
+    input=$("$YQ" eval '.input' "$test_file" -o json)
+    local expected
+    expected=$("$YQ" eval '.expected' "$test_file" -o json)
+
+    if result=$(echo "$input" | "$JQ" -L "$SCRIPT_DIR" -r "$jq_filter" 2>&1); then
         local result_trimmed="${result%$'\n'}"
         local expected_raw
-        expected_raw=$(echo "$expected" | jq -r '.')
+        expected_raw=$(echo "$expected" | "$JQ" -r '.')
 
         if [[ "$result_trimmed" == "$expected_raw" ]]; then
             test_passed "$name"
@@ -154,7 +223,11 @@ summary () {
 }
 
 run_tests () {
-    local test_dir="$SCRIPT_DIR/tests"
+    local test_subdir="${1:-tests}"
+    local test_dir="$test_subdir"
+    if [[ "$test_dir" != /* ]]; then
+        test_dir="$SCRIPT_DIR/$test_subdir"
+    fi
     local test_files=()
 
     if [[ ! -d "$test_dir" ]]; then
@@ -163,7 +236,7 @@ run_tests () {
     fi
     while IFS= read -r -d '' file; do
         test_files+=("$file")
-    done < <(find "$test_dir" -type f \( -name "*.test.yaml" -o -name "*.test.yml" \) -print0 | sort -z)
+    done < <(find -L "$test_dir" -type f \( -name "*.test.yaml" -o -name "*.test.yml" \) -print0 | sort -z)
     if [[ ${#test_files[@]} -eq 0 ]]; then
         echo "No test files found in $test_dir"
         exit 1
@@ -177,7 +250,7 @@ run_tests () {
 }
 
 main() {
-    run_tests
+    run_tests "$@"
     summary
     if [[ $FAILED -gt 0 ]]; then
         exit 1

@@ -1,0 +1,37 @@
+#############################################################################
+# CI never drives Bazel from `jq/` directly - `jq/`'s targets are tested via
+# `bazel/` (`@envoy_toolshed_jq//...`, see `.github/workflows/bazel.yml`), so
+# RBE (`rbe`/`bes`) config lives there, not here. This file is for local,
+# standalone use of `jq/` only.
+#############################################################################
+
+#############################################################################
+# global
+#############################################################################
+
+fetch --color=yes
+run --color=yes
+build --color=yes
+
+common --legacy_external_runfiles
+
+common --registry=https://bcr.bazel.build/
+common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/e1bd4ce32359abc1c80e934d99eca937ae798308
+common --experimental_repository_cache_hardlinks
+
+common --enable_platform_specific_config
+
+#############################################################################
+# ci
+#############################################################################
+
+common:ci --noshow_progress
+common:ci --noshow_loading_progress
+common:ci --test_output=errors
+
+#############################################################################
+# imports
+#############################################################################
+
+try-import %workspace%/repo.bazelrc
+try-import %workspace%/user.bazelrc

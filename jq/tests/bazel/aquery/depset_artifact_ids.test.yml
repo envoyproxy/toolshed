@@ -1,0 +1,21 @@
+name: bazel/aquery::depset_artifact_ids resolves transitive dep set artifact ids
+
+module: bazel/aquery::depset_artifact_ids($depsets)
+
+before: |
+  .ids as $ids
+  | .depsets as $depsets
+  | $ids
+
+input:
+  ids: [3]
+  depsets:
+    "1":
+      directArtifactIds: [10, 11]
+    "2":
+      directArtifactIds: [12]
+    "3":
+      directArtifactIds: [13]
+      transitiveDepSetIds: [1, 2]
+
+expected: [13, 10, 11, 12]

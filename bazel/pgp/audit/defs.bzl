@@ -31,7 +31,7 @@ def _runfiles_path(ctx, file):
 def _jq_args(ctx, jq_bin):
     args = ctx.actions.args()
     args.add(jq_bin)
-    args.add("-L", ctx.file._lib.dirname)
+    args.add("-L", ctx.file._modules_root.dirname)
     args.add("-f", ctx.file._filter)
     args.add_all(["--arg", "mnemonic", ctx.attr.mnemonic])
     args.add_all(["--argjson", "required_exec_reqs", _json_string_list(ctx.attr.required_execution_requirements)])
@@ -47,7 +47,7 @@ def _pgp_audit_impl(ctx):
     ctx.actions.run_shell(
         command = "out=\"$1\"; shift; \"$@\" > \"$out\"",
         arguments = [out.path, _jq_args(ctx, jq_bin)],
-        inputs = [ctx.file.aquery, ctx.file._filter, ctx.file._lib],
+        inputs = [ctx.file.aquery, ctx.file._filter, ctx.file._modules_root] + ctx.files._modules,
         outputs = [out],
         mnemonic = "OpenPGPAudit",
         progress_message = "Auditing OpenPGP signing actions in %s" % ctx.file.aquery.short_path,
@@ -72,7 +72,8 @@ pgp_audit = rule(
         "forbidden_env": attr.string_list(default = _DEFAULT_FORBIDDEN_ENV),
         "forbidden_inputs_regex": attr.string(default = _DEFAULT_FORBIDDEN_INPUTS_REGEX),
         "_filter": attr.label(default = "//pgp/audit:audit.jq", allow_single_file = True),
-        "_lib": attr.label(default = "//pgp/audit:lib.jq", allow_single_file = True),
+        "_modules": attr.label(default = "@envoy_toolshed_jq//:modules", allow_files = True),
+        "_modules_root": attr.label(default = "@envoy_toolshed_jq//:modules_root.marker", allow_single_file = True),
     },
     toolchains = [_JQ_TOOLCHAIN_TYPE],
 )
@@ -144,7 +145,7 @@ def _pgp_audit_binary_impl(ctx):
     substitutions = {
         "@JQ@": shell.quote(_runfiles_path(ctx, jq_bin)),
         "@FILTER@": shell.quote(_runfiles_path(ctx, ctx.file._filter)),
-        "@LIB_DIR@": shell.quote(_runfiles_path(ctx, ctx.file._lib).rsplit("/", 1)[0]),
+        "@LIB_DIR@": shell.quote(_runfiles_path(ctx, ctx.file._modules_root).rsplit("/", 1)[0]),
         "@MNEMONIC@": shell.quote(ctx.attr.mnemonic),
         "@REQUIRED_EXEC_REQS@": shell.quote(_json_string_list(ctx.attr.required_execution_requirements)),
         "@FORBIDDEN_ENV@": shell.quote(_json_string_list(ctx.attr.forbidden_env)),
@@ -158,7 +159,7 @@ def _pgp_audit_binary_impl(ctx):
     )
     return [DefaultInfo(
         executable = script,
-        runfiles = ctx.runfiles(files = [jq_bin, ctx.file._filter, ctx.file._lib]),
+        runfiles = ctx.runfiles(files = [jq_bin, ctx.file._filter, ctx.file._modules_root] + ctx.files._modules),
     )]
 
 pgp_audit_binary = rule(
@@ -171,7 +172,8 @@ pgp_audit_binary = rule(
         "forbidden_env": attr.string_list(default = _DEFAULT_FORBIDDEN_ENV),
         "forbidden_inputs_regex": attr.string(default = _DEFAULT_FORBIDDEN_INPUTS_REGEX),
         "_filter": attr.label(default = "//pgp/audit:audit.jq", allow_single_file = True),
-        "_lib": attr.label(default = "//pgp/audit:lib.jq", allow_single_file = True),
+        "_modules": attr.label(default = "@envoy_toolshed_jq//:modules", allow_files = True),
+        "_modules_root": attr.label(default = "@envoy_toolshed_jq//:modules_root.marker", allow_single_file = True),
         "_launcher_template": attr.label(default = "//pgp/audit:audit.sh.tpl", allow_single_file = True),
     },
     toolchains = [_JQ_TOOLCHAIN_TYPE],

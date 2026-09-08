@@ -1,0 +1,6 @@
+envoy_toolshed_jq module root marker.
+
+Used by `toolshed_jq()` (see `defs.bzl`) to derive the on-disk directory
+containing this module's `*.jq` files for jq's `-L` search path, via
+`$(dirname $(execpath //:modules_root.marker))`. Do not remove or rename
+without updating `defs.bzl`.

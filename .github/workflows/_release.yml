@@ -342,6 +342,15 @@ jobs:
         echo "Updated bazel/MODULE.bazel to version ${RELEASE_VERSION}"
         git add bazel/MODULE.bazel
         git diff --cached bazel/MODULE.bazel
+        # `jq/` is versioned and released together with `envoy_toolshed`
+        # (see `jq/README.md`), so its `module()` version and the
+        # `envoy_toolshed_jq` `bazel_dep` pin in `bazel/MODULE.bazel` are
+        # bumped in lockstep with the above.
+        sed -i '/^module(/,/^)/s/version = "[^"]*"/version = "'"${RELEASE_VERSION}"'"/' jq/MODULE.bazel
+        sed -i '/name = "envoy_toolshed_jq"/s/version = "[^"]*"/version = "'"${RELEASE_VERSION}"'"/' bazel/MODULE.bazel
+        echo "Updated jq/MODULE.bazel and envoy_toolshed_jq bazel_dep to version ${RELEASE_VERSION}"
+        git add jq/MODULE.bazel bazel/MODULE.bazel
+        git diff --cached jq/MODULE.bazel bazel/MODULE.bazel
 
     # DOCKER ONLY
     - name: Get latest bins release (for docker)

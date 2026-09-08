@@ -29,6 +29,7 @@ jobs:
           - bazel/*
           - bazel/**
           - docker/bazel/**
+          - jq/**
           - .github/scripts/bazel-run.sh
           - .github/workflows/bazel.yml
           - .github/workflows/_bazel.yml
@@ -96,6 +97,7 @@ jobs:
           # They must therefore be listed explicitly to be built/uploaded.
           targets: >-
             //...
+            @envoy_toolshed_jq//...
             //sysroot:sysroots
             //v8:wee8_packages //:macos_packages //compile:llvm_minimal_packages
             //pgp:sq_packages
@@ -114,7 +116,9 @@ jobs:
           rbe_bes: true
           rbe_config: rbe-gcc
           runner: ubuntu-24.04
-          targets: //...
+          targets: >-
+            //...
+            @envoy_toolshed_jq//...
           upload: false
         - name: macos
           action: build
@@ -130,7 +134,9 @@ jobs:
           rbe_bes: false
           rbe_config: rbe-cache-only
           runner: macos-14
-          targets: //...
+          targets: >-
+            //...
+            @envoy_toolshed_jq//...
           upload: false
 
   verify-artifacts:
@@ -194,6 +200,7 @@ jobs:
           runner: ubuntu-24.04
           targets: >-
             //...
+            @envoy_toolshed_jq//...
             //sysroot:sysroots
         - name: x86-to-arm
           action: test
