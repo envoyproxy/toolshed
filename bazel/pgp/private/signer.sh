@@ -194,10 +194,7 @@ fi
 # disk: `sq` reads `--password-file` from an anonymous pipe created by
 # process substitution (`/dev/fd/N` under bash), so the stripped passphrase
 # exists only in memory/in-pipe, never as a file.
-args=(
-    --password-file <(printf %s "$(cat "$PASSPHRASE_FILE")")
-    sign
-    --signer-file "$KEY")
+args=(sign --signer-file "$KEY")
 
 case "$MODE" in
     detached)
@@ -220,4 +217,10 @@ if [[ "$MODE" != "cleartext" && "$ARMOR" -eq 0 ]]; then
     args+=(--binary)
 fi
 
-sq "${args[@]}" "${INPUTS[0]}"
+# NB: the process substitution MUST be on the same command line as `sq`.
+# An fd created by `<(...)` during an array assignment is closed before the
+# array is used, so `sq` would see ENOENT on /dev/fd/N (seen under the Bazel
+# sandbox). `--password-file` is a global `sq` option, so it has to precede
+# the `sign` subcommand.
+sq --password-file <(printf %s "$(cat "$PASSPHRASE_FILE")") \
+   "${args[@]}" "${INPUTS[0]}"
