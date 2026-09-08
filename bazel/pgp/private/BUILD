@@ -2,6 +2,8 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 exports_files([
     "checksums.sh",
+    "changes.bzl",
+    "public_key.bzl",
     "signer.sh",
     "sign.bzl",
     "sq.bzl",

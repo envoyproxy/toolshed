@@ -34,9 +34,11 @@ include "lib";
       ] + [
         $actions[] as $action
         | $forbidden_strings[] as $forbidden
-        | select(($forbidden | length) > 0)
-        | select([$action.arguments[]? | select(contains($forbidden))] | length > 0)
-        | failure(4; $action; "forbidden string appears on command line")
+        | (if $forbidden | type == "object" then $forbidden.value else $forbidden end) as $forbidden_value
+        | (if $forbidden | type == "object" then $forbidden.source else "forbidden string" end) as $forbidden_source
+        | select(($forbidden_value | length) > 0)
+        | select([$action.arguments[]? | select(contains($forbidden_value))] | length > 0)
+        | failure(4; $action; "forbidden string appears on command line (" + $forbidden_source + ")")
       ] + [
         $actions[] as $action
         | ($action.arguments[-1]) as $expected_src

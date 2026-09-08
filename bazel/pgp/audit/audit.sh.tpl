@@ -22,14 +22,15 @@ mnemonic=@MNEMONIC@
 required_exec_reqs=@REQUIRED_EXEC_REQS@
 forbidden_env=@FORBIDDEN_ENV@
 forbidden_inputs_re=@FORBIDDEN_INPUTS_RE@
-forbidden_strings=()
+forbidden_values=()
+forbidden_sources=()
 aquery_json=
 bazel_opts=()
 targets=()
 
 usage() {
     cat >&2 <<'USAGE'
-usage: audit [--forbid STRING]... [--aquery-json FILE] [BAZEL OPTION]... [TARGET...]
+usage: audit [--forbid STRING|--forbid-file FILE]... [--aquery-json FILE] [BAZEL OPTION]... [TARGET...]
 
 With --aquery-json, audit captured `bazel aquery --output=jsonproto` JSON.
 Without --aquery-json, run `bazel aquery` for the supplied target patterns first.
@@ -46,7 +47,23 @@ while [[ $# -gt 0 ]]; do
             ;;
         --forbid)
             [[ $# -ge 2 ]] || usage
-            forbidden_strings+=("$2")
+            forbidden_values+=("$2")
+            forbidden_sources+=("--forbid")
+            shift 2
+            ;;
+        --forbid-file)
+            [[ $# -ge 2 ]] || usage
+            [[ -r "$2" ]] || {
+                printf 'cannot read --forbid-file: %s\n' "$2" >&2
+                exit 2
+            }
+            value="$(cat -- "$2"; printf x)"
+            value="${value%x}"
+            if [[ "$value" == *$'\n' ]]; then
+                value="${value%$'\n'}"
+            fi
+            forbidden_values+=("$value")
+            forbidden_sources+=("--forbid-file $2")
             shift 2
             ;;
         -h|--help)
@@ -74,8 +91,14 @@ if [[ -z "$aquery_json" ]]; then
         "${targets[@]}" > "$aquery_json"
 fi
 
-# shellcheck disable=SC2016
-forbidden_strings_json="$("$jq_bin" -n '$ARGS.positional' --args "${forbidden_strings[@]}")"
+forbidden_strings_json="$(
+    for index in "${!forbidden_values[@]}"; do
+        "$jq_bin" -n \
+            --arg value "${forbidden_values[$index]}" \
+            --arg source "${forbidden_sources[$index]}" \
+            '{value: $value, source: $source}'
+    done | "$jq_bin" -s .
+)"
 report="$tmp/report.json"
 "$jq_bin" \
     -L "$lib_dir" \

@@ -40,6 +40,15 @@ def _sign_action(env):
     asserts.equals(env, 1, len(actions), "expected a single %s action" % MNEMONIC)
     return actions[0]
 
+def _action(env, mnemonic):
+    actions = [
+        action
+        for action in analysistest.target_actions(env)
+        if action.mnemonic == mnemonic
+    ]
+    asserts.equals(env, 1, len(actions), "expected a single %s action" % mnemonic)
+    return actions[0]
+
 def _execution_requirements_test_impl(ctx):
     env = unittest.begin(ctx)
     for requirement in REQUIRED_EXECUTION_REQUIREMENTS:
@@ -193,6 +202,22 @@ inputs_test = analysistest.make(
         KEY_FLAG: KEY_PATH,
         PASSPHRASE_FLAG: PASSPHRASE_PATH,
     },
+)
+
+def _cacheable_action_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    action = _action(env, ctx.attr.mnemonic)
+    for requirement in REQUIRED_EXECUTION_REQUIREMENTS:
+        asserts.false(
+            env,
+            requirement in action.execution_requirements,
+            "%s must be cacheable" % ctx.attr.mnemonic,
+        )
+    return analysistest.end(env)
+
+cacheable_action_test = analysistest.make(
+    _cacheable_action_test_impl,
+    attrs = {"mnemonic": attr.string(mandatory = True)},
 )
 
 def _no_key_test_impl(ctx):

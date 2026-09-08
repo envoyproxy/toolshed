@@ -2,8 +2,8 @@ load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//pgp/audit:defs.bzl", "pgp_audit_test")
-load("//pgp:defs.bzl", "pgp_sign_changes_file", "pgp_sign_checksums", "pgp_sign_cleartext", "pgp_sign_detached", "pgp_toolchain")
-load(":sign_test.bzl", "KEY_FRAGMENT_DIGEST", "args_test", "args_with_fragment_test", "bad_key_fragment_test", "env_test", "execution_requirements_test", "inputs_test", "no_key_test", "no_passphrase_test", "passphrase_fragment_test", "relative_key_test", "relative_passphrase_test")
+load("//pgp:defs.bzl", "pgp_public_key", "pgp_sign_changes_file", "pgp_sign_changes_split", "pgp_sign_checksums", "pgp_sign_cleartext", "pgp_sign_detached", "pgp_toolchain")
+load(":sign_test.bzl", "KEY_FRAGMENT_DIGEST", "args_test", "args_with_fragment_test", "bad_key_fragment_test", "cacheable_action_test", "env_test", "execution_requirements_test", "inputs_test", "no_key_test", "no_passphrase_test", "passphrase_fragment_test", "relative_key_test", "relative_passphrase_test")
 
 exports_files(["assert_sq_manifest.sh"])
 
@@ -54,6 +54,41 @@ pgp_sign_changes_file(
     name = "example_deb_changes",
     changes = "fixtures/example.changes",
     tags = ["manual"],
+)
+
+changes_split_outputs = pgp_sign_changes_split(
+    name = "example_changes_split",
+    changes = "fixtures/changes-with-distribution.changes",
+    distros = ["a", "b"],
+)
+
+pgp_public_key(
+    name = "example_public_key",
+    src = "//pgp/test/fixturegen:generated_public_key",
+)
+
+pgp_public_key(
+    name = "secret_public_key",
+    src = "fixtures/secret-key.asc",
+    tags = ["manual"],
+)
+
+pgp_public_key(
+    name = "not_a_public_key",
+    src = "fixtures/not-a-key.txt",
+    tags = ["manual"],
+)
+
+cacheable_action_test(
+    name = "changes_split_cacheable_test",
+    mnemonic = "OpenPGPChangesSplit",
+    target_under_test = ":example_changes_split-a-split",
+)
+
+cacheable_action_test(
+    name = "public_key_cacheable_test",
+    mnemonic = "OpenPGPPublicKey",
+    target_under_test = ":example_public_key",
 )
 
 execution_requirements_test(
@@ -137,6 +172,47 @@ PASSPHRASE = "correct-horse-battery-staple"
 pgp_audit_test(
     name = "audit_test",
     aquery = "fixtures/audit.json",
+)
+
+sh_test(
+    name = "changes_split_test",
+    srcs = ["changes_split_test.sh"],
+    data = [
+        ":example_changes_split-a-split",
+        ":example_changes_split-b-split",
+        "fixtures/changes-with-distribution.changes",
+    ],
+    env = {
+        "INPUT": "$(rootpath fixtures/changes-with-distribution.changes)",
+        "a": "$(rootpath :example_changes_split-a-split)",
+        "b": "$(rootpath :example_changes_split-b-split)",
+    },
+)
+
+sh_test(
+    name = "public_key_test",
+    srcs = ["public_key_test.sh"],
+    data = [
+        ":example_public_key",
+        "@sq//:sq",
+    ],
+    env = {
+        "PUBLIC_KEY": "$(rootpath :example_public_key)",
+        "SQ": "$(rootpath @sq//:sq)",
+    },
+)
+
+sh_test(
+    name = "audit_forbid_file_test",
+    srcs = ["audit_forbid_file_test.sh"],
+    data = [
+        "//pgp/audit:audit",
+        "fixtures/audit.json",
+    ],
+    env = {
+        "AUDIT": "$(rootpath //pgp/audit:audit)",
+        "AQUERY": "$(rootpath fixtures/audit.json)",
+    },
 )
 
 jq(
