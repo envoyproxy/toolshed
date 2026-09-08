@@ -6,7 +6,6 @@ exports_files([
     "audit.sh.tpl",
     "audit_result_test.sh.tpl",
     "defs.bzl",
-    "lib.jq",
 ])
 
 pgp_audit_binary(

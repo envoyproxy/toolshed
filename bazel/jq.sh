@@ -12,4 +12,9 @@ else
     shift
 fi
 
-$JQ_BIN "${FILTER}" "${@}" < "$TARGET"
+JQ_ARGS=()
+if [[ -n "${JQ_MODULES_DIR:-}" ]]; then
+    JQ_ARGS+=("-L" "${JQ_MODULES_DIR}")
+fi
+
+$JQ_BIN "${JQ_ARGS[@]}" "${FILTER}" "${@}" < "$TARGET"

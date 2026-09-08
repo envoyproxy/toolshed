@@ -58,7 +58,9 @@ def jqcat(
         name = "jqcat",
         flag = "target",
         jq_toolchain = "@jq_toolchains//:resolved_toolchain",
-        jq_script = "@envoy_toolshed//:jq.sh"):
+        jq_script = "@envoy_toolshed//:jq.sh",
+        data = [],
+        env = {}):
     """
     Register the tool like so
 
@@ -79,6 +81,20 @@ def jqcat(
     `name` and `flag` are optional and default to `jqcat` and `target`
 
     Additional args are passed to `jq`.
+
+    To import `envoy_toolshed_jq` modules (eg with `-L`), set `JQ_MODULES_DIR`
+    in `env` to the directory containing them, and add the modules to `data`
+    so they are present at runtime, eg:
+
+    ```starlark
+
+    jqcat(
+        name = "myjqcat",
+        data = ["@envoy_toolshed_jq//:modules"],
+        env = {"JQ_MODULES_DIR": "external/envoy_toolshed_jq+"},
+    )
+
+    ```
 
     """
 
@@ -101,11 +117,11 @@ def jqcat(
         data = [
             ":%s" % flag,
             jq_toolchain,
-        ],
+        ] + data,
         args = ["$(location :%s)" % flag],
-        env = {
+        env = dict({
             "JQ_BIN": "$(JQ_BIN)",
-        },
+        }, **env),
         toolchains = [jq_toolchain],
     )
 

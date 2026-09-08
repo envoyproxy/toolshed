@@ -57,15 +57,16 @@ def parse_line:
       $state
     end;
 
-[., inputs]
-| join("\n")
-| split("\n")
-| reduce .[] as $line (
-  {diagnostics: [], current: null, context: []};
-  . + {line: $line} | parse_line
-)
-| if .current then
-    .diagnostics + [.current + {context_lines: .context}]
-  else
-    .diagnostics
-  end
+def parse:
+  [., inputs]
+  | join("\n")
+  | split("\n")
+  | reduce .[] as $line (
+    {diagnostics: [], current: null, context: []};
+    . + {line: $line} | parse_line
+  )
+  | if .current then
+      .diagnostics + [.current + {context_lines: .context}]
+    else
+      .diagnostics
+    end;

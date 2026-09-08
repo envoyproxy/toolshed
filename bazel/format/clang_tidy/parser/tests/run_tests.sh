@@ -11,30 +11,11 @@ if [ -n "${TEST_SRCDIR:-}" ]; then
         TOOLS_RUNFILES_DIR="${TEST_SRCDIR}/_main"
     fi
     SCRIPT_DIR="${TOOLS_RUNFILES_DIR}/format/clang_tidy/parser/tests"
-    PARSER="${TOOLS_RUNFILES_DIR}/format/clang_tidy/parser/parse_clang_tidy.jq"
+    PARSER_SH="${TOOLS_RUNFILES_DIR}/format/clang_tidy/parser/parse_clang_tidy.sh"
 else
     # Running directly
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    PARSER="${SCRIPT_DIR}/../parse_clang_tidy.jq"
-fi
-
-if [[ -n "${JQ_BIN:-}" && "${JQ_BIN}" != /* ]]; then
-    f=bazel_tools/tools/bash/runfiles/runfiles.bash
-    if [[ -z "${RUNFILES_DIR:-}" && -n "${TEST_SRCDIR:-}" ]]; then
-        RUNFILES_DIR="${TEST_SRCDIR}"
-    fi
-    runfiles_bash_path="${RUNFILES_DIR:-/dev/null}/$f"
-    # shellcheck disable=SC1090
-    source "${runfiles_bash_path}" 2>/dev/null || \
-        source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2 -d' ')" 2>/dev/null || \
-        { echo >&2 "ERROR: cannot find runfiles.bash"; exit 1; }
-    JQ_BIN="$(rlocation "${JQ_BIN}")"
-fi
-JQ="${JQ_BIN:-jq}"
-
-if ! command -v "$JQ" &> /dev/null; then
-    echo "jq binary not found: ${JQ}" >&2
-    exit 1
+    PARSER_SH="${SCRIPT_DIR}/../parse_clang_tidy.sh"
 fi
 
 run_test() {
@@ -45,7 +26,7 @@ run_test() {
     echo "Running test: ${test_name}"
     local actual_output
     actual_output=$(mktemp)
-    if ! ${JQ} -Rf "${PARSER}" < "${input_file}" > "${actual_output}" 2>&1; then
+    if ! "${PARSER_SH}" < "${input_file}" > "${actual_output}" 2>&1; then
         echo "✗ Test FAILED: Parser error"
         cat "${actual_output}"
         rm -f "${actual_output}"

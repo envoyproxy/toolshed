@@ -207,3 +207,6 @@ bazel/repo.bazelrc
 docker/build/oci-output/
 
 bazel/bazel-*
+
+jq/bazel-*
+jq/MODULE.bazel.lock

@@ -3,7 +3,6 @@ load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 exports_files([
-    "parse_clang_tidy.jq",
     "parse_clang_tidy.sh",
 ])
 
@@ -11,12 +10,14 @@ sh_binary(
     name = "parse_clang_tidy",
     srcs = ["parse_clang_tidy.sh"],
     data = [
-        "parse_clang_tidy.jq",
+        "@envoy_toolshed_jq//:modules",
+        "@envoy_toolshed_jq//:modules_root.marker",
         "@jq_toolchains//:resolved_toolchain",
     ],
     deps = ["@bazel_tools//tools/bash/runfiles"],
     env = {
         "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
+        "JQ_MODULES_ROOT_MARKER": "$(rlocationpath @envoy_toolshed_jq//:modules_root.marker)",
     },
     visibility = ["//visibility:public"],
 )
@@ -26,8 +27,9 @@ sh_test(
     size = "small",
     srcs = ["tests/run_tests.sh"],
     data = [
-        "parse_clang_tidy.jq",
         "parse_clang_tidy.sh",
+        "@envoy_toolshed_jq//:modules",
+        "@envoy_toolshed_jq//:modules_root.marker",
         "@jq_toolchains//:resolved_toolchain",
     ] + glob([
         "tests/*.txt",
@@ -36,5 +38,6 @@ sh_test(
     deps = ["@bazel_tools//tools/bash/runfiles"],
     env = {
         "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
+        "JQ_MODULES_ROOT_MARKER": "$(rlocationpath @envoy_toolshed_jq//:modules_root.marker)",
     },
 )

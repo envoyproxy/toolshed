@@ -1,0 +1,21 @@
+name: clang/tidy::parse handles a single error diagnostic
+
+raw: true
+
+module: clang/tidy::parse
+
+input: |
+  file.cpp:1:1: error: expected ';' after expression [clang-diagnostic-error]
+    return 0
+    ^
+
+expected:
+- file: file.cpp
+  line: 1
+  column: 1
+  severity: error
+  message: expected ';' after expression
+  check: clang-diagnostic-error
+  context_lines:
+  - "  return 0"
+  - "  ^"
