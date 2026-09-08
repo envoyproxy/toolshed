@@ -3,30 +3,12 @@
 def _pgp_public_key_impl(ctx):
     src = ctx.file.src
     out = ctx.actions.declare_file(src.basename)
-    ctx.actions.run_shell(
+    ctx.actions.run(
+        executable = ctx.executable._validator,
         inputs = [src],
         outputs = [out],
         arguments = [src.path, out.path],
-        command = """\
-set -eu
-src="$1"
-out="$2"
-
-if ! grep -Fq -- '-----BEGIN PGP PUBLIC KEY BLOCK-----' "$src" \
-    || ! grep -Fq -- '-----END PGP PUBLIC KEY BLOCK-----' "$src"; then
-    echo "refusing non-public OpenPGP key: missing public key block" >&2
-    exit 1
-fi
-if grep -Fq -- 'PRIVATE KEY' "$src"; then
-    echo "refusing OpenPGP key containing PRIVATE KEY material" >&2
-    exit 1
-fi
-if [[ "$(grep -Fc -- '-----BEGIN PGP' "$src")" -ne 1 ]]; then
-    echo "refusing OpenPGP key containing multiple PGP blocks" >&2
-    exit 1
-fi
-cp "$src" "$out"
-""",
+        tools = [ctx.executable._validator],
         mnemonic = "OpenPGPPublicKey",
         progress_message = "Validating OpenPGP public key %s" % src.short_path,
     )
@@ -40,6 +22,11 @@ pgp_public_key = rule(
             doc = "ASCII-armored public key file.",
             mandatory = True,
             allow_single_file = True,
+        ),
+        "_validator": attr.label(
+            default = "//pgp/private:public_key_validator",
+            executable = True,
+            cfg = "exec",
         ),
     },
 )

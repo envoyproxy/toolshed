@@ -194,11 +194,17 @@ sh_test(
     srcs = ["public_key_test.sh"],
     data = [
         ":example_public_key",
+        "//pgp/private:public_key_validator",
         "@sq//:sq",
+        "fixtures/not-a-key.txt",
+        "fixtures/secret-key.asc",
     ],
     env = {
+        "NOT_A_KEY": "$(rootpath fixtures/not-a-key.txt)",
         "PUBLIC_KEY": "$(rootpath :example_public_key)",
+        "SECRET_KEY": "$(rootpath fixtures/secret-key.asc)",
         "SQ": "$(rootpath @sq//:sq)",
+        "VALIDATOR": "$(rootpath //pgp/private:public_key_validator)",
     },
 )
 
