@@ -82,9 +82,36 @@ No key path configured for //:signed_tarball.
 | `pgp_sign_cleartext(name, src, out)` | Cleartext signature - what `debsign` produces for `.changes`/`.dsc`, and what an apt `InRelease` is |
 | `pgp_sign_checksums(name, srcs, algorithm, out)` | `shasum`-format checksums file for `srcs`, cleartext signed. Checksum generation is a separate, cacheable action - only signing handles secrets |
 | `pgp_sign_changes_file(name, changes, out)` | Cleartext sign a Debian `.changes`/`.dsc` file itself. **Not** a full `debsign`: it does not sign referenced `.dsc`/`.buildinfo` files or rewrite their checksums - see the `TODO` on the rule |
+| `pgp_sign_changes_split(name, changes, distros)` | Rewrite the `Distribution:` header for each distro, then cleartext sign each copy. The split actions are cacheable; signing targets are `manual` by default |
+| `changes_from_tarball(name, tarball, package, out, prefix)` | Extract one `<package>_*.changes` from a package tarball; cacheable. Feed into `pgp_sign_changes_split` |
+| `pgp_public_key(name, src)` | Validate and re-emit one ASCII-armored public key, rejecting private material and multiple PGP blocks |
 | `pgp_toolchain(name, signer)` | Register a signer implementation for `//pgp:toolchain_type` |
 
 RPM header signing is **not** implemented here.
+
+Extract a `.changes` file from a package tarball and split/sign it per distro:
+
+```starlark
+changes_from_tarball(
+    name = "extracted",
+    tarball = ":packages_tar",
+    package = "envoy",
+    prefix = "deb",
+    out = "envoy.changes",
+)
+pgp_sign_changes_split(name = "signed", changes = ":extracted", distros = ["jammy", "noble"])
+```
+
+To choose among committed public keys, use a constrained `string_flag` and
+`select`, then validate the selected key:
+
+```starlark
+string_flag(name = "signing_key", build_setting_default = "maintainers", values = ["maintainers", "test"])
+config_setting(name = "test_key", flag_values = {":signing_key": "test"})
+pgp_public_key(name = "public_key", src = select({":test_key": ":test.asc", "//conditions:default": ":maintainers.asc"}))
+```
+
+Do **not** use a `label_flag`: it lets arbitrary files enter the graph.
 
 > TODO(pgp): RPM header signing needs an OpenPGP implementation that can
 > insert a signature into the RPM header rather than produce a standalone
@@ -193,7 +220,7 @@ For live use, either capture JSON yourself:
 ```console
 $ bazel aquery --output=jsonproto "deps(//distribution:signed)" > aquery.json
 $ bazel run @envoy_toolshed//pgp/audit:audit -- \
-      --forbid "$(cat /run/user/1000/gpg/passphrase)" \
+      --forbid-file /run/user/1000/gpg/passphrase \
       --aquery-json "$PWD/aquery.json"
 ```
 
@@ -201,13 +228,15 @@ or let the runnable audit target invoke `bazel aquery` first:
 
 ```console
 $ bazel run @envoy_toolshed//pgp/audit:audit -- \
-      --forbid "$(cat /run/user/1000/gpg/passphrase)" \
+      --forbid-file /run/user/1000/gpg/passphrase \
       --@envoy_toolshed//pgp:key_path=/run/user/1000/gpg/signing-key.asc#sha256=... \
       --@envoy_toolshed//pgp:passphrase_path=/run/user/1000/gpg/passphrase \
       "deps(//distribution:signed)"
 ```
 
-Any option other than `--forbid`/`--aquery-json` is passed through to
+`--forbid-file` reads its file, stripping one trailing newline, without
+printing its contents; a hit identifies the source file. Any option other than
+`--forbid`, `--forbid-file` or `--aquery-json` is passed through to
 `bazel aquery`, so the targets can be audited in the configuration they are
 actually built in.
 
