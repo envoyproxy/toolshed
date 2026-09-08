@@ -24,7 +24,7 @@ describe('build_filter', () => {
   describe('basic filter without filter_fun', () => {
     it('should build filter with imports and no temp file on non-Windows', () => {
       const filter = '. | select(.status == "active")'
-      const expected_filter = `import "args" as args; import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${filter}`
+      const expected_filter = `import "args" as args; import "bash" as bash; import "github/gfm" as gfm; import "github/actions" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${filter}`
 
       mock_os.platform.mockReturnValue('linux')
 
@@ -37,7 +37,7 @@ describe('build_filter', () => {
 
     it('should build filter with imports on macOS', () => {
       const filter = '.name'
-      const expected_filter = `import "args" as args; import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${filter}`
+      const expected_filter = `import "args" as args; import "bash" as bash; import "github/gfm" as gfm; import "github/actions" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${filter}`
 
       mock_os.platform.mockReturnValue('darwin')
 
@@ -92,7 +92,7 @@ describe('build_filter', () => {
     it('should write mangled filter to temp file', () => {
       const filter = '.test'
       const tmp_file_name = '/tmp/filter-789.jq'
-      const expected_filter = `import "args" as args; import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${filter}`
+      const expected_filter = `import "args" as args; import "bash" as bash; import "github/gfm" as gfm; import "github/actions" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${filter}`
       const mock_tmp_file = {
         name: tmp_file_name,
         removeCallback: jest.fn(),
@@ -129,7 +129,7 @@ describe('build_filter', () => {
       expect(mock_fs.writeFileSync).toHaveBeenCalledWith(fun_path, filter_fun)
       expect(result.filter_fun_arg).toBe(`-L ${tmp_dir_name}`)
       expect(result.temp_handles.tmp_dir_fun).toBe(mock_tmp_dir)
-      const expected_filter = `import "fun" as fun; import "args" as args; import "bash" as bash; import "gfm" as gfm; import "github" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${filter}`
+      const expected_filter = `import "fun" as fun; import "args" as args; import "bash" as bash; import "github/gfm" as gfm; import "github/actions" as github; import "str" as str; import "utils" as utils; import "validate" as validate; ${filter}`
       expect(result.filter_arg).toBe(`'${expected_filter}'`)
     })
 
@@ -192,8 +192,8 @@ describe('build_filter', () => {
       // Check that filter_arg contains all expected imports
       expect(result.filter_arg).toContain('import "args" as args')
       expect(result.filter_arg).toContain('import "bash" as bash')
-      expect(result.filter_arg).toContain('import "gfm" as gfm')
-      expect(result.filter_arg).toContain('import "github" as github')
+      expect(result.filter_arg).toContain('import "github/gfm" as gfm')
+      expect(result.filter_arg).toContain('import "github/actions" as github')
       expect(result.filter_arg).toContain('import "str" as str')
       expect(result.filter_arg).toContain('import "utils" as utils')
       expect(result.filter_arg).toContain('import "validate" as validate')

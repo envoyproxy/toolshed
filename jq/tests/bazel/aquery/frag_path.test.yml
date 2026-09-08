@@ -1,0 +1,22 @@
+name: bazel/aquery::frag_path builds nested fragment path from parentId chain
+
+module: bazel/aquery::frag_path($frags)
+
+before: |
+  .id as $id
+  | .frags as $frags
+  | $id
+
+input:
+  id: 3
+  frags:
+    "1":
+      label: "root"
+    "2":
+      label: "pkg"
+      parentId: 1
+    "3":
+      label: "file.txt"
+      parentId: 2
+
+expected: "root/pkg/file.txt"

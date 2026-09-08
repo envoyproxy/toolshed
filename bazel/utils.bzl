@@ -58,7 +58,9 @@ def jqcat(
         name = "jqcat",
         flag = "target",
         jq_toolchain = "@jq_toolchains//:resolved_toolchain",
-        jq_script = "@envoy_toolshed//:jq.sh"):
+        jq_script = "@envoy_toolshed//:jq.sh",
+        data = [],
+        env = {}):
     """
     Register the tool like so
 
@@ -79,6 +81,22 @@ def jqcat(
     `name` and `flag` are optional and default to `jqcat` and `target`
 
     Additional args are passed to `jq`.
+
+    To import `envoy_toolshed_jq` modules (eg with `-L`), add the module's
+    marker file and modules to `data`, and set `JQ_MODULES_ROOT_MARKER` in
+    `env` to its `$(rlocationpath ...)`, so the search directory can be
+    derived at runtime without depending on the (registry- vs
+    `local_path_override`-dependent) canonical repo name, eg:
+
+    ```starlark
+
+    jqcat(
+        name = "myjqcat",
+        data = ["@envoy_toolshed_jq//:modules", "@envoy_toolshed_jq//:modules_root.marker"],
+        env = {"JQ_MODULES_ROOT_MARKER": "$(rlocationpath @envoy_toolshed_jq//:modules_root.marker)"},
+    )
+
+    ```
 
     """
 
@@ -101,11 +119,12 @@ def jqcat(
         data = [
             ":%s" % flag,
             jq_toolchain,
-        ],
+        ] + data,
         args = ["$(location :%s)" % flag],
-        env = {
+        env = dict({
             "JQ_BIN": "$(JQ_BIN)",
-        },
+        }, **env),
+        deps = ["@bazel_tools//tools/bash/runfiles"],
         toolchains = [jq_toolchain],
     )
 

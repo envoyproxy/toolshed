@@ -2,6 +2,6 @@ name: gfm::blockquote adds prefix to multiple lines
 
 input: "hello\nworld\ntest"
 
-module: gfm::blockquote
+module: github/gfm::blockquote
 
 expected: "> hello\n> world\n> test"

@@ -2,21 +2,40 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PARSER="${SCRIPT_DIR}/parse_clang_tidy.jq"
 
-if [[ -n "${JQ_BIN:-}" && "${JQ_BIN}" != /* ]]; then
-    f=bazel_tools/tools/bash/runfiles/runfiles.bash
-    if [[ -z "${RUNFILES_DIR:-}" && -n "${TEST_SRCDIR:-}" ]]; then
-        RUNFILES_DIR="${TEST_SRCDIR}"
+_resolve_runfile () {
+    local value="$1"
+    if [[ -n "${value}" && "${value}" != /* ]]; then
+        local f=bazel_tools/tools/bash/runfiles/runfiles.bash
+        if [[ -z "${RUNFILES_DIR:-}" && -n "${TEST_SRCDIR:-}" ]]; then
+            RUNFILES_DIR="${TEST_SRCDIR}"
+        fi
+        local runfiles_bash_path="${RUNFILES_DIR:-/dev/null}/$f"
+        # shellcheck disable=SC1090
+        source "${runfiles_bash_path}" 2>/dev/null || \
+            source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2 -d' ')" 2>/dev/null || \
+            { echo >&2 "ERROR: cannot find runfiles.bash"; exit 1; }
+        rlocation "${value}"
+    else
+        printf '%s\n' "${value}"
     fi
-    runfiles_bash_path="${RUNFILES_DIR:-/dev/null}/$f"
-    # shellcheck disable=SC1090
-    source "${runfiles_bash_path}" 2>/dev/null || \
-        source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2 -d' ')" 2>/dev/null || \
-        { echo >&2 "ERROR: cannot find runfiles.bash"; exit 1; }
-    JQ_BIN="$(rlocation "${JQ_BIN}")"
+}
+
+if [[ -n "${JQ_BIN:-}" ]]; then
+    JQ_BIN="$(_resolve_runfile "${JQ_BIN}")"
 fi
 JQ="${JQ_BIN:-jq}"
+
+# JQ_MODULES_ROOT_MARKER (set eg via Bazel to
+# `$(rlocationpath @envoy_toolshed_jq//:modules_root.marker)`) locates the
+# `envoy_toolshed_jq` modules directory so `clang/tidy` can be imported.
+# Outside Bazel, it defaults to the `jq/` directory at the repo root.
+if [[ -n "${JQ_MODULES_ROOT_MARKER:-}" ]]; then
+    MODULES_ROOT="$(dirname "$(_resolve_runfile "${JQ_MODULES_ROOT_MARKER}")")"
+else
+    MODULES_ROOT="$(cd "${SCRIPT_DIR}/../../../../jq" && pwd)"
+fi
+PARSER='import "clang/tidy" as tidy; tidy::parse'
 
 if ! command -v "$JQ" &> /dev/null; then
     echo "jq binary not found: ${JQ}" >&2
@@ -70,13 +89,14 @@ if [ "${COMPACT}" = true ]; then
 fi
 
 if [ $# -eq 0 ]; then
-    ${JQ} ${COMPACT_FLAG} -Rf "${PARSER}" | ${JQ} ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
+    ${JQ} ${COMPACT_FLAG} -R -L "${MODULES_ROOT}" "${PARSER}" | ${JQ} ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
 else
     for file in "$@"; do
         if [ ! -f "${file}" ]; then
             echo "ERROR: File not found: ${file}" >&2
             exit 1
         fi
-        ${JQ} ${COMPACT_FLAG} -Rf "${PARSER}" < "${file}" | ${JQ} ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
+        ${JQ} ${COMPACT_FLAG} -R -L "${MODULES_ROOT}" "${PARSER}" < "${file}" | ${JQ} ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
     done
 fi
+

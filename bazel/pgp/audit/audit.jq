@@ -1,12 +1,12 @@
-include "lib";
+import "bazel/aquery" as aquery;
 
 (INDEX(.targets[]?; .id | tostring)) as $targets
 | (INDEX(.pathFragments[]?; .id | tostring)) as $frags
 | (INDEX(.depSetOfFiles[]?; .id | tostring)) as $depsets
 | (INDEX(.artifacts[]?; .id | tostring)) as $arts
 | (INDEX(.configuration[]?; .id | tostring)) as $configs
-| signing_actions($mnemonic) as $actions
-| tool_artifact_ids(.actions; $configs; $depsets) as $tool_ids
+| aquery::signing_actions($mnemonic) as $actions
+| aquery::tool_artifact_ids(.actions; $configs; $depsets) as $tool_ids
 | def target($action):
       (($targets[($action.targetId | tostring)] // {}).label // ($action.targetId // $action.mnemonic | tostring));
   def failure($check; $action; $detail):
@@ -21,7 +21,7 @@ include "lib";
         | failure(1; $action; "missing execution requirement `" + $req + "`")
       ] + [
         $actions[] as $action
-        | ($action | action_input_paths($depsets; $arts; $frags)
+        | ($action | aquery::action_input_paths($depsets; $arts; $frags)
            | map(select(test($forbidden_inputs_re; "i")))
            | unique) as $bad
         | select($bad | length > 0)
@@ -40,7 +40,7 @@ include "lib";
       ] + [
         $actions[] as $action
         | ($action.arguments[-1]) as $expected_src
-        | ($action | non_tool_input_paths($depsets; $arts; $frags; $tool_ids) | unique) as $non_tool_inputs
+        | ($action | aquery::non_tool_input_paths($depsets; $arts; $frags; $tool_ids) | unique) as $non_tool_inputs
         | select($non_tool_inputs != [$expected_src])
         | failure(5; $action; "expected non-tool inputs [" + $expected_src + "], got [" + ($non_tool_inputs | join(", ")) + "]")
       ])

@@ -274,12 +274,31 @@ jobs:
         exclude-patterns: |
           .git*
           bazel/bazel-*
+    - name: Create jq source tarball
+      id: jq-source-tarball
+      if: >-
+        inputs.action == 'build'
+        && inputs.bazel-path == 'bazel'
+        && inputs.upload
+        && inputs.create-source
+      uses: envoyproxy/toolshed/actions/source@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
+      with:
+        output-name: toolshed-jq-v{version}.tar.gz
+        source-path: jq/
+        transform: s,^jq,toolshed-jq-v{version},
+        version-file: bazel/VERSION.txt
+        exclude-patterns: |
+          .git*
+          jq/bazel-*
+          jq/MODULE.bazel.lock
     - name: Bazel source
-      if: ${{ steps.source-tarball.outputs.tarball }}
+      if: ${{ steps.source-tarball.outputs.tarball || steps.jq-source-tarball.outputs.tarball }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: bazel-source
-        path: ${{ steps.source-tarball.outputs.tarball }}
+        path: |
+          ${{ steps.source-tarball.outputs.tarball }}
+          ${{ steps.jq-source-tarball.outputs.tarball }}
         retention-days: 30
     - name: Bazel artifact paths
       id: artifact-paths
