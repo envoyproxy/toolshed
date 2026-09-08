@@ -140,6 +140,12 @@ cmake(
     working_directory = "runtimes",
 )
 
+filegroup(
+    name = "libcxx_msan_headers",
+    srcs = [":libcxx_msan"],
+    output_group = "include",
+)
+
 pkg_files(
     name = "msan_libs_files",
     srcs = [":libcxx_msan"],
@@ -148,10 +154,7 @@ pkg_files(
         ":macos_build": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
-    excludes = [
-        "**/*.h",
-        "**/include/**",
-    ],
+    excludes = [":libcxx_msan_headers"],
     prefix = "msan-libs-x86_64/lib",
     strip_prefix = ".",
 )
@@ -168,6 +171,12 @@ pkg_tar(
     package_file_name = "msan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"],
 )
 
+filegroup(
+    name = "libcxx_tsan_headers",
+    srcs = [":libcxx_tsan"],
+    output_group = "include",
+)
+
 pkg_files(
     name = "tsan_libs_files",
     target_compatible_with = select({
@@ -176,10 +185,7 @@ pkg_files(
         "//conditions:default": [],
     }),
     srcs = [":libcxx_tsan"],
-    excludes = [
-        "**/*.h",
-        "**/include/**",
-    ],
+    excludes = [":libcxx_tsan_headers"],
     prefix = "tsan-libs-x86_64/lib",
     strip_prefix = ".",
 )
