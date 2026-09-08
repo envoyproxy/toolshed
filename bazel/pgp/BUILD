@@ -17,6 +17,8 @@ bzl_library(
     srcs = [
         "defs.bzl",
         "toolchain.bzl",
+        "//pgp/private:changes.bzl",
+        "//pgp/private:public_key.bzl",
         "//pgp/private:sign.bzl",
         "//pgp/private:sq.bzl",
         "//pgp/private:sq_package.bzl",

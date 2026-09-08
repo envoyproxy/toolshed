@@ -20,13 +20,21 @@ $ bazel build //:sign_tarball \\
 ```
 """
 
+load("//pgp:toolchain.bzl", _PgpSignerInfo = "PgpSignerInfo", _pgp_toolchain = "pgp_toolchain")
+load(
+    "//pgp/private:changes.bzl",
+    _changes_from_tarball = "changes_from_tarball",
+    _pgp_changes_split = "pgp_changes_split",
+)
+load("//pgp/private:public_key.bzl", _pgp_public_key = "pgp_public_key")
 load("//pgp/private:sign.bzl", _pgp_checksums = "pgp_checksums", _pgp_sign = "pgp_sign")
 load("//pgp/private:sq.bzl", _sq_signer = "sq_signer")
-load("//pgp:toolchain.bzl", _PgpSignerInfo = "PgpSignerInfo", _pgp_toolchain = "pgp_toolchain")
 
 PgpSignerInfo = _PgpSignerInfo
+changes_from_tarball = _changes_from_tarball
 pgp_sign = _pgp_sign
 pgp_checksums = _pgp_checksums
+pgp_public_key = _pgp_public_key
 pgp_toolchain = _pgp_toolchain
 sq_signer = _sq_signer
 
@@ -133,6 +141,34 @@ def pgp_sign_changes_file(name, changes, out = None, **kwargs):
         out = out or "%s/%s" % (name, _basename(changes)),
         **kwargs
     )
+
+def pgp_sign_changes_split(name, changes, distros, **kwargs):
+    """Split a Debian `.changes` file by distro and cleartext sign each copy.
+
+    Returns:
+        A list of `(label, distro)` tuples for the signed files.
+    """
+    sign_kwargs = dict(kwargs)
+    sign_kwargs.setdefault("tags", ["manual"])
+    outputs = []
+    for distro in distros:
+        split_name = "%s-%s-split" % (name, distro)
+        sign_name = "%s-%s" % (name, distro)
+        _pgp_changes_split(
+            name = split_name,
+            src = changes,
+            distro = distro,
+            out = "%s.%s.changes" % (name, distro),
+            tags = kwargs.get("tags"),
+            visibility = kwargs.get("visibility"),
+        )
+        pgp_sign_changes_file(
+            name = sign_name,
+            changes = ":%s" % split_name,
+            **sign_kwargs
+        )
+        outputs.append((":%s" % sign_name, distro))
+    return outputs
 
 def _basename(label):
     return str(label).split(":")[-1].split("/")[-1]
