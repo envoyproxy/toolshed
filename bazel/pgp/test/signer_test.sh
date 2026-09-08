@@ -6,18 +6,19 @@
 # is ever committed), signs in each mode, verifies the signatures, and asserts
 # that the signer refuses to use an unencrypted key.
 #
-# Skipped if no `sq` is available on PATH or via SQ.
+# `SQ` must point at a `sq` binary - under Bazel it is the hermetic
+# `@sq//:sq`. The test fails hard if it is missing, it is never skipped.
 
 set -euo pipefail
 
 SQ="${SQ:-}"
-if [[ -z "$SQ" ]]; then
-    SQ="$(command -v sq || true)"
+if [[ -n "$SQ" && "$SQ" != /* ]]; then
+    SQ="${PWD}/${SQ}"
 fi
 
-if [[ -z "$SQ" ]]; then
-    echo "SKIP: no \`sq\` binary found (set SQ to run this test)"
-    exit 0
+if [[ ! -x "$SQ" ]]; then
+    echo "no usable \`sq\` binary: SQ=${SQ:-<unset>}" >&2
+    exit 1
 fi
 
 SIGNER="$(dirname "$0")/../private/signer.sh"

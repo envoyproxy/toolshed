@@ -41,6 +41,7 @@ toolchain_type(
 sq_signer(
     name = "sq_signer",
     sq = "@sq//:sq",
+    visibility = ["//pgp/test:__pkg__"],
 )
 
 pgp_toolchain(
