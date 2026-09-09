@@ -1,0 +1,26 @@
+uses: ./actions/gcs/artefact/sync
+id: sync
+with:
+  bucket: envoy-test-bucket
+  path: artefacts
+  path-upload: docs
+  redirect: latest
+  sha: 0123456789abcdef0123456789abcdef01234567
+  working-directory: /tmp/gcs-sync-test
+
+before:
+- shell: bash
+  run: |
+    mkdir -p /tmp/gcs-sync-test/artefacts
+    echo "<html></html>" > /tmp/gcs-sync-test/artefacts/index.html
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_log_contains \
+        "gs://envoy-test-bucket/0123456/docs" \
+        "Upload destination"
+    test_mock_log_contains \
+        "gs://envoy-test-bucket/latest/docs" \
+        "Redirect destination"

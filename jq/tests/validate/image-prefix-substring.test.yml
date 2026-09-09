@@ -1,0 +1,12 @@
+name: validate::image_prefix rejects an image with an allowed repo in the path
+
+input: "evil.example.com/docker.io/envoyproxy/envoy-build-ubuntu:1.2.3"
+
+imports:
+- validate
+
+expression: >-
+  (try validate::image_prefix(["docker.io/envoyproxy/", "gcr.io/envoy-ci/"])
+   catch "invalid") == "invalid"
+
+expected: true

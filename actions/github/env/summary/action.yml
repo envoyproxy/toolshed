@@ -65,13 +65,13 @@ runs:
     id: linked-title
     with:
       input: |
-        event: "${{ inputs.event-type }}"
+        event: ${{ toJSON(inputs.event-type) }}
         link: ""
         repo: ${{ github.repository }}
-        pr: "${{ inputs.pr }}"
+        pr: ${{ toJSON(inputs.pr) }}
         sha: ${{ inputs.sha }}
         target-branch: ${{ inputs.target-branch }}
-        title: "${{ inputs.title }}"
+        title: ${{ toJSON(inputs.title) }}
       input-format: yaml
       options: -r
       filter: gfm::event_title
@@ -80,18 +80,23 @@ runs:
     id: title
     with:
       input: |
-        event: "${{ inputs.event-type }}"
+        event: ${{ toJSON(inputs.event-type) }}
         link: ${{ inputs.link }}
         repo: ${{ github.repository }}
-        pr: "${{ inputs.pr }}"
+        pr: ${{ toJSON(inputs.pr) }}
         sha: ${{ inputs.sha }}
         target-branch: ${{ inputs.target-branch }}
-        title: "${{ inputs.title }}"
+        title: ${{ toJSON(inputs.title) }}
       options: -r
       input-format: yaml
       filter: gfm::event_title
 
   # This generates a filter from configuration
+  #
+  # NB: the generated filter is jq _program_ text, and is only safe because the
+  # table configuration is maintainer-controlled (it is read from the target
+  # branch). No user data is ever interpolated into a filter - it is passed as
+  # data (`input`/`env`) instead.
   - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
     name: Table filter
     id: table-filter
@@ -121,28 +126,36 @@ runs:
               | select(.value.data | type != "null"))
         | gfm::tables
 
+  # WARNING: `message` (PR title/body) and `actor` are user data. They are
+  # passed to jq as data (`input`/`env`) and are never interpolated into the
+  # filter, where they would be jq program text.
   - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
     id: output
+    env:
+      SUMMARY_ACTOR: ${{ inputs.actor }}
+      SUMMARY_REPO: ${{ github.repository }}
+      SUMMARY_TABLES: ${{ steps.tables.outputs.value }}
     with:
       input: ${{ toJSON(inputs) }}
       options: -r
       filter: |
         . as $inputs
+        | (env.SUMMARY_REPO // "") as $repo
         | .sha as $sha
         | if $inputs.pr != "" then
             .["base-sha"] as $baseSha
             | "![](https://raw.githubusercontent.com/primer/octicons/main/icons/git-pull-request-16.svg)" as $prIcon
-            | "[#\(.pr)](https://github.com/${{ github.repository }}/pull/\(.pr))" as $prLink
-            | "[`merge`](https://github.com/${{ github.repository }}/commit/\(.ref))" as $mergeLink
-            | "[`\(.["target-branch"])@\($baseSha[:7])`](https://github.com/${{ github.repository }}/commit/\($baseSha))" as $commitLink
+            | "[#\(.pr)](https://github.com/\($repo)/pull/\(.pr))" as $prLink
+            | "[`merge`](https://github.com/\($repo)/commit/\(.ref))" as $mergeLink
+            | "[`\(.["target-branch"])@\($baseSha[:7])`](https://github.com/\($repo)/commit/\($baseSha))" as $commitLink
             | "\($prIcon) \($prLink) \($mergeLink) \($commitLink)"
           else
             ""
           end
         | . as $pr
-        | "${{ steps.tables.outputs.value }}" as $tables
-        | ${{ inputs.actor }} as $actor
-        | "[`\($sha[:7])`](https://github.com/${{ github.repository }}/commit/\($sha))" as $commitLink
+        | (env.SUMMARY_TABLES // "") as $tables
+        | (env.SUMMARY_ACTOR | fromjson) as $actor
+        | "[`\($sha[:7])`](https://github.com/\($repo)/commit/\($sha))" as $commitLink
         | $inputs.message as $message
         | if $message != "" then
             ($message | split("\n")[0]) as $title
@@ -162,6 +175,10 @@ runs:
 
   - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
     if: ${{ inputs.output-path }}
+    env:
+      SUMMARY_EVENT_NAME: ${{ inputs.event-name }}
+      SUMMARY_ICON: ${{ inputs.icon }}
+      SUMMARY_LINK: ${{ steps.linked-title.outputs.value }}
     with:
       input: ${{ steps.output.outputs.value }}
       options: -sRr
@@ -169,9 +186,9 @@ runs:
       print-result: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
       filter: |
         . as $summary
-        | "${{ inputs.icon }}" as $icon
-        | "${{ steps.linked-title.outputs.value }}" as $link
-        | "${{ inputs.event-name }}" as $event_name
+        | (env.SUMMARY_ICON // "") as $icon
+        | (env.SUMMARY_LINK // "") as $link
+        | (env.SUMMARY_EVENT_NAME // "") as $event_name
         | "
         ## \($icon) \($event_name) (\($link))
 

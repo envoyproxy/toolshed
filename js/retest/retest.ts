@@ -50,6 +50,7 @@ type PR = {
 type OctokitType = InstanceType<typeof GitHub>
 
 type Env = {
+  args: string[]
   octokit: OctokitType
   token: string
   comment: number
@@ -280,6 +281,19 @@ class AZPRetestCommand extends RetestCommand {
   }
 }
 
+// Args are derived from the body of a `/retest` comment, which anyone can
+// create, so they are validated against a strict allow-list before use.
+const ARG_EXPRESSION = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/
+
+export function parseArgs(args: string): string[] {
+  const parsed = args.split(/\s+/).filter((arg) => arg !== '')
+  const invalid = parsed.filter((arg) => !ARG_EXPRESSION.test(arg))
+  if (invalid.length !== 0) {
+    throw new TypeError(`Invalid \`args\` provided: ${invalid.join(' ')}`)
+  }
+  return parsed
+}
+
 class RetestCommands {
   @cachedProperty
   get env(): Env {
@@ -289,7 +303,7 @@ class RetestCommands {
 
     const pr = core.getInput('pr-url')
     const comment = parseInt(core.getInput('comment-id'))
-    console.log(token)
+    const args = parseArgs(core.getInput('args'))
     const octokit = github.getOctokit(token)
     // Create the octokit client
     const nwo = process.env['GITHUB_REPOSITORY'] || '/'
@@ -304,6 +318,7 @@ class RetestCommands {
     const appOwnerSlug = core.getInput('app-owner')
     const debug = Boolean(process.env.CI_DEBUG && process.env.CI_DEBUG != 'false')
     return {
+      args,
       debug,
       token,
       octokit,

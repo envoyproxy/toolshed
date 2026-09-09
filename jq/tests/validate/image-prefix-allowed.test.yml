@@ -1,0 +1,12 @@
+name: validate::image_prefix accepts an allowed image
+
+input: "docker.io/envoyproxy/envoy-build-ubuntu:1.2.3@sha256:beef"
+
+imports:
+- validate
+
+expression: >-
+  (. | validate::image_prefix(["docker.io/envoyproxy/", "gcr.io/envoy-ci/"]))
+  == "docker.io/envoyproxy/envoy-build-ubuntu:1.2.3@sha256:beef"
+
+expected: true

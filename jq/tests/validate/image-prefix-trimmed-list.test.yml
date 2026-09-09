@@ -1,0 +1,17 @@
+name: validate::image_prefix accepts a whitespace-padded allowed prefix list
+
+input:
+  repos: "  docker.io/envoyproxy/ \n   gcr.io/envoy-ci/   \n"
+  image: "gcr.io/envoy-ci/envoy-build-ubuntu:1.2.3@sha256:beef"
+
+imports:
+- validate
+- str
+
+expression: >-
+  ((.repos | split("\n") | map(str::trim) | map(select(length > 0))) as $repos
+   | .image
+   | validate::image_prefix($repos))
+  == "gcr.io/envoy-ci/envoy-build-ubuntu:1.2.3@sha256:beef"
+
+expected: true
