@@ -1,6 +1,6 @@
 module(
     name = "envoy_toolshed_jq",
-    version = "0.4.15",
+    version = "0.4.16-dev",
     bazel_compatibility = [">=7.2.1"],
 )
 
