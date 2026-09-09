@@ -143,6 +143,15 @@ jobs:
     - name: Register binfmt handlers (host-level, cross-compile only)
       if: runner.os == 'Linux' && inputs.privileged
       run: |
+        # Hosted runner images include third-party apt sources that can
+        # intermittently fail during publish; we only need Ubuntu archive here.
+        sudo rm -f \
+            /etc/apt/sources.list.d/google-chrome*.list \
+            /etc/apt/sources.list.d/google-chrome*.sources \
+            /etc/apt/sources.list.d/microsoft*.list \
+            /etc/apt/sources.list.d/microsoft*.sources \
+            /etc/apt/sources.list.d/azure-cli*.list \
+            /etc/apt/sources.list.d/azure-cli*.sources
         sudo apt-get -qq update
         sudo apt-get -qq install -y --no-install-recommends \
             qemu-user-static binfmt-support
