@@ -1,0 +1,52 @@
+uses: ./actions/gpg/write
+id: write
+with:
+  key: >-
+    %{{ env.GPG_KEY_B64 }}
+  passphrase: >-
+    %{{ env.GPG_PASSWORD }}
+  path: /tmp/test-signing-base64
+
+before:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    NAME="Test User"
+    EMAIL="test@example.com"
+    PASSPHRASE="testpassword123"
+
+    generate_test_key "$NAME" "$EMAIL" "$PASSPHRASE"
+    TEST_KEY=$(export_secret_key "$EMAIL" "$PASSPHRASE")
+    # Encode exactly the bytes compared against in `after:` - the
+    # `$GITHUB_ENV` heredoc strips the trailing newline from ARMORED_KEY,
+    # and the action decodes base64 byte-for-byte without appending one.
+    TEST_KEY_B64=$(printf '%s' "$TEST_KEY" | base64 -w0)
+
+    echo "GPG_KEY_B64=${TEST_KEY_B64}" >> "$GITHUB_ENV"
+    echo "GPG_PASSWORD=${PASSPHRASE}" >> "$GITHUB_ENV"
+    echo "ARMORED_KEY<<EOF" >> "$GITHUB_ENV"
+    echo "$TEST_KEY" >> "$GITHUB_ENV"
+    echo "EOF" >> "$GITHUB_ENV"
+
+    clear_keyring "$EMAIL"
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    SIGNING_PATH='%{{ steps.write.outputs.path }}'
+    KEY_PATH='%{{ steps.write.outputs.key-path }}'
+    KEY_SHA256='%{{ steps.write.outputs.key-sha256 }}'
+    PASSPHRASE_PATH='%{{ steps.write.outputs.passphrase-path }}'
+
+    test_file_exists "$KEY_PATH"
+    test_file_content_equals "$KEY_PATH" "$ARMORED_KEY"
+    test_file_content_equals "$PASSPHRASE_PATH" "testpassword123"
+    test_file_mode "$KEY_PATH" "600"
+    test_file_mode "$PASSPHRASE_PATH" "600"
+    test_file_mode "$SIGNING_PATH" "700"
+    test_sha256_matches "$KEY_PATH" "$KEY_SHA256"
+
+    # Cleanup runs in action post step after this after hook.
