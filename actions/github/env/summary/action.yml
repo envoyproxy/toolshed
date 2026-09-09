@@ -61,7 +61,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     id: linked-title
     with:
       input: |
@@ -76,7 +76,7 @@ runs:
       options: -r
       filter: gfm::event_title
 
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     id: title
     with:
       input: |
@@ -97,7 +97,7 @@ runs:
   # table configuration is maintainer-controlled (it is read from the target
   # branch). No user data is ever interpolated into a filter - it is passed as
   # data (`input`/`env`) instead.
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     name: Table filter
     id: table-filter
     with:
@@ -108,7 +108,7 @@ runs:
       filter: |
         with_entries({key: .key, value: .value.filter})
         | utils::filters
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     name: Tables
     id: tables
     with:
@@ -129,7 +129,7 @@ runs:
   # WARNING: `message` (PR title/body) and `actor` are user data. They are
   # passed to jq as data (`input`/`env`) and are never interpolated into the
   # filter, where they would be jq program text.
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     id: output
     env:
       SUMMARY_ACTOR: ${{ inputs.actor }}
@@ -173,7 +173,7 @@ runs:
         "
         | str::indent($inputs.indent // "0" | fromjson)
 
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     if: ${{ inputs.output-path }}
     env:
       SUMMARY_EVENT_NAME: ${{ inputs.event-name }}
