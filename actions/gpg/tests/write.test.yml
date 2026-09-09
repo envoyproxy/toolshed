@@ -1,0 +1,55 @@
+uses: ./actions/gpg/write
+id: write
+with:
+  key: >-
+    %{{ env.GPG_KEY }}
+  passphrase: >-
+    %{{ env.GPG_PASSWORD }}
+  path: /tmp/test-signing
+
+before:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    NAME="Test User"
+    EMAIL="test@example.com"
+    PASSPHRASE="testpassword123"
+
+    generate_test_key "$NAME" "$EMAIL" "$PASSPHRASE"
+    TEST_KEY=$(export_secret_key "$EMAIL" "$PASSPHRASE")
+
+    echo "GPG_KEY<<EOF" >> "$GITHUB_ENV"
+    echo "$TEST_KEY" >> "$GITHUB_ENV"
+    echo "EOF" >> "$GITHUB_ENV"
+    echo "GPG_PASSWORD=${PASSPHRASE}" >> "$GITHUB_ENV"
+
+    clear_keyring "$EMAIL"
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    SIGNING_PATH='%{{ steps.write.outputs.path }}'
+    KEY_PATH='%{{ steps.write.outputs.key-path }}'
+    KEY_SHA256='%{{ steps.write.outputs.key-sha256 }}'
+    KEY_PATH_FRAGMENT='%{{ steps.write.outputs.key-path-fragment }}'
+    PASSPHRASE_PATH='%{{ steps.write.outputs.passphrase-path }}'
+
+    test_file_exists "$KEY_PATH"
+    test_file_exists "$PASSPHRASE_PATH"
+    test_file_content_equals "$PASSPHRASE_PATH" "testpassword123"
+    test_file_mode "$KEY_PATH" "600"
+    test_file_mode "$PASSPHRASE_PATH" "600"
+    test_file_mode "$SIGNING_PATH" "700"
+    test_sha256_matches "$KEY_PATH" "$KEY_SHA256"
+    test_value_equals "$KEY_PATH_FRAGMENT" "$KEY_PATH#sha256=$KEY_SHA256" "key-path-fragment"
+
+    if grep -q -- '-----BEGIN PGP PRIVATE KEY BLOCK-----' "$KEY_PATH"; then
+        echo "success:Key contains private key block header" >> "$TEST_OUTPUT"
+    else
+        echo "fail:Key missing private key block header" >> "$TEST_OUTPUT"
+    fi
+
+    # Cleanup runs in action post step after this after hook.

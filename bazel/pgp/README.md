@@ -71,7 +71,7 @@ Without the flags the build fails at analysis time:
 No key path configured for //:signed_tarball.
 ```
 
-**CI wiring recommendation:** A setup step writes the encrypted key and passphrase to `${runner.temp}/gpg/`, `chmod 600`, computes the key digest, and passes both flags to bazel; no `~/.gnupg`, no agent, no `HOME` mount required.
+**CI wiring recommendation:** A setup step writes the encrypted key and passphrase to `${runner.temp}/gpg/`, `chmod 600`, computes the key digest, and passes both flags to bazel; no `~/.gnupg`, no agent, no `HOME` mount required. Recommended: `envoyproxy/toolshed/actions/gpg/write` to stage and automatically clean up this key material.
 
 ### Rules
 

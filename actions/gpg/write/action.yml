@@ -1,0 +1,116 @@
+name: Write GPG key material
+description: >-
+  Write a passphrase-encrypted OpenPGP secret key and passphrase to host files,
+  then remove them in a post step.
+
+inputs:
+  key:
+    description: ASCII-armored or base64-encoded secret key.
+    type: string
+    required: true
+  passphrase:
+    description: Key passphrase.
+    type: string
+    required: true
+  path:
+    description: Directory to write key material into.
+    type: string
+    default: ${{ runner.temp }}/signing
+  key-filename:
+    description: Filename for the secret key.
+    type: string
+    default: signing-key.asc
+  passphrase-filename:
+    description: Filename for the passphrase.
+    type: string
+    default: passphrase
+  require-armored:
+    description: Require an armored private key block after decoding.
+    type: boolean
+    default: true
+
+outputs:
+  path:
+    description: Directory containing key material.
+    value: ${{ steps.write.outputs.path }}
+  key-path:
+    description: Host path to the key file.
+    value: ${{ steps.write.outputs.key-path }}
+  key-sha256:
+    description: sha256 hex digest of the key file.
+    value: ${{ steps.write.outputs.key-sha256 }}
+  key-path-fragment:
+    description: '<key-path>#sha256=<digest>'
+    value: ${{ steps.write.outputs.key-path-fragment }}
+  passphrase-path:
+    description: Host path to the passphrase file.
+    value: ${{ steps.write.outputs.passphrase-path }}
+
+runs:
+  using: composite
+  steps:
+  - id: write
+    uses: envoyproxy/toolshed/actions/github/script/run@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    env:
+      KEY: ${{ inputs.key }}
+      PASSPHRASE: ${{ inputs.passphrase }}
+      SIGNING_PATH: ${{ inputs.path }}
+      KEY_PATH: ${{ inputs.path }}/${{ inputs.key-filename }}
+      PASSPHRASE_PATH: ${{ inputs.path }}/${{ inputs.passphrase-filename }}
+      REQUIRE_ARMORED: ${{ inputs.require-armored }}
+    with:
+      run: |
+        set -euo pipefail
+        umask 077
+
+        if [[ -z "$KEY" ]]; then
+            echo "::error::gpg/write: key input is required" >&2
+            exit 1
+        fi
+
+        if [[ -z "$PASSPHRASE" ]]; then
+            echo "::error::gpg/write: passphrase input is required" >&2
+            exit 1
+        fi
+
+        mkdir -p -m 700 "$SIGNING_PATH"
+
+        if [[ "$KEY" == *"-----BEGIN PGP"* ]]; then
+            printf '%s\n' "$KEY" > "$KEY_PATH"
+        elif ! printf '%s' "$KEY" | base64 -d > "$KEY_PATH" 2>/dev/null; then
+            rm -f "$KEY_PATH"
+            echo "::error::gpg/write: key is neither ASCII-armored nor valid base64" >&2
+            exit 1
+        fi
+
+        if [[ "$REQUIRE_ARMORED" == "true" ]]; then
+            if ! grep -q -- '-----BEGIN PGP PRIVATE KEY BLOCK-----' "$KEY_PATH"; then
+                rm -f "$KEY_PATH"
+                echo "::error::gpg/write: decoded key is not an armored private key" >&2
+                exit 1
+            fi
+        fi
+
+        printf '%s' "$PASSPHRASE" > "$PASSPHRASE_PATH"
+
+        chmod 600 "$KEY_PATH" "$PASSPHRASE_PATH"
+
+        KEY_SHA256=$(sha256sum "$KEY_PATH" | awk '{print $1}')
+
+        {
+            echo "path=$SIGNING_PATH"
+            echo "key-path=$KEY_PATH"
+            echo "key-sha256=$KEY_SHA256"
+            echo "key-path-fragment=$KEY_PATH#sha256=$KEY_SHA256"
+            echo "passphrase-path=$PASSPHRASE_PATH"
+        } >> "$GITHUB_OUTPUT"
+      post: |
+        set +e
+
+        if [[ -d "$SIGNING_PATH" ]]; then
+            if command -v shred >/dev/null 2>&1; then
+                find "$SIGNING_PATH" -type f -exec shred -u {} +
+            fi
+            rm -rf "$SIGNING_PATH"
+            echo "gpg/write: removed $SIGNING_PATH"
+        fi

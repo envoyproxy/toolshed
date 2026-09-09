@@ -1,0 +1,39 @@
+uses: ./actions/gpg/write
+id: write
+with:
+  key: >-
+    %{{ env.GPG_KEY_B64 }}
+  passphrase: >-
+    %{{ env.GPG_PASSWORD }}
+  path: /tmp/test-signing-base64
+
+before:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    NAME="Test User"
+    EMAIL="test@example.com"
+    PASSPHRASE="testpassword123"
+
+    generate_test_key "$NAME" "$EMAIL" "$PASSPHRASE"
+    TEST_KEY=$(export_secret_key "$EMAIL" "$PASSPHRASE")
+    TEST_KEY_B64=$(printf '%s\n' "$TEST_KEY" | base64 -w0)
+
+    echo "GPG_KEY_B64=${TEST_KEY_B64}" >> "$GITHUB_ENV"
+    echo "GPG_PASSWORD=${PASSPHRASE}" >> "$GITHUB_ENV"
+    echo "ARMORED_KEY<<EOF" >> "$GITHUB_ENV"
+    echo "$TEST_KEY" >> "$GITHUB_ENV"
+    echo "EOF" >> "$GITHUB_ENV"
+
+    clear_keyring "$EMAIL"
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+
+    KEY_PATH='%{{ steps.write.outputs.key-path }}'
+
+    test_file_exists "$KEY_PATH"
+    test_file_content_equals "$KEY_PATH" "$ARMORED_KEY"
