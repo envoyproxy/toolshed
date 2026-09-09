@@ -50,7 +50,7 @@ runs:
   using: composite
   steps:
   - id: write
-    uses: envoyproxy/toolshed/actions/github/script/run@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    uses: envoyproxy/toolshed/actions/github/script/run@36d1bce326258d62d1b69a469ac3df7e13a040e5
     env:
       KEY: ${{ inputs.key }}
       PASSPHRASE: ${{ inputs.passphrase }}

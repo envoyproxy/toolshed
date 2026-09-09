@@ -95,7 +95,7 @@ runs:
           exit 1
       fi
   - id: trusted
-    uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     env:
       TRUSTED_BOTS: ${{ inputs.trusted_bots || inputs.trusted-bots }}
     with:
@@ -116,7 +116,7 @@ runs:
         | (. and ($input.event_name | startswith("pull_request") | not))
 
   # Check requested changes
-  - uses: envoyproxy/toolshed/actions/bson@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/bson@36d1bce326258d62d1b69a469ac3df7e13a040e5
     id: changed
     with:
       title: git diff changes from ${{ inputs.merge-commit || 'HEAD^1' }}
@@ -137,7 +137,7 @@ runs:
         | split("\n")
 
   # Check current/requested config (currently only build-images can be overridden)
-  - uses: envoyproxy/toolshed/actions/bson@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/bson@36d1bce326258d62d1b69a469ac3df7e13a040e5
     id: config
     with:
       title: fetch ${{ inputs.branch-name }}:${{ inputs.config-file }}
@@ -164,7 +164,7 @@ runs:
   # branch, never the PR head, but it is still passed as data rather than
   # interpolated into the filter.
   - id: build-images
-    uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     env:
       BUILD_IMAGE_REPOS: ${{ inputs.build-image-repos }}
       CURRENT_CONFIG: ${{ steps.config.outputs.output }}
@@ -192,7 +192,7 @@ runs:
         | map_values(map_values(validate::image_prefix($repos)))
 
   # Check current/request versions
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     name: Validate given version string
     id: version-string
     with:
@@ -201,7 +201,7 @@ runs:
       input: ${{ inputs.working-directory }}/VERSION.txt
       filter: |
         validate::version
-  - uses: envoyproxy/toolshed/actions/bson@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/bson@36d1bce326258d62d1b69a469ac3df7e13a040e5
     id: version
     env:
       CHANGED_FILES: ${{ steps.changed.outputs.output || '[]' }}
@@ -238,7 +238,7 @@ runs:
   # WARNING: `message` (PR title/body) and `actor` are user data - they are
   # passed to jq as data, never interpolated into the filter.
   - id: request
-    uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     env:
       BUILD_IMAGES: ${{ steps.build-images.outputs.value }}
       MERGE_COMMIT: ${{ inputs.merge-commit }}
@@ -304,11 +304,11 @@ runs:
 
   - name: Run config
     id: run-config
-    uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     with:
       input-format: yaml
       input: ${{ toJSON(fromJSON(steps.config.outputs.output).run) }}
-  - uses: envoyproxy/toolshed/actions/torun@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/torun@36d1bce326258d62d1b69a469ac3df7e13a040e5
     id: torun
     with:
       event: ${{ github.event_name }}
@@ -318,7 +318,7 @@ runs:
   # NB: `config`/`changed` are read from the target branch, never the PR head,
   # but they are passed to jq as data (`env`) rather than interpolated into the
   # filter, so this does not depend on that invariant.
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@36d1bce326258d62d1b69a469ac3df7e13a040e5
     name: Create data
     id: data
     env:
