@@ -27,6 +27,9 @@ on:
       bazel-version-file:
         default: bazel/VERSION.txt
         type: string
+      branch:
+        default: main
+        type: string
       bins-version:
         default:
         type: string
@@ -75,6 +78,9 @@ on:
       repository:
         default: ${{ github.repository }}
         type: string
+      release-types:
+        default: actions bazel bins docker python
+        type: string
       sha:
         default: ${{ github.event.workflow_run.head_sha }}
         type: string
@@ -84,6 +90,14 @@ on:
       skip:
         type: boolean
         default: false
+      workflows:
+        type: string
+        default: |
+          Bazel CI
+          Docker CI
+          Github/actions CI
+          Python CI
+          Rust CI
 
 
 jobs:
@@ -103,11 +117,13 @@ jobs:
     if: >-
       inputs.conclusion == 'success'
       && ! inputs.skip
+      && contains(format(' {0} ', inputs.release-types), format(' {0} ', matrix.name))
     name: ${{ matrix.name }}
     uses: ./.github/workflows/_publish_release.yml
     with:
       artifact-workflows: ${{ matrix.artifact-workflows }}
       artifacts: ${{ matrix.artifacts || false }}
+      branch: ${{ inputs.branch }}
       committer-email: ${{ inputs.committer-email }}
       committer-name: ${{ inputs.committer-name }}
       dry-run: ${{ inputs.dry-run }}
@@ -130,12 +146,7 @@ jobs:
       version-file: ${{ matrix.version-file }}
       # Wait for all workflows to complete or else publishing
       # is repeatedly triggered
-      workflows: |
-        Bazel CI
-        Docker CI
-        Github/actions CI
-        Python CI
-        Rust CI
+      workflows: ${{ inputs.workflows }}
     strategy:
       fail-fast: false
       # Best not to run in parallel for real releases as it
