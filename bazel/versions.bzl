@@ -3,8 +3,14 @@ SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 BINS_RELEASE = "0.2.14"
 
 LLVM_VERSION = "22.1.8"
+SQ_VERSION = "1.4.0"
 
 V8_VERSION = "14.6.202.10"
+
+SQ_SHA256 = {
+    "Linux-X64": "dcef2a3f6ca8090684fdcbad777acbec83c9f6b182e2dca0288b06aa30b938a0",
+    "Linux-ARM64": "ccdbe4a6c79c589a12d6a2eff3fe8f635e7b170a45bf947971c47a018e923ebd",
+}
 
 # LLVM release archive checksums, used to fetch the distribution directly when
 # building the minimal LLVM toolchain repos.
@@ -17,6 +23,7 @@ LLVM_DISTRIBUTIONS = {
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": LLVM_VERSION,
+    "sq": SQ_VERSION,
     "v8": V8_VERSION,
     "ninja": "1.12.0",
     "python": "3.12",
@@ -56,6 +63,7 @@ VERSIONS = {
         "Linux-ARM64": "9a6cc0a84d524342e578db739b04e8a3875adb40b38887e4e074661e925f8a9c",
         "macOS-ARM64": "928e51aa7c97fbb8c5c50075118f4b36e36363b1a2c3af2dfef9aea1ef526ade",
     },
+    "sq_sha256": SQ_SHA256,
 
     # Glint binary hashes by architecture
     "glint_sha256": {
@@ -175,6 +183,26 @@ VERSIONS = {
         "sha256": "928e51aa7c97fbb8c5c50075118f4b36e36363b1a2c3af2dfef9aea1ef526ade",
         "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/llvm-minimal-{version}-{download_suffix}.tar.zst",
         "strip_prefix": "llvm-minimal-{version}-{download_suffix}",
+    },
+    "sq_linux_x86_64": {
+        "type": "http_archive",
+        "repo": "envoyproxy/toolshed",
+        "download_suffix": "Linux-X64",
+        "version": SQ_VERSION,
+        "bins_release": "0.2.16",
+        "sha256": SQ_SHA256["Linux-X64"],
+        "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/sq-{version}-{download_suffix}.tar.zst",
+        "strip_prefix": "sq-{version}-{download_suffix}",
+    },
+    "sq_linux_arm64": {
+        "type": "http_archive",
+        "repo": "envoyproxy/toolshed",
+        "download_suffix": "Linux-ARM64",
+        "version": SQ_VERSION,
+        "bins_release": "0.2.16",
+        "sha256": SQ_SHA256["Linux-ARM64"],
+        "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/sq-{version}-{download_suffix}.tar.zst",
+        "strip_prefix": "sq-{version}-{download_suffix}",
     },
     "llvm_source": {
         "type": "github_archive",
