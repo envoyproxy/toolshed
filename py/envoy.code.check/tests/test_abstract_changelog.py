@@ -503,8 +503,6 @@ async def test_changelogstatus_check_date(
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.pending_not_dev",
          dict(new_callable=PropertyMock)),
-        ("AChangelogStatus.project",
-         dict(new_callable=PropertyMock)),
         ("AChangelogStatus.version",
          dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.changelog")
@@ -517,8 +515,7 @@ async def test_changelogstatus_check_date(
         expected.append("Should not be set to `Pending`")
 
     with patched as (
-            m_tuple, m_dev, m_invalid, m_current, m_pending, m_project,
-            m_version):
+            m_tuple, m_dev, m_invalid, m_current, m_pending, m_version):
         m_current.return_value = False
         m_invalid.side_effect = AsyncMock(return_value=invalid_date)
         m_dev.side_effect = AsyncMock(return_value=dev_not_pending)
@@ -548,15 +545,18 @@ async def test_changelogstatus_check_date_current(patches):
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.pending_not_dev",
          dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.project",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.changelog")
 
-    with patched as (m_dev, m_invalid, m_current, m_pending):
+    with patched as (m_dev, m_invalid, m_current, m_pending, m_project):
         m_current.return_value = True
         assert await status.check_date() == ()
 
     assert not m_invalid.called
     assert not m_dev.called
     assert not m_pending.called
+    assert not m_project.called
 
 
 async def test_changelogstatus_check_date_historical_pending(
