@@ -14,6 +14,7 @@ bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 bazel_dep(name = "rules_python", version = "2.2.0")
 bazel_dep(name = "rules_shell", version = "0.8.0")
+bazel_dep(name = "sq", version = "1.4.0.envoy")
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
 bazel_dep(name = "toolchains_llvm", version = "1.9.0.envoy", dev_dependency = True)
 

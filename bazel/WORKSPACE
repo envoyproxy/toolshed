@@ -3,6 +3,9 @@ workspace(name = "envoy_toolshed")
 load(":archives.bzl", "load_archives")
 load_archives()
 
+load("//pgp:repositories.bzl", "setup_sq")
+setup_sq()
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
@@ -26,6 +29,10 @@ setup_llvm_toolchain()
 
 load(":toolchains.bzl", "load_toolchains")
 load_toolchains()
+
+load("//pgp:toolchain.bzl", "load_pgp_toolchains")
+register_toolchains("//pgp/test:stub_toolchain")
+load_pgp_toolchains()
 
 load(":packages.bzl", "load_packages", "load_website_packages")
 load_packages()
