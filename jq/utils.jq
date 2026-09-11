@@ -17,18 +17,27 @@ def bytesize:
 ;
 
 def version:
-  .
+  . as $input
   | endswith("-dev") as $is_dev
-  | (. | split("-") | .[0] | split(".") | map(tonumber)) as $parts
-  | (if $is_dev then "\($parts[0]).\($parts[1]).\($parts[2])"
-     else "\($parts[0]).\($parts[1]).\($parts[2] + 1)-dev"
+  | ($input | split("-") | .[0]) as $base
+  | ($base
+     | capture("^(?<maj>[0-9]+)\\.(?<min>[0-9]+)\\.(?<pat>[0-9]+)(\\.post(?<post>[0-9]+))?$")
+       // error("utils::version: unsupported version string: \($input)")) as $match
+  | ($match.maj | tonumber) as $major
+  | ($match.min | tonumber) as $minor
+  | ($match.pat | tonumber) as $patch
+  | ($match.post | if . == null then null else tonumber end) as $post
+  | (if $is_dev then $base
+     elif $post != null then "\($major).\($minor).\($patch).post\($post + 1)-dev"
+     else "\($major).\($minor).\($patch + 1)-dev"
      end) as $next
   | {
-      version: .,
+      version: $input,
       is_dev:  $is_dev,
-      major: $parts[0],
-      minor:  $parts[1],
-      patch: $parts[2],
+      major: $major,
+      minor:  $minor,
+      patch: $patch,
+      post: $post,
       next: $next
     }
 ;
