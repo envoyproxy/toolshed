@@ -18,18 +18,7 @@ on:
         default:
       cache-entries-default:
         type: string
-        default: |
-          llvm-x86:
-            extension: "//compile:extensions.bzl%llvm_minimal_build_extension"
-            repo: llvm_tarball_linux_x86_64
-          llvm-aarch:
-            extension: "//compile:extensions.bzl%llvm_minimal_build_extension"
-            repo: llvm_tarball_linux_arm64
-          llvm-macos:
-            extension: "//compile:extensions.bzl%llvm_minimal_build_extension"
-            repo: llvm_tarball_macos_arm64
-          v8-source:
-            module: v8
+        default:
       cache-keys:
         type: string
         default:
@@ -74,7 +63,7 @@ on:
         type: boolean
         default: true
       bazel-mode:
-        description: Bazel mode (workspace or bzlmod)
+        description: Bazel mode (workspace)
         required: true
         type: string
       bazel-path:
@@ -318,7 +307,7 @@ jobs:
       env:
         ARTIFACT_PATH_LIST: ${{ steps.artifact-paths.outputs.value }}
     - name: Bazel artifacts
-      if: ${{ inputs.upload && (steps.artifact-paths.outputs.value || steps.source-tarball.outputs.tarball) }}
+      if: ${{ inputs.upload && steps.artifact-paths.outputs.value }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: ${{ inputs.artifact-name }}
@@ -328,7 +317,7 @@ jobs:
 
     - name: Save caches
       uses: envoyproxy/toolshed/actions/github/caches/save@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
-      if: inputs.cache-create
+      if: inputs.cache-create && inputs.cache-entries != 'NONE'
       with:
         caches: ${{ steps.repo-cache-resolve.outputs.caches }}
         hits: ${{ steps.cache-restore.outputs.hits }}
