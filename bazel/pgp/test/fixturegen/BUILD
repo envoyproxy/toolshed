@@ -1,6 +1,7 @@
 genrule(
     name = "generated_public_key",
     outs = ["generated-public-key.asc"],
+    target_compatible_with = ["@platforms//os:linux"],
     tools = ["@sq//:sq"],
     cmd = """\
 tmp="$$(mktemp -d)"

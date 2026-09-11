@@ -1,7 +1,27 @@
-"""Repository rule exposing a host-arch prebuilt `sq` binary as `@sq//:sq`."""
+"""Repository rule exposing a host-arch prebuilt `sq` binary as `@sq//:sq`.
+
+On this `workspace` branch, `//pgp` is Linux-only. The bzlmod `sq` registry
+module includes a from-source fallback for hosts without a prebuilt binary; this
+WORKSPACE backport intentionally does not replicate that behavior. Unsupported
+hosts therefore get an incompatible `@sq//:sq`, so `//...` skips dependents
+instead of failing repository fetch.
+"""
 
 SQ_REPO_BUILD = """exports_files(["bin/sq"])
-filegroup(name = "sq", srcs = ["bin/sq"], visibility = ["//visibility:public"])
+filegroup(
+    name = "sq",
+    srcs = ["bin/sq"],
+    target_compatible_with = ["@platforms//os:linux"],
+    visibility = ["//visibility:public"],
+)
+"""
+
+SQ_UNSUPPORTED_BUILD = """filegroup(
+    name = "sq",
+    srcs = [],
+    target_compatible_with = ["@platforms//:incompatible"],
+    visibility = ["//visibility:public"],
+)
 """
 
 def _normalize_sq_repo_os(os_name):
@@ -26,10 +46,13 @@ def _select_sq_repo_root(ctx):
             return ctx.path(ctx.attr.linux_x86_64_build).dirname
         if arch == "aarch64":
             return ctx.path(ctx.attr.linux_arm64_build).dirname
-    fail("Unsupported host platform for sq alias: {} {}. Supported combinations are linux/x86_64 and linux/aarch64.".format(ctx.os.name, ctx.os.arch))
+    return None
 
 def _sq_repo_impl(ctx):
     root = _select_sq_repo_root(ctx)
+    if root == None:
+        ctx.file("BUILD.bazel", SQ_UNSUPPORTED_BUILD)
+        return
     result = ctx.execute(["mkdir", "-p", "bin"])
     if result.return_code:
         fail("Failed to create sq alias repo bin directory: {}".format(result.stderr))
