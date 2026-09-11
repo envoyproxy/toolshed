@@ -302,10 +302,10 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
             > _version.Version(self.project.version.base_version))
 
     async def check_date(self) -> tuple[str, ...]:
-        # In the entries layout the current changelog has no real date; it is
-        # synthesized as `Pending` until `write_version` bakes a dated file,
-        # so there is nothing to validate here.
-        if self.is_current and self.project.changelogs.entries_layout:
+        # The current changelog's date is synthesized as `Pending` from the
+        # entry files until `write_version` bakes a dated file, so there is
+        # nothing to validate here.
+        if self.is_current:
             return ()
         errors = []
         if invalid_date := await self.invalid_date:
