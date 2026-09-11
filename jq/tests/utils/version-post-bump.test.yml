@@ -1,0 +1,14 @@
+name: utils::version bumps post release version
+
+input: "1.2.3.post7"
+
+module: utils::version
+
+expected:
+  version: "1.2.3.post7"
+  is_dev: false
+  major: 1
+  minor: 2
+  patch: 3
+  post: 7
+  next: "1.2.3.post8-dev"
