@@ -2,6 +2,7 @@
 import types
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
+from packaging import version as _version
 import pytest
 
 from envoy.base import utils
@@ -1071,6 +1072,8 @@ def test_changelogstatus_entry_dir(patches, is_current):
 
     with patched as (m_current, m_project, m_version):
         m_current.return_value = is_current
+        m_project.return_value.changelogs.current_dir_path = (
+            MagicMock(name="CURRENT_DIR_PATH"))
         result = status.entry_dir
 
     if not is_current:
@@ -1078,20 +1081,14 @@ def test_changelogstatus_entry_dir(patches, is_current):
         assert not m_project.called
         assert not m_version.called
         return
-    assert (
-        result
-        == (m_project.return_value.changelogs
-                     .changelog_path.return_value
-                     .with_suffix.return_value))
-    assert (
-        m_project.return_value.changelogs.changelog_path.call_args
-        == [(m_version.return_value, ), {}])
-    assert (
-        (m_project.return_value.changelogs
-                  .changelog_path.return_value
-                  .with_suffix.call_args)
-        == [("", ), {}])
+    assert result == m_project.return_value.changelogs.current_dir_path
+    assert not m_project.return_value.changelogs.changelog_path.called
+    assert not (
+        m_project.return_value.changelogs
+                 .changelog_path.return_value
+                 .with_suffix.called)
     assert "entry_dir" not in status.__dict__
+    assert not m_version.called
 
 
 @pytest.mark.parametrize("entry_dir_exists", [None, False, True])
@@ -1106,10 +1103,12 @@ async def test_changelogstatus_check_entry_files(
          dict(new_callable=PropertyMock)),
         ("AChangelogStatus.project",
          dict(new_callable=PropertyMock)),
+        ("AChangelogStatus.version",
+         dict(new_callable=PropertyMock)),
         prefix="envoy.code.check.abstract.changelog")
     sorted_paths = [MagicMock(), MagicMock()] if has_paths else []
 
-    with patched as (m_sorted, m_entry_dir, m_project):
+    with patched as (m_sorted, m_entry_dir, m_project, m_version):
         if entry_dir_exists is None:
             m_entry_dir.return_value = None
         else:
@@ -1120,9 +1119,18 @@ async def test_changelogstatus_check_entry_files(
         m_project.return_value.execute = AsyncMock()
         result = await status.check_entry_files()
 
-    if entry_dir_exists is None or not entry_dir_exists:
+    if entry_dir_exists is None:
         assert result == ()
         assert not m_project.return_value.execute.called
+        assert not m_version.called
+        assert not m_sorted.called
+        return
+    if not entry_dir_exists:
+        assert result == (
+            f"{m_version.return_value}: Missing changelog entries "
+            f"directory ({m_entry_dir.return_value})", )
+        assert not m_project.return_value.execute.called
+        assert not m_sorted.called
         return
 
     assert (
@@ -1142,3 +1150,45 @@ async def test_changelogstatus_check_entry_files(
         m_project.return_value.execute.call_args
         == [(status.checker.check_entry_files,
              sorted_paths), {}])
+
+
+async def test_changelogstatus_errors_invalid_area_from_entry_files(tmp_path):
+    config_path = tmp_path / "changelogs" / "changelogs.yaml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        "sections:\n"
+        "  bug_fixes:\n"
+        "    title: Bug fixes\n"
+        "areas:\n"
+        "  known:\n"
+        "    title: known\n")
+    current_dir = tmp_path / "changelogs" / "current"
+    (current_dir / "bug_fixes").mkdir(parents=True)
+    (current_dir / "bug_fixes" / "unknown__slug.rst").write_text(
+        "Valid content.")
+    config = utils.from_yaml(config_path, utils.typing.ChangelogConfigDict)
+    checker = check.ChangelogChangesChecker(
+        config["sections"],
+        config["areas"])
+    project = MagicMock()
+    project.is_dev = False
+    project.version.base_version = "1.2.3"
+    project.is_current.side_effect = lambda version: (
+        version == _version.Version("1.2.3"))
+    project.changelogs.current_dir_path = current_dir
+    project.changelogs.areas = config["areas"]
+
+    async def _execute(func, *args):
+        return func(*args)
+
+    project.execute = AsyncMock(side_effect=_execute)
+    changelog = MagicMock()
+    changelog.version = _version.Version("1.2.3")
+    changelog.data = AsyncMock(return_value={"date": "Pending"})()
+    status = check.AChangelogStatus(MagicMock(), changelog)
+    status._check.project = project
+    status._check.changes_checker = checker
+
+    result = await status.errors
+
+    assert any("Invalid area 'unknown'" in error for error in result)

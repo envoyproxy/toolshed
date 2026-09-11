@@ -231,10 +231,7 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
     def entry_dir(self) -> pathlib.Path | None:
         if not self.is_current:
             return None
-        return (
-            self.project.changelogs
-                        .changelog_path(self.version)
-                        .with_suffix(""))
+        return self.project.changelogs.current_dir_path
 
     @async_property(cache=True)
     async def errors(self) -> tuple[str, ...]:
@@ -329,8 +326,12 @@ class AChangelogStatus(metaclass=abstracts.Abstraction):
 
     async def check_entry_files(self) -> tuple[str, ...]:
         entry_dir = self.entry_dir
-        if entry_dir is None or not entry_dir.exists():
+        if entry_dir is None:
             return ()
+        if not entry_dir.exists():
+            return (
+                f"{self.version}: Missing changelog entries directory "
+                f"({entry_dir})", )
         paths = sorted(entry_dir.glob(CHANGELOG_ENTRY_GLOB))
         if not paths:
             return ()
