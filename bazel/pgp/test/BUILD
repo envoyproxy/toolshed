@@ -92,6 +92,7 @@ changes_split_outputs = pgp_sign_changes_split(
 pgp_public_key(
     name = "example_public_key",
     src = "//pgp/test/fixturegen:generated_public_key",
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 pgp_public_key(
@@ -264,6 +265,7 @@ sh_test(
         "SQ": "$(rootpath @sq//:sq)",
         "VALIDATOR": "$(rootpath //pgp/private:public_key_validator)",
     },
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 sh_test(

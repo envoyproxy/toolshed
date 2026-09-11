@@ -43,6 +43,7 @@ toolchain_type(
 sq_signer(
     name = "sq_signer",
     sq = "@sq//:sq",
+    target_compatible_with = ["@platforms//os:linux"],
     visibility = ["//pgp/test:__pkg__"],
 )
 
