@@ -19,6 +19,9 @@ on:
       bazel-versions-file:
         type: string
         default: bazel/versions.bzl
+      branch:
+        type: string
+        default: main
       committer-email:
         type: string
         required: true
@@ -95,11 +98,18 @@ jobs:
       name: Checkout the repository
       uses: envoyproxy/toolshed/actions/github/checkout@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
       with:
-        branch: main
+        branch: ${{ inputs.branch }}
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
         pr: ${{ github.event.pull_request.number || '' }}
         token: ${{ steps.appauth.outputs.token }}
+    - name: Validate release type
+      if: >-
+        inputs.branch != 'main'
+        && inputs.type != 'bazel'
+      run: |
+        echo "::error::Only type=bazel releases are supported on branch '${{ inputs.branch }}'."
+        exit 1
     - name: Get version file
       id: version-file
       uses: envoyproxy/toolshed/actions/jq@3d5bb981268f22161fa1c0c87bfc6828887c4e0e  # actions-v0.4.22
@@ -176,8 +186,12 @@ jobs:
       with:
         input: |
           cd bazel
-          bazel build //:deps
-          OUTPUT=$(cat bazel-bin/deps.json)
+          if bazel query //:deps >/dev/null 2>&1 && bazel build //:deps; then
+              OUTPUT=$(cat bazel-bin/deps.json)
+          else
+              echo "::notice::Skipping bazel deps SHA refresh because //:deps is unavailable or failed to build."
+              OUTPUT='{}'
+          fi
         input-format: text
         filter:
           bash::output
@@ -204,115 +218,124 @@ jobs:
         input-format: yaml
         filter: |
           .
-          | .shas as $shas
-          | .current as $current
+          | (.shas // {}) as $shas
+          | (.current // {}) as $current
           | .glibc_versions as $glibc_versions
           | .arches as $arches
           | .stdcc_versions as $stdccs
           | .san as $san
           | .glint_version as $glint_version
           | .versions_file as $versions_file
-          | (.bins_latest | split("-v") | .[1]) as $bins_latest
-          | (if $current.bins_release != $bins_latest then
+          | ((.bins_latest // "") | split("-v") | .[1]) as $bins_latest
+          | (if ($current.bins_release // "") != "" and $current.bins_release != $bins_latest then
                ["sed -i 's/^BINS_RELEASE = \"\($current.bins_release)\"/BINS_RELEASE = \"\($bins_latest)\"/g' \($versions_file)"]
              else [] end) as $bins_update
           | [$san[]
              | . as $san_type
-             | $current["\($san_type)_libs_sha256"] as $current_sha
-             | ($shas["\($san_type)-llvm\($current.llvm)-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
-             | if $current_sha != $new_sha then
-                 "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
-               else "" end] as $san_updates
+             | ($shas["\($san_type)-llvm\($current.llvm // "")-x86_64.tar.xz"] // null) as $sha_entry
+             | ($current["\($san_type)_libs_sha256"] // null) as $current_sha
+             | if $sha_entry and $current_sha then
+                ($sha_entry | split(":") | .[1]) as $new_sha
+                | if $current_sha != $new_sha then
+                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                  else "" end
+              else "" end] as $san_updates
           | [["aarch64", "x86_64"][]
              | . as $arch
-             | ($shas["libcxx-llvm\($current.llvm)-\($arch).tar.xz"] // null) as $sha_entry
+             | ($shas["libcxx-llvm\($current.llvm // "")-\($arch).tar.xz"] // null) as $sha_entry
              | if $sha_entry then
-                 ($sha_entry | split(":") | .[1]) as $new_sha
-                 | $current.libcxx_libs_sha256[$arch] as $current_sha
-                 | if $current_sha != $new_sha then
-                     "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
-                   else "" end
-               else "" end] as $libcxx_updates
+                ($sha_entry | split(":") | .[1]) as $new_sha
+                | ($current.libcxx_libs_sha256[$arch] // null) as $current_sha
+                | if $current_sha and $current_sha != $new_sha then
+                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                  else "" end
+              else "" end] as $libcxx_updates
           | [$arches[]
              | . as $arch
-             | [($shas["glint-\($glint_version)-\($arch)"] | split(":") | .[1]) as $new_sha
-                | $current["glint_sha256"][$arch] as $current_sha
-                | if $current_sha != $new_sha then
-                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
-                  else "" end] as $glint_updates
+             | [($shas["glint-\($glint_version)-\($arch)"] // null) as $sha_entry
+               | ($current["glint_sha256"][$arch] // null) as $current_sha
+               | if $sha_entry and $current_sha then
+                   ($sha_entry | split(":") | .[1]) as $new_sha
+                   | if $current_sha != $new_sha then
+                       "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                     else "" end
+                 else "" end] as $glint_updates
              | [$glibc_versions[]
-                | . as $glibc
-                | $stdccs[]
-                | . as $stdcc
-                | (if $stdcc == "base" then ""
-                   else "-libstdc++\($stdcc)"
-                   end) as $stdcc_extra
-                | "sysroot-glibc\($glibc)\($stdcc_extra)-\($arch).tar.xz" as $sysroot
-                | ($shas[$sysroot]
-                   | split(":")
-                   | .[1]) as $new_sha
-                | $current.sysroot_hashes[$glibc][$stdcc][$arch] as $current_sha
-                | if $current_sha != $new_sha then
-                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
-                  else "" end] as $sysroot_updates
-              | $glint_updates + $sysroot_updates] as $arch_updates
+               | . as $glibc
+               | $stdccs[]
+               | . as $stdcc
+               | (if $stdcc == "base" then ""
+                  else "-libstdc++\($stdcc)"
+                  end) as $stdcc_extra
+               | "sysroot-glibc\($glibc)\($stdcc_extra)-\($arch).tar.xz" as $sysroot
+               | ($shas[$sysroot] // null) as $sha_entry
+               | ($current.sysroot_hashes[$glibc][$stdcc][$arch] // null) as $current_sha
+               | if $sha_entry and $current_sha then
+                   ($sha_entry | split(":") | .[1]) as $new_sha
+                   | if $current_sha != $new_sha then
+                       "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                     else "" end
+                 else "" end] as $sysroot_updates
+             | $glint_updates + $sysroot_updates] as $arch_updates
           | [
              # macOS sysroot hash
              ($shas["sysroot-macos-arm64.tar.xz"] // null) as $sha_entry
              | if $sha_entry then
-                 ($sha_entry | split(":") | .[1]) as $new_sha
-                 | $current.macos_sysroot_sha256.arm64 as $cur
-                 | if $cur == $new_sha then ""
-                   elif ($cur | length) > 0 then
-                     "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
-                   else
-                     "sed -i '0,/\"arm64\": \"\"/s//\"arm64\": \"\($new_sha)\"/' \($versions_file)"
-                   end
-               else "" end,
-             # darwin libcxx hash
-             ($shas["libcxx-llvm\($current.llvm)-darwin-aarch64.tar.xz"] // null) as $sha_entry
-             | if $sha_entry then
-                 ($sha_entry | split(":") | .[1]) as $new_sha
-                 | $current.libcxx_libs_darwin_sha256.aarch64 as $cur
-                 | if $cur == $new_sha then ""
-                   elif ($cur | length) > 0 then
-                     "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
-                   else
-                     "sed -i '0,/\"aarch64\": \"\"/s//\"aarch64\": \"\($new_sha)\"/' \($versions_file)"
-                   end
-               else "" end
-            ] as $macos_updates
-          | [["Linux-X64", "Linux-ARM64", "macOS-ARM64"][]
-            | . as $platform
-            | ($shas["llvm-minimal-\($current.llvm)-\($platform).tar.zst"] // null) as $sha_entry
-            | if $sha_entry then
                 ($sha_entry | split(":") | .[1]) as $new_sha
-                | $current.llvm_minimal_sha256[$platform] as $cur
+                | ($current.macos_sysroot_sha256.arm64 // "") as $cur
                 | if $cur == $new_sha then ""
                   elif ($cur | length) > 0 then
                     "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
                   else
-                    "sed -i '0,/\"\($platform)\": \"\"/s//\"\($platform)\": \"\($new_sha)\"/' \($versions_file)"
+                    "sed -i '0,/\"arm64\": \"\"/s//\"arm64\": \"\($new_sha)\"/' \($versions_file)"
                   end
-              else "" end] as $llvm_minimal_updates
+              else "" end,
+             # darwin libcxx hash
+             ($shas["libcxx-llvm\($current.llvm // "")-darwin-aarch64.tar.xz"] // null) as $sha_entry
+             | if $sha_entry then
+                ($sha_entry | split(":") | .[1]) as $new_sha
+                | ($current.libcxx_libs_darwin_sha256.aarch64 // "") as $cur
+                | if $cur == $new_sha then ""
+                  elif ($cur | length) > 0 then
+                    "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+                  else
+                    "sed -i '0,/\"aarch64\": \"\"/s//\"aarch64\": \"\($new_sha)\"/' \($versions_file)"
+                  end
+              else "" end
+            ] as $macos_updates
+          | [["Linux-X64", "Linux-ARM64", "macOS-ARM64"][]
+            | . as $platform
+            | ($shas["llvm-minimal-\($current.llvm // "")-\($platform).tar.zst"] // null) as $sha_entry
+            | if $sha_entry then
+               ($sha_entry | split(":") | .[1]) as $new_sha
+               | ($current.llvm_minimal_sha256[$platform] // "") as $cur
+               | if $cur == $new_sha then ""
+                 elif ($cur | length) > 0 then
+                   "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+                 else
+                   "sed -i '0,/\"\($platform)\": \"\"/s//\"\($platform)\": \"\($new_sha)\"/' \($versions_file)"
+                 end
+             else "" end] as $llvm_minimal_updates
           | [[["x86_64", "libcxx"], ["x86_64", "libstdcxx"], ["aarch64", "libcxx"], ["aarch64", "libstdcxx"]][]
              | .[0] as $arch
              | .[1] as $stdlib
              | (
-                 "v8-wee8-\($current.v8)-linux-\($arch)"
-                 + (if $stdlib == "libcxx" then "" else "-\($stdlib)" end)
-                 + ".tar.xz"
-               ) as $artifact
+                "v8-wee8-\($current.v8 // "")-linux-\($arch)"
+                + (if $stdlib == "libcxx" then "" else "-\($stdlib)" end)
+                + ".tar.xz"
+              ) as $artifact
              | ($shas[$artifact] // null) as $sha_entry
              | if $sha_entry then
-                ($sha_entry | split(":") | .[1]) as $new_sha
-                | $current.wee8_sha256[$arch][$stdlib] as $cur
-                | ("s/\"\($stdlib)\": \"[a-f0-9]*\"/\"\($stdlib)\": \"\($new_sha)\"/") as $sub
-                | ("/\"\($arch)\": {/,/    },/") as $range
-                | if $cur == $new_sha then ""
-                  else "sed -i '/\"wee8_sha256\"/,/^    },/{\($range){\($sub)}}' \($versions_file)"
-                  end
-              else "" end] as $wee8_updates
+               ($sha_entry | split(":") | .[1]) as $new_sha
+               | ($current.wee8_sha256[$arch][$stdlib] // "") as $cur
+               | ("s/\"\($stdlib)\": \"[a-f0-9]*\"/\"\($stdlib)\": \"\($new_sha)\"/") as $sub
+               | ("/\"\($arch)\": {/,/    },/") as $range
+               | if $cur == $new_sha then ""
+                 elif ($cur | length) > 0 then
+                   "sed -i '/\"wee8_sha256\"/,/^    },/{\($range){\($sub)}}' \($versions_file)"
+                 else ""
+                 end
+             else "" end] as $wee8_updates
           | $bins_update + $san_updates + $libcxx_updates + $arch_updates + $macos_updates + $llvm_minimal_updates + $wee8_updates
           | [flatten[]
              | select(. != "")]
@@ -324,6 +347,10 @@ jobs:
       env:
         RELEASE_VERSION: ${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
       run: |
+        if grep -q -- '--noenable_bzlmod' bazel/.bazelrc; then
+            echo "bzlmod disabled; skipping bazel/MODULE.bazel version update"
+            exit 0
+        fi
         sed -i '/^module(/,/^)/s/version = "[^"]*"/version = "'"${RELEASE_VERSION}"'"/' bazel/MODULE.bazel
         echo "Updated bazel/MODULE.bazel to version ${RELEASE_VERSION}"
         git add bazel/MODULE.bazel
@@ -499,13 +526,17 @@ jobs:
       uses: envoyproxy/toolshed/actions/github/pr@98b13b6d4f551c27b406cb090d9ff7bf6877d1f6  # actions-v0.4.20 + fix
       if: fromJSON(steps.commit.outputs.changes)
       with:
-        base: main
+        base: ${{ inputs.branch }}
         branch: >-
           release/${{
             inputs.action == 'prepare'
             && 'prepare'
             || 'create'
-          }}/${{ inputs.type }}/${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
+          }}/${{ inputs.type }}/${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}${{
+            inputs.branch != 'main'
+            && format('-{0}', inputs.branch)
+            || ''
+          }}
         commit: false
         title: >-
           ${{ steps.commit.outputs.message }}

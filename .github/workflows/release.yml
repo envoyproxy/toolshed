@@ -44,6 +44,7 @@ jobs:
     uses: ./.github/workflows/_release.yml
     with:
       action: ${{ inputs.action }}
+      branch: ${{ github.ref_name }}
       committer-name: publish-envoy[bot]
       committer-email: 140627008+publish-envoy[bot]@users.noreply.github.com
       dry-run: ${{ inputs.dry-run }}

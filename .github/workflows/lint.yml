@@ -3,7 +3,9 @@ name: Lint CI
 on:
   push:
     branches:
+    # Release branches: keep in sync with publish.yml
     - "main"
+    - "workspace"
   pull_request:
     branches:
     - "main"

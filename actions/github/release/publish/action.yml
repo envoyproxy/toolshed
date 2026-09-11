@@ -2,6 +2,9 @@ inputs:
   assets:
     type: string
     default:
+  branch:
+    type: string
+    default: main
   dry-run:
     default: false
     type: boolean
@@ -38,6 +41,7 @@ inputs:
       export ASSETS=\"\($assets)\"
       export DEBUG=1
       export SHA=\"\(.sha)\"
+      export BRANCH=\"\(.branch)\"
       export TAG=\"\($tag)\"
       export TITLE=\"\($title)\"
       export REPO=\"\(.repo)\"
@@ -89,6 +93,7 @@ runs:
         assets: ${{ steps.assets.outputs.value }}
         dry_run: ${{ inputs.dry-run }}
         fail_if_exists: ${{ inputs.fail-if-exists }}
+        branch: ${{ inputs.branch }}
         name: ${{ inputs.name }}
         prepare_dev: ${{ inputs.prepare-dev }}
         repo: ${{ inputs.repository }}
