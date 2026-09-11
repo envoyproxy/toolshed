@@ -890,6 +890,9 @@ def test_changeschecker_check_section_name(
     [(  # valid
         "bug_fixes", "myarea__myslug", ".rst",
         None),
+     (  # valid encoded nested area
+        "bug_fixes", "dns~cares__myslug", ".rst",
+        None),
      (  # invalid section
         "weird_section", "area__slug", ".rst",
         ("weird_section", "Invalid section")),
@@ -907,13 +910,17 @@ def test_changeschecker_check_section_name(
         ("Area", "empty")),
      (  # empty slug
         "bug_fixes", "area__", ".rst",
-        ("Slug", "empty"))])
+        ("Slug", "empty")),
+     (  # invalid filename area chars
+        "bug_fixes", "bad.area__slug", ".rst",
+        (r"[a-z0-9_\-~]+", ))])
 def test_changeschecker_check_entry_filename(
         section, stem, suffix, expected):
     changelog = DummyChangelogChangesChecker(
         {"bug_fixes": MagicMock()},
         {"myarea": {"title": "myarea"},
-         "area": {"title": "area"}})
+         "area": {"title": "area"},
+         "dns/cares": {"title": "dns/cares"}})
     path = MagicMock()
     path.parent.name = section
     path.stem = stem
@@ -935,13 +942,13 @@ def test_changeschecker_check_entry_filename_invalid_area():
         {"some_other_area": {"title": "some_other_area"}})
     path = MagicMock()
     path.parent.name = "bug_fixes"
-    path.stem = "myarea__myslug"
+    path.stem = "dns~cares__myslug"
     path.suffix = ".rst"
 
     result = changelog.check_entry_filename(path)
 
     assert result is not None
-    assert "Invalid area" in result
+    assert "Invalid area 'dns/cares' (from filename 'dns~cares')" in result
     assert "changelogs.yaml" in result
 
 
@@ -953,6 +960,21 @@ def test_changeschecker_check_entry_filename_without_areas():
     path.suffix = ".rst"
 
     assert changelog.check_entry_filename(path) is None
+
+
+def test_changeschecker_check_entry_filename_decoded_area_mismatch():
+    changelog = DummyChangelogChangesChecker(
+        {"bug_fixes": MagicMock()},
+        {"dns/cares": {"title": "dns/cares"}})
+    path = MagicMock()
+    path.parent.name = "bug_fixes"
+    path.stem = "dns_cares__myslug"
+    path.suffix = ".rst"
+
+    result = changelog.check_entry_filename(path)
+
+    assert result is not None
+    assert "Invalid area 'dns_cares'" in result
 
 
 def test_changeschecker_check_areas_file_empty():
@@ -992,14 +1014,42 @@ def test_changeschecker_check_areas_file_invalid_keys():
     changelog = DummyChangelogChangesChecker(
         "SECTIONS",
         {"Bad": {"title": "bad"},
-         "bad.dot": {"title": "also_bad"}})
+         "dns~cares": {"title": "dns/cares"}})
     assert (
         changelog.check_areas_file()
         == (
             "changelogs/changelogs.yaml: Invalid area key 'Bad' "
             "(must match [a-z0-9_\\-/]+)",
-            "changelogs/changelogs.yaml: Invalid area key 'bad.dot' "
+            "changelogs/changelogs.yaml: Invalid area key 'dns~cares' "
             "(must match [a-z0-9_\\-/]+)",
+        ))
+
+
+def test_changeschecker_check_areas_file_tilde_in_title():
+    changelog = DummyChangelogChangesChecker(
+        "SECTIONS",
+        {"dns/cares": {"title": "dns~cares"}})
+    assert (
+        changelog.check_areas_file()
+        == (
+            "changelogs/changelogs.yaml: Title must not contain '~' "
+            "(it is only a filename escape for '/')",
+            "changelogs/changelogs.yaml: Invalid title 'dns~cares' "
+            "for area 'dns/cares' (must match [a-z0-9_\\-/]+)",
+        ))
+
+
+def test_changeschecker_check_areas_file_slash_key_requires_title():
+    changelog = DummyChangelogChangesChecker(
+        "SECTIONS",
+        {"dns/cares": {"title": ""}})
+    assert (
+        changelog.check_areas_file()
+        == (
+            "changelogs/changelogs.yaml: Area 'dns/cares' contains '/' "
+            "and must set an explicit title",
+            "changelogs/changelogs.yaml: Invalid title '' "
+            "for area 'dns/cares' (must match [a-z0-9_\\-/]+)",
         ))
 
 
@@ -1161,9 +1211,13 @@ async def test_changelogstatus_errors_invalid_area_from_entry_files(tmp_path):
         "    title: Bug fixes\n"
         "areas:\n"
         "  known:\n"
-        "    title: known\n")
+        "    title: known\n"
+        "  dns/cares:\n"
+        "    title: dns/cares\n")
     current_dir = tmp_path / "changelogs" / "current"
     (current_dir / "bug_fixes").mkdir(parents=True)
+    (current_dir / "bug_fixes" / "dns~cares__slug.rst").write_text(
+        "Valid nested area content.")
     (current_dir / "bug_fixes" / "unknown__slug.rst").write_text(
         "Valid content.")
     config = utils.from_yaml(config_path, utils.typing.ChangelogConfigDict)
@@ -1192,3 +1246,4 @@ async def test_changelogstatus_errors_invalid_area_from_entry_files(tmp_path):
     result = await status.errors
 
     assert any("Invalid area 'unknown'" in error for error in result)
+    assert not any("dns/cares" in error for error in result)

@@ -39,6 +39,19 @@ Run only against files changed since a given ref:
 
 See ``envoy.code.check --help`` for the full set of options.
 
+Changelog entry areas
+---------------------
+
+Changelog area IDs in ``changelogs/changelogs.yaml`` are canonical and may use
+``/`` to represent hierarchy (for example ``dns/cares``). Because ``/`` cannot
+be used in entry filenames, changelog entries encode ``/`` as ``~`` in
+``changelogs/current/<section>/<area>__<slug>.rst`` (for example
+``dns~cares__preserve-qid.rst``).
+
+Area keys must match ``[a-z0-9_\\-/]+`` (so ``~`` is not valid in keys). Area
+titles must not contain ``~``. If an area key contains ``/``, it must define an
+explicit non-empty ``title``.
+
 Links
 -----
 

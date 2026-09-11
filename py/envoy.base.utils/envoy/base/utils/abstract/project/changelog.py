@@ -32,6 +32,8 @@ CHANGELOG_CURRENT_PLACEHOLDER = "PLACEHOLDER"
 CHANGELOG_ENTRY_GLOB = "*/*.rst"
 CHANGELOG_CONFIG_PATH = "changelogs/changelogs.yaml"
 ENTRY_SEPARATOR = "__"
+AREA_SEPARATOR = "/"
+AREA_FILENAME_SEPARATOR = "~"
 CHANGELOG_SUMMARY_PATH = "changelogs/summary.md"
 CHANGELOG_ENTRY_URL_TPL = (
     "https://raw.githubusercontent.com/envoyproxy/envoy/"
@@ -51,6 +53,14 @@ OLD_CHANGELOG_SECTIONS = frozendict({
     "New Features": "new_features",
     "Deprecated": "deprecated"})
 YAML_CHANGELOGS_VERSION = "1.23"
+
+
+def area_from_filename(stem_area: str) -> str:
+    return stem_area.replace(AREA_FILENAME_SEPARATOR, AREA_SEPARATOR)
+
+
+def area_to_filename(area: str) -> str:
+    return area.replace(AREA_SEPARATOR, AREA_FILENAME_SEPARATOR)
 
 
 class LegacyChangelog:
@@ -138,9 +148,11 @@ class AChangelog(metaclass=abstracts.Abstraction):
                     f"Invalid entry filename "
                     f"(expected exactly one '{ENTRY_SEPARATOR}'): "
                     f"{entry_path}")
-            area, _slug = path.stem.split(ENTRY_SEPARATOR, 1)
+            stem_area, _slug = path.stem.split(ENTRY_SEPARATOR, 1)
             change = typing.Change(text)
-            entry: typing.ChangeDict = dict(area=area, change=change)
+            entry: typing.ChangeDict = dict(
+                area=area_from_filename(stem_area),
+                change=change)
             sections.setdefault(path.parent.name, []).append(entry)
         return cast(
             typing.ChangelogDict,
