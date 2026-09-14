@@ -95,7 +95,7 @@ jobs:
       contents: read
       packages: read
     steps:
-    - uses: envoyproxy/toolshed/actions/bind-mounts@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
+    - uses: envoyproxy/toolshed/actions/bind-mounts@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
       if: runner.os == 'Linux'
       with:
         mounts: |
@@ -110,7 +110,7 @@ jobs:
 
     - name: Bazel caches
       id: repo-cache-resolve
-      uses: envoyproxy/toolshed/actions/bazel/cache/resolve@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/bazel/cache/resolve@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
       if: ${{ inputs.cache-entries != 'NONE' }}
       with:
         lock-file: bazel/MODULE.bazel.lock
@@ -120,7 +120,7 @@ jobs:
     - name: Restore caches
       id: cache-restore
       if: ${{ inputs.cache-entries != 'NONE' }}
-      uses: envoyproxy/toolshed/actions/github/caches/restore@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/github/caches/restore@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
       with:
         caches: ${{ steps.repo-cache-resolve.outputs.caches }}
 
@@ -150,7 +150,7 @@ jobs:
     - name: RBE auth check
       id: rbe
       if: inputs.rbe && github.event_name == 'pull_request'
-      uses: envoyproxy/toolshed/actions/github/container/auth@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/github/container/auth@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
       with:
         container: hello-world
     - name: Compute RBE/download flags
@@ -258,7 +258,7 @@ jobs:
         && inputs.bazel-path == 'bazel'
         && inputs.upload
         && inputs.create-source
-      uses: envoyproxy/toolshed/actions/source@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/source@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
       with:
         output-name: toolshed-bazel-v{version}.tar.gz
         source-path: bazel/
@@ -280,7 +280,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
       with:
         input: ${{ inputs.artifacts }}
         input-format: text
@@ -316,7 +316,7 @@ jobs:
         retention-days: 30
 
     - name: Save caches
-      uses: envoyproxy/toolshed/actions/github/caches/save@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/github/caches/save@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
       if: inputs.cache-create && inputs.cache-entries != 'NONE'
       with:
         caches: ${{ steps.repo-cache-resolve.outputs.caches }}
