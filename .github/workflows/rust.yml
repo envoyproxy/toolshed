@@ -3,6 +3,7 @@ name: Rust CI
 on:
   push:
     branches:
+    # Release branches: keep in sync with publish.yml
     - main
   pull_request:
     branches:
