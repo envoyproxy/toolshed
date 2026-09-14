@@ -1,0 +1,43 @@
+uses: ./actions/version
+id: version
+with:
+  version: "0.4.13.post0"
+
+after:
+- shell: bash
+  run: |
+    VERSION_OUTPUT='${{ steps.version.outputs.version }}'
+    if [[ -z "$VERSION_OUTPUT" ]]; then
+        echo "fail:Version output is empty" >> "$TEST_OUTPUT"
+    else
+        echo "success:Version output: $VERSION_OUTPUT" >> "$TEST_OUTPUT"
+    fi
+
+    VERSION_VALUE=$(echo "$VERSION_OUTPUT" | jq -r '.version')
+    IS_DEV=$(echo "$VERSION_OUTPUT" | jq -r '.is_dev')
+    POST=$(echo "$VERSION_OUTPUT" | jq -r '.post')
+    NEXT=$(echo "$VERSION_OUTPUT" | jq -r '.next')
+
+    if [[ "$VERSION_VALUE" != "0.4.13.post0" ]]; then
+        echo "fail:Expected version '0.4.13.post0', got '$VERSION_VALUE'" >> "$TEST_OUTPUT"
+    else
+        echo "success:Version value is correct: $VERSION_VALUE" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ "$IS_DEV" != "false" ]]; then
+        echo "fail:Expected is_dev 'false', got '$IS_DEV'" >> "$TEST_OUTPUT"
+    else
+        echo "success:is_dev flag is correct: $IS_DEV" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ "$POST" != "0" ]]; then
+        echo "fail:Expected post '0', got '$POST'" >> "$TEST_OUTPUT"
+    else
+        echo "success:post value is correct: $POST" >> "$TEST_OUTPUT"
+    fi
+
+    if [[ "$NEXT" != "0.4.13.post1-dev" ]]; then
+        echo "fail:Expected next '0.4.13.post1-dev', got '$NEXT'" >> "$TEST_OUTPUT"
+    else
+        echo "success:next value is correct: $NEXT" >> "$TEST_OUTPUT"
+    fi
