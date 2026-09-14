@@ -21,6 +21,9 @@ on:
       artifacts:
         type: boolean
         default: false
+      branch:
+        type: string
+        default: main
       committer-email:
         required: true
         type: string
@@ -102,7 +105,7 @@ jobs:
       name: Checkout the repository
       uses: envoyproxy/toolshed/actions/github/checkout@23d5a687b43f8984a3fdfd9b494470d80369b538  # actions-v0.4.26
       with:
-        branch: main
+        branch: ${{ inputs.branch }}
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
         config: |
@@ -143,6 +146,7 @@ jobs:
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
         artifacts: ${{ inputs.artifacts }}
+        branch: ${{ inputs.branch }}
         dry-run: ${{ inputs.dry-run }}
         event: ${{ inputs.event }}
         fail-if-exists: ${{ inputs.fail-if-exists }}

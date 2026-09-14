@@ -9,6 +9,7 @@ set -e -o pipefail
 # - TAG: the release tag
 # - TITLE: the release title
 # - REPO: the repository
+# - BRANCH: branch to reopen for the next dev version
 # - FAIL_IF_EXISTS: whether to fail if release exists
 # - DRY_RUN: whether this is a dry run
 # - NEXT_VERSION: next version to write to version file
@@ -27,6 +28,8 @@ cleanup() {
 }
 
 trap cleanup EXIT
+
+BRANCH="${BRANCH:-main}"
 
 read -ra ASSET_GLOBS <<< "$ASSETS"
 RELEASE_ARGS=(
@@ -90,8 +93,8 @@ if gh release view "$TAG" --repo "$REPO" &>/dev/null; then
 fi
 
 _run gh release create "${RELEASE_ARGS[@]}" "${ASSET_GLOBS[@]}"
-_run git fetch origin main
-_run git checkout -B main origin/main
+_run git fetch origin "${BRANCH}"
+_run git checkout -B "${BRANCH}" "origin/${BRANCH}"
 echo "$ echo ${NEXT_VERSION} > ${VERSION_FILE}" >> "$TMP_OUTPUT"
 if [[ -n "$DEBUG" ]]; then
     echo "$ echo ${NEXT_VERSION} > ${VERSION_FILE}" >&2
@@ -118,4 +121,4 @@ fi
 
 _run git commit "${COMMIT_FILES[@]}" -m "${REOPEN_MESSAGE}" --signoff
 _run git show
-_run git push origin HEAD:refs/heads/main
+_run git push origin "HEAD:refs/heads/${BRANCH}"

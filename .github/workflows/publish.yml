@@ -16,9 +16,61 @@ on:
 
 
 jobs:
+  config:
+    runs-on: ubuntu-24.04
+    outputs:
+      run: ${{ steps.outputs.outputs.run }}
+      release-types: ${{ steps.outputs.outputs.release-types }}
+      workflows: ${{ steps.outputs.outputs.workflows }}
+    steps:
+    - name: Resolve publish config for branch
+      id: config
+      uses: envoyproxy/toolshed/actions/jq@23d5a687b43f8984a3fdfd9b494470d80369b538  # actions-v0.4.26
+      env:
+        HEAD_BRANCH: ${{ github.event.workflow_run.head_branch || '' }}
+      with:
+        input: |
+          branches:
+            main:
+              release-types: actions bazel bins docker python
+              workflows:
+              - Bazel CI
+              - Docker CI
+              - Github/actions CI
+              - Python CI
+              - Rust CI
+            # Add long-lived release/backport branches here.
+            # workspace:
+            #   release-types: bazel
+            #   workflows:
+            #   - Bazel CI
+        input-format: yaml
+        filter: |
+          .branches[env.HEAD_BRANCH] as $config
+          | {
+              run: ($config != null),
+              "release-types": ($config["release-types"] // ""),
+              workflows: (($config.workflows // []) | join("\n"))
+            }
+    - name: Emit publish config outputs
+      id: outputs
+      env:
+        CONFIG: ${{ steps.config.outputs.value }}
+      run: |
+        echo "run=$(jq -r '.run' <<< "${CONFIG}")" >> "$GITHUB_OUTPUT"
+        echo "release-types=$(jq -r '."release-types"' <<< "${CONFIG}")" >> "$GITHUB_OUTPUT"
+        {
+            echo "workflows<<EOF"
+            jq -r '.workflows' <<< "${CONFIG}"
+            echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
   publish:
+    needs:
+    - config
     if: >-
       github.event.workflow_run.event == 'push'
+      && fromJSON(needs.config.outputs.run)
     permissions:
       actions: read
       contents: read
@@ -33,5 +85,8 @@ jobs:
       gcr-key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
     uses: ./.github/workflows/_publish.yml
     with:
+      branch: ${{ github.event.workflow_run.head_branch }}
       committer-email: "140627008+publish-envoy[bot]@users.noreply.github.com"
       committer-name: "publish-envoy[bot]"
+      release-types: ${{ needs.config.outputs.release-types }}
+      workflows: ${{ needs.config.outputs.workflows }}
