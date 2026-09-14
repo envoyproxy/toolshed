@@ -19,6 +19,9 @@ on:
       bazel-versions-file:
         type: string
         default: bazel/versions.bzl
+      branch:
+        type: string
+        default: main
       committer-email:
         type: string
         required: true
@@ -95,7 +98,7 @@ jobs:
       name: Checkout the repository
       uses: envoyproxy/toolshed/actions/github/checkout@23d5a687b43f8984a3fdfd9b494470d80369b538  # actions-v0.4.26
       with:
-        branch: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
+        branch: ${{ inputs.branch }}
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
         pr: ${{ github.event.pull_request.number || '' }}
@@ -522,13 +525,17 @@ jobs:
       uses: envoyproxy/toolshed/actions/github/pr@23d5a687b43f8984a3fdfd9b494470d80369b538  # actions-v0.4.26
       if: fromJSON(steps.commit.outputs.changes)
       with:
-        base: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
+        base: ${{ inputs.branch }}
         branch: >-
           release/${{
             inputs.action == 'prepare'
             && 'prepare'
             || 'create'
-          }}/${{ inputs.type }}/${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
+          }}/${{ inputs.type }}/${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}${{
+            inputs.branch != 'main'
+            && format('-{0}', inputs.branch)
+            || ''
+          }}
         commit: false
         title: >-
           ${{ steps.commit.outputs.message }}
