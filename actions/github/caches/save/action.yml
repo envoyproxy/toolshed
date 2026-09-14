@@ -9,7 +9,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/actions/foreach@57e3123e8c1007f270f1869ec6b4a5925386a2ae
+  - uses: envoyproxy/toolshed/actions/foreach@352ad2a91836059bb4fc55d9939e216d450719ae
     id: json_actions
     with:
       items: ${{ inputs.caches }}

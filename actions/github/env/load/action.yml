@@ -36,7 +36,7 @@ runs:
   using: composite
   steps:
   # For dispatch events we have to find the request via the Request workflow
-  - uses: envoyproxy/toolshed/actions/bson@57e3123e8c1007f270f1869ec6b4a5925386a2ae
+  - uses: envoyproxy/toolshed/actions/bson@352ad2a91836059bb4fc55d9939e216d450719ae
     name: Find request
     id: find-request
     if: ${{ inputs.head-sha }}
@@ -47,7 +47,7 @@ runs:
         | ("${{ inputs.template-script-current }}" | bash::output)
   - name: Download environment data
     id: download
-    uses: envoyproxy/toolshed/actions/github/artifact/download@57e3123e8c1007f270f1869ec6b4a5925386a2ae
+    uses: envoyproxy/toolshed/actions/github/artifact/download@352ad2a91836059bb4fc55d9939e216d450719ae
     with:
       name: ${{ inputs.name }}
       path: ${{ runner.temp }}
@@ -55,7 +55,7 @@ runs:
 
   - name: Validate environment source
     if: ${{ github.event_name == 'workflow_run' }}
-    uses: envoyproxy/toolshed/actions/jq@57e3123e8c1007f270f1869ec6b4a5925386a2ae
+    uses: envoyproxy/toolshed/actions/jq@352ad2a91836059bb4fc55d9939e216d450719ae
     with:
       input: |
         workflow_event: ${{ toJSON(github.event.workflow_run.event) }}
@@ -79,7 +79,7 @@ runs:
           else
             "✓ Environment source validation passed"
           end
-  - uses: envoyproxy/toolshed/actions/jq@57e3123e8c1007f270f1869ec6b4a5925386a2ae
+  - uses: envoyproxy/toolshed/actions/jq@352ad2a91836059bb4fc55d9939e216d450719ae
     name: Load env data
     id: data
     with:
