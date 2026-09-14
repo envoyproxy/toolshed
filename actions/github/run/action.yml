@@ -27,6 +27,22 @@ inputs:
   entrypoint:
     type: string
     default:
+  envsubst-vars:
+    description: >-
+      Whitespace-separated list of environment variable names that are expanded
+      in `command`, `args` and `container-command`. Any other variable is left
+      untouched.
+    type: string
+    default: >-
+      GITHUB_WORKSPACE
+      HOME
+      PWD
+      RUNNER_TEMP
+      TMP_ENTRYPOINT
+      TMP_REPORT
+      TMP_SOURCE
+      TMP_STDERR
+      TMP_STDOUT
   error-match:
     type: string
     default: |
@@ -76,10 +92,7 @@ inputs:
   steps-post-name:
     type: string
     default:
-  upload-name:
-    type: string
-    default:
-  upload-path:
+  uploads:
     type: string
     default:
   warning-match:
@@ -112,10 +125,10 @@ runs:
   steps:
   - if: ${{ fromJSON(inputs.diskspace-hack) }}
     name: Free diskspace
-    uses: envoyproxy/toolshed/actions/diskspace@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+    uses: envoyproxy/toolshed/actions/diskspace@baa13e5e8154d7e175da88eec1c5dc06046a702c
     with:
       to_remove: ${{ inputs.diskspace-hack-paths }}
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Generate download config
     if: ${{ inputs.downloads }}
     id: download-config
@@ -132,7 +145,7 @@ runs:
              else
                "${{ runner.temp }}/\(.)"
              end)
-  - uses: envoyproxy/toolshed/actions/foreach@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/foreach@baa13e5e8154d7e175da88eec1c5dc06046a702c
     if: ${{ steps.download-config.outputs.value }}
     with:
       items: ${{ steps.download-config.outputs.value }}
@@ -175,7 +188,7 @@ runs:
       OUTPUT_DATA: ${{ inputs.output-path }}
     shell: bash
 
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     id: entrypoint
     with:
       input: |
@@ -185,7 +198,7 @@ runs:
       output-path: ${{ steps.paths.outputs.entrypoint }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
 
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     id: source
     with:
       input: |
@@ -194,27 +207,27 @@ runs:
       options: -Rsr
       output-path: ${{ steps.paths.outputs.source }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Generate run context (steps-pre)
     id: context-steps-pre
     with:
       input: ${{ inputs.steps-pre || '""' }}
       options: -Rs
       input-format: string
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Generate run context (steps-post)
     id: context-steps-post
     with:
       input: ${{ inputs.steps-post || '""' }}
       options: -Rs
       input-format: string
-  - uses: envoyproxy/toolshed/actions/using/steps@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/using/steps@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Pre report
     if: ${{ inputs.report-pre }}
     with:
       steps: ${{ inputs.report-pre }}
       context: ${{ inputs.context }}
-  - uses: envoyproxy/toolshed/actions/using/steps@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/using/steps@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Run pre steps
     if: ${{ inputs.steps-pre }}
     with:
@@ -224,25 +237,44 @@ runs:
 
   - run: |
       # Put the command and args together
+      #
+      # Command inputs are passed via `env` and never interpolated into this
+      # script, and only the variables listed in `envsubst-vars` are expanded,
+      # so a crafted command cannot pull arbitrary environment (eg tokens) into
+      # the command line.
+      SHELL_FORMAT=""
+      for envsubst_var in ${ENVSUBST_VARS}; do
+          if [[ ! "$envsubst_var" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+              echo "::error::Invalid envsubst variable name: ${envsubst_var}" >&2
+              exit 1
+          fi
+          SHELL_FORMAT+="\$${envsubst_var} "
+      done
       COMMAND=()
-      read -ra ARGS <<< "${{ inputs.args }}"
+      read -d '' -ra ARGS <<< "$ARGS_INPUT" || :
+      read -d '' -ra COMMAND_PARTS <<< "$COMMAND_INPUT" || :
       ACTUAL_COMMAND=(
-          ${{ inputs.command }}
-          ${ARGS[@]})
-      CONTAINER_COMMAND="${CONTAINER_COMMAND:-${{ inputs.container-command }}}"
-      CONTAINER_COMMAND="$(echo $CONTAINER_COMMAND | envsubst)"
+          "${COMMAND_PARTS[@]}"
+          "${ARGS[@]}")
+      CONTAINER_COMMAND="${CONTAINER_COMMAND:-${CONTAINER_COMMAND_INPUT}}"
+      CONTAINER_COMMAND="$(echo "$CONTAINER_COMMAND" | envsubst "$SHELL_FORMAT")"
       read -ra ACTUAL_CONTAINER_COMMAND <<< "${CONTAINER_COMMAND}"
       COMMAND+=("${ACTUAL_CONTAINER_COMMAND[@]}")
       COMMAND+=("${ACTUAL_COMMAND[@]}")
-      echo "container=${ACTUAL_CONTAINER_COMMAND[*]}" >> $GITHUB_OUTPUT
-      echo "CONTAINER_COMMAND=${ACTUAL_CONTAINER_COMMAND[*]}" >> $GITHUB_ENV
-      ACTUAL_COMMAND="$(echo "${ACTUAL_COMMAND[*]}" | envsubst)"
-      echo "actual=${ACTUAL_COMMAND}" >> $GITHUB_OUTPUT
-      echo "command=${COMMAND[*]}" >> $GITHUB_OUTPUT
+      echo "container=${ACTUAL_CONTAINER_COMMAND[*]}" >> "$GITHUB_OUTPUT"
+      echo "CONTAINER_COMMAND=${ACTUAL_CONTAINER_COMMAND[*]}" >> "$GITHUB_ENV"
+      ACTUAL_COMMAND="$(echo "${ACTUAL_COMMAND[*]}" | envsubst "$SHELL_FORMAT")"
+      echo "actual=${ACTUAL_COMMAND}" >> "$GITHUB_OUTPUT"
+      echo "command=${COMMAND[*]}" >> "$GITHUB_OUTPUT"
     id: command
     shell: bash
+    env:
+      ARGS_INPUT: ${{ inputs.args }}
+      COMMAND_INPUT: ${{ inputs.command }}
+      CONTAINER_COMMAND_INPUT: ${{ inputs.container-command }}
+      ENVSUBST_VARS: ${{ inputs.envsubst-vars }}
 
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     if: ${{ always() }}
     id: started
     with:
@@ -276,21 +308,21 @@ runs:
     env:
       COMMAND: ${{ steps.command.outputs.command }}
       TARGET_PATH: ${{ inputs.working-directory }}
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     id: cancelled
     if: ${{ cancelled() }}
     with:
       options: -r
       filter: |
         true
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     if: ${{ always() }}
     id: completed
     with:
       options: -r
       filter: now
 
-  - uses: envoyproxy/toolshed/actions/bson@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/bson@baa13e5e8154d7e175da88eec1c5dc06046a702c
     if: ${{ ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false')) }}
     with:
       input-format: string-path
@@ -309,7 +341,7 @@ runs:
              error: $error_match,
              fail: $fail_match})
 
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Generate run context
     id: context
     if: ${{ always() }}
@@ -330,7 +362,7 @@ runs:
         | {"run": .,
            "context": ${{ inputs.context || '{}' }}}
 
-  - uses: envoyproxy/toolshed/actions/bson@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/bson@baa13e5e8154d7e175da88eec1c5dc06046a702c
     if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
     with:
       input: |
@@ -350,47 +382,70 @@ runs:
               | "\($dir)/\($v)" as $target
               | "mkdir -p $(dirname \($dir_target))\n\(env.CONTAINER_COMMAND) cp -a \($k) \($target)")
         | join("\n")
-  - uses: envoyproxy/toolshed/actions/using/steps@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/using/steps@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Run post steps
     if: ${{ inputs.steps-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     id: post-failed
-    if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
+    if: ${{ failure() && inputs.uploads }}
     with:
       input: ${{ steps.context.outputs.value }}
       filter: |
         .run["post-steps-failed"] = true
-  - uses: envoyproxy/toolshed/actions/using/steps@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/using/steps@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Post report
     if: ${{ inputs.report-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
       steps: ${{ inputs.report-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-    name: Upload artefacts
-    if: ${{ inputs.upload-name && inputs.upload-path && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
+    name: Generate upload config
+    id: upload-config
+    if: ${{ inputs.uploads && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
-      name: ${{ inputs.upload-name }}
-      path: ${{ startsWith(inputs.upload-path, '/') && inputs.upload-path || format('{0}/{1}', runner.temp, inputs.upload-path) }}
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+      input: ${{ inputs.uploads }}
+      input-format: yaml
+      filter: |
+        with_entries(
+          .value
+          |= (if type == "string" then {path: .} else . end)
+          | .value.path
+            |= if startswith("/") then
+                 .
+               else
+                 "${{ runner.temp }}/\(.)"
+               end)
+  - uses: envoyproxy/toolshed/actions/foreach@baa13e5e8154d7e175da88eec1c5dc06046a702c
+    if: ${{ steps.upload-config.outputs.value }}
+    with:
+      items: ${{ steps.upload-config.outputs.value }}
+      steps: |
+        - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+          with:
+            name: $KEY
+            path: >-
+              %{{ fromJSON(inputs.context).items['$KEY'].path }}
+            if-no-files-found: >-
+              %{{ fromJSON(inputs.context).items['$KEY']['if-no-files-found'] || 'warn' }}
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     id: upload-failed
-    if: ${{ failure() && inputs.upload-name && inputs.upload-path }}
+    if: ${{ failure() && inputs.uploads }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
         .run["upload-failed"] = true
-  - uses: envoyproxy/toolshed/actions/jq@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c
     id: run-cancelled
     if: ${{ cancelled() }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
         .run["cancelled"] = true
-  - uses: envoyproxy/toolshed/actions/using/steps@cdd2811f74b5ba0f69a56ac361f4426ce215c03f
+  - uses: envoyproxy/toolshed/actions/using/steps@baa13e5e8154d7e175da88eec1c5dc06046a702c
     name: Job summary
     if: ${{ always() && inputs.summary-post }}
     with:
