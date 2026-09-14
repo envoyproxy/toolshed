@@ -95,7 +95,7 @@ jobs:
       name: Checkout the repository
       uses: envoyproxy/toolshed/actions/github/checkout@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
       with:
-        branch: main
+        branch: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
         committer-name: ${{ inputs.committer-name }}
         committer-email: ${{ inputs.committer-email }}
         pr: ${{ github.event.pull_request.number || '' }}
@@ -499,7 +499,7 @@ jobs:
       uses: envoyproxy/toolshed/actions/github/pr@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
       if: fromJSON(steps.commit.outputs.changes)
       with:
-        base: main
+        base: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
         branch: >-
           release/${{
             inputs.action == 'prepare'
