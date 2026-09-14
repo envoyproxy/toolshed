@@ -5,6 +5,9 @@ inputs:
   artifacts:
     type: boolean
     default: true
+  branch:
+    type: string
+    default: main
   dry-run:
     type: boolean
     default: true
@@ -109,6 +112,7 @@ runs:
     uses: envoyproxy/toolshed/actions/github/release/publish@baa13e5e8154d7e175da88eec1c5dc06046a702c
     with:
       assets: ${{ fromJSON(inputs.artifacts) && format('{0}/*', inputs.publish-directory) || '' }}
+      branch: ${{ inputs.branch }}
       dry-run: ${{ inputs.dry-run }}
       event: ${{ inputs.event }}
       fail-if-exists: ${{ inputs.fail-if-exists }}
