@@ -18,18 +18,7 @@ on:
         default:
       cache-entries-default:
         type: string
-        default: |
-          llvm-x86:
-            extension: "//compile:extensions.bzl%llvm_minimal_build_extension"
-            repo: llvm_tarball_linux_x86_64
-          llvm-aarch:
-            extension: "//compile:extensions.bzl%llvm_minimal_build_extension"
-            repo: llvm_tarball_linux_arm64
-          llvm-macos:
-            extension: "//compile:extensions.bzl%llvm_minimal_build_extension"
-            repo: llvm_tarball_macos_arm64
-          v8-source:
-            module: v8
+        default:
       cache-keys:
         type: string
         default:
@@ -74,7 +63,7 @@ on:
         type: boolean
         default: true
       bazel-mode:
-        description: Bazel mode (workspace or bzlmod)
+        description: Bazel mode (workspace)
         required: true
         type: string
       bazel-path:
@@ -106,7 +95,7 @@ jobs:
       contents: read
       packages: read
     steps:
-    - uses: envoyproxy/toolshed/actions/bind-mounts@baa13e5e8154d7e175da88eec1c5dc06046a702c  # actions-v0.4.26+
+    - uses: envoyproxy/toolshed/actions/bind-mounts@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
       if: runner.os == 'Linux'
       with:
         mounts: |
@@ -121,7 +110,7 @@ jobs:
 
     - name: Bazel caches
       id: repo-cache-resolve
-      uses: envoyproxy/toolshed/actions/bazel/cache/resolve@baa13e5e8154d7e175da88eec1c5dc06046a702c  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/bazel/cache/resolve@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
       if: ${{ inputs.cache-entries != 'NONE' }}
       with:
         lock-file: bazel/MODULE.bazel.lock
@@ -131,7 +120,7 @@ jobs:
     - name: Restore caches
       id: cache-restore
       if: ${{ inputs.cache-entries != 'NONE' }}
-      uses: envoyproxy/toolshed/actions/github/caches/restore@baa13e5e8154d7e175da88eec1c5dc06046a702c  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/github/caches/restore@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
       with:
         caches: ${{ steps.repo-cache-resolve.outputs.caches }}
 
@@ -161,7 +150,7 @@ jobs:
     - name: RBE auth check
       id: rbe
       if: inputs.rbe && github.event_name == 'pull_request'
-      uses: envoyproxy/toolshed/actions/github/container/auth@baa13e5e8154d7e175da88eec1c5dc06046a702c  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/github/container/auth@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
       with:
         container: hello-world
     - name: Compute RBE/download flags
@@ -269,7 +258,7 @@ jobs:
         && inputs.bazel-path == 'bazel'
         && inputs.upload
         && inputs.create-source
-      uses: envoyproxy/toolshed/actions/source@baa13e5e8154d7e175da88eec1c5dc06046a702c  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/source@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
       with:
         output-name: toolshed-bazel-v{version}.tar.gz
         source-path: bazel/
@@ -291,7 +280,7 @@ jobs:
         inputs.action == 'build'
         && inputs.artifacts
         && inputs.upload
-      uses: envoyproxy/toolshed/actions/jq@baa13e5e8154d7e175da88eec1c5dc06046a702c  # actions-v0.4.26+
+      uses: envoyproxy/toolshed/actions/jq@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
       with:
         input: ${{ inputs.artifacts }}
         input-format: text
@@ -318,7 +307,7 @@ jobs:
       env:
         ARTIFACT_PATH_LIST: ${{ steps.artifact-paths.outputs.value }}
     - name: Bazel artifacts
-      if: ${{ inputs.upload && (steps.artifact-paths.outputs.value || steps.source-tarball.outputs.tarball) }}
+      if: ${{ inputs.upload && steps.artifact-paths.outputs.value }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: ${{ inputs.artifact-name }}
@@ -327,8 +316,8 @@ jobs:
         retention-days: 30
 
     - name: Save caches
-      uses: envoyproxy/toolshed/actions/github/caches/save@baa13e5e8154d7e175da88eec1c5dc06046a702c  # actions-v0.4.26+
-      if: inputs.cache-create
+      uses: envoyproxy/toolshed/actions/github/caches/save@a42ab9e8069c13e111ed5b98c230715689a51688  # actions-v0.4.26+
+      if: inputs.cache-create && inputs.cache-entries != 'NONE'
       with:
         caches: ${{ steps.repo-cache-resolve.outputs.caches }}
         hits: ${{ steps.cache-restore.outputs.hits }}
