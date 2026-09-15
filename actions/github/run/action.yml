@@ -299,7 +299,7 @@ runs:
       SOURCED=1
       read -ra COMMAND_PARTS <<< "$COMMAND"
       EXIT_CODE=0
-      "${COMMAND_PARTS[@]}" > >(tee "$TMP_STDOUT") 2> >(tee "$TMP_STDERR") || {
+      "${COMMAND_PARTS[@]}" > >(tee "$TMP_STDOUT") 2> >("${{ github.action_path }}/annotate.sh" "$TMP_STDERR") || {
           EXIT_CODE=$?
       }
       echo "exit-code=${EXIT_CODE}" >> $GITHUB_OUTPUT
@@ -308,6 +308,9 @@ runs:
     env:
       COMMAND: ${{ steps.command.outputs.command }}
       TARGET_PATH: ${{ inputs.working-directory }}
+      TOOLSHED_ERROR_MATCH: ${{ inputs.error-match }}
+      TOOLSHED_NOTICE_MATCH: ${{ inputs.notice-match }}
+      TOOLSHED_WARNING_MATCH: ${{ inputs.warning-match }}
   - uses: envoyproxy/toolshed/actions/jq@d2cf80f1a4b8d5132eb9970fc806c2e941408474
     id: cancelled
     if: ${{ cancelled() }}
@@ -330,16 +333,9 @@ runs:
       options: -sRr
       filter: |
         . as $lines
-        | ("${{ inputs.error-match }}" | split("\n") | map(select(test("^\\s*$") | not))) as $error_match
         | ("${{ inputs.fail-match }}" | split("\n") | map(select(test("^\\s*$") | not))) as $fail_match
-        | ("${{ inputs.warning-match }}" | split("\n") | map(select(test("^\\s*$") | not))) as $warning_match
-        | ("${{ inputs.notice-match }}" | split("\n") | map(select(test("^\\s*$") | not))) as $notice_match
         | $lines
-        | github::log_bubble(
-            {warning: $warning_match,
-             notice: $notice_match,
-             error: $error_match,
-             fail: $fail_match})
+        | github::log_bubble({fail: $fail_match})
 
   - uses: envoyproxy/toolshed/actions/jq@d2cf80f1a4b8d5132eb9970fc806c2e941408474
     name: Generate run context

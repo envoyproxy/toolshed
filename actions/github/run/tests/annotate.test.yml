@@ -1,0 +1,33 @@
+name: github/run streams matching annotations with command output
+
+uses: ./actions/github/run
+id: run
+with:
+  command: bash
+  args: >-
+    -c
+    printf '%s\n' 'ordinary output' 'INFO: Build completed, 2 tests FAILED, 26020 total actions'
+  error-match: FAILED
+
+after:
+- shell: bash
+  run: |
+    TMP_STDERR="$(mktemp)"
+    trap 'rm -f "$TMP_STDERR"' EXIT
+    export TMP_STDERR
+    export TOOLSHED_ERROR_MATCH=FAILED
+    actual="$(printf '%s\n' \
+      'ordinary output' \
+      'INFO: Build completed, 2 tests FAILED, 26020 total actions' \
+      | "${ACTION_TEST_PATH}/../annotate.sh" "$TMP_STDERR")"
+    expected=$'ordinary output\nINFO: Build completed, 2 tests FAILED, 26020 total actions\n::error::INFO: Build completed, 2 tests FAILED, 26020 total actions'
+    if [[ "$actual" != "$expected" ]]; then
+        echo "Unexpected streamed annotation output:"
+        printf '%s\n' "$actual"
+        exit 1
+    fi
+    expected_file=$'ordinary output\nINFO: Build completed, 2 tests FAILED, 26020 total actions'
+    if [[ "$(cat "$TMP_STDERR")" != "$expected_file" ]]; then
+        echo "Annotation stream did not preserve stderr"
+        exit 1
+    fi
