@@ -1,121 +1,67 @@
 #!/usr/bin/env bash
 
-# The run action captures command output through a streaming filter. Annotating in this
-# stream keeps the workflow command next to the output that caused it.
+# Stream stderr to the action log while emitting matching annotations.
+set -euo pipefail
 
-TOOLSHED_ANNOTATION_SEEN_LEVEL=()
-TOOLSHED_ANNOTATION_SEEN_MESSAGE=()
-TOOLSHED_ANNOTATION_NOTICE_EMITTED=0
-TOOLSHED_ANNOTATION_NOTICE_SUPPRESSED=0
-TOOLSHED_ANNOTATION_ERROR_EMITTED=0
-TOOLSHED_ANNOTATION_ERROR_SUPPRESSED=0
-TOOLSHED_ANNOTATION_WARNING_EMITTED=0
-TOOLSHED_ANNOTATION_WARNING_SUPPRESSED=0
+output="$1"
 
-toolshed_annotation_message() {
-    local message="$1"
-    message="${message//%/%25}"
-    message="${message//$'\r'/%0D}"
-    message="${message//$'\n'/%0A}"
-    printf '%s' "$message"
+awk \
+    -v output="$output" \
+    -v error_match="${TOOLSHED_ERROR_MATCH:-}" \
+    -v notice_match="${TOOLSHED_NOTICE_MATCH:-}" \
+    -v warning_match="${TOOLSHED_WARNING_MATCH:-}" \
+    '
+function emit(level, message, key, escaped) {
+    key = level SUBSEP message
+    if (seen[key]) {
+        return
+    }
+    seen[key] = 1
+    if (emitted[level] < 9) {
+        escaped = message
+        gsub(/%/, "%25", escaped)
+        gsub(/\r/, "%0D", escaped)
+        printf "::%s::%s\n", level, escaped
+        fflush()
+        emitted[level]++
+    } else {
+        suppressed[level]++
+    }
 }
 
-toolshed_annotation_emit() {
-    local level="$1"
-    local message="$2"
-    local i
-
-    for i in "${!TOOLSHED_ANNOTATION_SEEN_LEVEL[@]}"; do
-        if [[ "${TOOLSHED_ANNOTATION_SEEN_LEVEL[$i]}" == "$level" ]] && [[ "${TOOLSHED_ANNOTATION_SEEN_MESSAGE[$i]}" == "$message" ]]; then
+function match_and_emit(level, line, patterns, pattern_count, i, clean_line) {
+    clean_line = line
+    gsub(/\033\[[0-9;]*[a-zA-Z]/, "", clean_line)
+    for (i = 1; i <= pattern_count; i++) {
+        if (patterns[i] != "" && clean_line ~ patterns[i]) {
+            emit(level, line)
             return
-        fi
-    done
-    TOOLSHED_ANNOTATION_SEEN_LEVEL+=("$level")
-    TOOLSHED_ANNOTATION_SEEN_MESSAGE+=("$message")
-
-    local emitted
-    local suppressed
-    case "$level" in
-        notice)
-            emitted="$TOOLSHED_ANNOTATION_NOTICE_EMITTED"
-            suppressed="$TOOLSHED_ANNOTATION_NOTICE_SUPPRESSED"
-            ;;
-        error)
-            emitted="$TOOLSHED_ANNOTATION_ERROR_EMITTED"
-            suppressed="$TOOLSHED_ANNOTATION_ERROR_SUPPRESSED"
-            ;;
-        warning)
-            emitted="$TOOLSHED_ANNOTATION_WARNING_EMITTED"
-            suppressed="$TOOLSHED_ANNOTATION_WARNING_SUPPRESSED"
-            ;;
-        *) return 0 ;;
-    esac
-
-    if [[ "$emitted" -lt 9 ]]; then
-        printf '::%s::%s\n' "$level" "$(toolshed_annotation_message "$message")"
-        emitted=$((emitted + 1))
-    else
-        suppressed=$((suppressed + 1))
-    fi
-
-    case "$level" in
-        notice)
-            TOOLSHED_ANNOTATION_NOTICE_EMITTED="$emitted"
-            TOOLSHED_ANNOTATION_NOTICE_SUPPRESSED="$suppressed"
-            ;;
-        error)
-            TOOLSHED_ANNOTATION_ERROR_EMITTED="$emitted"
-            TOOLSHED_ANNOTATION_ERROR_SUPPRESSED="$suppressed"
-            ;;
-        warning)
-            TOOLSHED_ANNOTATION_WARNING_EMITTED="$emitted"
-            TOOLSHED_ANNOTATION_WARNING_SUPPRESSED="$suppressed"
-            ;;
-    esac
+        }
+    }
 }
 
-toolshed_annotation_match() {
-    local level="$1"
-    local line="$2"
-    local patterns
-
-    case "$level" in
-        error) patterns="${TOOLSHED_ERROR_MATCH:-}" ;;
-        warning) patterns="${TOOLSHED_WARNING_MATCH:-}" ;;
-        notice) patterns="${TOOLSHED_NOTICE_MATCH:-}" ;;
-        *) return 0 ;;
-    esac
-
-    while IFS= read -r pattern; do
-        [[ -z "$pattern" ]] && continue
-        if [[ "$line" =~ $pattern ]]; then
-            toolshed_annotation_emit "$level" "$line"
-            return
-        fi
-    done <<< "$patterns"
+BEGIN {
+    error_count = split(error_match, error_patterns, "\n")
+    notice_count = split(notice_match, notice_patterns, "\n")
+    warning_count = split(warning_match, warning_patterns, "\n")
 }
 
-toolshed_annotate_stream() {
-    local output="$1"
-
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        printf '%s\n' "$line" >> "$output"
-        printf '%s\n' "$line"
-        toolshed_annotation_match notice "$line"
-        toolshed_annotation_match error "$line"
-        toolshed_annotation_match warning "$line"
-    done
-
-    for level in notice error warning; do
-        local suppressed
-        case "$level" in
-            notice) suppressed="$TOOLSHED_ANNOTATION_NOTICE_SUPPRESSED" ;;
-            error) suppressed="$TOOLSHED_ANNOTATION_ERROR_SUPPRESSED" ;;
-            warning) suppressed="$TOOLSHED_ANNOTATION_WARNING_SUPPRESSED" ;;
-        esac
-        if [[ "$suppressed" -gt 0 ]]; then
-            printf '::%s::%s\n' "$level" "... and $suppressed more ${level}s"
-        fi
-    done
+{
+    print $0 >> output
+    fflush(output)
+    print $0
+    fflush()
+    match_and_emit("notice", $0, notice_patterns, notice_count)
+    match_and_emit("error", $0, error_patterns, error_count)
+    match_and_emit("warning", $0, warning_patterns, warning_count)
 }
-toolshed_annotate_stream "$1"
+
+END {
+    for (i = 1; i <= 3; i++) {
+        level = (i == 1 ? "notice" : i == 2 ? "error" : "warning")
+        if (suppressed[level] > 0) {
+            printf "::%s::... and %d more %ss\n", level, suppressed[level], level
+        }
+    }
+}
+'
