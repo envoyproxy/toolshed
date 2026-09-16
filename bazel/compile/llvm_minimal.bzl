@@ -149,28 +149,59 @@ def _lib_glob_to_extract_spec(pattern):
 def _llvm_version_major(version):
     return version.split(".")[0]
 
-def render_llvm_repo_build(llvm_major):
-    """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact."""
+# Fixed-name LLVM tool filegroups rendered into every minimal/host LLVM repo, as
+# (target name, fixed bin/ srcs, extra glob-with-allow_empty patterns).
+#
+# On the hermetic path the fixed srcs are emitted as literal file labels: the
+# minimal artifact is built from this same allowlist (see LLVM_MINIMAL_BINS), so
+# a tool missing from the artifact is a genuine integrity error and should fail
+# loudly. On the host path (tools_optional = True) the fixed srcs are wrapped in
+# glob(..., allow_empty = True) instead, because a distro LLVM is not guaranteed
+# to ship every allowlisted tool (e.g. git-clang-format, llvm-dwp, ld64.lld); a
+# missing one then yields an empty filegroup rather than a hard "missing input
+# file" analysis error for consumers that never reference it.
+_LLVM_REPO_TOOL_FILEGROUPS = [
+    ("clang", ["bin/clang", "bin/clang++", "bin/clang-cpp"], []),
+    ("ld", ["bin/ld.lld", "bin/ld64.lld"], ["bin/wasm-ld"]),
+    ("ar", ["bin/llvm-ar"], []),
+    ("as", ["bin/clang", "bin/llvm-as"], []),
+    ("nm", ["bin/llvm-nm"], []),
+    ("objcopy", ["bin/llvm-objcopy"], []),
+    ("objdump", ["bin/llvm-objdump"], []),
+    ("profdata", ["bin/llvm-profdata"], []),
+    ("dwp", ["bin/llvm-dwp"], []),
+    ("ranlib", ["bin/llvm-ranlib"], []),
+    ("readelf", ["bin/llvm-readelf"], []),
+    ("strip", ["bin/llvm-strip"], []),
+    ("symbolizer", ["bin/llvm-symbolizer"], []),
+    ("clang-tidy", ["bin/clang-tidy"], []),
+    ("clang-format", ["bin/clang-format"], []),
+    ("git-clang-format", ["bin/git-clang-format"], []),
+]
+
+def _render_llvm_tool_filegroups(tools_optional):
+    """Render the fixed-name LLVM tool filegroups (see _LLVM_REPO_TOOL_FILEGROUPS)."""
+    chunks = []
+    for name, fixed, extra_globs in _LLVM_REPO_TOOL_FILEGROUPS:
+        if tools_optional:
+            srcs = "glob({}, allow_empty = True)".format(fixed)
+        else:
+            srcs = "{}".format(fixed)
+        for pattern in extra_globs:
+            srcs += " + glob({}, allow_empty = True)".format([pattern])
+        chunks.append("filegroup(\n    name = \"{}\",\n    srcs = {},\n)".format(name, srcs))
+    return "\n\n".join(chunks)
+
+def render_llvm_repo_build(llvm_major, tools_optional = False):
+    """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact.
+
+    When tools_optional is True (the host-LLVM path), the fixed-name tool
+    filegroups tolerate tools the host does not ship; see
+    _LLVM_REPO_TOOL_FILEGROUPS.
+    """
     return """package(default_visibility = ["//visibility:public"])
 
-exports_files(glob(["bin/*", "lib/**", "include/**", "share/clang/*"], allow_empty = True))
-
-filegroup(
-    name = "clang",
-    srcs = [
-        "bin/clang",
-        "bin/clang++",
-        "bin/clang-cpp",
-    ],
-)
-
-filegroup(
-    name = "ld",
-    srcs = [
-        "bin/ld.lld",
-        "bin/ld64.lld",
-    ] + glob(["bin/wasm-ld"], allow_empty = True),
-)
+exports_files(glob(["bin/*", "lib/**", "lib64/**", "include/**", "share/clang/*"], allow_empty = True))
 
 filegroup(
     name = "include",
@@ -194,12 +225,12 @@ filegroup(
 filegroup(
     name = "cxx_builtin_include",
     srcs = glob([
-        "include/c++",
-        "lib/clang/{llvm_major}/include",
-        "lib/clang/{llvm_major}/share",
-        "lib/clang/{llvm_major}/libcxx-msan/include",
-        "lib/clang/{llvm_major}/libcxx-msan/source/include",
-    ], allow_empty = True, exclude_directories = 0),
+        "include/c++/**",
+        "lib/clang/{llvm_major}/include/**",
+        "lib/clang/{llvm_major}/share/**",
+        "lib/clang/{llvm_major}/libcxx-msan/include/**",
+        "lib/clang/{llvm_major}/libcxx-msan/source/include/**",
+    ], allow_empty = True),
 )
 
 filegroup(
@@ -247,84 +278,13 @@ filegroup(
     srcs = glob(["lib/clang/{llvm_major}/lib/darwin/libclang_rt.ubsan_osx_dynamic.dylib"], allow_empty = True),
 )
 
-filegroup(
-    name = "ar",
-    srcs = ["bin/llvm-ar"],
-)
-
-filegroup(
-    name = "as",
-    srcs = [
-        "bin/clang",
-        "bin/llvm-as",
-    ],
-)
-
-filegroup(
-    name = "nm",
-    srcs = ["bin/llvm-nm"],
-)
-
-filegroup(
-    name = "objcopy",
-    srcs = ["bin/llvm-objcopy"],
-)
-
-filegroup(
-    name = "objdump",
-    srcs = ["bin/llvm-objdump"],
-)
-
-filegroup(
-    name = "profdata",
-    srcs = ["bin/llvm-profdata"],
-)
-
-filegroup(
-    name = "dwp",
-    srcs = ["bin/llvm-dwp"],
-)
-
-filegroup(
-    name = "ranlib",
-    srcs = ["bin/llvm-ranlib"],
-)
-
-filegroup(
-    name = "readelf",
-    srcs = ["bin/llvm-readelf"],
-)
-
-filegroup(
-    name = "strip",
-    srcs = ["bin/llvm-strip"],
-)
-
-filegroup(
-    name = "symbolizer",
-    srcs = ["bin/llvm-symbolizer"],
-)
-
-filegroup(
-    name = "clang-tidy",
-    srcs = ["bin/clang-tidy"],
-)
-
-filegroup(
-    name = "clang-format",
-    srcs = ["bin/clang-format"],
-)
-
-filegroup(
-    name = "git-clang-format",
-    srcs = ["bin/git-clang-format"],
-)
+{tool_filegroups}
 
 filegroup(
     name = "libclang",
     srcs = glob(["lib/libclang.so*", "lib/libclang*.dylib"], allow_empty = True),
 )
-""".format(llvm_major = llvm_major)
+""".format(llvm_major = llvm_major, tool_filegroups = _render_llvm_tool_filegroups(tools_optional))
 
 LLVM_MINIMAL_LLVM_REPO_BUILD = render_llvm_repo_build(_llvm_version_major(LLVM_VERSION))
 
@@ -462,8 +422,182 @@ def _ensure_repo_dir(ctx, source_root, relpath):
         if result.return_code:
             fail("Failed to create llvm_toolchain_llvm alias directory '{}': {}".format(relpath, result.stderr))
 
+# Environment variable that, when set to a host LLVM install prefix (e.g.
+# "/usr"), makes llvm_toolchain_alias back @llvm_toolchain_llvm with that host
+# toolchain instead of the hermetic minimal artifact. This is the same variable
+# Envoy's own bazel/repo.bzl reads to switch to a host LLVM, so a single knob
+# selects the host toolchain consistently across the build.
+_HOST_LLVM_PATH_ENV = "BAZEL_LLVM_PATH"
+
+# Subdirectories of a host LLVM's include/ that hold the libclang / libTooling /
+# LLVM C++ API headers consumed by downstream tools (e.g. the Envoy openssl
+# prefixer, which #includes "clang/AST/...", "clang-c/...", and "llvm/..."). This
+# mirrors the include/* entries of LLVM_MINIMAL_LIB_GLOBS so a host LLVM presents
+# the same header surface as the hermetic minimal artifact -- and stays scoped to
+# LLVM headers rather than sweeping in the whole distro include tree.
+_HOST_LLVM_INCLUDE_SUBDIRS = [
+    "c++",
+    "clang",
+    "clang-c",
+    "llvm",
+    "llvm-c",
+]
+
+# Shared-library basename prefixes to expose from a host LLVM's lib/ and lib64/.
+# Matches the lib/libclang-cpp.so* / lib/libLLVM.so* / lib/libclang.so* entries
+# of LLVM_MINIMAL_LIB_GLOBS.
+_HOST_LLVM_SHARED_LIB_PREFIXES = [
+    "libclang-cpp.so",
+    "libLLVM.so",
+    "libclang.so",
+]
+
+def _host_llvm_resource_dir(ctx, host_root):
+    """Locate a host LLVM's clang resource dir (lib{,64}/clang/<major>).
+
+    Distros place it under lib/ or lib64/; returns (major, path) for the highest
+    version found, or (None, None) if absent. The major drives the shared BUILD
+    template's lib/clang/<major>/... globs and the bin/ version-suffix probe.
+    """
+    best_major = None
+    best_dir = None
+    for libdir in ["lib", "lib64"]:
+        clang_root = host_root.get_child(libdir).get_child("clang")
+        if not clang_root.exists:
+            continue
+        for child in clang_root.readdir():
+            # Resource dirs are named by version (e.g. "21" or "21.1.8"); compare
+            # by the leading integer major so the newest wins deterministically.
+            major = child.basename.split(".")[0]
+            if not major.isdigit():
+                continue
+            if best_major == None or int(major) > int(best_major):
+                best_major = major
+                best_dir = child
+    return best_major, best_dir
+
+def _host_llvm_shared_libs(host_root):
+    """Collect a host LLVM's shared libraries as {basename: host path}.
+
+    Scans both lib/ and lib64/ (distros differ) and keeps the first occurrence of
+    each basename, so callers can place every lib deterministically regardless of
+    which dir the host uses. lib64/ is scanned first so that on a 64-bit multilib
+    host (e.g. clang-libs.i686 alongside the 64-bit package, which puts a 32-bit
+    libclang-cpp.so in /usr/lib and the 64-bit one in /usr/lib64) the 64-bit lib
+    wins -- and so the choice matches the lib dir Envoy's repo.bzl probes first
+    when it composes the version-qualified label.
+    """
+    found = {}
+    for libdir in ["lib64", "lib"]:
+        host_lib_dir = host_root.get_child(libdir)
+        if not host_lib_dir.exists:
+            continue
+        for child in host_lib_dir.readdir():
+            for prefix in _HOST_LLVM_SHARED_LIB_PREFIXES:
+                if child.basename.startswith(prefix) and child.basename not in found:
+                    found[child.basename] = child
+                    break
+    return found
+
+def _symlink_host_llvm_bins(ctx, host_bin_dir, major):
+    """Symlink the allowlisted LLVM tools from a host bin/ dir into bin/.
+
+    Distros ship these version-suffixed (llvm-nm-21) or unversioned (llvm-nm);
+    accept whichever exists. The version-suffixed name is preferred so that on a
+    host with several LLVMs installed the tools match the resource-dir `major`
+    selected by _host_llvm_resource_dir rather than whatever an unversioned
+    /usr/bin/clang happens to point at. Tools absent from the host (e.g.
+    macOS-only tools) are skipped; the host BUILD renders tool filegroups with
+    allow_empty (tools_optional), so a missing optional tool is tolerated.
+    """
+    if not host_bin_dir.exists:
+        return
+    for tool in LLVM_MINIMAL_BINS:
+        for candidate in ["{}-{}".format(tool, major), tool]:
+            src = host_bin_dir.get_child(candidate)
+            if src.exists:
+                ctx.symlink(src, "bin/{}".format(tool))
+                break
+
+def _setup_host_llvm_alias(ctx, host_llvm_path):
+    """Back the alias repo with a host LLVM install rooted at host_llvm_path.
+
+    Reproduces the pre-Bzlmod behavior of building against a host (distro) LLVM
+    instead of the hermetic minimal artifact. The repo is populated from the host
+    -- bin/ tools, the LLVM C++ API headers, the clang resource dir, and the
+    libclang / libLLVM shared libraries -- and uses the *same* BUILD template as
+    the hermetic path (render_llvm_repo_build), so the host and hermetic aliases
+    expose an identical target surface to consumers. The repo name is unchanged,
+    so consumers that reference this repo's canonical path (e.g. a hardcoded
+    -isystem) keep resolving -- now to the host toolchain.
+
+    Per-child (not whole-directory) symlinks are used, matching the hermetic path,
+    because Bazel does not follow a symlinked package directory when sourcing
+    individual filegroup inputs.
+    """
+    host_root = ctx.path(host_llvm_path)
+    if not host_root.exists:
+        fail("{}='{}' does not exist. Set it to a host LLVM install prefix (e.g. /usr).".format(
+            _HOST_LLVM_PATH_ENV,
+            host_llvm_path,
+        ))
+
+    # The clang resource dir both supplies the builtin headers and pins the LLVM
+    # major used below; its absence means this is not a usable LLVM install, so
+    # fail fast rather than emit an empty-but-"successful" repo (every glob is
+    # allow_empty, so nothing else would complain).
+    major, resource_dir = _host_llvm_resource_dir(ctx, host_root)
+    if not major:
+        fail(("{}='{}' does not look like an LLVM install: no clang resource dir " +
+              "found under lib/clang/<major> or lib64/clang/<major>.").format(
+            _HOST_LLVM_PATH_ENV,
+            host_llvm_path,
+        ))
+
+    # LLVM C++ API headers (include/clang, include/llvm, include/c++, ...).
+    host_include = host_root.get_child("include")
+    for subdir in _HOST_LLVM_INCLUDE_SUBDIRS:
+        child = host_include.get_child(subdir)
+        if child.exists:
+            ctx.symlink(child, "include/{}".format(subdir))
+
+    # Per-target-triple libc++ headers (include/<triple>/c++, which carry
+    # v1/__config_site) when the host ships them -- mirrors include/*/c++ in
+    # LLVM_MINIMAL_LIB_GLOBS and keeps :extra_config_site resolvable.
+    if host_include.exists:
+        for child in host_include.readdir():
+            triple_cxx = child.get_child("c++")
+            if triple_cxx.exists:
+                ctx.symlink(triple_cxx, "include/{}/c++".format(child.basename))
+
+    # clang resource-dir builtin headers + runtimes, normalized to
+    # lib/clang/<major> so the shared BUILD template's lib/clang/<major>/... globs
+    # resolve regardless of whether the host keeps them under lib/ or lib64/.
+    for child in resource_dir.readdir():
+        ctx.symlink(child, "lib/clang/{}/{}".format(major, child.basename))
+
+    # libclang-cpp / libLLVM / libclang shared libraries. Expose each under both
+    # lib/ and lib64/ regardless of which the host uses: lib/ feeds the shared
+    # template's lib-globbed filegroups (:libclang, :lib), while lib64/ feeds the
+    # version-qualified label Envoy composes from the host's own lib dir (its
+    # repo.bzl probes /usr/lib64 first on Fedora/RHEL, yielding
+    # @llvm_toolchain_llvm//:lib64/libclang-cpp.so.<ver>).
+    for basename, src in _host_llvm_shared_libs(host_root).items():
+        ctx.symlink(src, "lib/{}".format(basename))
+        ctx.symlink(src, "lib64/{}".format(basename))
+
+    # LLVM bin tools (llvm-nm, llvm-readelf, clang, ...).
+    _symlink_host_llvm_bins(ctx, host_root.get_child("bin"), major)
+
+    ctx.file("BUILD.bazel", render_llvm_repo_build(major, tools_optional = True))
+
 def _llvm_toolchain_alias_impl(ctx):
     """Create a host-arch alias repo backed by the matching minimal LLVM artifact.
+
+    When BAZEL_LLVM_PATH is set, the repo is instead backed by that host LLVM
+    install (see _setup_host_llvm_alias) -- restoring the ability, lost in the
+    WORKSPACE->Bzlmod migration, to build against a distro LLVM rather than the
+    hermetic minimal artifact.
 
     bin/, include/ and lib/ contents are symlinked in per-child from the
     host-arch minimal repo, so every tool/header lives in this repo's own
@@ -475,6 +609,11 @@ def _llvm_toolchain_alias_impl(ctx):
     symlinks are required because Bazel does not follow a symlinked package
     directory when sourcing individual filegroup inputs.
     """
+    host_llvm_path = ctx.os.environ.get(_HOST_LLVM_PATH_ENV, "")
+    if host_llvm_path:
+        _setup_host_llvm_alias(ctx, host_llvm_path)
+        return
+
     minimal_build_label = _select_llvm_toolchain_alias_label(ctx)
     minimal_root = ctx.path(minimal_build_label).dirname
 
@@ -486,6 +625,7 @@ def _llvm_toolchain_alias_impl(ctx):
 
 llvm_toolchain_alias = repository_rule(
     implementation = _llvm_toolchain_alias_impl,
+    environ = [_HOST_LLVM_PATH_ENV],
     attrs = {
         "minimal_linux_x64": attr.label(
             mandatory = True,
