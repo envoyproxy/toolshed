@@ -4,10 +4,16 @@ uses: ./actions/github/run
 id: run
 with:
   command: bash
-  args: >-
-    -c
-    printf '%s\n' 'ordinary output' 'INFO: Build completed, 2 tests FAILED, 26020 total actions'
+  args: ${{ runner.temp }}/run-annotation-test.sh
   error-match: FAILED
+  source: |
+    cat > "$RUNNER_TEMP/run-annotation-test.sh" <<'EOF'
+    #!/usr/bin/env bash
+    printf '%s\n' \
+      'ordinary output' \
+      'INFO: Build completed, 2 tests FAILED, 26020 total actions' >&2
+    EOF
+    chmod +x "$RUNNER_TEMP/run-annotation-test.sh"
 
 after:
 - shell: bash
@@ -16,10 +22,11 @@ after:
     trap 'rm -f "$TMP_STDERR"' EXIT
     export TMP_STDERR
     export TOOLSHED_ERROR_MATCH=FAILED
-    actual="$(printf '%s\n' \
-      'ordinary output' \
-      'INFO: Build completed, 2 tests FAILED, 26020 total actions' \
-      | "${ACTION_TEST_PATH}/../annotate.sh" "$TMP_STDERR")"
+    actual="$(
+      {
+        printf '%s\n' 'ordinary output' 'INFO: Build completed, 2 tests FAILED, 26020 total actions' >&2
+      } 2>&1 | "${ACTION_TEST_PATH}/../annotate.sh" "$TMP_STDERR"
+    )"
     expected=$'ordinary output\nINFO: Build completed, 2 tests FAILED, 26020 total actions\n::error::INFO: Build completed, 2 tests FAILED, 26020 total actions'
     if [[ "$actual" != "$expected" ]]; then
         echo "Unexpected streamed annotation output:"
