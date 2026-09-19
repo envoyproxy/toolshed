@@ -1,0 +1,44 @@
+name: registry::apply_hash and registry::apply_edits rewrite only targeted literals
+
+imports:
+- registry
+
+input:
+  bazelrc:
+    files:
+      .bazelrc: |
+        common --registry=https://mirror.example/envoyproxy/bazel-registry/oldhash
+    paths:
+    - .bazelrc
+    url_prefix: https://mirror.example/envoyproxy/bazel-registry/
+    hash: newhash
+  modules:
+    files:
+      MODULE.bazel: |
+        bazel_dep(name = "foo", version = "1.0.0")
+        single_version_override(module_name = "foo", version = "1.0.0")
+    edits:
+    - file: MODULE.bazel
+      start: 34
+      end: 39
+      to: 2.0.0
+    - file: MODULE.bazel
+      start: 90
+      end: 95
+      to: 2.0.0
+
+before: |
+  {
+    bazelrc: (.bazelrc | registry::apply_hash),
+    modules: (.modules | registry::apply_edits)
+  }
+expression: .
+
+expected:
+  bazelrc:
+    .bazelrc: |
+      common --registry=https://mirror.example/envoyproxy/bazel-registry/newhash
+  modules:
+    MODULE.bazel: |
+      bazel_dep(name = "foo", version = "2.0.0")
+      single_version_override(module_name = "foo", version = "2.0.0")

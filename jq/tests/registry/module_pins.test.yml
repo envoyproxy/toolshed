@@ -1,0 +1,35 @@
+name: registry::module_pins extracts versioned bazel_dep and override pins
+
+imports:
+- registry
+
+input:
+  files:
+    MODULE.bazel: |
+      bazel_dep(
+          name = "kept",
+      )
+
+      bazel_dep(
+          name = "foo",
+          version = "1.0.0",
+      )
+
+      single_version_override(
+          module_name = "bar",
+          version = "2.0.0",
+      )
+  paths:
+  - MODULE.bazel
+
+expression: 'registry::module_pins | map({name, version, file, kind})'
+
+expected:
+- name: foo
+  version: 1.0.0
+  file: MODULE.bazel
+  kind: bazel_dep
+- name: bar
+  version: 2.0.0
+  file: MODULE.bazel
+  kind: single_version_override

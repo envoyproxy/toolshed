@@ -1,6 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//dependency:macros.bzl", "registry_updater")
 load("//dependency:reachability.bzl", "dependency_reachability")
 load(":custom_rule_test.bzl", "custom_library_rule")
 load(":reachability_apparent_name_test.bzl", "apparent_name_test")
@@ -16,6 +17,39 @@ sh_test(
         "//dependency:bazel-update.sh",
         "testdata/dependency_versions.json",
         "testdata/versions.bzl",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+    env = {
+        "JQ_BIN": "$(JQ_BIN)",
+    },
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+registry_updater(
+    name = "registry",
+    bazelrc_files = [
+        "testdata/registry/workspace/.bazelrc",
+        "testdata/registry/workspace/api/.bazelrc",
+    ],
+    module_files = [
+        "testdata/registry/workspace/MODULE.bazel",
+        "testdata/registry/workspace/api/MODULE.bazel",
+    ],
+    version_file = "testdata/registry/workspace/VERSION.txt",
+    testonly = True,
+)
+
+sh_test(
+    name = "registry_test",
+    size = "small",
+    srcs = ["registry_test.sh"],
+    data = [
+        ":registry",
+        "testdata/registry/workspace/.bazelrc",
+        "testdata/registry/workspace/MODULE.bazel",
+        "testdata/registry/workspace/VERSION.txt",
+        "testdata/registry/workspace/api/.bazelrc",
+        "testdata/registry/workspace/api/MODULE.bazel",
         "@jq_toolchains//:resolved_toolchain",
     ],
     env = {

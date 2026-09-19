@@ -1,10 +1,11 @@
-load("//dependency:macros.bzl", "updater")
+load("//dependency:macros.bzl", "registry_updater", "updater")
 load("@bazel_skylib//rules:common_settings.bzl", "string_list_flag")
 
 exports_files([
     "bazel-update.sh",
     "macros.bzl",
     "reachability.bzl",
+    "registry.sh",
 ])
 
 # Private build settings used by reachability.bzl to transport exclusion lists

@@ -1,0 +1,4 @@
+single_version_override(
+    module_name = "foo",
+    version = "1.0.0-20240101",
+)
