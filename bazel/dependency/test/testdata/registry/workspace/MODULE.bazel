@@ -1,0 +1,10 @@
+#	keep-tab
+bazel_dep(
+    name = "foo",
+    version = "1.0.0-20240101",
+)
+
+bazel_dep(
+    name = "local_only",
+    version = "0.0.1",
+)

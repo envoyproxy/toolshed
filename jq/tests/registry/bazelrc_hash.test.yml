@@ -1,0 +1,21 @@
+name: registry::bazelrc_hash reads configured files with custom URL prefix
+
+imports:
+- registry
+
+input:
+  files:
+    cfg/root.bazelrc: |
+      startup --host_jvm_args=-Xmx4g
+      common --registry=https://mirror.example/envoyproxy/bazel-registry/ab12cd
+    cfg/api.bazelrc: |
+      common --registry=https://mirror.example/envoyproxy/bazel-registry/ab12cd
+  paths:
+  - cfg/root.bazelrc
+  - cfg/api.bazelrc
+  url_prefix: https://mirror.example/envoyproxy/bazel-registry/
+
+expression: registry::bazelrc_hash
+
+expected:
+  hash: ab12cd

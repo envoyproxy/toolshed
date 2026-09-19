@@ -1,0 +1,59 @@
+name: registry::plan prefers overrides and replaces removed hosted pins
+
+imports:
+- registry
+
+input:
+  pins:
+  - name: foo
+    version: 1.0.0-20240101
+    file: MODULE.bazel
+    kind: bazel_dep
+    version_start: 0
+    version_end: 0
+  - name: foo
+    version: 1.0.0-20240101
+    file: api/MODULE.bazel
+    kind: single_version_override
+    version_start: 1
+    version_end: 1
+  - name: bar
+    version: 0.9.0
+    file: MODULE.bazel
+    kind: bazel_dep
+    version_start: 2
+    version_end: 2
+  exists:
+    modules/foo/metadata.json: true
+    modules/foo/1.0.0-20240101/MODULE.bazel: false
+    modules/foo/1.1.0-20250101/MODULE.bazel: true
+    modules/foo/1.0.1-20240201/MODULE.bazel: true
+    modules/bar/metadata.json: true
+    modules/bar/0.9.0/MODULE.bazel: true
+  metadata:
+    foo:
+      versions:
+      - 1.0.1-20240201
+      - 1.1.0-20250101
+    bar:
+      versions:
+      - 0.9.0
+  overrides:
+    bar: 0.9.0
+  old_hash: old
+  new_hash: new
+
+expression: 'registry::plan | {registry, modules, errors}'
+
+expected:
+  registry:
+    old: old
+    new: new
+  modules:
+  - name: foo
+    from: 1.0.0-20240101
+    to: 1.1.0-20250101
+    files:
+    - MODULE.bazel
+    - api/MODULE.bazel
+  errors: []

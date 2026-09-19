@@ -69,3 +69,51 @@ def updater(
         toolchains = toolchains,
         **kwargs
     )
+
+def _rootpaths(labels):
+    return ["$(rootpath %s)" % label for label in labels]
+
+def registry_updater(
+        name,
+        bazelrc_files,
+        module_files,
+        version_file,
+        jq_toolchain = "@jq_toolchains//:resolved_toolchain",
+        update_script = "@envoy_toolshed//dependency:registry.sh",
+        registry_repo = "https://github.com/envoyproxy/bazel-registry",
+        registry_branch = "main",
+        registry_url_prefix = "https://raw.githubusercontent.com/envoyproxy/bazel-registry/",
+        data = None,
+        deps = None,
+        toolchains = None,
+        **kwargs):
+    toolchains = [jq_toolchain] + (toolchains or [])
+    deps = ["@bazel_tools//tools/bash/runfiles"] + (deps or [])
+    data = (data or []) + [
+        jq_toolchain,
+        update_script,
+        "@envoy_toolshed_jq//:modules",
+        "@envoy_toolshed_jq//:modules_root.marker",
+        version_file,
+    ] + bazelrc_files + module_files
+
+    sh_binary(
+        name = name,
+        srcs = [update_script],
+        data = data,
+        deps = deps,
+        env = {
+            "JQ_BIN": "$(JQ_BIN)",
+            "JQ_MODULES_ROOT_MARKER": "$(rlocationpath @envoy_toolshed_jq//:modules_root.marker)",
+            "REGISTRY_BRANCH": registry_branch,
+            "REGISTRY_PATHS_JSON": json.encode({
+                "bazelrc": _rootpaths(bazelrc_files),
+                "modules": _rootpaths(module_files),
+                "version": "$(rootpath %s)" % version_file,
+            }),
+            "REGISTRY_REPO": registry_repo,
+            "REGISTRY_URL_PREFIX": registry_url_prefix,
+        },
+        toolchains = toolchains,
+        **kwargs
+    )
