@@ -8,7 +8,9 @@ WORKSPACE_DIRECTORY="${BUILD_WORKSPACE_DIRECTORY:-$(pwd)}"
 REGISTRY_PATHS_JSON="${REGISTRY_PATHS_JSON:-}"
 
 fail() {
-    printf 'FAIL: %s\n' "$1" >&2
+    while IFS= read -r line; do
+        printf 'FAIL: %s\n' "${line}" >&2
+    done <<<"$1"
     exit 1
 }
 

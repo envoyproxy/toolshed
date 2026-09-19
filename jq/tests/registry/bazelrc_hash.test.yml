@@ -7,9 +7,9 @@ input:
   files:
     cfg/root.bazelrc: |
       startup --host_jvm_args=-Xmx4g
-      common --registry=https://mirror.example/envoyproxy/bazel-registry/abc123
+      common --registry=https://mirror.example/envoyproxy/bazel-registry/ab12cd
     cfg/api.bazelrc: |
-      common --registry=https://mirror.example/envoyproxy/bazel-registry/abc123
+      common --registry=https://mirror.example/envoyproxy/bazel-registry/ab12cd
   paths:
   - cfg/root.bazelrc
   - cfg/api.bazelrc
@@ -18,4 +18,4 @@ input:
 expression: registry::bazelrc_hash
 
 expected:
-  hash: abc123
+  hash: ab12cd

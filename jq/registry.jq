@@ -22,7 +22,16 @@ def module_name_attr($kind):
   if $kind == "bazel_dep" then "name" else "module_name" end;
 
 def regex_escape:
-  gsub("([][(){}.*+?^$|\\\\])"; "\\\\\\1");
+  explode
+  | map([.] | implode)
+  | map(
+      . as $char
+      | if ["\\", "^", "$", ".", "|", "?", "*", "+", "(", ")", "[", "]", "{", "}"] | index($char) then
+        "\\" + $char
+      else
+        $char
+      end)
+  | join("");
 
 def registry_pattern($url_prefix):
   "(?m)^common --registry="

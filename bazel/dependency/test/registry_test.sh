@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+JQ="${JQ_BIN:-jq}"
+
 if ! command -v git >/dev/null 2>&1; then
     echo "Skipping registry_test: git not available"
     exit 0
@@ -15,16 +17,32 @@ if [ -n "${TEST_SRCDIR:-}" ]; then
     fi
     REGISTRY_BIN="${RUNFILES_DIR}/dependency/test/registry"
     FIXTURE_ROOT="${RUNFILES_DIR}/dependency/test/testdata/registry/workspace"
+    REGISTRY_PATHS_JSON=""
 else
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    REGISTRY_BIN="${SCRIPT_DIR}/registry"
+    REGISTRY_BIN="$(cd "${SCRIPT_DIR}/.." && pwd)/registry.sh"
     FIXTURE_ROOT="${SCRIPT_DIR}/testdata/registry/workspace"
+    REGISTRY_PATHS_JSON='{"bazelrc":["dependency/test/testdata/registry/workspace/.bazelrc","dependency/test/testdata/registry/workspace/api/.bazelrc"],"modules":["dependency/test/testdata/registry/workspace/MODULE.bazel","dependency/test/testdata/registry/workspace/api/MODULE.bazel"],"version":"dependency/test/testdata/registry/workspace/VERSION.txt"}'
 fi
+
+run_registry() {
+    if [[ -n "${REGISTRY_PATHS_JSON}" ]]; then
+        BUILD_WORKSPACE_DIRECTORY="$1" \
+            JQ_BIN="${JQ}" \
+            REGISTRY_PATHS_JSON="${REGISTRY_PATHS_JSON}" \
+            "${REGISTRY_BIN}" "${@:2}"
+    else
+        BUILD_WORKSPACE_DIRECTORY="$1" \
+            "${REGISTRY_BIN}" "${@:2}"
+    fi
+}
 
 make_registry_repo() {
     local repo_root="$1"
     local worktree="${repo_root}/worktree"
     local bare_repo="${repo_root}/registry.git"
+    local old_hash
+    local new_hash
 
     git init --quiet --initial-branch=main "${worktree}"
     git -C "${worktree}" config user.name 'Toolshed Test'
@@ -98,18 +116,17 @@ run_dry_run_test() {
         "${workspace_root}/dependency/test/testdata/registry/workspace/api/.bazelrc"
     before_hashes="$(find "${workspace_root}" -type f | sort | xargs sha256sum)"
 
-    BUILD_WORKSPACE_DIRECTORY="${workspace_root}" \
-        "${REGISTRY_BIN}" \
+    run_registry "${workspace_root}" \
         --repo "${bare_repo}" \
         --dry-run \
-        --output "${report_path}" >/tmp/registry-dry-run.log
+        --output "${report_path}" >"${temp_root}/registry-dry-run.log"
 
     after_hashes="$(find "${workspace_root}" -type f | sort | xargs sha256sum)"
     assert_eq "${before_hashes}" "${after_hashes}" "dry-run modified workspace files"
-    assert_eq "${new_hash}" "$(jq -r '.registry.new' "${report_path}")" "dry-run report new hash"
-    assert_eq "${old_hash}" "$(jq -r '.registry.old' "${report_path}")" "dry-run report old hash"
-    assert_eq "foo" "$(jq -r '.modules[0].name' "${report_path}")" "dry-run updated module name"
-    assert_eq "1.1.0-20250101" "$(jq -r '.modules[0].to' "${report_path}")" "dry-run replacement version"
+    assert_eq "${new_hash}" "$("${JQ}" -r '.registry.new' "${report_path}")" "dry-run report new hash"
+    assert_eq "${old_hash}" "$("${JQ}" -r '.registry.old' "${report_path}")" "dry-run report old hash"
+    assert_eq "foo" "$("${JQ}" -r '.modules[0].name' "${report_path}")" "dry-run updated module name"
+    assert_eq "1.1.0-20250101" "$("${JQ}" -r '.modules[0].to' "${report_path}")" "dry-run replacement version"
     rm -rf "${temp_root}"
 }
 
@@ -131,17 +148,16 @@ run_write_test() {
         "${workspace_root}/dependency/test/testdata/registry/workspace/.bazelrc" \
         "${workspace_root}/dependency/test/testdata/registry/workspace/api/.bazelrc"
 
-    BUILD_WORKSPACE_DIRECTORY="${workspace_root}" \
-        "${REGISTRY_BIN}" \
+    run_registry "${workspace_root}" \
         --repo "${bare_repo}" \
-        --output "${report_path}" >/tmp/registry-write.log
+        --output "${report_path}" >"${temp_root}/registry-write.log"
 
     grep -q "${new_hash}" "${workspace_root}/dependency/test/testdata/registry/workspace/.bazelrc"
     grep -q "${new_hash}" "${workspace_root}/dependency/test/testdata/registry/workspace/api/.bazelrc"
     grep -q 'version = "1.1.0-20250101"' "${workspace_root}/dependency/test/testdata/registry/workspace/MODULE.bazel"
     grep -q 'version = "1.1.0-20250101"' "${workspace_root}/dependency/test/testdata/registry/workspace/api/MODULE.bazel"
-    grep -q $'\\tkeep-tab' "${workspace_root}/dependency/test/testdata/registry/workspace/MODULE.bazel"
-    assert_eq "${new_hash}" "$(jq -r '.registry.new' "${report_path}")" "write report new hash"
+    grep -q $'\tkeep-tab' "${workspace_root}/dependency/test/testdata/registry/workspace/MODULE.bazel"
+    assert_eq "${new_hash}" "$("${JQ}" -r '.registry.new' "${report_path}")" "write report new hash"
     rm -rf "${temp_root}"
 }
 
@@ -152,11 +168,11 @@ run_cli_error_test() {
     mkdir -p "${workspace_root}"
     copy_workspace_fixture "${workspace_root}"
 
-    if BUILD_WORKSPACE_DIRECTORY="${workspace_root}" "${REGISTRY_BIN}" --check-only --skip-check >/tmp/registry-invalid.log 2>/tmp/registry-invalid.err; then
+    if run_registry "${workspace_root}" --check-only --skip-check >"${temp_root}/registry-invalid.log" 2>"${temp_root}/registry-invalid.err"; then
         echo "FAIL: expected --check-only --skip-check to fail" >&2
         exit 1
     fi
-    grep -q '^FAIL: --skip-check is invalid with --check-only$' /tmp/registry-invalid.err
+    grep -q '^FAIL: --skip-check is invalid with --check-only$' "${temp_root}/registry-invalid.err"
     rm -rf "${temp_root}"
 }
 

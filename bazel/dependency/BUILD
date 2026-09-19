@@ -1,4 +1,4 @@
-load("//dependency:macros.bzl", "registry_updater", "updater")
+load("//dependency:macros.bzl", "updater")
 load("@bazel_skylib//rules:common_settings.bzl", "string_list_flag")
 
 exports_files([
