@@ -16,6 +16,7 @@ LLVM_DISTRIBUTIONS = {
 
 VERSIONS = {
     "cmake": "3.23.2",
+    "git": "2.55.0",
     "llvm": LLVM_VERSION,
     "sq": "1.4.0",
     "v8": V8_VERSION,
@@ -60,6 +61,15 @@ VERSIONS = {
     "sq_sha256": {
         "Linux-X64": "dcef2a3f6ca8090684fdcbad777acbec83c9f6b182e2dca0288b06aa30b938a0",
         "Linux-ARM64": "ccdbe4a6c79c589a12d6a2eff3fe8f635e7b170a45bf947971c47a018e923ebd",
+    },
+    "git_sha256": {
+        "linux-x86_64": "",
+        "linux-aarch64": "",
+    },
+    "cacert": {
+        "version": "2026-08-13",
+        "sha256": "f66dff1bdf8f96060b8177976f8b7d9254bc89bc4db933d769f7384d28480bc9",
+        "url": "https://curl.se/ca/cacert-{version}.pem",
     },
 
     # Glint binary hashes by architecture
