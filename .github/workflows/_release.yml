@@ -347,10 +347,12 @@ jobs:
           | [flatten[]
              | select(. != "")]
           | join("\n")
+    # Keep this gate identical to `Update version file`: `prepare` must only
+    # bump artifact SHAs and must never freeze Bazel module versions.
     - name: Update MODULE.bazel version (for bazel)
       if: >-
         inputs.type == 'bazel'
-        && inputs.action != 'release-no-prepare'
+        && inputs.action != 'prepare'
       env:
         RELEASE_VERSION: ${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
       run: |
