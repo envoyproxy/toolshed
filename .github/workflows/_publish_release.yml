@@ -63,6 +63,9 @@ on:
       sha:
         default: ${{ github.event.workflow_run.head_sha }}
         type: string
+      skip:
+        type: boolean
+        default: false
       template-artifacts:
         type: string
         default: |
@@ -85,6 +88,8 @@ jobs:
   release:
     permissions:
       actions: read
+    if: >-
+      ! inputs.skip
     name: release (${{ inputs.name }})
     runs-on: ubuntu-24.04
     outputs:
