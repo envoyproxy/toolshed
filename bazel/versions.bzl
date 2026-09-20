@@ -16,6 +16,7 @@ LLVM_DISTRIBUTIONS = {
 
 VERSIONS = {
     "cmake": "3.23.2",
+    "git": "2.55.0",
     "llvm": LLVM_VERSION,
     "sq": "1.4.0",
     "v8": V8_VERSION,
@@ -60,6 +61,10 @@ VERSIONS = {
     "sq_sha256": {
         "Linux-X64": "dcef2a3f6ca8090684fdcbad777acbec83c9f6b182e2dca0288b06aa30b938a0",
         "Linux-ARM64": "ccdbe4a6c79c589a12d6a2eff3fe8f635e7b170a45bf947971c47a018e923ebd",
+    },
+    "git_sha256": {
+        "Linux-X64": "",
+        "Linux-ARM64": "",
     },
 
     # Glint binary hashes by architecture
