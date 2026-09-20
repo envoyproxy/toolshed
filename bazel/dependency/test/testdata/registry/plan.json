@@ -1,0 +1,36 @@
+{
+  "registry": {
+    "old": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "new": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "modules": [
+    {
+      "name": "foo",
+      "from": "1.0.0-20240101",
+      "to": "1.1.0-20250101",
+      "files": [
+        "dependency/test/testdata/registry/workspace/MODULE.bazel",
+        "dependency/test/testdata/registry/workspace/api/MODULE.bazel"
+      ]
+    }
+  ],
+  "edits": [
+    {
+      "file": "dependency/test/testdata/registry/workspace/MODULE.bazel",
+      "name": "foo",
+      "from": "1.0.0-20240101",
+      "to": "1.1.0-20250101",
+      "start": 55,
+      "end": 69
+    },
+    {
+      "file": "dependency/test/testdata/registry/workspace/api/MODULE.bazel",
+      "name": "foo",
+      "from": "1.0.0-20240101",
+      "to": "1.1.0-20250101",
+      "start": 65,
+      "end": 79
+    }
+  ],
+  "errors": []
+}

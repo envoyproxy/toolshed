@@ -1,0 +1,18 @@
+name: registry::overrides_from_flag keeps valid overrides and reports invalid ones
+
+imports:
+- registry
+
+input:
+- foo=1.2.3
+- nope
+- bar=2.0.0
+
+expression: registry::overrides_from_flag
+
+expected:
+  overrides:
+    foo: 1.2.3
+    bar: 2.0.0
+  errors:
+  - 'FAIL: --set "nope": expected name=version'

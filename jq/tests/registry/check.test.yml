@@ -1,0 +1,105 @@
+name: registry::check covers tagged, dev, release, ancestor, missing and skip cases
+
+imports:
+- registry
+
+input:
+  tagged:
+    hash: aaaa
+    commit_exists: true
+    is_ancestor: true
+    tags: [v1.2.3]
+    version_txt: 1.2.3
+    branch: main
+    repo: https://github.com/envoyproxy/bazel-registry
+    skip_check: false
+  dev_untagged:
+    hash: bbbb
+    commit_exists: true
+    is_ancestor: true
+    tags: []
+    version_txt: 1.2.4-dev
+    branch: main
+    repo: https://github.com/envoyproxy/bazel-registry
+    skip_check: false
+  release_untagged:
+    hash: cccc
+    commit_exists: true
+    is_ancestor: true
+    tags: []
+    version_txt: 1.2.4
+    branch: main
+    repo: https://github.com/envoyproxy/bazel-registry
+    skip_check: false
+  not_ancestor:
+    hash: dddd
+    commit_exists: true
+    is_ancestor: false
+    tags: []
+    version_txt: 1.2.4-dev
+    branch: main
+    repo: https://github.com/envoyproxy/bazel-registry
+    skip_check: false
+  missing:
+    hash: eeee
+    commit_exists: false
+    is_ancestor: false
+    tags: []
+    version_txt: 1.2.4-dev
+    branch: main
+    repo: https://github.com/envoyproxy/bazel-registry
+    skip_check: false
+  skipped:
+    hash: ffff
+    commit_exists: false
+    is_ancestor: false
+    tags: []
+    version_txt: 1.2.4
+    branch: main
+    repo: https://github.com/envoyproxy/bazel-registry
+    skip_check: true
+
+expression: |
+  {
+    tagged: (.tagged | registry::check),
+    dev_untagged: (.dev_untagged | registry::check),
+    release_untagged: (.release_untagged | registry::check),
+    not_ancestor: (.not_ancestor | registry::check),
+    missing: (.missing | registry::check),
+    skipped: (.skipped | registry::check)
+  }
+
+expected:
+  tagged:
+    ok: true
+    messages:
+    - Registry commit aaaa is an ancestor of main
+    - 'Registry commit aaaa is tagged: v1.2.3'
+    errors: []
+  dev_untagged:
+    ok: true
+    messages:
+    - Registry commit bbbb is an ancestor of main
+    - 'WARNING: registry commit bbbb is not a tagged version (ok for 1.2.4-dev)'
+    errors: []
+  release_untagged:
+    ok: false
+    messages:
+    - Registry commit cccc is an ancestor of main
+    errors:
+    - 'FAIL: Registry commit cccc is not a tagged version, required for release 1.2.4'
+  not_ancestor:
+    ok: false
+    messages: []
+    errors:
+    - 'FAIL: Registry commit dddd is not an ancestor of main'
+  missing:
+    ok: false
+    messages: []
+    errors:
+    - 'FAIL: Registry commit eeee not found in https://github.com/envoyproxy/bazel-registry'
+  skipped:
+    ok: true
+    messages:
+    - 'WARNING: skipping registry check for ffff'
+    errors: []

@@ -1,11 +1,31 @@
 # `//dependency`
 
+## `registry_snapshot`
+
+Declare the registry snapshot repository in `MODULE.bazel`:
+
+```starlark
+registry = use_extension("@envoy_toolshed//dependency:registry.bzl", "registry_ext")
+registry.snapshot(
+    name = "registry_snapshot",
+    repo = "https://github.com/envoyproxy/bazel-registry",
+    branch = "main",
+    url_prefix = "https://github.com/envoyproxy/bazel-registry/archive/",
+)
+use_repo(registry, "registry_snapshot")
+```
+
+- `--repo_env=REGISTRY_HASH=<sha>` pins the fetched snapshot.
+- `--repo_env=REGISTRY_SKIP_CHECK=1` skips the ancestry/tag validation probe and records `skip_check: true` in `info.json`.
+
+The generated repo exports:
+
+- `@registry_snapshot//:info`
+- `@registry_snapshot//:index`
+
 ## `registry_updater`
 
-`registry_updater` generates a `sh_binary` that updates pinned
-`envoyproxy/bazel-registry` commits in one or more `.bazelrc` files and
-reconciles any hosted `MODULE.bazel` pins that the target registry commit no
-longer serves.
+`registry_updater` builds a graph of `jq()` targets for registry planning/checking and a runnable source-writer target.
 
 ```starlark
 load("@envoy_toolshed//dependency:macros.bzl", "registry_updater")
@@ -18,47 +38,21 @@ registry_updater(
 )
 ```
 
-The generated binary reads and writes the configured source-tree files via
-`BUILD_WORKSPACE_DIRECTORY`, with jq module logic loaded from
-`@envoy_toolshed_jq//:modules`.
+The updater expects a snapshot repo named `@<name>_snapshot` (for `name = "registry"`, `@registry_snapshot`).
 
-### CLI
+### Flags
 
-```console
-$ bazel run //path:registry -- \
-    [--hash SHA] [--repo URL] [--branch NAME] [--skip-check] [--check-only] \
-    [--set name=version]... [--output PATH] [--dry-run]
-```
+- `--//pkg:registry.set=foo=1.2.3`
+- `--//pkg:registry.check_only`
+- `--repo_env=REGISTRY_HASH=<sha>`
+- `--repo_env=REGISTRY_SKIP_CHECK=1`
 
-- `--hash` uses an explicit registry commit; otherwise the tool resolves the
-  head of `--branch` from `--repo`.
-- `--check-only` validates the currently pinned registry hash without changing
-  files.
-- `--skip-check` skips registry ancestry/tag checks and is invalid with
-  `--check-only`.
-- `--set name=version` forces a hosted, already-pinned module to a specific
-  registry-served version.
-- `--dry-run` prints and writes the planned report without modifying files.
+### Useful targets
 
-### Report JSON
+- `bazel run //pkg:registry` writes the updated source files, then prints check messages and the rendered report.
+- `bazel build //pkg:registry.check_ok` validates the snapshot/check/plan without writing.
+- `bazel build //pkg:registry.report_text` builds the human-readable report text.
+- `bazel build //pkg:registry.report` builds the JSON report.
+- `bazel build //pkg:registry.edits` builds the JSON file-edit list.
 
-The tool always writes a JSON report for successful update/dry-run executions
-to `--output` (default:
-`${REGISTRY_CHANGES_OUTPUT:-${ENVOY_BUILD_DIR:-/build}/registry-changes.json}`):
-
-```json
-{
-  "registry": {
-    "old": "<old commit>",
-    "new": "<new commit>"
-  },
-  "modules": [
-    {
-      "name": "foo",
-      "from": "1.0.0",
-      "to": "1.1.0",
-      "files": ["MODULE.bazel", "api/MODULE.bazel"]
-    }
-  ]
-}
-```
+The JSON report is a declared output (`bazel-bin/.../registry.report.json`), so consumers can copy it directly from `bazel-bin`.

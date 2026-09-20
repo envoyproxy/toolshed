@@ -1,0 +1,29 @@
+name: registry::newest_version prefers dated variants and falls back to final entry
+
+imports:
+- registry
+
+input:
+  dated:
+  - 1.0.0-20240101
+  - 1.0.1-240201
+  - 1.1.0-20250101
+  plain:
+  - 1.0.0
+  - 1.1.0
+  empty: []
+
+expression: |
+  {
+    dated: (.dated | registry::newest_version),
+    plain: (.plain | registry::newest_version),
+    empty: (.empty | registry::newest_version)
+  }
+
+expected:
+  dated:
+    version: 1.1.0-20250101
+  plain:
+    version: 1.1.0
+  empty:
+    error: no replacement versions available

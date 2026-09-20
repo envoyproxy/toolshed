@@ -5,7 +5,7 @@ exports_files([
     "bazel-update.sh",
     "macros.bzl",
     "reachability.bzl",
-    "registry.sh",
+    "registry.bzl",
 ])
 
 # Private build settings used by reachability.bzl to transport exclusion lists

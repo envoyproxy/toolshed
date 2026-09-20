@@ -1,0 +1,25 @@
+name: registry::exists derives module and version presence from snapshot index
+
+imports:
+- registry
+
+input:
+  pins:
+  - name: foo
+    version: 1.0.0
+  - name: bar
+    version: 2.0.0
+  index:
+    modules:
+      foo:
+        versions:
+        - 1.0.0
+        - 1.1.0
+
+expression: '{pins: .pins, index: .index} | registry::exists'
+
+expected:
+  modules/foo/metadata.json: true
+  modules/foo/1.0.0/MODULE.bazel: true
+  modules/bar/metadata.json: false
+  modules/bar/2.0.0/MODULE.bazel: false

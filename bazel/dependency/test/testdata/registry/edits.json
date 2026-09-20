@@ -1,0 +1,18 @@
+[
+  {
+    "path": "dependency/test/testdata/registry/workspace/.bazelrc",
+    "content": "common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
+  },
+  {
+    "path": "dependency/test/testdata/registry/workspace/api/.bazelrc",
+    "content": "common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n"
+  },
+  {
+    "path": "dependency/test/testdata/registry/workspace/api/MODULE.bazel",
+    "content": "single_version_override(\n    module_name = \"foo\",\n    version = \"1.1.0-20250101\",\n)\n"
+  },
+  {
+    "path": "dependency/test/testdata/registry/workspace/MODULE.bazel",
+    "content": "#\tkeep-tab\nbazel_dep(\n    name = \"foo\",\n    version = \"1.1.0-20250101\",\n)\n\nbazel_dep(\n    name = \"local_only\",\n    version = \"0.0.1\",\n)\n"
+  }
+]

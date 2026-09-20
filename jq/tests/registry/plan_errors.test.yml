@@ -1,0 +1,54 @@
+name: registry::plan reports override and replacement failures
+
+imports:
+- registry
+
+input:
+  pins:
+  - name: foo
+    version: 1.0.0
+    file: MODULE.bazel
+    kind: bazel_dep
+    version_start: 0
+    version_end: 0
+  - name: bar
+    version: 0.9.0
+    file: MODULE.bazel
+    kind: bazel_dep
+    version_start: 1
+    version_end: 1
+  exists:
+    modules/foo/metadata.json: true
+    modules/foo/1.0.0/MODULE.bazel: false
+    modules/bar/metadata.json: true
+    modules/bar/0.9.0/MODULE.bazel: false
+  index:
+    modules:
+      foo:
+        versions: []
+        metadata:
+          versions: []
+      bar:
+        versions: []
+  current:
+    hash: old
+  info:
+    hash: new
+  overrides:
+    overrides:
+      baz: 1.0.0
+    errors:
+    - 'FAIL: --set "oops": expected name=version'
+
+expression: registry::plan | {registry, modules, errors}
+
+expected:
+  registry:
+    old: old
+    new: new
+  modules: []
+  errors:
+  - 'FAIL: --set "oops": expected name=version'
+  - 'FAIL: bar@0.9.0 removed from registry and no replacement versions available'
+  - 'FAIL: foo@1.0.0 removed from registry and no replacement versions available'
+  - 'FAIL: --set baz=1.0.0: module is not served by registry new'

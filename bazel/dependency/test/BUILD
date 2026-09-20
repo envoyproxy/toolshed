@@ -1,5 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
+load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//dependency:macros.bzl", "registry_updater")
 load("//dependency:reachability.bzl", "dependency_reachability")
@@ -39,23 +41,27 @@ registry_updater(
     testonly = True,
 )
 
-sh_test(
-    name = "registry_test",
-    size = "small",
-    srcs = ["registry_test.sh"],
-    data = [
-        ":registry",
-        "testdata/registry/workspace/.bazelrc",
-        "testdata/registry/workspace/MODULE.bazel",
-        "testdata/registry/workspace/VERSION.txt",
-        "testdata/registry/workspace/api/.bazelrc",
-        "testdata/registry/workspace/api/MODULE.bazel",
-        "@jq_toolchains//:resolved_toolchain",
-    ],
-    env = {
-        "JQ_BIN": "$(JQ_BIN)",
-    },
-    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+diff_test(
+    name = "registry_plan_test",
+    file1 = ":registry.plan",
+    file2 = "testdata/registry/plan.json",
+)
+
+diff_test(
+    name = "registry_report_test",
+    file1 = ":registry.report",
+    file2 = "testdata/registry/report.json",
+)
+
+diff_test(
+    name = "registry_edits_test",
+    file1 = ":registry.edits",
+    file2 = "testdata/registry/edits.json",
+)
+
+build_test(
+    name = "registry_check_ok_test",
+    targets = [":registry.check_ok"],
 )
 
 filegroup(

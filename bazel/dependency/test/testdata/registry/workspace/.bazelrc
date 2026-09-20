@@ -1,1 +1,1 @@
-common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/OLD_REGISTRY_HASH
+common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

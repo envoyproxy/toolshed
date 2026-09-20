@@ -1,0 +1,36 @@
+name: registry::apply combines hash and module updates
+
+imports:
+- registry
+
+input:
+  plan:
+    registry:
+      old: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      new: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    errors: []
+  current:
+    hash: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  bazelrc:
+    .bazelrc: |
+      common --registry=https://mirror.example/envoyproxy/bazel-registry/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  modules:
+    MODULE.bazel: |
+      bazel_dep(name = "foo", version = "1.0.0-20240101")
+
+before: |
+  .plan.edits = (
+    .modules
+    | {files: ., paths: ["MODULE.bazel"]}
+    | registry::module_pins
+    | map({file, start: .version_start, end: .version_end, to: "1.1.0-20250101"})
+  )
+expression: '{plan: .plan, current: .current, bazelrc_files: .bazelrc, module_files: .modules, url_prefix: "https://mirror.example/envoyproxy/bazel-registry/"} | registry::apply'
+
+expected:
+- path: .bazelrc
+  content: |
+    common --registry=https://mirror.example/envoyproxy/bazel-registry/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+- path: MODULE.bazel
+  content: |
+    bazel_dep(name = "foo", version = "1.1.0-20250101")
