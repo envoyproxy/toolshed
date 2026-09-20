@@ -8,6 +8,7 @@ bazel_dep(name = "abseil-cpp", version = "20260817.0")
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "boringssl", version = "0.20260813.0")
+bazel_dep(name = "buildifier_prebuilt", version = "10.0.1", repo_name = "buildifier")
 bazel_dep(name = "envoy_toolshed_jq", version = "0.5.1-dev")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.25")
@@ -41,6 +42,10 @@ bazel_lib_toolchains.jq(version = "1.7")
 bazel_lib_toolchains.yq()
 bazel_lib_toolchains.tar()
 use_repo(bazel_lib_toolchains, "bsd_tar_toolchains", "jq", "jq_toolchains", "yq", "yq_toolchains")
+
+buildifier_prebuilt = use_extension("@buildifier//:defs.bzl", "buildifier_prebuilt_deps_extension")
+buildifier_prebuilt.toolchains()
+use_repo(buildifier_prebuilt, "buildifier_prebuilt_toolchains")
 
 PYTHON_VERSION_DEFAULT = "3.12"
 

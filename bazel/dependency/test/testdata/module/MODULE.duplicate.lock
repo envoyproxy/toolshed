@@ -1,0 +1,6 @@
+{
+  "registryFileHashes": {
+    "https://bcr.bazel.build/modules/protobuf/35.1/source.json": "aaa",
+    "https://raw.githubusercontent.com/envoyproxy/bazel-registry/deadbeef/modules/protobuf/35.2.bcr.envoy/source.json": "bbb"
+  }
+}

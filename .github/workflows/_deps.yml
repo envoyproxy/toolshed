@@ -1,0 +1,328 @@
+name: _deps
+
+permissions:
+  contents: read
+
+on:
+  workflow_call:
+    secrets:
+      app-id:
+      app-key:
+    inputs:
+      action:
+        type: string
+        required: true
+      dependency:
+        type: string
+        default:
+      registry:
+        type: string
+        default:
+      branch:
+        type: string
+        default: main
+      committer-name:
+        type: string
+        required: true
+      committer-email:
+        type: string
+        required: true
+      dry-run:
+        description: Dry run (no PR created)
+        type: boolean
+        default: false
+      bazel-path:
+        type: string
+        default: bazel
+
+jobs:
+  deps:
+    name: ${{ inputs.action }}
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: envoyproxy/toolshed/actions/appauth@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      id: appauth
+      name: Appauth
+      if: >-
+        ! inputs.dry-run
+      with:
+        app_id: ${{ secrets.app-id }}
+        key: ${{ secrets.app-key }}
+    - id: checkout
+      name: Checkout the repository
+      uses: envoyproxy/toolshed/actions/github/checkout@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      with:
+        branch: ${{ inputs.branch }}
+        committer-name: ${{ inputs.committer-name }}
+        committer-email: ${{ inputs.committer-email }}
+        pr: ${{ github.event.pull_request.number || '' }}
+        token: ${{ steps.appauth.outputs.token || github.token }}
+    - name: Resolve Bazel CI config
+      id: bazel-config
+      shell: bash
+      working-directory: ${{ inputs.bazel-path }}
+      run: |
+        if grep -Eq '^(common|build|run|test):ci([[:space:]]|$)' .bazelrc; then
+            echo 'ci=--config=ci' >> "$GITHUB_OUTPUT"
+        else
+            echo 'ci=' >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Report
+      id: report
+      shell: bash
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+        REPORT_PATH: ${{ runner.temp }}/deps-report.json
+      run: |
+        BAZEL_CMD=(bazel)
+        [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
+        BAZEL_CMD+=(run //dependency:update_module -- --report "--json-out=${REPORT_PATH}")
+        "${BAZEL_CMD[@]}"
+    - name: Upload dependency report
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: deps-report
+        path: ${{ runner.temp }}/deps-report.json
+        retention-days: 30
+    - name: Summarize report
+      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      with:
+        input: ${{ runner.temp }}/deps-report.json
+        input-format: json-path
+        options: -r
+        output-path: GITHUB_STEP_SUMMARY
+        filter: |
+          to_entries
+          | sort_by(.key) as $deps
+          | ($deps | map(select(.value.update_available == true)) | length) as $outdated
+          | [
+              "Outdated dependencies: \($outdated)",
+              "",
+              "| Dependency | Current | Latest | Registry | Update? |",
+              "| --- | --- | --- | --- | --- |",
+              (
+                $deps[]
+                | .value as $value
+                | "| \(.key)"
+                  + " | \($value.current // \"—\")"
+                  + " | \($value.latest // \"—\")"
+                  + " | \($value.current_registry // \"—\")"
+                  + " | \(if $value.update_available == true then \"✅\" else \"—\" end) |"
+              )
+            ]
+          | join("\n")
+
+    - name: Update registry pin
+      if: >-
+        inputs.action == 'update-registry'
+      shell: bash
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+      run: |
+        BAZEL_CMD=(bazel)
+        [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
+        BAZEL_CMD+=(run //dependency:update_registry)
+        "${BAZEL_CMD[@]}"
+    - name: Update registry lockfile
+      if: >-
+        inputs.action == 'update-registry'
+      shell: bash
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+      run: |
+        BAZEL_CMD=(bazel)
+        [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
+        BAZEL_CMD+=(mod deps --lockfile_mode=update)
+        "${BAZEL_CMD[@]}"
+    - name: Read registry SHA
+      id: registry-sha
+      if: >-
+        inputs.action == 'update-registry'
+      shell: bash
+      working-directory: ${{ inputs.bazel-path }}
+      run: |
+        SHA=$(sed -nE 's#^common --registry=https://raw\.githubusercontent\.com/envoyproxy/bazel-registry/([0-9a-f]+)$#\1#p' .bazelrc)
+        if [[ -z "${SHA}" ]]; then
+            echo '::error::Failed to read bazel-registry SHA from .bazelrc' >&2
+            exit 1
+        fi
+        echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+
+    - name: Validate dependency input
+      if: >-
+        inputs.action == 'update-module'
+      shell: bash
+      env:
+        DEPENDENCY: ${{ inputs.dependency }}
+      run: |
+        if [[ -z "${DEPENDENCY}" ]]; then
+            echo "::error::\`dependency\` input is required for update-module" >&2
+            exit 1
+        fi
+    - name: Update module
+      id: module-update
+      if: >-
+        inputs.action == 'update-module'
+      shell: bash
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+        DEPENDENCY: ${{ inputs.dependency }}
+        REGISTRY: ${{ inputs.registry }}
+        UPDATE_OUT: ${{ runner.temp }}/update.out
+      run: |
+        set -o pipefail
+        BAZEL_CMD=(bazel)
+        [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
+        BAZEL_CMD+=(run //dependency:update_module -- "${DEPENDENCY}")
+        [[ -n "${REGISTRY}" ]] && BAZEL_CMD+=("--registry=${REGISTRY}")
+        "${BAZEL_CMD[@]}" | tee "${UPDATE_OUT}"
+
+        if grep -q 'already at' "${UPDATE_OUT}"; then
+            DEP=$(sed -nE 's/^([^:]+): already at .*/\1/p' "${UPDATE_OUT}" | head -n1)
+            [[ -z "${DEP}" ]] && DEP="${DEPENDENCY%%=*}"
+            echo "::notice::${DEP} is already at the requested version"
+            {
+                echo "dep=${DEP}"
+                echo 'changes=false'
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+        fi
+
+        LINE=$(grep -E '^[^:]+: .+ -> .+$' "${UPDATE_OUT}" | tail -n1 || true)
+        if [[ -z "${LINE}" ]]; then
+            echo '::error::Failed to parse update_module output' >&2
+            exit 1
+        fi
+        if [[ ! "${LINE}" =~ ^([^:]+):[[:space:]]+([^[:space:]]+)[[:space:]]+\-\>[[:space:]]+([^[:space:]]+)$ ]]; then
+            echo "::error::Unexpected update output: ${LINE}" >&2
+            exit 1
+        fi
+
+        {
+            echo "dep=${BASH_REMATCH[1]}"
+            echo "old=${BASH_REMATCH[2]}"
+            echo "new=${BASH_REMATCH[3]}"
+            echo 'changes=true'
+        } >> "$GITHUB_OUTPUT"
+    - name: Update module lockfile
+      if: >-
+        inputs.action == 'update-module'
+        && fromJSON(steps.module-update.outputs.changes || 'false')
+      shell: bash
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+      run: |
+        BAZEL_CMD=(bazel)
+        [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
+        BAZEL_CMD+=(mod deps --lockfile_mode=update)
+        "${BAZEL_CMD[@]}"
+
+    - name: Prepare change metadata
+      id: details
+      if: >-
+        inputs.action == 'update-registry'
+        || (
+          inputs.action == 'update-module'
+          && fromJSON(steps.module-update.outputs.changes || 'false')
+        )
+      shell: bash
+      env:
+        ACTION: ${{ inputs.action }}
+        ACTOR: ${{ github.actor }}
+        DEP: ${{ steps.module-update.outputs.dep }}
+        OLD: ${{ steps.module-update.outputs.old }}
+        NEW: ${{ steps.module-update.outputs.new }}
+        REGISTRY_SHA: ${{ steps.registry-sha.outputs.sha }}
+        REPORT_PATH: ${{ runner.temp }}/deps-report.json
+      run: |
+        if [[ "${ACTION}" == 'update-registry' ]]; then
+            SHORT_SHA=${REGISTRY_SHA:0:7}
+            MESSAGE="bazel: Bump bazel-registry to ${SHORT_SHA}"
+            BRANCH="deps/registry/${SHORT_SHA}"
+            BODY="Created by publish-envoy[bot] for @${ACTOR}"
+        else
+            SAFE_DEP=${DEP//\//-}
+            SAFE_DEP=${SAFE_DEP//@/-}
+            MESSAGE="bazel: Bump ${DEP} ${OLD} -> ${NEW}"
+            BRANCH="deps/module/${SAFE_DEP}/${NEW}"
+            ENTRY=$(jq --arg d "${DEP}" ".[\$d] // null" "${REPORT_PATH}")
+            BODY=$(printf "Created by publish-envoy[bot] for @%s\n\n\`\`\`json\n%s\n\`\`\`" "${ACTOR}" "${ENTRY}")
+        fi
+
+        {
+            echo "message=${MESSAGE}"
+            echo "branch=${BRANCH}"
+            echo 'body<<EOF'
+            printf '%s\n' "${BODY}"
+            echo 'EOF'
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Stage Bazel changes
+      if: >-
+        inputs.action == 'update-registry'
+        || inputs.action == 'update-module'
+      shell: bash
+      run: |
+        if [[ "${ACTION}" == 'update-module' && "${UPDATE_CHANGES}" != 'true' ]]; then
+            exit 0
+        fi
+
+        git status --porcelain > "${RUNNER_TEMP}/git-status.txt"
+        while IFS= read -r line; do
+            [[ -z "${line}" ]] && continue
+            path=${line:3}
+            case "${path}" in
+                bazel/.bazelrc|bazel/MODULE.bazel|bazel/MODULE.bazel.lock)
+                    ;;
+                *)
+                    echo "::error::Unexpected modified path: ${path}" >&2
+                    exit 1
+                    ;;
+            esac
+        done < "${RUNNER_TEMP}/git-status.txt"
+
+        git add -A bazel/.bazelrc bazel/MODULE.bazel bazel/MODULE.bazel.lock
+      env:
+        ACTION: ${{ inputs.action }}
+        UPDATE_CHANGES: ${{ steps.module-update.outputs.changes || 'false' }}
+
+    - name: Commit changes
+      id: commit
+      if: >-
+        inputs.action == 'update-registry'
+        || inputs.action == 'update-module'
+      env:
+        ACTION: ${{ inputs.action }}
+        COMMIT_MESSAGE: ${{ steps.details.outputs.message }}
+        UPDATE_CHANGES: ${{ steps.module-update.outputs.changes || 'false' }}
+      run: |
+        if [[ "${ACTION}" == 'update-module' && "${UPDATE_CHANGES}" != 'true' ]]; then
+            echo 'changes=false' >> "$GITHUB_OUTPUT"
+            exit 0
+        fi
+        if [[ -z "$(git status --porcelain)" ]]; then
+            echo 'changes=false' >> "$GITHUB_OUTPUT"
+            exit 0
+        fi
+        git commit -m "${COMMIT_MESSAGE}" --signoff
+        git show
+        echo "message=${COMMIT_MESSAGE}" >> "$GITHUB_OUTPUT"
+        echo 'changes=true' >> "$GITHUB_OUTPUT"
+    - name: Create Pull Request
+      uses: envoyproxy/toolshed/actions/github/pr@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      if: fromJSON(steps.commit.outputs.changes || 'false')
+      with:
+        base: ${{ inputs.branch }}
+        branch: ${{ steps.details.outputs.branch }}
+        commit: false
+        title: ${{ steps.commit.outputs.message }}
+        body: ${{ steps.details.outputs.body }}
+        dry-run: ${{ inputs.dry-run }}
+        diff-show: true
+        GITHUB_TOKEN: ${{ steps.appauth.outputs.token || github.token }}

@@ -1,0 +1,26 @@
+{
+  "aspect_bazel_lib": {
+    "module_url": "https://bcr.bazel.build/modules/aspect_bazel_lib/2.22.5/",
+    "registry": "https://bcr.bazel.build/",
+    "urls": [
+      "https://bcr.bazel.build/modules/aspect_bazel_lib/2.22.5/"
+    ],
+    "version": "2.22.5"
+  },
+  "bazel_skylib": {
+    "module_url": "https://bcr.bazel.build/modules/bazel_skylib/1.9.0/",
+    "registry": "https://bcr.bazel.build/",
+    "urls": [
+      "https://bcr.bazel.build/modules/bazel_skylib/1.9.0/"
+    ],
+    "version": "1.9.0"
+  },
+  "protobuf": {
+    "module_url": "https://raw.githubusercontent.com/envoyproxy/bazel-registry/deadbeef/modules/protobuf/35.2.bcr.envoy/",
+    "registry": "https://raw.githubusercontent.com/envoyproxy/bazel-registry/deadbeef/",
+    "urls": [
+      "https://raw.githubusercontent.com/envoyproxy/bazel-registry/deadbeef/modules/protobuf/35.2.bcr.envoy/"
+    ],
+    "version": "35.2.bcr.envoy"
+  }
+}

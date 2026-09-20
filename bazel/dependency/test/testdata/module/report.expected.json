@@ -1,0 +1,104 @@
+{
+  "aspect_bazel_lib": {
+    "cross_registry_update_available": false,
+    "current": "2.22.0",
+    "current_registry": "REGISTRY_BCR/",
+    "latest": "2.22.5",
+    "latest_any": "2.22.5",
+    "latest_by_registry": {
+      "REGISTRY_BCR/": "2.22.5"
+    },
+    "registries": {
+      "REGISTRY_BCR/": {
+        "versions": [
+          "2.21.2",
+          "2.22.0",
+          "2.22.5"
+        ],
+        "yanked": []
+      }
+    },
+    "update_available": true
+  },
+  "bazel_skylib": {
+    "cross_registry_update_available": false,
+    "current": "1.8.0",
+    "current_registry": "REGISTRY_BCR/",
+    "latest": "1.9.0",
+    "latest_any": "1.9.0",
+    "latest_by_registry": {
+      "REGISTRY_BCR/": "1.9.0"
+    },
+    "registries": {
+      "REGISTRY_BCR/": {
+        "versions": [
+          "1.8.0",
+          "1.9.0",
+          "1.9.1"
+        ],
+        "yanked": [
+          "1.9.1"
+        ]
+      }
+    },
+    "update_available": true
+  },
+  "missing_dep": {
+    "cross_registry_update_available": false,
+    "current": "0.1.0",
+    "current_registry": null,
+    "latest": null,
+    "latest_any": null,
+    "latest_by_registry": {},
+    "registries": {},
+    "update_available": false
+  },
+  "protobuf": {
+    "cross_registry_update_available": true,
+    "current": "35.1.bcr.envoy",
+    "current_registry": "REGISTRY_ENVOY/",
+    "latest": "35.2.bcr.envoy",
+    "latest_any": "36.0",
+    "latest_by_registry": {
+      "REGISTRY_BCR/": "36.0",
+      "REGISTRY_ENVOY/": "35.2.bcr.envoy"
+    },
+    "registries": {
+      "REGISTRY_BCR/": {
+        "versions": [
+          "35.1",
+          "36.0"
+        ],
+        "yanked": []
+      },
+      "REGISTRY_ENVOY/": {
+        "versions": [
+          "35.1.bcr.envoy",
+          "35.2.bcr.envoy"
+        ],
+        "yanked": []
+      }
+    },
+    "update_available": true
+  },
+  "sq": {
+    "cross_registry_update_available": false,
+    "current": "1.4.0.envoy",
+    "current_registry": "REGISTRY_ENVOY/",
+    "latest": "1.5.0.envoy",
+    "latest_any": "1.5.0.envoy",
+    "latest_by_registry": {
+      "REGISTRY_ENVOY/": "1.5.0.envoy"
+    },
+    "registries": {
+      "REGISTRY_ENVOY/": {
+        "versions": [
+          "1.4.0.envoy",
+          "1.5.0.envoy"
+        ],
+        "yanked": []
+      }
+    },
+    "update_available": true
+  }
+}

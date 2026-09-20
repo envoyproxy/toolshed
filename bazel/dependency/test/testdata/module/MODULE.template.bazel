@@ -1,0 +1,16 @@
+module(
+    name = "module_updater_test",
+    version = "0.1.0",
+)
+
+bazel_dep(
+    name = "bazel_skylib",
+    version = "1.8.0",
+)
+bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
+bazel_dep(name = "sq", version = "1.4.0.envoy", dev_dependency = True)
+
+single_version_override(
+    module_name = "bazel_skylib",
+    version = "1.8.0",
+)
