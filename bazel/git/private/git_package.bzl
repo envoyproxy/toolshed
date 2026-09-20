@@ -3,26 +3,7 @@
 load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files", "pkg_mklink", "strip_prefix")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load("//:versions.bzl", "VERSIONS")
-
-_PLATFORMS = {
-    "linux-x86_64": "@toolchains_llvm//platforms:linux-x86_64",
-    "linux-aarch64": "@toolchains_llvm//platforms:linux-aarch64",
-}
-
-def _git_transition_impl(settings, attr):
-    return {
-        "//command_line_option:platforms": [_PLATFORMS[attr.platform]],
-        "@curl//:ssl_lib": "openssl",
-    }
-
-_git_transition = transition(
-    implementation = _git_transition_impl,
-    inputs = [],
-    outputs = [
-        "//command_line_option:platforms",
-        "@curl//:ssl_lib",
-    ],
-)
+load("//git/private:transitions.bzl", "GIT_PLATFORMS", "git_platform_transition")
 
 def _strip_binary(ctx, src, out, progress_message):
     ctx.actions.run_shell(
@@ -130,18 +111,18 @@ git_files = rule(
         "git": attr.label(
             mandatory = True,
             executable = True,
-            cfg = _git_transition,
+            cfg = git_platform_transition,
         ),
         "git_remote_http": attr.label(
             mandatory = True,
             executable = True,
-            cfg = _git_transition,
+            cfg = git_platform_transition,
         ),
         "templates": attr.label(
             mandatory = True,
-            cfg = _git_transition,
+            cfg = git_platform_transition,
         ),
-        "platform": attr.string(mandatory = True, values = _PLATFORMS.keys()),
+        "platform": attr.string(mandatory = True, values = GIT_PLATFORMS.keys()),
         "stripper": attr.label(
             mandatory = True,
             executable = True,
@@ -154,7 +135,15 @@ git_files = rule(
     },
 )
 
-def git_package(name, platform, stripper, visibility=None):
+def git_package(name, platform, stripper, visibility = None):
+    """Build the published git tarball for one platform.
+
+    Args:
+        name: Macro target name.
+        platform: Artifact platform suffix.
+        stripper: Executable used to strip git binaries.
+        visibility: Optional visibility for the final tarball target.
+    """
     package_dir = "git-%s-%s" % (VERSIONS["git"], platform)
     files = name + "_files"
     executables = name + "_executables"

@@ -19,9 +19,9 @@ bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
 bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "sq", version = "1.4.0.envoy")
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
+bazel_dep(name = "curl", version = "8.11.0.bcr.4")
+bazel_dep(name = "git", version = "2.55.0")
 
-bazel_dep(name = "curl", version = "8.11.0.bcr.4", dev_dependency = True)
-bazel_dep(name = "git", version = "2.55.0", dev_dependency = True)
 bazel_dep(name = "toolchains_llvm", version = "1.9.0.envoy", dev_dependency = True)
 
 single_version_override(
@@ -53,7 +53,7 @@ bazel_lib_toolchains = use_extension("@aspect_bazel_lib//lib:extensions.bzl", "t
 bazel_lib_toolchains.jq(version = "1.7")
 bazel_lib_toolchains.yq()
 bazel_lib_toolchains.tar()
-use_repo(bazel_lib_toolchains, "jq", "jq_toolchains", "yq", "yq_toolchains", "bsd_tar_toolchains")
+use_repo(bazel_lib_toolchains, "bsd_tar_toolchains", "jq", "jq_toolchains", "yq", "yq_toolchains")
 
 PYTHON_VERSION_DEFAULT = "3.12"
 
@@ -101,7 +101,6 @@ use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_tra
 
 # Load llvm_source for compile targets
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 http_archive(
     name = "llvm_source",
@@ -111,16 +110,12 @@ http_archive(
     url = "https://github.com/llvm/llvm-project/archive/llvmorg-22.1.8.tar.gz",
 )
 
-# Keep in sync with VERSIONS["cacert"] in //:versions.bzl.
-http_file(
-    name = "cacert",
-    downloaded_file_path = "cacert.pem",
-    sha256 = "f66dff1bdf8f96060b8177976f8b7d9254bc89bc4db933d769f7384d28480bc9",
-    url = "https://curl.se/ca/cacert-2026-08-13.pem",
-)
+git_prebuilt_ext = use_extension("//git:extensions.bzl", "git_prebuilt_extension")
+git_prebuilt_ext.setup()
+use_repo(git_prebuilt_ext, "cacert", "git_toolchains")
 
 # Setup sysroots for LLVM toolchain using the sysroot extension
-sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev_dependency=True)
+sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev_dependency = True)
 sysroot_ext.setup()
 use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 
@@ -129,7 +124,7 @@ use_repo(macos_sysroot_build_ext, "macos_sdk_pkg", "pkgutil_linux_amd64")
 
 wee8_prebuilt_ext = use_extension("//v8:extensions.bzl", "wee8_prebuilt_extension")
 wee8_prebuilt_ext.setup()
-use_repo(wee8_prebuilt_ext, "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx", "wee8_prebuilt_aarch64")
+use_repo(wee8_prebuilt_ext, "wee8_prebuilt_aarch64", "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx")
 
 # Setup sanitizer libraries (MSAN and TSAN) - example for downstream consumers
 # Uncomment to use in your MODULE.bazel:
@@ -170,7 +165,7 @@ register_toolchains(
 
 # Configure LLVM toolchain
 
-llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency=True)
+llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm", dev_dependency = True)
 llvm.cxx_cross_lib(
     name = "llvm_toolchain",
     label = "@libcxx_libs_aarch64",
@@ -216,13 +211,25 @@ llvm.extra_exec_compatible_with(
 )
 use_repo(llvm, "llvm_toolchain")
 
-register_toolchains("@llvm_toolchain//:all", dev_dependency = True)
+register_toolchains(
+    "@llvm_toolchain//:all",
+    dev_dependency = True,
+)
 
 # Stub OpenPGP signer used by //pgp/test analysis tests. It is registered first
 # in dev mode so those tests resolve the stub instead of the default `sq` signer.
-register_toolchains("//pgp/test:stub_toolchain", dev_dependency = True)
+register_toolchains(
+    "//pgp/test:stub_toolchain",
+    dev_dependency = True,
+)
 
 register_toolchains("//pgp:sq_toolchain")
+
+# Prebuilt git toolchains are registered first so constrained matches win before
+# the unconstrained source fallback.
+register_toolchains("@git_toolchains//:all")
+
+register_toolchains("//git:source_toolchain")
 
 libcxx_ext = use_extension("//compile:extensions.bzl", "libcxx_extension", dev_dependency = True)
 use_repo(libcxx_ext, "llvm_libcxx_aarch64", "llvm_libcxx_x86_64")
@@ -234,11 +241,11 @@ use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
 # Set up raw LLVM tarball download repos needed to build //compile:llvm_minimal_* targets.
 # These are dev_dependency only — consumers use the llvm_minimal_* http_archive repos instead.
 llvm_minimal_build_ext = use_extension("//compile:extensions.bzl", "llvm_minimal_build_extension", dev_dependency = True)
-use_repo(llvm_minimal_build_ext, "llvm_tarball_linux_x86_64", "llvm_tarball_linux_arm64", "llvm_tarball_macos_arm64")
+use_repo(llvm_minimal_build_ext, "llvm_tarball_linux_arm64", "llvm_tarball_linux_x86_64", "llvm_tarball_macos_arm64")
 
 llvm_minimal_ext = use_extension("//compile:extensions.bzl", "llvm_minimal_extension", dev_dependency = True)
 llvm_minimal_ext.setup()
-use_repo(llvm_minimal_ext, "llvm_minimal_linux_x64", "llvm_minimal_linux_arm64", "llvm_minimal_macos_arm64")
+use_repo(llvm_minimal_ext, "llvm_minimal_linux_arm64", "llvm_minimal_linux_x64", "llvm_minimal_macos_arm64")
 
 llvm_toolchain_alias_ext = use_extension("//compile:extensions.bzl", "llvm_toolchain_alias_extension", dev_dependency = True)
 use_repo(llvm_toolchain_alias_ext, "llvm_toolchain_llvm")

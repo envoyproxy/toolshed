@@ -62,6 +62,7 @@ VERSIONS = {
         "Linux-X64": "dcef2a3f6ca8090684fdcbad777acbec83c9f6b182e2dca0288b06aa30b938a0",
         "Linux-ARM64": "ccdbe4a6c79c589a12d6a2eff3fe8f635e7b170a45bf947971c47a018e923ebd",
     },
+    # Git prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64).
     "git_sha256": {
         "linux-x86_64": "e179be2ec6eb08ec370a0fa938410c38ab9360da129f085e3c48f30e3eef1130",
         "linux-aarch64": "59032f71d0c94b3a790e43939e823d63c3b324e112ad3db0c046c199111c0489",
