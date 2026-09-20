@@ -117,7 +117,6 @@ jobs:
     if: >-
       inputs.conclusion == 'success'
       && ! inputs.skip
-      && contains(format(' {0} ', inputs.release-types), format(' {0} ', matrix.name))
     name: ${{ matrix.name }}
     uses: ./.github/workflows/_publish_release.yml
     with:
@@ -138,6 +137,7 @@ jobs:
       pypi-publish: ${{ matrix.pypi-publish || false }}
       pypi-repository-url: ${{ inputs.pypi-repository-url }}
       sha: ${{ inputs.sha }}
+      skip: ${{ ! contains(format(' {0} ', inputs.release-types), format(' {0} ', matrix.name)) }}
       template-artifacts: >-
         ${{ matrix.template-artifacts
             || '\($name)-*{artifacts,source}*' }}
