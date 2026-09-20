@@ -452,6 +452,48 @@
         "recordedRepoMappingEntries": []
       }
     },
+    "//git:extensions.bzl%git_prebuilt_extension": {
+      "general": {
+        "bzlTransitiveDigest": "IaUC7wC4J68ZUEsStUpAQGHTH7bEB9InolTFlprBfAI=",
+        "usagesDigest": "PTJ9J4ibeXpHG+AY0nNjugIA2FAPEvua7YTlmsbbV9o=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "cacert": {
+            "repoRuleId": "@@//git/private:git_prebuilt.bzl%git_cacert",
+            "attributes": {
+              "sha256": "f66dff1bdf8f96060b8177976f8b7d9254bc89bc4db933d769f7384d28480bc9",
+              "url": "https://curl.se/ca/cacert-2026-08-13.pem"
+            }
+          },
+          "git_prebuilt_linux_aarch64": {
+            "repoRuleId": "@@//git/private:git_prebuilt.bzl%git_prebuilt",
+            "attributes": {
+              "sha256": "59032f71d0c94b3a790e43939e823d63c3b324e112ad3db0c046c199111c0489",
+              "strip_prefix": "git-2.55.0-linux-aarch64",
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.18/git-2.55.0-linux-aarch64.tar.zst"
+            }
+          },
+          "git_prebuilt_linux_x86_64": {
+            "repoRuleId": "@@//git/private:git_prebuilt.bzl%git_prebuilt",
+            "attributes": {
+              "sha256": "e179be2ec6eb08ec370a0fa938410c38ab9360da129f085e3c48f30e3eef1130",
+              "strip_prefix": "git-2.55.0-linux-x86_64",
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.18/git-2.55.0-linux-x86_64.tar.zst"
+            }
+          },
+          "git_toolchains": {
+            "repoRuleId": "@@//git/private:git_prebuilt.bzl%git_toolchains_hub",
+            "attributes": {
+              "linux_aarch64": "@@+git_prebuilt_extension+git_prebuilt_linux_aarch64//:BUILD.bazel",
+              "linux_x86_64": "@@+git_prebuilt_extension+git_prebuilt_linux_x86_64//:BUILD.bazel"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
         "bzlTransitiveDigest": "BFDYjkG0dTS4QM4+yyNk7Qc20Iyx6GyU25eWhQnWHYs=",

@@ -1,9 +1,8 @@
 # Hermetic git prebuilt (`//git`)
 
 Builds Linux `git-<version>-<platform>.tar.zst` release artifacts for the
-`bins-v*` flow. Unlike `sq`, which still packages with aspect's mtree/bsdtar
-path, `git` uses `rules_pkg` so file modes, template selection, and the
-`git-remote-https` link are declared directly in Bazel.
+`bins-v*` flow and exposes a `//git:toolchain_type` consumers can resolve with
+no flags or `select()`.
 
 ## Runtime layout
 
@@ -28,7 +27,7 @@ into new repositories. Source-tree build files such as `Makefile`,
 ## Runtime environment
 
 The upstream BCR `git` overlay currently builds with `RUNTIME_PREFIX='false'`,
-so the package ships a `/bin/sh` wrapper that sets:
+so both the prebuilt runtime and the source fallback wrapper set:
 
 - `GIT_EXEC_PATH=$here/libexec/git-core`
 - `GIT_TEMPLATE_DIR=$here/share/git-core/templates`
@@ -38,17 +37,60 @@ so the package ships a `/bin/sh` wrapper that sets:
   3. bundled `share/git-core/ca-certificates.crt`
 - `SSL_CERT_FILE=$GIT_SSL_CAINFO`
 
+## Consuming the toolchain
+
+Registering `@envoy_toolshed//git:toolchain_type` resolves a prebuilt git on
+exec platforms with a published `git-<version>-<platform>.tar.zst`
+(`linux-x86_64`, `linux-aarch64` today). Other exec platforms fall back to the
+source-built `@git//:git` wrapped to match the same runtime contract.
+
+For `genrule`/`sh_*` consumers, declare the toolchain and use `$(GIT)`:
+
+```starlark
+genrule(
+    name = "git_version",
+    outs = ["git-version.txt"],
+    cmd = "$(GIT) --version > $@",
+    toolchains = ["@envoy_toolshed//git:toolchain_type"],
+)
+```
+
+For Starlark rules, load `GitInfo` and read `ctx.toolchains`:
+
+```starlark
+load("@envoy_toolshed//git:defs.bzl", "GIT_TOOLCHAIN_TYPE", "GitInfo")
+
+my_rule = rule(
+    implementation = _impl,
+    toolchains = [GIT_TOOLCHAIN_TYPE],
+)
+
+# In _impl(ctx):
+# git_info = ctx.toolchains[GIT_TOOLCHAIN_TYPE].git  # GitInfo
+```
+
+The source fallback can be forced for debugging with:
+
+```console
+bazel test //git/test:toolchain_source_version_test --extra_toolchains=@envoy_toolshed//git:source_toolchain
+```
+
+Prebuilt SHAs can be overridden, or a platform disabled, in `MODULE.bazel`:
+
+```starlark
+git_prebuilt_ext = use_extension("@envoy_toolshed//git:extensions.bzl", "git_prebuilt_extension")
+git_prebuilt_ext.setup(linux_x86_64_sha256 = "...")
+# Disable a platform entirely:
+# git_prebuilt_ext.setup(linux_aarch64_sha256 = "")
+```
+
 ## CA bundle maintenance
 
 The bundled CA file is Mozilla's CA bundle published via curl.se and pinned in
-`VERSIONS["cacert"]` in `/home/runner/work/toolshed/toolshed/bazel/versions.bzl`.
-When bumping it:
+`VERSIONS["cacert"]` in `bazel/versions.bzl`. When bumping it:
 
 1. Check the latest dated release on <https://curl.se/docs/caextract.html>.
 2. Download `https://curl.se/ca/cacert-YYYY-MM-DD.pem`.
 3. Compute its SHA-256.
-4. Update `VERSIONS["cacert"]` and the matching `@cacert` `http_file` in
-   `/home/runner/work/toolshed/toolshed/bazel/MODULE.bazel`.
-
-> TODO: add macOS-ARM64 packaging when the bins pipeline grows beyond Linux
-> parity with `sq`.
+4. Update `VERSIONS["cacert"]`; the git module extension will recreate
+   `@cacert` from that metadata for both packaging and toolchain consumers.
