@@ -311,6 +311,19 @@ jobs:
                     "sed -i '0,/\"\($platform)\": \"\"/s//\"\($platform)\": \"\($new_sha)\"/' \($versions_file)"
                   end
               else "" end] as $sq_updates
+          | [["linux-x86_64", "linux-aarch64"][]
+             | . as $platform
+             | ($shas["git-\($current.git)-\($platform).tar.zst"] // null) as $sha_entry
+             | if $sha_entry then
+                ($sha_entry | split(":") | .[1]) as $new_sha
+                | $current.git_sha256[$platform] as $cur
+                | if $cur == $new_sha then ""
+                  elif ($cur | length) > 0 then
+                    "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+                  else
+                    "sed -i '0,/\"\($platform)\": \"\"/s//\"\($platform)\": \"\($new_sha)\"/' \($versions_file)"
+                  end
+              else "" end] as $git_updates
           | [[["x86_64", "libcxx"], ["x86_64", "libstdcxx"], ["aarch64", "libcxx"], ["aarch64", "libstdcxx"]][]
              | .[0] as $arch
              | .[1] as $stdlib
@@ -330,7 +343,7 @@ jobs:
                   end
               else "" end] as $wee8_updates
           | $bins_update + $san_updates + $libcxx_updates + $arch_updates
-            + $macos_updates + $llvm_minimal_updates + $sq_updates + $wee8_updates
+            + $macos_updates + $llvm_minimal_updates + $sq_updates + $git_updates + $wee8_updates
           | [flatten[]
              | select(. != "")]
           | join("\n")

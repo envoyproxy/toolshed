@@ -19,7 +19,30 @@ bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
 bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "sq", version = "1.4.0.envoy")
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
+
+bazel_dep(name = "curl", version = "8.11.0.bcr.4", dev_dependency = True)
+bazel_dep(name = "git", version = "2.55.0", dev_dependency = True)
 bazel_dep(name = "toolchains_llvm", version = "1.9.0.envoy", dev_dependency = True)
+
+single_version_override(
+    module_name = "bazel_skylib",
+    version = "1.8.2",
+)
+
+single_version_override(
+    module_name = "platforms",
+    version = "1.0.0",
+)
+
+single_version_override(
+    module_name = "rules_cc",
+    version = "0.2.17",
+)
+
+single_version_override(
+    module_name = "rules_rust",
+    version = "0.69.0.envoy",
+)
 
 local_path_override(
     module_name = "envoy_toolshed_jq",
@@ -78,6 +101,7 @@ use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_tra
 
 # Load llvm_source for compile targets
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 
 http_archive(
     name = "llvm_source",
@@ -85,6 +109,14 @@ http_archive(
     sha256 = "ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace",
     strip_prefix = "llvm-project-llvmorg-22.1.8",
     url = "https://github.com/llvm/llvm-project/archive/llvmorg-22.1.8.tar.gz",
+)
+
+# Keep in sync with VERSIONS["cacert"] in //:versions.bzl.
+http_file(
+    name = "cacert",
+    downloaded_file_path = "cacert.pem",
+    sha256 = "f66dff1bdf8f96060b8177976f8b7d9254bc89bc4db933d769f7384d28480bc9",
+    url = "https://curl.se/ca/cacert-2026-08-13.pem",
 )
 
 # Setup sysroots for LLVM toolchain using the sysroot extension
