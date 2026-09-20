@@ -1,6 +1,6 @@
 SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 
-BINS_RELEASE = "0.2.16"
+BINS_RELEASE = "0.2.18"
 
 LLVM_VERSION = "22.1.8"
 
@@ -23,7 +23,7 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": BINS_RELEASE,
-    "msan_libs_sha256": "63484ef3d967c8eda3c277a2d3aaaf1047b863ef191df40182824bde50793995",
+    "msan_libs_sha256": "1ee256506ea5e142a8bdf18b5043c5fa788765a5f1228896f94a6b075baaaa75",
     "tsan_libs_sha256": "3e0a7c4521a75b5b9c473d50d7fd32a9601c92c5abe8d014ac3cc4b3c915efbf",
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
@@ -63,8 +63,8 @@ VERSIONS = {
         "Linux-ARM64": "ccdbe4a6c79c589a12d6a2eff3fe8f635e7b170a45bf947971c47a018e923ebd",
     },
     "git_sha256": {
-        "linux-x86_64": "",
-        "linux-aarch64": "",
+        "linux-x86_64": "e179be2ec6eb08ec370a0fa938410c38ab9360da129f085e3c48f30e3eef1130",
+        "linux-aarch64": "59032f71d0c94b3a790e43939e823d63c3b324e112ad3db0c046c199111c0489",
     },
     "cacert": {
         "version": "2026-08-13",
@@ -97,22 +97,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "cffbc25e7678f17fca98030857a7e067498c6b000d97e30f8053306624253de5",
-                "arm64": "4b69e95730bbb551fc803bb70ea7ecf98eeaabeff115e1f2bd2bcdfcd4d66192",
+                "amd64": "1ad39068a6d2c4b5c239129eed8c8b1063b17d03f56c7338c5c5c68c2b5e5ecb",
+                "arm64": "b4c1397605071f85a14878d0e572cc072ecdfe9eb98d29f0bdbe3ededba54138",
             },
             "13": {
-                "amd64": "5134f12e58c9acea186b520d985cd5beec2518f24bdb346f08f930edd45544e1",
-                "arm64": "659b3fefbd4e24eb9fcc51bd0429815b27b7edadea38dcab07bb16221970163f",
+                "amd64": "b9841e1ef1d2b2a9ebe2c73c8888275021a38042b04035f6fabad26bf53ea7af",
+                "arm64": "c6a768cf16f1f0455a7797299fe8f9a2e3a65328ac0e0d186d129501aafeff32",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "16b98c27a8f43597aaa7b67fefb5f4a04fb726aab41312900d4201a557377270",
-                "arm64": "f88a80ceab479dab849637b2e91cea51b48f5b534e408399a6f50ba320b62e6d",
+                "amd64": "0c010ec322f2bd3ef6252f7f840b45b84841d1a7d9ef75f06f45e22e17d0e3bf",
+                "arm64": "13448da2a06877de4da35a622453d7f59ec757354847d41c38da2575560a9840",
             },
             "13": {
-                "amd64": "846e8eed82f233466b242b5bb97d184f1b4632e6502ae88cafa3dd502df4c217",
-                "arm64": "26d8c0e82388d8712c0e7f106bef0d096cdebc98ace594fa7f8c4bc4716e201e",
+                "amd64": "1395baa9274e51add8a7eedbc5e55f7a7c72d4a04b5bf83588f23888c952868c",
+                "arm64": "681684300d2dc162fe626dc3768f7b92ef884539320731525ff124320cf0a593",
             },
         },
     },
