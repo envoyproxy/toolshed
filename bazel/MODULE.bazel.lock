@@ -389,8 +389,8 @@
     },
     "//git:extensions.bzl%git_prebuilt_extension": {
       "general": {
-        "bzlTransitiveDigest": "MoAoWLfAErnSNJ8jA7fxdfpQelcVAdOdAdJN0VjnnKo=",
-        "usagesDigest": "PTJ9J4ibeXpHG+AY0nNjugIA2FAPEvua7YTlmsbbV9o=",
+        "bzlTransitiveDigest": "ZcHAF/6WxPywXdrSB+9aI0lDW3XNIWauPSBEX+WOkMo=",
+        "usagesDigest": "D9o/qSVa3rOVa7jYRFLrQ7AEyFMK5kGlxi0LfsXH9cE=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "cacert": {
@@ -403,17 +403,17 @@
           "git_prebuilt_linux_aarch64": {
             "repoRuleId": "@@//git/private:git_prebuilt.bzl%git_prebuilt",
             "attributes": {
-              "sha256": "59032f71d0c94b3a790e43939e823d63c3b324e112ad3db0c046c199111c0489",
+              "sha256": "bf85635f2e490b86b8f3e4b4adc63705a78f3e9d08aaf1e3fdb1d33e5977fa13",
               "strip_prefix": "git-2.55.0-linux-aarch64",
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.19/git-2.55.0-linux-aarch64.tar.zst"
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.20/git-2.55.0-linux-aarch64.tar.zst"
             }
           },
           "git_prebuilt_linux_x86_64": {
             "repoRuleId": "@@//git/private:git_prebuilt.bzl%git_prebuilt",
             "attributes": {
-              "sha256": "e179be2ec6eb08ec370a0fa938410c38ab9360da129f085e3c48f30e3eef1130",
+              "sha256": "f955527a7090bad55aefd1f8a874148fa3a367d5f751d8ee48cb5dde9d7aa7e5",
               "strip_prefix": "git-2.55.0-linux-x86_64",
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.19/git-2.55.0-linux-x86_64.tar.zst"
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.20/git-2.55.0-linux-x86_64.tar.zst"
             }
           },
           "git_toolchains": {
@@ -428,26 +428,51 @@
         }
       }
     },
+    "//git:extensions.bzl%git_source_extension": {
+      "general": {
+        "bzlTransitiveDigest": "ZcHAF/6WxPywXdrSB+9aI0lDW3XNIWauPSBEX+WOkMo=",
+        "usagesDigest": "aVV9EMvspvSD6/cAK0/w4EQRHlPRzxzCXQuSBdFr2po=",
+        "recordedInputs": [],
+        "generatedRepoSpecs": {
+          "envoy_toolshed_git_source": {
+            "repoRuleId": "@@//git/private:git_source_hub.bzl%git_source_hub",
+            "attributes": {
+              "cacert": "@@+git_prebuilt_extension+cacert//file:file",
+              "gcc_build_label": "'@@//compile:gcc_build'",
+              "git": "@@git+//:git",
+              "git_package_bzl_label": "'@@//git/private:git_package.bzl'",
+              "git_remote_http": "@@git+//:git-remote-http",
+              "git_source_bzl_label": "'@@//git/private:git_source.bzl'",
+              "ssl_lib": "@@curl+//:ssl_lib",
+              "stripper": "@@//compile:llvm_minimal_host_llvm_strip",
+              "templates": "@@git+//:templates",
+              "toolchain_bzl_label": "'@@//git:toolchain.bzl'",
+              "toolchain_type_label": "'@@//git:toolchain_type'"
+            }
+          }
+        }
+      }
+    },
     "//pgp:extensions.bzl%sq_prebuilt_extension": {
       "general": {
-        "bzlTransitiveDigest": "mnpzEprwvGY4yxDD8WddTXTjrfmarQpxfPZkaXmmATc=",
-        "usagesDigest": "w2uAFDiGtDu0PcZs3puBXsKKYDfno/bsfyJyYRJcy+E=",
+        "bzlTransitiveDigest": "ZQ2QozibigaetKkdVO8QNlt77OMm7HKI3P/pUJkyX4M=",
+        "usagesDigest": "BMNqY2TuWqQSqiiS3fWYoBJDJr/WmCZKHD0TlgsmmrM=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "sq_prebuilt_linux_aarch64": {
             "repoRuleId": "@@//pgp/private:sq_prebuilt.bzl%sq_prebuilt",
             "attributes": {
-              "sha256": "ccdbe4a6c79c589a12d6a2eff3fe8f635e7b170a45bf947971c47a018e923ebd",
+              "sha256": "e6e6cf338f0a9caa0f770bdfd3b97d6f5dce70b8870bfd799be6a57065b1e4e4",
               "strip_prefix": "sq-1.4.0-Linux-ARM64",
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.19/sq-1.4.0-Linux-ARM64.tar.zst"
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.20/sq-1.4.0-Linux-ARM64.tar.zst"
             }
           },
           "sq_prebuilt_linux_x86_64": {
             "repoRuleId": "@@//pgp/private:sq_prebuilt.bzl%sq_prebuilt",
             "attributes": {
-              "sha256": "dcef2a3f6ca8090684fdcbad777acbec83c9f6b182e2dca0288b06aa30b938a0",
+              "sha256": "4271c3a20f53b29f129b601eb202eb8c9501b1e54650b16e8b3cce361d095ece",
               "strip_prefix": "sq-1.4.0-Linux-X64",
-              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.19/sq-1.4.0-Linux-X64.tar.zst"
+              "url": "https://github.com/envoyproxy/toolshed/releases/download/bins-v0.2.20/sq-1.4.0-Linux-X64.tar.zst"
             }
           },
           "sq_toolchains": {

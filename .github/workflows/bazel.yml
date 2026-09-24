@@ -76,7 +76,7 @@ jobs:
             compile/libcxx-llvm22.1.8-darwin-aarch64.tar.xz
             compile/libcxx-llvm22.1.8-x86_64.tar.xz
             compile/llvm-minimal-*.tar.zst
-            git/git-*.tar.zst
+            external/*git_source_extension*envoy_toolshed_git_source/git-*.tar.zst
             pgp/sq-*.tar.zst
             compile/msan-llvm22.1.8-x86_64.tar.xz
             compile/tsan-llvm22.1.8-x86_64.tar.xz
@@ -102,7 +102,7 @@ jobs:
             @envoy_toolshed_jq//...
             //:macos_packages
             //compile:llvm_minimal_packages
-            //git:git_packages
+            @envoy_toolshed_git_source//:git_packages
             //pgp:sq_packages
             //sysroot:sysroots
             //v8:wee8_packages
@@ -260,6 +260,13 @@ jobs:
           rbe: false
           runner: ubuntu-24.04
           targets: //pgp/test:live_audit
+        - name: git-prebuilt-consumer
+          action: run
+          bazel_args: --config=ci
+          privileged: false
+          rbe: false
+          runner: ubuntu-24.04
+          targets: //git/test:live_prebuilt_consumer
 
   status:
     runs-on: ubuntu-24.04
