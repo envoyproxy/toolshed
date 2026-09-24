@@ -3,7 +3,6 @@
 load("@rules_pkg//pkg:mappings.bzl", "pkg_attributes", "pkg_files", "pkg_mklink", "strip_prefix")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 load("//:versions.bzl", "VERSIONS")
-load("//git/private:transitions.bzl", "GIT_PLATFORMS", "git_platform_transition")
 
 def _strip_binary(ctx, src, out, progress_message):
     ctx.actions.run_shell(
@@ -105,37 +104,38 @@ exec "$GIT_EXEC_PATH/git" "$@"
         ),
     ]
 
-git_files = rule(
-    implementation = _git_files_impl,
-    attrs = {
-        "git": attr.label(
-            mandatory = True,
-            executable = True,
-            cfg = git_platform_transition,
-        ),
-        "git_remote_http": attr.label(
-            mandatory = True,
-            executable = True,
-            cfg = git_platform_transition,
-        ),
-        "templates": attr.label(
-            mandatory = True,
-            cfg = git_platform_transition,
-        ),
-        "platform": attr.string(mandatory = True, values = GIT_PLATFORMS.keys()),
-        "stripper": attr.label(
-            mandatory = True,
-            executable = True,
-            cfg = "exec",
-            allow_single_file = True,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    },
-)
+def git_files_rule(git_platform_transition, platforms):
+    return rule(
+        implementation = _git_files_impl,
+        attrs = {
+            "git": attr.label(
+                mandatory = True,
+                executable = True,
+                cfg = git_platform_transition,
+            ),
+            "git_remote_http": attr.label(
+                mandatory = True,
+                executable = True,
+                cfg = git_platform_transition,
+            ),
+            "templates": attr.label(
+                mandatory = True,
+                cfg = git_platform_transition,
+            ),
+            "platform": attr.string(mandatory = True, values = sorted(platforms.keys())),
+            "stripper": attr.label(
+                mandatory = True,
+                executable = True,
+                cfg = "exec",
+                allow_single_file = True,
+            ),
+            "_allowlist_function_transition": attr.label(
+                default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+            ),
+        },
+    )
 
-def git_package(name, platform, stripper, visibility = None):
+def git_package(name, platform, stripper, git_files, git, git_remote_http, templates, cacert, visibility = None):
     """Build the published git tarball for one platform.
 
     Args:
@@ -166,12 +166,12 @@ def git_package(name, platform, stripper, visibility = None):
     )
     git_files(
         name = files,
-        git = "@git//:git",
-        git_remote_http = "@git//:git-remote-http",
+        git = git,
+        git_remote_http = git_remote_http,
         platform = platform,
         stripper = stripper,
         tags = ["manual"],
-        templates = "@git//:templates",
+        templates = templates,
     )
     native.filegroup(
         name = executables,
@@ -208,10 +208,10 @@ def git_package(name, platform, stripper, visibility = None):
     )
     pkg_files(
         name = packaging_cacert,
-        srcs = ["@cacert//file"],
+        srcs = [cacert],
         attributes = pkg_attributes(mode = "0644"),
         prefix = "share/git-core",
-        renames = {"@cacert//file": "ca-certificates.crt"},
+        renames = {cacert: "ca-certificates.crt"},
         tags = ["manual"],
     )
     pkg_mklink(

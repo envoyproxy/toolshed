@@ -3,8 +3,9 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("//git:defs.bzl", "GIT_TOOLCHAIN_TYPE")
 load("//git/private:git_prebuilt.bzl", "render_git_toolchains_build")
+load("//git/private:git_source_hub.bzl", "render_git_source_build", "render_git_source_defs", "render_git_source_transitions")
 
-_SOURCE_TOOLCHAIN = str(Label("//git/dev:source_toolchain"))
+_SOURCE_TOOLCHAIN = str(Label("@envoy_toolshed_git_source//:source_toolchain"))
 
 _LAUNCHER_TEMPLATE = """#!/bin/bash
 set -euo pipefail
@@ -168,3 +169,32 @@ def _render_hub_build_test_impl(ctx):
     return unittest.end(env)
 
 render_hub_build_test = unittest.make(_render_hub_build_test_impl)
+
+def _render_source_hub_files_test_impl(ctx):
+    env = unittest.begin(ctx)
+    transitions = render_git_source_transitions("@" + "@curl+//:ssl_lib")
+    asserts.true(env, "\"@" + "@curl+//:ssl_lib\"" in transitions)
+    defs = render_git_source_defs(
+        git_package_bzl_label = "@" + "@envoy_toolshed+//git/private:git_package.bzl",
+        git_source_bzl_label = "@" + "@envoy_toolshed+//git/private:git_source.bzl",
+    )
+    asserts.true(env, "git_files = git_files_rule(" in defs)
+    asserts.true(env, "git_source_wrapper = git_source_wrapper_rule(openssl_transition)" in defs)
+    build = render_git_source_build(
+        cacert_label = "@" + "@cacert+//file",
+        gcc_build_label = "@" + "@envoy_toolshed+//compile:gcc_build",
+        git_label = "@" + "@git+//:git",
+        git_package_bzl_label = "@" + "@envoy_toolshed+//git/private:git_package.bzl",
+        git_remote_http_label = "@" + "@git+//:git-remote-http",
+        stripper_label = "@" + "@envoy_toolshed+//compile:llvm_minimal_host_llvm_strip",
+        templates_label = "@" + "@git+//:templates",
+        toolchain_bzl_label = "@" + "@envoy_toolshed+//git:toolchain.bzl",
+        toolchain_type_label = "@" + "@envoy_toolshed+//git:toolchain_type",
+    )
+    asserts.true(env, "name = \"source_toolchain\"" in build)
+    asserts.true(env, "load(\":defs.bzl\", \"git_files\", \"git_source_wrapper\")" in build)
+    asserts.true(env, "toolchain_type = \"@" + "@envoy_toolshed+//git:toolchain_type\"" in build)
+    asserts.true(env, "git = \"@" + "@git+//:git\"" in build)
+    return unittest.end(env)
+
+render_source_hub_files_test = unittest.make(_render_source_hub_files_test_impl)

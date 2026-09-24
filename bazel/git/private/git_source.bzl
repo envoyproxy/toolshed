@@ -1,7 +1,5 @@
 """Source-built git wrapper matching the prebuilt runtime layout."""
 
-load("//git/private:transitions.bzl", "openssl_transition")
-
 def _template_dest(src):
     parts = src.short_path.split("/templates/", 1)
     if len(parts) != 2:
@@ -108,30 +106,31 @@ exec "$GIT_EXEC_PATH/git" "$@"
         runfiles = ctx.runfiles(files = outputs),
     )]
 
-git_source_wrapper = rule(
-    implementation = _git_source_wrapper_impl,
-    executable = True,
-    attrs = {
-        "cacert": attr.label(
-            mandatory = True,
-            cfg = openssl_transition,
-        ),
-        "git": attr.label(
-            mandatory = True,
-            executable = True,
-            cfg = openssl_transition,
-        ),
-        "git_remote_http": attr.label(
-            mandatory = True,
-            executable = True,
-            cfg = openssl_transition,
-        ),
-        "templates": attr.label(
-            mandatory = True,
-            cfg = openssl_transition,
-        ),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    },
-)
+def git_source_wrapper_rule(openssl_transition):
+    return rule(
+        implementation = _git_source_wrapper_impl,
+        executable = True,
+        attrs = {
+            "cacert": attr.label(
+                mandatory = True,
+                cfg = openssl_transition,
+            ),
+            "git": attr.label(
+                mandatory = True,
+                executable = True,
+                cfg = openssl_transition,
+            ),
+            "git_remote_http": attr.label(
+                mandatory = True,
+                executable = True,
+                cfg = openssl_transition,
+            ),
+            "templates": attr.label(
+                mandatory = True,
+                cfg = openssl_transition,
+            ),
+            "_allowlist_function_transition": attr.label(
+                default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+            ),
+        },
+    )

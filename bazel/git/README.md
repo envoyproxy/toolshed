@@ -69,12 +69,11 @@ my_rule = rule(
 ```
 
 toolshed itself also keeps a dev-only source fallback registered for local
-builds and tests. The published packaging targets stay `manual` in `//git` so
-toolshed CI still emits stable `bazel-bin/git/...` artifacts. The source
-toolchain can be forced for debugging with:
+builds and tests via `@envoy_toolshed_git_source`. The source toolchain can be
+forced for debugging with:
 
 ```console
-bazel test //git/test:toolchain_source_version_test --extra_toolchains=@envoy_toolshed//git/dev:source_toolchain
+bazel test //git/test:toolchain_source_version_test --extra_toolchains=@envoy_toolshed_git_source//:source_toolchain
 ```
 
 ### Behaviour change
@@ -96,50 +95,33 @@ git_prebuilt_ext.setup(linux_x86_64_sha256 = "...")
 
 `envoy_toolshed` no longer exports the source-only `git`, `curl`, or OpenSSL
 module graph to downstream consumers by default. If a downstream wants a
-source-built git toolchain, it must instantiate the wrapper in its own module
-namespace so labels like `@git//:git` and the `@curl//:ssl_lib` transition are
-resolved there instead of inside toolshed.
+source-built git toolchain, it must declare those deps itself and instantiate
+the generated source hub in its own module namespace.
 
 ```starlark
-load("@envoy_toolshed//git:source_defs.bzl", "git_source_wrapper", "git_toolchain")
+bazel_dep(name = "curl", version = "8.11.0.bcr.4", dev_dependency = True)
+bazel_dep(name = "git", version = "2.55.0", dev_dependency = True)
 
-git_source_wrapper(
-    name = "source_git",
-    cacert = "@cacert//file",
-    git = "@git//:git",
-    git_remote_http = "@git//:git-remote-http",
-    templates = "@git//:templates",
-)
-
-git_toolchain(
-    name = "source_git_impl",
-    git = ":source_git",
-)
-
-toolchain(
-    name = "source_git_toolchain",
-    toolchain = ":source_git_impl",
-    toolchain_type = "@envoy_toolshed//git:toolchain_type",
-)
-```
-
-In `MODULE.bazel`, add the source-only deps yourself and expose the shared CA
-bundle repo in your module namespace, then register the toolchain you defined:
-
-```starlark
-bazel_dep(name = "curl", version = "8.11.0.bcr.4")
-bazel_dep(name = "git", version = "2.55.0")
-
-git_prebuilt_ext = use_extension("@envoy_toolshed//git:extensions.bzl", "git_prebuilt_extension")
+git_prebuilt_ext = use_extension("@envoy_toolshed//git:extensions.bzl", "git_prebuilt_extension", dev_dependency = True)
 git_prebuilt_ext.setup()
 use_repo(git_prebuilt_ext, "cacert")
 
-register_toolchains("//:source_git_toolchain")
+git_source = use_extension("@envoy_toolshed//git:extensions.bzl", "git_source_extension", dev_dependency = True)
+git_source.setup(
+    cacert = "@cacert//file",
+    git = "@git//:git",
+    git_remote_http = "@git//:git-remote-http",
+    ssl_lib = "@curl//:ssl_lib",
+    templates = "@git//:templates",
+)
+use_repo(git_source, "envoy_toolshed_git_source")
+
+register_toolchains("@envoy_toolshed_git_source//:source_toolchain", dev_dependency = True)
 ```
 
-The hardcoded `@curl//:ssl_lib` transition is only analyzed when this source
-path is selected, so downstreams that use the default prebuilt toolchains do
-not need those source-only repos in toolshed's non-dev module graph.
+The generated `@envoy_toolshed_git_source` repo also owns the `git_packages`,
+`git_linux_x86_64`, and `git_linux_aarch64` packaging targets used by toolshed
+CI, so `//git` itself stays loadable in non-dev consumer graphs.
 
 ## CA bundle maintenance
 

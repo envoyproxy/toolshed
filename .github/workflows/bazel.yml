@@ -260,6 +260,13 @@ jobs:
           rbe: false
           runner: ubuntu-24.04
           targets: //pgp/test:live_audit
+        - name: git-prebuilt-consumer
+          action: run
+          bazel_args: --config=ci
+          privileged: false
+          rbe: false
+          runner: ubuntu-24.04
+          targets: //git/test:live_prebuilt_consumer
 
   status:
     runs-on: ubuntu-24.04

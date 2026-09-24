@@ -8,7 +8,7 @@ bazel_dep(name = "abseil-cpp", version = "20260817.0")
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "boringssl", version = "0.20260813.0")
-bazel_dep(name = "envoy_toolshed_jq", version = "0.4.17-dev")
+bazel_dep(name = "envoy_toolshed_jq", version = "0.4.16")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
 bazel_dep(name = "rules_cc", version = "0.2.25")
@@ -247,8 +247,18 @@ register_toolchains(
 # the unconstrained source fallback.
 register_toolchains("@git_toolchains//:all")
 
+git_source_ext = use_extension("//git:extensions.bzl", "git_source_extension", dev_dependency = True)
+git_source_ext.setup(
+    cacert = "@cacert//file",
+    git = "@git//:git",
+    git_remote_http = "@git//:git-remote-http",
+    ssl_lib = "@curl//:ssl_lib",
+    templates = "@git//:templates",
+)
+use_repo(git_source_ext, "envoy_toolshed_git_source")
+
 register_toolchains(
-    "//git/dev:source_toolchain",
+    "@envoy_toolshed_git_source//:source_toolchain",
     dev_dependency = True,
 )
 

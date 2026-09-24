@@ -1,5 +1,6 @@
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("//git/private:git_package.bzl", "git_package")
+load("//:versions.bzl", "VERSIONS")
 
 exports_files([
     "README.md",
@@ -16,10 +17,9 @@ bzl_library(
         "extensions.bzl",
         "source_defs.bzl",
         "toolchain.bzl",
-        "//git/private:git_package.bzl",
         "//git/private:git_prebuilt.bzl",
         "//git/private:git_source.bzl",
-        "//git/private:transitions.bzl",
+        "//git/private:git_source_hub.bzl",
     ],
     visibility = ["//visibility:private"],
     deps = ["//private:extension_utils_bzl"],
@@ -31,34 +31,25 @@ toolchain_type(
     visibility = ["//visibility:public"],
 )
 
-alias(
-    name = "source_toolchain",
-    actual = "//git/dev:source_toolchain",
-    visibility = ["//visibility:public"],
-)
-
-# Packaging targets stay in the public package so toolshed CI always emits the
-# published tarballs at stable bazel-bin paths. They remain `manual`, so only
-# toolshed's own explicit CI builds analyze them with the dev-only source deps.
-git_package(
-    name = "git_linux_x86_64",
-    platform = "linux-x86_64",
-    stripper = "//compile:llvm_minimal_host_llvm_strip",
-    visibility = ["//visibility:public"],
-)
-
-git_package(
-    name = "git_linux_aarch64",
-    platform = "linux-aarch64",
-    stripper = "//compile:llvm_minimal_host_llvm_strip",
-    visibility = ["//visibility:public"],
-)
+[
+    copy_file(
+        name = "git_%s_tar" % platform.replace("-", "_"),
+        src = "@envoy_toolshed_git_source//:git_%s" % platform.replace("-", "_"),
+        out = "git-%s-%s.tar.zst" % (VERSIONS["git"], platform),
+        tags = ["manual"],
+        visibility = ["//git/test:__pkg__"],
+    )
+    for platform in [
+        "linux-aarch64",
+        "linux-x86_64",
+    ]
+]
 
 filegroup(
     name = "git_packages",
     srcs = [
-        ":git_linux_aarch64",
-        ":git_linux_x86_64",
+        ":git_linux_aarch64_tar",
+        ":git_linux_x86_64_tar",
     ],
     tags = ["manual"],
     target_compatible_with = ["@platforms//os:linux"],
