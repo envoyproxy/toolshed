@@ -1,7 +1,7 @@
 load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("//pgp/audit:defs.bzl", "pgp_audit_test")
+load("//:versions.bzl", "VERSIONS")
 load(
     "//pgp:defs.bzl",
     "changes_from_tarball",
@@ -11,8 +11,9 @@ load(
     "pgp_sign_checksums",
     "pgp_sign_cleartext",
     "pgp_sign_detached",
-    "pgp_toolchain"
+    "pgp_toolchain",
 )
+load("//pgp/audit:defs.bzl", "pgp_audit_test")
 load(
     ":sign_test.bzl",
     "KEY_FRAGMENT_DIGEST",
@@ -26,16 +27,52 @@ load(
     "no_passphrase_test",
     "passphrase_fragment_test",
     "relative_key_test",
-    "relative_passphrase_test"
+    "relative_passphrase_test",
+)
+load(
+    ":sq_toolchain_test.bzl",
+    "prebuilt_toolchain_probe",
+    "render_hub_build_test",
+    "resolved_repo_test",
+    "source_repo_test",
+    "source_toolchain_probe",
+    "sq_toolchain_probe",
 )
 
 exports_files([
     "assert_sq_manifest.sh",
+    "assert_sq_toolchain_version.sh",
     "fixtures/changes-with-distribution.changes",
 ])
 
-# Stub signer/toolchain for the analysis tests. Real signing uses the default
-# registered `//pgp:sq_toolchain`.
+sq_toolchain_probe(
+    name = "resolved_sq",
+)
+
+source_toolchain_probe(
+    name = "resolved_sq_source",
+    probe = ":resolved_sq",
+)
+
+prebuilt_toolchain_probe(
+    name = "resolved_sq_prebuilt",
+    probe = ":resolved_sq",
+)
+
+filegroup(
+    name = "resolved_sq_repo_name",
+    srcs = [":resolved_sq_prebuilt"],
+    output_group = "repo_name",
+)
+
+filegroup(
+    name = "resolved_sq_source_repo_name",
+    srcs = [":resolved_sq_source"],
+    output_group = "repo_name",
+)
+
+# Stub signer/toolchain for the analysis tests. Tests that need the real
+# prebuilt or source toolchains wrap `:resolved_sq` in an explicit transition.
 sh_binary(
     name = "stub_signer",
     srcs = ["stub_signer.sh"],
@@ -50,6 +87,43 @@ toolchain(
     name = "stub_toolchain",
     toolchain = ":stub_signer_toolchain",
     toolchain_type = "//pgp:toolchain_type",
+)
+
+resolved_repo_test(
+    name = "resolved_sq_default_is_stub_test",
+    expect_main_repo = True,
+    target_under_test = ":resolved_sq",
+)
+
+resolved_repo_test(
+    name = "resolved_sq_prebuilt_repo_test",
+    expected_repo_name = "+sq_prebuilt_extension+sq_toolchains",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_under_test = ":resolved_sq_prebuilt",
+)
+
+resolved_repo_test(
+    name = "resolved_sq_prebuilt_aarch64_repo_test",
+    expected_repo_name = "+sq_prebuilt_extension+sq_toolchains",
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:linux",
+    ],
+    target_under_test = ":resolved_sq_prebuilt",
+)
+
+source_repo_test(
+    name = "resolved_sq_source_repo_test",
+    expect_main_repo = True,
+    forbidden_repo_substring = "sq_toolchains",
+    target_under_test = ":resolved_sq_source",
+)
+
+render_hub_build_test(
+    name = "render_hub_build_test",
 )
 
 # Example signing targets. They are `manual` because building them requires
@@ -86,7 +160,10 @@ pgp_sign_changes_file(
 changes_split_outputs = pgp_sign_changes_split(
     name = "example_changes_split",
     changes = "fixtures/changes-with-distribution.changes",
-    distros = ["a", "b"],
+    distros = [
+        "a",
+        "b",
+    ],
 )
 
 pgp_public_key(
@@ -207,12 +284,45 @@ pgp_audit_test(
 )
 
 sh_test(
+    name = "toolchain_version_test",
+    size = "small",
+    srcs = ["assert_sq_toolchain_version.sh"],
+    data = [
+        ":resolved_sq_prebuilt",
+        ":resolved_sq_repo_name",
+    ],
+    env = {
+        "REPO_NAME_FILE": "$(rootpath :resolved_sq_repo_name)",
+        "SQ": "$(rootpath :resolved_sq_prebuilt)",
+        "SQ_VERSION": VERSIONS["sq"],
+    },
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+sh_test(
+    name = "toolchain_source_version_test",
+    size = "small",
+    srcs = ["assert_sq_toolchain_version.sh"],
+    data = [
+        ":resolved_sq_source",
+        ":resolved_sq_source_repo_name",
+    ],
+    env = {
+        "EXPECT_SOURCE_ONLY": "1",
+        "REPO_NAME_FILE": "$(rootpath :resolved_sq_source_repo_name)",
+        "SQ": "$(rootpath :resolved_sq_source)",
+        "SQ_VERSION": VERSIONS["sq"],
+    },
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+sh_test(
     name = "changes_split_test",
     srcs = ["changes_split_test.sh"],
     data = [
+        "fixtures/changes-with-distribution.changes",
         ":example_changes_split-a-split",
         ":example_changes_split-b-split",
-        "fixtures/changes-with-distribution.changes",
     ],
     env = {
         "INPUT": "$(rootpath fixtures/changes-with-distribution.changes)",
@@ -225,8 +335,8 @@ sh_test(
     name = "changes_from_tarball_test",
     srcs = ["changes_from_tarball_test.sh"],
     data = [
-        ":example_changes_from_tarball",
         "fixtures/changes-with-distribution.changes",
+        ":example_changes_from_tarball",
     ],
     env = {
         "EXTRACTED": "$(rootpath :example_changes_from_tarball)",
@@ -251,11 +361,11 @@ sh_test(
     name = "public_key_test",
     srcs = ["public_key_test.sh"],
     data = [
-        ":example_public_key",
-        "//pgp/private:public_key_validator",
-        "@sq//:sq",
         "fixtures/not-a-key.txt",
         "fixtures/secret-key.asc",
+        ":example_public_key",
+        "//pgp/private:public_key_validator",
+        "@sq",
     ],
     env = {
         "NOT_A_KEY": "$(rootpath fixtures/not-a-key.txt)",
@@ -270,9 +380,9 @@ sh_test(
     name = "audit_forbid_file_test",
     srcs = ["audit_forbid_file_test.sh"],
     data = [
-        ":audit_passphrase_argv",
-        "//pgp/audit:audit",
         "fixtures/audit.json",
+        ":audit_passphrase_argv",
+        "//pgp/audit",
     ],
     env = {
         "AQUERY": "$(rootpath fixtures/audit.json)",
@@ -284,41 +394,41 @@ sh_test(
 jq(
     name = "audit_missing_exec_req",
     srcs = ["fixtures/audit.json"],
-    filter_file = "fixtures/breakers/missing-exec-req.jq",
     out = "audit_missing_exec_req.json",
+    filter_file = "fixtures/breakers/missing-exec-req.jq",
 )
 
 jq(
     name = "audit_env_leak",
     srcs = ["fixtures/audit.json"],
-    filter_file = "fixtures/breakers/env-leak.jq",
     out = "audit_env_leak.json",
+    filter_file = "fixtures/breakers/env-leak.jq",
 )
 
 jq(
     name = "audit_passphrase_argv",
     srcs = ["fixtures/audit.json"],
-    filter_file = "fixtures/breakers/passphrase-argv.jq",
+    out = "audit_passphrase_argv.json",
     args = [
         "--arg",
         "passphrase",
         PASSPHRASE,
     ],
-    out = "audit_passphrase_argv.json",
+    filter_file = "fixtures/breakers/passphrase-argv.jq",
 )
 
 jq(
     name = "audit_key_material_input",
     srcs = ["fixtures/audit.json"],
-    filter_file = "fixtures/breakers/key-material-input.jq",
     out = "audit_key_material_input.json",
+    filter_file = "fixtures/breakers/key-material-input.jq",
 )
 
 jq(
     name = "audit_key_artifact_input",
     srcs = ["fixtures/audit.json"],
-    filter_file = "fixtures/breakers/key-artifact-input.jq",
     out = "audit_key_artifact_input.json",
+    filter_file = "fixtures/breakers/key-artifact-input.jq",
 )
 
 pgp_audit_test(
@@ -369,7 +479,7 @@ sh_test(
     srcs = ["signer_test.sh"],
     data = [
         "//pgp/private:signer.sh",
-        "@sq//:sq",
+        "@sq",
     ],
     env = {"SQ": "$(rootpath @sq//:sq)"},
     target_compatible_with = ["@platforms//os:linux"],
@@ -385,7 +495,7 @@ sh_test(
     srcs = ["signer_sandbox_test.sh"],
     data = [
         "//pgp:sq_signer",
-        "@sq//:sq",
+        "@sq",
     ],
     env = {
         "SQ": "$(rootpath @sq//:sq)",

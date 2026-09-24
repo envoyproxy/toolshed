@@ -15,8 +15,8 @@ signer --mode {detached|cleartext|inline} \\
 ```
 
 Any implementation of that contract can be dropped in without changing the
-rules. The default implementation wraps `@sq//:sq`, built from source via the
-Envoy Bazel registry.
+rules. The default downstream implementation wraps a prebuilt `sq` published by
+toolshed; source-built `sq` remains available as an opt-in toolchain.
 """
 
 PgpSignerInfo = provider(
