@@ -12,7 +12,7 @@ common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 common --@rules_python//python/config_settings:bootstrap_impl=script
 
 common --registry=https://bcr.bazel.build/
-common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/4fc17bd72fe9ef29531bafaefcc2e8ec06ad3568
+common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/060f772cd4675d6598b5a020d3f51ecdca64e584
 common --experimental_repository_cache_hardlinks
 
 common --repo_env=ANDROID_HOME=
