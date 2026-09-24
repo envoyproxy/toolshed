@@ -1,0 +1,9 @@
+"""Public git source-toolchain opt-in surface."""
+
+load("//git:defs.bzl", _GIT_TOOLCHAIN_TYPE = "GIT_TOOLCHAIN_TYPE")
+load("//git:toolchain.bzl", _git_toolchain = "git_toolchain")
+load("//git/private:git_source.bzl", _git_source_wrapper = "git_source_wrapper")
+
+GIT_TOOLCHAIN_TYPE = _GIT_TOOLCHAIN_TYPE
+git_source_wrapper = _git_source_wrapper
+git_toolchain = _git_toolchain

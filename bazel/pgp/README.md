@@ -140,18 +140,16 @@ The default implementation is a thin wrapper around Sequoia PGP's
 home directory or keyring state, used as the OpenPGP backend for `rpm` on
 Fedora/RHEL and as `sqv` in apt >= 3.0.
 
-The default signer uses `@sq//:sq` from the Envoy Bazel registry:
+By default, toolshed registers prebuilt `sq` toolchains published in the
+`bins-v*` GitHub release. `@envoy_toolshed//pgp:toolchain_type` therefore
+resolves a prebuilt signer on Linux x86_64 and arm64 without adding the
+source-only `sq` module to downstream module graphs.
 
-```starlark
-bazel_dep(name = "sq", version = "1.4.0.envoy")
-```
+### Behaviour change
 
-Toolshed builds and publishes `sq-<version>-<Platform>.tar.zst` in the
-`bins-v*` GitHub release. The registry `sq` module consumes that archive as
-its prebuilt toolchain and falls back to a source build when no matching
-archive is available. Registry-side wiring (adding the `bins` URL and SHA to
-`modules/sq/<version>/...` in `envoyproxy/bazel-registry`) happens after the
-first release containing `sq` and is out of scope here.
+Non-Linux exec platforms such as macOS no longer get an automatic toolshed
+source fallback for `@envoy_toolshed//pgp:toolchain_type`. They must opt into a
+source-built signer explicitly as documented below.
 
 Swapping in a different signer (for example a purpose-built Rust signer) is a
 matter of registering another toolchain - the rules do not change:
@@ -168,6 +166,45 @@ toolchain(
     toolchain_type = "@envoy_toolshed//pgp:toolchain_type",
 )
 ```
+
+## Opting into a source-built signer downstream
+
+If a downstream wants to build `sq` from source, it can instantiate its own
+signer/toolchain in its own module namespace:
+
+```starlark
+bazel_dep(name = "sq", version = "1.4.0.envoy")
+```
+
+```starlark
+load("@envoy_toolshed//pgp:defs.bzl", "pgp_toolchain", "sq_signer")
+
+sq_signer(
+    name = "source_sq_signer",
+    sq = "@sq//:sq_from_source",
+)
+
+pgp_toolchain(
+    name = "source_sq_impl",
+    signer = ":source_sq_signer",
+)
+
+toolchain(
+    name = "source_sq_toolchain",
+    toolchain = ":source_sq_impl",
+    toolchain_type = "@envoy_toolshed//pgp:toolchain_type",
+)
+```
+
+Register that toolchain in the downstream `MODULE.bazel`:
+
+```starlark
+register_toolchains("//:source_sq_toolchain")
+```
+
+toolshed itself keeps `//pgp/dev:sq_toolchain` as a dev-only source fallback
+for its own builds and tests. The published packaging targets stay `manual` in
+`//pgp` so toolshed CI still emits stable `bazel-bin/pgp/...` artifacts.
 
 ## Auditing your own targets
 

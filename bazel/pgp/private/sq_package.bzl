@@ -57,8 +57,9 @@ sq_binary = rule(
     },
 )
 
-def sq_package(name, platform, stripper):
+def sq_package(name, platform, stripper, visibility = None):
     package_dir = "sq-%s-%s" % (VERSIONS["sq"], platform)
+    package_name = native.package_name()
     binary = name + "_binary"
     build = name + "_build"
     native.genrule(
@@ -86,7 +87,7 @@ EOF""",
         name = name + "_mtree",
         mtree = ":" + name + "_mtree_src",
         package_dir = package_dir,
-        strip_prefix = "pgp/" + package_dir,
+        strip_prefix = ((package_name + "/") if package_name else "") + package_dir,
         tags = ["manual"],
     )
     tar(
@@ -98,4 +99,5 @@ EOF""",
         out = package_dir + ".tar.zst",
         srcs = [":" + binary, ":" + build],
         tags = ["manual"],
+        visibility = visibility,
     )

@@ -30,6 +30,7 @@ load("//pgp/private:public_key.bzl", _pgp_public_key = "pgp_public_key")
 load("//pgp/private:sign.bzl", _pgp_checksums = "pgp_checksums", _pgp_sign = "pgp_sign")
 load("//pgp/private:sq.bzl", _sq_signer = "sq_signer")
 
+PGP_TOOLCHAIN_TYPE = str(Label("@envoy_toolshed//pgp:toolchain_type"))
 PgpSignerInfo = _PgpSignerInfo
 changes_from_tarball = _changes_from_tarball
 pgp_sign = _pgp_sign

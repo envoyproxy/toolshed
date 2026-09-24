@@ -4,7 +4,7 @@ load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("//git:defs.bzl", "GIT_TOOLCHAIN_TYPE")
 load("//git/private:git_prebuilt.bzl", "render_git_toolchains_build")
 
-_SOURCE_TOOLCHAIN = str(Label("//git:source_toolchain"))
+_SOURCE_TOOLCHAIN = str(Label("//git/dev:source_toolchain"))
 
 _LAUNCHER_TEMPLATE = """#!/bin/bash
 set -euo pipefail
