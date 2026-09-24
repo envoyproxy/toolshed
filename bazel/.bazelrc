@@ -10,6 +10,7 @@ build --color=yes
 common --legacy_external_runfiles
 common --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
 common --@rules_python//python/config_settings:bootstrap_impl=script
+common --incompatible_default_to_explicit_init_py
 
 common --registry=https://bcr.bazel.build/
 common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/060f772cd4675d6598b5a020d3f51ecdca64e584
