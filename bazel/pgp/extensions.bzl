@@ -1,0 +1,72 @@
+"""Module extension for sq prebuilt toolchains."""
+
+load("//:versions.bzl", "VERSIONS")
+load("//pgp/private:sq_prebuilt.bzl", "SQ_PREBUILT_STRIP_PREFIX", "SQ_PREBUILT_URL", "sq_prebuilt", "sq_toolchains_hub")
+load("//private:extension_utils.bzl", "single_setup_tag")
+
+_NO_OVERRIDE = "__envoy_toolshed_sq_default__"
+DEFS_LABEL = str(Label("//pgp:defs.bzl"))
+TOOLCHAIN_TYPE_LABEL = str(Label("//pgp:toolchain_type"))
+
+def _sq_prebuilt_ext_impl(module_ctx):
+    setup_tag = single_setup_tag(
+        module_ctx = module_ctx,
+        ext_name = "sq_prebuilt_extension",
+        repos = "@sq_prebuilt_linux_x86_64, @sq_prebuilt_linux_aarch64, @sq_toolchains",
+        attrs = ["linux_x86_64_sha256", "linux_aarch64_sha256"],
+    )
+
+    platform_labels = {}
+    for platform in sorted(VERSIONS["sq_sha256"]):
+        attr_name = {
+            "Linux-ARM64": "linux_aarch64_sha256",
+            "Linux-X64": "linux_x86_64_sha256",
+        }[platform]
+        override = getattr(setup_tag, attr_name) if setup_tag else _NO_OVERRIDE
+        sha256 = VERSIONS["sq_sha256"][platform] if override == _NO_OVERRIDE else override
+        if not sha256:
+            continue
+        repo_name = "sq_prebuilt_" + attr_name[:-7]
+        sq_prebuilt(
+            name = repo_name,
+            sha256 = sha256,
+            strip_prefix = SQ_PREBUILT_STRIP_PREFIX.format(
+                platform = platform,
+                version = VERSIONS["sq"],
+            ),
+            url = SQ_PREBUILT_URL.format(
+                bins_release = VERSIONS["bins_release"],
+                platform = platform,
+                version = VERSIONS["sq"],
+            ),
+        )
+        platform_labels[platform] = "@%s//:BUILD.bazel" % repo_name
+
+    sq_toolchains_hub(
+        name = "sq_toolchains",
+        defs_label = DEFS_LABEL,
+        linux_aarch64 = platform_labels.get("Linux-ARM64"),
+        linux_x86_64 = platform_labels.get("Linux-X64"),
+        toolchain_type_label = TOOLCHAIN_TYPE_LABEL,
+    )
+
+# setup() controls per-platform prebuilt SHAs: unset uses VERSIONS["sq_sha256"],
+# "" disables that prebuilt repo (source fallback only), and any other value
+# overrides the sha256 for that platform.
+_setup = tag_class(
+    attrs = {
+        "linux_aarch64_sha256": attr.string(
+            default = _NO_OVERRIDE,
+            doc = "SHA256 for the Linux aarch64 prebuilt sq artifact: unset uses VERSIONS[\"sq_sha256\"], \"\" disables the prebuilt repo for this platform, any other value overrides the sha256.",
+        ),
+        "linux_x86_64_sha256": attr.string(
+            default = _NO_OVERRIDE,
+            doc = "SHA256 for the Linux x86_64 prebuilt sq artifact: unset uses VERSIONS[\"sq_sha256\"], \"\" disables the prebuilt repo for this platform, any other value overrides the sha256.",
+        ),
+    },
+)
+
+sq_prebuilt_extension = module_extension(
+    implementation = _sq_prebuilt_ext_impl,
+    tag_classes = {"setup": _setup},
+)

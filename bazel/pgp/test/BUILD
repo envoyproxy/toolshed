@@ -1,7 +1,16 @@
 load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:versions.bzl", "VERSIONS")
 load("//pgp/audit:defs.bzl", "pgp_audit_test")
+load(
+    ":sq_toolchain_test.bzl",
+    "render_hub_build_test",
+    "resolved_repo_test",
+    "source_repo_test",
+    "source_toolchain_probe",
+    "sq_toolchain_probe",
+)
 load(
     "//pgp:defs.bzl",
     "changes_from_tarball",
@@ -31,8 +40,24 @@ load(
 
 exports_files([
     "assert_sq_manifest.sh",
+    "assert_sq_toolchain_version.sh",
     "fixtures/changes-with-distribution.changes",
 ])
+
+sq_toolchain_probe(
+    name = "resolved_sq",
+)
+
+source_toolchain_probe(
+    name = "resolved_sq_source",
+    probe = ":resolved_sq",
+)
+
+filegroup(
+    name = "resolved_sq_repo_name",
+    srcs = [":resolved_sq"],
+    output_group = "repo_name",
+)
 
 # Stub signer/toolchain for the analysis tests. Real signing uses the default
 # registered `//pgp:sq_toolchain`.
@@ -50,6 +75,26 @@ toolchain(
     name = "stub_toolchain",
     toolchain = ":stub_signer_toolchain",
     toolchain_type = "//pgp:toolchain_type",
+)
+
+resolved_repo_test(
+    name = "resolved_sq_prebuilt_repo_test",
+    expected_repo_name = "+sq_prebuilt_extension+sq_toolchains",
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_under_test = ":resolved_sq",
+)
+
+source_repo_test(
+    name = "resolved_sq_source_repo_test",
+    forbidden_repo_substring = "sq_toolchains",
+    target_under_test = ":resolved_sq_source",
+)
+
+render_hub_build_test(
+    name = "render_hub_build_test",
 )
 
 # Example signing targets. They are `manual` because building them requires
@@ -204,6 +249,22 @@ PASSPHRASE = "correct-horse-battery-staple"
 pgp_audit_test(
     name = "audit_test",
     aquery = "fixtures/audit.json",
+)
+
+sh_test(
+    name = "toolchain_version_test",
+    size = "small",
+    srcs = ["assert_sq_toolchain_version.sh"],
+    data = [
+        ":resolved_sq",
+        ":resolved_sq_repo_name",
+    ],
+    env = {
+        "REPO_NAME_FILE": "$(rootpath :resolved_sq_repo_name)",
+        "SQ": "$(rootpath :resolved_sq)",
+        "SQ_VERSION": VERSIONS["sq"],
+    },
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 sh_test(

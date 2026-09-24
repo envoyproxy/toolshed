@@ -1,10 +1,10 @@
-"""Tests for git toolchain resolution and extension rendering."""
+"""Tests for sq toolchain resolution and extension rendering."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
-load("//git:defs.bzl", "GIT_TOOLCHAIN_TYPE")
-load("//git/private:git_prebuilt.bzl", "render_git_toolchains_build")
+load("//pgp:defs.bzl", "PGP_TOOLCHAIN_TYPE")
+load("//pgp/private:sq_prebuilt.bzl", "render_sq_toolchains_build")
 
-_SOURCE_TOOLCHAIN = str(Label("//git/dev:source_toolchain"))
+_SOURCE_TOOLCHAIN = str(Label("//pgp/dev:sq_toolchain"))
 
 _LAUNCHER_TEMPLATE = """#!/bin/bash
 set -euo pipefail
@@ -26,48 +26,51 @@ else
         *) runfiles="$(CDPATH= cd "$(dirname "$self")" && pwd)" ;;
     esac
 fi
-exec "$runfiles/{git}" "$@"
+mapfile -t matches < <(find "$runfiles" -type f -path '*/bin/sq' | sort)
+if [[ "${{#matches[@]}}" -ne 1 ]]; then
+    echo "expected exactly one sq binary in runfiles, got ${{#matches[@]}}" >&2
+    printf 'matches:\\n%s\\n' "${{matches[*]:-}}" >&2
+    exit 1
+fi
+exec "${{matches[0]}}" "$@"
 """
 
 def _repo_marker_name(name, repo_name):
     return "%s_%s.repo_name" % (name, repo_name)
 
-def _runfile_path(ctx, executable):
-    if executable.short_path.startswith("../"):
-        return executable.short_path[3:]
-    return "%s/%s" % (ctx.workspace_name, executable.short_path)
+def _runfile_path(ctx, file):
+    if file.short_path.startswith("../"):
+        return file.short_path[3:]
+    return "%s/%s" % (ctx.workspace_name, file.short_path)
 
-def _declare_launcher(ctx, executable):
+def _declare_launcher(ctx):
     launcher = ctx.actions.declare_file(ctx.label.name + ".sh")
     ctx.actions.write(
         launcher,
-        _LAUNCHER_TEMPLATE.format(
-            git = _runfile_path(ctx, executable),
-            launcher = _runfile_path(ctx, launcher),
-        ),
+        _LAUNCHER_TEMPLATE.format(launcher = _runfile_path(ctx, launcher)),
         is_executable = True,
     )
     return launcher
 
-def _git_toolchain_probe_impl(ctx):
-    git_info = ctx.toolchains[GIT_TOOLCHAIN_TYPE].git
-    repo_name = git_info.git.owner.repo_name
+def _sq_toolchain_probe_impl(ctx):
+    signer_info = ctx.toolchains[PGP_TOOLCHAIN_TYPE].pgp_signer
+    repo_name = signer_info.signer.owner.repo_name
     marker = ctx.actions.declare_file(_repo_marker_name(ctx.label.name, repo_name))
     ctx.actions.write(marker, repo_name + "\n")
-    launcher = _declare_launcher(ctx, git_info.git)
+    launcher = _declare_launcher(ctx)
     return [
         DefaultInfo(
             executable = launcher,
             files = depset([launcher, marker]),
-            runfiles = git_info.runfiles.merge(ctx.runfiles(files = [git_info.git, marker])),
+            runfiles = signer_info.runfiles.merge(ctx.runfiles(files = [marker])),
         ),
         OutputGroupInfo(repo_name = depset([marker])),
     ]
 
-git_toolchain_probe = rule(
-    implementation = _git_toolchain_probe_impl,
+sq_toolchain_probe = rule(
+    implementation = _sq_toolchain_probe_impl,
     executable = True,
-    toolchains = [GIT_TOOLCHAIN_TYPE],
+    toolchains = [PGP_TOOLCHAIN_TYPE],
 )
 
 def _source_toolchain_transition_impl(_settings, _attr):
@@ -81,12 +84,11 @@ _source_toolchain_transition = transition(
 
 def _source_probe_impl(ctx):
     default = ctx.attr.probe[0][DefaultInfo]
-    launcher = _declare_launcher(ctx, default.files_to_run.executable)
     return [
         DefaultInfo(
-            executable = launcher,
-            files = depset([launcher]),
-            runfiles = default.default_runfiles.merge(ctx.runfiles(files = default.files.to_list())),
+            executable = default.files_to_run.executable,
+            files = default.files,
+            runfiles = default.default_runfiles,
         ),
         OutputGroupInfo(repo_name = ctx.attr.probe[0][OutputGroupInfo].repo_name),
     ]
@@ -134,37 +136,30 @@ def _source_repo_test_impl(ctx):
         ctx.attr.forbidden_repo_substring in basename,
         "unexpected repo marker substring %s in %s" % (ctx.attr.forbidden_repo_substring, basename),
     )
-    if ctx.attr.expected_repo_substring:
-        asserts.true(
-            env,
-            ctx.attr.expected_repo_substring in basename,
-            "expected repo marker substring %s, got %s" % (ctx.attr.expected_repo_substring, basename),
-        )
     return analysistest.end(env)
 
 source_repo_test = analysistest.make(
     _source_repo_test_impl,
     attrs = {
-        "expected_repo_substring": attr.string(default = ""),
         "forbidden_repo_substring": attr.string(mandatory = True),
     },
 )
 
 def _render_hub_build_test_impl(ctx):
     env = unittest.begin(ctx)
-    content = render_git_toolchains_build(
+    content = render_sq_toolchains_build(
         {
-            "linux-aarch64": None,
-            "linux-x86_64": "git_prebuilt_linux_x86_64",
+            "Linux-ARM64": None,
+            "Linux-X64": "sq_prebuilt_linux_x86_64",
         },
-        "@" + "@envoy_toolshed+//git:defs.bzl",
-        "@" + "@envoy_toolshed+//git:toolchain_type",
+        "@" + "@envoy_toolshed+//pgp:defs.bzl",
+        "@" + "@envoy_toolshed+//pgp:toolchain_type",
     )
     asserts.true(env, "name = \"linux_x86_64\"" in content)
     asserts.false(env, "name = \"linux_aarch64\"" in content)
-    asserts.true(env, "load(\"@" + "@envoy_toolshed+//git:defs.bzl\", \"git_toolchain\")" in content)
-    asserts.true(env, "toolchain_type = \"@" + "@envoy_toolshed+//git:toolchain_type\"" in content)
-    asserts.true(env, "@" + "@git_prebuilt_linux_x86_64//:git" in content)
+    asserts.true(env, "load(\"@" + "@envoy_toolshed+//pgp:defs.bzl\", \"pgp_toolchain\", \"sq_signer\")" in content)
+    asserts.true(env, "toolchain_type = \"@" + "@envoy_toolshed+//pgp:toolchain_type\"" in content)
+    asserts.true(env, "@" + "@sq_prebuilt_linux_x86_64//:sq" in content)
     return unittest.end(env)
 
 render_hub_build_test = unittest.make(_render_hub_build_test_impl)

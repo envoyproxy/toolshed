@@ -7,7 +7,7 @@ module(
 bazel_dep(name = "abseil-cpp", version = "20260817.0")
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 bazel_dep(name = "bazel_skylib", version = "1.9.2")
-bazel_dep(name = "boringssl", version = "0.20260413.0")
+bazel_dep(name = "boringssl", version = "0.20260413.0", dev_dependency = True)
 bazel_dep(name = "envoy_toolshed_jq", version = "0.4.16-dev")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.17")
@@ -17,10 +17,10 @@ bazel_dep(name = "rules_pkg", version = "1.1.0")
 bazel_dep(name = "rules_python", version = "2.2.0")
 bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
 bazel_dep(name = "rules_shell", version = "0.8.0")
-bazel_dep(name = "sq", version = "1.4.0.envoy")
+bazel_dep(name = "sq", version = "1.4.0.envoy", dev_dependency = True)
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
-bazel_dep(name = "curl", version = "8.11.0.bcr.4")
-bazel_dep(name = "git", version = "2.55.0")
+bazel_dep(name = "curl", version = "8.11.0.bcr.4", dev_dependency = True)
+bazel_dep(name = "git", version = "2.55.0", dev_dependency = True)
 
 bazel_dep(name = "toolchains_llvm", version = "1.9.1.envoy", dev_dependency = True)
 
@@ -108,6 +108,10 @@ http_archive(
 git_prebuilt_ext = use_extension("//git:extensions.bzl", "git_prebuilt_extension")
 git_prebuilt_ext.setup()
 use_repo(git_prebuilt_ext, "cacert", "git_toolchains")
+
+sq_prebuilt_ext = use_extension("//pgp:extensions.bzl", "sq_prebuilt_extension")
+sq_prebuilt_ext.setup()
+use_repo(sq_prebuilt_ext, "sq_toolchains")
 
 # Setup sysroots for LLVM toolchain using the sysroot extension
 sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev_dependency = True)
@@ -218,13 +222,23 @@ register_toolchains(
     dev_dependency = True,
 )
 
-register_toolchains("//pgp:sq_toolchain")
+# Prebuilt sq toolchains are registered after the stub so dev-only analysis
+# tests still resolve the stub first, and before the dev-only source fallback.
+register_toolchains("@sq_toolchains//:all")
+
+register_toolchains(
+    "//pgp/dev:sq_toolchain",
+    dev_dependency = True,
+)
 
 # Prebuilt git toolchains are registered first so constrained matches win before
 # the unconstrained source fallback.
 register_toolchains("@git_toolchains//:all")
 
-register_toolchains("//git:source_toolchain")
+register_toolchains(
+    "//git/dev:source_toolchain",
+    dev_dependency = True,
+)
 
 libcxx_ext = use_extension("//compile:extensions.bzl", "libcxx_extension", dev_dependency = True)
 use_repo(libcxx_ext, "llvm_libcxx_aarch64", "llvm_libcxx_x86_64")

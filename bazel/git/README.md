@@ -41,8 +41,7 @@ so both the prebuilt runtime and the source fallback wrapper set:
 
 Registering `@envoy_toolshed//git:toolchain_type` resolves a prebuilt git on
 exec platforms with a published `git-<version>-<platform>.tar.zst`
-(`linux-x86_64`, `linux-aarch64` today). Other exec platforms fall back to the
-source-built `@git//:git` wrapped to match the same runtime contract.
+(`linux-x86_64`, `linux-aarch64` today).
 
 For `genrule`/`sh_*` consumers, declare the toolchain and use `$(GIT)`:
 
@@ -69,10 +68,11 @@ my_rule = rule(
 # git_info = ctx.toolchains[GIT_TOOLCHAIN_TYPE].git  # GitInfo
 ```
 
-The source fallback can be forced for debugging with:
+toolshed itself also keeps a dev-only source fallback registered for local
+builds and release packaging. It can be forced for debugging with:
 
 ```console
-bazel test //git/test:toolchain_source_version_test --extra_toolchains=@envoy_toolshed//git:source_toolchain
+bazel test //git/test:toolchain_source_version_test --extra_toolchains=@envoy_toolshed//git/dev:source_toolchain
 ```
 
 Prebuilt SHAs can be overridden, or a platform disabled, in `MODULE.bazel`:
@@ -83,6 +83,55 @@ git_prebuilt_ext.setup(linux_x86_64_sha256 = "...")
 # Disable a platform entirely:
 # git_prebuilt_ext.setup(linux_aarch64_sha256 = "")
 ```
+
+## Opting into a source-built git downstream
+
+`envoy_toolshed` no longer exports the source-only `git`, `curl`, or OpenSSL
+module graph to downstream consumers by default. If a downstream wants a
+source-built git toolchain, it must instantiate the wrapper in its own module
+namespace so labels like `@git//:git` and the `@curl//:ssl_lib` transition are
+resolved there instead of inside toolshed.
+
+```starlark
+load("@envoy_toolshed//git:source_defs.bzl", "git_source_wrapper", "git_toolchain")
+
+git_source_wrapper(
+    name = "source_git",
+    cacert = "@cacert//file",
+    git = "@git//:git",
+    git_remote_http = "@git//:git-remote-http",
+    templates = "@git//:templates",
+)
+
+git_toolchain(
+    name = "source_git_impl",
+    git = ":source_git",
+)
+
+toolchain(
+    name = "source_git_toolchain",
+    toolchain = ":source_git_impl",
+    toolchain_type = "@envoy_toolshed//git:toolchain_type",
+)
+```
+
+In `MODULE.bazel`, add the source-only deps yourself and expose the shared CA
+bundle repo in your module namespace, then register the toolchain you defined:
+
+```starlark
+bazel_dep(name = "curl", version = "8.11.0.bcr.4")
+bazel_dep(name = "git", version = "2.55.0")
+
+git_prebuilt_ext = use_extension("@envoy_toolshed//git:extensions.bzl", "git_prebuilt_extension")
+git_prebuilt_ext.setup()
+use_repo(git_prebuilt_ext, "cacert")
+
+register_toolchains("//:source_git_toolchain")
+```
+
+The hardcoded `@curl//:ssl_lib` transition is only analyzed when this source
+path is selected, so downstreams that use the default prebuilt toolchains do
+not need those source-only repos in toolshed's non-dev module graph.
 
 ## CA bundle maintenance
 
