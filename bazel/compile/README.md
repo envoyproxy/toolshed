@@ -174,14 +174,19 @@ rather than just checking the ELF architecture. They use `llvm-nm` to check for 
 to confirm there is no `libgcc_s` dynamic dependency (which would indicate a fallback to the
 system unwinder).
 
+The `libunwind` flag defaults to `False` in the Envoy registry build of `toolchains_llvm`, so
+the positive tests must enable it with `--@toolchains_llvm//toolchain/config:libunwind=True`.
+
 ```bash
 # Test aarch64 cross-compilation with libunwind statically linked
 bazel test //compile/test:cross_compile_aarch64_unwind_test \
-  --platforms=@toolchains_llvm//platforms:linux-aarch64
+  --platforms=@toolchains_llvm//platforms:linux-aarch64 \
+  --@toolchains_llvm//toolchain/config:libunwind=True
 
 # Test x86_64 cross-compilation with libunwind statically linked
 bazel test //compile/test:cross_compile_x86_64_unwind_test \
-  --platforms=@toolchains_llvm//platforms:linux-x86_64
+  --platforms=@toolchains_llvm//platforms:linux-x86_64 \
+  --@toolchains_llvm//toolchain/config:libunwind=True
 ```
 
 **Negative unwind tests** verify that libunwind is *not* statically linked when

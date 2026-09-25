@@ -59,6 +59,9 @@ selects.config_setting_group(
     ],
 )
 
+# Falls back to @wee8_source//:wee8, which consumers configure with
+# `wee8_prebuilt_extension.setup(source = "@v8//:wee8")`. Without that the
+# fallback is an incompatible stub.
 alias(
     name = "wee8",
     actual = select({
@@ -67,7 +70,7 @@ alias(
         # This does not currently work as it would require x-libs similar to how we provision llvm
         # ":linux_aarch64_gcc": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64", "libstdcxx"),
         ":linux_aarch64": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64"),
-        "//conditions:default": "@v8//:wee8",
+        "//conditions:default": "@wee8_source//:wee8",
     }),
     tags = ["manual"],
     visibility = ["//visibility:public"],

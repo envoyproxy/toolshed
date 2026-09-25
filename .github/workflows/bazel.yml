@@ -212,6 +212,7 @@ jobs:
           bazel_args: >-
             --config=ci
             --platforms=@toolchains_llvm//platforms:linux-aarch64
+            --@toolchains_llvm//toolchain/config:libunwind=True
           privileged: false
           rbe: false
           runner: ubuntu-24.04
@@ -233,6 +234,7 @@ jobs:
           bazel_args: >-
             --config=ci
             --platforms=@toolchains_llvm//platforms:linux-x86_64
+            --@toolchains_llvm//toolchain/config:libunwind=True
           privileged: true
           rbe: false
           runner: ubuntu-24.04-arm
