@@ -1,0 +1,17 @@
+{
+    "homepage": "https://github.com/dzbarsky/rules_rs",
+    "maintainers": [
+        {
+            "email": "maintainers@envoyproxy.io",
+            "github": "envoyproxy",
+            "name": "Envoy Proxy Maintainers"
+        }
+    ],
+    "repository": [
+        "github:dzbarsky/rules_rs"
+    ],
+    "versions": [
+        "0.0.27.envoy"
+    ],
+    "yanked_versions": {}
+}
