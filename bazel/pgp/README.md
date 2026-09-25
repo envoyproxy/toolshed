@@ -169,42 +169,22 @@ toolchain(
 
 ## Opting into a source-built signer downstream
 
-If a downstream wants to build `sq` from source, it can instantiate its own
-signer/toolchain in its own module namespace:
+Downstreams should normally use the default prebuilt signer registered via
+`sq_prebuilt_extension`. A source-built signer is only needed when a downstream
+wants to build `sq` itself (for example on an unsupported exec platform).
 
 ```starlark
-bazel_dep(name = "sq", version = "1.4.0.envoy")
+bazel_dep(name = "sq", version = "1.4.0.envoy", dev_dependency = True)
+
+sq_source = use_extension("@envoy_toolshed//pgp:extensions.bzl", "sq_source_extension", dev_dependency = True)
+sq_source.setup(sq = "@sq//:sq_from_source")
+use_repo(sq_source, "envoy_toolshed_sq_source")
+register_toolchains("@envoy_toolshed_sq_source//:source_toolchain", dev_dependency = True)
 ```
 
-```starlark
-load("@envoy_toolshed//pgp:defs.bzl", "pgp_toolchain", "sq_signer")
-
-sq_signer(
-    name = "source_sq_signer",
-    sq = "@sq//:sq_from_source",
-)
-
-pgp_toolchain(
-    name = "source_sq_impl",
-    signer = ":source_sq_signer",
-)
-
-toolchain(
-    name = "source_sq_toolchain",
-    toolchain = ":source_sq_impl",
-    toolchain_type = "@envoy_toolshed//pgp:toolchain_type",
-)
-```
-
-Register that toolchain in the downstream `MODULE.bazel`:
-
-```starlark
-register_toolchains("//:source_sq_toolchain")
-```
-
-toolshed itself keeps `//pgp/dev:sq_toolchain` as a dev-only source fallback
-for its own builds and tests. The published packaging targets stay `manual` in
-`//pgp` so toolshed CI still emits stable `bazel-bin/pgp/...` artifacts.
+The generated `@envoy_toolshed_sq_source` repo also owns the source packaging
+targets; toolshed re-exports them at stable `bazel-bin/pgp/sq-*.tar.zst` paths
+for its own release CI.
 
 ## Auditing your own targets
 

@@ -3,8 +3,8 @@
 # In-graph regression test for the built signer wrapper.
 #
 # Unlike `signer_test.sh`, which runs the raw script, this drives the
-# `expand_template` output of `//pgp:sq_signer` inside the Bazel test sandbox -
-# the environment that exposed the passphrase fd-lifetime bug, where the
+# `expand_template` output of the source-hub `sq_signer` inside the Bazel test
+# sandbox - the environment that exposed the passphrase fd-lifetime bug, where the
 # `/dev/fd/N` created by a process substitution in an array assignment was
 # already closed by the time `sq` ran:
 #

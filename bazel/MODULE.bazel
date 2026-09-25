@@ -238,8 +238,12 @@ register_toolchains(
 # tests still resolve the stub first, and before the dev-only source fallback.
 register_toolchains("@sq_toolchains//:all")
 
+sq_source_ext = use_extension("//pgp:extensions.bzl", "sq_source_extension", dev_dependency = True)
+sq_source_ext.setup(sq = "@sq//:sq_from_source")
+use_repo(sq_source_ext, "envoy_toolshed_sq_source")
+
 register_toolchains(
-    "//pgp/dev:sq_toolchain",
+    "@envoy_toolshed_sq_source//:source_toolchain",
     dev_dependency = True,
 )
 
