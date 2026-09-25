@@ -3,9 +3,10 @@
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("//pgp:defs.bzl", "PGP_TOOLCHAIN_TYPE")
 load("//pgp/private:sq_prebuilt.bzl", "render_sq_toolchains_build")
+load("//pgp/private:sq_source_hub.bzl", "render_sq_source_build")
 
 _PREBUILT_TOOLCHAINS = str(Label("@sq_toolchains//:all"))
-_SOURCE_TOOLCHAIN = str(Label("//pgp/dev:sq_toolchain"))
+_SOURCE_TOOLCHAIN = str(Label("@envoy_toolshed_sq_source//:source_toolchain"))
 
 # Basenames the resolved signer's `sq` executable may have: `bin/sq` in the
 # prebuilt tarball, `sq_from_source` for the registry source build.
@@ -217,18 +218,18 @@ def _source_repo_test_impl(ctx):
         ctx.attr.forbidden_repo_substring in basename,
         "unexpected repo marker substring %s in %s" % (ctx.attr.forbidden_repo_substring, basename),
     )
-    if ctx.attr.expect_main_repo:
+    if ctx.attr.expected_repo_substring:
         asserts.true(
             env,
-            basename.endswith("_.repo_name"),
-            "expected main-repo marker, got %s" % basename,
+            ctx.attr.expected_repo_substring in basename,
+            "expected repo marker substring %s, got %s" % (ctx.attr.expected_repo_substring, basename),
         )
     return analysistest.end(env)
 
 source_repo_test = analysistest.make(
     _source_repo_test_impl,
     attrs = {
-        "expect_main_repo": attr.bool(default = False),
+        "expected_repo_substring": attr.string(default = ""),
         "forbidden_repo_substring": attr.string(mandatory = True),
     },
 )
@@ -251,3 +252,21 @@ def _render_hub_build_test_impl(ctx):
     return unittest.end(env)
 
 render_hub_build_test = unittest.make(_render_hub_build_test_impl)
+
+def _render_sq_source_build_test_impl(ctx):
+    env = unittest.begin(ctx)
+    build = render_sq_source_build(
+        defs_bzl_label = "@" + "@envoy_toolshed+//pgp:defs.bzl",
+        sq_label = "@" + "@sq+//:sq_from_source",
+        sq_package_bzl_label = "@" + "@envoy_toolshed+//pgp/private:sq_package.bzl",
+        stripper_label = "@" + "@envoy_toolshed+//compile:llvm_minimal_host_llvm_strip",
+        toolchain_type_label = "@" + "@envoy_toolshed+//pgp:toolchain_type",
+    )
+    asserts.true(env, "name = \"source_toolchain\"" in build)
+    asserts.true(env, "load(\"@" + "@envoy_toolshed+//pgp:defs.bzl\", \"pgp_toolchain\", \"sq_signer\")" in build)
+    asserts.true(env, "load(\"@" + "@envoy_toolshed+//pgp/private:sq_package.bzl\", \"sq_package\")" in build)
+    asserts.true(env, "toolchain_type = \"@" + "@envoy_toolshed+//pgp:toolchain_type\"" in build)
+    asserts.true(env, "sq = \"@" + "@sq+//:sq_from_source\"" in build)
+    return unittest.end(env)
+
+render_sq_source_build_test = unittest.make(_render_sq_source_build_test_impl)
