@@ -514,7 +514,7 @@ async def test_release_push(patches, raises, errors):
                 BaseException
                 if raises == BaseException
                 else SomeError)
-            with pytest.raises(exception):
+            with pytest.raises(exception) as exc_info:
                 await release.push(artefacts)
         else:
             assert await release.push(artefacts) == expected
@@ -528,6 +528,9 @@ async def test_release_push(patches, raises, errors):
             m_pusher.return_value.call_args_list
             == [[(release, 'ARTEFACTS0'), {}]])
         assert not m_log.return_value.info.called
+        if raises == tasks.ConcurrentError:
+            assert isinstance(
+                exc_info.value.__cause__, tasks.ConcurrentError)
     else:
         assert (
             m_pusher.return_value.call_args_list
