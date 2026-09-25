@@ -2,11 +2,17 @@
 
 load("//:versions.bzl", "VERSIONS")
 load("//git/private:git_prebuilt.bzl", "GIT_PREBUILT_STRIP_PREFIX", "GIT_PREBUILT_URL", "git_cacert", "git_prebuilt", "git_toolchains_hub")
+load("//git/private:git_source_hub.bzl", "git_source_hub")
 load("//private:extension_utils.bzl", "single_setup_tag")
 
 _NO_OVERRIDE = "__envoy_toolshed_git_default__"
 DEFS_LABEL = str(Label("//git:defs.bzl"))
+GCC_BUILD_LABEL = str(Label("//compile:gcc_build"))
+GIT_PACKAGE_BZL_LABEL = str(Label("//git/private:git_package.bzl"))
+GIT_SOURCE_BZL_LABEL = str(Label("//git/private:git_source.bzl"))
 TOOLCHAIN_TYPE_LABEL = str(Label("//git:toolchain_type"))
+TOOLCHAIN_BZL_LABEL = str(Label("//git:toolchain.bzl"))
+_SOURCE_REPO_NAME = "envoy_toolshed_git_source"
 
 def _git_prebuilt_ext_impl(module_ctx):
     setup_tag = single_setup_tag(
@@ -73,4 +79,75 @@ _setup = tag_class(
 git_prebuilt_extension = module_extension(
     implementation = _git_prebuilt_ext_impl,
     tag_classes = {"setup": _setup},
+)
+
+def _git_source_ext_impl(module_ctx):
+    setup_tag = single_setup_tag(
+        module_ctx = module_ctx,
+        ext_name = "git_source_extension",
+        repos = "@envoy_toolshed_git_source",
+        attrs = [
+            "cacert",
+            "git",
+            "git_remote_http",
+            "name",
+            "ssl_lib",
+            "stripper",
+            "templates",
+        ],
+    )
+    if not setup_tag:
+        fail("git_source_extension requires setup()")
+
+    git_source_hub(
+        name = setup_tag.name,
+        cacert = setup_tag.cacert,
+        gcc_build_label = GCC_BUILD_LABEL,
+        git = setup_tag.git,
+        git_package_bzl_label = GIT_PACKAGE_BZL_LABEL,
+        git_remote_http = setup_tag.git_remote_http,
+        git_source_bzl_label = GIT_SOURCE_BZL_LABEL,
+        ssl_lib = setup_tag.ssl_lib,
+        stripper = setup_tag.stripper,
+        templates = setup_tag.templates,
+        toolchain_bzl_label = TOOLCHAIN_BZL_LABEL,
+        toolchain_type_label = TOOLCHAIN_TYPE_LABEL,
+    )
+
+_source_setup = tag_class(
+    attrs = {
+        "cacert": attr.label(
+            mandatory = True,
+            doc = "CA bundle file used by the source git wrapper and packaging targets.",
+        ),
+        "git": attr.label(
+            mandatory = True,
+            doc = "Source-built git executable to wrap/package.",
+        ),
+        "git_remote_http": attr.label(
+            mandatory = True,
+            doc = "Source-built git-remote-http executable to wrap/package.",
+        ),
+        "name": attr.string(
+            default = _SOURCE_REPO_NAME,
+            doc = "Repository name for the generated source git hub.",
+        ),
+        "ssl_lib": attr.label(
+            mandatory = True,
+            doc = "Build setting forced to `openssl` for source git builds.",
+        ),
+        "stripper": attr.label(
+            default = Label("//compile:llvm_minimal_host_llvm_strip"),
+            doc = "Strip executable used when packaging git tarballs.",
+        ),
+        "templates": attr.label(
+            mandatory = True,
+            doc = "Template tree packaged alongside the git runtime.",
+        ),
+    },
+)
+
+git_source_extension = module_extension(
+    implementation = _git_source_ext_impl,
+    tag_classes = {"setup": _source_setup},
 )

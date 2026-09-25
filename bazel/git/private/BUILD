@@ -2,5 +2,5 @@ exports_files([
     "git_package.bzl",
     "git_prebuilt.bzl",
     "git_source.bzl",
-    "transitions.bzl",
+    "git_source_hub.bzl",
 ])
