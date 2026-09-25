@@ -1,5 +1,6 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load(":wee8_prebuilt.bzl", "wee8_prebuilt_repo_name")
 load(":wee8_prebuilt_test.bzl", "wee8_prebuilt_helpers_test")
 
@@ -59,6 +60,16 @@ selects.config_setting_group(
     ],
 )
 
+cc_library(
+    name = "wee8_source_unavailable",
+    deprecation = "The source `@v8//:wee8` fallback is only available in the envoy_toolshed module's dev graph. Downstream consumers should use the published prebuilt wee8 targets on supported Linux platforms.",
+    hdrs = [],
+    srcs = [],
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//:incompatible"],
+    visibility = ["//visibility:public"],
+)
+
 alias(
     name = "wee8",
     actual = select({
@@ -67,7 +78,7 @@ alias(
         # This does not currently work as it would require x-libs similar to how we provision llvm
         # ":linux_aarch64_gcc": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64", "libstdcxx"),
         ":linux_aarch64": "@%s//:wee8" % wee8_prebuilt_repo_name("aarch64"),
-        "//conditions:default": "@v8//:wee8",
+        "//conditions:default": ":wee8_source_unavailable",
     }),
     tags = ["manual"],
     visibility = ["//visibility:public"],

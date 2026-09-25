@@ -12,12 +12,11 @@ bazel_dep(name = "envoy_toolshed_jq", version = "0.4.18-dev")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "protobuf", version = "35.1.bcr.envoy", repo_name = "com_google_protobuf")
 bazel_dep(name = "rules_cc", version = "0.2.25")
-bazel_dep(name = "rules_foreign_cc", version = "0.16.0")
+bazel_dep(name = "rules_foreign_cc", version = "0.16.0", dev_dependency = True)
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 bazel_dep(name = "rules_python", version = "2.2.0")
-bazel_dep(name = "rules_rust", version = "0.69.0.envoy")
 bazel_dep(name = "rules_shell", version = "0.8.0")
-bazel_dep(name = "v8", version = "14.6.202.10.envoy")
+bazel_dep(name = "v8", version = "14.6.202.10.envoy", dev_dependency = True)
 
 #############################################################################################
 # deps: dev
@@ -27,25 +26,6 @@ bazel_dep(name = "curl", version = "8.11.0.bcr.4", dev_dependency = True)
 bazel_dep(name = "git", version = "2.55.0", dev_dependency = True)
 bazel_dep(name = "sq", version = "1.4.0.envoy", dev_dependency = True)
 bazel_dep(name = "toolchains_llvm", version = "1.9.1.envoy", dev_dependency = True)
-
-#############################################################################################
-# overrides
-#############################################################################################
-
-single_version_override(
-    module_name = "platforms",
-    version = "1.0.0",
-)
-
-single_version_override(
-    module_name = "rules_cc",
-    version = "0.2.17",
-)
-
-single_version_override(
-    module_name = "rules_rust",
-    version = "0.69.0.envoy",
-)
 
 local_path_override(
     module_name = "envoy_toolshed_jq",
@@ -82,6 +62,7 @@ python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 use_repo(python, "python_3_11_host", "python_3_12_host")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip_dev = use_extension("@rules_python//python/extensions:pip.bzl", "pip", dev_dependency = True)
 
 [
     pip.parse(
@@ -93,7 +74,7 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 ]
 
 [
-    pip.parse(
+    pip_dev.parse(
         hub_name = "website_pip3",
         python_version = python_version,
         requirements_lock = "//website:requirements.txt",
@@ -101,7 +82,8 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
     for python_version in PYTHON_VERSIONS
 ]
 
-use_repo(pip, "pip3", "website_pip3")
+use_repo(pip, "pip3")
+use_repo(pip_dev, "website_pip3")
 
 reachability_test_ext = use_extension("//dependency/test:reachability_test_extension.bzl", "reachability_test_extension", dev_dependency = True)
 use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_transitive_repo")
@@ -110,6 +92,7 @@ use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_tra
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
+    dev_dependency = True,
     name = "llvm_source",
     build_file_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
     sha256 = "ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace",

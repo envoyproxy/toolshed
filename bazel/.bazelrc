@@ -95,14 +95,6 @@ common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//p
 
 
 #############################################################################
-# linux
-#############################################################################
-
-build:linux --@rules_rust//rust/settings:extra_rustc_flag=-Clink-self-contained=no
-build:linux --@rules_rust//rust/settings:extra_exec_rustc_flags=-Clink-self-contained=no
-
-
-#############################################################################
 # gcc
 #############################################################################
 

@@ -42,6 +42,8 @@ _WEE8_ARCH_DEFINE = {
 _WEE8_BUILD = """\
 package(default_visibility = ["//visibility:public"])
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 filegroup(
     name = "headers",
     srcs = glob(
@@ -98,6 +100,8 @@ cc_library(
 
 _MISSING_WEE8_BUILD = """\
 package(default_visibility = ["//visibility:public"])
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 filegroup(
     name = "headers",
