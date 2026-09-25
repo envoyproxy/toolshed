@@ -40,6 +40,8 @@ _WEE8_ARCH_DEFINE = {
 }
 
 _WEE8_BUILD = """\
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
@@ -97,6 +99,8 @@ cc_library(
 """
 
 _MISSING_WEE8_BUILD = """\
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
@@ -117,6 +121,21 @@ cc_library(
     target_compatible_with = ["@platforms//:incompatible"],
 )
 """
+
+_WEE8_SOURCE_BUILD = """\
+package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "wee8",
+    actual = "{actual}",
+)
+"""
+
+_MISSING_WEE8_SOURCE_MESSAGE = (
+    "No wee8 prebuilt for this target platform and no source fallback configured. " +
+    "Pass wee8_prebuilt_extension.setup(source = '@v8//:wee8') (or another " +
+    "cc_library) in MODULE.bazel to build wee8 from source."
+)
 
 def wee8_archive_filename(version, arch, stdlib = WEE8_DEFAULT_STDLIB):
     if stdlib == WEE8_DEFAULT_STDLIB:
@@ -218,6 +237,23 @@ wee8_prebuilt = repository_rule(
         ),
     },
     doc = "Downloads prebuilt wee8 bundles for cross-compilation",
+)
+
+def _wee8_source_repo_impl(ctx):
+    if ctx.attr.actual:
+        ctx.file("BUILD.bazel", _WEE8_SOURCE_BUILD.format(actual = str(ctx.attr.actual)))
+    else:
+        ctx.file("BUILD.bazel", _MISSING_WEE8_BUILD.format(message = _MISSING_WEE8_SOURCE_MESSAGE))
+    return ctx.repo_metadata(reproducible = True)
+
+wee8_source_repo = repository_rule(
+    implementation = _wee8_source_repo_impl,
+    attrs = {
+        "actual": attr.label(
+            doc = "Target to alias as :wee8. Unset renders an incompatible stub.",
+        ),
+    },
+    doc = "Aliases a consumer-provided source wee8 target for the //v8:wee8 fallback.",
 )
 
 def setup_wee8_prebuilt(
