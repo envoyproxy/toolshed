@@ -33,6 +33,7 @@ load(
     ":sq_toolchain_test.bzl",
     "prebuilt_toolchain_probe",
     "render_hub_build_test",
+    "render_sq_source_build_test",
     "resolved_repo_test",
     "source_repo_test",
     "source_toolchain_probe",
@@ -117,13 +118,35 @@ resolved_repo_test(
 
 source_repo_test(
     name = "resolved_sq_source_repo_test",
-    expect_main_repo = True,
+    expected_repo_substring = "sq_source_extension+envoy_toolshed_sq_source",
     forbidden_repo_substring = "sq_toolchains",
     target_under_test = ":resolved_sq_source",
 )
 
 render_hub_build_test(
     name = "render_hub_build_test",
+)
+
+render_sq_source_build_test(
+    name = "render_sq_source_build_test",
+)
+
+sh_test(
+    name = "sq_linux_x86_64_manifest_test",
+    size = "medium",
+    srcs = ["//pgp/test:assert_sq_manifest.sh"],
+    data = [
+        "//compile:llvm_minimal_host_llvm_readelf",
+        "//pgp:sq_linux_x86_64",
+        "@bsd_tar_toolchains//:resolved_toolchain",
+    ],
+    env = {
+        "READELF": "$(rootpath //compile:llvm_minimal_host_llvm_readelf)",
+        "SQ_VERSION": VERSIONS["sq"],
+        "TAR": "$(rootpath @bsd_tar_toolchains//:resolved_toolchain)",
+        "TARBALL": "$(rootpath //pgp:sq_linux_x86_64)",
+    },
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 # Example signing targets. They are `manual` because building them requires
@@ -486,20 +509,20 @@ sh_test(
 )
 
 # Regression test for the passphrase fd lifetime: runs the *built* signer
-# wrapper (`//pgp:sq_signer`) inside the test sandbox, which is where an fd
-# created by a process substitution in an array assignment showed up as
+# wrapper from `@envoy_toolshed_sq_source//:sq_signer` inside the test sandbox,
+# which is where an fd created by a process substitution in an array assignment showed up as
 # `Error: Reading /dev/fd/63 ... No such file or directory`.
 sh_test(
     name = "signer_sandbox_test",
     size = "medium",
     srcs = ["signer_sandbox_test.sh"],
     data = [
-        "//pgp:sq_signer",
+        "@envoy_toolshed_sq_source//:sq_signer",
         "@sq",
     ],
     env = {
         "SQ": "$(rootpath @sq//:sq)",
-        "SQ_SIGNER": "$(rootpath //pgp:sq_signer)",
+        "SQ_SIGNER": "$(rootpath @envoy_toolshed_sq_source//:sq_signer)",
     },
     target_compatible_with = ["@platforms//os:linux"],
 )

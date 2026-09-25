@@ -57,7 +57,7 @@ sq_binary = rule(
     },
 )
 
-def sq_package(name, platform, stripper, visibility = None):
+def sq_package(name, platform, sq, stripper, visibility = None):
     package_dir = "sq-%s-%s" % (VERSIONS["sq"], platform)
     package_name = native.package_name()
     binary = name + "_binary"
@@ -74,7 +74,7 @@ EOF""",
     sq_binary(
         name = binary,
         platform = platform,
-        sq = "@sq//:sq_from_source",
+        sq = sq,
         stripper = stripper,
         tags = ["manual"],
     )

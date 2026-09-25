@@ -1,12 +1,15 @@
-"""Module extension for sq prebuilt toolchains."""
+"""Module extensions for sq prebuilt and source toolchains."""
 
 load("//:versions.bzl", "VERSIONS")
 load("//pgp/private:sq_prebuilt.bzl", "SQ_PREBUILT_STRIP_PREFIX", "SQ_PREBUILT_URL", "sq_prebuilt", "sq_toolchains_hub")
+load("//pgp/private:sq_source_hub.bzl", "sq_source_hub")
 load("//private:extension_utils.bzl", "single_setup_tag")
 
 _NO_OVERRIDE = "__envoy_toolshed_sq_default__"
 DEFS_LABEL = str(Label("//pgp:defs.bzl"))
+SQ_PACKAGE_BZL_LABEL = str(Label("//pgp/private:sq_package.bzl"))
 TOOLCHAIN_TYPE_LABEL = str(Label("//pgp:toolchain_type"))
+_SOURCE_REPO_NAME = "envoy_toolshed_sq_source"
 _PLATFORMS = {
     "Linux-ARM64": struct(
         attr = "linux_aarch64_sha256",
@@ -77,4 +80,49 @@ _setup = tag_class(
 sq_prebuilt_extension = module_extension(
     implementation = _sq_prebuilt_ext_impl,
     tag_classes = {"setup": _setup},
+)
+
+def _sq_source_ext_impl(module_ctx):
+    setup_tag = single_setup_tag(
+        module_ctx = module_ctx,
+        ext_name = "sq_source_extension",
+        repos = "@envoy_toolshed_sq_source",
+        attrs = [
+            "name",
+            "sq",
+            "stripper",
+        ],
+    )
+    if not setup_tag:
+        fail("sq_source_extension requires setup()")
+
+    sq_source_hub(
+        name = setup_tag.name,
+        defs_bzl_label = DEFS_LABEL,
+        sq = setup_tag.sq,
+        sq_package_bzl_label = SQ_PACKAGE_BZL_LABEL,
+        stripper = setup_tag.stripper,
+        toolchain_type_label = TOOLCHAIN_TYPE_LABEL,
+    )
+
+_source_setup = tag_class(
+    attrs = {
+        "name": attr.string(
+            default = _SOURCE_REPO_NAME,
+            doc = "Repository name for the generated source sq hub.",
+        ),
+        "sq": attr.label(
+            default = "@sq//:sq_from_source",
+            doc = "Source-built sq executable to wrap/package.",
+        ),
+        "stripper": attr.label(
+            default = Label("//compile:llvm_minimal_host_llvm_strip"),
+            doc = "Strip executable used when packaging sq tarballs.",
+        ),
+    },
+)
+
+sq_source_extension = module_extension(
+    implementation = _sq_source_ext_impl,
+    tag_classes = {"setup": _source_setup},
 )

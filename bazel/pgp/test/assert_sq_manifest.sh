@@ -1,13 +1,16 @@
 #!/bin/bash
 set -euo pipefail
 
+: "${TAR:?TAR must be set}"
 : "${TARBALL:?TARBALL must be set}"
 : "${READELF:?READELF must be set}"
 : "${SQ_VERSION:?SQ_VERSION must be set}"
 
+TAR="$(realpath "$TAR")"
+
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-tar -xf "$TARBALL" -C "$tmp"
+"$TAR" -xf "$TARBALL" -C "$tmp"
 sq=$(find "$tmp" -path '*/bin/sq' -type f -print -quit)
 test -n "$sq"
 version=$("$sq" version 2>&1 || true)

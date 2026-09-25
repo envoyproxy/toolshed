@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# Verifies that a downstream consumer can register only the prebuilt git
-# toolchains and still analyze a target that resolves
-# `@envoy_toolshed//git:toolchain_type`.
+# Verifies that a downstream consumer can register only the prebuilt git and sq
+# toolchains and still analyze targets that resolve
+# `@envoy_toolshed//git:toolchain_type` and `@envoy_toolshed//pgp:toolchain_type`.
 
 set -euo pipefail
 
@@ -35,7 +35,12 @@ git_prebuilt_ext = use_extension("@envoy_toolshed//git:extensions.bzl", "git_pre
 git_prebuilt_ext.setup()
 use_repo(git_prebuilt_ext, "git_toolchains")
 
+sq_prebuilt_ext = use_extension("@envoy_toolshed//pgp:extensions.bzl", "sq_prebuilt_extension")
+sq_prebuilt_ext.setup()
+use_repo(sq_prebuilt_ext, "sq_toolchains")
+
 register_toolchains("@git_toolchains//:all")
+register_toolchains("@sq_toolchains//:all")
 EOF
 
 cat > "$tmp/BUILD.bazel" <<'EOF'
@@ -44,6 +49,15 @@ genrule(
     outs = ["git-version.txt"],
     cmd = "$(GIT) --version > $@",
     toolchains = ["@envoy_toolshed//git:toolchain_type"],
+)
+
+# pgp_toolchain exposes no make variables; requiring the toolchain type is
+# enough to force resolution under --nobuild.
+genrule(
+    name = "sq_probe",
+    outs = ["sq-probe.txt"],
+    cmd = "echo ok > $@",
+    toolchains = ["@envoy_toolshed//pgp:toolchain_type"],
 )
 EOF
 
@@ -60,5 +74,6 @@ EOF
         --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/060f772cd4675d6598b5a020d3f51ecdca64e584 \
         --repo_contents_cache= \
         --nobuild \
-        //:git_version
+        //:git_version \
+        //:sq_probe
 )
