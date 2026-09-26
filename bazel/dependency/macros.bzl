@@ -264,7 +264,7 @@ def module_deps_json(
 set -euo pipefail
 err="$(@D)/%s.declared.err"
 status=0
-RUNFILES_DIR="$(execpath %s).runfiles" "$(execpath %s)" 'print name version' "$(location %s):%%bazel_dep" > "$@" 2>"$$err" || status=$$?
+RUNFILES_DIR="$(execpath %s).runfiles" "$(execpath %s)" 'print name version dev_dependency' "$(location %s):%%bazel_dep" > "$@" 2>"$$err" || status=$$?
 if [ "$$status" -eq 3 ]; then
   : > "$@"
 elif [ "$$status" -ne 0 ]; then

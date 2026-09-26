@@ -92,7 +92,7 @@ jobs:
       run: |
         BAZEL_CMD=(bazel run)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(//dependency:update_module -- --report "--json-out=${REPORT_PATH}")
+        BAZEL_CMD+=(//dependency:update_module -- --report "--json-out=${REPORT_PATH}" "--markdown-out=${GITHUB_STEP_SUMMARY}")
         "${BAZEL_CMD[@]}"
     - name: Upload dependency report
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -100,33 +100,6 @@ jobs:
         name: deps-report
         path: ${{ runner.temp }}/deps-report.json
         retention-days: 30
-    - name: Summarize report
-      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
-      with:
-        input: ${{ runner.temp }}/deps-report.json
-        input-format: json-path
-        options: -r
-        output-path: GITHUB_STEP_SUMMARY
-        filter: |
-          to_entries
-          | sort_by(.key) as $deps
-          | ($deps | map(select(.value.update_available == true)) | length) as $outdated
-          | [
-              "Outdated dependencies: \($outdated)",
-              "",
-              "| Dependency | Current | Latest | Registry | Update? |",
-              "| --- | --- | --- | --- | --- |",
-              (
-                $deps[]
-                | .value as $value
-                | "| \(.key)"
-                  + " | \($value.current // "—")"
-                  + " | \($value.latest // "—")"
-                  + " | \($value.current_registry // "—")"
-                  + " | \(if $value.update_available == true then "✅" else "—" end) |"
-              )
-            ]
-          | join("\n")
 
     - name: Update registry pin
       if: >-
@@ -157,6 +130,7 @@ jobs:
         BAZEL_CMD+=(deps --lockfile_mode=update)
         "${BAZEL_CMD[@]}"
     - name: Read registry status
+      id: registry-status
       if: >-
         inputs.action == 'update-registry'
       shell: bash
@@ -164,34 +138,21 @@ jobs:
       env:
         ALLOW_UNSAFE: ${{ inputs.allow-unsafe }}
         BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+        REGISTRY_SHA_PATH: ${{ runner.temp }}/registry-sha.txt
         REGISTRY_STATUS_PATH: ${{ runner.temp }}/registry-status.json
+        REGISTRY_SUMMARY_PATH: ${{ runner.temp }}/registry-status.md
       run: |
         BAZEL_CMD=(bazel run)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
         BAZEL_CMD+=(//dependency:update_registry.check "--//dependency:registry_allow_unsafe=${ALLOW_UNSAFE}")
-        "${BAZEL_CMD[@]}" > "${REGISTRY_STATUS_PATH}"
-    - name: Extract registry SHA
-      id: registry-sha
-      if: >-
-        inputs.action == 'update-registry'
-      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
-      with:
-        input: ${{ runner.temp }}/registry-status.json
-        input-format: json-path
-        options: -r
-        filter: .sha
-    - name: Summarize registry status
-      id: registry-status
-      if: >-
-        inputs.action == 'update-registry'
-      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
-      with:
-        input: ${{ runner.temp }}/registry-status.json
-        input-format: json-path
-        options: -r
-        filter: |
-          (.tags | if length == 0 then "none" else join(", ") end) as $tags
-          | "pinned to `\(.sha)`, tags: \($tags), behind main by \((.behind // 0))"
+        BAZEL_CMD+=(-- "--json-out=${REGISTRY_STATUS_PATH}" "--sha-out=${REGISTRY_SHA_PATH}" "--markdown-out=${REGISTRY_SUMMARY_PATH}")
+        "${BAZEL_CMD[@]}"
+        {
+            echo "sha=$(cat "${REGISTRY_SHA_PATH}")"
+            echo 'summary<<EOF'
+            cat "${REGISTRY_SUMMARY_PATH}"
+            echo 'EOF'
+        } >> "$GITHUB_OUTPUT"
 
     - name: Validate dependency input
       if: >-
@@ -279,8 +240,8 @@ jobs:
         DEP: ${{ steps.module-update.outputs.dep }}
         OLD: ${{ steps.module-update.outputs.old }}
         NEW: ${{ steps.module-update.outputs.new }}
-        REGISTRY_SHA: ${{ steps.registry-sha.outputs.value }}
-        REGISTRY_SUMMARY: ${{ steps.registry-status.outputs.value }}
+        REGISTRY_SHA: ${{ steps.registry-status.outputs.sha }}
+        REGISTRY_SUMMARY: ${{ steps.registry-status.outputs.summary }}
         REPORT_PATH: ${{ runner.temp }}/deps-report.json
       run: |
         if [[ "${ACTION}" == 'update-registry' ]]; then

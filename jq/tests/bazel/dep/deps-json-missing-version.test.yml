@@ -2,7 +2,7 @@ name: bazel/dep deps_json errors on missing declared version
 
 input:
   declared: |
-    bazel_skylib (missing)
+    bazel_skylib (missing) (missing)
   overridden: |
   lockfile:
     registryFileHashes: {}

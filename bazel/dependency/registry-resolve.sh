@@ -5,8 +5,8 @@ set -euo pipefail
 usage() {
     cat <<'EOUSAGE'
 Usage:
-  registry-resolve.sh resolve --repo=<repo> --url=<url> --branch=<branch> [--release-tags=<glob>] [--requested-sha=<sha>] [--allow-unsafe] [--json-out=<path>] [--git-bin=<path>] [--jq-bin=<path>] [--jq-root=<path>]
-  registry-resolve.sh check --repo=<repo> --url=<url> --branch=<branch> --bazelrc=<path> [--allow-unsafe] [--json-out=<path>] [--git-bin=<path>] [--jq-bin=<path>] [--jq-root=<path>]
+  registry-resolve.sh resolve --repo=<repo> --url=<url> --branch=<branch> [--release-tags=<glob>] [--requested-sha=<sha>] [--allow-unsafe] [--format=json|markdown] [--json-out=<path>] [--markdown-out=<path>] [--sha-out=<path>] [--git-bin=<path>] [--jq-bin=<path>] [--jq-root=<path>]
+  registry-resolve.sh check --repo=<repo> --url=<url> --branch=<branch> --bazelrc=<path> [--allow-unsafe] [--format=json|markdown] [--json-out=<path>] [--markdown-out=<path>] [--sha-out=<path>] [--git-bin=<path>] [--jq-bin=<path>] [--jq-root=<path>]
 EOUSAGE
 }
 
@@ -122,8 +122,9 @@ verify_target() {
     fi
 }
 
-emit_json() {
+emit_output() {
     local output
+    local markdown
 
     if [[ "$MODE" == "resolve" ]]; then
         output="$(run_jq -n \
@@ -146,9 +147,25 @@ emit_json() {
             'import "bazel/registry" as registry; registry::check_output_from_args')"
     fi
 
+    if [[ -n "$SHA_OUT" ]]; then
+        printf '%s\n' "$TARGET_SHA" > "$SHA_OUT"
+    fi
+
+    markdown=""
+    if [[ -n "$MARKDOWN_OUT" || "$FORMAT" == markdown ]]; then
+        markdown="$(printf '%s\n' "$output" | run_jq -r 'import "bazel/registry" as registry; registry::check_markdown')"
+        if [[ -n "$MARKDOWN_OUT" ]]; then
+            printf '%s\n' "$markdown" > "$MARKDOWN_OUT"
+        fi
+    fi
+
     if [[ -n "$JSON_OUT" ]]; then
         printf '%s\n' "$output" > "$JSON_OUT"
-    else
+    fi
+
+    if [[ "$FORMAT" == markdown ]]; then
+        printf '%s\n' "$markdown"
+    elif [[ -z "$JSON_OUT" ]]; then
         printf '%s\n' "$output"
     fi
 }
@@ -161,7 +178,10 @@ RELEASE_TAGS=""
 REQUESTED_SHA=""
 ALLOW_UNSAFE=false
 BAZELRC=""
+FORMAT=json
 JSON_OUT=""
+MARKDOWN_OUT=""
+SHA_OUT=""
 SETTINGS_FILE=""
 GIT_BIN="${GIT_BIN:-git}"
 JQ_BIN="${JQ_BIN:-jq}"
@@ -190,8 +210,14 @@ while (($#)); do
         --allow-unsafe=*) ALLOW_UNSAFE="$(normalize_bool "${1#*=}")" ;;
         --bazelrc=*) BAZELRC="${1#*=}" ;;
         --bazelrc) BAZELRC="$2"; shift ;;
+        --format=*) FORMAT="${1#*=}" ;;
+        --format) FORMAT="$2"; shift ;;
         --json-out=*) JSON_OUT="${1#*=}" ;;
         --json-out) JSON_OUT="$2"; shift ;;
+        --markdown-out=*) MARKDOWN_OUT="${1#*=}" ;;
+        --markdown-out) MARKDOWN_OUT="$2"; shift ;;
+        --sha-out=*) SHA_OUT="${1#*=}" ;;
+        --sha-out) SHA_OUT="$2"; shift ;;
         --settings-file=*) SETTINGS_FILE="${1#*=}" ;;
         --settings-file) SETTINGS_FILE="$2"; shift ;;
         --git-bin=*) GIT_BIN="${1#*=}" ;;
@@ -209,6 +235,11 @@ while (($#)); do
 case "$MODE" in
     resolve|check) ;;
     *) usage >&2; exit 1 ;;
+esac
+
+case "$FORMAT" in
+    json|markdown) ;;
+    *) fail "Unknown format: $FORMAT" 1 ;;
 esac
 
 [[ -n "$REPO" ]] || fail "--repo is required" 1
@@ -253,4 +284,4 @@ collect_tags
 select_target
 collect_target_tags
 verify_target
-emit_json
+emit_output

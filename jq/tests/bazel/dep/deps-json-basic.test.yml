@@ -2,8 +2,8 @@ name: bazel/dep deps_json emits declared deps and selected version
 
 input:
   declared: |
-    bazel_skylib 1.8.2
-    protobuf 35.1.bcr.envoy
+    bazel_skylib 1.8.2 (missing)
+    protobuf 35.1.bcr.envoy True
   overridden: |
   lockfile:
     registryFileHashes:
@@ -16,6 +16,7 @@ before: '.declared as $declared | .overridden as $overridden | .lockfile'
 expression: 'dep::deps_json($declared; $overridden)'
 expected:
   bazel_skylib:
+    dev_dependency: false
     module_url: https://bcr.bazel.build/modules/bazel_skylib/1.8.2/
     registry: https://bcr.bazel.build/
     urls:
@@ -23,6 +24,7 @@ expected:
     version: 1.8.2
     selected: 1.9.1
   protobuf:
+    dev_dependency: true
     module_url: https://registry.example/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/
     registry: https://registry.example/0123456789abcdef0123456789abcdef01234567/
     urls:
