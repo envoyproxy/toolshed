@@ -3,14 +3,23 @@
 load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
-load("//dependency:registry.bzl", "registry_bazelrc", "repo_registry")
+load("//dependency:registry.bzl", "git_launcher", "registry_bazelrc", "registry_resolve", "registry_settings")
+
+_BAZEL_UPDATE_SH = Label("//dependency:bazel-update.sh")
+_JQ_LIBS = Label("//dependency:jq_libs")
+_JQ_TOOLCHAIN = Label("@jq_toolchains//:resolved_toolchain")
+_MODULE_DEPS_JSON_JQ = Label("//dependency:module_deps_json.jq")
+_MODULE_UPDATE_SH = Label("//dependency:module-update.sh")
+_REGISTRY_RESOLVE_SH = Label("//dependency:registry-resolve.sh")
+_VERSION_JQ = Label("//dependency:version.jq")
+
 
 def updater(
         name,
         dependencies,
         version_file,
-        jq_toolchain = "@jq_toolchains//:resolved_toolchain",
-        update_script = "@envoy_toolshed//dependency:bazel-update.sh",
+        jq_toolchain = _JQ_TOOLCHAIN,
+        update_script = _BAZEL_UPDATE_SH,
         post_script = None,
         data = None,
         deps = None,
@@ -98,12 +107,14 @@ def updater(
         **kwargs
     )
 
+
 def registry_updater(
         name,
         bazelrc,
         repo = "https://github.com/envoyproxy/bazel-registry.git",
         url = "https://raw.githubusercontent.com/envoyproxy/bazel-registry",
-        ref = "main",
+        branch = "main",
+        release_tags = None,
         visibility = None,
         **kwargs):
     """Rewrite the registry pin in a bazelrc file.
@@ -113,7 +124,8 @@ def registry_updater(
         bazelrc: Label for the bazelrc file to rewrite.
         repo: Git repository used to resolve the current registry SHA.
         url: Raw content base URL for the registry.
-        ref: Git ref to resolve from the registry repository.
+        branch: Registry branch used for latest and ancestor verification.
+        release_tags: Optional tag glob used when resolving latest published releases.
         visibility: Optional visibility for the generated target.
         **kwargs: Forwarded to write_source_files.
     """
@@ -122,10 +134,22 @@ def registry_updater(
         "target_compatible_with",
         ["@platforms//os:linux"],
     )
+    helper_kwargs = {
+        "tags": helper_tags,
+        "target_compatible_with": target_compatible_with,
+    }
+    if visibility != None:
+        helper_kwargs["visibility"] = visibility
 
-    repo_registry(
+    registry_settings(
+        name = name + "_settings",
+        tags = helper_tags,
+        target_compatible_with = target_compatible_with,
+    )
+    registry_resolve(
         name = name + "_resolved",
-        ref = ref,
+        branch = branch,
+        release_tags = release_tags or "",
         repo = repo,
         tags = helper_tags,
         target_compatible_with = target_compatible_with,
@@ -138,6 +162,68 @@ def registry_updater(
         tags = helper_tags,
         target_compatible_with = target_compatible_with,
         url = url,
+    )
+    git_launcher(
+        name = name + "_git",
+        tags = helper_tags,
+        target_compatible_with = target_compatible_with,
+    )
+
+    resolve_args = [
+        "resolve",
+        "--repo=%s" % repo,
+        "--url=%s" % url,
+        "--branch=%s" % branch,
+        "--settings-file=$(location :%s_settings)" % name,
+    ]
+    check_args = [
+        "check",
+        "--repo=%s" % repo,
+        "--url=%s" % url,
+        "--branch=%s" % branch,
+        "--bazelrc=$(location %s)" % bazelrc,
+        "--settings-file=$(location :%s_settings)" % name,
+    ]
+    if release_tags != None:
+        resolve_args.append("--release-tags=%s" % release_tags)
+        check_args.append("--release-tags=%s" % release_tags)
+
+    sh_binary(
+        name = name + ".resolve",
+        srcs = [_REGISTRY_RESOLVE_SH],
+        data = [
+            _JQ_LIBS,
+            _VERSION_JQ,
+            _JQ_TOOLCHAIN,
+            ":" + name + "_git",
+            ":" + name + "_settings",
+        ],
+        env = {
+            "GIT_BIN": "$(rootpath :%s_git)" % name,
+            "JQ_BIN": "$(rootpath %s)" % _JQ_TOOLCHAIN,
+            "REGISTRY_JQ_LIB": "$(rootpath %s)" % _VERSION_JQ,
+        },
+        args = resolve_args,
+        **helper_kwargs
+    )
+    sh_binary(
+        name = name + ".check",
+        srcs = [_REGISTRY_RESOLVE_SH],
+        data = [
+            _JQ_LIBS,
+            _VERSION_JQ,
+            _JQ_TOOLCHAIN,
+            bazelrc,
+            ":" + name + "_git",
+            ":" + name + "_settings",
+        ],
+        env = {
+            "GIT_BIN": "$(rootpath :%s_git)" % name,
+            "JQ_BIN": "$(rootpath %s)" % _JQ_TOOLCHAIN,
+            "REGISTRY_JQ_LIB": "$(rootpath %s)" % _VERSION_JQ,
+        },
+        args = check_args,
+        **helper_kwargs
     )
 
     if visibility != None:
@@ -152,6 +238,7 @@ def registry_updater(
         target_compatible_with = target_compatible_with,
         **kwargs
     )
+
 
 def module_deps_json(
         name,
@@ -234,7 +321,7 @@ rm -f "$$err"
         name = name,
         srcs = [lockfile],
         out = name + ".json",
-        filter_file = "//dependency:module_deps_json.jq",
+        filter_file = _MODULE_DEPS_JSON_JQ,
         expand_args = True,
         args = [
             "--rawfile",
@@ -249,10 +336,11 @@ rm -f "$$err"
         data = [
             ":" + name + "_declared",
             ":" + name + "_overridden",
-            "//dependency:jq_libs",
+            _JQ_LIBS,
         ],
         visibility = visibility,
     )
+
 
 def module_updater(
         name,
@@ -260,8 +348,8 @@ def module_updater(
         module_file,
         bazelrc = None,
         registries = None,
-        jq_toolchain = "@jq_toolchains//:resolved_toolchain",
-        update_script = "@envoy_toolshed//dependency:module-update.sh",
+        jq_toolchain = _JQ_TOOLCHAIN,
+        update_script = _MODULE_UPDATE_SH,
         buildozer = "@buildifier//:buildozer",
         data = None,
         deps = None,
@@ -296,13 +384,13 @@ def module_updater(
         buildozer,
         dependencies,
         module_file,
-        "//dependency:jq_libs",
-        "//dependency:version.jq",
+        _JQ_LIBS,
+        _VERSION_JQ,
     ]
     env = {
         "JQ_BIN": "$(rootpath %s)" % jq_toolchain,
         "BUILDOZER": "$(rootpath %s)" % buildozer,
-        "MODULE_UPDATER_JQ_DIR": "$(rootpath //dependency:version.jq)",
+        "MODULE_UPDATER_JQ_DIR": "$(rootpath %s)" % _VERSION_JQ,
     }
     args = [
         "$(location %s)" % module_file,

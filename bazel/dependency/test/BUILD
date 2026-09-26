@@ -4,14 +4,14 @@ load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//dependency:macros.bzl", "module_deps_json")
 load("//dependency:reachability.bzl", "dependency_reachability")
-load("//dependency:registry.bzl", "registry_bazelrc", "repo_registry")
+load("//dependency:registry.bzl", "git_launcher", "registry_bazelrc", "registry_resolve")
 load(":custom_rule_test.bzl", "custom_library_rule")
 load(":fixtures.bzl", "module_updater_fixture")
 load(":reachability_apparent_name_test.bzl", "apparent_name_test")
 load(":reachability_config_validation_test.bzl", "reachability_config_validation_test")
 load(":reachability_package_pattern_test.bzl", "reachability_package_pattern_test")
 load(":reachability_test_rules.bzl", "dependency_reachability_with_mode")
-load(":registry_test.bzl", "repo_registry_action_test", "repo_registry_runtime_inputs_test", "repo_registry_toolchain_test")
+load(":registry_test.bzl", "registry_resolve_action_test", "registry_resolve_runtime_inputs_test", "registry_resolve_toolchain_test")
 
 sh_test(
     name = "updater_test",
@@ -280,41 +280,75 @@ sh_test(
         "testdata/registry.missing.bazelrc",
         "testdata/resolved.txt",
         "//dependency:registry_bazelrc.sh",
+        "@jq_toolchains//:resolved_toolchain",
     ],
+    env = {"JQ_BIN": "$(JQ_BIN)"},
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
 )
 
-repo_registry(
+git_launcher(
+    name = "registry_test_git",
+)
+
+sh_test(
+    name = "registry_resolve_test",
+    size = "small",
+    srcs = ["registry_resolve_test.sh"],
+    data = [
+        ":registry_test_git",
+        "//dependency:jq_libs",
+        "//dependency:registry-resolve.sh",
+        "//dependency:version.jq",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+    env = {
+        "GIT_BIN": "$(rootpath :registry_test_git)",
+        "JQ_BIN": "$(JQ_BIN)",
+        "REGISTRY_JQ_LIB": "$(rootpath //dependency:version.jq)",
+    },
+    tags = ["manual"],
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+registry_resolve(
     name = "resolved_registry",
     repo = "https://github.com/envoyproxy/bazel-registry.git",
     tags = ["manual"],
     url = "https://raw.githubusercontent.com/envoyproxy/bazel-registry",
 )
 
-repo_registry_action_test(
-    name = "repo_registry_action_test",
+registry_resolve_action_test(
+    name = "registry_resolve_action_test",
     target_under_test = ":resolved_registry",
 )
 
-repo_registry_runtime_inputs_test(
-    name = "repo_registry_runtime_inputs_test",
+registry_resolve_runtime_inputs_test(
+    name = "registry_resolve_runtime_inputs_test",
     target_under_test = ":resolved_registry",
 )
 
-repo_registry_toolchain_test(
-    name = "repo_registry_toolchain_test",
+registry_resolve_toolchain_test(
+    name = "registry_resolve_toolchain_test",
 )
 
 sh_test(
-    name = "repo_registry_live_test",
+    name = "registry_resolve_live_test",
     size = "medium",
-    srcs = ["repo_registry_live_test.sh"],
-    data = [":resolved_registry"],
-    env = {"RESOLVED": "$(rootpath :resolved_registry)"},
+    srcs = ["registry_resolve_live_test.sh"],
+    data = [
+        ":resolved_registry",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+    env = {
+        "JQ_BIN": "$(JQ_BIN)",
+        "RESOLVED": "$(rootpath :resolved_registry)",
+    },
     tags = [
         "external",
         "requires-network",
     ],
     target_compatible_with = ["@platforms//os:linux"],
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
 )
 
 filegroup(

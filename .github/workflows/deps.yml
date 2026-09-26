@@ -18,6 +18,14 @@ on:
         description: Dependency to update (update-module only), `name` or `name=version`
         type: string
         default:
+      registry-sha:
+        description: Registry commit to pin explicitly (update-registry only)
+        type: string
+        default:
+      allow-unsafe:
+        description: Allow non-ancestor registry pins (update-registry only)
+        type: boolean
+        default: false
       registry:
         description: Registry URL override (update-module only, passed as --registry=)
         type: string
@@ -49,8 +57,10 @@ jobs:
     uses: ./.github/workflows/_deps.yml
     with:
       action: ${{ inputs.action || 'report' }}
+      allow-unsafe: ${{ inputs.allow-unsafe || false }}
       dependency: ${{ inputs.dependency || '' }}
       registry: ${{ inputs.registry || '' }}
+      registry-sha: ${{ inputs.registry-sha || '' }}
       dry-run: ${{ github.event_name != 'workflow_dispatch' || inputs.dry-run }}
       branch: ${{ github.ref_name }}
       committer-name: publish-envoy[bot]
