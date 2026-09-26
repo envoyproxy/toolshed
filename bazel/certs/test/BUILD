@@ -75,15 +75,6 @@ generated_certs(
 )
 
 generated_certs(
-    name = "fallback",
-    spec = "fixtures/serial.spec",
-    srcs = glob(["fixtures/**"], exclude = ["fixtures/*.spec"]),
-    outs = ["fallback_ca.pem", "fallback_leaf.pem"],
-    fallback_to_host_year = True,
-    tags = ["manual"],
-)
-
-generated_certs(
     name = "custom_status",
     spec = "fixtures/serial.spec",
     srcs = glob(["fixtures/**"], exclude = ["fixtures/*.spec"]),
@@ -140,9 +131,9 @@ command_test(
 )
 
 command_test(
-    name = "fallback_command_test",
-    target_under_test = ":fallback_gen",
-    expected = "date -u +%Y",
+    name = "build_timestamp_command_test",
+    target_under_test = ":stamped_gen",
+    expected = "BUILD_TIMESTAMP",
 )
 
 command_test(

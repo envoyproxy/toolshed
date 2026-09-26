@@ -49,20 +49,21 @@ checked-in headers from `static_srcs` should be referenced directly.
 Certificates are valid from Jan 1 of a given year, so they never age out.
 
 By default, `generated_certs` derives the year hermetically from the
-`STABLE_CERT_EPOCH_YEAR` key (configurable via `year_status_key`) in the
-consumer's `bazel-out/stable-status.txt`, which is only populated when the
-build is stamped (`stamp = 1`, set automatically by the macro). The
-consumer's `workspace_status_command` must emit a line of the form:
+`BUILD_TIMESTAMP` entry that Bazel writes into
+`bazel-out/volatile-status.txt` for stamped builds (`stamp = 1`, set
+automatically by the macro). No consumer configuration is required.
+
+Workspaces that want to pin the year from their own
+`workspace_status_command` may use `year_status_key` as an optional override
+by emitting a line of the form:
 
 ```
 STABLE_CERT_EPOCH_YEAR <YYYY>
 ```
 
-If the key is missing from the workspace status output, the build fails with
-an error naming the key, rather than silently falling back to the host's
-current date. Set `fallback_to_host_year = True` to opt back into that
-non-hermetic fallback, or pass `year = <YYYY>` to pin the year directly and
-skip stamping altogether.
+If neither the override key nor `BUILD_TIMESTAMP` is available (for example
+with `--nostamp`), the macro falls back to the host's current UTC year. Pass
+`year = <YYYY>` to pin the year directly and skip stamping altogether.
 
 Three validity modes are available:
 
