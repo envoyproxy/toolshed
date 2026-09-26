@@ -8,8 +8,8 @@ This package contains three update tools:
 
 ## Registry updater
 
-`registry_updater` rewrites a `.bazelrc` `--registry=<url>/<sha>` pin to the
-current commit for a branch in a git-backed Bazel registry.
+`registry_updater` rewrites a `.bazelrc` `--registry=<url>/<sha>` pin, but it
+also generates read-only runnables for resolving and checking registry SHAs.
 
 ```starlark
 load("@envoy_toolshed//dependency:macros.bzl", "registry_updater")
@@ -28,21 +28,112 @@ registry_updater(
     bazelrc,
     repo = "https://github.com/envoyproxy/bazel-registry.git",
     url = "https://raw.githubusercontent.com/envoyproxy/bazel-registry",
-    ref = "main",
+    branch = "main",
+    release_tags = None,
     visibility = None,
     **kwargs
 )
 ```
 
-The updater creates a `write_source_files` runnable plus private helper targets
-to resolve the current registry commit and rewrite the selected `.bazelrc`.
-Those helper actions are tagged `manual` so `//...` does not trigger the
-networked resolution step. The generated helper targets are Linux-only, matching
-the currently supported hermetic git toolchain platforms.
+The macro creates three public entry points:
 
-The registry resolution action is marked `local`, `no-cache`, `no-remote`, and
-`requires-network`, and it uses the hermetic `//git:toolchain_type` git
-toolchain rather than host git.
+- `<name>` keeps the existing `write_source_files` behavior and rewrites
+  `bazelrc` in place.
+- `<name>.resolve` prints the resolved JSON to stdout without writing files.
+- `<name>.check` reads the current pin from `bazelrc`, verifies it, and prints a
+  JSON status line.
+
+Everything remains Linux-only and `manual`-tagged. The build action behind
+`<name>` is marked `local`, `no-cache`, `no-remote`, and `requires-network`,
+and it uses the hermetic `//git:toolchain_type` git toolchain plus the jq
+toolchain rather than host binaries.
+
+### Build settings
+
+`registry_updater` consumes these public build settings:
+
+- `//dependency:registry_sha`: explicit 40-hex commit to pin. Empty resolves the
+  latest target.
+- `//dependency:registry_allow_unsafe`: bypass ancestor verification with a
+  warning.
+- `//dependency:registry_cache_ttl`: TTL in seconds for runnable-side cache
+  reuse. `0` disables caching.
+
+From a consumer repository, pass them with the toolshed repo qualifier:
+
+```bash
+bazel run @envoy_toolshed//dependency:update_registry \
+  --@envoy_toolshed//dependency:registry_sha=0123456789abcdef0123456789abcdef01234567
+```
+
+or to bypass verification explicitly:
+
+```bash
+bazel run @envoy_toolshed//dependency:update_registry \
+  --@envoy_toolshed//dependency:registry_sha=0123456789abcdef0123456789abcdef01234567 \
+  --@envoy_toolshed//dependency:registry_allow_unsafe=true
+```
+
+### Resolve semantics
+
+Resolution always starts from `repo`, `url`, and `branch`; callers never pass
+registry URLs on the CLI.
+
+- If `registry_sha` is empty and `release_tags` is `None`, the target is the
+  current head of `branch`.
+- If `registry_sha` is empty and `release_tags` is set, the target is the
+  highest matching tag, ordered with `version.jq` after stripping a leading `v`.
+- If `registry_sha` is set, it must be a full 40-character lowercase hex SHA.
+
+When the target differs from the current branch head, the resolver performs a
+commit-only fetch of `branch` and refuses non-ancestor SHAs with exit code `2`
+unless `registry_allow_unsafe=true`.
+
+`<name>.resolve` prints:
+
+```json
+{"sha":"<40hex>","url":"<url>/<sha>","branch":"main","latest":"<40hex>","ancestor":true,"tags":["v1.2.3"],"requested":"","unsafe":false}
+```
+
+### Check semantics
+
+`<name>.check` reads the current `--registry=<url>/<sha>` pin from `bazelrc`,
+fails if that pin is absent or differs across matching lines, and prints:
+
+```json
+{"sha":"<40hex>","ancestor":true,"tags":["v1.2.3"],"latest":"<40hex>","behind":1}
+```
+
+Exit codes:
+
+- `0`: resolved or checked successfully.
+- `2`: refused SHA, missing pin, or non-ancestor pin without `allow_unsafe`.
+
+If `allow_unsafe` is set, `.resolve` and `.check` still print JSON but emit a
+`WARNING:` line on stderr when verification is bypassed.
+
+### TTL behavior
+
+`registry_cache_ttl` applies only to `<name>.resolve` and `<name>.check`. Those
+runnables may reuse cached JSON under `$XDG_CACHE_HOME/envoy_toolshed/registry`
+(or `$HOME/.cache/...`) while the entry is younger than the TTL. The build
+action behind `<name>` always resolves over the network and keeps Bazel's action
+graph stateless.
+
+### Consumer example
+
+Downstream CI can layer release policy on top of `.check` output without baking
+that policy into toolshed. For example, require tags on release branches but
+allow untagged dev pins:
+
+```bash
+status_json="$(bazel run @envoy_toolshed//dependency:update_registry.check)"
+tags="$(printf '%s\n' "${status_json}" | jq -r '.tags | join(",")')"
+if [[ -z "${tags}" && "${VERSION}" != *-dev ]]; then
+  echo "registry pin must point at a tagged release" >&2
+  exit 1
+fi
+```
 
 ## Module updater
 
