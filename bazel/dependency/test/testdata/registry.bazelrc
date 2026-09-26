@@ -1,0 +1,5 @@
+common --registry=https://bcr.bazel.build/
+common --experimental_repository_cache_hardlinks
+common --registry=https://rawXgithubusercontent.com/envoyproxy/bazel-registry/2222222222222222222222222222222222222222
+common:ci --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/0000000000000000000000000000000000000000
+build:linux --test_output=errors

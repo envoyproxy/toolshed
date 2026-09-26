@@ -1,0 +1,9 @@
+{
+  "lockFileVersion": 28,
+  "registryFileHashes": {
+    "https://bcr.bazel.build/modules/aspect_bazel_lib/2.21.2/MODULE.bazel": "aaa",
+    "https://bcr.bazel.build/modules/aspect_bazel_lib/2.22.5/source.json": "bbb",
+    "https://bcr.bazel.build/modules/bazel_skylib/1.9.0/source.json": "ccc",
+    "https://raw.githubusercontent.com/envoyproxy/bazel-registry/deadbeef/modules/protobuf/35.2.bcr.envoy/source.json": "ddd"
+  }
+}

@@ -4,6 +4,9 @@ load("//:versions.bzl", "VERSIONS")
 load("//version:utils.bzl", "module_versions")
 
 exports_files([
+    ".bazelrc",
+    "MODULE.bazel",
+    "MODULE.bazel.lock",
     "jq.sh",
     "versions.bzl",
     "macros.bzl",

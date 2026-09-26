@@ -1,0 +1,6 @@
+# registry parsing fixture
+common --color=yes
+# common --registry=__REGISTRY_UNUSED__
+common --registry=__REGISTRY_BCR__/ # keep trailing comment
+build:ci --registry=__REGISTRY_ENVOY__
+common --experimental_repository_cache_hardlinks

@@ -1,0 +1,23 @@
+{
+  "archive_dep": {
+    "repo": "example/no-version"
+  },
+  "aspect_bazel_lib": {
+    "registry": "__REGISTRY_BCR__/",
+    "version": "2.22.0"
+  },
+  "bazel_skylib": {
+    "version": "1.8.0"
+  },
+  "missing_dep": {
+    "version": "0.1.0"
+  },
+  "protobuf": {
+    "registry": "__REGISTRY_ENVOY__/",
+    "version": "35.1.bcr.envoy"
+  },
+  "sq": {
+    "registry": "__REGISTRY_ENVOY__/",
+    "version": "1.4.0.envoy"
+  }
+}
