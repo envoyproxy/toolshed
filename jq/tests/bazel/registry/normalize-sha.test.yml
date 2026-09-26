@@ -1,0 +1,13 @@
+name: bazel/registry normalize_sha accepts uppercase and rejects short values
+
+input:
+  good: ABCDEF0123456789ABCDEF0123456789ABCDEF01
+  bad: deadbeef
+
+imports:
+- bazel/registry
+before: '.good as $good | .bad as $bad'
+expression: '{good: ($good | registry::normalize_sha), bad: (try ($bad | registry::normalize_sha) catch .)}'
+expected:
+  good: abcdef0123456789abcdef0123456789abcdef01
+  bad: registry SHA must be a full 40-character hex commit

@@ -1,0 +1,9 @@
+name: bazel/registry select_release errors on no match
+
+input:
+  note: cccccccccccccccccccccccccccccccccccccccc
+
+imports:
+- bazel/registry
+expression: 'try (registry::select_release("v*")) catch .'
+expected: No registry tag matches v*

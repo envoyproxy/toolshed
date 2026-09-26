@@ -15,6 +15,12 @@ on:
       dependency:
         type: string
         default:
+      registry-sha:
+        type: string
+        default:
+      allow-unsafe:
+        type: boolean
+        default: false
       registry:
         type: string
         default:
@@ -128,11 +134,13 @@ jobs:
       shell: bash
       working-directory: ${{ inputs.bazel-path }}
       env:
+        ALLOW_UNSAFE: ${{ inputs.allow-unsafe }}
         BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+        REGISTRY_SHA: ${{ inputs.registry-sha }}
       run: |
         BAZEL_CMD=(bazel run)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(//dependency:update_registry)
+        BAZEL_CMD+=(//dependency:update_registry "--//dependency:registry_sha=${REGISTRY_SHA}" "--//dependency:registry_allow_unsafe=${ALLOW_UNSAFE}")
         "${BAZEL_CMD[@]}"
     - name: Update registry lockfile
       if: >-
@@ -146,19 +154,45 @@ jobs:
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
         BAZEL_CMD+=(deps --lockfile_mode=update)
         "${BAZEL_CMD[@]}"
-    - name: Read registry SHA
-      id: registry-sha
+    - name: Read registry status
       if: >-
         inputs.action == 'update-registry'
       shell: bash
       working-directory: ${{ inputs.bazel-path }}
+      env:
+        ALLOW_UNSAFE: ${{ inputs.allow-unsafe }}
+        BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+        REGISTRY_SHA: ${{ inputs.registry-sha }}
+        REGISTRY_STATUS_PATH: ${{ runner.temp }}/registry-status.json
       run: |
-        SHA=$(sed -nE 's#^common --registry=https://raw\.githubusercontent\.com/envoyproxy/bazel-registry/([0-9a-f]+)$#\1#p' .bazelrc)
-        if [[ -z "${SHA}" ]]; then
-            echo '::error::Failed to read bazel-registry SHA from .bazelrc' >&2
-            exit 1
-        fi
-        echo "sha=${SHA}" >> "$GITHUB_OUTPUT"
+        BAZEL_CMD=(bazel run)
+        [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
+        BAZEL_CMD+=(//dependency:update_registry.check)
+        "${BAZEL_CMD[@]}" > "${REGISTRY_STATUS_PATH}"
+    - name: Extract registry SHA
+      id: registry-sha
+      if: >-
+        inputs.action == 'update-registry'
+      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      with:
+        input: ${{ runner.temp }}/registry-status.json
+        input-format: json-path
+        options: -r
+        output-path: GITHUB_OUTPUT
+        filter: '"sha=" + .sha'
+    - name: Summarize registry status
+      id: registry-status
+      if: >-
+        inputs.action == 'update-registry'
+      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      with:
+        input: ${{ runner.temp }}/registry-status.json
+        input-format: json-path
+        options: -r
+        output-path: GITHUB_OUTPUT
+        filter: |
+          (.tags | if length == 0 then "none" else join(", ") end) as $tags
+          | "summary=pinned to `\(.sha)`, tags: \($tags), behind main by \((.behind // 0))" 
 
     - name: Validate dependency input
       if: >-
@@ -247,13 +281,14 @@ jobs:
         OLD: ${{ steps.module-update.outputs.old }}
         NEW: ${{ steps.module-update.outputs.new }}
         REGISTRY_SHA: ${{ steps.registry-sha.outputs.sha }}
+        REGISTRY_SUMMARY: ${{ steps.registry-status.outputs.summary }}
         REPORT_PATH: ${{ runner.temp }}/deps-report.json
       run: |
         if [[ "${ACTION}" == 'update-registry' ]]; then
             SHORT_SHA=${REGISTRY_SHA:0:7}
             MESSAGE="bazel: Bump bazel-registry to ${SHORT_SHA}"
             BRANCH="deps/registry/${SHORT_SHA}"
-            BODY="Created by publish-envoy[bot] for @${ACTOR}"
+            BODY=$(printf "Created by publish-envoy[bot] for @%s\n\n%s" "${ACTOR}" "${REGISTRY_SUMMARY}")
         else
             SAFE_DEP=${DEP//\//-}
             SAFE_DEP=${SAFE_DEP//@/-}

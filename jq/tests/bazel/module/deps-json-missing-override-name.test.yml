@@ -1,0 +1,16 @@
+name: bazel/module deps_json errors on missing override module_name
+
+input:
+  declared: |
+    aspect_bazel_lib 2.22.0
+  overridden: |
+    (missing)
+  lockfile:
+    registryFileHashes:
+      https://bcr.bazel.build/modules/aspect_bazel_lib/2.22.0/source.json: hash
+
+imports:
+- bazel/module
+before: '.declared as $declared | .overridden as $overridden | .lockfile'
+expression: 'try (mod::deps_json($declared; $overridden)) catch .'
+expected: Override is missing module_name in MODULE.bazel

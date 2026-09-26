@@ -1,0 +1,14 @@
+name: bazel/module deps_json errors on missing declared version
+
+input:
+  declared: |
+    bazel_skylib (missing)
+  overridden: |
+  lockfile:
+    registryFileHashes: {}
+
+imports:
+- bazel/module
+before: '.declared as $declared | .overridden as $overridden | .lockfile'
+expression: 'try (mod::deps_json($declared; $overridden)) catch .'
+expected: Declared dependency bazel_skylib is missing version in MODULE.bazel

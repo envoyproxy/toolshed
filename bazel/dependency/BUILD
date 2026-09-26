@@ -1,40 +1,34 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//rules:common_settings.bzl", "string_list_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag", "string_list_flag")
 load("//dependency:macros.bzl", "module_deps_json", "module_updater", "registry_updater", "updater")
 
 exports_files([
     "README.md",
     "bazel-update.sh",
     "macros.bzl",
-    "metadata.jq",
     "module-update.sh",
-    "module_deps_json.jq",
     "reachability.bzl",
-    "registries.jq",
+    "registry-resolve.sh",
     "registry.bzl",
     "registry_bazelrc.sh",
-    "report.jq",
-    "resolve.jq",
-    "version.jq",
 ])
-
-filegroup(
-    name = "jq_libs",
-    srcs = [
-        "module_deps_json.jq",
-        "metadata.jq",
-        "registries.jq",
-        "report.jq",
-        "resolve.jq",
-        "version.jq",
-    ],
-    visibility = ["//visibility:public"],
-)
 
 bzl_library(
     name = "registry_bzl",
     srcs = ["registry.bzl"],
     visibility = ["//visibility:private"],
+)
+
+bool_flag(
+    name = "registry_allow_unsafe",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "registry_sha",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
 )
 
 # Private build settings used by reachability.bzl to transport exclusion lists

@@ -16,9 +16,9 @@ def module_updater_fixture(name, args, out):
             "testdata/module/registry_envoy/REGISTRY_MARKER",
             "testdata/module/registry_envoy/modules/protobuf/metadata.json",
             "testdata/module/registry_envoy/modules/sq/metadata.json",
-            "//dependency:jq_libs",
             "//dependency:module-update.sh",
-            "//dependency:version.jq",
+            "@envoy_toolshed_jq//:modules",
+            "@envoy_toolshed_jq//:modules_root.marker",
         ],
         outs = [out],
         tools = ["@buildifier//:buildozer", "@jq_toolchains//:resolved_toolchain"],
@@ -35,7 +35,7 @@ sed -e "s|__REGISTRY_BCR__|$$bcr_root|g" -e "s|__REGISTRY_ENVOY__|$$envoy_root|g
 sed -e "s|__REGISTRY_BCR__|$$bcr_root|g" -e "s|__REGISTRY_ENVOY__|$$envoy_root|g" $(location testdata/module/report.bazelrc.template) > "$$tmpdir/.bazelrc"
 cp $(location testdata/module/MODULE.template.bazel) "$$tmpdir/MODULE.bazel"
 chmod u+w "$$tmpdir/MODULE.bazel"
-BUILD_WORKSPACE_DIRECTORY="$$tmpdir" RUNFILES_DIR=$(execpath @buildifier//:buildozer).runfiles JQ_BIN=$(execpath @jq_toolchains//:resolved_toolchain) BUILDOZER=$(execpath @buildifier//:buildozer) MODULE_UPDATER_JQ_DIR=$(location //dependency:version.jq) bash $(location //dependency:module-update.sh) "$$tmpdir/MODULE.bazel" "$$tmpdir/deps.json" --bazelrc="$$tmpdir/.bazelrc" %s >/dev/null
+BUILD_WORKSPACE_DIRECTORY="$$tmpdir" RUNFILES_DIR=$(execpath @buildifier//:buildozer).runfiles JQ_BIN=$(execpath @jq_toolchains//:resolved_toolchain) BUILDOZER=$(execpath @buildifier//:buildozer) TOOLSHED_JQ_ROOT=$(location @envoy_toolshed_jq//:modules_root.marker) bash $(location //dependency:module-update.sh) "$$tmpdir/MODULE.bazel" "$$tmpdir/deps.json" --bazelrc="$$tmpdir/.bazelrc" %s >/dev/null
 cp "$$tmpdir/%s" "$@"
 """ % (command, output_source),
     )
