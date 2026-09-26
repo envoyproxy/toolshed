@@ -1,0 +1,8 @@
+name: bazel/registry import smoke test
+
+input: ABCDEF0123456789ABCDEF0123456789ABCDEF01
+
+imports:
+- bazel/registry
+expression: 'registry::normalize_sha'
+expected: abcdef0123456789abcdef0123456789abcdef01

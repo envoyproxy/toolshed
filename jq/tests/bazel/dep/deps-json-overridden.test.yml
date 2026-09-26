@@ -1,0 +1,24 @@
+name: bazel/dep deps_json skips overridden deps
+
+input:
+  declared: |
+    bazel_skylib 1.8.2
+    protobuf 35.1.bcr.envoy
+  overridden: |
+    protobuf
+  lockfile:
+    registryFileHashes:
+      https://bcr.bazel.build/modules/bazel_skylib/1.8.2/source.json: hash
+      https://registry.example/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/source.json: hash
+
+imports:
+- bazel/dep
+before: '.declared as $declared | .overridden as $overridden | .lockfile'
+expression: 'dep::deps_json($declared; $overridden)'
+expected:
+  bazel_skylib:
+    module_url: https://bcr.bazel.build/modules/bazel_skylib/1.8.2/
+    registry: https://bcr.bazel.build/
+    urls:
+    - https://bcr.bazel.build/modules/bazel_skylib/1.8.2/
+    version: 1.8.2

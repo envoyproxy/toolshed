@@ -11,5 +11,12 @@ It supports three actions:
 
 Use the `dry-run` input to exercise the update flows without opening a pull request.
 
+`update-registry` accepts two additional dispatch inputs:
+
+- `registry-sha`: optional explicit 40-hex commit to pin instead of resolving the current default target.
+- `allow-unsafe`: bypass ancestor verification when pinning or checking the registry SHA.
+
 The Bazel updaters only rewrite `bazel/.bazelrc` or `bazel/MODULE.bazel`; lockfile regeneration happens in
-this workflow after the updater runs.
+this workflow after the updater runs. The workflow now reads registry status from
+`bazel run //dependency:update_registry.check`, so PR metadata includes the pinned
+SHA, matching tags, and how far the pin is behind `main`.

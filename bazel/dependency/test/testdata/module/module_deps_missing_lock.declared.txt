@@ -1,0 +1,2 @@
+aspect_bazel_lib 2.22.0
+sq 1.4.0.envoy

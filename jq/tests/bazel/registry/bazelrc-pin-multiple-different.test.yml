@@ -1,0 +1,11 @@
+name: bazel/registry bazelrc_pin rejects differing pins
+
+raw: true
+input: |
+  common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/abcdef0123456789abcdef0123456789abcdef01
+  build:ci --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/1111111111111111111111111111111111111111
+
+imports:
+- bazel/registry
+expression: '[., inputs] | join("\n") | try (registry::bazelrc_pin("https://raw.githubusercontent.com/envoyproxy/bazel-registry")) catch .'
+expected: Found multiple differing '--registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/<sha>' pins

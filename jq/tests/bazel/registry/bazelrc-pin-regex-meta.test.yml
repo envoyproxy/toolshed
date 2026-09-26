@@ -1,0 +1,10 @@
+name: bazel/registry bazelrc_pin escapes regex metacharacters in URL
+
+raw: true
+input: |
+  common --registry=https://example.com/a+b?/abcdef0123456789abcdef0123456789abcdef01
+
+imports:
+- bazel/registry
+expression: '[., inputs] | join("\n") | registry::bazelrc_pin("https://example.com/a+b?")'
+expected: abcdef0123456789abcdef0123456789abcdef01
