@@ -1,0 +1,10 @@
+name: bazel/registry bazelrc_pin errors when pin missing
+
+raw: true
+input: |
+  common --registry=https://bcr.bazel.build/
+
+imports:
+- bazel/registry
+expression: '[., inputs] | join("\n") | try (registry::bazelrc_pin("https://raw.githubusercontent.com/envoyproxy/bazel-registry")) catch .'
+expected: No '--registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/<sha>' line found

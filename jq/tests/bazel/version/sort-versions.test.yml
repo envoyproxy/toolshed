@@ -1,0 +1,20 @@
+name: bazel/version sorts prerelease and bcr versions
+
+input:
+- "35.1.bcr.10"
+- "35.1.bcr.2"
+- "35.1.bcr.1"
+- "1.9.0-rc1"
+- "1.9.0"
+- "1.9.0.bcr.1"
+
+imports:
+- bazel/version
+expression: 'version::sort_versions'
+expected:
+- "1.9.0-rc1"
+- "1.9.0"
+- "1.9.0.bcr.1"
+- "35.1.bcr.1"
+- "35.1.bcr.2"
+- "35.1.bcr.10"

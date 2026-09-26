@@ -1,0 +1,18 @@
+name: bazel/dep registries normalizes and dedupes bazelrc entries
+
+input:
+  extra:
+  - https://extra.example/one/
+  bazelrc: |
+    common --registry=https://bcr.bazel.build
+    build:ci --registry=https://bcr.bazel.build/
+    common --registry=https://example.com/custom # comment
+
+imports:
+- bazel/dep
+before: '.extra as $extra | .bazelrc'
+expression: 'dep::registries($extra)'
+expected:
+- https://extra.example/one/
+- https://bcr.bazel.build/
+- https://example.com/custom/

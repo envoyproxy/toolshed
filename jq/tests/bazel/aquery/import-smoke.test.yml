@@ -1,0 +1,15 @@
+name: bazel/aquery import smoke test
+
+input:
+  frags:
+    "1":
+      label: root
+    "2":
+      parentId: 1
+      label: child
+
+imports:
+- bazel/aquery
+before: '.frags as $frags | "2"'
+expression: 'aquery::frag_path($frags)'
+expected: root/child
