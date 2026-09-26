@@ -1,5 +1,5 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-load("@bazel_skylib//rules:common_settings.bzl", "string_list_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag", "string_list_flag")
 load("//dependency:macros.bzl", "module_deps_json", "module_updater", "registry_updater", "updater")
 
 exports_files([
@@ -11,8 +11,13 @@ exports_files([
     "module_deps_json.jq",
     "reachability.bzl",
     "registries.jq",
+    "registry-resolve.sh",
     "registry.bzl",
     "registry_bazelrc.sh",
+    "registry_check_output.jq",
+    "registry_resolve_output.jq",
+    "registry_select_tag.jq",
+    "registry_tags_array.jq",
     "report.jq",
     "resolve.jq",
     "version.jq",
@@ -24,6 +29,10 @@ filegroup(
         "module_deps_json.jq",
         "metadata.jq",
         "registries.jq",
+        "registry_check_output.jq",
+        "registry_resolve_output.jq",
+        "registry_select_tag.jq",
+        "registry_tags_array.jq",
         "report.jq",
         "resolve.jq",
         "version.jq",
@@ -35,6 +44,24 @@ bzl_library(
     name = "registry_bzl",
     srcs = ["registry.bzl"],
     visibility = ["//visibility:private"],
+)
+
+bool_flag(
+    name = "registry_allow_unsafe",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "registry_cache_ttl",
+    build_setting_default = "0",
+    visibility = ["//visibility:public"],
+)
+
+string_flag(
+    name = "registry_sha",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
 )
 
 # Private build settings used by reachability.bzl to transport exclusion lists
