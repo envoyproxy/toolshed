@@ -1,0 +1,25 @@
+module(
+    name = "module_deps_json_test",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.0")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "local_only", version = "0.0.0")
+bazel_dep(name = "git_only", version = "0.0.0")
+
+single_version_override(
+    module_name = "bazel_skylib",
+    version = "1.9.0",
+)
+
+local_path_override(
+    module_name = "local_only",
+    path = "../local_only",
+)
+
+git_override(
+    module_name = "git_only",
+    remote = "https://example.invalid/x.git",
+    commit = "0000000000000000000000000000000000000000",
+)

@@ -18,6 +18,7 @@
         "yanked": []
       }
     },
+    "selected": null,
     "update_available": true
   },
   "bazel_skylib": {
@@ -41,6 +42,7 @@
         ]
       }
     },
+    "selected": null,
     "update_available": true
   },
   "missing_dep": {
@@ -51,6 +53,7 @@
     "latest_any": null,
     "latest_by_registry": {},
     "registries": {},
+    "selected": null,
     "update_available": false
   },
   "protobuf": {
@@ -79,6 +82,7 @@
         "yanked": []
       }
     },
+    "selected": null,
     "update_available": true
   },
   "sq": {
@@ -99,6 +103,7 @@
         "yanked": []
       }
     },
+    "selected": null,
     "update_available": true
   }
 }

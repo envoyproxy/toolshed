@@ -23,6 +23,7 @@ def nonempty_string_or_null($value): if ($value | type) == "string" and ($value 
     | {($dep.key): {
         current: $dep.value.version,
         current_registry: ($current_registry // null),
+        selected: ($dep.value.selected // null),
         registries: ($registries | from_entries),
         latest_by_registry: $latest_by_registry,
         latest: ($latest // null),

@@ -1,4 +1,4 @@
-name: _deps
+#name: _deps
 
 permissions:
   contents: read
@@ -67,6 +67,14 @@ jobs:
         else
             echo 'ci=' >> "$GITHUB_OUTPUT"
         fi
+    - name: Configure repo Bazel settings
+      if: vars.TOOLSHED_CI_BAZELRC
+      shell: bash
+      run: |
+        echo "${BAZELRC_CONTENT}" > repo.bazelrc
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZELRC_CONTENT: ${{ vars.TOOLSHED_CI_BAZELRC }}
 
     - name: Report
       id: report
@@ -76,9 +84,9 @@ jobs:
         BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
         REPORT_PATH: ${{ runner.temp }}/deps-report.json
       run: |
-        BAZEL_CMD=(bazel)
+        BAZEL_CMD=(bazel run)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(run //dependency:update_module -- --report "--json-out=${REPORT_PATH}")
+        BAZEL_CMD+=(//dependency:update_module -- --report "--json-out=${REPORT_PATH}")
         "${BAZEL_CMD[@]}"
     - name: Upload dependency report
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -106,10 +114,10 @@ jobs:
                 $deps[]
                 | .value as $value
                 | "| \(.key)"
-                  + " | \($value.current // \"—\")"
-                  + " | \($value.latest // \"—\")"
-                  + " | \($value.current_registry // \"—\")"
-                  + " | \(if $value.update_available == true then \"✅\" else \"—\" end) |"
+                  + " | \($value.current // "—")"
+                  + " | \($value.latest // "—")"
+                  + " | \($value.current_registry // "—")"
+                  + " | \(if $value.update_available == true then "✅" else "—" end) |"
               )
             ]
           | join("\n")
@@ -122,9 +130,9 @@ jobs:
       env:
         BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
       run: |
-        BAZEL_CMD=(bazel)
+        BAZEL_CMD=(bazel run)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(run //dependency:update_registry)
+        BAZEL_CMD+=(//dependency:update_registry)
         "${BAZEL_CMD[@]}"
     - name: Update registry lockfile
       if: >-
@@ -134,9 +142,9 @@ jobs:
       env:
         BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
       run: |
-        BAZEL_CMD=(bazel)
+        BAZEL_CMD=(bazel mod)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(mod deps --lockfile_mode=update)
+        BAZEL_CMD+=(deps --lockfile_mode=update)
         "${BAZEL_CMD[@]}"
     - name: Read registry SHA
       id: registry-sha
@@ -176,9 +184,9 @@ jobs:
         UPDATE_OUT: ${{ runner.temp }}/update.out
       run: |
         set -o pipefail
-        BAZEL_CMD=(bazel)
+        BAZEL_CMD=(bazel run)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(run //dependency:update_module -- "${DEPENDENCY}")
+        BAZEL_CMD+=(//dependency:update_module -- "${DEPENDENCY}")
         [[ -n "${REGISTRY}" ]] && BAZEL_CMD+=("--registry=${REGISTRY}")
         "${BAZEL_CMD[@]}" | tee "${UPDATE_OUT}"
 
@@ -218,9 +226,9 @@ jobs:
       env:
         BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
       run: |
-        BAZEL_CMD=(bazel)
+        BAZEL_CMD=(bazel mod)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(mod deps --lockfile_mode=update)
+        BAZEL_CMD+=(deps --lockfile_mode=update)
         "${BAZEL_CMD[@]}"
 
     - name: Prepare change metadata

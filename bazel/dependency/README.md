@@ -56,6 +56,7 @@ load("@envoy_toolshed//dependency:macros.bzl", "module_deps_json", "module_updat
 module_deps_json(
     name = "deps_json",
     lockfile = "//:MODULE.bazel.lock",
+    module_file = "//:MODULE.bazel",
 )
 
 module_updater(
@@ -81,10 +82,20 @@ module_updater(
 ```
 
 `dependencies` is a JSON map keyed by module name. Each entry needs a `version`,
-and may provide a `registry` hint. `module_deps_json` derives that shape from a
-`MODULE.bazel.lock` by reading `registryFileHashes` `source.json` entries, and
+and may provide a `registry` hint. `module_deps_json` takes both a
+`MODULE.bazel.lock` and a `MODULE.bazel`: the dependency set and `version` come
+from the `bazel_dep(...)` calls in `module_file` via hermetic `buildozer`, the
+registry hint comes from the lockfile, and a `selected` field is emitted when
+MVS selected a different version than the one declared in `module_file`. It
 fails if the lockfile reports more than one selected version for the same
-module.
+module. Dependencies with a `local_path_override(...)`, `git_override(...)`, or
+`archive_override(...)` are excluded because they are not registry-resolved and
+cannot be updated by this tool; `single_version_override(...)` deps are still
+included.
+
+Consumers that derive dependency JSON from the lockfile alone, such as
+envoy's `@envoy_mod_graph//:deps.json`, will over-report transitive modules and
+should switch to this macro.
 
 ### Report mode
 
