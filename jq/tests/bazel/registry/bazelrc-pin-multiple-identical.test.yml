@@ -1,0 +1,11 @@
+name: bazel/registry bazelrc_pin accepts repeated identical pins
+
+raw: true
+input: |
+  common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/abcdef0123456789abcdef0123456789abcdef01
+  build:ci --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/abcdef0123456789abcdef0123456789abcdef01
+
+imports:
+- bazel/registry
+expression: '[., inputs] | join("\n") | registry::bazelrc_pin("https://raw.githubusercontent.com/envoyproxy/bazel-registry")'
+expected: abcdef0123456789abcdef0123456789abcdef01

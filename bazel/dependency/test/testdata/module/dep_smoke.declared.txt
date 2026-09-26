@@ -1,0 +1,2 @@
+aspect_bazel_lib 2.22.0
+bazel_skylib 1.9.0

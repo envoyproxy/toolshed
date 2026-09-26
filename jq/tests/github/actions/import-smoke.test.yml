@@ -1,0 +1,13 @@
+name: github/actions import smoke test
+
+input: hi
+
+imports:
+- github/actions
+expression: 'actions::log_bubble({notice: ["hi"], warning: [], error: [], fail: []})'
+expected: |2
+
+  COMMANDS=('echo ::notice::hi')
+  for command in "${COMMANDS[@]}"; do
+      $command
+  done

@@ -1,0 +1,14 @@
+name: bash import smoke test
+
+input:
+- echo hi
+
+imports:
+- bash
+expression: 'bash::xfor'
+expected: |2
+
+  COMMANDS=('echo hi')
+  for command in "${COMMANDS[@]}"; do
+      $command
+  done

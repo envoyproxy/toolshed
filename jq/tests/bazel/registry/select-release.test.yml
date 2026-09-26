@@ -1,0 +1,11 @@
+name: bazel/registry select_release picks highest semantic match
+
+input:
+  v1.9.0: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  v1.10.0: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  note: cccccccccccccccccccccccccccccccccccccccc
+
+imports:
+- bazel/registry
+expression: 'registry::select_release("v*")'
+expected: v1.10.0

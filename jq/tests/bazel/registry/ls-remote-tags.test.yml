@@ -1,0 +1,16 @@
+name: bazel/registry ls_remote_tags prefers peeled annotated tags
+
+raw: true
+input: |
+  1111111111111111111111111111111111111111	refs/tags/v1.0.0
+  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	refs/tags/v1.1.0
+  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb	refs/tags/v1.1.0^{}
+  cccccccccccccccccccccccccccccccccccccccc	refs/tags/release
+
+imports:
+- bazel/registry
+expression: '[., inputs] | join("\n") | registry::ls_remote_tags'
+expected:
+  v1.0.0: "1111111111111111111111111111111111111111"
+  v1.1.0: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  release: cccccccccccccccccccccccccccccccccccccccc
