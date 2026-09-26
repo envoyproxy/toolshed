@@ -108,6 +108,25 @@ Exit codes:
 If `allow_unsafe` is set, `.resolve` and `.check` still print JSON but emit a
 `WARNING:` line on stderr when verification is bypassed.
 
+### Output options
+
+Both `.resolve` and `.check` accept:
+
+- `--format=json|markdown`: choose the stdout rendering (default `json`).
+  Markdown renders a single status line, eg
+  ``pinned to `<sha>`, tags: v1.2.3, behind main by 1``.
+- `--markdown-out=<path>`: write the markdown rendering to a file.
+- `--sha-out=<path>`: write the raw resolved/checked SHA to a file.
+- `--json-out=<path>`: write the JSON to a file. When set and
+  `--format=json`, nothing is printed on stdout.
+
+Because `.resolve` and `.check` are `sh_binary` targets with baked `args`,
+extra options can be appended after `--` in `bazel run`:
+
+```bash
+bazel run //dependency:update_registry.check --   --json-out=/tmp/registry.json   --sha-out=/tmp/registry-sha.txt   --markdown-out=/tmp/registry-status.md
+```
+
 ### Consumer example
 
 Downstream CI can layer release policy on top of `.check` output without baking
@@ -190,11 +209,26 @@ or write the JSON to a file:
 bazel run //dependency:update_module -- --report --json-out=/tmp/report.json
 ```
 
+Report mode also renders markdown, either to stdout or to a file:
+
+```bash
+bazel run //dependency:update_module -- --report --format=markdown
+bazel run //dependency:update_module -- --report   --json-out=/tmp/report.json   --markdown-out="$GITHUB_STEP_SUMMARY"
+```
+
+`--format=json|markdown` (default `json`) selects the stdout rendering, and
+unknown formats fail with exit code `1`. When `--json-out` is set and
+`--format=json`, nothing is printed on stdout. The markdown rendering is a
+single table with non-dev rows first, dev rows marked inline on the name
+(`` zlib _(dev)_ ``), and an `Outdated dependencies: N (dev: M)` header.
+
 Each dependency entry includes:
 
 - `current`: version from the input JSON
 - `current_registry`: registry hint from the input JSON when present, otherwise
   the first configured registry that serves the current version
+- `dev_dependency`: true when the `bazel_dep` is declared with
+  `dev_dependency = True`
 - `registries`: map of registry URL/path to `{versions, yanked}`
 - `latest_by_registry`: highest non-yanked version per serving registry
 - `latest`: highest non-yanked version on `current_registry`
@@ -203,8 +237,9 @@ Each dependency entry includes:
 - `cross_registry_update_available`: true when another registry is ahead of the
   current registry
 
-Use `--fail-on-outdated` to make report mode exit non-zero when any dependency
-has a same-registry update available.
+Use `--fail-on-outdated` to make report mode exit non-zero when any non-dev
+dependency has a same-registry update available. Dev dependencies are ignored;
+add `--fail-on-outdated-dev` to also fail when a dev dependency is outdated.
 
 ### Update mode
 

@@ -161,6 +161,22 @@ write_bazelrc "${pinned_bazelrc}" "${SECOND_SHA}"
 run_check "${pinned_bazelrc}" "${stdout}" "${stderr}"
 "${JQ_BIN}" -e --arg sha "${SECOND_SHA}" '.sha == $sha and .ancestor == true and .behind == 1 and .tags == ["v0.1.0"]' "${stdout}" >/dev/null
 
+run_check "${pinned_bazelrc}" "${stdout}" "${stderr}" --format=markdown
+grep -F 'pinned to' "${stdout}" >/dev/null
+grep -F "\`${SECOND_SHA}\`" "${stdout}" >/dev/null
+
+run_check "${pinned_bazelrc}" "${stdout}" "${stderr}" --sha-out="${tmpdir}/sha.txt" --markdown-out="${tmpdir}/status.md"
+[[ "$(cat "${tmpdir}/sha.txt")" == "${SECOND_SHA}" ]]
+grep -F 'pinned to' "${tmpdir}/status.md" >/dev/null
+"${JQ_BIN}" -e --arg sha "${SECOND_SHA}" '.sha == $sha' "${stdout}" >/dev/null
+
+set +e
+run_check "${pinned_bazelrc}" "${stdout}" "${stderr}" --format=bogus
+rc=$?
+set -e
+assert_exit_code 1 "${rc}"
+grep -F 'Unknown format: bogus' "${stderr}" >/dev/null
+
 stray_bazelrc="${tmpdir}/stray.bazelrc"
 write_bazelrc "${stray_bazelrc}" "${STRAY_SHA}"
 set +e

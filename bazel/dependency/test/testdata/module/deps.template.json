@@ -17,6 +17,7 @@
     "version": "35.1.bcr.envoy"
   },
   "sq": {
+    "dev_dependency": true,
     "registry": "__REGISTRY_ENVOY__/",
     "version": "1.4.0.envoy"
   }

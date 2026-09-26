@@ -1,5 +1,6 @@
 {
   "aspect_bazel_lib": {
+    "dev_dependency": true,
     "module_url": "https://bcr.bazel.build/modules/aspect_bazel_lib/2.22.0/",
     "registry": "https://bcr.bazel.build/",
     "urls": [
@@ -9,6 +10,7 @@
     "selected": "2.22.5"
   },
   "bazel_skylib": {
+    "dev_dependency": false,
     "module_url": "https://bcr.bazel.build/modules/bazel_skylib/1.9.0/",
     "registry": "https://bcr.bazel.build/",
     "urls": [
