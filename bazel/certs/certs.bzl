@@ -8,8 +8,8 @@ dependency on the consuming workspace.
 
 The generator stamps certificates with a validity window that starts on Jan 1
 of a given year, so fixtures never age out of validity. By default that year
-is read hermetically from the consumer's workspace status output (see
-`year_status_key` below); it can also be pinned directly via `year`.
+is derived from Bazel's stamped status files, with `year_status_key` acting as
+an optional override; it can also be pinned directly via `year`.
 
 See README.md in this package for the full spec file format.
 """
@@ -24,7 +24,6 @@ def generated_certs(
         gen = Label("//certs:gen"),
         year = None,
         year_status_key = "STABLE_CERT_EPOCH_YEAR",
-        fallback_to_host_year = False,
         testonly = False,
         tags = [],
         visibility = None):
@@ -57,18 +56,13 @@ def generated_certs(
       year: if set, the four digit year fixtures are stamped as starting
         from (Jan 1 of that year). Passed straight to `--year` and disables
         workspace stamping entirely. Leave unset (the default) to derive the
-        year hermetically from the workspace status output at build time.
-      year_status_key: the key looked up in `bazel-out/stable-status.txt`
-        (i.e. the `--stamp`ed workspace status) to obtain the epoch year
-        when `year` is not set. The consumer's `workspace_status_command`
-        must print a matching `<year_status_key> <YYYY>` line; see
-        README.md for details.
-      fallback_to_host_year: if true, and stamping is enabled but
-        `year_status_key` is absent from the workspace status output, fall
-        back to the (non-hermetic) host date instead of failing the build.
-        Defaults to false so that a missing workspace status key is caught
-        immediately rather than silently producing fixtures whose validity
-        window depends on when the build happened to run.
+        year from Bazel's stamped status files at build time.
+      year_status_key: optional override key looked up in
+        `bazel-out/stable-status.txt`. Consumers that want to pin the year via
+        their `workspace_status_command` may emit
+        `<year_status_key> <YYYY>`; if the key is absent the year is derived
+        from `BUILD_TIMESTAMP` in `bazel-out/volatile-status.txt`, which Bazel
+        writes for stamped builds.
       testonly: marks the generated targets as test-only.
       tags: tags applied to the generated targets.
       visibility: visibility of the generated targets.
@@ -80,19 +74,13 @@ def generated_certs(
         year_arg = "\"" + str(year) + "\""
         stamp = 0
     else:
-        fallback_cmd = (
-            "YEAR=$$(date -u +%Y);"
-            if fallback_to_host_year
-            else (
-                "echo \"missing '" + year_status_key + "' in bazel-out/stable-status.txt; " +
-                "ensure your workspace_status_command emits it (see " +
-                "@envoy_toolshed//certs:README.md)\" >&2; exit 1;"
-            )
-        )
         year_cmd = " ".join([
-            "YEAR=$$(sed -n -E 's/^" + year_status_key + " (.*)$$/\\1/p'",
-            "< bazel-out/stable-status.txt);",
-            "if [ -z \"$$YEAR\" ]; then " + fallback_cmd + " fi;",
+            "YEAR=$$(sed -n -E 's/^" + year_status_key + " ([0-9]{4})$$/\\1/p' bazel-out/stable-status.txt 2>/dev/null);",
+            "if [ -z \"$$YEAR\" ]; then",
+            "  TS=$$(sed -n -E 's/^BUILD_TIMESTAMP ([0-9]+)$$/\\1/p' bazel-out/volatile-status.txt 2>/dev/null);",
+            "  if [ -n \"$$TS\" ]; then YEAR=$$(date -u -d \"@$$TS\" +%Y 2>/dev/null || date -u -r \"$$TS\" +%Y); fi;",
+            "fi;",
+            "if [ -z \"$$YEAR\" ]; then YEAR=$$(date -u +%Y); fi;",
         ])
         year_arg = "\"$$YEAR\""
         stamp = 1
