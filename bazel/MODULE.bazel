@@ -8,7 +8,7 @@ bazel_dep(name = "abseil-cpp", version = "20260817.0")
 bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
 bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "boringssl", version = "0.20260813.0")
-bazel_dep(name = "buildifier_prebuilt", version = "10.0.1", repo_name = "buildifier")
+bazel_dep(name = "buildifier_prebuilt", version = "10.1.0", repo_name = "buildifier")
 bazel_dep(name = "envoy_toolshed_jq", version = "0.5.1-dev")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "rules_cc", version = "0.2.25")
@@ -86,9 +86,9 @@ use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_tra
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    dev_dependency = True,
     name = "llvm_source",
     build_file_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
+    dev_dependency = True,
     sha256 = "ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace",
     strip_prefix = "llvm-project-llvmorg-22.1.8",
     url = "https://github.com/llvm/llvm-project/archive/llvmorg-22.1.8.tar.gz",
