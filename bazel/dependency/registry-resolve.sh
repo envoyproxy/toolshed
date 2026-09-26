@@ -39,6 +39,17 @@ normalize_sha() {
     printf '%s\n' "$1" | run_jq -Rr 'import "bazel/registry" as registry; registry::normalize_sha'
 }
 
+require_requested_sha() {
+    local sha
+
+    if sha="$(normalize_sha "$1" 2>/dev/null)"; then
+        printf '%s\n' "$sha"
+        return
+    fi
+
+    fail "registry SHA must be a full 40-character hex commit" 2
+}
+
 read_bazelrc_sha() {
     local bazelrc="$1"
     local message
@@ -54,7 +65,10 @@ read_bazelrc_sha() {
 }
 
 collect_latest() {
-    LATEST="$(git_cmd ls-remote --exit-code "$REPO" "refs/heads/$BRANCH" | run_jq -Rsc 'import "bazel/registry" as registry; registry::ls_remote_head')"
+    local latest
+
+    latest="$(git_cmd ls-remote --exit-code "$REPO" "refs/heads/$BRANCH" | run_jq -Rrsc 'import "bazel/registry" as registry; registry::ls_remote_head')"
+    LATEST="$(normalize_sha "$latest" 2>/dev/null)" || fail "expected 40-hex commit for ${REPO} refs/heads/${BRANCH}, got '${latest}'" 1
 }
 
 collect_tags() {
@@ -63,7 +77,7 @@ collect_tags() {
 
 select_target() {
     if [[ -n "$REQUESTED_SHA" ]]; then
-        TARGET_SHA="$(normalize_sha "$REQUESTED_SHA")"
+        TARGET_SHA="$(require_requested_sha "$REQUESTED_SHA")"
         return
     fi
 
@@ -227,7 +241,7 @@ if [[ -n "$SETTINGS_FILE" ]]; then
 fi
 
 if [[ -n "$REQUESTED_SHA" ]]; then
-    REQUESTED_SHA="$(normalize_sha "$REQUESTED_SHA")"
+    REQUESTED_SHA="$(require_requested_sha "$REQUESTED_SHA")"
 fi
 
 if [[ "$MODE" == "check" ]]; then

@@ -322,7 +322,6 @@ rm -f "$$err"
         srcs = [lockfile],
         out = name + ".json",
         filter = 'import "bazel/module" as module; module::deps_json($declared; $overridden)',
-        expand_args = True,
         args = [
             "--rawfile",
             "declared",
