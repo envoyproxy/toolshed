@@ -160,6 +160,27 @@ pinned_bazelrc="${tmpdir}/pinned.bazelrc"
 write_bazelrc "${pinned_bazelrc}" "${SECOND_SHA}"
 run_check "${pinned_bazelrc}" "${stdout}" "${stderr}"
 "${JQ_BIN}" -e --arg sha "${SECOND_SHA}" '.sha == $sha and .ancestor == true and .behind == 1 and .tags == ["v0.1.0"]' "${stdout}" >/dev/null
+run_check "${pinned_bazelrc}" "${stdout}" "${stderr}" --format=markdown
+grep -F "pinned to \`${SECOND_SHA}\`, tags: v0.1.0, behind main by 1" "${stdout}" >/dev/null
+
+sha_out="${tmpdir}/sha.txt"
+json_out="${tmpdir}/out.json"
+run_resolve "${stdout}" "${stderr}" --sha-out="${sha_out}" --json-out="${json_out}"
+test ! -s "${stdout}"
+test "$(cat "${sha_out}")" = "${LATEST_SHA}"
+"${JQ_BIN}" -e --arg latest "${LATEST_SHA}" '.sha == $latest' "${json_out}" >/dev/null
+
+markdown_out="${tmpdir}/out.md"
+run_resolve "${stdout}" "${stderr}" --markdown-out="${markdown_out}"
+grep -F 'pinned to' "${markdown_out}" >/dev/null
+"${JQ_BIN}" -e --arg latest "${LATEST_SHA}" '.sha == $latest' "${stdout}" >/dev/null
+
+set +e
+run_resolve "${stdout}" "${stderr}" --format=bogus
+rc=$?
+set -e
+assert_exit_code 1 "${rc}"
+grep -F 'Unknown format' "${stderr}" >/dev/null
 
 stray_bazelrc="${tmpdir}/stray.bazelrc"
 write_bazelrc "${stray_bazelrc}" "${STRAY_SHA}"
