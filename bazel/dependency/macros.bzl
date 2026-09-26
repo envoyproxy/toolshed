@@ -153,21 +153,58 @@ def registry_updater(
         **kwargs
     )
 
-def module_deps_json(name, lockfile, visibility = None):
-    """Generate dependency JSON from a MODULE.bazel.lock file.
+def module_deps_json(
+        name,
+        lockfile,
+        module_file,
+        buildozer = "@buildifier//:buildozer",
+        visibility = None):
+    """Generate dependency JSON from MODULE.bazel and MODULE.bazel.lock.
 
     Args:
         name: Name of the generated target.
         lockfile: Label for the lockfile to read.
+        module_file: Label for the MODULE.bazel file to read declared deps from.
+        buildozer: buildozer binary used to read bazel_dep declarations.
         visibility: Optional target visibility.
     """
+    native.genrule(
+        name = name + "_declared",
+        srcs = [module_file],
+        outs = [name + ".declared.txt"],
+        tools = [buildozer],
+        cmd = """
+set -euo pipefail
+err="$(@D)/%s.declared.err"
+status=0
+RUNFILES_DIR="$(execpath %s).runfiles" "$(execpath %s)" 'print name version' "$(location %s):%%bazel_dep" > "$@" 2>"$$err" || status=$$?
+if [ "$$status" -eq 3 ]; then
+  : > "$@"
+elif [ "$$status" -ne 0 ]; then
+  cat "$$err" >&2
+  exit "$$status"
+fi
+rm -f "$$err"
+""" % (name, buildozer, buildozer, module_file),
+    )
+
     jq(
         name = name,
         srcs = [lockfile],
         out = name + ".json",
         filter_file = "//dependency:module_deps_json.jq",
-        args = ["-L", "dependency"],
-        data = ["//dependency:jq_libs"],
+        expand_args = True,
+        args = [
+            "--rawfile",
+            "declared",
+            "$(location :%s_declared)" % name,
+            "-L",
+            "dependency",
+        ],
+        data = [
+            ":" + name + "_declared",
+            "//dependency:jq_libs",
+        ],
         visibility = visibility,
     )
 

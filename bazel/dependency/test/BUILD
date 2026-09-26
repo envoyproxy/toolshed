@@ -150,6 +150,7 @@ diff_test(
 module_deps_json(
     name = "module_deps_json_fixture",
     lockfile = "testdata/module/MODULE.bazel.lock",
+    module_file = "testdata/module/MODULE.deps_json.bazel",
 )
 
 diff_test(
@@ -164,6 +165,34 @@ sh_test(
     srcs = ["module_deps_json_duplicate_test.sh"],
     data = [
         "testdata/module/MODULE.duplicate.lock",
+        "//dependency:jq_libs",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+    env = {"JQ_BIN": "$(JQ_BIN)"},
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+sh_test(
+    name = "module_deps_json_missing_lock_test",
+    size = "small",
+    srcs = ["module_deps_json_missing_lock_test.sh"],
+    data = [
+        "testdata/module/MODULE.bazel.lock",
+        "testdata/module/module_deps_missing_lock.declared.txt",
+        "//dependency:jq_libs",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+    env = {"JQ_BIN": "$(JQ_BIN)"},
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+sh_test(
+    name = "module_deps_json_missing_version_test",
+    size = "small",
+    srcs = ["module_deps_json_missing_version_test.sh"],
+    data = [
+        "testdata/module/MODULE.bazel.lock",
+        "testdata/module/module_deps_missing_version.declared.txt",
         "//dependency:jq_libs",
         "@jq_toolchains//:resolved_toolchain",
     ],

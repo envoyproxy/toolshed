@@ -73,6 +73,7 @@ registry_updater(
 module_deps_json(
     name = "toolshed_module_deps",
     lockfile = "//:MODULE.bazel.lock",
+    module_file = "//:MODULE.bazel",
     visibility = ["//visibility:private"],
 )
 
