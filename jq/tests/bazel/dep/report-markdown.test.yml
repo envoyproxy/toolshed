@@ -1,0 +1,39 @@
+name: bazel/dep report_markdown renders table with dev deps last
+
+input:
+  zlib:
+    current: 1.3.1
+    current_registry: https://bcr.bazel.build/
+    dev_dependency: true
+    latest: 1.3.2
+    update_available: true
+  protobuf:
+    current: "35.1"
+    current_registry: null
+    latest: null
+    update_available: false
+  aspect_bazel_lib:
+    current: 2.22.0
+    current_registry: https://bcr.bazel.build/
+    dev_dependency: false
+    latest: 2.22.5
+    update_available: true
+  abseil-cpp:
+    current: 20250127.1
+    current_registry: https://bcr.bazel.build/
+    dev_dependency: true
+    latest: 20250127.1
+    update_available: false
+
+imports:
+- bazel/dep
+expression: 'dep::report_markdown'
+expected: |-
+  Outdated dependencies: 1 (dev: 1)
+
+  | Dependency | Current | Latest | Registry | Update? |
+  | --- | --- | --- | --- | --- |
+  | aspect_bazel_lib | 2.22.0 | 2.22.5 | https://bcr.bazel.build/ | ✅ |
+  | protobuf | 35.1 | — | — | — |
+  | abseil-cpp _(dev)_ | 20250127.1 | 20250127.1 | https://bcr.bazel.build/ | — |
+  | zlib _(dev)_ | 1.3.1 | 1.3.2 | https://bcr.bazel.build/ | ✅ |

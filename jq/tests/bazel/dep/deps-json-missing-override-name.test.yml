@@ -2,7 +2,7 @@ name: bazel/dep deps_json errors on missing override module_name
 
 input:
   declared: |
-    aspect_bazel_lib 2.22.0
+    aspect_bazel_lib 2.22.0 (missing)
   overridden: |
     (missing)
   lockfile:

@@ -4,7 +4,7 @@ set -euo pipefail
 usage() {
   cat <<'EOF_USAGE'
 Usage:
-  module-update.sh <MODULE.bazel> <deps.json> [--bazelrc=<path>] [--registry=<url>]... --report [--json-out=<path>] [--fail-on-outdated]
+  module-update.sh <MODULE.bazel> <deps.json> [--bazelrc=<path>] [--registry=<url>]... --report [--format=json|markdown] [--json-out=<path>] [--markdown-out=<path>] [--fail-on-outdated] [--fail-on-outdated-dev]
   module-update.sh <MODULE.bazel> <deps.json> <dep>[=<version>] [--registry=<url>] [--allow-yanked]
 EOF_USAGE
 }
@@ -89,8 +89,11 @@ BUILDOZER="${BUILDOZER:-}"
 JQ_DIR="$(dirname "$TOOLSHED_JQ_ROOT")"
 REPORT=0
 FAIL_ON_OUTDATED=0
+FAIL_ON_OUTDATED_DEV=0
 ALLOW_YANKED=false
+FORMAT=json
 JSON_OUT=""
+MARKDOWN_OUT=""
 BAZELRC="${MODULE_UPDATER_BAZELRC:-/dev/null}"
 DEP=""
 REQUESTED_VERSION=""
@@ -103,9 +106,14 @@ while (($#)); do
   case "$1" in
     --report) REPORT=1 ;;
     --fail-on-outdated) FAIL_ON_OUTDATED=1 ;;
+    --fail-on-outdated-dev) FAIL_ON_OUTDATED_DEV=1 ;;
     --allow-yanked) ALLOW_YANKED=true ;;
+    --format=*) FORMAT="${1#*=}" ;;
+    --format) FORMAT="$2"; shift ;;
     --json-out=*) JSON_OUT="${1#*=}" ;;
     --json-out) JSON_OUT="$2"; shift ;;
+    --markdown-out=*) MARKDOWN_OUT="${1#*=}" ;;
+    --markdown-out) MARKDOWN_OUT="$2"; shift ;;
     --bazelrc=*) BAZELRC="${1#*=}" ;;
     --bazelrc) BAZELRC="$2"; shift ;;
     --registry=*)
@@ -127,6 +135,10 @@ while (($#)); do
   shift
 done
 [[ -n "$DEP" ]] || REPORT=1
+case "$FORMAT" in
+  json|markdown) ;;
+  *) echo "Unknown format: $FORMAT" >&2; exit 1 ;;
+esac
 [[ "$DEP" == *=* ]] && REQUESTED_VERSION="${DEP#*=}" DEP="${DEP%%=*}"
 EXTRA_JSON="$($JQ -Rsc 'split("\n") | map(select(length > 0))' <"$TMPDIR/extra_registries")"
 REGISTRIES_JSON="$($JQ -Rsc -L "$JQ_DIR" --argjson extra "$EXTRA_JSON" 'import "bazel/dep" as dep; dep::registries_from_args' <"$BAZELRC")"
@@ -175,11 +187,24 @@ REPORT_JSON="$($JQ -n -L "$JQ_DIR" --argjson deps "$(cat "$DEP_DATA")" --argjson
 if (( REPORT == 1 )); then
   if [[ -n "$JSON_OUT" ]]; then
     printf '%s\n' "$REPORT_JSON" >"$JSON_OUT"
-  else
+  fi
+  REPORT_MD=""
+  if [[ -n "$MARKDOWN_OUT" || "$FORMAT" == markdown ]]; then
+    REPORT_MD="$($JQ -r -L "$JQ_DIR" 'import "bazel/dep" as dep; dep::report_markdown' <<<"$REPORT_JSON")"
+    if [[ -n "$MARKDOWN_OUT" ]]; then
+      printf '%s\n' "$REPORT_MD" >"$MARKDOWN_OUT"
+    fi
+  fi
+  if [[ "$FORMAT" == markdown ]]; then
+    printf '%s\n' "$REPORT_MD"
+  elif [[ -z "$JSON_OUT" ]]; then
     printf '%s\n' "$REPORT_JSON"
   fi
 
-  if (( FAIL_ON_OUTDATED == 1 )) && $JQ -e 'any(.[]; .update_available)' <<<"$REPORT_JSON" >/dev/null; then
+  if (( FAIL_ON_OUTDATED == 1 )) && $JQ -e 'any(.[]; .update_available == true and ((.dev_dependency // false) | not))' <<<"$REPORT_JSON" >/dev/null; then
+    exit 1
+  fi
+  if (( FAIL_ON_OUTDATED_DEV == 1 )) && $JQ -e 'any(.[]; .update_available == true and (.dev_dependency // false))' <<<"$REPORT_JSON" >/dev/null; then
     exit 1
   fi
   exit 0
