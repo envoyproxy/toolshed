@@ -18,8 +18,10 @@ else
 fi
 
 err="$(mktemp)"
-trap 'rm -f "${err}"' EXIT
-if "${JQ_BIN}" -L "${JQ_DIR}" -f "${FILTER}" "${LOCKFILE}" >/dev/null 2>"${err}"; then
+declared="$(mktemp)"
+trap 'rm -f "${declared}" "${err}"' EXIT
+printf 'protobuf 35.2.bcr.envoy\n' >"${declared}"
+if "${JQ_BIN}" --rawfile declared "${declared}" -L "${JQ_DIR}" -f "${FILTER}" "${LOCKFILE}" >/dev/null 2>"${err}"; then
   echo "expected duplicate lockfile parse to fail" >&2
   exit 1
 fi
