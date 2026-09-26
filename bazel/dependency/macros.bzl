@@ -188,6 +188,48 @@ rm -f "$$err"
 """ % (name, buildozer, buildozer, module_file),
     )
 
+    native.genrule(
+        name = name + "_overridden",
+        srcs = [module_file],
+        outs = [name + ".overridden.txt"],
+        tools = [buildozer],
+        cmd = """
+set -euo pipefail
+: > "$@"
+err="$(@D)/%s.overridden.err"
+status=0
+RUNFILES_DIR="$(execpath %s).runfiles" "$(execpath %s)" 'print module_name' "$(location %s):%%local_path_override" >> "$@" 2>"$$err" || status=$$?
+if [ "$$status" -ne 0 ] && [ "$$status" -ne 3 ]; then
+  cat "$$err" >&2
+  exit "$$status"
+fi
+status=0
+RUNFILES_DIR="$(execpath %s).runfiles" "$(execpath %s)" 'print module_name' "$(location %s):%%git_override" >> "$@" 2>"$$err" || status=$$?
+if [ "$$status" -ne 0 ] && [ "$$status" -ne 3 ]; then
+  cat "$$err" >&2
+  exit "$$status"
+fi
+status=0
+RUNFILES_DIR="$(execpath %s).runfiles" "$(execpath %s)" 'print module_name' "$(location %s):%%archive_override" >> "$@" 2>"$$err" || status=$$?
+if [ "$$status" -ne 0 ] && [ "$$status" -ne 3 ]; then
+  cat "$$err" >&2
+  exit "$$status"
+fi
+rm -f "$$err"
+""" % (
+            name,
+            buildozer,
+            buildozer,
+            module_file,
+            buildozer,
+            buildozer,
+            module_file,
+            buildozer,
+            buildozer,
+            module_file,
+        ),
+    )
+
     jq(
         name = name,
         srcs = [lockfile],
@@ -198,11 +240,15 @@ rm -f "$$err"
             "--rawfile",
             "declared",
             "$(location :%s_declared)" % name,
+            "--rawfile",
+            "overridden",
+            "$(location :%s_overridden)" % name,
             "-L",
             "dependency",
         ],
         data = [
             ":" + name + "_declared",
+            ":" + name + "_overridden",
             "//dependency:jq_libs",
         ],
         visibility = visibility,

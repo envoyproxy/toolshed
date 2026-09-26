@@ -12,6 +12,15 @@ def parse_declared:
         end)
   | add // {};
 
+def parse_overridden:
+  split("\n")
+  | map(select(length > 0)
+      | if . == "(missing)" then
+          error("Override is missing module_name in MODULE.bazel")
+        else
+          .
+        end);
+
 def parse_lockfile:
   .registryFileHashes // {}
   | keys
@@ -35,22 +44,27 @@ def module_url($registry; $name; $version):
   $registry + "modules/" + $name + "/" + $version + "/";
 
 ($declared | parse_declared) as $declared_deps
+| ($overridden | parse_overridden) as $overridden_deps
 | (parse_lockfile) as $lockfile_deps
 | $declared_deps
 | to_entries
 | map(. as $dep
-    | ($lockfile_deps[$dep.key] // error("Declared dependency \($dep.key) not found in MODULE.bazel.lock; regenerate the lockfile")) as $lockfile_dep
-    | (module_url($lockfile_dep.registry; $dep.key; $dep.value)) as $module_url
-    | {
-        ($dep.key): ({
-          module_url: $module_url,
-          registry: $lockfile_dep.registry,
-          urls: [$module_url],
-          version: $dep.value,
-        } + if $lockfile_dep.version != $dep.value then
-              {selected: $lockfile_dep.version}
-            else
-              {}
-            end),
-      })
+    | if ($overridden_deps | index($dep.key)) != null then
+        empty
+      else
+        ($lockfile_deps[$dep.key] // error("Declared dependency \($dep.key) not found in MODULE.bazel.lock; regenerate the lockfile")) as $lockfile_dep
+        | (module_url($lockfile_dep.registry; $dep.key; $dep.value)) as $module_url
+        | {
+            ($dep.key): ({
+              module_url: $module_url,
+              registry: $lockfile_dep.registry,
+              urls: [$module_url],
+              version: $dep.value,
+            } + if $lockfile_dep.version != $dep.value then
+                  {selected: $lockfile_dep.version}
+                else
+                  {}
+                end),
+          }
+      end)
 | add // {}

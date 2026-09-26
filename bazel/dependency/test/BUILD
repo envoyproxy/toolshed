@@ -201,6 +201,19 @@ sh_test(
 )
 
 sh_test(
+    name = "module_deps_json_missing_override_module_name_test",
+    size = "small",
+    srcs = ["module_deps_json_missing_override_module_name_test.sh"],
+    data = [
+        "testdata/module/MODULE.bazel.lock",
+        "//dependency:jq_libs",
+        "@jq_toolchains//:resolved_toolchain",
+    ],
+    env = {"JQ_BIN": "$(JQ_BIN)"},
+    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+)
+
+sh_test(
     name = "module_updater_failure_test",
     size = "small",
     srcs = ["module_updater_failure_test.sh"],

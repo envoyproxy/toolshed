@@ -20,8 +20,10 @@ else
 fi
 
 err="$(mktemp)"
-trap 'rm -f "${err}"' EXIT
-if "${JQ_BIN}" --rawfile declared "${DECLARED}" -L "${JQ_DIR}" -f "${FILTER}" "${LOCKFILE}" >/dev/null 2>"${err}"; then
+overridden="$(mktemp)"
+trap 'rm -f "${overridden}" "${err}"' EXIT
+: >"${overridden}"
+if "${JQ_BIN}" --rawfile declared "${DECLARED}" --rawfile overridden "${overridden}" -L "${JQ_DIR}" -f "${FILTER}" "${LOCKFILE}" >/dev/null 2>"${err}"; then
   echo "expected missing declared version parse to fail" >&2
   exit 1
 fi

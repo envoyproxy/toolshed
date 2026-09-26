@@ -88,7 +88,10 @@ from the `bazel_dep(...)` calls in `module_file` via hermetic `buildozer`, the
 registry hint comes from the lockfile, and a `selected` field is emitted when
 MVS selected a different version than the one declared in `module_file`. It
 fails if the lockfile reports more than one selected version for the same
-module.
+module. Dependencies with a `local_path_override(...)`, `git_override(...)`, or
+`archive_override(...)` are excluded because they are not registry-resolved and
+cannot be updated by this tool; `single_version_override(...)` deps are still
+included.
 
 Consumers that derive dependency JSON from the lockfile alone, such as
 envoy's `@envoy_mod_graph//:deps.json`, will over-report transitive modules and
