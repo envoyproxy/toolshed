@@ -17,6 +17,7 @@ toolshed_library(
         "//py/deps:reqs#sphinxcontrib-httpdomain",
         "//py/deps:reqs#sphinxcontrib-serializinghtml",
         "//py/deps:reqs#sphinxext-rediraffe",
+        "//py/deps:reqs#types-docutils",
         "//py/deps:reqs#types-pygments",
     ],
     sources=[
