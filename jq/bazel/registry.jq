@@ -90,6 +90,10 @@ def check_output($sha; $ancestor; $tags; $latest; $behind):
     behind: $behind,
   };
 
+def check_markdown:
+  (.tags | if length == 0 then "none" else join(", ") end) as $tags
+  | "pinned to `\(.sha)`, tags: \($tags), behind main by \((.behind // 0))";
+
 def bazelrc_pin_from_args: bazelrc_pin($ARGS.named.url);
 def select_release_from_args: select_release($ARGS.named.glob);
 def select_release_sha_from_args: . as $tags | ($tags | select_release($ARGS.named.glob)) as $tag | ($tags[$tag] | normalize_sha);

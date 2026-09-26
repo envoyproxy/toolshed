@@ -2,7 +2,7 @@ name: bazel/dep deps_json errors on duplicate lockfile entries
 
 input:
   declared: |
-    protobuf 35.2.bcr.envoy
+    protobuf 35.2.bcr.envoy (missing)
   overridden: |
   lockfile:
     registryFileHashes:

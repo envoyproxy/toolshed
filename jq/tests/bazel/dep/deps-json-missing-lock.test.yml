@@ -2,7 +2,7 @@ name: bazel/dep deps_json errors on stale lockfile
 
 input:
   declared: |
-    sq 1.0.0
+    sq 1.0.0 True
   overridden: |
   lockfile:
     registryFileHashes:
