@@ -8,7 +8,7 @@ def parse_declared:
         elif $fields[1] == "(missing)" then
           error("Declared dependency \($fields[0]) is missing version in MODULE.bazel")
         else
-          {($fields[0]): $fields[1]}
+          {($fields[0]): {version: $fields[1], dev: (($fields[2] // "False") == "True")}}
         end)
   | add // {};
 
@@ -55,14 +55,15 @@ def deps_json($declared; $overridden):
           empty
         else
           ($lockfile_deps[$dep.key] // error("Declared dependency \($dep.key) not found in MODULE.bazel.lock; regenerate the lockfile")) as $lockfile_dep
-          | (module_url($lockfile_dep.registry; $dep.key; $dep.value)) as $resolved_module_url
+          | (module_url($lockfile_dep.registry; $dep.key; $dep.value.version)) as $resolved_module_url
           | {
               ($dep.key): ({
+                dev_dependency: $dep.value.dev,
                 module_url: $resolved_module_url,
                 registry: $lockfile_dep.registry,
                 urls: [$resolved_module_url],
-                version: $dep.value,
-              } + if $lockfile_dep.version != $dep.value then
+                version: $dep.value.version,
+              } + if $lockfile_dep.version != $dep.value.version then
                     {selected: $lockfile_dep.version}
                   else
                     {}
@@ -120,6 +121,7 @@ def report($deps; $registries; $metadata):
       | {($dep.key): {
           current: $dep.value.version,
           current_registry: ($current_registry // null),
+          dev_dependency: ($dep.value.dev_dependency // false),
           selected: ($dep.value.selected // null),
           registries: ($report_registries | from_entries),
           latest_by_registry: $latest_by_registry,
@@ -130,6 +132,22 @@ def report($deps; $registries; $metadata):
         }}
     )
   | add // {};
+
+def report_markdown:
+  to_entries
+  | sort_by([.value.dev_dependency // false, .key]) as $deps
+  | ($deps | map(select(.value.update_available == true and ((.value.dev_dependency // false) | not))) | length) as $outdated
+  | ($deps | map(select(.value.update_available == true and (.value.dev_dependency // false))) | length) as $outdated_dev
+  | [
+      "Outdated dependencies: \($outdated) (dev: \($outdated_dev))",
+      "",
+      "| Dependency | Current | Latest | Registry | Update? |",
+      "| --- | --- | --- | --- | --- |",
+      ($deps[]
+       | .value as $v
+       | "| \(.key)\(if $v.dev_dependency then " _(dev)_" else "" end) | \($v.current // "—") | \($v.latest // "—") | \($v.current_registry // "—") | \(if $v.update_available == true then "✅" else "—" end) |")
+    ]
+  | join("\n");
 
 def error_result($message): {error: $message};
 

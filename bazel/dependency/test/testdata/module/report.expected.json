@@ -3,6 +3,7 @@
     "cross_registry_update_available": false,
     "current": "2.22.0",
     "current_registry": "REGISTRY_BCR/",
+    "dev_dependency": false,
     "latest": "2.22.5",
     "latest_any": "2.22.5",
     "latest_by_registry": {
@@ -25,6 +26,7 @@
     "cross_registry_update_available": false,
     "current": "1.8.0",
     "current_registry": "REGISTRY_BCR/",
+    "dev_dependency": false,
     "latest": "1.9.0",
     "latest_any": "1.9.0",
     "latest_by_registry": {
@@ -49,6 +51,7 @@
     "cross_registry_update_available": false,
     "current": "0.1.0",
     "current_registry": null,
+    "dev_dependency": false,
     "latest": null,
     "latest_any": null,
     "latest_by_registry": {},
@@ -60,6 +63,7 @@
     "cross_registry_update_available": true,
     "current": "35.1.bcr.envoy",
     "current_registry": "REGISTRY_ENVOY/",
+    "dev_dependency": false,
     "latest": "35.2.bcr.envoy",
     "latest_any": "36.0",
     "latest_by_registry": {
@@ -89,6 +93,7 @@
     "cross_registry_update_available": false,
     "current": "1.4.0.envoy",
     "current_registry": "REGISTRY_ENVOY/",
+    "dev_dependency": true,
     "latest": "1.5.0.envoy",
     "latest_any": "1.5.0.envoy",
     "latest_by_registry": {
