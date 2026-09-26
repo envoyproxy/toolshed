@@ -1,0 +1,11 @@
+name: bazel/version orders .bcr suffixes numerically
+
+input:
+  left: "35.1.bcr.10"
+  right: "35.1.bcr.2"
+
+imports:
+- bazel/version
+before: '.left as $left | .right as $right'
+expression: 'version::compare_versions($left; $right)'
+expected: 1

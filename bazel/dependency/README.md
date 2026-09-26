@@ -56,22 +56,17 @@ toolchain rather than host binaries.
   latest target.
 - `//dependency:registry_allow_unsafe`: bypass ancestor verification with a
   warning.
-- `//dependency:registry_cache_ttl`: TTL in seconds for runnable-side cache
-  reuse. `0` disables caching.
 
 From a consumer repository, pass them with the toolshed repo qualifier:
 
 ```bash
-bazel run @envoy_toolshed//dependency:update_registry \
-  --@envoy_toolshed//dependency:registry_sha=0123456789abcdef0123456789abcdef01234567
+bazel run @envoy_toolshed//dependency:update_registry   --@envoy_toolshed//dependency:registry_sha=0123456789abcdef0123456789abcdef01234567
 ```
 
 or to bypass verification explicitly:
 
 ```bash
-bazel run @envoy_toolshed//dependency:update_registry \
-  --@envoy_toolshed//dependency:registry_sha=0123456789abcdef0123456789abcdef01234567 \
-  --@envoy_toolshed//dependency:registry_allow_unsafe=true
+bazel run @envoy_toolshed//dependency:update_registry   --@envoy_toolshed//dependency:registry_sha=0123456789abcdef0123456789abcdef01234567   --@envoy_toolshed//dependency:registry_allow_unsafe=true
 ```
 
 ### Resolve semantics
@@ -82,8 +77,9 @@ registry URLs on the CLI.
 - If `registry_sha` is empty and `release_tags` is `None`, the target is the
   current head of `branch`.
 - If `registry_sha` is empty and `release_tags` is set, the target is the
-  highest matching tag, ordered with `version.jq` after stripping a leading `v`.
-- If `registry_sha` is set, it must be a full 40-character lowercase hex SHA.
+  highest matching tag, ordered with `bazel/version.jq` after stripping a
+  leading `v`.
+- If `registry_sha` is set, it must be a full 40-character hex SHA.
 
 When the target differs from the current branch head, the resolver performs a
 commit-only fetch of `branch` and refuses non-ancestor SHAs with exit code `2`
@@ -111,14 +107,6 @@ Exit codes:
 
 If `allow_unsafe` is set, `.resolve` and `.check` still print JSON but emit a
 `WARNING:` line on stderr when verification is bypassed.
-
-### TTL behavior
-
-`registry_cache_ttl` applies only to `<name>.resolve` and `<name>.check`. Those
-runnables may reuse cached JSON under `$XDG_CACHE_HOME/envoy_toolshed/registry`
-(or `$HOME/.cache/...`) while the entry is younger than the TTL. The build
-action behind `<name>` always resolves over the network and keeps Bazel's action
-graph stateless.
 
 ### Consumer example
 

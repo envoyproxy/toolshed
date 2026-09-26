@@ -25,7 +25,7 @@ which consumer happens to call it. The directory name is the scope:
 | Directory | Scope |
 |---|---|
 | `github/` | GitHub API / Actions / GFM-shaped input or output (`actions.jq`, `gfm.jq`) |
-| `bazel/` | Bazel `aquery`/BEP/`BUILD`-shaped data (`aquery.jq`) |
+| `bazel/` | Bazel `aquery`/BEP/`BUILD`-shaped data (`aquery.jq`, `module.jq`, `registry.jq`, `version.jq`) |
 | `clang/` | clang tooling output (`tidy.jq`, clang-tidy stdout parsing) |
 | `envoy/` | reserved for Envoy release/archive policy filters (not added yet) |
 | root | generic helpers with no domain-specific knowledge (`args.jq`, `bash.jq`, `str.jq`, `utils.jq`, `validate.jq`) |

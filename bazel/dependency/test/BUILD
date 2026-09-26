@@ -29,52 +29,6 @@ sh_test(
     toolchains = ["@jq_toolchains//:resolved_toolchain"],
 )
 
-sh_test(
-    name = "version_jq_test",
-    size = "small",
-    srcs = ["version_jq_test.sh"],
-    data = [
-        "//dependency:jq_libs",
-        "version_compare.jq",
-        "version_sort.jq",
-        "@jq_toolchains//:resolved_toolchain",
-    ],
-    env = {"JQ_BIN": "$(JQ_BIN)"},
-    toolchains = ["@jq_toolchains//:resolved_toolchain"],
-)
-
-genrule(
-    name = "registries_json",
-    srcs = [
-        "testdata/module/report.bazelrc.template",
-        "testdata/module/registry_bcr/REGISTRY_MARKER",
-        "testdata/module/registry_envoy/REGISTRY_MARKER",
-        "//dependency:registries.jq",
-    ],
-    outs = ["registries.json"],
-    cmd = """
-set -euo pipefail
-bcr_root="$$(dirname $(execpath testdata/module/registry_bcr/REGISTRY_MARKER))"
-envoy_root="$$(dirname $(execpath testdata/module/registry_envoy/REGISTRY_MARKER))"
-sed \
-  -e "s|__REGISTRY_BCR__|$$bcr_root|g" \
-  -e "s|__REGISTRY_ENVOY__|$$envoy_root|g" \
-  $(execpath testdata/module/report.bazelrc.template) \
-  | $(execpath @jq_toolchains//:resolved_toolchain) -Rsc --argjson extra '[]' -f $(execpath //dependency:registries.jq) \
-  | $(execpath @jq_toolchains//:resolved_toolchain) -S . \
-  | sed \
-  -e "s|$$bcr_root/|REGISTRY_BCR/|g" \
-  -e "s|$$envoy_root/|REGISTRY_ENVOY/|g" > "$@"
-""",
-    tools = ["@jq_toolchains//:resolved_toolchain"],
-)
-
-diff_test(
-    name = "registries_jq_test",
-    file1 = ":registries_json",
-    file2 = "testdata/module/registries.expected.json",
-)
-
 module_updater_fixture(
     name = "module_update_bazel_skylib",
     out = "module_update_bazel_skylib.bazel",
@@ -160,60 +114,6 @@ diff_test(
 )
 
 sh_test(
-    name = "module_deps_json_duplicate_test",
-    size = "small",
-    srcs = ["module_deps_json_duplicate_test.sh"],
-    data = [
-        "testdata/module/MODULE.duplicate.lock",
-        "//dependency:jq_libs",
-        "@jq_toolchains//:resolved_toolchain",
-    ],
-    env = {"JQ_BIN": "$(JQ_BIN)"},
-    toolchains = ["@jq_toolchains//:resolved_toolchain"],
-)
-
-sh_test(
-    name = "module_deps_json_missing_lock_test",
-    size = "small",
-    srcs = ["module_deps_json_missing_lock_test.sh"],
-    data = [
-        "testdata/module/MODULE.bazel.lock",
-        "testdata/module/module_deps_missing_lock.declared.txt",
-        "//dependency:jq_libs",
-        "@jq_toolchains//:resolved_toolchain",
-    ],
-    env = {"JQ_BIN": "$(JQ_BIN)"},
-    toolchains = ["@jq_toolchains//:resolved_toolchain"],
-)
-
-sh_test(
-    name = "module_deps_json_missing_version_test",
-    size = "small",
-    srcs = ["module_deps_json_missing_version_test.sh"],
-    data = [
-        "testdata/module/MODULE.bazel.lock",
-        "testdata/module/module_deps_missing_version.declared.txt",
-        "//dependency:jq_libs",
-        "@jq_toolchains//:resolved_toolchain",
-    ],
-    env = {"JQ_BIN": "$(JQ_BIN)"},
-    toolchains = ["@jq_toolchains//:resolved_toolchain"],
-)
-
-sh_test(
-    name = "module_deps_json_missing_override_module_name_test",
-    size = "small",
-    srcs = ["module_deps_json_missing_override_module_name_test.sh"],
-    data = [
-        "testdata/module/MODULE.bazel.lock",
-        "//dependency:jq_libs",
-        "@jq_toolchains//:resolved_toolchain",
-    ],
-    env = {"JQ_BIN": "$(JQ_BIN)"},
-    toolchains = ["@jq_toolchains//:resolved_toolchain"],
-)
-
-sh_test(
     name = "module_updater_failure_test",
     size = "small",
     srcs = ["module_updater_failure_test.sh"],
@@ -228,14 +128,16 @@ sh_test(
         "testdata/module/registry_envoy/modules/protobuf/metadata.json",
         "testdata/module/registry_envoy/modules/sq/metadata.json",
         "testdata/module/report.bazelrc.template",
-        "//dependency:jq_libs",
         "//dependency:module-update.sh",
         "@buildifier//:buildozer",
+        "@envoy_toolshed_jq//:modules",
+        "@envoy_toolshed_jq//:modules_root.marker",
         "@jq_toolchains//:resolved_toolchain",
     ],
     env = {
         "BUILDOZER": "$(rootpath @buildifier//:buildozer)",
         "JQ_BIN": "$(JQ_BIN)",
+        "TOOLSHED_JQ_ROOT": "$(rootpath @envoy_toolshed_jq//:modules_root.marker)",
     },
     toolchains = ["@jq_toolchains//:resolved_toolchain"],
 )
@@ -245,11 +147,15 @@ sh_test(
     size = "medium",
     srcs = ["module_updater_live_test.sh"],
     data = [
-        "//dependency:jq_libs",
         "//dependency:module-update.sh",
+        "@envoy_toolshed_jq//:modules",
+        "@envoy_toolshed_jq//:modules_root.marker",
         "@jq_toolchains//:resolved_toolchain",
     ],
-    env = {"JQ_BIN": "$(JQ_BIN)"},
+    env = {
+        "JQ_BIN": "$(JQ_BIN)",
+        "TOOLSHED_JQ_ROOT": "$(rootpath @envoy_toolshed_jq//:modules_root.marker)",
+    },
     tags = [
         "external",
         "manual",
@@ -296,17 +202,16 @@ sh_test(
     srcs = ["registry_resolve_test.sh"],
     data = [
         ":registry_test_git",
-        "//dependency:jq_libs",
         "//dependency:registry-resolve.sh",
-        "//dependency:version.jq",
+        "@envoy_toolshed_jq//:modules",
+        "@envoy_toolshed_jq//:modules_root.marker",
         "@jq_toolchains//:resolved_toolchain",
     ],
     env = {
         "GIT_BIN": "$(rootpath :registry_test_git)",
         "JQ_BIN": "$(JQ_BIN)",
-        "REGISTRY_JQ_LIB": "$(rootpath //dependency:version.jq)",
+        "TOOLSHED_JQ_ROOT": "$(rootpath @envoy_toolshed_jq//:modules_root.marker)",
     },
-    tags = ["manual"],
     toolchains = ["@jq_toolchains//:resolved_toolchain"],
 )
 

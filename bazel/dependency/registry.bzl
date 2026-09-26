@@ -36,6 +36,7 @@ fi
 exec "$runfiles/{git}" "$@"
 """
 
+
 def _runfile_path(ctx, file_):
     if file_.short_path.startswith("../"):
         return file_.short_path[3:]
@@ -86,16 +87,14 @@ def _json_string(value):
 def _registry_settings_impl(ctx):
     requested_sha = ctx.attr._sha[BuildSettingInfo].value
     allow_unsafe = "true" if ctx.attr._allow_unsafe[BuildSettingInfo].value else "false"
-    cache_ttl = ctx.attr._cache_ttl[BuildSettingInfo].value
     output = ctx.actions.declare_file(ctx.label.name + ".json")
     ctx.actions.write(
         output,
         """{
   \"requested_sha\": \"%s\",
-  \"allow_unsafe\": %s,
-  \"cache_ttl\": \"%s\"
+  \"allow_unsafe\": %s
 }
-""" % (_json_string(requested_sha), allow_unsafe, _json_string(cache_ttl)),
+""" % (_json_string(requested_sha), allow_unsafe),
     )
     return [DefaultInfo(files = depset([output]))]
 
@@ -104,7 +103,6 @@ registry_settings = rule(
     implementation = _registry_settings_impl,
     attrs = {
         "_allow_unsafe": attr.label(default = Label("//dependency:registry_allow_unsafe")),
-        "_cache_ttl": attr.label(default = Label("//dependency:registry_cache_ttl")),
         "_sha": attr.label(default = Label("//dependency:registry_sha")),
     },
 )
@@ -114,7 +112,6 @@ def _registry_resolve_impl(ctx):
     git_info = ctx.toolchains[GIT_TOOLCHAIN_TYPE].git
     requested_sha = ctx.attr._sha[BuildSettingInfo].value
     allow_unsafe = ctx.attr._allow_unsafe[BuildSettingInfo].value
-    _cache_ttl = ctx.attr._cache_ttl[BuildSettingInfo].value
     out = ctx.actions.declare_file(ctx.label.name + ".json")
 
     arguments = [
@@ -127,7 +124,7 @@ def _registry_resolve_impl(ctx):
         "--json-out=%s" % out.path,
         "--git-bin=%s" % git_info.git.path,
         "--jq-bin=%s" % ctx.executable._jq.path,
-        "--jq-lib=%s" % ctx.file._version_jq.path,
+        "--jq-root=%s" % ctx.file._jq_root_marker.path,
     ]
     if ctx.attr.release_tags:
         arguments.append("--release-tags=%s" % ctx.attr.release_tags)
@@ -135,7 +132,7 @@ def _registry_resolve_impl(ctx):
     ctx.actions.run(
         executable = ctx.executable._registry_resolve,
         arguments = arguments,
-        inputs = depset(ctx.files._jq_libs),
+        inputs = depset([ctx.file._jq_root_marker], transitive = [depset(ctx.files._jq_libs)]),
         outputs = [out],
         tools = depset(
             [ctx.executable._jq, git_info.git],
@@ -152,7 +149,6 @@ registry_resolve = rule(
     implementation = _registry_resolve_impl,
     attrs = {
         "_allow_unsafe": attr.label(default = Label("//dependency:registry_allow_unsafe")),
-        "_cache_ttl": attr.label(default = Label("//dependency:registry_cache_ttl")),
         "_jq": attr.label(
             allow_single_file = True,
             cfg = "exec",
@@ -161,7 +157,11 @@ registry_resolve = rule(
         ),
         "_jq_libs": attr.label(
             allow_files = True,
-            default = Label("//dependency:jq_libs"),
+            default = Label("@envoy_toolshed_jq//:modules"),
+        ),
+        "_jq_root_marker": attr.label(
+            allow_single_file = True,
+            default = Label("@envoy_toolshed_jq//:modules_root.marker"),
         ),
         "_registry_resolve": attr.label(
             allow_single_file = True,
@@ -170,10 +170,6 @@ registry_resolve = rule(
             executable = True,
         ),
         "_sha": attr.label(default = Label("//dependency:registry_sha")),
-        "_version_jq": attr.label(
-            allow_single_file = True,
-            default = Label("//dependency:version.jq"),
-        ),
         "branch": attr.string(default = "main"),
         "release_tags": attr.string(),
         "repo": attr.string(mandatory = True),

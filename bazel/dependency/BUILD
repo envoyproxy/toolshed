@@ -6,39 +6,12 @@ exports_files([
     "README.md",
     "bazel-update.sh",
     "macros.bzl",
-    "metadata.jq",
     "module-update.sh",
-    "module_deps_json.jq",
     "reachability.bzl",
-    "registries.jq",
     "registry-resolve.sh",
     "registry.bzl",
     "registry_bazelrc.sh",
-    "registry_check_output.jq",
-    "registry_resolve_output.jq",
-    "registry_select_tag.jq",
-    "registry_tags_array.jq",
-    "report.jq",
-    "resolve.jq",
-    "version.jq",
 ])
-
-filegroup(
-    name = "jq_libs",
-    srcs = [
-        "module_deps_json.jq",
-        "metadata.jq",
-        "registries.jq",
-        "registry_check_output.jq",
-        "registry_resolve_output.jq",
-        "registry_select_tag.jq",
-        "registry_tags_array.jq",
-        "report.jq",
-        "resolve.jq",
-        "version.jq",
-    ],
-    visibility = ["//visibility:public"],
-)
 
 bzl_library(
     name = "registry_bzl",
@@ -49,12 +22,6 @@ bzl_library(
 bool_flag(
     name = "registry_allow_unsafe",
     build_setting_default = False,
-    visibility = ["//visibility:public"],
-)
-
-string_flag(
-    name = "registry_cache_ttl",
-    build_setting_default = "0",
     visibility = ["//visibility:public"],
 )
 

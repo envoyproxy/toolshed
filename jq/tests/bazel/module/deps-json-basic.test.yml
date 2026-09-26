@@ -1,0 +1,30 @@
+name: bazel/module deps_json emits declared deps and selected version
+
+input:
+  declared: |
+    bazel_skylib 1.8.2
+    protobuf 35.1.bcr.envoy
+  overridden: |
+  lockfile:
+    registryFileHashes:
+      https://bcr.bazel.build/modules/bazel_skylib/1.9.1/source.json: hash
+      https://raw.githubusercontent.com/envoyproxy/bazel-registry/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/source.json: hash
+
+imports:
+- bazel/module
+before: '.declared as $declared | .overridden as $overridden | .lockfile'
+expression: 'mod::deps_json($declared; $overridden)'
+expected:
+  bazel_skylib:
+    module_url: https://bcr.bazel.build/modules/bazel_skylib/1.8.2/
+    registry: https://bcr.bazel.build/
+    urls:
+    - https://bcr.bazel.build/modules/bazel_skylib/1.8.2/
+    version: 1.8.2
+    selected: 1.9.1
+  protobuf:
+    module_url: https://raw.githubusercontent.com/envoyproxy/bazel-registry/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/
+    registry: https://raw.githubusercontent.com/envoyproxy/bazel-registry/0123456789abcdef0123456789abcdef01234567/
+    urls:
+    - https://raw.githubusercontent.com/envoyproxy/bazel-registry/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/
+    version: 35.1.bcr.envoy

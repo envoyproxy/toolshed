@@ -65,7 +65,7 @@ def _registry_resolve_runtime_inputs_test_impl(ctx):
     )
     asserts.true(
         env,
-        "registry_select_tag.jq" in input_basenames,
+        "registry.jq" in input_basenames,
         "expected registry jq inputs, got %s" % input_paths,
     )
     return analysistest.end(env)

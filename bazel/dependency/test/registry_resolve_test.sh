@@ -17,7 +17,7 @@ fi
 
 : "${GIT_BIN:?GIT_BIN must be set}"
 : "${JQ_BIN:?JQ_BIN must be set}"
-: "${REGISTRY_JQ_LIB:?REGISTRY_JQ_LIB must be set}"
+: "${TOOLSHED_JQ_ROOT:?TOOLSHED_JQ_ROOT must be set}"
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
@@ -32,22 +32,26 @@ BASE_URL="https://raw.githubusercontent.com/envoyproxy/bazel-registry"
 "${GIT_BIN}" -C "${WORK_REPO}" config user.name 'Test User'
 "${GIT_BIN}" -C "${WORK_REPO}" config user.email 'test@example.com'
 
-printf 'one\n' > "${WORK_REPO}/registry.txt"
+printf 'one
+' > "${WORK_REPO}/registry.txt"
 "${GIT_BIN}" -C "${WORK_REPO}" add registry.txt
 "${GIT_BIN}" -C "${WORK_REPO}" commit -m 'first' >/dev/null
 
-printf 'two\n' > "${WORK_REPO}/registry.txt"
+printf 'two
+' > "${WORK_REPO}/registry.txt"
 "${GIT_BIN}" -C "${WORK_REPO}" commit -am 'second' >/dev/null
 SECOND_SHA="$("${GIT_BIN}" -C "${WORK_REPO}" rev-parse HEAD)"
 "${GIT_BIN}" -C "${WORK_REPO}" tag v0.1.0 "${SECOND_SHA}"
 
-printf 'three\n' > "${WORK_REPO}/registry.txt"
+printf 'three
+' > "${WORK_REPO}/registry.txt"
 "${GIT_BIN}" -C "${WORK_REPO}" commit -am 'third' >/dev/null
 LATEST_SHA="$("${GIT_BIN}" -C "${WORK_REPO}" rev-parse HEAD)"
 
 "${GIT_BIN}" -C "${WORK_REPO}" checkout --orphan stray >/dev/null
 rm -f "${WORK_REPO}/registry.txt"
-printf 'stray\n' > "${WORK_REPO}/stray.txt"
+printf 'stray
+' > "${WORK_REPO}/stray.txt"
 "${GIT_BIN}" -C "${WORK_REPO}" add stray.txt
 "${GIT_BIN}" -C "${WORK_REPO}" commit -m 'stray' >/dev/null
 STRAY_SHA="$("${GIT_BIN}" -C "${WORK_REPO}" rev-parse HEAD)"
@@ -59,14 +63,7 @@ run_resolve() {
     local stdout="$1"
     local stderr="$2"
     shift 2
-    bash "${RESOLVE_SCRIPT}" resolve \
-        --repo="${REPO_URL}" \
-        --url="${BASE_URL}" \
-        --branch=main \
-        --git-bin="${GIT_BIN}" \
-        --jq-bin="${JQ_BIN}" \
-        --jq-lib="${REGISTRY_JQ_LIB}" \
-        "$@" >"${stdout}" 2>"${stderr}"
+    bash "${RESOLVE_SCRIPT}" resolve         --repo="${REPO_URL}"         --url="${BASE_URL}"         --branch=main         --git-bin="${GIT_BIN}"         --jq-bin="${JQ_BIN}"         --jq-root="${TOOLSHED_JQ_ROOT}"         "$@" >"${stdout}" 2>"${stderr}"
 }
 
 run_check() {
@@ -74,15 +71,7 @@ run_check() {
     local stdout="$2"
     local stderr="$3"
     shift 3
-    bash "${RESOLVE_SCRIPT}" check \
-        --repo="${REPO_URL}" \
-        --url="${BASE_URL}" \
-        --branch=main \
-        --bazelrc="${bazelrc}" \
-        --git-bin="${GIT_BIN}" \
-        --jq-bin="${JQ_BIN}" \
-        --jq-lib="${REGISTRY_JQ_LIB}" \
-        "$@" >"${stdout}" 2>"${stderr}"
+    bash "${RESOLVE_SCRIPT}" check         --repo="${REPO_URL}"         --url="${BASE_URL}"         --branch=main         --bazelrc="${bazelrc}"         --git-bin="${GIT_BIN}"         --jq-bin="${JQ_BIN}"         --jq-root="${TOOLSHED_JQ_ROOT}"         "$@" >"${stdout}" 2>"${stderr}"
 }
 
 write_bazelrc() {

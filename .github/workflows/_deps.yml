@@ -167,7 +167,7 @@ jobs:
       run: |
         BAZEL_CMD=(bazel run)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(//dependency:update_registry.check "--//dependency:registry_sha=${REGISTRY_SHA}" "--//dependency:registry_allow_unsafe=${ALLOW_UNSAFE}")
+        BAZEL_CMD+=(//dependency:update_registry.check)
         "${BAZEL_CMD[@]}" > "${REGISTRY_STATUS_PATH}"
     - name: Extract registry SHA
       id: registry-sha

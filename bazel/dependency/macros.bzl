@@ -2,16 +2,16 @@
 
 load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("@envoy_toolshed_jq//:defs.bzl", "toolshed_jq")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//dependency:registry.bzl", "git_launcher", "registry_bazelrc", "registry_resolve", "registry_settings")
 
 _BAZEL_UPDATE_SH = Label("//dependency:bazel-update.sh")
-_JQ_LIBS = Label("//dependency:jq_libs")
 _JQ_TOOLCHAIN = Label("@jq_toolchains//:resolved_toolchain")
-_MODULE_DEPS_JSON_JQ = Label("//dependency:module_deps_json.jq")
 _MODULE_UPDATE_SH = Label("//dependency:module-update.sh")
 _REGISTRY_RESOLVE_SH = Label("//dependency:registry-resolve.sh")
-_VERSION_JQ = Label("//dependency:version.jq")
+_TOOLSHED_JQ_MODULES = Label("@envoy_toolshed_jq//:modules")
+_TOOLSHED_JQ_ROOT_MARKER = Label("@envoy_toolshed_jq//:modules_root.marker")
 
 
 def updater(
@@ -192,8 +192,8 @@ def registry_updater(
         name = name + ".resolve",
         srcs = [_REGISTRY_RESOLVE_SH],
         data = [
-            _JQ_LIBS,
-            _VERSION_JQ,
+            _TOOLSHED_JQ_MODULES,
+            _TOOLSHED_JQ_ROOT_MARKER,
             _JQ_TOOLCHAIN,
             ":" + name + "_git",
             ":" + name + "_settings",
@@ -201,7 +201,7 @@ def registry_updater(
         env = {
             "GIT_BIN": "$(rootpath :%s_git)" % name,
             "JQ_BIN": "$(rootpath %s)" % _JQ_TOOLCHAIN,
-            "REGISTRY_JQ_LIB": "$(rootpath %s)" % _VERSION_JQ,
+            "TOOLSHED_JQ_ROOT": "$(rootpath %s)" % _TOOLSHED_JQ_ROOT_MARKER,
         },
         args = resolve_args,
         **helper_kwargs
@@ -210,8 +210,8 @@ def registry_updater(
         name = name + ".check",
         srcs = [_REGISTRY_RESOLVE_SH],
         data = [
-            _JQ_LIBS,
-            _VERSION_JQ,
+            _TOOLSHED_JQ_MODULES,
+            _TOOLSHED_JQ_ROOT_MARKER,
             _JQ_TOOLCHAIN,
             bazelrc,
             ":" + name + "_git",
@@ -220,7 +220,7 @@ def registry_updater(
         env = {
             "GIT_BIN": "$(rootpath :%s_git)" % name,
             "JQ_BIN": "$(rootpath %s)" % _JQ_TOOLCHAIN,
-            "REGISTRY_JQ_LIB": "$(rootpath %s)" % _VERSION_JQ,
+            "TOOLSHED_JQ_ROOT": "$(rootpath %s)" % _TOOLSHED_JQ_ROOT_MARKER,
         },
         args = check_args,
         **helper_kwargs
@@ -317,11 +317,11 @@ rm -f "$$err"
         ),
     )
 
-    jq(
+    toolshed_jq(
         name = name,
         srcs = [lockfile],
         out = name + ".json",
-        filter_file = _MODULE_DEPS_JSON_JQ,
+        filter = 'import "bazel/module" as module; module::deps_json($declared; $overridden)',
         expand_args = True,
         args = [
             "--rawfile",
@@ -330,13 +330,10 @@ rm -f "$$err"
             "--rawfile",
             "overridden",
             "$(location :%s_overridden)" % name,
-            "-L",
-            "dependency",
         ],
         data = [
             ":" + name + "_declared",
             ":" + name + "_overridden",
-            _JQ_LIBS,
         ],
         visibility = visibility,
     )
@@ -384,13 +381,13 @@ def module_updater(
         buildozer,
         dependencies,
         module_file,
-        _JQ_LIBS,
-        _VERSION_JQ,
+        _TOOLSHED_JQ_MODULES,
+        _TOOLSHED_JQ_ROOT_MARKER,
     ]
     env = {
         "JQ_BIN": "$(rootpath %s)" % jq_toolchain,
         "BUILDOZER": "$(rootpath %s)" % buildozer,
-        "MODULE_UPDATER_JQ_DIR": "$(rootpath %s)" % _VERSION_JQ,
+        "TOOLSHED_JQ_ROOT": "$(rootpath %s)" % _TOOLSHED_JQ_ROOT_MARKER,
     }
     args = [
         "$(location %s)" % module_file,
