@@ -1,0 +1,27 @@
+name: bazel/registry check_markdown renders check and resolve output
+
+input:
+  check:
+    sha: 0123456789abcdef0123456789abcdef01234567
+    ancestor: true
+    tags:
+    - v0.1.0
+    - v0.1.1
+    latest: fedcba9876543210fedcba9876543210fedcba98
+    behind: 3
+  resolve:
+    sha: fedcba9876543210fedcba9876543210fedcba98
+    url: https://raw.example/fedcba9876543210fedcba9876543210fedcba98
+    branch: main
+    latest: fedcba9876543210fedcba9876543210fedcba98
+    ancestor: true
+    tags: []
+    requested: ''
+    unsafe: false
+
+imports:
+- bazel/registry
+expression: '{check: (.check | registry::check_markdown), resolve: (.resolve | registry::check_markdown)}'
+expected:
+  check: 'pinned to `0123456789abcdef0123456789abcdef01234567`, tags: v0.1.0, v0.1.1, behind main by 3'
+  resolve: 'pinned to `fedcba9876543210fedcba9876543210fedcba98`, tags: none, behind main by 0'
