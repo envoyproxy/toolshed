@@ -13,7 +13,7 @@ common --@rules_python//python/config_settings:bootstrap_impl=script
 common --incompatible_default_to_explicit_init_py
 
 common --registry=https://bcr.bazel.build/
-common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/936d335850d271d11f14c08a0b6f360823c9ecfb
+common --registry=https://raw.githubusercontent.com/envoyproxy/bazel-registry/882dd77603a2369508d6d6999f87f7ef310fb7a0
 common --experimental_repository_cache_hardlinks
 
 common --repo_env=ANDROID_HOME=
