@@ -1,4 +1,4 @@
-name: bazel/module deps_json errors on duplicate lockfile entries
+name: bazel/dep deps_json errors on duplicate lockfile entries
 
 input:
   declared: |
@@ -10,7 +10,7 @@ input:
       https://b.example/modules/protobuf/35.2.bcr.envoy/source.json: hash
 
 imports:
-- bazel/module
+- bazel/dep
 before: '.declared as $declared | .overridden as $overridden | .lockfile'
-expression: 'try (mod::deps_json($declared; $overridden)) catch .'
+expression: 'try (dep::deps_json($declared; $overridden)) catch .'
 expected: 'Multiple source.json entries for module protobuf: 35.1.bcr.envoy, 35.2.bcr.envoy'

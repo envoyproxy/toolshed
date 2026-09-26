@@ -1,0 +1,15 @@
+name: bazel/dep import smoke test
+
+input:
+  declared: |
+    bazel_skylib 1.8.2
+  overridden: |
+  lockfile:
+    registryFileHashes:
+      https://bcr.bazel.build/modules/bazel_skylib/1.8.2/source.json: hash
+
+imports:
+- bazel/dep
+before: '.declared as $declared | .overridden as $overridden | .lockfile'
+expression: 'dep::deps_json($declared; $overridden).bazel_skylib.version'
+expected: 1.8.2

@@ -1,4 +1,4 @@
-name: bazel/module registries normalizes and dedupes bazelrc entries
+name: bazel/dep registries normalizes and dedupes bazelrc entries
 
 input:
   extra:
@@ -9,9 +9,9 @@ input:
     common --registry=https://example.com/custom # comment
 
 imports:
-- bazel/module
+- bazel/dep
 before: '.extra as $extra | .bazelrc'
-expression: 'mod::registries($extra)'
+expression: 'dep::registries($extra)'
 expected:
 - https://extra.example/one/
 - https://bcr.bazel.build/

@@ -1,0 +1,14 @@
+name: bazel/version import smoke test
+
+input:
+- 3.0.0
+- 1.0.0
+- 2.0.0
+
+imports:
+- bazel/version
+expression: 'version::sort_versions'
+expected:
+- 1.0.0
+- 2.0.0
+- 3.0.0

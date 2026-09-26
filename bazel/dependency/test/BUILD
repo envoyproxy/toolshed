@@ -1,6 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load("@envoy_toolshed_jq//:defs.bzl", "toolshed_jq")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//dependency:macros.bzl", "module_deps_json")
 load("//dependency:reachability.bzl", "dependency_reachability")
@@ -107,9 +108,31 @@ module_deps_json(
     module_file = "testdata/module/MODULE.deps_json.bazel",
 )
 
+toolshed_jq(
+    name = "toolshed_dep_smoke",
+    srcs = ["testdata/module/MODULE.bazel.lock"],
+    out = "toolshed_dep_smoke.json",
+    filter = 'import "bazel/dep" as dep; dep::deps_json($declared; $overridden)',
+    args = [
+        "--rawfile",
+        "declared",
+        "$(location testdata/module/dep_smoke.declared.txt)",
+        "--arg",
+        "overridden",
+        "",
+    ],
+    data = ["testdata/module/dep_smoke.declared.txt"],
+)
+
 diff_test(
     name = "module_deps_json_test",
     file1 = ":module_deps_json_fixture",
+    file2 = "testdata/module/module_deps.expected.json",
+)
+
+diff_test(
+    name = "toolshed_dep_smoke_test",
+    file1 = ":toolshed_dep_smoke",
     file2 = "testdata/module/module_deps.expected.json",
 )
 

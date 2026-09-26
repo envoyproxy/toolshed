@@ -129,7 +129,7 @@ done
 [[ -n "$DEP" ]] || REPORT=1
 [[ "$DEP" == *=* ]] && REQUESTED_VERSION="${DEP#*=}" DEP="${DEP%%=*}"
 EXTRA_JSON="$($JQ -Rsc 'split("\n") | map(select(length > 0))' <"$TMPDIR/extra_registries")"
-REGISTRIES_JSON="$($JQ -Rsc -L "$JQ_DIR" --argjson extra "$EXTRA_JSON" 'import "bazel/module" as module; module::registries_from_args' <"$BAZELRC")"
+REGISTRIES_JSON="$($JQ -Rsc -L "$JQ_DIR" --argjson extra "$EXTRA_JSON" 'import "bazel/dep" as dep; dep::registries_from_args' <"$BAZELRC")"
 [[ "$REGISTRIES_JSON" != '[]' ]] || { echo "No registries configured. Pass --bazelrc or --registry." >&2; exit 1; }
 DEPS_JSON="$($JQ -rc 'to_entries | map(select(.value.version | type == "string") | .key)' "$DEP_DATA")"
 registries=()
@@ -170,8 +170,8 @@ if [[ -s "$TMPDIR/files" ]]; then
     [[ -n "$file" ]] && files+=("$file")
   done <"$TMPDIR/files"
 fi
-METADATA_JSON="$($JQ -n -L "$JQ_DIR" --argjson regs "$REGISTRIES_JSON" --argjson deps "$DEPS_JSON" 'import "bazel/module" as module; module::metadata_versions_from_args' "${files[@]}")"
-REPORT_JSON="$($JQ -n -L "$JQ_DIR" --argjson deps "$(cat "$DEP_DATA")" --argjson registries "$REGISTRIES_JSON" --argjson metadata "$METADATA_JSON" 'import "bazel/module" as module; module::report_from_args')"
+METADATA_JSON="$($JQ -n -L "$JQ_DIR" --argjson regs "$REGISTRIES_JSON" --argjson deps "$DEPS_JSON" 'import "bazel/dep" as dep; dep::metadata_versions_from_args' "${files[@]}")"
+REPORT_JSON="$($JQ -n -L "$JQ_DIR" --argjson deps "$(cat "$DEP_DATA")" --argjson registries "$REGISTRIES_JSON" --argjson metadata "$METADATA_JSON" 'import "bazel/dep" as dep; dep::report_from_args')"
 if (( REPORT == 1 )); then
   if [[ -n "$JSON_OUT" ]]; then
     printf '%s\n' "$REPORT_JSON" >"$JSON_OUT"
@@ -185,7 +185,7 @@ if (( REPORT == 1 )); then
   exit 0
 fi
 [[ -x "$BUILDOZER" ]] || { echo "buildozer binary not found: ${BUILDOZER}" >&2; exit 1; }
-RESOLUTION="$($JQ -n -L "$JQ_DIR" --arg dep "$DEP" --arg requested_version "$REQUESTED_VERSION" --arg requested_registry "$REQUESTED_REGISTRY" --argjson allow_yanked "$ALLOW_YANKED" --argjson report "$REPORT_JSON" 'import "bazel/module" as module; module::resolve_from_args')"
+RESOLUTION="$($JQ -n -L "$JQ_DIR" --arg dep "$DEP" --arg requested_version "$REQUESTED_VERSION" --arg requested_registry "$REQUESTED_REGISTRY" --argjson allow_yanked "$ALLOW_YANKED" --argjson report "$REPORT_JSON" 'import "bazel/dep" as dep; dep::resolve_from_args')"
 ERR="$($JQ -r '.error // empty' <<<"$RESOLUTION")"
 [[ -z "$ERR" ]] || { echo "$ERR" >&2; exit 1; }
 MODULE_PATH="$(resolve_module)"

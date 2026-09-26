@@ -82,12 +82,7 @@ build_imports () {
 
 module_alias () {
     local mod_path="$1"
-    local mod_alias="${mod_path##*/}"
-
-    case "$mod_alias" in
-        module) echo mod ;;
-        *) echo "$mod_alias" ;;
-    esac
+    echo "${mod_path##*/}"
 }
 
 build_jq_filter () {
