@@ -30,7 +30,13 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 # (via `$(dirname $(execpath ...))`, resolved by the shell that
 # `@aspect_bazel_lib`'s `jq()` runs its command in) is the `-L` search
 # directory for the modules in this repo.
-_MODULES_ROOT_MARKER = "//:modules_root.marker"
+#
+# These must be `Label()`s: plain strings resolve in the *caller's* repo, so
+# `toolshed_jq` used from another module would look for `//:modules_root.marker`
+# there instead of here.
+_MODULES_ROOT_MARKER = Label("//:modules_root.marker")
+_MODULES = Label("//:modules")
+_RUN_TESTS = Label("//:run-tests.sh")
 
 def toolshed_jq(name, srcs, filter_file = None, filter = None, args = [], data = [], **kwargs):
     """Invoke jq with a filter that can import/include `envoy_toolshed_jq` modules.
@@ -61,7 +67,7 @@ def toolshed_jq(name, srcs, filter_file = None, filter = None, args = [], data =
             "-L",
             "$(dirname $(execpath %s))" % _MODULES_ROOT_MARKER,
         ],
-        data = data + ["//:modules", _MODULES_ROOT_MARKER],
+        data = data + [_MODULES, _MODULES_ROOT_MARKER],
         expand_args = True,
         **kwargs
     )
@@ -82,11 +88,11 @@ def jq_module_test(name, module, size = "small", **kwargs):
     sh_test(
         name = name,
         size = size,
-        srcs = ["//:run-tests.sh"],
+        srcs = [_RUN_TESTS],
         args = ["tests/%s" % module],
         data = [
-            "//:run-tests.sh",
-            "//:modules",
+            _RUN_TESTS,
+            _MODULES,
             "@jq_toolchains//:resolved_toolchain",
             "@yq_toolchains//:resolved_toolchain",
         ] + native.glob(["tests/%s/**" % module]),
