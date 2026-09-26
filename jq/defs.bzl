@@ -27,9 +27,11 @@ load("@aspect_bazel_lib//lib:jq.bzl", _jq = "jq")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
 # A stable, single-file target at the module root. Its containing directory
-# (via `$(dirname $(execpath ...))`, resolved by the shell that
+# (via `$$(dirname $(execpath ...))`, resolved by the shell that
 # `@aspect_bazel_lib`'s `jq()` runs its command in) is the `-L` search
-# directory for the modules in this repo.
+# directory for the modules in this repo. The `$$` is required: Bazel's
+# make-variable expansion would otherwise try to expand `$(dirname ...)`
+# itself and fail with "$(dirname) not defined".
 #
 # These must be `Label()`s: plain strings resolve in the *caller's* repo, so
 # `toolshed_jq` used from another module would look for `//:modules_root.marker`
@@ -65,7 +67,7 @@ def toolshed_jq(name, srcs, filter_file = None, filter = None, args = [], data =
         filter_file = filter_file,
         args = args + [
             "-L",
-            "$(dirname $(execpath %s))" % _MODULES_ROOT_MARKER,
+            "$$(dirname $(execpath %s))" % _MODULES_ROOT_MARKER,
         ],
         data = data + [_MODULES, _MODULES_ROOT_MARKER],
         expand_args = True,
