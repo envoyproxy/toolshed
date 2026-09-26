@@ -2,11 +2,11 @@
 set -euo pipefail
 
 usage() {
-  cat <<'EOF'
+  cat <<'EOF_USAGE'
 Usage:
   module-update.sh <MODULE.bazel> <deps.json> [--bazelrc=<path>] [--registry=<url>]... --report [--json-out=<path>] [--fail-on-outdated]
   module-update.sh <MODULE.bazel> <deps.json> <dep>[=<version>] [--registry=<url>] [--allow-yanked]
-EOF
+EOF_USAGE
 }
 
 normalize_registry() {
@@ -80,12 +80,23 @@ run_buildozer() {
   return "$rc"
 }
 
-MODULE_FILE="$1"; DEP_DATA="$2"; shift 2
-JQ="${JQ_BIN:-jq}"; BUILDOZER="${BUILDOZER:-}"
-: "${MODULE_UPDATER_JQ_DIR:?MODULE_UPDATER_JQ_DIR must be set to the runfiles path of version.jq}"
-JQ_DIR="$(dirname "${MODULE_UPDATER_JQ_DIR}")"
-REPORT=0; FAIL_ON_OUTDATED=0; ALLOW_YANKED=false; JSON_OUT=""; BAZELRC="${MODULE_UPDATER_BAZELRC:-/dev/null}"; DEP=""; REQUESTED_VERSION=""; REQUESTED_REGISTRY=""
-TMPDIR="$(mktemp -d)"; trap 'rm -rf "$TMPDIR"' EXIT
+MODULE_FILE="$1"
+DEP_DATA="$2"
+shift 2
+JQ="${JQ_BIN:-jq}"
+BUILDOZER="${BUILDOZER:-}"
+: "${TOOLSHED_JQ_ROOT:?TOOLSHED_JQ_ROOT must be set to the runfiles path of modules_root.marker}"
+JQ_DIR="$(dirname "$TOOLSHED_JQ_ROOT")"
+REPORT=0
+FAIL_ON_OUTDATED=0
+ALLOW_YANKED=false
+JSON_OUT=""
+BAZELRC="${MODULE_UPDATER_BAZELRC:-/dev/null}"
+DEP=""
+REQUESTED_VERSION=""
+REQUESTED_REGISTRY=""
+TMPDIR="$(mktemp -d)"
+trap 'rm -rf "$TMPDIR"' EXIT
 FETCH_METADATA_ERROR=""
 : >"$TMPDIR/extra_registries"
 while (($#)); do
@@ -97,17 +108,28 @@ while (($#)); do
     --json-out) JSON_OUT="$2"; shift ;;
     --bazelrc=*) BAZELRC="${1#*=}" ;;
     --bazelrc) BAZELRC="$2"; shift ;;
-    --registry=*) REQUESTED_REGISTRY="$(normalize_registry "${1#*=}")"; printf '%s\n' "$REQUESTED_REGISTRY" >>"$TMPDIR/extra_registries" ;;
-    --registry) REQUESTED_REGISTRY="$(normalize_registry "$2")"; printf '%s\n' "$REQUESTED_REGISTRY" >>"$TMPDIR/extra_registries"; shift ;;
+    --registry=*)
+      REQUESTED_REGISTRY="$(normalize_registry "${1#*=}")"
+      printf '%s\n' "$REQUESTED_REGISTRY" >>"$TMPDIR/extra_registries"
+      ;;
+    --registry)
+      REQUESTED_REGISTRY="$(normalize_registry "$2")"
+      printf '%s\n' "$REQUESTED_REGISTRY" >>"$TMPDIR/extra_registries"
+      shift
+      ;;
     --help|-h) usage; exit 0 ;;
     --*) echo "Unknown option: $1" >&2; exit 1 ;;
-    *) [[ -n "$DEP" ]] && { usage >&2; exit 1; }; DEP="$1" ;;
-  esac; shift
+    *)
+      [[ -n "$DEP" ]] && { usage >&2; exit 1; }
+      DEP="$1"
+      ;;
+  esac
+  shift
 done
 [[ -n "$DEP" ]] || REPORT=1
 [[ "$DEP" == *=* ]] && REQUESTED_VERSION="${DEP#*=}" DEP="${DEP%%=*}"
 EXTRA_JSON="$($JQ -Rsc 'split("\n") | map(select(length > 0))' <"$TMPDIR/extra_registries")"
-REGISTRIES_JSON="$($JQ -Rsc --argjson extra "$EXTRA_JSON" -f "$JQ_DIR/registries.jq" <"$BAZELRC")"
+REGISTRIES_JSON="$($JQ -Rsc -L "$JQ_DIR" --argjson extra "$EXTRA_JSON" 'import "bazel/dep" as dep; dep::registries_from_args' <"$BAZELRC")"
 [[ "$REGISTRIES_JSON" != '[]' ]] || { echo "No registries configured. Pass --bazelrc or --registry." >&2; exit 1; }
 DEPS_JSON="$($JQ -rc 'to_entries | map(select(.value.version | type == "string") | .key)' "$DEP_DATA")"
 registries=()
@@ -148,8 +170,8 @@ if [[ -s "$TMPDIR/files" ]]; then
     [[ -n "$file" ]] && files+=("$file")
   done <"$TMPDIR/files"
 fi
-METADATA_JSON="$($JQ -n --argjson regs "$REGISTRIES_JSON" --argjson deps "$DEPS_JSON" -f "$JQ_DIR/metadata.jq" "${files[@]}")"
-REPORT_JSON="$($JQ -Sn -L "$JQ_DIR" --argjson deps "$(cat "$DEP_DATA")" --argjson registries "$REGISTRIES_JSON" --argjson metadata "$METADATA_JSON" -f "$JQ_DIR/report.jq")"
+METADATA_JSON="$($JQ -n -L "$JQ_DIR" --argjson regs "$REGISTRIES_JSON" --argjson deps "$DEPS_JSON" 'import "bazel/dep" as dep; dep::metadata_versions_from_args' "${files[@]}")"
+REPORT_JSON="$($JQ -n -L "$JQ_DIR" --argjson deps "$(cat "$DEP_DATA")" --argjson registries "$REGISTRIES_JSON" --argjson metadata "$METADATA_JSON" 'import "bazel/dep" as dep; dep::report_from_args')"
 if (( REPORT == 1 )); then
   if [[ -n "$JSON_OUT" ]]; then
     printf '%s\n' "$REPORT_JSON" >"$JSON_OUT"
@@ -157,23 +179,31 @@ if (( REPORT == 1 )); then
     printf '%s\n' "$REPORT_JSON"
   fi
 
-  if (( FAIL_ON_OUTDATED == 1 )) && $JQ -e 'any(.[]; .update_available)' <<<"$REPORT_JSON" >/dev/null; then exit 1; fi
+  if (( FAIL_ON_OUTDATED == 1 )) && $JQ -e 'any(.[]; .update_available)' <<<"$REPORT_JSON" >/dev/null; then
+    exit 1
+  fi
   exit 0
 fi
 [[ -x "$BUILDOZER" ]] || { echo "buildozer binary not found: ${BUILDOZER}" >&2; exit 1; }
-RESOLUTION="$($JQ -cn -L "$JQ_DIR" --arg dep "$DEP" --arg requested_version "$REQUESTED_VERSION" --arg requested_registry "$REQUESTED_REGISTRY" --argjson allow_yanked "$ALLOW_YANKED" --argjson report "$REPORT_JSON" -f "$JQ_DIR/resolve.jq")"
-ERR="$($JQ -r '.error // empty' <<<"$RESOLUTION")"; [[ -z "$ERR" ]] || { echo "$ERR" >&2; exit 1; }
-MODULE_PATH="$(resolve_module)"; grep -Eq '^[[:space:]]*module[[:space:]]*\(' "$MODULE_PATH" || { echo "Expected module() declaration in ${MODULE_PATH}" >&2; exit 1; }
-TARGET="$($JQ -r '.target' <<<"$RESOLUTION")"; CURRENT="$($JQ -r '.current' <<<"$RESOLUTION")"; CHANGED=0; rc=0
-if [[ "$TARGET" == "$CURRENT" ]]; then echo "${DEP}: already at ${TARGET}"; exit 0; fi
+RESOLUTION="$($JQ -n -L "$JQ_DIR" --arg dep "$DEP" --arg requested_version "$REQUESTED_VERSION" --arg requested_registry "$REQUESTED_REGISTRY" --argjson allow_yanked "$ALLOW_YANKED" --argjson report "$REPORT_JSON" 'import "bazel/dep" as dep; dep::resolve_from_args')"
+ERR="$($JQ -r '.error // empty' <<<"$RESOLUTION")"
+[[ -z "$ERR" ]] || { echo "$ERR" >&2; exit 1; }
+MODULE_PATH="$(resolve_module)"
+grep -Eq '^[[:space:]]*module[[:space:]]*\(' "$MODULE_PATH" || { echo "Expected module() declaration in ${MODULE_PATH}" >&2; exit 1; }
+TARGET="$($JQ -r '.target' <<<"$RESOLUTION")"
+CURRENT="$($JQ -r '.current' <<<"$RESOLUTION")"
+CHANGED=0
+rc=0
+if [[ "$TARGET" == "$CURRENT" ]]; then
+  echo "${DEP}: already at ${TARGET}"
+  exit 0
+fi
 
 if ! "$BUILDOZER" 'print name' "${MODULE_PATH}:${DEP}" >/dev/null 2>&1; then
   echo "Dependency ${DEP} not found in ${MODULE_PATH}" >&2
   exit 1
 fi
 
-# Collect override line numbers before any edit, then apply edits bottom-up so
-# that earlier rewrites cannot shift later targets.
 override_lines=()
 while IFS=: read -r line _; do
   [[ -n "$line" ]] || continue
@@ -204,4 +234,8 @@ elif (( rc != 3 )); then
   exit "$rc"
 fi
 
-if (( CHANGED == 0 )); then echo "${DEP}: already at ${TARGET}"; else echo "${DEP}: ${CURRENT} -> ${TARGET}"; fi
+if (( CHANGED == 0 )); then
+  echo "${DEP}: already at ${TARGET}"
+else
+  echo "${DEP}: ${CURRENT} -> ${TARGET}"
+fi

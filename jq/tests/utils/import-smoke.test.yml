@@ -1,0 +1,8 @@
+name: utils import smoke test
+
+input: 1536
+
+imports:
+- utils
+expression: 'utils::bytesize'
+expected: 1.5KB

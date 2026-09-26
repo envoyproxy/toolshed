@@ -72,14 +72,17 @@ build_imports () {
         for ((i=0; i<import_count; i++)); do
             local imp
             imp=$(echo "$imports" | "$JQ" -r ".[$i]")
-            # The import alias is always the last path segment, eg
-            # `import "github/gfm" as gfm;`, so scoped modules can be
-            # referred to by their short name in expressions.
-            local mod_alias="${imp##*/}"
+            local mod_alias
+            mod_alias="$(module_alias "$imp")"
             jq_filter+="import \"$imp\" as $mod_alias; "
         done
     fi
     echo "$jq_filter"
+}
+
+module_alias () {
+    local mod_path="$1"
+    echo "${mod_path##*/}"
 }
 
 build_jq_filter () {
@@ -101,7 +104,8 @@ build_jq_filter () {
     if [[ -n "$module" && "$module" != "" ]]; then
         local mod_path="${module%%::*}"
         local func_name="${module#*::}"
-        local mod_alias="${mod_path##*/}"
+        local mod_alias
+        mod_alias="$(module_alias "$mod_path")"
         if [[ "$imports" == "[]" || "$imports" == "null" ]]; then
             jq_filter="import \"$mod_path\" as $mod_alias; $jq_filter"
         fi
