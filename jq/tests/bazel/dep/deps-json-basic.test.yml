@@ -8,7 +8,7 @@ input:
   lockfile:
     registryFileHashes:
       https://bcr.bazel.build/modules/bazel_skylib/1.9.1/source.json: hash
-      https://raw.githubusercontent.com/envoyproxy/bazel-registry/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/source.json: hash
+      https://registry.example/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/source.json: hash
 
 imports:
 - bazel/dep
@@ -23,8 +23,8 @@ expected:
     version: 1.8.2
     selected: 1.9.1
   protobuf:
-    module_url: https://raw.githubusercontent.com/envoyproxy/bazel-registry/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/
-    registry: https://raw.githubusercontent.com/envoyproxy/bazel-registry/0123456789abcdef0123456789abcdef01234567/
+    module_url: https://registry.example/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/
+    registry: https://registry.example/0123456789abcdef0123456789abcdef01234567/
     urls:
-    - https://raw.githubusercontent.com/envoyproxy/bazel-registry/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/
+    - https://registry.example/0123456789abcdef0123456789abcdef01234567/modules/protobuf/35.1.bcr.envoy/
     version: 35.1.bcr.envoy

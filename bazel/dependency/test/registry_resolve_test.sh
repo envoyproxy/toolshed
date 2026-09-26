@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck disable=SC2016
 
 set -euo pipefail
 
@@ -63,7 +64,14 @@ run_resolve() {
     local stdout="$1"
     local stderr="$2"
     shift 2
-    bash "${RESOLVE_SCRIPT}" resolve         --repo="${REPO_URL}"         --url="${BASE_URL}"         --branch=main         --git-bin="${GIT_BIN}"         --jq-bin="${JQ_BIN}"         --jq-root="${TOOLSHED_JQ_ROOT}"         "$@" >"${stdout}" 2>"${stderr}"
+    bash "${RESOLVE_SCRIPT}" resolve \
+        --repo="${REPO_URL}" \
+        --url="${BASE_URL}" \
+        --branch=main \
+        --git-bin="${GIT_BIN}" \
+        --jq-bin="${JQ_BIN}" \
+        --jq-root="${TOOLSHED_JQ_ROOT}" \
+        "$@" >"${stdout}" 2>"${stderr}"
 }
 
 run_check() {
@@ -71,7 +79,15 @@ run_check() {
     local stdout="$2"
     local stderr="$3"
     shift 3
-    bash "${RESOLVE_SCRIPT}" check         --repo="${REPO_URL}"         --url="${BASE_URL}"         --branch=main         --bazelrc="${bazelrc}"         --git-bin="${GIT_BIN}"         --jq-bin="${JQ_BIN}"         --jq-root="${TOOLSHED_JQ_ROOT}"         "$@" >"${stdout}" 2>"${stderr}"
+    bash "${RESOLVE_SCRIPT}" check \
+        --repo="${REPO_URL}" \
+        --url="${BASE_URL}" \
+        --branch=main \
+        --bazelrc="${bazelrc}" \
+        --git-bin="${GIT_BIN}" \
+        --jq-bin="${JQ_BIN}" \
+        --jq-root="${TOOLSHED_JQ_ROOT}" \
+        "$@" >"${stdout}" 2>"${stderr}"
 }
 
 write_bazelrc() {

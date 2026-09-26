@@ -1,4 +1,4 @@
-#name: _deps
+name: _deps
 
 permissions:
   contents: read
@@ -140,7 +140,9 @@ jobs:
       run: |
         BAZEL_CMD=(bazel run)
         [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
-        BAZEL_CMD+=(//dependency:update_registry "--//dependency:registry_sha=${REGISTRY_SHA}" "--//dependency:registry_allow_unsafe=${ALLOW_UNSAFE}")
+        BAZEL_CMD+=(//dependency:update_registry)
+        BAZEL_CMD+=("--//dependency:registry_sha=${REGISTRY_SHA}")
+        BAZEL_CMD+=("--//dependency:registry_allow_unsafe=${ALLOW_UNSAFE}")
         "${BAZEL_CMD[@]}"
     - name: Update registry lockfile
       if: >-
