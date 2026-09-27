@@ -139,7 +139,8 @@ def last_n_bytes_of(target: str | pathlib.Path, n: int = 1) -> bytes:
     """Return the last `n` bytes from a file, defaults to 1 byte."""
     with open(target, "rb") as f:
         f.seek(0, os.SEEK_END)
-        f.seek(f.tell() - n)
+        # Clamp to the start of the file so empty or short files do not raise on negative seek.
+        f.seek(max(f.tell() - n, 0))
         return f.read(n)
 
 
