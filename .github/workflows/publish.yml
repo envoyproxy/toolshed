@@ -39,11 +39,11 @@ jobs:
               - Github/actions CI
               - Python CI
               - Rust CI
-            # Add long-lived release/backport branches here.
-            # workspace:
-            #   release-types: bazel
-            #   workflows:
-            #   - Bazel CI
+            # Long-lived release/backport branches.
+            workspace:
+              release-types: bazel
+              workflows:
+              - Bazel CI
         input-format: yaml
         filter: |
           .branches[env.HEAD_BRANCH] as $config
