@@ -85,6 +85,26 @@ def _run_tidy(
     )
     return outfile
 
+def _check_reports(ctx, reports, target):
+    # run_clang_tidy.sh ignores clang-tidy's exit status, so the reports are
+    # checked by a separate action. Bazel does not cache failed actions, so a
+    # report with findings fails every build even when the report is cached.
+    marker = ctx.actions.declare_file(
+        "bazel_clang_tidy_%s.report-check" % target.label.name,
+    )
+    args = ctx.actions.args()
+    args.add(marker)
+    args.add_all(reports)
+    ctx.actions.run(
+        inputs = reports,
+        outputs = [marker],
+        executable = ctx.executable._clang_tidy_report_checker,
+        arguments = [args],
+        mnemonic = "ClangTidyReportCheck",
+        progress_message = "Check clang-tidy reports for {}".format(target.label),
+    )
+    return marker
+
 def _rule_sources(ctx):
     srcs = []
     if hasattr(ctx.rule.attr, "srcs"):
@@ -153,8 +173,13 @@ def _clang_tidy_aspect_impl(target, ctx):
         for src in _rule_sources(ctx)
     ]
 
+    checks = [_check_reports(ctx, outputs, target)] if outputs else []
+
     return [
-        OutputGroupInfo(report = depset(direct = outputs)),
+        OutputGroupInfo(
+            report = depset(direct = outputs),
+            report_check = depset(direct = checks),
+        ),
     ]
 
 clang_tidy_aspect = aspect(
@@ -166,6 +191,11 @@ clang_tidy_aspect = aspect(
         "_clang_tidy_executable": attr.label(default = Label("@envoy_toolshed//format/clang_tidy:executable")),
         "_clang_tidy_additional_deps": attr.label(default = Label("@envoy_toolshed//format/clang_tidy:additional_deps")),
         "_clang_tidy_config": attr.label(default = Label("@envoy_toolshed//format/clang_tidy:config")),
+        "_clang_tidy_report_checker": attr.label(
+            default = Label("@envoy_toolshed//format/clang_tidy:check_reports"),
+            executable = True,
+            cfg = "exec",
+        ),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
