@@ -113,12 +113,12 @@ inputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/jq@d2cf80f1a4b8d5132eb9970fc806c2e941408474
+  - uses: envoyproxy/toolshed/actions/jq@8f2c404fc46ffb5b71d275069b7f99437b4b7a20
     if: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
     with:
       input: ${{ inputs.context }}
       print-result: true
-  - uses: envoyproxy/toolshed/actions/jq@d2cf80f1a4b8d5132eb9970fc806c2e941408474
+  - uses: envoyproxy/toolshed/actions/jq@8f2c404fc46ffb5b71d275069b7f99437b4b7a20
     name: Runtime information
     id: run-info
     with:
@@ -135,13 +135,13 @@ runs:
          completed: .run.completed,
          "run-time": "\(.run.completed - .run.started | . * 100 | round / 100)s",
          "job-time": "\(.run.completed - .context["job-started"] | . * 100 | round / 100)s"}
-  - uses: envoyproxy/toolshed/actions/json/table@d2cf80f1a4b8d5132eb9970fc806c2e941408474
+  - uses: envoyproxy/toolshed/actions/json/table@8f2c404fc46ffb5b71d275069b7f99437b4b7a20
     name: Run information summary
     id: run-summary
     with:
       json: ${{ steps.run-info.outputs.value }}
       title: Runtime information
-  - uses: envoyproxy/toolshed/actions/jq@d2cf80f1a4b8d5132eb9970fc806c2e941408474
+  - uses: envoyproxy/toolshed/actions/jq@8f2c404fc46ffb5b71d275069b7f99437b4b7a20
     with:
       input: ${{ inputs.context }}
       options: -r
