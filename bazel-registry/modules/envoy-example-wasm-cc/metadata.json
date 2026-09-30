@@ -1,0 +1,11 @@
+{
+  "homepage": "https://github.com/envoyproxy/examples",
+  "maintainers": [],
+  "repository": [
+    "github:envoyproxy/examples"
+  ],
+  "versions": [
+    "0.2.0.envoy"
+  ],
+  "yanked_versions": {}
+}
