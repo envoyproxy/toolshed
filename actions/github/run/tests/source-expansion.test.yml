@@ -1,0 +1,31 @@
+uses: ./actions/github/run
+id: run
+with:
+  source: |
+    ARGS=(--)
+    ARGS+=("--author=Some Name <some@name.io>" --flag)
+    SCALAR=scalar-value
+    EMPTY=()
+  command: >-
+    argv "${ARGS[@]}" ${SCALAR} "${EMPTY[@]}" "${HOME}" '$(id)' prefix${SCALAR}
+  envsubst-vars: ''
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_arg() {
+        if grep -Fxq -- "$1" "$MOCK_LOG"; then
+            echo "success:Command argument preserved: $1" >> "$TEST_OUTPUT"
+        else
+            echo "fail:Command argument missing or split: $1" >> "$TEST_OUTPUT"
+        fi
+    }
+    test_arg "--"
+    test_arg "--author=Some Name <some@name.io>"
+    test_arg "--flag"
+    test_arg "scalar-value"
+    test_arg '"${HOME}"'
+    test_arg "'\$(id)'"
+    test_arg 'prefix${SCALAR}'
+    test_output_contains "$(wc -l < "$MOCK_LOG")" "7" "Empty source array adds no arguments"
