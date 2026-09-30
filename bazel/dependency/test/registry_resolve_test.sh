@@ -33,6 +33,22 @@ case "${GIT_BIN}" in
     /*) GIT_BIN_ABS="${GIT_BIN}" ;;
     *) GIT_BIN_ABS="${PWD}/${GIT_BIN}" ;;
 esac
+
+(
+    unset RUNFILES_DIR TEST_SRCDIR RUNFILES_MANIFEST_FILE JAVA_RUNFILES
+    "${GIT_BIN_ABS}" --version
+) | grep -F 'git version ' >/dev/null
+(
+    unset TEST_SRCDIR RUNFILES_MANIFEST_FILE JAVA_RUNFILES
+    export RUNFILES_DIR
+    "${GIT_BIN_ABS}" --version
+) | grep -F 'git version ' >/dev/null
+(
+    cd "$(dirname "${GIT_BIN_ABS}")"
+    unset RUNFILES_DIR TEST_SRCDIR RUNFILES_MANIFEST_FILE JAVA_RUNFILES
+    "./$(basename "${GIT_BIN_ABS}")" --version
+) | grep -F 'git version ' >/dev/null
+
 SHIM_DIR="${tmpdir}/shims"
 mkdir -p "${SHIM_DIR}"
 for cmd in upload-pack receive-pack; do
