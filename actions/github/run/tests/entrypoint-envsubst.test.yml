@@ -1,0 +1,13 @@
+uses: ./actions/github/run
+id: run
+with:
+  entrypoint: |
+    #!/usr/bin/env bash
+    argv entrypoint-ok
+  command: $TMP_ENTRYPOINT
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_output_contains "$(cat "$MOCK_LOG")" "entrypoint-ok" "Allow-listed entrypoint path is executed"

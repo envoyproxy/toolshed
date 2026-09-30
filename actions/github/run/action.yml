@@ -2,6 +2,11 @@ inputs:
   args:
     type: string
   command:
+    description: >-
+      Command to execute. Variables listed in `envsubst-vars` are expanded.
+      Whole-token references to variables introduced by `source` are expanded
+      after sourcing, in the forms `${NAME}`, `"${NAME}"`, `${NAME[@]}` and
+      `"${NAME[@]}"`. Nothing else is expanded.
     type: string
     required: true
   container-command:
@@ -76,6 +81,10 @@ inputs:
           df -h > "${TMP_REPORT}/df-post"
         shell: bash
   source:
+    description: >-
+      Bash source file evaluated before the command. Variables it introduces
+      may be referenced by whole-token expansions in `command` using
+      `${NAME}`, `"${NAME}"`, `${NAME[@]}` or `"${NAME[@]}"`.
     type: string
   summary-post:
     type: string
@@ -251,6 +260,8 @@ runs:
           SHELL_FORMAT+="\$${envsubst_var} "
       done
       COMMAND=()
+      COMMAND_INPUT="$(envsubst "$SHELL_FORMAT" <<< "$COMMAND_INPUT")"
+      ARGS_INPUT="$(envsubst "$SHELL_FORMAT" <<< "$ARGS_INPUT")"
       read -d '' -ra ARGS <<< "$ARGS_INPUT" || :
       read -d '' -ra COMMAND_PARTS <<< "$COMMAND_INPUT" || :
       ACTUAL_COMMAND=(
@@ -293,11 +304,27 @@ runs:
       }
       trap onerror EXIT
       cd $TARGET_PATH
+      read -ra COMMAND_PARTS <<< "$COMMAND"
       if [[ -n "${TMP_SOURCE}" ]]; then
+          __PRE_VARS="$(compgen -v | sort)"
           . "$TMP_SOURCE"
+          SOURCED=1
+          # Expand only whole-token references to variables introduced by source.
+          __SOURCED_VARS="$(comm -13 <(printf '%s\n' "$__PRE_VARS") <(compgen -v | sort))"
+          __EXPANDED=()
+          for __part in "${COMMAND_PARTS[@]}"; do
+              if [[ "$__part" =~ ^\"?\$\{([A-Za-z_][A-Za-z0-9_]*)(\[@\])?\}\"?$ ]] \
+                      && grep -qx -- "${BASH_REMATCH[1]}" <<< "$__SOURCED_VARS"; then
+                  declare -n __ref="${BASH_REMATCH[1]}"
+                  __EXPANDED+=("${__ref[@]}")
+                  unset -n __ref
+                  continue
+              fi
+              __EXPANDED+=("$__part")
+          done
+          COMMAND_PARTS=("${__EXPANDED[@]}")
       fi
       SOURCED=1
-      read -ra COMMAND_PARTS <<< "$COMMAND"
       EXIT_CODE=0
       "${COMMAND_PARTS[@]}" > >(tee "$TMP_STDOUT") 2> >(tee "$TMP_STDERR") || {
           EXIT_CODE=$?
