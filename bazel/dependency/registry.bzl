@@ -28,6 +28,11 @@ case "$self" in
     /*) ;;
     *) self="$(pwd)/$self" ;;
 esac
+# Collapse `/./` segments so the launcher suffix match below works when
+# invoked as `./launcher.sh` (which is what `$(rootpath ...)` yields for
+# targets in a root package).
+while [[ "$self" == *"/./"* ]]; do self="${self//\\/\\.\\//\\/}"; done
+self="${self%/.}"
 if [[ -n "${TEST_SRCDIR:-}" ]]; then
     runfiles="$TEST_SRCDIR"
 elif [[ -n "${RUNFILES_DIR:-}" ]]; then
@@ -38,8 +43,17 @@ else
     launcher="/@@LAUNCHER@@"
     case "$self" in
         *"$launcher") runfiles="${self%"$launcher"}" ;;
-        *) runfiles="$(CDPATH= cd "$(dirname "$self")" && pwd)" ;;
+        *)
+            runfiles="$(CDPATH= cd "$(dirname "$self")" && pwd)"
+            while [[ ! -e "$runfiles/@@GIT@@" && "$runfiles" != / ]]; do
+                runfiles="$(dirname "$runfiles")"
+            done
+            ;;
     esac
+fi
+if [[ ! -e "$runfiles/@@GIT@@" ]]; then
+    echo "git_launcher: unable to locate @@GIT@@ from $self (runfiles=$runfiles)" >&2
+    exit 1
 fi
 exec "$runfiles/@@GIT@@" "$@"
 """
