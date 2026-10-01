@@ -306,38 +306,58 @@ def test_abstract_inventories_changes(patches, items, sync):
 
 
 @pytest.mark.parametrize("response", [None, 404, "OTHER"])
-async def test_abstract_inventories_fetch(patches, response):
+@pytest.mark.parametrize("legacy_response", [None, 404, "OTHER"])
+async def test_abstract_inventories_fetch(
+        patches, response, legacy_response):
     project = MagicMock()
     inventories = DummyInventories(project)
     patched = patches(
         "AInventories.inventory_url",
+        "AInventories.legacy_inventory_url",
         prefix="envoy.base.utils.abstract.project.inventory")
     version = MagicMock()
-    get = AsyncMock()
-    read = AsyncMock()
-    get.return_value.read.side_effect = read
-    get.return_value.status = response
+    primary = MagicMock()
+    primary.status = response
+    primary.read = AsyncMock()
+    legacy = MagicMock()
+    legacy.status = legacy_response
+    legacy.read = AsyncMock()
+    get = AsyncMock(side_effect=[primary, legacy])
     project.session.get.side_effect = get
 
-    with patched as (m_url, ):
-        assert (
-            await inventories.fetch(version)
-            == (read.return_value
-                if response != 404
-                else None))
+    with patched as (m_url, m_legacy):
+        result = await inventories.fetch(version)
 
-    assert (
-        get.call_args
-        == [(m_url.return_value, ), {}])
     assert (
         m_url.call_args
         == [(version, ), {}])
-    if response == 404:
-        assert not read.called
-    else:
+    if response != 404:
+        assert result == primary.read.return_value
         assert (
-            read.call_args
+            get.call_args_list
+            == [[(m_url.return_value, ), {}]])
+        assert (
+            primary.read.call_args
             == [(), {}])
+        assert not m_legacy.called
+        assert not legacy.read.called
+        return
+    assert not primary.read.called
+    assert (
+        get.call_args_list
+        == [[(m_url.return_value, ), {}],
+            [(m_legacy.return_value, ), {}]])
+    assert (
+        m_legacy.call_args
+        == [(version, ), {}])
+    if legacy_response == 404:
+        assert result is None
+        assert not legacy.read.called
+        return
+    assert result == legacy.read.return_value
+    assert (
+        legacy.read.call_args
+        == [(), {}])
 
 
 def test_abstract_inventories_inventory_path(patches):
@@ -365,12 +385,70 @@ def test_abstract_inventories_inventory_url(patches):
     inventories = DummyInventories(project)
     patched = patches(
         "INVENTORY_URL_FMT",
+        ("AInventories.inventory_base_url",
+         dict(new_callable=PropertyMock)),
+        prefix="envoy.base.utils.abstract.project.inventory")
+    version = MagicMock()
+
+    with patched as (m_tpl, m_base):
+        assert (
+            inventories.inventory_url(version)
+            == m_tpl.format.return_value)
+    assert (
+        m_tpl.format.call_args
+        == [(),
+            dict(base_url=m_base.return_value,
+                 version=version.base_version)])
+
+
+@pytest.mark.parametrize(
+    "env",
+    [None,
+     "https://example.com/bucket",
+     "https://example.com/bucket/",
+     "https://example.com/bucket//"])
+def test_abstract_inventories_inventory_base_url(monkeypatch, env):
+    inventories = DummyInventories("PROJECT")
+    inventory = abstract.project.inventory
+    if env is None:
+        monkeypatch.delenv(inventory.INVENTORY_BASE_URL_ENV, raising=False)
+    else:
+        monkeypatch.setenv(inventory.INVENTORY_BASE_URL_ENV, env)
+    assert (
+        inventories.inventory_base_url
+        == (inventory.INVENTORY_BASE_URL_DEFAULT
+            if env is None
+            else "https://example.com/bucket"))
+    assert "inventory_base_url" not in inventories.__dict__
+
+
+def test_abstract_inventories_inventory_url_default(monkeypatch):
+    inventories = DummyInventories("PROJECT")
+    inventory = abstract.project.inventory
+    monkeypatch.delenv(inventory.INVENTORY_BASE_URL_ENV, raising=False)
+    version = MagicMock()
+    version.base_version = "1.36.3"
+    assert (
+        inventories.inventory_url(version)
+        == ("https://storage.googleapis.com/envoy-docs-archive/"
+            "envoy/docs/v1.36.3/objects.inv"))
+    assert (
+        inventories.legacy_inventory_url(version)
+        == ("https://github.com/envoyproxy/archive/raw/main/"
+            "docs/envoy/v1.36.3/objects.inv"))
+
+
+def test_abstract_inventories_legacy_inventory_url(patches):
+    project = MagicMock()
+    inventories = DummyInventories(project)
+    patched = patches(
+        "INVENTORY_LEGACY_URL_FMT",
         prefix="envoy.base.utils.abstract.project.inventory")
     version = MagicMock()
 
     with patched as (m_tpl, ):
         assert (
-            inventories.inventory_url(version)
+            inventories.legacy_inventory_url(version)
             == m_tpl.format.return_value)
     assert (
         m_tpl.format.call_args
