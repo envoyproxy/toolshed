@@ -482,9 +482,9 @@ envoy-code-check==0.6.8 \
     --hash=sha256:6628fb3797fd8754e9037fdae3c7356b91c37405c33c55e6cec6f7019dca4e95 \
     --hash=sha256:e8a0fc524c8bfd02a29c144af6e564a21b8aee73c59c61736c1a1eec3757dbfe
     # via -r requirements.in
-flake8==7.4.0 \
-    --hash=sha256:7c8d371b6d1a2d0c1f9cdf9f865c91f16f880e6cf7b1da0fcfaba31006532f38 \
-    --hash=sha256:d3e0beb3d152209b4dc50fa5e3132844bf4ee4ff994cec87d6913d06b8eb5afc
+flake8==7.4.1 \
+    --hash=sha256:78480274a6d7289d9cb8eafeda241fac57d4ea687d26e32dfdca37b72cdeddad \
+    --hash=sha256:84ea5afcaf344487b0ea5baaebb8100f4cfaebc01f755998f75876664029f587
     # via
     #   envoy-code-check
     #   pep8-naming
@@ -679,9 +679,9 @@ frozenlist==1.5.0 \
     # via
     #   aiohttp
     #   aiosignal
-gidgethub==5.4.0 \
-    --hash=sha256:522bd3a846a315c3163925a840930c4c9a0d685d5853afe852fd589cb472daf5 \
-    --hash=sha256:7470d7723d7c1743471a2d62e79c8752fba12b1c0972e4bad57252338a501dbd
+gidgethub==6.0.0 \
+    --hash=sha256:236f53c5e1967bdf9e6963d94c0915757577332680c6f3df469648424ad91419 \
+    --hash=sha256:4e6ef8acdb45571222ea6f7ec90ec8ca93df847391daac9502562780f1988369
     # via aio-api-github
 humanfriendly==10.0 \
     --hash=sha256:1697e1a8a8f550fd43c2865cd84542fc175a61dcb779b6fee18cf6b6ccba1477 \
@@ -1172,15 +1172,15 @@ pyflakes==4.0.0 \
     --hash=sha256:0f7b7a78e8fcffd78b205200f045a70911f4179be1b42eac82c3323e0bf5c8aa \
     --hash=sha256:492b27735181e3d4a6acfc08738948b666bf3e696781854ea6e0d8540d566d52
     # via flake8
-pyjwt[crypto]==2.14.0 \
-    --hash=sha256:77283c83fb56ecf566a886c757a714bc83668e38156de2cce8263302f42e0b86 \
-    --hash=sha256:ad0cef71c756a56e74863c2919cf0985f72decbcfcb550ee2f422e7c62b5eedc
+pyjwt[crypto]==2.15.1 \
+    --hash=sha256:42d59d631f7768a1028a64c7ff581a9bf7519804daf91fc5b6c56e30eec5e193 \
+    --hash=sha256:4f259e80cdfb6b3fc18a7de51fd1ef9ec79652f25019bae68975ca2468a34df8
     # via
     #   -r requirements.in
     #   gidgethub
-python-gnupg==0.5.6 \
-    --hash=sha256:5743e96212d38923fc19083812dc127907e44dbd3bcf0db4d657e291d3c21eac \
-    --hash=sha256:b5050a55663d8ab9fcc8d97556d229af337a87a3ebebd7054cbd8b7e2043394a
+python-gnupg==0.5.7 \
+    --hash=sha256:73ea46219f992b361eb1ce54cb0968101670654454916a3ee5df8bb9bf0cc8cc \
+    --hash=sha256:dc7afba57a9bc50163c27c726c66cb2fc9692248597f5201f4f7d9eb6097dd1d
     # via envoy-base-utils
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
@@ -1272,6 +1272,7 @@ typing-extensions==4.15.0 \
     # via
     #   aiohttp
     #   aiosignal
+    #   gidgethub
 uritemplate==4.1.1 \
     --hash=sha256:4346edfc5c3b79f694bccd6d6099a322bbeb628dbf2cd86eea55a456ce5124f0 \
     --hash=sha256:830c08b8d99bdd312ea4ead05994a38e8936266f84b9a7878232db50b044e02e
