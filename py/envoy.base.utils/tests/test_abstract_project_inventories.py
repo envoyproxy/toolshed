@@ -305,8 +305,8 @@ def test_abstract_inventories_changes(patches, items, sync):
             in items.items() if v])
 
 
-@pytest.mark.parametrize("response", [None, 404, "OTHER"])
-@pytest.mark.parametrize("legacy_response", [None, 404, "OTHER"])
+@pytest.mark.parametrize("response", [200, 301, 403, 404, 500])
+@pytest.mark.parametrize("legacy_response", [200, 301, 403, 404, 500])
 async def test_abstract_inventories_fetch(
         patches, response, legacy_response):
     project = MagicMock()
@@ -331,7 +331,7 @@ async def test_abstract_inventories_fetch(
     assert (
         m_url.call_args
         == [(version, ), {}])
-    if response != 404:
+    if response == 200:
         assert result == primary.read.return_value
         assert (
             get.call_args_list
@@ -350,7 +350,7 @@ async def test_abstract_inventories_fetch(
     assert (
         m_legacy.call_args
         == [(version, ), {}])
-    if legacy_response == 404:
+    if legacy_response != 200:
         assert result is None
         assert not legacy.read.called
         return
@@ -430,7 +430,7 @@ def test_abstract_inventories_inventory_url_default(monkeypatch):
     version.base_version = "1.36.3"
     assert (
         inventories.inventory_url(version)
-        == ("https://storage.googleapis.com/envoy-docs-archive/"
+        == ("https://storage.googleapis.com/envoy-cncf-archive/"
             "envoy/docs/v1.36.3/objects.inv"))
     assert (
         inventories.legacy_inventory_url(version)
