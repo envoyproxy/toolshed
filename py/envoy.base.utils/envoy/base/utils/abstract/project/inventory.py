@@ -20,7 +20,7 @@ INVENTORY_PATH_GLOB = "docs/inventories/v*.*/objects.inv"
 INVENTORY_PATH_FMT = "docs/inventories/v{minor_version}/objects.inv"
 INVENTORY_VERSIONS_PATH = "docs/versions.yaml"
 INVENTORY_BASE_URL_DEFAULT = (
-    "https://storage.googleapis.com/envoy-docs-archive")
+    "https://storage.googleapis.com/envoy-cncf-archive")
 INVENTORY_BASE_URL_ENV = "ENVOY_DOCS_ARCHIVE_URL"
 INVENTORY_URL_FMT = "{base_url}/envoy/docs/v{version}/objects.inv"
 INVENTORY_LEGACY_URL_FMT = (
@@ -107,7 +107,7 @@ class AInventories(metaclass=abstracts.Abstraction):
     async def fetch(self, version: _version.Version) -> bytes | None:
         for url in (self.inventory_url, self.legacy_inventory_url):
             response = await self.project.session.get(url(version))
-            if response.status != 404:
+            if response.status == 200:
                 return await response.read()
         return None
 
