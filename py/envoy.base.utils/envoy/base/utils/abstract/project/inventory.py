@@ -1,4 +1,5 @@
 
+import os
 import pathlib
 import types
 from collections.abc import Iterator
@@ -18,7 +19,11 @@ from envoy.base.utils import interface, typing
 INVENTORY_PATH_GLOB = "docs/inventories/v*.*/objects.inv"
 INVENTORY_PATH_FMT = "docs/inventories/v{minor_version}/objects.inv"
 INVENTORY_VERSIONS_PATH = "docs/versions.yaml"
-INVENTORY_URL_FMT = (
+INVENTORY_BASE_URL_DEFAULT = (
+    "https://storage.googleapis.com/envoy-docs-archive")
+INVENTORY_BASE_URL_ENV = "ENVOY_DOCS_ARCHIVE_URL"
+INVENTORY_URL_FMT = "{base_url}/envoy/docs/v{version}/objects.inv"
+INVENTORY_LEGACY_URL_FMT = (
     "https://github.com/envoyproxy/archive/raw/main/"
     "docs/envoy/v{version}/objects.inv")
 
@@ -45,6 +50,12 @@ class AInventories(metaclass=abstracts.Abstraction):
             _version.Version(path.parent.name[1:]): path
             for path
             in self.paths}
+
+    @property
+    def inventory_base_url(self) -> str:
+        return os.environ.get(
+            INVENTORY_BASE_URL_ENV,
+            INVENTORY_BASE_URL_DEFAULT).rstrip("/")
 
     @property
     def paths(self) -> Iterator[pathlib.Path]:
@@ -94,17 +105,22 @@ class AInventories(metaclass=abstracts.Abstraction):
         return changed
 
     async def fetch(self, version: _version.Version) -> bytes | None:
-        response = await self.project.session.get(self.inventory_url(version))
-        return (
-            await response.read()
-            if response.status != 404
-            else None)
+        for url in (self.inventory_url, self.legacy_inventory_url):
+            response = await self.project.session.get(url(version))
+            if response.status != 404:
+                return await response.read()
+        return None
 
     def inventory_path(self, version: _version.Version) -> pathlib.Path:
         return self.project.path.joinpath(self.rel_inventory_path(version))
 
     def inventory_url(self, version: _version.Version) -> str:
-        return INVENTORY_URL_FMT.format(version=version.base_version)
+        return INVENTORY_URL_FMT.format(
+            base_url=self.inventory_base_url,
+            version=version.base_version)
+
+    def legacy_inventory_url(self, version: _version.Version) -> str:
+        return INVENTORY_LEGACY_URL_FMT.format(version=version.base_version)
 
     def rel_inventory_path(self, version: _version.Version) -> str:
         return INVENTORY_PATH_FMT.format(
