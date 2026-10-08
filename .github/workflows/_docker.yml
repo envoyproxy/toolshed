@@ -85,7 +85,7 @@ jobs:
       uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
     - name: Get echo version
       id: echo-version
-      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/jq@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:
         input: docker-assets.yaml
         input-format: yaml-path
