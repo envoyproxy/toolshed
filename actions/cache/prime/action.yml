@@ -73,7 +73,7 @@ runs:
     id: gcs-object
     if: >-
       inputs.cache-type == 'gcs'
-    uses: envoyproxy/toolshed/actions/gcs/cache/exists@d850cc271c9d0631028b27e87c41d2f5d6540ee1
+    uses: envoyproxy/toolshed/actions/gcs/cache/exists@a76c2dca927b8ca922d0e76d5d637d604e6851c9
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
@@ -81,7 +81,7 @@ runs:
     id: artifact-object
     if: >-
       inputs.cache-type == 'artifact'
-    uses: envoyproxy/toolshed/actions/github/artifact/cache/id@d850cc271c9d0631028b27e87c41d2f5d6540ee1
+    uses: envoyproxy/toolshed/actions/github/artifact/cache/id@a76c2dca927b8ca922d0e76d5d637d604e6851c9
     with:
       name: ${{ inputs.key }}
       wf-path: ${{ inputs.artifact-wf-path }}
@@ -97,7 +97,7 @@ runs:
       key: ${{ inputs.key }}
 
   # Mutex
-  - uses: envoyproxy/toolshed/actions/jq@d850cc271c9d0631028b27e87c41d2f5d6540ee1
+  - uses: envoyproxy/toolshed/actions/jq@a76c2dca927b8ca922d0e76d5d637d604e6851c9
     if: >-
       ! inputs.lock-id
       && steps.cache-restore-initial.outputs.cache-hit != 'true'
@@ -109,7 +109,7 @@ runs:
       options: -Rr
       filter: |
         @base64
-  - uses: envoyproxy/toolshed/actions/github/mutex@d850cc271c9d0631028b27e87c41d2f5d6540ee1
+  - uses: envoyproxy/toolshed/actions/github/mutex@a76c2dca927b8ca922d0e76d5d637d604e6851c9
     if: >-
       inputs.lock-token
       && steps.cache-restore-initial.outputs.cache-hit != 'true'
@@ -137,7 +137,7 @@ runs:
     if: >-
       inputs.cache-type == 'artifact'
       && steps.artifact-object.outputs.exists == ''
-    uses: envoyproxy/toolshed/actions/github/artifact/cache/id@d850cc271c9d0631028b27e87c41d2f5d6540ee1
+    uses: envoyproxy/toolshed/actions/github/artifact/cache/id@a76c2dca927b8ca922d0e76d5d637d604e6851c9
     with:
       name: ${{ inputs.key }}
       wf-path: ${{ inputs.artifact-wf-path }}
@@ -146,7 +146,7 @@ runs:
     if: >-
       inputs.cache-type == 'gcs'
       && steps.gcs-object.outputs.exists != 'true'
-    uses: envoyproxy/toolshed/actions/gcs/cache/exists@d850cc271c9d0631028b27e87c41d2f5d6540ee1
+    uses: envoyproxy/toolshed/actions/gcs/cache/exists@a76c2dca927b8ca922d0e76d5d637d604e6851c9
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
@@ -214,7 +214,7 @@ runs:
   - if: >-
       steps.restore.outputs.save == 'true'
       && inputs.gcs-bucket
-    uses: envoyproxy/toolshed/actions/gcs/cache/save@d850cc271c9d0631028b27e87c41d2f5d6540ee1
+    uses: envoyproxy/toolshed/actions/gcs/cache/save@a76c2dca927b8ca922d0e76d5d637d604e6851c9
     with:
       bucket: ${{ inputs.gcs-bucket }}
       key: ${{ inputs.key }}
@@ -224,7 +224,7 @@ runs:
     if: >-
       steps.restore.outputs.save == 'true'
       && inputs.cache-type == 'artifact'
-    uses: envoyproxy/toolshed/actions/github/artifact/cache/save@d850cc271c9d0631028b27e87c41d2f5d6540ee1
+    uses: envoyproxy/toolshed/actions/github/artifact/cache/save@a76c2dca927b8ca922d0e76d5d637d604e6851c9
     with:
       name: ${{ inputs.artifact-name }}
       path: ${{ inputs.path || inputs.path-tmp }}
