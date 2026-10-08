@@ -97,7 +97,7 @@ jobs:
       run-ids: ${{ steps.status.outputs.run-ids }}
       version: ${{ steps.status.outputs.version }}
     steps:
-    - uses: envoyproxy/toolshed/actions/appauth@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+    - uses: envoyproxy/toolshed/actions/appauth@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       id: appauth
       name: Appauth
       if: >-
@@ -108,7 +108,7 @@ jobs:
         key: ${{ secrets.app-key }}
     - id: checkout
       name: Checkout the repository
-      uses: envoyproxy/toolshed/actions/github/checkout@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/github/checkout@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:
         branch: ${{ inputs.branch }}
         committer-name: ${{ inputs.committer-name }}
@@ -131,13 +131,13 @@ jobs:
       id: gpg
       if: >-
         inputs.artifacts
-      uses: envoyproxy/toolshed/actions/gpg@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/gpg@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:
         gpg-key: ${{ ! inputs.dry-run && secrets.gpg-key || '' }}
         gpg-password: ${{ ! inputs.dry-run && secrets.gpg-password || '' }}
     - name: Release title (eg commit message)
       id: title
-      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/jq@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:
         options: -sRr
         input: |
@@ -146,7 +146,7 @@ jobs:
           split("\n") | first
 
     - name: Publish the release
-      uses: envoyproxy/toolshed/actions/github/release@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/github/release@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       id: status
       with:
         artifact-workflows: ${{ inputs.artifact-workflows }}
@@ -195,7 +195,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
     - name: Download Python artifacts
-      uses: envoyproxy/toolshed/actions/github/release/artifacts@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/github/release/artifacts@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:
         dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
         filter-artifacts: ${{ inputs.filter-artifacts }}
@@ -204,7 +204,7 @@ jobs:
         template-artifacts: ${{ inputs.template-artifacts }}
         workflows: ${{ inputs.artifact-workflows }}
     - name: Publish python wheels to PyPI
-      uses: envoyproxy/toolshed/actions/python/release/publish@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/python/release/publish@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:
         dry-run: ${{ fromJSON(inputs.dry-run) || fromJSON(inputs.pypi-dry-run) }}
         packages-dir: artifacts/publish
@@ -243,7 +243,7 @@ jobs:
 
     - name: Generate manifest configuration
       id: manifest-config
-      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/jq@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:
         input: .github/docker-manifests.yml
         input-format: yaml-path
@@ -268,7 +268,7 @@ jobs:
           | {manifests: .}
 
     - name: Collect and push OCI artifacts
-      uses: envoyproxy/toolshed/actions/oci/collector@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.27
+      uses: envoyproxy/toolshed/actions/oci/collector@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
       with:
         manifest-config: ${{ steps.manifest-config.outputs.value }}
         run-id: ${{ fromJSON(needs.release.outputs.run-ids)['Docker CI'] }}
