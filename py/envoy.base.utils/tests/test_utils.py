@@ -1,4 +1,5 @@
 import pathlib
+import tempfile
 from unittest.mock import MagicMock
 
 import pytest
@@ -271,13 +272,18 @@ def test_last_n_bytes_of(patches, n):
     assert (
         m_open.return_value.__enter__.return_value.seek.call_args_list
         == [[(0, m_os.SEEK_END), {}],
-            [(23 - (n or 1), ), {}]])
+            [(max(23 - (n or 1), 0), ), {}]])
     assert (
         m_open.return_value.__enter__.return_value.tell.call_args
         == [(), {}])
     assert (
         m_open.return_value.__enter__.return_value.read.call_args
         == [(n or 1, ), {}])
+
+
+def test_last_n_bytes_of_empty_file():
+    with tempfile.NamedTemporaryFile() as f:
+        assert utils.last_n_bytes_of(f.name) == b""
 
 
 def test_minor_version_for(patches):
