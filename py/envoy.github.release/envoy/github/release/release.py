@@ -198,7 +198,7 @@ class GithubRelease:
                     response["assets"].append(result)
                     self.log.info(f"Release file uploaded {result['name']}")
         except ConcurrentError as e:
-            raise e.args[0]
+            raise e.args[0] from e
         if not response["errors"]:
             self.log.success(f"Assets uploaded: {self.version}")
         return response
