@@ -1182,6 +1182,7 @@ def test_changelogstatus_entry_dir(patches, is_current):
                  .changelog_path.return_value
                  .with_suffix.called)
     assert "entry_dir" not in status.__dict__
+    assert not m_version.called
 
 
 @pytest.mark.parametrize("entry_dir_exists", [None, False, True])
