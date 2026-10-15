@@ -66,7 +66,6 @@ EOF
     bazel \
         --output_user_root="$output_root" \
         build \
-        --legacy_external_runfiles \
         --repo_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
         --repo_env=ANDROID_HOME= \
         --incompatible_default_to_explicit_init_py \
