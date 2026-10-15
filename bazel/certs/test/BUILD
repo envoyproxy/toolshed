@@ -95,8 +95,7 @@ sh_test(
         "fixtures/ca_key.pem",
         "@jq_toolchains//:resolved_toolchain",
     ],
-    env = {"JQ_BIN": "$(JQ_BIN)"},
-    toolchains = ["@jq_toolchains//:resolved_toolchain"],
+    env = {"JQ_BIN": "$(rootpath @jq_toolchains//:resolved_toolchain)"},
 )
 
 sh_test(

@@ -41,7 +41,6 @@ sh_test(
         "@jq_toolchains//:resolved_toolchain",
     ],
     env = {
-        "JQ_BIN": "$(JQ_BIN)",
+        "JQ_BIN": "$(rootpath @jq_toolchains//:resolved_toolchain)",
     },
-    toolchains = ["@jq_toolchains//:resolved_toolchain"],
 )
