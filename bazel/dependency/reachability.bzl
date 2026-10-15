@@ -183,6 +183,10 @@ on a path. The same pruning applies to `attributed_packages`: excluded
 repositories are not attributed, and packages are not attributed to repositories
 reachable only through an excluded repository.
 
+Aliases are transparent: an edge to an `alias` is recorded against the actual
+target's repository. `excluded_patterns` and JSON consumers such as `deps.yaml`
+validation must therefore match the resolved repository, not the alias's.
+
 `attribution_patterns` is opt-in and defaults to empty. When left unset, the
 emitted JSON is byte-identical to the historical output and no attribution sets
 are propagated through the aspect. Opt in only when a consumer specifically
