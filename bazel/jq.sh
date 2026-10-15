@@ -30,6 +30,10 @@ _resolve_runfile () {
     fi
 }
 
+if ! command -v "${JQ_BIN}" >/dev/null 2>&1; then
+    JQ_BIN="$(_resolve_runfile "${JQ_BIN}")"
+fi
+
 JQ_ARGS=()
 if [[ -n "${JQ_MODULES_ROOT_MARKER:-}" ]]; then
     JQ_ARGS+=("-L" "$(dirname "$(_resolve_runfile "${JQ_MODULES_ROOT_MARKER}")")")
@@ -37,4 +41,4 @@ elif [[ -n "${JQ_MODULES_DIR:-}" ]]; then
     JQ_ARGS+=("-L" "${JQ_MODULES_DIR}")
 fi
 
-$JQ_BIN "${JQ_ARGS[@]}" "${FILTER}" "${@}" < "$TARGET"
+"$JQ_BIN" "${JQ_ARGS[@]}" "${FILTER}" "${@}" < "$TARGET"

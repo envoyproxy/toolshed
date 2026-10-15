@@ -122,10 +122,9 @@ def jqcat(
         ] + data,
         args = ["$(location :%s)" % flag],
         env = dict({
-            "JQ_BIN": "$(JQ_BIN)",
+            "JQ_BIN": "$(rlocationpath %s)" % jq_toolchain,
         }, **env),
         deps = ["@bazel_tools//tools/bash/runfiles"],
-        toolchains = [jq_toolchain],
     )
 
 def json_merge(
