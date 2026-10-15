@@ -38,6 +38,8 @@ def _glint_repo_impl(rctx):
 
     # Create a BUILD file that exports the binary
     rctx.file("BUILD.bazel", """
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+
 exports_files(["glint"])
 
 filegroup(
