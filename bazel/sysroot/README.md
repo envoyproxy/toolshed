@@ -39,6 +39,33 @@ This ensures that even older glibc sysroots can compile code using modern kernel
 
 ## Usage in Bazel
 
+### Repository layout
+
+Archives are extracted into the repository's `sysroot/` directory. The public
+`:sysroot` target is an alias to `//sysroot:sysroot`, a single source-directory
+artifact rather than a filegroup expanding every file. This gives compile actions
+one sandbox symlink and one merkle-tree node, avoiding Bazel 9's multi-file sysroot
+warning. Files named with `:` and `*.pl` files are removed after extraction because
+a directory artifact cannot exclude individual files.
+
+The Linux `:headers`, `:libs`, and `:toolchain_sysroot` targets remain public:
+headers and libraries still provide individual files, while `:toolchain_sysroot`
+wraps the directory artifact. Their filegroups live inside the `sysroot` package
+because Bazel globs cannot cross package boundaries.
+
+Raw file labels now use the `sysroot` package, for example
+`@sysroot_linux_amd64//sysroot:usr/include/stdio.h` instead of
+`@sysroot_linux_amd64//:usr/include/stdio.h`. Downstream Envoy's
+`source/extensions/dynamic_modules/sdk/rust/BUILD` must update its raw `stdio.h`
+label accordingly; `@sysroot_linux_amd64//:headers` is unchanged.
+
+Configure LLVM's `llvm.sysroot` with
+`@sysroot_linux_amd64//sysroot:sysroot` (and the arm64 equivalent).
+LLVM derives its sysroot path from the label's package, not the alias's resolved
+artifact, so the direct label is required to get
+`external/<canonical-repository-name>/sysroot`. macOS repositories use the same
+directory-and-alias layout, including when the SDK is empty.
+
 ### Direct `.bzl` load
 
 To use these sysroots via a direct `.bzl` load:

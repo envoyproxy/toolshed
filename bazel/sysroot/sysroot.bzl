@@ -1,6 +1,21 @@
-"""Repository rules for sysroots."""
+"""Repository rules exposing sysroots as single source-directory artifacts."""
 
 load("//:versions.bzl", "VERSIONS")
+
+_SYSROOT_ALIAS_BUILD = """\
+package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "sysroot",
+    actual = "//sysroot",
+)
+"""
+
+def _prune_sysroot(ctx):
+    # Source directories cannot filter inputs, unlike the previous glob.
+    result = ctx.execute(["find", "sysroot", "-depth", "(", "-name", "*:*", "-o", "-name", "*.pl", ")", "-delete"])
+    if result.return_code:
+        fail("Failed to prune sysroot: {}".format(result.stderr))
 
 def _get_platform_arch(ctx):
     """Get the platform architecture for sysroot selection."""
@@ -13,7 +28,7 @@ def _get_platform_arch(ctx):
         fail("Unsupported architecture: {}".format(arch))
 
 def _sysroot_impl(ctx):
-    """Implementation for sysroot repository rule."""
+    """Download a sysroot with one sandbox symlink and one merkle-tree node."""
     arch = ctx.attr.arch or _get_platform_arch(ctx)
     glibc_version = ctx.attr.glibc_version
     stdcc_version = ctx.attr.stdcc_version
@@ -37,19 +52,16 @@ def _sysroot_impl(ctx):
         url = url,
         sha256 = ctx.attr.sha256,
         stripPrefix = "",
+        output = "sysroot",
     )
-    ctx.file("BUILD.bazel", """
+    _prune_sysroot(ctx)
+    ctx.file("sysroot/BUILD.bazel", """
 package(default_visibility = ["//visibility:public"])
 
+# A single source directory avoids thousands of individual action inputs.
 filegroup(
     name = "sysroot",
-    srcs = glob(
-        ["**"],
-        exclude = [
-            "**/*:*",
-            "**/*.pl",
-        ],
-    ),
+    srcs = ["."],
 )
 
 filegroup(
@@ -71,6 +83,19 @@ filegroup(
         ],
         exclude = ["**/*:*"],
     ),
+)
+""")
+
+    # Globs cannot cross the sysroot subpackage boundary.
+    ctx.file("BUILD.bazel", _SYSROOT_ALIAS_BUILD + """
+filegroup(
+    name = "headers",
+    srcs = ["//sysroot:headers"],
+)
+
+filegroup(
+    name = "libs",
+    srcs = ["//sysroot:libs"],
 )
 
 filegroup(
@@ -161,22 +186,14 @@ package(default_visibility = ["//visibility:public"])
 
 filegroup(
     name = "sysroot",
-    srcs = glob(
-        ["**"],
-        exclude = ["**/*:*"],
-    ),
+    srcs = ["."],
 )
 """
 
 def _macos_sysroot_impl(ctx):
-    """Implementation for macOS SDK sysroot repository rule."""
-    if ctx.os.name.startswith("mac"):
-        # On macOS, no cross-compilation sysroot needed.
-        ctx.file("BUILD.bazel", _MACOS_SYSROOT_BUILD)
-        return
-
+    """Expose the macOS SDK as one source directory, including empty SDKs."""
     sha256 = ctx.attr.sha256
-    if sha256:
+    if sha256 and not ctx.os.name.startswith("mac"):
         url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-macos-{arch}.tar.xz".format(
             version = ctx.attr.version,
             arch = ctx.attr.arch,
@@ -184,12 +201,18 @@ def _macos_sysroot_impl(ctx):
         ctx.download_and_extract(
             url,
             sha256 = sha256,
+            output = "sysroot",
         )
+        _prune_sysroot(ctx)
     else:
-        # No hash available yet — create an empty sysroot.
-        ctx.execute(["mkdir", "-p", "usr/include"])
+        # Native macOS or no hash available yet — create an empty sysroot.
+        result = ctx.execute(["mkdir", "-p", "sysroot/usr/include"])
+        if result.return_code:
+            fail("Failed to create empty sysroot: {}".format(result.stderr))
 
-    ctx.file("BUILD.bazel", _MACOS_SYSROOT_BUILD)
+    # One sandbox symlink and one merkle-tree node, just like the Linux SDK.
+    ctx.file("sysroot/BUILD.bazel", _MACOS_SYSROOT_BUILD)
+    ctx.file("BUILD.bazel", _SYSROOT_ALIAS_BUILD)
 
 macos_sysroot = repository_rule(
     implementation = _macos_sysroot_impl,
