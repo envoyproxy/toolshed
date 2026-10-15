@@ -1,6 +1,8 @@
 load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup", "pkg_files")
 load("@rules_pkg//pkg:pkg.bzl", "pkg_tar")
 
+_BSD_TAR = Label("@bsd_tar_toolchains//:resolved_toolchain")
+
 def static_website(
         name,
         content = ":content",
@@ -48,6 +50,7 @@ def static_website(
     if data:
         sources += [data]
 
+    # The compressor must produce a libarchive-readable stream for auto-detection.
     pkg_tar(
         name = name_sources,
         compressor = compressor,
@@ -56,7 +59,7 @@ def static_website(
         srcs = sources,
     )
 
-    tools = [generator]
+    tools = [generator, _BSD_TAR]
 
     extra_srcs = [
         name_sources,
@@ -65,11 +68,6 @@ def static_website(
     if url:
         extra_srcs.append(url)
         url = "export SITEURL=$$(cat $(location %s))" % url
-
-    decompressor_args = ""
-    if compressor:
-        decompressor_args = "--use-compress-program=$(location %s)" % compressor
-        tools += [compressor]
 
     exclude_args = " ".join(["--exclude=%s" % item for item in exclude])
     mapping_commands = "\n".join([
@@ -81,7 +79,8 @@ def static_website(
         name = name_website,
         cmd = """
         SOURCE="$(location %s)"
-        DECOMPRESS_ARGS="%s"
+        # Use the hermetic aspect_bazel_lib toolchain, never tar from the host.
+        TAR="$(location %s)"
         GENERATOR="$(location %s)"
         CONTENT="%s"
         OUTPUT="%s"
@@ -89,14 +88,7 @@ def static_website(
         EXCLUDES="%s"
         %s
 
-        # prefer gtar over tar and unbreak macs
-        if command -v gtar >/dev/null 2>&1; then
-            TAR_COMMAND=$$(which gtar)
-        else
-            TAR_COMMAND=$$(which tar)
-        fi
-
-        $$TAR_COMMAND -xf $$SOURCE $${DECOMPRESS_ARGS:+$$DECOMPRESS_ARGS}
+        $$TAR -xf "$$SOURCE"
 
         while IFS= read -r CMD; do
             $$CMD
@@ -104,8 +96,8 @@ def static_website(
 
         $$GENERATOR "$$CONTENT"
 
-        $$TAR_COMMAND cfh $@ $${EXCLUDES:+$$EXCLUDES} -C "$$OUTPUT" .
-        """ % (name_sources, decompressor_args, generator, content_path, output_path, mapping_commands, exclude_args, url),
+        $$TAR cfh $@ $${EXCLUDES:+$$EXCLUDES} -C "$$OUTPUT" .
+        """ % (name_sources, str(_BSD_TAR), generator, content_path, output_path, mapping_commands, exclude_args, url),
         outs = [name_website_tarball],
         srcs = extra_srcs,
         tools = tools,
