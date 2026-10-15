@@ -494,7 +494,9 @@ filegroup(
     name = "pattern_root",
     srcs = [
         "@bazel_skylib//lib:paths",
-        "@bazel_tools//tools/bash/runfiles",
+        # Use a concrete rule: since Bazel 9, bash/runfiles aliases rules_shell,
+        # and aspects observe the actual target's repository.
+        "@bazel_tools//tools/cpp:toolchain_type",
     ],
 )
 
@@ -503,6 +505,22 @@ dependency_reachability(
     testonly = True,
     excluded_patterns = ["bazel_*"],
     roots = [":pattern_root"],
+)
+
+alias(
+    name = "skylib_alias",
+    actual = "@bazel_skylib//lib:sets",
+)
+
+filegroup(
+    name = "alias_root",
+    srcs = [":skylib_alias"],
+)
+
+dependency_reachability(
+    name = "reachability_alias",
+    testonly = True,
+    roots = [":alias_root"],
 )
 
 filegroup(
@@ -560,6 +578,7 @@ sh_test(
     size = "small",
     srcs = ["exclusions_reachability_test.sh"],
     data = [
+        ":reachability_alias",
         ":reachability_apparent_exclusion",
         ":reachability_apparent_exclusion_baseline",
         ":reachability_attribution_excluded",
