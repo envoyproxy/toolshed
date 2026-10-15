@@ -14,6 +14,7 @@ else
 fi
 
 JQ="${JQ_BIN:-jq}"
+REACHABILITY_ALIAS_JSON="${RUNFILES_DIR}/dependency/test/reachability_alias.json"
 REACHABILITY_EXCLUDED_EDGE_JSON="${RUNFILES_DIR}/dependency/test/reachability_excluded_edge.json"
 REACHABILITY_EDGE_AND_PATTERN_JSON="${RUNFILES_DIR}/dependency/test/reachability_edge_and_pattern.json"
 REACHABILITY_EXCLUDED_PATTERN_JSON="${RUNFILES_DIR}/dependency/test/reachability_excluded_pattern.json"
@@ -71,6 +72,11 @@ check "excluded_patterns can remove all matching deps from one root" \
     '[.dependencies[] | .name] | length' \
     "0" \
     "${REACHABILITY_EXCLUDED_PATTERN_JSON}"
+
+check "alias edges record the actual target under its external repository" \
+    '.dependencies[] | select(.name == "bazel_skylib") | .targets | map(sub("^@+[^/]*//"; "//")) | sort | join(",")' \
+    "//lib:sets" \
+    "${REACHABILITY_ALIAS_JSON}"
 
 check "excluded_patterns baseline includes the matched boundary repo" \
     '[.dependencies[] | .name] | any(. == "rules_pkg")' \
