@@ -66,9 +66,9 @@ def static_website(
         extra_srcs.append(url)
         url = "export SITEURL=$$(cat $(location %s))" % url
 
-    decompressor_args = ""
+    decompressor = ""
     if compressor:
-        decompressor_args = "--use-compress-program=$(location %s)" % compressor
+        decompressor = "$(location %s) -d" % compressor
         tools += [compressor]
 
     exclude_args = " ".join(["--exclude=%s" % item for item in exclude])
@@ -81,7 +81,7 @@ def static_website(
         name = name_website,
         cmd = """
         SOURCE="$(location %s)"
-        DECOMPRESS_ARGS="%s"
+        DECOMPRESSOR="%s"
         GENERATOR="$(location %s)"
         CONTENT="%s"
         OUTPUT="%s"
@@ -89,14 +89,11 @@ def static_website(
         EXCLUDES="%s"
         %s
 
-        # prefer gtar over tar and unbreak macs
-        if command -v gtar >/dev/null 2>&1; then
-            TAR_COMMAND=$$(which gtar)
+        if [[ -n "$$DECOMPRESSOR" ]]; then
+            $$DECOMPRESSOR < "$$SOURCE" | tar -xf -
         else
-            TAR_COMMAND=$$(which tar)
+            tar -xf "$$SOURCE"
         fi
-
-        $$TAR_COMMAND -xf $$SOURCE $${DECOMPRESS_ARGS:+$$DECOMPRESS_ARGS}
 
         while IFS= read -r CMD; do
             $$CMD
@@ -104,8 +101,8 @@ def static_website(
 
         $$GENERATOR "$$CONTENT"
 
-        $$TAR_COMMAND cfh $@ $${EXCLUDES:+$$EXCLUDES} -C "$$OUTPUT" .
-        """ % (name_sources, decompressor_args, generator, content_path, output_path, mapping_commands, exclude_args, url),
+        tar cfh $@ $${EXCLUDES:+$$EXCLUDES} -C "$$OUTPUT" .
+        """ % (name_sources, decompressor, generator, content_path, output_path, mapping_commands, exclude_args, url),
         outs = [name_website_tarball],
         srcs = extra_srcs,
         tools = tools,
