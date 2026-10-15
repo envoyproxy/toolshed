@@ -22,6 +22,8 @@ def _sanitizer_libs_impl(ctx, sanitizer):
 
     # Create BUILD file
     ctx.file("BUILD.bazel", """
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 package(default_visibility = ["//visibility:public"])
 
 filegroup(
