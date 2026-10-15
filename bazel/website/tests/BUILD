@@ -1,6 +1,6 @@
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@rules_pkg//pkg:mappings.bzl", "pkg_filegroup", "pkg_files")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//website:macros.bzl", "static_website", "website_theme")
 
 # Test content files
@@ -32,9 +32,9 @@ pkg_filegroup(
 exports_files(["test_config.py"])
 
 # Use static gzip wrapper script for compression tests
-sh_binary(
+native_binary(
     name = "gzip",
-    srcs = ["gzip_wrapper.sh"],
+    src = "gzip_wrapper.sh",
 )
 
 # Test: Basic website generation with default Pelican generator
@@ -55,6 +55,7 @@ sh_test(
     name = "website_generation_test",
     size = "small",
     srcs = ["run_website_tests.sh"],
+    args = ["$(rlocationpath :test_basic_website)"],
     data = [
         ":test_basic_website",
     ],
@@ -111,6 +112,10 @@ sh_test(
     name = "website_parameterized_test",
     size = "small",
     srcs = ["run_parameterized_tests.sh"],
+    args = [
+        "$(rlocationpath :test_custom_exclude)",
+        "$(rlocationpath :test_custom_mappings)",
+    ],
     data = [
         ":test_custom_exclude",
         ":test_custom_mappings",
@@ -124,6 +129,7 @@ sh_test(
     name = "website_compression_test",
     size = "small",
     srcs = ["run_compression_test.sh"],
+    args = ["$(rlocationpath :test_with_compression)"],
     data = [
         ":test_with_compression",
     ],

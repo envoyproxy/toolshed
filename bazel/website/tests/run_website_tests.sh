@@ -1,5 +1,13 @@
 #!/bin/bash
-set -euo pipefail
+# --- begin runfiles.bash initialization v3 ---
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
 
 # Test script to verify basic website generation
 # This tests that the static_website macro correctly generates a website tarball
@@ -8,21 +16,7 @@ echo "================================"
 echo "Running Website Generation Tests"
 echo "================================"
 
-# Handle Bazel runfiles
-if [ -n "${TEST_SRCDIR:-}" ]; then
-    # Running under Bazel test
-    if [ -d "${TEST_SRCDIR}/envoy_toolshed" ]; then
-        RUNFILES_DIR="${TEST_SRCDIR}/envoy_toolshed"
-    else
-        RUNFILES_DIR="${TEST_SRCDIR}/_main"
-    fi
-else
-    echo "ERROR: TEST_SRCDIR not set. This script must be run under Bazel test."
-    exit 1
-fi
-
-TEST_DIR="${RUNFILES_DIR}/website/tests"
-TARBALL="${TEST_DIR}/test_basic_website_html.tar.gz"
+TARBALL="$(rlocation "$1")"
 
 # Check that the tarball was created
 echo ""

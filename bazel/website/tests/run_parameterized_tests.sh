@@ -1,5 +1,13 @@
 #!/bin/bash
-set -euo pipefail
+# --- begin runfiles.bash initialization v3 ---
+set -uo pipefail; set +e; f=bazel_tools/tools/bash/runfiles/runfiles.bash
+source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "${RUNFILES_MANIFEST_FILE:-/dev/null}" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$0.runfiles/$f" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  source "$(grep -sm1 "^$f " "$0.exe.runfiles_manifest" | cut -f2- -d' ')" 2>/dev/null || \
+  { echo>&2 "ERROR: cannot find $f"; exit 1; }; f=; set -e
+# --- end runfiles.bash initialization v3 ---
 
 # Test script for parameterized website generation tests
 # Tests custom configurations and generator-agnostic features
@@ -8,25 +16,12 @@ echo "======================================="
 echo "Running Parameterized Website Tests"
 echo "======================================="
 
-# Handle Bazel runfiles
-if [ -n "${TEST_SRCDIR:-}" ]; then
-    if [ -d "${TEST_SRCDIR}/envoy_toolshed" ]; then
-        RUNFILES_DIR="${TEST_SRCDIR}/envoy_toolshed"
-    else
-        RUNFILES_DIR="${TEST_SRCDIR}/_main"
-    fi
-else
-    echo "ERROR: TEST_SRCDIR not set. This script must be run under Bazel test."
-    exit 1
-fi
-
-TEST_DIR="${RUNFILES_DIR}/website/tests"
 failed=0
 
 # Test custom exclude patterns
 echo ""
 echo "Test 1: Custom exclude patterns"
-TARBALL="${TEST_DIR}/test_custom_exclude_html.tar.gz"
+TARBALL="$(rlocation "$1")"
 if [ ! -f "${TARBALL}" ]; then
     echo "✗ FAILED: Custom exclude tarball not found"
     failed=$((failed + 1))
@@ -59,7 +54,7 @@ fi
 # Test custom mappings
 echo ""
 echo "Test 2: Custom mappings"
-TARBALL="${TEST_DIR}/test_custom_mappings_html.tar.gz"
+TARBALL="$(rlocation "$2")"
 if [ ! -f "${TARBALL}" ]; then
     echo "✗ FAILED: Custom mappings tarball not found"
     failed=$((failed + 1))
