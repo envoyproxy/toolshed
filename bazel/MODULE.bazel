@@ -86,9 +86,9 @@ use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_tra
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
-    dev_dependency = True,
     name = "llvm_source",
     build_file_content = """filegroup(name = "all", srcs = glob(["**"]), visibility = ["//visibility:public"])""",
+    dev_dependency = True,
     sha256 = "ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace",
     strip_prefix = "llvm-project-llvmorg-22.1.8",
     url = "https://github.com/llvm/llvm-project/archive/llvmorg-22.1.8.tar.gz",
@@ -106,6 +106,14 @@ use_repo(sq_prebuilt_ext, "sq_toolchains")
 sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev_dependency = True)
 sysroot_ext.setup()
 use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
+
+macos_sysroot_test_repo = use_repo_rule("//sysroot:sysroot.bzl", "macos_sysroot")
+
+macos_sysroot_test_repo(
+    name = "sysroot_macos_empty",
+    dev_dependency = True,
+    version = "test",
+)
 
 macos_sysroot_build_ext = use_extension("//sysroot:extensions.bzl", "macos_sysroot_build_extension", dev_dependency = True)
 use_repo(macos_sysroot_build_ext, "macos_sdk_pkg", "pkgutil_linux_amd64")
@@ -192,12 +200,12 @@ llvm.toolchain_root(
 )
 llvm.sysroot(
     name = "llvm_toolchain",
-    label = "@sysroot_linux_amd64//:sysroot",
+    label = "@sysroot_linux_amd64//sysroot:sysroot",
     targets = ["linux-x86_64"],
 )
 llvm.sysroot(
     name = "llvm_toolchain",
-    label = "@sysroot_linux_arm64//:sysroot",
+    label = "@sysroot_linux_arm64//sysroot:sysroot",
     targets = ["linux-aarch64"],
 )
 llvm.extra_exec_compatible_with(
