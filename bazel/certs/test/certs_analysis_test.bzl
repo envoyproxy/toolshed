@@ -20,6 +20,25 @@ command_test = analysistest.make(
     attrs = {"expected": attr.string(mandatory = True)},
 )
 
+def _inputs_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = [action for action in analysistest.target_actions(env) if action.mnemonic == "Genrule"]
+    asserts.equals(env, 1, len(actions))
+    inputs = [f.basename for f in actions[0].inputs.to_list()]
+    for name in ctx.attr.expected:
+        asserts.true(env, name in inputs, "missing input: " + name)
+    for name in ctx.attr.forbidden:
+        asserts.false(env, name in inputs, "unexpected input: " + name)
+    return analysistest.end(env)
+
+inputs_test = analysistest.make(
+    _inputs_test_impl,
+    attrs = {
+        "expected": attr.string_list(),
+        "forbidden": attr.string_list(),
+    },
+)
+
 def _files_test_impl(ctx):
     env = analysistest.begin(ctx)
     files = sorted([
