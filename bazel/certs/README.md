@@ -53,6 +53,10 @@ By default, `generated_certs` derives the year hermetically from the
 `bazel-out/volatile-status.txt` for stamped builds (`stamp = 1`, set
 automatically by the macro). No consumer configuration is required.
 
+Year selection runs in a separate stamped action. Certificate generation
+consumes only the selected year, so unrelated workspace status changes do
+not invalidate cached fixtures or their dependent compilation actions.
+
 Workspaces that want to pin the year from their own
 `workspace_status_command` may use `year_status_key` as an optional override
 by emitting a line of the form:

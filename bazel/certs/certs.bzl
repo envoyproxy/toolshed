@@ -69,10 +69,10 @@ def generated_certs(
     """
     gen_label = str(Label(str(gen)))
 
+    year_srcs = []
     if year != None:
         year_cmd = "YEAR=\"" + str(year) + "\";"
         year_arg = "\"" + str(year) + "\""
-        stamp = 0
     else:
         year_cmd = " ".join([
             "YEAR=$$(sed -n -E 's/^" + year_status_key + " ([0-9]{4})$$/\\1/p' bazel-out/stable-status.txt 2>/dev/null);",
@@ -82,12 +82,28 @@ def generated_certs(
             "fi;",
             "if [ -z \"$$YEAR\" ]; then YEAR=$$(date -u +%Y); fi;",
         ])
-        year_arg = "\"$$YEAR\""
-        stamp = 1
+
+        # Only the selected year affects certificates. Keep unrelated status
+        # changes (including BUILD_TIMESTAMP) out of certificate action inputs.
+        year_file = name + "_epoch_year.txt"
+        native.genrule(
+            name = name + "_epoch_year",
+            outs = [year_file],
+            cmd = year_cmd + " printf '%s\\n' \"$$YEAR\" > $@",
+            # Undocumented attr to depend on the workspace status files; see
+            # https://github.com/bazelbuild/bazel/issues/4942
+            stamp = 1,
+            testonly = testonly,
+            tags = tags,
+            visibility = visibility,
+        )
+        year_srcs = [year_file]
+        year_cmd = ""
+        year_arg = "\"$$(cat $(location " + year_file + "))\""
 
     native.genrule(
         name = name + "_gen",
-        srcs = [spec] + srcs,
+        srcs = [spec] + srcs + year_srcs,
         outs = outs,
         cmd = " ".join([
             year_cmd,
@@ -105,9 +121,7 @@ def generated_certs(
             "  exit 1;",
             "fi;",
         ]),
-        # Undocumented attr to depend on the workspace status files; see
-        # https://github.com/bazelbuild/bazel/issues/4942
-        stamp = stamp,
+        stamp = 0,
         testonly = testonly,
         tags = tags,
         tools = [gen_label],

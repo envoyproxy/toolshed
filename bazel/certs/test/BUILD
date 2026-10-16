@@ -1,6 +1,6 @@
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//certs:certs.bzl", "generated_certs")
-load(":certs_analysis_test.bzl", "command_test", "files_test")
+load(":certs_analysis_test.bzl", "command_test", "files_test", "inputs_test")
 
 generated_certs(
     name = "generated",
@@ -125,20 +125,49 @@ command_test(
 
 command_test(
     name = "stamped_command_test",
-    target_under_test = ":stamped_gen",
+    target_under_test = ":stamped_epoch_year",
     expected = "STABLE_CERT_EPOCH_YEAR",
 )
 
 command_test(
     name = "build_timestamp_command_test",
-    target_under_test = ":stamped_gen",
+    target_under_test = ":stamped_epoch_year",
     expected = "BUILD_TIMESTAMP",
 )
 
 command_test(
     name = "custom_status_command_test",
-    target_under_test = ":custom_status_gen",
+    target_under_test = ":custom_status_epoch_year",
     expected = "CUSTOM_CERT_YEAR",
+)
+
+inputs_test(
+    name = "year_status_inputs_test",
+    expected = [
+        "stable-status.txt",
+        "volatile-status.txt",
+    ],
+    target_under_test = ":stamped_epoch_year",
+)
+
+inputs_test(
+    name = "certificate_inputs_test",
+    expected = ["stamped_epoch_year.txt"],
+    forbidden = [
+        "stable-status.txt",
+        "volatile-status.txt",
+    ],
+    target_under_test = ":stamped_gen",
+)
+
+inputs_test(
+    name = "pinned_inputs_test",
+    forbidden = [
+        "stable-status.txt",
+        "volatile-status.txt",
+        "generated_epoch_year.txt",
+    ],
+    target_under_test = ":generated_gen",
 )
 
 files_test(
