@@ -58,7 +58,7 @@ jobs:
     - name: Run pants test
       run: "pants --colors test ::"
     - name: Archive code coverage results
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: coverage
         path: dist/coverage/python/htmlcov/
@@ -142,13 +142,13 @@ jobs:
         python -m pip install --quiet packaging
         python py/tools/publish_check/check_wheel_metadata.py
     - name: Archive wheels
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: python-artifacts
         path: dist/*.whl
         if-no-files-found: error
     - name: Archive sdists
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: python-source
         path: dist/*.tar.gz
