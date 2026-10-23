@@ -14,17 +14,6 @@ config_setting(
 )
 
 config_setting(
-    name = "linux_x86_64",
-    constraint_values = [
-        "@platforms//os:linux",
-        "@platforms//cpu:x86_64",
-    ],
-    flag_values = {
-        "//compile:use_gcc_toolchain": "false",
-    },
-)
-
-config_setting(
     name = "linux_aarch64_platform",
     constraint_values = [
         "@platforms//os:linux",
@@ -33,14 +22,24 @@ config_setting(
 )
 
 config_setting(
-    name = "linux_aarch64",
-    constraint_values = [
-        "@platforms//os:linux",
-        "@platforms//cpu:aarch64",
+    name = "clang_build",
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "clang"},
+)
+
+selects.config_setting_group(
+    name = "linux_x86_64",
+    match_all = [
+        ":linux_x86_64_platform",
+        ":clang_build",
     ],
-    flag_values = {
-        "//compile:use_gcc_toolchain": "false",
-    },
+)
+
+selects.config_setting_group(
+    name = "linux_aarch64",
+    match_all = [
+        ":linux_aarch64_platform",
+        ":clang_build",
+    ],
 )
 
 selects.config_setting_group(
@@ -86,10 +85,10 @@ alias(
 bzl_library(
     name = "wee8_prebuilt_test_lib",
     srcs = ["wee8_prebuilt_test.bzl"],
+    tags = ["manual"],
     deps = [
         "@bazel_skylib//lib:unittest",
     ],
-    tags = ["manual"],
 )
 
 wee8_prebuilt_helpers_test(
