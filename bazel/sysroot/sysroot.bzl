@@ -250,14 +250,14 @@ def setup_macos_sysroot(version = None):
 def setup_sysroots(
         version = None,
         glibc_version = "2.31",
-        stdcc_version = "13",
+        stdcc_version = None,
         name_prefix = ""):
     """Setup function to configure sysroots, shared by module extensions and direct callers.
 
     Args:
         version: Version of sysroot release to use (default: uses VERSIONS["bins_release"])
         glibc_version: glibc version to use (default: "2.31", also available: "2.28")
-        stdcc_version: libstdc++ version to use (default: "13", set to None for base sysroot)
+        stdcc_version: libstdc++ version to use (default: None for base sysroot without libstdc++; set to e.g. "13" for the libstdc++ variant)
         name_prefix: Optional prefix for sysroot repository names (default: "")
                     Allows multiple sysroot setups, e.g., name_prefix="old" creates
                     @old_sysroot_linux_amd64 and @old_sysroot_linux_arm64
