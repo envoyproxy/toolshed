@@ -1,0 +1,80 @@
+[
+  {
+    "id": "CVE-2024-0001",
+    "matched": [
+      {
+        "cpe": {
+          "cpe": {
+            "part": "a",
+            "vendor": "example",
+            "product": "widget",
+            "version": "*"
+          },
+          "versions": {
+            "end_inc": null,
+            "end_exc": "2.0",
+            "start_inc": "1.0",
+            "start_exc": null
+          },
+          "published": "2024-01-15T00:00:00.000"
+        },
+        "dep": {
+          "name": "widget",
+          "release_date": "2023-01-01",
+          "version": {
+            "main": [
+              1,
+              2,
+              3
+            ],
+            "pre": [],
+            "build": [],
+            "string": "1.2.3"
+          },
+          "cpe": {
+            "match": "cpe:2.3:a:example:widget:*:*:*:*:*:*:*:*",
+            "part": "a",
+            "vendor": "example",
+            "product": "widget",
+            "version": "*"
+          }
+        }
+      }
+    ],
+    "cve": {
+      "id": "CVE-2024-0001",
+      "published": "2024-01-15T00:00:00.000",
+      "descriptions": [
+        {
+          "lang": "en",
+          "value": "Widget fixture vulnerability"
+        }
+      ],
+      "metrics": {
+        "cvssMetricV31": [
+          {
+            "cvssData": {
+              "baseSeverity": "HIGH"
+            }
+          }
+        ]
+      },
+      "configurations": [
+        {
+          "nodes": [
+            {
+              "cpeMatch": [
+                {
+                  "vulnerable": true,
+                  "criteria": "cpe:2.3:a:example:widget:*:*:*:*:*:*:*:*",
+                  "versionStartIncluding": "1.0",
+                  "versionEndExcluding": "2.0"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

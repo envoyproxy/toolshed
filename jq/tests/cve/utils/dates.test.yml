@@ -1,0 +1,5 @@
+name: cve utils normalizes NVD timestamps with optional fractions and Z
+imports: [cve/utils]
+input: ["2025-02-03T04:05:06.123", "2025-02-03T04:05:06", "2025-02-03T04:05:06.123Z", "2025-02-03T04:05:06Z"]
+expression: 'map(utils::to_date_string(.))'
+expected: ["2025-02-03", "2025-02-03", "2025-02-03", "2025-02-03"]

@@ -27,8 +27,14 @@ which consumer happens to call it. The directory name is the scope:
 | `github/` | GitHub API / Actions / GFM-shaped input or output (`actions.jq`, `gfm.jq`) |
 | `bazel/` | Bazel `aquery`/BEP/`BUILD`-shaped data (`aquery.jq`, `dep.jq`, `registry.jq`, `version.jq`) |
 | `clang/` | clang tooling output (`tidy.jq`, clang-tidy stdout parsing) |
+| `cve/` | NVD CVE matching and terminal reports (`utils.jq`, `matcher.jq`, `report.jq`) |
 | `envoy/` | reserved for Envoy release/archive policy filters (not added yet) |
 | root | generic helpers with no domain-specific knowledge (`args.jq`, `bash.jq`, `str.jq`, `utils.jq`, `validate.jq`) |
+
+Root `version.jq` parses semantic or opaque dependency versions and compares
+parsed objects. It is intentionally separate from `bazel/version.jq`, whose
+string-based ordering follows Bazel registry conventions. `ansi.jq` provides
+terminal color and style escapes.
 
 `import`/`include` paths mirror this layout, and the import alias is always
 the last path segment (the module's basename). A module must not share its
@@ -62,6 +68,27 @@ $ cd jq && bazel test //...
 ```
 
 Both entry points run the exact same `run-tests.sh` and `.test.yml` files.
+
+## CVE scanner
+
+Prepare a dependency-name dictionary (values containing `cpe`, `version`, and
+`release_date`) with `utils::parse_deps(.)`, then pass that JSON and a JSON
+array of ignored CVE IDs as slurpfiles:
+
+```sh
+jq -L jq 'import "cve/utils" as utils; utils::parse_deps(.)' deps.json > parsed-deps.json
+jq -L jq --slurpfile deps parsed-deps.json --slurpfile ignored ignored.json \
+  -f jq/cve/matcher.jq nvd.json > matches.json
+jq -r -L jq -f jq/cve/report.jq matches.json
+```
+
+`utils::scan($deps; $ignored)` accepts those same slurpfile arrays and reads an
+NVD `{vulnerabilities: [...]}` object from its input. It returns an array of
+`{id, matched: [{cpe, dep}], cve}` records. `utils::report($matches)` is the
+importable rendering function; `cve/matcher.jq` and `cve/report.jq` are executable
+filters, not importable modules. Matching preserves the upstream vendor/product,
+version-bound, and release-date policy; it is not an evaluator of NVD's full
+configuration boolean expressions.
 
 ## Consuming from Bazel
 

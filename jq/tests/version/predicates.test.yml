@@ -1,0 +1,11 @@
+name: version exposes all comparison predicates
+imports: [version]
+input: [["1", "2"], ["1", "1.0"], ["2", "1"]]
+expression: |
+  map(version::parse(.[0]) as $a | version::parse(.[1]) as $b
+      | [version::eq($a; $b), version::lt($a; $b), version::lte($a; $b),
+         version::gt($a; $b), version::gte($a; $b)])
+expected:
+- [false, true, true, false, false]
+- [true, false, true, false, true]
+- [false, false, false, true, true]
