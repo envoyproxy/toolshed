@@ -41,8 +41,8 @@ _setup = tag_class(
             doc = "glibc version to use (default: '2.31', also available: '2.28')",
         ),
         "stdcc_version": attr.string(
-            default = "13",
-            doc = "libstdc++ version to use (default: '13', set to empty string for base sysroot)",
+            default = "",
+            doc = "libstdc++ version to use (default: '' for base sysroot without libstdc++; set to e.g. '13' for the libstdc++ variant)",
         ),
         "name_prefix": attr.string(
             default = "",

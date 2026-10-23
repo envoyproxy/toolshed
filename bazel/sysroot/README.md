@@ -73,22 +73,18 @@ To use these sysroots via a direct `.bzl` load:
 ```starlark
 load("@toolshed//bazel/sysroot:sysroot.bzl", "setup_sysroots")
 
-# Use default glibc 2.31 with libstdc++13
+# Use default glibc 2.31 base sysroot (without libstdc++)
 setup_sysroots()
+
+# Or opt in to libstdc++13
+setup_sysroots(stdcc_version = "13")
 
 # Or use older glibc 2.28 for broader compatibility
 setup_sysroots(
     glibc_version = "2.28",
-    stdcc_version = "13",
 )
 
-# Or use base sysroot without libstdc++
-setup_sysroots(
-    glibc_version = "2.31",
-    stdcc_version = None,
-)
-
-# Or use multiple sysroot configurations with name prefixes
+# Or use multiple sysroot configurations with name prefixes and variants
 setup_sysroots(
     glibc_version = "2.31",
     stdcc_version = "13",
@@ -114,19 +110,17 @@ bazel_dep(name = "envoy_toolshed", version = "0.3.12")
 # Setup sysroots using the extension
 sysroot_ext = use_extension("@envoy_toolshed//bazel/sysroot:extensions.bzl", "sysroot_extension")
 
-# Use default glibc 2.31 with libstdc++13
+# Use default glibc 2.31 base sysroot (without libstdc++)
 sysroot_ext.setup()
 
-# Or configure with specific options:
+# Or opt in to libstdc++13:
 # sysroot_ext.setup(
-#     glibc_version = "2.28",
 #     stdcc_version = "13",
 # )
 
-# Or use base sysroot without libstdc++:
+# Or configure an older glibc base sysroot:
 # sysroot_ext.setup(
-#     glibc_version = "2.31",
-#     stdcc_version = "",
+#     glibc_version = "2.28",
 # )
 
 # Or use multiple sysroot configurations with name prefixes:
