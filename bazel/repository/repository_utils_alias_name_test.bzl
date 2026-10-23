@@ -6,6 +6,7 @@ def _alias_name_test_impl(ctx):
 
     asserts.equals(env, "clang_platform", alias_name("clang_platform"))
     asserts.equals(env, "clang_platform", alias_name("+envoy_toolchains_extension+clang_platform"))
+    asserts.equals(env, "clang_platform", alias_name("+arch_alias_extension+clang_platform"))
     asserts.equals(env, "clang_platform", alias_name("module+ext+clang_platform"))
     asserts.equals(env, "clang_platform", alias_name("module++ext++clang_platform"))
     asserts.equals(env, "clang_platform", alias_name("module~~ext~~clang_platform"))

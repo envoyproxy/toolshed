@@ -8,18 +8,16 @@ This can be useful specifically for setting the `host_platform`.
 
 Example usage:
 
-In `MODULE.bazel`, via a module extension using `use_repo_rule`:
+In `MODULE.bazel`, via the `arch_alias_extension`:
 
 ```starlark
-arch_alias = use_repo_rule("@envoy_toolshed//repository:utils.bzl", "arch_alias")
-
-arch_alias(
+arch_alias = use_extension("@envoy_toolshed//repository:extensions.bzl", "arch_alias_extension")
+arch_alias.alias(
     name = "clang_platform",
-    aliases = {
-        "amd64": "@envoy//bazel/platforms/rbe:rbe_linux_x64_clang_platform",
-        "aarch64": "@envoy//bazel/platforms/rbe:rbe_linux_arm64_clang_platform",
-    },
+    amd64 = "//bazel/platforms/rbe:linux_x64",
+    aarch64 = "//bazel/platforms/rbe:linux_arm64",
 )
+use_repo(arch_alias, "clang_platform")
 ```
 And then in .bazelrc:
 
