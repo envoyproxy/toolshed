@@ -23,7 +23,16 @@ bzl_library(
     name = "compile_extensions_bzl",
     srcs = ["extensions.bzl"],
     visibility = ["//visibility:public"],
-    deps = ["//private:extension_utils_bzl"],
+    deps = [
+        "//compile:llvm_minimal_bzl",
+        "//private:extension_utils_bzl",
+    ],
+)
+
+bzl_library(
+    name = "llvm_minimal_bzl",
+    srcs = ["llvm_minimal.bzl"],
+    visibility = ["//visibility:public"],
 )
 
 # Build setting to control which toolchain to use

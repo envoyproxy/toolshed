@@ -1,5 +1,7 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":llvm_toolchain_test.bzl", "clang_version_test", "llvm_metadata_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -7,6 +9,33 @@ exports_files([
     "assert_llvm_minimal_bins_layout.sh",
     "assert_llvm_minimal_manifest.sh",
 ])
+
+bzl_library(
+    name = "llvm_toolchain_test_bzl",
+    srcs = ["llvm_toolchain_test.bzl"],
+    deps = [
+        "//compile:llvm_minimal_bzl",
+        "@bazel_skylib//lib:unittest",
+    ],
+)
+
+clang_version_test(
+    name = "clang_version_test",
+)
+
+llvm_metadata_test(
+    name = "llvm_metadata_test",
+)
+
+filegroup(
+    name = "llvm_generated_targets_smoke",
+    srcs = [
+        "@llvm_toolchain_llvm//:clang_tooling_headers",
+        "@llvm_toolchain_llvm//:libclang_cpp",
+        "@llvm_toolchain_llvm//:libllvm",
+        "@llvm_toolchain_llvm//:llvm.bzl",
+    ],
+)
 
 # Simple C++ hello world binary for cross-compilation testing.
 # Build for aarch64:
@@ -88,11 +117,6 @@ sh_test(
     name = "cross_compile_aarch64_unwind_test",
     size = "small",
     srcs = ["check_unwind.sh"],
-    target_compatible_with = select({
-        "//compile:gcc_build": ["@platforms//:incompatible"],
-        "//compile:macos_build": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
     data = [
         ":test_unwind",
         "@llvm_toolchain_llvm//:nm",
@@ -106,6 +130,11 @@ sh_test(
         "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
     },
     tags = ["manual"],
+    target_compatible_with = select({
+        "//compile:gcc_build": ["@platforms//:incompatible"],
+        "//compile:macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 # Run with:
@@ -115,11 +144,6 @@ sh_test(
     name = "cross_compile_x86_64_unwind_test",
     size = "small",
     srcs = ["check_unwind.sh"],
-    target_compatible_with = select({
-        "//compile:gcc_build": ["@platforms//:incompatible"],
-        "//compile:macos_build": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
     data = [
         ":test_unwind",
         "@llvm_toolchain_llvm//:nm",
@@ -133,6 +157,11 @@ sh_test(
         "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
     },
     tags = ["manual"],
+    target_compatible_with = select({
+        "//compile:gcc_build": ["@platforms//:incompatible"],
+        "//compile:macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 # Negative unwind tests — verify that libunwind.a is NOT statically linked
@@ -144,11 +173,6 @@ sh_test(
     name = "cross_compile_aarch64_no_unwind_test",
     size = "small",
     srcs = ["check_unwind.sh"],
-    target_compatible_with = select({
-        "//compile:gcc_build": ["@platforms//:incompatible"],
-        "//compile:macos_build": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
     data = [
         ":test_unwind",
         "@llvm_toolchain_llvm//:nm",
@@ -162,6 +186,11 @@ sh_test(
         "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
     },
     tags = ["manual"],
+    target_compatible_with = select({
+        "//compile:gcc_build": ["@platforms//:incompatible"],
+        "//compile:macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 # Run with:
@@ -172,11 +201,6 @@ sh_test(
     name = "cross_compile_x86_64_no_unwind_test",
     size = "small",
     srcs = ["check_unwind.sh"],
-    target_compatible_with = select({
-        "//compile:gcc_build": ["@platforms//:incompatible"],
-        "//compile:macos_build": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
     data = [
         ":test_unwind",
         "@llvm_toolchain_llvm//:nm",
@@ -190,6 +214,11 @@ sh_test(
         "LLVM_READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
     },
     tags = ["manual"],
+    target_compatible_with = select({
+        "//compile:gcc_build": ["@platforms//:incompatible"],
+        "//compile:macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
 )
 
 # Binary exercising std::string/std::vector so that the resulting object
