@@ -35,8 +35,8 @@ bzl_library(
     visibility = ["//visibility:public"],
 )
 
-# Build setting to control which toolchain to use
-# This can be set with --//compile:use_gcc_toolchain=true
+# Toolshed-internal build setting to select its GCC toolchain/platform.
+# Consumers using their own GCC toolchain should not need to set this.
 bool_flag(
     name = "use_gcc_toolchain",
     build_setting_default = False,
@@ -44,7 +44,7 @@ bool_flag(
 
 config_setting(
     name = "gcc_build",
-    flag_values = {":use_gcc_toolchain": "true"},
+    flag_values = {"@bazel_tools//tools/cpp:compiler": "gcc"},
 )
 
 config_setting(
