@@ -1,6 +1,6 @@
 SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 
-BINS_RELEASE = "0.2.25"
+BINS_RELEASE = "0.2.26"
 
 LLVM_VERSION = "22.1.8"
 
@@ -23,8 +23,8 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": BINS_RELEASE,
-    "msan_libs_sha256": "f054293360a932993602265ea6c52e777c4f89eaff46cec4d80e96aa75805e4a",
-    "tsan_libs_sha256": "07f78bcfba0c6be156a893ec4e5fe27a34fd3e69ef616ae989d21ab006d41b57",
+    "msan_libs_sha256": "4a94084a2b2692b384777fe993c82f04c9b5fe866e3ec91d0cf340feadd76864",
+    "tsan_libs_sha256": "c2748fed2a861546c16361c688d3872c9239120842bf646a6a74c24e57e5678d",
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
         "x86_64": "e40f39338ffe561dfa26541557c9e548fc7760db9d99f7b6c5de237b725482aa",
@@ -54,9 +54,9 @@ VERSIONS = {
     # Keys match the platform suffix in artifact names (Linux-X64, Linux-ARM64, macOS-ARM64).
     # Empty strings are placeholders; the release (bazel/prepare) workflow fills them after release.
     "llvm_minimal_sha256": {
-        "Linux-X64": "6cb4cca6df33be00c80fa1639062c973d1cafe4e7ad98a9b4bdf21bf9dec5806",
-        "Linux-ARM64": "9a6cc0a84d524342e578db739b04e8a3875adb40b38887e4e074661e925f8a9c",
-        "macOS-ARM64": "928e51aa7c97fbb8c5c50075118f4b36e36363b1a2c3af2dfef9aea1ef526ade",
+        "Linux-X64": "a12891b93faaf8fc1293db6232bf71fcdade9df10e978fe92dbac78d7379130d",
+        "Linux-ARM64": "a4a8a3545ca213117e9629aa4b0abd6fd1232556109af31b3dacf16b1b59ffa1",
+        "macOS-ARM64": "ca6c644a6d285d52d62bf7cb206d839623668eaf86cdc25bc0a709cd137a2017",
     },
     "sq_sha256": {
         "Linux-X64": "cd0c003c86f6947cc43a6f4305ce04898e073deb297e598c7677b0d651fbf559",
@@ -98,22 +98,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "c6bc3431a24a869f226f1283c95ff575d8d158b14d0b344203235f438a03c9d6",
-                "arm64": "9e69b0b19c649970c77edeb22db15ae14b821c1b506055a88ef872d261ecfa0a",
+                "amd64": "a2f7f25c635ec8a6e28c29da54797b3e3202c16e9840675478d2f77ac2592221",
+                "arm64": "23b4ded5d86ebe45c282c370ce944f690134c8f87bc92965e0d9f863cbb8cfa7",
             },
             "13": {
-                "amd64": "964ead7dc533aee3057ea6c780e6b5ec09b25ed7140f24906b0ea02581bd6867",
-                "arm64": "906cd276c23916ceed92bd2e6dfe80da951ecd364ca41b691536366f45689f64",
+                "amd64": "4e6be49ec3b6f2b378ac8a64c3b8c9367cad696923ec3842a1bd1d9dc17b9b9a",
+                "arm64": "f5269da44050446a01c85b49ce9495618e461c286797b3db5747e6dc9ab59aba",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "e62bc513029d7fedec4b794be9c7e89da7cf0de2de2c43f6b83e636232099aaa",
-                "arm64": "3f7433b3e7b355e37a971bc7df1eb001e17e6fce8e120ac2800210acd7aff637",
+                "amd64": "55a1ac8041ce3cb0e71e10562cd2d1cc4cc31c71b37e35c0e5e546b6150cc8c7",
+                "arm64": "28559140ba728b3d59b889972586827b21963c8d7cfe190b3060fff3f1f554d4",
             },
             "13": {
-                "amd64": "2ea419344fbe9847e30c8d4c7f459d880afe172f96aad7d2b5a8854aa526986c",
-                "arm64": "9a858b234cedcf1c03d179872e5bfa8ea5ccf2f9c44c0ddd49806bbe9f1372c3",
+                "amd64": "f907a1b292f2bec255af57ba186326b4bf27b4d95b91e05f87f36fbe8c3377ad",
+                "arm64": "6063622859b7459f21bd9dbfd4f43f0840528f082f64b324d92a0ee321ef83ba",
             },
         },
     },
@@ -168,7 +168,7 @@ VERSIONS = {
         "download_suffix": "Linux-X64",
         "version": LLVM_VERSION,
         "bins_release": BINS_RELEASE,
-        "sha256": "6cb4cca6df33be00c80fa1639062c973d1cafe4e7ad98a9b4bdf21bf9dec5806",
+        "sha256": "a12891b93faaf8fc1293db6232bf71fcdade9df10e978fe92dbac78d7379130d",
         "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/llvm-minimal-{version}-{download_suffix}.tar.zst",
         "strip_prefix": "llvm-minimal-{version}-{download_suffix}",
     },
@@ -178,7 +178,7 @@ VERSIONS = {
         "download_suffix": "Linux-ARM64",
         "version": LLVM_VERSION,
         "bins_release": BINS_RELEASE,
-        "sha256": "9a6cc0a84d524342e578db739b04e8a3875adb40b38887e4e074661e925f8a9c",
+        "sha256": "a4a8a3545ca213117e9629aa4b0abd6fd1232556109af31b3dacf16b1b59ffa1",
         "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/llvm-minimal-{version}-{download_suffix}.tar.zst",
         "strip_prefix": "llvm-minimal-{version}-{download_suffix}",
     },
@@ -188,7 +188,7 @@ VERSIONS = {
         "download_suffix": "macOS-ARM64",
         "version": LLVM_VERSION,
         "bins_release": BINS_RELEASE,
-        "sha256": "928e51aa7c97fbb8c5c50075118f4b36e36363b1a2c3af2dfef9aea1ef526ade",
+        "sha256": "ca6c644a6d285d52d62bf7cb206d839623668eaf86cdc25bc0a709cd137a2017",
         "url": "https://github.com/{repo}/releases/download/bins-v{bins_release}/llvm-minimal-{version}-{download_suffix}.tar.zst",
         "strip_prefix": "llvm-minimal-{version}-{download_suffix}",
     },
