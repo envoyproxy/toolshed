@@ -1,0 +1,109 @@
+name: coverage/report source and test roots retain intermediate stats and categorize requested source paths
+input:
+  coveragePercent: 75
+  linesCovered: 30
+  linesTotal: 40
+  children:
+    source:
+      coveragePercent: 70
+      linesCovered: 21
+      linesTotal: 30
+      children:
+        common:
+          coveragePercent: 50
+          linesCovered: 5
+          linesTotal: 10
+          children:
+            foo:
+              coveragePercent: 50
+              linesCovered: 5
+              linesTotal: 10
+              children: {}
+        extensions:
+          coveragePercent: 70
+          linesCovered: 7
+          linesTotal: 10
+          children:
+            bar:
+              coveragePercent: 70
+              linesCovered: 7
+              linesTotal: 10
+              children: {}
+        server:
+          coveragePercent: 90
+          linesCovered: 9
+          linesTotal: 10
+          children: {}
+    test:
+      coveragePercent: 90
+      linesCovered: 9
+      linesTotal: 10
+      children: {}
+imports:
+- coverage/report
+expression: |
+  report::report(
+    {thresholds: {per_directory: 80},
+     directories: {"source/common/foo": 60, "source/extensions/bar": 60}};
+    ["source/common/foo", "source/extensions/bar", "source/server"])
+  | {per_directory_coverage, validation, validation_summary}
+expected:
+  per_directory_coverage:
+    source:
+      expected_percent: 80
+      coverage_percent: 70
+      lines_covered: 21
+      lines_total: 30
+    source/common:
+      expected_percent: 80
+      coverage_percent: 50
+      lines_covered: 5
+      lines_total: 10
+    source/common/foo:
+      expected_percent: 60
+      coverage_percent: 50
+      lines_covered: 5
+      lines_total: 10
+    source/extensions:
+      expected_percent: 80
+      coverage_percent: 70
+      lines_covered: 7
+      lines_total: 10
+    source/extensions/bar:
+      expected_percent: 60
+      coverage_percent: 70
+      lines_covered: 7
+      lines_total: 10
+    source/server:
+      expected_percent: 80
+      coverage_percent: 90
+      lines_covered: 9
+      lines_total: 10
+    test:
+      expected_percent: 80
+      coverage_percent: 90
+      lines_covered: 9
+      lines_total: 10
+  validation:
+    failed_coverage:
+    - directory: source/common/foo
+      coverage_percent: 50
+      threshold: 60
+    low_coverage:
+    - directory: source/extensions/bar
+      coverage_percent: 70
+      threshold: 60
+    excellent_coverage:
+    - directory: source/server
+      coverage_percent: 90
+    high_coverage_adjustable:
+    - directory: source/extensions/bar
+      coverage_percent: 70
+      threshold: 60
+  validation_summary:
+    total_directories: 3
+    failed_count: 1
+    low_coverage_count: 1
+    excellent_coverage_count: 1
+    adjustable_count: 1
+    all_passed: false

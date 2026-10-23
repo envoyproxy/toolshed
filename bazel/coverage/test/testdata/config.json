@@ -1,0 +1,4 @@
+{
+  "thresholds": {"total": 50, "per_directory": 50},
+  "directories": {"source/a": 50}
+}
