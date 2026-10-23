@@ -1,0 +1,11 @@
+name: cve utils matches wildcard numeric and opaque CPE versions
+imports: [cve/utils, version]
+input:
+- ["*", "1.2.3"]
+- ["1.2.3", "1.2.3"]
+- ["1.2", "1.2.0"]
+- ["1.2.3", "1.2.4"]
+- ["deadbeef", "deadbeef"]
+- ["deadbeef", "feedface"]
+expression: 'map(utils::match_cpe_tag_version(.[0]; version::parse(.[1])))'
+expected: [true, true, true, false, true, false]

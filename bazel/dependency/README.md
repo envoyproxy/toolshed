@@ -6,6 +6,12 @@ This package contains three update tools:
 - `registry_updater` for pinned `--registry=` entries in `.bazelrc`
 - `module_updater` for `bazel_dep(...)` versions in `MODULE.bazel`
 
+## CVE scanning
+
+[`cve_scan`](cve/README.md) scans dependency metadata against NVD CVE data,
+provides a report/test target, and updates cached monthly data. See its
+documentation for the dependency JSON contract and YAML configuration.
+
 ## Registry updater
 
 `registry_updater` rewrites a `.bazelrc` `--registry=<url>/<sha>` pin, but it

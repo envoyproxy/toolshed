@@ -1,0 +1,13 @@
+name: cve utils excludes dependencies released after publication but includes same day
+imports: [cve/utils, version]
+input:
+- {release: "2024-01-01", vendor: vendor, product: product}
+- {release: "2024-01-02", vendor: vendor, product: product}
+- {release: "2023-12-31", vendor: vendor, product: product}
+- {release: "2024-01-01", vendor: other, product: product}
+- {release: "2024-01-01", vendor: vendor, product: other}
+expression: |
+  map(utils::match_dep_cpe(
+      {cpe: {vendor: "vendor", product: "product", version: "*"}, versions: {}, published: "2024-01-01T12:34:56.000"};
+      {cpe: {vendor: .vendor, product: .product}, version: version::parse("1"), release_date: .release}))
+expected: [true, false, true, false, false]

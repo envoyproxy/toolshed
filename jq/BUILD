@@ -2,6 +2,7 @@ load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load(":defs.bzl", "jq_module_test", "test_modules", "toolshed_jq")
 
 exports_files(glob(["**/*.jq"]) + [
+    "defs.bzl",
     "run-tests.sh",
     "modules_root.marker",
 ])
@@ -24,8 +25,8 @@ toolshed_jq(
     name = "toolshed_jq_smoke",
     srcs = [],
     out = "toolshed_jq_smoke.txt",
-    filter = 'import "str" as str; "  x  " | str::trim',
     args = ["-r"],
+    filter = 'import "str" as str; "  x  " | str::trim',
 )
 
 diff_test(
