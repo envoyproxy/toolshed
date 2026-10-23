@@ -1,0 +1,36 @@
+name: coverage/report default zero threshold passes and omits empty warning and error sections
+input:
+  coveragePercent: 0
+  linesCovered: 0
+  linesTotal: 0
+  children:
+    source:
+      coveragePercent: 0
+      linesCovered: 0
+      linesTotal: 0
+      children: {}
+imports:
+- coverage/report
+expression: 'report::report({}; ["source"]) | .summary_report | split("\n")'
+expected:
+- ''
+- ================== Per-Directory Coverage Report ==================
+- ''
+- 'Directories with excellent coverage (>= 0%):'
+- '  ✓ source: 0%'
+- ''
+- ''
+- ''
+- ''
+- ==================================================================
+- 'Overall Coverage: 0%'
+- 'Source directories checked: 1,'
+- 'Failed: 0,'
+- 'Low coverage (configured): 0,'
+- 'Excellent coverage: 1'
+- ''
+- ==================================================================
+- ''
+- Code coverage 0% is good and higher than limit of 0%
+- ''
+- ''

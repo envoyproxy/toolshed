@@ -1,0 +1,37 @@
+name: coverage/report total threshold compares unrounded coverage with exact boundary
+input:
+  coveragePercent: 79.96
+  linesCovered: 7996
+  linesTotal: 10000
+imports:
+- coverage/report
+expression: |
+  [report::report({thresholds: {total: 80}}; []),
+   (.coveragePercent = 80 | report::report({thresholds: {total: 80}}; []))]
+expected:
+- summary:
+    coverage_percent: 80
+    lines_covered: 7996
+    lines_total: 10000
+    threshold: 80
+    threshold_reached: false
+  source_directories: []
+  per_directory_coverage: {}
+  default_threshold: 0
+  coverage_config:
+    thresholds:
+      total: 80
+  summary_message: Code coverage 80% is lower than limit of 80%
+- summary:
+    coverage_percent: 80
+    lines_covered: 7996
+    lines_total: 10000
+    threshold: 80
+    threshold_reached: true
+  source_directories: []
+  per_directory_coverage: {}
+  default_threshold: 0
+  coverage_config:
+    thresholds:
+      total: 80
+  summary_message: Code coverage 80% is good and higher than limit of 80%

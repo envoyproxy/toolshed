@@ -1,0 +1,60 @@
+name: coverage/report absent or empty children ignore missing sources and pass validation
+input:
+  coveragePercent: 0
+  linesCovered: 0
+  linesTotal: 0
+imports:
+- coverage/report
+expression: |
+  [report::report({}; ["missing"]),
+   (.children = {} | report::report({}; ["missing"]))]
+  | map(del(.summary_report))
+expected:
+- summary:
+    coverage_percent: 0
+    lines_covered: 0
+    lines_total: 0
+    threshold: 0
+    threshold_reached: true
+  source_directories:
+  - missing
+  per_directory_coverage: {}
+  default_threshold: 0
+  coverage_config: {}
+  validation:
+    failed_coverage: []
+    low_coverage: []
+    excellent_coverage: []
+    high_coverage_adjustable: []
+  validation_summary:
+    total_directories: 0
+    failed_count: 0
+    low_coverage_count: 0
+    excellent_coverage_count: 0
+    adjustable_count: 0
+    all_passed: true
+  summary_message: Code coverage 0% is good and higher than limit of 0%
+- summary:
+    coverage_percent: 0
+    lines_covered: 0
+    lines_total: 0
+    threshold: 0
+    threshold_reached: true
+  source_directories:
+  - missing
+  per_directory_coverage: {}
+  default_threshold: 0
+  coverage_config: {}
+  validation:
+    failed_coverage: []
+    low_coverage: []
+    excellent_coverage: []
+    high_coverage_adjustable: []
+  validation_summary:
+    total_directories: 0
+    failed_count: 0
+    low_coverage_count: 0
+    excellent_coverage_count: 0
+    adjustable_count: 0
+    all_passed: true
+  summary_message: Code coverage 0% is good and higher than limit of 0%
