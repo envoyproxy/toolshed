@@ -14,9 +14,8 @@ LCOV_DATA="$(rlocation "$LCOV_DATA")"
 WORK="$PWD/report-generator-test.${BASHPID}"
 mkdir "$WORK"
 trap 'rm -rf -- "$WORK"' EXIT
-mkdir -p "$WORK/ws/source/a" "$WORK/ws/source/uncovered" "$WORK/execroot" "$WORK/output"
-printf 'int covered = 1;\nint uncovered = 0;\n' > "$WORK/ws/source/a/a.cc"
-printf 'int untested = 0;\n' > "$WORK/ws/source/uncovered/uncovered.cc"
+mkdir "$WORK/execroot" "$WORK/output"
+cp -RL "$(dirname "$LCOV_DATA")/ws" "$WORK/ws"
 printf 'keep me\n' > "$WORK/output/sentinel"
 cp "$LCOV_DATA" "$WORK/input data.dat"
 # A missing entry and an unterminated final line are intentional.
@@ -53,9 +52,37 @@ ln -s "$WORK/ws/source" "$WORK/execroot/source"
 )
 check_archive "$WORK/fallback.tar.zst" "$WORK/fallback-extracted"
 
+# Bazel can also materialize real source directories containing file symlinks.
+mkdir -p "$WORK/file-execroot/source/a"
+ln -s "$WORK/ws/source/a/a.cc" "$WORK/file-execroot/source/a/a.cc"
+(
+    cd "$WORK/file-execroot"
+    unset BUILD_WORKSPACE_DIRECTORY
+    "$GENERATOR" --reports_file "$WORK/reports.txt" --output_file "$WORK/file-fallback.tar.zst"
+)
+check_archive "$WORK/file-fallback.tar.zst" "$WORK/file-fallback-extracted"
+
+# A copied source tree does not identify the real workspace. Never silently
+# treat an unresolved execroot as the source workspace.
+mkdir -p "$WORK/unresolved-execroot/source/a"
+cp "$WORK/ws/source/a/a.cc" "$WORK/unresolved-execroot/source/a/a.cc"
+if (
+    cd "$WORK/unresolved-execroot"
+    unset BUILD_WORKSPACE_DIRECTORY
+    "$GENERATOR" --reports_file "$WORK/reports.txt" --output_file "$WORK/unresolved.tar.zst"
+) > "$WORK/error" 2>&1; then
+    echo "Generator unexpectedly treated an unresolved execroot as a workspace" >&2
+    exit 1
+fi
+grep -q 'Cannot resolve source files to a real workspace' "$WORK/error"
+
 BUILD_WORKSPACE_DIRECTORY="$WORK/does-not-exist" "$GENERATOR" \
     --workspace "$WORK/ws" --reports_file "$WORK/reports.txt" --output_file "$WORK/override.tar.zst"
 check_archive "$WORK/override.tar.zst" "$WORK/override-extracted"
+
+BUILD_WORKSPACE_DIRECTORY="$WORK/does-not-exist" "$GENERATOR" \
+    --workspace="$WORK/ws" --reports_file="$WORK/reports.txt" --output_file="$WORK/equals-override.tar.zst"
+check_archive "$WORK/equals-override.tar.zst" "$WORK/equals-override-extracted"
 
 # Exercise manifest-only runfiles resolution, including imported jq modules.
 manifest="${RUNFILES_MANIFEST_FILE:-${RUNFILES_DIR:-$TEST_SRCDIR}/MANIFEST}"

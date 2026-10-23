@@ -54,14 +54,28 @@ for component in "${root_components[@]}"; do
 done
 if [[ -z "$WORKSPACE_PATH" ]]; then
     # Coverage invokes this in the execroot. Resolve the source-root symlink,
-    # then ascend to the workspace; generated configs and MODULE symlinks are
-    # not reliable workspace markers.
+    # or an individual source file when the execroot contains a symlink farm.
+    # Generated configs and MODULE symlinks are not reliable workspace markers.
     [[ -d "$PWD/$SOURCE_ROOT" ]] ||
         fail "Cannot locate workspace; set BUILD_WORKSPACE_DIRECTORY or pass --workspace"
-    WORKSPACE_PATH="$(realpath "$PWD/$SOURCE_ROOT")"
-    for component in "${root_components[@]}"; do
-        WORKSPACE_PATH="$(dirname "$WORKSPACE_PATH")"
-    done
+    resolved_root="$(realpath "$PWD/$SOURCE_ROOT")"
+    if [[ "$resolved_root" != "$PWD/$SOURCE_ROOT" ]]; then
+        WORKSPACE_PATH="$resolved_root"
+        for component in "${root_components[@]}"; do
+            WORKSPACE_PATH="$(dirname "$WORKSPACE_PATH")"
+        done
+    else
+        while IFS= read -r source_file; do
+            resolved_source="$(realpath "$source_file")"
+            source_suffix="${source_file#"$PWD/"}"
+            if [[ "$resolved_source" != "$source_file" && "$resolved_source" == */"$source_suffix" ]]; then
+                WORKSPACE_PATH="${resolved_source%/"$source_suffix"}"
+                break
+            fi
+        done < <(find -L "$PWD/$SOURCE_ROOT" -type f -name "$SOURCE_GLOB" -print)
+    fi
+    [[ -n "$WORKSPACE_PATH" && "$WORKSPACE_PATH" != "$PWD" && "$WORKSPACE_PATH" != "$PWD/"* ]] ||
+        fail "Cannot resolve source files to a real workspace; set BUILD_WORKSPACE_DIRECTORY or pass --workspace"
 fi
 [[ -d "$WORKSPACE_PATH" ]] || fail "Workspace not found: $WORKSPACE_PATH"
 WORKSPACE_PATH="$(realpath "$WORKSPACE_PATH")"
