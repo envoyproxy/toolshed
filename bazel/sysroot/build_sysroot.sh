@@ -272,9 +272,39 @@ install_libstdcc () {
     retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
 }
 
+install_libgcc_dev_link () {
+    # The runtime package omits the unversioned dev link from libgcc-N-dev.
+    # Provide it for literal -lgcc_s users (notably rustc), without -lgcc:
+    # base sysroots use compiler-rt and do not include libgcc.a.
+    echo ""
+    echo "Step 5: Ensuring unversioned libgcc_s.so link..."
+    local triple
+    case "$ARCH" in
+        amd64) triple="x86_64-linux-gnu" ;;
+        arm64) triple="aarch64-linux-gnu" ;;
+        *) echo "Unsupported arch for libgcc_s link: $ARCH"; exit 1 ;;
+    esac
+    local libdir
+    for libdir in "lib/$triple" "usr/lib/$triple"; do
+        if [[ -e "$WORK_DIR/$libdir/libgcc_s.so.1" ]]; then
+            if [[ ! -e "$WORK_DIR/usr/lib/$triple/libgcc_s.so" ]]; then
+                sudo mkdir -p "$WORK_DIR/usr/lib/$triple"
+                echo "/* GNU ld script - provided by toolshed sysroot */
+INPUT ( libgcc_s.so.1 )" \
+                    | sudo tee "$WORK_DIR/usr/lib/$triple/libgcc_s.so" > /dev/null
+                sudo chmod 0644 "$WORK_DIR/usr/lib/$triple/libgcc_s.so"
+                echo "Created usr/lib/$triple/libgcc_s.so -> libgcc_s.so.1"
+            fi
+            return
+        fi
+    done
+    echo "Error: libgcc_s.so.1 not found in sysroot"
+    exit 1
+}
+
 cleanup_sysroot () {
     echo ""
-    echo "Step 5: Cleaning up sysroot..."
+    echo "Step 6: Cleaning up sysroot..."
     if [[ "$CROSS_COMPILE" == "false" ]]; then
         sudo chroot "$WORK_DIR" apt-get clean
     fi
@@ -320,7 +350,7 @@ cleanup_sysroot () {
 
 fix_absolute_symlinks () {
     echo ""
-    echo "Step 6: Fixing absolute symlinks..."
+    echo "Step 7: Fixing absolute symlinks..."
     find "$WORK_DIR" -type l | while read -r symlink; do
         # Get the current target
         current_target=$(readlink "$symlink")
@@ -344,7 +374,7 @@ fix_absolute_symlinks () {
 
 package_sysroot () {
     echo ""
-    echo "Step 7: Packaging sysroot..."
+    echo "Step 8: Packaging sysroot..."
     OUTPUT_FILE="$(realpath "${OUTPUT}")"
     sudo tar -cJf "$OUTPUT_FILE" -C "$WORK_DIR" .
     echo ""
@@ -361,6 +391,7 @@ build_sysroot () {
     configure_package_sources
     install_base_packages
     install_libstdcc
+    install_libgcc_dev_link
     cleanup_sysroot
     fix_absolute_symlinks
     package_sysroot

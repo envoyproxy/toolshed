@@ -22,6 +22,12 @@ The workflow builds sysroots with the following configurations:
   - Base: `sysroot-glibc2.28-{arch}.tar.xz`
   - With libstdc++13: `sysroot-glibc2.28-libstdc++13-{arch}.tar.xz`
 
+The base variant includes the `libgcc_s.so.1` runtime and an unversioned
+`usr/lib/<triple>/libgcc_s.so` linker script so literal `-lgcc_s` links resolve
+(needed by, for example, rustc). It does not include `libgcc.a` or libstdc++;
+consumers should use `-rtlib=compiler-rt`. The libstdc++ variant retains the
+development linker script supplied by Debian's `libgcc-N-dev` package.
+
 ## Architecture Support
 
 Both glibc versions are built for:
