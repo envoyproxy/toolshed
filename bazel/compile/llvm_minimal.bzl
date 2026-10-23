@@ -482,8 +482,8 @@ def _select_llvm_toolchain_alias_label(ctx):
         elif arch == "aarch64":
             return ctx.attr.minimal_linux_arm64
 
-        # Only macOS ARM64 minimal artifacts are currently published.
     elif os_name == "macos" and arch == "aarch64":
+        # Only macOS ARM64 minimal artifacts are currently published.
         return ctx.attr.minimal_macos_arm64
 
     fail("Unsupported host platform for llvm_toolchain_llvm alias: {} {}. Supported combinations are linux/x86_64, linux/aarch64, and macos/arm64.".format(ctx.os.name, ctx.os.arch))

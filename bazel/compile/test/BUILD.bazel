@@ -1,7 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
-load(":llvm_toolchain_test.bzl", "clang_version_test", "llvm_metadata_test")
+load(":clang_version_test.bzl", "clang_version_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -11,8 +11,8 @@ exports_files([
 ])
 
 bzl_library(
-    name = "llvm_toolchain_test_bzl",
-    srcs = ["llvm_toolchain_test.bzl"],
+    name = "clang_version_test_bzl",
+    srcs = ["clang_version_test.bzl"],
     deps = [
         "//compile:llvm_minimal_bzl",
         "@bazel_skylib//lib:unittest",
@@ -21,20 +21,6 @@ bzl_library(
 
 clang_version_test(
     name = "clang_version_test",
-)
-
-llvm_metadata_test(
-    name = "llvm_metadata_test",
-)
-
-filegroup(
-    name = "llvm_generated_targets_smoke",
-    srcs = [
-        "@llvm_toolchain_llvm//:clang_tooling_headers",
-        "@llvm_toolchain_llvm//:libclang_cpp",
-        "@llvm_toolchain_llvm//:libllvm",
-        "@llvm_toolchain_llvm//:llvm.bzl",
-    ],
 )
 
 # Simple C++ hello world binary for cross-compilation testing.
