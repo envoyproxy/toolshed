@@ -187,9 +187,19 @@ llvm.cxx_cross_lib(
     label = "@libcxx_libs_x86_64",
     targets = ["linux-x86_64"],
 )
+# The base sysroot has libgcc_s but no GCC development runtime; use LLVM's
+# compiler-rt for builtins and the sysroot's shared unwinder.
 llvm.toolchain(
     name = "llvm_toolchain",
     llvm_version = "22.1.8",
+    extra_link_flags = {
+        "linux-aarch64": ["-rtlib=compiler-rt", "-unwindlib=none"],
+        "linux-x86_64": ["-rtlib=compiler-rt", "-unwindlib=none"],
+    },
+    extra_link_libs = {
+        "linux-aarch64": ["-l:libgcc_s.so.1"],
+        "linux-x86_64": ["-l:libgcc_s.so.1"],
+    },
 )
 llvm.toolchain_root(
     name = "llvm_toolchain",

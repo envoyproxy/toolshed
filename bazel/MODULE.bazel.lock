@@ -745,28 +745,26 @@
     },
     "//sysroot:extensions.bzl%sysroot_extension": {
       "general": {
-        "bzlTransitiveDigest": "mqFPk+rRx8qraJl4kmhKN33NfV8Cwh3IJCaDE/7wRxQ=",
-        "usagesDigest": "kxG6310p2WkpHRL2ISg7keTnjmsHiRo64T8XCDgKEXc=",
+        "bzlTransitiveDigest": "j5GnrT2iU94GAgwB08NbnpUoOugbFSSsMxW4ZFU/8sc=",
+        "usagesDigest": "oRAreTuzJWMf91QkMeKWP2rZbuidpgSeBcm/WfoJj+s=",
         "recordedInputs": [],
         "generatedRepoSpecs": {
           "sysroot_linux_amd64": {
             "repoRuleId": "@@//sysroot:sysroot.bzl%sysroot",
             "attributes": {
-              "version": "0.2.21",
-              "sha256": "7625512f6609535504c04544928103fd32ea24dde374ef0a806f1ab227c96ffc",
+              "version": "0.2.25",
+              "sha256": "c6bc3431a24a869f226f1283c95ff575d8d158b14d0b344203235f438a03c9d6",
               "arch": "amd64",
-              "glibc_version": "2.31",
-              "stdcc_version": "13"
+              "glibc_version": "2.31"
             }
           },
           "sysroot_linux_arm64": {
             "repoRuleId": "@@//sysroot:sysroot.bzl%sysroot",
             "attributes": {
-              "version": "0.2.21",
-              "sha256": "deccbf6c39f77dc7cace1b1d1f550f67dd3db1912bd99a02f5b88a89b6e5a3ac",
+              "version": "0.2.25",
+              "sha256": "9e69b0b19c649970c77edeb22db15ae14b821c1b506055a88ef872d261ecfa0a",
               "arch": "arm64",
-              "glibc_version": "2.31",
-              "stdcc_version": "13"
+              "glibc_version": "2.31"
             }
           }
         }
