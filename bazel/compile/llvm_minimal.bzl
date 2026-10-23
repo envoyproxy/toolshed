@@ -149,11 +149,40 @@ def _lib_glob_to_extract_spec(pattern):
 def _llvm_version_major(version):
     return version.split(".")[0]
 
+def parse_clang_version(stdout):
+    """Return a full x.y.z clang version from --version output, or an empty string."""
+    marker = "clang version "
+    for line in stdout.split("\n"):
+        if marker not in line:
+            continue
+        version = line.split(marker, 1)[1].strip().split(" ")[0].split("-")[0]
+        components = version.split(".")
+        if len(components) != 3:
+            return ""
+        for component in components:
+            if not component or not component.isdigit():
+                return ""
+        return version
+    return ""
+
+def write_llvm_bzl(repository_ctx, llvm_version, llvm_lib_dir, is_host):
+    major = llvm_version.split(".")[0]
+    major_minor = ".".join(llvm_version.split(".")[:2])
+    repository_ctx.file("llvm.bzl", """\
+LLVM_VERSION = %r
+LLVM_MAJOR = %r
+LLVM_MAJOR_MINOR = %r
+LLVM_LIB_DIR = %r
+LLVM_IS_HOST = %s
+""" % (llvm_version, major, major_minor, llvm_lib_dir, is_host))
+
 def render_llvm_repo_build(llvm_major):
     """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact."""
-    return """package(default_visibility = ["//visibility:public"])
+    return """load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
-exports_files(glob(["bin/*", "lib/**", "include/**", "share/clang/*"], allow_empty = True))
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["llvm.bzl"] + glob(["bin/*", "lib/**", "lib64/**", "include/**", "share/clang/*"], allow_empty = True))
 
 filegroup(
     name = "clang",
@@ -322,7 +351,23 @@ filegroup(
 
 filegroup(
     name = "libclang",
-    srcs = glob(["lib/libclang.so*", "lib/libclang*.dylib"], allow_empty = True),
+    srcs = glob(["lib/**/libclang.so*", "lib/**/libclang*.dylib", "lib64/**/libclang.so*", "lib64/**/libclang*.dylib"], allow_empty = True),
+)
+
+filegroup(
+    name = "libclang_cpp",
+    srcs = glob(["lib/**/libclang-cpp.so*", "lib64/**/libclang-cpp.so*"], allow_empty = True),
+)
+
+filegroup(
+    name = "libllvm",
+    srcs = glob(["lib/**/libLLVM.so*", "lib64/**/libLLVM.so*"], allow_empty = True),
+)
+
+cc_library(
+    name = "clang_tooling_headers",
+    hdrs = glob(["include/clang/**", "include/clang-c/**", "include/llvm/**", "include/llvm-c/**"], allow_empty = True),
+    includes = ["include"],
 )
 """.format(llvm_major = llvm_major)
 
@@ -343,6 +388,7 @@ def _llvm_minimal_repo_impl(ctx):
         if result.return_code:
             fail("Failed to create placeholder llvm_minimal repo directories: " + result.stderr)
     ctx.file("BUILD.bazel", LLVM_MINIMAL_LLVM_REPO_BUILD)
+    write_llvm_bzl(ctx, LLVM_VERSION, "lib", False)
 
 llvm_minimal_repo = repository_rule(
     implementation = _llvm_minimal_repo_impl,
@@ -435,7 +481,8 @@ def _select_llvm_toolchain_alias_label(ctx):
             return ctx.attr.minimal_linux_x64
         elif arch == "aarch64":
             return ctx.attr.minimal_linux_arm64
-    # Only macOS ARM64 minimal artifacts are currently published.
+
+        # Only macOS ARM64 minimal artifacts are currently published.
     elif os_name == "macos" and arch == "aarch64":
         return ctx.attr.minimal_macos_arm64
 
@@ -462,6 +509,77 @@ def _ensure_repo_dir(ctx, source_root, relpath):
         if result.return_code:
             fail("Failed to create llvm_toolchain_llvm alias directory '{}': {}".format(relpath, result.stderr))
 
+def _detect_llvm_version(repository_ctx, llvm_root, declared_version, clang_name = "bin/clang"):
+    clang = llvm_root.get_child(clang_name)
+    result = repository_ctx.execute([str(clang), "--version"])
+    if result.return_code != 0:
+        fail("Could not run %s --version (exit code %s): %s" % (clang, result.return_code, result.stderr))
+
+    version = parse_clang_version(result.stdout)
+    if not version:
+        fail("Could not parse a full clang version from %s --version output: %s" % (clang, result.stdout))
+    if declared_version and declared_version.split(".")[0] != version.split(".")[0]:
+        fail(
+            "llvm_toolchain_alias_extension.host(llvm_version = %r) does not match the installed clang version %s" %
+            (declared_version, version),
+        )
+    return version
+
+def _detect_llvm_lib_dir(llvm_root, major):
+    library_name = "libclang-cpp.so.%s" % major
+    for candidate in ["lib", "lib64", "lib/x86_64-linux-gnu", "lib/aarch64-linux-gnu"]:
+        directory = llvm_root.get_child(candidate)
+        if not directory.exists:
+            continue
+        for library in directory.readdir():
+            if library.basename == library_name or library.basename.startswith(library_name + "."):
+                return candidate
+    fail("Could not find %s under %s in lib, lib64, lib/x86_64-linux-gnu, or lib/aarch64-linux-gnu" % (library_name, llvm_root))
+
+def _host_llvm_repo_impl(ctx):
+    llvm_root = ctx.path(ctx.attr.path)
+    version = _detect_llvm_version(ctx, llvm_root, ctx.attr.llvm_version)
+    lib_dir = _detect_llvm_lib_dir(llvm_root, version.split(".")[0])
+    for directory in ["bin", "include", "lib", "lib64"]:
+        path = llvm_root.get_child(directory)
+        if not path.exists and directory in ["bin", "include"]:
+            fail("Host LLVM directory does not exist: %s" % path)
+        if path.exists:
+            _symlink_dir_children(ctx, path, directory)
+    ctx.file("BUILD.bazel", render_llvm_repo_build(version.split(".")[0]))
+    write_llvm_bzl(ctx, version, lib_dir, True)
+
+llvm_host_repo = repository_rule(
+    implementation = _host_llvm_repo_impl,
+    local = True,
+    attrs = {
+        "path": attr.string(mandatory = True),
+        "llvm_version": attr.string(default = ""),
+    },
+    doc = "Creates a repository backed by a host LLVM installation.",
+)
+
+def _windows_llvm_repo(ctx):
+    llvm_root = ctx.path(
+        (ctx.getenv("BAZEL_LLVM") or "C:/Program Files/LLVM").replace("\\", "/").rstrip("/"),
+    )
+    objcopy = llvm_root.get_child("bin/llvm-objcopy.exe")
+    if not objcopy.exists:
+        fail("Could not find %s. Set BAZEL_LLVM to the host LLVM installation." % objcopy)
+    ctx.symlink(objcopy, "bin/llvm-objcopy.exe")
+    ctx.file("BUILD.bazel", """\
+package(default_visibility = ["//visibility:public"])
+
+exports_files(["llvm.bzl"])
+
+alias(
+    name = "objcopy",
+    actual = "bin/llvm-objcopy.exe",
+)
+""")
+    version = _detect_llvm_version(ctx, llvm_root, "", "bin/clang.exe")
+    write_llvm_bzl(ctx, version, "lib", True)
+
 def _llvm_toolchain_alias_impl(ctx):
     """Create a host-arch alias repo backed by the matching minimal LLVM artifact.
 
@@ -475,14 +593,20 @@ def _llvm_toolchain_alias_impl(ctx):
     symlinks are required because Bazel does not follow a symlinked package
     directory when sourcing individual filegroup inputs.
     """
+    if ctx.os.name.lower().startswith("windows"):
+        _windows_llvm_repo(ctx)
+        return
+
     minimal_build_label = _select_llvm_toolchain_alias_label(ctx)
     minimal_root = ctx.path(minimal_build_label).dirname
 
     _ensure_repo_dir(ctx, minimal_root, "bin")
     _ensure_repo_dir(ctx, minimal_root, "include")
     _ensure_repo_dir(ctx, minimal_root, "lib")
+    _ensure_repo_dir(ctx, minimal_root, "lib64")
 
     ctx.file("BUILD.bazel", LLVM_MINIMAL_LLVM_REPO_BUILD)
+    write_llvm_bzl(ctx, LLVM_VERSION, "lib", False)
 
 llvm_toolchain_alias = repository_rule(
     implementation = _llvm_toolchain_alias_impl,
@@ -812,7 +936,6 @@ find "$DEST" -maxdepth 1 -type f | while IFS= read -r f; do
     fi
 done
 """
-
 
 def _llvm_minimal_strip_bins_impl(ctx):
     """Assembles and strips the minimal LLVM bin/ tree into a directory artifact.

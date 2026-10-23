@@ -321,3 +321,20 @@ SHA256 values default to `VERSIONS["llvm_minimal_sha256"][platform]` from
 `versions.bzl`.  Empty strings (the placeholder state before first release)
 cause `setup_llvm_minimal()` to create a stub empty repository instead of
 downloading, so builds that don't reference the repo are not broken.
+
+### Host LLVM and toolchain alias
+
+The `llvm_toolchain_alias_extension` creates `@llvm_toolchain_llvm`, backed by
+the matching minimal LLVM artifact by default. Its `host` tag can instead use
+a local LLVM installation; it may only be declared once by the root module:
+
+```starlark
+llvm = use_extension("@envoy_toolshed//compile:extensions.bzl", "llvm_toolchain_alias_extension")
+llvm.host(path = "/usr/lib/llvm-22", llvm_version = "22.1.8")
+use_repo(llvm, "llvm_toolchain_llvm")
+```
+
+The repository exports `llvm.bzl` with `LLVM_VERSION`, `LLVM_MAJOR`,
+`LLVM_MAJOR_MINOR`, `LLVM_LIB_DIR`, and `LLVM_IS_HOST`. It also exposes
+`libclang_cpp`, `libllvm`, and `clang_tooling_headers` targets, in addition to
+the LLVM toolchain targets.
