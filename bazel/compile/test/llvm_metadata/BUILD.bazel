@@ -1,0 +1,27 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load(":llvm_metadata_test.bzl", "llvm_metadata_test")
+
+package(default_visibility = ["//visibility:public"])
+
+bzl_library(
+    name = "llvm_metadata_test_bzl",
+    srcs = ["llvm_metadata_test.bzl"],
+    deps = [
+        "//:versions_bzl",
+        "@bazel_skylib//lib:unittest",
+    ],
+)
+
+llvm_metadata_test(
+    name = "llvm_metadata_test",
+)
+
+filegroup(
+    name = "llvm_generated_targets_smoke",
+    srcs = [
+        "@llvm_toolchain_llvm//:clang_tooling_headers",
+        "@llvm_toolchain_llvm//:libclang_cpp",
+        "@llvm_toolchain_llvm//:libllvm",
+        "@llvm_toolchain_llvm//:llvm.bzl",
+    ],
+)
