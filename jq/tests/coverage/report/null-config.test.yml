@@ -1,0 +1,38 @@
+name: coverage/report null config disables thresholds and validation even with source directories
+input:
+  coveragePercent: 83.456
+  linesCovered: 83
+  linesTotal: 100
+  children:
+    source:
+      coveragePercent: 50
+      linesCovered: 5
+      linesTotal: 10
+      children: {}
+imports:
+- coverage/report
+expression: '[report::report(null; []), report::report(null; ["source"])]'
+expected:
+- summary:
+    coverage_percent: 83.5
+    lines_covered: 83
+    lines_total: 100
+    threshold: 0
+    threshold_reached: true
+  source_directories: []
+  per_directory_coverage: {}
+  default_threshold: 0
+  coverage_config: null
+  summary_message: Code coverage 83.5% is good and higher than limit of 0%
+- summary:
+    coverage_percent: 83.5
+    lines_covered: 83
+    lines_total: 100
+    threshold: 0
+    threshold_reached: true
+  source_directories:
+  - source
+  per_directory_coverage: {}
+  default_threshold: 0
+  coverage_config: null
+  summary_message: Code coverage 83.5% is good and higher than limit of 0%

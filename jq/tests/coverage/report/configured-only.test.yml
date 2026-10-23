@@ -1,0 +1,33 @@
+name: coverage/report config directories trigger extraction without implicit validation
+input:
+  coveragePercent: 100
+  linesCovered: 1
+  linesTotal: 1
+  children:
+    source:
+      coveragePercent: 100
+      linesCovered: 1
+      linesTotal: 1
+      children: {}
+imports:
+- coverage/report
+expression: 'report::report({directories: {source: 90}}; [])'
+expected:
+  summary:
+    coverage_percent: 100
+    lines_covered: 1
+    lines_total: 1
+    threshold: 0
+    threshold_reached: true
+  source_directories: []
+  per_directory_coverage:
+    source:
+      expected_percent: 90
+      coverage_percent: 100
+      lines_covered: 1
+      lines_total: 1
+  default_threshold: 0
+  coverage_config:
+    directories:
+      source: 90
+  summary_message: Code coverage 100% is good and higher than limit of 0%
