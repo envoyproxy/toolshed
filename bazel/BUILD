@@ -1,4 +1,5 @@
 load("@aspect_bazel_lib//lib:jq.bzl", "jq")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("//:macros.bzl", "json_data")
 load("//:versions.bzl", "VERSIONS")
 load("//version:utils.bzl", "module_versions")
@@ -11,6 +12,12 @@ exports_files([
     "versions.bzl",
     "macros.bzl",
 ])
+
+bzl_library(
+    name = "versions_bzl",
+    srcs = ["versions.bzl"],
+    visibility = ["//visibility:public"],
+)
 
 json_data(
     name = "deps",
