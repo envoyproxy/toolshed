@@ -232,7 +232,8 @@ fi
 override_lines=()
 while IFS=: read -r line _; do
   [[ -n "$line" ]] || continue
-  if sed -n "${line},$((line + 12))p" "$MODULE_PATH" | grep -Eq "module_name[[:space:]]*=[[:space:]]*\"${DEP}\""; then
+  module_name="$("$BUILDOZER" 'print module_name' "${MODULE_PATH}:%${line}")"
+  if [[ "$module_name" == "$DEP" ]]; then
     override_lines+=("$line")
   fi
 done < <(grep -nE '^[[:space:]]*single_version_override[[:space:]]*\(' "$MODULE_PATH" || true)
