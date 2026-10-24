@@ -80,6 +80,19 @@ run_buildozer() {
   return "$rc"
 }
 
+# Print the `module_name` attribute of the rule starting at the given line, or
+# nothing if buildozer cannot read it.
+override_module_name() {
+  local label="$1"
+  local name
+
+  set +e
+  name="$("$BUILDOZER" 'print module_name' "$label" 2>/dev/null)"
+  set -e
+
+  printf '%s\n' "$name"
+}
+
 MODULE_FILE="$1"
 DEP_DATA="$2"
 shift 2
@@ -229,10 +242,18 @@ if ! "$BUILDOZER" 'print name' "${MODULE_PATH}:${DEP}" >/dev/null 2>&1; then
   exit 1
 fi
 
+# Collect `single_version_override(module_name = "<DEP>")` rules. Each candidate
+# is read structurally via buildozer so comments and neighbouring rules are never
+# matched; the comparison is exact so prefix-sharing module names don't collide.
 override_lines=()
 while IFS=: read -r line _; do
   [[ -n "$line" ]] || continue
-  if sed -n "${line},$((line + 12))p" "$MODULE_PATH" | grep -Eq "module_name[[:space:]]*=[[:space:]]*\"${DEP}\""; then
+  module_name="$(override_module_name "${MODULE_PATH}:%${line}")"
+  if [[ -z "$module_name" ]]; then
+    echo "WARNING: unable to read module_name of single_version_override at ${MODULE_PATH}:${line}, skipping" >&2
+    continue
+  fi
+  if [[ "$module_name" == "$DEP" ]]; then
     override_lines+=("$line")
   fi
 done < <(grep -nE '^[[:space:]]*single_version_override[[:space:]]*\(' "$MODULE_PATH" || true)
