@@ -17,6 +17,8 @@ exports_files([
     "libcxx_darwin.bzl",
     "llvm_minimal.bzl",
     "extensions.bzl",
+    "llvm_runtimes.bzl",
+    "unwind_libs.bzl",
 ])
 
 bzl_library(
@@ -67,6 +69,17 @@ config_setting(
     ]
 ]
 
+[
+    alias(
+        name = name,
+        actual = "//compile/unwind:%s" % name,
+    )
+    for name in [
+        "libunwind_shared",
+        "unwind_libs_files",
+    ]
+]
+
 # Sanitizer tarballs are packaged here (rather than in //compile/sanitizer) so
 # they keep their stable bazel-bin/compile/ paths for release CI.
 pkg_tar(
@@ -86,6 +99,18 @@ pkg_tar(
     srcs = ["//compile/sanitizer:tsan_libs_files"],
     extension = "tar.xz",
     package_file_name = "tsan-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"],
+    target_compatible_with = select({
+        ":gcc_build": ["@platforms//:incompatible"],
+        ":macos_build": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+)
+
+pkg_tar(
+    name = "cxx_unwind",
+    srcs = ["//compile/unwind:unwind_libs_files"],
+    extension = "tar.xz",
+    package_file_name = "unwind-llvm%s-x86_64.tar.xz" % VERSIONS["llvm"],
     target_compatible_with = select({
         ":gcc_build": ["@platforms//:incompatible"],
         ":macos_build": ["@platforms//:incompatible"],

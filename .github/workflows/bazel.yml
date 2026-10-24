@@ -80,6 +80,7 @@ jobs:
             pgp/sq-*.tar.zst
             compile/msan-llvm22.1.8-x86_64.tar.xz
             compile/tsan-llvm22.1.8-x86_64.tar.xz
+            compile/unwind-llvm22.1.8-x86_64.tar.xz
             sysroot/sysroot-*.tar.xz
             v8/package/v8-wee8-*.tar.xz
           bazel_args: >-
@@ -207,6 +208,7 @@ jobs:
             //...
             @envoy_toolshed_jq//...
             //sysroot:sysroots
+            //compile/test:libunwind_shared_test
         - name: x86-to-arm
           action: test
           bazel_args: >-
