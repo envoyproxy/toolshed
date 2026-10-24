@@ -133,7 +133,7 @@ jobs:
 
     - name: Setup Bazel
       if: runner.os != 'Linux'
-      uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86  # v0.19.0
+      uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3  # v0.19.1
     - name: Get runner UID/GID
       if: runner.os == 'Linux'
       id: runner-ids
@@ -302,7 +302,7 @@ jobs:
           jq/MODULE.bazel.lock
     - name: Bazel source
       if: ${{ steps.source-tarball.outputs.tarball || steps.jq-source-tarball.outputs.tarball }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: bazel-source
         path: |
@@ -343,7 +343,7 @@ jobs:
         ARTIFACT_PATH_LIST: ${{ steps.artifact-paths.outputs.value }}
     - name: Bazel artifacts
       if: ${{ inputs.upload && (steps.artifact-paths.outputs.value || steps.source-tarball.outputs.tarball) }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: ${{ inputs.artifact-name }}
         path: |
