@@ -55,6 +55,10 @@ setup_sanitizer_libs()
 
 This will create `@msan_libs` and `@tsan_libs` repositories you can use in your builds.
 
+GCC-specific targets are selected from the compiler reported by the resolved C++ toolchain.
+Consumers registering a GCC `cc_toolchain` get the matching libstdc++ targets automatically;
+they do not need to set toolshed's internal `//compile:use_gcc_toolchain` flag.
+
 ### Using with bzlmod (MODULE.bazel)
 
 In your MODULE.bazel file:
