@@ -1,6 +1,6 @@
 SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 
-BINS_RELEASE = "0.2.26"
+BINS_RELEASE = "0.2.27"
 
 LLVM_VERSION = "22.1.8"
 
@@ -23,10 +23,10 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": BINS_RELEASE,
-    "msan_libs_sha256": "4a94084a2b2692b384777fe993c82f04c9b5fe866e3ec91d0cf340feadd76864",
-    "tsan_libs_sha256": "c2748fed2a861546c16361c688d3872c9239120842bf646a6a74c24e57e5678d",
+    "msan_libs_sha256": "5538945e7113677fe90ea809bc15e90c4c573370e76eadf9c432b6936776d2e7",
+    "tsan_libs_sha256": "07f78bcfba0c6be156a893ec4e5fe27a34fd3e69ef616ae989d21ab006d41b57",
     # Filled after the bins-v* release publishes the shared libunwind artifact.
-    "unwind_libs_sha256": "",
+    "unwind_libs_sha256": "f8f031cd252cdfd59308d2f50dd0e4cea8952e6769fb348d8293d33e19647bee",
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
         "x86_64": "e40f39338ffe561dfa26541557c9e548fc7760db9d99f7b6c5de237b725482aa",
@@ -61,13 +61,13 @@ VERSIONS = {
         "macOS-ARM64": "ca6c644a6d285d52d62bf7cb206d839623668eaf86cdc25bc0a709cd137a2017",
     },
     "sq_sha256": {
-        "Linux-X64": "cd0c003c86f6947cc43a6f4305ce04898e073deb297e598c7677b0d651fbf559",
-        "Linux-ARM64": "cdff7b439ddf9e10c6b860ea780cfcc23f976691e0154a7567c0deb0135360c3",
+        "Linux-X64": "82c13d003a924b5560822f363df1af7733839cd82546a3074b2a32de0c5e99fb",
+        "Linux-ARM64": "b0520af4b16d4ee5efaf4ecfbea2d60d6de11e29dcd003924d191a315cb211ae",
     },
     # Git prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64).
     "git_sha256": {
-        "linux-x86_64": "7b6040ff52b8bd09e97078f3b508c1178da93f1cdd449b4f2c536e3cca35f924",
-        "linux-aarch64": "5155be595492b8333a1fe24e3bd964937b556054a679f142842c77cde569daf5",
+        "linux-x86_64": "e64a3bac2d21552076b7dfe6e09d08f873d9391f38818f9bf2f9ea1aa4b2ebb1",
+        "linux-aarch64": "a0618fbe88c742faa7954f72d5e630c9644fc4b1909614f9cd21353f194b116b",
     },
     "cacert": {
         "version": "2026-08-13",
@@ -89,7 +89,7 @@ VERSIONS = {
             "libstdcxx": "ad9895c550bdf8f4de931c0143c99cc28ae38aa0b475bc4602e494eedac46e90",
         },
         "aarch64": {
-            "libcxx": "65291cd8c4675ad20fccf22b15c855acca400af3bedd7f95d129b490bc7bd85c",
+            "libcxx": "682d0926e555da2fb33c7dc6dc95f884790fce5bc49fd95ca88a121e857d71a5",
             "libstdcxx": "",
         },
     },
@@ -100,22 +100,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "a2f7f25c635ec8a6e28c29da54797b3e3202c16e9840675478d2f77ac2592221",
-                "arm64": "23b4ded5d86ebe45c282c370ce944f690134c8f87bc92965e0d9f863cbb8cfa7",
+                "amd64": "c027659e4ed93c2f53ca29cc611962790cde21289cbedcfd3419354d6a50767e",
+                "arm64": "33fb571b3b9b5edb9854fa4444719fae01c0c08825b3051357fcd4ab3721749a",
             },
             "13": {
-                "amd64": "4e6be49ec3b6f2b378ac8a64c3b8c9367cad696923ec3842a1bd1d9dc17b9b9a",
-                "arm64": "f5269da44050446a01c85b49ce9495618e461c286797b3db5747e6dc9ab59aba",
+                "amd64": "0562bde13b68aa1c49ab286c5bb765158a9f17fb69f3f1d190672ef171502dbf",
+                "arm64": "db9c5b96cd4ecc9b5ec4ac865d5e91eacf2020ef583aa262c6a906741f46ca11",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "55a1ac8041ce3cb0e71e10562cd2d1cc4cc31c71b37e35c0e5e546b6150cc8c7",
-                "arm64": "28559140ba728b3d59b889972586827b21963c8d7cfe190b3060fff3f1f554d4",
+                "amd64": "d7ea7bc466377b2294127875216a701e400a57445b1c8daca223c71445681fc1",
+                "arm64": "ae47a5b829fa354d1936e97c3c01aca3b3fa49546717809f1618a2c20d9ff5f2",
             },
             "13": {
-                "amd64": "f907a1b292f2bec255af57ba186326b4bf27b4d95b91e05f87f36fbe8c3377ad",
-                "arm64": "6063622859b7459f21bd9dbfd4f43f0840528f082f64b324d92a0ee321ef83ba",
+                "amd64": "b0a230b3875f36dc50739fb4711e8745a0b65fd1b1e4d0c4961c6832980c0510",
+                "arm64": "8fd6257c1a6ea3048d03d46e3a452873f885fd17ced5640deb3b3994c8dda4bf",
             },
         },
     },
