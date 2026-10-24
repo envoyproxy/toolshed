@@ -1,0 +1,6 @@
+name: coverage/report imports without caller globals
+input: null
+imports:
+- coverage/report
+expression: 'report::get_default_threshold({thresholds: {per_directory: 75}})'
+expected: 75

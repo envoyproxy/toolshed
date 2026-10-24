@@ -15,6 +15,7 @@ bazel_dep(name = "rules_cc", version = "0.2.25")
 bazel_dep(name = "rules_pkg", version = "1.3.0")
 bazel_dep(name = "rules_python", version = "2.3.3")
 bazel_dep(name = "rules_shell", version = "0.8.0")
+bazel_dep(name = "zstd", version = "1.5.7.bcr.3")
 
 #############################################################################################
 # deps: dev
@@ -156,11 +157,10 @@ wee8_source_ext.setup(source = "@v8//:wee8")
 # libcxx_libs_ext.setup()
 # use_repo(libcxx_libs_ext, "libcxx_libs_aarch64", "libcxx_libs_x86_64")
 
-# Setup grcov for code coverage - example for downstream consumers
-# Uncomment to use in your MODULE.bazel:
-# grcov_ext = use_extension("@envoy_toolshed//coverage/grcov:extensions.bzl", "grcov_extension")
-# grcov_ext.setup()
-# use_repo(grcov_ext, "grcov")
+# Consumers configure their own grcov repository for coverage_report.
+grcov_ext = use_extension("//coverage/grcov:extensions.bzl", "grcov_extension", dev_dependency = True)
+grcov_ext.setup()
+use_repo(grcov_ext, "grcov")
 
 # Setup glint for code style linting - example for downstream consumers
 # Uncomment to use in your MODULE.bazel:
