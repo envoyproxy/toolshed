@@ -187,9 +187,19 @@ llvm.cxx_cross_lib(
     label = "@libcxx_libs_x86_64",
     targets = ["linux-x86_64"],
 )
+
+# The base sysroot ships libgcc_s.so.1 (+ an unversioned libgcc_s.so ld script)
+# but no libgcc.a/libgcc_eh.a or GCC crt objects. Use compiler-rt for builtins
+# and crt files; keep libgcc_s as the (as-needed) fallback unwinder so
+# libunwind=False still resolves _Unwind_* while libunwind=True leaves no
+# libgcc_s NEEDED entry.
 llvm.toolchain(
     name = "llvm_toolchain",
     llvm_version = "22.1.8",
+    extra_link_flags = {
+        "linux-aarch64": ["-rtlib=compiler-rt", "-unwindlib=libgcc"],
+        "linux-x86_64": ["-rtlib=compiler-rt", "-unwindlib=libgcc"],
+    },
 )
 llvm.toolchain_root(
     name = "llvm_toolchain",
