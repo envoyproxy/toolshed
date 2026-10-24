@@ -228,7 +228,8 @@ registry explicitly.
 Edits go through hermetic `buildozer` from `buildifier_prebuilt`, so the touched
 call is rewritten with buildifier's normal formatting. Matching
 `single_version_override(...)` blocks are updated alongside the `bazel_dep(...)`
-when they exist.
+when their `module_name` attribute exactly equals the dependency name. Comments
+and overrides for other modules are ignored.
 
 Yanked versions are rejected unless `--allow-yanked` is passed.
 
