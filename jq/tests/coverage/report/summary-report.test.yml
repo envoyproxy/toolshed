@@ -1,0 +1,62 @@
+name: coverage/report preserves full summary report text and category order
+input:
+  coveragePercent: 70
+  linesCovered: 28
+  linesTotal: 40
+  children:
+    excellent:
+      coveragePercent: 90
+      linesCovered: 9
+      linesTotal: 10
+      children: {}
+    low:
+      coveragePercent: 60
+      linesCovered: 6
+      linesTotal: 10
+      children: {}
+    adjustable:
+      coveragePercent: 70
+      linesCovered: 7
+      linesTotal: 10
+      children: {}
+    failed:
+      coveragePercent: 60
+      linesCovered: 6
+      linesTotal: 10
+      children: {}
+imports:
+- coverage/report
+expression: |
+  report::report(
+    {thresholds: {total: 80, per_directory: 80}, directories: {low: 60, adjustable: 60}};
+    ["excellent", "low", "adjustable", "failed"])
+  | .summary_report | split("\n")
+expected:
+- ''
+- ================== Per-Directory Coverage Report ==================
+- ''
+- 'Directories with excellent coverage (>= 80%):'
+- '  ✓ excellent: 90%'
+- ''
+- 'Directories with known low coverage (meeting configured thresholds):'
+- '  ⚠ low: 60% (configured threshold: 60%)'
+- '  ⚠ adjustable: 70% (configured threshold: 60%)'
+- ''
+- 'WARNING: Coverage in the following directories may be adjusted up:'
+- '  ⬆  adjustable: 70% (current threshold: 60%)'
+- ''
+- 'FAILED: Directories not meeting coverage thresholds:'
+- '  ✗ failed: 60% (threshold: 80%)'
+- ''
+- ==================================================================
+- 'Overall Coverage: 70%'
+- 'Source directories checked: 4,'
+- 'Failed: 1,'
+- 'Low coverage (configured): 2,'
+- 'Excellent coverage: 1'
+- 'Can be adjusted up: 1'
+- ==================================================================
+- ''
+- Code coverage 70% is lower than limit of 80%
+- 'ERROR: Coverage check failed. Some directories are below their thresholds.'
+- ''

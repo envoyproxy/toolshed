@@ -1,0 +1,169 @@
+name: coverage/report recursively extracts directories and validates only supplied paths
+input:
+  coveragePercent: 85.26
+  linesCovered: 85
+  linesTotal: 100
+  children:
+    src:
+      coveragePercent: 85.26
+      linesCovered: 85
+      linesTotal: 100
+      children:
+        failed:
+          coveragePercent: 49.94
+          linesCovered: 5
+          linesTotal: 10
+          children: {}
+        low:
+          coveragePercent: 60
+          linesCovered: 6
+          linesTotal: 10
+          children: {}
+        adjustable:
+          coveragePercent: 70.06
+          linesCovered: 7
+          linesTotal: 10
+          children: {}
+        excellent:
+          coveragePercent: 79.96
+          linesCovered: 8
+          linesTotal: 10
+          children: {}
+        strict:
+          coveragePercent: 89
+          linesCovered: 89
+          linesTotal: 100
+          children: {}
+        zero:
+          coveragePercent: 0
+          linesCovered: 0
+          linesTotal: 0
+          children: {}
+        leaf.cc:
+          coveragePercent: 100
+          linesCovered: 1
+          linesTotal: 1
+        incomplete:
+          coveragePercent: 100
+          children:
+            deep:
+              coveragePercent: 100
+              linesCovered: 1
+              linesTotal: 1
+              children: {}
+imports:
+- coverage/report
+expression: |
+  report::report(
+    {thresholds: {total: 85, per_directory: 80},
+     directories: {"src/failed": 50, "src/low": 60, "src/adjustable": 60,
+                   "src/strict": 90, "src/zero": 0}};
+    ["src/failed", "src/low", "src/adjustable", "src/excellent", "src/strict",
+     "src/zero", "missing", "src/leaf.cc", "src/incomplete", "src/failed"])
+  | del(.summary_report)
+expected:
+  summary:
+    coverage_percent: 85.3
+    lines_covered: 85
+    lines_total: 100
+    threshold: 85
+    threshold_reached: true
+  source_directories:
+  - src/failed
+  - src/low
+  - src/adjustable
+  - src/excellent
+  - src/strict
+  - src/zero
+  - missing
+  - src/leaf.cc
+  - src/incomplete
+  - src/failed
+  per_directory_coverage:
+    src:
+      expected_percent: 80
+      coverage_percent: 85.3
+      lines_covered: 85
+      lines_total: 100
+    src/failed:
+      expected_percent: 50
+      coverage_percent: 49.9
+      lines_covered: 5
+      lines_total: 10
+    src/low:
+      expected_percent: 60
+      coverage_percent: 60
+      lines_covered: 6
+      lines_total: 10
+    src/adjustable:
+      expected_percent: 60
+      coverage_percent: 70.1
+      lines_covered: 7
+      lines_total: 10
+    src/excellent:
+      expected_percent: 80
+      coverage_percent: 80
+      lines_covered: 8
+      lines_total: 10
+    src/strict:
+      expected_percent: 90
+      coverage_percent: 89
+      lines_covered: 89
+      lines_total: 100
+    src/zero:
+      expected_percent: 0
+      coverage_percent: 0
+      lines_covered: 0
+      lines_total: 0
+    src/incomplete/deep:
+      expected_percent: 80
+      coverage_percent: 100
+      lines_covered: 1
+      lines_total: 1
+  default_threshold: 80
+  coverage_config:
+    thresholds:
+      total: 85
+      per_directory: 80
+    directories:
+      src/failed: 50
+      src/low: 60
+      src/adjustable: 60
+      src/strict: 90
+      src/zero: 0
+  validation:
+    failed_coverage:
+    - directory: src/failed
+      coverage_percent: 49.9
+      threshold: 50
+    - directory: src/strict
+      coverage_percent: 89
+      threshold: 90
+    - directory: src/failed
+      coverage_percent: 49.9
+      threshold: 50
+    low_coverage:
+    - directory: src/low
+      coverage_percent: 60
+      threshold: 60
+    - directory: src/adjustable
+      coverage_percent: 70.1
+      threshold: 60
+    - directory: src/zero
+      coverage_percent: 0
+      threshold: 0
+    excellent_coverage:
+    - directory: src/excellent
+      coverage_percent: 80
+    high_coverage_adjustable:
+    - directory: src/adjustable
+      coverage_percent: 70.1
+      threshold: 60
+  validation_summary:
+    total_directories: 6
+    failed_count: 3
+    low_coverage_count: 3
+    excellent_coverage_count: 1
+    adjustable_count: 1
+    all_passed: false
+  summary_message: Code coverage 85.3% is good and higher than limit of 85%

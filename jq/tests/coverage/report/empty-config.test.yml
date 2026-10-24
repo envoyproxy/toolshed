@@ -1,0 +1,26 @@
+name: coverage/report empty config defaults to zero and skips directory extraction without sources
+input:
+  coveragePercent: 0
+  linesCovered: 0
+  linesTotal: 0
+  children:
+    source:
+      coveragePercent: 100
+      linesCovered: 1
+      linesTotal: 1
+      children: {}
+imports:
+- coverage/report
+expression: 'report::report({}; [])'
+expected:
+  summary:
+    coverage_percent: 0
+    lines_covered: 0
+    lines_total: 0
+    threshold: 0
+    threshold_reached: true
+  source_directories: []
+  per_directory_coverage: {}
+  default_threshold: 0
+  coverage_config: {}
+  summary_message: Code coverage 0% is good and higher than limit of 0%
