@@ -1,0 +1,18 @@
+name: version orders prereleases by SemVer numeric identifiers and identifier length
+imports: [version]
+input:
+- ["1.0.0-alpha", "1.0.0-alpha.1"]
+- ["1.0.0-alpha.1", "1.0.0-alpha.beta"]
+- ["1.0.0-alpha.beta", "1.0.0-beta"]
+- ["1.0.0-beta", "1.0.0-beta.2"]
+- ["1.0.0-beta.2", "1.0.0-beta.11"]
+- ["1.0.0-beta.11", "1.0.0-rc.1"]
+- ["1.0.0-rc.1", "1.0.0"]
+- ["1.0.0-2", "1.0.0-11"]
+- ["1.0.0-2", "1.0.0-1a"]
+- ["1.0.0-1a", "1.0.0-2"]
+- ["1.0.0-alpha.1", "1.0.0-alpha"]
+- ["1.0.0", "1.0.0-rc"]
+- ["1.0.0", "1.0.0"]
+expression: 'map(version::cmp(version::parse(.[0]); version::parse(.[1])))'
+expected: [-1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 0]

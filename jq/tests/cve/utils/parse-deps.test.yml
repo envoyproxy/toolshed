@@ -1,0 +1,18 @@
+name: cve utils preserves both semver and hash dependencies while removing absent or N/A CPEs
+imports: [cve/utils]
+input:
+  kept: {version: "1.2", release_date: "2024-01-01", cpe: "cpe:2.3:a:vendor:product:*", extra: ignored}
+  opaque: {version: deadbeef, release_date: "2024-02-01", cpe: "cpe:2.3:a:vendor:other:*"}
+  missing: {version: "1"}
+  "null": {version: "1", cpe: null}
+  ignored: {version: "1", cpe: N/A}
+expression: 'utils::parse_deps(.) | utils::deps_list(.)'
+expected:
+- name: kept
+  release_date: "2024-01-01"
+  version: {main: [1, 2, 0], pre: [], build: [], string: "1.2"}
+  cpe: {match: "cpe:2.3:a:vendor:product:*", part: a, vendor: vendor, product: product, version: "*"}
+- name: opaque
+  release_date: "2024-02-01"
+  version: {string: deadbeef}
+  cpe: {match: "cpe:2.3:a:vendor:other:*", part: a, vendor: vendor, product: other, version: "*"}

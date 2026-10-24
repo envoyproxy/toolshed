@@ -79,6 +79,17 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 use_repo(pip, "website_pip3")
 
+[
+    pip.parse(
+        hub_name = "cve_pip3",
+        python_version = python_version,
+        requirements_lock = "//dependency/cve:requirements_lock.txt",
+    )
+    for python_version in PYTHON_VERSIONS
+]
+
+use_repo(pip, "cve_pip3")
+
 reachability_test_ext = use_extension("//dependency/test:reachability_test_extension.bzl", "reachability_test_extension", dev_dependency = True)
 use_repo(reachability_test_ext, "apparent_excluded_repo", "apparent_excluded_transitive_repo")
 

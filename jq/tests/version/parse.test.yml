@@ -1,0 +1,16 @@
+name: version parses short releases prereleases builds wildcards and opaque strings
+imports: [version]
+input: [null, "*", "1", "1.2", "1.2.3", "1.2.3-alpha.2+build.42", "deadbeef", "v1.2.3", "1.2.3.4", "", "1.2.3\n"]
+expression: 'map(version::parse(.))'
+expected:
+- null
+- null
+- {main: [1, 0, 0], pre: [], build: [], string: "1"}
+- {main: [1, 2, 0], pre: [], build: [], string: "1.2"}
+- {main: [1, 2, 3], pre: [], build: [], string: "1.2.3"}
+- {main: [1, 2, 3], pre: [alpha, "2"], build: [build, "42"], string: "1.2.3-alpha.2+build.42"}
+- {string: deadbeef}
+- {string: v1.2.3}
+- {string: "1.2.3.4"}
+- {string: ""}
+- {string: "1.2.3\n"}

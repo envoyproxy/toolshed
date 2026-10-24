@@ -1,0 +1,50 @@
+{
+  "vulnerabilities": [
+    {
+      "cve": {
+        "id": "CVE-2024-0001",
+        "published": "2024-01-15T00:00:00.000",
+        "descriptions": [{"lang": "en", "value": "Widget fixture vulnerability"}],
+        "metrics": {"cvssMetricV31": [{"cvssData": {"baseSeverity": "HIGH"}}]},
+        "configurations": [{"nodes": [{"cpeMatch": [{
+          "vulnerable": true,
+          "criteria": "cpe:2.3:a:example:widget:*:*:*:*:*:*:*:*",
+          "versionStartIncluding": "1.0",
+          "versionEndExcluding": "2.0"
+        }]}]}]
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2024-0002",
+        "published": "2024-01-15T00:00:00.000",
+        "configurations": [{"nodes": [{"cpeMatch": [{
+          "vulnerable": true,
+          "criteria": "cpe:2.3:a:example:widget:*:*:*:*:*:*:*:*",
+          "versionEndExcluding": "1.2.3"
+        }]}]}]
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2024-0003",
+        "published": "2024-01-15T00:00:00.000",
+        "configurations": [{"nodes": [{"cpeMatch": [{
+          "vulnerable": true,
+          "criteria": "cpe:2.3:a:example:hashlib:*:*:*:*:*:*:*:*"
+        }]}]}]
+      }
+    },
+    {
+      "cve": {
+        "id": "CVE-2024-0004",
+        "published": "2024-01-15T00:00:00.000",
+        "configurations": [{"nodes": [{"cpeMatch": [{
+          "vulnerable": true,
+          "criteria": "cpe:2.3:a:example:widget:*:*:*:*:*:*:*:*"
+        }]}]}]
+      }
+    },
+    {"cve": {"id": "CVE-2024-0005", "published": "2024-01-15T00:00:00.000"}}
+  ]
+}
