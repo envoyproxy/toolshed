@@ -5,6 +5,38 @@ load(":libcxx_libs.bzl", "setup_libcxx_libs")
 load(":llvm_minimal.bzl", "llvm_host_repo", "llvm_toolchain_alias", "setup_llvm_minimal", "setup_llvm_minimal_build")
 load(":llvm_prebuilt.bzl", "setup_llvm_prebuilt")
 load(":sanitizer_libs.bzl", "setup_sanitizer_libs")
+load(":unwind_libs.bzl", "setup_unwind_libs")
+
+def _unwind_libs_ext_impl(module_ctx):
+    setup_tag = single_setup_tag(
+        module_ctx = module_ctx,
+        ext_name = "unwind_extension",
+        repos = "@unwind_libs",
+        attrs = ["version", "sha256"],
+    )
+    if setup_tag:
+        setup_unwind_libs(
+            version = setup_tag.version,
+            sha256 = setup_tag.sha256,
+        )
+    else:
+        setup_unwind_libs()
+
+_unwind_setup = tag_class(
+    attrs = {
+        "version": attr.string(
+            doc = "Release version (default: VERSIONS['bins_release'] from //:versions.bzl)",
+        ),
+        "sha256": attr.string(
+            doc = "SHA256 hash of the shared libunwind archive (default: VERSIONS['unwind_libs_sha256'] from //:versions.bzl)",
+        ),
+    },
+)
+
+unwind_extension = module_extension(
+    implementation = _unwind_libs_ext_impl,
+    tag_classes = {"setup": _unwind_setup},
+)
 
 def _sanitizer_libs_impl(module_ctx):
     """Implementation of the sanitizer_libs module extension.
