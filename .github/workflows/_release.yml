@@ -204,6 +204,7 @@ jobs:
           san:
           - msan
           - tsan
+          - unwind
         input-format: yaml
         filter: |
           .
@@ -222,9 +223,13 @@ jobs:
           | [$san[]
              | . as $san_type
              | $current["\($san_type)_libs_sha256"] as $current_sha
-             | ($shas["\($san_type)-llvm\($current.llvm)-x86_64.tar.xz"] | split(":") | .[1]) as $new_sha
-             | if $current_sha != $new_sha then
-                 "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+             | ($shas["\($san_type)-llvm\($current.llvm)-x86_64.tar.xz"] // null) as $sha_entry
+             | if $sha_entry then
+                 ($sha_entry | split(":") | .[1]) as $new_sha
+                 | if $current_sha != $new_sha then
+                      ("\"\($san_type)_libs_sha256\": \"" ) as $key
+                      | "sed -i 's/\($key)\($current_sha)\"/\($key)\($new_sha)\"/' \($versions_file)"
+                   else "" end
                else "" end] as $san_updates
           | [["aarch64", "x86_64"][]
              | . as $arch

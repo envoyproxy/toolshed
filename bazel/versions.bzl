@@ -25,6 +25,8 @@ VERSIONS = {
     "bins_release": BINS_RELEASE,
     "msan_libs_sha256": "4a94084a2b2692b384777fe993c82f04c9b5fe866e3ec91d0cf340feadd76864",
     "tsan_libs_sha256": "c2748fed2a861546c16361c688d3872c9239120842bf646a6a74c24e57e5678d",
+    # Filled after the bins-v* release publishes the shared libunwind artifact.
+    "unwind_libs_sha256": "",
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
         "x86_64": "e40f39338ffe561dfa26541557c9e548fc7760db9d99f7b6c5de237b725482aa",
