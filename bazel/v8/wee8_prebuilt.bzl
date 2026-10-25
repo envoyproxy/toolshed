@@ -262,18 +262,25 @@ def setup_wee8_prebuilt(
         x86_64_libstdcxx_version = None,
         x86_64_libstdcxx_sha256 = None,
         aarch64_version = None,
-        aarch64_sha256 = None):
-    """Setup function shared by module extensions and direct callers."""
+        aarch64_sha256 = None,
+        aarch64_libstdcxx_version = None,
+        aarch64_libstdcxx_sha256 = None):
+    """Setup function shared by module extensions and direct callers.
+
+    Variants with no published archive (an empty sha256 in //:versions.bzl and
+    no override) are exposed as an incompatible stub rather than fetched.
+    """
     variants = [
-        ("x86_64", WEE8_DEFAULT_STDLIB, x86_64_version, x86_64_sha256),
-        ("x86_64", "libstdcxx", x86_64_libstdcxx_version or x86_64_version, x86_64_libstdcxx_sha256),
-        ("aarch64", WEE8_DEFAULT_STDLIB, aarch64_version, aarch64_sha256),
+        ("x86_64", WEE8_DEFAULT_STDLIB, x86_64_version, x86_64_sha256, True),
+        ("x86_64", "libstdcxx", x86_64_libstdcxx_version or x86_64_version, x86_64_libstdcxx_sha256, True),
+        ("aarch64", WEE8_DEFAULT_STDLIB, aarch64_version, aarch64_sha256, True),
+        ("aarch64", "libstdcxx", aarch64_libstdcxx_version or aarch64_version, aarch64_libstdcxx_sha256, False),
     ]
-    for arch, stdlib, version, sha256 in variants:
+    for arch, stdlib, version, sha256, required in variants:
         wee8_prebuilt(
             name = wee8_prebuilt_repo_name(arch, stdlib),
             version = version or VERSIONS["bins_release"],
-            sha256 = _resolve_wee8_sha256(arch, stdlib, sha256),
+            sha256 = _resolve_wee8_sha256(arch, stdlib, sha256) if required else (sha256 or wee8_sha256(VERSIONS, arch, stdlib)),
             arch = arch,
             stdlib = stdlib,
         )

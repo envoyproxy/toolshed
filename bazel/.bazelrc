@@ -93,8 +93,10 @@ common:remote-exec --define=engflow_rbe=true
 # This is safe for ordinary (libcxx) targets: gcc requires //compile:libstdcxx
 # on the target platform, so it is not a candidate at all, and the gcc platforms
 # yield no toolchain and are skipped.
+# Both GCC 13.4.0 archives are x86_64-hosted: aarch64 GCC builds cross-compile
+# on linux_x64_gcc workers, not the native arm64 pool.
 common:remote-exec --host_platform=//platforms/rbe:linux_x64
-common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//platforms/rbe:linux_arm64_gcc,//platforms/rbe:linux_x64,//platforms/rbe:linux_arm64
+common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//platforms/rbe:linux_x64,//platforms/rbe:linux_arm64
 
 
 #############################################################################

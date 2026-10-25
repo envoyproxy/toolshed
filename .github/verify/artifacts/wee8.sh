@@ -23,12 +23,12 @@
 set -euo pipefail
 
 ARTIFACT_DIR="${1:?usage: wee8.sh <artifact-dir>}"
-CHECK_STDLIB="$(dirname "$0")/../../../bazel/compile/test/check_stdlib.sh"
+CHECK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../bazel/compile/test" && pwd)"
+CHECK_STDLIB="${CHECK_DIR}/check_stdlib.sh"
+CHECK_GLIBC="${CHECK_DIR}/check_glibc.sh"
 
-# Keep in sync with WEE8_VARIANTS in bazel/v8/package/BUILD. aarch64+libstdcxx
-# is deliberately absent: the gcc toolchain invokes /usr/bin/gcc directly and
-# has no cross-compiler, so that combination cannot be built.
-EXPECTED_COUNT=3
+# Keep in sync with WEE8_VARIANTS in bazel/v8/package/BUILD.
+EXPECTED_COUNT=4
 
 if [[ ! -d "${ARTIFACT_DIR}" ]]; then
     echo "FAIL: artifact dir '${ARTIFACT_DIR}' does not exist"
@@ -37,7 +37,9 @@ fi
 
 shopt -s nullglob globstar
 
-WORKDIR="$(mktemp -d)"
+ARTIFACT_DIR="$(cd "${ARTIFACT_DIR}" && pwd)"
+WORKDIR="${ARTIFACT_DIR}/.wee8-verify-$$"
+mkdir "${WORKDIR}"
 trap 'rm -rf "${WORKDIR}"' EXIT
 
 found=0
@@ -98,6 +100,10 @@ for tarball in "${ARTIFACT_DIR}"/**/v8-wee8-*.tar.xz; do
     fi
 
     if ! BINARY="${lib}" EXPECTED_STDLIB="${expected_stdlib}" bash "${CHECK_STDLIB}"; then
+        rc=1
+    fi
+
+    if ! BINARY="${lib}" bash "${CHECK_GLIBC}"; then
         rc=1
     fi
 

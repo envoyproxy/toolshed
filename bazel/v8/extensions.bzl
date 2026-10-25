@@ -9,9 +9,11 @@ _SHA_ATTRS = [
     "x86_64_libstdcxx_sha256",
     "aarch64_version",
     "aarch64_sha256",
+    "aarch64_libstdcxx_version",
+    "aarch64_libstdcxx_sha256",
 ]
 
-_REPOS = "@wee8_prebuilt_x86_64, @wee8_prebuilt_x86_64_libstdcxx, @wee8_prebuilt_aarch64"
+_REPOS = "@wee8_prebuilt_x86_64, @wee8_prebuilt_x86_64_libstdcxx, @wee8_prebuilt_aarch64, @wee8_prebuilt_aarch64_libstdcxx"
 
 def _module_id(mod):
     if mod.version:
@@ -101,6 +103,12 @@ _setup = tag_class(
         ),
         "aarch64_sha256": attr.string(
             doc = "SHA256 of the aarch64 libcxx wee8 archive",
+        ),
+        "aarch64_libstdcxx_version": attr.string(
+            doc = "Version of the aarch64 libstdcxx wee8 release to use",
+        ),
+        "aarch64_libstdcxx_sha256": attr.string(
+            doc = "SHA256 of the aarch64 libstdcxx wee8 archive",
         ),
         "source": attr.label(
             doc = "Target to build wee8 from source when no prebuilt matches the " +

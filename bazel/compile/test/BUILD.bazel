@@ -1,9 +1,20 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:versions.bzl", "VERSIONS")
 load(":clang_version_test.bzl", "clang_version_test")
 
 package(default_visibility = ["//visibility:public"])
+
+# TODO: remove the hash gate after the next bins release rebuilds libstdcxx wee8.
+# This published prebuilt used host glibc 2.39; changing its hash activates CI.
+_WEE8_LINK_COMPATIBLE = select({
+    "//compile:gcc_build": [],
+    "//conditions:default": ["@platforms//:incompatible"],
+}) if VERSIONS["wee8_sha256"]["x86_64"]["libstdcxx"] not in [
+    "",
+    "ad9895c550bdf8f4de931c0143c99cc28ae38aa0b475bc4602e494eedac46e90",
+] else ["@platforms//:incompatible"]
 
 exports_files([
     "assert_llvm_minimal_bins_layout.sh",
@@ -21,6 +32,16 @@ bzl_library(
 
 clang_version_test(
     name = "clang_version_test",
+)
+
+sh_test(
+    name = "check_glibc_test",
+    size = "small",
+    srcs = ["check_glibc_test.sh"],
+    data = [
+        "check_glibc.sh",
+        "glibc_tool_fixture.sh",
+    ],
 )
 
 sh_test(
@@ -246,8 +267,7 @@ cc_binary(
 #
 # Note these are gated the *inverse* way from the unwind tests above: the
 # libstdcxx variant only runs when :gcc_build is set, and vice versa. Every
-# other binary-inspecting test in this package is disabled under gcc, which is
-# why the gcc leg had no output verification at all.
+# other unwind-inspecting test in this package is disabled under gcc.
 #
 # Run with:
 #   bazel test //compile/test:stdlib_libstdcxx_test --config=gcc
@@ -255,10 +275,14 @@ sh_test(
     name = "stdlib_libstdcxx_test",
     size = "small",
     srcs = ["check_stdlib.sh"],
-    data = [":test_stdlib"],
+    data = [
+        ":test_stdlib",
+        "@llvm_toolchain_llvm//:nm",
+    ],
     env = {
         "BINARY": "$(rootpath :test_stdlib)",
         "EXPECTED_STDLIB": "libstdcxx",
+        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
     },
     tags = ["manual"],
     target_compatible_with = select({
@@ -273,10 +297,14 @@ sh_test(
     name = "stdlib_libcxx_test",
     size = "small",
     srcs = ["check_stdlib.sh"],
-    data = [":test_stdlib"],
+    data = [
+        ":test_stdlib",
+        "@llvm_toolchain_llvm//:nm",
+    ],
     env = {
         "BINARY": "$(rootpath :test_stdlib)",
         "EXPECTED_STDLIB": "libcxx",
+        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
     },
     tags = ["manual"],
     target_compatible_with = select({
@@ -284,4 +312,56 @@ sh_test(
         "//compile:macos_build": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+)
+
+# Inspect the linked binary without executing it, including on cross builds.
+sh_test(
+    name = "gcc_runtime_test",
+    size = "small",
+    srcs = ["check_glibc.sh"],
+    data = [
+        ":test_stdlib",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
+    env = {
+        "BINARY": "$(rootpath :test_stdlib)",
+        "CHECK_STATIC_RUNTIME": "true",
+        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+    },
+    tags = ["manual"],
+    target_compatible_with = select({
+        "//compile:gcc_build": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
+)
+
+# Unlike archive symbol-name filtering, this link resolves wee8's libc references
+# against the base sysroot and produces an ELF with actual GLIBC version tags.
+cc_binary(
+    name = "wee8_link_probe",
+    srcs = ["wee8_link_probe.cc"],
+    tags = ["manual"],
+    target_compatible_with = _WEE8_LINK_COMPATIBLE,
+    deps = ["//v8:wee8"],
+)
+
+sh_test(
+    name = "wee8_prebuilt_link_test",
+    size = "small",
+    srcs = ["check_glibc.sh"],
+    data = [
+        ":wee8_link_probe",
+        "@llvm_toolchain_llvm//:nm",
+        "@llvm_toolchain_llvm//:readelf",
+    ],
+    env = {
+        "BINARY": "$(rootpath :wee8_link_probe)",
+        "CHECK_STATIC_RUNTIME": "true",
+        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+    },
+    tags = ["manual"],
+    target_compatible_with = _WEE8_LINK_COMPATIBLE,
 )

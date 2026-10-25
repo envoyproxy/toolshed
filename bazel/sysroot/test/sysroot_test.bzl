@@ -1,6 +1,40 @@
 """Regression tests for directory sysroots and their file-level targets."""
 
-load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
+load("//:versions.bzl", "VERSIONS")
+
+def _sysroot_build_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    asserts.equals(
+        env,
+        [
+            "sysroot-glibc2.28-amd64.tar.xz",
+            "sysroot-glibc2.28-arm64.tar.xz",
+            "sysroot-glibc2.28-libstdc++13-amd64.tar.xz",
+            "sysroot-glibc2.28-libstdc++13-arm64.tar.xz",
+            "sysroot-glibc2.31-amd64.tar.xz",
+            "sysroot-glibc2.31-arm64.tar.xz",
+            "sysroot-glibc2.31-libstdc++13-amd64.tar.xz",
+            "sysroot-glibc2.31-libstdc++13-arm64.tar.xz",
+        ],
+        sorted([file.basename for file in target[DefaultInfo].files.to_list()]),
+    )
+    return analysistest.end(env)
+
+sysroot_build_test = analysistest.make(_sysroot_build_test_impl)
+
+def _sysroot_hashes_test_impl(ctx):
+    env = unittest.begin(ctx)
+    hashes = VERSIONS["sysroot_hashes"]
+    for variants in hashes.values():
+        asserts.equals(env, ["13", "base"], sorted(variants.keys()))
+        for variant in ["13", "base"]:
+            for arch in ["amd64", "arm64"]:
+                asserts.equals(env, 64, len(variants[variant][arch]))
+    return unittest.end(env)
+
+sysroot_hashes_test = unittest.make(_sysroot_hashes_test_impl)
 
 def _sysroot_test_impl(ctx):
     env = unittest.begin(ctx)
@@ -17,6 +51,10 @@ def _sysroot_test_impl(ctx):
             asserts.true(env, len(headers) > 0)
             asserts.true(env, len(libs) > 0)
             asserts.true(env, ctx.file.stdio in headers)
+            if ctx.attr.stdcc_version:
+                include_prefix = root.path + "/usr/include/c++/" + ctx.attr.stdcc_version + "/"
+                asserts.true(env, any([file.path.startswith(include_prefix) for file in headers]))
+                asserts.true(env, any([file.basename.startswith("libstdc++.") for file in libs]))
             for file in headers + libs:
                 asserts.true(env, file.path.startswith(root.path + "/"))
                 asserts.false(env, ":" in file.basename or file.basename.endswith(".pl"))
@@ -30,5 +68,6 @@ sysroot_test = unittest.make(
         "headers": attr.label(),
         "libs": attr.label(),
         "stdio": attr.label(allow_single_file = True),
+        "stdcc_version": attr.string(),
     },
 )
