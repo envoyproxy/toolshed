@@ -1,7 +1,7 @@
 """Module extension for sysroot configuration in bzlmod."""
 
 load(":macos_sysroot.bzl", "setup_macos_sysroot_build")
-load(":sysroot.bzl", "sysroot", "setup_sysroots")
+load(":sysroot.bzl", "setup_sysroots", "sysroot")
 
 def _sysroot_impl(module_ctx):
     """Implementation of the sysroot module extension.
@@ -27,7 +27,6 @@ def _sysroot_impl(module_ctx):
                 setup_sysroots(
                     version = setup_tag.version if setup_tag.version else None,
                     glibc_version = setup_tag.glibc_version,
-                    stdcc_version = setup_tag.stdcc_version if setup_tag.stdcc_version else None,
                     name_prefix = setup_tag.name_prefix,
                 )
 
@@ -39,10 +38,6 @@ _setup = tag_class(
         "glibc_version": attr.string(
             default = "2.31",
             doc = "glibc version to use (default: '2.31', also available: '2.28')",
-        ),
-        "stdcc_version": attr.string(
-            default = "",
-            doc = "libstdc++ version to use (default: '' for base sysroot without libstdc++; set to e.g. '13' for the libstdc++ variant)",
         ),
         "name_prefix": attr.string(
             default = "",

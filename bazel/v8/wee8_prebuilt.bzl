@@ -262,7 +262,9 @@ def setup_wee8_prebuilt(
         x86_64_libstdcxx_version = None,
         x86_64_libstdcxx_sha256 = None,
         aarch64_version = None,
-        aarch64_sha256 = None):
+        aarch64_sha256 = None,
+        aarch64_libstdcxx_version = None,
+        aarch64_libstdcxx_sha256 = None):
     """Setup function shared by module extensions and direct callers."""
     variants = [
         ("x86_64", WEE8_DEFAULT_STDLIB, x86_64_version, x86_64_sha256),
@@ -277,3 +279,13 @@ def setup_wee8_prebuilt(
             arch = arch,
             stdlib = stdlib,
         )
+
+    # Until the first cross-GCC bins release, expose the existing incompatible
+    # stub rather than trying to fetch an unpublished archive.
+    wee8_prebuilt(
+        name = wee8_prebuilt_repo_name("aarch64", "libstdcxx"),
+        version = aarch64_libstdcxx_version or aarch64_version or VERSIONS["bins_release"],
+        sha256 = aarch64_libstdcxx_sha256 or wee8_sha256(VERSIONS, "aarch64", "libstdcxx"),
+        arch = "aarch64",
+        stdlib = "libstdcxx",
+    )

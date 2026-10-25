@@ -1,4 +1,17 @@
-load(":sysroot_test.bzl", "sysroot_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":sysroot_test.bzl", "sysroot_build_test", "sysroot_test")
+
+sysroot_build_test(
+    name = "sysroot_build_test",
+    target_under_test = "//sysroot:sysroots",
+)
+
+sh_test(
+    name = "build_sysroot_options_test",
+    srcs = ["build_sysroot_options_test.sh"],
+    args = ["$(location //sysroot:build_sysroot.sh)"],
+    data = ["//sysroot:build_sysroot.sh"],
+)
 
 [
     sysroot_test(

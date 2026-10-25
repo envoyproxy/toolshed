@@ -83,6 +83,8 @@ VERSIONS = {
 
     # Wee8 prebuilt hashes by architecture and stdlib ABI flavour.
     # libcxx keeps the legacy unsuffixed artifact name; libstdcxx is suffixed.
+    # TODO: refresh both libstdcxx hashes in the next bins-v* release, built
+    # with hermetic GCC and the base glibc 2.31 sysroot, before downstream use.
     "wee8_sha256": {
         "x86_64": {
             "libcxx": "ce217d16544fb3fd2cecce3cf872a6ad82902117297b88a223aec5c81bc521df",
@@ -94,29 +96,16 @@ VERSIONS = {
         },
     },
 
-    # Sysroot hashes organized by glibc version, stdlib variant, and architecture
-    # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
-    # stdlib_variant is either "base" (no libstdc++) or the libstdc++ version (e.g., "13")
+    # Sysroot hashes organized by glibc version and architecture.
+    # Format: sysroot_hashes[glibc_version][arch]
     "sysroot_hashes": {
         "2.31": {
-            "base": {
-                "amd64": "c027659e4ed93c2f53ca29cc611962790cde21289cbedcfd3419354d6a50767e",
-                "arm64": "33fb571b3b9b5edb9854fa4444719fae01c0c08825b3051357fcd4ab3721749a",
-            },
-            "13": {
-                "amd64": "0562bde13b68aa1c49ab286c5bb765158a9f17fb69f3f1d190672ef171502dbf",
-                "arm64": "db9c5b96cd4ecc9b5ec4ac865d5e91eacf2020ef583aa262c6a906741f46ca11",
-            },
+            "amd64": "c027659e4ed93c2f53ca29cc611962790cde21289cbedcfd3419354d6a50767e",
+            "arm64": "33fb571b3b9b5edb9854fa4444719fae01c0c08825b3051357fcd4ab3721749a",
         },
         "2.28": {
-            "base": {
-                "amd64": "d7ea7bc466377b2294127875216a701e400a57445b1c8daca223c71445681fc1",
-                "arm64": "ae47a5b829fa354d1936e97c3c01aca3b3fa49546717809f1618a2c20d9ff5f2",
-            },
-            "13": {
-                "amd64": "b0a230b3875f36dc50739fb4711e8745a0b65fd1b1e4d0c4961c6832980c0510",
-                "arm64": "8fd6257c1a6ea3048d03d46e3a452873f885fd17ced5640deb3b3994c8dda4bf",
-            },
+            "amd64": "d7ea7bc466377b2294127875216a701e400a57445b1c8daca223c71445681fc1",
+            "arm64": "ae47a5b829fa354d1936e97c3c01aca3b3fa49546717809f1618a2c20d9ff5f2",
         },
     },
 

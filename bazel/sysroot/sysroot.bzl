@@ -31,22 +31,11 @@ def _sysroot_impl(ctx):
     """Download a sysroot with one sandbox symlink and one merkle-tree node."""
     arch = ctx.attr.arch or _get_platform_arch(ctx)
     glibc_version = ctx.attr.glibc_version
-    stdcc_version = ctx.attr.stdcc_version
-
-    # Construct URL based on whether stdcc_version is specified
-    if stdcc_version:
-        url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-glibc{glibc_version}-libstdc++{stdcc_version}-{arch}.tar.xz".format(
-            version = ctx.attr.version,
-            arch = arch,
-            glibc_version = glibc_version,
-            stdcc_version = stdcc_version,
-        )
-    else:
-        url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
-            version = ctx.attr.version,
-            arch = arch,
-            glibc_version = glibc_version,
-        )
+    url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/sysroot-glibc{glibc_version}-{arch}.tar.xz".format(
+        version = ctx.attr.version,
+        arch = arch,
+        glibc_version = glibc_version,
+    )
 
     ctx.download_and_extract(
         url = url,
@@ -122,19 +111,15 @@ sysroot = repository_rule(
             mandatory = True,
             doc = "glibc version (e.g., '2.31' or '2.28')",
         ),
-        "stdcc_version": attr.string(
-            doc = "libstdc++ version (e.g., '13'). If not specified, base sysroot without libstdc++ is used",
-        ),
     },
     doc = "Downloads sysroot for the specified or host architecture",
 )
 
-def _get_sysroot_hash(glibc_version, stdcc_version, arch):
+def _get_sysroot_hash(glibc_version, arch):
     """Get the SHA256 hash for a specific sysroot configuration.
 
     Args:
         glibc_version: glibc version (e.g., "2.31" or "2.28")
-        stdcc_version: libstdc++ version (e.g., "13") or None for base sysroot
         arch: Architecture (e.g., "amd64" or "arm64")
 
     Returns:
@@ -148,34 +133,21 @@ def _get_sysroot_hash(glibc_version, stdcc_version, arch):
             ", ".join(VERSIONS["sysroot_hashes"].keys()),
         ))
 
-    # Determine stdlib variant key
-    stdlib_variant = stdcc_version if stdcc_version else "base"
-
-    # Validate stdlib variant
-    if stdlib_variant not in VERSIONS["sysroot_hashes"][glibc_version]:
-        fail("Unsupported libstdc++ version '{}' for glibc {}. Supported variants: {}".format(
-            stdcc_version or "base",
+    # Validate architecture
+    if arch not in VERSIONS["sysroot_hashes"][glibc_version]:
+        fail("Unsupported architecture '{}' for glibc {}. Supported architectures: {}".format(
+            arch,
             glibc_version,
             ", ".join(VERSIONS["sysroot_hashes"][glibc_version].keys()),
         ))
 
-    # Validate architecture
-    if arch not in VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant]:
-        fail("Unsupported architecture '{}' for glibc {} with libstdc++ {}. Supported architectures: {}".format(
-            arch,
-            glibc_version,
-            stdcc_version or "base",
-            ", ".join(VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant].keys()),
-        ))
-
     # Get the hash
-    sha256 = VERSIONS["sysroot_hashes"][glibc_version][stdlib_variant][arch]
+    sha256 = VERSIONS["sysroot_hashes"][glibc_version][arch]
 
     # Validate hash is not empty
     if not sha256:
-        fail("SHA256 hash not yet available for glibc {} with libstdc++ {} on {}. This configuration may not be released yet.".format(
+        fail("SHA256 hash not yet available for glibc {} on {}. This configuration may not be released yet.".format(
             glibc_version,
-            stdcc_version or "base",
             arch,
         ))
 
@@ -250,22 +222,20 @@ def setup_macos_sysroot(version = None):
 def setup_sysroots(
         version = None,
         glibc_version = "2.31",
-        stdcc_version = None,
         name_prefix = ""):
     """Setup function to configure sysroots, shared by module extensions and direct callers.
 
     Args:
         version: Version of sysroot release to use (default: uses VERSIONS["bins_release"])
         glibc_version: glibc version to use (default: "2.31", also available: "2.28")
-        stdcc_version: libstdc++ version to use (default: None for base sysroot without libstdc++; set to e.g. "13" for the libstdc++ variant)
         name_prefix: Optional prefix for sysroot repository names (default: "")
                     Allows multiple sysroot setups, e.g., name_prefix="old" creates
                     @old_sysroot_linux_amd64 and @old_sysroot_linux_arm64
     """
 
     # Get hashes from versions.bzl based on configuration
-    amd64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "amd64")
-    arm64_sha256 = _get_sysroot_hash(glibc_version, stdcc_version, "arm64")
+    amd64_sha256 = _get_sysroot_hash(glibc_version, "amd64")
+    arm64_sha256 = _get_sysroot_hash(glibc_version, "arm64")
 
     # Construct repository names with optional prefix
     if name_prefix:
@@ -282,7 +252,6 @@ def setup_sysroots(
         sha256 = amd64_sha256,
         arch = "amd64",
         glibc_version = glibc_version,
-        stdcc_version = stdcc_version,
     )
 
     # ARM64 sysroot
@@ -292,5 +261,4 @@ def setup_sysroots(
         sha256 = arm64_sha256,
         arch = "arm64",
         glibc_version = glibc_version,
-        stdcc_version = stdcc_version,
     )

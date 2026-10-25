@@ -1,6 +1,23 @@
 """Regression tests for directory sysroots and their file-level targets."""
 
-load("@bazel_skylib//lib:unittest.bzl", "asserts", "unittest")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
+
+def _sysroot_build_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    asserts.equals(
+        env,
+        [
+            "sysroot-glibc2.28-amd64.tar.xz",
+            "sysroot-glibc2.28-arm64.tar.xz",
+            "sysroot-glibc2.31-amd64.tar.xz",
+            "sysroot-glibc2.31-arm64.tar.xz",
+        ],
+        sorted([file.basename for file in target[DefaultInfo].files.to_list()]),
+    )
+    return analysistest.end(env)
+
+sysroot_build_test = analysistest.make(_sysroot_build_test_impl)
 
 def _sysroot_test_impl(ctx):
     env = unittest.begin(ctx)

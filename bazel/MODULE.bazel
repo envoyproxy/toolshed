@@ -133,7 +133,7 @@ use_repo(macos_sysroot_build_ext, "macos_sdk_pkg", "pkgutil_linux_amd64")
 # stays a dev dependency.
 wee8_prebuilt_ext = use_extension("//v8:extensions.bzl", "wee8_prebuilt_extension")
 wee8_prebuilt_ext.setup()
-use_repo(wee8_prebuilt_ext, "wee8_prebuilt_aarch64", "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx", "wee8_source")
+use_repo(wee8_prebuilt_ext, "wee8_prebuilt_aarch64", "wee8_prebuilt_aarch64_libstdcxx", "wee8_prebuilt_x86_64", "wee8_prebuilt_x86_64_libstdcxx", "wee8_source")
 
 wee8_source_ext = use_extension("//v8:extensions.bzl", "wee8_prebuilt_extension", dev_dependency = True)
 wee8_source_ext.setup(source = "@v8//:wee8")
@@ -168,7 +168,20 @@ use_repo(grcov_ext, "grcov")
 # glint_ext.setup(bins_release_version = "0.1.21")
 # use_repo(glint_ext, "glint")
 
-# This needs to be before llvm to win in transitionsj
+gcc = use_extension("//toolchains/gcc:extensions.bzl", "gcc_extension", dev_dependency = True)
+gcc.toolchain(
+    name = "gcc_linux_x86_64",
+    arch = "x86_64",
+    sysroot = "@sysroot_linux_amd64//sysroot",
+)
+gcc.toolchain(
+    name = "gcc_linux_aarch64",
+    arch = "aarch64",
+    sysroot = "@sysroot_linux_arm64//sysroot",
+)
+use_repo(gcc, "gcc_linux_aarch64", "gcc_linux_x86_64")
+
+# This needs to be before llvm to win in transitions.
 register_toolchains(
     "//toolchains/gcc:linux_x64_toolchain",
     "//toolchains/gcc:linux_arm64_toolchain",
@@ -195,11 +208,17 @@ llvm.cxx_cross_lib(
 # libgcc_s NEEDED entry.
 llvm.toolchain(
     name = "llvm_toolchain",
-    llvm_version = "22.1.8",
     extra_link_flags = {
-        "linux-aarch64": ["-rtlib=compiler-rt", "-unwindlib=libgcc"],
-        "linux-x86_64": ["-rtlib=compiler-rt", "-unwindlib=libgcc"],
+        "linux-aarch64": [
+            "-rtlib=compiler-rt",
+            "-unwindlib=libgcc",
+        ],
+        "linux-x86_64": [
+            "-rtlib=compiler-rt",
+            "-unwindlib=libgcc",
+        ],
     },
+    llvm_version = "22.1.8",
 )
 llvm.toolchain_root(
     name = "llvm_toolchain",

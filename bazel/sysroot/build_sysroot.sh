@@ -68,9 +68,6 @@ DEFAULT_REMOVE_DIRS=(
 ARCH=""
 GLIBC_VERSION=""
 DEBIAN_VERSION=""
-VARIANT="base"
-PPA_TOOLCHAIN=""
-STDCC_VERSION="13"
 KEEP_DIRS=""
 REMOVE_DIRS=""
 SKIP_CLEANUP="false"
@@ -82,11 +79,6 @@ usage () {
     echo "  --arch           Architecture to build (amd64 or arm64)"
     echo "  --glibc          glibc version (e.g., 2.31 or 2.28)"
     echo "  --debian         Debian version (e.g., bullseye or buster)"
-    echo ""
-    echo "Variant Options:"
-    echo "  --variant        Sysroot variant: base or libstdcxx (default: base)"
-    echo "  --ppa-toolchain  Ubuntu PPA toolchain version (required for libstdcxx variant)"
-    echo "  --stdcc          libstdc++ version (default: 13)"
     echo ""
     echo "Output Options:"
     echo "  --output         Output directory name"
@@ -126,18 +118,6 @@ while [[ $# -gt 0 ]]; do
             DEBIAN_VERSION="$2"
             shift 2
             ;;
-        --variant)
-            VARIANT="$2"
-            shift 2
-            ;;
-        --ppa-toolchain)
-            PPA_TOOLCHAIN="$2"
-            shift 2
-            ;;
-        --stdcc)
-            STDCC_VERSION="$2"
-            shift 2
-            ;;
         --output)
             OUTPUT="$2"
             shift 2
@@ -170,11 +150,6 @@ if [[ -z "$ARCH" ]] || [[ -z "$GLIBC_VERSION" ]] || [[ -z "$DEBIAN_VERSION" ]]; 
     usage
 fi
 
-if [[ "$VARIANT" == "libstdcxx" ]] && [[ -z "$PPA_TOOLCHAIN" ]]; then
-    echo "Error: --ppa-toolchain is required for libstdcxx variant"
-    usage
-fi
-
 case "$ARCH" in
     amd64) TRIPLE="x86_64-linux-gnu" ;;
     arm64) TRIPLE="aarch64-linux-gnu" ;;
@@ -186,7 +161,6 @@ echo "  Architecture: $ARCH"
 echo "  Target triple: $TRIPLE"
 echo "  glibc version: $GLIBC_VERSION"
 echo "  Debian version: $DEBIAN_VERSION"
-echo "  Variant: $VARIANT"
 echo "  Output directory: $WORK_DIR"
 
 # Determine Debian mirror and libgcc package based on Debian version
@@ -250,44 +224,12 @@ install_base_packages () {
          -t "$DEBIAN_VERSION-backports" linux-libc-dev
 }
 
-install_libstdcc () {
-    if [[ "$VARIANT" != "libstdcxx" ]]; then
-        return
-    fi
-    echo ""
-    echo "Step 4: Installing libstdc++..."
-    # Fetch the ubuntu-toolchain-r PPA signing key using a temporary GNUPGHOME
-    # so we don't pollute the host keyring, then install it into the sysroot's
-    # trusted.gpg.d directory for apt's signed-by mechanism.
-    local ppa_key_id='1E9377A2BA9EF27F'
-    local tmp_gnupghome
-    tmp_gnupghome=$(mktemp -d)
-    # shellcheck disable=SC2064
-    trap "rm -rf '$tmp_gnupghome'" EXIT
-    sudo mkdir -p "$WORK_DIR/etc/apt/trusted.gpg.d"
-    GNUPGHOME="$tmp_gnupghome" retry 3 10 gpg \
-        --keyserver keyserver.ubuntu.com \
-        --recv-keys "$ppa_key_id"
-    GNUPGHOME="$tmp_gnupghome" gpg --export "$ppa_key_id" \
-        | sudo install -m 0644 -o root -g root /dev/stdin \
-            "$WORK_DIR/etc/apt/trusted.gpg.d/ubuntu-toolchain-r.gpg"
-    rm -rf "$tmp_gnupghome"
-    trap - EXIT
-    echo "deb [signed-by=/etc/apt/trusted.gpg.d/ubuntu-toolchain-r.gpg] http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu $PPA_TOOLCHAIN main" \
-        | sudo tee "$WORK_DIR/etc/apt/sources.list.d/toolchain.list" > /dev/null
-    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq update
-    retry 3 10 sudo chroot "$WORK_DIR" apt-get -qq install -y "libstdc++-${STDCC_VERSION}-dev"
-}
-
 install_libgcc_dev_link () {
-    if [[ "$VARIANT" != "base" ]]; then
-        return
-    fi
     # The runtime package omits the unversioned dev link from libgcc-N-dev.
     # Provide it for literal -lgcc_s users (notably rustc), without -lgcc:
     # base sysroots use compiler-rt and do not include libgcc.a.
     echo ""
-    echo "Step 5: Ensuring unversioned libgcc_s.so link..."
+    echo "Step 4: Ensuring unversioned libgcc_s.so link..."
     local libdir
     for libdir in "lib/$TRIPLE" "usr/lib/$TRIPLE"; do
         if [[ -e "$WORK_DIR/$libdir/libgcc_s.so.1" ]]; then
@@ -313,7 +255,7 @@ INPUT ( libgcc_s.so.1 )" \
 
 cleanup_sysroot () {
     echo ""
-    echo "Step 6: Cleaning up sysroot..."
+    echo "Step 5: Cleaning up sysroot..."
     if [[ "$CROSS_COMPILE" == "false" ]]; then
         sudo chroot "$WORK_DIR" apt-get clean
     fi
@@ -349,17 +291,16 @@ cleanup_sysroot () {
                 sudo rm -rf "$WORK_DIR/$dir"
             fi
         done
-        # Clean up apt sources and PPA keyring (unless etc is in keep list)
+        # Clean up apt sources (unless etc is in keep list)
         if [[ -z "${KEEP_SET[etc]}" ]]; then
             sudo rm -rf "$WORK_DIR/etc/apt/sources.list.d/"*
-            sudo rm -f "$WORK_DIR/etc/apt/trusted.gpg.d/ubuntu-toolchain-r.gpg"
         fi
     fi
 }
 
 fix_absolute_symlinks () {
     echo ""
-    echo "Step 7: Fixing absolute symlinks..."
+    echo "Step 6: Fixing absolute symlinks..."
     find "$WORK_DIR" -type l | while read -r symlink; do
         # Get the current target
         current_target=$(readlink "$symlink")
@@ -383,7 +324,7 @@ fix_absolute_symlinks () {
 
 package_sysroot () {
     echo ""
-    echo "Step 8: Packaging sysroot..."
+    echo "Step 7: Packaging sysroot..."
     OUTPUT_FILE="$(realpath "${OUTPUT}")"
     sudo tar -cJf "$OUTPUT_FILE" -C "$WORK_DIR" .
     echo ""
@@ -399,7 +340,6 @@ build_sysroot () {
     create_base_sysroot
     configure_package_sources
     install_base_packages
-    install_libstdcc
     install_libgcc_dev_link
     cleanup_sysroot
     fix_absolute_symlinks

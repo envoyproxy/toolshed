@@ -6,10 +6,14 @@ WEE8_VARIANTS = [
     ("x86_64", "libcxx"),
     ("aarch64", "libcxx"),
     ("x86_64", "libstdcxx"),
+    ("aarch64", "libstdcxx"),
 ]
 
 [
-    wee8_package(arch = arch, stdlib = stdlib)
+    wee8_package(
+        arch = arch,
+        stdlib = stdlib,
+    )
     for arch, stdlib in WEE8_VARIANTS
 ]
 
