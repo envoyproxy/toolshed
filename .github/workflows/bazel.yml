@@ -214,6 +214,7 @@ jobs:
           bazel_args: >-
             --config=ci
             --config=gcc
+            --skip_incompatible_explicit_targets
           privileged: false
           rbe: true
           runner: ubuntu-24.04
@@ -221,8 +222,13 @@ jobs:
             //compile/test:check_glibc_test
             //compile/test:stdlib_libstdcxx_test
             //compile/test:gcc_runtime_test
+            //compile/test:wee8_prebuilt_link_test
             //toolchains/gcc:linux_x64_paths_test
             //toolchains/gcc:linux_arm64_paths_test
+            //toolchains/gcc:linux_x86_64_runtime_test
+            //toolchains/gcc:linux_aarch64_runtime_test
+            //toolchains/gcc:linux_x86_64_runtime_abi_test
+            //toolchains/gcc:linux_aarch64_runtime_abi_test
         - name: x86-to-arm
           action: test
           bazel_args: >-

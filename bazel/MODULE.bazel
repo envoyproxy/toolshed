@@ -116,6 +116,10 @@ sysroot_ext = use_extension("//sysroot:extensions.bzl", "sysroot_extension", dev
 sysroot_ext.setup()
 use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 
+# Exercise deprecated downloads without changing the toolchains' base sysroots.
+sysroot_ext.setup(stdcc_version = "13", name_prefix = "legacy")
+use_repo(sysroot_ext, "legacy_sysroot_linux_amd64", "legacy_sysroot_linux_arm64")
+
 macos_sysroot_test_repo = use_repo_rule("//sysroot:sysroot.bzl", "macos_sysroot")
 
 macos_sysroot_test_repo(
@@ -185,6 +189,7 @@ use_repo(gcc, "gcc_linux_aarch64", "gcc_linux_x86_64")
 register_toolchains(
     "//toolchains/gcc:linux_x64_toolchain",
     "//toolchains/gcc:linux_arm64_toolchain",
+    dev_dependency = True,
 )
 
 # Configure LLVM toolchain

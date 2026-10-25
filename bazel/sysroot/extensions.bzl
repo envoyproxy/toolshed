@@ -27,13 +27,14 @@ def _sysroot_impl(module_ctx):
                 setup_sysroots(
                     version = setup_tag.version if setup_tag.version else None,
                     glibc_version = setup_tag.glibc_version,
+                    stdcc_version = setup_tag.stdcc_version if setup_tag.stdcc_version else None,
                     name_prefix = setup_tag.name_prefix,
                 )
 
 _setup = tag_class(
     attrs = {
         "version": attr.string(
-            doc = "Version of sysroot release to use (default: uses VERSIONS['bins_release'])",
+            doc = "Release to use (default: VERSIONS['bins_release'] for base sysroots, VERSIONS['sysroot_stdcc_release'] for deprecated variants)",
         ),
         "glibc_version": attr.string(
             default = "2.31",
@@ -44,6 +45,10 @@ _setup = tag_class(
             doc = """Optional prefix for sysroot repository names (default: '').
                     Allows multiple sysroot setups, e.g., name_prefix='old' creates
                     @old_sysroot_linux_amd64 and @old_sysroot_linux_arm64""",
+        ),
+        "stdcc_version": attr.string(
+            default = "",
+            doc = "Deprecated libstdc++ sysroot variant (e.g., '13'). Use the base sysroot and hermetic GCC toolchain instead.",
         ),
     },
 )

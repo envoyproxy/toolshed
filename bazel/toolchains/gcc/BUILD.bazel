@@ -1,4 +1,6 @@
-load(":toolchain_test.bzl", "gcc_paths_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:versions.bzl", "VERSIONS")
+load(":toolchain_test.bzl", "gcc_paths_test", "gcc_runtime_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -63,6 +65,44 @@ gcc_paths_test(
     sysroot = "@sysroot_linux_arm64//sysroot",
     target_under_test = ":linux_arm64",
 )
+
+[
+    gcc_runtime_test(
+        name = "linux_{}_runtime_test".format(arch),
+        arch = arch,
+        compiler = "@gcc_linux_{}//:xbin/gcc".format(arch),
+        libgcc = "@gcc_linux_{}//:libgcc".format(arch),
+        target_under_test = "@gcc_linux_{}//:libstdcxx".format(arch),
+        version = VERSIONS["gcc_toolchain"]["version"],
+    )
+    for arch in ["x86_64", "aarch64"]
+]
+
+[
+    sh_test(
+        name = "linux_{}_runtime_abi_test".format(arch),
+        srcs = ["runtime_abi_test.sh"],
+        args = [
+            "$(rootpath @gcc_linux_{}//:xbin/gcc)".format(arch),
+            "$(rootpath @sysroot_linux_{}//sysroot)".format("amd64" if arch == "x86_64" else "arm64"),
+            arch,
+            VERSIONS["gcc_toolchain"]["version"],
+            "$(rootpath //compile/test:check_glibc.sh)",
+        ],
+        data = [
+            "//compile/test:check_glibc.sh",
+            "@gcc_linux_{}//:files".format(arch),
+            "@gcc_linux_{}//:xbin/gcc".format(arch),
+            "@sysroot_linux_{}//sysroot".format("amd64" if arch == "x86_64" else "arm64"),
+        ],
+        exec_compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:x86_64",
+        ],
+        target_compatible_with = ["@platforms//os:linux"],
+    )
+    for arch in ["x86_64", "aarch64"]
+]
 
 toolchain(
     name = "linux_arm64_toolchain",

@@ -21,6 +21,9 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
     sysroot_path = sysroot.workspace_root + "/" + sysroot.package
     gcc_lib = root + "/lib/gcc/" + triple + "/" + version
     cxx_include = root + ("/aarch64-linux" if arch == "aarch64" else "") + "/include/c++/" + version
+    # -nostdinc removes GCC's configured archive/host include search. -idirafter
+    # restores only these compiler headers and base-sysroot libc headers, after
+    # project -I/-isystem paths (including the explicit C++ headers below).
     c_includes = [
         gcc_lib + "/include",
         gcc_lib + "/include-fixed",
@@ -41,6 +44,12 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
         sysroot_path + "/usr/lib/" + arch + "-linux-gnu",
         sysroot_path + "/lib/" + arch + "-linux-gnu",
     ]
+    # -B selects bundled assembler/linker executables and startup objects.
+    # crtbegin/crtend come from gcc_lib; crt1/Scrt1, crti and crtn must instead
+    # come from the base sysroot's multiarch lib directories. -L repeats those
+    # paths for ld's libraries; unlike -B it does not control startup objects.
+    # --sysroot alone does not add Debian's usr/lib/<arch>-linux-gnu layout to
+    # these archives' configured GCC search paths, hence the explicit -B/-L.
     search_flags = ["--sysroot=" + sysroot_path, "-B" + root + "/bin/"]
     search_flags += ["-B" + directory + "/" for directory in lib_dirs]
     gcc_cc_toolchain_config(
@@ -56,14 +65,13 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
         dbg_compile_flags = ["-g"],
         host_system_name = "x86_64-linux",
         link_flags = search_flags + ["-L" + directory for directory in lib_dirs] + [
-            "-static-libstdc++",
             "-static-libgcc",
             "-Wl,--build-id=md5",
             "-Wl,--hash-style=gnu",
             "-Wl,-z,relro,-z,now",
         ],
-        # The C driver does not interpret -static-libstdc++ for an explicit
-        # -lstdc++; select the archive explicitly as well.
+        # xbin/gcc is the C driver: -static-libstdc++ has no effect on explicit
+        # -lstdc++, so select the archive by name instead.
         link_libs = ["-l:libstdc++.a", "-lm"],
         opt_compile_flags = ["-O2", "-DNDEBUG"],
         # The bundled GNU BFD linker does not support --start-lib/--end-lib.

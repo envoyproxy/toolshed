@@ -1,18 +1,15 @@
 """Pinned x86_64-hosted GCC cross compilers using the shared base sysroot."""
 
-_VERSION = "13.4.0"
-_RELEASE = "18082025"
-_SHA256 = {
-    "x86_64": "d96071c1b98499afd7b7b56ebd69ad414020edf66e982004acffe7df8aaf7e02",
-    "aarch64": "770cf6bf62bdf78763de526d3a9f5cae4c19f1a3aca0ef8f18b05f1a46d1ffaf",
-}
+load("//:versions.bzl", "VERSIONS")
+
+_GCC = VERSIONS["gcc_toolchain"]
 
 def _gcc_repository_impl(ctx):
     arch = ctx.attr.arch
     triple = arch + "-linux"
     ctx.download_and_extract(
-        url = "https://github.com/f0rmiga/gcc-builds/releases/download/{}/gcc-toolchain-{}-{}.tar.xz".format(_RELEASE, _VERSION, arch),
-        sha256 = _SHA256[arch],
+        url = "https://github.com/f0rmiga/gcc-builds/releases/download/{}/gcc-toolchain-{}-{}.tar.xz".format(_GCC["release"], _GCC["version"], arch),
+        sha256 = _GCC["sha256"][arch],
     )
 
     # Never expose the archive's libc to compilation or linking.
@@ -38,16 +35,19 @@ exec "${ROOT}/%s" "$@"
         )
     cxx_prefix = "aarch64-linux/" if arch == "aarch64" else ""
     for path in [
-        "lib/gcc/" + triple + "/" + _VERSION + "/" + filename
+        "lib/gcc/" + triple + "/" + _GCC["version"] + "/" + filename
         for filename in ["crtbegin.o", "crtend.o", "libgcc.a", "libgcc_eh.a", "include", "include-fixed"]
     ] + [
-        cxx_prefix + "include/c++/" + _VERSION,
+        cxx_prefix + "include/c++/" + _GCC["version"],
         cxx_prefix + "lib64/libstdc++.a",
         cxx_prefix + "lib64/libstdc++.so",
     ]:
         if not ctx.path(path).exists:
             fail("GCC archive is missing compiler-owned runtime input " + path)
+    cxx_include = cxx_prefix + "include/c++/" + _GCC["version"]
+    gcc_lib = "lib/gcc/" + triple + "/" + _GCC["version"]
     ctx.file("BUILD.bazel", """
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc/toolchains:cc_toolchain.bzl", "cc_toolchain")
 load(%r, "gcc_linux_cc_toolchain_config")
 
@@ -66,6 +66,19 @@ filegroup(
     srcs = glob(["bin/**", "xbin/**", "lib/**", "lib64/**", "libexec/**", "include/**", %r]) + [%r],
 )
 
+cc_library(
+    name = "libstdcxx",
+    srcs = [%r],
+    hdrs = glob([%r]),
+    includes = %r,
+    linkstatic = True,
+)
+
+filegroup(
+    name = "libgcc",
+    srcs = %r,
+)
+
 cc_toolchain(
     name = "cc_toolchain",
     all_files = ":files",
@@ -81,7 +94,19 @@ cc_toolchain(
 )
 
 exports_files(glob(["xbin/*"]))
-""" % (str(ctx.attr._config), arch, triple, _VERSION, str(ctx.attr.sysroot), triple + "/**", str(ctx.attr.sysroot)))
+""" % (
+        str(ctx.attr._config),
+        arch,
+        triple,
+        _GCC["version"],
+        str(ctx.attr.sysroot),
+        triple + "/**",
+        str(ctx.attr.sysroot),
+        cxx_prefix + "lib64/libstdc++.a",
+        cxx_include + "/**",
+        [cxx_include, cxx_include + "/" + triple, cxx_include + "/backward"],
+        [gcc_lib + "/libgcc.a", gcc_lib + "/libgcc_eh.a"],
+    ))
 
 _gcc_repository = repository_rule(
     implementation = _gcc_repository_impl,

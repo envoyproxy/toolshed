@@ -63,6 +63,11 @@ on:
               fi
           done
           OUTPUT=$(printf '%s\n' "${_OUTPUT[@]}")
+      stdcc-versions:
+        description: Sysroot hash variants (deprecated variants are pinned and never updated)
+        type: string
+        default: |
+          ["base", "13"]
       template-version-update:
         type: string
         default: |
@@ -193,6 +198,7 @@ jobs:
           current: ${{ steps.bins-deps.outputs.output }}
           shas: ${{ steps.bins-shas.outputs.shas }}
           glibc_versions: ${{ inputs.glibc-versions }}
+          stdcc_versions: ${{ inputs.stdcc-versions }}
           arches: ${{ inputs.arches }}
           glint_version: ${{ inputs.glint-version }}
           versions_file: ${{ inputs.bazel-versions-file }}
@@ -206,6 +212,7 @@ jobs:
           | .shas as $shas
           | .current as $current
           | .glibc_versions as $glibc_versions
+          | .stdcc_versions as $stdccs
           | .arches as $arches
           | .san as $san
           | .glint_version as $glint_version
@@ -244,13 +251,17 @@ jobs:
                   else "" end] as $glint_updates
              | [$glibc_versions[]
                 | . as $glibc
+                | $stdccs[]
+                | . as $stdcc
+                | select($stdcc == "base")
                 | "sysroot-glibc\($glibc)-\($arch).tar.xz" as $sysroot
-                | ($shas[$sysroot]
-                   | split(":")
-                   | .[1]) as $new_sha
-                | $current.sysroot_hashes[$glibc][$arch] as $current_sha
-                | if $current_sha != $new_sha then
-                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                | ($shas[$sysroot] // null) as $sha_entry
+                | if $sha_entry then
+                    ($sha_entry | split(":") | .[1]) as $new_sha
+                    | $current.sysroot_hashes[$glibc][$stdcc][$arch] as $current_sha
+                    | if $current_sha != $new_sha then
+                        "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                      else "" end
                   else "" end] as $sysroot_updates
               | $glint_updates + $sysroot_updates] as $arch_updates
           | [

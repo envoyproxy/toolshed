@@ -32,13 +32,25 @@ Linux x86_64 (including aarch64 cross-compilation). GCC supplies its own
 libstdc++, libgcc, libgcc_eh, and crtbegin/crtend objects; glibc supplies
 crt1/crti/crtn from this sysroot. GCC links its C++ runtime statically.
 LLVM continues to supply compiler-rt and libc++ from its own toolchain.
+The GCC 13.4.0 release has no aarch64-hosted archive (native sibling releases
+start at newer GCC versions), so there is no `linux_arm64_gcc` execution
+platform: aarch64 GCC actions run on x86_64 workers.
 
 The pinned archives come from
 [f0rmiga/gcc-builds release 18082025](https://github.com/f0rmiga/gcc-builds/releases/tag/18082025),
-the same source used by envoyproxy/envoy#39632. Its
-[build recipe](https://github.com/f0rmiga/gcc-builds/blob/3fcca92fd993788a88af150cd4c885e4860e0055/Dockerfile)
-builds the target runtime against glibc 2.26. The repository rule removes the
-archive's bundled libc sysroot and explicitly uses toolshed's glibc 2.31 sysroot.
+the same source used by envoyproxy/envoy#39632. Empirical inspection of the
+SHA-pinned archives measured maximum GLIBC requirements of **2.26 (x86_64)**
+and **2.25 (aarch64)** in the shared libstdc++ siblings. The static archives'
+`nm -u` output contains no GLIBC version tags, `__isoc23_*`, or
+`__libc_single_threaded`; absence of version tags alone is not proof of
+compatibility. `//toolchains/gcc:linux_{x86_64,aarch64}_runtime_abi_test` also
+resolves every strong undefined name in libstdc++.a/libgcc.a/libgcc_eh.a against
+the other runtimes, GCC CRT, and base-sysroot exports at or below GLIBC_2.31
+(1,383 x86_64 and 1,365 aarch64 names in the pinned archives). The existing
+stdlib fixture linked with these inputs on both architectures with a measured
+maximum GLIBC_2.25 and no dynamic libstdc++/libgcc_s dependencies.
+The repository rule removes the archive's bundled libc sysroot and explicitly
+uses toolshed's glibc 2.31 sysroot.
 Replacement GCC archives **must build their target runtimes against glibc
 <= 2.31**; changing `--sysroot` cannot lower the glibc requirement of an
 already-built libstdc++.
@@ -46,9 +58,35 @@ already-built libstdc++.
 Downstreams can instantiate the downloads with `gcc_extension` from
 `//toolchains/gcc:extensions.bzl`, using a `toolchain(name = ..., arch =
 "x86_64" | "aarch64", sysroot = "@sysroot_linux_...//sysroot")` tag per target.
-Each generated repository exports `:cc_toolchain`, `:config`, and `:files`.
+Downstreams must instantiate this extension and register their own toolchains;
+toolshed's registrations are dev-only. Register GCC before LLVM, as in
+toolshed's `MODULE.bazel`.
+Each generated repository exports `:cc_toolchain`, `:config`, `:files`,
+`:libstdcxx` (headers and static library), and `:libgcc` (static runtime archives).
 The sysroot label must point directly into the `sysroot` package, not its
 root-package alias.
+
+Consumers compiling with a non-GCC toolchain but needing the libstdc++ ABI
+(for example, Envoy's `compat/openssl/prefixer` linking against prebuilt
+`libclang-cpp.so`) should use the GCC repository rather than a second sysroot:
+
+```starlark
+cc_binary(
+    name = "prefixer",
+    srcs = ["prefixer.cpp"],
+    copts = ["-nostdinc++", "-stdlib=libstdc++"],
+    deps = [
+        "@gcc_linux_x86_64//:libstdcxx",
+        # ... clang-tooling dependencies ...
+    ],
+)
+```
+
+Use the appropriate `@<gcc_repo>//:libstdcxx` for the compilation architecture.
+Its `CcInfo` supplies headers as compile inputs, include directories, and the
+static archive as a link input, including on RBE. Keep libc/CRT from the base
+sysroot: adding `-L` for a legacy sysroot's entire `usr/lib/<triple>` can mix
+libc/libpthread versions and produce `GLIBC_PRIVATE` and `__libc_csu_*` errors.
 
 **Release TODO:** the next `bins-v*` release must regenerate both wee8
 libstdcxx archives and refresh `VERSIONS["wee8_sha256"][arch]["libstdcxx"]`
@@ -57,6 +95,10 @@ x86_64 libstdcxx artifacts were built against host glibc 2.39 and are not
 compatible with this floor; aarch64 libstdcxx remains an incompatible prebuilt
 stub until its first archive/hash is published. `//v8:wee8_packages` builds
 all four arch/stdlib combinations without consuming these prebuilts.
+`//compile/test:wee8_prebuilt_link_test` links wasm C-API entry points against
+`//v8:wee8`, then checks the executable's GLIBC versions and static C++ runtime.
+The GCC CI leg includes it, but the known-incompatible x86_64 hash gates it off
+until replaced; the archive symbol-name scan remains an early pre-filter.
 
 ## Architecture Support
 
@@ -175,16 +217,22 @@ The setup will automatically validate your configuration:
 - **Missing hashes** (e.g., for unreleased configurations) will fail with a helpful message
 
 All SHA256 hashes are centrally managed in `versions.bzl` as
-`sysroot_hashes[glibc_version][arch]`.
+`sysroot_hashes[glibc_version][variant][arch]`, where variant is `"base"` or `"13"`.
 
 ### Migrating existing configurations
 
-Sysroots no longer bundle libstdc++. Remove `stdcc_version` from repository-rule,
-`setup_sysroots`, and module-extension calls, and remove `variant`, `ppa_toolchain`,
-and `stdcc_version` arguments from `sysrootfs` calls. The script no longer accepts
-`--variant`, `--ppa-toolchain`, or `--stdcc`. Use the unsuffixed sysroot build
-targets below and supply any C++ standard library through the toolchain.
-Existing unsuffixed archives and their SHA256 hashes are unchanged.
+New sysroots no longer bundle libstdc++. Downloads with `stdcc_version = "13"`
+on repository-rule, `setup_sysroots`, and module-extension calls remain supported
+for already-published `sysroot-glibc{2.28,2.31}-libstdc++13-{amd64,arm64}.tar.xz`
+archives. **This variant is deprecated and will not be rebuilt in future
+`bins-v*` releases.** Its default download remains pinned to the legacy release;
+an explicit `version` overrides that pin. Consumers must migrate to
+`@<gcc_repo>//:libstdcxx` and remove `stdcc_version`.
+
+For sysroot *builds*, remove `variant`, `ppa_toolchain`, and `stdcc_version`
+arguments from `sysrootfs` calls. The script no longer accepts `--variant`,
+`--ppa-toolchain`, or `--stdcc`. Use the unsuffixed build targets below.
+Existing unsuffixed archive names and hashes are unchanged.
 
 ## Building Sysroots with Bazel
 
