@@ -130,7 +130,6 @@ provider_test(
         "generated.jq",
         "greet.jq",
         "helper.jq",
-        "helper.jq",
         "str.jq",
     ],
     target_under_test = ":notice",
