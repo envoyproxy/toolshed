@@ -33,8 +33,7 @@ def sysrootfs(
             "manual",
         ],
         extra_tags = [],
-        visibility = ["//visibility:public"],
-):
+        visibility = ["//visibility:public"]):
     """Create a genrule to build a sysroot.
 
     Args:
@@ -49,7 +48,6 @@ def sysrootfs(
                Pass None to disable daily cache expiry.
     """
 
-    # Construct output filename
     if variant == "libstdcxx":
         output_file = "sysroot-glibc{}-libstdc++{}-{}.tar.xz".format(
             glibc_version,

@@ -15,6 +15,14 @@ LLVM_DISTRIBUTIONS = {
 }
 
 VERSIONS = {
+    "gcc_toolchain": {
+        "version": "13.4.0",
+        "release": "18082025",
+        "sha256": {
+            "x86_64": "d96071c1b98499afd7b7b56ebd69ad414020edf66e982004acffe7df8aaf7e02",
+            "aarch64": "770cf6bf62bdf78763de526d3a9f5cae4c19f1a3aca0ef8f18b05f1a46d1ffaf",
+        },
+    },
     "cmake": "3.23.2",
     "git": "2.55.0",
     "llvm": LLVM_VERSION,
@@ -83,6 +91,8 @@ VERSIONS = {
 
     # Wee8 prebuilt hashes by architecture and stdlib ABI flavour.
     # libcxx keeps the legacy unsuffixed artifact name; libstdcxx is suffixed.
+    # TODO: refresh both libstdcxx hashes in the next bins-v* release, built
+    # with hermetic GCC and the base glibc 2.31 sysroot, before downstream use.
     "wee8_sha256": {
         "x86_64": {
             "libcxx": "ce217d16544fb3fd2cecce3cf872a6ad82902117297b88a223aec5c81bc521df",
@@ -94,9 +104,9 @@ VERSIONS = {
         },
     },
 
-    # Sysroot hashes organized by glibc version, stdlib variant, and architecture
+    # Sysroot hashes organized by glibc version, stdlib variant, and architecture.
     # Format: sysroot_hashes[glibc_version][stdlib_variant][arch]
-    # stdlib_variant is either "base" (no libstdc++) or the libstdc++ version (e.g., "13")
+    # stdlib_variant is "base" or the libstdc++ version (e.g., "13").
     "sysroot_hashes": {
         "2.31": {
             "base": {

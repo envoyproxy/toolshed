@@ -148,8 +148,8 @@ jobs:
   verify-artifacts:
     # Asserts that uploaded artifacts actually contain what their filenames
     # claim. The build succeeding is not evidence of this: toolchain
-    # resolution can silently fall back to LLVM, and a gcc "cross" toolchain
-    # with no cross-compiler emits host-arch objects under a target-arch name.
+    # resolution can silently fall back to LLVM, and a misconfigured cross
+    # toolchain can emit host-arch objects under a target-arch name.
     # Both produce a green build and a plausible-looking tarball.
     #
     # Wee8, darwin libcxx, and macOS sysroot are verified below.
@@ -209,6 +209,26 @@ jobs:
             @envoy_toolshed_jq//...
             //sysroot:sysroots
             //compile/test:libunwind_shared_test
+        - name: gcc
+          action: test
+          bazel_args: >-
+            --config=ci
+            --config=gcc
+            --skip_incompatible_explicit_targets
+          privileged: false
+          rbe: true
+          runner: ubuntu-24.04
+          targets: >-
+            //compile/test:check_glibc_test
+            //compile/test:stdlib_libstdcxx_test
+            //compile/test:gcc_runtime_test
+            //compile/test:wee8_prebuilt_link_test
+            //toolchains/gcc:linux_x64_paths_test
+            //toolchains/gcc:linux_arm64_paths_test
+            //toolchains/gcc:linux_x86_64_runtime_test
+            //toolchains/gcc:linux_aarch64_runtime_test
+            //toolchains/gcc:linux_x86_64_runtime_abi_test
+            //toolchains/gcc:linux_aarch64_runtime_abi_test
         - name: x86-to-arm
           action: test
           bazel_args: >-

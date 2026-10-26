@@ -1,93 +1,94 @@
+"""Configure GCC with its own C++ runtime and toolshed's shared libc sysroot."""
+
 # buildifier: disable=bzl-visibility
 load(
     "@rules_cc//cc/private/toolchain:unix_cc_toolchain_config.bzl",
     gcc_cc_toolchain_config = "cc_toolchain_config",
 )
 
-_GCC_VERSIONS = [
-    "13",
-    "12",
-    "11",
-    "10",
-]
+def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
+    """Configure an extracted Linux cross compiler, never the host compiler.
 
-def _builtin_include_directories(triple):
-    return (
-        ["/usr/include/{}/c++/{}".format(triple, version) for version in _GCC_VERSIONS] +
-        ["/usr/lib/gcc/{}/{}/include".format(triple, version) for version in _GCC_VERSIONS] +
-        ["/usr/include/c++/{}".format(version) for version in _GCC_VERSIONS] +
-        ["/usr/include/c++/{}/backward".format(version) for version in _GCC_VERSIONS] +
-        [
-            "/usr/local/include",
-            "/usr/include/{}".format(triple),
-            "/usr/include",
-            "/usr/lib/linux/uapi",
-        ]
-    )
-
-_TOOL_PATHS = {
-    "ar": "/usr/bin/ar",
-    "cpp": "/usr/bin/cpp",
-    "dwp": "/usr/bin/dwp",
-    "gcc": "/usr/bin/gcc",
-    "gcov": "/usr/bin/gcov",
-    "ld": "/usr/bin/ld",
-    "nm": "/usr/bin/nm",
-    "objcopy": "/usr/bin/objcopy",
-    "objdump": "/usr/bin/objdump",
-    "strip": "/usr/bin/strip",
-}
-
-_TOOLCHAIN_CONFIGS = {
-    "x86_64": {
-        "abi_libc_version": "glibc_2.39",
-        "abi_version": "gcc-13",
-        "cpu": "k8",
-        "cxx_builtin_include_directories": _builtin_include_directories("x86_64-linux-gnu"),
-        "target_system_name": "x86_64-linux-gnu",
-        "toolchain_identifier": "linux-x86_64-gcc-13",
-    },
-    "aarch64": {
-        "abi_libc_version": "glibc_2.39",
-        "abi_version": "gcc-13",
-        "cpu": "aarch64",
-        "cxx_builtin_include_directories": _builtin_include_directories("aarch64-linux-gnu"),
-        "target_system_name": "aarch64-linux-gnu",
-        "toolchain_identifier": "linux-aarch64-gcc-13",
-    },
-}
-
-def gcc_linux_cc_toolchain_config(name, arch):
-    config = _TOOLCHAIN_CONFIGS[arch]
-
+    Args:
+        name: Configuration target name.
+        arch: Target CPU.
+        triple: GCC's configured target triple.
+        version: GCC version.
+        sysroot: Label exporting the base glibc sysroot.
+    """
+    root = native.package_relative_label(":BUILD.bazel").workspace_root
+    sysroot = Label(sysroot)
+    sysroot_path = sysroot.workspace_root + "/" + sysroot.package
+    gcc_lib = root + "/lib/gcc/" + triple + "/" + version
+    cxx_include = root + ("/aarch64-linux" if arch == "aarch64" else "") + "/include/c++/" + version
+    # -nostdinc removes GCC's configured archive/host include search. -idirafter
+    # restores only these compiler headers and base-sysroot libc headers, after
+    # project -I/-isystem paths (including the explicit C++ headers below).
+    c_includes = [
+        gcc_lib + "/include",
+        gcc_lib + "/include-fixed",
+        sysroot_path + "/usr/include",
+        sysroot_path + "/usr/include/" + arch + "-linux-gnu",
+    ]
+    cxx_includes = [
+        cxx_include,
+        cxx_include + "/" + triple,
+        cxx_include + "/backward",
+    ]
+    lib_dirs = [
+        gcc_lib,
+        root + "/lib",
+        root + "/lib64",
+        root + "/" + triple + "/lib",
+        root + "/" + triple + "/lib64",
+        sysroot_path + "/usr/lib/" + arch + "-linux-gnu",
+        sysroot_path + "/lib/" + arch + "-linux-gnu",
+    ]
+    # -B selects bundled assembler/linker executables and startup objects.
+    # crtbegin/crtend come from gcc_lib; crt1/Scrt1, crti and crtn must instead
+    # come from the base sysroot's multiarch lib directories. -L repeats those
+    # paths for ld's libraries; unlike -B it does not control startup objects.
+    # --sysroot alone does not add Debian's usr/lib/<arch>-linux-gnu layout to
+    # these archives' configured GCC search paths, hence the explicit -B/-L.
+    search_flags = ["--sysroot=" + sysroot_path, "-B" + root + "/bin/"]
+    search_flags += ["-B" + directory + "/" for directory in lib_dirs]
     gcc_cc_toolchain_config(
         name = name,
-        abi_libc_version = config["abi_libc_version"],
-        abi_version = config["abi_version"],
+        abi_libc_version = "glibc_2.31",
+        abi_version = "gcc-" + version,
+        builtin_sysroot = sysroot_path,
         compiler = "gcc",
-        cpu = config["cpu"],
-        cxx_builtin_include_directories = config["cxx_builtin_include_directories"],
+        compile_flags = search_flags + ["-nostdinc"] + ["-idirafter" + directory for directory in c_includes],
+        cpu = "k8" if arch == "x86_64" else arch,
+        cxx_builtin_include_directories = ["%workspace%/" + directory for directory in cxx_includes + c_includes],
+        cxx_flags = ["-nostdinc++"] + ["-isystem" + directory for directory in cxx_includes],
         dbg_compile_flags = ["-g"],
-        host_system_name = arch,
-        link_flags = [
+        host_system_name = "x86_64-linux",
+        link_flags = search_flags + ["-L" + directory for directory in lib_dirs] + [
+            "-static-libgcc",
             "-Wl,--build-id=md5",
             "-Wl,--hash-style=gnu",
             "-Wl,-z,relro,-z,now",
         ],
-        link_libs = [
-            "-lstdc++",
-            "-lm",
-        ],
-        opt_compile_flags = [
-            "-O2",
-            "-DNDEBUG",
-        ],
-        # `--start-lib`/`--end-lib` are gold/lld-only options. This toolchain
-        # links with GNU BFD `/usr/bin/ld`, which rejects them, so Bazel must
-        # fall back to building static archives for cc_library deps.
+        # xbin/gcc is the C driver: -static-libstdc++ has no effect on explicit
+        # -lstdc++, so select the archive by name instead.
+        link_libs = ["-l:libstdc++.a", "-lm"],
+        opt_compile_flags = ["-O2", "-DNDEBUG"],
+        # The bundled GNU BFD linker does not support --start-lib/--end-lib.
         supports_start_end_lib = False,
         target_libc = "glibc",
-        target_system_name = config["target_system_name"],
-        tool_paths = _TOOL_PATHS,
-        toolchain_identifier = config["toolchain_identifier"],
+        target_system_name = triple,
+        tool_paths = {tool: "xbin/" + tool for tool in [
+            "ar",
+            "cpp",
+            "dwp",
+            "gcc",
+            "gcov",
+            "ld",
+            "nm",
+            "objcopy",
+            "objdump",
+            "strip",
+        ]},
+        toolchain_identifier = "linux-" + arch + "-gcc-" + version,
     )

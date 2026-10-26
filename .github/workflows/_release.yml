@@ -64,6 +64,7 @@ on:
           done
           OUTPUT=$(printf '%s\n' "${_OUTPUT[@]}")
       stdcc-versions:
+        description: Sysroot hash variants
         type: string
         default: |
           ["base", "13"]
@@ -211,8 +212,8 @@ jobs:
           | .shas as $shas
           | .current as $current
           | .glibc_versions as $glibc_versions
-          | .arches as $arches
           | .stdcc_versions as $stdccs
+          | .arches as $arches
           | .san as $san
           | .glint_version as $glint_version
           | .versions_file as $versions_file
@@ -252,16 +253,15 @@ jobs:
                 | . as $glibc
                 | $stdccs[]
                 | . as $stdcc
-                | (if $stdcc == "base" then ""
-                   else "-libstdc++\($stdcc)"
-                   end) as $stdcc_extra
+                | (if $stdcc == "base" then "" else "-libstdc++\($stdcc)" end) as $stdcc_extra
                 | "sysroot-glibc\($glibc)\($stdcc_extra)-\($arch).tar.xz" as $sysroot
-                | ($shas[$sysroot]
-                   | split(":")
-                   | .[1]) as $new_sha
-                | $current.sysroot_hashes[$glibc][$stdcc][$arch] as $current_sha
-                | if $current_sha != $new_sha then
-                    "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                | ($shas[$sysroot] // null) as $sha_entry
+                | if $sha_entry then
+                    ($sha_entry | split(":") | .[1]) as $new_sha
+                    | $current.sysroot_hashes[$glibc][$stdcc][$arch] as $current_sha
+                    | if $current_sha != $new_sha then
+                        "sed -i s/\($current_sha)/\($new_sha)/g \($versions_file)"
+                      else "" end
                   else "" end] as $sysroot_updates
               | $glint_updates + $sysroot_updates] as $arch_updates
           | [

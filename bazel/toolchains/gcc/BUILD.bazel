@@ -1,28 +1,17 @@
-load("@rules_cc//cc/toolchains:cc_toolchain.bzl", "cc_toolchain")
-load(":toolchain.bzl", "gcc_linux_cc_toolchain_config")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:versions.bzl", "VERSIONS")
+load(":toolchain_test.bzl", "gcc_paths_test", "gcc_runtime_test")
 
 package(default_visibility = ["//visibility:public"])
 
-filegroup(
-    name = "empty",
-    srcs = [],
-)
+exports_files([
+    "extensions.bzl",
+    "toolchain.bzl",
+])
 
-gcc_linux_cc_toolchain_config(
-    name = "linux_x64_config",
-    arch = "x86_64",
-)
-
-cc_toolchain(
+alias(
     name = "linux_x64",
-    all_files = ":empty",
-    ar_files = ":empty",
-    compiler_files = ":empty",
-    dwp_files = ":empty",
-    linker_files = ":empty",
-    objcopy_files = ":empty",
-    strip_files = ":empty",
-    toolchain_config = ":linux_x64_config",
+    actual = "@gcc_linux_x86_64//:cc_toolchain",
 )
 
 # Selection is driven by the target platform: target_compatible_with
@@ -42,9 +31,7 @@ cc_toolchain(
 # //compile:llvm_worker is still required by the llvm toolchains, which is what
 # prevents clang being scheduled into the gcc container.
 #
-# NB: the cc_toolchain has empty filegroups and invokes /usr/bin/gcc from the
-# exec machine, so it only works where gcc is actually installed - on RBE that
-# is guaranteed by the ordering above rather than by a constraint.
+# Both archives execute on x86_64, including the aarch64 cross compiler.
 toolchain(
     name = "linux_x64_toolchain",
     exec_compatible_with = [
@@ -60,28 +47,68 @@ toolchain(
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
 
-gcc_linux_cc_toolchain_config(
-    name = "linux_arm64_config",
-    arch = "aarch64",
+alias(
+    name = "linux_arm64",
+    actual = "@gcc_linux_aarch64//:cc_toolchain",
 )
 
-cc_toolchain(
-    name = "linux_arm64",
-    all_files = ":empty",
-    ar_files = ":empty",
-    compiler_files = ":empty",
-    dwp_files = ":empty",
-    linker_files = ":empty",
-    objcopy_files = ":empty",
-    strip_files = ":empty",
-    toolchain_config = ":linux_arm64_config",
+gcc_paths_test(
+    name = "linux_x64_paths_test",
+    compiler = "@gcc_linux_x86_64//:xbin/gcc",
+    sysroot = "@sysroot_linux_amd64//sysroot",
+    target_under_test = ":linux_x64",
 )
+
+gcc_paths_test(
+    name = "linux_arm64_paths_test",
+    compiler = "@gcc_linux_aarch64//:xbin/gcc",
+    sysroot = "@sysroot_linux_arm64//sysroot",
+    target_under_test = ":linux_arm64",
+)
+
+[
+    gcc_runtime_test(
+        name = "linux_{}_runtime_test".format(arch),
+        arch = arch,
+        compiler = "@gcc_linux_{}//:xbin/gcc".format(arch),
+        libgcc = "@gcc_linux_{}//:libgcc".format(arch),
+        target_under_test = "@gcc_linux_{}//:libstdcxx".format(arch),
+        version = VERSIONS["gcc_toolchain"]["version"],
+    )
+    for arch in ["x86_64", "aarch64"]
+]
+
+[
+    sh_test(
+        name = "linux_{}_runtime_abi_test".format(arch),
+        srcs = ["runtime_abi_test.sh"],
+        args = [
+            "$(rootpath @gcc_linux_{}//:xbin/gcc)".format(arch),
+            "$(rootpath @sysroot_linux_{}//sysroot)".format("amd64" if arch == "x86_64" else "arm64"),
+            arch,
+            VERSIONS["gcc_toolchain"]["version"],
+            "$(rootpath //compile/test:check_glibc.sh)",
+        ],
+        data = [
+            "//compile/test:check_glibc.sh",
+            "@gcc_linux_{}//:files".format(arch),
+            "@gcc_linux_{}//:xbin/gcc".format(arch),
+            "@sysroot_linux_{}//sysroot".format("amd64" if arch == "x86_64" else "arm64"),
+        ],
+        exec_compatible_with = [
+            "@platforms//os:linux",
+            "@platforms//cpu:x86_64",
+        ],
+        target_compatible_with = ["@platforms//os:linux"],
+    )
+    for arch in ["x86_64", "aarch64"]
+]
 
 toolchain(
     name = "linux_arm64_toolchain",
     exec_compatible_with = [
         "@platforms//os:linux",
-        "@platforms//cpu:aarch64",
+        "@platforms//cpu:x86_64",
     ],
     target_compatible_with = [
         "@platforms//os:linux",

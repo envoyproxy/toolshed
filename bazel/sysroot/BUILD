@@ -17,8 +17,8 @@ so they must be explicitly requested.
 load("@aspect_bazel_lib//lib:tar.bzl", "mtree_mutate", "mtree_spec", "tar")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//:versions.bzl", "VERSIONS")
-load(":macos_sysroot.bzl", "macos_sysroot_extract")
 load(":fs.bzl", "sysroot_daily_stamp", "sysroots")
+load(":macos_sysroot.bzl", "macos_sysroot_extract")
 
 exports_files([
     "build_sysroot.sh",
@@ -29,9 +29,20 @@ exports_files([
     "sysroot.bzl",
 ])
 
-ARCHES = ["amd64", "arm64"]
-GLIBC = ["2.28", "2.31"]
-STDCC = ["13", ""]
+ARCHES = [
+    "amd64",
+    "arm64",
+]
+
+GLIBC = [
+    "2.28",
+    "2.31",
+]
+
+STDCC = [
+    "13",
+    "",
+]
 
 sh_binary(
     name = "build_sysroot",
@@ -49,9 +60,9 @@ sysroots(
 
 macos_sysroot_extract(
     name = "sysroot_macos_arm64_src",
-    sdk_pkg = "@macos_sdk_pkg//:sdk_pkg",
-    pkgutil = "@pkgutil_linux_amd64//:pkgutil_bin",
     manifest = "manifests/sysroot-macos.txt",
+    pkgutil = "@pkgutil_linux_amd64//:pkgutil_bin",
+    sdk_pkg = "@macos_sdk_pkg//:sdk_pkg",
     sdk_prefix = VERSIONS["macos_sdk_pkg"]["sdk_prefix"],
     tags = ["manual"],
 )
@@ -64,18 +75,18 @@ mtree_spec(
 
 mtree_mutate(
     name = "sysroot_macos_arm64_mtree",
-    mtree = ":sysroot_macos_arm64_mtree_src",
     srcs = [":sysroot_macos_arm64_src"],
+    mtree = ":sysroot_macos_arm64_mtree_src",
     strip_prefix = "sysroot/sysroot_macos_arm64_src",
     tags = ["manual"],
 )
 
 tar(
     name = "sysroot_macos_arm64",
+    srcs = [":sysroot_macos_arm64_src"],
+    out = "sysroot-macos-arm64.tar.xz",
     compress = "xz",
     mtree = ":sysroot_macos_arm64_mtree",
-    out = "sysroot-macos-arm64.tar.xz",
-    srcs = [":sysroot_macos_arm64_src"],
     tags = ["manual"],
     visibility = ["//visibility:public"],
 )
