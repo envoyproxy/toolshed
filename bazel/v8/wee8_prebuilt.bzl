@@ -86,13 +86,31 @@ cc_library(
     defines = [
 {defines}
     ],
+    # System libraries v8_libbase links against (its own `linkopts`). The LLVM
+    # toolchain adds these by default so they were never missed under libc++;
+    # hermetic gcc on the base glibc 2.31 sysroot links only what is asked for
+    # (platform-posix.cc needs dlsym from libdl there).
+    linkopts = [
+        "-ldl",
+        "-lpthread",
+        "-lrt",
+    ],
     linkstatic = True,
     # abseil/icu are deliberately excluded from libwee8.a (consumers provide
-    # their own). Re-expose abseil's compile context (v8.cc #includes absl
-    # headers directly) and the wasm C-API headers so the prebuilt is a drop-in
-    # for the source @v8//:wee8.
+    # their own), so the prebuilt must carry the same abseil LINK deps as the
+    # source @v8//:wee8 target or libwee8.a's objects (cpp-heap, turboshaft
+    # reducers, ...) are left with undefined absl::container_internal::* refs.
+    # Keep in sync with the `deps` of `:noicu/v8` in V8's BUILD.bazel (as
+    # patched in envoyproxy/bazel-registry). str_format is additionally needed
+    # as a compile dep because proxy-wasm's v8.cc #includes it directly. Also
+    # re-expose the wasm C-API headers so the prebuilt is a drop-in.
     deps = [
         ":wasm_c_api_headers",
+        "@abseil-cpp//absl/container:btree",
+        "@abseil-cpp//absl/container:flat_hash_map",
+        "@abseil-cpp//absl/container:flat_hash_set",
+        "@abseil-cpp//absl/hash",
+        "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/strings:str_format",
     ],
 )
