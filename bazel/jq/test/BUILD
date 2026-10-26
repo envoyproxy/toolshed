@@ -1,7 +1,16 @@
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//jq:defs.bzl", "jq_binary", "jq_library", "jq_test")
-load(":analysis_test.bzl", "collision_source", "failure_test", "provider_test")
+load(":analysis_test.bzl", "collision_source", "execution_constraints_test", "failure_test", "provider_test")
+
+constraint_setting(name = "test_execution")
+
+constraint_value(
+    name = "execution_constraint",
+    constraint_setting = ":test_execution",
+)
+
+execution_constraints_test(name = "execution_constraints_test")
 
 jq_library(
     name = "str",

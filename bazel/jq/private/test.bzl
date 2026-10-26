@@ -93,6 +93,9 @@ def jq_test(
         "tags": kwargs.get("tags", []),
         "visibility": ["//visibility:private"],
     }
+    for attribute in ["exec_compatible_with", "exec_properties", "target_compatible_with"]:
+        if attribute in kwargs:
+            common[attribute] = kwargs[attribute]
     binary = None
     if cases == None:
         binary = name + "_binary"

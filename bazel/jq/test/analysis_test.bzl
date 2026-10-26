@@ -1,7 +1,7 @@
 """Provider, ordering, and invalid-attribute analysis tests."""
 
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//jq:defs.bzl", "JqInfo")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
+load("//jq:defs.bzl", "JqInfo", "jq_test")
 
 def _provider_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -36,3 +36,42 @@ def _collision_source_impl(ctx):
     return [DefaultInfo(files = depset([output]))]
 
 collision_source = rule(implementation = _collision_source_impl)
+
+def _constraints_test_impl(ctx):
+    env = unittest.begin(ctx)
+    asserts.equals(env, [], ctx.attr.missing)
+    return unittest.end(env)
+
+_constraints_test = unittest.make(
+    _constraints_test_impl,
+    attrs = {"missing": attr.string_list()},
+)
+
+def execution_constraints_test(name):
+    """Check that every test backend forwards toolchain platform constraints.
+
+    Args:
+        name: Test target name and prefix for manual inspection fixtures.
+    """
+    missing = []
+    for mode, options in {
+        "assertion": {"filter": "true"},
+        "golden": {"filter": ".", "expected": "answer.json"},
+        "cases": {"cases": "str.test"},
+    }.items():
+        fixture = name + "_" + mode
+        jq_test(
+            name = fixture,
+            exec_compatible_with = [Label("//jq/test:execution_constraint")],
+            exec_properties = {"jq_test_property": "value"},
+            target_compatible_with = [Label("//jq/test:execution_constraint")],
+            tags = ["manual"],
+            **options
+        )
+        outer = native.existing_rule(fixture)
+        for suffix in ["_runner"] + ([] if mode == "cases" else ["_binary"]):
+            helper = native.existing_rule(fixture + suffix)
+            for attribute in ["exec_compatible_with", "exec_properties", "target_compatible_with"]:
+                if helper[attribute] != outer[attribute]:
+                    missing.append(fixture + suffix + ": " + attribute)
+    _constraints_test(name = name, missing = missing)
