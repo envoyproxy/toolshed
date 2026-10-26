@@ -1,6 +1,7 @@
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@cve_pip3//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -8,9 +9,18 @@ exports_files([
     "scan.sh",
     "test.sh",
     "update.sh",
+    "requirements.in",
     "requirements.txt",
-    "requirements_lock.txt",
 ])
+
+compile_pip_requirements(
+    name = "requirements",
+    src = "requirements.in",
+    extra_args = ["--allow-unsafe", "--generate-hashes"],
+    python_version = "3.12",
+    requirements_txt = "requirements.txt",
+    tags = ["requires-network"],
+)
 
 bzl_library(
     name = "macros",

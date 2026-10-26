@@ -1,5 +1,24 @@
 # CVE scanner
 
+## Python dependencies
+
+From the `bazel/` workspace, update Python deps:
+`bazel run //dependency/cve:requirements.update`.
+The unpinned inputs are in `requirements.in`; `requirements.txt` is the generated
+hashed lockfile. Do not edit its hashes by hand.
+
+Update the website lockfile with `bazel run //website:requirements.update`.
+Check both lockfiles with:
+
+```bash
+bazel test //dependency/cve:requirements.test //website:requirements.test
+```
+
+These tests are tagged `requires-network`, `no-remote-exec`, and `no-sandbox` by
+rules_python: CI must allow local access to PyPI and artifact downloads.
+Use the `.test` targets in CI; the deprecated `requirements_test` aliases are
+tagged `manual` by rules_python and are not discovered as tests by Bazel 9.
+
 Scan raw dependency metadata against NVD 2.0 JSON data:
 
 ```starlark
