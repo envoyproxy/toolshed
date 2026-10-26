@@ -31,7 +31,9 @@ services:
   bazel:
     stdin_open: true
     tty: true
-    build: *bazel_build
+    build:
+      <<: *bazel_build
+      target: ci
     environment: *bazel_environment
     command: *bazel_command
     volumes: *bazel_volumes
@@ -39,9 +41,7 @@ services:
 
   # Variant for workloads that build chrooted cross-arch sysroots.
   #
-  # The image is identical to `bazel` -- the qemu tooling (debootstrap,
-  # qemu-user-static) is baked into the published envoy-build qemu variant.
-  # What differs is the runtime privilege.
+  # The qemu image adds debootstrap and qemu-user-static to the ci image.
   #
   # Only chroot(2) is actually required, i.e. CAP_SYS_CHROOT, provided the
   # sysroot build uses the two-stage `debootstrap --foreign` flow (copy
@@ -51,7 +51,9 @@ services:
   bazel-privileged:
     stdin_open: true
     tty: true
-    build: *bazel_build
+    build:
+      <<: *bazel_build
+      target: qemu
     environment: *bazel_environment
     command: *bazel_command
     cap_add:
