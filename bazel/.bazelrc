@@ -74,10 +74,13 @@ common:rbe-cache-only --config=bes
 
 common:remote-cache --config=engflow-common
 common:remote-cache --remote_cache=grpcs://mordenite.cluster.engflow.com
-common:remote-cache --experimental_remote_downloader=grpcs://mordenite.cluster.engflow.com
 common:remote-cache --remote_timeout=3600s
 
 common:remote-exec --remote_executor=grpcs://mordenite.cluster.engflow.com
+# The engflow asset cache serves stale content for un-hashed repository
+# downloads (eg rules_python's PyPI simple index pages), so the remote
+# downloader is only enabled alongside remote execution, not for cache-only.
+common:remote-exec --experimental_remote_downloader=grpcs://mordenite.cluster.engflow.com
 common:remote-exec --jobs=200
 common:remote-exec --define=engflow_rbe=true
 # Platforms carry the `container-image` exec property that EngFlow's
