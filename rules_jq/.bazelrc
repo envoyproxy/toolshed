@@ -1,0 +1,36 @@
+#############################################################################
+# CI never drives Bazel from `rules_jq/` directly - its targets are tested via
+# `bazel/` (`@rules_jq//...`, see `.github/workflows/bazel.yml`), so
+# RBE (`rbe`/`bes`) config lives there, not here. This file is for local,
+# standalone use of `rules_jq/` only.
+#############################################################################
+
+#############################################################################
+# global
+#############################################################################
+
+fetch --color=yes
+run --color=yes
+build --color=yes
+
+common --registry=https://bcr.bazel.build/
+common --experimental_repository_cache_hardlinks
+
+common --enable_platform_specific_config
+
+
+#############################################################################
+# ci
+#############################################################################
+
+common:ci --noshow_progress
+common:ci --noshow_loading_progress
+common:ci --test_output=errors
+
+
+#############################################################################
+# imports
+#############################################################################
+
+try-import %workspace%/repo.bazelrc
+try-import %workspace%/user.bazelrc

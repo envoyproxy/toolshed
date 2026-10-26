@@ -1,0 +1,11 @@
+import "str" as str; str::trim
+"  hello  "
+"hello"
+
+import "str" as str; str::trim
+"world"
+"world"
+
+%%FAIL
+undefined_function
+jq: error: undefined_function/0 is not defined at <top-level>, line 1:

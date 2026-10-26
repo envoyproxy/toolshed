@@ -1,0 +1,4 @@
+# Runfiles helpers are sourced from paths only known at runtime
+# (runfiles.bash via RUNFILES_DIR / manifest / $0.runfiles), which shellcheck
+# cannot follow statically.
+disable=SC1090,SC1091
