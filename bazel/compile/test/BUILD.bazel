@@ -274,15 +274,18 @@ cc_binary(
 sh_test(
     name = "stdlib_libstdcxx_test",
     size = "small",
-    srcs = ["check_stdlib.sh"],
+    srcs = ["gcc_binutils_test.sh"],
     data = [
+        ":check_stdlib.sh",
         ":test_stdlib",
-        "@llvm_toolchain_llvm//:nm",
+        "@gcc_linux_x86_64//:files",
+        "@gcc_linux_x86_64//:xbin/nm",
     ],
     env = {
         "BINARY": "$(rootpath :test_stdlib)",
+        "CHECK_SCRIPT": "$(rootpath :check_stdlib.sh)",
         "EXPECTED_STDLIB": "libstdcxx",
-        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
     },
     tags = ["manual"],
     target_compatible_with = select({
@@ -318,17 +321,20 @@ sh_test(
 sh_test(
     name = "gcc_runtime_test",
     size = "small",
-    srcs = ["check_glibc.sh"],
+    srcs = ["gcc_binutils_test.sh"],
     data = [
+        ":check_glibc.sh",
         ":test_stdlib",
-        "@llvm_toolchain_llvm//:nm",
-        "@llvm_toolchain_llvm//:readelf",
+        "@gcc_linux_x86_64//:files",
+        "@gcc_linux_x86_64//:xbin/nm",
+        "@gcc_linux_x86_64//:xbin/readelf",
     ],
     env = {
         "BINARY": "$(rootpath :test_stdlib)",
+        "CHECK_SCRIPT": "$(rootpath :check_glibc.sh)",
         "CHECK_STATIC_RUNTIME": "true",
-        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
-        "READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
+        "READELF": "$(rootpath @gcc_linux_x86_64//:xbin/readelf)",
     },
     tags = ["manual"],
     target_compatible_with = select({
@@ -350,17 +356,20 @@ cc_binary(
 sh_test(
     name = "wee8_prebuilt_link_test",
     size = "small",
-    srcs = ["check_glibc.sh"],
+    srcs = ["gcc_binutils_test.sh"],
     data = [
+        ":check_glibc.sh",
         ":wee8_link_probe",
-        "@llvm_toolchain_llvm//:nm",
-        "@llvm_toolchain_llvm//:readelf",
+        "@gcc_linux_x86_64//:files",
+        "@gcc_linux_x86_64//:xbin/nm",
+        "@gcc_linux_x86_64//:xbin/readelf",
     ],
     env = {
         "BINARY": "$(rootpath :wee8_link_probe)",
+        "CHECK_SCRIPT": "$(rootpath :check_glibc.sh)",
         "CHECK_STATIC_RUNTIME": "true",
-        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
-        "READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
+        "READELF": "$(rootpath @gcc_linux_x86_64//:xbin/readelf)",
     },
     tags = ["manual"],
     target_compatible_with = _WEE8_LINK_COMPATIBLE,
