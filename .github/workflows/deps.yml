@@ -14,6 +14,7 @@ on:
         - report
         - update-registry
         - update-module
+        - update-lockfile
       dependency:
         description: Dependency to update (update-module only), `name` or `name=version`
         type: string

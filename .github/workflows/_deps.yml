@@ -74,7 +74,7 @@ jobs:
             echo 'ci=' >> "$GITHUB_OUTPUT"
         fi
     - name: Configure repo Bazel settings
-      if: vars.TOOLSHED_CI_BAZELRC
+      if: vars.TOOLSHED_CI_BAZELRC && inputs.action != 'update-lockfile'
       shell: bash
       run: |
         echo "${BAZELRC_CONTENT}" > repo.bazelrc
@@ -84,6 +84,7 @@ jobs:
 
     - name: Report
       id: report
+      if: inputs.action != 'update-lockfile'
       shell: bash
       working-directory: ${{ inputs.bazel-path }}
       env:
@@ -95,6 +96,7 @@ jobs:
         BAZEL_CMD+=(//dependency:update_module -- --report "--json-out=${REPORT_PATH}" "--markdown-out=${GITHUB_STEP_SUMMARY}")
         "${BAZEL_CMD[@]}"
     - name: Upload dependency report
+      if: inputs.action != 'update-lockfile'
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
       with:
         name: deps-report
@@ -225,10 +227,33 @@ jobs:
         BAZEL_CMD+=(deps --lockfile_mode=update)
         "${BAZEL_CMD[@]}"
 
+    - name: Regenerate lockfile
+      if: inputs.action == 'update-lockfile'
+      shell: bash
+      working-directory: ${{ inputs.bazel-path }}
+      env:
+        BAZEL_CI_CONFIG: ${{ steps.bazel-config.outputs.ci }}
+      run: |
+        BAZEL_CMD=(bazel mod)
+        [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
+        BAZEL_CMD+=(deps --lockfile_mode=update)
+        "${BAZEL_CMD[@]}"
+
+        BAZEL_CMD=(bazel fetch)
+        [[ -n "${BAZEL_CI_CONFIG}" ]] && BAZEL_CMD+=("${BAZEL_CI_CONFIG}")
+        BAZEL_CMD+=(--lockfile_mode=update @cve_pip3//... @website_pip3//...)
+        "${BAZEL_CMD[@]}"
+
+        if ! grep -q '"fact_version"' MODULE.bazel.lock; then
+            echo '::error::Lockfile regeneration did not write rules_python pypi facts' >&2
+            exit 1
+        fi
+
     - name: Prepare change metadata
       id: details
       if: >-
         inputs.action == 'update-registry'
+        || inputs.action == 'update-lockfile'
         || (
           inputs.action == 'update-module'
           && fromJSON(steps.module-update.outputs.changes || 'false')
@@ -249,6 +274,10 @@ jobs:
             MESSAGE="bazel: Bump bazel-registry to ${SHORT_SHA}"
             BRANCH="deps/registry/${SHORT_SHA}"
             BODY=$(printf "Created by publish-envoy[bot] for @%s\n\n%s" "${ACTOR}" "${REGISTRY_SUMMARY}")
+        elif [[ "${ACTION}" == 'update-lockfile' ]]; then
+            MESSAGE="bazel: Regenerate MODULE.bazel.lock"
+            BRANCH="deps/lockfile/$(date -u +%Y%m%d)"
+            BODY=$(printf "Created by publish-envoy[bot] for @%s\n\nRepopulates rules_python pypi facts in MODULE.bazel.lock." "${ACTOR}")
         else
             SAFE_DEP=${DEP//\//-}
             SAFE_DEP=${SAFE_DEP//@/-}
@@ -270,6 +299,7 @@ jobs:
       if: >-
         inputs.action == 'update-registry'
         || inputs.action == 'update-module'
+        || inputs.action == 'update-lockfile'
       shell: bash
       run: |
         if [[ "${ACTION}" == 'update-module' && "${UPDATE_CHANGES}" != 'true' ]]; then
@@ -280,6 +310,10 @@ jobs:
         while IFS= read -r line; do
             [[ -z "${line}" ]] && continue
             path=${line:3}
+            if [[ "${ACTION}" == 'update-lockfile' && "${path}" != 'bazel/MODULE.bazel.lock' ]]; then
+                echo "::error::Unexpected modified path: ${path}" >&2
+                exit 1
+            fi
             case "${path}" in
                 bazel/.bazelrc|bazel/MODULE.bazel|bazel/MODULE.bazel.lock)
                     ;;
@@ -300,6 +334,7 @@ jobs:
       if: >-
         inputs.action == 'update-registry'
         || inputs.action == 'update-module'
+        || inputs.action == 'update-lockfile'
       env:
         ACTION: ${{ inputs.action }}
         COMMIT_MESSAGE: ${{ steps.details.outputs.message }}
@@ -319,7 +354,13 @@ jobs:
         echo 'changes=true' >> "$GITHUB_OUTPUT"
     - name: Create Pull Request
       uses: envoyproxy/toolshed/actions/github/pr@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
-      if: fromJSON(steps.commit.outputs.changes || 'false')
+      if: >-
+        (
+          inputs.action == 'update-registry'
+          || inputs.action == 'update-module'
+          || inputs.action == 'update-lockfile'
+        )
+        && fromJSON(steps.commit.outputs.changes || 'false')
       with:
         base: ${{ inputs.branch }}
         branch: ${{ steps.details.outputs.branch }}
