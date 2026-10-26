@@ -80,15 +80,13 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 
 use_repo(pip, "website_pip3")
 
-[
-    pip.parse(
-        hub_name = "cve_pip3",
-        python_version = python_version,
-        requirements_lock = "//dependency/cve:requirements_lock.txt",
-    )
-    for python_version in PYTHON_VERSIONS
-]
-
+# The cve fetcher is pinned to the default interpreter; only parse the lock for
+# that version so rules_python does not warn about wheels for other versions.
+pip.parse(
+    hub_name = "cve_pip3",
+    python_version = PYTHON_VERSION_DEFAULT,
+    requirements_lock = "//dependency/cve:requirements.txt",
+)
 use_repo(pip, "cve_pip3")
 
 reachability_test_ext = use_extension("//dependency/test:reachability_test_extension.bzl", "reachability_test_extension", dev_dependency = True)
