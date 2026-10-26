@@ -8,8 +8,8 @@ exports_files([
     "scan.sh",
     "test.sh",
     "update.sh",
+    "requirements.in",
     "requirements.txt",
-    "requirements_lock.txt",
 ])
 
 bzl_library(
