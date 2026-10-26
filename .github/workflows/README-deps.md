@@ -3,11 +3,14 @@
 The `Dependencies` workflow is a single-module maintenance workflow for this repository's `/bazel`
 workspace.
 
-It supports three actions:
+It supports four actions:
 
 - `report` generates a dependency report artifact and job summary.
 - `update-registry` updates the pinned `bazel-registry` SHA and regenerates the lockfile.
 - `update-module` updates one `bazel_dep` entry, then regenerates the lockfile.
+- `update-lockfile` regenerates `bazel/MODULE.bazel.lock`, including rules_python pypi facts,
+  and opens a PR. Run it after changing any `requirements.txt` (or pip hub requirements lockfile).
+  It fetches PyPI directly without the remote downloader or RBE configuration.
 
 Use the `dry-run` input to exercise the update flows without opening a pull request.
 
