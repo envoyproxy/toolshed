@@ -13,7 +13,16 @@
 # compiler produces host-arch objects under a target-arch name. Neither
 # shows up as a build failure, and neither is obvious from file size.
 #
-# This checks the actual ELF contents of libwee8.a against the name.
+# A third silent failure would be an INCOMPLETE archive: V8 emits many
+# same-basename objects and an archiver in replace mode can collapse them, so
+# a libwee8.a can be the right arch, the right stdlib, the right glibc, and
+# still be missing whole translation units. So this also checks completeness:
+# duplicate member names must exist, the libcxx and libstdcxx builds of one
+# arch must have the same member count, and the wasm C++ API entry points that
+# Envoy actually links must be defined.
+#
+# Note the wasm *C* API (wasm_engine_new & co.) is deliberately compiled out
+# by the v8 patch in envoyproxy/bazel-registry; do not probe for it.
 #
 # Usage:
 #   .github/verify/artifacts/wee8.sh <artifact-dir>
@@ -30,6 +39,13 @@ CHECK_GLIBC="${CHECK_DIR}/check_glibc.sh"
 # Keep in sync with WEE8_VARIANTS in bazel/v8/package/BUILD.
 EXPECTED_COUNT=4
 
+# Demangled wasm C++ API entry points (src/wasm/c-api.cc, namespace wasm).
+# These are what proxy-wasm's v8.cc and //compile/test:wee8_link_probe link.
+REQUIRED_SYMBOLS=(
+    "wasm::Engine::make("
+    "wasm::Store::make("
+)
+
 if [[ ! -d "${ARTIFACT_DIR}" ]]; then
     echo "FAIL: artifact dir '${ARTIFACT_DIR}' does not exist"
     exit 1
@@ -45,6 +61,10 @@ trap 'rm -rf "${WORKDIR}"' EXIT
 found=0
 rc=0
 
+# arch -> member count, so libcxx and libstdcxx builds of the same arch can be
+# compared: they compile the same sources and must contain the same objects.
+declare -A members_by_arch
+
 for tarball in "${ARTIFACT_DIR}"/**/v8-wee8-*.tar.xz; do
     found=$((found + 1))
     name="$(basename "${tarball}")"
@@ -55,8 +75,8 @@ for tarball in "${ARTIFACT_DIR}"/**/v8-wee8-*.tar.xz; do
     esac
 
     case "${name}" in
-        *-linux-x86_64*)  expected_arch="Advanced Micro Devices X86-64" ;;
-        *-linux-aarch64*) expected_arch="AArch64" ;;
+        *-linux-x86_64*)  arch=x86_64;  expected_arch="Advanced Micro Devices X86-64" ;;
+        *-linux-aarch64*) arch=aarch64; expected_arch="AArch64" ;;
         *)
             echo "FAIL: cannot determine arch from '${name}'"
             rc=1
@@ -106,6 +126,37 @@ for tarball in "${ARTIFACT_DIR}"/**/v8-wee8-*.tar.xz; do
     if ! BINARY="${lib}" bash "${CHECK_GLIBC}"; then
         rc=1
     fi
+
+    # -- Completeness ---------------------------------------------------------
+
+    member_count="$(ar t "${lib}" | wc -l)"
+    dup_count="$(ar t "${lib}" | sort | uniq -d | wc -l)"
+    echo "members: ${member_count} (${dup_count} duplicate basenames)"
+
+    # V8 emits same-named objects from different directories; a correct fat
+    # archive therefore ALWAYS has duplicate member names. Zero means the
+    # archiver collapsed them.
+    if [[ "${dup_count}" -eq 0 ]]; then
+        echo "FAIL: ${name} has no duplicate member basenames; archiver dropped objects"
+        rc=1
+    fi
+
+    # Demangle once; symbol names contain parens so match as fixed strings.
+    defined="$(nm -C --defined-only "${lib}" 2>/dev/null | grep ' T ' || true)"
+    for sym in "${REQUIRED_SYMBOLS[@]}"; do
+        if grep -qF " T ${sym}" <<< "${defined}"; then
+            echo "PASS: ${name} defines ${sym}"
+        else
+            echo "FAIL: ${name} does not define ${sym}"
+            rc=1
+        fi
+    done
+
+    if [[ -n "${members_by_arch[${arch}]:-}" && "${members_by_arch[${arch}]}" != "${member_count}" ]]; then
+        echo "FAIL: ${name} has ${member_count} members but its ${arch} sibling has ${members_by_arch[${arch}]}"
+        rc=1
+    fi
+    members_by_arch[${arch}]="${member_count}"
 
     rm -rf "${objdir}" "${lib}"
 done

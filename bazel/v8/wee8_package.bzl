@@ -108,6 +108,13 @@ _TRANSITION_ATTRS = {
 # basenames, exactly like V8's own `.lo`, which links correctly because the linker
 # reads members by content, not by filesystem name. `@file` avoids ARG_MAX with
 # ~1200 objects; both llvm-ar and GNU ar expand it.
+#
+# Use `q` (quick append) rather than `r` (replace-or-add). `r` matches incoming
+# files against existing members by basename, and whether that catches the
+# same-basename objects above is archiver-specific; `q` never replaces, so the
+# result is the same under llvm-ar and GNU ar. `s` writes the symbol index, `D`
+# makes it deterministic. The member-count assertion below makes any future
+# collapse a hard build failure rather than a silently smaller archive.
 _ARCHIVE_SCRIPT = r"""
 set -e -o pipefail
 
@@ -120,7 +127,16 @@ if [ ! -s "$PARAMS" ]; then
     exit 1
 fi
 
-"$AR" Drcs "$OUT" "@$PARAMS"
+rm -f "$OUT"
+"$AR" Dqs "$OUT" "@$PARAMS"
+
+expected="$(grep -c . "$PARAMS")"
+actual="$("$AR" t "$OUT" | wc -l)"
+if [ "$expected" != "$actual" ]; then
+    echo "ERROR: libwee8.a has ${actual} members but ${expected} objects were supplied" >&2
+    echo "ERROR: the archiver dropped same-basename objects" >&2
+    exit 1
+fi
 """
 
 def _wee8_fat_archive_impl(ctx):
