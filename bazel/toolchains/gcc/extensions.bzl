@@ -22,15 +22,20 @@ def _gcc_repository_impl(ctx):
         binary = "bin/" + prefix + tool
         if not ctx.path(binary).exists:
             fail("GCC archive is missing " + binary)
+
+        # Resolve the repository root from the wrapper's own (symlink-resolved)
+        # location rather than from ${PWD}/external/<repo>, so the wrapper works
+        # from the execroot, from sandboxed/remote actions, and from test
+        # runfiles alike.
         ctx.file(
             "xbin/" + tool,
             """#!/bin/bash
 set -euo pipefail
-ROOT="${PWD}/external/%s"
+ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
 export PATH="${ROOT}/bin"
 unset CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH OBJC_INCLUDE_PATH LIBRARY_PATH GCC_EXEC_PREFIX COMPILER_PATH
 exec "${ROOT}/%s" "$@"
-""" % (ctx.name, binary),
+""" % binary,
             executable = True,
         )
     cxx_prefix = "aarch64-linux/" if arch == "aarch64" else ""

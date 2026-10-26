@@ -189,6 +189,7 @@ jobs:
       action: ${{ matrix.action }}
       bazel-args: ${{ matrix.bazel_args }}
       bazel-path: bazel
+      cache-entries: ${{ matrix.cache-entries }}
       name: ${{ matrix.name }}
       privileged: ${{ matrix.privileged }}
       rbe: ${{ matrix.rbe }}
@@ -215,6 +216,7 @@ jobs:
             --config=ci
             --config=gcc
             --skip_incompatible_explicit_targets
+          cache-entries: NONE
           privileged: false
           rbe: true
           runner: ubuntu-24.04

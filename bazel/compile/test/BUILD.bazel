@@ -16,6 +16,16 @@ _WEE8_LINK_COMPATIBLE = select({
     "ad9895c550bdf8f4de931c0143c99cc28ae38aa0b475bc4602e494eedac46e90",
 ] else ["@platforms//:incompatible"]
 
+# The gcc-only tests below inspect binaries with the hermetic GCC binutils.
+# The xbin/* wrappers resolve the toolchain root relative to themselves, but
+# the real binaries must be present in the runfiles tree (eg on RBE), hence
+# the :files dependency.
+_GCC_BINUTILS = [
+    "@gcc_linux_x86_64//:files",
+    "@gcc_linux_x86_64//:xbin/nm",
+    "@gcc_linux_x86_64//:xbin/readelf",
+]
+
 exports_files([
     "assert_llvm_minimal_bins_layout.sh",
     "assert_llvm_minimal_manifest.sh",
@@ -275,14 +285,11 @@ sh_test(
     name = "stdlib_libstdcxx_test",
     size = "small",
     srcs = ["check_stdlib.sh"],
-    data = [
-        ":test_stdlib",
-        "@llvm_toolchain_llvm//:nm",
-    ],
+    data = [":test_stdlib"] + _GCC_BINUTILS,
     env = {
         "BINARY": "$(rootpath :test_stdlib)",
         "EXPECTED_STDLIB": "libstdcxx",
-        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
     },
     tags = ["manual"],
     target_compatible_with = select({
@@ -319,16 +326,12 @@ sh_test(
     name = "gcc_runtime_test",
     size = "small",
     srcs = ["check_glibc.sh"],
-    data = [
-        ":test_stdlib",
-        "@llvm_toolchain_llvm//:nm",
-        "@llvm_toolchain_llvm//:readelf",
-    ],
+    data = [":test_stdlib"] + _GCC_BINUTILS,
     env = {
         "BINARY": "$(rootpath :test_stdlib)",
         "CHECK_STATIC_RUNTIME": "true",
-        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
-        "READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
+        "READELF": "$(rootpath @gcc_linux_x86_64//:xbin/readelf)",
     },
     tags = ["manual"],
     target_compatible_with = select({
@@ -351,16 +354,12 @@ sh_test(
     name = "wee8_prebuilt_link_test",
     size = "small",
     srcs = ["check_glibc.sh"],
-    data = [
-        ":wee8_link_probe",
-        "@llvm_toolchain_llvm//:nm",
-        "@llvm_toolchain_llvm//:readelf",
-    ],
+    data = [":wee8_link_probe"] + _GCC_BINUTILS,
     env = {
         "BINARY": "$(rootpath :wee8_link_probe)",
         "CHECK_STATIC_RUNTIME": "true",
-        "NM": "$(rootpath @llvm_toolchain_llvm//:nm)",
-        "READELF": "$(rootpath @llvm_toolchain_llvm//:readelf)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
+        "READELF": "$(rootpath @gcc_linux_x86_64//:xbin/readelf)",
     },
     tags = ["manual"],
     target_compatible_with = _WEE8_LINK_COMPATIBLE,
