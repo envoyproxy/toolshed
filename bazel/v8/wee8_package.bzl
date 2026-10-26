@@ -108,6 +108,16 @@ _TRANSITION_ATTRS = {
 # basenames, exactly like V8's own `.lo`, which links correctly because the linker
 # reads members by content, not by filesystem name. `@file` avoids ARG_MAX with
 # ~1200 objects; both llvm-ar and GNU ar expand it.
+#
+# The archiver mode matters. `r` (replace-or-add) matches each incoming file
+# against existing members BY BASENAME: llvm-ar only matches members that were
+# already in the archive when it started, but GNU ar matches against the archive
+# as it grows, so the second `heap.pic.o` *replaces* the first and the symbols
+# it defined vanish without any error. The hermetic gcc toolchain hands us GNU
+# ar, and the first libstdcxx release built with it shipped a libwee8.a missing
+# the wasm C API for exactly this reason. `q` (quick append) never replaces, so
+# every object survives under either archiver. `s` writes the symbol index, `D`
+# makes it deterministic.
 _ARCHIVE_SCRIPT = r"""
 set -e -o pipefail
 
@@ -120,7 +130,19 @@ if [ ! -s "$PARAMS" ]; then
     exit 1
 fi
 
-"$AR" Drcs "$OUT" "@$PARAMS"
+rm -f "$OUT"
+"$AR" Dqs "$OUT" "@$PARAMS"
+
+# Belt and braces: the archive must contain exactly as many members as there
+# were input objects. A shortfall means the archiver collapsed same-basename
+# members, which is the silent failure described above.
+expected="$(grep -c . "$PARAMS")"
+actual="$("$AR" t "$OUT" | wc -l)"
+if [ "$expected" != "$actual" ]; then
+    echo "ERROR: libwee8.a has ${actual} members but ${expected} objects were supplied" >&2
+    echo "ERROR: the archiver dropped same-basename objects" >&2
+    exit 1
+fi
 """
 
 def _wee8_fat_archive_impl(ctx):
