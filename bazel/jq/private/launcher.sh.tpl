@@ -11,4 +11,12 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null ||
   { echo >&2 "ERROR: cannot find $f"; exit 1; }
 # --- end runfiles.bash initialization v3 ---
 
+# Manifest-only runfiles may list tree children but not their directory.
+jq_root() {
+  local marker
+  marker="$(rlocation "$1")"
+  [[ -n "$marker" ]] || return 1
+  dirname "$marker"
+}
+
 @@COMMAND@@

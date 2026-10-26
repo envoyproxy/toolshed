@@ -77,6 +77,10 @@ provider_test(
         "greet.modules",
         "str.modules",
     ],
+    sources = [
+        "greet.jq",
+        "str.jq",
+    ],
     target_under_test = ":greet",
 )
 
@@ -88,12 +92,17 @@ provider_test(
         "str.modules",
         "override.modules",
     ],
+    sources = [
+        "greet.jq",
+        "str.jq",
+        "str.jq",
+    ],
     target_under_test = ":diamond",
 )
 
 jq_binary(
     name = "notice",
-    args = ["-n"],
+    jq_args = ["-n"],
     main = "notice.jq",
     # Do not sort: jq module search order is significant.
     deps = [
@@ -115,6 +124,15 @@ provider_test(
         "generated.modules",
         "absolute_prefix.modules",
     ],
+    sources = [
+        "config.json",
+        "feature.jq",
+        "generated.jq",
+        "greet.jq",
+        "helper.jq",
+        "helper.jq",
+        "str.jq",
+    ],
     target_under_test = ":notice",
 )
 
@@ -133,8 +151,8 @@ diff_test(
 
 jq_binary(
     name = "smoke",
-    args = ["-c"],
     filter = "{name: .name, config: $config[0].value}",
+    jq_args = ["-c"],
     named_srcs = {"config": "config.json"},
 )
 
@@ -200,6 +218,32 @@ jq_test(
 )
 
 jq_test(
+    name = "standard_args_test",
+    args = ["$(rootpath input.json)"],
+    data = ["input.json"],
+    env = {"JQ_TEST_VALUE": "world"},
+    filter = ".name == env.JQ_TEST_VALUE",
+    jq_args = ["-c"],
+)
+
+jq_test(
+    name = "standard_args_golden_test",
+    args = ["$(rootpath input.json)"],
+    data = ["input.json"],
+    expected = "raw.expected",
+    filter = ".name",
+    jq_args = ["-r"],
+    raw = True,
+)
+
+provider_test(
+    name = "generated_provider_test",
+    roots = ["generated.modules"],
+    sources = ["generated.jq"],
+    target_under_test = ":generated",
+)
+
+jq_test(
     name = "golden_test",
     srcs = ["input.json"],
     expected = "input.reordered.json",
@@ -209,9 +253,9 @@ jq_test(
 jq_test(
     name = "raw_golden_test",
     srcs = ["input.json"],
-    args = ["-r"],
     expected = "raw.expected",
     filter = ".name",
+    jq_args = ["-r"],
     raw = True,
 )
 
@@ -275,4 +319,17 @@ failure_test(
     name = "collision_rejected_test",
     message = "import-path collision",
     target_under_test = ":collision",
+)
+
+jq_library(
+    name = "marker_collision",
+    srcs = ["str.jq"],
+    import_prefix = ".jq_root",
+    tags = ["manual"],
+)
+
+failure_test(
+    name = "marker_collision_rejected_test",
+    message = "reserved marker name",
+    target_under_test = ":marker_collision",
 )

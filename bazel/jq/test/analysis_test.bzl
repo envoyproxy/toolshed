@@ -9,13 +9,14 @@ def _provider_test_impl(ctx):
     asserts.true(env, JqInfo in target)
     info = target[JqInfo]
     asserts.equals(env, ctx.attr.roots, [root.basename for root in info.roots.to_list()])
-    asserts.equals(env, sorted(ctx.attr.roots), sorted([src.basename for src in info.transitive_srcs.to_list()]))
+    asserts.equals(env, sorted(ctx.attr.sources), sorted([src.basename for src in info.transitive_srcs.to_list()]))
+    asserts.true(env, all([not src.is_directory for src in info.transitive_srcs.to_list()]))
     asserts.true(env, all([root.is_directory for root in info.roots.to_list()]))
     return analysistest.end(env)
 
 provider_test = analysistest.make(
     _provider_test_impl,
-    attrs = {"roots": attr.string_list()},
+    attrs = {"roots": attr.string_list(), "sources": attr.string_list()},
 )
 
 def _failure_test_impl(ctx):
@@ -69,9 +70,25 @@ def execution_constraints_test(name):
             **options
         )
         outer = native.existing_rule(fixture)
-        for suffix in ["_runner"] + ([] if mode == "cases" else ["_binary"]):
-            helper = native.existing_rule(fixture + suffix)
-            for attribute in ["exec_compatible_with", "exec_properties", "target_compatible_with"]:
+        if outer["kind"] != "_runner_test":
+            missing.append(fixture + ": not a direct test rule")
+        if native.existing_rule(fixture + "_runner") != None:
+            missing.append(fixture + ": unexpected runner helper")
+        for attribute, expected in {
+            "exec_compatible_with": (":execution_constraint",),
+            "exec_properties": {"jq_test_property": "value"},
+            "target_compatible_with": (":execution_constraint",),
+        }.items():
+            if outer[attribute] != expected:
+                missing.append(fixture + ": " + attribute)
+        helper = native.existing_rule(fixture + "_binary")
+        if mode == "cases":
+            if helper != None:
+                missing.append(fixture + ": unexpected binary helper")
+        else:
+            for attribute in ["exec_compatible_with", "exec_properties", "target_compatible_with", "tags"]:
                 if helper[attribute] != outer[attribute]:
-                    missing.append(fixture + suffix + ": " + attribute)
+                    missing.append(fixture + "_binary: " + attribute)
+            if not helper["testonly"]:
+                missing.append(fixture + "_binary: testonly")
     _constraints_test(name = name, missing = missing)

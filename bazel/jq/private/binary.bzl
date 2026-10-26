@@ -57,7 +57,7 @@ def jq_command(ctx, roots):
     jq = ctx.toolchains[JQ_TOOLCHAIN_TYPE].jqinfo.bin
     command = location(ctx, jq)
     for root in roots:
-        command += " -L " + location(ctx, root)
+        command += ' -L "$(jq_root %s)"' % shell.quote(runfile_path(ctx, root) + "/.jq_root")
     return jq, command
 
 def _jq_binary_impl(ctx):
@@ -66,7 +66,7 @@ def _jq_binary_impl(ctx):
     info = jq_info(ctx.attr.deps)
     roots = info.roots.to_list()
     jq, command = jq_command(ctx, roots)
-    files = [jq] + roots + info.transitive_srcs.to_list()
+    files = [jq] + roots
     command += " " + " ".join([shell.quote(arg) for arg in ctx.attr.jq_args])
     for target, names in ctx.attr.named_srcs.items():
         srcs = target[DefaultInfo].files.to_list()
@@ -101,7 +101,7 @@ _jq_binary = rule(
     toolchains = [JQ_TOOLCHAIN_TYPE],
 )
 
-def jq_binary(name, main = None, filter = "", deps = [], args = [], named_srcs = {}, data = [], **kwargs):
+def jq_binary(name, main = None, filter = "", deps = [], jq_args = [], named_srcs = {}, data = [], **kwargs):
     """Create an executable jq filter with staged modules and named slurpfiles.
 
     Args:
@@ -109,7 +109,7 @@ def jq_binary(name, main = None, filter = "", deps = [], args = [], named_srcs =
         main: Main .jq file, mutually exclusive with filter.
         filter: Inline jq program, mutually exclusive with main.
         deps: Targets providing JqInfo.
-        args: jq flags placed before the program.
+        jq_args: jq flags placed before the program.
         named_srcs: Mapping from variable names to single-file labels.
         data: Additional runtime files and targets.
         **kwargs: Common rule attributes.
@@ -122,7 +122,7 @@ def jq_binary(name, main = None, filter = "", deps = [], args = [], named_srcs =
         main = main,
         filter = filter,
         deps = deps,
-        jq_args = args,
+        jq_args = jq_args,
         data = data,
         named_srcs = {source: json.encode(names) for source, names in bindings.items()},
         **kwargs

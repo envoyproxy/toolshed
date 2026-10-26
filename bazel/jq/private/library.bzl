@@ -15,7 +15,11 @@ def _jq_library_impl(ctx):
     _check_prefix(ctx.attr.import_prefix, "import_prefix")
     root = ctx.actions.declare_directory(ctx.label.name + ".modules")
     imports = {}
-    commands = ["set -eu", "mkdir -p " + shell.quote(root.path)]
+    commands = [
+        "set -eu",
+        "mkdir -p " + shell.quote(root.path),
+        "touch " + shell.quote(root.path + "/.jq_root"),
+    ]
     package_prefix = ctx.label.package + "/" if ctx.label.package else ""
     for src in ctx.files.srcs:
         if src.extension not in ["jq", "json"]:
@@ -33,10 +37,14 @@ def _jq_library_impl(ctx):
             path = path[len(strip) + 1:]
         if ctx.attr.import_prefix:
             path = ctx.attr.import_prefix + "/" + path
+        if path.split("/")[0] == ".jq_root":
+            fail("jq_library import path uses reserved marker name '.jq_root': %s" % path)
         if path in imports:
             fail("jq_library import-path collision at %r: %s and %s" % (path, imports[path].path, src.path))
         imports[path] = src
         destination = root.path + "/" + path
+
+        # Copy rather than symlink so trees remain self-contained under remote execution.
         commands.extend([
             "mkdir -p " + shell.quote(destination.rsplit("/", 1)[0]),
             "cp -- %s %s" % (shell.quote(src.path), shell.quote(destination)),
@@ -50,7 +58,7 @@ def _jq_library_impl(ctx):
     return [
         DefaultInfo(files = depset([root])),
         JqInfo(
-            transitive_srcs = depset([root], transitive = [dep[JqInfo].transitive_srcs for dep in ctx.attr.deps]),
+            transitive_srcs = depset(ctx.files.srcs, transitive = [dep[JqInfo].transitive_srcs for dep in ctx.attr.deps]),
             roots = depset([root], transitive = [dep[JqInfo].roots for dep in ctx.attr.deps], order = "preorder"),
         ),
     ]
