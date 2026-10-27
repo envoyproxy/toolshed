@@ -8,7 +8,7 @@ This module defines:
   - setup_llvm_minimal(): sets up llvm_minimal_* repos used by consumers
   - setup_llvm_minimal_build(): sets up llvm_tarball_* repos needed by genrule build targets
   - llvm_toolchain_alias: repository rule that resolves llvm_toolchain_llvm to the
-    matching host-arch llvm_minimal_* repo
+    matching host-arch llvm_minimal_* repo, or host LLVM tools on Windows
 
 To update the allowlist, edit LLVM_MINIMAL_BINS or LLVM_MINIMAL_LIB_GLOBS below and
 rebuild/re-release.
@@ -559,24 +559,29 @@ llvm_host_repo = repository_rule(
     doc = "Creates a repository backed by a host LLVM installation.",
 )
 
+# Host LLVM tools exposed on Windows (clang-cl host toolchain, no hermetic LLVM to alias).
+# Keep in sync with direct `@llvm_toolchain_llvm//:<tool>` references in Envoy
+# (objcopy: bazel/envoy_binary.bzl; nm/objcopy: dynamic_modules.bzl).
+_WINDOWS_LLVM_TOOLS = ["objcopy", "nm"]
+
 def _windows_llvm_repo(ctx):
     llvm_root = ctx.path(
         (ctx.getenv("BAZEL_LLVM") or "C:/Program Files/LLVM").replace("\\", "/").rstrip("/"),
     )
-    objcopy = llvm_root.get_child("bin/llvm-objcopy.exe")
-    if not objcopy.exists:
-        fail("Could not find %s. Set BAZEL_LLVM to the host LLVM installation." % objcopy)
-    ctx.symlink(objcopy, "bin/llvm-objcopy.exe")
+    aliases = []
+    for tool in _WINDOWS_LLVM_TOOLS:
+        exe = "bin/llvm-%s.exe" % tool
+        src = llvm_root.get_child(exe)
+        if not src.exists:
+            fail("Could not find %s. Set BAZEL_LLVM to the host LLVM installation." % src)
+        ctx.symlink(src, exe)
+        aliases.append('alias(\n    name = "%s",\n    actual = "%s",\n)\n' % (tool, exe))
     ctx.file("BUILD.bazel", """\
 package(default_visibility = ["//visibility:public"])
 
 exports_files(["llvm.bzl"])
 
-alias(
-    name = "objcopy",
-    actual = "bin/llvm-objcopy.exe",
-)
-""")
+""" + "\n".join(aliases))
     version = _detect_llvm_version(ctx, llvm_root, "", "bin/clang.exe")
     write_llvm_bzl(ctx, version, "lib", True)
 
@@ -592,6 +597,8 @@ def _llvm_toolchain_alias_impl(ctx):
     "missing input file '...//:bin/llvm-nm'". Per-child (not whole-directory)
     symlinks are required because Bazel does not follow a symlinked package
     directory when sourcing individual filegroup inputs.
+
+    On Windows, expose objcopy and nm from the host LLVM installation instead.
     """
     if ctx.os.name.lower().startswith("windows"):
         _windows_llvm_repo(ctx)
