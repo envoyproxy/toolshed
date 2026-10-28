@@ -37,7 +37,16 @@
             "vendor": "example",
             "product": "widget",
             "version": "*"
-          }
+          },
+          "cpes": [
+            {
+              "match": "cpe:2.3:a:example:widget:*:*:*:*:*:*:*:*",
+              "part": "a",
+              "vendor": "example",
+              "product": "widget",
+              "version": "*"
+            }
+          ]
         }
       }
     ],

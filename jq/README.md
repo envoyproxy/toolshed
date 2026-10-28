@@ -73,7 +73,16 @@ Both entry points run the exact same `run-tests.sh` and `.test.yml` files.
 
 Prepare a dependency-name dictionary (values containing `cpe`, `version`, and
 `release_date`) with `utils::parse_deps(.)`, then pass that JSON and a JSON
-array of ignored CVE IDs as slurpfiles:
+array of ignored CVE IDs as slurpfiles.
+
+`cpe` accepts either a single CPE string or a list of CPE strings, for example
+`["cpe:2.3:a:c-ares_project:c-ares:*", "cpe:2.3:a:c-ares:c-ares:*"]`.
+A CVE can match any tag in the list. Null and `"N/A"` entries are ignored;
+dependencies with no remaining tags are skipped. Parsed dependencies contain a
+`cpes` array and a backwards-compatible `cpe` alias for its first entry. Reports
+show the dependency tag that matched.
+
+For example:
 
 ```sh
 jq -L jq 'import "cve/utils" as utils; utils::parse_deps(.)' deps.json > parsed-deps.json

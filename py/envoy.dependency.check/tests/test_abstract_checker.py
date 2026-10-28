@@ -1384,6 +1384,26 @@ def test_checker__validate_dependency_metadata(data, raises, expected_msg):
             assert expected_msg in str(exc_info.value)
 
 
+@pytest.mark.parametrize(
+    "cpe",
+    [None,
+     "N/A",
+     "cpe:2.3:a:c-ares_project:c-ares:*",
+     ["cpe:2.3:a:c-ares_project:c-ares:*",
+      "cpe:2.3:a:c-ares:c-ares:*"],
+     ["N/A"],
+     []])
+def test_checker__validate_dependency_metadata_cpes(cpe):
+    checker = DummyDependencyChecker()
+    checker._validate_dependency_metadata(
+        {"c-ares": {
+            "release_date": "2024-01-01",
+            "version": "1.2.3",
+            "urls": ["https://example.com"],
+            "sha256": "abc",
+            "cpe": cpe}})
+
+
 async def test_checker_run_catches_dependency_metadata_error(patches):
     checker = DummyDependencyChecker()
     patched = patches(
