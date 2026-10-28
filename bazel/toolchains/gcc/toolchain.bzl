@@ -21,6 +21,7 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
     sysroot_path = sysroot.workspace_root + "/" + sysroot.package
     gcc_lib = root + "/lib/gcc/" + triple + "/" + version
     cxx_include = root + ("/aarch64-linux" if arch == "aarch64" else "") + "/include/c++/" + version
+
     # -nostdinc removes GCC's configured archive/host include search. -idirafter
     # restores only these compiler headers and base-sysroot libc headers, after
     # project -I/-isystem paths (including the explicit C++ headers below).
@@ -44,6 +45,7 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
         sysroot_path + "/usr/lib/" + arch + "-linux-gnu",
         sysroot_path + "/lib/" + arch + "-linux-gnu",
     ]
+
     # -B selects bundled assembler/linker executables and startup objects.
     # crtbegin/crtend come from gcc_lib; crt1/Scrt1, crti and crtn must instead
     # come from the base sysroot's multiarch lib directories. -L repeats those
@@ -65,20 +67,23 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
         dbg_compile_flags = ["-g"],
         host_system_name = "x86_64-linux",
         link_flags = search_flags + ["-L" + directory for directory in lib_dirs] + [
+            # bfd OOMs on large static binaries like Envoy; gold is noisy and
+            # breaks Rust linking. Use lld, as the clang toolchain already does.
+            "-fuse-ld=lld",
             "-static-libgcc",
             "-Wl,--build-id=md5",
             "-Wl,--hash-style=gnu",
             "-Wl,-z,relro,-z,now",
+            "-Wl,-z,noexecstack",
         ],
         # xbin/gcc is the C driver: -static-libstdc++ has no effect on explicit
         # -lstdc++, so select the archive by name instead.
         link_libs = ["-l:libstdc++.a", "-lm"],
         opt_compile_flags = ["-O2", "-DNDEBUG"],
-        # The bundled GNU BFD linker does not support --start-lib/--end-lib.
-        supports_start_end_lib = False,
+        supports_start_end_lib = True,
         target_libc = "glibc",
         target_system_name = triple,
-        tool_paths = {tool: "xbin/" + tool for tool in [
+        tool_paths = {tool: "bin/ld.lld" if tool == "ld" else "xbin/" + tool for tool in [
             "ar",
             "cpp",
             "dwp",

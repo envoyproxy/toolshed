@@ -66,7 +66,18 @@ already-built libstdc++.
 
 Downstreams can instantiate the downloads with `gcc_extension` from
 `//toolchains/gcc:extensions.bzl`, using a `toolchain(name = ..., arch =
-"x86_64" | "aarch64", sysroot = "@sysroot_linux_...//sysroot")` tag per target.
+"x86_64" | "aarch64", sysroot = "@sysroot_linux_...//sysroot",
+lld = "@llvm_minimal_linux_x64//:bin/lld")` tag per target.
+The required `lld` label selects the real multicall linker binary from the
+minimal LLVM artifact (not a host installation). Instantiate
+`llvm_minimal_extension` from `//compile:extensions.bzl`, call `setup()`, and
+`use_repo(llvm_minimal_ext, "llvm_minimal_linux_x64")` as in toolshed's
+`MODULE.bazel`. Use Linux-X64 lld for **both** GCC targets: the aarch64 compiler
+also executes on x86_64. The GCC repository exposes that binary as
+`bin/ld.lld` and includes it in remote action inputs. GCC links with
+`-fuse-ld=lld`, supports `--start-lib`/`--end-lib`, and enforces a non-executable
+stack. This avoids bfd's excessive memory use on large static links and gold's
+noisy, Rust-incompatible linking.
 Downstreams must instantiate this extension and register their own toolchains;
 toolshed's registrations are dev-only. Register GCC before LLVM, as in
 toolshed's `MODULE.bazel`.

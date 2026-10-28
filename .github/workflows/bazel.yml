@@ -231,6 +231,8 @@ jobs:
             //toolchains/gcc:linux_aarch64_runtime_test
             //toolchains/gcc:linux_x86_64_runtime_abi_test
             //toolchains/gcc:linux_aarch64_runtime_abi_test
+            //toolchains/gcc:linux_x86_64_lld_test
+            //toolchains/gcc:linux_aarch64_lld_test
         - name: x86-to-arm
           action: test
           bazel_args: >-
