@@ -1,0 +1,17 @@
+uses: ./actions/buildah
+with:
+  operations: '[]'
+  ghcr-username: 'test-user$(exit 1)'
+  ghcr-token: 'test-token$(exit 1)"'
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_call_count 2
+    if grep -Fxq 'buildah login --username "test-user$(exit 1)" --password-stdin ghcr.io' "$MOCK_LOG"; then
+        echo "success:GHCR username passed literally and token received on stdin" >> "$TEST_OUTPUT"
+    else
+        echo "fail:GHCR authentication missing or username changed" >> "$TEST_OUTPUT"
+    fi
+    test_mock_log_not_contains "test-token" "GHCR token is not logged"

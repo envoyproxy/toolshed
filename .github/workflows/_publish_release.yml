@@ -210,12 +210,13 @@ jobs:
         packages-dir: artifacts/publish
         repository-url: ${{ inputs.pypi-repository-url }}
 
-  # Pushes multi-arch Docker manifests to docker.io/envoyproxy and gcr.io/envoy-ci.
+  # Pushes multi-arch Docker manifests to docker.io/envoyproxy, gcr.io/envoy-ci, and ghcr.io/envoyproxy.
   # Runs as a separate job so that docker registry credentials are scoped to this job only.
   docker_publish:
     permissions:
       actions: read
       contents: read
+      packages: write
     needs: release
     name: Docker publish (${{ inputs.name }})
     if: >-
@@ -277,3 +278,5 @@ jobs:
         dockerhub-username: ${{ ! fromJSON(inputs.dry-run) && secrets.dockerhub-username || '' }}
         dockerhub-password: ${{ ! fromJSON(inputs.dry-run) && secrets.dockerhub-password || '' }}
         gcr-key: ${{ ! fromJSON(inputs.dry-run) && secrets.gcr-key || '' }}
+        ghcr-username: ${{ ! fromJSON(inputs.dry-run) && github.actor || '' }}
+        ghcr-token: ${{ ! fromJSON(inputs.dry-run) && github.token || '' }}

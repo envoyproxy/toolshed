@@ -106,6 +106,7 @@ jobs:
       actions: read
       contents: read
       id-token: write
+      packages: write
     secrets:
       app-id: ${{ secrets.app-id }}
       app-key: ${{ secrets.app-key }}
