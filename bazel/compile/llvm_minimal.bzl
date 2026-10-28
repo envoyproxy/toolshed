@@ -176,28 +176,54 @@ LLVM_LIB_DIR = %r
 LLVM_IS_HOST = %s
 """ % (llvm_version, major, major_minor, llvm_lib_dir, is_host))
 
+# Patterns exported (as individual file labels) by the generated llvm_repo BUILD,
+# passed to render_llvm_repo_build() below. The minimal/tarball variant is a clean
+# LLVM tree so a broad sweep is safe. The host variant is rooted at a system
+# prefix (e.g. /usr), so it is scoped to LLVM files only: a broad "lib/**" sweep
+# there also matches non-LLVM files with characters Bazel forbids in target names
+# (e.g. ':' in man pages, '\' in systemd unit names), aborting exports_files().
+_MINIMAL_EXPORTS_GLOB = [
+    "bin/*",
+    "lib/**",
+    "lib64/**",
+    "include/**",
+    "share/clang/*",
+]
+
+_HOST_EXPORTS_GLOB = [
+    "bin/*",
+    "lib/clang/**",
+    "lib/libclang.so*",
+    "lib/libclang-cpp.so*",
+    "lib/libLLVM.so*",
+    # Debian/Ubuntu multiarch lib dirs (lib/<triple>/), per _detect_llvm_lib_dir.
+    "lib/*/libclang.so*",
+    "lib/*/libclang-cpp.so*",
+    "lib/*/libLLVM.so*",
+    "lib64/libclang.so*",
+    "lib64/libclang-cpp.so*",
+    "lib64/libLLVM.so*",
+    "include/clang*/**",
+    "include/llvm*/**",
+    "include/c++/**",
+    "include/*/c++/**",
+    "share/clang/*",
+]
+
 def render_llvm_repo_build(llvm_major, is_host = False):
     """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact.
 
     Args:
       llvm_major: LLVM major version, used to locate the clang resource dir.
       is_host: Whether the artifact is a host LLVM installation rooted at a
-        system prefix (e.g. /usr) instead of a clean minimal tarball. When True,
-        the top-level exports_files() glob is scoped to LLVM files only: a broad
-        "lib/**"/"lib64/**" sweep over a system prefix also matches non-LLVM
-        files whose names contain characters Bazel forbids in target names (for
-        example ':' in bundled Perl man pages, or '\\' in systemd unit names),
-        which makes exports_files() abort while loading the generated BUILD. The
-        scoped list covers lib/, lib64/ and the Debian/Ubuntu multiarch lib dirs
-        (lib/<triple>/), matching _detect_llvm_lib_dir.
+        system prefix (e.g. /usr) instead of a clean minimal tarball. Selects the
+        exports_files() glob: _HOST_EXPORTS_GLOB (scoped to LLVM files) vs
+        _MINIMAL_EXPORTS_GLOB (broad). See those constants for the rationale.
 
     Returns:
       The BUILD file content as a string.
     """
-    if is_host:
-        exports_files_glob = '["bin/*", "lib/clang/**", "lib/libclang.so*", "lib/libclang-cpp.so*", "lib/libLLVM.so*", "lib/*/libclang.so*", "lib/*/libclang-cpp.so*", "lib/*/libLLVM.so*", "lib64/libclang.so*", "lib64/libclang-cpp.so*", "lib64/libLLVM.so*", "include/clang*/**", "include/llvm*/**", "include/c++/**", "include/*/c++/**", "share/clang/*"]'
-    else:
-        exports_files_glob = '["bin/*", "lib/**", "lib64/**", "include/**", "share/clang/*"]'
+    exports_files_glob = _HOST_EXPORTS_GLOB if is_host else _MINIMAL_EXPORTS_GLOB
     return """load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
