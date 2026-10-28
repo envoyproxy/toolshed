@@ -16,6 +16,10 @@ def _gcc_repository_impl(ctx):
     ctx.delete("sysroot")
     prefix = triple + "-" if ctx.path("bin/" + triple + "-as").exists else ""
 
+    # Give the multicall lld binary its GNU driver name. Bazel stages this
+    # file symlink as an input, including in sandboxes, RBE and test runfiles.
+    ctx.symlink(ctx.path(ctx.attr.lld), "bin/ld.lld")
+
     # These archives do not ship dwp; never fall back to a host executable.
     ctx.file("xbin/dwp", "#!/bin/bash\necho 'GCC toolchain does not support dwp' >&2\nexit 1\n", executable = True)
     for tool in ["ar", "as", "cpp", "gcc", "gcov", "ld", "nm", "objcopy", "objdump", "readelf", "strip"]:
@@ -68,7 +72,7 @@ gcc_linux_cc_toolchain_config(
 
 filegroup(
     name = "files",
-    srcs = glob(["bin/**", "xbin/**", "lib/**", "lib64/**", "libexec/**", "include/**", %r]) + [%r],
+    srcs = glob(["bin/**", "xbin/**", "lib/**", "lib64/**", "libexec/**", "include/**", %r]) + [%r, %r],
 )
 
 cc_library(
@@ -107,6 +111,7 @@ exports_files(glob(["xbin/*"]))
         str(ctx.attr.sysroot),
         triple + "/**",
         str(ctx.attr.sysroot),
+        str(ctx.attr.lld),
         cxx_prefix + "lib64/libstdc++.a",
         cxx_include + "/**",
         [cxx_include, cxx_include + "/" + triple, cxx_include + "/backward"],
@@ -117,6 +122,7 @@ _gcc_repository = repository_rule(
     implementation = _gcc_repository_impl,
     attrs = {
         "arch": attr.string(mandatory = True, values = ["x86_64", "aarch64"]),
+        "lld": attr.label(mandatory = True, allow_single_file = True),
         "sysroot": attr.label(mandatory = True),
         "_config": attr.label(default = Label("//toolchains/gcc:toolchain.bzl")),
     },
@@ -128,6 +134,7 @@ def _gcc_extension_impl(ctx):
             _gcc_repository(
                 name = tag.name,
                 arch = tag.arch,
+                lld = tag.lld,
                 sysroot = tag.sysroot,
             )
     return ctx.extension_metadata(reproducible = True)
@@ -138,6 +145,7 @@ gcc_extension = module_extension(
         "toolchain": tag_class(attrs = {
             "name": attr.string(mandatory = True),
             "arch": attr.string(mandatory = True, values = ["x86_64", "aarch64"]),
+            "lld": attr.label(mandatory = True),
             "sysroot": attr.label(mandatory = True),
         }),
     },
