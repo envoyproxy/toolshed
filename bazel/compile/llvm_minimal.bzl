@@ -176,13 +176,59 @@ LLVM_LIB_DIR = %r
 LLVM_IS_HOST = %s
 """ % (llvm_version, major, major_minor, llvm_lib_dir, is_host))
 
-def render_llvm_repo_build(llvm_major):
-    """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact."""
+# Patterns exported (as individual file labels) by the generated llvm_repo BUILD,
+# passed to render_llvm_repo_build() below. The minimal/tarball variant is a clean
+# LLVM tree so a broad sweep is safe. The host variant is rooted at a system
+# prefix (e.g. /usr), so it is scoped to LLVM files only: a broad "lib/**" sweep
+# there also matches non-LLVM files with characters Bazel forbids in target names
+# (e.g. ':' in man pages, '\' in systemd unit names), aborting exports_files().
+_MINIMAL_EXPORTS_GLOB = [
+    "bin/*",
+    "lib/**",
+    "lib64/**",
+    "include/**",
+    "share/clang/*",
+]
+
+_HOST_EXPORTS_GLOB = [
+    "bin/*",
+    "lib/clang/**",
+    "lib/libclang.so*",
+    "lib/libclang-cpp.so*",
+    "lib/libLLVM.so*",
+    # Debian/Ubuntu multiarch lib dirs (lib/<triple>/), per _detect_llvm_lib_dir.
+    "lib/*/libclang.so*",
+    "lib/*/libclang-cpp.so*",
+    "lib/*/libLLVM.so*",
+    "lib64/libclang.so*",
+    "lib64/libclang-cpp.so*",
+    "lib64/libLLVM.so*",
+    "include/clang*/**",
+    "include/llvm*/**",
+    "include/c++/**",
+    "include/*/c++/**",
+    "share/clang/*",
+]
+
+def render_llvm_repo_build(llvm_major, is_host = False):
+    """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact.
+
+    Args:
+      llvm_major: LLVM major version, used to locate the clang resource dir.
+      is_host: Whether the artifact is a host LLVM installation rooted at a
+        system prefix (e.g. /usr) instead of a clean minimal tarball. Selects the
+        exports_files() glob: _HOST_EXPORTS_GLOB (scoped to LLVM files) vs
+        _MINIMAL_EXPORTS_GLOB (broad). See those constants for the rationale.
+
+    Returns:
+      The BUILD file content as a string.
+    """
+    exports_files_glob = _HOST_EXPORTS_GLOB if is_host else _MINIMAL_EXPORTS_GLOB
     return """load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["llvm.bzl"] + glob(["bin/*", "lib/**", "lib64/**", "include/**", "share/clang/*"], allow_empty = True))
+exports_files(["llvm.bzl"] + glob({exports_files_glob}, allow_empty = True))
 
 filegroup(
     name = "clang",
@@ -369,21 +415,31 @@ cc_library(
     hdrs = glob(["include/clang/**", "include/clang-c/**", "include/llvm/**", "include/llvm-c/**"], allow_empty = True),
     includes = ["include"],
 )
-""".format(llvm_major = llvm_major)
+""".format(llvm_major = llvm_major, exports_files_glob = exports_files_glob)
 
 LLVM_MINIMAL_LLVM_REPO_BUILD = render_llvm_repo_build(_llvm_version_major(LLVM_VERSION))
 
+# Consumers that supply their own (host) LLVM toolchain and never compile with
+# the released minimal LLVM can set this to "1"/"true" to skip the download and
+# get an empty placeholder repo instead -- useful for offline/air-gapped builds
+# where fetching an unused ~100MB+ artifact would fail or bloat a vendor snapshot.
+_SKIP_DOWNLOAD_ENV = "ENVOY_TOOLSHED_SKIP_LLVM_MINIMAL_DOWNLOAD"
+
+def _skip_llvm_minimal_download(ctx):
+    return ctx.getenv(_SKIP_DOWNLOAD_ENV) in ("1", "true", "True")
+
 def _llvm_minimal_repo_impl(ctx):
     """Downloads and extracts a released minimal LLVM artifact."""
-    if ctx.attr.sha256:
+    if ctx.attr.sha256 and not _skip_llvm_minimal_download(ctx):
         ctx.download_and_extract(
             url = ctx.attr.url,
             sha256 = ctx.attr.sha256,
             stripPrefix = ctx.attr.strip_prefix,
         )
     else:
-        # Placeholder state before first release: create an empty repo so callers
-        # that do not reference it are not broken.
+        # Empty placeholder repo -- used before the first release (sha256 unset)
+        # and when a consumer opts out of the download via _SKIP_DOWNLOAD_ENV --
+        # so callers that do not reference it are not broken.
         result = ctx.execute(["mkdir", "-p", "bin", "include", "lib", "share/clang"])
         if result.return_code:
             fail("Failed to create placeholder llvm_minimal repo directories: " + result.stderr)
@@ -392,6 +448,7 @@ def _llvm_minimal_repo_impl(ctx):
 
 llvm_minimal_repo = repository_rule(
     implementation = _llvm_minimal_repo_impl,
+    environ = [_SKIP_DOWNLOAD_ENV],
     attrs = {
         "url": attr.string(
             mandatory = True,
@@ -546,7 +603,7 @@ def _host_llvm_repo_impl(ctx):
             fail("Host LLVM directory does not exist: %s" % path)
         if path.exists:
             _symlink_dir_children(ctx, path, directory)
-    ctx.file("BUILD.bazel", render_llvm_repo_build(version.split(".")[0]))
+    ctx.file("BUILD.bazel", render_llvm_repo_build(version.split(".")[0], is_host = True))
     write_llvm_bzl(ctx, version, lib_dir, True)
 
 llvm_host_repo = repository_rule(
