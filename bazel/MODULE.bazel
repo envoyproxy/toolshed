@@ -129,7 +129,10 @@ use_repo(sysroot_ext, "sysroot_linux_amd64", "sysroot_linux_arm64")
 
 # libstdc++13 sysroot variant, exercised by //sysroot/test. Not used by the
 # toolchains: GCC supplies its own libstdc++ and must stay on the base sysroot.
-sysroot_ext.setup(stdcc_version = "13", name_prefix = "libstdcxx")
+sysroot_ext.setup(
+    name_prefix = "libstdcxx",
+    stdcc_version = "13",
+)
 use_repo(sysroot_ext, "libstdcxx_sysroot_linux_amd64", "libstdcxx_sysroot_linux_arm64")
 
 macos_sysroot_test_repo = use_repo_rule("//sysroot:sysroot.bzl", "macos_sysroot")
@@ -188,11 +191,13 @@ gcc = use_extension("//toolchains/gcc:extensions.bzl", "gcc_extension", dev_depe
 gcc.toolchain(
     name = "gcc_linux_x86_64",
     arch = "x86_64",
+    lld = "@llvm_minimal_linux_x64//:bin/lld",
     sysroot = "@sysroot_linux_amd64//sysroot",
 )
 gcc.toolchain(
     name = "gcc_linux_aarch64",
     arch = "aarch64",
+    lld = "@llvm_minimal_linux_x64//:bin/lld",
     sysroot = "@sysroot_linux_arm64//sysroot",
 )
 use_repo(gcc, "gcc_linux_aarch64", "gcc_linux_x86_64")

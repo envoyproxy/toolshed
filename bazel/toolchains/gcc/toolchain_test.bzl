@@ -1,8 +1,35 @@
 """Analysis regressions for repository-relative compiler and header paths."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+
+def _link_configuration(ctx, toolchain):
+    features = cc_common.configure_features(ctx = ctx, cc_toolchain = toolchain)
+    variables = cc_common.create_link_variables(
+        cc_toolchain = toolchain,
+        feature_configuration = features,
+        is_static_linking_mode = True,
+    )
+    flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = features,
+        action_name = ACTION_NAMES.cpp_link_executable,
+        variables = variables,
+    )
+    return features, flags
+
+def _gcc_link_flags_impl(ctx):
+    _, flags = _link_configuration(ctx, ctx.attr.toolchain[cc_common.CcToolchainInfo])
+    output = ctx.actions.declare_file(ctx.label.name + ".flags")
+    ctx.actions.write(output, "\n".join(flags) + "\n")
+    return [DefaultInfo(files = depset([output]))]
+
+gcc_link_flags = rule(
+    implementation = _gcc_link_flags_impl,
+    attrs = {"toolchain": attr.label(mandatory = True)},
+    fragments = ["cpp"],
+)
 
 def _gcc_paths_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -12,6 +39,15 @@ def _gcc_paths_test_impl(ctx):
     sysroot = ctx.file.sysroot.path
     asserts.equals(env, compiler, toolchain.compiler_executable)
     asserts.equals(env, root + "/xbin/ar", toolchain.ar_executable)
+    asserts.equals(env, root + "/bin/ld.lld", toolchain.ld_executable)
+    for files in [toolchain.all_files, toolchain._linker_files]:
+        paths = [file.path for file in files.to_list()]
+        asserts.true(env, root + "/bin/ld.lld" in paths, "Missing staged ld.lld")
+        asserts.true(env, ctx.file.lld.path in paths, "Missing LLVM lld input")
+    features, flags = _link_configuration(ctx, toolchain)
+    for flag in ["-fuse-ld=lld", "-B" + root + "/bin/", "-Wl,-z,noexecstack"]:
+        asserts.true(env, flag in flags, "Missing linker flag: " + flag)
+    asserts.true(env, cc_common.is_enabled(feature_configuration = features, feature_name = "supports_start_end_lib"))
     for directory in toolchain.built_in_include_directories:
         asserts.true(
             env,
@@ -25,8 +61,10 @@ gcc_paths_test = analysistest.make(
     _gcc_paths_test_impl,
     attrs = {
         "compiler": attr.label(allow_single_file = True),
+        "lld": attr.label(allow_single_file = True),
         "sysroot": attr.label(allow_single_file = True),
     },
+    fragments = ["cpp"],
 )
 
 def _gcc_runtime_test_impl(ctx):
