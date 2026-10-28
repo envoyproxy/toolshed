@@ -176,13 +176,33 @@ LLVM_LIB_DIR = %r
 LLVM_IS_HOST = %s
 """ % (llvm_version, major, major_minor, llvm_lib_dir, is_host))
 
-def render_llvm_repo_build(llvm_major):
-    """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact."""
+def render_llvm_repo_build(llvm_major, is_host = False):
+    """Render BUILD.llvm_repo-shaped BUILD content for a minimal LLVM artifact.
+
+    Args:
+      llvm_major: LLVM major version, used to locate the clang resource dir.
+      is_host: Whether the artifact is a host LLVM installation rooted at a
+        system prefix (e.g. /usr) instead of a clean minimal tarball. When True,
+        the top-level exports_files() glob is scoped to LLVM files only: a broad
+        "lib/**"/"lib64/**" sweep over a system prefix also matches non-LLVM
+        files whose names contain characters Bazel forbids in target names (for
+        example ':' in bundled Perl man pages, or '\\' in systemd unit names),
+        which makes exports_files() abort while loading the generated BUILD. The
+        scoped list covers lib/, lib64/ and the Debian/Ubuntu multiarch lib dirs
+        (lib/<triple>/), matching _detect_llvm_lib_dir.
+
+    Returns:
+      The BUILD file content as a string.
+    """
+    if is_host:
+        exports_files_glob = '["bin/*", "lib/clang/**", "lib/libclang.so*", "lib/libclang-cpp.so*", "lib/libLLVM.so*", "lib/*/libclang.so*", "lib/*/libclang-cpp.so*", "lib/*/libLLVM.so*", "lib64/libclang.so*", "lib64/libclang-cpp.so*", "lib64/libLLVM.so*", "include/clang*/**", "include/llvm*/**", "include/c++/**", "include/*/c++/**", "share/clang/*"]'
+    else:
+        exports_files_glob = '["bin/*", "lib/**", "lib64/**", "include/**", "share/clang/*"]'
     return """load("@rules_cc//cc:cc_library.bzl", "cc_library")
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["llvm.bzl"] + glob(["bin/*", "lib/**", "lib64/**", "include/**", "share/clang/*"], allow_empty = True))
+exports_files(["llvm.bzl"] + glob({exports_files_glob}, allow_empty = True))
 
 filegroup(
     name = "clang",
@@ -369,7 +389,7 @@ cc_library(
     hdrs = glob(["include/clang/**", "include/clang-c/**", "include/llvm/**", "include/llvm-c/**"], allow_empty = True),
     includes = ["include"],
 )
-""".format(llvm_major = llvm_major)
+""".format(llvm_major = llvm_major, exports_files_glob = exports_files_glob)
 
 LLVM_MINIMAL_LLVM_REPO_BUILD = render_llvm_repo_build(_llvm_version_major(LLVM_VERSION))
 
@@ -546,7 +566,7 @@ def _host_llvm_repo_impl(ctx):
             fail("Host LLVM directory does not exist: %s" % path)
         if path.exists:
             _symlink_dir_children(ctx, path, directory)
-    ctx.file("BUILD.bazel", render_llvm_repo_build(version.split(".")[0]))
+    ctx.file("BUILD.bazel", render_llvm_repo_build(version.split(".")[0], is_host = True))
     write_llvm_bzl(ctx, version, lib_dir, True)
 
 llvm_host_repo = repository_rule(
