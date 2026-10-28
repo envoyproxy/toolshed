@@ -393,17 +393,27 @@ cc_library(
 
 LLVM_MINIMAL_LLVM_REPO_BUILD = render_llvm_repo_build(_llvm_version_major(LLVM_VERSION))
 
+# Consumers that supply their own (host) LLVM toolchain and never compile with
+# the released minimal LLVM can set this to "1"/"true" to skip the download and
+# get an empty placeholder repo instead -- useful for offline/air-gapped builds
+# where fetching an unused ~100MB+ artifact would fail or bloat a vendor snapshot.
+_SKIP_DOWNLOAD_ENV = "ENVOY_TOOLSHED_SKIP_LLVM_MINIMAL_DOWNLOAD"
+
+def _skip_llvm_minimal_download(ctx):
+    return ctx.getenv(_SKIP_DOWNLOAD_ENV) in ("1", "true", "True")
+
 def _llvm_minimal_repo_impl(ctx):
     """Downloads and extracts a released minimal LLVM artifact."""
-    if ctx.attr.sha256:
+    if ctx.attr.sha256 and not _skip_llvm_minimal_download(ctx):
         ctx.download_and_extract(
             url = ctx.attr.url,
             sha256 = ctx.attr.sha256,
             stripPrefix = ctx.attr.strip_prefix,
         )
     else:
-        # Placeholder state before first release: create an empty repo so callers
-        # that do not reference it are not broken.
+        # Empty placeholder repo -- used before the first release (sha256 unset)
+        # and when a consumer opts out of the download via _SKIP_DOWNLOAD_ENV --
+        # so callers that do not reference it are not broken.
         result = ctx.execute(["mkdir", "-p", "bin", "include", "lib", "share/clang"])
         if result.return_code:
             fail("Failed to create placeholder llvm_minimal repo directories: " + result.stderr)
@@ -412,6 +422,7 @@ def _llvm_minimal_repo_impl(ctx):
 
 llvm_minimal_repo = repository_rule(
     implementation = _llvm_minimal_repo_impl,
+    environ = [_SKIP_DOWNLOAD_ENV],
     attrs = {
         "url": attr.string(
             mandatory = True,
