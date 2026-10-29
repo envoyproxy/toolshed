@@ -983,22 +983,22 @@ private:
             "unable to add responses");
       for (const SingleResponseSpec& single : singles) {
         CBB single_response;
+        // Children must outlive the CBB_flush calls on their parents below.
+        CBB status_cbb;
+        CBB next;
         check(CBB_add_asn1(&responses, &single_response, CBS_ASN1_SEQUENCE) == 1,
               "unable to add a SingleResponse");
         addCertId(&single_response, single);
         if (single.status == "good") {
-          CBB good;
-          check(CBB_add_asn1(&single_response, &good, CBS_ASN1_CONTEXT_SPECIFIC | 0) == 1,
+          check(CBB_add_asn1(&single_response, &status_cbb, CBS_ASN1_CONTEXT_SPECIFIC | 0) == 1,
                 "unable to add a good status");
         } else if (single.status == "revoked") {
-          CBB revoked;
-          check(CBB_add_asn1(&single_response, &revoked,
+          check(CBB_add_asn1(&single_response, &status_cbb,
                              CBS_ASN1_CONTEXT_SPECIFIC | CBS_ASN1_CONSTRUCTED | 1) == 1,
                 "unable to add a revoked status");
-          addGeneralizedTime(&revoked, this_update);
+          addGeneralizedTime(&status_cbb, this_update);
         } else if (single.status == "unknown") {
-          CBB unknown;
-          check(CBB_add_asn1(&single_response, &unknown, CBS_ASN1_CONTEXT_SPECIFIC | 2) == 1,
+          check(CBB_add_asn1(&single_response, &status_cbb, CBS_ASN1_CONTEXT_SPECIFIC | 2) == 1,
                 "unable to add an unknown status");
         } else {
           fail("unknown OCSP certificate status '" + single.status + "'");
@@ -1006,7 +1006,6 @@ private:
         check(CBB_flush(&single_response) == 1, "unable to flush a certificate status");
         addGeneralizedTime(&single_response, this_update);
         if (single.has_next_update) {
-          CBB next;
           check(CBB_add_asn1(&single_response, &next,
                              CBS_ASN1_CONTEXT_SPECIFIC | CBS_ASN1_CONSTRUCTED | 0) == 1,
                 "unable to add a nextUpdate");
