@@ -21,27 +21,12 @@ def _gcc_repository_impl(ctx):
     ctx.symlink(ctx.path(ctx.attr.lld), "bin/ld.lld")
 
     # These archives do not ship dwp; never fall back to a host executable.
-    ctx.file("xbin/dwp", "#!/bin/bash\necho 'GCC toolchain does not support dwp' >&2\nexit 1\n", executable = True)
+    ctx.file("bin/" + prefix + "dwp", "#!/bin/bash\necho 'GCC toolchain does not support dwp' >&2\nexit 1\n", executable = True)
     for tool in ["ar", "as", "cpp", "gcc", "gcov", "ld", "nm", "objcopy", "objdump", "readelf", "strip"]:
         binary = "bin/" + prefix + tool
         if not ctx.path(binary).exists:
             fail("GCC archive is missing " + binary)
 
-        # Resolve the repository root from the wrapper's own (symlink-resolved)
-        # location rather than from ${PWD}/external/<repo>, so the wrapper works
-        # from the execroot, from sandboxed/remote actions, and from test
-        # runfiles alike.
-        ctx.file(
-            "xbin/" + tool,
-            """#!/bin/bash
-set -euo pipefail
-ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
-export PATH="${ROOT}/bin"
-unset CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH OBJC_INCLUDE_PATH LIBRARY_PATH GCC_EXEC_PREFIX COMPILER_PATH
-exec "${ROOT}/%s" "$@"
-""" % binary,
-            executable = True,
-        )
     cxx_prefix = "aarch64-linux/" if arch == "aarch64" else ""
     for path in [
         "lib/gcc/" + triple + "/" + _GCC["version"] + "/" + filename
@@ -66,13 +51,14 @@ gcc_linux_cc_toolchain_config(
     name = "config",
     arch = %r,
     triple = %r,
+    prefix = %r,
     version = %r,
     sysroot = %r,
 )
 
 filegroup(
     name = "files",
-    srcs = glob(["bin/**", "xbin/**", "lib/**", "lib64/**", "libexec/**", "include/**", %r]) + [%r, %r],
+    srcs = glob(["bin/**", "lib/**", "lib64/**", "libexec/**", "include/**", %r]) + [%r, %r],
 )
 
 cc_library(
@@ -102,11 +88,12 @@ cc_toolchain(
     toolchain_config = ":config",
 )
 
-exports_files(glob(["xbin/*"]))
+exports_files(glob(["bin/*"]))
 """ % (
         str(ctx.attr._config),
         arch,
         triple,
+        prefix,
         _GCC["version"],
         str(ctx.attr.sysroot),
         triple + "/**",
