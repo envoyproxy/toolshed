@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-root="${1%/xbin/gcc}"
+root="${1%/bin/*}"
 sysroot="$2"
 arch="$3"
 version="$4"
