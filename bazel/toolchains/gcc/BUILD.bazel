@@ -1,6 +1,6 @@
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:versions.bzl", "VERSIONS")
-load(":toolchain_test.bzl", "gcc_link_flags", "gcc_paths_test", "gcc_runtime_test")
+load(":toolchain_test.bzl", "gcc_compile_flags", "gcc_link_flags", "gcc_paths_test", "gcc_runtime_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -54,7 +54,7 @@ alias(
 
 gcc_paths_test(
     name = "linux_x64_paths_test",
-    compiler = "@gcc_linux_x86_64//:xbin/gcc",
+    compiler = "@gcc_linux_x86_64//:bin/gcc",
     lld = "@llvm_minimal_linux_x64//:bin/lld",
     sysroot = "@sysroot_linux_amd64//sysroot",
     target_under_test = ":linux_x64",
@@ -62,7 +62,7 @@ gcc_paths_test(
 
 gcc_paths_test(
     name = "linux_arm64_paths_test",
-    compiler = "@gcc_linux_aarch64//:xbin/gcc",
+    compiler = "@gcc_linux_aarch64//:bin/aarch64-linux-gcc",
     lld = "@llvm_minimal_linux_x64//:bin/lld",
     sysroot = "@sysroot_linux_arm64//sysroot",
     target_under_test = ":linux_arm64",
@@ -72,7 +72,10 @@ gcc_paths_test(
     gcc_runtime_test(
         name = "linux_{}_runtime_test".format(arch),
         arch = arch,
-        compiler = "@gcc_linux_{}//:xbin/gcc".format(arch),
+        compiler = "@gcc_linux_{}//:bin/{}gcc".format(
+            arch,
+            "aarch64-linux-" if arch == "aarch64" else "",
+        ),
         libgcc = "@gcc_linux_{}//:libgcc".format(arch),
         target_under_test = "@gcc_linux_{}//:libstdcxx".format(arch),
         version = VERSIONS["gcc_toolchain"]["version"],
@@ -95,18 +98,37 @@ gcc_paths_test(
 ]
 
 [
+    gcc_compile_flags(
+        name = "linux_{}_compile_flags".format(arch),
+        toolchain = "@gcc_linux_{}//:cc_toolchain".format(arch),
+    )
+    for arch in [
+        "x86_64",
+        "aarch64",
+    ]
+]
+
+[
     sh_test(
         name = "linux_{}_lld_test".format(arch),
         srcs = ["lld_test.sh"],
         args = [
-            "$(rootpath @gcc_linux_{}//:xbin/gcc)".format(arch),
+            "$(rootpath @gcc_linux_{}//:bin/{}gcc)".format(
+                arch,
+                "aarch64-linux-" if arch == "aarch64" else "",
+            ),
             "$(rootpath :linux_{}_link_flags)".format(arch),
             arch,
+            "$(rootpath :linux_{}_compile_flags)".format(arch),
         ],
         data = [
+            ":linux_{}_compile_flags".format(arch),
             ":linux_{}_link_flags".format(arch),
             "@gcc_linux_{}//:files".format(arch),
-            "@gcc_linux_{}//:xbin/gcc".format(arch),
+            "@gcc_linux_{}//:bin/{}gcc".format(
+                arch,
+                "aarch64-linux-" if arch == "aarch64" else "",
+            ),
         ],
         exec_compatible_with = [
             "@platforms//os:linux",
@@ -125,7 +147,10 @@ gcc_paths_test(
         name = "linux_{}_runtime_abi_test".format(arch),
         srcs = ["runtime_abi_test.sh"],
         args = [
-            "$(rootpath @gcc_linux_{}//:xbin/gcc)".format(arch),
+            "$(rootpath @gcc_linux_{}//:bin/{}gcc)".format(
+                arch,
+                "aarch64-linux-" if arch == "aarch64" else "",
+            ),
             "$(rootpath @sysroot_linux_{}//sysroot)".format("amd64" if arch == "x86_64" else "arm64"),
             arch,
             VERSIONS["gcc_toolchain"]["version"],
@@ -134,7 +159,10 @@ gcc_paths_test(
         data = [
             "//compile/test:check_glibc.sh",
             "@gcc_linux_{}//:files".format(arch),
-            "@gcc_linux_{}//:xbin/gcc".format(arch),
+            "@gcc_linux_{}//:bin/{}gcc".format(
+                arch,
+                "aarch64-linux-" if arch == "aarch64" else "",
+            ),
             "@sysroot_linux_{}//sysroot".format("amd64" if arch == "x86_64" else "arm64"),
         ],
         exec_compatible_with = [

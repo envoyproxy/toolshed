@@ -31,19 +31,43 @@ gcc_link_flags = rule(
     fragments = ["cpp"],
 )
 
+def _gcc_compile_flags_impl(ctx):
+    toolchain = ctx.attr.toolchain[cc_common.CcToolchainInfo]
+    features = cc_common.configure_features(ctx = ctx, cc_toolchain = toolchain)
+    variables = cc_common.create_compile_variables(
+        cc_toolchain = toolchain,
+        feature_configuration = features,
+    )
+    flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = features,
+        action_name = ACTION_NAMES.cpp_compile,
+        variables = variables,
+    )
+    output = ctx.actions.declare_file(ctx.label.name + ".flags")
+    ctx.actions.write(output, "\n".join(flags) + "\n")
+    return [DefaultInfo(files = depset([output]))]
+
+gcc_compile_flags = rule(
+    implementation = _gcc_compile_flags_impl,
+    attrs = {"toolchain": attr.label(mandatory = True)},
+    fragments = ["cpp"],
+)
+
 def _gcc_paths_test_impl(ctx):
     env = analysistest.begin(ctx)
     toolchain = analysistest.target_under_test(env)[cc_common.CcToolchainInfo]
     compiler = ctx.file.compiler.path
-    root = compiler[:-len("/xbin/gcc")]
+    root = compiler.rsplit("/bin/", 1)[0]
+    prefix = compiler.rsplit("/bin/", 1)[1][:-len("gcc")]
     sysroot = ctx.file.sysroot.path
     asserts.equals(env, compiler, toolchain.compiler_executable)
-    asserts.equals(env, root + "/xbin/ar", toolchain.ar_executable)
+    asserts.equals(env, root + "/bin/" + prefix + "ar", toolchain.ar_executable)
     asserts.equals(env, root + "/bin/ld.lld", toolchain.ld_executable)
     for files in [toolchain.all_files, toolchain._linker_files]:
         paths = [file.path for file in files.to_list()]
         asserts.true(env, root + "/bin/ld.lld" in paths, "Missing staged ld.lld")
         asserts.true(env, ctx.file.lld.path in paths, "Missing LLVM lld input")
+        asserts.false(env, any(["/xbin/" in path for path in paths]), "Unexpected xbin wrapper")
     features, flags = _link_configuration(ctx, toolchain)
     for flag in ["-fuse-ld=lld", "-B" + root + "/bin/", "-Wl,-z,noexecstack"]:
         asserts.true(env, flag in flags, "Missing linker flag: " + flag)
@@ -71,7 +95,7 @@ def _gcc_runtime_test_impl(ctx):
     env = analysistest.begin(ctx)
     info = analysistest.target_under_test(env)[CcInfo]
     cc = info.compilation_context
-    root = ctx.file.compiler.path[:-len("/xbin/gcc")]
+    root = ctx.file.compiler.path.rsplit("/bin/", 1)[0]
     prefix = root + ("/aarch64-linux" if ctx.attr.arch == "aarch64" else "")
     include = prefix + "/include/c++/" + ctx.attr.version
 

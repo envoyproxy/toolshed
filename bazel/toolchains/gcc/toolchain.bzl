@@ -6,13 +6,14 @@ load(
     gcc_cc_toolchain_config = "cc_toolchain_config",
 )
 
-def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
+def gcc_linux_cc_toolchain_config(name, arch, triple, prefix, version, sysroot):
     """Configure an extracted Linux cross compiler, never the host compiler.
 
     Args:
         name: Configuration target name.
         arch: Target CPU.
         triple: GCC's configured target triple.
+        prefix: Prefix of the archive's tool binaries.
         version: GCC version.
         sysroot: Label exporting the base glibc sysroot.
     """
@@ -76,14 +77,14 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, version, sysroot):
             "-Wl,-z,relro,-z,now",
             "-Wl,-z,noexecstack",
         ],
-        # xbin/gcc is the C driver: -static-libstdc++ has no effect on explicit
+        # gcc is the C driver: -static-libstdc++ has no effect on explicit
         # -lstdc++, so select the archive by name instead.
         link_libs = ["-l:libstdc++.a", "-lm"],
         opt_compile_flags = ["-O2", "-DNDEBUG"],
         supports_start_end_lib = True,
         target_libc = "glibc",
         target_system_name = triple,
-        tool_paths = {tool: "bin/ld.lld" if tool == "ld" else "xbin/" + tool for tool in [
+        tool_paths = {tool: "bin/ld.lld" if tool == "ld" else "bin/" + prefix + tool for tool in [
             "ar",
             "cpp",
             "dwp",

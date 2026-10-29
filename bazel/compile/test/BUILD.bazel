@@ -17,13 +17,12 @@ _WEE8_LINK_COMPATIBLE = select({
 ] else ["@platforms//:incompatible"]
 
 # The gcc-only tests below inspect binaries with the hermetic GCC binutils.
-# The xbin/* wrappers resolve the toolchain root relative to themselves, but
-# the real binaries must be present in the runfiles tree (eg on RBE), hence
-# the :files dependency.
+# The binutils need the rest of the toolchain in the runfiles tree (eg on
+# RBE), hence the :files dependency.
 _GCC_BINUTILS = [
     "@gcc_linux_x86_64//:files",
-    "@gcc_linux_x86_64//:xbin/nm",
-    "@gcc_linux_x86_64//:xbin/readelf",
+    "@gcc_linux_x86_64//:bin/nm",
+    "@gcc_linux_x86_64//:bin/readelf",
 ]
 
 exports_files([
@@ -289,7 +288,7 @@ sh_test(
     env = {
         "BINARY": "$(rootpath :test_stdlib)",
         "EXPECTED_STDLIB": "libstdcxx",
-        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:bin/nm)",
     },
     tags = ["manual"],
     target_compatible_with = select({
@@ -330,8 +329,8 @@ sh_test(
     env = {
         "BINARY": "$(rootpath :test_stdlib)",
         "CHECK_STATIC_RUNTIME": "true",
-        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
-        "READELF": "$(rootpath @gcc_linux_x86_64//:xbin/readelf)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:bin/nm)",
+        "READELF": "$(rootpath @gcc_linux_x86_64//:bin/readelf)",
     },
     tags = ["manual"],
     target_compatible_with = select({
@@ -358,8 +357,8 @@ sh_test(
     env = {
         "BINARY": "$(rootpath :wee8_link_probe)",
         "CHECK_STATIC_RUNTIME": "true",
-        "NM": "$(rootpath @gcc_linux_x86_64//:xbin/nm)",
-        "READELF": "$(rootpath @gcc_linux_x86_64//:xbin/readelf)",
+        "NM": "$(rootpath @gcc_linux_x86_64//:bin/nm)",
+        "READELF": "$(rootpath @gcc_linux_x86_64//:bin/readelf)",
     },
     tags = ["manual"],
     target_compatible_with = _WEE8_LINK_COMPATIBLE,
