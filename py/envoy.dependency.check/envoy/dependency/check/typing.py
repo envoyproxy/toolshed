@@ -13,7 +13,7 @@ class BaseDependencyMetadataDict(TypedDict):
 
 
 class DependencyMetadataDict(BaseDependencyMetadataDict, total=False):
-    cpe: str | None
+    cpe: str | list[str] | None
 
 
 DependenciesDict = dict[str, DependencyMetadataDict]

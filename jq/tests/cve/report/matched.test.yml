@@ -3,9 +3,13 @@ imports: [cve/utils]
 input:
 - id: CVE-EXAMPLE
   matched:
-  - dep: {name: example, version: {string: "1.2.3"}, release_date: "2024-01-01"}
+  - dep:
+      name: example
+      version: {string: "1.2.3"}
+      release_date: "2024-01-01"
+      cpe: {match: "cpe:2.3:a:vendor:product:*", vendor: vendor, product: product, version: "*"}
     cpe:
-      cpe: {version: "*"}
+      cpe: {vendor: vendor, product: product, version: "*"}
       versions: {start_inc: "1.0", start_exc: null, end_inc: null, end_exc: "2.0"}
   cve:
     published: "2024-06-01T12:00:00.000"
@@ -18,6 +22,7 @@ expected:
 - ""
 - "  Severity: HIGH"
 - "  Published: 2024-06-01"
+- "  CPE: cpe:2.3:a:vendor:product:*"
 - "  Version: *"
 - "  Start (including/excluding): 1.0/"
 - "  End (including/excluding): /2.0"

@@ -6,13 +6,18 @@ input:
   missing: {version: "1"}
   "null": {version: "1", cpe: null}
   ignored: {version: "1", cpe: N/A}
+  ignored_list: {version: "1", cpe: ["N/A"]}
+  empty: {version: "1", cpe: []}
+  null_list: {version: "1", cpe: [null, "N/A"]}
 expression: 'utils::parse_deps(.) | utils::deps_list(.)'
 expected:
 - name: kept
   release_date: "2024-01-01"
   version: {main: [1, 2, 0], pre: [], build: [], string: "1.2"}
   cpe: {match: "cpe:2.3:a:vendor:product:*", part: a, vendor: vendor, product: product, version: "*"}
+  cpes: [{match: "cpe:2.3:a:vendor:product:*", part: a, vendor: vendor, product: product, version: "*"}]
 - name: opaque
   release_date: "2024-02-01"
   version: {string: deadbeef}
   cpe: {match: "cpe:2.3:a:vendor:other:*", part: a, vendor: vendor, product: other, version: "*"}
+  cpes: [{match: "cpe:2.3:a:vendor:other:*", part: a, vendor: vendor, product: other, version: "*"}]
