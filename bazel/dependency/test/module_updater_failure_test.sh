@@ -182,6 +182,40 @@ grep -F 'Unable to read bazel_dep declarations' "${stderr}" >/dev/null
 mv "${tmpdir}/MODULE.bazel.orig" "${tmpdir}/MODULE.bazel"
 assert_module_unchanged
 
+# A failed edit part-way through a batch restores MODULE.bazel.
+real_buildozer="${BUILDOZER}"
+cat > "${tmpdir}/failing_buildozer" <<FAILING_BUILDOZER
+#!/bin/bash
+if [[ "\$1" == "set version"* ]]; then
+  count=\$(( \$(cat "${tmpdir}/set_count" 2>/dev/null || echo 0) + 1 ))
+  echo "\${count}" > "${tmpdir}/set_count"
+  if (( count > 1 )); then
+    echo "simulated buildozer failure" >&2
+    exit 2
+  fi
+fi
+exec "${real_buildozer}" "\$@"
+FAILING_BUILDOZER
+chmod +x "${tmpdir}/failing_buildozer"
+BUILDOZER="${tmpdir}/failing_buildozer"
+set +e
+run_update "${stdout}" "${stderr}" bazel_skylib protobuf
+rc=$?
+set -e
+BUILDOZER="${real_buildozer}"
+assert_exit_code 2 "${rc}"
+grep -F 'simulated buildozer failure' "${stderr}" >/dev/null
+grep -F 'restored' "${stderr}" >/dev/null
+assert_module_unchanged
+
+# Without any bazel_dep, `--outdated` skips every entry as undeclared.
+cp "${tmpdir}/MODULE.bazel" "${tmpdir}/MODULE.bazel.orig"
+sed -n '/^module(/,/^)/p' "${MODULE_TEMPLATE}" > "${tmpdir}/MODULE.bazel"
+run_update "${stdout}" "${stderr}" --outdated
+grep -F 'not declared' "${stderr}" >/dev/null
+grep -F 'No outdated dependencies declared' "${stdout}" >/dev/null
+mv "${tmpdir}/MODULE.bazel.orig" "${tmpdir}/MODULE.bazel"
+
 # Nothing outdated on a registry nobody uses.
 run_update "${stdout}" "${stderr}" --outdated=no_such_registry
 grep -F 'No outdated dependencies on registries matching no_such_registry' "${stdout}" >/dev/null

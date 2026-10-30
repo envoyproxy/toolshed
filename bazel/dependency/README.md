@@ -228,7 +228,8 @@ bazel run //dependency:update_module -- protobuf=35.2.bcr.envoy
 
 Several dependencies can be given at once. They are resolved from a single
 registry scan and nothing is edited unless every one of them resolves, so a bad
-spec leaves `MODULE.bazel` untouched:
+spec leaves `MODULE.bazel` untouched. If an edit then fails, `MODULE.bazel` is
+restored:
 
 ```bash
 bazel run //dependency:update_module -- bazel_skylib protobuf=35.2.bcr.envoy

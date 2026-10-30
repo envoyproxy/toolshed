@@ -99,6 +99,15 @@ override_module_name() {
   printf '%s\n' "$name"
 }
 
+# Report a failed buildozer edit and restore MODULE_PATH, so earlier edits in the same run are
+# not left half-applied.
+fail_update() {
+  cat "$TMPDIR/buildozer.err" >&2
+  cat "$TMPDIR/MODULE.bazel.orig" > "$MODULE_PATH"
+  echo "Update failed, ${MODULE_PATH} restored" >&2
+  exit "$1"
+}
+
 # Rewrite the `bazel_dep(name = "<dep>")` version, and any
 # `single_version_override(module_name = "<dep>")`, in MODULE_PATH.
 apply_update() {
@@ -140,8 +149,7 @@ apply_update() {
       continue
     fi
     if (( rc != 3 )); then
-      cat "$TMPDIR/buildozer.err" >&2
-      exit "$rc"
+      fail_update "$rc"
     fi
   done
 
@@ -150,8 +158,7 @@ apply_update() {
   if (( rc == 0 )); then
     changed=1
   elif (( rc != 3 )); then
-    cat "$TMPDIR/buildozer.err" >&2
-    exit "$rc"
+    fail_update "$rc"
   fi
 
   if (( changed == 0 )); then
@@ -321,11 +328,18 @@ grep -Eq '^[[:space:]]*module[[:space:]]*\(' "$MODULE_PATH" || { echo "Expected 
 # Resolve (and check for) every requested dependency before editing anything, so a bad
 # request leaves MODULE.bazel untouched.
 # Read the declared `bazel_dep` names once. A failure here (eg MODULE.bazel does not parse) is
-# fatal, rather than being mistaken for an undeclared dependency.
-DECLARED_DEPS="$("$BUILDOZER" 'print name' "${MODULE_PATH}:%bazel_dep")" || {
+# fatal, rather than being mistaken for an undeclared dependency. Exit code 3 means there are no
+# `bazel_dep` rules (as in `module_deps_json`).
+declared_status=0
+DECLARED_DEPS="$("$BUILDOZER" 'print name' "${MODULE_PATH}:%bazel_dep" 2>"$TMPDIR/declared.err")" \
+  || declared_status=$?
+if (( declared_status == 3 )); then
+  DECLARED_DEPS=""
+elif (( declared_status != 0 )); then
+  cat "$TMPDIR/declared.err" >&2
   echo "Unable to read bazel_dep declarations from ${MODULE_PATH}" >&2
   exit 1
-}
+fi
 
 dep_names=()
 dep_targets=()
@@ -363,6 +377,12 @@ for dep_arg in "${DEP_ARGS[@]}"; do
   dep_currents+=("$($JQ -r '.current' <<<"$RESOLUTION")")
 done
 
+if (( ${#dep_names[@]} == 0 )); then
+  echo "No outdated dependencies declared in ${MODULE_PATH}"
+  exit 0
+fi
+
+cp "$MODULE_PATH" "$TMPDIR/MODULE.bazel.orig"
 for ((i=0; i<${#dep_names[@]}; i++)); do
   apply_update "${dep_names[$i]}" "${dep_targets[$i]}" "${dep_currents[$i]}"
 done
