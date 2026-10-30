@@ -77,6 +77,7 @@ jobs:
             compile/libcxx-llvm22.1.8-x86_64.tar.xz
             compile/llvm-minimal-*.tar.zst
             git/git-*.tar.zst
+            hunspell/source/hunspell-*.tar.zst
             pgp/sq-*.tar.zst
             compile/msan-llvm22.1.8-x86_64.tar.xz
             compile/tsan-llvm22.1.8-x86_64.tar.xz
@@ -104,6 +105,7 @@ jobs:
             //:macos_packages
             //compile:llvm_minimal_packages
             //git:git_packages
+            //hunspell/source:hunspell_packages
             //pgp:sq_packages
             //sysroot:sysroots
             //v8:wee8_packages

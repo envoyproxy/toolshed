@@ -118,6 +118,29 @@ git_prebuilt_ext = use_extension("//git:extensions.bzl", "git_prebuilt_extension
 git_prebuilt_ext.setup()
 use_repo(git_prebuilt_ext, "cacert", "git_toolchains")
 
+hunspell_prebuilt_ext = use_extension("//hunspell:extensions.bzl", "hunspell_prebuilt_extension")
+use_repo(hunspell_prebuilt_ext, "hunspell_toolchains")
+
+# Source hunspell and en_US dictionary, for toolshed's own builds/tests and the bins release.
+# Keep in sync with VERSIONS["hunspell"] and VERSIONS["dictionary_en"].
+http_archive(
+    name = "hunspell_src",
+    build_file = "//hunspell/private:hunspell.BUILD.bazel",
+    dev_dependency = True,
+    sha256 = "9c650ace31d4d8cc1da925a9507c3de1d50f1a54857af2f72429f517d5d53467",
+    strip_prefix = "hunspell-1.7.6",
+    url = "https://github.com/hunspell/hunspell/releases/download/v1.7.6/hunspell-1.7.6.tar.gz",
+)
+
+http_archive(
+    name = "dictionary_en",
+    build_file = "//hunspell/private:dictionary_en.BUILD.bazel",
+    dev_dependency = True,
+    sha256 = "160cba5e6c0230d43d70b0c929e498566ff2c3c4bcf840318d98ce28e31ee756",
+    strip_prefix = "package",
+    url = "https://registry.npmjs.org/dictionary-en/-/dictionary-en-4.0.0.tgz",
+)
+
 sq_prebuilt_ext = use_extension("//pgp:extensions.bzl", "sq_prebuilt_extension")
 sq_prebuilt_ext.setup()
 use_repo(sq_prebuilt_ext, "sq_toolchains")
@@ -325,6 +348,14 @@ git_host_test = use_repo_rule("//git/test:host_repo.bzl", "git_host_test")
 
 git_host_test(
     name = "envoy_toolshed_git_host_test",
+    dev_dependency = True,
+)
+
+# Prebuilt hunspell toolchains first, so constrained matches win before the source fallback.
+register_toolchains("@hunspell_toolchains//:all")
+
+register_toolchains(
+    "//hunspell/source:source_toolchain",
     dev_dependency = True,
 )
 
