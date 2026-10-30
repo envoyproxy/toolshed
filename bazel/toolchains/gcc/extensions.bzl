@@ -1,7 +1,7 @@
 """Pinned x86_64-hosted GCC cross compilers using the shared base sysroot."""
 
 load("//:versions.bzl", "VERSIONS")
-load(":host.bzl", "gcc_host_repository", "host_cpu")
+load(":host.bzl", "gcc_host_repository", "host_cpu", "host_toolchain_names")
 
 _GCC = VERSIONS["gcc_toolchain"]
 
@@ -130,16 +130,16 @@ def _gcc_extension_impl(ctx):
             host = tag
 
     # Only an explicit `host` tag swaps native-arch toolchains for the host GCC
-    # (all of them, or just those named in `host.toolchains`); every other
-    # toolchain is the hermetic download.
+    # (see `host_toolchain_names`); every other toolchain is the hermetic download.
     host_arch = host_cpu(ctx.os) if host else None
     names = [tag.name for mod in ctx.modules for tag in mod.tags.toolchain]
     for name in (host.toolchains if host else []):
         if name not in names:
             fail("gcc_extension.host(toolchains = ...) names unknown toolchain %r" % name)
+    use_host = host_toolchain_names(ctx.modules, host, host_arch)
     for mod in ctx.modules:
         for tag in mod.tags.toolchain:
-            if host and tag.arch == host_arch and (not host.toolchains or tag.name in host.toolchains):
+            if tag.name in use_host:
                 gcc_host_repository(
                     name = tag.name,
                     arch = tag.arch,
@@ -169,7 +169,7 @@ gcc_extension = module_extension(
         "host": tag_class(attrs = {
             "path": attr.string(mandatory = True, doc = "Absolute GCC installation prefix containing bin/gcc (e.g. /usr)."),
             "gcc_version": attr.string(doc = "Optional; if set, its major version must match the installed GCC."),
-            "toolchains": attr.string_list(doc = "Optional; names of the native-arch toolchains to replace. Defaults to all of them."),
+            "toolchains": attr.string_list(doc = "Optional; names of the native-arch toolchains to replace, from any module. Defaults to all of the root module's own."),
         }),
     },
 )
