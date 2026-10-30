@@ -67,11 +67,21 @@ def _gcc_paths_test_impl(ctx):
         paths = [file.path for file in files.to_list()]
         asserts.true(env, root + "/bin/ld.lld" in paths, "Missing staged ld.lld")
         asserts.true(env, ctx.file.lld.path in paths, "Missing LLVM lld input")
+        asserts.true(env, root + "/bin/" + prefix + "dwp" in paths, "Missing staged dwp")
+        asserts.true(env, ctx.file.dwp.path in paths, "Missing LLVM dwp input")
         asserts.false(env, any(["/xbin/" in path for path in paths]), "Unexpected xbin wrapper")
     features, flags = _link_configuration(ctx, toolchain)
     for flag in ["-fuse-ld=lld", "-B" + root + "/bin/", "-Wl,-z,noexecstack"]:
         asserts.true(env, flag in flags, "Missing linker flag: " + flag)
     asserts.true(env, cc_common.is_enabled(feature_configuration = features, feature_name = "supports_start_end_lib"))
+    compile_features = cc_common.configure_features(ctx = ctx, cc_toolchain = toolchain)
+    compile_flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = compile_features,
+        action_name = ACTION_NAMES.cpp_compile,
+        variables = cc_common.create_compile_variables(cc_toolchain = toolchain, feature_configuration = compile_features),
+    )
+    for flag in ["-U_FORTIFY_SOURCE", "-fstack-protector"]:
+        asserts.true(env, flag in compile_flags, "Missing hardening flag: " + flag)
     for directory in toolchain.built_in_include_directories:
         asserts.true(
             env,
@@ -85,6 +95,7 @@ gcc_paths_test = analysistest.make(
     _gcc_paths_test_impl,
     attrs = {
         "compiler": attr.label(allow_single_file = True),
+        "dwp": attr.label(allow_single_file = True),
         "lld": attr.label(allow_single_file = True),
         "sysroot": attr.label(allow_single_file = True),
     },

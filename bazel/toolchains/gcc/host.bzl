@@ -105,7 +105,7 @@ cc_toolchain_config(
     name = "config",
     abi_libc_version = "local",
     abi_version = "local",
-    compile_flags = ["-fstack-protector", "-Wall", "-fno-omit-frame-pointer"],
+    compile_flags = ["-U_FORTIFY_SOURCE", "-fstack-protector", "-Wall", "-fno-omit-frame-pointer"],
     compiler = "gcc",
     coverage_compile_flags = ["--coverage"],
     coverage_link_flags = ["--coverage"],
