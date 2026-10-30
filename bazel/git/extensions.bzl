@@ -22,6 +22,15 @@ def _git_prebuilt_ext_impl(module_ctx):
         attrs = ["linux_x86_64_sha256", "linux_aarch64_sha256"],
     )
 
+    # The host fallback only affects the host running the build, so the root module decides;
+    # toolshed's own setup() (and any other dependency's) must not force it either way.
+    host_fallback = True
+    for mod in module_ctx.modules:
+        if not mod.is_root:
+            continue
+        for tag in mod.tags.setup:
+            host_fallback = tag.host_fallback
+
     cacert = VERSIONS["cacert"]
     git_cacert(
         name = "cacert",
@@ -55,6 +64,7 @@ def _git_prebuilt_ext_impl(module_ctx):
     git_toolchains_hub(
         name = "git_toolchains",
         defs_label = DEFS_LABEL,
+        host_fallback = host_fallback,
         linux_aarch64 = platform_labels.get("linux-aarch64"),
         linux_x86_64 = platform_labels.get("linux-x86_64"),
         toolchain_type_label = TOOLCHAIN_TYPE_LABEL,
@@ -62,9 +72,15 @@ def _git_prebuilt_ext_impl(module_ctx):
 
 # setup() controls per-platform prebuilt SHAs: unset uses VERSIONS["git_sha256"],
 # "" disables that prebuilt repo (source fallback only), and any other value
-# overrides the sha256 for that platform.
+# overrides the sha256 for that platform. host_fallback registers the host's
+# git on macOS, which has no prebuilt; unlike the SHAs it is taken from the
+# root module only.
 _setup = tag_class(
     attrs = {
+        "host_fallback": attr.bool(
+            default = True,
+            doc = "On macOS, which has no prebuilt git, register the host's `git` from PATH as the toolchain so consumers still resolve. Only the root module's value is used.",
+        ),
         "linux_aarch64_sha256": attr.string(
             default = _NO_OVERRIDE,
             doc = "SHA256 for the Linux aarch64 prebuilt git artifact: unset uses VERSIONS[\"git_sha256\"], \"\" disables the prebuilt repo for this platform, any other value overrides the sha256.",

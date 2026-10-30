@@ -319,6 +319,15 @@ register_toolchains(
     dev_dependency = True,
 )
 
+# Test-only toolchain over the host's git, exercising the hub's host fallback mechanism
+# on this host (see //git/test:toolchain_host_test). Not registered: tests force it.
+git_host_test = use_repo_rule("//git/test:host_repo.bzl", "git_host_test")
+
+git_host_test(
+    name = "envoy_toolshed_git_host_test",
+    dev_dependency = True,
+)
+
 libcxx_ext = use_extension("//compile:extensions.bzl", "libcxx_extension", dev_dependency = True)
 use_repo(libcxx_ext, "llvm_libcxx_aarch64", "llvm_libcxx_x86_64")
 

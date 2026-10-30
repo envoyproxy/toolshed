@@ -2,10 +2,11 @@
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
 load("//git:defs.bzl", "GIT_TOOLCHAIN_TYPE")
-load("//git/private:git_prebuilt.bzl", "render_git_toolchains_build")
+load("//git/private:git_prebuilt.bzl", "host_fallback_platform", "host_platform", "render_git_toolchains_build")
 load("//git/private:git_source_hub.bzl", "render_git_source_build", "render_git_source_defs", "render_git_source_transitions")
 
 _SOURCE_TOOLCHAIN = str(Label("@envoy_toolshed_git_source//:source_toolchain"))
+_HOST_TOOLCHAIN = str(Label("@envoy_toolshed_git_host_test//:host"))
 
 _LAUNCHER_TEMPLATE = """#!/bin/bash
 set -euo pipefail
@@ -80,6 +81,15 @@ _source_toolchain_transition = transition(
     outputs = ["//command_line_option:extra_toolchains"],
 )
 
+def _host_toolchain_transition_impl(_settings, _attr):
+    return {"//command_line_option:extra_toolchains": [_HOST_TOOLCHAIN]}
+
+_host_toolchain_transition = transition(
+    implementation = _host_toolchain_transition_impl,
+    inputs = [],
+    outputs = ["//command_line_option:extra_toolchains"],
+)
+
 def _source_probe_impl(ctx):
     default = ctx.attr.probe[0][DefaultInfo]
     launcher = _declare_launcher(ctx, default.files_to_run.executable)
@@ -100,6 +110,22 @@ source_toolchain_probe = rule(
             mandatory = True,
             executable = True,
             cfg = _source_toolchain_transition,
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
+    },
+)
+
+# As `source_toolchain_probe`, forcing the test-only host git toolchain instead.
+host_toolchain_probe = rule(
+    implementation = _source_probe_impl,
+    executable = True,
+    attrs = {
+        "probe": attr.label(
+            mandatory = True,
+            executable = True,
+            cfg = _host_toolchain_transition,
         ),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
@@ -166,9 +192,71 @@ def _render_hub_build_test_impl(ctx):
     asserts.true(env, "load(\"@" + "@envoy_toolshed+//git:defs.bzl\", \"git_toolchain\")" in content)
     asserts.true(env, "toolchain_type = \"@" + "@envoy_toolshed+//git:toolchain_type\"" in content)
     asserts.true(env, "@" + "@git_prebuilt_linux_x86_64//:git" in content)
+    asserts.false(env, "name = \"host\"" in content)
+
+    # A host without a prebuilt gets a toolchain for the host's git, constrained to that host.
+    content = render_git_toolchains_build(
+        {"linux-x86_64": "git_prebuilt_linux_x86_64"},
+        "@" + "@envoy_toolshed+//git:defs.bzl",
+        "@" + "@envoy_toolshed+//git:toolchain_type",
+        host = "macos-aarch64",
+    )
+    asserts.true(env, "name = \"host\"" in content)
+    asserts.true(env, "srcs = [\"host/git\"]" in content)
+    asserts.true(env, "\"@platforms//os:macos\"" in content)
+    asserts.true(env, "\"@platforms//cpu:aarch64\"" in content)
+
+    # A host that has a prebuilt keeps using it.
+    content = render_git_toolchains_build(
+        {"linux-x86_64": "git_prebuilt_linux_x86_64"},
+        "@" + "@envoy_toolshed+//git:defs.bzl",
+        "@" + "@envoy_toolshed+//git:toolchain_type",
+        host = "linux-x86_64",
+    )
+    asserts.false(env, "name = \"host\"" in content)
+
+    # A prebuilt platform with its prebuilt disabled gets no host toolchain either: the
+    # source fallback covers it, and a Linux toolchain could be picked for remote workers.
+    content = render_git_toolchains_build(
+        {"linux-x86_64": None},
+        "@" + "@envoy_toolshed+//git:defs.bzl",
+        "@" + "@envoy_toolshed+//git:toolchain_type",
+        host = "linux-x86_64",
+    )
+    asserts.false(env, "name = \"host\"" in content)
+    asserts.false(env, "git_toolchain(" in content)
+
+    # Only macOS hosts fall back.
+    content = render_git_toolchains_build(
+        {"linux-x86_64": "git_prebuilt_linux_x86_64"},
+        "@" + "@envoy_toolshed+//git:defs.bzl",
+        "@" + "@envoy_toolshed+//git:toolchain_type",
+        host = "windows-x86_64",
+    )
+    asserts.false(env, "name = \"host\"" in content)
     return unittest.end(env)
 
 render_hub_build_test = unittest.make(_render_hub_build_test_impl)
+
+def _host_platform_test_impl(ctx):
+    env = unittest.begin(ctx)
+    asserts.equals(env, "macos-aarch64", host_platform("mac os x", "aarch64"))
+    asserts.equals(env, "macos-x86_64", host_platform("Mac OS X", "x86_64"))
+    asserts.equals(env, "linux-x86_64", host_platform("linux", "amd64"))
+    asserts.equals(env, "linux-aarch64", host_platform("Linux", "arm64"))
+    asserts.equals(env, "windows-x86_64", host_platform("windows 11", "amd64"))
+    asserts.equals(env, None, host_platform("freebsd", "x86_64"))
+    asserts.equals(env, None, host_platform("linux", "ppc64le"))
+
+    asserts.equals(env, "macos-aarch64", host_fallback_platform("macos-aarch64"))
+    asserts.equals(env, "macos-x86_64", host_fallback_platform("macos-x86_64"))
+    asserts.equals(env, None, host_fallback_platform("linux-x86_64"))
+    asserts.equals(env, None, host_fallback_platform("linux-aarch64"))
+    asserts.equals(env, None, host_fallback_platform("windows-x86_64"))
+    asserts.equals(env, None, host_fallback_platform(None))
+    return unittest.end(env)
+
+host_platform_test = unittest.make(_host_platform_test_impl)
 
 def _render_source_hub_files_test_impl(ctx):
     env = unittest.begin(ctx)
