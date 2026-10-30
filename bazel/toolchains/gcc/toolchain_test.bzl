@@ -80,8 +80,17 @@ def _gcc_paths_test_impl(ctx):
         action_name = ACTION_NAMES.cpp_compile,
         variables = cc_common.create_compile_variables(cc_toolchain = toolchain, feature_configuration = compile_features),
     )
-    for flag in ["-U_FORTIFY_SOURCE", "-fstack-protector"]:
-        asserts.true(env, flag in compile_flags, "Missing hardening flag: " + flag)
+    for flag in [
+        "-U_FORTIFY_SOURCE",
+        "-fstack-protector",
+        "-fno-omit-frame-pointer",
+        "-no-canonical-prefixes",
+        "-fno-canonical-system-headers",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+    ]:
+        asserts.true(env, flag in compile_flags, "Missing compile flag: " + flag)
     for directory in toolchain.built_in_include_directories:
         asserts.true(
             env,
@@ -153,4 +162,38 @@ gcc_runtime_test = analysistest.make(
         "libgcc": attr.label(mandatory = True),
         "version": attr.string(mandatory = True),
     },
+)
+
+def _gcc_opt_flags_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    toolchain = analysistest.target_under_test(env)[cc_common.CcToolchainInfo]
+
+    # cc rules request the compilation mode's feature; custom rules must do so explicitly.
+    features = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = toolchain,
+        requested_features = ctx.features + ["opt"],
+    )
+    compile_flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = features,
+        action_name = ACTION_NAMES.cpp_compile,
+        variables = cc_common.create_compile_variables(cc_toolchain = toolchain, feature_configuration = features),
+    )
+    for flag in ["-g0", "-O2", "-D_FORTIFY_SOURCE=1", "-DNDEBUG", "-ffunction-sections", "-fdata-sections"]:
+        asserts.true(env, flag in compile_flags, "Missing opt compile flag: " + flag)
+    link_flags = cc_common.get_memory_inefficient_command_line(
+        feature_configuration = features,
+        action_name = ACTION_NAMES.cpp_link_executable,
+        variables = cc_common.create_link_variables(
+            cc_toolchain = toolchain,
+            feature_configuration = features,
+            is_static_linking_mode = True,
+        ),
+    )
+    asserts.true(env, "-Wl,--gc-sections" in link_flags, "Missing opt link flag: -Wl,--gc-sections")
+    return analysistest.end(env)
+
+gcc_opt_flags_test = analysistest.make(
+    _gcc_opt_flags_test_impl,
+    fragments = ["cpp"],
 )

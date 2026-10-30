@@ -81,7 +81,10 @@ stack. This avoids bfd's excessive memory use on large static links and gold's
 noisy, Rust-incompatible linking. The archives ship no `dwp`, so the required
 `dwp` label (`llvm-dwp`, which handles GCC's split DWARF) is exposed as the
 toolchain's `dwp` for `--fission` builds. Like the LLVM toolchain, GCC compiles
-with `-fstack-protector`, and with `-D_FORTIFY_SOURCE=1` in optimized builds.
+with `-fstack-protector` and `-fno-omit-frame-pointer`, redacts `__DATE__`/`__TIME__`/
+`__TIMESTAMP__` for reproducible outputs, and optimized builds use `-D_FORTIFY_SOURCE=1`,
+`-g0` and section garbage collection (`-ffunction-sections -fdata-sections`,
+`-Wl,--gc-sections`).
 
 #### Host GCC
 

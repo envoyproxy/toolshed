@@ -63,7 +63,13 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, prefix, version, sysroot):
         compiler = "gcc",
         # Hardening matches the LLVM toolchain: stack protection, plus fortified
         # libc calls in optimized builds (_FORTIFY_SOURCE needs optimization).
-        compile_flags = search_flags + ["-nostdinc", "-U_FORTIFY_SOURCE", "-fstack-protector"] + [
+        compile_flags = search_flags + [
+            "-nostdinc",
+            "-U_FORTIFY_SOURCE",
+            "-fstack-protector",
+            # Keep frame pointers, for frame-pointer based profilers and unwinders.
+            "-fno-omit-frame-pointer",
+        ] + [
             "-idirafter" + directory
             for directory in c_includes
         ],
@@ -85,7 +91,16 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, prefix, version, sysroot):
         # gcc is the C driver: -static-libstdc++ has no effect on explicit
         # -lstdc++, so select the archive by name instead.
         link_libs = ["-l:libstdc++.a", "-lm"],
-        opt_compile_flags = ["-O2", "-D_FORTIFY_SOURCE=1", "-DNDEBUG"],
+        opt_compile_flags = [
+            "-g0",
+            "-O2",
+            "-D_FORTIFY_SOURCE=1",
+            "-DNDEBUG",
+            # With `opt_link_flags`, drops unused code and data (eg from alwayslink libraries).
+            "-ffunction-sections",
+            "-fdata-sections",
+        ],
+        opt_link_flags = ["-Wl,--gc-sections"],
         supports_start_end_lib = True,
         target_libc = "glibc",
         target_system_name = triple,
@@ -101,5 +116,14 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, prefix, version, sysroot):
             "objdump",
             "strip",
         ]},
+        # Reproducible outputs (no build dates) and execroot-relative paths in dependency files.
+        unfiltered_compile_flags = [
+            "-no-canonical-prefixes",
+            "-fno-canonical-system-headers",
+            "-Wno-builtin-macro-redefined",
+            "-D__DATE__=\"redacted\"",
+            "-D__TIMESTAMP__=\"redacted\"",
+            "-D__TIME__=\"redacted\"",
+        ],
         toolchain_identifier = "linux-" + arch + "-gcc-" + version,
     )
