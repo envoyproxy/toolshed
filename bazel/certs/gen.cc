@@ -46,6 +46,11 @@
 #include "openssl/x509.h"
 #include "openssl/x509v3.h"
 
+#ifdef _WIN32
+#define timegm _mkgmtime
+#define gmtime_r(src, tm) (!gmtime_s(tm, src) ? tm : nullptr)
+#endif
+
 namespace {
 
 // CRL nextUpdate offset. Matches `default_crl_days` in the CA configs.
