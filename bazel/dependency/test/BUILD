@@ -100,6 +100,51 @@ diff_test(
     file2 = "testdata/module/MODULE.expected.sq.bazel",
 )
 
+# Several dependencies in one invocation, resolved from a single registry scan.
+module_updater_fixture(
+    name = "module_update_multi",
+    out = "module_update_multi.bazel",
+    args = [
+        "protobuf",
+        "sq=1.5.0.envoy",
+    ],
+)
+
+diff_test(
+    name = "module_update_multi_test",
+    file1 = ":module_update_multi",
+    file2 = "testdata/module/MODULE.expected.multi.bazel",
+)
+
+# Everything outdated on registries matching the filter: protobuf and sq live on the
+# envoy registry, bazel_skylib does not.
+module_updater_fixture(
+    name = "module_update_outdated_envoy",
+    out = "module_update_outdated_envoy.bazel",
+    args = ["--outdated=registry_envoy"],
+)
+
+diff_test(
+    name = "module_update_outdated_envoy_test",
+    file1 = ":module_update_outdated_envoy",
+    file2 = "testdata/module/MODULE.expected.multi.bazel",
+)
+
+# Everything outdated: bazel_skylib goes to 1.9.0 (1.9.1 is yanked) together with its
+# single_version_override; aspect_bazel_lib is outdated in the dependency data but not
+# declared in MODULE.bazel, so it is skipped.
+module_updater_fixture(
+    name = "module_update_outdated",
+    out = "module_update_outdated.bazel",
+    args = ["--outdated"],
+)
+
+diff_test(
+    name = "module_update_outdated_test",
+    file1 = ":module_update_outdated",
+    file2 = "testdata/module/MODULE.expected.outdated.bazel",
+)
+
 module_deps_json(
     name = "module_deps_json_fixture",
     lockfile = "testdata/module/MODULE.bazel.lock",

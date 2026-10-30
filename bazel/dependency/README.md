@@ -226,6 +226,24 @@ or pin an explicit version:
 bazel run //dependency:update_module -- protobuf=35.2.bcr.envoy
 ```
 
+Several dependencies can be given at once. They are resolved from a single
+registry scan and nothing is edited unless every one of them resolves, so a bad
+spec leaves `MODULE.bazel` untouched. If an edit then fails, `MODULE.bazel` is
+restored:
+
+```bash
+bazel run //dependency:update_module -- bazel_skylib protobuf=35.2.bcr.envoy
+```
+
+`--outdated` updates every dependency with a newer version on its current
+registry, as `update_available` in the report. `--outdated=<match>` limits that
+to dependencies whose current registry URL contains `<match>`, eg
+`--outdated=envoyproxy/bazel-registry` to pick up everything a registry bump
+made available while leaving BCR dependencies alone. Dependencies in the
+dependency data that the `MODULE.bazel` does not declare are skipped with a
+warning. `--outdated` cannot be combined with dependency arguments or
+`--report`.
+
 By default, updates stay on the dependency's current registry. If another
 registry has a newer version, that still appears in the report, but the updater
 does not silently jump registries. Use `--registry=<url>` to select another

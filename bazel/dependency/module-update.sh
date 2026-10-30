@@ -5,7 +5,13 @@ usage() {
   cat <<'EOF_USAGE'
 Usage:
   module-update.sh <MODULE.bazel> <deps.json> [--bazelrc=<path>] [--registry=<url>]... --report [--format=json|markdown] [--json-out=<path>] [--markdown-out=<path>] [--fail-on-outdated] [--fail-on-outdated-dev]
-  module-update.sh <MODULE.bazel> <deps.json> <dep>[=<version>] [--registry=<url>] [--allow-yanked]
+  module-update.sh <MODULE.bazel> <deps.json> <dep>[=<version>]... [--registry=<url>] [--allow-yanked]
+  module-update.sh <MODULE.bazel> <deps.json> --outdated[=<registry-match>] [--registry=<url>] [--allow-yanked]
+
+Several <dep>[=<version>] arguments are resolved from a single registry scan and applied together;
+nothing is edited unless every one of them resolves. --outdated updates every dependency with a
+newer version on its current registry, optionally only those whose current registry contains
+<registry-match>.
 EOF_USAGE
 }
 
@@ -93,6 +99,75 @@ override_module_name() {
   printf '%s\n' "$name"
 }
 
+# Report a failed buildozer edit and restore MODULE_PATH, so earlier edits in the same run are
+# not left half-applied.
+fail_update() {
+  cat "$TMPDIR/buildozer.err" >&2
+  cat "$TMPDIR/MODULE.bazel.orig" > "$MODULE_PATH"
+  echo "Update failed, ${MODULE_PATH} restored" >&2
+  exit "$1"
+}
+
+# Rewrite the `bazel_dep(name = "<dep>")` version, and any
+# `single_version_override(module_name = "<dep>")`, in MODULE_PATH.
+apply_update() {
+  local dep="$1"
+  local target="$2"
+  local current="$3"
+  local changed=0
+  local rc
+  local line
+  local module_name
+  local idx
+  local -a override_lines=()
+
+  if [[ "$target" == "$current" ]]; then
+    echo "${dep}: already at ${target}"
+    return 0
+  fi
+
+  # Collect `single_version_override(module_name = "<dep>")` rules. Each candidate
+  # is read structurally via buildozer so comments and neighbouring rules are never
+  # matched; the comparison is exact so prefix-sharing module names don't collide.
+  while IFS=: read -r line _; do
+    [[ -n "$line" ]] || continue
+    module_name="$(override_module_name "${MODULE_PATH}:%${line}")"
+    if [[ -z "$module_name" ]]; then
+      echo "WARNING: unable to read module_name of single_version_override at ${MODULE_PATH}:${line}, skipping" >&2
+      continue
+    fi
+    if [[ "$module_name" == "$dep" ]]; then
+      override_lines+=("$line")
+    fi
+  done < <(grep -nE '^[[:space:]]*single_version_override[[:space:]]*\(' "$MODULE_PATH" || true)
+
+  for ((idx=${#override_lines[@]} - 1; idx>=0; idx--)); do
+    rc=0
+    run_buildozer "set version \"$target\"" "${MODULE_PATH}:%${override_lines[$idx]}" || rc=$?
+    if (( rc == 0 )); then
+      changed=1
+      continue
+    fi
+    if (( rc != 3 )); then
+      fail_update "$rc"
+    fi
+  done
+
+  rc=0
+  run_buildozer "set version \"$target\"" "${MODULE_PATH}:${dep}" || rc=$?
+  if (( rc == 0 )); then
+    changed=1
+  elif (( rc != 3 )); then
+    fail_update "$rc"
+  fi
+
+  if (( changed == 0 )); then
+    echo "${dep}: already at ${target}"
+  else
+    echo "${dep}: ${current} -> ${target}"
+  fi
+}
+
 MODULE_FILE="$1"
 DEP_DATA="$2"
 shift 2
@@ -108,8 +183,9 @@ FORMAT=json
 JSON_OUT=""
 MARKDOWN_OUT=""
 BAZELRC="${MODULE_UPDATER_BAZELRC:-/dev/null}"
-DEP=""
-REQUESTED_VERSION=""
+DEP_ARGS=()
+OUTDATED=0
+OUTDATED_MATCH=""
 REQUESTED_REGISTRY=""
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
@@ -121,6 +197,8 @@ while (($#)); do
     --fail-on-outdated) FAIL_ON_OUTDATED=1 ;;
     --fail-on-outdated-dev) FAIL_ON_OUTDATED_DEV=1 ;;
     --allow-yanked) ALLOW_YANKED=true ;;
+    --outdated) OUTDATED=1 ;;
+    --outdated=*) OUTDATED=1; OUTDATED_MATCH="${1#*=}" ;;
     --format=*) FORMAT="${1#*=}" ;;
     --format) FORMAT="$2"; shift ;;
     --json-out=*) JSON_OUT="${1#*=}" ;;
@@ -140,19 +218,24 @@ while (($#)); do
       ;;
     --help|-h) usage; exit 0 ;;
     --*) echo "Unknown option: $1" >&2; exit 1 ;;
-    *)
-      [[ -n "$DEP" ]] && { usage >&2; exit 1; }
-      DEP="$1"
-      ;;
+    *) DEP_ARGS+=("$1") ;;
   esac
   shift
 done
-[[ -n "$DEP" ]] || REPORT=1
+if (( OUTDATED == 1 )) && (( ${#DEP_ARGS[@]} > 0 )); then
+  echo "--outdated cannot be combined with dependency arguments" >&2
+  usage >&2
+  exit 1
+fi
+if (( OUTDATED == 1 )) && (( REPORT == 1 )); then
+  echo "--outdated cannot be combined with --report" >&2
+  exit 1
+fi
+(( ${#DEP_ARGS[@]} > 0 || OUTDATED == 1 )) || REPORT=1
 case "$FORMAT" in
   json|markdown) ;;
   *) echo "Unknown format: $FORMAT" >&2; exit 1 ;;
 esac
-[[ "$DEP" == *=* ]] && REQUESTED_VERSION="${DEP#*=}" DEP="${DEP%%=*}"
 EXTRA_JSON="$($JQ -Rsc 'split("\n") | map(select(length > 0))' <"$TMPDIR/extra_registries")"
 REGISTRIES_JSON="$($JQ -Rsc -L "$JQ_DIR" --argjson extra "$EXTRA_JSON" 'import "bazel/dep" as dep; dep::registries_from_args' <"$BAZELRC")"
 [[ "$REGISTRIES_JSON" != '[]' ]] || { echo "No registries configured. Pass --bazelrc or --registry." >&2; exit 1; }
@@ -223,65 +306,83 @@ if (( REPORT == 1 )); then
   exit 0
 fi
 [[ -x "$BUILDOZER" ]] || { echo "buildozer binary not found: ${BUILDOZER}" >&2; exit 1; }
-RESOLUTION="$($JQ -n -L "$JQ_DIR" --arg dep "$DEP" --arg requested_version "$REQUESTED_VERSION" --arg requested_registry "$REQUESTED_REGISTRY" --argjson allow_yanked "$ALLOW_YANKED" --argjson report "$REPORT_JSON" 'import "bazel/dep" as dep; dep::resolve_from_args')"
-ERR="$($JQ -r '.error // empty' <<<"$RESOLUTION")"
-[[ -z "$ERR" ]] || { echo "$ERR" >&2; exit 1; }
+if (( OUTDATED == 1 )); then
+  # shellcheck disable=SC2016  # `$match` is a jq variable, not a shell expansion
+  OUTDATED_FILTER='
+    to_entries[]
+    | select(.value.update_available == true
+             and (($match == "") or ((.value.current_registry // "") | contains($match))))
+    | .key'
+  DEP_ARGS=()
+  while IFS= read -r dep; do
+    [[ -n "$dep" ]] && DEP_ARGS+=("$dep")
+  done < <($JQ -r --arg match "$OUTDATED_MATCH" "$OUTDATED_FILTER" <<<"$REPORT_JSON")
+  if (( ${#DEP_ARGS[@]} == 0 )); then
+    echo "No outdated dependencies${OUTDATED_MATCH:+ on registries matching ${OUTDATED_MATCH}}"
+    exit 0
+  fi
+fi
 MODULE_PATH="$(resolve_module)"
 grep -Eq '^[[:space:]]*module[[:space:]]*\(' "$MODULE_PATH" || { echo "Expected module() declaration in ${MODULE_PATH}" >&2; exit 1; }
-TARGET="$($JQ -r '.target' <<<"$RESOLUTION")"
-CURRENT="$($JQ -r '.current' <<<"$RESOLUTION")"
-CHANGED=0
-rc=0
-if [[ "$TARGET" == "$CURRENT" ]]; then
-  echo "${DEP}: already at ${TARGET}"
-  exit 0
-fi
 
-if ! "$BUILDOZER" 'print name' "${MODULE_PATH}:${DEP}" >/dev/null 2>&1; then
-  echo "Dependency ${DEP} not found in ${MODULE_PATH}" >&2
+# Resolve (and check for) every requested dependency before editing anything, so a bad
+# request leaves MODULE.bazel untouched.
+# Read the declared `bazel_dep` names once. A failure here (eg MODULE.bazel does not parse) is
+# fatal, rather than being mistaken for an undeclared dependency. Exit code 3 means there are no
+# `bazel_dep` rules (as in `module_deps_json`).
+declared_status=0
+DECLARED_DEPS="$("$BUILDOZER" 'print name' "${MODULE_PATH}:%bazel_dep" 2>"$TMPDIR/declared.err")" \
+  || declared_status=$?
+if (( declared_status == 3 )); then
+  DECLARED_DEPS=""
+elif (( declared_status != 0 )); then
+  cat "$TMPDIR/declared.err" >&2
+  echo "Unable to read bazel_dep declarations from ${MODULE_PATH}" >&2
   exit 1
 fi
 
-# Collect `single_version_override(module_name = "<DEP>")` rules. Each candidate
-# is read structurally via buildozer so comments and neighbouring rules are never
-# matched; the comparison is exact so prefix-sharing module names don't collide.
-override_lines=()
-while IFS=: read -r line _; do
-  [[ -n "$line" ]] || continue
-  module_name="$(override_module_name "${MODULE_PATH}:%${line}")"
-  if [[ -z "$module_name" ]]; then
-    echo "WARNING: unable to read module_name of single_version_override at ${MODULE_PATH}:${line}, skipping" >&2
-    continue
+dep_names=()
+dep_targets=()
+dep_currents=()
+requested_deps=()
+for dep_arg in "${DEP_ARGS[@]}"; do
+  dep="$dep_arg"
+  requested_version=""
+  [[ "$dep_arg" == *=* ]] && requested_version="${dep_arg#*=}" dep="${dep_arg%%=*}"
+  # Each request is resolved against the original versions, so a repeated dependency would be
+  # compared against a stale current version once an earlier request had updated it.
+  for seen in "${requested_deps[@]+"${requested_deps[@]}"}"; do
+    if [[ "$seen" == "$dep" ]]; then
+      echo "Dependency ${dep} requested more than once" >&2
+      exit 1
+    fi
+  done
+  requested_deps+=("$dep")
+  # Check the declaration before resolving, so an undeclared `--outdated` entry is skipped even if
+  # the selected registry cannot resolve it.
+  if ! grep -qxF -- "$dep" <<<"$DECLARED_DEPS"; then
+    if (( OUTDATED == 1 )); then
+      # The dependency data may cover more than this MODULE.bazel declares.
+      echo "WARNING: ${dep} not declared in ${MODULE_PATH}, skipping" >&2
+      continue
+    fi
+    echo "Dependency ${dep} not found in ${MODULE_PATH}" >&2
+    exit 1
   fi
-  if [[ "$module_name" == "$DEP" ]]; then
-    override_lines+=("$line")
-  fi
-done < <(grep -nE '^[[:space:]]*single_version_override[[:space:]]*\(' "$MODULE_PATH" || true)
-
-for ((idx=${#override_lines[@]} - 1; idx>=0; idx--)); do
-  rc=0
-  run_buildozer "set version \"$TARGET\"" "${MODULE_PATH}:%${override_lines[$idx]}" || rc=$?
-  if (( rc == 0 )); then
-    CHANGED=1
-    continue
-  fi
-  if (( rc != 3 )); then
-    cat "$TMPDIR/buildozer.err" >&2
-    exit "$rc"
-  fi
+  RESOLUTION="$($JQ -n -L "$JQ_DIR" --arg dep "$dep" --arg requested_version "$requested_version" --arg requested_registry "$REQUESTED_REGISTRY" --argjson allow_yanked "$ALLOW_YANKED" --argjson report "$REPORT_JSON" 'import "bazel/dep" as dep; dep::resolve_from_args')"
+  ERR="$($JQ -r '.error // empty' <<<"$RESOLUTION")"
+  [[ -z "$ERR" ]] || { echo "$ERR" >&2; exit 1; }
+  dep_names+=("$dep")
+  dep_targets+=("$($JQ -r '.target' <<<"$RESOLUTION")")
+  dep_currents+=("$($JQ -r '.current' <<<"$RESOLUTION")")
 done
 
-rc=0
-run_buildozer "set version \"$TARGET\"" "${MODULE_PATH}:${DEP}" || rc=$?
-if (( rc == 0 )); then
-  CHANGED=1
-elif (( rc != 3 )); then
-  cat "$TMPDIR/buildozer.err" >&2
-  exit "$rc"
+if (( ${#dep_names[@]} == 0 )); then
+  echo "No outdated dependencies declared in ${MODULE_PATH}"
+  exit 0
 fi
 
-if (( CHANGED == 0 )); then
-  echo "${DEP}: already at ${TARGET}"
-else
-  echo "${DEP}: ${CURRENT} -> ${TARGET}"
-fi
+cp "$MODULE_PATH" "$TMPDIR/MODULE.bazel.orig"
+for ((i=0; i<${#dep_names[@]}; i++)); do
+  apply_update "${dep_names[$i]}" "${dep_targets[$i]}" "${dep_currents[$i]}"
+done
