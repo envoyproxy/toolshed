@@ -78,6 +78,31 @@ also executes on x86_64. The GCC repository exposes that binary as
 `-fuse-ld=lld`, supports `--start-lib`/`--end-lib`, and enforces a non-executable
 stack. This avoids bfd's excessive memory use on large static links and gold's
 noisy, Rust-incompatible linking.
+
+#### Host GCC
+
+The extension's `host` tag replaces the native-architecture toolchain with a
+local GCC installation. It may only be declared once, by the root module:
+
+```starlark
+gcc = use_extension("@envoy_toolshed//toolchains/gcc:extensions.bzl", "gcc_extension")
+gcc.toolchain(
+    name = "gcc_linux_x86_64",
+    arch = "x86_64",
+    lld = "@llvm_minimal_linux_x64//:bin/lld",
+    sysroot = "@sysroot_linux_amd64//sysroot",
+)
+gcc.host(path = "/usr", gcc_version = "13")  # Optional
+use_repo(gcc, "gcc_linux_x86_64")
+```
+
+The `toolchain` tag whose `arch` matches the host keeps its repository name, so
+registered toolchains are unchanged; other architectures stay hermetic. The
+host repository exposes `:cc_toolchain`, `:config` and `:files`. It uses host
+headers, libc, libstdc++ and binutils (linking with bfd), is not suitable for
+remote execution, and deliberately provides no `:libstdcxx` or `:libgcc`
+targets. `gcc_version` optionally cross-checks the installed major version.
+Without a `host` tag nothing falls back to host tools, headers or libraries.
 Downstreams must instantiate this extension and register their own toolchains;
 toolshed's registrations are dev-only. Register GCC before LLVM, as in
 toolshed's `MODULE.bazel`.
