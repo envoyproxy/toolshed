@@ -1,6 +1,7 @@
 """Pinned x86_64-hosted GCC cross compilers using the shared base sysroot."""
 
 load("//:versions.bzl", "VERSIONS")
+load(":host.bzl", "gcc_host_repository", "host_cpu")
 
 _GCC = VERSIONS["gcc_toolchain"]
 
@@ -116,15 +117,35 @@ _gcc_repository = repository_rule(
 )
 
 def _gcc_extension_impl(ctx):
+    host = None
+    for mod in ctx.modules:
+        for tag in mod.tags.host:
+            if not mod.is_root:
+                fail("gcc_extension.host may only be set by the root module")
+            if host != None:
+                fail("gcc_extension.host may only be set once")
+            host = tag
+
+    # Only an explicit `host` tag swaps the native-arch toolchain for the host
+    # GCC; otherwise every toolchain is the hermetic download.
+    host_arch = host_cpu(ctx.os) if host else None
     for mod in ctx.modules:
         for tag in mod.tags.toolchain:
-            _gcc_repository(
-                name = tag.name,
-                arch = tag.arch,
-                lld = tag.lld,
-                sysroot = tag.sysroot,
-            )
-    return ctx.extension_metadata(reproducible = True)
+            if host and tag.arch == host_arch:
+                gcc_host_repository(
+                    name = tag.name,
+                    arch = tag.arch,
+                    gcc_version = host.gcc_version,
+                    path = host.path,
+                )
+            else:
+                _gcc_repository(
+                    name = tag.name,
+                    arch = tag.arch,
+                    lld = tag.lld,
+                    sysroot = tag.sysroot,
+                )
+    return ctx.extension_metadata(reproducible = not host)
 
 gcc_extension = module_extension(
     implementation = _gcc_extension_impl,
@@ -134,6 +155,10 @@ gcc_extension = module_extension(
             "arch": attr.string(mandatory = True, values = ["x86_64", "aarch64"]),
             "lld": attr.label(mandatory = True),
             "sysroot": attr.label(mandatory = True),
+        }),
+        "host": tag_class(attrs = {
+            "path": attr.string(mandatory = True, doc = "Absolute GCC installation prefix containing bin/gcc (e.g. /usr)."),
+            "gcc_version": attr.string(doc = "Optional; if set, its major version must match the installed GCC."),
         }),
     },
 )
