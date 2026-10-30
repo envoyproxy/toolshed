@@ -22,3 +22,11 @@ Multi-language tooling and libraries for Envoy proxy's CI and development workfl
 ### Development
 
 See [DEVELOPER.md](DEVELOPER.md) for information on building, testing, and contributing to the toolshed.
+
+### Build images
+
+Build images published as `docker.io/envoyproxy/envoy-build:<tag>` are also mirrored to
+`ghcr.io/envoyproxy/envoy-build:<tag>` with identical tags and architectures.
+The `toolshed-echo` image is likewise available from both registries.
+See [.github/docker-manifests.yml](.github/docker-manifests.yml) for the published variants,
+including the worker and gcc images also published to `gcr.io/envoy-ci`.

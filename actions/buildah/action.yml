@@ -1,5 +1,5 @@
 name: Run buildah commands
-description: Execute buildah commands from structured configuration
+description: Execute buildah commands from structured configuration with Docker Hub, GCR, and GHCR authentication
 
 inputs:
   operations:
@@ -33,6 +33,13 @@ inputs:
   gcr-key:
     description: GCR service account JSON for authentication
     required: false
+  ghcr-username:
+    description: GHCR username for authentication (eg `github.actor` or a bot login)
+    required: false
+  ghcr-token:
+    description: >-
+      GHCR token for authentication (`GITHUB_TOKEN` with `packages: write`, or a PAT with `write:packages`)
+    required: false
   bash-postfix:
     required: true
     default: |
@@ -63,6 +70,16 @@ runs:
     run: |
       echo "::group::Authenticating with GCR"
       echo '${{ inputs.gcr-key }}' | base64 -d | buildah login --username _json_key --password-stdin gcr.io
+      echo "::endgroup::"
+  - name: Authenticate GHCR
+    if: inputs.ghcr-username != '' && inputs.ghcr-token != ''
+    shell: bash
+    env:
+      GHCR_USERNAME: ${{ inputs.ghcr-username }}
+      GHCR_TOKEN: ${{ inputs.ghcr-token }}
+    run: |
+      echo "::group::Authenticating with GHCR"
+      echo "${GHCR_TOKEN}" | buildah login --username "${GHCR_USERNAME}" --password-stdin ghcr.io
       echo "::endgroup::"
   - name: Execute buildah operations
     uses: envoyproxy/toolshed/actions/bson@14eff69d81e97ac38909d426ccfb3918bd406a8b
