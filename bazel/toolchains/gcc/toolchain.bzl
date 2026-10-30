@@ -61,7 +61,12 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, prefix, version, sysroot):
         abi_version = "gcc-" + version,
         builtin_sysroot = sysroot_path,
         compiler = "gcc",
-        compile_flags = search_flags + ["-nostdinc"] + ["-idirafter" + directory for directory in c_includes],
+        # Hardening matches the LLVM toolchain: stack protection, plus fortified
+        # libc calls in optimized builds (_FORTIFY_SOURCE needs optimization).
+        compile_flags = search_flags + ["-nostdinc", "-U_FORTIFY_SOURCE", "-fstack-protector"] + [
+            "-idirafter" + directory
+            for directory in c_includes
+        ],
         cpu = "k8" if arch == "x86_64" else arch,
         cxx_builtin_include_directories = ["%workspace%/" + directory for directory in cxx_includes + c_includes],
         cxx_flags = ["-nostdinc++"] + ["-isystem" + directory for directory in cxx_includes],
@@ -80,7 +85,7 @@ def gcc_linux_cc_toolchain_config(name, arch, triple, prefix, version, sysroot):
         # gcc is the C driver: -static-libstdc++ has no effect on explicit
         # -lstdc++, so select the archive by name instead.
         link_libs = ["-l:libstdc++.a", "-lm"],
-        opt_compile_flags = ["-O2", "-DNDEBUG"],
+        opt_compile_flags = ["-O2", "-D_FORTIFY_SOURCE=1", "-DNDEBUG"],
         supports_start_end_lib = True,
         target_libc = "glibc",
         target_system_name = triple,

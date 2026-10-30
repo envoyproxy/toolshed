@@ -21,8 +21,9 @@ def _gcc_repository_impl(ctx):
     # file symlink as an input, including in sandboxes, RBE and test runfiles.
     ctx.symlink(ctx.path(ctx.attr.lld), "bin/ld.lld")
 
-    # These archives do not ship dwp; never fall back to a host executable.
-    ctx.file("bin/" + prefix + "dwp", "#!/bin/bash\necho 'GCC toolchain does not support dwp' >&2\nexit 1\n", executable = True)
+    # These archives do not ship dwp; use the hermetic llvm-dwp, which packages
+    # GCC's (DWARF 5) split debug info, never a host executable.
+    ctx.symlink(ctx.path(ctx.attr.dwp), "bin/" + prefix + "dwp")
     for tool in ["ar", "as", "cpp", "gcc", "gcov", "ld", "nm", "objcopy", "objdump", "readelf", "strip"]:
         binary = "bin/" + prefix + tool
         if not ctx.path(binary).exists:
@@ -59,7 +60,7 @@ gcc_linux_cc_toolchain_config(
 
 filegroup(
     name = "files",
-    srcs = glob(["bin/**", "lib/**", "lib64/**", "libexec/**", "include/**", %r]) + [%r, %r],
+    srcs = glob(["bin/**", "lib/**", "lib64/**", "libexec/**", "include/**", %r]) + [%r, %r, %r],
 )
 
 cc_library(
@@ -100,6 +101,7 @@ exports_files(glob(["bin/*"]))
         triple + "/**",
         str(ctx.attr.sysroot),
         str(ctx.attr.lld),
+        str(ctx.attr.dwp),
         cxx_prefix + "lib64/libstdc++.a",
         cxx_include + "/**",
         [cxx_include, cxx_include + "/" + triple, cxx_include + "/backward"],
@@ -110,6 +112,7 @@ _gcc_repository = repository_rule(
     implementation = _gcc_repository_impl,
     attrs = {
         "arch": attr.string(mandatory = True, values = ["x86_64", "aarch64"]),
+        "dwp": attr.label(mandatory = True, allow_single_file = True),
         "lld": attr.label(mandatory = True, allow_single_file = True),
         "sysroot": attr.label(mandatory = True),
         "_config": attr.label(default = Label("//toolchains/gcc:toolchain.bzl")),
@@ -126,12 +129,17 @@ def _gcc_extension_impl(ctx):
                 fail("gcc_extension.host may only be set once")
             host = tag
 
-    # Only an explicit `host` tag swaps the native-arch toolchain for the host
-    # GCC; otherwise every toolchain is the hermetic download.
+    # Only an explicit `host` tag swaps native-arch toolchains for the host GCC
+    # (all of them, or just those named in `host.toolchains`); every other
+    # toolchain is the hermetic download.
     host_arch = host_cpu(ctx.os) if host else None
+    names = [tag.name for mod in ctx.modules for tag in mod.tags.toolchain]
+    for name in (host.toolchains if host else []):
+        if name not in names:
+            fail("gcc_extension.host(toolchains = ...) names unknown toolchain %r" % name)
     for mod in ctx.modules:
         for tag in mod.tags.toolchain:
-            if host and tag.arch == host_arch:
+            if host and tag.arch == host_arch and (not host.toolchains or tag.name in host.toolchains):
                 gcc_host_repository(
                     name = tag.name,
                     arch = tag.arch,
@@ -142,6 +150,7 @@ def _gcc_extension_impl(ctx):
                 _gcc_repository(
                     name = tag.name,
                     arch = tag.arch,
+                    dwp = tag.dwp,
                     lld = tag.lld,
                     sysroot = tag.sysroot,
                 )
@@ -153,12 +162,14 @@ gcc_extension = module_extension(
         "toolchain": tag_class(attrs = {
             "name": attr.string(mandatory = True),
             "arch": attr.string(mandatory = True, values = ["x86_64", "aarch64"]),
+            "dwp": attr.label(mandatory = True, doc = "llvm-dwp executable, eg @llvm_minimal_linux_x64//:bin/llvm-dwp."),
             "lld": attr.label(mandatory = True),
             "sysroot": attr.label(mandatory = True),
         }),
         "host": tag_class(attrs = {
             "path": attr.string(mandatory = True, doc = "Absolute GCC installation prefix containing bin/gcc (e.g. /usr)."),
             "gcc_version": attr.string(doc = "Optional; if set, its major version must match the installed GCC."),
+            "toolchains": attr.string_list(doc = "Optional; names of the native-arch toolchains to replace. Defaults to all of them."),
         }),
     },
 )
