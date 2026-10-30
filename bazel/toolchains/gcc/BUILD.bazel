@@ -1,6 +1,6 @@
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:versions.bzl", "VERSIONS")
-load(":toolchain_test.bzl", "gcc_compile_flags", "gcc_link_flags", "gcc_paths_test", "gcc_runtime_test")
+load(":toolchain_test.bzl", "gcc_compile_flags", "gcc_link_flags", "gcc_opt_flags_test", "gcc_paths_test", "gcc_runtime_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -61,6 +61,17 @@ gcc_paths_test(
     sysroot = "@sysroot_linux_amd64//sysroot",
     target_under_test = ":linux_x64",
 )
+
+[
+    gcc_opt_flags_test(
+        name = "%s_opt_flags_test" % name,
+        target_under_test = ":" + name,
+    )
+    for name in [
+        "linux_x64",
+        "linux_arm64",
+    ]
+]
 
 gcc_paths_test(
     name = "linux_arm64_paths_test",
