@@ -31,6 +31,7 @@ jobs:
           - bazel/**
           - docker/bazel/**
           - jq/**
+          - rules_jq/**
           - .github/scripts/bazel-run.sh
           - .github/workflows/bazel.yml
           - .github/workflows/_bazel.yml
@@ -102,6 +103,7 @@ jobs:
           targets: >-
             //...
             @envoy_toolshed_jq//...
+            @rules_jq//...
             //:macos_packages
             //compile:llvm_minimal_packages
             //git:git_packages
@@ -127,6 +129,7 @@ jobs:
           targets: >-
             //...
             @envoy_toolshed_jq//...
+            @rules_jq//...
           upload: false
         - name: macos
           action: build
@@ -145,6 +148,7 @@ jobs:
           targets: >-
             //...
             @envoy_toolshed_jq//...
+            @rules_jq//...
           upload: false
 
   verify-artifacts:
@@ -210,6 +214,7 @@ jobs:
           targets: >-
             //...
             @envoy_toolshed_jq//...
+            @rules_jq//...
             //sysroot:sysroots
             //compile/test:libunwind_shared_test
         - name: gcc

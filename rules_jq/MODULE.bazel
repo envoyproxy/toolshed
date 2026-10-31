@@ -1,0 +1,16 @@
+module(
+    name = "rules_jq",
+    version = "0.0.0",
+    bazel_compatibility = [">=7.2.1"],
+)
+
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
+
+# The jq toolchain, which `jq.bzl` registers. Keep this at the oldest release with its own
+# toolchain type that works with `bazel_lib` 3.0.0, so it does not lift a consumer's jq: 0.7 moves to
+# jq 1.8.
+bazel_dep(name = "jq.bzl", version = "0.4.0")
+
+# Only for `//jq/test`, which toolshed runs from `bazel/`, where a dev dependency here would not be
+# visible.
+bazel_dep(name = "rules_shell", version = "0.8.0")
