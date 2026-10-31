@@ -8,7 +8,7 @@ backend_packages = [
     "pants.backend.python.typecheck.mypy",
     "toolshed_distribution",
     "toolshed_publish_reqs"]
-pants_ignore = ["not", "/bazel/", "/jq/"]
+pants_ignore = ["not", "/bazel/", "/jq/", "/rules_jq/"]
 build_file_prelude_globs = [
   "py/pants-toolshed/macros.py",
 ]
