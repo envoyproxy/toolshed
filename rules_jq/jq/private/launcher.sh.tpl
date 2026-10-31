@@ -45,7 +45,35 @@ rlocation() {
   fi
   if [[ -n "$runfiles_manifest" && -f "$runfiles_manifest" ]]; then
     local path
-    path="$(awk -v key="$1 " 'index($0, key) == 1 { print substr($0, length(key) + 1); exit }' "$runfiles_manifest")"
+    # A record starting with a space is escaped (a key or path with a space,
+    # newline or backslash): `\s`, `\n` and `\b` stand for those characters.
+    path="$(RLOCATION_KEY="$1" awk '
+      function unescape(s,    out, i, c, n) {
+        out = ""
+        for (i = 1; i <= length(s); i++) {
+          c = substr(s, i, 1)
+          n = substr(s, i + 1, 1)
+          if (c == "\\" && (n == "s" || n == "n" || n == "b")) {
+            out = out (n == "s" ? " " : n == "n" ? "\n" : "\\")
+            i++
+          } else {
+            out = out c
+          }
+        }
+        return out
+      }
+      BEGIN { key = ENVIRON["RLOCATION_KEY"] }
+      substr($0, 1, 1) == " " {
+        record = substr($0, 2)
+        split_at = index(record, " ")
+        if (split_at && unescape(substr(record, 1, split_at - 1)) == key) {
+          print unescape(substr(record, split_at + 1))
+          exit
+        }
+        next
+      }
+      index($0, key " ") == 1 { print substr($0, length(key) + 2); exit }
+    ' "$runfiles_manifest")"
     if [[ -n "$path" ]]; then
       echo "$path"
       return 0

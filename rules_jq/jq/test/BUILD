@@ -171,6 +171,20 @@ sh_test(
     ],
 )
 
+sh_test(
+    name = "escaped_manifest_test",
+    srcs = ["escaped_manifest.sh"],
+    args = [
+        "$(rlocationpath :notice)",
+        "$(rlocationpath notice.expected.json)",
+    ],
+    data = [
+        "notice.expected.json",
+        ":notice",
+        "@bazel_tools//tools/bash/runfiles",
+    ],
+)
+
 jq_binary(
     name = "false_binary",
     filter = "false",
