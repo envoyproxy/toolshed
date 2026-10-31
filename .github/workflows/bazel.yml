@@ -139,7 +139,7 @@ jobs:
           rbe: true
           rbe_bes: false
           rbe_config: rbe-cache-only
-          runner: macos-14
+          runner: macos-15
           targets: >-
             //...
             @envoy_toolshed_jq//...
