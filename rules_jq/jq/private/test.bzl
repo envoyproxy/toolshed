@@ -56,7 +56,6 @@ _runner_test = rule(
         "env": attr.string_dict(),
         "env_inherit": attr.string_list(),
         "_launcher": attr.label(default = Label("//jq/private:launcher.sh.tpl"), allow_single_file = True),
-        "_runfiles": attr.label(default = Label("@bazel_tools//tools/bash/runfiles")),
     },
     toolchains = [JQ_TOOLCHAIN_TYPE],
 )

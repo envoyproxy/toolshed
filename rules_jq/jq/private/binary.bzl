@@ -22,7 +22,7 @@ def launcher(ctx, command, files, dependencies = [], roots = []):
     """Expand the common launcher and collect its complete runfiles.
 
     Args:
-        ctx: Rule context with _launcher and _runfiles attributes.
+        ctx: Rule context with a _launcher attribute.
         command: Shell command to append after runfiles initialization.
         files: Runtime Files, including staged module trees.
         dependencies: Targets whose default runfiles should be merged.
@@ -46,7 +46,7 @@ def launcher(ctx, command, files, dependencies = [], roots = []):
         substitutions = {"@@COMMAND@@": command},
         is_executable = True,
     )
-    runfiles = ctx.runfiles(files = files).merge(ctx.attr._runfiles[DefaultInfo].default_runfiles)
+    runfiles = ctx.runfiles(files = files)
     for dep in dependencies:
         runfiles = runfiles.merge(dep[DefaultInfo].default_runfiles)
     return DefaultInfo(executable = output, runfiles = runfiles)
@@ -111,7 +111,6 @@ _jq_binary = rule(
         "data": attr.label_list(allow_files = True),
         "named_srcs": attr.label_keyed_string_dict(allow_files = True),
         "_launcher": attr.label(default = Label("//jq/private:launcher.sh.tpl"), allow_single_file = True),
-        "_runfiles": attr.label(default = Label("@bazel_tools//tools/bash/runfiles")),
     },
     toolchains = [JQ_TOOLCHAIN_TYPE],
 )
