@@ -63,6 +63,32 @@ def host_cpu(os):
         return "aarch64"
     fail("Unsupported host GCC architecture: %s" % arch)
 
+def host_toolchain_names(modules, host, host_arch):
+    """Return the names of the `toolchain` tags that `host` swaps for the host GCC.
+
+    Only native-arch toolchains are swapped: by default the root module's own, or exactly
+    those named in `host.toolchains` (which may belong to any module). Toolchains declared
+    by dependencies, eg one used only for its `:libstdcxx`, otherwise stay hermetic.
+
+    Args:
+      modules: `module_ctx.modules`, or structs with `is_root` and `tags.toolchain`.
+      host: The root module's `host` tag, or None.
+      host_arch: The host GCC arch (`x86_64`/`aarch64`), or None without `host`.
+
+    Returns:
+      A list of toolchain names to provide from the host GCC.
+    """
+    if not host:
+        return []
+    return [
+        tag.name
+        for mod in modules
+        for tag in mod.tags.toolchain
+        if tag.arch == host_arch and (
+            tag.name in host.toolchains if host.toolchains else mod.is_root
+        )
+    ]
+
 def _gcc_host_repository_impl(ctx):
     if not ctx.os.name.lower().startswith("linux"):
         fail("gcc.host supports only native Linux hosts")

@@ -1,5 +1,6 @@
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:versions.bzl", "VERSIONS")
+load(":host_test.bzl", "host_toolchain_names_test")
 load(":toolchain_test.bzl", "gcc_compile_flags", "gcc_link_flags", "gcc_opt_flags_test", "gcc_paths_test", "gcc_runtime_test")
 
 package(default_visibility = ["//visibility:public"])
@@ -204,4 +205,8 @@ toolchain(
     ],
     toolchain = ":linux_arm64",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+host_toolchain_names_test(
+    name = "host_toolchain_names_test",
 )

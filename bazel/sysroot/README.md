@@ -104,12 +104,13 @@ gcc.host(path = "/usr", gcc_version = "13")  # Optional
 use_repo(gcc, "gcc_linux_x86_64")
 ```
 
-Every `toolchain` tag whose `arch` matches the host is replaced, keeping its
-repository name so registered toolchains are unchanged; other architectures stay
-hermetic. To replace only some, list them in `toolchains`, eg
-`gcc.host(path = "/usr", toolchains = ["gcc_linux_x86_64"])`, so that another
-native-arch toolchain stays hermetic (for example one used only for its
-`:libstdcxx`). The
+Every `toolchain` tag the root module declares whose `arch` matches the host is
+replaced, keeping its repository name so registered toolchains are unchanged;
+other architectures, and toolchains declared by dependencies (eg one a
+dependency uses only for its `:libstdcxx`), stay hermetic. To replace exactly
+some, list them in `toolchains`, eg
+`gcc.host(path = "/usr", toolchains = ["gcc_linux_x86_64"])`. Named toolchains
+may come from any module. The
 host repository exposes `:cc_toolchain`, `:config` and `:files`. It uses host
 headers, libc, libstdc++ and binutils (linking with bfd), is not suitable for
 remote execution, and deliberately provides no `:libstdcxx` or `:libgcc`
