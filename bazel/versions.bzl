@@ -80,12 +80,13 @@ VERSIONS = {
         "Linux-X64": "82c13d003a924b5560822f363df1af7733839cd82546a3074b2a32de0c5e99fb",
         "Linux-ARM64": "b0520af4b16d4ee5efaf4ecfbea2d60d6de11e29dcd003924d191a315cb211ae",
     },
-    # Git prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64).
-    # Filled after the bins-v* release publishes the hunspell artifacts.
+    # Hunspell prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64),
+    # filled by the release preparation once a bins-v* release publishes the artifacts.
     "hunspell_sha256": {
         "linux-x86_64": "",
         "linux-aarch64": "",
     },
+    # Git prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64).
     "git_sha256": {
         "linux-x86_64": "e64a3bac2d21552076b7dfe6e09d08f873d9391f38818f9bf2f9ea1aa4b2ebb1",
         "linux-aarch64": "a0618fbe88c742faa7954f72d5e630c9644fc4b1909614f9cd21353f194b116b",
