@@ -1,0 +1,94 @@
+# Overlay for the upstream hunspell release tarball.
+#
+# Builds the static library and a CLI with only what spellchecking pipelines need: no
+# readline/curses (interactive UI), iconv (input recoding) or gettext (translations).
+
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["reciprocal"])  # MPL-1.1 / GPL-2.0+ / LGPL-2.1+ (tri-license)
+
+exports_files([
+    "COPYING",
+    "COPYING.LESSER",
+    "COPYING.MPL",
+    "license.hunspell",
+    "license.myspell",
+])
+
+genrule(
+    name = "config_h",
+    outs = ["config/config.h"],
+    cmd = """cat > $@ <<'EOF'
+#define HAVE_LANGINFO_H 1
+#define HAVE_LOCALE_H 1
+#define HAVE_INTTYPES_H 1
+#define HAVE_STDINT_H 1
+#define HAVE_STDIO_H 1
+#define HAVE_STDLIB_H 1
+#define HAVE_STRINGS_H 1
+#define HAVE_STRING_H 1
+#define HAVE_SYS_STAT_H 1
+#define HAVE_SYS_TYPES_H 1
+#define HAVE_UNISTD_H 1
+#define HAVE_WCHAR_H 1
+#define STDC_HEADERS 1
+#define PACKAGE "hunspell"
+#define PACKAGE_BUGREPORT "https://github.com/hunspell/hunspell/issues"
+#define PACKAGE_NAME "hunspell"
+#define PACKAGE_STRING "hunspell 1.7.6"
+#define PACKAGE_TARNAME "hunspell"
+#define PACKAGE_URL "https://github.com/hunspell/hunspell"
+#define PACKAGE_VERSION "1.7.6"
+#define VERSION "1.7.6"
+EOF""",
+)
+
+cc_library(
+    name = "config",
+    hdrs = [":config_h"],
+    includes = ["config"],
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "libhunspell",
+    srcs = glob(["src/hunspell/*.cxx"]),
+    hdrs = glob([
+        "src/hunspell/*.h",
+        "src/hunspell/*.hxx",
+    ]),
+    defines = ["HUNSPELL_STATIC"],
+    includes = ["src/hunspell"],
+    linkstatic = True,
+    local_defines = ["BUILDING_LIBHUNSPELL"],
+    deps = [":config"],
+)
+
+cc_library(
+    name = "parsers",
+    srcs = glob(
+        ["src/parsers/*.cxx"],
+        exclude = ["src/parsers/testparser.cxx"],
+    ),
+    hdrs = glob(["src/parsers/*.hxx"]),
+    linkstatic = True,
+    visibility = ["//visibility:private"],
+    deps = [
+        ":config",
+        ":libhunspell",
+    ],
+)
+
+cc_binary(
+    name = "hunspell",
+    srcs = ["src/tools/hunspell.cxx"],
+    # Only used for the default dictionary search path; toolchain users pass `-d <path>`.
+    local_defines = ['HUNSPELL_DATADIR=\\"/usr/share\\"'],
+    deps = [
+        ":config",
+        ":libhunspell",
+        ":parsers",
+    ],
+)

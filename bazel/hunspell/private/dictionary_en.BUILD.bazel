@@ -1,0 +1,11 @@
+# Overlay for the `dictionary-en` npm package: SCOWL's en_US Hunspell dictionary.
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])  # SCOWL (MIT-like) and Ispell (BSD) terms, see `license`.
+
+exports_files([
+    "index.aff",
+    "index.dic",
+    "license",
+])

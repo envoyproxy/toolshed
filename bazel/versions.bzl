@@ -25,6 +25,14 @@ VERSIONS = {
     },
     "cmake": "3.23.2",
     "git": "2.55.0",
+    "hunspell": {
+        "version": "1.7.6",
+        "sha256": "9c650ace31d4d8cc1da925a9507c3de1d50f1a54857af2f72429f517d5d53467",
+    },
+    "dictionary_en": {
+        "version": "4.0.0",
+        "sha256": "160cba5e6c0230d43d70b0c929e498566ff2c3c4bcf840318d98ce28e31ee756",
+    },
     "llvm": LLVM_VERSION,
     "sq": "1.4.0",
     "v8": V8_VERSION,
@@ -73,6 +81,11 @@ VERSIONS = {
         "Linux-ARM64": "b0520af4b16d4ee5efaf4ecfbea2d60d6de11e29dcd003924d191a315cb211ae",
     },
     # Git prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64).
+    # Filled after the bins-v* release publishes the hunspell artifacts.
+    "hunspell_sha256": {
+        "linux-x86_64": "",
+        "linux-aarch64": "",
+    },
     "git_sha256": {
         "linux-x86_64": "e64a3bac2d21552076b7dfe6e09d08f873d9391f38818f9bf2f9ea1aa4b2ebb1",
         "linux-aarch64": "a0618fbe88c742faa7954f72d5e630c9644fc4b1909614f9cd21353f194b116b",
