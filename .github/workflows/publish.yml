@@ -25,7 +25,7 @@ jobs:
     steps:
     - name: Resolve publish config for branch
       id: config
-      uses: envoyproxy/toolshed/actions/jq@6386c410c5fd9aa28c29c60f50271d958f9d1897  # actions-v0.4.26
+      uses: envoyproxy/toolshed/actions/jq@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.26
       env:
         HEAD_BRANCH: ${{ github.event.workflow_run.head_branch || '' }}
       with:
