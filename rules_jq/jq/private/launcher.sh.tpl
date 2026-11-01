@@ -36,18 +36,19 @@ if [[ -z "$runfiles_manifest" && -n "$runfiles_dir" ]]; then
   fi
 fi
 
-# Print the path for a runfiles key, from the symlink tree when it has the
-# entry, else from the manifest. Prints nothing and fails on a miss.
-rlocation() {
-  if [[ -n "$runfiles_dir" && -e "$runfiles_dir/$1" ]]; then
-    echo "$runfiles_dir/$1"
+# Print the path for key $3 in runfiles directory $1 or manifest $2, from the
+# symlink tree when it has the entry, else from the manifest. Prints nothing
+# and fails on a miss.
+runfiles_lookup() {
+  if [[ -n "$1" && -e "$1/$3" ]]; then
+    echo "$1/$3"
     return 0
   fi
-  if [[ -n "$runfiles_manifest" && -f "$runfiles_manifest" ]]; then
+  if [[ -n "$2" && -f "$2" ]]; then
     local path
     # A record starting with a space is escaped (a key or path with a space,
     # newline or backslash): `\s`, `\n` and `\b` stand for those characters.
-    path="$(RLOCATION_KEY="$1" awk '
+    path="$(RLOCATION_KEY="$3" awk '
       function unescape(s,    out, i, c, n) {
         out = ""
         for (i = 1; i <= length(s); i++) {
@@ -73,13 +74,39 @@ rlocation() {
         next
       }
       index($0, key " ") == 1 { print substr($0, length(key) + 2); exit }
-    ' "$runfiles_manifest")"
+    ' "$2")"
     if [[ -n "$path" ]]; then
       echo "$path"
       return 0
     fi
   fi
   return 1
+}
+
+# Fallbacks for keys the runfiles above lack, eg when RUNFILES_DIR names
+# another executable's runfiles (a genrule setting it for a different tool) or
+# a directory inside them: the launcher's own `$0.runfiles`, then the runfiles
+# tree the launcher itself is in (when called by path from another
+# executable's runfiles, eg by `$(rootpath)` from a `bazel run` script).
+own_runfiles_dir=""
+own_runfiles_manifest=""
+if [[ -d "$0.runfiles" ]]; then
+  own_runfiles_dir="$0.runfiles"
+fi
+if [[ -f "$0.runfiles_manifest" ]]; then
+  own_runfiles_manifest="$0.runfiles_manifest"
+fi
+enclosing_runfiles_dir=""
+launcher_dir="$(cd "$(dirname "$0")" && pwd)"
+if [[ "$launcher_dir" == *.runfiles/* ]]; then
+  enclosing_runfiles_dir="${launcher_dir%%.runfiles/*}.runfiles"
+fi
+
+# Print the path for a runfiles key, or nothing and fail on a miss.
+rlocation() {
+  runfiles_lookup "$runfiles_dir" "$runfiles_manifest" "$1" ||
+    runfiles_lookup "$own_runfiles_dir" "$own_runfiles_manifest" "$1" ||
+    runfiles_lookup "$enclosing_runfiles_dir" "" "$1"
 }
 
 # Resolve a staged module root from the runfiles key of its `.jq_root` marker.

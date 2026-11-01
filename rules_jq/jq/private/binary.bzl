@@ -75,8 +75,8 @@ def jq_command(ctx, roots):
     return jq, command
 
 def _jq_binary_impl(ctx):
-    if bool(ctx.file.main) == bool(ctx.attr.filter):
-        fail("jq_binary requires exactly one of main or filter")
+    if ctx.file.main and ctx.attr.filter:
+        fail("jq_binary accepts at most one of main or filter")
     info = jq_info(ctx.attr.deps)
     roots = info.roots.to_list()
     jq, command = jq_command(ctx, roots)
@@ -92,9 +92,12 @@ def _jq_binary_impl(ctx):
     if ctx.file.main:
         files.append(ctx.file.main)
         command += " -f " + location(ctx, ctx.file.main)
-    else:
+    elif ctx.attr.filter:
         # A leading space keeps jq from reading a program such as `-length` as an option.
         command += " " + shell.quote(" " + ctx.attr.filter)
+
+    # Without either, the program comes from the arguments: jq itself, with the libraries'
+    # module roots on its search path.
     return [
         launcher(ctx, "exec %s %s" % (command, ARGV), files + ctx.files.data, ctx.attr.data + ctx.attr.deps, roots),
         info,
@@ -121,7 +124,9 @@ def jq_binary(name, main = None, filter = "", deps = [], jq_args = [], named_src
     Args:
         name: Executable target name.
         main: Main .jq file, mutually exclusive with filter.
-        filter: Inline jq program, mutually exclusive with main.
+        filter: Inline jq program, mutually exclusive with main. With neither, the
+            executable is jq itself with the deps' module roots on its search path,
+            taking the program from its arguments.
         deps: Targets providing JqInfo.
         jq_args: jq flags placed before the program.
         named_srcs: Mapping from variable names to single-file labels.

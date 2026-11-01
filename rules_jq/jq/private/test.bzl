@@ -100,6 +100,8 @@ def jq_test(
         fail("cases mode is mutually exclusive with main/filter, named_srcs, srcs, jq_args, expected, and raw")
     if raw and expected == None:
         fail("raw requires expected")
+    if cases == None and (main == None) == (not filter):
+        fail("jq_test requires exactly one of main or filter, or cases")
     binary = None
     if cases == None:
         binary = name + "_binary"

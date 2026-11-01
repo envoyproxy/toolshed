@@ -61,13 +61,17 @@ name as their first component.
 ```starlark
 jq_binary(
     name = "notice",
-    main = "notice.jq",  # Exactly one of main or filter.
+    main = "notice.jq",  # At most one of main or filter.
     deps = [":strings"],
     jq_args = ["-r"],
     named_srcs = {"config": ":config.json"},
     data = [],
 )
 ```
+
+With neither `main` nor `filter`, the executable is jq itself with the deps' module
+roots on its search path: scripts can run it in place of jq, passing the program
+and flags as usual, eg `"$JQ" -n 'import "app/str" as str; ...'`.
 
 The executable resolves jq, module roots, the main file, and named inputs through
 Bazel runfiles, resolving each root through its `.jq_root` marker file, so
