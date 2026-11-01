@@ -1,0 +1,11 @@
+name: cve utils reads CNA cvss severity preferring v4 then v3.1 then v3.0 across all metrics
+imports: [cve/utils]
+input:
+- metrics: [{cvssV3_1: {baseSeverity: HIGH}}, {cvssV4_0: {baseSeverity: CRITICAL}}]
+- metrics: [{cvssV3_0: {baseSeverity: LOW}, cvssV3_1: {baseSeverity: MEDIUM}}]
+- metrics: [{cvssV3_0: {baseSeverity: LOW}}]
+- metrics: [{cvssV3_1: {baseScore: 1}}, {cvssV3_0: {baseSeverity: LOW}}]
+- metrics: []
+- {}
+expression: 'map(utils::get_cna_severity(.))'
+expected: [CRITICAL, MEDIUM, LOW, LOW, UNKNOWN, UNKNOWN]

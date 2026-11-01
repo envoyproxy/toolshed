@@ -27,7 +27,7 @@ which consumer happens to call it. The directory name is the scope:
 | `github/` | GitHub API / Actions / GFM-shaped input or output (`actions.jq`, `gfm.jq`) |
 | `bazel/` | Bazel `aquery`/BEP/`BUILD`-shaped data (`aquery.jq`, `dep.jq`, `registry.jq`, `version.jq`) |
 | `clang/` | clang tooling output (`tidy.jq`, clang-tidy stdout parsing) |
-| `cve/` | NVD CVE matching and terminal reports (`utils.jq`, `matcher.jq`, `report.jq`) |
+| `cve/` | NVD and CVE Program CVE matching and terminal reports (`utils.jq`, `matcher.jq`, `nvd_scan.jq`, `cna_matcher.jq`, `merge.jq`, `report.jq`) |
 | `envoy/` | reserved for Envoy release/archive policy filters (not added yet) |
 | root | generic helpers with no domain-specific knowledge (`args.jq`, `bash.jq`, `str.jq`, `utils.jq`, `validate.jq`) |
 
@@ -99,6 +99,45 @@ importable rendering function; `cve/matcher.jq` and `cve/report.jq` are executab
 filters, not importable modules. Matching preserves the upstream vendor/product,
 version-bound, and release-date policy; it is not an evaluator of NVD's full
 configuration boolean expressions.
+
+### CVE Program records
+
+NVD only adds CPE configurations when it analyzes a CVE, and most recently
+published CVEs are unanalyzed (`Awaiting Analysis`, `Received`) or will never
+be (`Deferred`), so they can never match above. `utils::scan_cna($deps;
+$ignored)` (executable: `cve/cna_matcher.jq`) reads compacted CVE Program
+(cvelistV5) records, `{records: [{id, assigner, published, descriptions,
+metrics, affected}]}` as written by `dependency/cve:cvelist_fetch`, and
+matches the CNA/ADP asserted `affected[]` entries instead:
+
+- on `cpes`, where an entry carries them, against the dependency CPE tags, or
+- on `vendor`/`product` (case-insensitively) against the dependency's
+  `names`: the CPE tags, the same with any `_project` vendor suffix removed,
+  and the github `owner`/`repo` of the first `github.com` url in the
+  dependency's `urls`, `project_url` or `license_url`.
+
+Versions come from the `versions[]` entries, as `lessThan` /
+`lessThanOrEqual` ranges starting at `version` (a trailing `.*` on a limit
+covers the rest of that series, up to the next series' lowest pre-release),
+free-text constraints (`< 1.34.7`, `>= 2.0, < 2.1.3`; repeated bounds
+intersect) or single versions; `versionType: git` entries (commit
+ranges) and constraints that do not parse are ignored. As in the CVE record
+format, the first entry covering the dependency version decides its status,
+after applying that entry's `changes[]` at or below the version (the last
+applicable change wins); `defaultStatus` applies when no entry covers it. The release-date policy applies as for NVD. The records returned
+have the shape `{id, matched: [{affected, dep}], cve}`.
+
+`utils::nvd_scan($deps; $ignored)` (executable: `cve/nvd_scan.jq`) returns
+`{matches, analyzed}` from one pass over NVD data: the `scan` matches and the
+ids of records that have CPE configurations. `utils::merge_sources(nvd; cna)`
+(executable: `cve/merge.jq`, with the NVD result as `$nvd`) unions the two
+match sets by id: each result carries `sources`, each matched dependency a
+`source`, `cve` is the NVD record where there is one (else the CVE Program
+record, also kept as `cna`), and CVE Program only matches record
+`nvd_analyzed`. Deps are indexed by their candidate names, so the CNA pass
+costs little more than parsing the records. `utils::report` labels each
+matched dependency with its source, notes NVD's state for CVE Program only
+matches, and counts by source in the summary.
 
 ## Consuming from Bazel
 

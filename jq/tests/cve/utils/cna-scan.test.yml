@@ -1,0 +1,115 @@
+name: cve utils scans CVE Program records on CNA asserted vendor/product and versions
+imports: [cve/utils]
+input:
+  deps:
+    cares:
+      version: "1.34.6"
+      release_date: "2025-02-24"
+      cpe: "cpe:2.3:a:c-ares_project:c-ares:*"
+      urls: ["https://github.com/c-ares/c-ares/releases/download/v{version}/c-ares-{version}.tar.gz"]
+    openssl: {version: "3.0.14", release_date: "2024-06-04", cpe: "cpe:2.3:a:openssl:openssl:*"}
+    zlib: {version: "1.3.1", release_date: "2024-01-22", cpe: "cpe:2.3:a:zlib:zlib:*"}
+    recent: {version: "1.0.0", release_date: "2026-01-01", cpe: "cpe:2.3:a:recent:recent:*"}
+    opaque: {version: "deadbeef", release_date: "2024-01-01", cpe: "cpe:2.3:a:opaque:opaque:*"}
+  ignored: [CVE-IGNORED]
+  cvelist:
+    records:
+    - id: CVE-TEXT-RANGE
+      assigner: GitHub_M
+      published: "2026-09-18T17:26:52.210Z"
+      descriptions: [{lang: en, value: c-ares via github owner/repo and a text range}]
+      metrics: [{cvssV3_1: {baseSeverity: HIGH, baseScore: 7.5}}]
+      affected:
+      - {vendor: c-ares, product: c-ares, versions: [{version: "< 1.34.7", status: affected}], provider: cna}
+    - id: CVE-TEXT-RANGE-FIXED
+      published: "2026-09-18T17:26:52.210Z"
+      affected:
+      - {vendor: c-ares, product: c-ares, versions: [{version: "< 1.34.6", status: affected}], provider: cna}
+    - id: CVE-SEMVER
+      published: "2024-06-27T00:00:00.000Z"
+      affected:
+      - vendor: OpenSSL
+        product: OpenSSL
+        defaultStatus: unaffected
+        versions:
+        - {lessThan: "3.3.2", status: affected, version: "3.3.0", versionType: semver}
+        - {lessThan: "3.0.15", status: affected, version: "3.0.0", versionType: semver}
+        provider: cna
+    - id: CVE-SEMVER-OTHER-BRANCH
+      published: "2024-06-27T00:00:00.000Z"
+      affected:
+      - vendor: OpenSSL
+        product: OpenSSL
+        versions: [{lessThan: "3.3.2", status: affected, version: "3.3.0", versionType: semver}]
+        provider: cna
+    - id: CVE-UNAFFECTED-ONLY
+      published: "2024-06-27T00:00:00.000Z"
+      affected:
+      - vendor: OpenSSL
+        product: OpenSSL
+        versions: [{version: "3.0.14", status: unaffected}]
+        provider: cna
+    - id: CVE-ADP-CPES
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: n/a, product: n/a, versions: [{version: "< 1.3.2", status: affected}], provider: cna}
+      - {cpes: ["cpe:2.3:a:zlib:zlib:*:*:*:*:*:*:*:*"], defaultStatus: affected, provider: CISA-ADP}
+    - id: CVE-EXACT
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "1.3.1", status: affected}], provider: cna}
+    - id: CVE-EXACT-OTHER
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "1.3.0", status: affected}], provider: cna}
+    - id: CVE-VENDOR-MISMATCH
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: someone, product: zlib, versions: [{version: "< 9", status: affected}], provider: cna}
+    - id: CVE-PRODUCT-MISMATCH
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: libz, versions: [{version: "< 9", status: affected}], provider: cna}
+    - id: CVE-IGNORED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "< 9", status: affected}], provider: cna}
+    - id: CVE-RELEASED-AFTER
+      published: "2025-01-01T00:00:00.000Z"
+      affected:
+      - {vendor: recent, product: recent, defaultStatus: affected, versions: [], provider: cna}
+    - id: CVE-DEFAULT-AFFECTED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, defaultStatus: affected, versions: [], provider: cna}
+    - id: CVE-INVALID-TEXT
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "all versions", status: affected}], provider: cna}
+    - id: CVE-OPAQUE-STRING-COMPARE
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: opaque, product: opaque, versions: [{version: "< 2.0", status: affected}], provider: cna}
+    - id: CVE-NO-PUBLISHED-DATE
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "< 9", status: affected}], provider: cna}
+    - id: CVE-NO-AFFECTED
+      published: "2026-09-18T00:00:00.000Z"
+      affected: []
+expression: |
+  . as $fixture
+  | [utils::parse_deps(.deps)] as $deps
+  | [.ignored] as $ignored
+  | .cvelist
+  | utils::scan_cna($deps; $ignored)
+  | map(. as $match
+        | {id, names: [.matched[].dep.name],
+           providers: [.matched[].affected.provider],
+           preserves_cve: (.cve == ($fixture.cvelist.records[] | select(.id == $match.id)))})
+expected:
+- {id: CVE-TEXT-RANGE, names: [cares], providers: [cna], preserves_cve: true}
+- {id: CVE-SEMVER, names: [openssl], providers: [cna], preserves_cve: true}
+- {id: CVE-ADP-CPES, names: [zlib], providers: [CISA-ADP], preserves_cve: true}
+- {id: CVE-EXACT, names: [zlib], providers: [cna], preserves_cve: true}
+- {id: CVE-DEFAULT-AFFECTED, names: [zlib], providers: [cna], preserves_cve: true}
+- {id: CVE-NO-PUBLISHED-DATE, names: [zlib], providers: [cna], preserves_cve: true}
