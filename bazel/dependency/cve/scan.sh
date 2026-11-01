@@ -9,7 +9,6 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null ||
     { echo >&2 "ERROR: cannot find runfiles.bash"; exit 1; }
 
 JQ_BIN="$(rlocation "$JQ_BIN")"
-TOOLSHED_JQ_ROOT="$(rlocation "$TOOLSHED_JQ_ROOT")"
 CPE_DEPS="$(rlocation "$CPE_DEPS")"
 CVES_IGNORED="$(rlocation "$CVES_IGNORED")"
 JQ_CVE_MATCHER="$(rlocation "$JQ_CVE_MATCHER")"
@@ -24,6 +23,6 @@ if [[ ${#files[@]} -eq 0 ]]; then
     exit 1
 fi
 
-"$JQ_BIN" -L "$(dirname "$TOOLSHED_JQ_ROOT")" -f "$JQ_CVE_MATCHER" \
+"$JQ_BIN" -f "$JQ_CVE_MATCHER" \
     --slurpfile deps "$CPE_DEPS" --slurpfile ignored "$CVES_IGNORED" "${files[@]}" |
     "$JQ_BIN" -s '[.[][]]'

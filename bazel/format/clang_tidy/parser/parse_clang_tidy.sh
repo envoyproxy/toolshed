@@ -26,15 +26,25 @@ if [[ -n "${JQ_BIN:-}" ]]; then
 fi
 JQ="${JQ_BIN:-jq}"
 
-# JQ_MODULES_ROOT_MARKER (set eg via Bazel to
+# Under Bazel, JQ_BIN is `@envoy_toolshed_jq//:jq`, which can already import
+# `clang/tidy`. Otherwise JQ_MODULES_ROOT_MARKER (eg
 # `$(rlocationpath @envoy_toolshed_jq//:modules_root.marker)`) locates the
-# `envoy_toolshed_jq` modules directory so `clang/tidy` can be imported.
-# Outside Bazel, it defaults to the `jq/` directory at the repo root.
+# modules directory, defaulting outside Bazel (with any jq) to the repo's
+# `jq/` directory. Adding it to `//:jq`'s own search path is harmless.
+MODULES_ROOT=""
 if [[ -n "${JQ_MODULES_ROOT_MARKER:-}" ]]; then
     MODULES_ROOT="$(dirname "$(_resolve_runfile "${JQ_MODULES_ROOT_MARKER}")")"
-else
+elif [[ -d "${SCRIPT_DIR}/../../../../jq" ]]; then
     MODULES_ROOT="$(cd "${SCRIPT_DIR}/../../../../jq" && pwd)"
 fi
+
+jq_modules() {
+    if [[ -n "${MODULES_ROOT}" ]]; then
+        ${JQ} -L "${MODULES_ROOT}" "$@"
+    else
+        ${JQ} "$@"
+    fi
+}
 PARSER='import "clang/tidy" as tidy; tidy::parse'
 
 if ! command -v "$JQ" &> /dev/null; then
@@ -89,14 +99,14 @@ if [ "${COMPACT}" = true ]; then
 fi
 
 if [ $# -eq 0 ]; then
-    ${JQ} ${COMPACT_FLAG} -R -L "${MODULES_ROOT}" "${PARSER}" | ${JQ} ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
+    jq_modules ${COMPACT_FLAG} -R "${PARSER}" | ${JQ} ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
 else
     for file in "$@"; do
         if [ ! -f "${file}" ]; then
             echo "ERROR: File not found: ${file}" >&2
             exit 1
         fi
-        ${JQ} ${COMPACT_FLAG} -R -L "${MODULES_ROOT}" "${PARSER}" < "${file}" | ${JQ} ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
+        jq_modules ${COMPACT_FLAG} -R "${PARSER}" < "${file}" | ${JQ} ${COMPACT_FLAG} ". ${FILTER_JQ} ${SUMMARY_JQ}"
     done
 fi
 

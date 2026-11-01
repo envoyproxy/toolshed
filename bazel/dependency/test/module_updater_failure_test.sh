@@ -24,7 +24,6 @@ else
   ENVOY_MARKER="${RUNFILES_DIR}/test/testdata/module/registry_envoy/REGISTRY_MARKER"
 fi
 
-: "${TOOLSHED_JQ_ROOT:?TOOLSHED_JQ_ROOT must be set}"
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
@@ -54,7 +53,6 @@ run_report() {
   local stderr="$2"
   shift 2
   JQ_BIN="${JQ_BIN}" \
-  TOOLSHED_JQ_ROOT="${TOOLSHED_JQ_ROOT}" \
   bash "${UPDATE_SCRIPT}" \
     "${tmpdir}/MODULE.bazel" \
     "${tmpdir}/deps.json" \
@@ -69,7 +67,6 @@ run_update() {
   shift 2
   JQ_BIN="${JQ_BIN}" \
   BUILDOZER="${BUILDOZER}" \
-  TOOLSHED_JQ_ROOT="${TOOLSHED_JQ_ROOT}" \
   bash "${UPDATE_SCRIPT}" \
     "${tmpdir}/MODULE.bazel" \
     "${tmpdir}/deps.json" \
@@ -93,7 +90,6 @@ stderr="${tmpdir}/stderr"
 report_json="${tmpdir}/report.json"
 
 JQ_BIN="${JQ_BIN}" \
-TOOLSHED_JQ_ROOT="${TOOLSHED_JQ_ROOT}" \
 bash "${UPDATE_SCRIPT}" \
   "${tmpdir}/MODULE.bazel" \
   "${tmpdir}/deps.json" \

@@ -1,7 +1,7 @@
 """Tests for dependency registry updater rules."""
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts", "unittest")
-load("//dependency:registry.bzl", "JQ_TOOLCHAIN_TYPE", "REGISTRY_RESOLVE_EXECUTION_REQUIREMENTS", "REGISTRY_RESOLVE_MNEMONIC", "REGISTRY_RESOLVE_TOOLCHAINS")
+load("//dependency:registry.bzl", "REGISTRY_RESOLVE_EXECUTION_REQUIREMENTS", "REGISTRY_RESOLVE_MNEMONIC", "REGISTRY_RESOLVE_TOOLCHAINS")
 load("//git:defs.bzl", "GIT_TOOLCHAIN_TYPE")
 
 
@@ -65,8 +65,9 @@ def _registry_resolve_runtime_inputs_test_impl(ctx):
     )
     asserts.true(
         env,
-        "registry.jq" in input_basenames,
-        "expected registry jq inputs, got %s" % input_paths,
+        # Not the canonical repo name, which is not a stable API.
+        len([path for path in input_paths if path.endswith("/jq.sh") and "envoy_toolshed_jq" in path]) > 0,
+        "expected toolshed jq in action inputs, got %s" % input_paths,
     )
     return analysistest.end(env)
 
@@ -76,7 +77,7 @@ registry_resolve_runtime_inputs_test = analysistest.make(_registry_resolve_runti
 
 def _registry_resolve_toolchain_test_impl(ctx):
     env = unittest.begin(ctx)
-    asserts.equals(env, [GIT_TOOLCHAIN_TYPE, JQ_TOOLCHAIN_TYPE], REGISTRY_RESOLVE_TOOLCHAINS)
+    asserts.equals(env, [GIT_TOOLCHAIN_TYPE], REGISTRY_RESOLVE_TOOLCHAINS)
     asserts.equals(env, "1", REGISTRY_RESOLVE_EXECUTION_REQUIREMENTS["requires-network"])
     asserts.equals(env, "1", REGISTRY_RESOLVE_EXECUTION_REQUIREMENTS["no-remote"])
     return unittest.end(env)

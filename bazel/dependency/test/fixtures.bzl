@@ -17,11 +17,9 @@ def module_updater_fixture(name, args, out):
             "testdata/module/registry_envoy/modules/protobuf/metadata.json",
             "testdata/module/registry_envoy/modules/sq/metadata.json",
             "//dependency:module-update.sh",
-            "@envoy_toolshed_jq//:modules",
-            "@envoy_toolshed_jq//:modules_root.marker",
         ],
         outs = [out],
-        tools = ["@buildifier//:buildozer", "@jq_toolchains//:resolved_toolchain"],
+        tools = ["@buildifier//:buildozer", "@envoy_toolshed_jq//:jq"],
         # Action inputs are read-only under remote execution and `cp` preserves
         # mode, so the copied MODULE.bazel must be made writable before buildozer
         # edits it in place.
@@ -35,7 +33,9 @@ sed -e "s|__REGISTRY_BCR__|$$bcr_root|g" -e "s|__REGISTRY_ENVOY__|$$envoy_root|g
 sed -e "s|__REGISTRY_BCR__|$$bcr_root|g" -e "s|__REGISTRY_ENVOY__|$$envoy_root|g" $(location testdata/module/report.bazelrc.template) > "$$tmpdir/.bazelrc"
 cp $(location testdata/module/MODULE.template.bazel) "$$tmpdir/MODULE.bazel"
 chmod u+w "$$tmpdir/MODULE.bazel"
-BUILD_WORKSPACE_DIRECTORY="$$tmpdir" RUNFILES_DIR=$(execpath @buildifier//:buildozer).runfiles JQ_BIN=$(execpath @jq_toolchains//:resolved_toolchain) BUILDOZER=$(execpath @buildifier//:buildozer) TOOLSHED_JQ_ROOT=$(location @envoy_toolshed_jq//:modules_root.marker) bash $(location //dependency:module-update.sh) "$$tmpdir/MODULE.bazel" "$$tmpdir/deps.json" --bazelrc="$$tmpdir/.bazelrc" %s >/dev/null
+# RUNFILES_DIR is buildozer's; the `rules_jq` launcher falls back to its own
+# runfiles for keys missing there.
+BUILD_WORKSPACE_DIRECTORY="$$tmpdir" RUNFILES_DIR=$(execpath @buildifier//:buildozer).runfiles JQ_BIN=$(execpath @envoy_toolshed_jq//:jq) BUILDOZER=$(execpath @buildifier//:buildozer) bash $(location //dependency:module-update.sh) "$$tmpdir/MODULE.bazel" "$$tmpdir/deps.json" --bazelrc="$$tmpdir/.bazelrc" %s >/dev/null
 cp "$$tmpdir/%s" "$@"
 """ % (command, output_source),
     )

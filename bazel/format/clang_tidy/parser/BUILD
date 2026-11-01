@@ -8,15 +8,8 @@ exports_files([
 sh_binary(
     name = "parse_clang_tidy",
     srcs = ["parse_clang_tidy.sh"],
-    data = [
-        "@envoy_toolshed_jq//:modules",
-        "@envoy_toolshed_jq//:modules_root.marker",
-        "@jq_toolchains//:resolved_toolchain",
-    ],
+    data = ["@envoy_toolshed_jq//:jq"],
     deps = ["@bazel_tools//tools/bash/runfiles"],
-    env = {
-        "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
-        "JQ_MODULES_ROOT_MARKER": "$(rlocationpath @envoy_toolshed_jq//:modules_root.marker)",
-    },
+    env = {"JQ_BIN": "$(rlocationpath @envoy_toolshed_jq//:jq)"},
     visibility = ["//visibility:public"],
 )

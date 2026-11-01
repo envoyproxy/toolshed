@@ -90,7 +90,6 @@ ZSTD_BIN="$(resolve "${ZSTD_BIN:?ZSTD_BIN is required}")"
 COVERAGE_CONFIG="$(resolve "${COVERAGE_CONFIG:?COVERAGE_CONFIG is required}")"
 GRCOV_CONFIG="$(resolve "${GRCOV_CONFIG:?GRCOV_CONFIG is required}")"
 JQ_FILTER="$(resolve "${JQ_FILTER:?JQ_FILTER is required}")"
-TOOLSHED_JQ_ROOT="$(dirname "$(resolve "${TOOLSHED_JQ_ROOT:?TOOLSHED_JQ_ROOT is required}")")"
 TEMPLATE_BASE="$(resolve "${TEMPLATE_BASE:?TEMPLATE_BASE is required}")"
 TEMPLATE_INDEX="$(resolve "${TEMPLATE_INDEX:?TEMPLATE_INDEX is required}")"
 TEMPLATE_MACROS="$(resolve "${TEMPLATE_MACROS:?TEMPLATE_MACROS is required}")"
@@ -133,7 +132,7 @@ if "$JQ_BIN" -e '.directories != null' "$COVERAGE_CONFIG" >/dev/null; then
     done < "$WORK_DIR/sources" | sort -u > "$WORK_DIR/directories"
     source_directories="$(cat "$WORK_DIR/directories")"
 fi
-"$JQ_BIN" -L "$TOOLSHED_JQ_ROOT" --slurpfile config "$COVERAGE_CONFIG" \
+"$JQ_BIN" --slurpfile config "$COVERAGE_CONFIG" \
     --arg source_directories "$source_directories" -f "$JQ_FILTER" \
     "$WORK_DIR/output/covdir" > "$WORK_DIR/output/coverage.json"
 rm -rf "$WORK_DIR/output/html/badges" "$WORK_DIR/output/html/coverage.json"
