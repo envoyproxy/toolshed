@@ -391,9 +391,12 @@ jobs:
 
     # RULES_JQ ONLY
     - name: Update MODULE.bazel version (for rules_jq)
+      # As with the version file, only move a dev version, so a rerun cannot
+      # take MODULE.bazel past VERSION.txt.
       if: >-
         inputs.type == 'rules_jq'
         && inputs.action != 'prepare'
+        && fromJSON(steps.version.outputs.version).is_dev
       env:
         RELEASE_VERSION: ${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
       run: |

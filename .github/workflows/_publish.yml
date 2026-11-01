@@ -223,7 +223,8 @@ jobs:
             Bazel CI
           artifacts: true
           prepare-dev: .github/workflows/prepare_rules_jq_dev.sh
+          # `$name` is the artifact workflow's (`bazel`), so name the artifact literally.
           template-artifacts: |
-            \($name)-source*
+            rules_jq-source*
           version: ${{ inputs.rules_jq-version }}
           version-file: ${{ inputs.rules_jq-version-file }}
