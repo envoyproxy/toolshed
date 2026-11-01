@@ -174,14 +174,11 @@ sh_test(
         "testdata/module/report.bazelrc.template",
         "//dependency:module-update.sh",
         "@buildifier//:buildozer",
-        "@envoy_toolshed_jq//:modules",
-        "@envoy_toolshed_jq//:modules_root.marker",
-        "@jq_toolchains//:resolved_toolchain",
+        "@envoy_toolshed_jq//:jq",
     ],
     env = {
         "BUILDOZER": "$(rootpath @buildifier//:buildozer)",
-        "JQ_BIN": "$(rootpath @jq_toolchains//:resolved_toolchain)",
-        "TOOLSHED_JQ_ROOT": "$(rootpath @envoy_toolshed_jq//:modules_root.marker)",
+        "JQ_BIN": "$(rootpath @envoy_toolshed_jq//:jq)",
     },
 )
 
@@ -191,13 +188,10 @@ sh_test(
     srcs = ["module_updater_live_test.sh"],
     data = [
         "//dependency:module-update.sh",
-        "@envoy_toolshed_jq//:modules",
-        "@envoy_toolshed_jq//:modules_root.marker",
-        "@jq_toolchains//:resolved_toolchain",
+        "@envoy_toolshed_jq//:jq",
     ],
     env = {
-        "JQ_BIN": "$(rootpath @jq_toolchains//:resolved_toolchain)",
-        "TOOLSHED_JQ_ROOT": "$(rootpath @envoy_toolshed_jq//:modules_root.marker)",
+        "JQ_BIN": "$(rootpath @envoy_toolshed_jq//:jq)",
     },
     tags = [
         "external",
@@ -244,14 +238,11 @@ sh_test(
     data = [
         ":registry_test_git",
         "//dependency:registry-resolve.sh",
-        "@envoy_toolshed_jq//:modules",
-        "@envoy_toolshed_jq//:modules_root.marker",
-        "@jq_toolchains//:resolved_toolchain",
+        "@envoy_toolshed_jq//:jq",
     ],
     env = {
         "GIT_BIN": "$(rootpath :registry_test_git)",
-        "JQ_BIN": "$(rootpath @jq_toolchains//:resolved_toolchain)",
-        "TOOLSHED_JQ_ROOT": "$(rootpath @envoy_toolshed_jq//:modules_root.marker)",
+        "JQ_BIN": "$(rootpath @envoy_toolshed_jq//:jq)",
     },
 )
 

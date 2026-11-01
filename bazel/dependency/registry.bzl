@@ -13,7 +13,7 @@ REGISTRY_RESOLVE_EXECUTION_REQUIREMENTS = {
 }
 
 REGISTRY_RESOLVE_MNEMONIC = "RegistryResolve"
-REGISTRY_RESOLVE_TOOLCHAINS = [GIT_TOOLCHAIN_TYPE, JQ_TOOLCHAIN_TYPE]
+REGISTRY_RESOLVE_TOOLCHAINS = [GIT_TOOLCHAIN_TYPE]
 
 # Substituted with `.replace()` rather than `.format()`: the script's own
 # `${VAR:-}` expansions would otherwise be parsed as format placeholders.
@@ -130,7 +130,6 @@ registry_settings = rule(
 
 def _registry_resolve_impl(ctx):
     git_info = ctx.toolchains[GIT_TOOLCHAIN_TYPE].git
-    jq_bin = _jq_bin(ctx)
     requested_sha = ctx.attr._sha[BuildSettingInfo].value
     allow_unsafe = ctx.attr._allow_unsafe[BuildSettingInfo].value
     out = ctx.actions.declare_file(ctx.label.name + ".json")
@@ -144,8 +143,7 @@ def _registry_resolve_impl(ctx):
         "--allow-unsafe=%s" % ("true" if allow_unsafe else "false"),
         "--json-out=%s" % out.path,
         "--git-bin=%s" % git_info.git.path,
-        "--jq-bin=%s" % jq_bin.path,
-        "--jq-root=%s" % ctx.file._jq_root_marker.path,
+        "--jq-bin=%s" % ctx.executable._jq.path,
     ]
     if ctx.attr.release_tags:
         arguments.append("--release-tags=%s" % ctx.attr.release_tags)
@@ -153,12 +151,11 @@ def _registry_resolve_impl(ctx):
     ctx.actions.run(
         executable = ctx.executable._registry_resolve,
         arguments = arguments,
-        inputs = depset([ctx.file._jq_root_marker], transitive = [depset(ctx.files._jq_libs)]),
         outputs = [out],
-        tools = depset(
-            [jq_bin, git_info.git],
-            transitive = [git_info.runfiles.files],
-        ),
+        tools = [
+            ctx.attr._jq[DefaultInfo].files_to_run,
+            depset([git_info.git], transitive = [git_info.runfiles.files]),
+        ],
         mnemonic = REGISTRY_RESOLVE_MNEMONIC,
         progress_message = "Resolving %s@%s" % (ctx.attr.repo, ctx.attr.branch),
         execution_requirements = REGISTRY_RESOLVE_EXECUTION_REQUIREMENTS,
@@ -170,13 +167,11 @@ registry_resolve = rule(
     implementation = _registry_resolve_impl,
     attrs = {
         "_allow_unsafe": attr.label(default = Label("//dependency:registry_allow_unsafe")),
-        "_jq_libs": attr.label(
-            allow_files = True,
-            default = Label("@envoy_toolshed_jq//:modules"),
-        ),
-        "_jq_root_marker": attr.label(
-            allow_single_file = True,
-            default = Label("@envoy_toolshed_jq//:modules_root.marker"),
+        # jq with the toolshed modules importable.
+        "_jq": attr.label(
+            cfg = "exec",
+            default = Label("@envoy_toolshed_jq//:jq"),
+            executable = True,
         ),
         "_registry_resolve": attr.label(
             allow_single_file = True,

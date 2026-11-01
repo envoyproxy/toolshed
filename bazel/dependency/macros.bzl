@@ -10,8 +10,9 @@ _BAZEL_UPDATE_SH = Label("//dependency:bazel-update.sh")
 _JQ_TOOLCHAIN = Label("@jq_toolchains//:resolved_toolchain")
 _MODULE_UPDATE_SH = Label("//dependency:module-update.sh")
 _REGISTRY_RESOLVE_SH = Label("//dependency:registry-resolve.sh")
-_TOOLSHED_JQ_MODULES = Label("@envoy_toolshed_jq//:modules")
-_TOOLSHED_JQ_ROOT_MARKER = Label("@envoy_toolshed_jq//:modules_root.marker")
+
+# jq with the toolshed modules importable.
+_TOOLSHED_JQ = Label("@envoy_toolshed_jq//:jq")
 
 
 def updater(
@@ -192,16 +193,13 @@ def registry_updater(
         name = name + ".resolve",
         srcs = [_REGISTRY_RESOLVE_SH],
         data = [
-            _TOOLSHED_JQ_MODULES,
-            _TOOLSHED_JQ_ROOT_MARKER,
-            _JQ_TOOLCHAIN,
+            _TOOLSHED_JQ,
             ":" + name + "_git",
             ":" + name + "_settings",
         ],
         env = {
             "GIT_BIN": "$(rootpath :%s_git)" % name,
-            "JQ_BIN": "$(rootpath %s)" % _JQ_TOOLCHAIN,
-            "TOOLSHED_JQ_ROOT": "$(rootpath %s)" % _TOOLSHED_JQ_ROOT_MARKER,
+            "JQ_BIN": "$(rootpath %s)" % _TOOLSHED_JQ,
         },
         args = resolve_args,
         **helper_kwargs
@@ -210,17 +208,14 @@ def registry_updater(
         name = name + ".check",
         srcs = [_REGISTRY_RESOLVE_SH],
         data = [
-            _TOOLSHED_JQ_MODULES,
-            _TOOLSHED_JQ_ROOT_MARKER,
-            _JQ_TOOLCHAIN,
+            _TOOLSHED_JQ,
             bazelrc,
             ":" + name + "_git",
             ":" + name + "_settings",
         ],
         env = {
             "GIT_BIN": "$(rootpath :%s_git)" % name,
-            "JQ_BIN": "$(rootpath %s)" % _JQ_TOOLCHAIN,
-            "TOOLSHED_JQ_ROOT": "$(rootpath %s)" % _TOOLSHED_JQ_ROOT_MARKER,
+            "JQ_BIN": "$(rootpath %s)" % _TOOLSHED_JQ,
         },
         args = check_args,
         **helper_kwargs
@@ -344,7 +339,6 @@ def module_updater(
         module_file,
         bazelrc = None,
         registries = None,
-        jq_toolchain = _JQ_TOOLCHAIN,
         update_script = _MODULE_UPDATE_SH,
         buildozer = "@buildifier//:buildozer",
         data = None,
@@ -360,7 +354,6 @@ def module_updater(
         module_file: Label for the MODULE.bazel file to update.
         bazelrc: Optional bazelrc file used to discover registries.
         registries: Optional explicit list of registries.
-        jq_toolchain: jq toolchain target used by the updater.
         update_script: Shell script implementing the updater.
         buildozer: buildozer binary used to rewrite MODULE.bazel.
         data: Additional runtime data dependencies.
@@ -372,21 +365,17 @@ def module_updater(
     if not bazelrc and not registries:
         fail("module_updater requires either bazelrc or registries")
 
-    toolchains = [jq_toolchain] + (toolchains or [])
     deps = deps or []
     data = (data or []) + [
-        jq_toolchain,
+        _TOOLSHED_JQ,
         update_script,
         buildozer,
         dependencies,
         module_file,
-        _TOOLSHED_JQ_MODULES,
-        _TOOLSHED_JQ_ROOT_MARKER,
     ]
     env = {
-        "JQ_BIN": "$(rootpath %s)" % jq_toolchain,
+        "JQ_BIN": "$(rootpath %s)" % _TOOLSHED_JQ,
         "BUILDOZER": "$(rootpath %s)" % buildozer,
-        "TOOLSHED_JQ_ROOT": "$(rootpath %s)" % _TOOLSHED_JQ_ROOT_MARKER,
     }
     args = [
         "$(location %s)" % module_file,

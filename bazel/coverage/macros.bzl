@@ -4,8 +4,9 @@ load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 
 _JQ = Label("@jq_toolchains//:resolved_toolchain")
-_MODULES = Label("@envoy_toolshed_jq//:modules")
-_MARKER = Label("@envoy_toolshed_jq//:modules_root.marker")
+
+# jq with the toolshed modules importable, for the report filter.
+_TOOLSHED_JQ = Label("@envoy_toolshed_jq//:jq")
 _MAIN = Label("@envoy_toolshed_jq//:coverage/main.jq")
 _GENERATOR = Label("//coverage:report_generator.sh")
 _VALIDATOR = Label("//coverage:validate.sh")
@@ -36,7 +37,6 @@ def _configured_script_impl(ctx):
         "TEMPLATE_BASE",
         "TEMPLATE_INDEX",
         "TEMPLATE_MACROS",
-        "TOOLSHED_JQ_ROOT",
         "ZSTD_BIN",
     ]:
         file = getattr(ctx.file, name.lower())
@@ -69,7 +69,6 @@ _configured_script = rule(
             "template_base",
             "template_index",
             "template_macros",
-            "toolshed_jq_root",
             "zstd_bin",
         ]
     }, source_root = attr.string(), source_glob = attr.string()),
@@ -141,12 +140,11 @@ def coverage_report(
         coverage_config = config,
         grcov = grcov,
         grcov_config = grcov_config,
-        jq_bin = _JQ,
+        jq_bin = _TOOLSHED_JQ,
         jq_filter = _MAIN,
         template_base = resolved_templates["base.html"],
         template_index = resolved_templates["index.html"],
         template_macros = resolved_templates["macros.html"],
-        toolshed_jq_root = _MARKER,
         zstd_bin = zstd,
         source_root = source_root,
         source_glob = source_glob,
@@ -159,9 +157,7 @@ def coverage_report(
             grcov,
             grcov_config,
             zstd,
-            _JQ,
-            _MODULES,
-            _MARKER,
+            _TOOLSHED_JQ,
             _MAIN,
         ] + resolved_templates.values(),
         deps = [_RUNFILES],
@@ -169,14 +165,13 @@ def coverage_report(
             "COVERAGE_CONFIG": "$(rlocationpath %s)" % config,
             "GRCOV": "$(rlocationpath %s)" % grcov,
             "GRCOV_CONFIG": "$(rlocationpath %s)" % grcov_config,
-            "JQ_BIN": "$(rlocationpath %s)" % _JQ,
+            "JQ_BIN": "$(rlocationpath %s)" % _TOOLSHED_JQ,
             "JQ_FILTER": "$(rlocationpath %s)" % _MAIN,
             "SOURCE_GLOB": source_glob,
             "SOURCE_ROOT": source_root,
             "TEMPLATE_BASE": "$(rlocationpath %s)" % resolved_templates["base.html"],
             "TEMPLATE_INDEX": "$(rlocationpath %s)" % resolved_templates["index.html"],
             "TEMPLATE_MACROS": "$(rlocationpath %s)" % resolved_templates["macros.html"],
-            "TOOLSHED_JQ_ROOT": "$(rlocationpath %s)" % _MARKER,
             "ZSTD_BIN": "$(rlocationpath %s)" % zstd,
         },
         visibility = visibility,

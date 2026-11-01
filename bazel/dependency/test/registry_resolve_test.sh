@@ -20,7 +20,6 @@ fi
 
 : "${GIT_BIN:?GIT_BIN must be set}"
 : "${JQ_BIN:?JQ_BIN must be set}"
-: "${TOOLSHED_JQ_ROOT:?TOOLSHED_JQ_ROOT must be set}"
 
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "${tmpdir}"' EXIT
@@ -104,7 +103,6 @@ run_resolve() {
         --branch=main \
         --git-bin="${GIT_BIN}" \
         --jq-bin="${JQ_BIN}" \
-        --jq-root="${TOOLSHED_JQ_ROOT}" \
         "$@" >"${stdout}" 2>"${stderr}"
 }
 
@@ -120,7 +118,6 @@ run_check() {
         --bazelrc="${bazelrc}" \
         --git-bin="${GIT_BIN}" \
         --jq-bin="${JQ_BIN}" \
-        --jq-root="${TOOLSHED_JQ_ROOT}" \
         "$@" >"${stdout}" 2>"${stderr}"
 }
 

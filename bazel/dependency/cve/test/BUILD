@@ -58,8 +58,7 @@ sh_test(
         ":empty_ignored",
         "@envoy_toolshed_jq//:cve/matcher.jq",
         "@envoy_toolshed_jq//:cve/report.jq",
-        "@envoy_toolshed_jq//:modules_root.marker",
-        "@jq_toolchains//:resolved_toolchain",
+        "@envoy_toolshed_jq//:jq",
     ],
     env = {
         "CVE_TEST": "$(rlocationpath :cves.test)",
@@ -67,11 +66,10 @@ sh_test(
         "CPE_DEPS": "$(rlocationpath :empty_deps)",
         "CVE_FILES": "$(rlocationpath :empty_data)",
         "CVES_IGNORED": "$(rlocationpath :empty_ignored)",
-        "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
+        "JQ_BIN": "$(rlocationpath @envoy_toolshed_jq//:jq)",
         "JQ_CVE_MATCHER": "$(rlocationpath @envoy_toolshed_jq//:cve/matcher.jq)",
         "JQ_REPORT": "$(rlocationpath @envoy_toolshed_jq//:cve/report.jq)",
         "SCANNED": "$(rlocationpath :cves.scanned)",
-        "TOOLSHED_JQ_ROOT": "$(rlocationpath @envoy_toolshed_jq//:modules_root.marker)",
     },
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )

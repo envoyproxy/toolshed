@@ -24,7 +24,6 @@ else
   ENVOY_MARKER="${SCRIPT_DIR}/testdata/module/registry_envoy/REGISTRY_MARKER"
 fi
 
-: "${TOOLSHED_JQ_ROOT:?TOOLSHED_JQ_ROOT must be set}"
 
 prepare_workspace() {
   local workspace="$1"
@@ -50,7 +49,6 @@ assert_failure() {
   if BUILD_WORKSPACE_DIRECTORY="${tmpdir}" \
     JQ_BIN="${JQ_BIN}" \
     BUILDOZER="${BUILDOZER}" \
-    TOOLSHED_JQ_ROOT="${TOOLSHED_JQ_ROOT}" \
     bash "${UPDATE_SCRIPT}" \
       "${tmpdir}/MODULE.bazel" \
       "${tmpdir}/deps.json" \
@@ -75,7 +73,6 @@ assert_success_stdout() {
   BUILD_WORKSPACE_DIRECTORY="${tmpdir}" \
     JQ_BIN="${JQ_BIN}" \
     BUILDOZER="${BUILDOZER}" \
-    TOOLSHED_JQ_ROOT="${TOOLSHED_JQ_ROOT}" \
     bash "${UPDATE_SCRIPT}" \
       "${tmpdir}/MODULE.bazel" \
       "${tmpdir}/deps.json" \

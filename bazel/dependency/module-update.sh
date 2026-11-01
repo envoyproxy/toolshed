@@ -171,10 +171,9 @@ apply_update() {
 MODULE_FILE="$1"
 DEP_DATA="$2"
 shift 2
-JQ="${JQ_BIN:-jq}"
+# jq with the `envoy_toolshed_jq` modules importable (`@envoy_toolshed_jq//:jq`).
+JQ="${JQ_BIN:?JQ_BIN must be set to jq with the toolshed modules importable}"
 BUILDOZER="${BUILDOZER:-}"
-: "${TOOLSHED_JQ_ROOT:?TOOLSHED_JQ_ROOT must be set to the runfiles path of modules_root.marker}"
-JQ_DIR="$(dirname "$TOOLSHED_JQ_ROOT")"
 REPORT=0
 FAIL_ON_OUTDATED=0
 FAIL_ON_OUTDATED_DEV=0
@@ -237,7 +236,7 @@ case "$FORMAT" in
   *) echo "Unknown format: $FORMAT" >&2; exit 1 ;;
 esac
 EXTRA_JSON="$($JQ -Rsc 'split("\n") | map(select(length > 0))' <"$TMPDIR/extra_registries")"
-REGISTRIES_JSON="$($JQ -Rsc -L "$JQ_DIR" --argjson extra "$EXTRA_JSON" 'import "bazel/dep" as dep; dep::registries_from_args' <"$BAZELRC")"
+REGISTRIES_JSON="$($JQ -Rsc --argjson extra "$EXTRA_JSON" 'import "bazel/dep" as dep; dep::registries_from_args' <"$BAZELRC")"
 [[ "$REGISTRIES_JSON" != '[]' ]] || { echo "No registries configured. Pass --bazelrc or --registry." >&2; exit 1; }
 DEPS_JSON="$($JQ -rc 'to_entries | map(select(.value.version | type == "string") | .key)' "$DEP_DATA")"
 registries=()
@@ -278,15 +277,15 @@ if [[ -s "$TMPDIR/files" ]]; then
     [[ -n "$file" ]] && files+=("$file")
   done <"$TMPDIR/files"
 fi
-METADATA_JSON="$($JQ -n -L "$JQ_DIR" --argjson regs "$REGISTRIES_JSON" --argjson deps "$DEPS_JSON" 'import "bazel/dep" as dep; dep::metadata_versions_from_args' "${files[@]}")"
-REPORT_JSON="$($JQ -n -L "$JQ_DIR" --argjson deps "$(cat "$DEP_DATA")" --argjson registries "$REGISTRIES_JSON" --argjson metadata "$METADATA_JSON" 'import "bazel/dep" as dep; dep::report_from_args')"
+METADATA_JSON="$($JQ -n --argjson regs "$REGISTRIES_JSON" --argjson deps "$DEPS_JSON" 'import "bazel/dep" as dep; dep::metadata_versions_from_args' "${files[@]}")"
+REPORT_JSON="$($JQ -n --argjson deps "$(cat "$DEP_DATA")" --argjson registries "$REGISTRIES_JSON" --argjson metadata "$METADATA_JSON" 'import "bazel/dep" as dep; dep::report_from_args')"
 if (( REPORT == 1 )); then
   if [[ -n "$JSON_OUT" ]]; then
     printf '%s\n' "$REPORT_JSON" >"$JSON_OUT"
   fi
   REPORT_MD=""
   if [[ -n "$MARKDOWN_OUT" || "$FORMAT" == markdown ]]; then
-    REPORT_MD="$($JQ -r -L "$JQ_DIR" 'import "bazel/dep" as dep; dep::report_markdown' <<<"$REPORT_JSON")"
+    REPORT_MD="$($JQ -r 'import "bazel/dep" as dep; dep::report_markdown' <<<"$REPORT_JSON")"
     if [[ -n "$MARKDOWN_OUT" ]]; then
       printf '%s\n' "$REPORT_MD" >"$MARKDOWN_OUT"
     fi
@@ -369,7 +368,7 @@ for dep_arg in "${DEP_ARGS[@]}"; do
     echo "Dependency ${dep} not found in ${MODULE_PATH}" >&2
     exit 1
   fi
-  RESOLUTION="$($JQ -n -L "$JQ_DIR" --arg dep "$dep" --arg requested_version "$requested_version" --arg requested_registry "$REQUESTED_REGISTRY" --argjson allow_yanked "$ALLOW_YANKED" --argjson report "$REPORT_JSON" 'import "bazel/dep" as dep; dep::resolve_from_args')"
+  RESOLUTION="$($JQ -n --arg dep "$dep" --arg requested_version "$requested_version" --arg requested_registry "$REQUESTED_REGISTRY" --argjson allow_yanked "$ALLOW_YANKED" --argjson report "$REPORT_JSON" 'import "bazel/dep" as dep; dep::resolve_from_args')"
   ERR="$($JQ -r '.error // empty' <<<"$RESOLUTION")"
   [[ -z "$ERR" ]] || { echo "$ERR" >&2; exit 1; }
   dep_names+=("$dep")

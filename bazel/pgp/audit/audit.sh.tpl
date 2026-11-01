@@ -17,7 +17,6 @@ resolve_runfile() {
 
 jq_bin="$(resolve_runfile @JQ@)"
 filter="$(resolve_runfile @FILTER@)"
-lib_dir="$(resolve_runfile @LIB_DIR@)"
 mnemonic=@MNEMONIC@
 required_exec_reqs=@REQUIRED_EXEC_REQS@
 forbidden_env=@FORBIDDEN_ENV@
@@ -102,7 +101,6 @@ forbidden_strings_json="$(
 )"
 report="$tmp/report.json"
 "$jq_bin" \
-    -L "$lib_dir" \
     -f "$filter" \
     --arg mnemonic "$mnemonic" \
     --argjson required_exec_reqs "$required_exec_reqs" \

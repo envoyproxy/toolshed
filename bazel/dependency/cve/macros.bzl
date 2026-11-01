@@ -6,9 +6,8 @@ load("@envoy_toolshed_jq//:defs.bzl", "toolshed_jq")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
-_JQ = Label("@jq_toolchains//:resolved_toolchain")
-_MODULES = Label("@envoy_toolshed_jq//:modules")
-_ROOT = Label("@envoy_toolshed_jq//:modules_root.marker")
+# jq with the toolshed modules importable.
+_JQ = Label("@envoy_toolshed_jq//:jq")
 _MATCHER = Label("@envoy_toolshed_jq//:cve/matcher.jq")
 _REPORT = Label("@envoy_toolshed_jq//:cve/report.jq")
 _SCAN = Label("//dependency/cve:scan.sh")
@@ -128,10 +127,9 @@ def cve_scan(
         data = cve_data,
         **helpers
     )
-    data = [_JQ, _MODULES, _ROOT, _MATCHER, _REPORT, cve_data, ":" + name + "_data"]
+    data = [_JQ, _MATCHER, _REPORT, cve_data, ":" + name + "_data"]
     env = {
         "JQ_BIN": "$(rlocationpath %s)" % _JQ,
-        "TOOLSHED_JQ_ROOT": "$(rlocationpath %s)" % _ROOT,
         "CVE_FILES": "$(rlocationpath :%s_data)" % name,
     }
     sh_binary(
@@ -156,11 +154,10 @@ def cve_scan(
         name = name + ".test",
         tags = ["manual"],
         srcs = [_TEST],
-        data = [_JQ, _MODULES, _ROOT, _REPORT, ":" + name + ".scanned"],
+        data = [_JQ, _REPORT, ":" + name + ".scanned"],
         deps = [_RUNFILES],
         env = {
             "JQ_BIN": "$(rlocationpath %s)" % _JQ,
-            "TOOLSHED_JQ_ROOT": "$(rlocationpath %s)" % _ROOT,
             "JQ_REPORT": "$(rlocationpath %s)" % _REPORT,
             "SCANNED": "$(rlocationpath :%s.scanned)" % name,
         },

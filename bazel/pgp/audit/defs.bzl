@@ -4,6 +4,9 @@ load("@bazel_skylib//lib:shell.bzl", "shell")
 
 _JQ_TOOLCHAIN_TYPE = "@aspect_bazel_lib//lib:jq_toolchain_type"
 
+# jq with the toolshed modules importable, for the audit filter.
+_TOOLSHED_JQ = Label("@envoy_toolshed_jq//:jq")
+
 _DEFAULT_MNEMONIC = "OpenPGPSign"
 _DEFAULT_REQUIRED_EXECUTION_REQUIREMENTS = [
     "no-cache",
@@ -31,7 +34,6 @@ def _runfiles_path(ctx, file):
 def _jq_args(ctx, jq_bin):
     args = ctx.actions.args()
     args.add(jq_bin)
-    args.add("-L", ctx.file._modules_root.dirname)
     args.add("-f", ctx.file._filter)
     args.add_all(["--arg", "mnemonic", ctx.attr.mnemonic])
     args.add_all(["--argjson", "required_exec_reqs", _json_string_list(ctx.attr.required_execution_requirements)])
@@ -43,15 +45,14 @@ def _jq_args(ctx, jq_bin):
 
 def _pgp_audit_impl(ctx):
     out = ctx.actions.declare_file("%s.report.json" % ctx.label.name)
-    jq_bin = ctx.toolchains[_JQ_TOOLCHAIN_TYPE].jqinfo.bin
     ctx.actions.run_shell(
         command = "out=\"$1\"; shift; \"$@\" > \"$out\"",
-        arguments = [out.path, _jq_args(ctx, jq_bin)],
-        inputs = [ctx.file.aquery, ctx.file._filter, ctx.file._modules_root] + ctx.files._modules,
+        arguments = [out.path, _jq_args(ctx, ctx.executable._jq)],
+        inputs = [ctx.file.aquery, ctx.file._filter],
         outputs = [out],
         mnemonic = "OpenPGPAudit",
         progress_message = "Auditing OpenPGP signing actions in %s" % ctx.file.aquery.short_path,
-        tools = [jq_bin],
+        tools = [ctx.attr._jq[DefaultInfo].files_to_run],
     )
     return [DefaultInfo(files = depset([out]))]
 
@@ -72,10 +73,8 @@ pgp_audit = rule(
         "forbidden_env": attr.string_list(default = _DEFAULT_FORBIDDEN_ENV),
         "forbidden_inputs_regex": attr.string(default = _DEFAULT_FORBIDDEN_INPUTS_REGEX),
         "_filter": attr.label(default = "//pgp/audit:audit.jq", allow_single_file = True),
-        "_modules": attr.label(default = "@envoy_toolshed_jq//:modules", allow_files = True),
-        "_modules_root": attr.label(default = "@envoy_toolshed_jq//:modules_root.marker", allow_single_file = True),
+        "_jq": attr.label(default = _TOOLSHED_JQ, cfg = "exec", executable = True),
     },
-    toolchains = [_JQ_TOOLCHAIN_TYPE],
 )
 
 def _pgp_audit_result_test_impl(ctx):
@@ -140,12 +139,10 @@ def pgp_audit_test(name, aquery, expect_failure = False, forbidden_strings = [],
     )
 
 def _pgp_audit_binary_impl(ctx):
-    jq_bin = ctx.toolchains[_JQ_TOOLCHAIN_TYPE].jqinfo.bin
     script = ctx.actions.declare_file("%s.sh" % ctx.label.name)
     substitutions = {
-        "@JQ@": shell.quote(_runfiles_path(ctx, jq_bin)),
+        "@JQ@": shell.quote(_runfiles_path(ctx, ctx.executable._jq)),
         "@FILTER@": shell.quote(_runfiles_path(ctx, ctx.file._filter)),
-        "@LIB_DIR@": shell.quote(_runfiles_path(ctx, ctx.file._modules_root).rsplit("/", 1)[0]),
         "@MNEMONIC@": shell.quote(ctx.attr.mnemonic),
         "@REQUIRED_EXEC_REQS@": shell.quote(_json_string_list(ctx.attr.required_execution_requirements)),
         "@FORBIDDEN_ENV@": shell.quote(_json_string_list(ctx.attr.forbidden_env)),
@@ -159,12 +156,12 @@ def _pgp_audit_binary_impl(ctx):
     )
     return [DefaultInfo(
         executable = script,
-        runfiles = ctx.runfiles(files = [jq_bin, ctx.file._filter, ctx.file._modules_root] + ctx.files._modules),
+        runfiles = ctx.runfiles(files = [ctx.file._filter]).merge(ctx.attr._jq[DefaultInfo].default_runfiles),
     )]
 
 pgp_audit_binary = rule(
     implementation = _pgp_audit_binary_impl,
-    doc = "Runnable OpenPGP audit CLI using jq from the hermetic toolchain.",
+    doc = "Runnable OpenPGP audit CLI using `@envoy_toolshed_jq//:jq`.",
     executable = True,
     attrs = {
         "mnemonic": attr.string(default = _DEFAULT_MNEMONIC),
@@ -172,9 +169,7 @@ pgp_audit_binary = rule(
         "forbidden_env": attr.string_list(default = _DEFAULT_FORBIDDEN_ENV),
         "forbidden_inputs_regex": attr.string(default = _DEFAULT_FORBIDDEN_INPUTS_REGEX),
         "_filter": attr.label(default = "//pgp/audit:audit.jq", allow_single_file = True),
-        "_modules": attr.label(default = "@envoy_toolshed_jq//:modules", allow_files = True),
-        "_modules_root": attr.label(default = "@envoy_toolshed_jq//:modules_root.marker", allow_single_file = True),
+        "_jq": attr.label(default = _TOOLSHED_JQ, cfg = "target", executable = True),
         "_launcher_template": attr.label(default = "//pgp/audit:audit.sh.tpl", allow_single_file = True),
     },
-    toolchains = [_JQ_TOOLCHAIN_TYPE],
 )
