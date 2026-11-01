@@ -10,7 +10,11 @@ printf 'envoyproxy\n' > "$personal"
 
 output="$(printf 'hello\nhelo\nenvoyproxy\nrunning\n' \
     | env - "$hunspell" -a -i utf-8 -d "$dict" -p "$personal")"
-mapfile -t lines <<< "$output"
+# A read loop rather than `mapfile`, which macOS's bash 3.2 lacks.
+lines=()
+while IFS= read -r line; do
+    lines+=("$line")
+done <<< "$output"
 
 fail() {
     echo "FAIL: $1" >&2
