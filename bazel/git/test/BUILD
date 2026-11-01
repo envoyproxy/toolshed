@@ -122,7 +122,8 @@ sh_test(
 )
 
 # The hub's host fallback mechanism (PATH lookup, symlink, git_toolchain over it), exercised
-# on this host through the test-only repo, since the hub itself only renders it for macOS.
+# on this host through the test-only repo, since the hub itself only renders it on hosts without
+# a prebuilt (macOS, Linux on eg ppc64le).
 sh_test(
     name = "toolchain_host_test",
     size = "small",
