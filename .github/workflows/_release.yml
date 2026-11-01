@@ -114,6 +114,7 @@ jobs:
           bazel: bazel/VERSION.txt
           docker: docker/build/VERSION.txt
           python: py/VERSION.txt
+          rules_jq: rules_jq/VERSION.txt
         input-format: yaml
         options: -r
         filter: .["${{ inputs.type }}"]
@@ -387,6 +388,21 @@ jobs:
         echo "Updated jq/MODULE.bazel and envoy_toolshed_jq bazel_dep to version ${RELEASE_VERSION}"
         git add jq/MODULE.bazel bazel/MODULE.bazel
         git diff --cached jq/MODULE.bazel bazel/MODULE.bazel
+
+    # RULES_JQ ONLY
+    - name: Update MODULE.bazel version (for rules_jq)
+      if: >-
+        inputs.type == 'rules_jq'
+        && inputs.action != 'prepare'
+      env:
+        RELEASE_VERSION: ${{ inputs.release-version || fromJSON(steps.version.outputs.version).next }}
+      run: |
+        # `rules_jq` is versioned independently of toolshed: only its own
+        # `module()` version follows rules_jq/VERSION.txt.
+        sed -i '/^module(/,/^)/s/version = "[^"]*"/version = "'"${RELEASE_VERSION}"'"/' rules_jq/MODULE.bazel
+        echo "Updated rules_jq/MODULE.bazel to version ${RELEASE_VERSION}"
+        git add rules_jq/MODULE.bazel
+        git diff --cached rules_jq/MODULE.bazel
 
     # DOCKER ONLY
     - name: Get latest bins release (for docker)

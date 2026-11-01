@@ -300,6 +300,32 @@ jobs:
           .git*
           jq/bazel-*
           jq/MODULE.bazel.lock
+    # `rules_jq` is versioned and released independently of toolshed, as
+    # `rules_jq-v<version>`, so its source goes in its own artifact.
+    - name: Create rules_jq source tarball
+      id: rules-jq-source-tarball
+      if: >-
+        inputs.action == 'build'
+        && inputs.bazel-path == 'bazel'
+        && inputs.upload
+        && inputs.create-source
+      uses: envoyproxy/toolshed/actions/source@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
+      with:
+        output-name: rules_jq-v{version}.tar.gz
+        source-path: rules_jq/
+        transform: s,^rules_jq,rules_jq-v{version},
+        version-file: rules_jq/VERSION.txt
+        exclude-patterns: |
+          .git*
+          rules_jq/bazel-*
+          rules_jq/MODULE.bazel.lock
+    - name: rules_jq source
+      if: ${{ steps.rules-jq-source-tarball.outputs.tarball }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: rules_jq-source
+        path: ${{ steps.rules-jq-source-tarball.outputs.tarball }}
+        retention-days: 30
     - name: Bazel source
       if: ${{ steps.source-tarball.outputs.tarball || steps.jq-source-tarball.outputs.tarball }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1

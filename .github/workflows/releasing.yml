@@ -34,6 +34,7 @@ jobs:
           - actions/VERSION.txt
           - python/VERSION.txt
           - docker/build/VERSION.txt
+          - rules_jq/VERSION.txt
           - docker-assets.yaml
     - name: Get latest commit from main
       id: commit
@@ -89,6 +90,7 @@ jobs:
         - docker
         - python
         - python-args
+        - rules_jq
         action:
         - prepare
         - release

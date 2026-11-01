@@ -16,6 +16,7 @@ on:
         - bazel
         - docker
         - python
+        - rules_jq
       action:
         type: choice
         options:
