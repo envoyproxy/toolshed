@@ -1,0 +1,8 @@
+# Module roots registered in envoyproxy/bazel-registry on release (`.bcr/` is
+# for BCR). Each root is registered only when its version at the released ref
+# is new, so `bazel-v*` releases register `bazel` and `jq`, and `rules_jq-v*`
+# releases `rules_jq`.
+moduleRoots:
+- bazel
+- jq
+- rules_jq

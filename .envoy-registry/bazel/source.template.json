@@ -1,0 +1,5 @@
+{
+    "url": "https://github.com/{OWNER}/{REPO}/releases/download/bazel-v{VERSION}/toolshed-bazel-v{VERSION}.tar.gz",
+    "integrity": "",
+    "strip_prefix": "toolshed-bazel-v{VERSION}"
+}
