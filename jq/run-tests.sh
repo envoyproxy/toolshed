@@ -12,8 +12,8 @@ set -euo pipefail
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Resolve rlocation-style JQ_BIN/YQ_BIN (as set eg by Bazel's aspect jq/yq
-# toolchains) to real binary paths. Left untouched (and defaulted to the
+# Resolve rlocation-style JQ_BIN/YQ_BIN (as set by `jq_module_test`) to real
+# binary paths. Left untouched (and defaulted to the
 # binary on PATH) for bare/non-Bazel invocation.
 _resolve_runfiles_bin () {
     local var_name="$1"

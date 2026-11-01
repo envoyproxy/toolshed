@@ -15,9 +15,9 @@ toolshed_jq(
 ```
 
 `jq_module_test` wraps one `jq/tests/<scope>/<module>/` directory of
-`.test.yml` cases as an `sh_test`, running `run-tests.sh` through the
-hermetic aspect jq/yq toolchains (the same script also runs bare, outside
-Bazel, as `./jq/run-tests.sh`).
+`.test.yml` cases as an `sh_test`, running `run-tests.sh` with `//:jq` (the
+jq consumers get) and the hermetic aspect yq toolchain (the same script also
+runs bare, outside Bazel, as `./jq/run-tests.sh`).
 
 `test_modules` derives the list of `<scope>/<module>` directories that have
 `.test.yml` cases, so `jq/BUILD` doesn't have to hand-maintain it.
@@ -30,6 +30,7 @@ load("@rules_shell//shell:sh_test.bzl", "sh_test")
 # These must be `Label()`s: plain strings resolve in the *caller's* repo, so
 # `toolshed_jq` used from another module would look for them there instead of
 # here.
+_JQ = Label("//:jq")
 _LIBRARY = Label("//:library")
 _MODULES = Label("//:modules")
 _RUN_TESTS = Label("//:run-tests.sh")
@@ -50,13 +51,13 @@ def toolshed_jq(name, srcs, filter_file = None, filter = None, args = [], data =
         filter_file: `.jq` file containing the filter.
         args: Additional args to pass to jq, after the filter. `$(location)`
             and other genrule expansions apply.
-        data: Additional files referenced from `args`.
+        data: Additional files referenced from `args`, or imported relative to
+            `filter_file`.
         out: Output file; defaults to `<name>.json`.
         **kwargs: Other common named parameters such as `tags` or
             `visibility`, passed through to the genrule.
     """
     binary = name + "_jq"
-    null_input = not srcs and "-n" not in args and "--null-input" not in args
     jq_binary(
         name = binary,
         main = filter_file,
@@ -64,7 +65,12 @@ def toolshed_jq(name, srcs, filter_file = None, filter = None, args = [], data =
         # pass-through jq taking its program from the arguments.
         filter = filter or ("" if filter_file else "."),
         deps = [_LIBRARY],
-        jq_args = ["-n"] if null_input else [],
+        # Without `srcs`, always read no input: `args` cannot be checked for
+        # `-n` reliably (it may be an `--arg` value), and a repeat is harmless.
+        jq_args = [] if srcs else ["-n"],
+        # `data` also reaches the binary's runfiles, so a `filter_file` can
+        # import its siblings with `{search: "./"}`.
+        data = data,
         tags = ["manual"],
         testonly = kwargs.get("testonly", False),
         visibility = ["//visibility:private"],
@@ -104,12 +110,13 @@ def jq_module_test(name, module, size = "small", **kwargs):
         data = [
             _RUN_TESTS,
             _MODULES,
-            "@jq_toolchains//:resolved_toolchain",
+            # The jq consumers get (`rules_jq`'s toolchain), not a separate one.
+            _JQ,
             "@yq_toolchains//:resolved_toolchain",
         ] + native.glob(["tests/%s/**" % module]),
         deps = ["@bazel_tools//tools/bash/runfiles"],
         env = {
-            "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
+            "JQ_BIN": "$(rlocationpath %s)" % _JQ,
             "YQ_BIN": "$(rlocationpath @yq_toolchains//:resolved_toolchain)",
         },
         **kwargs

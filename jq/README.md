@@ -61,7 +61,8 @@ $ ./jq/run-tests.sh              # all tests
 $ ./jq/run-tests.sh tests/github/gfm   # just one module's tests
 ```
 
-Through Bazel, against the hermetic `aspect_bazel_lib` jq/yq toolchains:
+Through Bazel, against `//:jq` (`rules_jq`'s hermetic jq, as consumers get) and
+the `aspect_bazel_lib` yq toolchain:
 
 ```console
 $ cd jq && bazel test //...
@@ -112,14 +113,6 @@ none jq runs with `--null-input`.
 
 Rules using `rules_jq` directly can depend on `@envoy_toolshed_jq//:library`.
 
-### `@envoy_toolshed_jq//:jq`
-
-jq with the modules importable, for scripts and actions that run jq
-themselves: use it in place of the toolchain jq, with no `-L`, eg
-`"$JQ_BIN" -n 'import "str" as str; "  x  " | str::trim'`. It is a
-pass-through `rules_jq` `jq_binary`, so add it to `data` (or `tools`) and pass
-its `$(rlocationpath)`/`$(execpath)`.
-
 ```starlark
 load("@envoy_toolshed_jq//:defs.bzl", "toolshed_jq")
 
@@ -144,11 +137,19 @@ bazel_dep(name = "envoy_toolshed_jq", version = "<envoy_toolshed version>")
 (`bazel/MODULE.bazel` instead uses `local_path_override(module_name =
 "envoy_toolshed_jq", path = "../jq")`, since `jq/` lives in the same repo.)
 
+### `@envoy_toolshed_jq//:jq`
+
+jq with the modules importable, for scripts and actions that run jq
+themselves: use it in place of the toolchain jq, with no `-L`, eg
+`"$JQ_BIN" -n 'import "str" as str; "  x  " | str::trim'`. It is a
+pass-through `rules_jq` `jq_binary`, so add it to `data` (or `tools`) and pass
+its `$(rlocationpath)`/`$(execpath)`.
+
 ### `jq_module_test`
 
 `defs.bzl`'s `jq_module_test()` wraps one `tests/<scope>/<module>/`
 directory's `.test.yml` cases as an `sh_test`, running `run-tests.sh` with
-`JQ_BIN`/`YQ_BIN` pointed at the aspect toolchains:
+`JQ_BIN` pointed at `//:jq` and `YQ_BIN` at the aspect yq toolchain:
 
 ```starlark
 load("@envoy_toolshed_jq//:defs.bzl", "jq_module_test")
