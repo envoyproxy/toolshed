@@ -360,7 +360,10 @@ git_host_test(
 # which is registered for consumers too: platforms without a prebuilt build hunspell from source.
 register_toolchains("@hunspell_toolchains//:all")
 
-register_toolchains("//hunspell/source:source_toolchain")
+register_toolchains(
+    "//hunspell/source:source_toolchain_linux",
+    "//hunspell/source:source_toolchain_macos",
+)
 
 libcxx_ext = use_extension("//compile:extensions.bzl", "libcxx_extension", dev_dependency = True)
 use_repo(libcxx_ext, "llvm_libcxx_aarch64", "llvm_libcxx_x86_64")
