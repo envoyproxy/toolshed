@@ -1,6 +1,6 @@
 module(
     name = "rules_jq",
-    version = "0.0.1-dev",
+    version = "0.0.1",
     bazel_compatibility = [">=7.2.1"],
 )
 
