@@ -86,6 +86,13 @@ cc_binary(
     srcs = ["src/tools/hunspell.cxx"],
     # Only used for the default dictionary search path; toolchain users pass `-d <path>`.
     local_defines = ['HUNSPELL_DATADIR=\\"/usr/share\\"'],
+    # This build assumes POSIX (eg `unistd.h`, `langinfo.h`). As the toolchain builds it for the
+    # exec platform, this is checked there, and dependents are skipped elsewhere (eg Windows).
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
     deps = [
         ":config",
         ":libhunspell",

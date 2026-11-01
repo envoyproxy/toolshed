@@ -68,10 +68,4 @@ sh_test(
         "@dictionary_en//:index.dic",
         "@hunspell_src//:hunspell",
     ],
-    # The source build assumes POSIX, as for the fallback toolchains.
-    target_compatible_with = select({
-        "@platforms//os:linux": [],
-        "@platforms//os:macos": [],
-        "//conditions:default": ["@platforms//:incompatible"],
-    }),
 )

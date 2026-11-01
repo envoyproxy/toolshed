@@ -52,6 +52,7 @@ loads `$HOME/.hunspell_<dictionary>` when `HOME` is set, and reads `DICTIONARY`,
 toolshed builds hunspell from source (`@hunspell_src`, an overlay on the upstream release in
 `//hunspell/private:hunspell.BUILD.bazel`), registered after the prebuilt toolchains as a
 fallback for consumers: platforms without a prebuilt (eg macOS) build hunspell from source,
-fetching and compiling it only then. The source build needs POSIX, so the fallback and its
-targets are limited to Linux and macOS; elsewhere (eg Windows) there is no hunspell toolchain. `//hunspell/source:hunspell_packages` builds the published tarballs; after a bins
+fetching and compiling it only then. The source build needs POSIX, so the fallback toolchains
+are limited to Linux and macOS exec platforms; elsewhere (eg Windows) there is no hunspell
+toolchain, and targets building the source binary are skipped. `//hunspell/source:hunspell_packages` builds the published tarballs; after a bins
 release, set `VERSIONS["hunspell_sha256"]` to enable the prebuilt toolchains.
