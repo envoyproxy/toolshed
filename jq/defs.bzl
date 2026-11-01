@@ -1,8 +1,8 @@
 """Macros for consuming `envoy_toolshed_jq` modules from Bazel.
 
-`toolshed_jq` wraps `@aspect_bazel_lib//lib:jq.bzl`'s `jq()`, adding a `-L`
-flag that points at the directory containing this module's `*.jq` files, so
-callers can `import`/`include` them by their scoped path, eg:
+`toolshed_jq` runs jq at build time through `rules_jq`, with this module's
+`*.jq` files (`//:library`) on its search path, so callers can
+`import`/`include` them by their scoped path, eg:
 
 ```starlark
 load("@envoy_toolshed_jq//:defs.bzl", "toolshed_jq")
@@ -15,62 +15,77 @@ toolshed_jq(
 ```
 
 `jq_module_test` wraps one `jq/tests/<scope>/<module>/` directory of
-`.test.yml` cases as an `sh_test`, running `run-tests.sh` through the
-hermetic aspect jq/yq toolchains (the same script also runs bare, outside
-Bazel, as `./jq/run-tests.sh`).
+`.test.yml` cases as an `sh_test`, running `run-tests.sh` with `//:jq` (the
+jq consumers get) and the hermetic aspect yq toolchain (the same script also
+runs bare, outside Bazel, as `./jq/run-tests.sh`).
 
 `test_modules` derives the list of `<scope>/<module>` directories that have
 `.test.yml` cases, so `jq/BUILD` doesn't have to hand-maintain it.
 """
 
-load("@aspect_bazel_lib//lib:jq.bzl", _jq = "jq")
+load("@bazel_skylib//lib:shell.bzl", "shell")
+load("@rules_jq//jq:defs.bzl", "jq_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 
-# A stable, single-file target at the module root. Its containing directory
-# (via `$$(dirname $(execpath ...))`, resolved by the shell that
-# `@aspect_bazel_lib`'s `jq()` runs its command in) is the `-L` search
-# directory for the modules in this repo. The `$$` is required: Bazel's
-# make-variable expansion would otherwise try to expand `$(dirname ...)`
-# itself and fail with "$(dirname) not defined".
-#
 # These must be `Label()`s: plain strings resolve in the *caller's* repo, so
-# `toolshed_jq` used from another module would look for `//:modules_root.marker`
-# there instead of here.
-_MODULES_ROOT_MARKER = Label("//:modules_root.marker")
+# `toolshed_jq` used from another module would look for them there instead of
+# here.
+_JQ = Label("//:jq")
+_LIBRARY = Label("//:library")
 _MODULES = Label("//:modules")
 _RUN_TESTS = Label("//:run-tests.sh")
 
-def toolshed_jq(name, srcs, filter_file = None, filter = None, args = [], data = [], **kwargs):
-    """Invoke jq with a filter that can import/include `envoy_toolshed_jq` modules.
+def toolshed_jq(name, srcs, filter_file = None, filter = None, args = [], data = [], out = None, **kwargs):
+    """Run jq at build time with a filter that can import `envoy_toolshed_jq` modules.
 
-    This is a thin wrapper around `@aspect_bazel_lib//lib:jq.bzl`'s `jq()`
-    that adds `-L <modules root>` to `args` and this repo's `.jq` modules to
-    `data`, so filters can do eg `import "str" as str;` or
-    `import "github/gfm" as gfm;`.
+    A `rules_jq` `jq_binary` over this module's `jq_library` (`//:library`),
+    run by a genrule that writes its output to `out`, so filters can do eg
+    `import "str" as str;` or `import "github/gfm" as gfm;`.
 
     Args:
         name: Name of the rule.
-        srcs: List of input files. May be empty.
-        filter: Filter expression, mutually exclusive with `filter_file`.
-        filter_file: File containing the filter expression.
-        args: Additional args to pass to jq (the `-L <modules root>` flag is
-            added automatically).
-        data: Additional data files jq may need at runtime (this repo's
-            modules are added automatically).
-        **kwargs: Other common named parameters such as `out`, `tags` or
-            `visibility`, passed through to `jq()`.
+        srcs: List of input files, passed to jq after `args`. May be empty, in
+            which case jq runs with `--null-input`.
+        filter: Filter expression, mutually exclusive with `filter_file`. With
+            neither, the identity filter (`.`).
+        filter_file: `.jq` file containing the filter.
+        args: Additional args to pass to jq, after the filter. `$(location)`
+            and other genrule expansions apply.
+        data: Additional files referenced from `args`, or imported relative to
+            `filter_file`.
+        out: Output file; defaults to `<name>.json`.
+        **kwargs: Other common named parameters such as `tags` or
+            `visibility`, passed through to the genrule.
     """
-    _jq(
+    binary = name + "_jq"
+    jq_binary(
+        name = binary,
+        main = filter_file,
+        # As with `jq()`, no filter means the identity filter, not a
+        # pass-through jq taking its program from the arguments.
+        filter = filter or ("" if filter_file else "."),
+        deps = [_LIBRARY],
+        # Without `srcs`, always read no input: `args` cannot be checked for
+        # `-n` reliably (it may be an `--arg` value), and a repeat is harmless.
+        jq_args = [] if srcs else ["-n"],
+        # `data` also reaches the binary's runfiles, so a `filter_file` can
+        # import its siblings with `{search: "./"}`.
+        data = data,
+        tags = ["manual"],
+        testonly = kwargs.get("testonly", False),
+        visibility = ["//visibility:private"],
+    )
+    native.genrule(
         name = name,
-        srcs = srcs,
-        filter = filter,
-        filter_file = filter_file,
-        args = args + [
-            "-L",
-            "$$(dirname $(execpath %s))" % _MODULES_ROOT_MARKER,
-        ],
-        data = data + [_MODULES, _MODULES_ROOT_MARKER],
-        expand_args = True,
+        srcs = srcs + data,
+        outs = [out or name + ".json"],
+        cmd = " ".join(
+            ["$(execpath :%s)" % binary] +
+            [shell.quote(arg) for arg in args] +
+            ["$(execpaths %s)" % src for src in srcs] +
+            ["> $@"],
+        ),
+        tools = [":" + binary],
         **kwargs
     )
 
@@ -95,12 +110,13 @@ def jq_module_test(name, module, size = "small", **kwargs):
         data = [
             _RUN_TESTS,
             _MODULES,
-            "@jq_toolchains//:resolved_toolchain",
+            # The jq consumers get (`rules_jq`'s toolchain), not a separate one.
+            _JQ,
             "@yq_toolchains//:resolved_toolchain",
         ] + native.glob(["tests/%s/**" % module]),
         deps = ["@bazel_tools//tools/bash/runfiles"],
         env = {
-            "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
+            "JQ_BIN": "$(rlocationpath %s)" % _JQ,
             "YQ_BIN": "$(rlocationpath @yq_toolchains//:resolved_toolchain)",
         },
         **kwargs
