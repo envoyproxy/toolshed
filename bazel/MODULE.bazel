@@ -120,6 +120,9 @@ http_archive(
     url = "https://github.com/llvm/llvm-project/archive/llvmorg-22.1.8.tar.gz",
 )
 
+cert_epoch_ext = use_extension("//certs:extensions.bzl", "cert_epoch_extension")
+use_repo(cert_epoch_ext, "cert_epoch")
+
 git_prebuilt_ext = use_extension("//git:extensions.bzl", "git_prebuilt_extension")
 git_prebuilt_ext.setup()
 use_repo(git_prebuilt_ext, "cacert", "git_toolchains")
