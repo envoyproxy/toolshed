@@ -2,8 +2,12 @@
 
 Bazel rules for composable [jq](https://jqlang.org/) libraries, executables and tests.
 
-This directory is its own Bazel module, `rules_jq`, incubating in toolshed. It is not yet
-published; toolshed tests it from `bazel/` through a `local_path_override`.
+This directory is its own Bazel module, `rules_jq`, incubating in toolshed. toolshed tests it
+from `bazel/` through a `local_path_override`.
+
+It is versioned independently of toolshed, in `rules_jq/VERSION.txt`. Releasing it (the
+`Release` workflow with type `rules_jq`) publishes a `rules_jq-v<version>` GitHub release with
+the source as `rules_jq-v<version>.tar.gz`, prefixed `rules_jq-v<version>/`.
 
 ```starlark
 bazel_dep(name = "rules_jq", version = "...")

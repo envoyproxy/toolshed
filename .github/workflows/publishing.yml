@@ -77,6 +77,7 @@ jobs:
       event: ${{ matrix.event }}
       python-filter-artifacts: ${{ matrix.python-filter-artifacts }}
       python-version: ${{ matrix.python-version }}
+      rules_jq-version: ${{ matrix.rules_jq-version }}
       pypi-repository-url: ${{ matrix.pypi-repository-url || '' }}
       sha: ${{ matrix.sha || needs.request.outputs.sha }}
       skip: ${{ matrix.skip || (github.event_name != 'pull_request' && matrix.event == 'pull_request') }}
@@ -96,6 +97,8 @@ jobs:
           bins-version: 0.1.23
         - event: push
           docker-version: 0.0.1
+        - event: push
+          rules_jq-version: 0.0.1
         - event: push
           python-version: 0.0.23
         - event: push

@@ -79,7 +79,13 @@ on:
         default: ${{ github.repository }}
         type: string
       release-types:
-        default: actions bazel bins docker python
+        default: actions bazel bins docker python rules_jq
+        type: string
+      rules_jq-version:
+        default:
+        type: string
+      rules_jq-version-file:
+        default: rules_jq/VERSION.txt
         type: string
       sha:
         default: ${{ github.event.workflow_run.head_sha }}
@@ -212,3 +218,13 @@ jobs:
             \($name)-{artifacts,source}*
           version: ${{ inputs.python-version }}
           version-file: ${{ inputs.python-version-file }}
+        - name: rules_jq
+          artifact-workflows: |
+            Bazel CI
+          artifacts: true
+          prepare-dev: .github/workflows/prepare_rules_jq_dev.sh
+          # `$name` is the artifact workflow's (`bazel`), so name the artifact literally.
+          template-artifacts: |
+            rules_jq-source*
+          version: ${{ inputs.rules_jq-version }}
+          version-file: ${{ inputs.rules_jq-version-file }}

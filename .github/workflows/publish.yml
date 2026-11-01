@@ -32,7 +32,7 @@ jobs:
         input: |
           branches:
             main:
-              release-types: actions bazel bins docker python
+              release-types: actions bazel bins docker python rules_jq
               workflows:
               - Bazel CI
               - Docker CI
