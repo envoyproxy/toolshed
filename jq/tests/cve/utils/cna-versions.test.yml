@@ -1,0 +1,49 @@
+name: cve utils normalizes CNA affected version entries to bounds
+imports: [cve/utils]
+input:
+- {version: "< 1.34.7", status: affected}
+- {version: ">= 2.0, < 2.1.3", status: affected}
+- {version: ">= 2.0, < 3.0, < 4.0", status: affected}
+- {version: ">= 2.0, < 4.0, < 3.0", status: affected}
+- {version: ">= 1.0, >= 2.0, <= 5.0, <= 4.0, > 0.5, > 1.5", status: affected}
+- {version: "<= 1.2", status: affected}
+- {version: "> 1.0", status: affected}
+- {version: "= 1.2.3", status: affected}
+- {version: "1.2.3", status: affected}
+- {version: "0", lessThan: "1.34.7", status: affected, versionType: semver}
+- {version: "3.0.0", lessThan: "3.0.15", status: affected, versionType: semver}
+- {version: "8.11.1", lessThanOrEqual: "8.11.1", status: affected, versionType: semver}
+- {version: "*", lessThan: "unspecified", status: affected}
+- {version: "1.0", lessThan: "1.*", status: affected}
+- {version: "2.5.0", lessThanOrEqual: "2.5.*", status: affected}
+- {version: "3.0", lessThan: "3.x.*", status: affected}
+- {version: "abc123", lessThan: "def456", status: affected, versionType: git}
+- {version: "0", status: affected}
+- {version: "< 0", status: affected}
+- {version: "0", lessThanOrEqual: "0", status: affected}
+- {version: "nonsense words", status: affected}
+- {status: affected}
+expression: 'map(utils::cna_versions(.))'
+expected:
+- {end_exc: "1.34.7"}
+- {start_inc: "2.0", end_exc: "2.1.3"}
+- {start_inc: "2.0", end_exc: "3.0"}
+- {start_inc: "2.0", end_exc: "3.0"}
+- {start_inc: "2.0", end_inc: "4.0", start_exc: "1.5"}
+- {end_inc: "1.2"}
+- {start_exc: "1.0"}
+- {exact: "1.2.3"}
+- {exact: "1.2.3"}
+- {end_exc: "1.34.7"}
+- {start_inc: "3.0.0", end_exc: "3.0.15"}
+- {start_inc: "8.11.1", end_inc: "8.11.1"}
+- {}
+- {start_inc: "1.0", end_exc: "2.0.0-0"}
+- {start_inc: "2.5.0", end_exc: "2.6.0-0"}
+- {invalid: true}
+- {invalid: true}
+- {exact: "0"}
+- {end_exc: "0"}
+- {end_inc: "0"}
+- {invalid: true}
+- {}

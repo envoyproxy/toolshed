@@ -16,8 +16,10 @@ expected:
   version: {main: [1, 2, 0], pre: [], build: [], string: "1.2"}
   cpe: {match: "cpe:2.3:a:vendor:product:*", part: a, vendor: vendor, product: product, version: "*"}
   cpes: [{match: "cpe:2.3:a:vendor:product:*", part: a, vendor: vendor, product: product, version: "*"}]
+  names: [{vendor: vendor, product: product}]
 - name: opaque
   release_date: "2024-02-01"
   version: {string: deadbeef}
   cpe: {match: "cpe:2.3:a:vendor:other:*", part: a, vendor: vendor, product: other, version: "*"}
   cpes: [{match: "cpe:2.3:a:vendor:other:*", part: a, vendor: vendor, product: other, version: "*"}]
+  names: [{vendor: vendor, product: other}]

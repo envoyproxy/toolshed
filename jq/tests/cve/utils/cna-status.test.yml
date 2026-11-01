@@ -1,0 +1,143 @@
+name: cve utils resolves CNA affected status from the first covering entry, its changes, or the default
+imports: [cve/utils]
+input:
+  deps:
+    zlib: {version: "1.3.1", release_date: "2024-01-22", cpe: "cpe:2.3:a:zlib:zlib:*"}
+    pre: {version: "1.3.0-rc.1", release_date: "2024-01-22", cpe: "cpe:2.3:a:pre:pre:*"}
+  cvelist:
+    records:
+    - id: CVE-DEFAULT-WITH-UNAFFECTED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, defaultStatus: affected, versions: [{version: "1.3.1", status: unaffected}], provider: cna}
+    - id: CVE-DEFAULT-WITH-OTHER-UNAFFECTED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, defaultStatus: affected, versions: [{version: "1.3.0", status: unaffected}], provider: cna}
+    - id: CVE-RANGE-WITH-UNAFFECTED-VERSION
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: zlib
+        product: zlib
+        versions:
+        - {version: "0", lessThan: "2.0", status: affected, versionType: semver}
+        - {version: "1.3.1", status: unaffected}
+        provider: cna
+    - id: CVE-UNAFFECTED-RANGE-WITH-AFFECTED-VERSION
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: zlib
+        product: zlib
+        versions:
+        - {version: "0", lessThan: "2.0", status: unaffected, versionType: semver}
+        - {version: "1.3.1", status: affected}
+        provider: cna
+    - id: CVE-OVERLAPPING-RANGES
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: zlib
+        product: zlib
+        versions:
+        - {version: "0", lessThan: "2.0", status: unaffected, versionType: semver}
+        - {version: "1.3", lessThan: "1.4", status: affected, versionType: semver}
+        provider: cna
+    - id: CVE-CHANGE-TO-UNAFFECTED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: zlib
+        product: zlib
+        versions:
+        - {version: "0", lessThan: "2.0", status: affected, versionType: semver, changes: [{at: "1.2", status: unaffected}]}
+        provider: cna
+    - id: CVE-CHANGE-TO-AFFECTED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: zlib
+        product: zlib
+        versions:
+        - {version: "0", lessThan: "2.0", status: unaffected, versionType: semver, changes: [{at: "1.3", status: affected}]}
+        provider: cna
+    - id: CVE-CHANGE-LAST-WINS
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: zlib
+        product: zlib
+        versions:
+        - version: "0"
+          lessThan: "2.0"
+          status: affected
+          versionType: semver
+          changes: [{at: "1.3.1", status: affected}, {at: "1.0", status: unaffected}, {at: "1.5", status: unaffected}]
+        provider: cna
+    - id: CVE-CHANGE-ABOVE
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: zlib
+        product: zlib
+        versions:
+        - {version: "0", lessThan: "2.0", status: unaffected, versionType: semver, changes: [{at: "1.4", status: affected}]}
+        provider: cna
+    - id: CVE-WILDCARD-LIMIT
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "1.0", lessThan: "1.*", status: affected}], provider: cna}
+    - id: CVE-WILDCARD-LIMIT-OTHER-SERIES
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "1.2.0", lessThan: "1.2.*", status: affected}], provider: cna}
+    - id: CVE-WILDCARD-INCLUSIVE
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "1.0", lessThanOrEqual: "1.2.*", status: affected}], provider: cna}
+    - id: CVE-GIT-RANGE
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: zlib
+        product: zlib
+        versions: [{version: "0", lessThan: "ffffffffffff", status: affected, versionType: git}]
+        provider: cna
+    - id: CVE-WILDCARD-NEXT-SERIES-PRERELEASE
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: pre, product: pre, versions: [{version: "1.0", lessThan: "1.2.*", status: affected}], provider: cna}
+    - id: CVE-WILDCARD-OWN-SERIES-PRERELEASE
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: pre, product: pre, versions: [{version: "1.0", lessThan: "1.3.*", status: affected}], provider: cna}
+    - id: CVE-ORDERED-BOUNDS
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: ">= 1.0, < 1.3, < 2.0", status: affected}], provider: cna}
+    - id: CVE-ORDERED-BOUNDS-REVERSED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: ">= 1.0, < 2.0, < 1.3", status: affected}], provider: cna}
+    - id: CVE-WILDCARD-UNRESOLVED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "1.0", lessThan: "1.x.*", status: affected}], provider: cna}
+    - id: CVE-EXACT-ZERO
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {vendor: zlib, product: zlib, versions: [{version: "0", status: affected}], provider: cna}
+    - id: CVE-CPE-VERSION
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {cpes: ["cpe:2.3:a:zlib:zlib:1.3.1:*:*:*:*:*:*:*"], defaultStatus: affected, provider: CISA-ADP}
+    - id: CVE-CPE-OTHER-VERSION
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - {cpes: ["cpe:2.3:a:zlib:zlib:1.2.0:*:*:*:*:*:*:*"], defaultStatus: affected, provider: CISA-ADP}
+expression: |
+  [utils::parse_deps(.deps)] as $deps
+  | .cvelist
+  | utils::scan_cna($deps; [[]])
+  | map(.id)
+expected:
+- CVE-DEFAULT-WITH-OTHER-UNAFFECTED
+- CVE-RANGE-WITH-UNAFFECTED-VERSION
+- CVE-CHANGE-TO-AFFECTED
+- CVE-CHANGE-LAST-WINS
+- CVE-WILDCARD-LIMIT
+- CVE-WILDCARD-OWN-SERIES-PRERELEASE
+- CVE-CPE-VERSION

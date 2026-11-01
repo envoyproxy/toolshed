@@ -1,0 +1,28 @@
+name: cve utils merges NVD and CVE Program matches by id with source tags and NVD state
+imports: [cve/utils]
+input:
+  nvd:
+    matches:
+    - {id: CVE-BOTH, matched: [{dep: {name: a}, cpe: {}}], cve: {id: CVE-BOTH, descriptions: [{value: nvd}]}}
+    - {id: CVE-NVD-ONLY, matched: [{dep: {name: a}, cpe: {}}], cve: {id: CVE-NVD-ONLY}}
+    analyzed: [CVE-BOTH, CVE-NVD-ONLY, CVE-CNA-ANALYZED]
+  cna:
+  - {id: CVE-BOTH, matched: [{dep: {name: a}, affected: {}}], cve: {id: CVE-BOTH, descriptions: [{value: cna}]}}
+  - id: CVE-CNA-ONLY
+    matched: [{dep: {name: b}, affected: {}}, {dep: {name: c}, affected: {}}]
+    cve: {id: CVE-CNA-ONLY}
+  - {id: CVE-CNA-ANALYZED, matched: [{dep: {name: a}, affected: {}}], cve: {id: CVE-CNA-ANALYZED}}
+expression: |
+  (utils::merge_sources({matches: [], analyzed: null}; .cna) | map(has("nvd_analyzed")) | unique) as $unscanned
+  | utils::merge_sources(.nvd; .cna) | . + [{unscanned_nvd_analyzed: $unscanned}]
+  | map(if .unscanned_nvd_analyzed != null then . else
+        {id, sources, nvd_analyzed,
+         deps: [.matched[] | "\(.dep.name):\(.source)"],
+         cve: .cve.descriptions[0].value,
+         cna: .cna.descriptions[0].value} end)
+expected:
+- {id: CVE-BOTH, sources: [nvd, cna], nvd_analyzed: null, deps: ["a:nvd", "a:cna"], cve: nvd, cna: cna}
+- {id: CVE-CNA-ANALYZED, sources: [cna], nvd_analyzed: true, deps: ["a:cna"], cve: null, cna: null}
+- {id: CVE-CNA-ONLY, sources: [cna], nvd_analyzed: false, deps: ["b:cna", "c:cna"], cve: null, cna: null}
+- {id: CVE-NVD-ONLY, sources: [nvd], nvd_analyzed: null, deps: ["a:nvd"], cve: null, cna: null}
+- {unscanned_nvd_analyzed: [false]}

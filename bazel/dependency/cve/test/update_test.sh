@@ -16,7 +16,15 @@ grep -qx -- '--skip' "$TEST_TMPDIR/incremental/args"
 grep -qx '2024-01' "$TEST_TMPDIR/incremental/args"
 head -n1 "$TEST_TMPDIR/incremental/args" | grep -qx '2024-01'
 test -f "$TEST_TMPDIR/incremental/$(date +%Y-%m).json"
+# cvelist data is never copied from the inputs, always refetched in full
+test ! -f "$TEST_TMPDIR/incremental/cvelist/2024-01.json"
+head -n1 "$TEST_TMPDIR/incremental/cvelist/args" | grep -qx '2024'
+grep -qx -- "--output_path=$TEST_TMPDIR/incremental/cvelist" "$TEST_TMPDIR/incremental/cvelist/args"
+test -f "$TEST_TMPDIR/incremental/cvelist/$(date +%Y-%m).json"
 
 OVERWRITE_ALL_CVE_DATA=1 "$update" "$TEST_TMPDIR/overwrite"
 test ! -f "$TEST_TMPDIR/overwrite/2024-01.json"
-! grep -qx -- '--skip' "$TEST_TMPDIR/overwrite/args"
+if grep -qx -- '--skip' "$TEST_TMPDIR/overwrite/args"; then
+    exit 1
+fi
+test -f "$TEST_TMPDIR/overwrite/cvelist/args"

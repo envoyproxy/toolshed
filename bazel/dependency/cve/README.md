@@ -1,6 +1,7 @@
 # CVE scanner
 
-Scan raw dependency metadata against NVD 2.0 JSON data:
+Scan raw dependency metadata against NVD 2.0 JSON data and CVE Program
+(cvelistV5) records:
 
 ```starlark
 load("@envoy_toolshed//dependency/cve:macros.bzl", "cve_scan")
@@ -41,11 +42,56 @@ with `cve/utils::parse_deps`:
   opaque versions use string comparison when bounds exist.
 - `release_date`: ISO `YYYY-MM-DD` date. Dependencies released after a CVE's
   publication date are excluded, including hash-versioned dependencies.
+- `urls`, `project_url`, `license_url` (optional): the first `github.com`
+  url among them supplies an `owner`/`repo` name for matching CVE Program
+  records (see below), alongside the CPE vendor/product.
 - Additional fields are ignored.
 
 This is a potential-vulnerability detector, not a proof of exploitability:
 it matches vendor/product/version and publication dates, rather than
 evaluating the complete NVD configuration logic.
+
+## CVE Program records
+
+NVD only adds CPE configurations when it analyzes a CVE. A large share of
+recently published CVEs never get there (`Awaiting Analysis`, `Received`, or
+`Deferred`, which NVD will not analyze), so CPE matching alone misses them
+regardless of the CPEs tracked. The CVE Program record published by the CNA
+carries the affected versions from day one, so the scanner also matches those.
+
+`<name>.update` fetches the latest
+[cvelistV5](https://github.com/CVEProject/cvelistV5/releases) release archive
+and writes compacted `PUBLISHED` records published from `start_year` (by
+publication date, not the year in the id) to `cvelist/YYYY-MM.json` under the
+data directory, keyed by publication month like the NVD files. The whole set is refetched on every update: records are
+amended in place and the archive is a single download. Consumers must glob
+the subdirectory into `cve_data` (and sync it, eg `gsutil rsync -r`):
+
+```starlark
+filegroup(
+    name = "cve-data-dir",
+    srcs = glob([
+        "cve_data/*.json",
+        "cve_data/cvelist/*.json",
+    ]),
+)
+```
+
+Records match on the CNA/ADP asserted `vendor`/`product` (against the CPE
+vendor/product, the CPE vendor without any `_project` suffix, or the github
+owner/repo) or on `cpes` where an ADP has supplied them (including any
+version in the CPE), and on the asserted version entries
+(`lessThan`/`lessThanOrEqual` ranges, wildcard limits such as `2.5.*`,
+free-text `< x` / `>= x, < y` constraints, single versions, `changes[]` and
+`defaultStatus`; see the jq README for the precedence rules).
+
+The scan is the union of both sources: matches are merged by CVE id, each
+carries `sources` (`nvd`, `cna`) and each matched dependency its `source`.
+A CVE matched only from its CVE Program record also records whether NVD has
+analyzed it (`nvd_analyzed`): `false` means NVD has no CPE data for it yet
+(or, if `Deferred`, ever); `true` means NVD's CPE configurations did not
+match the tracked tags, which may be worth checking. Both fail `<name>.test`
+like any match; use `ignored_cves` for false positives.
 
 ## Configuration and data
 
@@ -55,10 +101,13 @@ evaluating the complete NVD configuration logic.
 start_year: 2024
 ignored_cves:
 - CVE-2024-1234
+sources: [nvd, cna]
 ```
 
 `start_year` is an integer, the first publication year fetched.
 `ignored_cves` is a list of CVE IDs (defaults to empty).
+`sources` selects the data scanned, `nvd` (NVD CPE configurations) and/or
+`cna` (CVE Program records, see above); default both.
 
 `cve_data` supplies NVD 2.0 JSON files. A file may contain multiple consecutive
 NVD page objects. Updates use filenames `YYYY-MM.json`. Non-JSON placeholders
@@ -111,7 +160,17 @@ bazel run //tools/dependency:cves.update \
 Select the data label on subsequent updates to preserve previous months.
 No repository paths or `BUILD_WORKSPACE_DIRECTORY` are needed.
 
-The fetcher uses `aiohttp` and `aio.run.runner` via the `cve_pip3` hub.
+The cvelist fetcher resolves the latest release through the GitHub API. To
+authenticate (avoiding the unauthenticated rate limits) pass a token into
+the fetch action, which does not inherit the shell environment:
+
+```bash
+GITHUB_TOKEN=... bazel run //tools/dependency:cves.update \
+  --action_env=CVE_UPDATE_NONCE="$(date +%s%N)" \
+  --action_env=GITHUB_TOKEN
+```
+
+The fetchers use `aiohttp` and `aio.run.runner` via the `cve_pip3` hub.
 TODO(phlax): Decide its long-term home: Python brings a toolchain into
 consumers' graphs (slow); consider a hermetic curl + jq paging/backoff loop,
 or a prebuilt fetcher.

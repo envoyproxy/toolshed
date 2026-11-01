@@ -38,3 +38,19 @@ py_test(
     srcs = ["fetch_test.py"],
     deps = [":fetch"],
 )
+
+py_binary(
+    name = "cvelist_fetch",
+    srcs = ["cvelist_fetch.py"],
+    python_version = "3.12",
+    deps = [
+        requirement("aiohttp"),
+        requirement("aio.run.runner"),
+    ],
+)
+
+py_test(
+    name = "cvelist_fetch_test",
+    srcs = ["cvelist_fetch_test.py"],
+    deps = [":cvelist_fetch"],
+)

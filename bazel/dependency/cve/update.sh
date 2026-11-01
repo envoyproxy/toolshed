@@ -10,6 +10,7 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null ||
 
 START_YEAR_PATH="$(rlocation "$START_YEAR_PATH")"
 FETCHER="$(rlocation "$FETCHER")"
+CVELIST_FETCHER="$(rlocation "$CVELIST_FETCHER")"
 CVE_FILES="$(rlocation "$CVE_FILES")"
 output="$1"
 mkdir -p "$output"
@@ -23,6 +24,10 @@ while IFS= read -r file; do
         echo >&2 "Expected a YYYY-MM.json CVE data file: $file"
         exit 1
     fi
+    # CVE Program data (`cvelist/`) is always refetched in full
+    if [[ "$file" == */cvelist/* ]]; then
+        continue
+    fi
     if [[ -z "${OVERWRITE_ALL_CVE_DATA:-}" && "$month" != "$current_month" ]]; then
         cp "$(rlocation "$file")" "$output/$month.json"
         skip+=("$month")
@@ -35,3 +40,4 @@ if [[ ${#skip[@]} -gt 0 ]]; then
     args+=(--skip "$months")
 fi
 "$FETCHER" "${start_year}-01" "$current_month" "${args[@]}"
+"$CVELIST_FETCHER" "$start_year" --output_path="$output/cvelist"
