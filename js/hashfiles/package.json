@@ -51,6 +51,7 @@
     "@await/spawn": "^9.0.0"
   },
   "overrides": {
-    "js-yaml": "^5.4.1"
+    "js-yaml": "^5.4.1",
+    "minimatch": "^11.0.1"
   }
 }
