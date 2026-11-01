@@ -3,7 +3,8 @@
 set -euo pipefail
 
 hunspell="$1"
-dict="$2"
+# The dictionary path, with or without `.dic` (as `-d` takes it).
+dict="${2%.dic}"
 personal="${TEST_TMPDIR:-$(mktemp -d)}/personal.dic"
 printf 'envoyproxy\n' > "$personal"
 

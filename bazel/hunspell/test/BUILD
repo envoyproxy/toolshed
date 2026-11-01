@@ -48,3 +48,20 @@ hunspell_toolchain_test(
 render_hub_build_test(
     name = "render_hub_build_test",
 )
+
+# The source build that the fallback toolchain uses, run directly: toolchain resolution prefers
+# the prebuilt where there is one. Unconstrained, so CI also builds it for macOS.
+sh_test(
+    name = "hunspell_source_test",
+    size = "small",
+    srcs = [":assert_hunspell_pipe.sh"],
+    args = [
+        "$(rootpath @hunspell_src//:hunspell)",
+        "$(rootpath @dictionary_en//:index.dic)",
+    ],
+    data = [
+        "@dictionary_en//:index.aff",
+        "@dictionary_en//:index.dic",
+        "@hunspell_src//:hunspell",
+    ],
+)

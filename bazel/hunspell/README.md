@@ -50,6 +50,7 @@ loads `$HOME/.hunspell_<dictionary>` when `HOME` is set, and reads `DICTIONARY`,
 ## Building
 
 toolshed builds hunspell from source (`@hunspell_src`, an overlay on the upstream release in
-`//hunspell/private:hunspell.BUILD.bazel`) for its own tests, registered as a dev-only source
-toolchain. `//hunspell/source:hunspell_packages` builds the published tarballs; after a bins
+`//hunspell/private:hunspell.BUILD.bazel`), registered after the prebuilt toolchains as a
+fallback for consumers: platforms without a prebuilt (eg macOS) build hunspell from source,
+fetching and compiling it only then. `//hunspell/source:hunspell_packages` builds the published tarballs; after a bins
 release, set `VERSIONS["hunspell_sha256"]` to enable the prebuilt toolchains.

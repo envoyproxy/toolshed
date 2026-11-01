@@ -1,5 +1,6 @@
-# Source-built hunspell for toolshed's own builds/tests, and the published per-platform
-# packages (`//hunspell/source:hunspell_packages`). Consumers use the prebuilt toolchains.
+# Source-built hunspell: the toolchain consumers fall back to where there is no prebuilt (eg
+# macOS), toolshed's tests, and the published per-platform packages
+# (`//hunspell/source:hunspell_packages`).
 
 load("//hunspell:defs.bzl", "hunspell_toolchain")
 load("//hunspell/private:hunspell_package.bzl", "hunspell_package")
