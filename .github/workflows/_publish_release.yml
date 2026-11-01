@@ -128,9 +128,12 @@ jobs:
         cp -a temprepo/.github/workflows/prepare_python_dev.sh .github/workflows
         cp -a temprepo/.github/workflows/prepare_rules_jq_dev.sh .github/workflows
         # Release types newer than the checked-out SHA need their version
-        # file too.
+        # file too, staged so the publisher can commit it after reopening the
+        # branch (a staged addition survives its checkout; an untracked file
+        # is not a pathspec `git commit` accepts).
         if [[ ! -e rules_jq/VERSION.txt ]]; then
             cp -a temprepo/rules_jq/VERSION.txt rules_jq/
+            git add rules_jq/VERSION.txt
         fi
         rm -rf temprepo
     - name: Initialize GPG
