@@ -332,22 +332,28 @@ jq_binary(
     tags = ["manual"],
 )
 
+# Neither main nor filter: jq itself, with the module roots set.
 jq_binary(
-    name = "neither",
-    tags = ["manual"],
+    name = "passthrough",
+    deps = [":greet"],
+)
+
+sh_test(
+    name = "passthrough_test",
+    srcs = ["assert_passthrough.sh"],
+    args = ["$(rlocationpath :passthrough)"],
+    data = [
+        ":passthrough",
+        "@bazel_tools//tools/bash/runfiles",
+    ],
 )
 
 failure_test(
     name = "both_rejected_test",
-    message = "exactly one of main or filter",
+    message = "at most one of main or filter",
     target_under_test = ":both",
 )
 
-failure_test(
-    name = "neither_rejected_test",
-    message = "exactly one of main or filter",
-    target_under_test = ":neither",
-)
 
 collision_source(
     name = "collision_source",

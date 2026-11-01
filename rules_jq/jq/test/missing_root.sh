@@ -9,7 +9,9 @@
 set -euo pipefail
 source "$TEST_SRCDIR/bazel_tools/tools/bash/runfiles/runfiles.bash"
 
-launcher="$(rlocation "$1")"
+# A copy outside any runfiles tree, so its only runfiles are the ones given.
+launcher="$TEST_TMPDIR/launcher.sh"
+cp "$(rlocation "$1")" "$launcher"
 runfiles_bash_key=bazel_tools/tools/bash/runfiles/runfiles.bash
 runfiles_bash="$(rlocation "$runfiles_bash_key")"
 message="jq launcher: cannot resolve module root"
