@@ -4,6 +4,8 @@
 set -euo pipefail
 source "$TEST_SRCDIR/bazel_tools/tools/bash/runfiles/runfiles.bash"
 jq="$(rlocation "$1")"
+# `$who` is a jq variable, not a shell one.
+# shellcheck disable=SC2016
 program='import "greet" as greet; $who | greet::hello'
 
 check() {

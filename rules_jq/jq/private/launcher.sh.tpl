@@ -95,6 +95,8 @@ if [[ -d "$0.runfiles" ]]; then
 fi
 if [[ -f "$0.runfiles_manifest" ]]; then
   own_runfiles_manifest="$0.runfiles_manifest"
+elif [[ -f "$0.runfiles/MANIFEST" ]]; then
+  own_runfiles_manifest="$0.runfiles/MANIFEST"
 fi
 enclosing_runfiles_dir=""
 launcher_dir="$(cd "$(dirname "$0")" && pwd)"
