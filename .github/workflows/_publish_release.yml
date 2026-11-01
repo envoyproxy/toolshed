@@ -179,6 +179,48 @@ jobs:
         version-file: ${{ inputs.version-file }}
         workflows: ${{ inputs.workflows }}
 
+  # Asks envoyproxy/bazel-registry to register this release's Bazel modules.
+  # It registers each module root in `.envoy-registry/` whose version at the
+  # tag is new (so a `bazel` release adds `envoy_toolshed` and
+  # `envoy_toolshed_jq`, and a `rules_jq` release `rules_jq`), and opens a PR.
+  # Only for main in this repo: other branches (eg `workspace`) have no
+  # `.envoy-registry/`, and forks cannot be registered.
+  register:
+    needs: release
+    name: Registry dispatch (${{ inputs.name }})
+    if: >-
+      contains(fromJSON('["bazel", "rules_jq"]'), inputs.name)
+      && inputs.repository == 'envoyproxy/toolshed'
+      && inputs.branch == 'main'
+      && inputs.event == 'push'
+      && ! inputs.dry-run
+      && needs.release.outputs.version != ''
+      && ! fromJSON(needs.release.outputs.version).is_dev
+      && fromJSON(needs.release.outputs.continue)
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: envoyproxy/toolshed/actions/appauth@9bd3b300cf19f67cd2ef8b6e4aaa920f79894c24  # actions-v0.4.29
+      id: appauth
+      name: Appauth
+      with:
+        app_id: ${{ secrets.app-id }}
+        key: ${{ secrets.app-key }}
+    # The publish app needs write access to envoyproxy/bazel-registry contents
+    # to send this.
+    - name: Dispatch registration
+      env:
+        GH_TOKEN: ${{ steps.appauth.outputs.token }}
+        REF: ${{ inputs.name }}-v${{ fromJSON(needs.release.outputs.version).version }}
+        REPOSITORY: ${{ inputs.repository }}
+        SHA: ${{ inputs.sha }}
+      run: |
+        gh api repos/envoyproxy/bazel-registry/dispatches \
+            -f event_type=register-module \
+            -f "client_payload[repository]=${REPOSITORY}" \
+            -f "client_payload[ref]=${REF}" \
+            -f "client_payload[sha]=${SHA}"
+        echo "Requested registration of ${REPOSITORY}@${REF} (${SHA})"
+
   # Publishes Python wheels to PyPI using OIDC Trusted Publishing.
   # Runs as a separate job so that:
   #   - The `pypi` environment is only triggered for real (non-dry-run) publishes.

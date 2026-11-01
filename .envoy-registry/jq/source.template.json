@@ -1,0 +1,5 @@
+{
+    "url": "https://github.com/{OWNER}/{REPO}/releases/download/bazel-v{VERSION}/toolshed-jq-v{VERSION}.tar.gz",
+    "integrity": "",
+    "strip_prefix": "toolshed-jq-v{VERSION}"
+}

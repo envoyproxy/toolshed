@@ -1,0 +1,5 @@
+{
+    "url": "https://github.com/{OWNER}/{REPO}/releases/download/rules_jq-v{VERSION}/rules_jq-v{VERSION}.tar.gz",
+    "integrity": "",
+    "strip_prefix": "rules_jq-v{VERSION}"
+}
