@@ -73,13 +73,13 @@ def _git_prebuilt_ext_impl(module_ctx):
 # setup() controls per-platform prebuilt SHAs: unset uses VERSIONS["git_sha256"],
 # "" disables that prebuilt repo (source fallback only), and any other value
 # overrides the sha256 for that platform. host_fallback registers the host's
-# git on macOS, which has no prebuilt; unlike the SHAs it is taken from the
-# root module only.
+# git where there is no prebuilt (macOS, Linux on eg ppc64le); unlike the SHAs
+# it is taken from the root module only.
 _setup = tag_class(
     attrs = {
         "host_fallback": attr.bool(
             default = True,
-            doc = "On macOS, which has no prebuilt git, register the host's `git` from PATH as the toolchain so consumers still resolve. Only the root module's value is used.",
+            doc = "On hosts without a prebuilt git (macOS, Linux on eg ppc64le or s390x), register the host's `git` from PATH as the toolchain so consumers still resolve. Only the root module's value is used.",
         ),
         "linux_aarch64_sha256": attr.string(
             default = _NO_OVERRIDE,

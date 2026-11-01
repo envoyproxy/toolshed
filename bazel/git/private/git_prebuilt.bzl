@@ -14,14 +14,17 @@ _PLATFORM_TARGETS = {
     },
 }
 
-# Host platforms the hub may fall back to the host's git on. Linux always has a
-# prebuilt (or the source fallback), and Windows is untested.
+# Host platforms the hub may fall back to the host's git on, when no prebuilt is published for
+# them: macOS, and Linux on CPUs without a prebuilt (eg ppc64le, s390x). Windows is untested.
 _HOST_FALLBACK_OS_CONSTRAINTS = {
+    "linux": "@platforms//os:linux",
     "macos": "@platforms//os:macos",
 }
 
 _CPU_CONSTRAINTS = {
     "aarch64": "@platforms//cpu:aarch64",
+    "ppc64le": "@platforms//cpu:ppc64le",
+    "s390x": "@platforms//cpu:s390x",
     "x86_64": "@platforms//cpu:x86_64",
 }
 
@@ -29,6 +32,8 @@ _CPU_ALIASES = {
     "aarch64": "aarch64",
     "amd64": "x86_64",
     "arm64": "aarch64",
+    "ppc64le": "ppc64le",
+    "s390x": "s390x",
     "x86_64": "x86_64",
 }
 
@@ -46,6 +51,20 @@ def host_fallback_platform(host):
     if host.split("-", 1)[0] not in _HOST_FALLBACK_OS_CONSTRAINTS:
         return None
     return host
+
+def host_exec_constraints(host):
+    """Return the exec constraints for a `<os>-<cpu>` host platform suffix.
+
+    Args:
+        host: Platform suffix from `host_platform`.
+
+    Returns:
+        The OS and CPU constraint labels for `host`, or None if either is unknown.
+    """
+    os_key, cpu = host.split("-", 1)
+    if os_key not in _HOST_FALLBACK_OS_CONSTRAINTS or cpu not in _CPU_CONSTRAINTS:
+        return None
+    return [_HOST_FALLBACK_OS_CONSTRAINTS[os_key], _CPU_CONSTRAINTS[cpu]]
 
 def host_platform(os_name, arch):
     """Map a `repository_os` name and arch to a `<os>-<cpu>` platform suffix.
@@ -114,10 +133,9 @@ def render_git_toolchains_build(platform_repos, defs_label, toolchain_type_label
             "",
         ])
     if host_fallback_platform(host):
-        os_key, cpu = host.split("-", 1)
         lines.extend(host_toolchain_lines(
             toolchain_type_label,
-            [_HOST_FALLBACK_OS_CONSTRAINTS[os_key], _CPU_CONSTRAINTS[cpu]],
+            host_exec_constraints(host),
             "# Host fallback: no prebuilt git is published for %s." % host,
         ))
     return "\n".join(lines)
@@ -223,10 +241,10 @@ def _git_toolchains_hub_impl(ctx):
         "linux-x86_64": _repo_name(ctx.attr.linux_x86_64) if ctx.attr.linux_x86_64 else None,
     }
 
-    # On a host platform that never has a prebuilt (macOS), fall back to the host's git so
-    # consumers that require the toolchain type still resolve. A prebuilt disabled with
-    # `setup(<platform>_sha256 = "")` does not qualify: that keeps the source fallback, and a
-    # Linux-constrained host toolchain could be selected for remote Linux workers.
+    # On a host platform that never has a prebuilt (macOS, or Linux on eg ppc64le), fall back to
+    # the host's git so consumers that require the toolchain type still resolve. A prebuilt
+    # disabled with `setup(<platform>_sha256 = "")` does not qualify: that keeps the source
+    # fallback, and a Linux x86_64/aarch64 host toolchain could be selected for remote workers.
     host = None
     if ctx.attr.host_fallback:
         host = host_fallback_platform(host_platform(ctx.os.name, ctx.os.arch))
