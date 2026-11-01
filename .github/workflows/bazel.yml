@@ -284,6 +284,19 @@ jobs:
           rbe: false
           runner: ubuntu-24.04-arm
           targets: //compile/test:cross_compile_x86_64_no_unwind_test
+        # The hunspell source fallback toolchain, resolved and run on macOS (no prebuilt there).
+        - name: macos-hunspell
+          action: test
+          bazel_args: >-
+            --config=ci
+            --config=macos
+          cache-entries: NONE
+          privileged: false
+          rbe: false
+          runner: macos-15
+          targets: >-
+            //hunspell/test:hunspell_toolchain_test
+            //hunspell/test:hunspell_source_test
         # Live counterpart of //pgp/test:audit_test - re-runs the audit
         # against a real `bazel aquery` of //pgp/test's example targets
         # rather than captured JSON (see bazel/pgp/README.md#auditing).

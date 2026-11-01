@@ -1,5 +1,6 @@
-# Source-built hunspell for toolshed's own builds/tests, and the published per-platform
-# packages (`//hunspell/source:hunspell_packages`). Consumers use the prebuilt toolchains.
+# Source-built hunspell: the toolchain consumers fall back to where there is no prebuilt (eg
+# macOS), toolshed's tests, and the published per-platform packages
+# (`//hunspell/source:hunspell_packages`).
 
 load("//hunspell:defs.bzl", "hunspell_toolchain")
 load("//hunspell/private:hunspell_package.bzl", "hunspell_package")
@@ -11,12 +12,22 @@ hunspell_toolchain(
     hunspell = "@hunspell_src//:hunspell",
 )
 
-toolchain(
-    name = "source_toolchain",
-    toolchain = ":source_impl",
-    toolchain_type = "//hunspell:toolchain_type",
-    visibility = ["//visibility:public"],
-)
+# One per supported exec OS: the build overlay assumes POSIX (eg `unistd.h`, `langinfo.h`), so
+# elsewhere (eg Windows) resolution fails cleanly rather than selecting a toolchain that cannot
+# build.
+[
+    toolchain(
+        name = "source_toolchain_%s" % os,
+        exec_compatible_with = ["@platforms//os:%s" % os],
+        toolchain = ":source_impl",
+        toolchain_type = "//hunspell:toolchain_type",
+        visibility = ["//visibility:public"],
+    )
+    for os in [
+        "linux",
+        "macos",
+    ]
+]
 
 [
     hunspell_package(
