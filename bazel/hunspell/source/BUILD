@@ -10,6 +10,12 @@ hunspell_toolchain(
     affix = "@dictionary_en//:index.aff",
     dictionary = "@dictionary_en//:index.dic",
     hunspell = "@hunspell_src//:hunspell",
+    # The source build assumes POSIX, so `//...` skips it elsewhere (eg Windows).
+    target_compatible_with = select({
+        "@platforms//os:linux": [],
+        "@platforms//os:macos": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
 )
 
 # One per supported exec OS: the build overlay assumes POSIX (eg `unistd.h`, `langinfo.h`), so
