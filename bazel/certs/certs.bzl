@@ -8,8 +8,9 @@ dependency on the consuming workspace.
 
 The generator stamps certificates with a validity window that starts on Jan 1
 of a given year, so fixtures never age out of validity. By default that year
-is derived from Bazel's stamped status files, with `year_status_key` acting as
-an optional override; it can also be pinned directly via `year`.
+is read from `@cert_epoch//:year`, which only changes when the year does, so
+the fixtures (and everything built from them) stay cached until then; it can
+also be pinned directly via `year`, or read from another file via `year_file`.
 
 See README.md in this package for the full spec file format.
 """
@@ -23,7 +24,7 @@ def generated_certs(
         headers_name = None,
         gen = Label("//certs:gen"),
         year = None,
-        year_status_key = "STABLE_CERT_EPOCH_YEAR",
+        year_file = Label("@cert_epoch//:year"),
         testonly = False,
         tags = [],
         visibility = None):
@@ -54,40 +55,34 @@ def generated_certs(
         `@envoy_toolshed//certs:gen` regardless of which workspace/module
         loads this macro.
       year: if set, the four digit year fixtures are stamped as starting
-        from (Jan 1 of that year). Passed straight to `--year` and disables
-        workspace stamping entirely. Leave unset (the default) to derive the
-        year from Bazel's stamped status files at build time.
-      year_status_key: optional override key looked up in
-        `bazel-out/stable-status.txt`. Consumers that want to pin the year via
-        their `workspace_status_command` may emit
-        `<year_status_key> <YYYY>`; if the key is absent the year is derived
-        from `BUILD_TIMESTAMP` in `bazel-out/volatile-status.txt`, which Bazel
-        writes for stamped builds.
+        from (Jan 1 of that year). Passed straight to `--year`, and
+        `year_file` is not used.
+      year_file: label of a file holding the four digit year, used when `year`
+        is unset. Defaults to `@cert_epoch//:year`: the host's current UTC year
+        when that repo is fetched, or `--repo_env=CERT_EPOCH_YEAR=<YYYY>`. It is
+        a regular input, so the generator only reruns when it (or the
+        generator, spec or `srcs`) changes.
       testonly: marks the generated targets as test-only.
       tags: tags applied to the generated targets.
       visibility: visibility of the generated targets.
     """
     gen_label = str(Label(str(gen)))
 
+    # No stamping: workspace status files change on every build, which would rerun the generator
+    # and bust the cache of everything built from its outputs. The year is a regular input.
     if year != None:
-        year_cmd = "YEAR=\"" + str(year) + "\";"
+        year_cmd = ""
         year_arg = "\"" + str(year) + "\""
-        stamp = 0
+        year_srcs = []
     else:
-        year_cmd = " ".join([
-            "YEAR=$$(sed -n -E 's/^" + year_status_key + " ([0-9]{4})$$/\\1/p' bazel-out/stable-status.txt 2>/dev/null);",
-            "if [ -z \"$$YEAR\" ]; then",
-            "  TS=$$(sed -n -E 's/^BUILD_TIMESTAMP ([0-9]+)$$/\\1/p' bazel-out/volatile-status.txt 2>/dev/null);",
-            "  if [ -n \"$$TS\" ]; then YEAR=$$(date -u -d \"@$$TS\" +%Y 2>/dev/null || date -u -r \"$$TS\" +%Y); fi;",
-            "fi;",
-            "if [ -z \"$$YEAR\" ]; then YEAR=$$(date -u +%Y); fi;",
-        ])
+        year_label = str(native.package_relative_label(year_file))
+        year_cmd = "YEAR=$$(tr -d '[:space:]' < $(location " + year_label + "));"
         year_arg = "\"$$YEAR\""
-        stamp = 1
+        year_srcs = [year_label]
 
     native.genrule(
         name = name + "_gen",
-        srcs = [spec] + srcs,
+        srcs = [spec] + srcs + year_srcs,
         outs = outs,
         cmd = " ".join([
             year_cmd,
@@ -105,9 +100,6 @@ def generated_certs(
             "  exit 1;",
             "fi;",
         ]),
-        # Undocumented attr to depend on the workspace status files; see
-        # https://github.com/bazelbuild/bazel/issues/4942
-        stamp = stamp,
         testonly = testonly,
         tags = tags,
         tools = [gen_label],

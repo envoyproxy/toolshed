@@ -1,6 +1,6 @@
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//certs:certs.bzl", "generated_certs")
-load(":certs_analysis_test.bzl", "command_test", "files_test")
+load(":certs_analysis_test.bzl", "command_test", "files_test", "inputs_test")
 
 generated_certs(
     name = "generated",
@@ -67,19 +67,19 @@ generated_certs(
 )
 
 generated_certs(
-    name = "stamped",
+    name = "epoch",
     spec = "fixtures/serial.spec",
     srcs = glob(["fixtures/**"], exclude = ["fixtures/*.spec"]),
-    outs = ["stamped_ca.pem", "stamped_leaf.pem"],
+    outs = ["epoch_ca.pem", "epoch_leaf.pem"],
     tags = ["manual"],
 )
 
 generated_certs(
-    name = "custom_status",
+    name = "custom_year_file",
     spec = "fixtures/serial.spec",
     srcs = glob(["fixtures/**"], exclude = ["fixtures/*.spec"]),
     outs = ["custom_ca.pem", "custom_leaf.pem"],
-    year_status_key = "CUSTOM_CERT_YEAR",
+    year_file = "custom_epoch_year.txt",
     tags = ["manual"],
 )
 
@@ -123,22 +123,40 @@ command_test(
     expected = "did not create declared output(s)",
 )
 
+# The year comes from a regular input rather than the (volatile) workspace status files, so
+# the generator only reruns when the year, generator, spec or sources change.
 command_test(
-    name = "stamped_command_test",
-    target_under_test = ":stamped_gen",
-    expected = "STABLE_CERT_EPOCH_YEAR",
+    name = "epoch_command_test",
+    target_under_test = ":epoch_gen",
+    expected = "cert_epoch",
 )
 
-command_test(
-    name = "build_timestamp_command_test",
-    target_under_test = ":stamped_gen",
-    expected = "BUILD_TIMESTAMP",
+inputs_test(
+    name = "epoch_inputs_test",
+    target_under_test = ":epoch_gen",
+    expected = ["year"],
+    forbidden = ["stable-status.txt", "volatile-status.txt"],
 )
 
-command_test(
-    name = "custom_status_command_test",
-    target_under_test = ":custom_status_gen",
-    expected = "CUSTOM_CERT_YEAR",
+inputs_test(
+    name = "pinned_inputs_test",
+    target_under_test = ":generated_gen",
+    forbidden = ["stable-status.txt", "volatile-status.txt", "year"],
+)
+
+inputs_test(
+    name = "custom_year_file_inputs_test",
+    target_under_test = ":custom_year_file_gen",
+    expected = ["custom_epoch_year.txt"],
+    forbidden = ["stable-status.txt", "volatile-status.txt", "year"],
+)
+
+sh_test(
+    name = "epoch_year_test",
+    size = "small",
+    srcs = ["epoch_year_test.sh"],
+    args = ["$(rootpath @cert_epoch//:year)"],
+    data = ["@cert_epoch//:year"],
 )
 
 files_test(

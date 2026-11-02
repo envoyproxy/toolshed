@@ -48,30 +48,35 @@ checked-in headers from `static_srcs` should be referenced directly.
 
 Certificates are valid from Jan 1 of a given year, so they never age out.
 
-By default, `generated_certs` derives the year hermetically from the
-`BUILD_TIMESTAMP` entry that Bazel writes into
-`bazel-out/volatile-status.txt` for stamped builds (`stamp = 1`, set
-automatically by the macro). No consumer configuration is required.
+By default, `generated_certs` reads the year from `@cert_epoch//:year`. That
+repo holds the host's current UTC year when it is fetched, so the year is a
+regular, content-addressed input: the generator only reruns (and everything
+built from its outputs is only rebuilt) when the year changes, or the
+generator, spec or sources do. Stamping is not used, as the workspace status
+files change on every build and would bust the cache each time. No consumer
+configuration is required.
 
-Workspaces that want to pin the year from their own
-`workspace_status_command` may use `year_status_key` as an optional override
-by emitting a line of the form:
+To pin the year:
 
-```
-STABLE_CERT_EPOCH_YEAR <YYYY>
-```
+- `--repo_env=CERT_EPOCH_YEAR=<YYYY>` sets it for every `generated_certs`
+  target;
+- `year = <YYYY>` pins it for one target;
+- `year_file = "<label>"` reads it from another file holding the year.
 
-If neither the override key nor `BUILD_TIMESTAMP` is available (for example
-with `--nostamp`), the macro falls back to the host's current UTC year. Pass
-`year = <YYYY>` to pin the year directly and skip stamping altogether.
+The repo is not refetched automatically, so a long-lived local output base
+keeps the year it first fetched. `current` fixtures expire on Jan 1 of the
+epoch year + 2 (eg an epoch fetched in December 2026 expires in January 2028),
+so refetch it before then, eg with `bazel clean --expunge` or by setting
+`CERT_EPOCH_YEAR`. CI runners that start from a fresh output base always fetch
+the current year.
 
 Three validity modes are available:
 
 | Mode | notBefore | notAfter |
 | --- | --- | --- |
-| `current` (default) | Jan 1 of the stamped year | +2 years |
+| `current` (default) | Jan 1 of the epoch year | +2 years |
 | `expired` | Jan 1 2020 | Jan 1 2021 |
-| `long` | Jan 1 of the stamped year | +18250 days |
+| `long` | Jan 1 of the epoch year | +18250 days |
 
 Serial numbers are derived from a hash of the fixture name (or pinned in the
 spec), never randomly, so CRL and OCSP entries stay consistent and repeated
