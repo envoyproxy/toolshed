@@ -1,0 +1,11 @@
+uses: ./actions/buildah
+with:
+  operations: '[]'
+  ghcr-token: test-token
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_call_count 1
+    test_mock_log_not_contains "buildah login" "GHCR login skipped without a username"
