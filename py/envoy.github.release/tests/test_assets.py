@@ -205,24 +205,27 @@ async def test_fetcher_save(patches, status):
             m_fail.call_args
             == [(f"Failed downloading, got response:\n{download}", ), {}])
         expected["error"] = m_fail.return_value
+        # stream.writer must NOT be called on error
+        assert not m_stream.writer.called
+        assert not outfile.parent.mkdir.called
     else:
         assert not m_fail.called
+        assert (
+            outfile.parent.mkdir.call_args
+            == [(), dict(exist_ok=True)])
+        writer = m_stream.writer
+        assert (
+            writer.call_args
+            == [(outfile, ), {}])
+        stream_bytes = writer.return_value.__aenter__.return_value.stream_bytes
+        assert (
+            stream_bytes.call_args
+            == [(download, ), {}])
 
     assert result == expected
     assert (
         m_path.return_value.joinpath.call_args
         == [('ASSET TYPE', 'NAME'), {}])
-    assert (
-        outfile.parent.mkdir.call_args
-        == [(), dict(exist_ok=True)])
-    writer = m_stream.writer
-    assert (
-        writer.call_args
-        == [(outfile, ), {}])
-    stream_bytes = writer.return_value.__aenter__.return_value.stream_bytes
-    assert (
-        stream_bytes.call_args
-        == [(download, ), {}])
 
 
 def test_pusher_constructor(patches):
