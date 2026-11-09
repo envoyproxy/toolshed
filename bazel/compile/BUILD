@@ -551,3 +551,21 @@ constraint_value(
     name = "gcc_worker",
     constraint_setting = ":worker",
 )
+
+# Where actions run. A host toolchain uses absolute host paths, so it is registered for
+# :local_execution, which every platform has unless it declares :remote_execution - as remote
+# execution platforms must, to keep host toolchains off their workers.
+constraint_setting(
+    name = "execution",
+    default_constraint_value = ":local_execution",
+)
+
+constraint_value(
+    name = "local_execution",
+    constraint_setting = ":execution",
+)
+
+constraint_value(
+    name = "remote_execution",
+    constraint_setting = ":execution",
+)

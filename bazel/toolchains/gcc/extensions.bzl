@@ -1,9 +1,13 @@
 """Pinned x86_64-hosted GCC cross compilers using the shared base sysroot."""
 
 load("//:versions.bzl", "VERSIONS")
-load(":host.bzl", "gcc_host_repository", "host_cpu", "host_toolchain_names")
+load(":host.bzl", "fallback_cpu_constraint", "fallback_host_cpu", "gcc_host_repository", "host_cpu", "host_toolchain_names")
 
 _GCC = VERSIONS["gcc_toolchain"]
+
+# The fallback host GCC toolchain, and the platform it is registered for.
+_FALLBACK = "gcc_host"
+_FALLBACK_PLATFORM = "gcc_host_platform"
 
 def _gcc_repository_impl(ctx):
     arch = ctx.attr.arch
@@ -119,6 +123,41 @@ _gcc_repository = repository_rule(
     },
 )
 
+def _gcc_host_platform_repository_impl(ctx):
+    ctx.file("BUILD.bazel", """
+package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "cpu",
+    actual = %r,
+)
+""" % ctx.attr.cpu)
+
+# The CPU constraint of the platform that the fallback toolchain both runs on and targets. It is
+# a separate repository from the toolchain so that registering it does not probe for a host GCC
+# during toolchain resolution.
+_gcc_host_platform_repository = repository_rule(
+    implementation = _gcc_host_platform_repository_impl,
+    attrs = {
+        "cpu": attr.string(mandatory = True),
+    },
+)
+
+def _gcc_no_fallback_repository_impl(ctx):
+    # A registered toolchain names `:cc_toolchain` whether or not it can ever match, so keep
+    # the label loadable (eg for `bazel query`) on hosts with no fallback.
+    ctx.file("BUILD.bazel", """
+# This host runs the hermetic GCC archives, or is not supported: there is no fallback.
+filegroup(
+    name = "cc_toolchain",
+    visibility = ["//visibility:public"],
+)
+""")
+
+_gcc_no_fallback_repository = repository_rule(
+    implementation = _gcc_no_fallback_repository_impl,
+)
+
 def _gcc_extension_impl(ctx):
     host = None
     for mod in ctx.modules:
@@ -132,7 +171,15 @@ def _gcc_extension_impl(ctx):
     # Only an explicit `host` tag swaps native-arch toolchains for the host GCC
     # (see `host_toolchain_names`); every other toolchain is the hermetic download.
     host_arch = host_cpu(ctx.os) if host else None
+
+    # No archive runs on this host: its GCC is a separate fallback toolchain as well, and
+    # without `host` the archives stay as they are for the x86_64 remote workers that can run
+    # them.
+    fallback_arch = fallback_host_cpu(ctx.os)
     names = [tag.name for mod in ctx.modules for tag in mod.tags.toolchain]
+    for name in [_FALLBACK, _FALLBACK_PLATFORM]:
+        if name in names:
+            fail("gcc_extension.toolchain(name = %r) is reserved for the host GCC fallback" % name)
     for name in (host.toolchains if host else []):
         if name not in names:
             fail("gcc_extension.host(toolchains = ...) names unknown toolchain %r" % name)
@@ -154,10 +201,28 @@ def _gcc_extension_impl(ctx):
                     lld = tag.lld,
                     sysroot = tag.sysroot,
                 )
+    if fallback_arch:
+        gcc_host_repository(
+            name = _FALLBACK,
+            arch = fallback_arch,
+            gcc_version = host.gcc_version if host else "",
+            path = host.path if host else "",
+        )
+    else:
+        _gcc_no_fallback_repository(name = _FALLBACK)
+    _gcc_host_platform_repository(
+        name = _FALLBACK_PLATFORM,
+        cpu = fallback_cpu_constraint(fallback_arch),
+    )
+
+    # Whether there is a fallback depends only on the host's OS and CPU, which the extension
+    # declares, so only an explicit `host` (a local path) is not reproducible.
     return ctx.extension_metadata(reproducible = not host)
 
 gcc_extension = module_extension(
     implementation = _gcc_extension_impl,
+    arch_dependent = True,
+    os_dependent = True,
     tag_classes = {
         "toolchain": tag_class(attrs = {
             "name": attr.string(mandatory = True),

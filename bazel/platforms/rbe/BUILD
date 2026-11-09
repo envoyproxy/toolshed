@@ -19,6 +19,7 @@ platform(
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
         "//compile:llvm_worker",
+        "//compile:remote_execution",
     ],
     exec_properties = {
         "container-image": WORKER_IMAGE,
@@ -32,6 +33,7 @@ platform(
         "@platforms//os:linux",
         "@platforms//cpu:aarch64",
         "//compile:llvm_worker",
+        "//compile:remote_execution",
     ],
     exec_properties = {
         "container-image": WORKER_IMAGE,
@@ -46,6 +48,7 @@ platform(
         "@platforms//os:linux",
         "@platforms//cpu:x86_64",
         "//compile:gcc_worker",
+        "//compile:remote_execution",
     ],
     exec_properties = {
         "container-image": WORKER_IMAGE,

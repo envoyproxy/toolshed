@@ -103,6 +103,8 @@ common:remote-exec --extra_execution_platforms=//platforms/rbe:linux_x64_gcc,//p
 # gcc
 #############################################################################
 
+# This targets x86_64, which only the archives build: on an aarch64 host use
+# --platforms=//platforms:linux_aarch64_libstdcxx for a native build with the host GCC.
 common:gcc --//compile:use_gcc_toolchain=true
 common:gcc --platforms=//platforms:linux_x86_64_libstdcxx
 
