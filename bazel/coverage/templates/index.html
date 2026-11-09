@@ -10,7 +10,9 @@
     <tr>
       <th>{{ kind }}</th>
       <th class="has-text-centered" colspan="3">Line Coverage</th>
+      {% if stats.total_funs > 0 %}
       <th class="has-text-centered" colspan="2">Functions</th>
+      {% endif %}
       {% if branch_enabled %}
       <th class="has-text-centered" colspan="2">Branches</th>
       {% endif %}
@@ -20,17 +22,17 @@
     {%- if kind == "Directory" -%}
     {%- for item, info in items -%}
     {% if info.abs_prefix and info.abs_prefix != "" %}
-    {{ macros::stats_line(name=item, url=info.abs_prefix~item~"/index.html", stats=info.stats, precision=precision) }}
+    {{ macros::stats_line(name=item, url=info.abs_prefix~item~"/index.html", stats=info.stats, precision=precision, functions=stats.total_funs > 0) }}
     {% else %}
-    {{ macros::stats_line(name=item, url=item~"/index.html", stats=info.stats, precision=precision) }}
+    {{ macros::stats_line(name=item, url=item~"/index.html", stats=info.stats, precision=precision, functions=stats.total_funs > 0) }}
     {% endif %}
     {%- endfor -%}
     {%- else -%}
     {%- for item, info in items -%}
     {% if info.abs_prefix and info.abs_prefix != "" %}
-    {{ macros::stats_line(name=item, url=info.abs_prefix~"/"~item~".html", stats=info.stats, precision=precision) }}
+    {{ macros::stats_line(name=item, url=info.abs_prefix~"/"~item~".html", stats=info.stats, precision=precision, functions=stats.total_funs > 0) }}
     {% else %}
-    {{ macros::stats_line(name=item, url=item~".html", stats=info.stats, precision=precision) }}
+    {{ macros::stats_line(name=item, url=item~".html", stats=info.stats, precision=precision, functions=stats.total_funs > 0) }}
     {% endif %}
     {%- endfor -%}
     {%- endif -%}
