@@ -12,7 +12,10 @@ JQ_BIN="$(rlocation "$JQ_BIN")"
 JQ_REPORT="$(rlocation "$JQ_REPORT")"
 SCANNED="$(rlocation "$SCANNED")"
 
-if [[ $("$JQ_BIN" 'length' "$SCANNED") -gt 0 ]]; then
+# A plain assignment, so that a jq failure aborts under `set -e` rather than
+# comparing as zero and passing the test.
+count="$("$JQ_BIN" 'length' "$SCANNED")"
+if [[ "$count" -gt 0 ]]; then
     "$JQ_BIN" -r -f "$JQ_REPORT" "$SCANNED"
     exit 1
 fi
