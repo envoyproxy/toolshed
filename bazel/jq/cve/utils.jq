@@ -122,6 +122,9 @@ def iterate_cves(cves; deps; ignored):
    | . as $cve
    | select(ignored | index($cve.cve.id) | not)
    | [.cve.configurations[]?.nodes[]?.cpeMatch[]?
+      # `vulnerable: false` marks an environment the vulnerable product runs
+      # on or with, not something that is itself affected
+      | select(.vulnerable != false)
       | parse_cve_cpe(.; $cve)]
    | matching_deps(.; deps)
    | select(length > 0)
