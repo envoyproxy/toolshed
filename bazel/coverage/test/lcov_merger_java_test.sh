@@ -34,3 +34,5 @@ grep -q '^SF:source/uncovered/uncovered.cc$' "$WORK/coverage.dat"
 grep -q '^DA:1,1$' "$WORK/coverage.dat"
 grep -q '^DA:2,0$' "$WORK/coverage.dat"
 [[ "$(grep -c '^end_of_record$' "$WORK/coverage.dat")" == 2 ]]
+# The intermediates the merger read are gone (this is the in-test-action case).
+[[ -z "$(ls -A "$WORK/coverage")" ]]

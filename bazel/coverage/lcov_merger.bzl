@@ -31,6 +31,7 @@ def _lcov_merger_impl(ctx):
         substitutions = {
             "{{MERGER}}": _runfile_key(ctx, merger.files_to_run.executable),
             "{{STRIP}}": " ".join(ctx.attr.strip),
+            "{{CLEAN}}": "1" if ctx.attr.clean_coverage_dir else "0",
         },
         is_executable = True,
     )
@@ -48,7 +49,9 @@ Point `--coverage_output_generator` at an instance of this rule. Arguments are p
 through to `merger`; the `--output_file` it writes is then filtered in place, dropping
 every lcov record type named in `strip`. The default drops function and branch records,
 which the toolshed report and threshold validation never read, and keeps every `DA`
-line record, including zero-hit lines.
+line record, including zero-hit lines. Inside the test action (no split postprocessing)
+it also clears the coverage directory's intermediates after merging, so they are not
+uploaded with the test's outputs.
 """,
     attrs = {
         "merger": attr.label(
@@ -62,6 +65,13 @@ line record, including zero-hit lines.
         "strip": attr.string_list(
             default = DEFAULT_STRIP_RECORDS,
             doc = "lcov record types (the text before the colon) to drop from the merged report.",
+        ),
+        "clean_coverage_dir": attr.bool(
+            default = True,
+            doc = """Remove the coverage directory's intermediates (raw profiles, the unfiltered
+export, indexed profiles) once the report is merged, when the merger runs inside the test
+action rather than in a split postprocessing spawn. Without split postprocessing that
+directory is uploaded with the test's outputs, and these files are its bulk.""",
         ),
         "_runfiles": attr.label(default = "@bazel_tools//tools/bash/runfiles"),
         "_script": attr.label(
