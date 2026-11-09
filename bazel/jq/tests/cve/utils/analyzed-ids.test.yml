@@ -1,0 +1,17 @@
+name: cve utils lists the ids of NVD records with non-empty CPE configurations
+imports: [cve/utils]
+input:
+  vulnerabilities:
+  - cve: {id: CVE-ANALYZED, published: "2024-06-01T00:00:00.000", configurations: [{nodes: [{cpeMatch: [{criteria: "cpe:2.3:a:v:p:*"}]}]}]}
+  - cve: {id: CVE-EMPTY-CONFIG, configurations: []}
+  - cve: {id: CVE-AWAITING, vulnStatus: Awaiting Analysis}
+  - cve: {id: CVE-DEFERRED, vulnStatus: Deferred}
+expression: |
+  [utils::parse_deps({dep: {version: "1", release_date: "2024-01-01", cpe: "cpe:2.3:a:v:p:*"}})] as $deps
+  | {ids: utils::analyzed_ids(.vulnerabilities),
+     scan: (utils::nvd_scan($deps; [[]]) | {matches: (.matches | map(.id)), analyzed})}
+expected:
+  ids: [CVE-ANALYZED]
+  scan:
+    matches: [CVE-ANALYZED]
+    analyzed: [CVE-ANALYZED]

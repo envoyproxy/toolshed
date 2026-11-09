@@ -1,0 +1,2 @@
+aiohttp==3.14.5
+aio.run.runner==0.4.1

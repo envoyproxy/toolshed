@@ -26,6 +26,7 @@ jobs:
         config: |
           paths:
           - jq/**
+          - bazel/jq/**
           - .github/workflows/jq.yml
 
   tests:
@@ -41,6 +42,8 @@ jobs:
         yq --version
     - name: Run jq tests
       run: ./jq/run-tests.sh
+    - name: Run jq tests (Bazel modules)
+      run: ./jq/run-tests.sh bazel/jq
 
   status:
     runs-on: ubuntu-24.04

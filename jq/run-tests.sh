@@ -8,6 +8,13 @@ set -euo pipefail
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# The module root to test: its `*.jq` files and `tests/` directory. Defaults to
+# this directory; pass eg `bazel/jq` to test the modules shipped with Bazel.
+MODULES_DIR="$SCRIPT_DIR"
+if [[ -n "${1:-}" ]]; then
+    MODULES_DIR="$(cd "$1" && pwd)"
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -40,7 +47,8 @@ build_imports () {
         for ((i=0; i<import_count; i++)); do
             local imp
             imp=$(echo "$imports" | jq -r ".[$i]")
-            jq_filter+="import \"$imp\" as $imp; "
+            # A scoped module (eg `cve/utils`) is imported as its last segment.
+            jq_filter+="import \"$imp\" as ${imp##*/}; "
         done
     fi
     echo "$jq_filter"
@@ -115,7 +123,7 @@ run_test () {
     fi
 
     local result
-    if result=$(echo "$input" | jq -L "$SCRIPT_DIR" -r "$jq_filter" 2>&1); then
+    if result=$(echo "$input" | jq -L "$MODULES_DIR" -r "$jq_filter" 2>&1); then
         local result_trimmed="${result%$'\n'}"
         local expected_raw
         expected_raw=$(echo "$expected" | jq -r '.')
@@ -154,7 +162,7 @@ summary () {
 }
 
 run_tests () {
-    local test_dir="$SCRIPT_DIR/tests"
+    local test_dir="$MODULES_DIR/tests"
     local test_files=()
 
     if [[ ! -d "$test_dir" ]]; then

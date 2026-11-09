@@ -40,6 +40,9 @@ load_packages()
 load("@toolshed_pip3//:requirements.bzl", "install_deps")
 install_deps()
 
+load("@cve_pip3//:requirements.bzl", cve_install_deps = "install_deps")
+cve_install_deps()
+
 load_website_packages()
 
 load("@website_pip3//:requirements.bzl", website_install_deps = "install_deps")

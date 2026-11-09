@@ -1,0 +1,19 @@
+name: cve utils handles empty vulnerabilities dependencies and complete ignore lists
+imports: [cve/utils]
+input:
+  vulnerabilities:
+  - cve:
+      id: CVE-IGNORED
+      published: "2024-01-01T00:00:00.000"
+      configurations:
+      - nodes:
+        - cpeMatch: [{criteria: "cpe:2.3:a:vendor:product:*"}]
+expression: |
+  [utils::scan([{}]; [[]]),
+   ({vulnerabilities: []} | utils::scan([{}]; [[]])),
+   utils::scan(
+     [{target: {cpe: {vendor: "vendor", product: "product"},
+                version: {string: "hash"},
+                release_date: "2023-01-01"}}];
+     [["CVE-IGNORED"]])]
+expected: [[], [], []]

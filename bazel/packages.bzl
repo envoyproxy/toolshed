@@ -9,6 +9,14 @@ def load_packages():
         requirements_lock = "@envoy_toolshed//:requirements.txt",
         python_interpreter_target = "@python3_12_host//:python",
     )
+
+    # The CVE data fetchers (`//dependency/cve`). Using them also requires the
+    # hub's `install_deps()`.
+    pip_parse(
+        name = "cve_pip3",
+        requirements_lock = "@envoy_toolshed//dependency/cve:requirements_lock.txt",
+        python_interpreter_target = "@python3_12_host//:python",
+    )
     bazel_features_deps()
 
 def load_website_packages():

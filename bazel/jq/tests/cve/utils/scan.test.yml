@@ -1,0 +1,59 @@
+name: cve utils scans NVD fixtures with slurpfile dependencies and ignored IDs
+imports: [cve/utils]
+input:
+  deps:
+    target: {version: "1.2.3", release_date: "2024-01-01", cpe: "cpe:2.3:a:vendor:product:*"}
+    recent: {version: "1.2.3", release_date: "2025-01-01", cpe: "cpe:2.3:a:vendor:product:*"}
+    other: {version: "1.2.3", release_date: "2024-01-01", cpe: "cpe:2.3:a:vendor:other:*"}
+    skip: {version: "1.2.3", cpe: N/A}
+  ignored: [CVE-IGNORED]
+  nvd:
+    vulnerabilities:
+    - cve:
+        id: CVE-MATCH
+        published: "2024-06-01T00:00:00.000"
+        descriptions: [{lang: en, value: Example vulnerability}]
+        metrics: {cvssMetricV31: [{cvssData: {baseSeverity: HIGH}}]}
+        configurations:
+        - nodes:
+          - cpeMatch:
+            - {criteria: "cpe:2.3:a:vendor:product:1.2.3", versionStartIncluding: "1.0", versionEndExcluding: "2.0"}
+    - cve:
+        id: CVE-IGNORED
+        published: "2024-06-01T00:00:00.000"
+        configurations:
+        - nodes:
+          - cpeMatch: [{criteria: "cpe:2.3:a:vendor:product:*"}]
+    - cve:
+        id: CVE-OUTSIDE
+        published: "2024-06-01T00:00:00.000"
+        configurations:
+        - nodes:
+          - cpeMatch: [{criteria: "cpe:2.3:a:vendor:product:*", versionStartIncluding: "2.0"}]
+    - cve:
+        id: CVE-MISMATCH
+        published: "2024-06-01T00:00:00.000"
+        configurations:
+        - nodes:
+          - cpeMatch: [{criteria: "cpe:2.3:a:vendor:product:1.2.4"}]
+    - cve: {id: CVE-NO-CONFIG}
+    - cve: {id: CVE-NO-NODES, configurations: [{}]}
+    - cve: {id: CVE-NO-CPES, configurations: [{nodes: [{}]}]}
+expression: |
+  . as $fixture
+  | [utils::parse_deps(.deps)] as $deps
+  | [.ignored] as $ignored
+  | .nvd
+  | utils::scan($deps; $ignored)
+  | map({id, names: [.matched[].dep.name],
+         versions: [.matched[].dep.version.string],
+         cpe_versions: [.matched[].cpe.cpe.version],
+         bounds: [.matched[].cpe.versions],
+         preserves_cve: (.cve == $fixture.nvd.vulnerabilities[0].cve)})
+expected:
+- id: CVE-MATCH
+  names: [target]
+  versions: ["1.2.3"]
+  cpe_versions: ["1.2.3"]
+  bounds: [{end_inc: null, end_exc: "2.0", start_inc: "1.0", start_exc: null}]
+  preserves_cve: true

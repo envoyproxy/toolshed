@@ -1,0 +1,9 @@
+name: cve utils selects CVSS 3.1 before 3.0 and falls back to UNKNOWN
+imports: [cve/utils]
+input:
+- {cvssMetricV31: [{cvssData: {baseSeverity: CRITICAL}}], cvssMetricV30: [{cvssData: {baseSeverity: HIGH}}]}
+- {cvssMetricV30: [{cvssData: {baseSeverity: HIGH}}]}
+- {}
+- null
+expression: 'map(utils::get_severity(.))'
+expected: [CRITICAL, HIGH, UNKNOWN, UNKNOWN]
