@@ -90,6 +90,37 @@ Tool, config, jq module, and template paths are resolved through Bazel runfiles.
 The report is a zstd-compressed tar archive containing HTML, covdir, and
 `coverage.json`; it is written to Bazel's requested `--output_file`.
 
+## Smaller per-test reports
+
+Bazel runs an lcov merger once per test, in the coverage postprocessing spawn,
+to produce that test's `coverage.dat`. Every such file describes the whole
+instrumented binary, and in a large C++ tree most of it is function (`FN`,
+`FNDA`) and branch (`BRDA`) records: thousands of mangled names per file,
+repeated for every test, then uploaded, downloaded and parsed again by the
+combined report. The thresholds are validated against line coverage only.
+
+`@envoy_toolshed//coverage:lcov_merger` wraps Bazel's merger and strips those
+records from each merged per-test report before it leaves the spawn:
+
+```
+coverage --coverage_output_generator=@envoy_toolshed//coverage:lcov_merger
+```
+
+Line records are untouched, zero-hit lines included (the baseline report only
+lists files, so dropping them would hide uncovered lines rather than count
+them), and the combined line coverage is identical. The HTML report omits its
+Functions column when no function records remain. To strip a different set of
+record types, instantiate the rule with `strip = [...]`:
+
+```starlark
+load("@envoy_toolshed//coverage:lcov_merger.bzl", "lcov_merger")
+
+lcov_merger(
+    name = "lcov_merger",
+    strip = ["BRDA", "BRF", "BRH"],
+)
+```
+
 ## Driver
 
 Run the exported `@envoy_toolshed//coverage:run.sh` directly, or:

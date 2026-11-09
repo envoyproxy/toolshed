@@ -1,5 +1,7 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//coverage:lcov_merger.bzl", "lcov_merger")
 load("//coverage:macros.bzl", "coverage_report")
 
 licenses(["notice"])  # Apache 2
@@ -48,8 +50,47 @@ build_test(
         ":smoke",
         ":smoke.validate",
         ":custom",
+        "//coverage:lcov_merger",
         "//coverage:run",
     ],
+)
+
+sh_binary(
+    name = "fake_merger",
+    srcs = ["fake_merger.sh"],
+)
+
+lcov_merger(
+    name = "fake_lcov_merger",
+    merger = ":fake_merger",
+)
+
+sh_test(
+    name = "lcov_merger_test",
+    srcs = ["lcov_merger_test.sh"],
+    data = [
+        "testdata/per_test.dat",
+        ":fake_lcov_merger",
+    ],
+    env = {
+        "LCOV_DATA": "$(rlocationpath testdata/per_test.dat)",
+        "MERGER": "$(rlocationpath :fake_lcov_merger)",
+    },
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)
+
+sh_test(
+    name = "lcov_merger_java_test",
+    srcs = ["lcov_merger_java_test.sh"],
+    data = [
+        "testdata/per_test.dat",
+        "//coverage:lcov_merger",
+    ],
+    env = {
+        "LCOV_DATA": "$(rlocationpath testdata/per_test.dat)",
+        "MERGER": "$(rlocationpath //coverage:lcov_merger)",
+    },
+    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 
 sh_test(
