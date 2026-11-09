@@ -1,0 +1,82 @@
+name: cve utils matches single git revisions exactly and ignores git ranges
+imports: [cve/utils]
+input:
+  deps:
+    pinned:
+      version: "0123456789abcdef0123456789abcdef01234567"
+      release_date: "2024-01-22"
+      cpe: "cpe:2.3:a:vendor:pinned:*"
+    tagged: {version: "1.2.3", release_date: "2024-01-22", cpe: "cpe:2.3:a:vendor:tagged:*"}
+    numeric: {version: "7.0.0", release_date: "2024-01-22", cpe: "cpe:2.3:a:vendor:numeric:*"}
+  cvelist:
+    records:
+    - id: CVE-GIT-EXACT
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: vendor
+        product: pinned
+        versions:
+        - {version: "0123456789abcdef0123456789abcdef01234567", status: affected, versionType: git}
+        provider: cna
+    - id: CVE-GIT-OTHER
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: vendor
+        product: pinned
+        versions:
+        - {version: "89abcdef0123456789abcdef0123456789abcdef", status: affected, versionType: git}
+        provider: cna
+    - id: CVE-GIT-UNAFFECTED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: vendor
+        product: pinned
+        defaultStatus: affected
+        versions:
+        - {version: "0123456789abcdef0123456789abcdef01234567", status: unaffected, versionType: git}
+        provider: cna
+    - id: CVE-GIT-RANGE
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: vendor
+        product: pinned
+        versions:
+        - version: "0123456789abcdef0123456789abcdef01234567"
+          lessThan: "89abcdef0123456789abcdef0123456789abcdef"
+          status: affected
+          versionType: git
+        provider: cna
+    - id: CVE-GIT-TAGGED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: vendor
+        product: tagged
+        versions:
+        - {version: "0123456789abcdef0123456789abcdef01234567", status: affected, versionType: git}
+        provider: cna
+    # a commit made up of digits is not the version it would parse as
+    - id: CVE-GIT-NUMERIC
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: vendor
+        product: numeric
+        versions:
+        - {version: "0000007", status: affected, versionType: git}
+        provider: cna
+    - id: CVE-GIT-NUMERIC-UNAFFECTED
+      published: "2026-09-18T00:00:00.000Z"
+      affected:
+      - vendor: vendor
+        product: numeric
+        defaultStatus: affected
+        versions:
+        - {version: "0000007", status: unaffected, versionType: git}
+        provider: cna
+expression: |
+  [utils::parse_deps(.deps)] as $deps
+  | .cvelist
+  | utils::scan_cna($deps; [[]])
+  | map({id, names: [.matched[].dep.name]})
+expected:
+- {id: CVE-GIT-EXACT, names: [pinned]}
+- {id: CVE-GIT-NUMERIC-UNAFFECTED, names: [numeric]}

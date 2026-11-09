@@ -187,11 +187,17 @@ def cna_wildcard_limit(limit):
       | try ((.[-1] |= ((tonumber + 1) | tostring)) + ["0", "0"] | .[0:3] | join(".") + "-0") catch null
     else $limit end;
 
+def cna_git_revision(entry):
+  # a single commit, rather than a range of them
+  entry.lessThan == null and entry.lessThanOrEqual == null
+  and ((entry.version // "") | test("^[0-9a-f]{7,64}$"));
+
 def cna_versions(entry):
   # normalize a CNA `versions[]` entry to the start/end bounds used for NVD
-  # cpe matching, or `{exact}` for a single version; git (commit) ranges
-  # cannot be compared and are ignored
-  (if entry.versionType == "git" then {invalid: true}
+  # cpe matching, `{exact}` for a single version or `{revision}` for a single
+  # git commit; git (commit) ranges cannot be compared and are ignored
+  (if entry.versionType == "git" then
+     (if cna_git_revision(entry) then {revision: entry.version} else {invalid: true} end)
    elif entry.lessThan != null then
      {start_inc: entry.version, end_exc: cna_wildcard_limit(entry.lessThan)}
    elif cna_wildcard(entry.lessThanOrEqual) then
@@ -212,6 +218,8 @@ def match_cna_version(versions; dep):
   # whether the dep version is covered by the normalized versions
   versions as $v
   | if $v.invalid then false
+    # a commit is compared literally: as a version, `0000007` equals `7.0.0`
+    elif $v.revision != null then dep.version.string == $v.revision
     elif $v.exact != null then version::eq(dep.version; version::parse($v.exact))
     else match_cpe_version({versions: $v}; dep)
     end;
@@ -319,6 +327,7 @@ def cna_bounds_string(versions):
   # the normalized bounds of a `versions[]` entry, as `a <= v < b`
   versions as $v
   | if $v.invalid then "(unparsed)"
+    elif $v.revision != null then "commit \($v.revision)"
     elif $v.exact != null then "v = \($v.exact)"
     else
       ([if $v.start_inc then "\($v.start_inc) <=" elif $v.start_exc then "\($v.start_exc) <" else empty end]
