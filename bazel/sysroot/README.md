@@ -88,8 +88,40 @@ with `-fstack-protector` and `-fno-omit-frame-pointer`, redacts `__DATE__`/`__TI
 
 #### Host GCC
 
+The archives only run on x86_64 Linux. On another supported Linux host (aarch64)
+the extension provides the host's own GCC as a fallback toolchain, `@gcc_host`:
+the GCC that `gcc` on `PATH` runs. Register it after the archives:
+
+```starlark
+toolchain(
+    name = "gcc_host_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@gcc_host_platform//:cpu",
+        "@envoy_toolshed//compile:local_execution",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@gcc_host_platform//:cpu",
+    ],
+    toolchain = "@gcc_host//:cc_toolchain",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+```
+
+`@gcc_host_platform//:cpu` is that host's CPU, so the toolchain is used for
+native builds there. Where an archive runs, and on unsupported hosts, it is a
+constraint that no platform has and the toolchain never matches: both
+repositories can be imported and registered unconditionally. The host is only
+probed when the fallback is selected, and the archives stay available for
+x86_64 remote workers. Like any host toolchain it uses absolute host paths and
+is not suitable for remote execution: every platform has
+`//compile:local_execution` by default, so give remote execution platforms
+`@envoy_toolshed//compile:remote_execution` to keep it off their workers.
+
 The extension's `host` tag replaces the native-architecture toolchain with a
-local GCC installation. It may only be declared once, by the root module:
+local GCC installation, and selects the installation that the fallback uses.
+It may only be declared once, by the root module:
 
 ```starlark
 gcc = use_extension("@envoy_toolshed//toolchains/gcc:extensions.bzl", "gcc_extension")
@@ -115,7 +147,8 @@ host repository exposes `:cc_toolchain`, `:config` and `:files`. It uses host
 headers, libc, libstdc++ and binutils (linking with bfd), is not suitable for
 remote execution, and deliberately provides no `:libstdcxx` or `:libgcc`
 targets. `gcc_version` optionally cross-checks the installed major version.
-Without a `host` tag nothing falls back to host tools, headers or libraries.
+Without a `host` tag a toolchain backed by an archive never falls back to host
+tools, headers or libraries.
 Downstreams must instantiate this extension and register their own toolchains;
 toolshed's registrations are dev-only. Register GCC before LLVM, as in
 toolshed's `MODULE.bazel`.

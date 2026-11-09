@@ -1,6 +1,6 @@
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:versions.bzl", "VERSIONS")
-load(":host_test.bzl", "host_toolchain_names_test")
+load(":host_test.bzl", "fallback_host_test", "host_toolchain_names_test", "host_tools_test")
 load(":toolchain_test.bzl", "gcc_compile_flags", "gcc_link_flags", "gcc_opt_flags_test", "gcc_paths_test", "gcc_runtime_test")
 
 package(default_visibility = ["//visibility:public"])
@@ -207,6 +207,34 @@ toolchain(
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
 
+# No archive runs on other Linux hosts (eg aarch64), where the host GCC is the fallback: this
+# matches only the host's own platform there, and nothing where an archive does run. It is
+# registered after the archives, which x86_64 remote workers can still run from such a host,
+# and only for local execution: it uses absolute host paths.
+toolchain(
+    name = "linux_host_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@gcc_host_platform//:cpu",
+        "//compile:local_execution",
+    ],
+    target_compatible_with = [
+        "@platforms//os:linux",
+        "@gcc_host_platform//:cpu",
+        "//compile:libstdcxx",
+    ],
+    toolchain = "@gcc_host//:cc_toolchain",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
 host_toolchain_names_test(
     name = "host_toolchain_names_test",
+)
+
+fallback_host_test(
+    name = "fallback_host_test",
+)
+
+host_tools_test(
+    name = "host_tools_test",
 )
