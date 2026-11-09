@@ -57,6 +57,22 @@ filegroup(
     srcs = ["cve.yaml"],
 )
 
+# Data files that contain no documents.
+filegroup(
+    name = "blank-files",
+    srcs = glob([
+        "blank_data/*.json",
+        "blank_data/cvelist/*.json",
+    ]),
+)
+
+cve_scan(
+    name = "blank",
+    config = "cve.yaml",
+    cve_data = ":blank-files",
+    deps = "deps.json",
+)
+
 diff_test(
     name = "scanned_test",
     file1 = ":cves.scanned",
@@ -67,6 +83,9 @@ sh_test(
     name = "failure_test",
     srcs = ["failure_test.sh"],
     data = [
+        ":blank-files",
+        ":blank_data",
+        ":cna_only_sources",
         ":cves.scanned",
         ":cves.test",
         ":cves_sources",
@@ -74,6 +93,7 @@ sh_test(
         ":empty_data",
         ":empty_deps",
         ":empty_ignored",
+        ":nvd_only_sources",
         "@envoy_toolshed_jq//:cve/cna_matcher.jq",
         "@envoy_toolshed_jq//:cve/matcher.jq",
         "@envoy_toolshed_jq//:cve/merge.jq",
@@ -82,6 +102,8 @@ sh_test(
         "@envoy_toolshed_jq//:jq",
     ],
     env = {
+        "BLANK_FILES": "$(rlocationpath :blank_data)",
+        "CNA_ONLY_SOURCES": "$(rlocationpath :cna_only_sources)",
         "CVE_TEST": "$(rlocationpath :cves.test)",
         "EMPTY_SCAN": "$(rlocationpath :empty)",
         "CPE_DEPS": "$(rlocationpath :empty_deps)",
@@ -94,6 +116,7 @@ sh_test(
         "JQ_MERGE": "$(rlocationpath @envoy_toolshed_jq//:cve/merge.jq)",
         "JQ_NVD_SCAN": "$(rlocationpath @envoy_toolshed_jq//:cve/nvd_scan.jq)",
         "JQ_REPORT": "$(rlocationpath @envoy_toolshed_jq//:cve/report.jq)",
+        "NVD_ONLY_SOURCES": "$(rlocationpath :nvd_only_sources)",
         "SCANNED": "$(rlocationpath :cves.scanned)",
     },
     deps = ["@bazel_tools//tools/bash/runfiles"],

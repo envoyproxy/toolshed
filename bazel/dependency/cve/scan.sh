@@ -58,8 +58,11 @@ trap 'rm -rf "$tmpdir"' EXIT
 
 # One pass over the NVD data: the matches, and the ids NVD has analyzed
 # (ie that have CPE configurations).
+#
+# `-e` fails the matchers when the data files contain no documents at all (eg
+# they are empty), rather than passing an empty scan.
 if [[ "$scan_nvd" == true ]]; then
-    "$JQ_BIN" -f "$JQ_NVD_SCAN" \
+    "$JQ_BIN" -e -f "$JQ_NVD_SCAN" \
         --slurpfile deps "$CPE_DEPS" --slurpfile ignored "$CVES_IGNORED" "${nvd_files[@]}" |
         "$JQ_BIN" -s '{matches: [.[].matches[]], analyzed: [.[].analyzed[]]}' \
             > "$tmpdir/nvd.json"
@@ -67,7 +70,7 @@ else
     echo '{"matches": [], "analyzed": null}' > "$tmpdir/nvd.json"
 fi
 if [[ "$scan_cna" == true ]]; then
-    "$JQ_BIN" -f "$JQ_CNA_MATCHER" \
+    "$JQ_BIN" -e -f "$JQ_CNA_MATCHER" \
         --slurpfile deps "$CPE_DEPS" --slurpfile ignored "$CVES_IGNORED" "${cna_files[@]}" |
         "$JQ_BIN" -s '[.[][]]' > "$tmpdir/cna.json"
 else
