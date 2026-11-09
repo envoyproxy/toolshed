@@ -33,3 +33,12 @@ status=0
 "$(rlocation "$EMPTY_SCAN")" > "$TEST_TMPDIR/empty" 2>&1 || status=$?
 [[ "$status" -eq 1 ]]
 grep -q "No CVE data set" "$TEST_TMPDIR/empty"
+
+# Data files that contain no documents fail the scan for each source (jq exits
+# 4 when it reads no document), rather than passing it empty
+for sources in "$NVD_ONLY_SOURCES" "$CNA_ONLY_SOURCES"; do
+    status=0
+    CVE_FILES="$BLANK_FILES" CVES_SOURCES="$sources" "$(rlocation "$EMPTY_SCAN")" \
+        > "$TEST_TMPDIR/blank" 2>&1 || status=$?
+    [[ "$status" -eq 4 ]]
+done
