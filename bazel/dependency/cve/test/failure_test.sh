@@ -20,6 +20,15 @@ grep -q "Affected: Example/Widget 1.0 <= v < 1.3 affected" "$TEST_TMPDIR/report"
 grep -q "2 potential CVE vulnerabilities found" "$TEST_TMPDIR/report"
 grep -q "(0 NVD only, 1 CVE Program only, 1 both)" "$TEST_TMPDIR/report"
 
+# A scan that cannot be read fails the test, rather than passing it
+echo "not json" > "$TEST_TMPDIR/broken.json"
+status=0
+SCANNED="$TEST_TMPDIR/broken.json" "$(rlocation "$CVE_TEST")" > "$TEST_TMPDIR/broken" 2>&1 || status=$?
+[[ "$status" -ne 0 ]]
+if grep -q "potential CVE" "$TEST_TMPDIR/broken"; then
+    exit 1
+fi
+
 status=0
 "$(rlocation "$EMPTY_SCAN")" > "$TEST_TMPDIR/empty" 2>&1 || status=$?
 [[ "$status" -eq 1 ]]
