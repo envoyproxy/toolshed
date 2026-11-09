@@ -18,6 +18,10 @@ input:
 - {version: "2.5.0", lessThanOrEqual: "2.5.*", status: affected}
 - {version: "3.0", lessThan: "3.x.*", status: affected}
 - {version: "abc123", lessThan: "def456", status: affected, versionType: git}
+- {version: "0123456789abcdef0123456789abcdef01234567", status: affected, versionType: git}
+- {version: "0123456789ab", lessThanOrEqual: "89abcdef0123", status: affected, versionType: git}
+- {version: "0", status: affected, versionType: git}
+- {version: "*", status: affected, versionType: git}
 - {version: "0", status: affected}
 - {version: "< 0", status: affected}
 - {version: "0", lessThanOrEqual: "0", status: affected}
@@ -40,6 +44,10 @@ expected:
 - {}
 - {start_inc: "1.0", end_exc: "2.0.0-0"}
 - {start_inc: "2.5.0", end_exc: "2.6.0-0"}
+- {invalid: true}
+- {invalid: true}
+- {revision: "0123456789abcdef0123456789abcdef01234567"}
+- {invalid: true}
 - {invalid: true}
 - {invalid: true}
 - {exact: "0"}
