@@ -1,0 +1,5 @@
+name: cve report renders empty summary with ANSI styling
+imports: [cve/utils]
+input: []
+expression: 'utils::report(.)'
+expected: "\n  ==========================================\n  \u001b[31m\u001b[1m0 potential CVE vulnerabilities found\u001b[0m"

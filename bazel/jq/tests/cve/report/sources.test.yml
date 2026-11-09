@@ -1,0 +1,147 @@
+name: cve report renders NVD and CVE Program matches with their sources and NVD state
+imports: [cve/utils]
+input:
+- id: CVE-BOTH
+  sources: [nvd, cna]
+  matched:
+  - source: nvd
+    dep:
+      name: example
+      version: {string: "1.2.3"}
+      release_date: "2024-01-01"
+      cpe: {match: "cpe:2.3:a:vendor:product:*", vendor: vendor, product: product, version: "*"}
+      cpes: [{match: "cpe:2.3:a:vendor:product:*", vendor: vendor, product: product, version: "*"}]
+    cpe:
+      cpe: {vendor: vendor, product: product, version: "*"}
+      versions: {start_inc: "1.0", start_exc: null, end_inc: null, end_exc: "2.0"}
+  - source: cna
+    dep:
+      name: example
+      version: {string: "1.2.3"}
+      release_date: "2024-01-01"
+    affected: {vendor: Vendor, product: Product, versions: [{version: "< 2.0", status: affected}]}
+  cve:
+    published: "2024-06-01T12:00:00.000"
+    descriptions: [{value: NVD description}]
+    metrics: {cvssMetricV31: [{cvssData: {baseSeverity: HIGH}}]}
+  cna:
+    assigner: example
+    published: "2024-06-01T10:00:00.000Z"
+    descriptions: [{value: CNA description}]
+    metrics: [{cvssV3_1: {baseSeverity: MEDIUM}}]
+- id: CVE-CNA-ONLY
+  sources: [cna]
+  nvd_analyzed: false
+  matched:
+  - source: cna
+    dep:
+      name: cares
+      version: {string: "1.34.6"}
+      release_date: "2025-02-24"
+    affected:
+      vendor: c-ares
+      product: c-ares
+      defaultStatus: unaffected
+      versions:
+      - {version: "< 1.34.7", status: affected}
+      - {version: "1.0", lessThan: "1.2", status: affected}
+      - {version: "2.0", lessThanOrEqual: "2.2", status: affected}
+      - {version: "9.9", status: unaffected}
+      - {version: "0", lessThan: "3.0", status: unaffected, changes: [{at: "2.5", status: affected}]}
+      - {version: "0", lessThan: "1.*", status: affected}
+      - {version: "abc", lessThan: "def", status: affected, versionType: git}
+  cve:
+    assigner: GitHub_M
+    published: "2026-09-18T17:26:52.210Z"
+    descriptions: [{value: CNA only description}]
+    metrics: [{cvssV3_1: {baseSeverity: HIGH}}]
+  cna:
+    assigner: GitHub_M
+    published: "2026-09-18T17:26:52.210Z"
+    descriptions: [{value: CNA only description}]
+    metrics: [{cvssV3_1: {baseSeverity: HIGH}}]
+- id: CVE-CNA-ANALYZED
+  sources: [cna]
+  nvd_analyzed: true
+  matched:
+  - source: cna
+    dep:
+      name: zlib
+      version: {string: "1.3.1"}
+      release_date: "2024-01-22"
+    affected: {cpes: ["cpe:2.3:a:zlib:zlib:*:*:*:*:*:*:*:*"], defaultStatus: affected}
+  cve:
+    published: "2026-09-18T00:00:00.000Z"
+    descriptions: [{value: ADP description}]
+    metrics: []
+  cna:
+    published: "2026-09-18T00:00:00.000Z"
+    descriptions: [{value: ADP description}]
+    metrics: []
+expression: 'utils::report(.) | gsub("\u001b\\[[0-9;]*m"; "") | split("\n")'
+expected:
+- "================ CVE-BOTH ================"
+- "  Dep: example@1.2.3 (2024-01-01)"
+- ""
+- "  Source: NVD"
+- "  Severity: HIGH"
+- "  Published: 2024-06-01"
+- "  CPE: cpe:2.3:a:vendor:product:*"
+- "  Version: *"
+- "  Start (including/excluding): 1.0/"
+- "  End (including/excluding): /2.0"
+- ""
+- "  ---------------------------------"
+- ""
+- "  NVD description"
+- ""
+- "  Dep: example@1.2.3 (2024-01-01)"
+- ""
+- "  Source: CVE Program (example)"
+- "  Severity: MEDIUM"
+- "  Published: 2024-06-01"
+- "  Affected: Vendor/Product v < 2.0 affected"
+- "  CPEs: "
+- ""
+- "  ---------------------------------"
+- ""
+- "  NVD description"
+- ""
+- "  "
+- "  "
+- "================ CVE-CNA-ONLY ================"
+- "  NVD: not analyzed (no CPE data)"
+- "  Dep: cares@1.34.6 (2025-02-24)"
+- ""
+- "  Source: CVE Program (GitHub_M)"
+- "  Severity: HIGH"
+- "  Published: 2026-09-18"
+- "  Affected: c-ares/c-ares v < 1.34.7 affected; 1.0 <= v < 1.2 affected; 2.0 <= v <= 2.2 affected;\
+  \ v = 9.9 unaffected; v < 3.0 unaffected then affected at 2.5; v < 2.0.0-0 affected; (unparsed) affected;\
+  \ default unaffected"
+- "  CPEs: "
+- ""
+- "  ---------------------------------"
+- ""
+- "  CNA only description"
+- ""
+- "  "
+- "  "
+- "================ CVE-CNA-ANALYZED ================"
+- "  NVD: analyzed, no CPE match for the tracked tags"
+- "  Dep: zlib@1.3.1 (2024-01-22)"
+- ""
+- "  Source: CVE Program (unknown CNA)"
+- "  Severity: UNKNOWN"
+- "  Published: 2026-09-18"
+- "  Affected: / default affected"
+- "  CPEs: cpe:2.3:a:zlib:zlib:*:*:*:*:*:*:*:*"
+- ""
+- "  ---------------------------------"
+- ""
+- "  ADP description"
+- ""
+- "  "
+- "  "
+- "  =========================================="
+- "  3 potential CVE vulnerabilities found (0 NVD only, 2 CVE Program only, 1 both)"

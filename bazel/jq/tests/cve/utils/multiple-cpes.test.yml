@@ -1,0 +1,39 @@
+name: cve utils matches any dependency tag and reports the matched tag
+imports: [cve/utils]
+input:
+  deps:
+    single: {version: "1.2.3", release_date: "2024-01-01", cpe: "cpe:2.3:a:c-ares:c-ares:*"}
+    multiple:
+      version: "1.2.3"
+      release_date: "2024-01-01"
+      cpe: [null, "N/A", "cpe:2.3:a:c-ares_project:c-ares:*", "cpe:2.3:a:c-ares:c-ares:*"]
+    neither:
+      version: "1.2.3"
+      release_date: "2024-01-01"
+      cpe: ["cpe:2.3:a:other:c-ares:*", "cpe:2.3:a:c-ares:other:*"]
+  nvd:
+    vulnerabilities:
+    - cve:
+        id: CVE-EXAMPLE
+        published: "2024-06-01T00:00:00.000"
+        descriptions: [{value: Example vulnerability}]
+        configurations:
+        - nodes:
+          - cpeMatch:
+            - {criteria: "cpe:2.3:a:c-ares:c-ares:1.2.3", versionEndExcluding: "2.0"}
+expression: |
+  [utils::parse_deps(.deps)] as $deps
+  | .nvd
+  | utils::scan($deps; [[]])
+  | {names: [.[].matched[].dep.name],
+     tags: [.[].matched[].dep.cpes | map(.match)],
+     first_tags: [.[].matched[].dep.cpe.match],
+     reported_tags: (utils::report(.) | gsub("\u001b\\[[0-9;]*m"; "")
+                     | split("\n") | map(select(startswith("  CPE: "))))}
+expected:
+  names: [single, multiple]
+  tags:
+  - ["cpe:2.3:a:c-ares:c-ares:*"]
+  - ["cpe:2.3:a:c-ares_project:c-ares:*", "cpe:2.3:a:c-ares:c-ares:*"]
+  first_tags: ["cpe:2.3:a:c-ares:c-ares:*", "cpe:2.3:a:c-ares_project:c-ares:*"]
+  reported_tags: ["  CPE: cpe:2.3:a:c-ares:c-ares:*", "  CPE: cpe:2.3:a:c-ares:c-ares:*"]

@@ -1,0 +1,23 @@
+name: cve utils normalizes timestamps with fractions, Z or an offset to the UTC date, and a missing date
+imports: [cve/utils]
+input:
+- "2025-02-03T04:05:06.123"
+- "2025-02-03T04:05:06"
+- "2025-02-03T04:05:06.123Z"
+- "2025-02-03T04:05:06Z"
+- null
+- "2026-09-18T17:26:52.210+00:00"
+- "2025-02-03T01:05:06+02:00"
+- "2025-02-03T23:05:06.5-02:30"
+- "2025-02-03T04:05:06+0530"
+expression: 'map(utils::to_date_string(.))'
+expected:
+- "2025-02-03"
+- "2025-02-03"
+- "2025-02-03"
+- "2025-02-03"
+- unknown
+- "2026-09-18"
+- "2025-02-02"
+- "2025-02-04"
+- "2025-02-02"

@@ -1,0 +1,8 @@
+name: cve utils parses full and partial CPE tags
+imports: [cve/utils]
+input: ["cpe:2.3:a:vendor:product:1.2:*:*:*:*:*:*:*", "cpe:2.3:a:vendor:product", "cpe:2.3"]
+expression: 'map(utils::parse_cpe_tag(.))'
+expected:
+- {part: a, vendor: vendor, product: product, version: "1.2"}
+- {part: a, vendor: vendor, product: product, version: "*"}
+- {part: "*", vendor: "*", product: "*", version: "*"}

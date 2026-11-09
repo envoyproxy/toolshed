@@ -1,4 +1,6 @@
 exports_files(glob(["**/*.jq"]) + [
+    "defs.bzl",
+    "launcher.sh.tpl",
     "modules_root.marker",
 ])
 

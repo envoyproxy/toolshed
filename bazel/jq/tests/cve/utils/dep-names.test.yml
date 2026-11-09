@@ -1,0 +1,28 @@
+name: cve utils derives CNA vendor/product candidates from CPEs and github urls
+imports: [cve/utils]
+input:
+  plain: {version: "1", release_date: "2024-01-01", cpe: "cpe:2.3:a:Vendor:Product:*"}
+  project:
+    version: "1"
+    release_date: "2024-01-01"
+    cpe: "cpe:2.3:a:c-ares_project:c-ares:*"
+    urls: ["https://example.com/c-ares.tar.gz", "https://github.com/c-ares/c-ares/releases/download/v1/c-ares-1.tar.gz"]
+  github:
+    version: "1"
+    release_date: "2024-01-01"
+    cpe: ["cpe:2.3:a:google:brotli:*", "cpe:2.3:a:brotli_project:brotli:*"]
+    project_url: "https://github.com/Google/Brotli.git"
+  license:
+    version: "1"
+    release_date: "2024-01-01"
+    cpe: "cpe:2.3:a:openssl:openssl:*"
+    license_url: "https://github.com/openssl/openssl/blob/master/LICENSE.txt"
+expression: 'utils::parse_deps(.) | map_values(.names)'
+expected:
+  plain: [{vendor: vendor, product: product}]
+  project: [{vendor: c-ares, product: c-ares}, {vendor: c-ares_project, product: c-ares}]
+  github:
+  - {vendor: brotli, product: brotli}
+  - {vendor: brotli_project, product: brotli}
+  - {vendor: google, product: brotli}
+  license: [{vendor: openssl, product: openssl}]

@@ -1,0 +1,11 @@
+name: cve utils collects all matching CPE and dependency pairs
+imports: [cve/utils]
+input:
+  cpes:
+  - {cpe: {vendor: vendor, product: product, version: "*"}, versions: {}, published: "2024-01-01T00:00:00"}
+  - {cpe: {vendor: vendor, product: product, version: abcdef}, versions: {}, published: "2024-01-01T00:00:00"}
+  deps:
+  - {name: a, cpe: {vendor: vendor, product: product}, version: {string: abcdef}, release_date: "2023-01-01"}
+  - {name: b, cpe: {vendor: vendor, product: product}, version: {string: ghijkl}, release_date: "2023-01-01"}
+expression: 'utils::matching_deps(.cpes; .deps) | map([.dep.name, .cpe.cpe.version])'
+expected: [[a, "*"], [b, "*"], [a, abcdef]]
