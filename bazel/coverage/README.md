@@ -121,6 +121,42 @@ lcov_merger(
 )
 ```
 
+## Cheaper exports, nothing but the report uploaded
+
+Two more per-test costs sit in Bazel's `collect_cc_coverage.sh`, which runs the C++
+toolchain's `llvm-cov export` over the whole instrumented binary and leaves its
+intermediates in the coverage directory.
+
+**`//coverage:llvm_support`** is a drop-in `llvm-cov` whose `export` emits only what the
+merger keeps: `-skip-functions -skip-branches` (the report reads line coverage) and an
+`-ignore-filename-regex` for `external/...` and generated `bazel-out/<config>/bin/external/...`
+paths, which the lcov merger discards anyway because the coverage manifest lists
+workspace sources only. For an Envoy test that is ~85% of a 100MB export. Bazel sets the
+toolchain's `LLVM_COV` in the test environment only when nothing else has, so select the
+wrapper with `--test_env` and stage it into the coverage spawns with `--coverage_support`:
+
+```
+coverage --coverage_support=@envoy_toolshed//coverage:llvm_support
+coverage --test_env=LLVM_COV=external/envoy_toolshed+/coverage/llvm/llvm-cov.sh
+```
+
+(`envoy_toolshed+` is the module's canonical repository name under bzlmod.) The wrapper
+finds the real tool beside `COVERAGE_GCOV_PATH`, which toolchains_llvm points at
+`bin/llvm-profdata` in the same directory. The ignore pattern assumes the instrumented
+code is in the main workspace; a consumer instrumenting an external repository sets
+`--test_env=LLVM_COV_IGNORE_FILENAME_REGEX=<pattern>` (empty ignores nothing).
+
+**Without split postprocessing** (`--noexperimental_split_coverage_postprocessing`) the
+export and merge run inside the test action, so the raw profile is never uploaded for a
+second action to fetch; Envoy's full coverage run moved ~160GB through the CAS that way
+and spent as many worker-hours on the postprocessing actions as on the tests. The catch
+is that the coverage directory is then one of the test's output directories, and its
+intermediates (raw profile, unfiltered export, indexed profile: ~290MB per Envoy test)
+are uploaded with the results. `:lcov_merger` is the last step of that pipeline and, when
+it runs inside the test action, removes everything in the directory but the merged
+report (`clean_coverage_dir = False` keeps them). With both in place a test uploads its
+`coverage.dat` and `test.xml`, under 1MB.
+
 ## Driver
 
 Run the exported `@envoy_toolshed//coverage:run.sh` directly, or:

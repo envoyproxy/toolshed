@@ -134,3 +134,11 @@ sh_test(
     ],
     data = [":smoke.validate"] + glob(["validation/*.json"]),
 )
+
+sh_test(
+    name = "llvm_wrappers_test",
+    srcs = ["llvm_wrappers_test.sh"],
+    data = ["//coverage:llvm/llvm-cov.sh"],
+    env = {"LLVM_COV_WRAPPER": "$(rlocationpath //coverage:llvm/llvm-cov.sh)"},
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)

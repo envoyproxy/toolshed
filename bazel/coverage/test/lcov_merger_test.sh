@@ -41,6 +41,20 @@ if compgen -G "$WORK/out.dat.strip.*" >/dev/null; then
     exit 1
 fi
 
+# Inside the test action, the coverage directory's intermediates are removed after merging;
+# the report is kept even if it lives inside, and a split spawn's directory is left alone.
+mkdir "$WORK/cov"
+printf 'raw' > "$WORK/cov/x.profraw"; printf 'lcov' > "$WORK/cov/_cc_coverage.dat"; mkdir "$WORK/cov/nested"
+"$MERGER" --coverage_dir="$WORK/cov" --output_file="$WORK/cov/_coverage.dat"
+[[ "$(ls -A "$WORK/cov")" == "_coverage.dat" ]]
+grep -q '^DA:2,0$' "$WORK/cov/_coverage.dat"
+printf 'raw' > "$WORK/cov/x.profraw"
+IS_COVERAGE_SPAWN=1 "$MERGER" --coverage_dir="$WORK/cov" --output_file="$WORK/split.dat"
+[[ -f "$WORK/cov/x.profraw" ]]
+# A merger that produced no report still gets the directory cleaned.
+FAKE_MERGER_INPUT='' "$MERGER" --coverage_dir="$WORK/cov" --output_file="$WORK/cov/none.dat"
+[[ -z "$(ls -A "$WORK/cov")" ]]
+
 # Non-UTF-8 bytes do not turn the report into grep's "binary file" message.
 printf 'SF:source/caf\xe9.cc\nFN:1,f\nDA:1,1\nend_of_record\n' > "$WORK/latin1.dat"
 FAKE_MERGER_INPUT="$WORK/latin1.dat" "$MERGER" --output_file="$WORK/latin1_out.dat"

@@ -13,6 +13,14 @@
 # Zero-hit `DA` lines are kept: the baseline report only lists files, so a line no test
 # hits would otherwise disappear from the combined report rather than count as uncovered.
 #
+# When the merger runs inside the test action itself (no split postprocessing), the
+# coverage directory it reads is one of the test's output directories, and everything in it
+# is uploaded with the test's results: the raw profile, the unfiltered `llvm-cov export`
+# and the indexed profile, several hundred MB per test that nothing reads again once the
+# report is merged. The merger is the last step of that pipeline, so it removes them.
+# In a split postprocessing spawn (IS_COVERAGE_SPAWN=1) the directory is an input of a
+# separate action and is left alone.
+#
 # Arguments are passed through unchanged to Bazel's merger. The merged report is filtered
 # in place afterwards, so the wrapper is transparent to `collect_coverage.sh`.
 
@@ -33,11 +41,14 @@ fail() { echo "ERROR: $*" >&2; exit 1; }
 # Substituted at analysis time.
 MERGER_RLOCATION="{{MERGER}}"
 STRIP_RECORDS="{{STRIP}}"
+CLEAN_COVERAGE_DIR="{{CLEAN}}"
 
 output_file=
+coverage_dir=
 for arg in "$@"; do
     case "$arg" in
         --output_file=*) output_file="${arg#*=}" ;;
+        --coverage_dir=*) coverage_dir="${arg#*=}" ;;
     esac
 done
 [[ -n "$output_file" ]] || fail "--output_file is required"
@@ -58,6 +69,15 @@ if [[ -n "$runfiles_root" ]]; then
 fi
 
 "$merger" "$@"
+
+if [[ "$CLEAN_COVERAGE_DIR" == 1 && "${IS_COVERAGE_SPAWN:-}" != 1 && -n "$coverage_dir" && -d "$coverage_dir" ]]; then
+    if [[ -f "$output_file" ]]; then
+        # Should Bazel have placed the merged report inside the directory.
+        find "$coverage_dir" -mindepth 1 -maxdepth 1 ! -samefile "$output_file" -exec rm -rf -- {} +
+    else
+        find "$coverage_dir" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+    fi
+fi
 
 [[ -f "$output_file" ]] || exit 0
 
