@@ -86,6 +86,11 @@ OUTPUT_FILE="$(realpath -m "$OUTPUT_FILE")"
 
 JQ_BIN="$(resolve "${JQ_BIN:?JQ_BIN is required}")"
 GRCOV="$(resolve "${GRCOV:?GRCOV is required}")"
+LCOV_MERGE_BIN=
+if [[ -n "${LCOV_MERGE:-}" ]]; then
+    LCOV_MERGE_BIN="$(resolve "$LCOV_MERGE")"
+    [[ -x "$LCOV_MERGE_BIN" ]] || fail "Tool is not executable: $LCOV_MERGE_BIN"
+fi
 ZSTD_BIN="$(resolve "${ZSTD_BIN:?ZSTD_BIN is required}")"
 COVERAGE_CONFIG="$(resolve "${COVERAGE_CONFIG:?COVERAGE_CONFIG is required}")"
 GRCOV_CONFIG="$(resolve "${GRCOV_CONFIG:?GRCOV_CONFIG is required}")"
@@ -117,6 +122,21 @@ while IFS= read -r dat_file || [[ -n "$dat_file" ]]; do
     INFO_FILES+=("$info_link")
 done < "$REPORTS_FILE"
 [[ ${#INFO_FILES[@]} -gt 0 ]] || fail "No coverage reports found in REPORTS_FILE: $REPORTS_FILE"
+
+if [[ -n "$LCOV_MERGE_BIN" ]]; then
+    # Merging the per-test tracefiles first is far cheaper than having grcov parse and
+    # merge them itself (it is the bulk of the report's time on a large tree), and
+    # rendering then works from one small file.
+    "$LCOV_MERGE_BIN" --output "$WORK_DIR/merged.info" "${INFO_FILES[@]}"
+    INFO_FILES=("$WORK_DIR/merged.info")
+    # Bazel also runs the report generator over the baseline coverage files, which carry
+    # no execution counts. Nothing reads that output but the merged tracefile itself, so
+    # skip rendering it.
+    if [[ "$(basename "$OUTPUT_FILE")" == "_baseline_report.dat" ]]; then
+        mv -f "$WORK_DIR/merged.info" "$OUTPUT_FILE"
+        exit 0
+    fi
+fi
 
 "$GRCOV" "${INFO_FILES[@]}" --precision 1 -s "$WORKSPACE_PATH" -t html,covdir \
     --excl-line "LCOV_EXCL_LINE" --output-config-file "$WORK_DIR/grcov_config.json" \

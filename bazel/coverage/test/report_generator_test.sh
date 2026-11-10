@@ -6,6 +6,7 @@ f=bazel_tools/tools/bash/runfiles/runfiles.bash
 source "${RUNFILES_DIR:-$TEST_SRCDIR}/$f"
 GENERATOR="$(rlocation "$GENERATOR")"
 CUSTOM_GENERATOR="$(rlocation "$CUSTOM_GENERATOR")"
+PREMERGED_GENERATOR="$(rlocation "$PREMERGED_GENERATOR")"
 JQ_BIN="$(rlocation "$JQ_BIN")"
 ZSTD_BIN="$(rlocation "$ZSTD_BIN")"
 LCOV_DATA="$(rlocation "$LCOV_DATA")"
@@ -114,6 +115,29 @@ ln -s "$WORK/custom-ws/nested/source" "$WORK/custom-execroot/nested/source"
 "$JQ_BIN" -e '
   .summary.coverage_percent == 50 and .source_directories == ["nested/source/a"]
 ' "$WORK/custom-extracted/coverage.json" >/dev/null
+
+# With an lcov merger configured, the tracefiles are merged into one before grcov sees
+# them; the report is the same. The baseline report is just the merged tracefile. The
+# merger is only wired in on the platforms the prebuilt exists for; elsewhere the
+# generator must behave exactly like one without a merger.
+printf '%s\n%s\n' "$WORK/input data.dat" "$WORK/input data.dat" > "$WORK/double-reports.txt"
+FAKE_LCOV_MERGE_LOG="$WORK/merge.log" BUILD_WORKSPACE_DIRECTORY="$WORK/ws" "$PREMERGED_GENERATOR" \
+    --reports_file="$WORK/double-reports.txt" --output_file="$WORK/premerged.tar.zst"
+check_archive "$WORK/premerged.tar.zst" "$WORK/premerged-extracted"
+mkdir "$WORK/baseline"
+BUILD_WORKSPACE_DIRECTORY="$WORK/ws" "$PREMERGED_GENERATOR" \
+    --reports_file="$WORK/reports.txt" --output_file="$WORK/baseline/_baseline_report.dat"
+if grep -q '^export LCOV_MERGE=' "$PREMERGED_GENERATOR"; then
+    [[ "$(wc -l < "$WORK/merge.log")" -eq 2 ]]
+    cmp "$WORK/baseline/_baseline_report.dat" "$WORK/input data.dat"
+else
+    [[ ! -e "$WORK/merge.log" ]]
+    check_archive "$WORK/baseline/_baseline_report.dat" "$WORK/baseline-extracted"
+fi
+if compgen -G "$WORK/baseline/.coverage-report.*" >/dev/null; then
+    echo "Generator leaked staging directories for the baseline report" >&2
+    exit 1
+fi
 
 if BUILD_WORKSPACE_DIRECTORY="$WORK/ws" "$GENERATOR" \
     --reports_file="$WORK/missing" --output_file="$WORK/bad.tar.zst" > "$WORK/error" 2>&1; then

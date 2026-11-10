@@ -3,6 +3,7 @@ members = [
   "core",
   "echo",
   "glint",
+  "lcov",
   "runner",
   "test",
 ]

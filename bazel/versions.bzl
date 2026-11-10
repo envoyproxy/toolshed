@@ -103,6 +103,12 @@ VERSIONS = {
         "arm64": "206776e11414bb07c48b5a92f1efd684a3ce948e24b927e0a86b53d7520b2852",
     },
 
+    # lcov-merge (rust/lcov) binary hashes by architecture; filled in by the bins release.
+    "lcov_merge_sha256": {
+        "amd64": "",
+        "arm64": "",
+    },
+
     # Wee8 prebuilt hashes by architecture and stdlib ABI flavour.
     # libcxx keeps the legacy unsuffixed artifact name; libstdcxx is suffixed.
     # TODO: refresh both libstdcxx hashes in the next bins-v* release, built

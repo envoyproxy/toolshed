@@ -2,6 +2,7 @@
 
 load("@aspect_bazel_lib//lib:jq.bzl", "jq")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//coverage/lcov:lcov_merge_repository.bzl", "LCOV_MERGE_PLATFORMS")
 
 _JQ = Label("@jq_toolchains//:resolved_toolchain")
 
@@ -11,6 +12,13 @@ _MAIN = Label("@envoy_toolshed_jq//:coverage/main.jq")
 _GENERATOR = Label("//coverage:report_generator.sh")
 _VALIDATOR = Label("//coverage:validate.sh")
 _RUNFILES = Label("@bazel_tools//tools/bash/runfiles")
+_LCOV_MERGE_SETTINGS = [Label("//coverage/lcov:" + platform) for platform in LCOV_MERGE_PLATFORMS]
+
+def _on_lcov_merge_platforms(value, default):
+    """`value` where the prebuilt lcov-merge exists, `default` elsewhere."""
+    choices = {str(setting): value for setting in _LCOV_MERGE_SETTINGS}
+    choices["//conditions:default"] = default
+    return select(choices)
 COVERAGE_ZSTD_TARGET = str(Label("@zstd//:zstd_cli"))
 _TEMPLATES = {
     "base.html": Label("//coverage:templates/base.html"),
@@ -26,6 +34,18 @@ def _runfile_key(ctx, file):
 def _quote(value):
     return "'" + value.replace("'", "'\"'\"'") + "'"
 
+def _tool_file(target):
+    """The file a tool attribute refers to: its executable, or its single file."""
+    if not target:
+        return None
+    info = target[DefaultInfo]
+    if info.files_to_run and info.files_to_run.executable:
+        return info.files_to_run.executable
+    files = info.files.to_list()
+    if len(files) != 1:
+        fail("%s must be an executable or a single file" % target.label)
+    return files[0]
+
 def _configured_script_impl(ctx):
     exports = []
     for name in [
@@ -34,12 +54,13 @@ def _configured_script_impl(ctx):
         "GRCOV_CONFIG",
         "JQ_BIN",
         "JQ_FILTER",
+        "LCOV_MERGE",
         "TEMPLATE_BASE",
         "TEMPLATE_INDEX",
         "TEMPLATE_MACROS",
         "ZSTD_BIN",
     ]:
-        file = getattr(ctx.file, name.lower())
+        file = _tool_file(getattr(ctx.attr, name.lower()))
         if file:
             exports.append("export %s=%s" % (name, _quote(_runfile_key(ctx, file))))
     exports.extend([
@@ -57,21 +78,27 @@ def _configured_script_impl(ctx):
 
 _configured_script = rule(
     implementation = _configured_script_impl,
-    attrs = dict({
-        name: attr.label(allow_single_file = True)
-        for name in [
-            "coverage_config",
-            "grcov",
-            "grcov_config",
-            "jq_bin",
-            "jq_filter",
-            "script",
-            "template_base",
-            "template_index",
-            "template_macros",
-            "zstd_bin",
-        ]
-    }, source_root = attr.string(), source_glob = attr.string()),
+    attrs = dict(
+        {
+            # Tools may be executable targets (their executable is used) or single files.
+            name: attr.label(allow_files = True)
+            for name in [
+                "coverage_config",
+                "grcov",
+                "grcov_config",
+                "jq_bin",
+                "jq_filter",
+                "lcov_merge",
+                "template_base",
+                "template_index",
+                "template_macros",
+                "zstd_bin",
+            ]
+        },
+        script = attr.label(allow_single_file = True),
+        source_root = attr.string(),
+        source_glob = attr.string(),
+    ),
 )
 
 def coverage_report(
@@ -82,6 +109,7 @@ def coverage_report(
         source_glob = "*.cc",
         zstd = Label("@zstd//:zstd_cli"),
         grcov = "@grcov//:grcov",
+        lcov_merge = None,
         visibility = None):
     """Create a report generator and a `<name>.validate` threshold checker.
 
@@ -94,6 +122,10 @@ def coverage_report(
         source_glob: Source filename pattern used for discovery.
         zstd: Archive compressor executable.
         grcov: Consumer-configured grcov executable label.
+        lcov_merge: Optional `lcov-merge` executable label (see //coverage/lcov). When set,
+            the per-test tracefiles are merged into one with it before grcov runs, and the
+            baseline report is written as that merged tracefile without rendering. Only
+            used on the platforms the prebuilt exists for; elsewhere grcov merges as before.
         visibility: Visibility of generated executable targets.
     """
 
@@ -142,6 +174,7 @@ def coverage_report(
         grcov_config = grcov_config,
         jq_bin = _TOOLSHED_JQ,
         jq_filter = _MAIN,
+        lcov_merge = _on_lcov_merge_platforms(lcov_merge, None) if lcov_merge else None,
         template_base = resolved_templates["base.html"],
         template_index = resolved_templates["index.html"],
         template_macros = resolved_templates["macros.html"],
@@ -149,31 +182,38 @@ def coverage_report(
         source_root = source_root,
         source_glob = source_glob,
     )
+    env = {
+        "COVERAGE_CONFIG": "$(rlocationpath %s)" % config,
+        "GRCOV": "$(rlocationpath %s)" % grcov,
+        "GRCOV_CONFIG": "$(rlocationpath %s)" % grcov_config,
+        "JQ_BIN": "$(rlocationpath %s)" % _TOOLSHED_JQ,
+        "JQ_FILTER": "$(rlocationpath %s)" % _MAIN,
+        "SOURCE_GLOB": source_glob,
+        "SOURCE_ROOT": source_root,
+        "TEMPLATE_BASE": "$(rlocationpath %s)" % resolved_templates["base.html"],
+        "TEMPLATE_INDEX": "$(rlocationpath %s)" % resolved_templates["index.html"],
+        "TEMPLATE_MACROS": "$(rlocationpath %s)" % resolved_templates["macros.html"],
+        "ZSTD_BIN": "$(rlocationpath %s)" % zstd,
+    }
+    data = [
+        config,
+        grcov,
+        grcov_config,
+        zstd,
+        _TOOLSHED_JQ,
+        _MAIN,
+    ] + resolved_templates.values()
+    if lcov_merge:
+        # The prebuilt only exists for some platforms; elsewhere the merger is left out and
+        # the generator merges with grcov as before.
+        env = env | _on_lcov_merge_platforms({"LCOV_MERGE": "$(rlocationpath %s)" % lcov_merge}, {})
+        data = data + _on_lcov_merge_platforms([lcov_merge], [])
     sh_binary(
         name = name,
         srcs = [":" + name + "_script"],
-        data = [
-            config,
-            grcov,
-            grcov_config,
-            zstd,
-            _TOOLSHED_JQ,
-            _MAIN,
-        ] + resolved_templates.values(),
+        data = data,
         deps = [_RUNFILES],
-        env = {
-            "COVERAGE_CONFIG": "$(rlocationpath %s)" % config,
-            "GRCOV": "$(rlocationpath %s)" % grcov,
-            "GRCOV_CONFIG": "$(rlocationpath %s)" % grcov_config,
-            "JQ_BIN": "$(rlocationpath %s)" % _TOOLSHED_JQ,
-            "JQ_FILTER": "$(rlocationpath %s)" % _MAIN,
-            "SOURCE_GLOB": source_glob,
-            "SOURCE_ROOT": source_root,
-            "TEMPLATE_BASE": "$(rlocationpath %s)" % resolved_templates["base.html"],
-            "TEMPLATE_INDEX": "$(rlocationpath %s)" % resolved_templates["index.html"],
-            "TEMPLATE_MACROS": "$(rlocationpath %s)" % resolved_templates["macros.html"],
-            "ZSTD_BIN": "$(rlocationpath %s)" % zstd,
-        },
+        env = env,
         visibility = visibility,
     )
 

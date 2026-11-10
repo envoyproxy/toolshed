@@ -1478,6 +1478,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "toolshed-lcov"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "rayon",
+ "tempfile",
+]
+
+[[package]]
 name = "toolshed-test"
 version = "0.1.0"
 dependencies = [
