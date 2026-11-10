@@ -40,6 +40,9 @@ on:
         # TODO: think of a better solution for this
         type: string
         default: 0.1.0
+      lcov-merge-version:
+        type: string
+        default: 0.1.0
       prepare-args:
         type: string
         default:
@@ -202,6 +205,7 @@ jobs:
           stdcc_versions: ${{ inputs.stdcc-versions }}
           arches: ${{ inputs.arches }}
           glint_version: ${{ inputs.glint-version }}
+          lcov_merge_version: ${{ inputs.lcov-merge-version }}
           versions_file: ${{ inputs.bazel-versions-file }}
           san:
           - msan
@@ -217,6 +221,7 @@ jobs:
           | .arches as $arches
           | .san as $san
           | .glint_version as $glint_version
+          | .lcov_merge_version as $lcov_merge_version
           | .versions_file as $versions_file
           | (.bins_latest | split("-v") | .[1]) as $bins_latest
           | (if $current.bins_release != $bins_latest then
@@ -362,9 +367,23 @@ jobs:
                   else "sed -i '/\"wee8_sha256\"/,/^    },/{\($range){\($sub)}}' \($versions_file)"
                   end
               else "" end] as $wee8_updates
+          | [$arches[]
+             | . as $arch
+             | ($shas["lcov-merge-\($lcov_merge_version)-\($arch)"] // null) as $sha_entry
+             | if $sha_entry then
+                ($sha_entry | split(":") | .[1]) as $new_sha
+                | $current.lcov_merge_sha256[$arch] as $cur
+                | if $cur == $new_sha then ""
+                  elif ($cur | length) > 0 then
+                    "sed -i s/\($cur)/\($new_sha)/g \($versions_file)"
+                  else
+                    ("sed -i '/\"lcov_merge_sha256\"/,/^    },/"
+                     + "{s/\"\($arch)\": \"\"/\"\($arch)\": \"\($new_sha)\"/}' \($versions_file)")
+                  end
+              else "" end] as $lcov_merge_updates
           | $bins_update + $san_updates + $libcxx_updates + $arch_updates
             + $macos_updates + $llvm_minimal_updates + $sq_updates + $git_updates + $hunspell_updates
-            + $wee8_updates
+            + $wee8_updates + $lcov_merge_updates
           | [flatten[]
              | select(. != "")]
           | join("\n")

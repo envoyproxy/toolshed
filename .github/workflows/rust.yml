@@ -65,6 +65,11 @@ jobs:
       run: |
         cargo test --package glint --test integration_test --verbose
       working-directory: rust
+    - name: Run lcov-merge tests
+      if: matrix.test-type == 'integration'
+      run: |
+        cargo test --package toolshed-lcov --verbose
+      working-directory: rust
 
   build:
     needs: request
@@ -137,6 +142,31 @@ jobs:
       with:
         name: rust-artifacts-echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
         path: echo-${{ steps.echo-version.outputs.version }}-${{ matrix.arch }}
+        retention-days: 30
+
+    - name: Build lcov-merge
+      run: cargo build --release -p toolshed-lcov
+      working-directory: rust
+
+    - name: Get lcov-merge version
+      id: lcov-merge-version
+      run: |
+        cd rust/lcov
+        VERSION=$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[] | select(.name == "toolshed-lcov") | .version')
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Strip lcov-merge binary
+      run: strip rust/target/release/lcov-merge
+
+    - name: Rename lcov-merge binary with version and architecture
+      run: |
+        cp rust/target/release/lcov-merge lcov-merge-${{ steps.lcov-merge-version.outputs.version }}-${{ matrix.arch }}
+
+    - name: Upload lcov-merge binary
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+      with:
+        name: rust-artifacts-lcov-merge-${{ steps.lcov-merge-version.outputs.version }}-${{ matrix.arch }}
+        path: lcov-merge-${{ steps.lcov-merge-version.outputs.version }}-${{ matrix.arch }}
         retention-days: 30
 
   status:

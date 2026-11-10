@@ -3,7 +3,7 @@ skip-clean = true
 target-dir = "target/tarpaulin"
 workspace = true
 color = "Always"
-exclude-files = ["runner/src/test/*", "echo/src/test/*", "glint/tests"]
+exclude-files = ["runner/src/test/*", "echo/src/test/*", "glint/tests", "lcov/tests"]
 
 [report]
 out = ["Html"]

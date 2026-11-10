@@ -44,12 +44,24 @@ coverage_report(
     ],
 )
 
+sh_binary(
+    name = "fake_lcov_merge",
+    srcs = ["fake_lcov_merge.sh"],
+)
+
+coverage_report(
+    name = "premerged",
+    config = ":generated_config",
+    lcov_merge = ":fake_lcov_merge",
+)
+
 build_test(
     name = "smoke_build_test",
     targets = [
         ":smoke",
         ":smoke.validate",
         ":custom",
+        ":premerged",
         "//coverage:lcov_merger",
         "//coverage:run",
     ],
@@ -98,6 +110,7 @@ sh_test(
     srcs = ["report_generator_test.sh"],
     data = [
         ":custom",
+        ":premerged",
         ":smoke",
         "@jq_toolchains//:resolved_toolchain",
         "@zstd//:zstd_cli",
@@ -105,6 +118,7 @@ sh_test(
     env = {
         "CUSTOM_GENERATOR": "$(rlocationpath :custom)",
         "GENERATOR": "$(rlocationpath :smoke)",
+        "PREMERGED_GENERATOR": "$(rlocationpath :premerged)",
         "JQ_BIN": "$(rlocationpath @jq_toolchains//:resolved_toolchain)",
         "LCOV_DATA": "$(rlocationpath testdata/coverage.dat)",
         "ZSTD_BIN": "$(rlocationpath @zstd//:zstd_cli)",

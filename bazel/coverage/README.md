@@ -36,7 +36,7 @@ coverage_report(
 ```
 
 Signature:
-`coverage_report(name, config, templates=None, source_root="source", source_glob="*.cc", zstd=..., grcov=..., visibility=None)`.
+`coverage_report(name, config, templates=None, source_root="source", source_glob="*.cc", zstd=..., grcov=..., lcov_merge=None, visibility=None)`.
 Template overrides are three labels in **base, index, macros** order.
 The default compressor is toolshed's BCR zstd dependency, not a host binary;
 grcov can be supplied from a consumer-owned repository.
@@ -156,6 +156,40 @@ are uploaded with the results. `:lcov_merger` is the last step of that pipeline 
 it runs inside the test action, removes everything in the directory but the merged
 report (`clean_coverage_dir = False` keeps them). With both in place a test uploads its
 `coverage.dat` and `test.xml`, under 1MB.
+
+## Faster merging of the per-test reports
+
+grcov both merges the per-test tracefiles and renders the report. On a large tree the
+merge is most of the report's time: Envoy's ~1,600 per-test files (1.3GB after
+stripping) took grcov about 30s to parse and merge on a 4-core CI runner, against ~13s
+to render, and the whole thing sits on the critical path after the last test finishes.
+Bazel also runs the generator a second time over the baseline coverage files (file
+lists with no counts) for `_baseline_report.dat`, rendering a report nothing reads.
+
+`lcov-merge` (`rust/lcov`) is a small parallel merger for lcov tracefiles: it sums
+`DA`/`FNDA`/`BRDA` hits, keeps `FN`, recomputes the `LF/LH`, `FNF/FNH`, `BRF/BRH`
+totals and writes a sorted, deterministic result. The same 1,600 files merge in ~4s on
+four threads. It is published with the toolshed bins release; enable it in the consumer's
+`MODULE.bazel` and hand it to the report:
+
+```starlark
+lcov_merge = use_extension("@envoy_toolshed//coverage/lcov:extensions.bzl", "lcov_merge_extension")
+lcov_merge.setup(bins_release_version = "<bins release>")
+use_repo(lcov_merge, "lcov_merge")
+
+coverage_report(
+    name = "report",
+    config = ":config",
+    lcov_merge = "@lcov_merge//:lcov_merge",
+)
+```
+
+With it set, the generator merges the per-test tracefiles into one before grcov runs,
+so grcov only parses one small file, and the baseline report is written as that merged
+tracefile without rendering. Without it the generator behaves as before. The prebuilt
+exists for Linux amd64 and arm64 (`LCOV_MERGE_PLATFORMS`); on any other platform the
+repository is a stub, the report leaves the merger out and grcov merges as before, so a
+consumer can enable it unconditionally.
 
 ## Driver
 
