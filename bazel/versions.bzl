@@ -1,6 +1,6 @@
 SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 
-BINS_RELEASE = "0.2.31"
+BINS_RELEASE = "0.2.32"
 
 LLVM_VERSION = "22.1.8"
 
@@ -39,10 +39,10 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": BINS_RELEASE,
-    "msan_libs_sha256": "5538945e7113677fe90ea809bc15e90c4c573370e76eadf9c432b6936776d2e7",
+    "msan_libs_sha256": "f054293360a932993602265ea6c52e777c4f89eaff46cec4d80e96aa75805e4a",
     "tsan_libs_sha256": "c2748fed2a861546c16361c688d3872c9239120842bf646a6a74c24e57e5678d",
     # Filled after the bins-v* release publishes the shared libunwind artifact.
-    "unwind_libs_sha256": "ba87bd62fb499791268a27fb1ac92cdddd0af1b27d6a935deaf819ca6c32b05d",
+    "unwind_libs_sha256": "f8f031cd252cdfd59308d2f50dd0e4cea8952e6769fb348d8293d33e19647bee",
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
         "x86_64": "e40f39338ffe561dfa26541557c9e548fc7760db9d99f7b6c5de237b725482aa",
@@ -105,8 +105,8 @@ VERSIONS = {
 
     # lcov-merge (rust/lcov) binary hashes by architecture; filled in by the bins release.
     "lcov_merge_sha256": {
-        "amd64": "",
-        "arm64": "",
+        "amd64": "7b0951a5cc6d9b1ff80cdf25a9a46c90aa0db3f443556fa70a5205c6868ce113",
+        "arm64": "604139d4c2dde285a6c536e57dc2b4f42861f288959c511cc8a659bf7230b764",
     },
 
     # Wee8 prebuilt hashes by architecture and stdlib ABI flavour.
@@ -130,22 +130,22 @@ VERSIONS = {
     "sysroot_hashes": {
         "2.31": {
             "base": {
-                "amd64": "9a5f05acd166c1939ec426e6dd0762c78e64c2bdeb3b1b8f59e025abff417a79",
-                "arm64": "529bffaa12bf398a7fdcfc6f807f8b540d6034aa092eeecc968a4bc56f13c938",
+                "amd64": "2fc4af45e83b62960242dc63069685bd76e6f3d976a243479982a35e64844fdb",
+                "arm64": "866bae89ae4bd5e9816a355b729abdc2d084d68f500f10d24204c26a2a58724c",
             },
             "13": {
-                "amd64": "beb9c72e1df69b7ec09da1b867741c91709423fbec8049461605aa80e399b94b",
-                "arm64": "5231480d10515a8329cdc63c6ca639551b72903003a71f44411dabffa0b19d15",
+                "amd64": "d790ebab28d93e9c00987e734aa4201be7cd8f95e812f788e5411b7b42a04fb2",
+                "arm64": "b06db66a8d56333c0937be878daeacbba484447d407ea876c8eb76b89dc54d2b",
             },
         },
         "2.28": {
             "base": {
-                "amd64": "ddf2925566a65a459fe6e842941df1dce184f546f4437ad45cdeb172eb48536f",
-                "arm64": "7b4bb6fbfa958c06dde6b7f486b1482202baf3a1bf95a8b6f780f17f71c72298",
+                "amd64": "a4508e918559020faba22af2f6e2b14dce7d033fc338794ad62b15cbda3cbf3a",
+                "arm64": "b210d6f47b6450c6210ca14f06750b30ab464c58aef91f6cbe54b7f03cf23bba",
             },
             "13": {
-                "amd64": "79a5ccc5aa18e839a359cc845976edee98fdb7eacb20d5ca9eb2bc137049afd5",
-                "arm64": "722e643200ad612c6f690e40cf7a95f57d1e236aeeb0be8309e2ec73a7bada16",
+                "amd64": "519bf985118bf3408df057ed27bb12da066de42630c74a5fd74dac9294149565",
+                "arm64": "1626f67549d407ff64ba145611307a78dcc4404b63ee858fcd2c4ae2da17d296",
             },
         },
     },
