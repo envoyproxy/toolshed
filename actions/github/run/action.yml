@@ -29,6 +29,12 @@ inputs:
   downloads:
     type: string
     default:
+  downloads-run-id:
+    description: >-
+      Download `downloads` from this workflow run, eg the run that triggered this one, rather than
+      from the current run.
+    type: string
+    default:
   entrypoint:
     type: string
     default:
@@ -164,6 +170,8 @@ runs:
             name: $KEY
             path: >-
               %{{ fromJSON(inputs.context).items['$KEY'] }}
+            github-token: ${{ inputs.downloads-run-id && github.token || '' }}
+            run-id: ${{ inputs.downloads-run-id || github.run_id }}
 
   - run: |
       # Create temporary files
