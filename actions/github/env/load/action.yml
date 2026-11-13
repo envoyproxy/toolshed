@@ -53,13 +53,26 @@ runs:
       path: ${{ runner.temp }}
       run-id: ${{ steps.find-request.outputs.output || inputs.run-id }}
 
+  # Validate the run the environment was downloaded from. This is the triggering run, unless
+  # `run-id` names another, eg the request run of a workflow triggered by a `workflow_run` workflow.
+  - name: Find environment source
+    id: source
+    if: ${{ github.event_name == 'workflow_run' }}
+    run: |
+      SOURCE="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
+                  | jq -c '{event, repository: .repository.full_name}')"
+      echo "source=${SOURCE}" >> "$GITHUB_OUTPUT"
+    shell: bash
+    env:
+      GH_TOKEN: ${{ env.GH_TOKEN || github.token }}
+      RUN_ID: ${{ steps.find-request.outputs.output || inputs.run-id || github.event.workflow_run.id }}
   - name: Validate environment source
     if: ${{ github.event_name == 'workflow_run' }}
     uses: envoyproxy/toolshed/actions/jq@14eff69d81e97ac38909d426ccfb3918bd406a8b
     with:
       input: |
-        workflow_event: ${{ toJSON(github.event.workflow_run.event) }}
-        workflow_repo: ${{ toJSON(github.event.workflow_run.repository.full_name) }}
+        workflow_event: ${{ toJSON(fromJSON(steps.source.outputs.source).event) }}
+        workflow_repo: ${{ toJSON(fromJSON(steps.source.outputs.source).repository) }}
         current_repo: ${{ toJSON(github.repository) }}
         allowed_events: ["pull_request_target", "push", "schedule"]
       input-format: yaml
