@@ -55,6 +55,49 @@ IS_COVERAGE_SPAWN=1 "$MERGER" --coverage_dir="$WORK/cov" --output_file="$WORK/sp
 FAKE_MERGER_INPUT='' "$MERGER" --coverage_dir="$WORK/cov" --output_file="$WORK/cov/none.dat"
 [[ -z "$(ls -A "$WORK/cov")" ]]
 
+# Without a runfiles tree (Bazel 7 runs the merger inside the test action with neither its
+# runfiles nor Bazel's merger staged), the built-in merge renames reported sources, drops
+# filtered sources and anything not in the manifest, and strips as above.
+cp "$MERGER" "$WORK/bare_merger.sh"
+mkdir "$WORK/bare"
+cat > "$WORK/bare/_cc_coverage.dat" <<'LCOV'
+TN:
+SF:source/kept.cc
+FN:1,f
+FNDA:1,f
+DA:1,1
+DA:2,0
+BRDA:1,0,0,1
+LH:1
+LF:2
+end_of_record
+TN:
+SF:external/dep/dep.cc
+DA:1,1
+end_of_record
+SF:bazel-out/k8-fastbuild/bin/source/_virtual_includes/gen.h
+DA:3,2
+end_of_record
+SF:/usr/include/stdio.h
+DA:1,1
+end_of_record
+LCOV
+printf 'raw' > "$WORK/bare/x.profraw"
+printf '%s\n' source/kept.cc source/gen.h /usr/include/stdio.h > "$WORK/bare_manifest"
+printf '%s\n' 'bazel-out/k8-fastbuild/bin/source/_virtual_includes/gen.h:source/gen.h' > "$WORK/bare_replace"
+env -u RUNFILES_DIR -u RUNFILES_MANIFEST_FILE -u JAVA_RUNFILES -u TEST_SRCDIR \
+    "$WORK/bare_merger.sh" --coverage_dir="$WORK/bare" --output_file="$WORK/bare_out.dat" \
+    --filter_sources=/usr/bin/.+ --filter_sources=/usr/include.+ \
+    --source_file_manifest="$WORK/bare_manifest" --sources_to_replace_file="$WORK/bare_replace"
+diff <(printf '%s\n' SF:source/kept.cc DA:1,1 DA:2,0 LH:1 LF:2 end_of_record \
+    SF:source/gen.h DA:3,2 end_of_record) "$WORK/bare_out.dat"
+[[ -z "$(ls -A "$WORK/bare")" ]]
+# A coverage directory without lcov leaves an empty report.
+mkdir "$WORK/bare_empty"
+env -u RUNFILES_DIR -u RUNFILES_MANIFEST_FILE -u JAVA_RUNFILES -u TEST_SRCDIR \
+    "$WORK/bare_merger.sh" --coverage_dir="$WORK/bare_empty" --output_file="$WORK/bare_empty.dat"
+[[ ! -s "$WORK/bare_empty.dat" ]]
+
 # Non-UTF-8 bytes do not turn the report into grep's "binary file" message.
 printf 'SF:source/caf\xe9.cc\nFN:1,f\nDA:1,1\nend_of_record\n' > "$WORK/latin1.dat"
 FAKE_MERGER_INPUT="$WORK/latin1.dat" "$MERGER" --output_file="$WORK/latin1_out.dat"
