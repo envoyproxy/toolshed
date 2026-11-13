@@ -20,6 +20,11 @@ common --experimental_repository_cache_hardlinks
 
 common --repo_env=ANDROID_HOME=
 
+# No first-class Java, but //coverage:lcov_merger wraps Bazel's Java lcov merger. Use a hermetic
+# JDK rather than autodetecting one on the host.
+common --java_runtime_version=remotejdk_21
+common --tool_java_runtime_version=remotejdk_21
+
 
 #############################################################################
 # workspace
