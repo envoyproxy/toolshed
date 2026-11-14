@@ -1,0 +1,96 @@
+"""Repository rules for prebuilt pigz toolchains."""
+
+PIGZ_PREBUILT_URL = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{bins_release}/pigz-{version}-{platform}.tar.zst"
+PIGZ_PREBUILT_STRIP_PREFIX = "pigz-{version}-{platform}"
+
+_PLATFORM_TARGETS = {
+    "linux-aarch64": {
+        "constraint": "@platforms//cpu:aarch64",
+        "name": "linux_aarch64",
+    },
+    "linux-x86_64": {
+        "constraint": "@platforms//cpu:x86_64",
+        "name": "linux_x86_64",
+    },
+}
+
+def render_pigz_toolchains_build(platform_repos, defs_label, toolchain_type_label):
+    """Render the hub BUILD file for the configured prebuilt toolchains.
+
+    Args:
+        platform_repos: Mapping from platform suffix to prebuilt repository name.
+        defs_label: Canonical label string for //pigz:defs.bzl.
+        toolchain_type_label: Canonical label string for //pigz:toolchain_type.
+
+    Returns:
+        BUILD file content for the hub repository.
+    """
+    lines = [
+        "load(\"%s\", \"pigz_toolchain\")" % defs_label,
+        "",
+    ]
+    for platform in sorted(_PLATFORM_TARGETS):
+        repo_name = platform_repos.get(platform)
+        if not repo_name:
+            continue
+        target = _PLATFORM_TARGETS[platform]
+        lines.extend([
+            "pigz_toolchain(",
+            "    name = \"%s_impl\"," % target["name"],
+            # workspace_name is canonical here, so the hub must render @@ labels.
+            "    pigz = \"@" + "@%s//:pigz\"," % repo_name,
+            ")",
+            "",
+            "toolchain(",
+            "    name = \"%s\"," % target["name"],
+            "    toolchain = \":%s_impl\"," % target["name"],
+            "    toolchain_type = \"%s\"," % toolchain_type_label,
+            # The prebuilt runs on the platform it is resolved for (see `pigz_toolchain`).
+            "    target_compatible_with = [",
+            "        \"@platforms//os:linux\",",
+            "        \"%s\"," % target["constraint"],
+            "    ],",
+            ")",
+            "",
+        ])
+    return "\n".join(lines)
+
+def _pigz_prebuilt_impl(ctx):
+    if not ctx.attr.sha256:
+        fail("pigz_prebuilt requires a non-empty sha256")
+    ctx.download_and_extract(
+        url = ctx.attr.url,
+        sha256 = ctx.attr.sha256,
+        stripPrefix = ctx.attr.strip_prefix,
+    )
+    return ctx.repo_metadata(reproducible = True)
+
+pigz_prebuilt = repository_rule(
+    implementation = _pigz_prebuilt_impl,
+    attrs = {
+        "sha256": attr.string(mandatory = True),
+        "strip_prefix": attr.string(mandatory = True),
+        "url": attr.string(mandatory = True),
+    },
+)
+
+def _pigz_toolchains_hub_impl(ctx):
+    ctx.file("BUILD.bazel", render_pigz_toolchains_build(
+        {
+            "linux-aarch64": ctx.attr.linux_aarch64.workspace_name if ctx.attr.linux_aarch64 else None,
+            "linux-x86_64": ctx.attr.linux_x86_64.workspace_name if ctx.attr.linux_x86_64 else None,
+        },
+        ctx.attr.defs_label,
+        ctx.attr.toolchain_type_label,
+    ))
+    return ctx.repo_metadata(reproducible = True)
+
+pigz_toolchains_hub = repository_rule(
+    implementation = _pigz_toolchains_hub_impl,
+    attrs = {
+        "defs_label": attr.string(mandatory = True),
+        "linux_aarch64": attr.label(default = None),
+        "linux_x86_64": attr.label(default = None),
+        "toolchain_type_label": attr.string(mandatory = True),
+    },
+)

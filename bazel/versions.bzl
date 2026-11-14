@@ -34,6 +34,8 @@ VERSIONS = {
         "sha256": "160cba5e6c0230d43d70b0c929e498566ff2c3c4bcf840318d98ce28e31ee756",
     },
     "llvm": LLVM_VERSION,
+    # Keep in sync with the `pigz` bazel_dep (dev) in MODULE.bazel.
+    "pigz": "2.8.bcr.3",
     "sq": "1.4.0",
     "v8": V8_VERSION,
     "ninja": "1.12.0",
@@ -85,6 +87,13 @@ VERSIONS = {
     "hunspell_sha256": {
         "linux-x86_64": "8a8f5fed83891053b59bc4d01c91d3a87dfe4e7985eb51c7bcc62aa052bca2c1",
         "linux-aarch64": "fd0b06e7d41d6781ed1531d961cf21a9c8417cf6fdfa9c7be3c303717f2fa99b",
+    },
+    # pigz prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64),
+    # filled by the release preparation once a bins-v* release publishes the artifacts. Empty, there
+    # is no prebuilt for the platform.
+    "pigz_sha256": {
+        "linux-x86_64": "",
+        "linux-aarch64": "",
     },
     # Git prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64).
     "git_sha256": {
