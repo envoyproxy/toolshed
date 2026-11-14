@@ -107,6 +107,8 @@ inputs:
   steps-post-name:
     type: string
     default:
+  # Artifacts to upload, as YAML `<name>: <path>`, or `<name>: {path, if-no-files-found,
+  # compression-level}`. Relative paths are in the runner temp directory.
   uploads:
     type: string
     default:
@@ -466,6 +468,12 @@ runs:
               %{{ fromJSON(inputs.context).items['$KEY'].path }}
             if-no-files-found: >-
               %{{ fromJSON(inputs.context).items['$KEY']['if-no-files-found'] || 'warn' }}
+            # Set `compression-level: 0` for content that is already compressed (eg tarballs, images).
+            # `foreach` substitutes only the first `$KEY` of a string, so this looks the level up
+            # once. As a string, an explicit `0` is truthy (`0 == null` is true in an expression),
+            # and an unset level is '' and falls back to the default.
+            compression-level: >-
+              %{{ format('{0}', fromJSON(inputs.context).items['$KEY']['compression-level']) || '6' }}
   - uses: envoyproxy/toolshed/actions/jq@14eff69d81e97ac38909d426ccfb3918bd406a8b
     id: upload-failed
     if: ${{ failure() && inputs.uploads }}
