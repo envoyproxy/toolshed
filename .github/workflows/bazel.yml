@@ -80,6 +80,7 @@ jobs:
             git/git-*.tar.zst
             hunspell/source/hunspell-*.tar.zst
             pgp/sq-*.tar.zst
+            pigz/source/pigz-*.tar.zst
             compile/msan-llvm22.1.8-x86_64.tar.xz
             compile/tsan-llvm22.1.8-x86_64.tar.xz
             compile/unwind-llvm22.1.8-x86_64.tar.xz
@@ -109,6 +110,7 @@ jobs:
             //git:git_packages
             //hunspell/source:hunspell_packages
             //pgp:sq_packages
+            //pigz/source:pigz_packages
             //sysroot:sysroots
             //v8:wee8_packages
           upload: true
@@ -297,6 +299,19 @@ jobs:
           targets: >-
             //hunspell/test:hunspell_toolchain_test
             //hunspell/test:hunspell_source_test
+        # The pigz source fallback toolchain, resolved and run on macOS (no prebuilt there).
+        - name: macos-pigz
+          action: test
+          bazel_args: >-
+            --config=ci
+            --config=macos
+          cache-entries: NONE
+          privileged: false
+          rbe: false
+          runner: macos-15
+          targets: >-
+            //pigz/test:pigz_toolchain_test
+            //pigz/test:pigz_source_test
         # Live counterpart of //pgp/test:audit_test - re-runs the audit
         # against a real `bazel aquery` of //pgp/test's example targets
         # rather than captured JSON (see bazel/pgp/README.md#auditing).
