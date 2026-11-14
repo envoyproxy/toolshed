@@ -26,6 +26,10 @@ case "$1" in
         exit 0
         ;;
     login)
+        if [[ "${*: -1}" == "ghcr.io" ]]; then
+            IFS= read -r token
+            [[ "${token}" == "${GHCR_TOKEN}" ]] || exit 1
+        fi
         # Succeed silently — used by the auth steps in action.yml
         exit 0
         ;;

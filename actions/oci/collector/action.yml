@@ -1,5 +1,5 @@
 name: OCI Artifact Collector
-description: Collect OCI artifacts and push multi-arch manifests to registries using regctl
+description: Collect OCI artifacts and push multi-arch manifests to Docker Hub, GCR, and GHCR using buildah
 
 inputs:
   artifacts-pattern:
@@ -34,13 +34,14 @@ inputs:
     default: ${{ github.repository }}
   manifest-config:
     description: |
-      JSON configuration for manifests to create. Format:
+      JSON configuration for manifests to create.
+      Each registry may be e.g. docker.io/myorg, gcr.io/myorg, or ghcr.io/myorg. Format:
       {
         "manifests": [
           {
             "name": "my-image",
             "tag": "latest",
-            "registry": "docker.io/myorg",
+            "registry": "ghcr.io/myorg",
             "architectures": ["amd64", "arm64"],
             "artifact-pattern": "{arch}/myimage-{arch}.tar",
           }
@@ -61,6 +62,14 @@ inputs:
     type: string
   gcr-key:
     description: GCR service account JSON
+    required: false
+    type: string
+  ghcr-username:
+    description: GHCR username
+    required: false
+    default:
+  ghcr-token:
+    description: GHCR token
     required: false
     type: string
 
@@ -154,3 +163,5 @@ runs:
       dockerhub-username: ${{ inputs.dry-run != true && inputs.dockerhub-username || '' }}
       dockerhub-password: ${{ inputs.dry-run != true && inputs.dockerhub-password || '' }}
       gcr-key: ${{ inputs.dry-run != true && inputs.gcr-key || '' }}
+      ghcr-username: ${{ inputs.dry-run != true && inputs.ghcr-username || '' }}
+      ghcr-token: ${{ inputs.dry-run != true && inputs.ghcr-token || '' }}

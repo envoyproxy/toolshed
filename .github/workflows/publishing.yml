@@ -62,6 +62,7 @@ jobs:
       actions: read
       contents: read
       id-token: write
+      packages: write
     # secrets.ENVOY_GPG_SNAKEOIL_KEY_PASSWORD
     # secrets.ENVOY_GPG_SNAKEOIL_KEY
     uses: ./.github/workflows/_publish.yml
