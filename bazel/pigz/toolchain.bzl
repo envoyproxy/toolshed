@@ -14,7 +14,8 @@ PigzInfo = provider(
 UNAVAILABLE_MESSAGE = (
     "No pigz for this platform: toolshed's prebuilt pigz is for Linux x86_64 and aarch64 " +
     "(once a bins release publishes them), and no other pigz toolchain is registered. " +
-    "Register a source toolchain (see @envoy_toolshed//pigz:README.md)."
+    "Set a host pigz (`pigz_prebuilt_extension`'s `setup(host_path = ...)`), or register a " +
+    "source toolchain (see @envoy_toolshed//pigz:README.md)."
 )
 
 def _pigz_toolchain_impl(ctx):

@@ -34,9 +34,24 @@ toolchains match on `target_compatible_with`, which in the exec configuration is
 `//pigz` resolves, in order:
 
 1. the prebuilt for the platform (Linux x86_64 and aarch64, once a bins release publishes them);
-2. a source toolchain, if the consumer registers one;
-3. otherwise, it fails, naming the reason: toolshed does not build pigz for consumers, so that
+2. a host pigz, if the root module sets one (`host_path`, below);
+3. a source toolchain, if the consumer registers one;
+4. otherwise, it fails, naming the reason: toolshed does not build pigz for consumers, so that
    they never fetch and compile it unless they ask to.
+
+To use a pigz already on the host where there is no prebuilt (eg macOS), rather than building it,
+set its absolute path:
+
+```starlark
+pigz_prebuilt = use_extension("@envoy_toolshed//pigz:extensions.bzl", "pigz_prebuilt_extension")
+pigz_prebuilt.setup(host_path = "/opt/homebrew/bin/pigz")
+```
+
+This adds a toolchain for the host's OS and CPU, unless there is an enabled prebuilt for it, which
+takes precedence (to use the host pigz on Linux, disable the prebuilt for it, eg
+`linux_x86_64_sha256 = ""`). The path must exist (it
+is watched, so a change re-evaluates the toolchains), and the binary runs wherever the action
+does, so with remote execution it must run there too.
 
 To build pigz from source where there is no prebuilt (eg macOS), depend on the `pigz` module and
 register a source toolchain after the prebuilts. A root module's toolchains are registered before
