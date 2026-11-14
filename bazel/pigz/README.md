@@ -45,8 +45,20 @@ toolchains match on `target_compatible_with`, which in the exec configuration is
 
 1. a source toolchain, if the consumer registers one before `load_pigz_toolchains()`;
 2. the prebuilt for the platform (Linux x86_64 and aarch64, once a bins release publishes them);
-3. otherwise, it fails, naming the reason: toolshed does not build pigz for consumers, so that
+3. a host pigz, if `setup_pigz` is given one (`host_path`, below);
+4. otherwise, it fails, naming the reason: toolshed does not build pigz for consumers, so that
    they never fetch and compile it unless they ask to.
+
+To use a pigz already on the host where there is no prebuilt (eg macOS), rather than building it,
+set its absolute path:
+
+```starlark
+setup_pigz(host_path = "/opt/homebrew/bin/pigz")
+```
+
+This adds a toolchain for the host's OS and CPU, unless there is a prebuilt for it, which takes
+precedence. The path must exist (it is watched, so a change re-evaluates the toolchains), and the
+binary runs wherever the action does, so with remote execution it must run there too.
 
 To build pigz from source where there is no prebuilt, register a toolchain for it, constrained to
 where it should build, before `load_pigz_toolchains()`:
