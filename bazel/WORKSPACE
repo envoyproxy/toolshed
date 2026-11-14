@@ -6,6 +6,9 @@ load_archives()
 load("//pgp:repositories.bzl", "setup_sq")
 setup_sq()
 
+load("//pigz:repositories.bzl", "load_pigz_toolchains", "setup_pigz")
+setup_pigz()
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
@@ -33,6 +36,8 @@ load_toolchains()
 load("//pgp:toolchain.bzl", "load_pgp_toolchains")
 register_toolchains("//pgp/test:stub_toolchain")
 load_pgp_toolchains()
+
+load_pigz_toolchains()
 
 load(":packages.bzl", "load_packages", "load_website_packages")
 load_packages()

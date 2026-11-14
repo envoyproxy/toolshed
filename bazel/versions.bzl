@@ -23,6 +23,8 @@ LLVM_DISTRIBUTIONS = {
 VERSIONS = {
     "cmake": "3.23.2",
     "llvm": LLVM_VERSION,
+    # The version of the prebuilt pigz (built and published from `main`).
+    "pigz": "2.8.bcr.3",
     "sq": SQ_VERSION,
     "v8": V8_VERSION,
     "ninja": "1.12.0",
@@ -64,6 +66,14 @@ VERSIONS = {
         "macOS-ARM64": "ca6c644a6d285d52d62bf7cb206d839623668eaf86cdc25bc0a709cd137a2017",
     },
     "sq_sha256": SQ_SHA256,
+
+    # pigz prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64),
+    # filled by the release preparation once a bins-v* release publishes the artifacts. Empty, there
+    # is no prebuilt for the platform.
+    "pigz_sha256": {
+        "linux-x86_64": "",
+        "linux-aarch64": "",
+    },
 
     # Glint binary hashes by architecture
     "glint_sha256": {
