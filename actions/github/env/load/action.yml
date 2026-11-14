@@ -11,6 +11,12 @@ inputs:
   check-name:
     type: string
     default:
+  # Upload the environment as an artifact of this run, unchanged, so that a workflow triggered by
+  # this run can load it from this run with `run-id`. A workflow triggered by a `workflow_run` run
+  # cannot otherwise find the request: GitHub does not record what triggered a run.
+  save:
+    type: boolean
+    default: false
   template-check-text:
     type: string
     default: |
@@ -54,7 +60,8 @@ runs:
       run-id: ${{ steps.find-request.outputs.output || inputs.run-id }}
 
   # Validate the run the environment was downloaded from. This is the triggering run, unless
-  # `run-id` names another, eg the request run of a workflow triggered by a `workflow_run` workflow.
+  # `run-id` names another. A `workflow_run` run of this repository runs the default branch's
+  # workflows, and only provides an environment it was given (`save`).
   - name: Find environment source
     id: source
     if: ${{ github.event_name == 'workflow_run' }}
@@ -74,7 +81,7 @@ runs:
         workflow_event: ${{ toJSON(fromJSON(steps.source.outputs.source).event) }}
         workflow_repo: ${{ toJSON(fromJSON(steps.source.outputs.source).repository) }}
         current_repo: ${{ toJSON(github.repository) }}
-        allowed_events: ["pull_request_target", "push", "schedule"]
+        allowed_events: ["pull_request_target", "push", "schedule", "workflow_run"]
       input-format: yaml
       print-output: true
       options: -r
@@ -92,6 +99,13 @@ runs:
           else
             "✓ Environment source validation passed"
           end
+  - name: Save environment data
+    if: ${{ inputs.save == true || inputs.save == 'true' }}
+    uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+    with:
+      name: ${{ inputs.name }}
+      path: ${{ runner.temp }}/${{ inputs.name }}.json
+      if-no-files-found: error
   - uses: envoyproxy/toolshed/actions/jq@14eff69d81e97ac38909d426ccfb3918bd406a8b
     name: Load env data
     id: data
