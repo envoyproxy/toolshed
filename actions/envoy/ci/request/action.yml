@@ -11,6 +11,9 @@
 #
 # Checks/runs are enabled/disabled by .github/config.yml
 #
+# Run entries in `.github/config.yml` may set `pr-skip-actors: [actor, ...]` to skip
+# that run for the listed actors on pull_request events only (never on push).
+#
 # Check/runs can be overridden with vars, eg ENVOY_CI_RUN_MOBILE_COVERAGE=1 will force `mobile-coverage` to `true`
 #
 # Any *required* checks that are not scheduled to be run are explicitly skipped
@@ -323,6 +326,7 @@ runs:
     id: data
     env:
       CURRENT_CONFIG: ${{ steps.config.outputs.output }}
+      EVENT_NAME: ${{ github.event_name }}
       IS_ENVOY_REPO: ${{ github.repository == 'envoyproxy/envoy' }}
       REQUEST: ${{ steps.request.outputs.value }}
       RUNS: ${{ steps.torun.outputs.runs }}
@@ -331,6 +335,10 @@ runs:
       filter: |
         (env.RUNS | fromjson) as $runs
         | (env.IS_ENVOY_REPO | fromjson) as $isEnvoyRepo
+        | (env.EVENT_NAME | startswith("pull_request")) as $isPR
+        | (env.REQUEST | fromjson) as $request
+        | (env.CURRENT_CONFIG | fromjson) as $fullConfig
+        | ($fullConfig.run // {}) as $runConfig
         | . as $vars
         | ($isEnvoyRepo or $vars.ENVOY_CI) as $ci
         | ($isEnvoyRepo or $vars.ENVOY_MOBILE_CI) as $ciMobile
@@ -341,18 +349,22 @@ runs:
             ((.key | test("^mobile-") and ($ciMobile | not))
             or ((.key | test("^build-windows")) and ($ciWindows | not))
             or ((.key | test("^build-macos")) and ($ciMacos | not))) as $disable
+            # `pr-skip-actors`: skip this run for listed actors on PR events only.
+            # Pushes (ie landed commits) are never skipped by this.
+            | (($runConfig[.key] | if type == "object" then .["pr-skip-actors"] else null end) // []) as $skipActors
+            | ($isPR and ($skipActors | index($request.actor.name) != null)) as $skipActor
             | (.key | gsub("-"; "_") | ascii_upcase) as $keyVar
             | "ENVOY_CI_RUN_\($keyVar)" as $envVar
             | ($vars | has($envVar)) as $enable
             | if $enable then
                 .value = true
-              elif $disable then
+              elif ($disable or $skipActor) then
                 .value = false
               elif .value == "" then
                 .value = false
               else . end)
         | . as $run
-        | (env.CURRENT_CONFIG | fromjson) as $config
+        | $fullConfig as $config
         | $config.checks as $checks
         | $checks
         | with_entries(
@@ -371,7 +383,6 @@ runs:
         | to_entries
         | sort_by(.value.action, .key)
         | from_entries as $checks
-        | (env.REQUEST | fromjson) as $request
         | ($config
            | del(.checks, .config, .run, .["build-image"], .["agent-ubuntu"])
            | .envoy = $config.config.envoy
