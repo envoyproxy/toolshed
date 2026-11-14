@@ -1,6 +1,6 @@
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//:versions.bzl", "VERSIONS")
-load(":pigz_test.bzl", "render_hub_build_test", "unavailable_test")
+load(":pigz_test.bzl", "host_constraints_test", "render_hub_build_test", "unavailable_test")
 
 exports_files([
     "assert_pigz_roundtrip.sh",
@@ -20,6 +20,10 @@ sh_test(
 
 render_hub_build_test(
     name = "render_hub_build_test",
+)
+
+host_constraints_test(
+    name = "host_constraints_test",
 )
 
 # A platform that the prebuilt toolchains do not match.
