@@ -1,7 +1,8 @@
 exports_files([
     "licenses/pigz",
-    "licenses/zlib",
+    "licenses/zlib-ng",
     "licenses/zopfli",
     "pigz_package.bzl",
+    "pigz-zlib-ng.patch",
     "pigz_prebuilt.bzl",
 ])
