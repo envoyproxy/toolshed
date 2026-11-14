@@ -1,6 +1,6 @@
 SUPPORTED_ARCHES = ["aarch64", "x86_64"]
 
-BINS_RELEASE = "0.2.33"
+BINS_RELEASE = "0.2.34"
 
 LLVM_VERSION = "22.1.8"
 
@@ -41,10 +41,10 @@ VERSIONS = {
     "ninja": "1.12.0",
     "python": "3.12",
     "bins_release": BINS_RELEASE,
-    "msan_libs_sha256": "9283b77341f9025dcd39424aa30ee3e0d126ae901b23212663af7884bb366c07",
-    "tsan_libs_sha256": "07f78bcfba0c6be156a893ec4e5fe27a34fd3e69ef616ae989d21ab006d41b57",
+    "msan_libs_sha256": "5538945e7113677fe90ea809bc15e90c4c573370e76eadf9c432b6936776d2e7",
+    "tsan_libs_sha256": "1af4d41cbe88c2c0bbb4611f57edbf8d933b432d501ccba7d4744105d785e81d",
     # Filled after the bins-v* release publishes the shared libunwind artifact.
-    "unwind_libs_sha256": "ba87bd62fb499791268a27fb1ac92cdddd0af1b27d6a935deaf819ca6c32b05d",
+    "unwind_libs_sha256": "e51178035361876de4cbc26180dc896591ab86114c11b4520a711545dd698a68",
     "libcxx_libs_sha256": {
         "aarch64": "b3bd8dfc1c250d5c2c36de174138ffef9754402b33e54abe9b5efb25982fa2f7",
         "x86_64": "e40f39338ffe561dfa26541557c9e548fc7760db9d99f7b6c5de237b725482aa",
@@ -92,8 +92,8 @@ VERSIONS = {
     # filled by the release preparation once a bins-v* release publishes the artifacts. Empty, there
     # is no prebuilt for the platform.
     "pigz_sha256": {
-        "linux-x86_64": "9003d9434cc0efaacda40924ea801e2794f9b0061b09c4bf0271a5bb6b36ca18",
-        "linux-aarch64": "79fd14c823497ee1fde5facdc079bb2ee60381cd0c6e165571e2ea50a4298962",
+        "linux-x86_64": "ea1b320f220005816e4073be6c79988873f47ab47bf1c82e8e1ac56bbfa594e8",
+        "linux-aarch64": "05a3f170340ed7c5de9b4f0ecf06035705441ba71624e6e11e7d4e532d92634d",
     },
     # Git prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64).
     "git_sha256": {
