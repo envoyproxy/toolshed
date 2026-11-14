@@ -31,7 +31,7 @@ pigz_toolchain(
         name = "pigz_%s" % platform.replace("-", "_"),
         licenses = {
             "//pigz/private:licenses/pigz": "pigz/LICENSE",
-            "//pigz/private:licenses/zlib": "zlib/LICENSE",
+            "//pigz/private:licenses/zlib-ng": "zlib-ng/LICENSE.md",
             "//pigz/private:licenses/zopfli": "zopfli/COPYING",
         },
         pigz = "@pigz",

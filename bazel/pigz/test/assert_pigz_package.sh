@@ -42,7 +42,7 @@ expect_entry '-rw-r--r--' 'BUILD\.bazel'
 expect_entry '-rwxr-xr-x' 'bin/pigz'
 for license in \
     pigz/LICENSE \
-    zlib/LICENSE \
+    zlib-ng/LICENSE.md \
     zopfli/COPYING
 do
     expect_entry '-rw-r--r--' "share/doc/${license}"
@@ -63,7 +63,7 @@ header=$("$READELF" -h "$pigz")
 sections=$("$READELF" -S "$pigz")
 [[ "$sections" != *".symtab"* ]] || fail "bin/pigz is not stripped"
 
-# Only glibc at runtime: zlib and zopfli are linked statically.
+# Only glibc at runtime: zlib-ng and zopfli are linked statically.
 unexpected=$("$READELF" -d "$pigz" \
     | awk '/NEEDED/ { gsub(/\[|\]/, "", $NF); print $NF }' \
     | grep -Ev '^(libc\.so\.6|libm\.so\.6|libpthread\.so\.0|libdl\.so\.2|librt\.so\.1|ld-linux[^[:space:]]*\.so(\.[0-9]+)*|libgcc_s\.so\.1)$' || true)

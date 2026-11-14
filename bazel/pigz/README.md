@@ -8,9 +8,10 @@ for the platform it runs on, as the executable target `//pigz`.
 Each `bins-v*` release publishes `pigz-<version>-linux-{x86_64,aarch64}.tar.zst`:
 
 - `BUILD.bazel`
-- `bin/pigz`: the `pigz` module (zlib and zopfli linked statically), built against toolshed's
-  glibc 2.31 sysroot and stripped.
-- `share/doc/`: pigz, zlib and zopfli licenses.
+- `bin/pigz`: the `pigz` module, with zlib-ng (zlib-compatible, for faster compression at the
+  same level and format) in place of zlib, and zopfli, linked statically; built against
+  toolshed's glibc 2.31 sysroot and stripped.
+- `share/doc/`: pigz, zlib-ng and zopfli licenses.
 
 ## Consuming pigz
 
