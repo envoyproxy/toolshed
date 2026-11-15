@@ -79,7 +79,7 @@ outputs:
 runs:
   using: composite
   steps:
-  - uses: envoyproxy/toolshed/actions/github/merge-commit@18149145f9f6b54444e8d24675a3eaa5535155ac
+  - uses: envoyproxy/toolshed/actions/github/merge-commit@e817e4dfbeacca47d3babc3d2ce6a4968b640759
     id: merge-commit
     name: Fetch merge commit hash
     if: ${{ inputs.pr != '' && fromJSON(inputs.fetch-merge-commit) }}
@@ -91,7 +91,7 @@ runs:
   # otherwise the config value is respected.
   - name: Parse YAML config
     id: parsed-config
-    uses: envoyproxy/toolshed/actions/jq@18149145f9f6b54444e8d24675a3eaa5535155ac
+    uses: envoyproxy/toolshed/actions/jq@e817e4dfbeacca47d3babc3d2ce6a4968b640759
     with:
       input: ${{ inputs.config || '{}' }}
       input-format: yaml
@@ -138,7 +138,7 @@ runs:
   - name: Config
     id: config-token
     if: ${{ inputs.ssh-key == '' }}
-    uses: envoyproxy/toolshed/actions/jq@18149145f9f6b54444e8d24675a3eaa5535155ac
+    uses: envoyproxy/toolshed/actions/jq@e817e4dfbeacca47d3babc3d2ce6a4968b640759
     with:
       input: ${{ inputs.token || github.token }}
       options: -R
@@ -151,7 +151,7 @@ runs:
         | del(.branch, .["requested-ref"])
   - name: Config
     id: config-ssh
-    uses: envoyproxy/toolshed/actions/jq@18149145f9f6b54444e8d24675a3eaa5535155ac
+    uses: envoyproxy/toolshed/actions/jq@e817e4dfbeacca47d3babc3d2ce6a4968b640759
     if: ${{ inputs.ssh-key != '' }}
     with:
       input: ${{ inputs.ssh-key }}
@@ -190,7 +190,7 @@ runs:
       COMMITTER_EMAIL: ${{ inputs.committer-email }}
     shell: bash
   - id: branch
-    uses: envoyproxy/toolshed/actions/jq@18149145f9f6b54444e8d24675a3eaa5535155ac
+    uses: envoyproxy/toolshed/actions/jq@e817e4dfbeacca47d3babc3d2ce6a4968b640759
     with:
       input: ${{ fromJSON(steps.parsed-config.outputs.value).branch }}
       input-format: text
