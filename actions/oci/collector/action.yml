@@ -47,6 +47,10 @@ inputs:
         ]
       }
     required: true
+  push-jobs:
+    description: How many manifests to push concurrently (1, each in turn).
+    required: false
+    default: 1
   dry-run:
     description: Run without actually pushing images
     required: false
@@ -93,16 +97,15 @@ runs:
       echo "::endgroup::"
       echo "::group::Extracting OCI archives"
       mkdir -p ${{ inputs.oci-tmp-path }}
-      for tar_file in $(find ${{ inputs.artifacts-path }} -name "*.tar" -type f); do
-          echo "Processing: ${tar_file}"
-          dir_name=$(basename "${tar_file}" .tar)
-          extract_dir="${{ inputs.oci-tmp-path }}/${dir_name}"
-          echo "  Basename: ${dir_name}"
-          echo "  Extract to: ${extract_dir}"
-          mkdir -p "${extract_dir}"
-          tar -xf "${tar_file}" -C "${extract_dir}"
-          echo "  ✓ Extracted successfully"
-      done
+      # Extract the archives concurrently (one per core).
+      find ${{ inputs.artifacts-path }} -name "*.tar" -type f -print0 \
+          | xargs -0 -r -P "$(nproc)" -I{} bash -c '
+              set -e
+              tar_file="${1}"
+              extract_dir="${2}/$(basename "${tar_file}" .tar)"
+              mkdir -p "${extract_dir}"
+              tar -xf "${tar_file}" -C "${extract_dir}"
+              echo "✓ Extracted ${tar_file} to ${extract_dir}"' _ {} "${{ inputs.oci-tmp-path }}"
       echo "::endgroup::"
 
       echo "::group::Extracted OCI directories"
@@ -151,6 +154,7 @@ runs:
     with:
       operations: ${{ steps.operations.outputs.value }}
       dry-run: ${{ inputs.dry-run }}
+      push-jobs: ${{ inputs.push-jobs }}
       dockerhub-username: ${{ inputs.dry-run != true && inputs.dockerhub-username || '' }}
       dockerhub-password: ${{ inputs.dry-run != true && inputs.dockerhub-password || '' }}
       gcr-key: ${{ inputs.dry-run != true && inputs.gcr-key || '' }}
