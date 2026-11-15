@@ -6,16 +6,17 @@
 MOCK_LOG="${MOCK_LOG:-/tmp/buildah-mock.log}"
 BUILDAH_MOCK_STATE="${BUILDAH_MOCK_STATE:-/tmp/buildah-mock.state}"
 
+# The line is written with a single `printf`, so concurrent calls (eg pushes) do not interleave.
 print_cmd() {
-    local arg
+    local arg line=""
     for arg in "$@"; do
         if [[ "$arg" =~ [[:space:]] ]]; then
-            printf '"%s" ' "$arg"
+            line+="\"${arg}\" "
         else
-            printf '%s ' "$arg"
+            line+="${arg} "
         fi
-    done | sed 's/ $//'
-    echo
+    done
+    printf '%s\n' "${line% }"
 }
 
 print_cmd buildah "$@" >> "$MOCK_LOG"
@@ -40,6 +41,13 @@ case "$1" in
         shift  # remove "manifest"
         subcmd="$1"
 
+        # With `BUILDAH_MOCK_FAIL_MATCH`, fail the calls whose arguments match it (eg one of
+        # several concurrent pushes, deterministically).
+        if [[ -n "${BUILDAH_MOCK_FAIL_MATCH:-}" && "$*" =~ ${BUILDAH_MOCK_FAIL_MATCH} ]]; then
+            echo "buildah mock: failing $*" >&2
+            exit 1
+        fi
+
         # Read call index from counter file
         idx=0
         [[ -f "${BUILDAH_MOCK_STATE}" ]] && idx=$(cat "${BUILDAH_MOCK_STATE}")
@@ -62,6 +70,18 @@ case "$1" in
                 done
             fi
             exit "${code}"
+        fi
+
+        # With `BUILDAH_MOCK_CONCURRENCY_DIR`, each push records how many pushes were running
+        # when it started (in `<dir>/observed`), and runs for `BUILDAH_MOCK_PUSH_SECONDS`, so tests
+        # can check pushes overlap, and how many at most.
+        if [[ "${subcmd}" == "push" && -n "${BUILDAH_MOCK_CONCURRENCY_DIR:-}" ]]; then
+            mkdir -p "${BUILDAH_MOCK_CONCURRENCY_DIR}"
+            touch "${BUILDAH_MOCK_CONCURRENCY_DIR}/running.$$"
+            sleep "${BUILDAH_MOCK_PUSH_SECONDS:-1}"
+            find "${BUILDAH_MOCK_CONCURRENCY_DIR}" -name 'running.*' | wc -l \
+                >> "${BUILDAH_MOCK_CONCURRENCY_DIR}/observed"
+            rm -f "${BUILDAH_MOCK_CONCURRENCY_DIR}/running.$$"
         fi
 
         echo "buildah manifest ${subcmd}: ok"

@@ -1,0 +1,31 @@
+uses: ./actions/buildah
+id: buildah
+with:
+  push-jobs: 2
+  operations: >-
+    [{"command": "manifest", "args": ["create", "foo"]},
+     {"command": "manifest", "args": ["add", "foo", "oci:/tmp/a"]},
+     {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:a"]},
+     {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:b"]},
+     {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:c"]}]
+
+before:
+- shell: bash
+  run: |
+    rm -rf /tmp/buildah-mock.state /tmp/buildah-mock-concurrency
+    # Each push runs for 2s and records how many pushes were running: with 3 pushes and
+    # `push-jobs: 2`, two overlap, and the third waits for one of them.
+    echo "BUILDAH_MOCK_CONCURRENCY_DIR=/tmp/buildah-mock-concurrency" >> "$GITHUB_ENV"
+    echo "BUILDAH_MOCK_PUSH_SECONDS=2" >> "$GITHUB_ENV"
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_call_count 6
+    test_mock_log_contains "buildah --log-level warn manifest create foo"
+    test_mock_log_contains "buildah --log-level warn manifest add foo oci:/tmp/a"
+    test_mock_log_contains "buildah --log-level warn manifest push --all foo docker://example.com/foo:a"
+    test_mock_log_contains "buildah --log-level warn manifest push --all foo docker://example.com/foo:b"
+    test_mock_log_contains "buildah --log-level warn manifest push --all foo docker://example.com/foo:c"
+    test_mock_max_concurrency 2

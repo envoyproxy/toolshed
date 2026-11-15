@@ -1,0 +1,49 @@
+# Pushes that complete before they are waited for are collected, with their output.
+uses: ./actions/buildah
+id: buildah
+with:
+  push-jobs: 4
+  operations: >-
+    [{"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:a"]},
+     {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:b"]},
+     {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:c"]}]
+  bash-prefix: |
+    #!/bin/bash
+    set -uo pipefail
+
+    export DRY_RUN=\($dry_run)
+    source \($action_path)/buildah.sh
+    _step_rc=0
+    source /tmp/buildah-wrapper.sh
+  bash-postfix: |
+    echo ${_step_rc} > /tmp/buildah-test-rc
+
+before:
+- shell: bash
+  run: |
+    rm -f /tmp/buildah-mock.state /tmp/buildah-wait.out
+    # Wait for every push to complete (its status marker) before collecting them.
+    cat > /tmp/buildah-wrapper.sh << 'EOF2'
+    eval "$(declare -f handle_manifest_wait | sed '1s/handle_manifest_wait/orig_handle_manifest_wait/')"
+    handle_manifest_wait() {
+        local log
+        for log in "${_PUSH_LOGS[@]}"; do
+            until [[ -s "${log}.rc" ]]; do sleep 0.1; done
+        done
+        orig_handle_manifest_wait > /tmp/buildah-wait.out 2>&1 || _step_rc=$?
+        cat /tmp/buildah-wait.out
+    }
+    EOF2
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_call_count 4
+    test_step_outcome "success"
+    count=$(grep -c "buildah manifest push: ok" /tmp/buildah-wait.out)
+    if [[ "${count}" == 3 ]]; then
+        echo "success:the output of the 3 completed pushes was collected" >> "${TEST_OUTPUT}"
+    else
+        echo "fail:Expected the output of 3 pushes to be collected, got ${count}" >> "${TEST_OUTPUT}"
+    fi

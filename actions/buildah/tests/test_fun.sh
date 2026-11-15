@@ -61,3 +61,18 @@ test_step_outcome() {
         echo "fail:Expected step outcome '${expected}', got '${outcome}' (rc=${rc})" >> "${TEST_OUTPUT}"
     fi
 }
+
+# Assert the most pushes the mock saw running at once (`BUILDAH_MOCK_CONCURRENCY_DIR`) is exactly
+# the given number: so that they overlapped, and no more than allowed.
+test_mock_max_concurrency() {
+    local expected="${1}"
+    local observed="${BUILDAH_MOCK_CONCURRENCY_DIR}/observed"
+    local max
+    max=$(sort -n "${observed}" 2>/dev/null | tail -n1)
+    if [[ "${max}" == "${expected}" ]]; then
+        echo "success:at most ${expected} pushes ran at once" >> "${TEST_OUTPUT}"
+    else
+        echo "fail:Expected at most ${expected} pushes at once, got ${max:-none}" >> "${TEST_OUTPUT}"
+        cat "${observed}" >&2 2>/dev/null || :
+    fi
+}
