@@ -33,6 +33,12 @@ inputs:
   gcr-key:
     description: GCR service account JSON for authentication
     required: false
+  push-jobs:
+    description: |
+      How many `manifest push`es to run concurrently (1: each in turn). Each push follows the
+      operations before it, so the `create`/`add`s of its manifest list.
+    required: false
+    default: 1
   bash-postfix:
     required: true
     default: |
@@ -72,10 +78,12 @@ runs:
       input: |
         operations: ${{ inputs.operations }}
         dry_run: ${{ inputs.dry-run }}
+        push_jobs: ${{ inputs.push-jobs }}
         action_path: ${{ github.action_path }}
       input-format: yaml
       filter: |
         .dry_run as $dry_run
+        | (.push_jobs | tostring | @sh) as $push_jobs
         | .action_path as $action_path
         | (.operations
            | map(
@@ -87,4 +95,4 @@ runs:
                  "echo \"::error::Unknown command: \($command)\"\nexit 1"
                end)
            | join("\n")) as $actions
-        | "${{ inputs.bash-prefix }}\n\($actions)\n${{ inputs.bash-postfix }}"
+        | "${{ inputs.bash-prefix }}\nexport BUILDAH_PUSH_JOBS=\($push_jobs)\n\($actions)\nhandle_manifest_wait\n${{ inputs.bash-postfix }}"

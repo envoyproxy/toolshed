@@ -1,0 +1,54 @@
+# A concurrent push that fails (its retries exhausted) alongside one that succeeds: both are
+# collected, the failure's output is kept, and the step fails.
+uses: ./actions/buildah
+id: buildah
+with:
+  push-jobs: 2
+  operations: >-
+    [{"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:a"]},
+     {"command": "manifest", "args": ["push", "--all", "foo", "docker://example.com/foo:b"]}]
+  bash-prefix: |
+    #!/bin/bash
+    set -uo pipefail
+
+    export DRY_RUN=\($dry_run)
+    source \($action_path)/buildah.sh
+    _step_rc=0
+    source /tmp/buildah-wrapper.sh
+  bash-postfix: |
+    echo ${_step_rc} > /tmp/buildah-test-rc
+
+before:
+- shell: bash
+  run: |
+    rm -f /tmp/buildah-mock.state /tmp/buildah-wait.out
+    echo "BUILDAH_MOCK_FAIL_MATCH=foo:b" >> "$GITHUB_ENV"
+    echo "BUILDAH_RETRY_MAX=2" >> "$GITHUB_ENV"
+    echo "BUILDAH_RETRY_DELAY=0" >> "$GITHUB_ENV"
+    # The result of collecting the pushes (`handle_manifest_wait`), not of starting them.
+    cat > /tmp/buildah-wrapper.sh << 'EOF2'
+    eval "$(declare -f handle_manifest_wait | sed '1s/handle_manifest_wait/orig_handle_manifest_wait/')"
+    handle_manifest_wait() {
+        orig_handle_manifest_wait > /tmp/buildah-wait.out 2>&1 || _step_rc=$?
+        cat /tmp/buildah-wait.out
+    }
+    EOF2
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_mock_call_count 4
+    test_step_outcome "failure"
+    test_mock_log_contains "buildah --log-level warn manifest push --all foo docker://example.com/foo:a"
+    test_mock_log_contains "buildah --log-level warn manifest push --all foo docker://example.com/foo:b"
+    if grep -q "buildah manifest push: ok" /tmp/buildah-wait.out; then
+        echo "success:the successful push was collected" >> "${TEST_OUTPUT}"
+    else
+        echo "fail:the successful push was not collected" >> "${TEST_OUTPUT}"
+    fi
+    if grep -q "::error title=Buildah manifest push failed::manifest push --all foo docker://example.com/foo:b" /tmp/buildah-wait.out; then
+        echo "success:the failed push's annotation was kept" >> "${TEST_OUTPUT}"
+    else
+        echo "fail:the failed push's annotation was lost" >> "${TEST_OUTPUT}"
+    fi
