@@ -1,0 +1,25 @@
+name: version parses a Bazel registry version as the release it is a revision of
+imports: [version]
+input:
+- "3.5.9.bcr.1"
+- "3.5.9.envoy"
+- "2.15.envoy.1"
+- "1.10.0.bcr.2.envoy.1"
+- "35.1.bcr.envoy"
+- "5.3.0-bcr.4"
+- "0.4.0-alpha.9.envoy"
+- "1.2.3.4.envoy"
+- ".envoy"
+- "envoy"
+expression: 'map(version::parse(.))'
+expected:
+- {main: [3, 5, 9], pre: [], build: [], string: "3.5.9.bcr.1"}
+- {main: [3, 5, 9], pre: [], build: [], string: "3.5.9.envoy"}
+- {main: [2, 15, 0], pre: [], build: [], string: "2.15.envoy.1"}
+- {main: [1, 10, 0], pre: [], build: [], string: "1.10.0.bcr.2.envoy.1"}
+- {main: [35, 1, 0], pre: [], build: [], string: "35.1.bcr.envoy"}
+- {main: [5, 3, 0], pre: [], build: [], string: "5.3.0-bcr.4"}
+- {main: [0, 4, 0], pre: [alpha, "9"], build: [], string: "0.4.0-alpha.9.envoy"}
+- {string: "1.2.3.4.envoy"}
+- {string: ".envoy"}
+- {string: envoy}

@@ -1,0 +1,11 @@
+name: cve utils matches a dependency with a Bazel registry version against the bounds
+imports: [cve/utils, version]
+input:
+- [{start_inc: "3.5.0", end_exc: "3.5.10"}, "3.5.9"]
+- [{start_inc: "3.5.0", end_exc: "3.5.10"}, "3.5.9.bcr.1"]
+- [{start_inc: "3.5.0", end_exc: "3.5.10"}, "3.5.9.envoy"]
+- [{start_inc: "3.5.0", end_exc: "3.5.10"}, "3.5.10.envoy"]
+- [{start_inc: "3.5.0", end_exc: "3.5.10"}, "3.4.2.bcr.3"]
+- [{end_inc: "7.0.2"}, "7.0.0.envoy.1"]
+expression: 'map(utils::match_cpe_version({versions: .[0]}; {version: version::parse(.[1])}))'
+expected: [true, true, true, false, false, true]
