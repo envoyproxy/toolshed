@@ -1,7 +1,9 @@
 # Generic dependency/CVE version parsing and comparison.
 #
 # API: parse/1 returns {main, pre, build, string} for numeric versions, an opaque
-# {string} object otherwise, and null for "*" (or a missing/null version).
+# {string} object otherwise, and null for "*" (or a missing/null version). A Bazel
+# registry suffix (`.bcr.N`, `.envoy`, `.envoy.N`) is not part of the version that is
+# parsed: `3.5.9.bcr.1` parses as `3.5.9`, with the full version as its `string`.
 # cmp/2 returns -1, 0, or 1 for parsed objects; eq/2, lt/2, lte/2, gt/2, and
 # gte/2 expose boolean comparisons. cmp_pre/2 compares prerelease identifier
 # arrays, with [] denoting a final release. Numeric prerelease identifiers sort
@@ -65,22 +67,30 @@ def lte(v1; v2): cmp(v1; v2) <= 0;
 def gt(v1; v2): cmp(v1; v2) > 0;
 def gte(v1; v2): cmp(v1; v2) >= 0;
 
+# Bazel registry suffixes: a registry's own revision of a release (`.bcr.N`, or `-bcr.N`), and
+# Envoy's registry's (`.envoy`, `.envoy.N`), which can follow one another (`1.10.0.bcr.2.envoy.1`).
+# They are not part of the upstream version, and would otherwise make the version opaque.
+def strip_registry_suffix:
+  sub("(?:[.-]bcr(?:\\.[0-9]+)?|\\.envoy(?:\\.[0-9]+)?)+$"; "") as $stripped
+  | if $stripped == "" then . else $stripped end;
+
 def parse(v):
-  (v // "*") as $v
-  | if $v == "*" then null
+  (v // "*") as $original
+  | if $original == "*" then null
     else
-      ($v | capture("^(?<main>[0-9]+(?:\\.[0-9]+){0,2})(?:-(?<pre>[^+]+))?(?:\\+(?<build>.+))?$")? // null) as $m
-      | if $m == null then {string: $v}
+      ($original | strip_registry_suffix) as $v
+      | ($v | capture("^(?<main>[0-9]+(?:\\.[0-9]+){0,2})(?:-(?<pre>[^+]+))?(?:\\+(?<build>.+))?$")? // null) as $m
+      | if $m == null then {string: $original}
         else
           ($m.main
            + (if $m.pre == null then "" else "-" + $m.pre end)
            + (if $m.build == null then "" else "+" + $m.build end)) as $reconstructed
-          | if $reconstructed != $v then {string: $v}
+          | if $reconstructed != $v then {string: $original}
             else
               {main: ($m.main | (split(".") | map(tonumber) + [0, 0, 0])[0:3]),
                pre: (if $m.pre == null then [] else $m.pre | split(".") end),
                build: (if $m.build == null then [] else $m.build | split(".") end),
-               string: $v}
+               string: $original}
             end
         end
     end;
