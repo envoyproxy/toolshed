@@ -9,7 +9,7 @@ def _libcxx_libs_impl(ctx):
         url = "https://github.com/envoyproxy/toolshed/releases/download/bins-v{version}/libcxx-llvm{llvm_version}-{arch}.tar.xz".format(
             arch = arch,
             version = ctx.attr.version,
-            llvm_version = VERSIONS["llvm"],
+            llvm_version = ctx.attr.llvm_version or VERSIONS["llvm"],
         ),
         sha256 = ctx.attr.sha256,
     )
@@ -50,6 +50,9 @@ libcxx_libs = repository_rule(
             mandatory = True,
             doc = "Architecture to target (aarch64 or x86_64)",
             values = ["aarch64", "x86_64"],
+        ),
+        "llvm_version": attr.string(
+            doc = "LLVM version of the bundle (default: toolshed's). It must be the version of the toolchain that compiles against it: the bundle has that libc++'s `__config_site`.",
         ),
     },
     doc = "Downloads prebuilt libcxx bundles for cross-compilation with toolchains_llvm",
@@ -135,16 +138,22 @@ def setup_libcxx_libs(
         aarch64_version = None,
         aarch64_sha256 = None,
         x86_64_version = None,
-        x86_64_sha256 = None):
+        x86_64_sha256 = None,
+        llvm_version = None):
     """Setup function for WORKSPACE.
 
     Creates @libcxx_libs_aarch64 and @libcxx_libs_x86_64 repositories.
+
+    A consumer on another LLVM version than toolshed's sets `llvm_version`, with the bins release
+    (`*_version`) that published the bundles for it, and their hashes: the bundles have their
+    libc++'s `__config_site`, which has to match the headers of the toolchain.
     """
     libcxx_libs(
         name = "libcxx_libs_aarch64",
         version = aarch64_version or VERSIONS["bins_release"],
         sha256 = aarch64_sha256 or VERSIONS["libcxx_libs_sha256"]["aarch64"],
         arch = "aarch64",
+        llvm_version = llvm_version or "",
     )
 
     libcxx_libs(
@@ -152,4 +161,5 @@ def setup_libcxx_libs(
         version = x86_64_version or VERSIONS["bins_release"],
         sha256 = x86_64_sha256 or VERSIONS["libcxx_libs_sha256"]["x86_64"],
         arch = "x86_64",
+        llvm_version = llvm_version or "",
     )
