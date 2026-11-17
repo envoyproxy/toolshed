@@ -71,8 +71,8 @@ VERSIONS = {
     # filled by the release preparation once a bins-v* release publishes the artifacts. Empty, there
     # is no prebuilt for the platform.
     "pigz_sha256": {
-        "linux-x86_64": "",
-        "linux-aarch64": "",
+        "linux-x86_64": "ea1b320f220005816e4073be6c79988873f47ab47bf1c82e8e1ac56bbfa594e8",
+        "linux-aarch64": "05a3f170340ed7c5de9b4f0ecf06035705441ba71624e6e11e7d4e532d92634d",
     },
 
     # Glint binary hashes by architecture
