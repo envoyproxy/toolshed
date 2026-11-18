@@ -11,6 +11,7 @@ exports_files([
     "registry-resolve.sh",
     "registry.bzl",
     "registry_bazelrc.sh",
+    "release-dates.sh",
 ])
 
 bzl_library(

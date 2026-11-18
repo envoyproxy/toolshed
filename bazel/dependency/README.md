@@ -1,10 +1,11 @@
 # Dependency updaters
 
-This package contains three update tools:
+This package contains four update tools:
 
 - `updater` for legacy `WORKSPACE` / `versions.bzl` flows
 - `registry_updater` for pinned `--registry=` entries in `.bazelrc`
 - `module_updater` for `bazel_dep(...)` versions in `MODULE.bazel`
+- `release_date_updater` for `release_date` entries in YAML dependency metadata
 
 ## CVE scanning
 
@@ -128,6 +129,70 @@ if [[ -z "${tags}" && "${VERSION}" != *-dev ]]; then
   exit 1
 fi
 ```
+
+## Release date updater
+
+`release_date_updater` sets the `release_date` of dependencies in YAML metadata
+files (eg Envoy's `bazel/deps.yaml`), which nothing else updates when a
+`bazel_dep` version is bumped:
+
+```starlark
+load("@envoy_toolshed//dependency:macros.bzl", "release_date_updater")
+
+release_date_updater(
+    name = "release_dates",
+    check = ":check",
+    dependencies = ":dependencies",
+    metadata = [
+        "//bazel:deps.yaml",
+        "@envoy_api//bazel:deps.yaml",
+    ],
+)
+```
+
+It does not work out the dates itself: they are looked up by `check`
+(`envoy.dependency.check`), which makes requests to GitHub for each dependency
+that it checks. Name the dependencies to fix, and it is run on only those of
+the `dependencies` JSON:
+
+```console
+$ bazel run //tools/dependency:release_dates -- fmt rules_cc
+Checking the release dates of: fmt rules_cc
+bazel/deps.yaml: fmt 2026-06-16 -> 2026-11-07
+rules_cc: no release date to fix
+Release dates: 1 updated, 0 already set
+```
+
+With no arguments every dependency is checked, which is slow, and can fail on a
+rate limit or on any one request:
+
+```console
+$ bazel run //tools/dependency:release_dates
+```
+
+The dates can be given instead, in which case nothing is looked up, and `check`
+and `dependencies` are not needed:
+
+```console
+$ bazel run //tools/dependency:release_dates -- fmt=2026-11-07 rules_cc=2026-11-05
+```
+
+A dependency is named by its key in the dependency JSON (which is its key in the
+metadata files), or by the `module_name` that the JSON has for it, as the two
+can differ. One that is in neither is an error, unless `--skip-unknown` is
+given: a module that was updated need not have metadata.
+
+```console
+$ bazel run //tools/dependency:release_dates -- --skip-unknown google_benchmark rules_swift
+Not in the dependencies, skipped: rules_swift
+Checking the release dates of: benchmark
+```
+
+Only the `release_date` line of each dependency is changed, so comments,
+quoting and ordering are left as they are. A dependency is updated in the first
+file that has it, and one that is in none of them is an error. If the check
+fails without reporting a mismatch (eg it could not reach GitHub), that is an
+error too, and nothing is changed.
 
 ## Module updater
 

@@ -10,6 +10,8 @@ _BAZEL_UPDATE_SH = Label("//dependency:bazel-update.sh")
 _JQ_TOOLCHAIN = Label("@jq_toolchains//:resolved_toolchain")
 _MODULE_UPDATE_SH = Label("//dependency:module-update.sh")
 _REGISTRY_RESOLVE_SH = Label("//dependency:registry-resolve.sh")
+_RELEASE_DATES_SH = Label("//dependency:release-dates.sh")
+_YQ_TOOLCHAIN = Label("@yq_toolchains//:resolved_toolchain")
 
 # jq with the toolshed modules importable.
 _TOOLSHED_JQ = Label("@envoy_toolshed_jq//:jq")
@@ -108,6 +110,74 @@ def updater(
         **kwargs
     )
 
+
+def release_date_updater(
+        name,
+        metadata,
+        dependencies = None,
+        check = None,
+        jq_toolchain = _JQ_TOOLCHAIN,
+        yq_toolchain = _YQ_TOOLCHAIN,
+        update_script = _RELEASE_DATES_SH,
+        data = None,
+        visibility = None,
+        **kwargs):
+    """Create a runnable that sets dependency release dates in YAML metadata files.
+
+    Given the names of dependencies it looks up their release dates and fixes those that are
+    wrong, given dates it sets them, and given nothing it looks up every dependency:
+
+    ```console
+    $ bazel run //tools/dependency:release_dates -- fmt rules_cc
+    $ bazel run //tools/dependency:release_dates -- fmt=2026-11-07 rules_cc=2026-11-05
+    $ bazel run //tools/dependency:release_dates
+    ```
+
+    The dates are looked up by `check` (`envoy.dependency.check`), which makes requests to GitHub
+    for each dependency: for the named ones it is run on only those of `dependencies`.
+
+    Only the `release_date` line of each dependency is changed.
+
+    Args:
+        name: Name of the generated target.
+        metadata: Labels of the YAML files with the `release_date` of each dependency. A
+            dependency is updated in the first that has it.
+        dependencies: Label for the dependency JSON that `check` checks, keyed by the names
+            of the dependencies in `metadata`. Where an entry has a `module_name`, the
+            dependency can be named by that too.
+        check: Label of the dependency checker binary, to look the dates up with.
+        jq_toolchain: jq toolchain target used by the updater.
+        yq_toolchain: yq toolchain target used by the updater.
+        update_script: Shell script implementing the update.
+        data: Additional runtime data dependencies.
+        visibility: Optional target visibility.
+        **kwargs: Forwarded to sh_binary.
+    """
+    if bool(check) != bool(dependencies):
+        fail("release_date_updater: check and dependencies are given together")
+
+    data = (data or []) + [jq_toolchain, yq_toolchain] + metadata
+    env = {
+        "JQ_BIN": "$(rootpath %s)" % jq_toolchain,
+        "YQ_BIN": "$(rootpath %s)" % yq_toolchain,
+        "RELEASE_DATES_METADATA": "\n".join(["$(rootpath %s)" % yaml for yaml in metadata]),
+    }
+    if check:
+        data += [check, dependencies]
+        env["RELEASE_DATES_CHECK"] = "$(rootpath %s)" % check
+        env["RELEASE_DATES_DEPENDENCIES"] = "$(rootpath %s)" % dependencies
+
+    if visibility != None:
+        kwargs["visibility"] = visibility
+
+    sh_binary(
+        name = name,
+        srcs = [update_script],
+        data = data,
+        env = env,
+        toolchains = [jq_toolchain, yq_toolchain],
+        **kwargs
+    )
 
 def registry_updater(
         name,

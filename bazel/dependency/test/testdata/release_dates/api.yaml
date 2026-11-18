@@ -1,0 +1,8 @@
+rules_buf:
+  project_name: "rules_buf"
+  release_date: "2026-04-30"
+
+# Also in the first file: only updated there.
+fmt:
+  project_name: "fmt"
+  release_date: "2020-01-01"
