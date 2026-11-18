@@ -78,7 +78,9 @@ lookup fmt abseil-cpp > "${tmpdir}/out"
   || fail "the check was run on: $(cat "${tmpdir}/checked")"
 [[ "$(changes deps.yaml)" == '13:  release_date: "2026-11-07"  # trailing comment' ]] \
   || fail "lookup: deps.yaml changed unexpectedly: $(changes deps.yaml)"
-[[ -z "$(changes api.yaml)" ]] || fail "lookup: api.yaml changed, though rules_buf was not named"
+# fmt is in both files, and is fixed in both; rules_buf was not named.
+[[ "$(changes api.yaml)" == '8:  release_date: "2026-11-07"' ]] \
+  || fail "lookup: api.yaml changed unexpectedly: $(changes api.yaml)"
 grep -q "abseil-cpp: no release date to fix" "${tmpdir}/out" || fail "no report for abseil-cpp"
 grep -q "Release dates: 1 updated, 0 already set" "${tmpdir}/out" \
   || fail "lookup: unexpected summary: $(tail -n1 "${tmpdir}/out")"
@@ -133,7 +135,9 @@ lookup > "${tmpdir}/out"
   || fail "the check was run on: $(cat "${tmpdir}/checked")"
 [[ "$(changes deps.yaml)" == '13:  release_date: "2026-11-07"  # trailing comment' ]] \
   || fail "all: deps.yaml changed unexpectedly: $(changes deps.yaml)"
-[[ "$(changes api.yaml)" == '3:  release_date: "2026-11-05"' ]] \
+expected_api='3:  release_date: "2026-11-05"
+8:  release_date: "2026-11-07"'
+[[ "$(changes api.yaml)" == "$expected_api" ]] \
   || fail "all: api.yaml changed unexpectedly: $(changes api.yaml)"
 grep -q "Release dates: 2 updated, 0 already set" "${tmpdir}/out" \
   || fail "all: unexpected summary: $(tail -n1 "${tmpdir}/out")"
@@ -172,7 +176,8 @@ expected_deps='13:  release_date: "2026-11-07"  # trailing comment
 39:  release_date: '"'"'2026-11-11'"'"''
 [[ "$(changes deps.yaml)" == "$expected_deps" ]] \
   || fail "deps.yaml changed unexpectedly: $(changes deps.yaml)"
-[[ -z "$(changes api.yaml)" ]] || fail "api.yaml changed: fmt is only updated in the first file"
+[[ "$(changes api.yaml)" == '8:  release_date: "2026-11-07"' ]] \
+  || fail "api.yaml changed unexpectedly: $(changes api.yaml)"
 grep -q "fmt 2026-06-16 -> 2026-11-07" "${tmpdir}/out" || fail "no report of the fmt update"
 grep -q "Release dates: 3 updated, 1 already set" "${tmpdir}/out" \
   || fail "unexpected summary: $(tail -n1 "${tmpdir}/out")"

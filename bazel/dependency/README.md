@@ -189,7 +189,7 @@ Checking the release dates of: benchmark
 ```
 
 Only the `release_date` line of each dependency is changed, so comments,
-quoting and ordering are left as they are. A dependency is updated in the first
+quoting and ordering are left as they are. A dependency is updated in every
 file that has it, and one that is in none of them is an error. If the check
 fails without reporting a mismatch (eg it could not reach GitHub), that is an
 error too, and nothing is changed.

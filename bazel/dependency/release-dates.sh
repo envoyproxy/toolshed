@@ -23,7 +23,7 @@
 # rate limit or any one request: name the dependencies where they are known.
 #
 # Only the `release_date` line of each dependency is changed, so the rest of the file (comments,
-# quoting, ordering) is left as it is. A dependency is updated in the first file that has it.
+# quoting, ordering) is left as it is. A dependency is updated in every file that has it.
 
 set -e -o pipefail
 
@@ -78,28 +78,33 @@ date_line() {
 }
 
 set_date() {
-    local name="$1" date="$2" yaml line current
+    local name="$1" date="$2" yaml line current found='' updated=''
+    # Every file that has it: the same dependency can have metadata in more than one.
     for yaml in "${YAMLS[@]}"; do
         current="$(current_date "$yaml" "$name")"
         [[ -n "$current" ]] || continue
+        found=1
         [[ "$current" =~ ^${DATE_RE}$ ]] \
             || fail "${yaml}: the release_date of ${name} is not a date: ${current}"
         line="$(date_line "$yaml" "$name")"
         [[ -n "$line" ]] || fail "${yaml}: unable to find the release_date line of ${name}"
         if [[ "$current" == "$date" ]]; then
             echo "${yaml}: ${name} is ${date}"
-            return
+            continue
         fi
         # Check the line holds the date that yq reads for the dependency before changing it.
         sed -n "${line}p" "$yaml" | grep -qE "^[[:space:]]+release_date:[[:space:]]*[\"']?${current}[\"']?[[:space:]]*(#.*)?$" \
             || fail "${yaml}:${line} is not the release_date of ${name}"
         sed -i -E "${line}s/(release_date:[[:space:]]*[\"']?)${current}/\\1${date}/" "$yaml"
         echo "${yaml}: ${name} ${current} -> ${date}"
-        UPDATED=$((UPDATED + 1))
-        return
+        updated=1
     done
-    echo "ERROR: no release_date found for ${name}" >&2
-    MISSING=$((MISSING + 1))
+    if [[ -z "$found" ]]; then
+        echo "ERROR: no release_date found for ${name}" >&2
+        MISSING=$((MISSING + 1))
+    elif [[ -n "$updated" ]]; then
+        UPDATED=$((UPDATED + 1))
+    fi
 }
 
 declare -A APPLIED=()
