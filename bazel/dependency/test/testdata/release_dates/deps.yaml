@@ -1,0 +1,41 @@
+# Dependency metadata, as Envoy's `bazel/deps.yaml`.
+abseil-cpp:
+  project_name: "Abseil"
+  project_url: "https://abseil.io/"
+  release_date: "2026-08-17"
+  use_category:
+  - dataplane_core
+
+# A comment that has to stay.
+fmt:
+  project_name: "fmt"
+  project_url: "https://fmt.dev"
+  release_date: "2026-06-16"  # trailing comment
+  use_category:
+  - dataplane_core
+  license: "fmt"
+
+# Its own date comes after others that are not its own.
+nested:
+  project_name: "nested"
+  project_desc: |
+    A description that quotes a date:
+      release_date: "2024-03-03"
+  cpe:
+    release_date: "2024-03-03"
+  release_date: "2024-03-03"
+  # A commented out one too.
+  # release_date: "2024-03-03"
+
+no-date:
+  project_name: "A dependency with no release date"
+
+unquoted:
+  project_name: "unquoted"
+  release_date: 2025-01-02
+
+zstd:
+  project_name: 'zstd'
+  release_date: '2025-02-19'
+  extensions:
+  - envoy.compression.zstd.compressor

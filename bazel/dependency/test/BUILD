@@ -158,6 +158,24 @@ diff_test(
 )
 
 sh_test(
+    name = "release_dates_test",
+    size = "small",
+    srcs = ["release_dates_test.sh"],
+    data = [
+        "testdata/release_dates/api.yaml",
+        "testdata/release_dates/dependencies.json",
+        "testdata/release_dates/deps.yaml",
+        "//dependency:release-dates.sh",
+        "@jq_toolchains//:resolved_toolchain",
+        "@yq_toolchains//:resolved_toolchain",
+    ],
+    env = {
+        "JQ_BIN": "$(rootpath @jq_toolchains//:resolved_toolchain)",
+        "YQ_BIN": "$(rootpath @yq_toolchains//:resolved_toolchain)",
+    },
+)
+
+sh_test(
     name = "module_updater_failure_test",
     size = "small",
     srcs = ["module_updater_failure_test.sh"],
