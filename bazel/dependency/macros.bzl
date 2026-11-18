@@ -141,7 +141,7 @@ def release_date_updater(
     Args:
         name: Name of the generated target.
         metadata: Labels of the YAML files with the `release_date` of each dependency. A
-            dependency is updated in the first that has it.
+            dependency is updated in every one that has it.
         dependencies: Label for the dependency JSON that `check` checks, keyed by the names
             of the dependencies in `metadata`. Where an entry has a `module_name`, the
             dependency can be named by that too.
