@@ -1,0 +1,57 @@
+socket_buffered_trace {
+  trace_id: 1
+  connection {
+    local_address {
+      socket_address {
+        address: "127.0.0.1"
+        port_value: 10000
+      }
+    }
+    remote_address {
+      socket_address {
+        address: "127.0.0.2"
+        port_value: 53288
+      }
+    }
+  }
+  events {
+    timestamp {
+      seconds: 1700000000
+      nanos: 123456789
+    }
+    read {
+      data {
+        as_bytes: "GET / HTTP/1.1\r\nhost: example\r\n\r\n"
+      }
+    }
+  }
+  events {
+    timestamp {
+      seconds: 1700000000
+      nanos: 200000000
+    }
+    write {
+      data {
+        as_string: "HTTP/1.1 200 OK\r\ncontent-length: 2\r\n\r\n"
+      }
+    }
+  }
+  events {
+    timestamp {
+      seconds: 1700000001
+    }
+    write {
+      data {
+        as_bytes: "ok"
+      }
+      end_stream: true
+    }
+  }
+  events {
+    timestamp {
+      seconds: 1700000002
+    }
+    closed {
+    }
+  }
+}
