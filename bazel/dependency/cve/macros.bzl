@@ -36,6 +36,36 @@ _data_manifest = rule(
     attrs = {"data": attr.label(allow_files = True)},
 )
 
+def _rlocationpath(ctx, target):
+    """The runfiles path of a target: of its executable if it has one, else of its one file."""
+    info = target[DefaultInfo]
+    executable = info.files_to_run.executable if info.files_to_run else None
+    files = [executable] if executable else info.files.to_list()
+    if len(files) != 1:
+        fail("Expected one file for %s, got %d" % (target.label, len(files)))
+    path = files[0].short_path
+    return path[3:] if path.startswith("../") else ctx.workspace_name + "/" + path
+
+def _tool_env(ctx, tool):
+    """The environment to run `tool` with: the runfiles paths that its own `env` gives it.
+
+    These are worked out here, and not read from the tool's `RunEnvironmentInfo` (with Bazel 7 an
+    `sh_binary` does not provide it) or expanded with `ctx.expand_location` (with Bazel 7 that
+    takes every default output of an executable, so fails for a `py_binary`).
+    """
+    env = {key: _rlocationpath(ctx, target) for target, key in ctx.attr.env.items()}
+    env["RUNFILES_DIR"] = tool.executable.path + ".runfiles"
+    return env
+
+# The targets that a tool's `env` gives it the runfiles paths of, to the name of each variable.
+_TOOL_ENV_ATTRS = {
+    "env": attr.label_keyed_string_dict(allow_files = True, cfg = "exec"),
+}
+
+def _env(targets):
+    """The `env` of a tool, from the `env` of the rule that runs it (see `_TOOL_ENV_ATTRS`)."""
+    return {key: "$(rlocationpath %s)" % target for target, key in targets.items()}
+
 def _scanned_impl(ctx):
     output = ctx.actions.declare_file(ctx.label.name + ".json")
     scanner = ctx.attr.scanner[DefaultInfo].files_to_run
@@ -44,9 +74,7 @@ def _scanned_impl(ctx):
         arguments = [scanner.executable.path, output.path],
         tools = [scanner],
         outputs = [output],
-        env = dict(ctx.attr.scanner[RunEnvironmentInfo].environment, **{
-            "RUNFILES_DIR": scanner.executable.path + ".runfiles",
-        }),
+        env = _tool_env(ctx, scanner),
         execution_requirements = {"no-remote-exec": "1"},
         mnemonic = "CveScan",
     )
@@ -54,7 +82,9 @@ def _scanned_impl(ctx):
 
 _scanned = rule(
     implementation = _scanned_impl,
-    attrs = {"scanner": attr.label(executable = True, cfg = "exec", mandatory = True)},
+    attrs = dict(_TOOL_ENV_ATTRS, **{
+        "scanner": attr.label(executable = True, cfg = "exec", mandatory = True),
+    }),
 )
 
 def _fetch_data_impl(ctx):
@@ -66,9 +96,7 @@ def _fetch_data_impl(ctx):
         inputs = ctx.files.data,
         outputs = [output],
         tools = [updater],
-        env = dict(ctx.attr.updater[RunEnvironmentInfo].environment, **{
-            "RUNFILES_DIR": updater.executable.path + ".runfiles",
-        }),
+        env = _tool_env(ctx, updater),
         use_default_shell_env = True,
         execution_requirements = {
             "local": "1",
@@ -83,10 +111,10 @@ def _fetch_data_impl(ctx):
 
 _fetch_data = rule(
     implementation = _fetch_data_impl,
-    attrs = {
+    attrs = dict(_TOOL_ENV_ATTRS, **{
         "data": attr.label(allow_files = True),
         "updater": attr.label(executable = True, cfg = "exec", mandatory = True),
-    },
+    }),
 )
 
 def cve_scan(
@@ -138,29 +166,29 @@ def cve_scan(
         **helpers
     )
     data = [_JQ, _MATCHER, _CNA_MATCHER, _NVD_SCAN, _MERGE, _REPORT, cve_data, ":" + name + "_data"]
-    env = {
-        "JQ_BIN": "$(rlocationpath %s)" % _JQ,
-        "CVE_FILES": "$(rlocationpath :%s_data)" % name,
+    scan_env = {
+        _JQ: "JQ_BIN",
+        ":" + name + "_data": "CVE_FILES",
+        ":" + name + "_deps": "CPE_DEPS",
+        ":" + name + "_ignored": "CVES_IGNORED",
+        ":" + name + "_sources": "CVES_SOURCES",
+        _MATCHER: "JQ_CVE_MATCHER",
+        _CNA_MATCHER: "JQ_CNA_MATCHER",
+        _NVD_SCAN: "JQ_NVD_SCAN",
+        _MERGE: "JQ_MERGE",
     }
     sh_binary(
         name = name,
         srcs = [_SCAN],
         data = data + [":" + name + "_deps", ":" + name + "_ignored", ":" + name + "_sources"],
         deps = [_RUNFILES],
-        env = dict(env, **{
-            "CPE_DEPS": "$(rlocationpath :%s_deps)" % name,
-            "CVES_IGNORED": "$(rlocationpath :%s_ignored)" % name,
-            "CVES_SOURCES": "$(rlocationpath :%s_sources)" % name,
-            "JQ_CVE_MATCHER": "$(rlocationpath %s)" % _MATCHER,
-            "JQ_CNA_MATCHER": "$(rlocationpath %s)" % _CNA_MATCHER,
-            "JQ_NVD_SCAN": "$(rlocationpath %s)" % _NVD_SCAN,
-            "JQ_MERGE": "$(rlocationpath %s)" % _MERGE,
-        }),
+        env = _env(scan_env),
         **common
     )
     _scanned(
         name = name + ".scanned",
         scanner = ":" + name,
+        env = scan_env,
         tags = ["manual", "no-remote-exec"],
         **common
     )
@@ -178,23 +206,25 @@ def cve_scan(
         **common
     )
     update_kwargs = dict(helpers, target_compatible_with = target_compatible_with)
+    fetch_env = {
+        ":" + name + "_data": "CVE_FILES",
+        _FETCH: "FETCHER",
+        _CVELIST_FETCH: "CVELIST_FETCHER",
+        ":" + name + "_start_year": "START_YEAR_PATH",
+    }
     sh_binary(
         name = name + "_fetcher",
         srcs = [_UPDATE],
-        data = [cve_data, ":" + name + "_data", _FETCH, _CVELIST_FETCH, ":" + name + "_start_year"],
+        data = [cve_data] + fetch_env.keys(),
         deps = [_RUNFILES],
-        env = {
-            "CVE_FILES": "$(rlocationpath :%s_data)" % name,
-            "FETCHER": "$(rlocationpath %s)" % _FETCH,
-            "CVELIST_FETCHER": "$(rlocationpath %s)" % _CVELIST_FETCH,
-            "START_YEAR_PATH": "$(rlocationpath :%s_start_year)" % name,
-        },
+        env = _env(fetch_env),
         **update_kwargs
     )
     _fetch_data(
         name = name + "_fetched",
         data = cve_data,
         updater = ":" + name + "_fetcher",
+        env = fetch_env,
         tags = ["manual", "local", "no-cache", "no-remote", "requires-network"],
         target_compatible_with = target_compatible_with,
         **common
