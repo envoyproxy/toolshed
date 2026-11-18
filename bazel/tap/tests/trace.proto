@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package toolshed.tap.tests;
+
+import "google/protobuf/timestamp.proto";
+
+// The parts of Envoy's tap trace wrapper (`envoy.data.tap.v3.TraceWrapper`) that `tap2pcap` reads,
+// with the same field names and numbers, to test it without a dependency on the Envoy API.
+
+message SocketAddress {
+  string address = 2;
+  uint32 port_value = 3;
+}
+
+message Address {
+  SocketAddress socket_address = 1;
+}
+
+message Connection {
+  Address local_address = 1;
+  Address remote_address = 2;
+}
+
+message Body {
+  oneof body_type {
+    bytes as_bytes = 1;
+    string as_string = 2;
+  }
+  bool truncated = 3;
+}
+
+message SocketEvent {
+  message Read {
+    Body data = 1;
+  }
+
+  message Write {
+    Body data = 1;
+    bool end_stream = 2;
+  }
+
+  message Closed {
+  }
+
+  google.protobuf.Timestamp timestamp = 1;
+
+  oneof event_selector {
+    Read read = 2;
+    Write write = 3;
+    Closed closed = 4;
+  }
+}
+
+message SocketBufferedTrace {
+  uint64 trace_id = 1;
+  Connection connection = 2;
+  repeated SocketEvent events = 3;
+}
+
+message HttpBufferedTrace {
+}
+
+message TraceWrapper {
+  oneof trace {
+    HttpBufferedTrace http_buffered_trace = 1;
+    SocketBufferedTrace socket_buffered_trace = 3;
+  }
+}
