@@ -1,0 +1,13 @@
+name: sbom/cyclonedx::build_time reads another field, and is false without build categories
+
+imports: [sbom/cyclonedx]
+
+input:
+- kinds: [tool]
+- kinds: [lib]
+
+expression: '[map(cyclonedx::build_time({build_categories: ["tool"], category_key: "kinds"})), map(cyclonedx::build_time({}))]'
+
+expected:
+- [true, false]
+- [false, false]

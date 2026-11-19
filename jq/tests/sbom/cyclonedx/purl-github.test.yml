@@ -1,0 +1,10 @@
+name: sbom/cyclonedx::purl uses the GitHub repository of a GitHub download
+
+module: sbom/cyclonedx::purl("abseil-cpp")
+
+input:
+  version: 20260107.1
+  urls:
+  - https://github.com/Abseil/abseil-cpp/releases/download/20260107.1/abseil-cpp-20260107.1.tar.gz
+
+expected: "pkg:github/abseil/abseil-cpp@20260107.1"

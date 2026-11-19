@@ -1,0 +1,15 @@
+name: sbom/cyclonedx::bom makes a generic purl for a subject without one, and no timestamp
+
+imports: [sbom/cyclonedx]
+
+input: {}
+
+expression: 'cyclonedx::bom({name: "my app", version: 2}) | .metadata'
+
+expected:
+  component:
+    type: application
+    bom-ref: pkg:generic/my%20app@2
+    name: my app
+    version: "2"
+    purl: pkg:generic/my%20app@2

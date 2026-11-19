@@ -1,0 +1,32 @@
+name: sbom/cyclonedx::bom omits, marks or includes build-time dependencies
+
+imports: [sbom/cyclonedx]
+
+input:
+  lib:
+    version: 1
+    use_category: [dataplane_core]
+  rules:
+    version: 2
+    use_category: [build, dataplane_core]
+
+expression: |
+  . as $deps
+  | ["omit", "excluded", "include"]
+  | map(. as $mode
+        | $deps
+        | cyclonedx::bom({name: "app", version: 1}; {build_categories: ["build"], build_time: $mode})
+        | {components: (.components | map({name, scope})), dependsOn: .dependencies[0].dependsOn})
+
+expected:
+- components:
+  - {name: lib, scope: null}
+  dependsOn: [pkg:generic/lib@1]
+- components:
+  - {name: lib, scope: null}
+  - {name: rules, scope: excluded}
+  dependsOn: [pkg:generic/lib@1]
+- components:
+  - {name: lib, scope: null}
+  - {name: rules, scope: null}
+  dependsOn: [pkg:generic/lib@1, pkg:generic/rules@2]

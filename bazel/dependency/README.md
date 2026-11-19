@@ -13,6 +13,60 @@ This package contains four update tools:
 provides a report/test target, and updates cached monthly data. See its
 documentation for the dependency JSON contract and YAML configuration.
 
+## SBOMs
+
+`cyclonedx_sbom` writes a [CycloneDX](https://cyclonedx.org/) 1.5 JSON SBOM from the same
+dependency JSON that `cve_scan` reads.
+
+```starlark
+load("@envoy_toolshed//dependency:sbom.bzl", "cyclonedx_sbom")
+
+cyclonedx_sbom(
+    name = "sbom",
+    dependencies = ":dependencies",
+    purl = "pkg:github/example/project@v{version}",
+    reachability = ":dep-reachability",
+    subject = "project",
+    version_file = "//:VERSION.txt",
+)
+```
+
+Each dependency with a `version` becomes a component, with what its metadata gives:
+
+- a package URL: `pkg:github/<owner>/<repo>@<version>` for a GitHub download, else
+  `pkg:generic/<name>@<version>` with the download URL;
+- the upstream version: a Bazel registry suffix (`.bcr.1`, `.envoy`) is dropped, and the module
+  version kept as the `bazel:module_version` property;
+- `cpe`, unless it is `N/A`;
+- `license` (and `license_url`): an SPDX id if it is a common one, an SPDX expression if it has
+  `AND`, `OR` or `WITH`, else a named license;
+- a digest, from a hex `sha256` or an SRI `source.integrity`;
+- `project_name`, `project_desc`, `project_url` and where it is downloaded from (`source.url`,
+  or `urls`).
+
+With `reachability` (a `dependency_reachability` map) only the dependencies reached in
+production from its roots are listed, so the SBOM describes what is built into them and not
+everything the workspace can fetch. A dependency is matched to the map by its key, or by its
+`apparent_name` or `module_name`. Without it, every dependency with a version is listed.
+
+Dependencies that are only used to build can be left out or marked. `build_categories` lists
+the categories that mean so (read from each dependency's `use_category`, or the field named by
+`category_key`); a dependency with any of them is build-time. `build_time` then says what to do
+with those: `omit` them (the default), list them with CycloneDX's `excluded` scope, or `include`
+them as any other component.
+
+```starlark
+cyclonedx_sbom(
+    name = "sbom",
+    build_categories = ["build", "test_only"],
+    build_time = "excluded",
+    ...
+)
+```
+
+The output has no serial number or timestamp, so the same input gives the same SBOM. The
+`sbom/cyclonedx` jq module has the pieces (`bom`, `component`, `purl`, `reachable`) for other uses.
+
 ## Registry updater
 
 `registry_updater` rewrites a `.bazelrc` `--registry=<url>/<sha>` pin, but it

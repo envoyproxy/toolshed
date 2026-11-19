@@ -1,0 +1,25 @@
+name: sbom/cyclonedx::reachable matches a dependency by its apparent or module name too
+
+module: sbom/cyclonedx::reachable($reachability)
+
+before: |
+  .reachability as $reachability
+  | .dependencies
+
+input:
+  dependencies:
+    abseil-cpp: {version: 1, apparent_name: abseil_cpp}
+    com_google_protobuf: {version: 2, module_name: protobuf}
+    other: {version: 3, apparent_name: unreached_name}
+  reachability:
+    dependencies:
+      "abseil-cpp+":
+        name: abseil_cpp
+        production: true
+      "protobuf+":
+        name: protobuf
+        production: true
+
+expected:
+  abseil-cpp: {version: 1, apparent_name: abseil_cpp}
+  com_google_protobuf: {version: 2, module_name: protobuf}

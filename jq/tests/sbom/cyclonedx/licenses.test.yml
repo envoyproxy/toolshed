@@ -1,0 +1,28 @@
+name: sbom/cyclonedx::licenses gives a listed SPDX id, a name or an expression
+
+imports: [sbom/cyclonedx]
+
+input:
+- license: Apache-2.0
+  license_url: https://example.com/LICENSE
+- license: zlib
+- license: Boost
+- license: Protocol Buffers
+- license: LGPL-2.1-only OR BSD-2-Clause
+  license_url: https://example.com/COPYING
+- {}
+
+expression: map(cyclonedx::licenses)
+
+expected:
+- - license:
+      id: Apache-2.0
+      url: https://example.com/LICENSE
+- - license:
+      id: Zlib
+- - license:
+      name: Boost
+- - license:
+      name: Protocol Buffers
+- - expression: LGPL-2.1-only OR BSD-2-Clause
+- []

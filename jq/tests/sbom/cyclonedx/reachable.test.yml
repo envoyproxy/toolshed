@@ -1,0 +1,24 @@
+name: sbom/cyclonedx::reachable keeps the dependencies reached in production
+
+module: sbom/cyclonedx::reachable($reachability)
+
+before: |
+  .reachability as $reachability
+  | .dependencies
+
+input:
+  dependencies:
+    linked: {version: 1}
+    test-only: {version: 2}
+    unreached: {version: 3}
+  reachability:
+    dependencies:
+      "linked+":
+        name: linked
+        production: true
+      "test-only+":
+        name: test-only
+        production: false
+
+expected:
+  linked: {version: 1}

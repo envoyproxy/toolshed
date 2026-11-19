@@ -1,0 +1,28 @@
+name: sbom/cyclonedx::component uses a module's source archive and upstream version
+
+module: sbom/cyclonedx::component("nghttp2")
+
+input:
+  project_name: Nghttp2
+  version: 1.66.0.envoy.1
+  urls:
+  - https://raw.githubusercontent.com/envoyproxy/bazel-registry/abc/modules/nghttp2/1.66.0.envoy.1/
+  source:
+    url: https://github.com/nghttp2/nghttp2/releases/download/v1.66.0/nghttp2-1.66.0.tar.gz
+    integrity: "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+
+expected:
+  type: library
+  bom-ref: pkg:github/nghttp2/nghttp2@1.66.0
+  name: Nghttp2
+  version: 1.66.0
+  purl: pkg:github/nghttp2/nghttp2@1.66.0
+  hashes:
+  - alg: SHA-256
+    content: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  externalReferences:
+  - type: distribution
+    url: https://github.com/nghttp2/nghttp2/releases/download/v1.66.0/nghttp2-1.66.0.tar.gz
+  properties:
+  - name: bazel:module_version
+    value: 1.66.0.envoy.1

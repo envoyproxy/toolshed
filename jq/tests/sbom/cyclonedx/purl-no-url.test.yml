@@ -1,0 +1,8 @@
+name: sbom/cyclonedx::purl is generic without a download URL
+
+module: sbom/cyclonedx::purl("some dep")
+
+input:
+  version: 1.2.3+build
+
+expected: "pkg:generic/some%20dep@1.2.3%2Bbuild"

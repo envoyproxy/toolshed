@@ -1,0 +1,95 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "bom-ref": "pkg:github/example/widget@v1.2.3",
+      "name": "widget",
+      "version": "1.2.3",
+      "purl": "pkg:github/example/widget@v1.2.3",
+      "description": "A widget"
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/abseil/abseil-cpp@20260107.1",
+      "name": "Abseil",
+      "version": "20260107.1",
+      "purl": "pkg:github/abseil/abseil-cpp@20260107.1",
+      "description": "Open source collection of C++ libraries",
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "url": "https://github.com/abseil/abseil-cpp/blob/20260107.1/LICENSE"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://abseil.io/"
+        },
+        {
+          "type": "distribution",
+          "url": "https://github.com/abseil/abseil-cpp/releases/download/20260107.1/abseil-cpp-20260107.1.tar.gz"
+        }
+      ],
+      "properties": [
+        {
+          "name": "bazel:module_version",
+          "value": "20260107.1.bcr.2"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:generic/zlib@1.3.1?download_url=https%3A%2F%2Fzlib.net%2Fzlib-1.3.1.tar.gz",
+      "name": "zlib",
+      "version": "1.3.1",
+      "purl": "pkg:generic/zlib@1.3.1?download_url=https%3A%2F%2Fzlib.net%2Fzlib-1.3.1.tar.gz",
+      "cpe": "cpe:2.3:a:gnu:zlib:*",
+      "licenses": [
+        {
+          "license": {
+            "id": "Zlib"
+          }
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://zlib.net"
+        },
+        {
+          "type": "distribution",
+          "url": "https://zlib.net/zlib-1.3.1.tar.gz"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:github/example/widget@v1.2.3",
+      "dependsOn": [
+        "pkg:generic/zlib@1.3.1?download_url=https%3A%2F%2Fzlib.net%2Fzlib-1.3.1.tar.gz",
+        "pkg:github/abseil/abseil-cpp@20260107.1"
+      ]
+    }
+  ]
+}
