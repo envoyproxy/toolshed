@@ -30,6 +30,9 @@ resolve_dependencies()
 load(":toolchains_llvm.bzl", "setup_llvm_toolchain")
 setup_llvm_toolchain()
 
+load("//toolchains/gcc:repositories.bzl", "setup_gcc_toolchains")
+setup_gcc_toolchains()
+
 load(":toolchains.bzl", "load_toolchains")
 load_toolchains()
 
