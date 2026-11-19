@@ -9,6 +9,9 @@ setup_sq()
 load("//pigz:repositories.bzl", "load_pigz_toolchains", "setup_pigz")
 setup_pigz()
 
+load("//hunspell:repositories.bzl", "load_hunspell_toolchains", "setup_hunspell")
+setup_hunspell()
+
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 bazel_skylib_workspace()
 
@@ -41,6 +44,8 @@ register_toolchains("//pgp/test:stub_toolchain")
 load_pgp_toolchains()
 
 load_pigz_toolchains()
+
+load_hunspell_toolchains()
 
 load(":packages.bzl", "load_packages", "load_website_packages")
 load_packages()

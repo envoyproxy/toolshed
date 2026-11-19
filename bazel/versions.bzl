@@ -30,6 +30,14 @@ VERSIONS = {
         },
     },
     "cmake": "3.23.2",
+    "hunspell": {
+        "version": "1.7.6",
+        "sha256": "9c650ace31d4d8cc1da925a9507c3de1d50f1a54857af2f72429f517d5d53467",
+    },
+    "dictionary_en": {
+        "version": "4.0.0",
+        "sha256": "160cba5e6c0230d43d70b0c929e498566ff2c3c4bcf840318d98ce28e31ee756",
+    },
     "llvm": LLVM_VERSION,
     # The version of the prebuilt pigz (built and published from `main`).
     "pigz": "2.8.bcr.3",
@@ -75,6 +83,12 @@ VERSIONS = {
     },
     "sq_sha256": SQ_SHA256,
 
+    # Hunspell prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64),
+    # from the bins-v* release (built and published from `main`).
+    "hunspell_sha256": {
+        "linux-x86_64": "8a8f5fed83891053b59bc4d01c91d3a87dfe4e7985eb51c7bcc62aa052bca2c1",
+        "linux-aarch64": "fd0b06e7d41d6781ed1531d961cf21a9c8417cf6fdfa9c7be3c303717f2fa99b",
+    },
     # pigz prebuilt hashes keyed by the artifact platform suffix (linux-x86_64, linux-aarch64),
     # filled by the release preparation once a bins-v* release publishes the artifacts. Empty, there
     # is no prebuilt for the platform.
