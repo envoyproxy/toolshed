@@ -1,0 +1,39 @@
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load(":flags.bzl", "gcc_compile_flags", "gcc_link_flags")
+
+# The hermetic GCC (`//toolchains/gcc:repositories.bzl`) compiles C++ against its own libstdc++
+# and the shared sysroot, and links with the hermetic lld.
+
+gcc_link_flags(
+    name = "linux_x86_64_link_flags",
+    target_compatible_with = ["@platforms//os:linux"],
+    toolchain = "@gcc_linux_x86_64//:cc_toolchain",
+)
+
+gcc_compile_flags(
+    name = "linux_x86_64_compile_flags",
+    target_compatible_with = ["@platforms//os:linux"],
+    toolchain = "@gcc_linux_x86_64//:cc_toolchain",
+)
+
+sh_test(
+    name = "linux_x86_64_lld_test",
+    srcs = ["lld_test.sh"],
+    args = [
+        "$(rootpath @gcc_linux_x86_64//:bin/gcc)",
+        "$(rootpath :linux_x86_64_link_flags)",
+        "x86_64",
+        "$(rootpath :linux_x86_64_compile_flags)",
+    ],
+    data = [
+        ":linux_x86_64_compile_flags",
+        ":linux_x86_64_link_flags",
+        "@gcc_linux_x86_64//:bin/gcc",
+        "@gcc_linux_x86_64//:files",
+    ],
+    exec_compatible_with = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)

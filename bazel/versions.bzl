@@ -21,6 +21,14 @@ LLVM_DISTRIBUTIONS = {
 }
 
 VERSIONS = {
+    "gcc_toolchain": {
+        "version": "13.4.0",
+        "release": "18082025",
+        "sha256": {
+            "x86_64": "d96071c1b98499afd7b7b56ebd69ad414020edf66e982004acffe7df8aaf7e02",
+            "aarch64": "770cf6bf62bdf78763de526d3a9f5cae4c19f1a3aca0ef8f18b05f1a46d1ffaf",
+        },
+    },
     "cmake": "3.23.2",
     "llvm": LLVM_VERSION,
     # The version of the prebuilt pigz (built and published from `main`).
