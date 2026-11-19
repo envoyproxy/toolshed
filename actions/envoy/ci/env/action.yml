@@ -79,9 +79,13 @@ runs:
         .["build-image"].repo as $repo
         | (. ["build-image"].tag | validate::sha_or_semver(40)) as $tag
         | (. ["build-image"].sha | validate::sha(64)) as $sha
-        | (. ["build-image"]["mobile-sha"] | validate::sha(64)) as $mobileSha
-        | {"default": "\($repo):\($tag)@sha256:\($sha)",
-           "mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
+        # The mobile image is optional: validated if it is configured.
+        | (. ["build-image"]["mobile-sha"]
+           | if . == null then null else validate::sha(64) end) as $mobileSha
+        | ({"default": "\($repo):\($tag)@sha256:\($sha)"}
+           + if $mobileSha then
+               {"mobile": "\($repo):mobile-\($tag)@sha256:\($mobileSha)"}
+             else {} end)
         | . as $requested
         | {$requested}
 
