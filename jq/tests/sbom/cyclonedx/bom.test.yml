@@ -1,0 +1,55 @@
+name: sbom/cyclonedx::bom lists versioned dependencies, sorted, under the subject
+
+module: sbom/cyclonedx::bom($subject)
+
+before: |
+  .subject as $subject
+  | .dependencies
+
+input:
+  subject:
+    name: envoy
+    version: 1.41.0
+    purl: pkg:github/envoyproxy/envoy@v1.41.0
+    timestamp: "2026-11-19T00:00:00Z"
+  dependencies:
+    zlib:
+      version: 1.3.1
+      license: zlib
+    abseil-cpp:
+      project_name: Abseil
+      version: 20260107.1
+    metadata-only:
+      license: MIT
+
+expected:
+  bomFormat: CycloneDX
+  specVersion: "1.5"
+  version: 1
+  metadata:
+    timestamp: "2026-11-19T00:00:00Z"
+    component:
+      type: application
+      bom-ref: pkg:github/envoyproxy/envoy@v1.41.0
+      name: envoy
+      version: 1.41.0
+      purl: pkg:github/envoyproxy/envoy@v1.41.0
+  components:
+  - type: library
+    bom-ref: pkg:generic/abseil-cpp@20260107.1
+    name: Abseil
+    version: "20260107.1"
+    purl: pkg:generic/abseil-cpp@20260107.1
+  - type: library
+    bom-ref: pkg:generic/zlib@1.3.1
+    name: zlib
+    version: 1.3.1
+    purl: pkg:generic/zlib@1.3.1
+    licenses:
+    - license:
+        id: Zlib
+  dependencies:
+  - ref: pkg:github/envoyproxy/envoy@v1.41.0
+    dependsOn:
+    - pkg:generic/abseil-cpp@20260107.1
+    - pkg:generic/zlib@1.3.1

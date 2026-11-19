@@ -1,0 +1,23 @@
+name: sbom/cyclonedx::hashes takes a hex sha256 or an SRI integrity
+
+imports: [sbom/cyclonedx]
+
+input:
+- sha256: E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855
+- sha256: "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+- source:
+    integrity: "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+- sha256: ""
+- {}
+
+expression: map(cyclonedx::hashes)
+
+expected:
+- - alg: SHA-256
+    content: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- - alg: SHA-256
+    content: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- - alg: SHA-256
+    content: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+- []
+- []

@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "abseil-cpp+": {
+      "name": "abseil-cpp",
+      "production": true
+    },
+    "googletest+": {
+      "name": "googletest",
+      "production": false
+    },
+    "zlib+": {
+      "name": "zlib",
+      "production": true
+    },
+    "rules_widget+": {
+      "name": "rules_widget",
+      "production": true
+    }
+  }
+}

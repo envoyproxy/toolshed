@@ -1,0 +1,10 @@
+name: sbom/cyclonedx::purl is generic, with the download URL, for other downloads
+
+module: sbom/cyclonedx::purl("sqlite")
+
+input:
+  version: "3.50.4"
+  source:
+    url: https://sqlite.org/2025/sqlite-amalgamation-3500400.zip
+
+expected: "pkg:generic/sqlite@3.50.4?download_url=https%3A%2F%2Fsqlite.org%2F2025%2Fsqlite-amalgamation-3500400.zip"

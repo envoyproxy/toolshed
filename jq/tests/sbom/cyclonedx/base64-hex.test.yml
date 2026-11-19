@@ -1,0 +1,7 @@
+name: sbom/cyclonedx::base64_hex converts a base64 digest to hex
+
+module: sbom/cyclonedx::base64_hex
+
+input: "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+
+expected: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"

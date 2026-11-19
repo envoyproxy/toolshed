@@ -1,0 +1,57 @@
+{
+  "abseil-cpp": {
+    "project_name": "Abseil",
+    "project_desc": "Open source collection of C++ libraries",
+    "project_url": "https://abseil.io/",
+    "version": "20260107.1.bcr.2",
+    "license": "Apache-2.0",
+    "license_url": "https://github.com/abseil/abseil-cpp/blob/20260107.1/LICENSE",
+    "cpe": "N/A",
+    "source": {
+      "url": "https://github.com/abseil/abseil-cpp/releases/download/20260107.1/abseil-cpp-20260107.1.tar.gz",
+      "integrity": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="
+    },
+    "urls": [
+      "https://bcr.bazel.build/modules/abseil-cpp/20260107.1.bcr.2/"
+    ]
+  },
+  "googletest": {
+    "project_name": "Google Test",
+    "version": "1.17.0",
+    "license": "BSD-3-Clause",
+    "urls": [
+      "https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz"
+    ]
+  },
+  "metadata-only": {
+    "project_name": "No version",
+    "license": "MIT"
+  },
+  "rules_widget": {
+    "project_name": "Widget rules",
+    "version": "2.0.0.bcr.1",
+    "license": "Apache-2.0",
+    "use_category": [
+      "build",
+      "dataplane_core"
+    ],
+    "kinds": [
+      "build"
+    ]
+  },
+  "unreached": {
+    "version": "3",
+    "license": "MIT"
+  },
+  "zlib": {
+    "project_name": "zlib",
+    "project_url": "https://zlib.net",
+    "version": "1.3.1",
+    "license": "zlib",
+    "cpe": "cpe:2.3:a:gnu:zlib:*",
+    "urls": [
+      "https://zlib.net/zlib-1.3.1.tar.gz"
+    ],
+    "sha256": "9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23"
+  }
+}

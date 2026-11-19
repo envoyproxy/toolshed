@@ -1,0 +1,14 @@
+name: sbom/cyclonedx::component omits what a dependency does not have
+
+module: sbom/cyclonedx::component("widget")
+
+input:
+  version: 7
+  cpe: N/A
+
+expected:
+  type: library
+  bom-ref: pkg:generic/widget@7
+  name: widget
+  version: "7"
+  purl: pkg:generic/widget@7

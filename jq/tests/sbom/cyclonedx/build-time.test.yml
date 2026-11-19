@@ -1,0 +1,14 @@
+name: sbom/cyclonedx::build_time is true for a dependency with any build category
+
+imports: [sbom/cyclonedx]
+
+input:
+- use_category: [build]
+- use_category: [build, dataplane_core]
+- use_category: [dataplane_core, controlplane]
+- use_category: [test_only]
+- {}
+
+expression: 'map(cyclonedx::build_time({build_categories: ["build", "test_only"]}))'
+
+expected: [true, true, false, true, false]

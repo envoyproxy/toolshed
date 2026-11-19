@@ -1,0 +1,27 @@
+name: sbom/cyclonedx::upstream_version drops Bazel registry suffixes
+
+imports: [sbom/cyclonedx]
+
+input:
+- 1.34.9
+- 4.13.2.bcr.2
+- 2.1.1.envoy
+- 1.66.0.envoy.1
+- 35.1.bcr.envoy
+- 0.0.0-221103-dd4080f.envoy.1
+- 2025-11-05.bcr.1
+- "20260817.0"
+- 7
+
+expression: map(cyclonedx::upstream_version)
+
+expected:
+- 1.34.9
+- 4.13.2
+- 2.1.1
+- 1.66.0
+- "35.1"
+- 0.0.0-221103-dd4080f
+- 2025-11-05
+- "20260817.0"
+- "7"

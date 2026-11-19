@@ -4,6 +4,7 @@ load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//dependency:macros.bzl", "module_deps_json")
 load("//dependency:reachability.bzl", "dependency_reachability")
+load("//dependency:sbom.bzl", "cyclonedx_sbom")
 load("//dependency:registry.bzl", "git_launcher", "registry_bazelrc", "registry_resolve")
 load(":custom_rule_test.bzl", "custom_library_rule")
 load(":fixtures.bzl", "module_updater_fixture")
@@ -683,4 +684,40 @@ reachability_config_validation_test(
 
 reachability_package_pattern_test(
     name = "reachability_package_pattern_test",
+)
+
+# SBOM of the dependencies reached in production, for a subject with its version in a file.
+cyclonedx_sbom(
+    name = "sbom",
+    dependencies = "testdata/sbom/dependencies.json",
+    description = "A widget",
+    purl = "pkg:github/example/widget@v{version}",
+    build_categories = ["build"],
+    reachability = "testdata/sbom/reachability.json",
+    subject = "widget",
+    version_file = "testdata/sbom/VERSION.txt",
+)
+
+diff_test(
+    name = "sbom_test",
+    file1 = ":sbom",
+    file2 = "testdata/sbom/expected.cdx.json",
+)
+
+# Without a reachability map every dependency with a version is listed, here with the
+# build-time ones marked as not part of what is built.
+cyclonedx_sbom(
+    name = "sbom_all",
+    build_categories = ["build"],
+    build_time = "excluded",
+    category_key = "kinds",
+    dependencies = "testdata/sbom/dependencies.json",
+    subject = "widget",
+    version = "1.2.3",
+)
+
+diff_test(
+    name = "sbom_all_test",
+    file1 = ":sbom_all",
+    file2 = "testdata/sbom/expected_all.cdx.json",
 )
