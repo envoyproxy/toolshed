@@ -1,0 +1,73 @@
+name: Upstream Module to BCR
+description: Track upstreaming a bazel-registry module to Bazel Central Registry
+labels: ["upstream:BCR", "dependencies"]
+body:
+- type: input
+  id: module-name
+  attributes:
+    label: Module Name
+    placeholder: e.g., grpc
+  validations:
+    required: true
+- type: input
+  id: version
+  attributes:
+    label: Toolshed Version
+    placeholder: e.g., 1.76.0.bcr.1.envoy
+  validations:
+    required: true
+- type: dropdown
+  id: bcr-status
+  attributes:
+    label: BCR Status
+    options:
+    - "✅ Exists - update/compare needed"
+    - "❌ Not present - new module needed"
+    - "❌ Not present - blocked upstream"
+  validations:
+    required: true
+- type: dropdown
+  id: source-status
+  attributes:
+    label: Source Repo MODULE.bazel
+    options:
+    - "✅ Has MODULE.bazel"
+    - "❌ Needs MODULE.bazel (overlay)"
+  validations:
+    required: true
+- type: textarea
+  id: source-repo
+  attributes:
+    label: Source Repository
+    description: Link to the upstream source repository
+    placeholder: e.g., https://github.com/google/cel-cpp
+- type: textarea
+  id: patches
+  attributes:
+    label: Patches/Overlays Applied
+    description: List any patches or overlays in the toolshed version
+    placeholder: |
+      - `module.patch` - description of what it fixes
+      - overlay/BUILD.bazel - custom build file
+- type: checkboxes
+  id: tasks
+  attributes:
+    label: Tasks
+    options:
+    - label: Compare toolshed patches/overlays with upstream
+    - label: "Upstream to source repo: Add MODULE.bazel / Bazel build support"
+    - label: "Upstream to source repo: Upstream bug fixes (generic, not envoy-specific)"
+    - label: "Upstream to source repo: Make hardcoded deps configurable"
+    - label: PR to BCR (new module or update)
+    - label: Update envoy to use BCR version
+- type: textarea
+  id: notes
+  attributes:
+    label: Notes
+    description: Blockers, dependencies, links to upstream issues/PRs
+- type: input
+  id: parent-issue
+  attributes:
+    label: Parent Tracking Issue
+    description: Link to the parent tracking issue
+    value: "#3524"
