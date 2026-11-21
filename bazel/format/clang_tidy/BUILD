@@ -42,3 +42,9 @@ sh_binary(
     data = [":config"],
     visibility = ["//visibility:public"],
 )
+
+sh_binary(
+    name = "check_reports",
+    srcs = ["check_reports.sh"],
+    visibility = ["//visibility:public"],
+)
