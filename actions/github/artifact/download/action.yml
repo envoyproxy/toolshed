@@ -15,6 +15,10 @@ runs:
   - name: 'Download artifact'
     uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3  # v9.0.0
     with:
+      # Retry transient API failures (network errors / 5xx). github-script defaults to no retries,
+      # so a single ConnectTimeoutError here fails the whole env load and leaves the CI check with
+      # no result. 4xx (incl. auth/not-found) stay exempt via the action default.
+      retries: 3
       script: |
         let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
             owner: context.repo.owner,
