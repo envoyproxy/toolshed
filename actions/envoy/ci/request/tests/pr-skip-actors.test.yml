@@ -1,0 +1,52 @@
+uses: ./actions/jq
+with:
+  input: actions/envoy/ci/request/action.yml
+  input-format: yaml-path
+  filter: '.runs.steps[] | select(.id == "data") | .with.filter'
+  options: '-r'
+  env_var: REQUEST_DATA_FILTER
+
+after:
+- shell: bash
+  run: |
+    export IS_ENVOY_REPO=true
+    export RUNS='{"verify":true,"unchanged":false,"bare":true,"null":true,"missing":true}'
+    export CURRENT_CONFIG='{
+      "run": {
+        "verify": {"pr-skip-actors":["publish-envoy[bot]"]},
+        "bare": true,
+        "null": null
+      },
+      "checks": {
+        "verify": {"on-run":["verify"],"required":true}
+      },
+      "config": {"envoy": {}}
+    }'
+    test_run() {
+        local event="$1" actor="$2" vars="$3" expected="$4"
+        local result
+        result="$(EVENT_NAME="$event" REQUEST="$(jq -cn --arg actor "$actor" '{actor:{name:$actor}}')" \
+            jq "$REQUEST_DATA_FILTER" <<< "$vars")"
+        if jq -e --argjson expected "$expected" --arg actor "$actor" '
+            .run == {
+              verify: $expected, unchanged: false, bare: true, null: true, missing: true
+            }
+            and .request.actor.name == $actor
+            and .checks.verify.action == (if $expected then "RUN" else "SKIP" end)
+            and (keys == ["checks", "config", "request", "run"])
+        ' <<< "$result"; then
+            echo "success:$event / $actor / $vars" >> "$TEST_OUTPUT"
+        else
+            echo "fail:$event / $actor / $vars" >> "$TEST_OUTPUT"
+        fi
+    }
+    test_run pull_request 'publish-envoy[bot]' '{}' false
+    test_run pull_request_target 'publish-envoy[bot]' '{}' false
+    test_run push 'publish-envoy[bot]' '{}' true
+    test_run workflow_dispatch 'publish-envoy[bot]' '{}' true
+    test_run pull_request 'contributor' '{}' true
+    test_run pull_request 'publish-envoy[bot]' '{"ENVOY_CI_RUN_VERIFY":false}' true
+    export CURRENT_CONFIG='{"checks":{},"config":{"envoy":{}}}'
+    EVENT_NAME=pull_request REQUEST='{"actor":{"name":"publish-envoy[bot]"}}' \
+        jq -e "$REQUEST_DATA_FILTER | .run == (env.RUNS | fromjson)" <<< '{}'
+    echo "success:Missing run config preserves runs" >> "$TEST_OUTPUT"
