@@ -108,7 +108,7 @@ inputs:
     type: string
     default:
   # Artifacts to upload, as YAML `<name>: <path>`, or `<name>: {path, if-no-files-found,
-  # compression-level}`. Relative paths are in the runner temp directory.
+  # compression-level, retention-days}`. Relative paths are in the runner temp directory.
   uploads:
     type: string
     default:
@@ -474,6 +474,10 @@ runs:
             # and an unset level is '' and falls back to the default.
             compression-level: >-
               %{{ format('{0}', fromJSON(inputs.context).items['$KEY']['compression-level']) || '6' }}
+            # Omit to inherit the repository's default retention; set eg `retention-days: 1`
+            # for ephemeral same-run handoffs so they are not kept for the full default window.
+            retention-days: >-
+              %{{ format('{0}', fromJSON(inputs.context).items['$KEY']['retention-days']) || '' }}
   - uses: envoyproxy/toolshed/actions/jq@087f4a13e01736fb1c7778d09fd6705a6eca31a5
     id: upload-failed
     if: ${{ failure() && inputs.uploads }}
