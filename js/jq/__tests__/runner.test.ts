@@ -2,7 +2,7 @@ import fs from 'fs'
 import os from 'os'
 import {exec} from 'child_process'
 import tmp from 'tmp'
-import {run_jq} from '../src/runner'
+import {MAX_BUFFER, run_jq} from '../src/runner'
 import * as input from '../src/input'
 import * as filter from '../src/filter'
 import type {JqConfig, TempFileHandles} from '../src/types'
@@ -56,7 +56,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((_command: string, callback: any) => {
+      mock_exec.mockImplementation(((_command: string, _options: any, callback: any) => {
         callback(null, 'test', '')
         return {on: jest.fn()} as any
       }) as any)
@@ -68,6 +68,9 @@ describe('run_jq', () => {
       expect(mock_filter.cleanup_temp_files).toHaveBeenCalledWith(temp_handles)
       expect(result.output).toBe('test')
       expect(result.stderr).toBeUndefined()
+      // Node kills the child at its default of 1MiB of output.
+      expect(MAX_BUFFER).toBeGreaterThan(1024 * 1024)
+      expect(mock_exec.mock.calls[0][1]).toEqual({maxBuffer: MAX_BUFFER})
     })
 
     it('should return stderr when present', async () => {
@@ -93,7 +96,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((_command: string, callback: any) => {
+      mock_exec.mockImplementation(((_command: string, _options: any, callback: any) => {
         callback(null, '123', 'warning: something')
         return {on: jest.fn()} as any
       }) as any)
@@ -130,7 +133,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((command: string, callback: any) => {
+      mock_exec.mockImplementation(((command: string, _options: any, callback: any) => {
         // Verify the processed input is used in the command
         expect(command).toContain(processed_input)
         callback(null, '42', '')
@@ -167,7 +170,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((command: string, callback: any) => {
+      mock_exec.mockImplementation(((command: string, _options: any, callback: any) => {
         expect(command).toBe("printf '%s' '{\"test\": \"value\"}' | jq -r -L /path/to/jq '.test'")
         callback(null, 'value', '')
         return {on: jest.fn()} as any
@@ -207,7 +210,7 @@ describe('run_jq', () => {
       mock_tmp.fileSync.mockReturnValue(mock_tmp_file as any)
       mock_fs.writeFileSync.mockImplementation()
 
-      mock_exec.mockImplementation(((command: string, callback: any) => {
+      mock_exec.mockImplementation(((command: string, _options: any, callback: any) => {
         expect(command).toBe(`cat ${tmp_file_name} | jq  -L C:\\jq '.data'`)
         callback(null, 'test', '')
         return {on: jest.fn()} as any
@@ -250,7 +253,7 @@ describe('run_jq', () => {
       mock_tmp.fileSync.mockReturnValue(mock_tmp_file as any)
       mock_fs.writeFileSync.mockImplementation()
 
-      mock_exec.mockImplementation(((command: string, callback: any) => {
+      mock_exec.mockImplementation(((command: string, _options: any, callback: any) => {
         expect(command).toBe(`cat ${tmp_file_name} | jq -r -L /path/to/jq '.value'`)
         callback(null, '100', '')
         return {on: jest.fn()} as any
@@ -286,7 +289,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((command: string, callback: any) => {
+      mock_exec.mockImplementation(((command: string, _options: any, callback: any) => {
         expect(command).toContain('-L /tmp/fun-dir')
         expect(command).toContain("'-f /tmp/filter.jq'")
         callback(null, '2', '')
@@ -322,7 +325,7 @@ describe('run_jq', () => {
       mock_os.platform.mockReturnValue('linux')
 
       const exec_error = new Error('jq parse error')
-      mock_exec.mockImplementation(((_command: string, callback: any) => {
+      mock_exec.mockImplementation(((_command: string, _options: any, callback: any) => {
         callback(exec_error, '', 'parse error: Invalid numeric literal')
         return {on: jest.fn()} as any
       }) as any)
@@ -355,7 +358,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((_command: string, callback: any) => {
+      mock_exec.mockImplementation(((_command: string, _options: any, callback: any) => {
         const mock_proc = {
           on: jest.fn((event, cb) => {
             if (event === 'exit') {
@@ -397,7 +400,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((_command: string, callback: any) => {
+      mock_exec.mockImplementation(((_command: string, _options: any, callback: any) => {
         callback(new Error('jq error'), '', 'error')
         return {on: jest.fn()} as any
       }) as any)
@@ -483,7 +486,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((_command: string, callback: any) => {
+      mock_exec.mockImplementation(((_command: string, _options: any, callback: any) => {
         callback(null, '2', '')
         return {on: jest.fn()} as any
       }) as any)
@@ -518,7 +521,7 @@ describe('run_jq', () => {
 
       mock_os.platform.mockReturnValue('linux')
 
-      mock_exec.mockImplementation(((_command: string, callback: any) => {
+      mock_exec.mockImplementation(((_command: string, _options: any, callback: any) => {
         callback(null, '"value"', '')
         return {on: jest.fn()} as any
       }) as any)
