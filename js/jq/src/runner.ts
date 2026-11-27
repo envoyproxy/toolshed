@@ -7,6 +7,12 @@ import {process_input} from './input'
 import {build_filter, cleanup_temp_files} from './filter'
 
 /**
+ * How much jq may write before it is killed. Node's default is 1MiB, which a
+ * filter over a large input passes easily.
+ */
+export const MAX_BUFFER = 256 * 1024 * 1024
+
+/**
  * Execute jq with the given configuration
  */
 export async function run_jq(config: JqConfig): Promise<JqResult> {
@@ -26,7 +32,7 @@ export async function run_jq(config: JqConfig): Promise<JqResult> {
         config.use_tmp_file,
         temp_handles,
       )
-      const proc = exec(shell_command, (error, stdout, stderr) => {
+      const proc = exec(shell_command, {maxBuffer: MAX_BUFFER}, (error, stdout, stderr) => {
         cleanup_temp_files(temp_handles)
         if (error) {
           reject(error)
