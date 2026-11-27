@@ -1,0 +1,128 @@
+name: 'Envoy retest - publish oci check'
+description: >-
+  Decide whether a publish build must be re-run to regenerate expired oci
+  artifacts for a failed verify check. Outputs the recovery decision; the
+  caller performs the re-run and delegated retest.
+
+inputs:
+  token:
+    description: GitHub token.
+    required: true
+  pr-url:
+    description: The pull request API url.
+    required: true
+  app-owner:
+    description: App slug that owns the publish/verify checks.
+    default: ci-envoy
+  publish-check:
+    description: Name of the app-owned publish-build check.
+    default: Envoy/Publish
+  verify-check:
+    description: Name of the app-owned check that consumes the oci artifacts.
+    default: Envoy/Verify
+  oci-artifacts:
+    description: Space-separated oci artifact names the verify check downloads.
+    default: oci.x64 oci.arm64
+
+outputs:
+  rerun:
+    description: true when the publish run should be re-run to regenerate oci.
+    value: ${{ steps.decide.outputs.rerun }}
+  exclude-pipeline:
+    description: >-
+      true when the publish and verify checks must be excluded from a delegated
+      retest (a recovery was kicked here, or one is already in progress).
+    value: ${{ steps.decide.outputs.exclude-pipeline }}
+  publish-run:
+    description: The resolved publish run id, when found.
+    value: ${{ steps.decide.outputs.publish-run }}
+
+runs:
+  using: composite
+  steps:
+  - name: Decide oci recovery
+    id: decide
+    shell: bash
+    env:
+      GH_TOKEN: ${{ inputs.token }}
+      PR_URL: ${{ inputs.pr-url }}
+      APP_OWNER: ${{ inputs.app-owner }}
+      PUBLISH_CHECK: ${{ inputs.publish-check }}
+      VERIFY_CHECK: ${{ inputs.verify-check }}
+      OCI_ARTIFACTS: ${{ inputs.oci-artifacts }}
+    run: |
+      set -euo pipefail
+      head_sha="$(gh api "${PR_URL}" --jq .head.sha)"
+
+      # App-owned check-runs on the PR head. Fail loudly on an API error rather
+      # than mistaking it for an absent check.
+      if ! checks="$(gh api --paginate \
+          "repos/${GITHUB_REPOSITORY}/commits/${head_sha}/check-runs?per_page=100" \
+          --jq '.check_runs[] | select(.app.slug == env.APP_OWNER)' | jq -s '.')"; then
+        echo "::error::Failed to list check-runs for ${head_sha}"
+        exit 1
+      fi
+
+      rerun=false
+      # Whether to keep the delegated retest off the publish and verify checks:
+      # true when we re-run publish here, or when a recovery publish is already
+      # in progress (so the generic retest does not retry verify before its oci
+      # is regenerated, competing with the pending cascade).
+      exclude_pipeline=false
+      publish_run=""
+
+      # Recover only when the verify check actually failed. A skipped verify (eg a
+      # docs-only request, where it is required-but-skipped) or a passing one needs
+      # no oci, so missing artifacts there are not expiry.
+      verify_failed="$(jq -r --arg n "${VERIFY_CHECK}" '
+        [.[]
+          | select(.name == $n or (.name | startswith($n + " ")))
+          | select(.conclusion == "failure" or .conclusion == "cancelled")]
+        | length' <<<"${checks}")"
+
+      if [[ "${verify_failed:-0}" -gt 0 ]]; then
+        # Resolve the publish run from its app-owned check's external_id.
+        publish_run="$(jq -r --arg n "${PUBLISH_CHECK}" \
+          'first(.[] | select(.name == $n) | .external_id) // empty' <<<"${checks}")"
+        if [[ -n "${publish_run}" ]]; then
+          # Validate the run belongs to the expected publish workflow and has
+          # completed -- a queued/in-progress build may simply not have uploaded
+          # its oci yet, which is not expiry.
+          if ! run="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${publish_run}" \
+              --jq '{name: .name, status: .status}')"; then
+            echo "::error::Failed to read publish run ${publish_run}"
+            exit 1
+          fi
+          run_name="$(jq -r .name <<<"${run}")"
+          run_status="$(jq -r .status <<<"${run}")"
+          if [[ "${run_name}" == "${PUBLISH_CHECK}" ]]; then
+            if [[ "${run_status}" == "completed" ]]; then
+              if ! arts="$(gh api --paginate \
+                  "repos/${GITHUB_REPOSITORY}/actions/runs/${publish_run}/artifacts" \
+                  --jq '.artifacts[]' | jq -s '.')"; then
+                echo "::error::Failed to list artifacts for publish run ${publish_run}"
+                exit 1
+              fi
+              for want in ${OCI_ARTIFACTS}; do
+                if ! jq -e --arg n "${want}" 'any(.[]; .name == $n and (.expired | not))' \
+                    >/dev/null <<<"${arts}"; then
+                  rerun=true
+                  exclude_pipeline=true
+                  break
+                fi
+              done
+            else
+              # Publish is queued/in-progress (eg a recovery from an earlier /retest,
+              # or a build still running): oci may not exist yet. Do not re-run it,
+              # but exclude it and verify from the delegated retest.
+              exclude_pipeline=true
+            fi
+          fi
+        fi
+      fi
+
+      {
+        echo "rerun=${rerun}"
+        echo "exclude-pipeline=${exclude_pipeline}"
+        echo "publish-run=${publish_run}"
+      } >> "${GITHUB_OUTPUT}"

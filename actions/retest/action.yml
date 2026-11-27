@@ -45,6 +45,13 @@ inputs:
       Check-name prefixes to exclude from retesting, same validation as `args`.
       A failed check is skipped when its name equals or starts with any token.
       Intended for trusted callers (eg a wrapping action), not comment input.
+  retested:
+    description: >-
+      Baseline count of checks the caller has already retested itself (eg a
+      wrapping action that re-ran a build). Folded into the retest tally so the
+      comment reaction reflects that work: a positive value avoids a misleading
+      `confused` reaction when every remaining check was excluded.
+    default: '0'
 
 runs:
   using: node24

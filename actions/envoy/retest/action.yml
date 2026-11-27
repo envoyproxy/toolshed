@@ -1,0 +1,84 @@
+name: 'Envoy retest'
+description: >-
+  Retest wrapper for Envoy. On `/retest`, if the verify check's upstream
+  publish-build oci artifacts have expired, re-run the publish build (which
+  regenerates them and cascades to a fresh verify) instead of re-running verify
+  against the expired artifacts, and delegate the remaining checks to the
+  generic retest with the publish and verify checks excluded.
+
+inputs:
+  token:
+    description: GitHub token.
+    required: true
+  azp_org:
+    description: Azure DevOps org.
+  azp_token:
+    description: Azure DevOps token.
+  azp-owner:
+    description: Retest azp checks with this app owner.
+  app-owner:
+    description: App slug that owns the publish/verify checks.
+    default: ci-envoy
+  comment-id:
+    description: The `/retest` comment id.
+  pr-url:
+    description: The pull request API url.
+    required: true
+  publish-check:
+    description: >-
+      Name of the app-owned check for the publish build. Its run (the check's
+      external_id) is re-run to regenerate oci, and it is excluded from the
+      delegated retest when re-run.
+    default: Envoy/Publish
+  verify-check:
+    description: >-
+      Name of the app-owned check that consumes the oci artifacts. Recovery only
+      runs when this check is present (eg not on docs-only requests), and it is
+      excluded from the delegated retest when publish is re-run.
+    default: Envoy/Verify
+  oci-artifacts:
+    description: Space-separated oci artifact names the verify check downloads.
+    default: oci.x64 oci.arm64
+
+runs:
+  using: composite
+  steps:
+  - name: Check publish oci artifacts
+    id: oci
+    uses: envoyproxy/toolshed/actions/envoy/retest/check-oci@50cff316aab799bfbae0cd35afb2e75d22ae16f0
+    with:
+      token: ${{ inputs.token }}
+      pr-url: ${{ inputs.pr-url }}
+      app-owner: ${{ inputs.app-owner }}
+      publish-check: ${{ inputs.publish-check }}
+      verify-check: ${{ inputs.verify-check }}
+      oci-artifacts: ${{ inputs.oci-artifacts }}
+
+  - name: Re-run publish to regenerate oci (cascades to verify)
+    if: ${{ steps.oci.outputs.rerun == 'true' }}
+    shell: bash
+    env:
+      GH_TOKEN: ${{ inputs.token }}
+      PUBLISH_CHECK: ${{ inputs.publish-check }}
+      PUBLISH_RUN: ${{ steps.oci.outputs.publish-run }}
+    run: |
+      echo "::notice::${PUBLISH_CHECK} oci artifacts expired - re-running run ${PUBLISH_RUN} (cascades to verify)."
+      gh run rerun "${PUBLISH_RUN}" -R "${GITHUB_REPOSITORY}"
+
+  - name: Retest
+    uses: envoyproxy/toolshed/actions/retest@10e5d3f0606a8f3b4ff66b4d1cfa6342228e2305
+    with:
+      token: ${{ inputs.token }}
+      azp_org: ${{ inputs.azp_org }}
+      azp_token: ${{ inputs.azp_token }}
+      azp-owner: ${{ inputs.azp-owner }}
+      app-owner: ${{ inputs.app-owner }}
+      comment-id: ${{ inputs.comment-id }}
+      pr-url: ${{ inputs.pr-url }}
+      # When publish was re-run, exclude both the publish and verify checks from
+      # the delegated retest: verify comes from the publish cascade, and the
+      # publish check must not be re-run a second time.
+      exclude: ${{ steps.oci.outputs.exclude-pipeline == 'true' && format('{0} {1}', inputs.publish-check, inputs.verify-check) || '' }}
+      # Count the publish re-run we performed so the delegated retest reports a
+      # rocket, not a `confused`, when verify was the only other failed check.
+      retested: ${{ steps.oci.outputs.rerun == 'true' && '1' || '0' }}

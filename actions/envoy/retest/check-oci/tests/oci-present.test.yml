@@ -1,0 +1,35 @@
+uses: ./actions/envoy/retest/check-oci
+id: oci
+with:
+  token: test-token
+  pr-url: https://api.github.com/repos/envoyproxy/envoy/pulls/1
+  app-owner: ci-envoy
+  publish-check: Envoy/Publish
+  verify-check: Envoy/Verify
+  oci-artifacts: oci.x64 oci.arm64
+
+before:
+- shell: bash
+  run: |
+    MOCK_DIR="${RUNNER_TEMP}/check-oci-oci-present"
+    mkdir -p "${MOCK_DIR}"
+    rm -f "${MOCK_DIR}/gh.log" "${MOCK_DIR}/fail_on" "${MOCK_DIR}/run.json" "${MOCK_DIR}/artifacts.json"
+    echo "MOCK_DIR=${MOCK_DIR}" >> "${GITHUB_ENV}"
+    printf '%s\n' "0123456789abcdef0123456789abcdef01234567" > "${MOCK_DIR}/head_sha"
+    cat > "${MOCK_DIR}/checks.json" <<'JSON'
+    {"name":"Envoy/Verify","conclusion":"failure","external_id":"111"}
+    {"name":"Envoy/Publish","conclusion":"success","external_id":"999"}
+    JSON
+    printf '%s\n' '{"name":"Envoy/Publish","status":"completed"}' > "${MOCK_DIR}/run.json"
+    cat > "${MOCK_DIR}/artifacts.json" <<'JSON'
+    {"name":"oci.x64","expired":false}
+    {"name":"oci.arm64","expired":false}
+    JSON
+
+after:
+- shell: bash
+  run: |
+    . "${ACTION_TEST_PATH}/test_fun.sh"
+    test_output_equals '%{{ steps.oci.outputs.rerun }}' 'false' rerun
+    test_output_equals '%{{ steps.oci.outputs.exclude-pipeline }}' 'false' exclude-pipeline
+    test_output_equals '%{{ steps.oci.outputs.publish-run }}' '999' publish-run
