@@ -1,0 +1,14 @@
+name: ci/checks job_label is the short name of a job
+imports:
+- ci/checks
+input:
+- Check / asan / ./ci/do_ci.sh asan
+- Precheck / Release (x64) / [x64] ./ci/do_ci.sh release.test_only
+- kotlin-hello-world / bazel kotlin-hello-world
+- Check / upload / upload (coverage)
+expression: map(checks::job_label)
+expected:
+- asan
+- release.test_only [x64]
+- kotlin-hello-world
+- upload (coverage)

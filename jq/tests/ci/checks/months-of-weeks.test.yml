@@ -1,0 +1,20 @@
+name: ci/checks months_of_weeks splits a week which crosses months
+imports:
+- ci/checks
+input:
+  since: '2026-01-01T00:00:00Z'
+  until: '2027-01-01T00:00:00Z'
+  complete: false
+  generated: '2026-02-03T12:00:00Z'
+expression: 'checks::months_of_weeks | map({key, weeks: (.value | map(length))})'
+expected:
+- key: Jan
+  weeks:
+  - 3
+  - 7
+  - 7
+  - 7
+  - 7
+- key: Feb
+  weeks:
+  - 3

@@ -1,0 +1,18 @@
+name: ci/checks pct and coloured format a rate
+imports:
+- ci/checks
+input:
+- 100
+- 89.34
+- 79.96
+- null
+expression: map([checks::pct, checks::coloured])
+expected:
+- - 100.0%
+  - ' $`\color{#2da44e}{\textsf{100.0\%}}`$ of commits green'
+- - 89.3%
+  - ' $`\color{#bc4c00}{\textsf{89.3\%}}`$ of commits green'
+- - 80.0%
+  - ' $`\color{#cf222e}{\textsf{80.0\%}}`$ of commits green'
+- - '-'
+  - ''

@@ -1,0 +1,32 @@
+name: ci/checks context is what requested a check
+imports:
+- ci/checks
+input:
+- name: a
+  status: COMPLETED
+  conclusion: SUCCESS
+  run_id: '1'
+  text: |-
+    ## Check run finished
+
+    # [Envoy/Checks (postsubmit/main@abc1234)](https://github.com/envoyproxy/envoy/actions/runs/1)
+- name: a
+  status: COMPLETED
+  conclusion: SUCCESS
+  run_id: '2'
+  text: |-
+    ## Check run finished
+
+    # [Envoy/Checks (pr/49230/release/v1.37@08dc2dd)](https://github.com/envoyproxy/envoy/actions/runs/1)
+- name: a
+  status: QUEUED
+  conclusion: null
+  run_id: null
+  text: null
+expression: map(checks::context)
+expected:
+- kind: postsubmit
+  ref: main
+- kind: pr
+  ref: 49230/release/v1.37
+- null

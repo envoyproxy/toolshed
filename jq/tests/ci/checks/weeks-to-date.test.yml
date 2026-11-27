@@ -1,0 +1,16 @@
+name: ci/checks weeks stops at today for a period which has not ended
+imports:
+- ci/checks
+input:
+  since: '2026-11-01T00:00:00Z'
+  until: '2026-12-01T00:00:00Z'
+  complete: false
+  generated: '2026-11-10T12:00:00Z'
+expression: 'checks::weeks | map({key, days: (.value | length), last: .value[-1]})'
+expected:
+- key: Nov 1
+  days: 7
+  last: '2026-11-07'
+- key: Nov 8
+  days: 3
+  last: '2026-11-10'

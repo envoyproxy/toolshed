@@ -1,0 +1,129 @@
+name: ci/checks commit keeps only the postsubmit checks which ran for the branch
+imports:
+- ci/checks
+input:
+- sha: ccc3333
+  date: '2026-11-17T10:00:00Z'
+  title: third
+  checks:
+  - name: Envoy/Checks
+    status: COMPLETED
+    conclusion: FAILURE
+    run_id: '103'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+
+      :warning: Allowed-to-fail checks failed: build-openssl
+  - name: Envoy/Prechecks
+    status: COMPLETED
+    conclusion: SUCCESS
+    run_id: '104'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+  - name: Mobile/iOS
+    status: COMPLETED
+    conclusion: SKIPPED
+    run_id: null
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+- sha: bbb2222
+  date: '2026-11-16T12:00:00Z'
+  title: second
+  checks:
+  - name: Envoy/Checks
+    status: COMPLETED
+    conclusion: SUCCESS
+    run_id: '101'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+
+      :warning: Allowed-to-fail checks failed: build-openssl
+  - name: Envoy/Prechecks
+    status: COMPLETED
+    conclusion: SUCCESS
+    run_id: '102'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+  - name: Envoy/Verify
+    status: COMPLETED
+    conclusion: CANCELLED
+    run_id: '105'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+- sha: aaa1111
+  date: '2026-11-16T09:00:00Z'
+  title: first of a push of two
+  checks: []
+- sha: '0000000'
+  date: '2026-11-15T09:00:00Z'
+  title: zeroth
+  checks:
+  - name: Envoy/Checks
+    status: COMPLETED
+    conclusion: SUCCESS
+    run_id: '100'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+  - name: Envoy/Checks
+    status: COMPLETED
+    conclusion: FAILURE
+    run_id: '99'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (pr/1/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+  - name: Envoy/Prechecks
+    status: QUEUED
+    conclusion: null
+    run_id: null
+    text: null
+expression: 'checks::commits("main") | map({sha, checks: (.checks | map({workflow, outcome, run_id, allowed}))})'
+expected:
+- sha: ccc3333
+  checks:
+  - workflow: Envoy/Checks
+    outcome: failure
+    run_id: '103'
+    allowed:
+    - build-openssl
+  - workflow: Envoy/Prechecks
+    outcome: success
+    run_id: '104'
+    allowed: []
+- sha: bbb2222
+  checks:
+  - workflow: Envoy/Checks
+    outcome: success
+    run_id: '101'
+    allowed:
+    - build-openssl
+  - workflow: Envoy/Prechecks
+    outcome: success
+    run_id: '102'
+    allowed: []
+  - workflow: Envoy/Verify
+    outcome: cancelled
+    run_id: '105'
+    allowed: []
+- sha: aaa1111
+  checks: []
+- sha: '0000000'
+  checks:
+  - workflow: Envoy/Checks
+    outcome: success
+    run_id: '100'
+    allowed: []

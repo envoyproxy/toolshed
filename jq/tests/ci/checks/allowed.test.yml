@@ -1,0 +1,27 @@
+name: ci/checks allowed is the jobs a check says were allowed to fail
+imports:
+- ci/checks
+input:
+- name: a
+  status: COMPLETED
+  conclusion: SUCCESS
+  run_id: '1'
+  text: |-
+    ## Check run finished
+
+    # [Envoy/Checks (postsubmit/main@abc1234)](https://github.com/envoyproxy/envoy/actions/runs/1)
+
+    :warning: Allowed-to-fail checks failed: build-openssl, other_job
+- name: a
+  status: COMPLETED
+  conclusion: SUCCESS
+  run_id: '1'
+  text: |-
+    ## Check run finished
+
+    # [Envoy/Checks (postsubmit/main@abc1234)](https://github.com/envoyproxy/envoy/actions/runs/1)
+expression: map(checks::allowed)
+expected:
+- - build-openssl
+  - other_job
+- []
