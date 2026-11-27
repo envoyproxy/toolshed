@@ -1,0 +1,168 @@
+name: ci/checks report omits release branches which had no CI
+imports:
+- ci/checks
+input:
+  schema: 6
+  repo: envoyproxy/envoy
+  period: week
+  frame: '2026-11-15'
+  complete: true
+  generated: '2026-11-23T02:01:00Z'
+  since: '2026-11-15T00:00:00Z'
+  until: '2026-11-22T00:00:00Z'
+  branches:
+    main:
+    - sha: ccc3333
+      date: '2026-11-17T10:00:00Z'
+      title: third
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: FAILURE
+        run_id: '103'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+
+          :warning: Allowed-to-fail checks failed: build-openssl
+      - name: Envoy/Prechecks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '104'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Mobile/iOS
+        status: COMPLETED
+        conclusion: SKIPPED
+        run_id: null
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+    - sha: bbb2222
+      date: '2026-11-16T12:00:00Z'
+      title: second
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '101'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+
+          :warning: Allowed-to-fail checks failed: build-openssl
+      - name: Envoy/Prechecks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '102'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Envoy/Verify
+        status: COMPLETED
+        conclusion: CANCELLED
+        run_id: '105'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+    - sha: aaa1111
+      date: '2026-11-16T09:00:00Z'
+      title: first of a push of two
+      checks: []
+    - sha: '0000000'
+      date: '2026-11-15T09:00:00Z'
+      title: zeroth
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '100'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: FAILURE
+        run_id: '99'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (pr/1/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Envoy/Prechecks
+        status: QUEUED
+        conclusion: null
+        run_id: null
+        text: null
+    release/v1.40:
+    - sha: eee5555
+      date: '2026-11-18T08:00:00Z'
+      title: backport
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '200'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/release/v1.40@eee5555)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '199'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (pr/2/release/v1.40@eee5555)](https://github.com/envoyproxy/envoy/actions/runs/1)
+    - sha: '0000000'
+      date: '2026-11-15T09:00:00Z'
+      title: zeroth
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '100'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+    release/v1.39:
+    - sha: fff6666
+      date: '2026-11-18T08:00:00Z'
+      title: untested
+      checks: []
+  jobs:
+    '103':
+    - name: Check (postsubmit/main@ccc3333) / asan / ./ci/do_ci.sh asan
+      conclusion: failure
+    - name: Check (postsubmit/main@ccc3333) / OpenSSL (test) / ./ci/do_ci.sh openssl.test
+      conclusion: failure
+    - name: Check (postsubmit/main@ccc3333) / tsan / ./ci/do_ci.sh tsan
+      conclusion: success
+    - name: request / complete
+      conclusion: failure
+    '101':
+    - name: Check (postsubmit/main@bbb2222) / OpenSSL (build) / ./ci/do_ci.sh openssl.build
+      conclusion: failure
+    - name: request / complete
+      conclusion: success
+expression: 'checks::report | {schema, period, frame, branches: (.branches | map_values({commits, commits_with_ci}))}'
+expected:
+  schema: 6
+  period: week
+  frame: '2026-11-15'
+  branches:
+    main:
+      commits: 4
+      commits_with_ci: 3
+    release/v1.40:
+      commits: 1
+      commits_with_ci: 1

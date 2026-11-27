@@ -1,0 +1,218 @@
+name: ci/checks summary of a week has a cell per commit
+imports:
+- ci/checks
+input:
+  schema: 6
+  repo: envoyproxy/envoy
+  period: week
+  frame: '2026-11-15'
+  complete: true
+  generated: '2026-11-23T02:01:00Z'
+  since: '2026-11-15T00:00:00Z'
+  until: '2026-11-22T00:00:00Z'
+  branches:
+    main:
+    - sha: ccc3333
+      date: '2026-11-17T10:00:00Z'
+      title: third
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: FAILURE
+        run_id: '103'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+
+          :warning: Allowed-to-fail checks failed: build-openssl
+      - name: Envoy/Prechecks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '104'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Mobile/iOS
+        status: COMPLETED
+        conclusion: SKIPPED
+        run_id: null
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@ccc3333)](https://github.com/envoyproxy/envoy/actions/runs/1)
+    - sha: bbb2222
+      date: '2026-11-16T12:00:00Z'
+      title: second
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '101'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+
+          :warning: Allowed-to-fail checks failed: build-openssl
+      - name: Envoy/Prechecks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '102'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Envoy/Verify
+        status: COMPLETED
+        conclusion: CANCELLED
+        run_id: '105'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@bbb2222)](https://github.com/envoyproxy/envoy/actions/runs/1)
+    - sha: aaa1111
+      date: '2026-11-16T09:00:00Z'
+      title: first of a push of two
+      checks: []
+    - sha: '0000000'
+      date: '2026-11-15T09:00:00Z'
+      title: zeroth
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '100'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: FAILURE
+        run_id: '99'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (pr/1/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Envoy/Prechecks
+        status: QUEUED
+        conclusion: null
+        run_id: null
+        text: null
+    release/v1.40:
+    - sha: eee5555
+      date: '2026-11-18T08:00:00Z'
+      title: backport
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '200'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/release/v1.40@eee5555)](https://github.com/envoyproxy/envoy/actions/runs/1)
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '199'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (pr/2/release/v1.40@eee5555)](https://github.com/envoyproxy/envoy/actions/runs/1)
+    - sha: '0000000'
+      date: '2026-11-15T09:00:00Z'
+      title: zeroth
+      checks:
+      - name: Envoy/Checks
+        status: COMPLETED
+        conclusion: SUCCESS
+        run_id: '100'
+        text: |-
+          ## Check run finished
+
+          # [Envoy/Checks (postsubmit/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+    release/v1.39:
+    - sha: fff6666
+      date: '2026-11-18T08:00:00Z'
+      title: untested
+      checks: []
+  jobs:
+    '103':
+    - name: Check (postsubmit/main@ccc3333) / asan / ./ci/do_ci.sh asan
+      conclusion: failure
+    - name: Check (postsubmit/main@ccc3333) / OpenSSL (test) / ./ci/do_ci.sh openssl.test
+      conclusion: failure
+    - name: Check (postsubmit/main@ccc3333) / tsan / ./ci/do_ci.sh tsan
+      conclusion: success
+    - name: request / complete
+      conclusion: failure
+    '101':
+    - name: Check (postsubmit/main@bbb2222) / OpenSSL (build) / ./ci/do_ci.sh openssl.build
+      conclusion: failure
+    - name: request / complete
+      conclusion: success
+expression: checks::report | checks::summary | split("\n")
+expected:
+- '# Postsubmit CI report: week of 2026-11-15'
+- ''
+- '## `main` $`\color{#cf222e}{\textsf{33.3\%}}`$ of commits green'
+- ''
+- 4 commits, 3 with CI, 2 with a failed or cancelled workflow (33.3% of commits fully passed).
+- ''
+- '| Workflow | Pass | Fail | Cancelled | Pass rate |'
+- '|---|---:|---:|---:|---:|'
+- '| Envoy/Checks | 2 | 1 | 0 | 66.7% |'
+- '| Envoy/Prechecks | 2 | 0 | 0 | 100.0% |'
+- '| Envoy/Verify | 0 | 0 | 1 | 0.0% |'
+- '| **Envoy/\*** | 4 | 1 | 1 | 66.7% |'
+- '| **All jobs** | 4 | 1 | 1 | 66.7% |'
+- ''
+- '| Workflow | Sun 15 | Mon 16 | Tue 17 |'
+- '|---|---|---|---|'
+- '| Envoy/Checks | 🟩 | 🟩 | 🟥 |'
+- '| Envoy/Verify | ⬜ | ⬛ | ⬜ |'
+- ''
+- 'One cell per commit, oldest first: 🟩 passed, 🟥 failed, ⬛ cancelled, 🟨 not finished, ⬜ not run. Commits
+  with no CI are left out.'
+- ''
+- 'No failures: Envoy/Prechecks.'
+- ''
+- '```mermaid'
+- '%%{init: {"themeVariables": {"xyChart": {"plotColorPalette": "#cf222e"}}}}%%'
+- xychart-beta horizontal
+- '    title "Failed jobs"'
+- '    x-axis ["asan"]'
+- '    y-axis "Failures" 0 --> 10'
+- '    bar [1]'
+- '```'
+- ''
+- 'Allowed to fail, and not counted above:'
+- ''
+- '| Workflow | Job | Failures |'
+- '|---|---|---:|'
+- '| Envoy/Checks | Check / OpenSSL (build) / ./ci/do_ci.sh openssl.build | 1 |'
+- '| Envoy/Checks | Check / OpenSSL (test) / ./ci/do_ci.sh openssl.test | 1 |'
+- ''
+- <details><summary>Failed jobs</summary>
+- ''
+- '| Workflow | Job | Failures |'
+- '|---|---|---:|'
+- '| Envoy/Checks | Check / asan / ./ci/do_ci.sh asan | 1 |'
+- ''
+- </details>
+- ''
+- '## `release/v1.40` $`\color{#2da44e}{\textsf{100.0\%}}`$ of commits green'
+- ''
+- 1 commits, 1 with CI, 0 with a failed or cancelled workflow (100.0% of commits fully passed).
+- ''
+- '| Workflow | Pass | Fail | Cancelled | Pass rate |'
+- '|---|---:|---:|---:|---:|'
+- '| Envoy/Checks | 1 | 0 | 0 | 100.0% |'
+- '| **Envoy/\*** | 1 | 0 | 0 | 100.0% |'
+- '| **All jobs** | 1 | 0 | 0 | 100.0% |'
+- ''
+- 'No failures: Envoy/Checks.'
+- ''

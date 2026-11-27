@@ -1,0 +1,41 @@
+name: ci/checks commit drops commits tested on the branch this one was cut from
+imports:
+- ci/checks
+input:
+- sha: eee5555
+  date: '2026-11-18T08:00:00Z'
+  title: backport
+  checks:
+  - name: Envoy/Checks
+    status: COMPLETED
+    conclusion: SUCCESS
+    run_id: '200'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/release/v1.40@eee5555)](https://github.com/envoyproxy/envoy/actions/runs/1)
+  - name: Envoy/Checks
+    status: COMPLETED
+    conclusion: SUCCESS
+    run_id: '199'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (pr/2/release/v1.40@eee5555)](https://github.com/envoyproxy/envoy/actions/runs/1)
+- sha: '0000000'
+  date: '2026-11-15T09:00:00Z'
+  title: zeroth
+  checks:
+  - name: Envoy/Checks
+    status: COMPLETED
+    conclusion: SUCCESS
+    run_id: '100'
+    text: |-
+      ## Check run finished
+
+      # [Envoy/Checks (postsubmit/main@0000000)](https://github.com/envoyproxy/envoy/actions/runs/1)
+expression: 'checks::commits("release/v1.40") | map({sha, checks: (.checks | map(.run_id))})'
+expected:
+- sha: eee5555
+  checks:
+  - '200'

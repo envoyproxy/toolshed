@@ -26,6 +26,7 @@ which consumer happens to call it. The directory name is the scope:
 |---|---|
 | `github/` | GitHub API / Actions / GFM-shaped input or output (`actions.jq`, `gfm.jq`) |
 | `bazel/` | Bazel `aquery`/BEP/`BUILD`-shaped data (`aquery.jq`, `dep.jq`, `registry.jq`, `version.jq`) |
+| `ci/` | pass rates of CI from the checks on a branch's commits, and reports of them (`checks.jq`, `runs.jq`, `report.jq`, `year.jq`, `summary.jq`, `slack.jq`) |
 | `clang/` | clang tooling output (`tidy.jq`, clang-tidy stdout parsing) |
 | `cve/` | NVD and CVE Program CVE matching and terminal reports (`utils.jq`, `matcher.jq`, `nvd_scan.jq`, `cna_matcher.jq`, `merge.jq`, `report.jq`) |
 | `envoy/` | reserved for Envoy release/archive policy filters (not added yet) |
@@ -69,6 +70,72 @@ $ cd jq && bazel test //...
 ```
 
 Both entry points run the exact same `run-tests.sh` and `.test.yml` files.
+
+## CI reports
+
+`ci/checks.jq` turns the checks on a branch's commits into pass rates per
+workflow, and renders them. Only fetching touches GitHub, so that is all a
+caller has to provide: everything else is a filter here.
+
+```sh
+# 1. Fetch the commits of each branch in the period, with their check runs
+#    (raw.json), then ask which workflow runs to fetch the jobs of.
+jq -L jq -f jq/ci/runs.jq raw.json > runs.json
+# 2. Fetch those (jobs.json), and aggregate.
+jq -L jq --slurpfile jobs jobs.json -f jq/ci/report.jq raw.json > report.json
+# 3. Render.
+jq -r -L jq -f jq/ci/summary.jq report.json >> "$GITHUB_STEP_SUMMARY"
+jq -L jq --arg channel '#ci' --arg url "$RUN_URL" -f jq/ci/slack.jq report.json > slack.json
+```
+
+`raw.json` is the frame of the report and what GitHub returned, unprocessed:
+
+```json
+{"schema": 6, "repo": "envoyproxy/envoy",
+ "period": "week", "frame": "2026-11-15", "complete": true,
+ "generated": "2026-11-22T02:01:00Z",
+ "since": "2026-11-15T00:00:00Z", "until": "2026-11-22T00:00:00Z",
+ "branches": {"main": [{"sha": "...", "date": "...", "title": "...",
+                        "checks": [{"name": "Envoy/Checks", "status": "COMPLETED",
+                                    "conclusion": "FAILURE", "run_id": "123",
+                                    "text": "..."}]}]},
+ "jobs": {"123": [{"name": "...", "conclusion": "failure"}]}}
+```
+
+`period` is `week`, `month` or `year`, and `complete` is false for a period
+which has not ended, which is then reported to date. A check's `status`,
+`conclusion` and `text` are as the GraphQL API gives them for a check run,
+and a job's `name` and `conclusion` as the REST API does. `jobs` can be in
+the file, or given as `--slurpfile jobs` once fetched.
+
+What is counted:
+
+- Only checks requested as postsubmit for the branch. A check's text says
+  what requested it (`(postsubmit/main@1e013e6)`, `(pr/49230/main@08dc2dd)`):
+  a stack merged without being rewritten keeps its commit ids and so its pull
+  request's checks, and a new release branch starts with the commits and
+  checks of the branch it was cut from.
+- Skipped checks not at all, and cancelled ones against the pass rate.
+- Jobs which are allowed to fail (`Allowed-to-fail checks failed: ...` in the
+  check's text) do not fail their check, so are in no rate, and are listed
+  apart.
+- A branch other than `main` only if it had CI in the period.
+
+A week's summary has a cell per commit, a month's a cell per day and rates
+per week, and a year's a cell per week and rates per month.
+
+GitHub keeps neither checks nor workflow runs for a year, so a year is
+compiled from the reports of its months, which have to have been kept:
+
+```sh
+jq -s -L jq --arg repo envoyproxy/envoy --arg year 2026 -f jq/ci/year.jq months/*.json
+```
+
+Reports of other years, periods and repositories are ignored, and months with
+no report are listed in `missing`. If the year's monthly reports are all for
+other repositories it is an error rather than a year with every month missing,
+as that is most likely the wrong `repo`. `--arg generated` overrides the time
+(which decides whether the year is `complete`).
 
 ## CVE scanner
 
