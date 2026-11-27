@@ -37,7 +37,7 @@ runs:
 
   - id: keys
     if: ${{ inputs.keys }}
-    uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+    uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     with:
       input-format: text
       input: ${{ inputs.keys }}
@@ -48,7 +48,7 @@ runs:
         | map(select(length > 0))
 
   - id: entries
-    uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+    uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     with:
       input-format: yaml
       input: ${{ inputs.entries }}
@@ -64,7 +64,7 @@ runs:
           end
 
   - id: resolved
-    uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+    uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     with:
       input-format: yaml-path
       input: ${{ inputs.lock-file }}
@@ -85,7 +85,7 @@ runs:
               end)
 
   - id: modules
-    uses: envoyproxy/toolshed/actions/bson@9f2f90a962545aef17920d070d3089748ee33b20
+    uses: envoyproxy/toolshed/actions/bson@a8216ac61470af7180efc4639f7010902b64343c
     with:
       input: ${{ steps.resolved.outputs.value }}
       input-format: json
@@ -115,7 +115,7 @@ runs:
       result-filter-options: -csR
 
   - id: caches
-    uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+    uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     with:
       input: ${{ steps.resolved.outputs.value }}
       options: >-

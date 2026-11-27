@@ -142,10 +142,10 @@ runs:
   steps:
   - if: ${{ fromJSON(inputs.diskspace-hack) }}
     name: Free diskspace
-    uses: envoyproxy/toolshed/actions/diskspace@9f2f90a962545aef17920d070d3089748ee33b20
+    uses: envoyproxy/toolshed/actions/diskspace@a8216ac61470af7180efc4639f7010902b64343c
     with:
       to_remove: ${{ inputs.diskspace-hack-paths }}
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     name: Generate download config
     if: ${{ inputs.downloads }}
     id: download-config
@@ -162,7 +162,7 @@ runs:
              else
                "${{ runner.temp }}/\(.)"
              end)
-  - uses: envoyproxy/toolshed/actions/foreach@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/foreach@a8216ac61470af7180efc4639f7010902b64343c
     if: ${{ steps.download-config.outputs.value }}
     with:
       items: ${{ steps.download-config.outputs.value }}
@@ -207,7 +207,7 @@ runs:
       OUTPUT_DATA: ${{ inputs.output-path }}
     shell: bash
 
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     id: entrypoint
     with:
       input: |
@@ -217,7 +217,7 @@ runs:
       output-path: ${{ steps.paths.outputs.entrypoint }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
 
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     id: source
     with:
       input: |
@@ -226,27 +226,27 @@ runs:
       options: -Rsr
       output-path: ${{ steps.paths.outputs.source }}
       print-output: ${{ fromJSON(env.CI_DEBUG || 'false') && true || false }}
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     name: Generate run context (steps-pre)
     id: context-steps-pre
     with:
       input: ${{ inputs.steps-pre || '""' }}
       options: -Rs
       input-format: string
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     name: Generate run context (steps-post)
     id: context-steps-post
     with:
       input: ${{ inputs.steps-post || '""' }}
       options: -Rs
       input-format: string
-  - uses: envoyproxy/toolshed/actions/using/steps@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/using/steps@a8216ac61470af7180efc4639f7010902b64343c
     name: Pre report
     if: ${{ inputs.report-pre }}
     with:
       steps: ${{ inputs.report-pre }}
       context: ${{ inputs.context }}
-  - uses: envoyproxy/toolshed/actions/using/steps@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/using/steps@a8216ac61470af7180efc4639f7010902b64343c
     name: Run pre steps
     if: ${{ inputs.steps-pre }}
     with:
@@ -295,7 +295,7 @@ runs:
       CONTAINER_COMMAND_INPUT: ${{ inputs.container-command }}
       ENVSUBST_VARS: ${{ inputs.envsubst-vars }}
 
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     if: ${{ always() }}
     id: started
     with:
@@ -345,21 +345,21 @@ runs:
     env:
       COMMAND: ${{ steps.command.outputs.command }}
       TARGET_PATH: ${{ inputs.working-directory }}
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     id: cancelled
     if: ${{ cancelled() }}
     with:
       options: -r
       filter: |
         true
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     if: ${{ always() }}
     id: completed
     with:
       options: -r
       filter: now
 
-  - uses: envoyproxy/toolshed/actions/bson@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/bson@a8216ac61470af7180efc4639f7010902b64343c
     if: ${{ ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false')) }}
     with:
       input-format: string-path
@@ -378,7 +378,7 @@ runs:
              error: $error_match,
              fail: $fail_match})
 
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     name: Generate run context
     id: context
     if: ${{ always() }}
@@ -399,7 +399,7 @@ runs:
         | {"run": .,
            "context": ${{ inputs.context || '{}' }}}
 
-  - uses: envoyproxy/toolshed/actions/bson@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/bson@a8216ac61470af7180efc4639f7010902b64343c
     if: ${{ inputs.container-output && ( ! (cancelled() || fromJSON(steps.cancelled.outputs.value || 'false'))) }}
     with:
       input: |
@@ -419,27 +419,27 @@ runs:
               | "\($dir)/\($v)" as $target
               | "mkdir -p $(dirname \($dir_target))\n\(env.CONTAINER_COMMAND) cp -a \($k) \($target)")
         | join("\n")
-  - uses: envoyproxy/toolshed/actions/using/steps@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/using/steps@a8216ac61470af7180efc4639f7010902b64343c
     name: Run post steps
     if: ${{ inputs.steps-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
       name: ${{ inputs.steps-post-name }}
       steps: ${{ inputs.steps-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     id: post-failed
     if: ${{ failure() && inputs.uploads }}
     with:
       input: ${{ steps.context.outputs.value }}
       filter: |
         .run["post-steps-failed"] = true
-  - uses: envoyproxy/toolshed/actions/using/steps@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/using/steps@a8216ac61470af7180efc4639f7010902b64343c
     name: Post report
     if: ${{ inputs.report-post && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
     with:
       steps: ${{ inputs.report-post }}
       context: ${{ steps.context.outputs.value }}
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     name: Generate upload config
     id: upload-config
     if: ${{ inputs.uploads && ! (fromJSON(steps.context.outputs.value).run.cancelled || cancelled()) }}
@@ -456,7 +456,7 @@ runs:
                else
                  "${{ runner.temp }}/\(.)"
                end)
-  - uses: envoyproxy/toolshed/actions/foreach@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/foreach@a8216ac61470af7180efc4639f7010902b64343c
     if: ${{ steps.upload-config.outputs.value }}
     with:
       items: ${{ steps.upload-config.outputs.value }}
@@ -478,21 +478,21 @@ runs:
             # for ephemeral same-run handoffs so they are not kept for the full default window.
             retention-days: >-
               %{{ format('{0}', fromJSON(inputs.context).items['$KEY']['retention-days']) || '' }}
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     id: upload-failed
     if: ${{ failure() && inputs.uploads }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
         .run["upload-failed"] = true
-  - uses: envoyproxy/toolshed/actions/jq@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/jq@a8216ac61470af7180efc4639f7010902b64343c
     id: run-cancelled
     if: ${{ cancelled() }}
     with:
       input: ${{ steps.post-failed.outputs.value || steps.context.outputs.value }}
       filter: |
         .run["cancelled"] = true
-  - uses: envoyproxy/toolshed/actions/using/steps@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/using/steps@a8216ac61470af7180efc4639f7010902b64343c
     name: Job summary
     if: ${{ always() && inputs.summary-post }}
     with:

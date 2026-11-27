@@ -19,7 +19,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-  - uses: envoyproxy/toolshed/actions/github/script/run@9f2f90a962545aef17920d070d3089748ee33b20
+  - uses: envoyproxy/toolshed/actions/github/script/run@a8216ac61470af7180efc4639f7010902b64343c
     id: key
     if: ${{ inputs.key }}
     with:
