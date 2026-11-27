@@ -2,7 +2,7 @@ import fetchMock from 'fetch-mock'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
-import run, {parseArgs} from '../retest'
+import run, {isExcluded, parseArgs} from '../retest'
 
 beforeEach(() => {
   jest.resetModules()
@@ -59,5 +59,23 @@ describe('parseArgs', () => {
 
   it.each([['$(id)'], ['check;id'], ['`id`'], ['--flag'], ['check name && id']])('rejects %s', (args: string) => {
     expect(() => parseArgs(args)).toThrow(TypeError)
+  })
+})
+
+describe('isExcluded', () => {
+  it('matches an exact or prefix token', () => {
+    expect(isExcluded('Envoy/Verify', ['Envoy/Verify'])).toBe(true)
+    expect(isExcluded('Envoy/Verify / examples', ['Envoy/Verify'])).toBe(true)
+    expect(isExcluded('Envoy/Checks', ['Envoy/Verify'])).toBe(false)
+  })
+  it('is false for an empty exclude list', () => {
+    expect(isExcluded('anything', [])).toBe(false)
+  })
+  // Regression: backends must match the original plain name, not a display form.
+  // The AZP backend renders names as `[pipeline](link)`; it filters on the plain
+  // `pipeline` name, so excluding `pipeline` works (matching `[pipeline](link)` would not).
+  it('matches the plain pipeline name, not a markdown display form', () => {
+    expect(isExcluded('macos', ['macos'])).toBe(true)
+    expect(isExcluded('[macos](https://dev.azure.com/x)', ['macos'])).toBe(false)
   })
 })

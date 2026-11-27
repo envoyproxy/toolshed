@@ -51,6 +51,7 @@ type OctokitType = InstanceType<typeof GitHub>
 
 type Env = {
   args: string[]
+  exclude: string[]
   octokit: OctokitType
   token: string
   comment: number
@@ -166,6 +167,9 @@ class GithubRetestCommand extends RetestCommand {
       if (check.conclusion !== 'failure' && check.conclusion !== 'cancelled') {
         return
       }
+      if (isExcluded(check.name || '', this.env.exclude)) {
+        return
+      }
       if (this.env.debug) {
         console.log(
           `Check ${check.conclusion}: ${check.name}\n\n  ${check.html_url}\n\n`
@@ -235,6 +239,9 @@ class AZPRetestCommand extends RetestCommand {
         continue
       }
       const subcheck = subchecks[0].name.split(' ')[0]
+      if (isExcluded(subcheck, this.env.exclude)) {
+        continue
+      }
       const link = this.getAZPLink(checkId)
       const name = `[${subcheck}](${link})`
       const config = {
@@ -285,6 +292,10 @@ class AZPRetestCommand extends RetestCommand {
 // create, so they are validated against a strict allow-list before use.
 const ARG_EXPRESSION = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/
 
+export function isExcluded(name: string, exclude: string[]): boolean {
+  return exclude.some((prefix) => name === prefix || name.startsWith(prefix))
+}
+
 export function parseArgs(args: string): string[] {
   const parsed = args.split(/\s+/).filter((arg) => arg !== '')
   const invalid = parsed.filter((arg) => !ARG_EXPRESSION.test(arg))
@@ -304,6 +315,7 @@ class RetestCommands {
     const pr = core.getInput('pr-url')
     const comment = parseInt(core.getInput('comment-id'))
     const args = parseArgs(core.getInput('args'))
+    const exclude = parseArgs(core.getInput('exclude'))
     const octokit = github.getOctokit(token)
     // Create the octokit client
     const nwo = process.env['GITHUB_REPOSITORY'] || '/'
@@ -319,6 +331,7 @@ class RetestCommands {
     const debug = Boolean(process.env.CI_DEBUG && process.env.CI_DEBUG != 'false')
     return {
       args,
+      exclude,
       debug,
       token,
       octokit,

@@ -40,6 +40,12 @@ inputs:
       body of a `/retest` comment, which anyone can create, and are validated
       against a strict allow-list of check-name-like tokens.
 
+  exclude:
+    description: >-
+      Check-name prefixes to exclude from retesting, same validation as `args`.
+      A failed check is skipped when its name equals or starts with any token.
+      Intended for trusted callers (eg a wrapping action), not comment input.
+
 runs:
   using: node24
   main: '../../js/retest/dist/index.js'
