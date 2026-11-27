@@ -2,7 +2,7 @@ import fetchMock from 'fetch-mock'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 
-import run, {isExcluded, parseArgs} from '../retest'
+import run, {isExcluded, parseArgs, reactions} from '../retest'
 
 beforeEach(() => {
   jest.resetModules()
@@ -77,5 +77,24 @@ describe('isExcluded', () => {
   it('matches the plain pipeline name, not a markdown display form', () => {
     expect(isExcluded('macos', ['macos'])).toBe(true)
     expect(isExcluded('[macos](https://dev.azure.com/x)', ['macos'])).toBe(false)
+  })
+})
+
+describe('reactions', () => {
+  it('reacts rocket when checks were retested', () => {
+    expect(reactions({errors: 0, retested: 2})).toEqual(['rocket'])
+  })
+
+  it('reacts confused when nothing was retested', () => {
+    expect(reactions({errors: 0, retested: 0})).toEqual(['confused'])
+  })
+
+  it('counts a caller baseline so a recovery is not reported as confused', () => {
+    expect(reactions({errors: 0, retested: 1})).toEqual(['rocket'])
+  })
+
+  it('reacts -1 on errors alongside the status reaction', () => {
+    expect(reactions({errors: 1, retested: 0})).toEqual(['-1', 'confused'])
+    expect(reactions({errors: 2, retested: 3})).toEqual(['-1', 'rocket'])
   })
 })

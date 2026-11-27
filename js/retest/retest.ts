@@ -52,6 +52,7 @@ type OctokitType = InstanceType<typeof GitHub>
 type Env = {
   args: string[]
   exclude: string[]
+  retested: number
   octokit: OctokitType
   token: string
   comment: number
@@ -296,6 +297,15 @@ export function isExcluded(name: string, exclude: string[]): boolean {
   return exclude.some((prefix) => name === prefix || name.startsWith(prefix))
 }
 
+export function reactions(result: RetestResult): GithubReactionType[] {
+  const list: GithubReactionType[] = []
+  if (result.errors !== 0) {
+    list.push('-1')
+  }
+  list.push(result.retested === 0 ? 'confused' : 'rocket')
+  return list
+}
+
 export function parseArgs(args: string): string[] {
   const parsed = args.split(/\s+/).filter((arg) => arg !== '')
   const invalid = parsed.filter((arg) => !ARG_EXPRESSION.test(arg))
@@ -316,6 +326,7 @@ class RetestCommands {
     const comment = parseInt(core.getInput('comment-id'))
     const args = parseArgs(core.getInput('args'))
     const exclude = parseArgs(core.getInput('exclude'))
+    const retested = parseInt(core.getInput('retested')) || 0
     const octokit = github.getOctokit(token)
     // Create the octokit client
     const nwo = process.env['GITHUB_REPOSITORY'] || '/'
@@ -332,6 +343,7 @@ class RetestCommands {
     return {
       args,
       exclude,
+      retested,
       debug,
       token,
       octokit,
@@ -415,19 +427,17 @@ class RetestCommands {
   }
 
   retest = async (): Promise<void> => {
-    const result: RetestResult = {errors: 0, retested: 0}
+    // Seed with any retests the caller already performed itself (eg a wrapping
+    // action that re-ran a build), so the reaction reflects that work rather
+    // than reporting `confused` when every remaining check was excluded.
+    const result: RetestResult = {errors: 0, retested: this.env.retested}
     for (const retester of await this.retesters()) {
       const retested = await retester.retest()
       result.errors += retested.errors
       result.retested += retested.retested
     }
-    if (result.errors !== 0) {
-      await this.addReaction('-1')
-    }
-    if (result.retested === 0) {
-      await this.addReaction('confused')
-    } else {
-      await this.addReaction()
+    for (const reaction of reactions(result)) {
+      await this.addReaction(reaction)
     }
   }
 }

@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+# Mock gh for testing actions/envoy/retest/check-oci.
+#
+# Returns canned, already-jq'd responses from $MOCK_DIR and logs each call to
+# $MOCK_DIR/gh.log. The decision step's --jq filters are applied by real gh
+# against the live API; here the fixtures ARE the post-filter output, so the
+# mock ignores the gh flags and dispatches purely on the endpoint in the args.
+set -uo pipefail
+
+MOCK_DIR="${MOCK_DIR:?MOCK_DIR not set for mock gh}"
+echo "gh $*" >> "${MOCK_DIR}/gh.log"
+args="$*"
+
+# Optional failure injection: $MOCK_DIR/fail_on holds a substring; if the call
+# matches it, exit nonzero (simulates an API/authorization error).
+if [[ -f "${MOCK_DIR}/fail_on" ]]; then
+    pat="$(cat "${MOCK_DIR}/fail_on")"
+    if [[ -n "${pat}" && "${args}" == *"${pat}"* ]]; then
+        echo "mock gh: simulated failure for '${pat}'" >&2
+        exit 1
+    fi
+fi
+
+if [[ "${args}" == *"head.sha"* ]]; then
+    cat "${MOCK_DIR}/head_sha" 2>/dev/null || echo deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
+elif [[ "${args}" == *"check-runs"* ]]; then
+    cat "${MOCK_DIR}/checks.json" 2>/dev/null
+elif [[ "${args}" == *"/artifacts"* ]]; then
+    cat "${MOCK_DIR}/artifacts.json" 2>/dev/null
+elif [[ "${args}" == *"/actions/runs/"* ]]; then
+    cat "${MOCK_DIR}/run.json" 2>/dev/null
+else
+    echo "mock gh: unhandled call: ${args}" >&2
+    exit 1
+fi
