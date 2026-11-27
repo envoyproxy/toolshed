@@ -4,7 +4,7 @@ Write an encrypted OpenPGP secret key and passphrase to host files for Bazel
 `@envoy_toolshed//pgp` signing, and remove them in a post step.
 
 ```yaml
-- uses: envoyproxy/toolshed/actions/gpg/write@9f2f90a962545aef17920d070d3089748ee33b20
+- uses: envoyproxy/toolshed/actions/gpg/write@a8216ac61470af7180efc4639f7010902b64343c
   id: signing
   with:
     key: ${{ secrets.GPG_KEY }}

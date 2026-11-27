@@ -45,7 +45,7 @@ runs:
   steps:
   - name: Check publish oci artifacts
     id: oci
-    uses: envoyproxy/toolshed/actions/envoy/retest/check-oci@9f2f90a962545aef17920d070d3089748ee33b20
+    uses: envoyproxy/toolshed/actions/envoy/retest/check-oci@a8216ac61470af7180efc4639f7010902b64343c
     with:
       token: ${{ inputs.token }}
       pr-url: ${{ inputs.pr-url }}
@@ -66,7 +66,7 @@ runs:
       gh run rerun "${PUBLISH_RUN}" -R "${GITHUB_REPOSITORY}"
 
   - name: Retest
-    uses: envoyproxy/toolshed/actions/retest@9f2f90a962545aef17920d070d3089748ee33b20
+    uses: envoyproxy/toolshed/actions/retest@a8216ac61470af7180efc4639f7010902b64343c
     with:
       token: ${{ inputs.token }}
       azp_org: ${{ inputs.azp_org }}
